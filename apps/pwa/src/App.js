@@ -10,6 +10,7 @@ class App extends Component {
     const height = this.mount.clientHeight;
 
     this.scene = new THREE.Scene();
+    this.clickTargets = [];
 
     this.camera = new THREE.PerspectiveCamera(
       75,
@@ -18,34 +19,34 @@ class App extends Component {
       1000
     );
 
-    this.camera.position.z = 40;
+    this.camera.rotation.x = Math.PI / 4
+
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+
+    this.camera.position.z = 45;
+    this.camera.position.y = -20;
+    this.camera.position.x = 10;
+
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setClearColor('#000000');
     this.renderer.setSize(width, height);
     this.mount.appendChild(this.renderer.domElement);
 
-    const material = new THREE.MeshPhongMaterial( { color: '#2b1d0e', specular: '#e08b3e', shininess: 30, flatShading: true } )
     const loader = new GLTFLoader();
+    this.onClick = this.onClick.bind(this);
 
     loader.load(
-        'models/cannon.glb',
+        'models/cannon.gltf',
         ( gltf ) => {
-            this.cannon = new THREE.Mesh(gltf.scene.children[2].geometry, material);
-            this.cannon.scale.set(.005, .005, .005);
-            this.cannon.rotation.y  = Math.PI / 2
-            this.cannon.rotation.x  = Math.PI / 4
-            this.cannon.position.set(-42, 6, 1.5);
+            this.cannonGeometry = gltf.scene.children[2].geometry;
+            this.playerGameField = this.buildGameField(true);
+            this.playerGameField.position.set(-60, 0, 0);
 
-            this.playerGameField = this.buildGameField();
-            this.playerGameField.rotateX(-Math.PI / 8);
-            this.playerGameField.position.set(-60, -15, 0);
+            this.opponentGameField = this.buildGameField(false);
+            this.opponentGameField.position.set(20, 0, 0);
 
-            this.opponentGameField = this.buildGameField();
-            this.opponentGameField.rotateX(-Math.PI / 8);
-            this.opponentGameField.position.set(20, -15, 0);
-
-            this.scene.add(this.cannon);
             this.scene.add(this.opponentGameField);
             this.scene.add(this.playerGameField);
 
@@ -68,7 +69,31 @@ class App extends Component {
     );
   }
 
-  buildGameField() {
+  onClick = (event) => {
+    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    var intersects = this.raycaster.intersectObjects(this.clickTargets);
+
+    for (let i = 0; i < intersects.length; i++) {
+      this.setRumTruffleCannon(intersects[i].object.position);
+    }
+  }
+
+  setRumTruffleCannon(position) {
+    console.log(position);
+    const material = new THREE.MeshPhongMaterial({ color: '#2b1d0e', specular: '#e08b3e', shininess: 30, flatShading: true });
+    let cannon = new THREE.Mesh(this.cannonGeometry, material);
+    let scaleFactor = .002;
+    cannon.scale.set(scaleFactor, scaleFactor, scaleFactor);
+    cannon.rotation.y = Math.PI / 2
+    cannon.rotation.x = Math.PI / 2
+    cannon.position.set(position.x - 59, position.y, 2);
+    this.scene.add(cannon);
+  }
+
+  buildGameField(isPlayerGameField) {
     var gameField = new THREE.Group();
     const rows = 8;
     const cols = 8;
@@ -76,11 +101,14 @@ class App extends Component {
     var fieldtypes = ['#e08b3e', '#b5651d', '#734012'];
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
-        var geometry = new THREE.PlaneGeometry(fieldSize, fieldSize, 1);
+        var geometry = new THREE.PlaneGeometry(fieldSize, 8, fieldSize);
         var fieldtype = fieldtypes[Math.floor(Math.random()*fieldtypes.length)];
         var field = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: fieldtype}));
         field.position.set(fieldSize * i, fieldSize * j, 0);
         gameField.add(field);
+        if (isPlayerGameField) {
+          this.clickTargets.push(field);
+        }
       }
     }
     return gameField;
@@ -124,6 +152,7 @@ class App extends Component {
     return(
       <div
         className="App"
+        onClick={this.onClick}
         ref={(mount) => { this.mount = mount }}
       />
     )
