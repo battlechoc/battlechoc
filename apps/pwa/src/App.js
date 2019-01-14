@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import './App.css';
 import * as THREE from 'three';
 import GLTFLoader from 'three-gltf-loader';
-
+import {Game, GameConfig, Player, PlayerType } from './Game.js';
 
 class App extends Component {
   componentDidMount() {
@@ -79,6 +79,11 @@ class App extends Component {
     for (let i = 0; i < intersects.length; i++) {
       this.setRumTruffleCannon(intersects[i].object.position);
     }
+
+    let game = new Game();
+    game.start([new Player("foo", PlayerType.human), new Player("foo", PlayerType.non_human)], 0, new GameConfig());
+    console.log(game);
+    console.log(game.currentPlayer().name());
   }
 
   setRumTruffleCannon(position) {
