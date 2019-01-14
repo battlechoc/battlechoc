@@ -5,6 +5,13 @@ import GLTFLoader from 'three-gltf-loader';
 
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      cannons: 0
+    };
+  }
+
   componentDidMount() {
     const width = this.mount.clientWidth;
     const height = this.mount.clientHeight;
@@ -28,10 +35,11 @@ class App extends Component {
     this.camera.position.y = -20;
     this.camera.position.x = 10;
 
-
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setClearColor('#000000');
     this.renderer.setSize(width, height);
+    this.renderer.domElement.id = 'game-canvas'
+
     this.mount.appendChild(this.renderer.domElement);
 
     const loader = new GLTFLoader();
@@ -58,7 +66,6 @@ class App extends Component {
 
             this.start();
             window.addEventListener("resize", () => this.updateDimensions());
-            console.dir(this.camera)
         },
         ( xhr ) => {
             console.log( `${( xhr.loaded / xhr.total * 100 )}% loaded` );
@@ -82,7 +89,6 @@ class App extends Component {
   }
 
   setRumTruffleCannon(position) {
-    console.log(position);
     const material = new THREE.MeshPhongMaterial({ color: '#2b1d0e', specular: '#e08b3e', shininess: 30, flatShading: true });
     let cannon = new THREE.Mesh(this.cannonGeometry, material);
     let scaleFactor = .002;
@@ -91,6 +97,7 @@ class App extends Component {
     cannon.rotation.x = Math.PI / 2
     cannon.position.set(position.x - 59, position.y, 2);
     this.scene.add(cannon);
+    this.setState({cannons: this.state.cannons + 1});
   }
 
   buildGameField(isPlayerGameField) {
@@ -139,7 +146,6 @@ class App extends Component {
   }
 
   animate = () => {
-    //this.cannon.rotation.y += 0.01;
     this.renderScene();
     this.frameId = window.requestAnimationFrame(this.animate);
   }
@@ -150,11 +156,14 @@ class App extends Component {
 
   render() {
     return(
-      <div
-        className="App"
-        onClick={this.onClick}
-        ref={(mount) => { this.mount = mount }}
-      />
+      <div className="app-container">
+        <div id="hud">Rum Truffle Cannons: {this.state.cannons}</div>
+        <div
+          className="app"
+          onClick={this.onClick}
+          ref={(mount) => {this.mount = mount}}
+        />
+      </div>
     )
   }
   
