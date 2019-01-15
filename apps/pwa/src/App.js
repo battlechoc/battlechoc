@@ -26,6 +26,9 @@ class App extends Component {
       1000
     );
 
+    this.game = new Game();
+    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], 0, new GameConfig());
+
     this.camera.rotation.x = Math.PI / 4
 
     this.raycaster = new THREE.Raycaster();
@@ -77,6 +80,8 @@ class App extends Component {
   }
 
   onClick = (event) => {
+    this.game.finishTurn();
+
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
 
@@ -87,10 +92,7 @@ class App extends Component {
       this.setRumTruffleCannon(intersects[i].object.position);
     }
 
-    let game = new Game();
-    game.start([new Player("foo", PlayerType.human), new Player("foo", PlayerType.non_human)], 0, new GameConfig());
-    console.log(game);
-    console.log(game.currentPlayer().name());
+    console.log(this.game.currentPlayer().name);
   }
 
   setRumTruffleCannon(position) {
