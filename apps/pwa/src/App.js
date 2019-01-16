@@ -12,11 +12,12 @@ class App extends Component {
     };
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     const width = this.mount.clientWidth;
     const height = this.mount.clientHeight;
 
     this.scene = new THREE.Scene();
+    this.loader = new GLTFLoader();
     this.clickTargets = [];
 
     this.camera = new THREE.PerspectiveCamera(
@@ -42,41 +43,46 @@ class App extends Component {
     this.renderer.setClearColor('#000000');
     this.renderer.setSize(width, height);
     this.renderer.domElement.id = 'game-canvas'
+    this.renderer.gammaOutput = true;
+    this.renderer.gammaFactor = 2.2;
 
     this.mount.appendChild(this.renderer.domElement);
-
-    const loader = new GLTFLoader();
     this.onClick = this.onClick.bind(this);
 
-    loader.load(
-        'models/cannon.gltf',
-        ( gltf ) => {
-            this.cannonGeometry = gltf.scene.children[2].geometry;
-            this.playerGameField = this.buildGameField(true);
-            this.playerGameField.position.set(-60, 0, 0);
+    var cannonModel = await this.loadGLTFModel('models/cannon.gltf');
+    var factoryModel = await this.loadGLTFModel('models/factory.gltf');
+    this.factory = factoryModel.scene;
+    this.factory.scale.set(1, 2, 2);
+    this.factory.rotation.y = Math.PI * 1.25;
+    this.factory.rotation.x = Math.PI / 2;
 
-            this.opponentGameField = this.buildGameField(false);
-            this.opponentGameField.position.set(20, 0, 0);
+    console.log(factoryModel.asset)
 
-            this.scene.add(this.opponentGameField);
-            this.scene.add(this.playerGameField);
+    this.cannonGeometry = cannonModel.scene.children[2].geometry;
+    
+    this.playerGameField = this.buildGameField(true);
+    this.playerGameField.position.set(-60, 0, 0);
 
-            var ambientLight = new THREE.AmbientLight(0x101010, 1.0);
-            this.scene.add(ambientLight);
-            var directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); 
-            directionalLight.position.set(0.0, 0.0, 10.0);
-            this.scene.add(directionalLight); 
+    this.opponentGameField = this.buildGameField(false);
+    this.opponentGameField.position.set(20, 0, 0);
 
-            this.start();
-            window.addEventListener("resize", () => this.updateDimensions());
-        },
-        ( xhr ) => {
-            console.log( `${( xhr.loaded / xhr.total * 100 )}% loaded` );
-        },
-        ( error ) => {
-            console.error( 'An error happened', error );
-        },
-    );
+    this.scene.add(this.opponentGameField);
+    this.scene.add(this.playerGameField);
+
+    var ambientLight = new THREE.AmbientLight(0x101010, 1.0);
+    this.scene.add(ambientLight);
+    var directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); 
+    directionalLight.position.set(0.0, -5.0, 10.0);
+    this.scene.add(directionalLight); 
+
+    this.start();
+    window.addEventListener("resize", () => this.updateDimensions());
+  }
+
+  loadGLTFModel = (filename) => {
+    return new Promise((resolve, reject) => {
+      this.loader.load(filename, resolve);
+    });
   }
 
   onClick = (event) => {
@@ -89,10 +95,19 @@ class App extends Component {
     var intersects = this.raycaster.intersectObjects(this.clickTargets);
 
     for (let i = 0; i < intersects.length; i++) {
-      this.setRumTruffleCannon(intersects[i].object.position);
+      if (this.game.currentPlayer().name == 'foo') {
+        this.setRumTruffleCannon(intersects[i].object.position);
+      } else {
+        this.setFactory(intersects[i].object.position);
+      }
     }
 
     console.log(this.game.currentPlayer().name);
+  }
+
+  setFactory(position) {
+    this.factory.position.set(position.x - 59, position.y, 2);
+    this.scene.add(this.factory);
   }
 
   setRumTruffleCannon(position) {
