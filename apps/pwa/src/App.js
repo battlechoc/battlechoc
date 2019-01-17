@@ -31,6 +31,7 @@ class App extends Component {
     this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], 0, new GameConfig());
 
     this.camera.rotation.x = Math.PI / 4
+    this.initialTurn = true;
 
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
@@ -95,10 +96,11 @@ class App extends Component {
     var intersects = this.raycaster.intersectObjects(this.clickTargets);
 
     for (let i = 0; i < intersects.length; i++) {
-      if (this.game.currentPlayer().name == 'foo') {
-        this.setRumTruffleCannon(intersects[i].object.position);
-      } else {
+      if (this.initialTurn) {
         this.setFactory(intersects[i].object.position);
+        this.initialTurn = false;
+      } else {
+        this.setRumTruffleCannon(intersects[i].object.position);
       }
     }
 
