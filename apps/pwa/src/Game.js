@@ -3,9 +3,30 @@ const PlayerType = Object.freeze({
     non_human:  Symbol("non_human")
 });
 
+const SweastyGameStateType = Object.freeze({
+    start: Symbol("start"),
+    choose_field_or_start: Symbol("field_or_start"),
+    initial_placement_p1: Symbol("p1_initial_placement"),
+    initial_placement_p2: Symbol("p2_initial_placement"),
+    playing: Symbol("playing"),
+    end: Symbol("end")
+})
+
+const SweastyGameActionType = Object.freeze({
+    finish_turn: Symbol("finish_turn")
+})
+
 class GameEvent {
     fire(gameState) {
+        // GameEvents and its fire method are the only place where the gameState may be changed.
         return gameState;
+    }
+}
+
+class FinishTurnEvent extends GameEvent {
+    fire(gameState) {
+        gameState.finishTurn();
+        return super.fire(gameState);
     }
 }
 
@@ -13,9 +34,9 @@ class GameEvent {
  * Actions are performed by players. They trigger events when fired by players.
  */
 class Action {
-    constructor(type) {
+    constructor(type, events) {
         this.type = type;
-        this.events = [];
+        this.events = events;
     }
 
     getType() {
@@ -34,6 +55,12 @@ class Action {
             gameState = gameEvent.fire(gameState);
         }
         return gameState;
+    }
+}
+
+class FinishTurnAction extends Action {
+    constructor() {
+        super(SweastyGameActionType.finish_turn, [new FinishTurnEvent()]);
     }
 }
 
@@ -77,7 +104,7 @@ class Turn {
         return this.actions;
     }
 
-    addActions(action) {
+    addAction(action) {
         this.actions.push(action);
     }
 }
@@ -96,8 +123,6 @@ class State {
         this.currentPlayerIndex = playerStartIndex;
         this.turns = [];
         this.currentTurn = new Turn(this.players[playerStartIndex]);
-
-        // list some variables that describe the game state
     }
 
     /**
@@ -146,19 +171,22 @@ class State {
     }
 }
 
-/**
- * Defines the configuration of the game.
- */
-class GameConfig {
-
+class SweastyGameState extends State {
+    constructor(players, playerStartIndex) {
+        super(players, playerStartIndex);
+        this.currentState = SweastyGameStateType.start;
+    }
 }
 
 /**
  * A game consists of the history of turn performed so far and the current state.
  */
 class Game {
-    constructor() {
-        this.config = null;
+    constructor(gameStateType) {
+        if (gameStateType == null) {
+            throw new Error("Invalid gamestate type given.");
+        }
+        this.gameStateType = gameStateType;
         this.state = null;
     }
 
@@ -167,9 +195,8 @@ class Game {
      * 
      * @param {Player} players the list of players participating in the game
      * @param {int} playerStartIndex index of the player that has the initial turn in the game
-     * @param {GameConfig} config configuration parameters defining the game
      */
-    start(players, playerStartIndex, config) {
+    start(players, playerStartIndex) {
         if (this.state != null) {
             throw new Error("Game has already been started.");
         }
@@ -182,26 +209,25 @@ class Game {
             throw new Error("Invalid player start index.");
         }
 
-        if (config == null) {
-            throw new Error("Invalid config given.");
+        try {
+            this.state = new this.gameStateType(players, playerStartIndex);
+        } catch (error) {
+            throw new Error("could not create initial game state.");
         }
-
-        this.config = config;
-        this.state = new State(players, playerStartIndex);
     }
 
     /**
      * Persists the current game state and the turn history in order to reload or replay it later on.
      */
     save() {
-
+        // persist the game state
     }
 
     /**
      * Loads an persisted game.
      */
     load() {
-
+        // load a game state
     }
 
     /**
@@ -210,13 +236,6 @@ class Game {
      */
     perform(action) {
         this.state.perform(action);
-    }
-
-    /**
-     * Finishes the current turn and advances to the next one.
-     */
-    finishTurn() {
-        this.state.finishTurn();
     }
 
     /**
@@ -231,4 +250,4 @@ class Game {
     }
 }
 
-export { Game, GameConfig, Player, Action, PlayerType };
+export { Game, Player, Action, PlayerType, SweastyGameStateType, SweastyGameState, FinishTurnAction };

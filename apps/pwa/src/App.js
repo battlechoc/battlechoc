@@ -1,9 +1,14 @@
 import React, { Component } from 'react';
 import './App.css';
 import * as THREE from 'three';
+<<<<<<< HEAD
 import {Game, GameConfig, Player, PlayerType } from './Game.js';
 import Gamefield from './Gamefield.js';
 import { BuildingType } from './Building.js';
+=======
+import GLTFLoader from 'three-gltf-loader';
+import {Game, SweastyGameState, Player, PlayerType, FinishTurnAction } from './Game.js';
+>>>>>>> changed structure of game logic implementation slightly and prepared first action, event and game state.
 
 class App extends Component {
   constructor(props) {
@@ -22,8 +27,8 @@ class App extends Component {
     const height = this.mount.clientHeight;
     window.addEventListener("resize", () => this.updateDimensions());
 
-    this.game = new Game();
-    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], 0, new GameConfig());
+    this.game = new Game(SweastyGameState);
+    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], 0);
 
     this.initialTurn = true;
 
@@ -69,7 +74,7 @@ class App extends Component {
   }
 
   onClick = (event) => {
-    this.game.finishTurn();
+    this.game.perform(new FinishTurnAction());
 
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
