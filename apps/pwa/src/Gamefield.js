@@ -7,9 +7,10 @@ class Gamefield {
 		this.rows = 8;
 		this.cols = 8;
 		this.fieldSize = 8;
+		this.position = position;
 
 		this.loader = new GLTFLoader();
-    	this._build(position);
+    	this._build();
     	this._loadBuildings();
 	}
 
@@ -23,7 +24,7 @@ class Gamefield {
 		return this.gameField;
 	}
 
-	async _build(position) {
+	async _build() {
 		this.gameField = new THREE.Group();
 
 		const whiteTileModel = await this.loadGLTFModel('models/white_tile.gltf');
@@ -51,7 +52,7 @@ class Gamefield {
 	      	}
 	    }
 
-	    this.gameField.position.set(position[0], position[1], position[2]);
+	    this.gameField.position.set(this.position[0], this.position[1], this.position[2]);
 	}
 
 	getClickableFields() {
@@ -60,22 +61,26 @@ class Gamefield {
 
 	setFactory(scene, position) {
 		let factory = this.factoryModel.scene.clone();
-		factory.position.set(position.x - 70.5, 6, position.z + 1.5);
+		factory.position.set(position.x - 70.5, -10, position.z + 1.5);
 		scene.add(factory);
+	}
+
+	setCacaotree(scene, position) {
+		let cacaotree = this.cacaotreeModel.scene.clone();
+		cacaotree.position.set(position.x - 69, -10, position.z + 3.5);
+		scene.add(cacaotree);
 	}
 
 	async _loadBuildings() {
 		this.cannonModel = await this.loadGLTFModel('models/cannon.gltf');
     	this.factoryModel = await this.loadGLTFModel('models/factory.gltf');
+    	this.cacaotreeModel = await this.loadGLTFModel('models/cacaotree.gltf');
 	}
 
 	setRumTruffleCannon(scene, position) {
-		const material = new THREE.MeshPhongMaterial({ color: '#2b1d0e', specular: '#e08b3e', shininess: 30, flatShading: true });
-		let cannon = new THREE.Mesh(this.cannonModel.scene.children[2].geometry, material);
-		let scaleFactor = .002;
-		cannon.scale.set(scaleFactor, scaleFactor, scaleFactor);
-		cannon.rotation.y = Math.PI / 1.5
-		cannon.position.set(position.x - 71, 6, position.z);
+		let cannon = this.cannonModel.scene.clone();
+		cannon.rotation.y = Math.PI * -(1/3)
+		cannon.position.set(position.x - 69, -10, position.z + 2.5);
 		scene.add(cannon);
 	}
 

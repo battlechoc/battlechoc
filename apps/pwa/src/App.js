@@ -9,11 +9,14 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      cannons: 0
+      cannons: 0,
+      trees: 0
     };
   }
 
   async componentDidMount() {
+    // Prototyping Variables
+    this.setCannon = false;
     // Basic window and game setup
     const width = this.mount.clientWidth;
     const height = this.mount.clientHeight;
@@ -39,7 +42,7 @@ class App extends Component {
     this.renderer.setSize(width, height);
     this.renderer.domElement.id = 'game-canvas'
     this.renderer.gammaOutput = true;
-    this.renderer.gammaFactor = 2.2;
+    this.renderer.gammaFactor = 1.9;
 
     this.mount.appendChild(this.renderer.domElement);
 
@@ -49,16 +52,16 @@ class App extends Component {
     this.onClick = this.onClick.bind(this);
     
     // Add Gamefield    
-    this.playerGameField = new Gamefield(true, [-72, 0, 0]);
+    this.playerGameField = new Gamefield(true, [-72, -16, 0]);
     this.clickTargets = this.playerGameField.getClickableFields();
-    this.opponentGameField = new Gamefield(true, [72, 72, 0]);
+    this.opponentGameField = new Gamefield(true, [72, 56, 0]);
 
     this.scene.add(this.opponentGameField.getMeshGroup());
     this.scene.add(this.playerGameField.getMeshGroup());
 
     // Add Light
-    var directionalLight = new THREE.DirectionalLight(0xffffff, 2); 
-    directionalLight.position.set(20, 40, 20);
+    var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2); 
+    directionalLight.position.set(20, 24, -10);
     this.scene.add(directionalLight); 
 
     // Start game render loop
@@ -79,8 +82,13 @@ class App extends Component {
         this.playerGameField.setFactory(this.scene, intersects[0].object.parent.position);
         this.initialTurn = false;
       } else {
-        this.playerGameField.setRumTruffleCannon(this.scene, intersects[0].object.parent.position);
-        this.setState({cannons: this.state.cannons + 1});
+        if (this.setCannon) {
+          this.playerGameField.setRumTruffleCannon(this.scene, intersects[0].object.parent.position);
+          this.setState({cannons: this.state.cannons + 1});
+        } else {
+          this.playerGameField.setCacaotree(this.scene, intersects[0].object.parent.position);
+          this.setState({trees: this.state.trees + 1});
+        }
       }
     }
     
@@ -123,7 +131,11 @@ class App extends Component {
   render() {
     return(
       <div className="app-container">
-        <div id="hud">Rum Truffle Cannons: {this.state.cannons}</div>
+        <div id="hud">
+          <p>Rum Truffle Cannons: {this.state.cannons} Cacao Trees: {this.state.trees}</p>
+          <img id="cacaotreeIcon" class="preview" src="images/cacaotree_icon.png" onClick={() => {this.setCannon = false;}}/>
+          <img id="cannonIcon" class="preview" src="images/cannon_icon.png" onClick={() => {this.setCannon = true;}}/>
+        </div>
         <div
           className="app"
           onClick={this.onClick}
