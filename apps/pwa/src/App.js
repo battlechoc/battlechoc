@@ -1,14 +1,10 @@
 import React, { Component } from 'react';
 import './App.css';
 import * as THREE from 'three';
-<<<<<<< HEAD
-import {Game, GameConfig, Player, PlayerType } from './Game.js';
+
+import {Game, SweastyGameState, Player, PlayerType, FinishTurnAction } from './Game.js';
 import Gamefield from './Gamefield.js';
 import { BuildingType } from './Building.js';
-=======
-import GLTFLoader from 'three-gltf-loader';
-import {Game, SweastyGameState, Player, PlayerType, FinishTurnAction } from './Game.js';
->>>>>>> changed structure of game logic implementation slightly and prepared first action, event and game state.
 
 class App extends Component {
   constructor(props) {
