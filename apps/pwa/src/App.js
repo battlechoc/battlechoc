@@ -83,11 +83,13 @@ class App extends Component {
         this.initialTurn = false;
       } else {
         if (this.setCannon) {
-          this.playerGameField.setRumTruffleCannon(this.scene, intersects[0].object.parent.position);
-          this.setState({cannons: this.state.cannons + 1});
+          if (this.playerGameField.setRumTruffleCannon(this.scene, intersects[0].object.parent.position)) {
+            this.setState({cannons: this.state.cannons + 1});
+          }
         } else {
-          this.playerGameField.setCacaotree(this.scene, intersects[0].object.parent.position);
-          this.setState({trees: this.state.trees + 1});
+          if (this.playerGameField.setCacaotree(this.scene, intersects[0].object.parent.position)) {
+            this.setState({trees: this.state.trees + 1});
+          }
         }
       }
     }
@@ -133,8 +135,8 @@ class App extends Component {
       <div className="app-container">
         <div id="hud">
           <p>Rum Truffle Cannons: {this.state.cannons} Cacao Trees: {this.state.trees}</p>
-          <img id="cacaotreeIcon" class="preview" src="images/cacaotree_icon.png" onClick={() => {this.setCannon = false;}}/>
-          <img id="cannonIcon" class="preview" src="images/cannon_icon.png" onClick={() => {this.setCannon = true;}}/>
+          <img id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {this.setCannon = false;}}/>
+          <img id="cannonIcon" className="preview" src="images/cannon_icon.png" onClick={() => {this.setCannon = true;}}/>
         </div>
         <div
           className="app"

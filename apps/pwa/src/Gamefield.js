@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 import GLTFLoader from 'three-gltf-loader';
 
+const Buildings = Object.freeze({
+	EMPTY: Symbol("empty"), 
+    FACTORY:   Symbol("factory"),
+    CACAOTREE:  Symbol("cacaotree"),
+    RUM_TRUFFLE_CANNON: Symbol("rumTruffleCannon")
+});
+
 class Gamefield {
 	constructor(isPlayerGameField, position) {
 		this.isPlayerGameField = isPlayerGameField;
@@ -8,6 +15,10 @@ class Gamefield {
 		this.cols = 8;
 		this.fieldSize = 8;
 		this.position = position;
+
+		this.buildings = [...Array(this.rows)].map(
+			field => Array(this.cols).fill(Buildings.EMPTY)
+		);
 
 		this.loader = new GLTFLoader();
     	this._build();
@@ -60,15 +71,33 @@ class Gamefield {
 	}
 
 	setFactory(scene, position) {
-		let factory = this.factoryModel.scene.clone();
-		factory.position.set(position.x - 70.5, -10, position.z + 1.5);
-		scene.add(factory);
+		let row = position.x / this.fieldSize;
+		let col = position.z / this.fieldSize;
+		
+		if (this.buildings[row][col] == Buildings.EMPTY) {
+			let factory = this.factoryModel.scene.clone();
+			factory.position.set(position.x - 70.5, -10, position.z + 1.5);
+			scene.add(factory);
+			this.buildings[row][col] = Buildings.FACTORY;
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	setCacaotree(scene, position) {
-		let cacaotree = this.cacaotreeModel.scene.clone();
-		cacaotree.position.set(position.x - 69, -10, position.z + 3.5);
-		scene.add(cacaotree);
+		let row = position.x / this.fieldSize;
+		let col = position.z / this.fieldSize;
+
+		if (this.buildings[row][col] == Buildings.EMPTY) {
+			let cacaotree = this.cacaotreeModel.scene.clone();
+			cacaotree.position.set(position.x - 69, -10, position.z + 3.5);
+			scene.add(cacaotree);
+			this.buildings[row][col] = Buildings.CACAOTREE;
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	async _loadBuildings() {
@@ -78,10 +107,19 @@ class Gamefield {
 	}
 
 	setRumTruffleCannon(scene, position) {
-		let cannon = this.cannonModel.scene.clone();
-		cannon.rotation.y = Math.PI * -(1/3)
-		cannon.position.set(position.x - 69, -10, position.z + 2.5);
-		scene.add(cannon);
+		let row = position.x / this.fieldSize;
+		let col = position.z / this.fieldSize;
+
+		if (this.buildings[row][col] == Buildings.EMPTY) {
+			let cannon = this.cannonModel.scene.clone();
+			cannon.rotation.y = Math.PI * -(1/3)
+			cannon.position.set(position.x - 69, -10, position.z + 2.5);
+			scene.add(cannon);
+			this.buildings[row][col] = Buildings.RUM_TRUFFLE_CANNON;
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 }
