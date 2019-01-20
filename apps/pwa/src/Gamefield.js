@@ -1,12 +1,6 @@
 import * as THREE from 'three';
 import GLTFLoader from 'three-gltf-loader';
-
-const Buildings = Object.freeze({
-	EMPTY: Symbol("empty"), 
-    FACTORY:   Symbol("factory"),
-    CACAOTREE:  Symbol("cacaotree"),
-    RUM_TRUFFLE_CANNON: Symbol("rumTruffleCannon")
-});
+import { BuildingType, Building } from './Building.js';
 
 class Gamefield {
 	constructor(isPlayerGameField, position) {
@@ -17,12 +11,11 @@ class Gamefield {
 		this.position = position;
 
 		this.buildings = [...Array(this.rows)].map(
-			field => Array(this.cols).fill(Buildings.EMPTY)
+			field => Array(this.cols).fill(BuildingType.EMPTY)
 		);
 
 		this.loader = new GLTFLoader();
     	this._build();
-    	this._loadBuildings();
 	}
 
 	loadGLTFModel(filename) {
@@ -46,13 +39,14 @@ class Gamefield {
 	    for (let i = 0; i < this.rows; i++) {
 	      	for (let j = 0; j < this.cols; j++) {
 	        	
+	        	var fieldClone = undefined;
 	        	var fieldtype = fieldtypes[Math.floor(Math.random()*fieldtypes.length)];
 	        	if (fieldtype === 'white') {
-	          		var fieldClone = whiteTileModel.scene.clone();
+	          		fieldClone = whiteTileModel.scene.clone();
 	        	} else if (fieldtype === 'brown') {
-	          		var fieldClone = brownTileModel.scene.clone();
+	          		fieldClone = brownTileModel.scene.clone();
 	        	} else {
-	          		var fieldClone = blackTileModel.scene.clone();
+	          		fieldClone = blackTileModel.scene.clone();
 	        	}
 	        	
 	        	var field = fieldClone.children[2]
@@ -70,58 +64,21 @@ class Gamefield {
 		return this.gameField.children;
 	}
 
-	setFactory(scene, position) {
+	setBuilding(scene, position, buildingType) {
 		let row = position.x / this.fieldSize;
 		let col = position.z / this.fieldSize;
 		
-		if (this.buildings[row][col] == Buildings.EMPTY) {
-			let factory = this.factoryModel.scene.clone();
-			factory.position.set(position.x - 70.5, -10, position.z + 1.5);
-			scene.add(factory);
-			this.buildings[row][col] = Buildings.FACTORY;
+		if (this.buildings[row][col] === BuildingType.EMPTY) {
+			let building = new Building(buildingType);
+			building.adjustPosition(position, this.position);
+			building.adjustRotation()
+			scene.add(building.getModel());
+			this.buildings[row][col] = building;
 			return true;
 		} else {
 			return false;
 		}
 	}
-
-	setCacaotree(scene, position) {
-		let row = position.x / this.fieldSize;
-		let col = position.z / this.fieldSize;
-
-		if (this.buildings[row][col] == Buildings.EMPTY) {
-			let cacaotree = this.cacaotreeModel.scene.clone();
-			cacaotree.position.set(position.x - 69, -10, position.z + 3.5);
-			scene.add(cacaotree);
-			this.buildings[row][col] = Buildings.CACAOTREE;
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	async _loadBuildings() {
-		this.cannonModel = await this.loadGLTFModel('models/cannon.gltf');
-    	this.factoryModel = await this.loadGLTFModel('models/factory.gltf');
-    	this.cacaotreeModel = await this.loadGLTFModel('models/cacaotree.gltf');
-	}
-
-	setRumTruffleCannon(scene, position) {
-		let row = position.x / this.fieldSize;
-		let col = position.z / this.fieldSize;
-
-		if (this.buildings[row][col] == Buildings.EMPTY) {
-			let cannon = this.cannonModel.scene.clone();
-			cannon.rotation.y = Math.PI * -(1/3)
-			cannon.position.set(position.x - 69, -10, position.z + 2.5);
-			scene.add(cannon);
-			this.buildings[row][col] = Buildings.RUM_TRUFFLE_CANNON;
-			return true;
-		} else {
-			return false;
-		}
-	}
-
 }
 
 export default Gamefield;

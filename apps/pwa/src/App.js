@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import './App.css';
 import * as THREE from 'three';
-import GLTFLoader from 'three-gltf-loader';
 import {Game, GameConfig, Player, PlayerType } from './Game.js';
 import Gamefield from './Gamefield.js';
+import { BuildingType } from './Building.js';
 
 class App extends Component {
   constructor(props) {
@@ -79,15 +79,15 @@ class App extends Component {
 
     if (intersects.length > 0) {
       if (this.initialTurn) {
-        this.playerGameField.setFactory(this.scene, intersects[0].object.parent.position);
+        this.playerGameField.setBuilding(this.scene, intersects[0].object.parent.position, BuildingType.FACTORY);
         this.initialTurn = false;
       } else {
         if (this.setCannon) {
-          if (this.playerGameField.setRumTruffleCannon(this.scene, intersects[0].object.parent.position)) {
+          if (this.playerGameField.setBuilding(this.scene, intersects[0].object.parent.position, BuildingType.RUM_TRUFFLE_CANNON)) {
             this.setState({cannons: this.state.cannons + 1});
           }
         } else {
-          if (this.playerGameField.setCacaotree(this.scene, intersects[0].object.parent.position)) {
+          if (this.playerGameField.setBuilding(this.scene, intersects[0].object.parent.position, BuildingType.CACAOTREE)) {
             this.setState({trees: this.state.trees + 1});
           }
         }
@@ -135,8 +135,8 @@ class App extends Component {
       <div className="app-container">
         <div id="hud">
           <p>Rum Truffle Cannons: {this.state.cannons} Cacao Trees: {this.state.trees}</p>
-          <img id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {this.setCannon = false;}}/>
-          <img id="cannonIcon" className="preview" src="images/cannon_icon.png" onClick={() => {this.setCannon = true;}}/>
+          <img alt="cacao tree preview" id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {this.setCannon = false;}}/>
+          <img alt="cannon preview" id="cannonIcon" className="preview" src="images/cannon_icon.png" onClick={() => {this.setCannon = true;}}/>
         </div>
         <div
           className="app"
