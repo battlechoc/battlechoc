@@ -30,12 +30,15 @@ class App extends Component {
     // Setup scene, camera and renderer
     this.scene = new THREE.Scene();
 
-    let distance = 50;
+    let distance = 36;
     let aspect = width / height;
 
-    this.camera = new THREE.OrthographicCamera( -distance * aspect, distance * aspect, distance, -distance, 1, 1000);
-    this.camera.position.set(120, 120, 120);
-    this.camera.lookAt(this.scene.position)
+    this.camera = new THREE.OrthographicCamera( -distance * aspect, distance * aspect, distance, -distance, -100, 1000);
+    this.camera.position.set(140, 140, 140);
+    this.camera.lookAt(this.scene.position);
+    this.camera.position.y = 60;
+    this.camera.position.x = 30;
+    this.camera.position.z = 85;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setClearColor('#000000');
@@ -44,13 +47,35 @@ class App extends Component {
     this.renderer.gammaOutput = true;
     this.renderer.gammaFactor = 1.9;
 
+    // Enable swipe
+    this.mousedown = false;
+    this.swipeStartPosition = 0;
+    this.swipePosition = 0;
+    this.isSwiping = false;
+    this.lookAtOpponent = false;
+    
+    this.renderer.domElement.addEventListener('mousedown', event => this.startSwipe(event));
+    this.renderer.domElement.addEventListener('mousemove', event => this.swipe(event));
+    this.renderer.domElement.addEventListener('mouseup', () => this.endSwipe());
+    this.renderer.domElement.addEventListener('touchstart', event => {
+      event.clientX = event.touches[0].clientX;
+      this.startSwipe(event)
+    });
+
+    this.renderer.domElement.addEventListener('touchmove', event => {
+      event.clientX = event.touches[0].clientX;
+      this.swipe(event)
+    });
+    
+    this.renderer.domElement.addEventListener('touchend', () => this.endSwipe());
+
     this.mount.appendChild(this.renderer.domElement);
 
     // Allow clicking
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
     this.onClick = this.onClick.bind(this);
-    
+
     // Add Gamefield    
     this.playerGameField = new Gamefield(true, [-72, -16, 0]);
     this.clickTargets = this.playerGameField.getClickableFields();
@@ -60,9 +85,9 @@ class App extends Component {
     this.scene.add(this.playerGameField.getMeshGroup());
 
     // Add Light
-    var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2); 
+    var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2.0); 
     directionalLight.position.set(20, 24, -10);
-    this.scene.add(directionalLight); 
+    this.scene.add(directionalLight);
 
     // Start game render loop
     this.start();
@@ -70,14 +95,14 @@ class App extends Component {
 
   onClick = (event) => {
     this.game.finishTurn();
-
+    
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
 
-    if (intersects.length > 0) {
+    if (intersects.length > 0 && !this.isSwiping) {
       if (this.initialTurn) {
         this.playerGameField.setBuilding(this.scene, intersects[0].object.parent.position, BuildingType.FACTORY);
         this.initialTurn = false;
@@ -93,8 +118,31 @@ class App extends Component {
         }
       }
     }
-    
+
+    this.isSwiping = false;
     console.log(this.game.currentPlayer().name);
+  }
+
+  startSwipe(event) {
+    this.swipeStartPosition = event.clientX / event.target.width;
+    this.mousedown = true;
+  }
+
+  endSwipe() {
+    this.mousedown = false;
+    
+    if (this.swipePosition < 0.4 && this.swipeStartPosition > 0.6 && !this.lookAtOpponent && this.isSwiping) {
+      this.lookAtOpponent = true;
+    } else if (this.swipePosition > 0.6 && this.swipeStartPosition < 0.4 && this.lookAtOpponent && this.isSwiping) { 
+      this.lookAtOpponent = false;
+    }
+  }
+
+  swipe(event) {
+    if (this.mousedown) {
+      this.swipePosition = event.clientX / event.target.width;
+      this.isSwiping = true;
+    }
   }
 
   updateDimensions () {
@@ -122,7 +170,16 @@ class App extends Component {
   }
 
   animate = () => {
-    this.renderScene();
+    this.renderScene();    
+
+    if (this.lookAtOpponent && this.camera.position.y < 120) {
+      this.camera.position.y += 2.0;
+      this.camera.position.x += 4.0;
+    } else if (!this.lookAtOpponent && this.camera.position.y > 60) {
+      this.camera.position.y -= 2.0;
+      this.camera.position.x -= 4.0;      
+    }
+
     this.frameId = window.requestAnimationFrame(this.animate);
   }
 
