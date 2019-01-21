@@ -66,7 +66,7 @@ class App extends Component {
       event.clientX = event.touches[0].clientX;
       this.swipe(event)
     });
-    
+
     this.renderer.domElement.addEventListener('touchend', () => this.endSwipe());
 
     this.mount.appendChild(this.renderer.domElement);
@@ -91,6 +91,25 @@ class App extends Component {
 
     // Start game render loop
     this.start();
+
+    // Setup Music
+    var audioListener = new THREE.AudioListener();
+    this.camera.add(audioListener);
+
+    this.ambientSound = new THREE.Audio(audioListener);
+    this.scene.add(this.ambientSound);
+
+    var loader = new THREE.AudioLoader();
+
+    loader.load(
+      'music/CacaoLiving.mp3',
+      audioBuffer => {
+        this.ambientSound.setBuffer(audioBuffer);
+        this.ambientSound.setLoop(true);
+        this.ambientSound.setVolume(0.1);
+        this.ambientSound.pause();
+      }
+    );
   }
 
   onClick = (event) => {
@@ -123,6 +142,14 @@ class App extends Component {
     console.log(this.game.currentPlayer().name);
   }
 
+  toggleMusic() {
+    if (this.ambientSound.isPlaying) {
+      this.ambientSound.pause();
+    } else {
+      this.ambientSound.play();
+    }
+  }
+
   startSwipe(event) {
     this.swipeStartPosition = event.clientX / event.target.width;
     this.mousedown = true;
@@ -146,6 +173,7 @@ class App extends Component {
   }
 
   updateDimensions () {
+    console.log()
     const width = this.mount.clientWidth;
     const height = this.mount.clientHeight;
     this.camera.aspect = width / height;
@@ -191,6 +219,7 @@ class App extends Component {
     return(
       <div className="app-container">
         <div id="hud">
+          <div id="toggleMusic" onClick={() => this.toggleMusic()}>toggle music</div>
           <p>Rum Truffle Cannons: {this.state.cannons} Cacao Trees: {this.state.trees}</p>
           <img alt="cacao tree preview" id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {this.setCannon = false;}}/>
           <img alt="cannon preview" id="cannonIcon" className="preview" src="images/cannon_icon.png" onClick={() => {this.setCannon = true;}}/>
