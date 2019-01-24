@@ -1,10 +1,11 @@
 import * as THREE from 'three';
-import GLTFLoader from 'three-gltf-loader';
 import { BuildingType, Building } from './Building.js';
+import ModelLoader from './ModelLoader.js'
 
 class Gamefield {
-	constructor(isPlayerGameField, position) {
+	constructor(isPlayerGameField, position, scene) {
 		this.isPlayerGameField = isPlayerGameField;
+		this.scene = scene;
 		this.rows = 8;
 		this.cols = 8;
 		this.fieldSize = 8;
@@ -14,27 +15,33 @@ class Gamefield {
 			field => Array(this.cols).fill(BuildingType.EMPTY)
 		);
 
-		this.loader = new GLTFLoader();
     	this._build();
+    	this.addRandomCream(20);
+    	this.scene.add(this.gameField);
 	}
 
-	loadGLTFModel(filename) {
-		return new Promise((resolve, reject) => {
-	  		this.loader.load(filename, resolve);
-		});
-	}
-
-	getMeshGroup() {
-		return this.gameField;
+	addRandomCream(count) {
+		if(this.isPlayerGameField) {
+			for (let i = 0; i < count; i++) {
+				let randomCol = Math.floor(Math.random() * 8);
+				let randomRow = Math.floor(Math.random() * 8);
+				let position = {
+					x: randomRow * this.fieldSize,
+					y: 0,
+					z: randomCol * this.fieldSize
+				}
+				let buildingType = BuildingType.CREAM;
+				let building = new Building(buildingType);
+				building.adjustPosition(position, this.position);
+				this.scene.add(building.getModel());
+				this.buildings[randomRow][randomCol] = building;
+				console.log(randomRow, randomCol)
+			}
+		}
 	}
 
 	async _build() {
 		this.gameField = new THREE.Group();
-
-		const whiteTileModel = await this.loadGLTFModel('models/white_tile.gltf');
-    	const brownTileModel = await this.loadGLTFModel('models/brown_tile.gltf');
-    	const blackTileModel = await this.loadGLTFModel('models/black_tile.gltf');
-
 	    var fieldtypes = ['white', 'brown', 'black'];
 	    for (let i = 0; i < this.rows; i++) {
 	      	for (let j = 0; j < this.cols; j++) {
@@ -42,11 +49,11 @@ class Gamefield {
 	        	var fieldClone = undefined;
 	        	var fieldtype = fieldtypes[Math.floor(Math.random()*fieldtypes.length)];
 	        	if (fieldtype === 'white') {
-	          		fieldClone = whiteTileModel.scene.clone();
+	          		fieldClone = ModelLoader.models[0].scene.clone();
 	        	} else if (fieldtype === 'brown') {
-	          		fieldClone = brownTileModel.scene.clone();
+	          		fieldClone = ModelLoader.models[1].scene.clone();
 	        	} else {
-	          		fieldClone = blackTileModel.scene.clone();
+	          		fieldClone = ModelLoader.models[2].scene.clone();
 	        	}
 	        	
 	        	var field = fieldClone.children[2]
@@ -64,15 +71,15 @@ class Gamefield {
 		return this.gameField.children;
 	}
 
-	setBuilding(scene, position, buildingType) {
+	setBuilding(position, buildingType) {
 		let row = position.x / this.fieldSize;
 		let col = position.z / this.fieldSize;
 		
-		if (this.buildings[row][col] === BuildingType.EMPTY) {
+		if (this.buildings[row][col] === BuildingType.EMPTY || this.buildings[row][col] === BuildingType.CREAM) {
 			let building = new Building(buildingType);
 			building.adjustPosition(position, this.position);
 			building.adjustRotation()
-			scene.add(building.getModel());
+			this.scene.add(building.getModel());
 			this.buildings[row][col] = building;
 			return true;
 		} else {

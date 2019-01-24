@@ -1,12 +1,15 @@
 import GLTFLoader from 'three-gltf-loader';
+import ModelLoader from './ModelLoader.js'
 
 const BuildingType = Object.freeze({
-	EMPTY: Symbol("empty"), 
-    FACTORY:   Symbol("factory"),
-    CACAOTREE:  Symbol("cacaotree"),
-    RUM_TRUFFLE_CANNON: Symbol("rumTruffleCannon"),
+	EMPTY: Symbol('empty'),
+	CREAM: Symbol('cream'), 
+    FACTORY:   Symbol('factory'),
+    CACAOTREE:  Symbol('cacaotree'),
+    RUM_TRUFFLE_CANNON: Symbol('rumTruffleCannon'),
     isInstanceOf: function (buildingType) {
     	if (buildingType === BuildingType.EMPTY ||
+    		buildingType === BuildingType.CREAM ||
     		buildingType === BuildingType.FACTORY ||
     		buildingType === BuildingType.CACAOTREE ||
     		buildingType === BuildingType.RUM_TRUFFLE_CANNON)
@@ -15,22 +18,6 @@ const BuildingType = Object.freeze({
     		return false; 
     }
 });
-
-function loadGLTFModel(filename) {
-	var loader = new GLTFLoader();
-	return new Promise((resolve, reject) => {
-	  	loader.load(filename, resolve);
-	});
-}
-
-var buildingModels = undefined;
-(async () => {
-	return [
-		await loadGLTFModel('models/factory.gltf'),
-		await loadGLTFModel('models/cacaotree.gltf'),
-		await loadGLTFModel('models/cannon.gltf')
-	]
-})().then(models => buildingModels = models);
 
 class Building {
 	constructor(buildingType) {
@@ -41,14 +28,18 @@ class Building {
 		}
 
 		if (this._buildingType === BuildingType.FACTORY) {
-			this._model = buildingModels[0].scene.clone();
+			this._model = ModelLoader.models[3].scene.clone();
 			this._offset = [1.5, 6, 1.5];
 		} else if (this._buildingType === BuildingType.CACAOTREE) {
-			this._model = buildingModels[1].scene.clone();
+			this._model = ModelLoader.models[4].scene.clone();
 			this._offset = [3, 6, 3.5];
 		} else if (this._buildingType === BuildingType.RUM_TRUFFLE_CANNON) {
-			this._model = buildingModels[2].scene.clone();
+			this._model = ModelLoader.models[5].scene.clone();
 			this._offset = [3, 6, 2.5];
+		} else if (this._buildingType === BuildingType.CREAM) {
+			this._model = ModelLoader.models[6].scene.clone();
+			this._model.scale.set(3,3,3);
+			this._offset = [0, 0, 0];
 		}
 	}
 

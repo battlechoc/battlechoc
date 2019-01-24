@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import './App.css';
 import * as THREE from 'three';
+import ModelLoader from './ModelLoader.js'
 import {Game, GameConfig, Player, PlayerType } from './Game.js';
 import Gamefield from './Gamefield.js';
 import { BuildingType } from './Building.js';
@@ -15,6 +16,8 @@ class App extends Component {
   }
 
   async componentDidMount() {
+    // Load Models
+    await ModelLoader.loadModels();
     // Prototyping Variables
     this.setCannon = false;
     // Basic window and game setup
@@ -77,12 +80,9 @@ class App extends Component {
     this.onClick = this.onClick.bind(this);
 
     // Add Gamefield    
-    this.playerGameField = new Gamefield(true, [-72, -16, 0]);
+    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.scene);
+    this.opponentGameField = new Gamefield(true, [72, 56, 0], this.scene);
     this.clickTargets = this.playerGameField.getClickableFields();
-    this.opponentGameField = new Gamefield(true, [72, 56, 0]);
-
-    this.scene.add(this.opponentGameField.getMeshGroup());
-    this.scene.add(this.playerGameField.getMeshGroup());
 
     // Add Light
     var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2.0); 
@@ -123,15 +123,15 @@ class App extends Component {
 
     if (intersects.length > 0 && !this.isSwiping) {
       if (this.initialTurn) {
-        this.playerGameField.setBuilding(this.scene, intersects[0].object.parent.position, BuildingType.FACTORY);
+        this.playerGameField.setBuilding(intersects[0].object.parent.position, BuildingType.FACTORY);
         this.initialTurn = false;
       } else {
         if (this.setCannon) {
-          if (this.playerGameField.setBuilding(this.scene, intersects[0].object.parent.position, BuildingType.RUM_TRUFFLE_CANNON)) {
+          if (this.playerGameField.setBuilding(intersects[0].object.parent.position, BuildingType.RUM_TRUFFLE_CANNON)) {
             this.setState({cannons: this.state.cannons + 1});
           }
         } else {
-          if (this.playerGameField.setBuilding(this.scene, intersects[0].object.parent.position, BuildingType.CACAOTREE)) {
+          if (this.playerGameField.setBuilding(intersects[0].object.parent.position, BuildingType.CACAOTREE)) {
             this.setState({trees: this.state.trees + 1});
           }
         }
