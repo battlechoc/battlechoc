@@ -33,15 +33,15 @@ class App extends Component {
     // Setup scene, camera and renderer
     this.scene = new THREE.Scene();
 
-    let distance = 36;
+    let distance = 30;
     let aspect = width / height;
 
     this.camera = new THREE.OrthographicCamera( -distance * aspect, distance * aspect, distance, -distance, -100, 1000);
     this.camera.position.set(140, 140, 140);
     this.camera.lookAt(this.scene.position);
-    this.camera.position.y = 60;
-    this.camera.position.x = 30;
-    this.camera.position.z = 85;
+    this.camera.position.y = 70;
+    this.camera.position.x = 50;
+    this.camera.position.z = 95;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setClearColor('#000000');
@@ -81,7 +81,7 @@ class App extends Component {
 
     // Add Gamefield    
     this.playerGameField = new Gamefield(true, [-72, -16, 0], this.scene);
-    this.opponentGameField = new Gamefield(true, [72, 56, 0], this.scene);
+    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.scene);
     this.clickTargets = this.playerGameField.getClickableFields();
 
     // Add Light

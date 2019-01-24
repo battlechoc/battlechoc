@@ -16,27 +16,18 @@ class Gamefield {
 		);
 
     	this._build();
-    	this.addRandomCream(20);
+    	this._addRandomCream(64);
     	this.scene.add(this.gameField);
 	}
 
-	addRandomCream(count) {
-		if(this.isPlayerGameField) {
-			for (let i = 0; i < count; i++) {
-				let randomCol = Math.floor(Math.random() * 8);
-				let randomRow = Math.floor(Math.random() * 8);
-				let position = {
-					x: randomRow * this.fieldSize,
-					y: 0,
-					z: randomCol * this.fieldSize
-				}
-				let buildingType = BuildingType.CREAM;
-				let building = new Building(buildingType);
-				building.adjustPosition(position, this.position);
-				this.scene.add(building.getModel());
-				this.buildings[randomRow][randomCol] = building;
-				console.log(randomRow, randomCol)
+	_addRandomCream(count) {
+		for (let i = 0; i < count; i++) {
+			let position = {
+				x: Math.floor(Math.random() * 8) * this.fieldSize,
+				y: 0,
+				z: Math.floor(Math.random() * 8) * this.fieldSize
 			}
+			this.setBuilding(position, BuildingType.CREAM, this.isPlayerGameField);
 		}
 	}
 
@@ -71,16 +62,25 @@ class Gamefield {
 		return this.gameField.children;
 	}
 
-	setBuilding(position, buildingType) {
+	setBuilding(position, buildingType, asWireframe) {
+		if (typeof asWireframe == 'undefined') {
+			asWireframe = false;
+		}
+
 		let row = position.x / this.fieldSize;
 		let col = position.z / this.fieldSize;
 		
-		if (this.buildings[row][col] === BuildingType.EMPTY || this.buildings[row][col] === BuildingType.CREAM) {
+		if (this.buildings[row][col] === BuildingType.EMPTY || 
+			(this.buildings[row][col] === BuildingType.CREAM && buildingType !== BuildingType.CREAM)) {
 			let building = new Building(buildingType);
 			building.adjustPosition(position, this.position);
 			building.adjustRotation()
-			this.scene.add(building.getModel());
-			this.buildings[row][col] = building;
+			if (asWireframe) {
+				this.scene.add(building.getModelWireframe());
+			} else {
+				this.scene.add(building.getModel());
+			}
+			this.buildings[row][col] = buildingType;
 			return true;
 		} else {
 			return false;

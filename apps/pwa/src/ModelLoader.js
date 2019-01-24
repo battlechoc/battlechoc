@@ -27,6 +27,4 @@ class ModelLoader {
 }
 
 const modelLoader = new ModelLoader();
-//Object.freeze(modelLoader);
-
 export default modelLoader;
