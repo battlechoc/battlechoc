@@ -10,16 +10,15 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      cannons: 0,
-      trees: 0
+      cacao: 50,
+      buildings: 3
     };
   }
 
   async componentDidMount() {
     // Load Models
     await ModelLoader.loadModels();
-    // Prototyping Variables
-    this.setCannon = false;
+    this.selectedBuilding = BuildingType.CACAOTREE;
     // Basic window and game setup
     const width = this.mount.clientWidth;
     const height = this.mount.clientHeight;
@@ -39,8 +38,8 @@ class App extends Component {
     this.camera = new THREE.OrthographicCamera( -distance * aspect, distance * aspect, distance, -distance, -100, 1000);
     this.camera.position.set(140, 140, 140);
     this.camera.lookAt(this.scene.position);
-    this.camera.position.y = 70;
-    this.camera.position.x = 50;
+    this.camera.position.y = 60;
+    this.camera.position.x = 30;
     this.camera.position.z = 95;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -57,6 +56,9 @@ class App extends Component {
     this.isSwiping = false;
     this.lookAtOpponent = false;
     
+    // animations and renderer
+    this.mixer = null;
+
     this.renderer.domElement.addEventListener('mousedown', event => this.startSwipe(event));
     this.renderer.domElement.addEventListener('mousemove', event => this.swipe(event));
     this.renderer.domElement.addEventListener('mouseup', () => this.endSwipe());
@@ -83,6 +85,7 @@ class App extends Component {
     this.playerGameField = new Gamefield(true, [-72, -16, 0], this.scene);
     this.opponentGameField = new Gamefield(false, [72, 56, 0], this.scene);
     this.clickTargets = this.playerGameField.getClickableFields();
+    this.opponentClickTargets = this.opponentGameField.getClickableFields();
 
     // Add Light
     var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2.0); 
@@ -112,13 +115,25 @@ class App extends Component {
     );
   }
 
-  onClick = (event) => {
+  onClick = event => {
+    // Time for game logic
     this.game.finishTurn();
+    console.log(this.game.currentPlayer().name);
     
+    // Get mouse position and use raycaster
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-
     this.raycaster.setFromCamera(this.mouse, this.camera);
+
+    // Check clickable objects
+    this.playerFieldClick();
+    this.opponentFieldClick();
+    
+    // Part of "ignore click if it was just an end of swiping"
+    this.isSwiping = false;
+  }
+
+  playerFieldClick() {
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
 
     if (intersects.length > 0 && !this.isSwiping) {
@@ -126,20 +141,26 @@ class App extends Component {
         this.playerGameField.setBuilding(intersects[0].object.parent.position, BuildingType.FACTORY);
         this.initialTurn = false;
       } else {
-        if (this.setCannon) {
-          if (this.playerGameField.setBuilding(intersects[0].object.parent.position, BuildingType.RUM_TRUFFLE_CANNON)) {
-            this.setState({cannons: this.state.cannons + 1});
-          }
-        } else {
-          if (this.playerGameField.setBuilding(intersects[0].object.parent.position, BuildingType.CACAOTREE)) {
-            this.setState({trees: this.state.trees + 1});
-          }
-        }
+        this.playerGameField.setBuilding(intersects[0].object.parent.position, this.selectedBuilding);
       }
     }
+  }
 
-    this.isSwiping = false;
-    console.log(this.game.currentPlayer().name);
+  opponentFieldClick() {
+    var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
+
+    if (intersects.length > 0 && !this.isSwiping) {
+      /*
+      TODO: gltf animation is not correctly exported by blender
+
+      console.log(intersects[0].object.parent.position);
+      let model = ModelLoader.models[7].scene.clone();
+      console.dir(ModelLoader.models[7]);
+      this.scene.add(model);
+
+      this.mixer = new THREE.AnimationMixer(model);
+      this.mixer.clipAction(ModelLoader.models[7].animations[0]).play();*/
+    }
   }
 
   toggleMusic() {
@@ -209,6 +230,9 @@ class App extends Component {
     }
 
     this.frameId = window.requestAnimationFrame(this.animate);
+    if (this.mixer != null) {
+      this.mixer.update(this.frameId);
+    };
   }
 
   renderScene = () => {
@@ -220,9 +244,13 @@ class App extends Component {
       <div className="app-container">
         <div id="hud">
           <div id="toggleMusic" onClick={() => this.toggleMusic()}>toggle music</div>
-          <p>Rum Truffle Cannons: {this.state.cannons} Cacao Trees: {this.state.trees}</p>
-          <img alt="cacao tree preview" id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {this.setCannon = false;}}/>
-          <img alt="cannon preview" id="cannonIcon" className="preview" src="images/cannon_icon.png" onClick={() => {this.setCannon = true;}}/>
+          <p>Cacao: {this.state.cacao}<br />Buildings: {this.state.buildings}</p>
+          <img alt="cacao tree preview" id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {
+            this.selectedBuilding = BuildingType.CACAOTREE;
+          }}/>
+          <img alt="cannon preview" id="cannonIcon" className="preview" src="images/cannon_icon.png" onClick={() => {
+            this.selectedBuilding = BuildingType.RUM_TRUFFLE_CANNON;
+          }}/>
         </div>
         <div
           className="app"
