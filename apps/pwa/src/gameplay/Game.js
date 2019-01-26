@@ -1,38 +1,27 @@
 const PlayerType = Object.freeze({
-    human:   Symbol("human"),
-    non_human:  Symbol("non_human")
+    human: Symbol("human"),
+    non_human: Symbol("non_human")
 });
-
-class GameEvent {
-    fire(gameState) {
-        return gameState;
-    }
-}
 
 /**
  * Actions are performed by players. They trigger events when fired by players.
  */
 class Action {
-    constructor(type) {
-        this.type = type;
-        this.events = [];
+    constructor(actionType) {
+        this.actionType = actionType;
     }
 
-    getType() {
-        return this.type;
+    getActionType() {
+        return this.actionType;
     }
-
+    
     /**
-     * Executes this action on the given game state. Will fire events and return the changed gameState.
+     * Actions and its perform method are the only place where the gameState may be changed.
      * 
-     * @param {State} gameState 
+     * @param {State} gameState The current game state affected by the execution of this event.
+     * @returns {State} the changed game state.
      */
     perform(gameState) {
-        // fire events related to this action to change the game state
-        for (let gameEvent of this.events) {
-            // fired events will be transmitted to the server
-            gameState = gameEvent.fire(gameState);
-        }
         return gameState;
     }
 }
@@ -77,7 +66,7 @@ class Turn {
         return this.actions;
     }
 
-    addActions(action) {
+    addAction(action) {
         this.actions.push(action);
     }
 }
@@ -87,17 +76,15 @@ class Turn {
  */
 class State {
     /**
-     * Initializes the state with an initial player.
+     * Initializes the state.
      * 
-     * @param {Player} player Initial player that is on turn.
+     * @param {Player} players.
      */
-    constructor(players, playerStartIndex) {
+    constructor(players) {
         this.players = players;
-        this.currentPlayerIndex = playerStartIndex;
+        this.currentPlayerIndex = 0;
         this.turns = [];
-        this.currentTurn = new Turn(this.players[playerStartIndex]);
-
-        // list some variables that describe the game state
+        this.currentTurn = new Turn(this.players[0]);
     }
 
     /**
@@ -116,8 +103,8 @@ class State {
      */
     perform(action) {
         if (this.isValid(action)) {
-            this.state = action.perform(this);
             this.currentTurn.addAction(action);
+            action.perform(this);
         }
     }
 
@@ -126,7 +113,7 @@ class State {
      */
     finishTurn() {
         this.turns.push(this.currentTurn);
-        this.currentTurn = new Turn(this.nextPlayer())
+        this.currentTurn = new Turn(this.nextPlayer());
     }
 
     nextPlayer() {
@@ -147,18 +134,14 @@ class State {
 }
 
 /**
- * Defines the configuration of the game.
- */
-class GameConfig {
-
-}
-
-/**
  * A game consists of the history of turn performed so far and the current state.
  */
 class Game {
-    constructor() {
-        this.config = null;
+    constructor(gameStateType) {
+        if (gameStateType == null) {
+            throw new Error("Invalid gamestate type given.");
+        }
+        this.gameStateType = gameStateType;
         this.state = null;
     }
 
@@ -166,10 +149,8 @@ class Game {
      * Starts a game. Will throw an error if the game has already been started.
      * 
      * @param {Player} players the list of players participating in the game
-     * @param {int} playerStartIndex index of the player that has the initial turn in the game
-     * @param {GameConfig} config configuration parameters defining the game
      */
-    start(players, playerStartIndex, config) {
+    start(players) {
         if (this.state != null) {
             throw new Error("Game has already been started.");
         }
@@ -178,30 +159,25 @@ class Game {
             throw new Error("Invalid players given.");
         }
 
-        if (playerStartIndex < 0 || playerStartIndex >= players.length) {
-            throw new Error("Invalid player start index.");
+        try {
+            this.state = new this.gameStateType(players);
+        } catch (error) {
+            throw new Error("could not create initial game state. (" + error + ")");
         }
-
-        if (config == null) {
-            throw new Error("Invalid config given.");
-        }
-
-        this.config = config;
-        this.state = new State(players, playerStartIndex);
     }
 
     /**
      * Persists the current game state and the turn history in order to reload or replay it later on.
      */
     save() {
-
+        // persist the game state
     }
 
     /**
      * Loads an persisted game.
      */
     load() {
-
+        // load a game state
     }
 
     /**
@@ -213,17 +189,10 @@ class Game {
     }
 
     /**
-     * Finishes the current turn and advances to the next one.
-     */
-    finishTurn() {
-        this.state.finishTurn();
-    }
-
-    /**
      * Returns a list of possible actions for the given player based on the current game state.
      */
     listPossibleActions(player) {
-        return this.state.possibleActions();
+        return this.state.listPossibleActions(player);
     }
 
     currentPlayer() {
@@ -231,4 +200,4 @@ class Game {
     }
 }
 
-export { Game, GameConfig, Player, Action, PlayerType };
+export { Game, Player, Action, PlayerType, State };

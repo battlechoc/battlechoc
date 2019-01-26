@@ -1,8 +1,11 @@
 import React, { Component } from 'react';
 import './App.css';
 import * as THREE from 'three';
+
+import { Game, Player, PlayerType } from './gameplay/Game.js';
+import { SweastyGameState } from './gameplay/SweastyGameState';
+import { FinishTurnAction } from './gameplay/SweastyGameActions';
 import ModelLoader from './ModelLoader.js'
-import {Game, GameConfig, Player, PlayerType } from './Game.js';
 import Gamefield from './Gamefield.js';
 import { BuildingType } from './Building.js';
 
@@ -24,8 +27,8 @@ class App extends Component {
     const height = this.mount.clientHeight;
     window.addEventListener("resize", () => this.updateDimensions());
 
-    this.game = new Game();
-    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], 0, new GameConfig());
+    this.game = new Game(SweastyGameState);
+    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)]);
 
     this.initialTurn = true;
 
@@ -118,8 +121,8 @@ class App extends Component {
 
   onClick = event => {
     // Time for game logic
-    this.game.finishTurn();
-    console.log(this.game.currentPlayer().name);
+    console.log(this.game.listPossibleActions(this.game.currentPlayer()));
+    this.game.perform(new FinishTurnAction());
     
     // Get mouse position and use raycaster
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
