@@ -68,11 +68,12 @@ class Turn {
  */
 class State {
     /**
-     * Initializes the state with an initial player.
+     * Initializes the state.
      * 
-     * @param {Player} player Initial player that is on turn.
+     * @param {Player} players.
      */
     constructor(players) {
+        console.log("gamestate: " + players);
         this.players = players;
         this.currentPlayerIndex = 0;
         this.turns = [];
@@ -95,7 +96,7 @@ class State {
      */
     perform(action) {
         if (this.isValid(action)) {
-            this.state = action.perform(this);
+            action.perform(this);
             this.currentTurn.addAction(action);
         }
     }
@@ -109,13 +110,14 @@ class State {
     }
 
     nextPlayer() {
+        console.log(this.currentPlayerIndex);
         this.currentPlayerIndex = ((this.currentPlayerIndex + 1) % this.players.length);
+        console.log(this.currentPlayerIndex);
         return this.currentPlayer;
     }
 
     getCurrentPlayer() {
-        console.log(this.players);
-        console.log(this.currentPlayerIndex);
+        console.log("currentPlayer:" + this.players);
         return this.players[this.currentPlayerIndex];
     }
 
@@ -154,6 +156,7 @@ class Game {
         }
 
         try {
+            console.log("game: " + players);
             this.state = new this.gameStateType(players);
         } catch (error) {
             throw new Error("could not create initial game state. (" + error + ")");

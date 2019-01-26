@@ -7,7 +7,7 @@ const SweastyGameStateType = Object.freeze({
     initial_placement_p2: Symbol("p2_initial_placement"),
     playing: Symbol("playing"),
     end: Symbol("end")
-})
+});
 
 class SweastyGameState extends Game.State {
     constructor(players) {
