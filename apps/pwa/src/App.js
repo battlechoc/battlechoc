@@ -28,10 +28,7 @@ class App extends Component {
     window.addEventListener("resize", () => this.updateDimensions());
 
     this.game = new Game(SweastyGameState);
-    let players = [];
-    players.push(new Player("foo", PlayerType.human));
-    players.push(new Player("bar", PlayerType.humnon_humanan));
-    this.game.start(players);
+    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)]);
 
     this.initialTurn = true;
 
@@ -124,7 +121,6 @@ class App extends Component {
   onClick = event => {
     // Time for game logic
     this.game.perform(new FinishTurnAction());
-    console.log(this.game.currentPlayer.name);
     
     // Get mouse position and use raycaster
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;

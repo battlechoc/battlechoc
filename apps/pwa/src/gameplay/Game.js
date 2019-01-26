@@ -73,7 +73,6 @@ class State {
      * @param {Player} players.
      */
     constructor(players) {
-        console.log("gamestate: " + players);
         this.players = players;
         this.currentPlayerIndex = 0;
         this.turns = [];
@@ -96,8 +95,8 @@ class State {
      */
     perform(action) {
         if (this.isValid(action)) {
-            action.perform(this);
             this.currentTurn.addAction(action);
+            action.perform(this);
         }
     }
 
@@ -106,18 +105,16 @@ class State {
      */
     finishTurn() {
         this.turns.push(this.currentTurn);
-        this.currentTurn = new Turn(this.nextPlayer())
+        this.currentTurn = new Turn(this.nextPlayer());
+        console.log(this.turns);
     }
 
     nextPlayer() {
-        console.log(this.currentPlayerIndex);
         this.currentPlayerIndex = ((this.currentPlayerIndex + 1) % this.players.length);
-        console.log(this.currentPlayerIndex);
-        return this.currentPlayer;
+        return this.currentPlayer();
     }
 
-    getCurrentPlayer() {
-        console.log("currentPlayer:" + this.players);
+    currentPlayer() {
         return this.players[this.currentPlayerIndex];
     }
 
@@ -156,7 +153,6 @@ class Game {
         }
 
         try {
-            console.log("game: " + players);
             this.state = new this.gameStateType(players);
         } catch (error) {
             throw new Error("could not create initial game state. (" + error + ")");
@@ -192,8 +188,8 @@ class Game {
         return this.state.possibleActions(player);
     }
 
-    getCurrentPlayer() {
-        return this.state.currentPlayer;
+    currentPlayer() {
+        return this.state.currentPlayer();
     }
 }
 
