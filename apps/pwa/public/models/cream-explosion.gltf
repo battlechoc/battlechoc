@@ -1,0 +1,390 @@
+{
+    "accessors": [
+        {
+            "bufferView": 6,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 60,
+            "max": [
+                0.0,
+                0.7071068286895752,
+                0.7071068286895752,
+                0.0
+            ],
+            "min": [
+                0.0,
+                0.7071068286895752,
+                0.7071068286895752,
+                0.0
+            ],
+            "name": "accessor_buffer_Spiral.001_Spiral.001_Action_1",
+            "type": "VEC4"
+        },
+        {
+            "bufferView": 0,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 2746,
+            "max": [
+                3.911609172821045,
+                0.10569775104522705,
+                4.2891693115234375
+            ],
+            "min": [
+                -3.504300117492676,
+                -6.689265727996826,
+                -3.8433127403259277
+            ],
+            "name": "accessor_buffer_CUSpiral.000_POSITION_0",
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 2,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 2746,
+            "max": [
+                0.36000001430511475,
+                0.5
+            ],
+            "min": [
+                0.36000001430511475,
+                0.5
+            ],
+            "name": "accessor_buffer_CUSpiral.000_TEXCOORD_0_0",
+            "type": "VEC2"
+        },
+        {
+            "bufferView": 5,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 60,
+            "max": [
+                0.046769093722105026,
+                1.3597633838653564,
+                -0.10605332255363464
+            ],
+            "min": [
+                0.046769093722105026,
+                1.3597633838653564,
+                -0.10605332255363464
+            ],
+            "name": "accessor_buffer_Spiral.001_Spiral.001_Action_0",
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 1,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 2746,
+            "max": [
+                0.9973449110984802,
+                0.999786376953125,
+                0.999176025390625
+            ],
+            "min": [
+                -0.999542236328125,
+                -0.999603271484375,
+                -0.999755859375
+            ],
+            "name": "accessor_buffer_CUSpiral.000_NORMAL_0",
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 7,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 60,
+            "max": [
+                0.6866053342819214,
+                0.6866053342819214,
+                0.6866053342819214
+            ],
+            "min": [
+                0.6866053342819214,
+                0.6866053342819214,
+                0.6866053342819214
+            ],
+            "name": "accessor_buffer_Spiral.001_Spiral.001_Action_2",
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 3,
+            "byteOffset": 0,
+            "componentType": 5123,
+            "count": 8775,
+            "max": [
+                2745
+            ],
+            "min": [
+                0
+            ],
+            "name": "accessor_buffer_CUSpiral.000_0",
+            "type": "SCALAR"
+        },
+        {
+            "bufferView": 4,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 60,
+            "max": [
+                2.458333333333333
+            ],
+            "min": [
+                0
+            ],
+            "name": "accessor_buffer_Spiral.001_Action_time_0",
+            "type": "SCALAR"
+        }
+    ],
+    "animations": [
+        {
+            "channels": [
+                {
+                    "sampler": 0,
+                    "target": {
+                        "node": 2,
+                        "path": "translation"
+                    }
+                },
+                {
+                    "sampler": 1,
+                    "target": {
+                        "node": 2,
+                        "path": "rotation"
+                    }
+                },
+                {
+                    "sampler": 2,
+                    "target": {
+                        "node": 2,
+                        "path": "scale"
+                    }
+                }
+            ],
+            "name": "Action",
+            "samplers": [
+                {
+                    "input": 7,
+                    "interpolation": "LINEAR",
+                    "output": 3
+                },
+                {
+                    "input": 7,
+                    "interpolation": "LINEAR",
+                    "output": 0
+                },
+                {
+                    "input": 7,
+                    "interpolation": "LINEAR",
+                    "output": 5
+                }
+            ]
+        }
+    ],
+    "asset": {
+        "copyright": "",
+        "generator": "blendergltf v1.2.0",
+        "version": "2.0"
+    },
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteLength": 32952,
+            "byteOffset": 0,
+            "byteStride": 12,
+            "name": "bufferView_buffer_CUSpiral.000_POSITION_0",
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 32952,
+            "byteOffset": 32952,
+            "byteStride": 12,
+            "name": "bufferView_buffer_CUSpiral.000_NORMAL_0",
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 21968,
+            "byteOffset": 65904,
+            "byteStride": 8,
+            "name": "bufferView_buffer_CUSpiral.000_TEXCOORD_0_0",
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 17552,
+            "byteOffset": 87872,
+            "name": "bufferView_buffer_CUSpiral.000_0",
+            "target": 34963
+        },
+        {
+            "buffer": 0,
+            "byteLength": 240,
+            "byteOffset": 105424,
+            "byteStride": 4,
+            "name": "bufferView_buffer_Spiral.001_Action_time_0"
+        },
+        {
+            "buffer": 0,
+            "byteLength": 720,
+            "byteOffset": 105664,
+            "byteStride": 12,
+            "name": "bufferView_buffer_Spiral.001_Spiral.001_Action_0"
+        },
+        {
+            "buffer": 0,
+            "byteLength": 960,
+            "byteOffset": 106384,
+            "byteStride": 16,
+            "name": "bufferView_buffer_Spiral.001_Spiral.001_Action_1"
+        },
+        {
+            "buffer": 0,
+            "byteLength": 720,
+            "byteOffset": 107344,
+            "byteStride": 12,
+            "name": "bufferView_buffer_Spiral.001_Spiral.001_Action_2"
+        }
+    ],
+    "buffers": [
+        {
+            "byteLength": 108064,
+            "name": "buffer_cream-explosion",
+            "uri": "buffer_cream-explosion.bin"
+        }
+    ],
+    "cameras": [
+        {
+            "name": "Camera",
+            "orthographic": {
+                "xmag": 6.501587337917751,
+                "ymag": 3.6571428775787354,
+                "zfar": 100.0,
+                "znear": 0.10000000149011612
+            },
+            "type": "orthographic"
+        }
+    ],
+    "materials": [
+        {
+            "alphaMode": "BLEND",
+            "doubleSided": false,
+            "emissiveFactor": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "name": "Material.003",
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [
+                    0.64000004529953,
+                    0.64000004529953,
+                    0.64000004529953,
+                    0.0
+                ],
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0
+            }
+        }
+    ],
+    "meshes": [
+        {
+            "name": "CUSpiral.000",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 4,
+                        "POSITION": 1,
+                        "TEXCOORD_0": 2
+                    },
+                    "indices": 6,
+                    "material": 0,
+                    "mode": 4
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "camera": 0,
+            "name": "Camera",
+            "rotation": [
+                -0.30138731002807617,
+                0.36293137073516846,
+                0.12532736361026764,
+                0.8727768659591675
+            ],
+            "scale": [
+                0.9999998211860657,
+                0.9999998807907104,
+                0.9999998211860657
+            ],
+            "translation": [
+                7.054425239562988,
+                7.801451683044434,
+                7.0154948234558105
+            ]
+        },
+        {
+            "name": "Lamp",
+            "rotation": [
+                -0.34203386306762695,
+                -0.5232755541801453,
+                -0.2841663062572479,
+                0.7269423007965088
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                0.9999999403953552
+            ],
+            "translation": [
+                -0.01566481590270996,
+                4.178947448730469,
+                -1.6948176622390747
+            ]
+        },
+        {
+            "mesh": 0,
+            "name": "Spiral.001",
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                0.6866053342819214,
+                0.6866053342819214,
+                0.6866053342819214
+            ],
+            "translation": [
+                0.046769093722105026,
+                1.3597633838653564,
+                -0.10605332255363464
+            ]
+        }
+    ],
+    "scene": 0,
+    "scenes": [
+        {
+            "extras": {
+                "active_camera": 0,
+                "background_color": [
+                    0.05087608844041824,
+                    0.05087608844041824,
+                    0.05087608844041824
+                ],
+                "frames_per_second": 24
+            },
+            "name": "Scene",
+            "nodes": [
+                2,
+                1,
+                0
+            ]
+        }
+    ]
+}

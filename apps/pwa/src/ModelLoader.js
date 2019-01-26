@@ -16,7 +16,7 @@ class ModelLoader {
             await this.loadGLTFModel('models/cacaotree.gltf'),
             await this.loadGLTFModel('models/cannon.gltf'),
             await this.loadGLTFModel('models/cream.gltf'),
-            await this.loadGLTFModel('models/explosion.gltf'),
+            await this.loadGLTFModel('models/cream-explosion.gltf'),
         ];
     }
 

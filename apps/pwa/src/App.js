@@ -31,6 +31,7 @@ class App extends Component {
 
     // Setup scene, camera and renderer
     this.scene = new THREE.Scene();
+    this.clock = new THREE.Clock();
 
     let distance = 30;
     let aspect = width / height;
@@ -150,16 +151,21 @@ class App extends Component {
     var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
 
     if (intersects.length > 0 && !this.isSwiping) {
-      /*
-      TODO: gltf animation is not correctly exported by blender
-
-      console.log(intersects[0].object.parent.position);
+      var position = intersects[0].object.parent.position;
       let model = ModelLoader.models[7].scene.clone();
-      console.dir(ModelLoader.models[7]);
-      this.scene.add(model);
 
+      model.scale.set(3,3,3);
+      model.position.set(
+        position.x + this.opponentGameField.position[0],
+        position.y + this.opponentGameField.position[1],
+        position.z + this.opponentGameField.position[2],
+      );
+      this.scene.add(model);
+      console.log(model.position);
+      /*
       this.mixer = new THREE.AnimationMixer(model);
-      this.mixer.clipAction(ModelLoader.models[7].animations[0]).play();*/
+      this.mixer.clipAction(ModelLoader.models[7].animations[0]).play();
+      */
     }
   }
 
@@ -230,8 +236,10 @@ class App extends Component {
     }
 
     this.frameId = window.requestAnimationFrame(this.animate);
+    var delta = this.clock.getDelta();
     if (this.mixer != null) {
-      this.mixer.update(this.frameId);
+      console.log(delta);
+      this.mixer.update(delta);
     };
   }
 
