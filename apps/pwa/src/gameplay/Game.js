@@ -7,6 +7,14 @@ const PlayerType = Object.freeze({
  * Actions are performed by players. They trigger events when fired by players.
  */
 class Action {
+    constructor(actionType) {
+        this.actionType = actionType;
+    }
+
+    getActionType() {
+        return this.actionType;
+    }
+    
     /**
      * Actions and its perform method are the only place where the gameState may be changed.
      * 
@@ -106,7 +114,6 @@ class State {
     finishTurn() {
         this.turns.push(this.currentTurn);
         this.currentTurn = new Turn(this.nextPlayer());
-        console.log(this.turns);
     }
 
     nextPlayer() {
@@ -185,7 +192,7 @@ class Game {
      * Returns a list of possible actions for the given player based on the current game state.
      */
     listPossibleActions(player) {
-        return this.state.possibleActions(player);
+        return this.state.listPossibleActions(player);
     }
 
     currentPlayer() {

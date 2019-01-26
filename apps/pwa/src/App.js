@@ -120,6 +120,7 @@ class App extends Component {
 
   onClick = event => {
     // Time for game logic
+    console.log(this.game.listPossibleActions(this.game.currentPlayer()));
     this.game.perform(new FinishTurnAction());
     
     // Get mouse position and use raycaster
