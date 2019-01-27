@@ -5,14 +5,15 @@ const BoardCellTypes = Object.freeze({
 });
 
 class Cell {
-    constructor(cellType, row, col, creamed, occupied = false) {
-        this.cellType = cellType;
+    constructor(type, row, col, creamed, occupied = false) {
+        this.type = type;
         this.row = row;
         this.col = col;
         this.occupied = occupied;
         this.creamed = creamed;
     }
 }
+
 class Board {
     constructor(size, playerCount, seed) {
         this.size = size;
@@ -45,4 +46,27 @@ class Board {
     }
 }
 
+class Entity {
+    constructor(cost) {
+        this.cost = cost;
+    }
+}
+
+class Factory extends Entity {
+    constructor() {
+        super(2);
+    }
+}
+
+class CacaoTree extends Entity {
+    constructor() {
+        super(1);
+    }
+}
+
+class RumTruffleCannon extends Entity {
+    constructor() {
+        super(2);
+    }
+}
 export { BoardCellTypes, Cell, Board };

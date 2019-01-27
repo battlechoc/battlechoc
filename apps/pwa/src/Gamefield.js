@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { BuildingType, Building } from './Building.js';
-import ModelLoader from './ModelLoader.js'
+import * as GameEntities from './gameplay/SweastyGameEntities';
+import ModelLoader from './ModelLoader.js';
 
 class Gamefield {
-	constructor(isPlayerGameField, position, scene) {
+	constructor(isPlayerGameField, position, scene, playerField) {
 		this.isPlayerGameField = isPlayerGameField;
 		this.scene = scene;
 		this.rows = 8;
@@ -15,9 +16,9 @@ class Gamefield {
 			field => Array(this.cols).fill(BuildingType.EMPTY)
 		);
 
-    	this._build();
-    	this._addRandomCream(64);
-    	this.scene.add(this.gameField);
+		this._build(playerField);
+		this._addRandomCream(64);
+		this.scene.add(this.gameField);
 	}
 
 	_addRandomCream(count) {
@@ -31,31 +32,29 @@ class Gamefield {
 		}
 	}
 
-	async _build() {
+	async _build(playerField) {
 		this.gameField = new THREE.Group();
-	    var fieldtypes = ['white', 'brown', 'black'];
-	    for (let i = 0; i < this.rows; i++) {
-	      	for (let j = 0; j < this.cols; j++) {
-	        	
-	        	var fieldClone = undefined;
-	        	var fieldtype = fieldtypes[Math.floor(Math.random()*fieldtypes.length)];
-	        	if (fieldtype === 'white') {
-	          		fieldClone = ModelLoader.models[0].scene.clone();
-	        	} else if (fieldtype === 'brown') {
-	          		fieldClone = ModelLoader.models[1].scene.clone();
-	        	} else {
-	          		fieldClone = ModelLoader.models[2].scene.clone();
-	        	}
-	        	
-	        	var field = fieldClone.children[2]
-	        	field.scale.set(3, 3, 3);
-	        	field.position.set(this.fieldSize * i, 0, this.fieldSize * j);
-	        	
-	        	this.gameField.add(field);
-	      	}
-	    }
+		for (let i = 0; i < this.rows; i++) {
+			for (let j = 0; j < this.cols; j++) {
+				let cell = playerField.grid[i * this.cols + j];
+				var fieldClone = undefined;
+				if (cell.type === GameEntities.BoardCellTypes.white) {
+					fieldClone = ModelLoader.models[0].scene.clone();
+				} else if (cell.type === GameEntities.BoardCellTypes.brown) {
+					fieldClone = ModelLoader.models[1].scene.clone();
+				} else if (cell.type === GameEntities.BoardCellTypes.black) {
+					fieldClone = ModelLoader.models[2].scene.clone();
+				}
 
-	    this.gameField.position.set(this.position[0], this.position[1], this.position[2]);
+				var field = fieldClone.children[2]
+				field.scale.set(3, 3, 3);
+				field.position.set(this.fieldSize * i, 0, this.fieldSize * j);
+
+				this.gameField.add(field);
+			}
+		}
+
+		this.gameField.position.set(this.position[0], this.position[1], this.position[2]);
 	}
 
 	getClickableFields() {
@@ -69,8 +68,8 @@ class Gamefield {
 
 		let row = position.x / this.fieldSize;
 		let col = position.z / this.fieldSize;
-		
-		if (this.buildings[row][col] === BuildingType.EMPTY || 
+
+		if (this.buildings[row][col] === BuildingType.EMPTY ||
 			(this.buildings[row][col] === BuildingType.CREAM && buildingType !== BuildingType.CREAM)) {
 			let building = new Building(buildingType);
 			building.adjustPosition(position, this.position);
