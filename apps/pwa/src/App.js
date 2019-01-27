@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 import { Game, Player, PlayerType } from './gameplay/Game.js';
 import { SweastyGameState } from './gameplay/SweastyGameState';
-import { FinishTurnAction, GenerateBoardAction } from './gameplay/SweastyGameActions';
+import { FinishTurnAction, CreateBoardAction } from './gameplay/SweastyGameActions';
 import ModelLoader from './ModelLoader.js'
 import Gamefield from './Gamefield.js';
 import { BuildingType } from './Building.js';
@@ -28,7 +28,7 @@ class App extends Component {
     window.addEventListener("resize", () => this.updateDimensions());
 
     this.game = new Game(SweastyGameState);
-    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], { boardSeed: 64, boardSize: { x: 8, y: 8 } });
+    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], { boardSeed: 64, boardSize: { rows: 8, cols: 8 } });
 
     this.initialTurn = true;
 
@@ -122,9 +122,10 @@ class App extends Component {
     // Time for game logic
     console.log(this.game);
     console.log(this.game.listPossibleActions(this.game.currentPlayer()));
-    this.game.perform(new GenerateBoardAction());
+    this.game.perform(new CreateBoardAction());
     console.log(this.game);
     console.log(this.game.listPossibleActions(this.game.currentPlayer()));
+    console.log(this.game.currentState().board);
 
     // Get mouse position and use raycaster
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;

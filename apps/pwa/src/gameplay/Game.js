@@ -232,6 +232,10 @@ class Game {
     currentPlayer() {
         return this.state.currentPlayer();
     }
+
+    currentState() {
+        return this.state;
+    }
 }
 
 export { Game, Player, Action, PlayerType, State };

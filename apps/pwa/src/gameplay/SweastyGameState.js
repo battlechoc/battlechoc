@@ -23,8 +23,8 @@ class SweastyGameState extends Game.State {
         // -- ressources of player 1, ressources of player 2
     }
 
-    generateBoard() {
-        this.board = new Entities.Board(this.config.boardSize, this.config.boardSeed);
+    createBoard() {
+        this.board = new Entities.Board(this.config.boardSize, this.players.length, this.config.boardSeed);
     }
 
     getBoard() {
@@ -47,7 +47,7 @@ class SweastyGameState extends Game.State {
     isValidAction(action) {
         switch (this.currentState) {
             case SweastyGameStateType.start: {
-                if (action instanceof Actions.GenerateBoardAction) {
+                if (action instanceof Actions.CreateBoardAction) {
                     return true;
                 } else {
                     return false;
@@ -86,7 +86,7 @@ class SweastyGameState extends Game.State {
         if (super.perform(action) === true) {
             switch (this.currentState) {
                 case SweastyGameStateType.start: {
-                    if (action instanceof Actions.GenerateBoardAction) {
+                    if (action instanceof Actions.CreateBoardAction) {
                         this.currentState = SweastyGameStateType.choose_field_or_start;
                     }
                     return true;
@@ -124,7 +124,7 @@ class SweastyGameState extends Game.State {
         }
         switch (this.currentState) {
             case SweastyGameStateType.start: {
-                return [Actions.SweastyActionTypes.generate_board];
+                return [Actions.SweastyActionTypes.create_board];
             }
             case SweastyGameStateType.choose_field_or_start: {
                 return [];
