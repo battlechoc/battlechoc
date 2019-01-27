@@ -17,19 +17,7 @@ class Gamefield {
 		);
 
 		this._build(playerField);
-		this._addRandomCream(64);
 		this.scene.add(this.gameField);
-	}
-
-	_addRandomCream(count) {
-		for (let i = 0; i < count; i++) {
-			let position = {
-				x: Math.floor(Math.random() * 8) * this.fieldSize,
-				y: 0,
-				z: Math.floor(Math.random() * 8) * this.fieldSize
-			}
-			this.setBuilding(position, BuildingType.CREAM, this.isPlayerGameField);
-		}
 	}
 
 	async _build(playerField) {
@@ -51,6 +39,10 @@ class Gamefield {
 				field.position.set(this.fieldSize * i, 0, this.fieldSize * j);
 
 				this.gameField.add(field);
+
+				if (cell.creamed === true) {
+					this.setBuilding(field.position, BuildingType.CREAM, this.isPlayerGameField);
+				}
 			}
 		}
 
