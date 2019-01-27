@@ -8,61 +8,7 @@ html, body, #root {
   width: 100%;
 }
 
-#hud {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  width: 100%;
-  color: white;
-}
-
-#toggleMusic {
-  border: 1px solid #fff;
-  margin: 5px;
-  cursor: pointer;
-  padding: 5px;
-  font-size: 1.4vw;
-  display: inline-block;
-}
-
 .app {
   height: 100%;
   width: 100%;
-}
-
-.preview {
-  margin-left: 5px;
-  height: auto;
-}
-
-#hud > p {
-  margin: 5px 5px;
-  font-size: 1.6vw;
-}
-
-@media screen and (min-width: 901px) {
-  .preview {
-    width: 80px;
-  }
-}
-
-@media screen and (min-width: 601px) {
-  .preview {
-    width: 40px;
-  }
-}
-
-@media screen and (max-width: 600px) {
-  #hud > p {
-    margin: 5px 5px;
-    font-size: 10px;
-  }
-
-  #toggleMusic {
-    font-size: 10px;
-  }
-
-  .preview {
-    width: 40px;
-  }
 }

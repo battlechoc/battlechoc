@@ -8,6 +8,7 @@ import { FinishTurnAction, CreateBoardAction } from './gameplay/SweastyGameActio
 import ModelLoader from './ModelLoader.js'
 import Gamefield from './Gamefield.js';
 import { BuildingType } from './Building.js';
+import Hud from './ui/Hud.js';
 
 class App extends Component {
   constructor(props) {
@@ -176,6 +177,10 @@ class App extends Component {
     }
   }
 
+  selectBuilding(buildingType) {
+    this.selectedBuilding = buildingType;
+  }
+
   toggleMusic() {
     if (this.ambientSound.isPlaying) {
       this.ambientSound.pause();
@@ -250,6 +255,10 @@ class App extends Component {
     };
   }
 
+  startGame = () => {
+    console.log('GAME START');
+  }
+
   renderScene = () => {
     this.renderer.render(this.scene, this.camera);
   }
@@ -257,16 +266,12 @@ class App extends Component {
   render() {
     return (
       <div className="app-container">
-        <div id="hud">
-          <div id="toggleMusic" onClick={() => this.toggleMusic()}>toggle music</div>
-          <p>Cacao: {this.state.cacao}<br />Buildings: {this.state.buildings}</p>
-          <img alt="cacao tree preview" id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {
-            this.selectedBuilding = BuildingType.CACAOTREE;
-          }} />
-          <img alt="cannon preview" id="cannonIcon" className="preview" src="images/cannon_icon.png" onClick={() => {
-            this.selectedBuilding = BuildingType.RUM_TRUFFLE_CANNON;
-          }} />
-        </div>
+        <Hud 
+          selectBuilding={buildingType => this.selectBuilding(buildingType)} 
+          toggleMusic={() => this.toggleMusic()} 
+          cacao={this.state.cacao} 
+          buildings={this.state.buildings}
+          startGameCallback={this.startGame} />
         <div
           className="app"
           onClick={this.onClick}
