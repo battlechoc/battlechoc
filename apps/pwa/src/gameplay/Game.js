@@ -125,7 +125,7 @@ class State {
      * @param {Action} action Action that shall be executed on this game state.
      * @returns true if action was valid and successfully executed, false otherwise. false means action was rolled back.
      */
-    perform(action) {
+    dispatch(action) {
         if (this.isValidAction(action) === true) {
             this.currentTurn.addAction(action);
             return action.perform(this);
@@ -138,9 +138,13 @@ class State {
     /**
      * Finishes the current turn and advances to the next one.
      */
-    finishTurn() {
+    finishTurn(keepPlayer = false) {
         this.game.turnFinished(this.currentTurn);
-        this.currentTurn = new Turn(this.nextPlayer());
+        if (keepPlayer === true) {
+            this.currentTurn = new Turn(this.currentPlayer());
+        } else {
+            this.currentTurn = new Turn(this.nextPlayer());
+        }
     }
 
     nextPlayer() {
@@ -150,6 +154,10 @@ class State {
 
     currentPlayer() {
         return this.players[this.currentPlayerIndex];
+    }
+
+    otherPlayer() {
+        return this.players[(this.currentPlayerIndex + 1) % this.players.length];
     }
 
     /**
@@ -214,8 +222,8 @@ class Game {
      * 
      * @param {Action} action Action object that shall be executed on the current game state.
      */
-    perform(action) {
-        this.state.perform(action);
+    dispatch(action) {
+        this.state.dispatch(action);
     }
 
     turnFinished(turn) {
@@ -231,6 +239,10 @@ class Game {
 
     currentPlayer() {
         return this.state.currentPlayer();
+    }
+
+    otherPlayer() {
+        return this.state.otherPlayer();
     }
 
     currentState() {

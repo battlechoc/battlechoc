@@ -2,9 +2,9 @@ import React, { Component } from 'react';
 import './App.css';
 import * as THREE from 'three';
 
-import { Game, Player, PlayerType } from './gameplay/Game.js';
+import { Game, Player, PlayerType } from './gameplay/Game';
 import { SweastyGameState } from './gameplay/SweastyGameState';
-import { FinishTurnAction, CreateBoardAction } from './gameplay/SweastyGameActions';
+import { CreateBoardAction, ChooseStartAction, ChooseFieldAction } from './gameplay/SweastyGameActions';
 import ModelLoader from './ModelLoader.js'
 import Gamefield from './Gamefield.js';
 import { BuildingType } from './Building.js';
@@ -30,6 +30,7 @@ class App extends Component {
 
     this.game = new Game(SweastyGameState);
     this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], { boardSeed: 64, boardSize: { rows: 8, cols: 8 } });
+    this.game.dispatch(new CreateBoardAction());
 
     this.initialTurn = true;
 
@@ -86,9 +87,9 @@ class App extends Component {
     this.mouse = new THREE.Vector2();
     this.onClick = this.onClick.bind(this);
 
-    // Add Gamefield    
-    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.scene);
-    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.scene);
+    // Add Gamefield
+    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.scene, this.game.currentState().getBoard().playerFields[0]);
+    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.scene, this.game.currentState().getBoard().playerFields[1]);
     this.clickTargets = this.playerGameField.getClickableFields();
     this.opponentClickTargets = this.opponentGameField.getClickableFields();
 
@@ -122,12 +123,12 @@ class App extends Component {
 
   onClick = event => {
     // Time for game logic
+    this.game.dispatch(new ChooseStartAction());
     console.log(this.game);
     console.log(this.game.listPossibleActions(this.game.currentPlayer()));
-    this.game.perform(new CreateBoardAction());
+    this.game.dispatch(new ChooseFieldAction(1));
     console.log(this.game);
     console.log(this.game.listPossibleActions(this.game.currentPlayer()));
-    console.log(this.game.currentState().board);
 
     // Get mouse position and use raycaster
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
