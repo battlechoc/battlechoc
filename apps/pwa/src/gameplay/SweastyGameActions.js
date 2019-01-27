@@ -1,11 +1,24 @@
 import * as Game from "./Game.js";
+import { Board } from "./SweastyGameEntities.js";
 
 const SweastyActionTypes = Object.freeze({
+    create_board: Symbol("create_board"),
     finish_turn: Symbol("finish_turn"),
     finish_build_phase: Symbol("finish_build_phase"),
     place_unit: Symbol("place_unit"),
     attack_field: Symbol("attack_field")
 });
+
+class CreateBoardAction extends Game.Action {
+    constructor() {
+        super(SweastyActionTypes.create_board);
+    }
+
+    perform(gameState) {
+        gameState.createBoard();
+        return true;
+    }
+}
 
 class FinishTurnAction extends Game.Action {
     constructor() {
@@ -14,7 +27,7 @@ class FinishTurnAction extends Game.Action {
 
     perform(gameState) {
         gameState.finishTurn();
-        return gameState;
+        return true;
     }
 }
 
@@ -25,7 +38,7 @@ class FinishBuildPhaseAction extends Game.Action {
 
     perform(gameState) {
         gameState.finishBuildPhase();
-        return gameState;
+        return true;
     }
 }
 
@@ -49,4 +62,4 @@ class AttackFieldAction extends Game.Action {
     }
 }
 
-export { SweastyActionTypes, FinishTurnAction, FinishBuildPhaseAction, PlaceUnitAction, AttackFieldAction };
+export { SweastyActionTypes, CreateBoardAction, FinishTurnAction, FinishBuildPhaseAction, PlaceUnitAction, AttackFieldAction };

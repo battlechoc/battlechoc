@@ -4,13 +4,13 @@ import * as THREE from 'three';
 
 import { Game, Player, PlayerType } from './gameplay/Game.js';
 import { SweastyGameState } from './gameplay/SweastyGameState';
-import { FinishTurnAction } from './gameplay/SweastyGameActions';
+import { FinishTurnAction, CreateBoardAction } from './gameplay/SweastyGameActions';
 import ModelLoader from './ModelLoader.js'
 import Gamefield from './Gamefield.js';
 import { BuildingType } from './Building.js';
 
 class App extends Component {
-  constructor(props) {
+  constructor(props) {
     super(props);
     this.state = {
       cacao: 50,
@@ -28,7 +28,7 @@ class App extends Component {
     window.addEventListener("resize", () => this.updateDimensions());
 
     this.game = new Game(SweastyGameState);
-    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)]);
+    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], { boardSeed: 64, boardSize: { rows: 8, cols: 8 } });
 
     this.initialTurn = true;
 
@@ -39,7 +39,7 @@ class App extends Component {
     let distance = 30;
     let aspect = width / height;
 
-    this.camera = new THREE.OrthographicCamera( -distance * aspect, distance * aspect, distance, -distance, -100, 1000);
+    this.camera = new THREE.OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, -100, 1000);
     this.camera.position.set(140, 140, 140);
     this.camera.lookAt(this.scene.position);
     this.camera.position.y = 60;
@@ -59,7 +59,7 @@ class App extends Component {
     this.swipePosition = 0;
     this.isSwiping = false;
     this.lookAtOpponent = false;
-    
+
     // animations and renderer
     this.mixer = null;
 
@@ -92,7 +92,7 @@ class App extends Component {
     this.opponentClickTargets = this.opponentGameField.getClickableFields();
 
     // Add Light
-    var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2.0); 
+    var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2.0);
     directionalLight.position.set(20, 24, -10);
     this.scene.add(directionalLight);
 
@@ -121,9 +121,13 @@ class App extends Component {
 
   onClick = event => {
     // Time for game logic
+    console.log(this.game);
     console.log(this.game.listPossibleActions(this.game.currentPlayer()));
-    this.game.perform(new FinishTurnAction());
-    
+    this.game.perform(new CreateBoardAction());
+    console.log(this.game);
+    console.log(this.game.listPossibleActions(this.game.currentPlayer()));
+    console.log(this.game.currentState().board);
+
     // Get mouse position and use raycaster
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
@@ -132,7 +136,7 @@ class App extends Component {
     // Check clickable objects
     this.playerFieldClick();
     this.opponentFieldClick();
-    
+
     // Part of "ignore click if it was just an end of swiping"
     this.isSwiping = false;
   }
@@ -187,10 +191,10 @@ class App extends Component {
 
   endSwipe() {
     this.mousedown = false;
-    
+
     if (this.swipePosition < 0.4 && this.swipeStartPosition > 0.6 && !this.lookAtOpponent && this.isSwiping) {
       this.lookAtOpponent = true;
-    } else if (this.swipePosition > 0.6 && this.swipeStartPosition < 0.4 && this.lookAtOpponent && this.isSwiping) { 
+    } else if (this.swipePosition > 0.6 && this.swipeStartPosition < 0.4 && this.lookAtOpponent && this.isSwiping) {
       this.lookAtOpponent = false;
     }
   }
@@ -202,7 +206,7 @@ class App extends Component {
     }
   }
 
-  updateDimensions () {
+  updateDimensions() {
     console.log()
     const width = this.mount.clientWidth;
     const height = this.mount.clientHeight;
@@ -228,14 +232,14 @@ class App extends Component {
   }
 
   animate = () => {
-    this.renderScene();    
+    this.renderScene();
 
     if (this.lookAtOpponent && this.camera.position.y < 120) {
       this.camera.position.y += 2.0;
       this.camera.position.x += 4.0;
     } else if (!this.lookAtOpponent && this.camera.position.y > 60) {
       this.camera.position.y -= 2.0;
-      this.camera.position.x -= 4.0;      
+      this.camera.position.x -= 4.0;
     }
 
     this.frameId = window.requestAnimationFrame(this.animate);
@@ -251,27 +255,27 @@ class App extends Component {
   }
 
   render() {
-    return(
+    return (
       <div className="app-container">
         <div id="hud">
           <div id="toggleMusic" onClick={() => this.toggleMusic()}>toggle music</div>
           <p>Cacao: {this.state.cacao}<br />Buildings: {this.state.buildings}</p>
           <img alt="cacao tree preview" id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {
             this.selectedBuilding = BuildingType.CACAOTREE;
-          }}/>
+          }} />
           <img alt="cannon preview" id="cannonIcon" className="preview" src="images/cannon_icon.png" onClick={() => {
             this.selectedBuilding = BuildingType.RUM_TRUFFLE_CANNON;
-          }}/>
+          }} />
         </div>
         <div
           className="app"
           onClick={this.onClick}
-          ref={(mount) => {this.mount = mount}}
+          ref={(mount) => { this.mount = mount }}
         />
       </div>
     )
   }
-  
+
 }
 
 export default App;
