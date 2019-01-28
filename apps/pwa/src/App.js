@@ -24,15 +24,9 @@ class App extends Component {
     await ModelLoader.loadModels();
     this.selectedBuilding = BuildingType.CACAOTREE;
     // Basic window and game setup
-    const width = this.mount.clientWidth;
-    const height = this.mount.clientHeight;
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
     window.addEventListener("resize", () => this.updateDimensions());
-
-    this.game = new Game(SweastyGameState);
-    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], { boardSeed: 64, boardSize: { rows: 8, cols: 8 } });
-    this.game.dispatch(new CreateBoardAction());
-
-    this.initialTurn = true;
 
     // Setup scene, camera and renderer
     this.scene = new THREE.Scene();
@@ -64,41 +58,18 @@ class App extends Component {
 
     // animations and renderer
     this.mixer = null;
-
-    this.renderer.domElement.addEventListener('mousedown', event => this.startSwipe(event));
-    this.renderer.domElement.addEventListener('mousemove', event => this.swipe(event));
-    this.renderer.domElement.addEventListener('mouseup', () => this.endSwipe());
-    this.renderer.domElement.addEventListener('touchstart', event => {
-      event.clientX = event.touches[0].clientX;
-      this.startSwipe(event)
-    });
-
-    this.renderer.domElement.addEventListener('touchmove', event => {
-      event.clientX = event.touches[0].clientX;
-      this.swipe(event)
-    });
-
-    this.renderer.domElement.addEventListener('touchend', () => this.endSwipe());
-
-    this.mount.appendChild(this.renderer.domElement);
+    this.container.appendChild(this.renderer.domElement);
 
     // Allow clicking
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
-    this.onClick = this.onClick.bind(this);
-
-    // Add Gamefield
-    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.scene, this.game.currentState().getBoard().playerFields[0]);
-    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.scene, this.game.currentState().getBoard().playerFields[1]);
-    this.clickTargets = this.playerGameField.getClickableFields();
-    this.opponentClickTargets = this.opponentGameField.getClickableFields();
 
     // Add Light
     var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2.0);
     directionalLight.position.set(20, 24, -10);
     this.scene.add(directionalLight);
 
-    // Start game render loop
+    // Start render loop
     this.start();
 
     // Setup Music
@@ -178,10 +149,6 @@ class App extends Component {
     }
   }
 
-  selectBuilding(buildingType) {
-    this.selectedBuilding = buildingType;
-  }
-
   toggleMusic() {
     if (this.ambientSound.isPlaying) {
       this.ambientSound.pause();
@@ -213,17 +180,23 @@ class App extends Component {
   }
 
   updateDimensions() {
-    console.log()
-    const width = this.mount.clientWidth;
-    const height = this.mount.clientHeight;
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
     this.renderer.setSize(width, height);
+
+    let distance = 30;
+    let aspect = width / height;
+
+    this.camera.left = -distance * aspect;
+    this.camera.right = distance * aspect;
+    this.camera.top = distance;
+    this.camera.bottom = -distance;
+    this.camera.updateProjectionMatrix();
   }
 
   componentWillUnmount() {
     this.stop();
-    this.mount.removeChild(this.renderer.domElement);
+    this.container.removeChild(this.renderer.domElement);
     window.removeEventListener("resize", () => this.updateDimensions());
   }
 
@@ -251,13 +224,39 @@ class App extends Component {
     this.frameId = window.requestAnimationFrame(this.animate);
     var delta = this.clock.getDelta();
     if (this.mixer != null) {
-      console.log(delta);
       this.mixer.update(delta);
     };
   }
 
   startGame = () => {
-    console.log('GAME START');
+    // Game Logic
+    this.game = new Game(SweastyGameState);
+    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], { boardSeed: 64, boardSize: { rows: 8, cols: 8 } });
+    this.game.dispatch(new CreateBoardAction());
+    this.initialTurn = true;
+
+    // Add Gamefield
+    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.scene, this.game.currentState().getBoard().playerFields[0]);
+    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.scene, this.game.currentState().getBoard().playerFields[1]);
+    this.clickTargets = this.playerGameField.getClickableFields();
+    this.opponentClickTargets = this.opponentGameField.getClickableFields();
+
+    // Setup Game EventListener
+    this.container.onclick = event => this.onClick(event);
+    this.renderer.domElement.addEventListener('mousedown', event => this.startSwipe(event));
+    this.renderer.domElement.addEventListener('mousemove', event => this.swipe(event));
+    this.renderer.domElement.addEventListener('mouseup', () => this.endSwipe());
+    this.renderer.domElement.addEventListener('touchstart', event => {
+      event.clientX = event.touches[0].clientX;
+      this.startSwipe(event)
+    });
+
+    this.renderer.domElement.addEventListener('touchmove', event => {
+      event.clientX = event.touches[0].clientX;
+      this.swipe(event)
+    });
+
+    this.renderer.domElement.addEventListener('touchend', () => this.endSwipe());
   }
 
   renderScene = () => {
@@ -268,15 +267,14 @@ class App extends Component {
     return (
       <div className="app-container">
         <Hud 
-          selectBuilding={buildingType => this.selectBuilding(buildingType)} 
+          selectBuilding={buildingType => this.selectedBuilding = buildingType} 
           toggleMusic={() => this.toggleMusic()} 
           cacao={this.state.cacao} 
           buildings={this.state.buildings}
           startGameCallback={this.startGame} />
         <div
           className="app"
-          onClick={this.onClick}
-          ref={(mount) => { this.mount = mount }}
+          ref={(container) => { this.container = container }}
         />
       </div>
     )

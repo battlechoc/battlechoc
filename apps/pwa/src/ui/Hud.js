@@ -21,7 +21,9 @@ class Hud extends Component {
     render() {
         return (
             <div id="hud" className={this.state.startScreen ? "fullscreen" : ""}>
-                <div id="toggleMusic" onClick={() => this.props.toggleMusic()}>toggle music</div>
+                <div id="toggleMusic" 
+                    className={this.state.startScreen ? "overlay" : ""}
+                    onClick={() => this.props.toggleMusic()}>toggle music</div>
                 {(() => {
                     if (this.state.startScreen) {
                         return (

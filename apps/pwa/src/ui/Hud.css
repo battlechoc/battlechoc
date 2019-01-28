@@ -28,13 +28,21 @@
   margin: 5px;
 }
 
+#gameMenu {
+  margin-left: 5px; 
+}
+
 #toggleMusic {
   border: 1px solid #fff;
-  margin: 5px;
   cursor: pointer;
   padding: 5px;
   font-size: 1.4vw;
   display: inline-block;
+  margin: 5px;
+}
+
+.overlay {
+  position: absolute;
 }
 
 .preview {
