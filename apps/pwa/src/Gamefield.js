@@ -17,28 +17,34 @@ class Gamefield {
 		);
 
 		this._build(playerField);
-		this.scene.add(this.gameField);
 	}
 
 	async _build(playerField) {
 		this.gameField = new THREE.Group();
+		this.preview = [];
+		
 		for (let i = 0; i < this.rows; i++) {
 			for (let j = 0; j < this.cols; j++) {
 				let cell = playerField.grid[i * this.cols + j];
 				var fieldClone = undefined;
+				let fieldType = 'white';
+
 				if (cell.type === GameEntities.BoardCellTypes.white) {
 					fieldClone = ModelLoader.models[0].scene.clone();
 				} else if (cell.type === GameEntities.BoardCellTypes.brown) {
 					fieldClone = ModelLoader.models[1].scene.clone();
+					fieldType = 'brown';
 				} else if (cell.type === GameEntities.BoardCellTypes.black) {
 					fieldClone = ModelLoader.models[2].scene.clone();
+					fieldType = 'black';
 				}
 
 				var field = fieldClone.children[2]
 				field.scale.set(3, 3, 3);
 				field.position.set(this.fieldSize * i, 0, this.fieldSize * j);
-
-				this.gameField.add(field);
+                
+                this.gameField.add(field);
+				this.preview.push(fieldType);
 
 				if (cell.creamed === true) {
 					this.setBuilding(field.position, BuildingType.CREAM, this.isPlayerGameField);
@@ -67,9 +73,9 @@ class Gamefield {
 			building.adjustPosition(position, this.position);
 			building.adjustRotation()
 			if (asWireframe) {
-				this.scene.add(building.getModelWireframe());
+				this.gameField.add(building.getModelWireframe());
 			} else {
-				this.scene.add(building.getModel());
+				this.gameField.add(building.getModel());
 			}
 			this.buildings[row][col] = buildingType;
 			return true;

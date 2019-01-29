@@ -236,10 +236,16 @@ class App extends Component {
     this.initialTurn = true;
 
     // Add Gamefield
-    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.scene, this.game.currentState().getBoard().playerFields[0]);
+    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.scene, this.game.currentState().getBoard().playerFields[0]);    
     this.opponentGameField = new Gamefield(false, [72, 56, 0], this.scene, this.game.currentState().getBoard().playerFields[1]);
-    this.clickTargets = this.playerGameField.getClickableFields();
-    this.opponentClickTargets = this.opponentGameField.getClickableFields();
+    
+    this.setState({
+      playerFieldPreview: this.playerGameField.preview,
+      opponentFieldPreview: this.opponentGameField.preview
+    });
+
+    //this.clickTargets = this.playerGameField.getClickableFields();
+    //this.opponentClickTargets = this.opponentGameField.getClickableFields();
 
     // Setup Game EventListener
     this.container.onclick = event => this.onClick(event);
@@ -271,7 +277,9 @@ class App extends Component {
           toggleMusic={() => this.toggleMusic()} 
           cacao={this.state.cacao} 
           buildings={this.state.buildings}
-          startGameCallback={this.startGame} />
+          startGameCallback={this.startGame}
+          playerFieldPreview={this.state.playerFieldPreview}
+          opponentFieldPreview={this.state.opponentFieldPreview} />
         <div
           className="app"
           ref={(container) => { this.container = container }}
