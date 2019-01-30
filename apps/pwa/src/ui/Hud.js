@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import './Hud.css';
 import PropTypes from 'prop-types';
 import { BuildingType } from '../Building.js';
+import { ChooseStartAction, ChooseFieldAction } from '../gameplay/SweastyGameActions';
 import * as THREE from 'three';
 
 class Hud extends Component {
@@ -66,7 +67,7 @@ class Hud extends Component {
         this.showTurnMessage('It\'s up on you');
 
         setTimeout(() => {
-            this.props.startGameCallback();
+            this.props.prepareGameCallback();
         }, 1000);
     }
 
@@ -85,6 +86,29 @@ class Hud extends Component {
         this.gameStartBitmap.fillText(this.message, this.hud.clientWidth / 2, this.hud.clientHeight / 2);
         this.texture.needsUpdate = true;
         this.renderer.render(this.scene, this.camera);
+    }
+
+    choose(option) {
+        if (option === 'START') {
+            this.setState({
+                screen: 'GAME_RUNNING'
+            });
+            this.props.game.dispatch(new ChooseStartAction());
+            this.props.startGameCallback();
+        } else if (option === 'LEFT_GAMEFIELD') {
+            this.setState({
+                screen: 'GAME_RUNNING'
+            });
+            this.props.game.dispatch(new ChooseFieldAction(0));
+            this.props.startGameCallback();
+        } else if (option === 'RIGHT_GAMEFIELD') {
+            this.setState({
+                screen: 'GAME_RUNNING'
+            });
+            this.props.switchGameFields();
+            this.props.game.dispatch(new ChooseFieldAction(1));
+            this.props.startGameCallback();
+        }
     }
 
     animateMessage() {
@@ -127,12 +151,12 @@ class Hud extends Component {
                                 }} />
                             </div>
                         );
-                    } else if (this.state.screen == 'CHOOSE_START_OR_FIELD') {
+                    } else if (this.state.screen === 'CHOOSE_START_OR_FIELD') {
                         return (
                             <div className="choose">
-                                <div className="button start"><p>Choose First Turn</p></div>
+                                <div className="button start" onClick={() => this.choose('START')}><p>Choose First Turn</p></div>
                                 <div className="gamefield">
-                                    <div className="button left"><p>Choose this field</p>
+                                    <div className="button left" onClick={() => this.choose('LEFT_GAMEFIELD')}><p>Choose this field</p>
                                         <div className="fields">
                                         {(() => {
                                             if (typeof this.props.playerFieldPreview !== 'undefined') {
@@ -143,7 +167,7 @@ class Hud extends Component {
                                         })()}                                    
                                         </div>
                                     </div>
-                                    <div className="button right"><p>Choose this field</p>
+                                    <div className="button right" onClick={() => this.choose('RIGHT_GAMEFIELD')}><p>Choose this field</p>
                                         <div className="fields">
                                         {(() => {
                                             if (typeof this.props.opponentFieldPreview !== 'undefined') {
@@ -168,6 +192,8 @@ Hud.propTypes = {
     selectBuilding: PropTypes.func.isRequired,
     toggleMusic: PropTypes.func.isRequired,
     startGameCallback: PropTypes.func.isRequired,
+    switchGameFields: PropTypes.func.isRequired,
+    game: PropTypes.object.isRequired,
     playerFieldPreview: PropTypes.array,
     opponentFieldPreview: PropTypes.array,
     cacao: PropTypes.number,

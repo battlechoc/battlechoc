@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 import { Game, Player, PlayerType } from './gameplay/Game';
 import { SweastyGameState } from './gameplay/SweastyGameState';
-import { CreateBoardAction, ChooseStartAction, ChooseFieldAction } from './gameplay/SweastyGameActions';
+import { CreateBoardAction } from './gameplay/SweastyGameActions';
 import ModelLoader from './ModelLoader.js'
 import Gamefield from './Gamefield.js';
 import { BuildingType } from './Building.js';
@@ -15,7 +15,8 @@ class App extends Component {
     super(props);
     this.state = {
       cacao: 50,
-      buildings: 3
+      buildings: 3,
+      game: new Game(SweastyGameState)
     };
   }
 
@@ -94,12 +95,11 @@ class App extends Component {
 
   onClick = event => {
     // Time for game logic
-    this.game.dispatch(new ChooseStartAction());
-    console.log(this.game);
-    console.log(this.game.listPossibleActions(this.game.currentPlayer()));
-    this.game.dispatch(new ChooseFieldAction(1));
-    console.log(this.game);
-    console.log(this.game.listPossibleActions(this.game.currentPlayer()));
+    console.log(this.state.game);
+    console.log(this.state.game.listPossibleActions(this.state.game.currentPlayer()));
+    
+    console.log(this.state.game);
+    console.log(this.state.game.listPossibleActions(this.state.game.currentPlayer()));
 
     // Get mouse position and use raycaster
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -228,24 +228,23 @@ class App extends Component {
     };
   }
 
-  startGame = () => {
+  prepareGame = () => {
     // Game Logic
-    this.game = new Game(SweastyGameState);
-    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], { boardSeed: 64, boardSize: { rows: 8, cols: 8 } });
-    this.game.dispatch(new CreateBoardAction());
+    this.state.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], { boardSeed: 64, boardSize: { rows: 8, cols: 8 } });
     this.initialTurn = true;
 
     // Add Gamefield
-    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.scene, this.game.currentState().getBoard().playerFields[0]);    
-    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.scene, this.game.currentState().getBoard().playerFields[1]);
+    this.state.game.dispatch(new CreateBoardAction());
+    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[0]);    
+    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.state.game.currentState().getBoard().playerFields[1]);
     
     this.setState({
       playerFieldPreview: this.playerGameField.preview,
       opponentFieldPreview: this.opponentGameField.preview
     });
 
-    //this.clickTargets = this.playerGameField.getClickableFields();
-    //this.opponentClickTargets = this.opponentGameField.getClickableFields();
+    this.clickTargets = this.playerGameField.getClickableFields();
+    this.opponentClickTargets = this.opponentGameField.getClickableFields();
 
     // Setup Game EventListener
     this.container.onclick = event => this.onClick(event);
@@ -265,6 +264,19 @@ class App extends Component {
     this.renderer.domElement.addEventListener('touchend', () => this.endSwipe());
   }
 
+  switchGameFields = () => {
+    let pivotfield = this.playerGameField;
+    this.playerGameField = this.opponentGameField;
+    this.opponentGameField = pivotfield;
+    this.playerGameField.isPlayerGameField = true;
+    this.opponentGameField.isPlayerGameField = false;
+  }
+
+  startGame = () => {
+    this.scene.add(this.playerGameField.gameField);
+    this.scene.add(this.opponentGameField.gameField);
+  }
+
   renderScene = () => {
     this.renderer.render(this.scene, this.camera);
   }
@@ -277,7 +289,10 @@ class App extends Component {
           toggleMusic={() => this.toggleMusic()} 
           cacao={this.state.cacao} 
           buildings={this.state.buildings}
+          game={this.state.game}
           startGameCallback={this.startGame}
+          prepareGameCallback={this.prepareGame}
+          switchGameFields={this.switchGameFields}
           playerFieldPreview={this.state.playerFieldPreview}
           opponentFieldPreview={this.state.opponentFieldPreview} />
         <div

@@ -4,9 +4,8 @@ import * as GameEntities from './gameplay/SweastyGameEntities';
 import ModelLoader from './ModelLoader.js';
 
 class Gamefield {
-	constructor(isPlayerGameField, position, scene, playerField) {
+	constructor(isPlayerGameField, position, playerField) {
 		this.isPlayerGameField = isPlayerGameField;
-		this.scene = scene;
 		this.rows = 8;
 		this.cols = 8;
 		this.fieldSize = 8;
@@ -70,7 +69,7 @@ class Gamefield {
 		if (this.buildings[row][col] === BuildingType.EMPTY ||
 			(this.buildings[row][col] === BuildingType.CREAM && buildingType !== BuildingType.CREAM)) {
 			let building = new Building(buildingType);
-			building.adjustPosition(position, this.position);
+			building.adjustPosition(position);
 			building.adjustRotation()
 			if (asWireframe) {
 				this.gameField.add(building.getModelWireframe());

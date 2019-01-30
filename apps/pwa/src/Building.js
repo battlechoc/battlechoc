@@ -43,11 +43,11 @@ class Building {
 		}
 	}
 
-	adjustPosition(fieldPosition, position) {
+	adjustPosition(position) {
 		this._model.position.set(
-			position[0] + fieldPosition.x + this._offset[0],
-			position[1] + fieldPosition.y + this._offset[1],
-			position[2] + fieldPosition.z + this._offset[2],
+			position.x + this._offset[0],
+			position.y + this._offset[1],
+			position.z + this._offset[2],
 		);		
 	}
 
