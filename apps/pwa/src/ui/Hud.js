@@ -8,36 +8,26 @@ class Hud extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            screen: 'START_SCREEN'
+            screen: 'START_SCREEN',
+            messageAnimation: false
         };
     }
 
-    startGame() {
-        this.setState({
-            screen: 'CHOOSE_START_OR_FIELD'
-        });
-
+    componentDidMount() {
         const width = this.hud.clientWidth;
         const height = this.hud.clientHeight;
 
-        this.gameStartCanvas = document.createElement('canvas');
+        this.gameStartCanvas = document.getElementById('textAnimationCanvas');
         this.gameStartCanvas.width = width;
         this.gameStartCanvas.height = height;
         this.gameStartBitmap = this.gameStartCanvas.getContext('2d');
-
-        this.fontAlpha = 1.0;
-        this.fontSize = 40;
-        this.gameStartBitmap.font = "Normal " + this.fontSize + "px Arial";
-        this.gameStartBitmap.textAlign = 'center';
-        this.gameStartBitmap.fillStyle = "rgba(245,245,245," + this.fontAlpha + ")";
-        this.gameStartBitmap.fillText('It\'s up on you', width / 2, height / 2);
 
         this.camera = new THREE.OrthographicCamera(
             -width/2, width/2,
             height/2, -height/2,
             0, 30
         );
-        this.scene = new THREE.Scene();
+        this.scene = new THREE.Scene();   
         this.texture = new THREE.Texture(this.gameStartCanvas)
         this.texture.needsUpdate = true;
         var material = new THREE.MeshBasicMaterial( {map: this.texture } );
@@ -51,34 +41,63 @@ class Hud extends Component {
         this.renderer.autoClear = false;
         this.renderer.render(this.scene, this.camera);
 
-        this.hud.appendChild(this.gameStartCanvas);
+        this.hud.appendChild(this.gameStartCanvas);   
+    }
+
+    showTurnMessage(message) {
+        this.message = message;
+        this.setState({
+            messageAnimation: true
+        });
+
+        this.fontAlpha = 1.0;
+        this.fontSize = 40; 
+        this.renderText();
+
         setTimeout(() => {
-            this.renderGameStart();
+            this.renderAnimation();
+        }, 1000);
+    }
+
+    startGame() {
+        this.setState({
+            screen: 'CHOOSE_START_OR_FIELD'
+        });
+        this.showTurnMessage('It\'s up on you');
+
+        setTimeout(() => {
             this.props.startGameCallback();
         }, 1000);
     }
 
-    renderGameStart = () => {
-        const width = this.hud.clientWidth;
-        const height = this.hud.clientHeight;
-
-        this.gameStartBitmap.clearRect(0, 0, width, height);
+    renderAnimation = () => {
+        this.gameStartBitmap.clearRect(0, 0, this.hud.clientWidth, this.hud.clientHeight);
         
+        if (this.state.messageAnimation) {
+            this.animateMessage();
+        }
+    }
+
+    renderText = () => {
+        this.gameStartBitmap.font = "Normal " + Math.round(this.fontSize) + "px Arial";
+        this.gameStartBitmap.fillStyle = "rgba(245,245,245," + this.fontAlpha + ")";
+        this.gameStartBitmap.textAlign = 'center';
+        this.gameStartBitmap.fillText(this.message, this.hud.clientWidth / 2, this.hud.clientHeight / 2);
+        this.texture.needsUpdate = true;
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    animateMessage() {
         if (this.fontSize < 250) {
             this.fontAlpha -= 0.01;
             this.fontSize += 2;
-            this.gameStartBitmap.font = "Normal " + Math.round(this.fontSize) + "px Arial";
-            this.gameStartBitmap.fillStyle = "rgba(245,245,245," + this.fontAlpha + ")";
-            this.gameStartBitmap.textAlign = 'center';
-            this.gameStartBitmap.fillStyle = "rgba(245,245,245," + this.fontAlpha + ")";
-            this.gameStartBitmap.fillText('It\'s up on you', width / 2, height / 2);
-
-            this.texture.needsUpdate = true;
-            this.renderer.render(this.scene, this.camera);
-            requestAnimationFrame(this.renderGameStart);
+            this.renderText();
+            requestAnimationFrame(this.renderAnimation);
         } else {
-            this.hud.removeChild(this.gameStartCanvas);
-        }
+            this.setState({
+                messageAnimation: false
+            });
+        }   
     }
 
     render() {
@@ -87,6 +106,7 @@ class Hud extends Component {
                 <div id="toggleMusic" 
                     className={this.state.screen === 'START_SCREEN' ? "overlay" : ""}
                     onClick={() => this.props.toggleMusic()}>toggle music</div>
+                <canvas id="textAnimationCanvas" className={this.state.messageAnimation ? 'ontop' : 'below'}></canvas>
                 {(() => {
                     if (this.state.screen === 'START_SCREEN') {
                         return (

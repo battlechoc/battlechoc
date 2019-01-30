@@ -5,11 +5,18 @@
   color: white;
 }
 
-#hud > canvas {
+#textAnimationCanvas {
   position: absolute;
   top: 0px;
   left: 0px;
+}
+
+.ontop {
   z-index: 10;
+}
+
+.below {
+  z-index: -10;
 }
 
 .fullscreen {
