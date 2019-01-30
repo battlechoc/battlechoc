@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import './Hud.css';
 import PropTypes from 'prop-types';
 import { BuildingType } from '../Building.js';
-import { ChooseStartAction, ChooseFieldAction } from '../gameplay/SweastyGameActions';
+import { SweastyActionTypes } from '../gameplay/SweastyGameActions';
+import * as GameEntities from '../gameplay/SweastyGameEntities';
 import * as THREE from 'three';
 
 class Hud extends Component {
@@ -93,21 +94,17 @@ class Hud extends Component {
             this.setState({
                 screen: 'GAME_RUNNING'
             });
-            this.props.game.dispatch(new ChooseStartAction());
-            this.props.startGameCallback();
+            this.props.startGameCallback(SweastyActionTypes.choose_start);
         } else if (option === 'LEFT_GAMEFIELD') {
             this.setState({
                 screen: 'GAME_RUNNING'
             });
-            this.props.game.dispatch(new ChooseFieldAction(0));
-            this.props.startGameCallback();
+            this.props.startGameCallback(SweastyActionTypes.choose_field, 0);
         } else if (option === 'RIGHT_GAMEFIELD') {
             this.setState({
                 screen: 'GAME_RUNNING'
             });
-            this.props.switchGameFields();
-            this.props.game.dispatch(new ChooseFieldAction(1));
-            this.props.startGameCallback();
+            this.props.startGameCallback(SweastyActionTypes.choose_field, 1);
         }
     }
 
@@ -122,6 +119,16 @@ class Hud extends Component {
                 messageAnimation: false
             });
         }   
+    }
+
+    getClassName(field) {
+        if (field.type === GameEntities.BoardCellTypes.white) {
+            return 'white';
+        } else if (field.type === GameEntities.BoardCellTypes.brown) {
+            return 'brown';
+        } else {
+            return 'black';
+        }
     }
 
     render() {
@@ -161,7 +168,9 @@ class Hud extends Component {
                                         {(() => {
                                             if (typeof this.props.playerFieldPreview !== 'undefined') {
                                                 return this.props.playerFieldPreview.map(
-                                                    (preview, i) => <div key={i} className={preview}></div>
+                                                    (preview, i) => {
+                                                        return <div key={i} className={this.getClassName(preview)}></div>
+                                                    }
                                                 );
                                             }
                                         })()}                                    
@@ -172,7 +181,7 @@ class Hud extends Component {
                                         {(() => {
                                             if (typeof this.props.opponentFieldPreview !== 'undefined') {
                                                 return this.props.opponentFieldPreview.map(
-                                                    (preview, i) => <div key={i} className={preview}></div>
+                                                    (preview, i) => <div key={i} className={this.getClassName(preview)}></div>
                                                 );
                                             }
                                         })()}                                    
@@ -192,8 +201,6 @@ Hud.propTypes = {
     selectBuilding: PropTypes.func.isRequired,
     toggleMusic: PropTypes.func.isRequired,
     startGameCallback: PropTypes.func.isRequired,
-    switchGameFields: PropTypes.func.isRequired,
-    game: PropTypes.object.isRequired,
     playerFieldPreview: PropTypes.array,
     opponentFieldPreview: PropTypes.array,
     cacao: PropTypes.number,
