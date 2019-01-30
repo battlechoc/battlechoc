@@ -5,6 +5,20 @@
   color: white;
 }
 
+#textAnimationCanvas {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+
+.ontop {
+  z-index: 10;
+}
+
+.below {
+  z-index: -10;
+}
+
 .fullscreen {
   height: 100%;
   width: 100%;
@@ -24,7 +38,7 @@
   width: 18vw;
   font-size: 2vw;
   text-align: center;
-  background: rgba(0.5,0.5,0.5,0.5);
+  background: rgba(50,50,50,0.5);
   margin: 5px;
 }
 
@@ -48,6 +62,67 @@
 .preview {
   margin-left: 5px;
   height: auto;
+}
+
+.choose {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.start {
+  flex: 1;
+  justify-content: center;
+}
+
+.choose p {
+  font-size: 2vw;
+  text-shadow: 2px 2px #333;
+}
+
+.gamefield {
+  flex: 5;
+  display: flex;
+  flex-direction: row;
+}
+
+.button {
+  flex-direction: column;
+  background-color: rgba(255, 255, 255, 0.1);
+  margin: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  flex: 1;  
+}
+
+.button:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
+.fields {
+  width: 20vw;
+  height: 20vw;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.fields > div {
+  flex: 1 0 12.5%;
+}
+
+.white {
+  background-color: #ffe4c4;  
+}
+
+.brown {
+  background-color: #cd853f;
+}
+
+.black {
+  background-color: #3d1600;
 }
 
 #hud > p {

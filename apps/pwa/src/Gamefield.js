@@ -4,9 +4,8 @@ import * as GameEntities from './gameplay/SweastyGameEntities';
 import ModelLoader from './ModelLoader.js';
 
 class Gamefield {
-	constructor(isPlayerGameField, position, scene, playerField) {
+	constructor(isPlayerGameField, position, playerField) {
 		this.isPlayerGameField = isPlayerGameField;
-		this.scene = scene;
 		this.rows = 8;
 		this.cols = 8;
 		this.fieldSize = 8;
@@ -17,15 +16,16 @@ class Gamefield {
 		);
 
 		this._build(playerField);
-		this.scene.add(this.gameField);
 	}
 
 	async _build(playerField) {
 		this.gameField = new THREE.Group();
+		
 		for (let i = 0; i < this.rows; i++) {
 			for (let j = 0; j < this.cols; j++) {
 				let cell = playerField.grid[i * this.cols + j];
 				var fieldClone = undefined;
+
 				if (cell.type === GameEntities.BoardCellTypes.white) {
 					fieldClone = ModelLoader.models[0].scene.clone();
 				} else if (cell.type === GameEntities.BoardCellTypes.brown) {
@@ -37,8 +37,8 @@ class Gamefield {
 				var field = fieldClone.children[2]
 				field.scale.set(3, 3, 3);
 				field.position.set(this.fieldSize * i, 0, this.fieldSize * j);
-
-				this.gameField.add(field);
+                
+                this.gameField.add(field);
 
 				if (cell.creamed === true) {
 					this.setBuilding(field.position, BuildingType.CREAM, this.isPlayerGameField);
@@ -64,12 +64,12 @@ class Gamefield {
 		if (this.buildings[row][col] === BuildingType.EMPTY ||
 			(this.buildings[row][col] === BuildingType.CREAM && buildingType !== BuildingType.CREAM)) {
 			let building = new Building(buildingType);
-			building.adjustPosition(position, this.position);
+			building.adjustPosition(position);
 			building.adjustRotation()
 			if (asWireframe) {
-				this.scene.add(building.getModelWireframe());
+				this.gameField.add(building.getModelWireframe());
 			} else {
-				this.scene.add(building.getModel());
+				this.gameField.add(building.getModel());
 			}
 			this.buildings[row][col] = buildingType;
 			return true;
