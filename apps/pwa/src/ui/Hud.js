@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import { BuildingType } from '../Building.js';
 import { SweastyActionTypes } from '../gameplay/SweastyGameActions';
 import * as GameEntities from '../gameplay/SweastyGameEntities';
-import * as THREE from 'three';
 
 class Hud extends Component {
     constructor(props) {
@@ -22,49 +21,22 @@ class Hud extends Component {
         this.gameStartCanvas = document.getElementById('textAnimationCanvas');
         this.gameStartCanvas.width = width;
         this.gameStartCanvas.height = height;
-        this.gameStartBitmap = this.gameStartCanvas.getContext('2d');
-
-        this.camera = new THREE.OrthographicCamera(
-            -width/2, width/2,
-            height/2, -height/2,
-            0, 30
-        );
-        this.scene = new THREE.Scene();   
-        this.texture = new THREE.Texture(this.gameStartCanvas)
-        this.texture.needsUpdate = true;
-        var material = new THREE.MeshBasicMaterial( {map: this.texture } );
-        material.transparent = true;
-
-        var plane = new THREE.Mesh( new THREE.PlaneGeometry( width, height ), material );
-        this.scene.add( plane );
-
-        this.renderer = new THREE.WebGLRenderer({antialias: false});
-        this.renderer.setSize( width, height );
-        this.renderer.autoClear = false;
-        this.renderer.render(this.scene, this.camera);
-
-        this.hud.appendChild(this.gameStartCanvas);   
+        this.gameStartBitmap = this.gameStartCanvas.getContext('2d'); 
     }
 
     showTurnMessage(message) {
         this.message = message;
-        this.setState({
-            messageAnimation: true
-        });
+        this.setState({ messageAnimation: true });
 
         this.fontAlpha = 1.0;
         this.fontSize = 40; 
         this.renderText();
 
-        setTimeout(() => {
-            this.renderAnimation();
-        }, 1000);
+        setTimeout(() => { this.renderAnimation(); }, 1000);
     }
 
     startGame() {
-        this.setState({
-            screen: 'CHOOSE_START_OR_FIELD'
-        });
+        this.setState({ screen: 'CHOOSE_START_OR_FIELD' });
         this.showTurnMessage('It\'s up on you');
 
         setTimeout(() => {
@@ -85,25 +57,17 @@ class Hud extends Component {
         this.gameStartBitmap.fillStyle = "rgba(245,245,245," + this.fontAlpha + ")";
         this.gameStartBitmap.textAlign = 'center';
         this.gameStartBitmap.fillText(this.message, this.hud.clientWidth / 2, this.hud.clientHeight / 2);
-        this.texture.needsUpdate = true;
-        this.renderer.render(this.scene, this.camera);
     }
 
     choose(option) {
         if (option === 'START') {
-            this.setState({
-                screen: 'GAME_RUNNING'
-            });
+            this.setState({ screen: 'GAME_RUNNING' });
             this.props.startGameCallback(SweastyActionTypes.choose_start);
         } else if (option === 'LEFT_GAMEFIELD') {
-            this.setState({
-                screen: 'GAME_RUNNING'
-            });
+            this.setState({ screen: 'GAME_RUNNING' });
             this.props.startGameCallback(SweastyActionTypes.choose_field, 0);
         } else if (option === 'RIGHT_GAMEFIELD') {
-            this.setState({
-                screen: 'GAME_RUNNING'
-            });
+            this.setState({ screen: 'GAME_RUNNING' });
             this.props.startGameCallback(SweastyActionTypes.choose_field, 1);
         }
     }
@@ -115,9 +79,7 @@ class Hud extends Component {
             this.renderText();
             requestAnimationFrame(this.renderAnimation);
         } else {
-            this.setState({
-                messageAnimation: false
-            });
+            this.setState({ messageAnimation: false });
         }   
     }
 

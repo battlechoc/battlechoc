@@ -270,7 +270,7 @@ class App extends Component {
       this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[0]);    
       this.opponentGameField = new Gamefield(false, [72, 56, 0], this.state.game.currentState().getBoard().playerFields[1]);
     } else if (action === SweastyActionTypes.choose_field) {
-      if (field == 0) {
+      if (field === 0) {
         this.state.game.dispatch(new ChooseFieldAction(0));
         this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[0]);    
         this.opponentGameField = new Gamefield(false, [72, 56, 0], this.state.game.currentState().getBoard().playerFields[1]);
