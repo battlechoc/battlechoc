@@ -134,7 +134,7 @@ class App extends Component {
       var position = intersects[0].object.parent.position;
       let model = ModelLoader.models[7].scene.clone();
 
-      model.scale.set(3,3,3);
+      model.scale.set(3, 3, 3);
       model.position.set(
         position.x + this.opponentGameField.position[0],
         position.y + this.opponentGameField.position[1],
@@ -266,10 +266,10 @@ class App extends Component {
   render() {
     return (
       <div className="app-container">
-        <Hud 
-          selectBuilding={buildingType => this.selectedBuilding = buildingType} 
-          toggleMusic={() => this.toggleMusic()} 
-          cacao={this.state.cacao} 
+        <Hud
+          selectBuilding={buildingType => this.selectedBuilding = buildingType}
+          toggleMusic={() => this.toggleMusic()}
+          cacao={this.state.cacao}
           buildings={this.state.buildings}
           startGameCallback={this.startGame} />
         <div
