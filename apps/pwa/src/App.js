@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 import { Game, Player, PlayerType } from './gameplay/Game';
 import { SweastyGameState } from './gameplay/SweastyGameState';
-import { CreateBoardAction, ChooseStartAction, ChooseFieldAction } from './gameplay/SweastyGameActions';
+import { SweastyActionTypes, ChooseFieldAction, ChooseStartAction, CreateBoardAction } from './gameplay/SweastyGameActions';
 import ModelLoader from './ModelLoader.js'
 import Gamefield from './Gamefield.js';
 import { BuildingType } from './Building.js';
@@ -15,7 +15,8 @@ class App extends Component {
     super(props);
     this.state = {
       cacao: 50,
-      buildings: 3
+      buildings: 3,
+      game: new Game(SweastyGameState)
     };
   }
 
@@ -31,6 +32,8 @@ class App extends Component {
     // Setup scene, camera and renderer
     this.scene = new THREE.Scene();
     this.clock = new THREE.Clock();
+    this.targetFps = 1 / 60;
+    this.delta = 0;
 
     let distance = 30;
     let aspect = width / height;
@@ -93,14 +96,6 @@ class App extends Component {
   }
 
   onClick = event => {
-    // Time for game logic
-    this.game.dispatch(new ChooseStartAction());
-    console.log(this.game);
-    console.log(this.game.listPossibleActions(this.game.currentPlayer()));
-    this.game.dispatch(new ChooseFieldAction(1));
-    console.log(this.game);
-    console.log(this.game.listPossibleActions(this.game.currentPlayer()));
-
     // Get mouse position and use raycaster
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
@@ -118,6 +113,9 @@ class App extends Component {
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
 
     if (intersects.length > 0 && !this.isSwiping) {
+      console.log(this.state.game);
+      console.log(this.state.game.listPossibleActions(this.state.game.currentPlayer()));
+
       if (this.initialTurn) {
         this.playerGameField.setBuilding(intersects[0].object.parent.position, BuildingType.FACTORY);
         this.initialTurn = false;
@@ -131,6 +129,9 @@ class App extends Component {
     var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
 
     if (intersects.length > 0 && !this.isSwiping) {
+      console.log(this.state.game);
+      console.log(this.state.game.listPossibleActions(this.state.game.currentPlayer()));
+
       var position = intersects[0].object.parent.position;
       let model = ModelLoader.models[7].scene.clone();
 
@@ -211,35 +212,39 @@ class App extends Component {
   }
 
   animate = () => {
-    this.renderScene();
-
-    if (this.lookAtOpponent && this.camera.position.y < 120) {
-      this.camera.position.y += 2.0;
-      this.camera.position.x += 4.0;
-    } else if (!this.lookAtOpponent && this.camera.position.y > 60) {
-      this.camera.position.y -= 2.0;
-      this.camera.position.x -= 4.0;
+    this.delta += this.clock.getDelta();
+    if (this.delta  > this.targetFps) {
+      // Render all objects
+      this.renderScene();
+      // Swipe animation to another game field
+      if (this.lookAtOpponent && this.camera.position.y < 120) {
+        this.camera.position.y += 2.0;
+        this.camera.position.x += 4.0;
+      } else if (!this.lookAtOpponent && this.camera.position.y > 60) {
+        this.camera.position.y -= 2.0;
+        this.camera.position.x -= 4.0;
+      }
+      // Animation if needed
+      if (this.mixer != null) {
+        this.mixer.update(this.clock.getDelta());
+      }
+      this.delta = this.delta % this.targetFps;
     }
 
-    this.frameId = window.requestAnimationFrame(this.animate);
-    var delta = this.clock.getDelta();
-    if (this.mixer != null) {
-      this.mixer.update(delta);
-    };
+    this.frameId = window.requestAnimationFrame(this.animate);    
   }
 
-  startGame = () => {
+  prepareGame = () => {
     // Game Logic
-    this.game = new Game(SweastyGameState);
-    this.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], { boardSeed: 64, boardSize: { rows: 8, cols: 8 } });
-    this.game.dispatch(new CreateBoardAction());
+    this.state.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], { boardSeed: 64, boardSize: { rows: 8, cols: 8 } });
     this.initialTurn = true;
 
     // Add Gamefield
-    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.scene, this.game.currentState().getBoard().playerFields[0]);
-    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.scene, this.game.currentState().getBoard().playerFields[1]);
-    this.clickTargets = this.playerGameField.getClickableFields();
-    this.opponentClickTargets = this.opponentGameField.getClickableFields();
+    this.state.game.dispatch(new CreateBoardAction());
+    this.setState({
+      playerFieldPreview: this.state.game.currentState().getBoard().playerFields[0].grid,
+      opponentFieldPreview: this.state.game.currentState().getBoard().playerFields[1].grid
+    });
 
     // Setup Game EventListener
     this.container.onclick = event => this.onClick(event);
@@ -259,6 +264,30 @@ class App extends Component {
     this.renderer.domElement.addEventListener('touchend', () => this.endSwipe());
   }
 
+  startGame = (action, field) => {
+    if (action === SweastyActionTypes.choose_start) {
+      this.state.game.dispatch(new ChooseStartAction());
+      this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[0]);    
+      this.opponentGameField = new Gamefield(false, [72, 56, 0], this.state.game.currentState().getBoard().playerFields[1]);
+    } else if (action === SweastyActionTypes.choose_field) {
+      if (field === 0) {
+        this.state.game.dispatch(new ChooseFieldAction(0));
+        this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[0]);    
+        this.opponentGameField = new Gamefield(false, [72, 56, 0], this.state.game.currentState().getBoard().playerFields[1]);
+      } else {
+        this.state.game.dispatch(new ChooseFieldAction(1));
+        this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[1]);    
+        this.opponentGameField = new Gamefield(false, [72, 56, 0], this.state.game.currentState().getBoard().playerFields[0]);
+      }
+    }
+    
+    this.clickTargets = this.playerGameField.getClickableFields();
+    this.opponentClickTargets = this.opponentGameField.getClickableFields();
+
+    this.scene.add(this.playerGameField.gameField);
+    this.scene.add(this.opponentGameField.gameField);
+  }
+
   renderScene = () => {
     this.renderer.render(this.scene, this.camera);
   }
@@ -271,7 +300,10 @@ class App extends Component {
           toggleMusic={() => this.toggleMusic()}
           cacao={this.state.cacao}
           buildings={this.state.buildings}
-          startGameCallback={this.startGame} />
+          startGameCallback={this.startGame}
+          prepareGameCallback={this.prepareGame}
+          playerFieldPreview={this.state.playerFieldPreview}
+          opponentFieldPreview={this.state.opponentFieldPreview} />
         <div
           className="app"
           ref={(container) => { this.container = container }}
