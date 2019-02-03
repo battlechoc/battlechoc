@@ -5,10 +5,11 @@ import * as THREE from 'three';
 import { Game, Player, PlayerType } from './gameplay/Game';
 import { SweastyGameState } from './gameplay/SweastyGameState';
 import { SweastyActionTypes, ChooseFieldAction, ChooseStartAction, CreateBoardAction } from './gameplay/SweastyGameActions';
-import ModelLoader from './ModelLoader.js'
-import Gamefield from './Gamefield.js';
-import { BuildingType } from './Building.js';
-import Hud from './ui/Hud.js';
+import ModelLoader from './ModelLoader'
+import Gamefield from './Gamefield';
+import { BuildingType } from './Building';
+import BillboardAnimation from './graphics/BillboardAnimation';
+import Hud from './ui/Hud';
 
 class App extends Component {
   constructor(props) {
@@ -32,7 +33,7 @@ class App extends Component {
     // Setup scene, camera and renderer
     this.scene = new THREE.Scene();
     this.clock = new THREE.Clock();
-    this.targetFps = 1 / 60;
+    this.targetFps = 1 / 32;
     this.delta = 0;
 
     let distance = 30;
@@ -46,6 +47,7 @@ class App extends Component {
     this.camera.position.z = 95;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer.setPixelRatio( window.devicePixelRatio );
     this.renderer.setClearColor('#000000');
     this.renderer.setSize(width, height);
     this.renderer.domElement.id = 'game-canvas'
@@ -93,6 +95,9 @@ class App extends Component {
         this.ambientSound.pause();
       }
     );
+
+    this.explosion = new BillboardAnimation('animations/cream_explosion/spritesheet.png', 32)
+    this.scene.add(this.explosion.sprite);
   }
 
   onClick = event => {
@@ -133,20 +138,7 @@ class App extends Component {
       console.log(this.state.game.listPossibleActions(this.state.game.currentPlayer()));
 
       var position = intersects[0].object.parent.position;
-      let model = ModelLoader.models[7].scene.clone();
-
-      model.scale.set(3,3,3);
-      model.position.set(
-        position.x + this.opponentGameField.position[0],
-        position.y + this.opponentGameField.position[1],
-        position.z + this.opponentGameField.position[2],
-      );
-      this.scene.add(model);
-      console.log(model.position);
-      /*
-      this.mixer = new THREE.AnimationMixer(model);
-      this.mixer.clipAction(ModelLoader.models[7].animations[0]).play();
-      */
+      this.explosion.playAt(position);
     }
   }
 
@@ -224,13 +216,9 @@ class App extends Component {
         this.camera.position.y -= 2.0;
         this.camera.position.x -= 4.0;
       }
-      // Animation if needed
-      if (this.mixer != null) {
-        this.mixer.update(this.clock.getDelta());
-      }
       this.delta = this.delta % this.targetFps;
+      this.explosion.animate();
     }
-
     this.frameId = window.requestAnimationFrame(this.animate);    
   }
 
