@@ -8,7 +8,6 @@ import { SweastyActionTypes, ChooseFieldAction, ChooseStartAction, CreateBoardAc
 import ModelLoader from './ModelLoader'
 import Gamefield from './Gamefield';
 import { BuildingType } from './Building';
-import BillboardAnimation from './graphics/BillboardAnimation';
 import Hud from './ui/Hud';
 
 class App extends Component {
@@ -95,9 +94,6 @@ class App extends Component {
         this.ambientSound.pause();
       }
     );
-
-    this.explosion = new BillboardAnimation('animations/cream_explosion/spritesheet.png', 32)
-    this.scene.add(this.explosion.sprite);
   }
 
   onClick = event => {
@@ -137,8 +133,8 @@ class App extends Component {
       console.log(this.state.game);
       console.log(this.state.game.listPossibleActions(this.state.game.currentPlayer()));
 
-      var position = intersects[0].object.parent.position;
-      this.explosion.playAt(position);
+      let position = intersects[0].object.parent.position;
+      this.opponentGameField.attack(position);
     }
   }
 
@@ -217,7 +213,10 @@ class App extends Component {
         this.camera.position.x -= 4.0;
       }
       this.delta = this.delta % this.targetFps;
-      this.explosion.animate();
+    }
+
+    if (this.opponentGameField) {
+      this.opponentGameField.animate(this.delta);
     }
     this.frameId = window.requestAnimationFrame(this.animate);    
   }
