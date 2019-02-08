@@ -60,27 +60,33 @@ class Gamefield {
 	}
 
 	attack(position) {
-		if (typeof this.mixer === 'undefined') {
-			let row = position.x / this.fieldSize;
-			let col = position.z / this.fieldSize;
+		if (typeof this.mixer !== 'undefined') {
+			this.mixer.stopAllAction();
+			this.explosionCallback();
+		}
 
-			if (this.buildings[row][col].buildingType === BuildingType.CREAM) {
-				this.gameField.remove(this.buildings[row][col].getModel());
-				this.buildings[row][col].explode();
-				
-				this.buildings[row][col].adjustPosition(position);
-				this.gameField.add(this.buildings[row][col].getModel());
+		let row = position.x / this.fieldSize;
+		let col = position.z / this.fieldSize;
 
-				this.mixer = new THREE.AnimationMixer(this.buildings[row][col].getModel());
-				for (let i = 0; i < ModelLoader.models[7].animations.length; i++) {
-			    	let explosionAction = this.mixer.clipAction(ModelLoader.models[7].animations[i]).setLoop(THREE.LoopOnce).play()
-			    }
-			    this.mixer.addEventListener('finished', () => {
-			    	this.mixer = undefined;
-			    	this.gameField.remove(this.buildings[row][col].getModel());
-			    	this.buildings[row][col] = new Building(BuildingType.EMPTY);
-			    });
-			}
+		if (this.buildings[row][col].buildingType === BuildingType.CREAM) {
+			this.gameField.remove(this.buildings[row][col].getModel());
+			this.buildings[row][col].explode();
+			
+			this.buildings[row][col].adjustPosition(position);
+			this.gameField.add(this.buildings[row][col].getModel());
+
+			this.mixer = new THREE.AnimationMixer(this.buildings[row][col].getModel());
+			for (let i = 0; i < ModelLoader.models[7].animations.length; i++) {
+		    	let explosionAction = this.mixer.clipAction(ModelLoader.models[7].animations[i]).setLoop(THREE.LoopOnce).play()
+		    }
+
+		    this.explosionCallback = () => {
+		    	this.mixer = undefined;
+		    	this.gameField.remove(this.buildings[row][col].getModel());
+		    	this.buildings[row][col] = new Building(BuildingType.EMPTY);
+		    }
+
+		    this.mixer.addEventListener('finished', () => this.explosionCallback());
 		}
 	}
 
