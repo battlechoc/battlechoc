@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import './Hud.css';
 import PropTypes from 'prop-types';
 import { BuildingType } from '../Building.js';
-import { SweastyActionTypes } from '../gameplay/SweastyGameActions';
-import * as GameEntities from '../gameplay/SweastyGameEntities';
+import * as GameActions from '../gameplay/GameActions';
+import * as GameEntities from '../gameplay/GameEntities';
 
 class Hud extends Component {
     constructor(props) {
@@ -62,13 +62,13 @@ class Hud extends Component {
     choose(option) {
         if (option === 'START') {
             this.setState({ screen: 'GAME_RUNNING' });
-            this.props.startGameCallback(SweastyActionTypes.choose_start);
+            this.props.startGameCallback(GameActions.chooseStart);
         } else if (option === 'LEFT_GAMEFIELD') {
             this.setState({ screen: 'GAME_RUNNING' });
-            this.props.startGameCallback(SweastyActionTypes.choose_field, 0);
+            this.props.startGameCallback(GameActions.chooseField, 0);
         } else if (option === 'RIGHT_GAMEFIELD') {
             this.setState({ screen: 'GAME_RUNNING' });
-            this.props.startGameCallback(SweastyActionTypes.choose_field, 1);
+            this.props.startGameCallback(GameActions.chooseField, 1);
         }
     }
 

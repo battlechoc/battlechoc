@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { BuildingType, Building } from './Building.js';
-import * as GameEntities from './gameplay/SweastyGameEntities';
+import * as GameEntities from './gameplay/GameEntities';
 import ModelLoader from './ModelLoader.js';
 
 class Gamefield {

@@ -2,9 +2,9 @@ import React, { Component } from 'react';
 import './App.css';
 import * as THREE from 'three';
 
-import { Game, Player, PlayerType } from './gameplay/Game';
-import { SweastyGameState } from './gameplay/SweastyGameState';
-import { SweastyActionTypes, ChooseFieldAction, ChooseStartAction, CreateBoardAction } from './gameplay/SweastyGameActions';
+import { Game } from './gameplay/Game';
+import { createPlayer, PlayerType } from './gameplay/Player';
+import * as GameActions from './gameplay/GameActions';
 import ModelLoader from './ModelLoader.js'
 import Gamefield from './Gamefield.js';
 import { BuildingType } from './Building.js';
@@ -16,7 +16,7 @@ class App extends Component {
     this.state = {
       cacao: 50,
       buildings: 3,
-      game: new Game(SweastyGameState)
+      game: {}
     };
   }
 
@@ -213,7 +213,7 @@ class App extends Component {
 
   animate = () => {
     this.delta += this.clock.getDelta();
-    if (this.delta  > this.targetFps) {
+    if (this.delta > this.targetFps) {
       // Render all objects
       this.renderScene();
       // Swipe animation to another game field
@@ -231,16 +231,21 @@ class App extends Component {
       this.delta = this.delta % this.targetFps;
     }
 
-    this.frameId = window.requestAnimationFrame(this.animate);    
+    this.frameId = window.requestAnimationFrame(this.animate);
   }
 
   prepareGame = () => {
     // Game Logic
-    this.state.game.start([new Player("foo", PlayerType.human), new Player("bar", PlayerType.non_human)], { boardSeed: 64, boardSize: { rows: 8, cols: 8 } });
+    // dispatch a startGame action
+    const startGameAction = GameActions.startGame({ players: [createPlayer("foo", PlayerType.human), createPlayer("bar", PlayerType.non_human)] });
+
+    //this.state.game = Game.create([createPlayer("foo", PlayerType.human), createPlayer("bar", PlayerType.non_human)], { boardSeed: 64, boardSize: { rows: 8, cols: 8 } });
     this.initialTurn = true;
 
     // Add Gamefield
-    this.state.game.dispatch(new CreateBoardAction());
+    // TODO dispatch startGame action
+    // TODO dispatch createBoard action
+    //this.state.game.dispatch(new CreateBoardAction());
     this.setState({
       playerFieldPreview: this.state.game.currentState().getBoard().playerFields[0].grid,
       opponentFieldPreview: this.state.game.currentState().getBoard().playerFields[1].grid
@@ -265,22 +270,25 @@ class App extends Component {
   }
 
   startGame = (action, field) => {
-    if (action === SweastyActionTypes.choose_start) {
-      this.state.game.dispatch(new ChooseStartAction());
-      this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[0]);    
+    if (action === GameActions.chooseStart) {
+      // TODO dispatch chooseStart action
+      //this.state.game.dispatch(new ChooseStartAction());
+      this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[0]);
       this.opponentGameField = new Gamefield(false, [72, 56, 0], this.state.game.currentState().getBoard().playerFields[1]);
-    } else if (action === SweastyActionTypes.choose_field) {
+    } else if (action === GameActions.chooseField) {
       if (field === 0) {
-        this.state.game.dispatch(new ChooseFieldAction(0));
-        this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[0]);    
+        // TODO dispatch chooseField action - payload: 0
+        //this.state.game.dispatch(new ChooseFieldAction(0));
+        this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[0]);
         this.opponentGameField = new Gamefield(false, [72, 56, 0], this.state.game.currentState().getBoard().playerFields[1]);
       } else {
-        this.state.game.dispatch(new ChooseFieldAction(1));
-        this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[1]);    
+        // TODO dispatch chooseField action - payload:1
+        //this.state.game.dispatch(new ChooseFieldAction(1));
+        this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[1]);
         this.opponentGameField = new Gamefield(false, [72, 56, 0], this.state.game.currentState().getBoard().playerFields[0]);
       }
     }
-    
+
     this.clickTargets = this.playerGameField.getClickableFields();
     this.opponentClickTargets = this.opponentGameField.getClickableFields();
 

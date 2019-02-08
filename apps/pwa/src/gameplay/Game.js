@@ -1,253 +1,189 @@
-const PlayerType = Object.freeze({
-    human: Symbol("human"),
-    non_human: Symbol("non_human")
+import * as GameEntities from "./GameEntities.js";
+import * as GameActions from "./GameActions.js";
+
+const GameStateTypes = Object.freeze({
+    start: Symbol("start"),
+    choose_field_or_start: Symbol("field_or_start"),
+    choose_field: Symbol("choose_field"),
+    initial_placement_p1: Symbol("p1_initial_placement"),
+    initial_placement_p2: Symbol("p2_initial_placement"),
+    build_phase: Symbol("build_phase"),
+    attack_phase: Symbol("attack_phase"),
+    end: Symbol("end")
 });
 
-/**
- * Wraps data about players including its name and type (numan, nonhuman).
- */
-class Player {
-    /**
-     * 
-     * @param {String} name displayed name of the player
-     * @param {PlayerType} type define a humand or non-human player
-     */
-    constructor(name, type) {
-        this.name = name;
-        this.type = type;
-    }
-
-    getType() {
-        return this.type;
-    }
-
-    getName() {
-        return this.name;
-    }
-}
-
-/**
- * Actions are performed by players. They trigger events when fired by players.
- */
-class Action {
-    constructor(actionType) {
-        this.actionType = actionType;
-    }
-
-    getActionType() {
-        return this.actionType;
-    }
-    
-    /**
-     * Actions and its perform method are the only place where the gameState may be changed.
-     * 
-     * @param {State} gameState The current game state affected by the execution of this event.
-     * @returns {State} the changed game state.
-     */
-    perform(gameState) {
-        return true;
-    }
-
-    /**
-     * Evaluates this action on the given game state and returns the resulting game state.
-     * Leaves the given game state "untouched". Needed by npc to evaluate the outcome possible actions.
-     * 
-     * @param {State} gameState State object on which the action shall be applied.
-     * @returns {State} a State object representing the state after the action was performed on the given game state.
-     */
-    evaluate(gameState) {
-        return gameState.clone();
-    }
-}
-
-/**
- * A turn consists of a sequence of actions performed by a player.
- */
-class Turn {
-    constructor(player) {
-        this.player = player;
-        this.actions = [];
-    }
-
-    getPlayer() {
-        return this.player;
-    }
-
-    getActions() {
-        return this.actions;
-    }
-
-    addAction(action) {
-        this.actions.push(action);
-    }
-}
-
-/**
- * The state describes the current state of a game. States result from an initial state an a series of turns.
- */
-class State {
-    /**
-     * Initializes the state.
-     * 
-     * @param {Game} game the game hosting this game state.
-     * @param {Player} players the players playing the game.
-     * @param {Object} config game configuration parameters
-     */
-    constructor(game, players, config) {
-        this.players = players;
-        this.game = game;
-        this.currentPlayerIndex = 0;
-        this.config = config;
-        this.currentTurn = new Turn(this.players[0]);
-    }
-
-    /**
-     * Clones this game state.
-     * 
-     * @returns A deep copy of this game state object.
-     */
-    clone() {
-        return new State();
-    }
-
-    /**
-     * Checks if the given action is a valid move based on the current game state and player.
-     * 
-     * @param {Action} action 
-     */
-    isValidAction(action) {
-        return true;
-    }
-
-    /**
-     * Performs the given action on the current game state.
-     * 
-     * @param {Action} action Action that shall be executed on this game state.
-     * @returns true if action was valid and successfully executed, false otherwise. false means action was rolled back.
-     */
-    dispatch(action) {
-        if (this.isValidAction(action) === true) {
-            this.currentTurn.addAction(action);
-            return action.perform(this);
-        } else {
-            console.error("Trying to perform invalid action.");
-            return false;   
-        }
-    }
-
-    /**
-     * Finishes the current turn and advances to the next one.
-     */
-    finishTurn(keepPlayer = false) {
-        this.game.turnFinished(this.currentTurn);
-        if (keepPlayer === true) {
-            this.currentTurn = new Turn(this.currentPlayer());
-        } else {
-            this.currentTurn = new Turn(this.nextPlayer());
-        }
-    }
-
-    nextPlayer() {
-        this.currentPlayerIndex = ((this.currentPlayerIndex + 1) % this.players.length);
-        return this.currentPlayer();
-    }
-
-    currentPlayer() {
-        return this.players[this.currentPlayerIndex];
-    }
-
-    otherPlayer() {
-        return this.players[(this.currentPlayerIndex + 1) % this.players.length];
-    }
-
-    /**
-     * Returns a list of possible actions for the given player based on the current game state.
-     */
-    listPossibleActions(player) {
-        return [];
-    }
-}
-
-/**
- * A game consists of the history of turn performed so far and the current state.
- */
 class Game {
-    constructor(gameStateType) {
-        if (gameStateType == null) {
-            throw new Error("Invalid gamestate type given.");
+    static nextPlayerIndex(gameState) {
+        return ((gameState.currentPlayerIndex + 1) % gameState.players.length);
+    }
+
+    static currentPlayer(gameState) {
+        return gameState.players[gameState.currentPlayerIndex];
+    }
+
+    static otherPlayer(gameState) {
+        return gameState.players[Game.nextPlayerIndex(gameState)];
+    }
+
+    static create(data) {
+        return {
+            players: data.players,
+            currentPlayerIndex: 0,
+            state: GameStateTypes.start
+        };
+    }
+
+    static createBoard(gameState, boardConfig) {
+        gameState.board = new GameEntities.Board(boardConfig.boardSize, gameState.players.length, boardConfig.boardSeed);
+    }
+
+    static chooseField(gameState, fieldIndex) {
+        Game.currentPlayer(gameState).fieldIndex = fieldIndex;
+        Game.otherPlayer(gameState).fieldIndex = (fieldIndex + 1) % this.players.length;
+        gameState.currentPlayerIndex = Game.nextPlayerIndex(gameState);
+    }
+
+    static build(gameState, data) {
+        // data: entityType, playerId, row, col
+        // let entity = GameEntities.getEntity(data.entityType);
+        // TODO reduce ressources of player
+        // TODO create the graphical entity based on the game entity
+    }
+
+    static attack(gameStaste) {
+
+    }
+
+    static nextGameState(gameState, actionType) {
+        switch (gameState) {
+            case GameStateTypes.start: {
+                if (actionType === GameActions.createBoard) {
+                    return GameStateTypes.choose_field_or_start;
+                }
+                break;
+            }
+            case GameStateTypes.choose_field_or_start: {
+                if (actionType === GameActions.chooseField) {
+                    return GameStateTypes.initial_placement_p1;
+                } else if (actionType === GameActions.chooseStart) {
+                    return GameStateTypes.choose_field;
+                }
+                break;
+            }
+            case GameStateTypes.choose_field: {
+                if (actionType === GameActions.chooseField) {
+                    return GameStateTypes.initial_placement_p1;
+                }
+                break;
+            }
+            case GameStateTypes.initial_placement_p1: {
+                return gameState;
+            }
+            case GameStateTypes.initial_placement_p2: {
+                return gameState;
+            }
+            case GameStateTypes.build_phase: {
+                return gameState;
+            }
+            case GameStateTypes.attack_phase: {
+                return gameState;
+            }
+            case GameStateTypes.end: {
+                return gameState;
+            }
+            default: {
+                throw new Error("Trying to perform action in undefined game state.");
+            }
         }
-        this.gameStateType = gameStateType;
-        this.turnHistory = [];
-        this.state = null;
+        return gameState;
     }
 
-    /**
-     * Starts a game. Will throw an error if the game has already been started.
-     * 
-     * @param {Player} players the list of players participating in the game
-     * @param {Object} config game configuration parameters
-     */
-    start(players, config) {
-        if (this.state != null) {
-            throw new Error("Game has already been started.");
+    static isValidAction(gameState, actionType, currentPlayerId, issuingPlayerId) {
+        if (currentPlayerId !== issuingPlayerId) {
+            return false;
         }
 
-        if (players == null || players.length !== 2) {
-            throw new Error("Invalid players given.");
+        switch (gameState) {
+            case GameStateTypes.start: {
+                if (actionType === GameActions.createBoard) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            case GameStateTypes.choose_field_or_start: {
+                if (actionType === GameActions.chooseField ||
+                    actionType === GameActions.chooseStart) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            case GameStateTypes.choose_field: {
+                if (actionType === GameActions.chooseField) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            case GameStateTypes.initial_placement_p1: {
+                return true;
+            }
+            case GameStateTypes.initial_placement_p2: {
+                return true;
+            }
+            case GameStateTypes.build_phase: {
+                return true;
+            }
+            case GameStateTypes.attack_phase: {
+                return true;
+            }
+            case GameStateTypes.end: {
+                return false;
+            }
+            default: {
+                return false;
+            }
         }
+    }
 
-        try {
-            this.state = new this.gameStateType(this, players, config);
-        } catch (error) {
-            throw new Error("could not create initial game state. (" + error + ")");
+    static listPossibleActions(gameState, currentPlayerId, playerId) {
+        if (currentPlayerId !== playerId) {
+            return [];
         }
-    }
-
-    /**
-     * Persists the current game state and the turn history in order to reload or replay it later on.
-     */
-    save() {
-        // persist the game state and turn history
-    }
-
-    /**
-     * Loads a persisted game.
-     */
-    load() {
-        // load a game state and turn history
-    }
-
-    /**
-     * Performs the given action on the current game state.
-     * 
-     * @param {Action} action Action object that shall be executed on the current game state.
-     */
-    dispatch(action) {
-        this.state.dispatch(action);
-    }
-
-    turnFinished(turn) {
-        this.turnHistory.push(turn);
-    }
-
-    /**
-     * Returns a list of possible actions for the given player based on the current game state.
-     */
-    listPossibleActions(player) {
-        return this.state.listPossibleActions(player);
-    }
-
-    currentPlayer() {
-        return this.state.currentPlayer();
-    }
-
-    otherPlayer() {
-        return this.state.otherPlayer();
-    }
-
-    currentState() {
-        return this.state;
+        switch (gameState) {
+            case GameStateTypes.start: {
+                return [GameActions.createBoard];
+            }
+            case GameStateTypes.choose_field_or_start: {
+                return [GameActions.chooseStart, GameActions.chooseField];
+            }
+            case GameStateTypes.choose_field: {
+                return [GameActions.chooseField];
+            }
+            case GameStateTypes.initial_placement_p1: {
+                return [GameActions.build];
+            }
+            case GameStateTypes.initial_placement_p2: {
+                return [GameActions.build];
+            }
+            case GameStateTypes.build_phase: {
+                return [GameActions.build,
+                GameActions.finishBuildPhase,
+                GameActions.finishTurn];
+            }
+            case GameStateTypes.attack_phase: {
+                return [GameActions.attack,
+                GameActions.finishTurn];
+            }
+            case GameStateTypes.end: {
+                return [];
+            }
+            default: {
+                throw new Error("Trying to get list of possible actions in invalid game state.");
+            }
+        }
     }
 }
 
-export { Game, Player, Action, PlayerType, State };
+export { GameStateTypes, Game };

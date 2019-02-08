@@ -1,3 +1,5 @@
+import uuidv4 from 'uuid/v4';
+
 const BoardCellTypes = Object.freeze({
     white: Symbol("white"),
     brown: Symbol("brown"),
@@ -46,27 +48,26 @@ class Board {
     }
 }
 
-class Entity {
-    constructor(cost) {
-        this.cost = cost;
+const EntityTypes = Object.freeze({
+    factory: Symbol("factory"),
+    tree: Symbol("tree"),
+    cannon: Symbol("cannon"),
+    cream: Symbol("cream"),
+});
+
+function getEntity(type) {
+    switch (type) {
+        case EntityTypes.factory:
+            return { id: uuidv4(), type: EntityTypes.factory, costs: 0, cells: 4 };
+        case EntityTypes.tree:
+            return { id: uuidv4(), type: EntityTypes.tree, costs: 4, cells: 1 };
+        case EntityTypes.cannon:
+            return { id: uuidv4(), type: EntityTypes.cannon, costs: 2, cells: 1 };
+        case EntityTypes.cream:
+            return { id: uuidv4(), type: EntityTypes.cream, costs: 1, cells: 1 };
+        default:
+            throw new Error("Invalid entity type given: " + type);
     }
 }
 
-class Factory extends Entity {
-    constructor() {
-        super(2);
-    }
-}
-
-class CacaoTree extends Entity {
-    constructor() {
-        super(1);
-    }
-}
-
-class RumTruffleCannon extends Entity {
-    constructor() {
-        super(2);
-    }
-}
-export { BoardCellTypes, Cell, Board };
+export { BoardCellTypes, Cell, Board, EntityTypes, getEntity };
