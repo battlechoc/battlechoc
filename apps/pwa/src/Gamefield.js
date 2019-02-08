@@ -12,7 +12,7 @@ class Gamefield {
 		this.position = position;
 
 		this.buildings = [...Array(this.rows)].map(
-			field => Array(this.cols).fill(BuildingType.EMPTY)
+			field => Array(this.cols).fill(new Building(BuildingType.EMPTY))
 		);
 
 		this._build(playerField);
@@ -53,6 +53,43 @@ class Gamefield {
 		return this.gameField.children;
 	}
 
+	animate(delta) {
+    	if (this.mixer) {
+        	this.mixer.update(delta);
+    	}		
+	}
+
+	attack(position) {
+		if (typeof this.mixer !== 'undefined') {
+			this.mixer.stopAllAction();
+			this.explosionCallback();
+		}
+
+		let row = position.x / this.fieldSize;
+		let col = position.z / this.fieldSize;
+
+		if (this.buildings[row][col].buildingType === BuildingType.CREAM) {
+			this.gameField.remove(this.buildings[row][col].getModel());
+			this.buildings[row][col].explode();
+			
+			this.buildings[row][col].adjustPosition(position);
+			this.gameField.add(this.buildings[row][col].getModel());
+
+			this.mixer = new THREE.AnimationMixer(this.buildings[row][col].getModel());
+			for (let i = 0; i < ModelLoader.models[7].animations.length; i++) {
+		    	let explosionAction = this.mixer.clipAction(ModelLoader.models[7].animations[i]).setLoop(THREE.LoopOnce).play()
+		    }
+
+		    this.explosionCallback = () => {
+		    	this.mixer = undefined;
+		    	this.gameField.remove(this.buildings[row][col].getModel());
+		    	this.buildings[row][col] = new Building(BuildingType.EMPTY);
+		    }
+
+		    this.mixer.addEventListener('finished', () => this.explosionCallback());
+		}
+	}
+
 	setBuilding(position, buildingType, asWireframe) {
 		if (typeof asWireframe == 'undefined') {
 			asWireframe = false;
@@ -61,8 +98,8 @@ class Gamefield {
 		let row = position.x / this.fieldSize;
 		let col = position.z / this.fieldSize;
 
-		if (this.buildings[row][col] === BuildingType.EMPTY ||
-			(this.buildings[row][col] === BuildingType.CREAM && buildingType !== BuildingType.CREAM)) {
+		if (this.buildings[row][col].buildingType === BuildingType.EMPTY ||
+			(this.buildings[row][col].buildingType === BuildingType.CREAM && buildingType !== BuildingType.CREAM)) {
 			let building = new Building(buildingType);
 			building.adjustPosition(position);
 			building.adjustRotation()
@@ -71,7 +108,7 @@ class Gamefield {
 			} else {
 				this.gameField.add(building.getModel());
 			}
-			this.buildings[row][col] = buildingType;
+			this.buildings[row][col] = building;
 			return true;
 		} else {
 			return false;

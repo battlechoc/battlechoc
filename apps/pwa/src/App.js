@@ -5,10 +5,10 @@ import * as THREE from 'three';
 import { Game } from './gameplay/Game';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import * as GameActions from './gameplay/GameActions';
-import ModelLoader from './ModelLoader.js'
-import Gamefield from './Gamefield.js';
-import { BuildingType } from './Building.js';
-import Hud from './ui/Hud.js';
+import ModelLoader from './ModelLoader'
+import Gamefield from './Gamefield';
+import { BuildingType } from './Building';
+import Hud from './ui/Hud';
 
 class App extends Component {
   constructor(props) {
@@ -32,7 +32,7 @@ class App extends Component {
     // Setup scene, camera and renderer
     this.scene = new THREE.Scene();
     this.clock = new THREE.Clock();
-    this.targetFps = 1 / 60;
+    this.targetFps = 1 / 32;
     this.delta = 0;
 
     let distance = 30;
@@ -46,6 +46,7 @@ class App extends Component {
     this.camera.position.z = 95;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer.setPixelRatio( window.devicePixelRatio );
     this.renderer.setClearColor('#000000');
     this.renderer.setSize(width, height);
     this.renderer.domElement.id = 'game-canvas'
@@ -132,21 +133,8 @@ class App extends Component {
       console.log(this.state.game);
       console.log(this.state.game.listPossibleActions(this.state.game.currentPlayer()));
 
-      var position = intersects[0].object.parent.position;
-      let model = ModelLoader.models[7].scene.clone();
-
-      model.scale.set(3, 3, 3);
-      model.position.set(
-        position.x + this.opponentGameField.position[0],
-        position.y + this.opponentGameField.position[1],
-        position.z + this.opponentGameField.position[2],
-      );
-      this.scene.add(model);
-      console.log(model.position);
-      /*
-      this.mixer = new THREE.AnimationMixer(model);
-      this.mixer.clipAction(ModelLoader.models[7].animations[0]).play();
-      */
+      let position = intersects[0].object.parent.position;
+      this.opponentGameField.attack(position);
     }
   }
 
@@ -224,14 +212,13 @@ class App extends Component {
         this.camera.position.y -= 2.0;
         this.camera.position.x -= 4.0;
       }
-      // Animation if needed
-      if (this.mixer != null) {
-        this.mixer.update(this.clock.getDelta());
-      }
       this.delta = this.delta % this.targetFps;
     }
 
-    this.frameId = window.requestAnimationFrame(this.animate);
+    if (this.opponentGameField) {
+      this.opponentGameField.animate(this.delta);
+    }
+    this.frameId = window.requestAnimationFrame(this.animate);    
   }
 
   prepareGame = () => {

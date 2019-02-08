@@ -43,6 +43,11 @@ class Building {
 		}
 	}
 
+	explode() {
+		this._model = ModelLoader.models[7].scene.clone();
+		this._model.scale.set(3,3,3);
+	}
+
 	adjustPosition(position) {
 		this._model.position.set(
 			position.x + this._offset[0],
