@@ -77,7 +77,7 @@ class Gamefield {
 
 			this.mixer = new THREE.AnimationMixer(this.buildings[row][col].getModel());
 			for (let i = 0; i < ModelLoader.models[7].animations.length; i++) {
-		    	let explosionAction = this.mixer.clipAction(ModelLoader.models[7].animations[i]).setLoop(THREE.LoopOnce).play()
+		    	this.mixer.clipAction(ModelLoader.models[7].animations[i]).setLoop(THREE.LoopOnce).play()
 		    }
 
 		    this.explosionCallback = () => {

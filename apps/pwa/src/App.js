@@ -2,9 +2,6 @@ import React, { Component } from 'react';
 import './App.css';
 import * as THREE from 'three';
 
-import { Game } from './gameplay/Game';
-import { createPlayer, PlayerType } from './gameplay/Player';
-import * as GameActions from './gameplay/GameActions';
 import ModelLoader from './ModelLoader'
 import Gamefield from './Gamefield';
 import { BuildingType } from './Building';
@@ -26,7 +23,8 @@ class App extends Component {
     // Setup scene, camera and renderer
     this.scene = new THREE.Scene();
     this.clock = new THREE.Clock();
-    this.targetFps = 1 / 32;
+    // Set target FPS to 60
+    this.targetFps = 1 / 60;
     this.delta = 0;
 
     let distance = 30;
@@ -52,8 +50,7 @@ class App extends Component {
     this.swipeStartPosition = 0;
     this.swipePosition = 0;
     this.isSwiping = false;
-    this.lookAtOpponent = false;
-
+    
     // animations and renderer
     this.mixer = null;
     this.container.appendChild(this.renderer.domElement);
@@ -222,6 +219,7 @@ class App extends Component {
     }
     // Game Logic
     this.initialTurn = true;
+    this.lookAtOpponent = this.props.gameplay.game.currentPlayerIndex === 1;
     // Setup Game EventListener
     this.container.onclick = event => this.onClick(event);
     this.renderer.domElement.addEventListener('mousedown', event => this.startSwipe(event));

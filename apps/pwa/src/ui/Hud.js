@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import './Hud.css';
 import PropTypes from 'prop-types';
 import { BuildingType } from '../Building.js';
-import * as GameEntities from '../gameplay/GameEntities';
 import { connect } from 'react-redux';
 import { startGame, chooseField, chooseStart, createBoard } from '../gameplay/GameActions';
 import { showMessage, hideMessage, viewSelectScreen, viewIngameScreen, selectBuilding } from './UiActions';
