@@ -6,7 +6,13 @@ const PlayerType = Object.freeze({
 });
 
 function createPlayer(name, type) {
-    return { name: name, type: type, id: uuidv4() };
+    return { 
+    	name: name, 
+    	type: type, 
+    	id: uuidv4(),
+    	cacao: 50,
+    	buildingsPerTurn: 2
+    };
 }
 
 export { PlayerType, createPlayer };

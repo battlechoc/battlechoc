@@ -14,10 +14,10 @@ const EntityTypes = Object.freeze({
 });
 
 class Board {
-    static generate(size, playerCount, seed) {
+    static generate(size, seed) {
         let playerFields = [];
 
-        for (let p = 0; p < playerCount; p++) {
+        for (let player = 0; player < 2; player++) {
             let field = { grid: [] };
             for (let row = 0; row < size.rows; row++) {
                 for (let col = 0; col < size.cols; col++) {

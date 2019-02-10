@@ -30,12 +30,10 @@ class Hud extends Component {
 
     fireGameStart() {
         this.props.viewSelectScreen();
-        this.props.startGame({ 
-            players: [
-                createPlayer("Charlie Bucket", PlayerType.HUMAN), 
-                createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
-            ]
-        });
+        this.props.startGame([
+            createPlayer("Charlie Bucket", PlayerType.HUMAN), 
+            createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
+        ]);
 
         this.showTurnMessage('It\'s up on you');
         setTimeout(() => {
@@ -49,7 +47,7 @@ class Hud extends Component {
     renderAnimation = () => {
         this.gameStartBitmap.clearRect(0, 0, this.hud.clientWidth, this.hud.clientHeight);
         
-        if (this.props.ui.messageAnimation) {
+        if (this.props.messageAnimation) {
             this.animateMessage();
         }
     }
@@ -80,7 +78,7 @@ class Hud extends Component {
         if (this.fontSize < 250) {
             this.fontAlpha -= 0.01;
             this.fontSize += 2;
-            this.renderText(this.props.ui.message);
+            this.renderText(this.props.message);
             requestAnimationFrame(this.renderAnimation);
         } else {
             this.props.hideMessage();
@@ -89,23 +87,23 @@ class Hud extends Component {
 
     render() {
         return (
-            <div id="hud" className={this.props.ui.screen !== 'GAME_RUNNING' ? 'fullscreen' : ''} ref={hud => {this.hud = hud}}>
+            <div id="hud" className={this.props.screen !== 'GAME_RUNNING' ? 'fullscreen' : ''} ref={hud => {this.hud = hud}}>
                 <div id="toggleMusic" 
-                    className={this.props.ui.screen === 'START_SCREEN' ? "overlay" : ""}
+                    className={this.props.screen === 'START_SCREEN' ? "overlay" : ""}
                     onClick={() => this.props.toggleMusic()}>toggle music</div>
-                <canvas id="textAnimationCanvas" className={this.props.ui.messageAnimation ? 'ontop' : 'below'}></canvas>
+                <canvas id="textAnimationCanvas" className={this.props.messageAnimation ? 'ontop' : 'below'}></canvas>
                 {(() => {
-                    if (this.props.ui.screen === 'START_SCREEN') {
+                    if (this.props.screen === 'START_SCREEN') {
                         return (
                             <div id="mainMenu">
                                 <div onClick={() => this.fireGameStart()}>New Game</div>
                                 <div>Settings</div>
                             </div>
                         );
-                    } else if (this.props.ui.screen === 'GAME_RUNNING') {
+                    } else if (this.props.screen === 'GAME_RUNNING') {
                         return (
                             <div id="gameMenu">
-                                <p>Cacao: {this.props.gameplay.cacao}<br />Buildings: {this.props.gameplay.buildings}</p>
+                                <p>Cacao: {this.props.game.players[0].cacao}<br />Buildings: {this.props.game.players[0].buildingsPerTurn}</p>
                                 <img alt="cacao tree preview" id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {
                                     this.props.selectBuilding(BuildingType.CACAOTREE);
                                 }} />
@@ -114,7 +112,7 @@ class Hud extends Component {
                                 }} />
                             </div>
                         );
-                    } else if (this.props.ui.screen === 'CHOOSE_START_OR_FIELD') {
+                    } else if (this.props.screen === 'CHOOSE_START_OR_FIELD') {
                         return (
                             <div className="choose">
                                 <div className="button start" onClick={() => this.choose('START')}><p>Choose First Turn</p></div>
@@ -122,8 +120,8 @@ class Hud extends Component {
                                     <div className="button left" onClick={() => this.choose('LEFT_GAMEFIELD')}><p>Choose this field</p>
                                         <div className="fields">
                                         {(() => {
-                                            if (typeof this.props.gameplay.game.board !== 'undefined') {
-                                                return this.props.gameplay.game.board[0].grid.map(
+                                            if (typeof this.props.game.board !== 'undefined') {
+                                                return this.props.game.board[0].grid.map(
                                                     (preview, i) => {
                                                         return <div key={i} className={preview.previewStyle}></div>
                                                     }
@@ -135,8 +133,8 @@ class Hud extends Component {
                                     <div className="button right" onClick={() => this.choose('RIGHT_GAMEFIELD')}><p>Choose this field</p>
                                         <div className="fields">
                                         {(() => {
-                                            if (typeof this.props.gameplay.game.board !== 'undefined') {
-                                                return this.props.gameplay.game.board[1].grid.map(
+                                            if (typeof this.props.game.board !== 'undefined') {
+                                                return this.props.game.board[1].grid.map(
                                                     (preview, i) => <div key={i} className={preview.previewStyle}></div>
                                                 );
                                             }
@@ -159,7 +157,10 @@ Hud.propTypes = {
 }
 
 const mapStateToProps = state => ({
-  ...state
+  game: state.gameplay.game,
+  screen: state.ui.screen,
+  messageAnimation: state.ui.messageAnimation,
+  message: state.ui.message
 });
 
 const mapDispatchToProps = {

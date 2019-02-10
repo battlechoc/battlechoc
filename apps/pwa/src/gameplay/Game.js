@@ -13,65 +13,36 @@ const GameStateTypes = Object.freeze({
 });
 
 class Game {
-    static nextPlayerIndex(gameState) {
-        return ((gameState.currentPlayerIndex + 1) % gameState.players.length);
-    }
-
     static currentPlayer(gameState) {
         return gameState.players[gameState.currentPlayerIndex];
     }
 
     static otherPlayer(gameState) {
-        return gameState.players[Game.nextPlayerIndex(gameState)];
-    }
-
-    static create(data) {
-        return {
-            players: data.players,
-            currentPlayerIndex: 0,
-            state: GameStateTypes.START
-        };
+        return gameState.players[1 - gameState.currentPlayerIndex];
     }
 
     static createBoard(gameState, boardConfig) {
-        return GameEntities.Board.generate(boardConfig.boardSize, gameState.players.length, boardConfig.boardSeed);
-    }
-
-    static chooseField(gameState, fieldIndex) {
-        Game.currentPlayer(gameState).fieldIndex = fieldIndex;
-        Game.otherPlayer(gameState).fieldIndex = (fieldIndex + 1) % gameState.players.length;
-        gameState.currentPlayerIndex = Game.nextPlayerIndex(gameState);
-    }
-
-    static build(gameState, data) {
-        // data: entityType, playerId, row, col
-        // let entity = GameEntities.getEntity(data.entityType);
-        // TODO reduce ressources of player
-        // TODO create the graphical entity based on the game entity
-    }
-
-    static attack(gameStaste) {
-
+        return GameEntities.Board.generate(boardConfig.boardSize, boardConfig.boardSeed);
     }
 
     static nextGameState(gameState, actionType) {
         switch (gameState) {
             case GameStateTypes.START: {
-                if (actionType === GameActions.createBoard) {
+                if (actionType === GameActions.startGame.type) {
                     return GameStateTypes.CHOOSE_FIELD_OR_START;
                 }
                 break;
             }
             case GameStateTypes.CHOOSE_FIELD_OR_START: {
-                if (actionType === GameActions.chooseField) {
+                if (actionType === GameActions.chooseField.type) {
                     return GameStateTypes.PLACEMENT_INIT_PLAYER_1;
-                } else if (actionType === GameActions.chooseStart) {
+                } else if (actionType === GameActions.chooseStart.type) {
                     return GameStateTypes.CHOOSE_FIELD;
                 }
                 break;
             }
             case GameStateTypes.CHOOSE_FIELD: {
-                if (actionType === GameActions.chooseField) {
+                if (actionType === GameActions.chooseField.type) {
                     return GameStateTypes.PLACEMENT_INIT_PLAYER_1;
                 }
                 break;
@@ -105,22 +76,22 @@ class Game {
 
         switch (gameState) {
             case GameStateTypes.START: {
-                if (actionType === GameActions.createBoard) {
+                if (actionType === GameActions.createBoard.type) {
                     return true;
                 } else {
                     return false;
                 }
             }
             case GameStateTypes.CHOOSE_FIELD_OR_START: {
-                if (actionType === GameActions.chooseField ||
-                    actionType === GameActions.chooseStart) {
+                if (actionType === GameActions.chooseField.type ||
+                    actionType === GameActions.chooseStart.type) {
                     return true;
                 } else {
                     return false;
                 }
             }
             case GameStateTypes.CHOOSE_FIELD: {
-                if (actionType === GameActions.chooseField) {
+                if (actionType === GameActions.chooseField.type) {
                     return true;
                 } else {
                     return false;

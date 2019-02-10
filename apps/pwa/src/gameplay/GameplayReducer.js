@@ -1,13 +1,14 @@
 import { createReducer } from 'redux-starter-kit';
 import * as GameActions from './GameActions';
-import { Game } from './Game';
+import { Game, GameStateTypes } from './Game';
 
-const gameplayReducer = createReducer({
-        cacao: 50,
-        buildings: 3
-    }, {
+const gameplayReducer = createReducer({}, {
     [GameActions.startGame]: (state, action) => {
-        state.game = Game.create(action.payload);
+        state.game = {
+            players: action.payload,
+            currentPlayerIndex: 0,
+            state: GameStateTypes.START
+        };
         state.game.state = Game.nextGameState(state.game.state, action.type);
     },
     [GameActions.createBoard]: (state, action) => {
@@ -15,7 +16,9 @@ const gameplayReducer = createReducer({
         state.game.state = Game.nextGameState(state.game.state, action.type);
     },
     [GameActions.chooseField]: (state, action) => {
-        Game.chooseField(state.game, action.payload);
+        Game.currentPlayer(state.game).fieldIndex = action.payload;
+        Game.otherPlayer(state.game).fieldIndex = 1 - action.payload;
+        state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
         state.game.state = Game.nextGameState(state.game.state, action.type);
     },
     [GameActions.chooseStart]: (state, action) => {
