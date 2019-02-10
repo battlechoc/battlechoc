@@ -2,14 +2,14 @@ import * as GameEntities from "./GameEntities.js";
 import * as GameActions from "./GameActions.js";
 
 const GameStateTypes = Object.freeze({
-    start: Symbol("start"),
-    choose_field_or_start: Symbol("field_or_start"),
-    choose_field: Symbol("choose_field"),
-    initial_placement_p1: Symbol("p1_initial_placement"),
-    initial_placement_p2: Symbol("p2_initial_placement"),
-    build_phase: Symbol("build_phase"),
-    attack_phase: Symbol("attack_phase"),
-    end: Symbol("end")
+    start: 'start',
+    choose_field_or_start: 'field_or_start',
+    choose_field: 'choose_field',
+    initial_placement_p1: 'p1_initial_placement',
+    initial_placement_p2: 'p2_initial_placement',
+    build_phase: 'build_phase',
+    attack_phase: 'attack_phase',
+    end: 'end'
 });
 
 class Game {

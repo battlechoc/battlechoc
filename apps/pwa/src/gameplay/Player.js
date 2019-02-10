@@ -1,8 +1,8 @@
 import uuidv4 from 'uuid/v4';
 
 const PlayerType = Object.freeze({
-    human: Symbol("human"),
-    non_human: Symbol("non_human")
+    human: 'human',
+    non_human: 'non_human'
 });
 
 function createPlayer(name, type) {

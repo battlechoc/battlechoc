@@ -8,7 +8,9 @@ import * as GameActions from './gameplay/GameActions';
 import ModelLoader from './ModelLoader'
 import Gamefield from './Gamefield';
 import { BuildingType } from './Building';
+import { createBoard } from './gameplay/GameActions';
 import Hud from './ui/Hud';
+import { connect } from 'react-redux';
 
 class App extends Component {
   constructor(props) {
@@ -223,20 +225,19 @@ class App extends Component {
 
   prepareGame = () => {
     // Game Logic
-    // dispatch a startGame action
-    const startGameAction = GameActions.startGame({ players: [createPlayer("foo", PlayerType.human), createPlayer("bar", PlayerType.non_human)] });
-
-    //this.state.game = Game.create([createPlayer("foo", PlayerType.human), createPlayer("bar", PlayerType.non_human)], { boardSeed: 64, boardSize: { rows: 8, cols: 8 } });
     this.initialTurn = true;
 
     // Add Gamefield
-    // TODO dispatch startGame action
     // TODO dispatch createBoard action
-    //this.state.game.dispatch(new CreateBoardAction());
-    this.setState({
+    this.props.createBoard({
+      boardSize: 8,
+      boardSeed: 42
+    });
+    
+    /*this.setState({
       playerFieldPreview: this.state.game.currentState().getBoard().playerFields[0].grid,
       opponentFieldPreview: this.state.game.currentState().getBoard().playerFields[1].grid
-    });
+    });  <-- this.props.gameplay.game.currentState() ...   */
 
     // Setup Game EventListener
     this.container.onclick = event => this.onClick(event);
@@ -306,7 +307,19 @@ class App extends Component {
       </div>
     )
   }
-
 }
 
-export default App;
+const mapStateToProps = state => ({
+  ...state
+});
+
+const mapDispatchToProps = {
+  createBoard
+};
+
+const AppContainer = connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(App);
+
+export default AppContainer;

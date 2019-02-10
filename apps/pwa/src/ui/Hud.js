@@ -2,19 +2,14 @@ import React, { Component } from 'react';
 import './Hud.css';
 import PropTypes from 'prop-types';
 import { BuildingType } from '../Building.js';
-import * as GameActions from '../gameplay/GameActions';
 import * as GameEntities from '../gameplay/GameEntities';
+import { connect } from 'react-redux';
+import { startGame, chooseField, chooseStart, createBoard } from '../gameplay/GameActions';
+import { createPlayer, PlayerType } from '../gameplay/Player';
 
 class Hud extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            screen: 'START_SCREEN',
-            messageAnimation: false
-        };
-    }
-
     componentDidMount() {
+        console.dir(this)
         const width = this.hud.clientWidth;
         const height = this.hud.clientHeight;
 
@@ -26,17 +21,18 @@ class Hud extends Component {
 
     showTurnMessage(message) {
         this.message = message;
-        this.setState({ messageAnimation: true });
-
+        //this.setState({ messageAnimation: true });
+        this.props.startGame({ players: [createPlayer("foo", PlayerType.human), createPlayer("bar", PlayerType.non_human)] });
+        
         this.fontAlpha = 1.0;
         this.fontSize = 40; 
         this.renderText();
 
-        setTimeout(() => { this.renderAnimation(); }, 1000);
+        console.log(this);
+        //setTimeout(() => { this.renderAnimation(); }, 1000);
     }
 
-    startGame() {
-        this.setState({ screen: 'CHOOSE_START_OR_FIELD' });
+    fireGameStart() {
         this.showTurnMessage('It\'s up on you');
 
         setTimeout(() => {
@@ -60,16 +56,15 @@ class Hud extends Component {
     }
 
     choose(option) {
+        /*
         if (option === 'START') {
-            this.setState({ screen: 'GAME_RUNNING' });
             this.props.startGameCallback(GameActions.chooseStart);
         } else if (option === 'LEFT_GAMEFIELD') {
-            this.setState({ screen: 'GAME_RUNNING' });
             this.props.startGameCallback(GameActions.chooseField, 0);
         } else if (option === 'RIGHT_GAMEFIELD') {
-            this.setState({ screen: 'GAME_RUNNING' });
             this.props.startGameCallback(GameActions.chooseField, 1);
         }
+        */
     }
 
     animateMessage() {
@@ -95,20 +90,20 @@ class Hud extends Component {
 
     render() {
         return (
-            <div id="hud" className={this.state.screen !== 'GAME_RUNNING' ? 'fullscreen' : ''} ref={hud => {this.hud = hud}}>
+            <div id="hud" className={this.props.gameplay.screen !== 'GAME_RUNNING' ? 'fullscreen' : ''} ref={hud => {this.hud = hud}}>
                 <div id="toggleMusic" 
-                    className={this.state.screen === 'START_SCREEN' ? "overlay" : ""}
+                    className={this.props.gameplay.screen === 'START_SCREEN' ? "overlay" : ""}
                     onClick={() => this.props.toggleMusic()}>toggle music</div>
-                <canvas id="textAnimationCanvas" className={this.state.messageAnimation ? 'ontop' : 'below'}></canvas>
+                <canvas id="textAnimationCanvas" className={this.messageAnimation ? 'ontop' : 'below'}></canvas>
                 {(() => {
-                    if (this.state.screen === 'START_SCREEN') {
+                    if (this.props.gameplay.screen === 'START_SCREEN') {
                         return (
                             <div id="mainMenu">
-                                <div onClick={() => this.startGame()}>New Game</div>
+                                <div onClick={() => this.fireGameStart()}>New Game</div>
                                 <div>Settings</div>
                             </div>
                         );
-                    } else if (this.state.screen === 'GAME_RUNNING') {
+                    } else if (this.props.gameplay.screen === 'GAME_RUNNING') {
                         return (
                             <div id="gameMenu">
                                 <p>Cacao: {this.props.cacao}<br />Buildings: {this.props.buildings}</p>
@@ -120,7 +115,7 @@ class Hud extends Component {
                                 }} />
                             </div>
                         );
-                    } else if (this.state.screen === 'CHOOSE_START_OR_FIELD') {
+                    } else if (this.props.gameplay.screen === 'CHOOSE_START_OR_FIELD') {
                         return (
                             <div className="choose">
                                 <div className="button start" onClick={() => this.choose('START')}><p>Choose First Turn</p></div>
@@ -169,4 +164,20 @@ Hud.propTypes = {
     buildings: PropTypes.number
 }
 
-export default Hud;
+const mapStateToProps = state => ({
+  ...state
+});
+
+const mapDispatchToProps = {
+  startGame,
+  chooseField,
+  chooseStart,
+  createBoard
+};
+
+const HudContainer = connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Hud);
+
+export default HudContainer;

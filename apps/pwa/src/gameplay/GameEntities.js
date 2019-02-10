@@ -1,9 +1,9 @@
 import uuidv4 from 'uuid/v4';
 
 const BoardCellTypes = Object.freeze({
-    white: Symbol("white"),
-    brown: Symbol("brown"),
-    black: Symbol("black")
+    white: 'white',
+    brown: 'brown',
+    black: 'black'
 });
 
 class Cell {
