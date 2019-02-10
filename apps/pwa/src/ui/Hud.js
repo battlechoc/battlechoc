@@ -5,7 +5,7 @@ import { BuildingType } from '../Building.js';
 import * as GameEntities from '../gameplay/GameEntities';
 import { connect } from 'react-redux';
 import { startGame, chooseField, chooseStart, createBoard } from '../gameplay/GameActions';
-import { showMessage, hideMessage, viewSelectScreen, viewIngameScreen } from './UiActions';
+import { showMessage, hideMessage, viewSelectScreen, viewIngameScreen, selectBuilding } from './UiActions';
 import { createPlayer, PlayerType } from '../gameplay/Player';
 
 class Hud extends Component {
@@ -88,16 +88,6 @@ class Hud extends Component {
         }   
     }
 
-    getClassName(field) {
-        if (field.type === GameEntities.BoardCellTypes.WHITE) {
-            return 'white';
-        } else if (field.type === GameEntities.BoardCellTypes.BROWN) {
-            return 'brown';
-        } else {
-            return 'black';
-        }
-    }
-
     render() {
         return (
             <div id="hud" className={this.props.ui.screen !== 'GAME_RUNNING' ? 'fullscreen' : ''} ref={hud => {this.hud = hud}}>
@@ -136,7 +126,7 @@ class Hud extends Component {
                                             if (typeof this.props.gameplay.game.board !== 'undefined') {
                                                 return this.props.gameplay.game.board[0].grid.map(
                                                     (preview, i) => {
-                                                        return <div key={i} className={this.getClassName(preview)}></div>
+                                                        return <div key={i} className={preview.previewStyle}></div>
                                                     }
                                                 );
                                             }
@@ -148,7 +138,7 @@ class Hud extends Component {
                                         {(() => {
                                             if (typeof this.props.gameplay.game.board !== 'undefined') {
                                                 return this.props.gameplay.game.board[1].grid.map(
-                                                    (preview, i) => <div key={i} className={this.getClassName(preview)}></div>
+                                                    (preview, i) => <div key={i} className={preview.previewStyle}></div>
                                                 );
                                             }
                                         })()}                                    
@@ -165,7 +155,6 @@ class Hud extends Component {
 }
 
 Hud.propTypes = {
-    selectBuilding: PropTypes.func.isRequired,
     toggleMusic: PropTypes.func.isRequired,
     startGameCallback: PropTypes.func.isRequired,
 }
@@ -182,7 +171,8 @@ const mapDispatchToProps = {
   showMessage,
   hideMessage,
   viewSelectScreen, 
-  viewIngameScreen
+  viewIngameScreen,
+  selectBuilding
 };
 
 const HudContainer = connect(

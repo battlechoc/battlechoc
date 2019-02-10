@@ -2,11 +2,11 @@ import ModelLoader from './ModelLoader.js';
 import * as THREE from 'three';
 
 const BuildingType = Object.freeze({
-	EMPTY: Symbol('empty'),
-	CREAM: Symbol('cream'), 
-    FACTORY:   Symbol('factory'),
-    CACAOTREE:  Symbol('cacaotree'),
-    RUM_TRUFFLE_CANNON: Symbol('rumTruffleCannon'),
+	EMPTY: 'BuildingsType.EMPTY',
+	CREAM: 'BuildingsType.CREAM', 
+    FACTORY:   'BuildingsType.FACTORY',
+    CACAOTREE:  'BuildingsType.CACAOTREE',
+    RUM_TRUFFLE_CANNON: 'BuildingsType.RUM_TRUFFLE_CANNON',
     isInstanceOf: function (buildingType) {
     	if (buildingType === BuildingType.EMPTY ||
     		buildingType === BuildingType.CREAM ||

@@ -17,7 +17,7 @@ class App extends Component {
   async componentDidMount() {
     // Load Models
     await ModelLoader.loadModels();
-    this.selectedBuilding = BuildingType.CACAOTREE;
+
     // Basic window and game setup
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
@@ -112,7 +112,7 @@ class App extends Component {
         this.playerGameField.setBuilding(intersects[0].object.parent.position, BuildingType.FACTORY);
         this.initialTurn = false;
       } else {
-        this.playerGameField.setBuilding(intersects[0].object.parent.position, this.selectedBuilding);
+        this.playerGameField.setBuilding(intersects[0].object.parent.position, this.props.ui.selectedBuilding);
       }
     }
   }
@@ -255,7 +255,6 @@ class App extends Component {
     return (
       <div className="app-container">
         <Hud
-          selectBuilding={buildingType => this.selectedBuilding = buildingType}
           toggleMusic={() => this.toggleMusic()}
           startGameCallback={this.startGame} />
         <div

@@ -1,9 +1,11 @@
 import { createReducer } from 'redux-starter-kit';
 import * as UiActions from './UiActions';
+import { BuildingType } from '../Building';
 
 const uiReducer = createReducer({
         screen: 'START_SCREEN',
-        messageAnimation: false
+        messageAnimation: false,
+        selectedBuilding: BuildingType.CACAOTREE
     }, {
     [UiActions.viewSelectScreen]: (state, action) => {
         state.screen = 'CHOOSE_START_OR_FIELD'
@@ -18,7 +20,10 @@ const uiReducer = createReducer({
     [UiActions.hideMessage]: (state, action) => {
         state.message = undefined;
         state.messageAnimation = false;
-    }
+    },
+    [UiActions.selectBuilding]: (state, action) => {
+        state.selectedBuilding = action.payload;
+    },
 })
 
 export default uiReducer

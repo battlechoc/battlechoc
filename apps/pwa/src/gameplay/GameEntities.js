@@ -34,14 +34,18 @@ class Board {
                     let fieldtype = Math.floor(Math.random() * 3);
                     let creamed = Math.floor(Math.random() * 2) === 1;
                     let cellType = BoardCellTypes.BLACK;
+                    let previewStyle = 'black'; 
                     if (fieldtype === 0) {
                         cellType = BoardCellTypes.WHITE;
+                        previewStyle = 'white';
                     } else if (fieldtype === 1) {
                         cellType = BoardCellTypes.BROWN;
+                        previewStyle = 'brown';
                     }
                     field.grid.push({
                         type: cellType, 
-                        row: row, 
+                        previewStyle: previewStyle,
+                        row: row,
                         col: col, 
                         creamed: creamed, 
                         occupied: false
