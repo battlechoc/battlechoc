@@ -30,12 +30,21 @@ class Hud extends Component {
 
     fireGameStart() {
         this.props.viewSelectScreen();
-        this.props.startGame([
-            createPlayer("Charlie Bucket", PlayerType.HUMAN), 
-            createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
-        ]);
+        let coinToss = Math.round(Math.random());
+        this.props.startGame({
+            players: [
+                createPlayer("Charlie Bucket", PlayerType.HUMAN), 
+                createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
+            ],
+            coinToss: coinToss
+        });
 
-        this.showTurnMessage('It\'s up on you');
+        if (coinToss === 0) {
+            this.showTurnMessage('It\'s up on you');
+        } else {
+            this.showTurnMessage('Your opponent decides');
+        }
+
         setTimeout(() => {
             this.props.createBoard({
               boardSize: {rows: 8, cols: 8},

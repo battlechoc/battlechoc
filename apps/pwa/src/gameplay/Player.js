@@ -15,4 +15,12 @@ function createPlayer(name, type) {
     };
 }
 
+/*
+class Augustus {
+	static simulateDecision () {
+
+	}
+}
+*/
+
 export { PlayerType, createPlayer };
