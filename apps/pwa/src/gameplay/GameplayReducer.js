@@ -2,7 +2,10 @@ import { createReducer } from 'redux-starter-kit';
 import * as GameActions from './GameActions';
 import { Game } from './Game';
 
-const gameplayReducer = createReducer({}, {
+const gameplayReducer = createReducer({
+        cacao: 50,
+        buildings: 3
+    }, {
     [GameActions.startGame]: (state, action) => {
         state.game = Game.create(action.payload);
         state.game.state = Game.nextGameState(state.game.state, action.type);

@@ -40,7 +40,10 @@ class Hud extends Component {
 
         this.showTurnMessage('It\'s up on you');
         setTimeout(() => {
-            this.props.prepareGameCallback();
+            this.props.createBoard({
+              boardSize: {rows: 8, cols: 8},
+              boardSeed: 42
+            });
         }, 1000);
     }
 
@@ -64,13 +67,13 @@ class Hud extends Component {
 
         if (option === 'START') {
             this.props.chooseStart();
-            this.props.startGameCallback();
+            this.props.startGameCallback(option);
         } else if (option === 'LEFT_GAMEFIELD') {
             this.props.chooseField(0);
-            this.props.startGameCallback();
+            this.props.startGameCallback(option);
         } else if (option === 'RIGHT_GAMEFIELD') {
             this.props.chooseField(1);
-            this.props.startGameCallback();
+            this.props.startGameCallback(option);
         }
     }
 
@@ -113,7 +116,7 @@ class Hud extends Component {
                     } else if (this.props.ui.screen === 'GAME_RUNNING') {
                         return (
                             <div id="gameMenu">
-                                <p>Cacao: {this.props.cacao}<br />Buildings: {this.props.buildings}</p>
+                                <p>Cacao: {this.props.gameplay.cacao}<br />Buildings: {this.props.gameplay.buildings}</p>
                                 <img alt="cacao tree preview" id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {
                                     this.props.selectBuilding(BuildingType.CACAOTREE);
                                 }} />
@@ -165,8 +168,6 @@ Hud.propTypes = {
     selectBuilding: PropTypes.func.isRequired,
     toggleMusic: PropTypes.func.isRequired,
     startGameCallback: PropTypes.func.isRequired,
-    cacao: PropTypes.number,
-    buildings: PropTypes.number
 }
 
 const mapStateToProps = state => ({

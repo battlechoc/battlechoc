@@ -39,7 +39,7 @@ class Game {
 
     static chooseField(gameState, fieldIndex) {
         Game.currentPlayer(gameState).fieldIndex = fieldIndex;
-        Game.otherPlayer(gameState).fieldIndex = (fieldIndex + 1) % this.players.length;
+        Game.otherPlayer(gameState).fieldIndex = (fieldIndex + 1) % gameState.players.length;
         gameState.currentPlayerIndex = Game.nextPlayerIndex(gameState);
     }
 

@@ -13,14 +13,6 @@ import Hud from './ui/Hud';
 import { connect } from 'react-redux';
 
 class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      cacao: 50,
-      buildings: 3,
-      game: {}
-    };
-  }
 
   async componentDidMount() {
     // Load Models
@@ -116,9 +108,6 @@ class App extends Component {
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
 
     if (intersects.length > 0 && !this.isSwiping) {
-      console.log(this.state.game);
-      console.log(this.state.game.listPossibleActions(this.state.game.currentPlayer()));
-
       if (this.initialTurn) {
         this.playerGameField.setBuilding(intersects[0].object.parent.position, BuildingType.FACTORY);
         this.initialTurn = false;
@@ -132,9 +121,6 @@ class App extends Component {
     var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
 
     if (intersects.length > 0 && !this.isSwiping) {
-      console.log(this.state.game);
-      console.log(this.state.game.listPossibleActions(this.state.game.currentPlayer()));
-
       let position = intersects[0].object.parent.position;
       this.opponentGameField.attack(position);
     }
@@ -223,16 +209,19 @@ class App extends Component {
     this.frameId = window.requestAnimationFrame(this.animate);    
   }
 
-  prepareGame = () => {
+  startGame = option => {
+    if (option === 'START') {
+      this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.gameplay.game.board[0]);
+      this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.gameplay.game.board[1]);
+    } else if (option === 'LEFT_GAMEFIELD') {
+      this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.gameplay.game.board[0]);
+      this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.gameplay.game.board[1]);
+    } else if (option === 'RIGHT_GAMEFIELD') {
+      this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.gameplay.game.board[1]);
+      this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.gameplay.game.board[0]);
+    }
     // Game Logic
     this.initialTurn = true;
-
-    // Add Gamefield
-    this.props.createBoard({
-      boardSize: {rows: 8, cols: 8},
-      boardSeed: 42
-    });
-    
     // Setup Game EventListener
     this.container.onclick = event => this.onClick(event);
     this.renderer.domElement.addEventListener('mousedown', event => this.startSwipe(event));
@@ -249,28 +238,8 @@ class App extends Component {
     });
 
     this.renderer.domElement.addEventListener('touchend', () => this.endSwipe());
-  }
 
-  startGame = (action, field) => {
-    if (action === GameActions.chooseStart) {
-      // TODO dispatch chooseStart action
-      //this.state.game.dispatch(new ChooseStartAction());
-      this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[0]);
-      this.opponentGameField = new Gamefield(false, [72, 56, 0], this.state.game.currentState().getBoard().playerFields[1]);
-    } else if (action === GameActions.chooseField) {
-      if (field === 0) {
-        // TODO dispatch chooseField action - payload: 0
-        //this.state.game.dispatch(new ChooseFieldAction(0));
-        this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[0]);
-        this.opponentGameField = new Gamefield(false, [72, 56, 0], this.state.game.currentState().getBoard().playerFields[1]);
-      } else {
-        // TODO dispatch chooseField action - payload:1
-        //this.state.game.dispatch(new ChooseFieldAction(1));
-        this.playerGameField = new Gamefield(true, [-72, -16, 0], this.state.game.currentState().getBoard().playerFields[1]);
-        this.opponentGameField = new Gamefield(false, [72, 56, 0], this.state.game.currentState().getBoard().playerFields[0]);
-      }
-    }
-
+    // Prepare click targets
     this.clickTargets = this.playerGameField.getClickableFields();
     this.opponentClickTargets = this.opponentGameField.getClickableFields();
 
@@ -288,12 +257,7 @@ class App extends Component {
         <Hud
           selectBuilding={buildingType => this.selectedBuilding = buildingType}
           toggleMusic={() => this.toggleMusic()}
-          cacao={this.state.cacao}
-          buildings={this.state.buildings}
-          startGameCallback={this.startGame}
-          prepareGameCallback={this.prepareGame}
-          playerFieldPreview={this.state.playerFieldPreview}
-          opponentFieldPreview={this.state.opponentFieldPreview} />
+          startGameCallback={this.startGame} />
         <div
           className="app"
           ref={(container) => { this.container = container }}

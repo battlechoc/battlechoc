@@ -26,11 +26,11 @@ class Gamefield {
 				let cell = playerField.grid[i * this.cols + j];
 				var fieldClone = undefined;
 
-				if (cell.type === GameEntities.BoardCellTypes.white) {
+				if (cell.type === GameEntities.BoardCellTypes.WHITE) {
 					fieldClone = ModelLoader.models[0].scene.clone();
-				} else if (cell.type === GameEntities.BoardCellTypes.brown) {
+				} else if (cell.type === GameEntities.BoardCellTypes.BROWN) {
 					fieldClone = ModelLoader.models[1].scene.clone();
-				} else if (cell.type === GameEntities.BoardCellTypes.black) {
+				} else if (cell.type === GameEntities.BoardCellTypes.BLACK) {
 					fieldClone = ModelLoader.models[2].scene.clone();
 				}
 
