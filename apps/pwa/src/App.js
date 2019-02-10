@@ -4,9 +4,9 @@ import * as THREE from 'three';
 
 import ModelLoader from './ModelLoader'
 import Gamefield from './Gamefield';
+import Hud from './ui/Hud';
 import { BuildingType } from './Building';
 import { createBoard } from './gameplay/GameActions';
-import Hud from './ui/Hud';
 import { connect } from 'react-redux';
 
 class App extends Component {

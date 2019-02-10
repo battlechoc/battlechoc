@@ -32,8 +32,8 @@ class Hud extends Component {
         this.props.viewSelectScreen();
         this.props.startGame({ 
             players: [
-                createPlayer("foo", PlayerType.human), 
-                createPlayer("bar", PlayerType.non_human)
+                createPlayer("Charlie Bucket", PlayerType.HUMAN), 
+                createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
             ]
         });
 

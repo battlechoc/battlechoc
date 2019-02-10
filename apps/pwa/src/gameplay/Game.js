@@ -2,14 +2,14 @@ import * as GameEntities from "./GameEntities.js";
 import * as GameActions from "./GameActions.js";
 
 const GameStateTypes = Object.freeze({
-    start: 'start',
-    choose_field_or_start: 'field_or_start',
-    choose_field: 'choose_field',
-    initial_placement_p1: 'p1_initial_placement',
-    initial_placement_p2: 'p2_initial_placement',
-    build_phase: 'build_phase',
-    attack_phase: 'attack_phase',
-    end: 'end'
+    START: 'GameStateTypes.START',
+    CHOOSE_FIELD_OR_START: 'GameStateTypes.CHOOSE_FIELD_OR_START',
+    CHOOSE_FIELD: 'GameStateTypes.CHOOSE_FIELD',
+    PLACEMENT_INIT_PLAYER_1: 'GameStateTypes.PLACEMENT_INIT_PLAYER_1',
+    PLACEMENT_INIT_PLAYER_2: 'GameStateTypes.PLACEMENT_INIT_PLAYER_2',
+    BUILD_PHASE: 'GameStateTypes.BUILD_PHASE',
+    ATTACK_PHASE: 'GameStateTypes.ATTACK_PHASE',
+    END: 'GameStateTypes.END'
 });
 
 class Game {
@@ -29,7 +29,7 @@ class Game {
         return {
             players: data.players,
             currentPlayerIndex: 0,
-            state: GameStateTypes.start
+            state: GameStateTypes.START
         };
     }
 
@@ -56,39 +56,39 @@ class Game {
 
     static nextGameState(gameState, actionType) {
         switch (gameState) {
-            case GameStateTypes.start: {
+            case GameStateTypes.START: {
                 if (actionType === GameActions.createBoard) {
-                    return GameStateTypes.choose_field_or_start;
+                    return GameStateTypes.CHOOSE_FIELD_OR_START;
                 }
                 break;
             }
-            case GameStateTypes.choose_field_or_start: {
+            case GameStateTypes.CHOOSE_FIELD_OR_START: {
                 if (actionType === GameActions.chooseField) {
-                    return GameStateTypes.initial_placement_p1;
+                    return GameStateTypes.PLACEMENT_INIT_PLAYER_1;
                 } else if (actionType === GameActions.chooseStart) {
-                    return GameStateTypes.choose_field;
+                    return GameStateTypes.CHOOSE_FIELD;
                 }
                 break;
             }
-            case GameStateTypes.choose_field: {
+            case GameStateTypes.CHOOSE_FIELD: {
                 if (actionType === GameActions.chooseField) {
-                    return GameStateTypes.initial_placement_p1;
+                    return GameStateTypes.PLACEMENT_INIT_PLAYER_1;
                 }
                 break;
             }
-            case GameStateTypes.initial_placement_p1: {
+            case GameStateTypes.PLACEMENT_INIT_PLAYER_1: {
                 return gameState;
             }
-            case GameStateTypes.initial_placement_p2: {
+            case GameStateTypes.PLACEMENT_INIT_PLAYER_2: {
                 return gameState;
             }
-            case GameStateTypes.build_phase: {
+            case GameStateTypes.BUILD_PHASE: {
                 return gameState;
             }
-            case GameStateTypes.attack_phase: {
+            case GameStateTypes.ATTACK_PHASE: {
                 return gameState;
             }
-            case GameStateTypes.end: {
+            case GameStateTypes.END: {
                 return gameState;
             }
             default: {
@@ -104,14 +104,14 @@ class Game {
         }
 
         switch (gameState) {
-            case GameStateTypes.start: {
+            case GameStateTypes.START: {
                 if (actionType === GameActions.createBoard) {
                     return true;
                 } else {
                     return false;
                 }
             }
-            case GameStateTypes.choose_field_or_start: {
+            case GameStateTypes.CHOOSE_FIELD_OR_START: {
                 if (actionType === GameActions.chooseField ||
                     actionType === GameActions.chooseStart) {
                     return true;
@@ -119,26 +119,26 @@ class Game {
                     return false;
                 }
             }
-            case GameStateTypes.choose_field: {
+            case GameStateTypes.CHOOSE_FIELD: {
                 if (actionType === GameActions.chooseField) {
                     return true;
                 } else {
                     return false;
                 }
             }
-            case GameStateTypes.initial_placement_p1: {
+            case GameStateTypes.PLACEMENT_INIT_PLAYER_1: {
                 return true;
             }
-            case GameStateTypes.initial_placement_p2: {
+            case GameStateTypes.PLACEMENT_INIT_PLAYER_2: {
                 return true;
             }
-            case GameStateTypes.build_phase: {
+            case GameStateTypes.BUILD_PHASE: {
                 return true;
             }
-            case GameStateTypes.attack_phase: {
+            case GameStateTypes.ATTACK_PHASE: {
                 return true;
             }
-            case GameStateTypes.end: {
+            case GameStateTypes.END: {
                 return false;
             }
             default: {
@@ -152,31 +152,31 @@ class Game {
             return [];
         }
         switch (gameState) {
-            case GameStateTypes.start: {
+            case GameStateTypes.START: {
                 return [GameActions.createBoard];
             }
-            case GameStateTypes.choose_field_or_start: {
+            case GameStateTypes.CHOOSE_FIELD_OR_START: {
                 return [GameActions.chooseStart, GameActions.chooseField];
             }
-            case GameStateTypes.choose_field: {
+            case GameStateTypes.CHOOSE_FIELD: {
                 return [GameActions.chooseField];
             }
-            case GameStateTypes.initial_placement_p1: {
+            case GameStateTypes.PLACEMENT_INIT_PLAYER_1: {
                 return [GameActions.build];
             }
-            case GameStateTypes.initial_placement_p2: {
+            case GameStateTypes.PLACEMENT_INIT_PLAYER_2: {
                 return [GameActions.build];
             }
-            case GameStateTypes.build_phase: {
+            case GameStateTypes.BUILD_PHASE: {
                 return [GameActions.build,
                 GameActions.finishBuildPhase,
                 GameActions.finishTurn];
             }
-            case GameStateTypes.attack_phase: {
+            case GameStateTypes.ATTACK_PHASE: {
                 return [GameActions.attack,
                 GameActions.finishTurn];
             }
-            case GameStateTypes.end: {
+            case GameStateTypes.END: {
                 return [];
             }
             default: {

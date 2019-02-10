@@ -1,8 +1,8 @@
 import uuidv4 from 'uuid/v4';
 
 const PlayerType = Object.freeze({
-    human: 'human',
-    non_human: 'non_human'
+    HUMAN: 'PlayerType.HUMAN',
+    AUGUSTUS_GLOOP: 'PlayerType.AUGUSTUS_GLOOP'
 });
 
 function createPlayer(name, type) {

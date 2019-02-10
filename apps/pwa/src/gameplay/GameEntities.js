@@ -13,16 +13,6 @@ const EntityTypes = Object.freeze({
     CREAM: 'EntityTypes.CREAM'
 });
 
-class Cell {
-    constructor(type, row, col, creamed, occupied = false) {
-        this.type = type;
-        this.row = row;
-        this.col = col;
-        this.occupied = occupied;
-        this.creamed = creamed;
-    }
-}
-
 class Board {
     static generate(size, playerCount, seed) {
         let playerFields = [];
@@ -73,4 +63,4 @@ function getEntity(type) {
     }
 }
 
-export { BoardCellTypes, Cell, Board, EntityTypes, getEntity };
+export { BoardCellTypes, Board, EntityTypes, getEntity };
