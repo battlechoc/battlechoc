@@ -34,7 +34,7 @@ class Game {
     }
 
     static createBoard(gameState, boardConfig) {
-        gameState.board = new GameEntities.Board(boardConfig.boardSize, gameState.players.length, boardConfig.boardSeed);
+        return GameEntities.Board.generate(boardConfig.boardSize, gameState.players.length, boardConfig.boardSeed);
     }
 
     static chooseField(gameState, fieldIndex) {

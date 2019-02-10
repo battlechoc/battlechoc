@@ -5,11 +5,11 @@ import { BuildingType } from '../Building.js';
 import * as GameEntities from '../gameplay/GameEntities';
 import { connect } from 'react-redux';
 import { startGame, chooseField, chooseStart, createBoard } from '../gameplay/GameActions';
+import { showMessage, hideMessage, viewSelectScreen, viewIngameScreen } from './UiActions';
 import { createPlayer, PlayerType } from '../gameplay/Player';
 
 class Hud extends Component {
     componentDidMount() {
-        console.dir(this)
         const width = this.hud.clientWidth;
         const height = this.hud.clientHeight;
 
@@ -20,21 +20,25 @@ class Hud extends Component {
     }
 
     showTurnMessage(message) {
-        this.message = message;
-        //this.setState({ messageAnimation: true });
-        this.props.startGame({ players: [createPlayer("foo", PlayerType.human), createPlayer("bar", PlayerType.non_human)] });
+        this.props.showMessage(message);
         
         this.fontAlpha = 1.0;
         this.fontSize = 40; 
-        this.renderText();
+        this.renderText(message);
 
-        console.log(this);
-        //setTimeout(() => { this.renderAnimation(); }, 1000);
+        setTimeout(() => { this.renderAnimation(); }, 1000);
     }
 
     fireGameStart() {
-        this.showTurnMessage('It\'s up on you');
+        this.props.viewSelectScreen();
+        this.props.startGame({ 
+            players: [
+                createPlayer("foo", PlayerType.human), 
+                createPlayer("bar", PlayerType.non_human)
+            ]
+        });
 
+        this.showTurnMessage('It\'s up on you');
         setTimeout(() => {
             this.props.prepareGameCallback();
         }, 1000);
@@ -43,45 +47,48 @@ class Hud extends Component {
     renderAnimation = () => {
         this.gameStartBitmap.clearRect(0, 0, this.hud.clientWidth, this.hud.clientHeight);
         
-        if (this.state.messageAnimation) {
+        if (this.props.ui.messageAnimation) {
             this.animateMessage();
         }
     }
 
-    renderText = () => {
+    renderText = text => {
         this.gameStartBitmap.font = "Normal " + Math.round(this.fontSize) + "px Arial";
         this.gameStartBitmap.fillStyle = "rgba(245,245,245," + this.fontAlpha + ")";
         this.gameStartBitmap.textAlign = 'center';
-        this.gameStartBitmap.fillText(this.message, this.hud.clientWidth / 2, this.hud.clientHeight / 2);
+        this.gameStartBitmap.fillText(text, this.hud.clientWidth / 2, this.hud.clientHeight / 2);
     }
 
     choose(option) {
-        /*
+        this.props.viewIngameScreen();
+
         if (option === 'START') {
-            this.props.startGameCallback(GameActions.chooseStart);
+            this.props.chooseStart();
+            this.props.startGameCallback();
         } else if (option === 'LEFT_GAMEFIELD') {
-            this.props.startGameCallback(GameActions.chooseField, 0);
+            this.props.chooseField(0);
+            this.props.startGameCallback();
         } else if (option === 'RIGHT_GAMEFIELD') {
-            this.props.startGameCallback(GameActions.chooseField, 1);
+            this.props.chooseField(1);
+            this.props.startGameCallback();
         }
-        */
     }
 
     animateMessage() {
         if (this.fontSize < 250) {
             this.fontAlpha -= 0.01;
             this.fontSize += 2;
-            this.renderText();
+            this.renderText(this.props.ui.message);
             requestAnimationFrame(this.renderAnimation);
         } else {
-            this.setState({ messageAnimation: false });
+            this.props.hideMessage();
         }   
     }
 
     getClassName(field) {
-        if (field.type === GameEntities.BoardCellTypes.white) {
+        if (field.type === GameEntities.BoardCellTypes.WHITE) {
             return 'white';
-        } else if (field.type === GameEntities.BoardCellTypes.brown) {
+        } else if (field.type === GameEntities.BoardCellTypes.BROWN) {
             return 'brown';
         } else {
             return 'black';
@@ -90,20 +97,20 @@ class Hud extends Component {
 
     render() {
         return (
-            <div id="hud" className={this.props.gameplay.screen !== 'GAME_RUNNING' ? 'fullscreen' : ''} ref={hud => {this.hud = hud}}>
+            <div id="hud" className={this.props.ui.screen !== 'GAME_RUNNING' ? 'fullscreen' : ''} ref={hud => {this.hud = hud}}>
                 <div id="toggleMusic" 
-                    className={this.props.gameplay.screen === 'START_SCREEN' ? "overlay" : ""}
+                    className={this.props.ui.screen === 'START_SCREEN' ? "overlay" : ""}
                     onClick={() => this.props.toggleMusic()}>toggle music</div>
-                <canvas id="textAnimationCanvas" className={this.messageAnimation ? 'ontop' : 'below'}></canvas>
+                <canvas id="textAnimationCanvas" className={this.props.ui.messageAnimation ? 'ontop' : 'below'}></canvas>
                 {(() => {
-                    if (this.props.gameplay.screen === 'START_SCREEN') {
+                    if (this.props.ui.screen === 'START_SCREEN') {
                         return (
                             <div id="mainMenu">
                                 <div onClick={() => this.fireGameStart()}>New Game</div>
                                 <div>Settings</div>
                             </div>
                         );
-                    } else if (this.props.gameplay.screen === 'GAME_RUNNING') {
+                    } else if (this.props.ui.screen === 'GAME_RUNNING') {
                         return (
                             <div id="gameMenu">
                                 <p>Cacao: {this.props.cacao}<br />Buildings: {this.props.buildings}</p>
@@ -115,7 +122,7 @@ class Hud extends Component {
                                 }} />
                             </div>
                         );
-                    } else if (this.props.gameplay.screen === 'CHOOSE_START_OR_FIELD') {
+                    } else if (this.props.ui.screen === 'CHOOSE_START_OR_FIELD') {
                         return (
                             <div className="choose">
                                 <div className="button start" onClick={() => this.choose('START')}><p>Choose First Turn</p></div>
@@ -123,8 +130,8 @@ class Hud extends Component {
                                     <div className="button left" onClick={() => this.choose('LEFT_GAMEFIELD')}><p>Choose this field</p>
                                         <div className="fields">
                                         {(() => {
-                                            if (typeof this.props.playerFieldPreview !== 'undefined') {
-                                                return this.props.playerFieldPreview.map(
+                                            if (typeof this.props.gameplay.game.board !== 'undefined') {
+                                                return this.props.gameplay.game.board[0].grid.map(
                                                     (preview, i) => {
                                                         return <div key={i} className={this.getClassName(preview)}></div>
                                                     }
@@ -136,8 +143,8 @@ class Hud extends Component {
                                     <div className="button right" onClick={() => this.choose('RIGHT_GAMEFIELD')}><p>Choose this field</p>
                                         <div className="fields">
                                         {(() => {
-                                            if (typeof this.props.opponentFieldPreview !== 'undefined') {
-                                                return this.props.opponentFieldPreview.map(
+                                            if (typeof this.props.gameplay.game.board !== 'undefined') {
+                                                return this.props.gameplay.game.board[1].grid.map(
                                                     (preview, i) => <div key={i} className={this.getClassName(preview)}></div>
                                                 );
                                             }
@@ -158,8 +165,6 @@ Hud.propTypes = {
     selectBuilding: PropTypes.func.isRequired,
     toggleMusic: PropTypes.func.isRequired,
     startGameCallback: PropTypes.func.isRequired,
-    playerFieldPreview: PropTypes.array,
-    opponentFieldPreview: PropTypes.array,
     cacao: PropTypes.number,
     buildings: PropTypes.number
 }
@@ -172,7 +177,11 @@ const mapDispatchToProps = {
   startGame,
   chooseField,
   chooseStart,
-  createBoard
+  createBoard,
+  showMessage,
+  hideMessage,
+  viewSelectScreen, 
+  viewIngameScreen
 };
 
 const HudContainer = connect(

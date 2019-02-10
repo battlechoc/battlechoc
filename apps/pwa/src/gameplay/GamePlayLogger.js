@@ -16,8 +16,10 @@ const gameplayLog = new GameplayLog();
 
 function gameplayLoggerMiddleware(log) {
     return ({ dispatch, getState }) => next => action => {
-        if (action.payload.isGameplayAction) {
+        if (typeof action.payload !== 'undefined') {
+            if (action.payload.isGameplayAction) {
 
+            }
         }
         return next(action);
     }

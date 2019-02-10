@@ -228,17 +228,11 @@ class App extends Component {
     this.initialTurn = true;
 
     // Add Gamefield
-    // TODO dispatch createBoard action
     this.props.createBoard({
-      boardSize: 8,
+      boardSize: {rows: 8, cols: 8},
       boardSeed: 42
     });
     
-    /*this.setState({
-      playerFieldPreview: this.state.game.currentState().getBoard().playerFields[0].grid,
-      opponentFieldPreview: this.state.game.currentState().getBoard().playerFields[1].grid
-    });  <-- this.props.gameplay.game.currentState() ...   */
-
     // Setup Game EventListener
     this.container.onclick = event => this.onClick(event);
     this.renderer.domElement.addEventListener('mousedown', event => this.startSwipe(event));
