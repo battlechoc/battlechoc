@@ -19,12 +19,24 @@ function createPlayer(name, type) {
     };
 }
 
-/*
-class Augustus {
-	static simulateDecision () {
 
+class Augustus {
+	constructor(actions) {
+		this.actions = actions;
+	}
+
+	simulateInitialDecision () {
+		let decision = Math.floor(Math.random() * 3);
+
+		if (decision === 0) {
+
+		} else if (decision === 1) {
+
+		} else {
+
+		}
 	}
 }
-*/
 
-export { PlayerType, createPlayer };
+
+export { PlayerType, createPlayer, Augustus };

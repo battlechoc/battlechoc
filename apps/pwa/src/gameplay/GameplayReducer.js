@@ -23,10 +23,12 @@ function otherPlayer(gameState) {
 
 const gameplayReducer = createReducer({}, {
     [GameActions.startGame]: (state, action) => {
+        let coinToss = Math.round(Math.random());
         state.game = {
-            players: action.payload.players,
-            currentPlayerIndex: action.payload.coinToss,
-            state: GameStateTypes.START;
+            players: coinToss === 0 ? action.payload : action.payload.reverse(),
+            currentPlayerIndex: 0,
+            state: GameStateTypes.START,
+            coinToss: coinToss
         };
     },
     [GameActions.createBoard]: (state, action) => {
@@ -85,4 +87,4 @@ const gameplayReducer = createReducer({}, {
     }
 })
 
-export default gameplayReducer
+export { gameplayReducer, GameStateTypes }

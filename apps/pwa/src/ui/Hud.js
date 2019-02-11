@@ -18,6 +18,17 @@ class Hud extends Component {
         this.gameStartBitmap = this.gameStartCanvas.getContext('2d'); 
     }
 
+    componentWillReceiveProps(nextProps) {
+        if (typeof this.props.game === 'undefined' &&
+            typeof nextProps.game !== 'undefined') {
+            if (nextProps.game.coinToss === 0) {
+                this.showTurnMessage('It\'s up on you');
+            } else {
+                this.showTurnMessage('Your opponent decides');
+            }
+        }
+    }
+
     showTurnMessage(message) {
         this.props.showMessage(message);
         
@@ -30,21 +41,12 @@ class Hud extends Component {
 
     fireGameStart() {
         this.props.viewSelectScreen();
-        let coinToss = Math.round(Math.random());
         let player = [
             createPlayer("Charlie Bucket", PlayerType.HUMAN), 
             createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
         ];
 
-        if (coinToss === 0) {
-            this.showTurnMessage('It\'s up on you');
-            this.props.startGame(player);
-        } else {
-            this.showTurnMessage('Your opponent decides');
-            player = player.reverse();
-            this.props.startGame(player);
-        }
-
+        this.props.startGame(player);
         setTimeout(() => {
             this.props.createBoard({
               boardSize: {rows: 8, cols: 8},
@@ -163,6 +165,7 @@ class Hud extends Component {
 Hud.propTypes = {
     toggleMusic: PropTypes.func.isRequired,
     startGameCallback: PropTypes.func.isRequired,
+    triggerAugustusAction: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({

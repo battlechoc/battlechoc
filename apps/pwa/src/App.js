@@ -6,8 +6,10 @@ import ModelLoader from './ModelLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import { BuildingType } from './Building';
-import { createBoard } from './gameplay/GameActions';
+import { chooseStart, chooseField } from './gameplay/GameActions';
 import { connect } from 'react-redux';
+import { Augustus } from './gameplay/Player';
+import { GameStateTypes } from './gameplay/GameplayReducer';
 
 class App extends Component {
 
@@ -85,6 +87,21 @@ class App extends Component {
         this.ambientSound.pause();
       }
     );
+
+    this.opponent = new Augustus({
+      chooseStart: chooseStart, 
+      chooseField: chooseField
+    });
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (typeof this.props.gameplay.game !== 'undefined') {
+      if (this.props.gameplay.game.state === GameStateTypes.START && 
+        nextProps.gameplay.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
+        this.props.gameplay.game.coinToss === 1) {
+        this.triggerAugustusAction();
+      }
+    }
   }
 
   onClick = event => {
@@ -99,6 +116,10 @@ class App extends Component {
 
     // Part of "ignore click if it was just an end of swiping"
     this.isSwiping = false;
+  }
+
+  triggerAugustusAction() {
+    console.log('trigger state')
   }
 
   playerFieldClick() {
@@ -254,10 +275,12 @@ class App extends Component {
       <div className="app-container">
         <Hud
           toggleMusic={() => this.toggleMusic()}
-          startGameCallback={this.startGame} />
+          startGameCallback={this.startGame}
+          triggerAugustusAction={() => this.triggerAugustusAction()}
+          ref={overlay => { this.overlay = overlay }} />
         <div
           className="app"
-          ref={(container) => { this.container = container }}
+          ref={container => { this.container = container }}
         />
       </div>
     )
@@ -269,7 +292,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = {
-  createBoard
+  chooseStart, chooseField
 };
 
 const AppContainer = connect(
