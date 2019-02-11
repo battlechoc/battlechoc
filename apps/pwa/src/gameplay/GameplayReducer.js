@@ -48,7 +48,10 @@ const gameplayReducer = createReducer({}, {
             state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
             state.game.state = GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
         } else if (state.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
-            state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex; 
+            state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
+            currentPlayer(state.game).cacao = currentPlayer(state.game).cacaoPerTurn;
+            currentPlayer(state.game).attacks = currentPlayer(state.game).attacksPerTurn;
+            currentPlayer(state.game).buildings = currentPlayer(state.game).buildingsPerTurn;
             state.game.state = GameStateTypes.BUILD_PHASE;
         } else if (state.game.state === GameStateTypes.ATTACK_PHASE) { 
             state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
@@ -56,15 +59,29 @@ const gameplayReducer = createReducer({}, {
         }
     },
     [GameActions.finishBuildPhase]: (state, action) => {
-        //state.game.state = Game.nextGameState(state.game.state, action.type);
+        state.game.state = GameStateTypes.ATTACK_PHASE;
     },
     [GameActions.build]: (state, action) => {
-        //Game.build(state.game, action.payload);
-        //state.game.state = Game.nextGameState(state.game.state, action.type);
+        if (currentPlayer(state.game).buildings > 0) {
+            currentPlayer(state.game).buildings = currentPlayer(state.game).buildings - 1;
+
+            if (currentPlayer(state.game).buildings === 0) {
+                state.game.state = GameStateTypes.ATTACK_PHASE;
+            }
+        } else {
+            state.game.state = GameStateTypes.ATTACK_PHASE;
+        }
     },
     [GameActions.attack]: (state, action) => {
-        //Game.attach(state.game, action.payload);
-        //state.game.state = Game.nextGameState(state.game.state, action.type);
+        if (currentPlayer(state.game).attacks > 0) {
+            currentPlayer(state.game).attacks = currentPlayer(state.game).attacks - 1;
+
+            if (currentPlayer(state.game).attacks === 0) {
+                state.game.state = GameStateTypes.BUILD_PHASE;
+            }
+        } else {
+            state.game.state = GameStateTypes.BUILD_PHASE;
+        }
     }
 })
 
