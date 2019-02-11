@@ -6,7 +6,8 @@ const GameStateTypes = Object.freeze({
     START: 'GameStateTypes.START',
     CHOOSE_FIELD_OR_START: 'GameStateTypes.CHOOSE_FIELD_OR_START',
     CHOOSE_FIELD: 'GameStateTypes.CHOOSE_FIELD',
-    INITIAL_PLACEMENT: 'GameStateTypes.INITIAL_PLACEMENT',
+    PLAYER_1_INITIAL_PLACEMENT: 'GameStateTypes.PLAYER_1_INITIAL_PLACEMENT',
+    PLAYER_2_INITIAL_PLACEMENT: 'GameStateTypes.PLAYER_2_INITIAL_PLACEMENT',
     BUILD_PHASE: 'GameStateTypes.BUILD_PHASE',
     ATTACK_PHASE: 'GameStateTypes.ATTACK_PHASE',
     END: 'GameStateTypes.END'
@@ -24,32 +25,35 @@ const gameplayReducer = createReducer({}, {
     [GameActions.startGame]: (state, action) => {
         state.game = {
             players: action.payload.players,
-            currentPlayerIndex: action.payload.coinToss
+            currentPlayerIndex: action.payload.coinToss,
+            state: GameStateTypes.START;
         };
-
-        currentPlayer(state.game).state = GameStateTypes.START;
-        otherPlayer(state.game).state = GameStateTypes.START;
     },
     [GameActions.createBoard]: (state, action) => {
         state.game.board = GameEntities.Board.generate(action.payload.boardSize, action.payload.boardSeed);
-
-        currentPlayer(state.game).state = GameStateTypes.CHOOSE_FIELD_OR_START;
-        otherPlayer(state.game).state = GameStateTypes.START;
+        state.game.state = GameStateTypes.CHOOSE_FIELD_OR_START;
     },
     [GameActions.chooseField]: (state, action) => {
         currentPlayer(state.game).fieldIndex = action.payload;
         otherPlayer(state.game).fieldIndex = 1 - action.payload;
         state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
-
-        currentPlayer(state.game).state = GameStateTypes.INITIAL_PLACEMENT;
-        otherPlayer(state.game).state = GameStateTypes.INITIAL_PLACEMENT;
+        state.game.state = GameStateTypes.PLAYER_1_INITIAL_PLACEMENT;
     },
     [GameActions.chooseStart]: (state, action) => {
-        currentPlayer(state.game).state = GameStateTypes.INITIAL_PLACEMENT;
-        otherPlayer(state.game).state = GameStateTypes.CHOOSE_FIELD;
+        state.game.state = GameStateTypes.CHOOSE_FIELD;
+        state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
     },
     [GameActions.finishTurn]: (state, action) => {
-        //state.game.state = Game.nextGameState(state.game.state, action.type);
+        if (state.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) {
+            state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
+            state.game.state = GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
+        } else if (state.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
+            state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex; 
+            state.game.state = GameStateTypes.BUILD_PHASE;
+        } else if (state.game.state === GameStateTypes.ATTACK_PHASE) { 
+            state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
+            state.game.state = GameStateTypes.BUILD_PHASE;
+        }
     },
     [GameActions.finishBuildPhase]: (state, action) => {
         //state.game.state = Game.nextGameState(state.game.state, action.type);
