@@ -35,15 +35,12 @@ const gameplayReducer = createReducer({}, {
         state.game.state = GameStateTypes.CHOOSE_FIELD_OR_START;
     },
     [GameActions.chooseField]: (state, action) => {
-        console.log('choose field')
-        console.log(action.payload);
         currentPlayer(state.game).fieldIndex = action.payload;
         otherPlayer(state.game).fieldIndex = 1 - action.payload;
         state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
         state.game.state = GameStateTypes.PLAYER_1_INITIAL_PLACEMENT;
     },
     [GameActions.chooseStart]: (state, action) => {
-        console.log('choose game start')
         state.game.state = GameStateTypes.CHOOSE_FIELD;
         state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
     },

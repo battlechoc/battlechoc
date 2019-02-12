@@ -35,7 +35,7 @@ class Augustus {
             } else {
                 this.actions.chooseField(1);
             }
-        }, 2000);
+        }, 3000);
     }
 
     simulateChooseFieldDecision() {
@@ -47,7 +47,7 @@ class Augustus {
             } else {
                 this.actions.chooseField(1);
             }
-        }, 2000);
+        }, 3000);
     }
 }
 

@@ -9,7 +9,7 @@ import { BuildingType } from './Building';
 import { chooseStart, chooseField } from './gameplay/GameActions';
 import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
-import { GameStateTypes } from './gameplay/GameplayReducer';
+import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 
 class App extends Component {
 
@@ -95,29 +95,22 @@ class App extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (typeof this.props.game !== 'undefined') {
-      if (this.props.game.state === GameStateTypes.START && 
-        nextProps.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
-        this.props.game.currentPlayerIndex === 1) {
-        this.triggerAugustusAction(GameStateTypes.CHOOSE_FIELD_OR_START);
-      } else if ((this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
-          nextProps.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) ||
-          (this.props.game.state === GameStateTypes.CHOOSE_FIELD &&
-          nextProps.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT)) {
-          this.uiEvent = 'START_GAME';
-      } else if (this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
-          nextProps.game.state === GameStateTypes.CHOOSE_FIELD &&
-          this.props.game.currentPlayerIndex === 0) {
-          this.triggerAugustusAction(GameStateTypes.CHOOSE_FIELD);
-      }
-    }         
+    let gameTransition = getGameTransition(this.props.game, nextProps.game);
+    
+    if (gameTransition === GameTransitions.OPPONENT_STARTS_GAME) {
+      this.opponent.simulateChooseFieldOrStartDecision();
+    } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START) {
+      this.opponent.simulateChooseFieldDecision();
+    } else if (gameTransition === GameTransitions.BEGIN_INITAL_PLACEMENT) {
+      this.triggerUiEvent = 'START_GAME';  
+    }
   }
 
   componentDidUpdate() {
-    if (this.uiEvent === 'START_GAME') {
+    if (this.triggerUiEvent === 'START_GAME') {
       this.startGame();
     }
-    this.uiEvent = undefined;
+    this.triggerUiEvent = undefined;
   }
 
   onClick = event => {
@@ -132,14 +125,6 @@ class App extends Component {
 
     // Part of "ignore click if it was just an end of swiping"
     this.isSwiping = false;
-  }
-
-  triggerAugustusAction(gamestate) {
-    if (gamestate === GameStateTypes.CHOOSE_FIELD_OR_START) {
-      this.opponent.simulateChooseFieldOrStartDecision();
-    } else if (gamestate === GameStateTypes.CHOOSE_FIELD) {
-      this.opponent.simulateChooseFieldDecision();
-    }
   }
 
   playerFieldClick() {
@@ -250,7 +235,7 @@ class App extends Component {
   startGame = () => {
     let playerFieldIndex = this.props.game.players[0].fieldIndex;
     let opponentFieldIndex = this.props.game.players[1].fieldIndex;
-    console.log(this.props.game);
+
     this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board[playerFieldIndex]);
     this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.game.board[opponentFieldIndex]);
     this.scene.add(this.playerGameField.gameField);

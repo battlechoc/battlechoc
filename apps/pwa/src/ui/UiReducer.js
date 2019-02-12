@@ -7,12 +7,6 @@ const uiReducer = createReducer({
         messageAnimation: false,
         selectedBuilding: BuildingType.CACAOTREE
     }, {
-    [UiActions.viewSelectScreen]: (state, action) => {
-        state.screen = 'CHOOSE_START_OR_FIELD'
-    },
-    [UiActions.viewIngameScreen]: (state, action) => {
-        state.screen = 'GAME_RUNNING'
-    },
     [UiActions.showMessage]: (state, action) => {
         state.message = action.payload;
         state.messageAnimation = true;
