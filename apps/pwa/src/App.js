@@ -26,7 +26,7 @@ class App extends Component {
     this.scene = new THREE.Scene();
     this.clock = new THREE.Clock();
     // Set target FPS to 60
-    this.targetFps = 1 / 60;
+    this.targetFps = 1 / 30;
     this.delta = 0;
 
     let distance = 30;
@@ -89,19 +89,32 @@ class App extends Component {
     );
 
     this.opponent = new Augustus({
-      chooseStart: chooseStart, 
-      chooseField: chooseField
+      chooseStart: this.props.chooseStart, 
+      chooseField: this.props.chooseField
     });
   }
 
   componentWillReceiveProps(nextProps) {
-    if (typeof this.props.gameplay.game !== 'undefined') {
-      if (this.props.gameplay.game.state === GameStateTypes.START && 
-        nextProps.gameplay.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
-        this.props.gameplay.game.coinToss === 1) {
-        this.triggerAugustusAction();
+    if (typeof this.props.game !== 'undefined') {
+      if (this.props.game.state === GameStateTypes.START && 
+        nextProps.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
+        this.props.game.currentPlayerIndex === 1) {
+        this.triggerAugustusAction(GameStateTypes.CHOOSE_FIELD_OR_START);
       }
+      if ((this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
+          nextProps.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) ||
+          (this.props.game.state === GameStateTypes.CHOOSE_FIELD &&
+          nextProps.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT)) {
+          this.uiEvent = 'START_GAME';
+      }
+    }         
+  }
+
+  componentDidUpdate() {
+    if (this.uiEvent === 'START_GAME') {
+      this.startGame();
     }
+    this.uiEvent = undefined;
   }
 
   onClick = event => {
@@ -118,8 +131,10 @@ class App extends Component {
     this.isSwiping = false;
   }
 
-  triggerAugustusAction() {
-    console.log('trigger state')
+  triggerAugustusAction(gamestate) {
+    if (gamestate === GameStateTypes.CHOOSE_FIELD_OR_START) {
+      this.opponent.simulateInitialDecision();
+    }
   }
 
   playerFieldClick() {
@@ -130,7 +145,7 @@ class App extends Component {
         this.playerGameField.setBuilding(intersects[0].object.parent.position, BuildingType.FACTORY);
         this.initialTurn = false;
       } else {
-        this.playerGameField.setBuilding(intersects[0].object.parent.position, this.props.ui.selectedBuilding);
+        this.playerGameField.setBuilding(intersects[0].object.parent.position, this.props.selectedBuilding);
       }
     }
   }
@@ -227,20 +242,19 @@ class App extends Component {
     this.frameId = window.requestAnimationFrame(this.animate);    
   }
 
-  startGame = option => {
-    if (option === 'START') {
-      this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.gameplay.game.board[0]);
-      this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.gameplay.game.board[1]);
-    } else if (option === 'LEFT_GAMEFIELD') {
-      this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.gameplay.game.board[0]);
-      this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.gameplay.game.board[1]);
-    } else if (option === 'RIGHT_GAMEFIELD') {
-      this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.gameplay.game.board[1]);
-      this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.gameplay.game.board[0]);
-    }
+  startGame = () => {
+    let playerFieldIndex = this.props.game.players[0].fieldIndex;
+    let opponentFieldIndex = this.props.game.players[1].fieldIndex;
+    console.log(this.props.game);
+    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board[playerFieldIndex]);
+    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.game.board[opponentFieldIndex]);
+    this.scene.add(this.playerGameField.gameField);
+    this.scene.add(this.opponentGameField.gameField);
+
     // Game Logic
     this.initialTurn = true;
-    this.lookAtOpponent = this.props.gameplay.game.currentPlayerIndex === 1;
+    this.lookAtOpponent = this.props.game.currentPlayerIndex === 1;
+    
     // Setup Game EventListener
     this.container.onclick = event => this.onClick(event);
     this.renderer.domElement.addEventListener('mousedown', event => this.startSwipe(event));
@@ -261,9 +275,6 @@ class App extends Component {
     // Prepare click targets
     this.clickTargets = this.playerGameField.getClickableFields();
     this.opponentClickTargets = this.opponentGameField.getClickableFields();
-
-    this.scene.add(this.playerGameField.gameField);
-    this.scene.add(this.opponentGameField.gameField);
   }
 
   renderScene = () => {
@@ -288,7 +299,8 @@ class App extends Component {
 }
 
 const mapStateToProps = state => ({
-  ...state
+  game: state.gameplay.game,
+  selectedBuilding: state.ui.selectedBuilding
 });
 
 const mapDispatchToProps = {

@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import { startGame, chooseField, chooseStart, createBoard } from '../gameplay/GameActions';
 import { showMessage, hideMessage, viewSelectScreen, viewIngameScreen, selectBuilding } from './UiActions';
 import { createPlayer, PlayerType } from '../gameplay/Player';
+import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 class Hud extends Component {
     componentDidMount() {
@@ -16,15 +17,31 @@ class Hud extends Component {
         this.gameStartCanvas.width = width;
         this.gameStartCanvas.height = height;
         this.gameStartBitmap = this.gameStartCanvas.getContext('2d'); 
+
+        this.activeUi = true;
+        this.startDisabled = false;
     }
 
     componentWillReceiveProps(nextProps) {
         if (typeof this.props.game === 'undefined' &&
             typeof nextProps.game !== 'undefined') {
-            if (nextProps.game.coinToss === 0) {
+            if (nextProps.game.currentPlayerIndex === 0) {
                 this.showTurnMessage('It\'s up on you');
             } else {
+                this.activeUi = false;
                 this.showTurnMessage('Your opponent decides');
+            }
+        } else if (typeof this.props.game !== 'undefined') {
+            if (nextProps.game.currentPlayerIndex === 0 &&
+                this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
+                nextProps.game.state === GameStateTypes.CHOOSE_FIELD) {
+                this.activeUi = true;
+                this.startDisabled = true;
+            } else if ((this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
+                        nextProps.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) ||
+                       (this.props.game.state === GameStateTypes.CHOOSE_FIELD &&
+                        nextProps.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT)) {
+                this.props.viewIngameScreen();
             }
         }
     }
@@ -71,17 +88,17 @@ class Hud extends Component {
     }
 
     choose(option) {
-        this.props.viewIngameScreen();
-
-        if (option === 'START') {
-            this.props.chooseStart();
-            this.props.startGameCallback(option);
-        } else if (option === 'LEFT_GAMEFIELD') {
-            this.props.chooseField(0);
-            this.props.startGameCallback(option);
-        } else if (option === 'RIGHT_GAMEFIELD') {
-            this.props.chooseField(1);
-            this.props.startGameCallback(option);
+        if (this.activeUi) {
+            if (option === 'START' && !this.startDisabled) {
+                this.props.viewIngameScreen();
+                this.props.chooseStart();
+            } else if (option === 'LEFT_GAMEFIELD') {
+                this.props.viewIngameScreen();
+                this.props.chooseField(0);
+            } else if (option === 'RIGHT_GAMEFIELD') {
+                this.props.viewIngameScreen();
+                this.props.chooseField(1);
+            }
         }
     }
 
@@ -126,9 +143,9 @@ class Hud extends Component {
                     } else if (this.props.screen === 'CHOOSE_START_OR_FIELD') {
                         return (
                             <div className="choose">
-                                <div className="button start" onClick={() => this.choose('START')}><p>Choose First Turn</p></div>
+                                <div className={(this.activeUi && !this.startDisabled ? 'active ' : '') + 'button start'} onClick={() => this.choose('START')}><p>Choose First Turn</p></div>
                                 <div className="gamefield">
-                                    <div className="button left" onClick={() => this.choose('LEFT_GAMEFIELD')}><p>Choose this field</p>
+                                    <div className={(this.activeUi ? 'active ' : '') + 'button left'} onClick={() => this.choose('LEFT_GAMEFIELD')}><p>Choose this field</p>
                                         <div className="fields">
                                         {(() => {
                                             if (typeof this.props.game.board !== 'undefined') {
@@ -141,7 +158,7 @@ class Hud extends Component {
                                         })()}                                    
                                         </div>
                                     </div>
-                                    <div className="button right" onClick={() => this.choose('RIGHT_GAMEFIELD')}><p>Choose this field</p>
+                                    <div className={(this.activeUi ? 'active ' : '') + 'button right'} onClick={() => this.choose('RIGHT_GAMEFIELD')}><p>Choose this field</p>
                                         <div className="fields">
                                         {(() => {
                                             if (typeof this.props.game.board !== 'undefined') {
