@@ -24,18 +24,27 @@ class Augustus {
         this.actions = actions;
     }
 
-    simulateInitialDecision () {
+    simulateChooseFieldOrStartDecision() {
         setTimeout(() => {
             let decision = Math.floor(Math.random() * 3);
 
             if (decision === 0) {
-                console.log('start');
                 this.actions.chooseStart();
             } else if (decision === 1) {
-                console.log('field 0');
                 this.actions.chooseField(0);
             } else {
-                console.log('field 1');
+                this.actions.chooseField(1);
+            }
+        }, 2000);
+    }
+
+    simulateChooseFieldDecision() {
+        setTimeout(() => {
+            let decision = Math.round(Math.random());
+
+            if (decision === 0) {
+                this.actions.chooseField(0);
+            } else {
                 this.actions.chooseField(1);
             }
         }, 2000);

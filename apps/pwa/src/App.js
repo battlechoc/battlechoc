@@ -100,12 +100,15 @@ class App extends Component {
         nextProps.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
         this.props.game.currentPlayerIndex === 1) {
         this.triggerAugustusAction(GameStateTypes.CHOOSE_FIELD_OR_START);
-      }
-      if ((this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
+      } else if ((this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
           nextProps.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) ||
           (this.props.game.state === GameStateTypes.CHOOSE_FIELD &&
           nextProps.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT)) {
           this.uiEvent = 'START_GAME';
+      } else if (this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
+          nextProps.game.state === GameStateTypes.CHOOSE_FIELD &&
+          this.props.game.currentPlayerIndex === 0) {
+          this.triggerAugustusAction(GameStateTypes.CHOOSE_FIELD);
       }
     }         
   }
@@ -133,7 +136,9 @@ class App extends Component {
 
   triggerAugustusAction(gamestate) {
     if (gamestate === GameStateTypes.CHOOSE_FIELD_OR_START) {
-      this.opponent.simulateInitialDecision();
+      this.opponent.simulateChooseFieldOrStartDecision();
+    } else if (gamestate === GameStateTypes.CHOOSE_FIELD) {
+      this.opponent.simulateChooseFieldDecision();
     }
   }
 

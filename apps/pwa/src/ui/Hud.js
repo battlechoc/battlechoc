@@ -19,24 +19,25 @@ class Hud extends Component {
         this.gameStartBitmap = this.gameStartCanvas.getContext('2d'); 
 
         this.activeUi = true;
-        this.startDisabled = false;
+        this.playerChooseStart = -1;
     }
 
     componentWillReceiveProps(nextProps) {
         if (typeof this.props.game === 'undefined' &&
             typeof nextProps.game !== 'undefined') {
             if (nextProps.game.currentPlayerIndex === 0) {
-                this.showTurnMessage('It\'s up on you');
+                this.showTurnMessage('It\'s up on you', true);
             } else {
                 this.activeUi = false;
-                this.showTurnMessage('Your opponent decides');
+                this.showTurnMessage('Your opponent decides', true);
             }
         } else if (typeof this.props.game !== 'undefined') {
             if (nextProps.game.currentPlayerIndex === 0 &&
                 this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
                 nextProps.game.state === GameStateTypes.CHOOSE_FIELD) {
                 this.activeUi = true;
-                this.startDisabled = true;
+                this.showTurnMessage(this.props.game.players[0].name + ' picks a field', false);
+                this.playerChooseStart = 1;
             } else if ((this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
                         nextProps.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) ||
                        (this.props.game.state === GameStateTypes.CHOOSE_FIELD &&
@@ -46,14 +47,18 @@ class Hud extends Component {
         }
     }
 
-    showTurnMessage(message) {
+    showTurnMessage(message, animated) {
         this.props.showMessage(message);
         
         this.fontAlpha = 1.0;
         this.fontSize = 40; 
         this.renderText(message);
 
-        setTimeout(() => { this.renderAnimation(); }, 1000);
+        if (animated) {
+            setTimeout(() => { this.renderAnimation(); }, 1000);
+        } else {
+            setTimeout(() => { this.props.hideMessage(); }, 1000);
+        }
     }
 
     fireGameStart() {
@@ -83,20 +88,23 @@ class Hud extends Component {
     renderText = text => {
         this.gameStartBitmap.font = "Normal " + Math.round(this.fontSize) + "px Arial";
         this.gameStartBitmap.fillStyle = "rgba(245,245,245," + this.fontAlpha + ")";
+        this.gameStartBitmap.shadowColor = "rgba(0,0,0,0.3)";
+        this.gameStartBitmap.shadowOffsetX = 3;
+        this.gameStartBitmap.shadowOffsetY = 3;
+        this.gameStartBitmap.shadowBlur = 4;
         this.gameStartBitmap.textAlign = 'center';
         this.gameStartBitmap.fillText(text, this.hud.clientWidth / 2, this.hud.clientHeight / 2);
     }
 
     choose(option) {
         if (this.activeUi) {
-            if (option === 'START' && !this.startDisabled) {
-                this.props.viewIngameScreen();
+            if (option === 'START' && this.playerChooseStart === -1) {
                 this.props.chooseStart();
+                this.playerChooseStart = 0;
+                this.showTurnMessage(this.props.game.players[1].name + ' picks a field', false);
             } else if (option === 'LEFT_GAMEFIELD') {
-                this.props.viewIngameScreen();
                 this.props.chooseField(0);
             } else if (option === 'RIGHT_GAMEFIELD') {
-                this.props.viewIngameScreen();
                 this.props.chooseField(1);
             }
         }
@@ -143,7 +151,10 @@ class Hud extends Component {
                     } else if (this.props.screen === 'CHOOSE_START_OR_FIELD') {
                         return (
                             <div className="choose">
-                                <div className={(this.activeUi && !this.startDisabled ? 'active ' : '') + 'button start'} onClick={() => this.choose('START')}><p>Choose First Turn</p></div>
+                                <div className={(this.activeUi && this.playerChooseStart === -1 ? 'active ' : '')
+                                                + 'button start'
+                                                + (this.playerChooseStart === 0 ? ' selectedByPlayer' : '')
+                                                + (this.playerChooseStart === 1 ? ' selectedByOpponent' : '')} onClick={() => this.choose('START')}><p>Choose First Turn</p></div>
                                 <div className="gamefield">
                                     <div className={(this.activeUi ? 'active ' : '') + 'button left'} onClick={() => this.choose('LEFT_GAMEFIELD')}><p>Choose this field</p>
                                         <div className="fields">
