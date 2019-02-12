@@ -101,8 +101,10 @@ class App extends Component {
       this.opponent.simulateChooseFieldOrStartDecision();
     } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START) {
       this.opponent.simulateChooseFieldDecision();
-    } else if (gameTransition === GameTransitions.BEGIN_INITAL_PLACEMENT) {
-      this.triggerUiEvent = 'START_GAME';  
+    } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
+      this.triggerUiEvent = 'START_GAME';
+    } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
+      this.triggerUiEvent = 'START_GAME';
     }
   }
 

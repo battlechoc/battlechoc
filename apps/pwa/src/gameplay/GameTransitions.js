@@ -6,7 +6,8 @@ const GameTransitions = Object.freeze({
     OPPONENT_STARTS_GAME: 'GameTransitions.OPPONENT_STARTS_GAME',
     PLAYER_HAS_CHOSEN_START: 'GameTransitions.PLAYER_HAS_CHOSEN_START',
     OPPONENT_HAS_CHOSEN_START: 'GameTransitions.OPPONENT_HAS_CHOSEN_START',
-    BEGIN_INITAL_PLACEMENT: 'GameTransitions.BEGIN_INITAL_PLACEMENT',
+    PLAYER_INITAL_PLACEMENT: 'GameTransitions.PLAYER_INITAL_PLACEMENT',
+    OPPONENT_INITAL_PLACEMENT: 'GameTransitions.OPPONENT_INITAL_PLACEMENT',
     INVALID: 'GameTransitions.INVALID'
 });
 
@@ -36,7 +37,11 @@ function getGameTransition(currentState, nextState) {
         nextState.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) ||
         (currentState.state === GameStateTypes.CHOOSE_FIELD &&
         nextState.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT)) {
-        return GameTransitions.BEGIN_INITAL_PLACEMENT;
+        if (nextState.currentPlayerIndex === 0) {
+            return GameTransitions.PLAYER_INITAL_PLACEMENT;
+        } else {
+            return GameTransitions.OPPONENT_INITAL_PLACEMENT;
+        }
     } else {
         return GameTransitions.INVALID;
     }

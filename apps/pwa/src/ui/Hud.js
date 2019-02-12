@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { BuildingType } from '../Building.js';
 import { connect } from 'react-redux';
 import { startGame, chooseField, chooseStart, createBoard } from '../gameplay/GameActions';
-import { selectBuilding } from './UiActions';
+import { selectBuilding, showMessage, hideMessage } from './UiActions';
 import { createPlayer, PlayerType } from '../gameplay/Player';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { GameTransitions, getGameTransition } from '../gameplay/GameTransitions';
@@ -36,12 +36,16 @@ class Hud extends Component {
             this.activeUi = true;
             this.showTurnMessage(this.props.game.players[0].name + ' picks a field', false);
             this.colorStartButton = 1;
+        } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
+            this.showTurnMessage('Place your factory', true);
+        } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
+            this.showTurnMessage('Oppoent starts to place factory', true);
         }
     }
 
     showTurnMessage(message, animated) {
-        this.message = message;
-        this.messageAnimation = true;        
+        this.props.showMessage(message);
+     
         this.fontAlpha = 1.0;
         this.fontSize = 40; 
         this.renderText(message);
@@ -50,15 +54,10 @@ class Hud extends Component {
             setTimeout(() => { this.renderAnimation(); }, 1000);
         } else {
             setTimeout(() => { 
-                this.hideMessage();
+                this.gameStartBitmap.clearRect(0, 0, this.hud.clientWidth, this.hud.clientHeight);
+                this.props.hideMessage();
             }, 1000);
         }
-    }
-
-    hideMessage() {
-        this.message = undefined;
-        this.messageAnimation = false;
-        this.forceUpdate();        
     }
 
     fireGameStart() {
@@ -79,7 +78,7 @@ class Hud extends Component {
     renderAnimation = () => {
         this.gameStartBitmap.clearRect(0, 0, this.hud.clientWidth, this.hud.clientHeight);
         
-        if (this.messageAnimation) {
+        if (this.props.messageAnimation) {
             this.animateMessage();
         }
     }
@@ -88,10 +87,11 @@ class Hud extends Component {
         if (this.fontSize < 250) {
             this.fontAlpha -= 0.01;
             this.fontSize += 2;
-            this.renderText(this.message);
+            this.renderText(this.props.message);
             requestAnimationFrame(this.renderAnimation);
         } else {
-            this.hideMessage(); 
+            this.gameStartBitmap.clearRect(0, 0, this.hud.clientWidth, this.hud.clientHeight);
+            this.props.hideMessage(); 
         }   
     }
 
@@ -132,11 +132,11 @@ class Hud extends Component {
 
     render() {
         return (
-            <div id="hud" className={this.isInitalStage() || this.isTitleScreen() ? 'fullscreen' : ''} ref={hud => {this.hud = hud}}>
+            <div id="hud" className={this.isInitalStage() || this.isTitleScreen() || this.props.messageAnimation ? 'fullscreen' : ''} ref={hud => {this.hud = hud}}>
                 <div id="toggleMusic" 
                     className={this.isTitleScreen() ? "overlay" : ""}
                     onClick={() => this.props.toggleMusic()}>toggle music</div>
-                <canvas id="textAnimationCanvas" className={this.messageAnimation ? 'ontop' : 'below'}></canvas>
+                <canvas id="textAnimationCanvas" className={this.props.messageAnimation ? 'ontop' : 'below'}></canvas>
                 {(() => {
                     if (this.isTitleScreen()) {
                         return (
@@ -207,7 +207,9 @@ Hud.propTypes = {
 
 const mapStateToProps = state => ({
   game: state.gameplay.game,
-  state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state
+  state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
+  message: state.ui.message,
+  messageAnimation: state.ui.messageAnimation
 });
 
 const mapDispatchToProps = {
@@ -215,7 +217,9 @@ const mapDispatchToProps = {
   chooseField,
   chooseStart,
   createBoard,
-  selectBuilding
+  selectBuilding,
+  hideMessage,
+  showMessage
 };
 
 const HudContainer = connect(
