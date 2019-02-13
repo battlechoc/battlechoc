@@ -7,7 +7,11 @@ const GameTransitions = Object.freeze({
     PLAYER_HAS_CHOSEN_START: 'GameTransitions.PLAYER_HAS_CHOSEN_START',
     OPPONENT_HAS_CHOSEN_START: 'GameTransitions.OPPONENT_HAS_CHOSEN_START',
     PLAYER_INITAL_PLACEMENT: 'GameTransitions.PLAYER_INITAL_PLACEMENT',
+    PLAYER_FINISHED_INITIAL_PLACEMENT: 'GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT',
     OPPONENT_INITAL_PLACEMENT: 'GameTransitions.OPPONENT_INITAL_PLACEMENT',
+    OPPONENT_FINISHED_INITIAL_PLACEMENT: 'GameTransitions.OPPONENT_FINISHED_INITIAL_PLACEMENT',
+    OPPONENT_FINISHED_BUILD_PHASE: 'GameTransitions.OPPONENT_FINISHED_BUILD_PHASE',
+    OPPONENT_FINISHED_TURN: 'GameTransitions.OPPONENT_FINISHED_TURN',
     INVALID: 'GameTransitions.INVALID'
 });
 
@@ -42,6 +46,23 @@ function getGameTransition(currentState, nextState) {
         } else {
             return GameTransitions.OPPONENT_INITAL_PLACEMENT;
         }
+    } else if ((currentState.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT &&
+        nextState.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) ||
+        (currentState.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT &&
+        nextState.state === GameStateTypes.BUILD_PHASE)) {
+        if (currentState.currentPlayerIndex === 1) {
+            return GameTransitions.OPPONENT_FINISHED_INITIAL_PLACEMENT;
+        } else {
+            return GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT;
+        }
+    } else if (currentState.state === GameStateTypes.BUILD_PHASE &&
+        nextState.state === GameStateTypes.ATTACK_PHASE &&
+        currentState.currentPlayerIndex === 1) {
+        return GameTransitions.OPPONENT_FINISHED_BUILD_PHASE;
+    } else if (currentState.state === GameStateTypes.ATTACK_PHASE &&
+        nextState.state === GameStateTypes.BUILD_PHASE &&
+        currentState.currentPlayerIndex === 1) {
+        return GameTransitions.OPPONENT_FINISHED_TURN;
     } else {
         return GameTransitions.INVALID;
     }

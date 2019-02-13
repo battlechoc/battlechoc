@@ -6,10 +6,11 @@ import ModelLoader from './ModelLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import { BuildingType } from './Building';
-import { chooseStart, chooseField } from './gameplay/GameActions';
+import { chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
 import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
+import { GameStateTypes } from './gameplay/GameplayReducer'
 
 class App extends Component {
 
@@ -90,13 +91,18 @@ class App extends Component {
 
     this.opponent = new Augustus({
       chooseStart: this.props.chooseStart, 
-      chooseField: this.props.chooseField
+      chooseField: this.props.chooseField,
+      build: this.props.build,
+      attack: this.props.attack,
+      finishTurn: this.props.finishTurn,
+      finishBuildPhase: this.props.finishBuildPhase
     });
   }
 
   componentWillReceiveProps(nextProps) {
     let gameTransition = getGameTransition(this.props.game, nextProps.game);
-    
+    console.log(gameTransition);
+
     if (gameTransition === GameTransitions.OPPONENT_STARTS_GAME) {
       this.opponent.simulateChooseFieldOrStartDecision();
     } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START) {
@@ -105,6 +111,9 @@ class App extends Component {
       this.triggerUiEvent = 'START_GAME';
     } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
       this.triggerUiEvent = 'START_GAME';
+      this.opponent.simulateInitialPlacement();
+    } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
+      this.opponent.simulateInitialPlacement();
     }
   }
 
@@ -113,6 +122,7 @@ class App extends Component {
       this.startGame();
     }
     this.triggerUiEvent = undefined;
+    this.lookAtOpponent = this.props.game.currentPlayerIndex === 1;
   }
 
   onClick = event => {
@@ -122,32 +132,39 @@ class App extends Component {
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
     // Check clickable objects
-    this.playerFieldClick();
-    this.opponentFieldClick();
+    if (this.props.game.currentPlayerIndex === 0) {
+      this.playerFieldClick();
+      this.opponentFieldClick();
+    }
 
     // Part of "ignore click if it was just an end of swiping"
     this.isSwiping = false;
   }
 
-  playerFieldClick() {
+  playerFieldClick() {    
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
 
     if (intersects.length > 0 && !this.isSwiping) {
-      if (this.initialTurn) {
+      if (this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
+          this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
         this.playerGameField.setBuilding(intersects[0].object.parent.position, BuildingType.FACTORY);
-        this.initialTurn = false;
-      } else {
+        this.props.finishTurn()
+      } else if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
         this.playerGameField.setBuilding(intersects[0].object.parent.position, this.props.selectedBuilding);
+        this.props.build()
       }
     }
   }
 
   opponentFieldClick() {
-    var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
+    if (this.lookAtOpponent && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
+      var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
 
-    if (intersects.length > 0 && !this.isSwiping) {
-      let position = intersects[0].object.parent.position;
-      this.opponentGameField.attack(position);
+      if (intersects.length > 0 && !this.isSwiping) {
+        let position = intersects[0].object.parent.position;
+        this.opponentGameField.attack(position);
+        this.props.attack();
+      }
     }
   }
 
@@ -237,16 +254,13 @@ class App extends Component {
   startGame = () => {
     let playerFieldIndex = this.props.game.players[0].fieldIndex;
     let opponentFieldIndex = this.props.game.players[1].fieldIndex;
+    this.lookAtOpponent = this.props.game.currentPlayerIndex === 1;
 
     this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board[playerFieldIndex]);
     this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.game.board[opponentFieldIndex]);
     this.scene.add(this.playerGameField.gameField);
     this.scene.add(this.opponentGameField.gameField);
 
-    // Game Logic
-    this.initialTurn = true;
-    this.lookAtOpponent = this.props.game.currentPlayerIndex === 1;
-    
     // Setup Game EventListener
     this.container.onclick = event => this.onClick(event);
     this.renderer.domElement.addEventListener('mousedown', event => this.startSwipe(event));
@@ -296,7 +310,12 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = {
-  chooseStart, chooseField
+  chooseStart, 
+  chooseField, 
+  finishTurn,
+  build,
+  finishBuildPhase,
+  attack
 };
 
 const AppContainer = connect(

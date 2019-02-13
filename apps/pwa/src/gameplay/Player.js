@@ -49,6 +49,24 @@ class Augustus {
             }
         }, 3000);
     }
+
+    simulateInitialPlacement() {
+        setTimeout(() => {
+            this.actions.finishTurn();
+        }, 4000);        
+    }
+
+    simulateAttackPhase() {
+        setTimeout(() => {
+            this.actions.finishTurn();
+        }, 4000);    
+    }
+
+    simulateBuildPhase() {
+        setTimeout(() => {
+            this.actions.finishBuildPhase();
+        }, 4000);   
+    }
 }
 
 export { PlayerType, createPlayer, Augustus };
