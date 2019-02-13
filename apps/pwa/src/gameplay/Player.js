@@ -52,6 +52,7 @@ class Augustus {
 
     simulateInitialPlacement() {
         setTimeout(() => {
+            console.log('finishTurn')
             this.actions.finishTurn();
         }, 4000);        
     }

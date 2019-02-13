@@ -1,23 +1,6 @@
 import ModelLoader from './ModelLoader.js';
 import * as THREE from 'three';
-
-const BuildingType = Object.freeze({
-	EMPTY: 'BuildingsType.EMPTY',
-	CREAM: 'BuildingsType.CREAM', 
-    FACTORY:   'BuildingsType.FACTORY',
-    CACAOTREE:  'BuildingsType.CACAOTREE',
-    RUM_TRUFFLE_CANNON: 'BuildingsType.RUM_TRUFFLE_CANNON',
-    isInstanceOf: function (buildingType) {
-    	if (buildingType === BuildingType.EMPTY ||
-    		buildingType === BuildingType.CREAM ||
-    		buildingType === BuildingType.FACTORY ||
-    		buildingType === BuildingType.CACAOTREE ||
-    		buildingType === BuildingType.RUM_TRUFFLE_CANNON)
-    		return true;
-    	else
-    		return false; 
-    }
-});
+import { BuildingType } from './gameplay/GameEntities'
 
 class Building {
 	constructor(buildingType) {
@@ -72,4 +55,4 @@ class Building {
 	}
 }
 
-export { BuildingType, Building };
+export default Building;

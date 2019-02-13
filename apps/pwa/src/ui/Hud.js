@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import './Hud.css';
 import PropTypes from 'prop-types';
-import { BuildingType } from '../Building.js';
+import { BuildingType } from '../gameplay/GameEntities';
 import { connect } from 'react-redux';
 import { startGame, chooseField, chooseStart, createBoard } from '../gameplay/GameActions';
 import { selectBuilding, showMessage, hideMessage } from './UiActions';

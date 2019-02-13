@@ -6,11 +6,22 @@ const BoardCellTypes = Object.freeze({
     BLACK: 'BoardCellTypes.BLACK'
 });
 
-const EntityTypes = Object.freeze({
-    FACTORY: 'EntityTypes.FACTORY',
-    TREE: 'EntityTypes.TREE',
-    CANNON: 'EntityTypes.CANNON',
-    CREAM: 'EntityTypes.CREAM'
+const BuildingType = Object.freeze({
+    EMPTY: 'BuildingsType.EMPTY',
+    CREAM: 'BuildingsType.CREAM', 
+    FACTORY:   'BuildingsType.FACTORY',
+    CACAOTREE:  'BuildingsType.CACAOTREE',
+    RUM_TRUFFLE_CANNON: 'BuildingsType.RUM_TRUFFLE_CANNON',
+    isInstanceOf: function (buildingType) {
+        if (buildingType === BuildingType.EMPTY ||
+            buildingType === BuildingType.CREAM ||
+            buildingType === BuildingType.FACTORY ||
+            buildingType === BuildingType.CACAOTREE ||
+            buildingType === BuildingType.RUM_TRUFFLE_CANNON)
+            return true;
+        else
+            return false; 
+    }
 });
 
 class Board {
@@ -50,17 +61,37 @@ class Board {
 
 function getEntity(type) {
     switch (type) {
-        case EntityTypes.FACTORY:
-            return { id: uuidv4(), type: EntityTypes.FACTORY, costs: 0, cells: 4 };
-        case EntityTypes.TREE:
-            return { id: uuidv4(), type: EntityTypes.TREE, costs: 4, cells: 1 };
-        case EntityTypes.CANNON:
-            return { id: uuidv4(), type: EntityTypes.CANNON, costs: 2, cells: 1 };
-        case EntityTypes.CREAM:
-            return { id: uuidv4(), type: EntityTypes.CREAM, costs: 1, cells: 1 };
+        case BuildingType.FACTORY:
+            return { 
+                id: uuidv4(), 
+                type: BuildingType.FACTORY, 
+                costs: 0,
+                cells: 4 
+            };
+        case BuildingType.CACAOTREE:
+            return { 
+                id: uuidv4(), 
+                type: BuildingType.CACAOTREE, 
+                costs: 20, 
+                cells: 1 
+            };
+        case BuildingType.RUM_TRUFFLE_CANNON:
+            return { 
+                id: uuidv4(), 
+                type: BuildingType.RUM_TRUFFLE_CANNON, 
+                costs: 60, 
+                cells: 1 
+            };
+        case BuildingType.CREAM:
+            return { 
+                id: uuidv4(), 
+                type: BuildingType.CREAM, 
+                costs: 10, 
+                cells: 1
+            };
         default:
             throw new Error("Invalid entity type given: " + type);
     }
 }
 
-export { BoardCellTypes, Board, EntityTypes, getEntity };
+export { BoardCellTypes, Board, BuildingType, getEntity };

@@ -50,7 +50,10 @@ const gameplayReducer = createReducer({}, {
             state.game.state = GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
         } else if (state.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
             state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
+            console.log(currentPlayer(state.game).cacao)
             currentPlayer(state.game).cacao = currentPlayer(state.game).cacaoPerTurn;
+            console.log(currentPlayer(state.game).cacaoPerTurn)
+            console.log(currentPlayer(state.game).cacao)
             currentPlayer(state.game).attacks = currentPlayer(state.game).attacksPerTurn;
             currentPlayer(state.game).buildings = currentPlayer(state.game).buildingsPerTurn;
             state.game.state = GameStateTypes.BUILD_PHASE;

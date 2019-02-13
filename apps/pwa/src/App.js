@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import ModelLoader from './ModelLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
-import { BuildingType } from './Building';
+import { BuildingType } from './gameplay/GameEntities';
 import { chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
 import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';

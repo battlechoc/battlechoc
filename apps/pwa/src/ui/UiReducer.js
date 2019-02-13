@@ -1,6 +1,6 @@
 import { createReducer } from 'redux-starter-kit';
 import * as UiActions from './UiActions';
-import { BuildingType } from '../Building';
+import { BuildingType } from '../gameplay/GameEntities';
 
 const uiReducer = createReducer({
         screen: 'START_SCREEN',

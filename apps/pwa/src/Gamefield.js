@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { BuildingType, Building } from './Building.js';
-import * as GameEntities from './gameplay/GameEntities';
+import Building from './Building.js';
+import { BuildingType, BoardCellTypes } from './gameplay/GameEntities';
 import ModelLoader from './ModelLoader.js';
 
 class Gamefield {
@@ -26,11 +26,11 @@ class Gamefield {
 				let cell = playerField.grid[i * this.cols + j];
 				var fieldClone = undefined;
 
-				if (cell.type === GameEntities.BoardCellTypes.WHITE) {
+				if (cell.type === BoardCellTypes.WHITE) {
 					fieldClone = ModelLoader.models[0].scene.clone();
-				} else if (cell.type === GameEntities.BoardCellTypes.BROWN) {
+				} else if (cell.type === BoardCellTypes.BROWN) {
 					fieldClone = ModelLoader.models[1].scene.clone();
-				} else if (cell.type === GameEntities.BoardCellTypes.BLACK) {
+				} else if (cell.type === BoardCellTypes.BLACK) {
 					fieldClone = ModelLoader.models[2].scene.clone();
 				}
 
