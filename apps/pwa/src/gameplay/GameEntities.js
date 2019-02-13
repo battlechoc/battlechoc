@@ -48,14 +48,13 @@ class Board {
                         previewStyle: previewStyle,
                         row: row,
                         col: col, 
-                        creamed: creamed, 
-                        occupied: false
+                        occupiedBy: creamed ? BuildingType.CREAM : BuildingType.EMPTY
                     });
                 }
             }
             playerFields.push(field);
         }
-        return playerFields;
+        return { fields: playerFields, size: size, seed: seed };
     }
 }
 

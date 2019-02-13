@@ -148,16 +148,20 @@ class App extends Component {
       if (this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
           this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
         let building = getEntity(BuildingType.FACTORY);
-        this.playerGameField.setBuilding(intersects[0].object.parent.position, building.type);
-        this.props.build(building);
-        this.props.finishTurn();
+        building.position = this.playerGameField.setBuilding(intersects[0].object.parent.position, building.type);
+        if (building.position !== undefined) {
+          this.props.build(building);
+          this.props.finishTurn();
+        }
       } else if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
         let building = getEntity(this.props.selectedBuilding);
         // Check for resources
         if (this.props.game.players[0].cacao >= building.costs &&
             this.props.game.players[0].buildings > 0) {
-          this.playerGameField.setBuilding(intersects[0].object.parent.position, building.type);
-          this.props.build(building);
+          building.position = this.playerGameField.setBuilding(intersects[0].object.parent.position, building.type);
+          if (building.position !== undefined) {
+            this.props.build(building);
+          }
         }
       }
     }
@@ -263,8 +267,8 @@ class App extends Component {
     let opponentFieldIndex = this.props.game.players[1].fieldIndex;
     this.lookAtOpponent = this.props.game.currentPlayerIndex === 1;
 
-    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board[playerFieldIndex]);
-    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.game.board[opponentFieldIndex]);
+    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board.fields[playerFieldIndex]);
+    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.game.board.fields[opponentFieldIndex]);
     this.scene.add(this.playerGameField.gameField);
     this.scene.add(this.opponentGameField.gameField);
 

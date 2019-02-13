@@ -174,7 +174,7 @@ class Hud extends Component {
                                         <div className="fields">
                                         {(() => {
                                             if (typeof this.props.game.board !== 'undefined') {
-                                                return this.props.game.board[0].grid.map(
+                                                return this.props.game.board.fields[0].grid.map(
                                                     (preview, i) => {
                                                         return <div key={i} className={preview.previewStyle}></div>
                                                     }
@@ -187,7 +187,7 @@ class Hud extends Component {
                                         <div className="fields">
                                         {(() => {
                                             if (typeof this.props.game.board !== 'undefined') {
-                                                return this.props.game.board[1].grid.map(
+                                                return this.props.game.board.fields[1].grid.map(
                                                     (preview, i) => <div key={i} className={preview.previewStyle}></div>
                                                 );
                                             }

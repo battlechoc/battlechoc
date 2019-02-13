@@ -40,7 +40,7 @@ class Gamefield {
                 
                 this.gameField.add(field);
 
-				if (cell.creamed === true) {
+				if (cell.occupiedBy === BuildingType.CREAM) {
 					this.setBuilding(field.position, BuildingType.CREAM, this.isPlayerGameField);
 				}
 			}
@@ -109,9 +109,9 @@ class Gamefield {
 				this.gameField.add(building.getModel());
 			}
 			this.buildings[row][col] = building;
-			return true;
+			return { row: row, col: col };
 		} else {
-			return false;
+			return undefined;
 		}
 	}
 }

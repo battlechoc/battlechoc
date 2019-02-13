@@ -21,6 +21,14 @@ function otherPlayer(gameState) {
     return gameState.players[1 - gameState.currentPlayerIndex];
 }
 
+function playerBoardCell(gameState, playerIndex, row, col) {
+    return gameState.board.fields[gameState.players[playerIndex].fieldIndex].grid[row * gameState.board.size.cols + col];
+}
+
+function currentPlayerBoardCell(gameState, row, col) {
+    return playerBoardCell(gameState, gameState.currentPlayerIndex, row, col);
+}
+
 const gameplayReducer = createReducer({}, {
     [GameActions.startGame]: (state, action) => {
         let coinToss = Math.round(Math.random());
@@ -32,6 +40,7 @@ const gameplayReducer = createReducer({}, {
     },
     [GameActions.createBoard]: (state, action) => {
         state.game.board = GameEntities.Board.generate(action.payload.boardSize, action.payload.boardSeed);
+        console.dir(state.game.board);
         state.game.state = GameStateTypes.CHOOSE_FIELD_OR_START;
     },
     [GameActions.chooseField]: (state, action) => {
@@ -65,9 +74,11 @@ const gameplayReducer = createReducer({}, {
     [GameActions.build]: (state, action) => {
         if (action.payload.type === GameEntities.BuildingType.FACTORY) {
             currentPlayer(state.game).buildingsPerTurn = 2;
+            currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy = action.payload.type;
         } else if (currentPlayer(state.game).buildings > 0) {
             // Check if Player has enough cacao
             if (currentPlayer(state.game).cacao >= action.payload.costs) {
+                currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy = action.payload.type;
                 // Pay cacao and decrease the buildings
                 currentPlayer(state.game).buildings -= 1;
                 currentPlayer(state.game).cacao -= action.payload.costs;
