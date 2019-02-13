@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import ModelLoader from './ModelLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
-import { BuildingType } from './gameplay/GameEntities';
+import { BuildingType, getEntity } from './gameplay/GameEntities';
 import { chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
 import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
@@ -147,11 +147,18 @@ class App extends Component {
     if (intersects.length > 0 && !this.isSwiping) {
       if (this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
           this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
-        this.playerGameField.setBuilding(intersects[0].object.parent.position, BuildingType.FACTORY);
-        this.props.finishTurn()
+        let building = getEntity(BuildingType.FACTORY);
+        this.playerGameField.setBuilding(intersects[0].object.parent.position, building.type);
+        this.props.build(building);
+        this.props.finishTurn();
       } else if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
-        this.playerGameField.setBuilding(intersects[0].object.parent.position, this.props.selectedBuilding);
-        this.props.build()
+        let building = getEntity(this.props.selectedBuilding);
+        // Check for resources
+        if (this.props.game.players[0].cacao >= building.costs &&
+            this.props.game.players[0].buildings > 0) {
+          this.playerGameField.setBuilding(intersects[0].object.parent.position, building.type);
+          this.props.build(building);
+        }
       }
     }
   }

@@ -50,10 +50,7 @@ const gameplayReducer = createReducer({}, {
             state.game.state = GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
         } else if (state.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
             state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
-            console.log(currentPlayer(state.game).cacao)
-            currentPlayer(state.game).cacao = currentPlayer(state.game).cacaoPerTurn;
-            console.log(currentPlayer(state.game).cacaoPerTurn)
-            console.log(currentPlayer(state.game).cacao)
+            currentPlayer(state.game).cacao += currentPlayer(state.game).cacaoPerTurn;
             currentPlayer(state.game).attacks = currentPlayer(state.game).attacksPerTurn;
             currentPlayer(state.game).buildings = currentPlayer(state.game).buildingsPerTurn;
             state.game.state = GameStateTypes.BUILD_PHASE;
@@ -66,13 +63,22 @@ const gameplayReducer = createReducer({}, {
         state.game.state = GameStateTypes.ATTACK_PHASE;
     },
     [GameActions.build]: (state, action) => {
-        if (currentPlayer(state.game).buildings > 0) {
-            currentPlayer(state.game).buildings = currentPlayer(state.game).buildings - 1;
-
-            if (currentPlayer(state.game).buildings === 0) {
-                state.game.state = GameStateTypes.ATTACK_PHASE;
+        if (action.payload.type === GameEntities.BuildingType.FACTORY) {
+            currentPlayer(state.game).buildingsPerTurn = 2;
+        } else if (currentPlayer(state.game).buildings > 0) {
+            // Check if Player has enough cacao
+            if (currentPlayer(state.game).cacao >= action.payload.costs) {
+                // Pay cacao and decrease the buildings
+                currentPlayer(state.game).buildings -= 1;
+                currentPlayer(state.game).cacao -= action.payload.costs;
+                // Skip to attack phase if player has no resources
+                if (currentPlayer(state.game).buildings === 0 ||
+                    currentPlayer(state.game).cacao === 0) {
+                    state.game.state = GameStateTypes.ATTACK_PHASE;
+                }
             }
         } else {
+            // Skip to attack phase if player has no resources
             state.game.state = GameStateTypes.ATTACK_PHASE;
         }
     },

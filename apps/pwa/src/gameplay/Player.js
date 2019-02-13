@@ -13,7 +13,7 @@ function createPlayer(name, type, activePlayer) {
         cacao: 50,
         cacaoPerTurn: 0,
         buildings: 0,
-        buildingsPerTurn: 2,
+        buildingsPerTurn: 0,
         attacks: 0,
         attacksPerTurn: 0
     };

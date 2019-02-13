@@ -11,7 +11,10 @@ const GameTransitions = Object.freeze({
     OPPONENT_INITAL_PLACEMENT: 'GameTransitions.OPPONENT_INITAL_PLACEMENT',
     OPPONENT_FINISHED_INITIAL_PLACEMENT: 'GameTransitions.OPPONENT_FINISHED_INITIAL_PLACEMENT',
     OPPONENT_FINISHED_BUILD_PHASE: 'GameTransitions.OPPONENT_FINISHED_BUILD_PHASE',
-    OPPONENT_FINISHED_TURN: 'GameTransitions.OPPONENT_FINISHED_TURN',
+    PLAYER_BUILD_PHASE: 'GameTransitions.PLAYER_BUILD_PHASE',
+    PLAYER_ATTACK_PHASE: 'GameTransitions.PLAYER_ATTACK_PHASE',
+    OPPONENT_BUILD_PHASE: 'GameTransitions.OPPONENT_BUILD_PHASE',
+    OPPONENT_ATTACK_PHASE: 'GameTransitions.OPPONENT_ATTACK_PHASE',
     INVALID: 'GameTransitions.INVALID'
 });
 
@@ -59,10 +62,20 @@ function getGameTransition(currentState, nextState) {
         nextState.state === GameStateTypes.ATTACK_PHASE &&
         currentState.currentPlayerIndex === 1) {
         return GameTransitions.OPPONENT_FINISHED_BUILD_PHASE;
-    } else if (currentState.state === GameStateTypes.ATTACK_PHASE &&
-        nextState.state === GameStateTypes.BUILD_PHASE &&
-        currentState.currentPlayerIndex === 1) {
-        return GameTransitions.OPPONENT_FINISHED_TURN;
+    } else if (nextState.state === GameStateTypes.BUILD_PHASE &&
+        currentState.state !== GameStateTypes.BUILD_PHASE) {
+        if (nextState.currentPlayerIndex === 0) {
+            return GameTransitions.PLAYER_BUILD_PHASE;
+        } else {
+            return GameTransitions.OPPONENT_BUILD_PHASE;
+        }
+    } else if (nextState.state === GameStateTypes.ATTACK_PHASE &&
+        currentState.state === GameStateTypes.BUILD_PHASE) {
+        if (nextState.currentPlayerIndex === 0) {
+            return GameTransitions.PLAYER_ATTACK_PHASE;
+        } else {
+            return GameTransitions.OPPONENT_ATTACK_PHASE;
+        }        
     } else {
         return GameTransitions.INVALID;
     }

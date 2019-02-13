@@ -40,6 +40,11 @@ class Hud extends Component {
             this.showTurnMessage('Place your factory', true);
         } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
             this.showTurnMessage('Oppoent starts to place factory', true);
+        } else if (gameTransition === GameTransitions.PLAYER_BUILD_PHASE ||
+            gameTransition === GameTransitions.OPPONENT_FINISHED_INITIAL_PLACEMENT) {
+            this.showTurnMessage('Build it up!', true);
+        } else if (gameTransition === GameTransitions.PLAYER_ATTACK_PHASE) {
+            this.showTurnMessage('Moving the Cannon into Position', true);
         }
     }
 
@@ -148,7 +153,7 @@ class Hud extends Component {
                     } else if (!this.isInitalStage() && !this.isTitleScreen()) {
                         return (
                             <div id="gameMenu">
-                                <p>Cacao: {this.props.game.players[0].cacao}<br />Buildings: {this.props.game.players[0].buildingsPerTurn}</p>
+                                <p>Cacao: {this.props.game.players[0].cacao}<br />Buildings: {this.props.game.players[0].buildings + '/' + this.props.game.players[0].buildingsPerTurn}</p>
                                 <img alt="cacao tree preview" id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {
                                     this.props.selectBuilding(BuildingType.CACAOTREE);
                                 }} />
