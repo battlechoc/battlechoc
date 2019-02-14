@@ -29,6 +29,10 @@ function currentPlayerBoardCell(gameState, row, col) {
     return playerBoardCell(gameState, gameState.currentPlayerIndex, row, col);
 }
 
+function otherPlayerBoardCell(gameState, row, col) {
+    return playerBoardCell(gameState, 1 - gameState.currentPlayerIndex, row, col);
+}
+
 function prepareBuildPhase(gameState) {
     gameState.currentPlayerIndex = 1 - gameState.currentPlayerIndex;
     currentPlayer(gameState).cacao += currentPlayer(gameState).cacaoPerTurn;
@@ -65,11 +69,9 @@ const gameplayReducer = createReducer({}, {
         if (state.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) {
             state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
             state.game.state = GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
-        } else if (state.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
-            prepareBuildPhase(state.game);
-        } else if (state.game.state === GameStateTypes.ATTACK_PHASE) { 
-            prepareBuildPhase(state.game);
-        } else if (state.game.state === GameStateTypes.BUILD_PHASE) { 
+        } else if (state.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT ||
+            state.game.state === GameStateTypes.ATTACK_PHASE ||
+            state.game.state === GameStateTypes.BUILD_PHASE) {
             prepareBuildPhase(state.game);
         }
     },
@@ -92,36 +94,24 @@ const gameplayReducer = createReducer({}, {
                 currentPlayer(state.game).buildings -= 1;
                 currentPlayer(state.game).cacao -= action.payload.costs;
                 // Skip to attack phase if player has no resources anymore
-                // Skip attack phase if player has no attacks
-                if (currentPlayer(state.game).buildings === 0 ||
-                    currentPlayer(state.game).cacao === 0) {
-                    if (currentPlayer(state.game).attacks > 0) {
-                        state.game.state = GameStateTypes.ATTACK_PHASE;
-                    }
-                    else {
-                        prepareBuildPhase(state.game);               
-                    }
+                if (currentPlayer(state.game).buildings === 0) {
+                    state.game.state = GameStateTypes.ATTACK_PHASE;
                 }
-            }
-        } else {
-            // Skip to attack phase if player has no resources anymore
-            // Skip attack phase if player has no attacks
-            if (currentPlayer(state.game).attacks > 0) {
-                state.game.state = GameStateTypes.ATTACK_PHASE;
-            } else {
-                prepareBuildPhase(state.game);              
             }
         }
     },
     [GameActions.attack]: (state, action) => {
         if (currentPlayer(state.game).attacks > 0) {
             currentPlayer(state.game).attacks = currentPlayer(state.game).attacks - 1;
-
-            if (currentPlayer(state.game).attacks === 0) {
-                prepareBuildPhase(state.game);
+            let attackedCell = otherPlayerBoardCell(state.game, action.payload.targetRow, action.payload.targetCol);
+            if (attackedCell.occupiedBy !== GameEntities.BuildingType.EMPTY) {
+                state.ui.attackOutcome = {
+                    fieldIndex: otherPlayer(state.game).fieldIndex,
+                    target: { col: action.payload.targetCol, row: action.payload.targetRow },
+                    wasOccupiedBy: attackedCell.occupiedBy
+                };
+                attackedCell.occupiedBy = GameEntities.BuildingType.EMPTY;
             }
-        } else {
-            prepareBuildPhase(state.game);
         }
     }
 })
