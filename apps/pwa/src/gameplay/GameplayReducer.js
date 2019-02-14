@@ -41,6 +41,16 @@ function prepareBuildPhase(gameState) {
     gameState.state = GameStateTypes.BUILD_PHASE;
 }
 
+function countAttacks(gameState, playerIndex) {
+    let attacks = 0;
+    for (var cell in gameState.board.fields[currentPlayer(gameState).fieldIndex].grid) {
+        if (cell.occupiedBy === GameEntities.BuildingType.RUM_TRUFFLE_CANNON) {
+            ++attacks;
+        }
+    }
+    return attacks;
+}
+
 const gameplayReducer = createReducer({}, {
     [GameActions.startGame]: (state, action) => {
         let coinToss = Math.round(Math.random());
@@ -52,7 +62,6 @@ const gameplayReducer = createReducer({}, {
     },
     [GameActions.createBoard]: (state, action) => {
         state.game.board = GameEntities.Board.generate(action.payload.boardSize, action.payload.boardSeed);
-        console.dir(state.game.board);
         state.game.state = GameStateTypes.CHOOSE_FIELD_OR_START;
     },
     [GameActions.chooseField]: (state, action) => {
@@ -76,10 +85,10 @@ const gameplayReducer = createReducer({}, {
         }
     },
     [GameActions.finishBuildPhase]: (state, action) => {
+        currentPlayer(state.game).attacks = countAttacks(state.game);
         state.game.state = GameStateTypes.ATTACK_PHASE;
     },
     [GameActions.build]: (state, action) => {
-        console.log('build', action)
         if (action.payload.type === GameEntities.BuildingType.FACTORY) {
             currentPlayer(state.game).buildingsPerTurn = 2;
             currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy = action.payload.type;
@@ -93,10 +102,6 @@ const gameplayReducer = createReducer({}, {
                 // Pay cacao and decrease the buildings
                 currentPlayer(state.game).buildings -= 1;
                 currentPlayer(state.game).cacao -= action.payload.costs;
-                // Skip to attack phase if player has no resources anymore
-                if (currentPlayer(state.game).buildings === 0) {
-                    state.game.state = GameStateTypes.ATTACK_PHASE;
-                }
             }
         }
     },
