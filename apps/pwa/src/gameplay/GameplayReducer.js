@@ -55,7 +55,7 @@ function countAttacks(gameState, playerIndex) {
 const gameplayReducer = createReducer({}, {
     [GameActions.startGame]: (state, action) => {
         let coinToss = Math.round(Math.random());
-        if (action.payload[1].type == PlayerType.AUGUSTUS_GLOOP) { 
+        if (action.payload[1].type === PlayerType.AUGUSTUS_GLOOP) { 
             coinToss = 0;
         }
         state.game = {
