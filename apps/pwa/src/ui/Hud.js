@@ -3,7 +3,7 @@ import './Hud.css';
 import PropTypes from 'prop-types';
 import { BuildingType } from '../gameplay/GameEntities';
 import { connect } from 'react-redux';
-import { startGame, chooseField, chooseStart, createBoard } from '../gameplay/GameActions';
+import { startGame, chooseField, chooseStart, createBoard, finishTurn, finishBuildPhase } from '../gameplay/GameActions';
 import { selectBuilding, showMessage, hideMessage } from './UiActions';
 import { createPlayer, PlayerType } from '../gameplay/Player';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
@@ -143,10 +143,26 @@ class Hud extends Component {
     }
 
     render() {
+        let skipButtons = undefined;
+        if (typeof this.props.game !== 'undefined') {
+            if (this.props.game.currentPlayerIndex === 0) {
+                if (this.props.state  === GameStateTypes.BUILD_PHASE) {
+                    skipButtons = <div className="skipMenu">
+                            <div onClick={() => this.props.finishBuildPhase()} className="menuButton">Skip Build</div>
+                            <div onClick={() => this.props.finishTurn()} className="menuButton">Finish Turn</div>
+                        </div>;
+                } else if (this.props.state  === GameStateTypes.ATTACK_PHASE) {
+                    skipButtons = <div className="skipMenu">
+                            <div onClick={() => this.props.finishTurn()} className="menuButton">Finish Turn</div>
+                        </div>;
+                }
+            }
+        }
+
         return (
             <div id="hud" className={this.isInitalStage() || this.isTitleScreen() || this.props.messageAnimation ? 'fullscreen' : ''} ref={hud => {this.hud = hud}}>
                 <div id="toggleMusic" 
-                    className={this.isTitleScreen() ? "overlay" : ""}
+                    className={this.isTitleScreen() ? "overlay menuButton" : "menuButton"}
                     onClick={() => this.props.toggleMusic()}>toggle music</div>
                 <canvas id="textAnimationCanvas" className={this.props.messageAnimation ? 'ontop' : 'below'}></canvas>
                 {(() => {
@@ -160,6 +176,7 @@ class Hud extends Component {
                     } else if (!this.isInitalStage() && !this.isTitleScreen()) {
                         return (
                             <div id="gameMenu">
+                                { skipButtons }
                                 <p>Cacao: {this.props.game.players[0].cacao}<br />Buildings: {this.props.game.players[0].buildings + '/' + this.props.game.players[0].buildingsPerTurn}</p>
                                 {(() => {
                                     if (this.buildingSelectionIsVisible()) {
@@ -237,7 +254,9 @@ const mapDispatchToProps = {
   createBoard,
   selectBuilding,
   hideMessage,
-  showMessage
+  showMessage,
+  finishBuildPhase,
+  finishTurn
 };
 
 const HudContainer = connect(

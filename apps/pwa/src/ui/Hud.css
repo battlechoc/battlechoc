@@ -50,13 +50,26 @@
   margin-left: 5px; 
 }
 
-#toggleMusic {
+.skipMenu {
+  display: flex;
+  padding-top: 5px;
+  flex-direction: row;
+}
+
+.skipMenu > div {
+  margin-right: 10px; 
+}
+
+.menuButton {
   border: 1px solid #fff;
-  cursor: pointer;
+  font-size: 1.2vw;
   padding: 5px;
-  font-size: 1.4vw;
-  display: inline-block;
+  cursor: pointer;
+}
+
+#toggleMusic {
   margin: 5px;
+  display: inline-block;
 }
 
 .overlay {
@@ -154,13 +167,13 @@
   }
 }
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 800px) {
   #hud > p {
     margin: 5px 5px;
     font-size: 10px;
   }
 
-  #toggleMusic {
+  .menuButton {
     font-size: 10px;
   }
 
