@@ -1,6 +1,7 @@
 import { createReducer } from 'redux-starter-kit';
 import * as GameActions from './GameActions';
-import * as GameEntities from "./GameEntities.js";
+import * as GameEntities from './GameEntities';
+import { PlayerType } from './Player';
 
 const GameStateTypes = Object.freeze({
     START: 'GameStateTypes.START',
@@ -54,6 +55,9 @@ function countAttacks(gameState, playerIndex) {
 const gameplayReducer = createReducer({}, {
     [GameActions.startGame]: (state, action) => {
         let coinToss = Math.round(Math.random());
+        if (action.payload[1].type == PlayerType.AUGUSTUS_GLOOP) { 
+            coinToss = 0;
+        }
         state.game = {
             players: action.payload,
             currentPlayerIndex: coinToss,
