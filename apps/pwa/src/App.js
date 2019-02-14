@@ -114,6 +114,8 @@ class App extends Component {
       this.opponent.simulateInitialPlacement();
     } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
       this.opponent.simulateInitialPlacement();
+    } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
+      this.opponent.simulateBuildPhase();
     }
   }
 

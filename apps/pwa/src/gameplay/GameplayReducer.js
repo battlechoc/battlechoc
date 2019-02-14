@@ -29,6 +29,14 @@ function currentPlayerBoardCell(gameState, row, col) {
     return playerBoardCell(gameState, gameState.currentPlayerIndex, row, col);
 }
 
+function prepareBuildPhase(gameState) {
+    gameState.currentPlayerIndex = 1 - gameState.currentPlayerIndex;
+    currentPlayer(gameState).cacao += currentPlayer(gameState).cacaoPerTurn;
+    currentPlayer(gameState).attacks = currentPlayer(gameState).attacksPerTurn;
+    currentPlayer(gameState).buildings = currentPlayer(gameState).buildingsPerTurn;
+    gameState.state = GameStateTypes.BUILD_PHASE;
+}
+
 const gameplayReducer = createReducer({}, {
     [GameActions.startGame]: (state, action) => {
         let coinToss = Math.round(Math.random());
@@ -58,33 +66,25 @@ const gameplayReducer = createReducer({}, {
             state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
             state.game.state = GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
         } else if (state.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
-            state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
-            currentPlayer(state.game).cacao += currentPlayer(state.game).cacaoPerTurn;
-            currentPlayer(state.game).attacks = currentPlayer(state.game).attacksPerTurn;
-            currentPlayer(state.game).buildings = currentPlayer(state.game).buildingsPerTurn;
-            state.game.state = GameStateTypes.BUILD_PHASE;
+            prepareBuildPhase(state.game);
         } else if (state.game.state === GameStateTypes.ATTACK_PHASE) { 
-            currentPlayer(state.game).cacao += currentPlayer(state.game).cacaoPerTurn;
-            currentPlayer(state.game).attacks = currentPlayer(state.game).attacksPerTurn;
-            currentPlayer(state.game).buildings = currentPlayer(state.game).buildingsPerTurn;
-            state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
-            state.game.state = GameStateTypes.BUILD_PHASE;
+            prepareBuildPhase(state.game);
         } else if (state.game.state === GameStateTypes.BUILD_PHASE) { 
-            currentPlayer(state.game).cacao += currentPlayer(state.game).cacaoPerTurn;
-            currentPlayer(state.game).attacks = currentPlayer(state.game).attacksPerTurn;
-            currentPlayer(state.game).buildings = currentPlayer(state.game).buildingsPerTurn;
-            state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
-            state.game.state = GameStateTypes.BUILD_PHASE;
+            prepareBuildPhase(state.game);
         }
     },
     [GameActions.finishBuildPhase]: (state, action) => {
         state.game.state = GameStateTypes.ATTACK_PHASE;
     },
     [GameActions.build]: (state, action) => {
+        console.log('build', action)
         if (action.payload.type === GameEntities.BuildingType.FACTORY) {
             currentPlayer(state.game).buildingsPerTurn = 2;
             currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy = action.payload.type;
         } else if (currentPlayer(state.game).buildings > 0) {
+            if (action.payload.type === GameEntities.BuildingType.CACAOTREE) {
+                currentPlayer(state.game).cacaoPerTurn += 30;
+            }
             // Check if Player has enough cacao
             if (currentPlayer(state.game).cacao >= action.payload.costs) {
                 currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy = action.payload.type;
@@ -93,14 +93,14 @@ const gameplayReducer = createReducer({}, {
                 currentPlayer(state.game).cacao -= action.payload.costs;
                 // Skip to attack phase if player has no resources anymore
                 // Skip attack phase if player has no attacks
-                if (currentPlayer(state.game).attacks > 0) {
-                    if (currentPlayer(state.game).buildings === 0 ||
-                        currentPlayer(state.game).cacao === 0) {
+                if (currentPlayer(state.game).buildings === 0 ||
+                    currentPlayer(state.game).cacao === 0) {
+                    if (currentPlayer(state.game).attacks > 0) {
                         state.game.state = GameStateTypes.ATTACK_PHASE;
                     }
-                } else {
-                    state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
-                    state.game.state = GameStateTypes.BUILD_PHASE;                
+                    else {
+                        prepareBuildPhase(state.game);               
+                    }
                 }
             }
         } else {
@@ -109,8 +109,7 @@ const gameplayReducer = createReducer({}, {
             if (currentPlayer(state.game).attacks > 0) {
                 state.game.state = GameStateTypes.ATTACK_PHASE;
             } else {
-                state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
-                state.game.state = GameStateTypes.BUILD_PHASE;                
+                prepareBuildPhase(state.game);              
             }
         }
     },
@@ -119,12 +118,10 @@ const gameplayReducer = createReducer({}, {
             currentPlayer(state.game).attacks = currentPlayer(state.game).attacks - 1;
 
             if (currentPlayer(state.game).attacks === 0) {
-                state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
-                state.game.state = GameStateTypes.BUILD_PHASE;
+                prepareBuildPhase(state.game);
             }
         } else {
-            state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
-            state.game.state = GameStateTypes.BUILD_PHASE;
+            prepareBuildPhase(state.game);
         }
     }
 })
