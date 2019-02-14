@@ -135,6 +135,13 @@ class Hud extends Component {
         return typeof this.props.state === 'undefined';
     }
 
+    buildingSelectionIsVisible() {
+        return (this.props.state === GameStateTypes.BUILD_PHASE ||
+            this.props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
+            this.props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) && 
+            this.props.game.currentPlayerIndex === 0;
+    }
+
     render() {
         return (
             <div id="hud" className={this.isInitalStage() || this.isTitleScreen() || this.props.messageAnimation ? 'fullscreen' : ''} ref={hud => {this.hud = hud}}>
@@ -154,12 +161,18 @@ class Hud extends Component {
                         return (
                             <div id="gameMenu">
                                 <p>Cacao: {this.props.game.players[0].cacao}<br />Buildings: {this.props.game.players[0].buildings + '/' + this.props.game.players[0].buildingsPerTurn}</p>
-                                <img alt="cacao tree preview" id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {
-                                    this.props.selectBuilding(BuildingType.CACAOTREE);
-                                }} />
-                                <img alt="cannon preview" id="cannonIcon" className="preview" src="images/cannon_icon.png" onClick={() => {
-                                    this.props.selectBuilding(BuildingType.RUM_TRUFFLE_CANNON);
-                                }} />
+                                {(() => {
+                                    if (this.buildingSelectionIsVisible()) {
+                                        return (<div id="buildings">
+                                                    <img alt="cacao tree preview" id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {
+                                                        this.props.selectBuilding(BuildingType.CACAOTREE);
+                                                    }} />
+                                                    <img alt="cannon preview" id="cannonIcon" className="preview" src="images/cannon_icon.png" onClick={() => {
+                                                        this.props.selectBuilding(BuildingType.RUM_TRUFFLE_CANNON);
+                                                    }} />
+                                                </div>);
+                                    }
+                                })()}
                             </div>
                         );
                     } else if (this.isInitalStage()) {
