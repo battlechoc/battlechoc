@@ -69,6 +69,16 @@ function getGameTransition(currentState, nextState) {
         } else {
             return GameTransitions.OPPONENT_BUILD_PHASE;
         }
+    } else if (nextState.state === GameStateTypes.BUILD_PHASE &&
+        currentState.state === GameStateTypes.BUILD_PHASE &&
+        nextState.currentPlayerIndex === 1 &&
+        currentState.currentPlayerIndex === 0) {
+        return GameTransitions.OPPONENT_BUILD_PHASE;
+    } else if (nextState.state === GameStateTypes.BUILD_PHASE &&
+        currentState.state === GameStateTypes.BUILD_PHASE &&
+        nextState.currentPlayerIndex === 0 &&
+        currentState.currentPlayerIndex === 1) {
+        return GameTransitions.PLAYER_BUILD_PHASE;
     } else if (nextState.state === GameStateTypes.ATTACK_PHASE &&
         currentState.state === GameStateTypes.BUILD_PHASE) {
         if (nextState.currentPlayerIndex === 0) {

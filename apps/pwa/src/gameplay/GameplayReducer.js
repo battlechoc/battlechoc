@@ -64,6 +64,15 @@ const gameplayReducer = createReducer({}, {
             currentPlayer(state.game).buildings = currentPlayer(state.game).buildingsPerTurn;
             state.game.state = GameStateTypes.BUILD_PHASE;
         } else if (state.game.state === GameStateTypes.ATTACK_PHASE) { 
+            currentPlayer(state.game).cacao += currentPlayer(state.game).cacaoPerTurn;
+            currentPlayer(state.game).attacks = currentPlayer(state.game).attacksPerTurn;
+            currentPlayer(state.game).buildings = currentPlayer(state.game).buildingsPerTurn;
+            state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
+            state.game.state = GameStateTypes.BUILD_PHASE;
+        } else if (state.game.state === GameStateTypes.BUILD_PHASE) { 
+            currentPlayer(state.game).cacao += currentPlayer(state.game).cacaoPerTurn;
+            currentPlayer(state.game).attacks = currentPlayer(state.game).attacksPerTurn;
+            currentPlayer(state.game).buildings = currentPlayer(state.game).buildingsPerTurn;
             state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
             state.game.state = GameStateTypes.BUILD_PHASE;
         }
@@ -82,15 +91,27 @@ const gameplayReducer = createReducer({}, {
                 // Pay cacao and decrease the buildings
                 currentPlayer(state.game).buildings -= 1;
                 currentPlayer(state.game).cacao -= action.payload.costs;
-                // Skip to attack phase if player has no resources
-                if (currentPlayer(state.game).buildings === 0 ||
-                    currentPlayer(state.game).cacao === 0) {
-                    state.game.state = GameStateTypes.ATTACK_PHASE;
+                // Skip to attack phase if player has no resources anymore
+                // Skip attack phase if player has no attacks
+                if (currentPlayer(state.game).attacks > 0) {
+                    if (currentPlayer(state.game).buildings === 0 ||
+                        currentPlayer(state.game).cacao === 0) {
+                        state.game.state = GameStateTypes.ATTACK_PHASE;
+                    }
+                } else {
+                    state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
+                    state.game.state = GameStateTypes.BUILD_PHASE;                
                 }
             }
         } else {
-            // Skip to attack phase if player has no resources
-            state.game.state = GameStateTypes.ATTACK_PHASE;
+            // Skip to attack phase if player has no resources anymore
+            // Skip attack phase if player has no attacks
+            if (currentPlayer(state.game).attacks > 0) {
+                state.game.state = GameStateTypes.ATTACK_PHASE;
+            } else {
+                state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
+                state.game.state = GameStateTypes.BUILD_PHASE;                
+            }
         }
     },
     [GameActions.attack]: (state, action) => {
@@ -98,9 +119,11 @@ const gameplayReducer = createReducer({}, {
             currentPlayer(state.game).attacks = currentPlayer(state.game).attacks - 1;
 
             if (currentPlayer(state.game).attacks === 0) {
+                state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
                 state.game.state = GameStateTypes.BUILD_PHASE;
             }
         } else {
+            state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
             state.game.state = GameStateTypes.BUILD_PHASE;
         }
     }

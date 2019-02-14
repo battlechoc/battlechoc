@@ -52,21 +52,20 @@ class Augustus {
 
     simulateInitialPlacement() {
         setTimeout(() => {
-            console.log('finishTurn')
             this.actions.finishTurn();
-        }, 4000);        
+        }, 3000);        
     }
 
     simulateAttackPhase() {
         setTimeout(() => {
             this.actions.finishTurn();
-        }, 4000);    
+        }, 3000);    
     }
 
     simulateBuildPhase() {
         setTimeout(() => {
             this.actions.finishBuildPhase();
-        }, 4000);   
+        }, 3000);   
     }
 }
 
