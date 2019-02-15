@@ -106,11 +106,12 @@ const gameplayReducer = createReducer({}, {
             currentPlayer(state.game).attacks = currentPlayer(state.game).attacks - 1;
             let attackedCell = otherPlayerBoardCell(state.game, action.payload.targetRow, action.payload.targetCol);
             if (attackedCell.occupiedBy !== GameEntities.BuildingType.EMPTY) {
-                state.ui.attackOutcome = {
+                // TODO: Needs a fix -> throws error "ui is undefined in this reducer"
+                /* state.ui.attackOutcome = {
                     fieldIndex: otherPlayer(state.game).fieldIndex,
                     target: { col: action.payload.targetCol, row: action.payload.targetRow },
                     wasOccupiedBy: attackedCell.occupiedBy
-                };
+                }; */
                 attackedCell.occupiedBy = GameEntities.BuildingType.EMPTY;
             }
         }

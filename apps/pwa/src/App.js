@@ -174,10 +174,17 @@ class App extends Component {
     if (this.lookAtOpponent && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
       var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
 
-      if (intersects.length > 0 && !this.isSwiping) {
+      if (intersects.length > 0 && !this.isSwiping && this.props.game.players[0].attacks > 0) {
         let position = intersects[0].object.parent.position;
         this.opponentGameField.attack(position);
-        this.props.attack();
+        
+        let row = position.x / this.opponentGameField.fieldSize;
+        let col = position.z / this.opponentGameField.fieldSize;
+
+        this.props.attack({
+          targetRow: row,
+          targetCol: col
+        });
       }
     }
   }
