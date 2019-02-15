@@ -111,9 +111,13 @@ class App extends Component {
       this.triggerUiEvent = 'START_GAME';
     } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
       this.triggerUiEvent = 'START_GAME';
-      this.opponent.simulateInitialPlacement();
     } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
-      this.opponent.simulateInitialPlacement();
+      let oppoentGameBoard = nextProps.game.board.fields[this.props.game.players[1].fieldIndex];
+      if (oppoentGameBoard.grid.filter(cell => cell.occupiedBy === BuildingType.FACTORY).length < 1) {
+        this.opponent.simulateInitialPlacement(oppoentGameBoard, this.opponentGameField);
+      } else {
+        this.opponent.simulateBuildPhase();
+      }
     } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
       this.opponent.simulateBuildPhase();
     }
@@ -122,6 +126,8 @@ class App extends Component {
   componentDidUpdate() {
     if (this.triggerUiEvent === 'START_GAME') {
       this.startGame();
+      let opponentGameBoard = this.props.game.board.fields[this.props.game.players[1].fieldIndex];
+      this.opponent.simulateInitialPlacement(opponentGameBoard, this.opponentGameField);
     }
     this.triggerUiEvent = undefined;
     this.lookAtOpponent = this.props.game.currentPlayerIndex === 1 || 

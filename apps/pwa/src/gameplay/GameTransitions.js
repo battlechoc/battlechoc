@@ -53,7 +53,7 @@ function getGameTransition(currentState, nextState) {
         nextState.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) ||
         (currentState.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT &&
         nextState.state === GameStateTypes.BUILD_PHASE)) {
-        if (currentState.currentPlayerIndex === 1) {
+        if (nextState.currentPlayerIndex === 0) {
             return GameTransitions.OPPONENT_FINISHED_INITIAL_PLACEMENT;
         } else {
             return GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT;
