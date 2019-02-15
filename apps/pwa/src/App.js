@@ -124,7 +124,8 @@ class App extends Component {
       this.startGame();
     }
     this.triggerUiEvent = undefined;
-    this.lookAtOpponent = this.props.game.currentPlayerIndex === 1;
+    this.lookAtOpponent = this.props.game.currentPlayerIndex === 1 || 
+                          this.props.game.state === GameStateTypes.ATTACK_PHASE;
   }
 
   onClick = event => {

@@ -42,16 +42,6 @@ function prepareBuildPhase(gameState) {
     gameState.state = GameStateTypes.BUILD_PHASE;
 }
 
-function countAttacks(gameState, playerIndex) {
-    let attacks = 0;
-    for (var cell in gameState.board.fields[currentPlayer(gameState).fieldIndex].grid) {
-        if (cell.occupiedBy === GameEntities.BuildingType.RUM_TRUFFLE_CANNON) {
-            ++attacks;
-        }
-    }
-    return attacks;
-}
-
 const gameplayReducer = createReducer({}, {
     [GameActions.startGame]: (state, action) => {
         let coinToss = Math.round(Math.random());
@@ -89,7 +79,6 @@ const gameplayReducer = createReducer({}, {
         }
     },
     [GameActions.finishBuildPhase]: (state, action) => {
-        currentPlayer(state.game).attacks = countAttacks(state.game);
         state.game.state = GameStateTypes.ATTACK_PHASE;
     },
     [GameActions.build]: (state, action) => {
@@ -99,6 +88,9 @@ const gameplayReducer = createReducer({}, {
         } else if (currentPlayer(state.game).buildings > 0) {
             if (action.payload.type === GameEntities.BuildingType.CACAOTREE) {
                 currentPlayer(state.game).cacaoPerTurn += 30;
+            } else if (action.payload.type === GameEntities.BuildingType.RUM_TRUFFLE_CANNON) {
+                currentPlayer(state.game).attacksPerTurn += 1;
+                currentPlayer(state.game).attacks += 1;
             }
             // Check if Player has enough cacao
             if (currentPlayer(state.game).cacao >= action.payload.costs) {
@@ -123,6 +115,6 @@ const gameplayReducer = createReducer({}, {
             }
         }
     }
-})
+});
 
 export { gameplayReducer, GameStateTypes }

@@ -37,14 +37,14 @@ class Hud extends Component {
             this.showTurnMessage(this.props.game.players[0].name + ' picks a field', false);
             this.colorStartButton = 1;
         } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
-            this.showTurnMessage('Place your factory', true);
+            // TODO: Tooltip shows infos about placing the factory
         } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
-            this.showTurnMessage('Oppoent starts to place factory', true);
+            // TODO: Tooltip shows infos about opponent placing the factory
         } else if (gameTransition === GameTransitions.PLAYER_BUILD_PHASE ||
             gameTransition === GameTransitions.OPPONENT_FINISHED_INITIAL_PLACEMENT) {
-            this.showTurnMessage('Build it up!', true);
+            // TODO: Tooltip shows infos about the build phase
         } else if (gameTransition === GameTransitions.PLAYER_ATTACK_PHASE) {
-            this.showTurnMessage('Moving the Cannon into Position', true);
+            // TODO: Tooltip shows infos about attack
         }
     }
 
@@ -177,7 +177,9 @@ class Hud extends Component {
                         return (
                             <div id="gameMenu">
                                 { skipButtons }
-                                <p>Cacao: {this.props.game.players[0].cacao}<br />Buildings: {this.props.game.players[0].buildings + '/' + this.props.game.players[0].buildingsPerTurn}</p>
+                                <p>Cacao: {this.props.game.players[0].cacao}<br />
+                                Buildings: {this.props.game.players[0].buildings + '/' + this.props.game.players[0].buildingsPerTurn}<br />
+                                Attacks: {this.props.game.players[0].attacks + '/' + this.props.game.players[0].attacksPerTurn}</p>
                                 {(() => {
                                     if (this.buildingSelectionIsVisible()) {
                                         return (<div id="buildings">
