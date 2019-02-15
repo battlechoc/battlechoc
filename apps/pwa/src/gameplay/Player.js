@@ -58,7 +58,7 @@ class Augustus {
         let possibleCells = [];
 
         gamefield.grid.forEach(cell => {
-            if (cell.occupiedBy === BuildingType.CREAM) {
+            if (cell.occupiedBy.includes(BuildingType.CREAM)) {
                 possibleCells.push(cell);
             }
         });

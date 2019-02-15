@@ -40,7 +40,7 @@ class Gamefield {
                 
                 this.gameField.add(field);
 
-				if (cell.occupiedBy === BuildingType.CREAM) {
+				if (cell.occupiedBy.includes(BuildingType.CREAM)) {
 					this.setBuilding(field.position, BuildingType.CREAM, this.isPlayerGameField);
 				}
 			}

@@ -45,7 +45,7 @@ function prepareBuildPhase(gameState) {
 const gameplayReducer = createReducer({}, {
     [GameActions.startGame]: (state, action) => {
         let coinToss = Math.round(Math.random());
-        if (action.payload[1].type === PlayerType.AUGUSTUS_GLOOP) { 
+        if (action.payload[1].type === PlayerType.AUGUSTUS_GLOOP) {
             coinToss = 0;
         }
         state.game = {
@@ -84,7 +84,7 @@ const gameplayReducer = createReducer({}, {
     [GameActions.build]: (state, action) => {
         if (action.payload.type === GameEntities.BuildingType.FACTORY) {
             currentPlayer(state.game).buildingsPerTurn = 2;
-            currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy = action.payload.type;
+            currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy.push(action.payload.type);
         } else if (currentPlayer(state.game).buildings > 0) {
             if (action.payload.type === GameEntities.BuildingType.CACAOTREE) {
                 currentPlayer(state.game).cacaoPerTurn += 30;
@@ -94,7 +94,7 @@ const gameplayReducer = createReducer({}, {
             }
             // Check if Player has enough cacao
             if (currentPlayer(state.game).cacao >= action.payload.costs) {
-                currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy = action.payload.type;
+                currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy.push(action.payload.type);
                 // Pay cacao and decrease the buildings
                 currentPlayer(state.game).buildings -= 1;
                 currentPlayer(state.game).cacao -= action.payload.costs;
@@ -105,14 +105,16 @@ const gameplayReducer = createReducer({}, {
         if (currentPlayer(state.game).attacks > 0) {
             currentPlayer(state.game).attacks = currentPlayer(state.game).attacks - 1;
             let attackedCell = otherPlayerBoardCell(state.game, action.payload.targetRow, action.payload.targetCol);
-            if (attackedCell.occupiedBy !== GameEntities.BuildingType.EMPTY) {
-                // TODO: Needs a fix -> throws error "ui is undefined in this reducer"
-                /* state.ui.attackOutcome = {
+            if (attackedCell.occupiedBy.length > 0) {
+                if (state.ui === undefined) {
+                    state.ui = {};
+                }
+                state.ui.attackOutcome = {
                     fieldIndex: otherPlayer(state.game).fieldIndex,
                     target: { col: action.payload.targetCol, row: action.payload.targetRow },
                     wasOccupiedBy: attackedCell.occupiedBy
-                }; */
-                attackedCell.occupiedBy = GameEntities.BuildingType.EMPTY;
+                };
+                attackedCell.occupiedBy = [];
             }
         }
     }

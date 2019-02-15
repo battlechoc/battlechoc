@@ -148,8 +148,8 @@ class Hud extends Component {
             if (this.props.game.currentPlayerIndex === 0) {
                 if (this.props.state  === GameStateTypes.BUILD_PHASE) {
                     skipButtons = <div className="skipMenu">
-                            <div onClick={() => this.props.finishBuildPhase()} className="menuButton">Skip Build</div>
-                            <div onClick={() => this.props.finishTurn()} className="menuButton">Finish Turn</div>
+                            <div onClick={() => this.props.finishBuildPhase()} className="menuButton">Finish build phase</div>
+                            <div onClick={() => this.props.finishTurn()} className="menuButton">Finish turn</div>
                         </div>;
                 } else if (this.props.state  === GameStateTypes.ATTACK_PHASE) {
                     skipButtons = <div className="skipMenu">

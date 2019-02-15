@@ -113,7 +113,7 @@ class App extends Component {
       this.triggerUiEvent = 'START_GAME';
     } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
       let oppoentGameBoard = nextProps.game.board.fields[this.props.game.players[1].fieldIndex];
-      if (oppoentGameBoard.grid.filter(cell => cell.occupiedBy === BuildingType.FACTORY).length < 1) {
+      if (oppoentGameBoard.grid.filter(cell => cell.occupiedBy.includes(BuildingType.FACTORY)).length < 1) {
         this.opponent.simulateInitialPlacement(oppoentGameBoard, this.opponentGameField);
       } else {
         this.opponent.simulateBuildPhase();

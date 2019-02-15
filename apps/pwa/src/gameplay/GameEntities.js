@@ -48,7 +48,7 @@ class Board {
                         previewStyle: previewStyle,
                         row: row,
                         col: col, 
-                        occupiedBy: creamed ? BuildingType.CREAM : BuildingType.EMPTY
+                        occupiedBy: creamed ? [BuildingType.CREAM] : []
                     });
                 }
             }
