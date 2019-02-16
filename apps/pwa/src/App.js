@@ -126,8 +126,10 @@ class App extends Component {
   componentDidUpdate() {
     if (this.triggerUiEvent === 'START_GAME') {
       this.startGame();
-      let opponentGameBoard = this.props.game.board.fields[this.props.game.players[1].fieldIndex];
-      this.opponent.simulateInitialPlacement(opponentGameBoard, this.opponentGameField);
+      if (this.props.game.currentPlayerIndex === 1) {
+        let opponentGameBoard = this.props.game.board.fields[this.props.game.players[1].fieldIndex];
+        this.opponent.simulateInitialPlacement(opponentGameBoard, this.opponentGameField);
+      }
     }
     this.triggerUiEvent = undefined;
     this.lookAtOpponent = this.props.game.currentPlayerIndex === 1 || 
