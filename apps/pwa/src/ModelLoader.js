@@ -13,6 +13,7 @@ class ModelLoader {
             await this.loadGLTFModel('models/brown_tile.gltf'),
             await this.loadGLTFModel('models/black_tile.gltf'),
             await this.loadGLTFModel('models/factory.gltf'),
+            await this.loadGLTFModel('models/factory-extension.gltf'),
             await this.loadGLTFModel('models/cacaotree.gltf'),
             await this.loadGLTFModel('models/cannon.gltf'),
             await this.loadGLTFModel('models/cream.gltf'),

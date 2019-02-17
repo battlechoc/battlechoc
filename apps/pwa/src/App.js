@@ -113,10 +113,10 @@ class App extends Component {
       this.triggerUiEvent = 'START_GAME';
     } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
       let oppoentGameBoard = nextProps.game.board.fields[this.props.game.players[1].fieldIndex];
-      if (oppoentGameBoard.grid.filter(cell => cell.occupiedBy.includes(BuildingType.FACTORY)).length < 1) {
-        this.opponent.simulateInitialPlacement(oppoentGameBoard, this.opponentGameField);
-      } else {
+      if (this.props.game.players[1].hasFactory) {
         this.opponent.simulateBuildPhase();
+      } else {
+        this.opponent.simulateInitialPlacement(oppoentGameBoard, this.opponentGameField);
       }
     } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
       this.opponent.simulateBuildPhase();
@@ -159,7 +159,7 @@ class App extends Component {
       if (this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
           this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
         let building = getEntity(BuildingType.FACTORY);
-        building.position = this.playerGameField.setBuilding(intersects[0].object.parent.position, building.type);
+        building.position = this.playerGameField.setBuilding(intersects[intersects.length - 1].object.parent.position, building.type);
         if (building.position !== undefined) {
           this.props.build(building);
           this.props.finishTurn();
@@ -169,7 +169,7 @@ class App extends Component {
         // Check for resources
         if (this.props.game.players[0].cacao >= building.costs &&
             this.props.game.players[0].buildings > 0) {
-          building.position = this.playerGameField.setBuilding(intersects[0].object.parent.position, building.type);
+          building.position = this.playerGameField.setBuilding(intersects[intersects.length - 1].object.parent.position, building.type);
           if (building.position !== undefined) {
             this.props.build(building);
           }

@@ -16,7 +16,8 @@ function createPlayer(name, type, activePlayer) {
         buildings: 0,
         buildingsPerTurn: 0,
         attacks: 0,
-        attacksPerTurn: 0
+        attacksPerTurn: 0,
+        hasFactory: false
     };
 }
 
@@ -51,10 +52,7 @@ class Augustus {
         }, 3000);
     }
 
-    simulateInitialPlacement(gamefield, uiGamefield) {
-        console.log(gamefield);
-        console.log(uiGamefield);
-        
+    simulateInitialPlacement(gamefield, uiGamefield) {        
         let possibleCells = [];
 
         gamefield.grid.forEach(cell => {
