@@ -72,7 +72,7 @@ class Augustus {
 
         setTimeout(() => {
             let building = getEntity(BuildingType.FACTORY);
-            building.position = uiGamefield.setBuilding(randomPosition, building.type);
+            building.position = uiGamefield.setBuilding(randomPosition, building.type, false);
             if (building.position !== undefined) {
               this.actions.build(building);
               this.actions.finishTurn();

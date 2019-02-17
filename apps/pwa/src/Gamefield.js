@@ -90,16 +90,22 @@ class Gamefield {
 		}
 	}
 
+	getCellIndex(position) {
+		return {
+			row: position.x / this.fieldSize,
+			col: position.z / this.fieldSize
+		};
+	}
+
 	setBuilding(position, buildingType, asWireframe) {
 		if (typeof asWireframe == 'undefined') {
 			asWireframe = false;
 		}
 
-		let row = position.x / this.fieldSize;
-		let col = position.z / this.fieldSize;
+		const idx = this.getCellIndex(position);
 
-		if (this.buildings[row][col].buildingType === BuildingType.EMPTY ||
-			(this.buildings[row][col].buildingType === BuildingType.CREAM && buildingType !== BuildingType.CREAM)) {
+		if (this.buildings[idx.row][idx.col].buildingType === BuildingType.EMPTY ||
+			(this.buildings[idx.row][idx.col].buildingType === BuildingType.CREAM && buildingType !== BuildingType.CREAM)) {
 			let building = new Building(buildingType);
 			building.adjustPosition(position);
 			building.adjustRotation()
@@ -108,8 +114,11 @@ class Gamefield {
 			} else {
 				this.gameField.add(building.getModel());
 			}
-			this.buildings[row][col] = building;
-			return { row: row, col: col };
+			if (this.buildings[idx.row][idx.col].buildingType === BuildingType.CREAM && this.isPlayerGameField === false) {
+				building.hide();
+			}
+			this.buildings[idx.row][idx.col] = building;
+			return idx;
 		} else {
 			return undefined;
 		}

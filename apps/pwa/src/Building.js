@@ -45,6 +45,24 @@ class Building {
 		}
 	}
 
+	show() {
+		this._model.traverse(child => {
+			if (child instanceof THREE.Mesh) {
+				child.visible = true;
+			}
+		});
+
+	}
+
+	hide() {
+		this._model.traverse(child => {
+			if (child instanceof THREE.Mesh) {
+				child.visible = false;
+			}
+		});
+
+	}
+
 	getModelWireframe() {
 		this._model.children[2].material = new THREE.MeshBasicMaterial({opacity: 0.2, transparent: true, wireframe: true});
 		return this._model;
