@@ -9,15 +9,17 @@ const BoardCellTypes = Object.freeze({
 const BuildingType = Object.freeze({
     EMPTY: 'BuildingsType.EMPTY',
     CREAM: 'BuildingsType.CREAM', 
-    FACTORY:   'BuildingsType.FACTORY',
-    CACAOTREE:  'BuildingsType.CACAOTREE',
+    FACTORY: 'BuildingsType.FACTORY',
+    FACTORY_EXTENSION: 'BuildingType.FACTORY_EXTENSION',
+    CACAOTREE: 'BuildingsType.CACAOTREE',
     RUM_TRUFFLE_CANNON: 'BuildingsType.RUM_TRUFFLE_CANNON',
     isInstanceOf: function (buildingType) {
         if (buildingType === BuildingType.EMPTY ||
             buildingType === BuildingType.CREAM ||
             buildingType === BuildingType.FACTORY ||
             buildingType === BuildingType.CACAOTREE ||
-            buildingType === BuildingType.RUM_TRUFFLE_CANNON)
+            buildingType === BuildingType.RUM_TRUFFLE_CANNON ||
+            buildingType === BuildingType.FACTORY_EXTENSION)
             return true;
         else
             return false; 
@@ -65,7 +67,14 @@ function getEntity(type) {
                 id: uuidv4(), 
                 type: BuildingType.FACTORY, 
                 costs: 0,
-                cells: 4 
+                cells: 1 
+            };
+        case BuildingType.FACTORY_EXTENSION:
+            return { 
+                id: uuidv4(), 
+                type: BuildingType.FACTORY_EXTENSION, 
+                costs: 150, 
+                cells: 1
             };
         case BuildingType.CACAOTREE:
             return { 

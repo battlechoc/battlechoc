@@ -76,8 +76,8 @@ class Gamefield {
 			this.gameField.add(this.buildings[row][col].getModel());
 
 			this.mixer = new THREE.AnimationMixer(this.buildings[row][col].getModel());
-			for (let i = 0; i < ModelLoader.models[7].animations.length; i++) {
-		    	this.mixer.clipAction(ModelLoader.models[7].animations[i]).setLoop(THREE.LoopOnce).play()
+			for (let i = 0; i < ModelLoader.models[8].animations.length; i++) {
+		    	this.mixer.clipAction(ModelLoader.models[8].animations[i]).setLoop(THREE.LoopOnce).play()
 		    }
 
 		    this.explosionCallback = () => {
@@ -90,6 +90,38 @@ class Gamefield {
 		}
 	}
 
+	isAboveOfFactory(row, col) {
+		if ((col + 1) < this.fieldSize) {
+			return this.buildings[row][col + 1].buildingType === BuildingType.FACTORY;
+		} else {
+			return false;
+		}
+	}
+
+	isRightToFactory(row, col) {
+		if ((row + 1) < this.fieldSize) {
+			return this.buildings[row + 1][col].buildingType === BuildingType.FACTORY;
+		} else {
+			return false;
+		}
+	}
+
+	isBelowOfFactory(row, col) {
+		if ((col - 1) >= 0) {
+			return this.buildings[row][col - 1].buildingType === BuildingType.FACTORY;
+		} else {
+			return false
+		}
+	}
+
+	isLeftToFactory(row, col) {
+		if ((row - 1) >= 0) {
+			return this.buildings[row - 1][col].buildingType === BuildingType.FACTORY;
+		} else {
+			return false;
+		}
+	}
+
 	setBuilding(position, buildingType, asWireframe) {
 		if (typeof asWireframe == 'undefined') {
 			asWireframe = false;
@@ -99,8 +131,21 @@ class Gamefield {
 		let col = position.z / this.fieldSize;
 
 		if (this.buildings[row][col].buildingType === BuildingType.EMPTY ||
-			(this.buildings[row][col].buildingType === BuildingType.CREAM && buildingType !== BuildingType.CREAM)) {
+		   (this.buildings[row][col].buildingType === BuildingType.CREAM && buildingType !== BuildingType.CREAM)) {
 			let building = new Building(buildingType);
+
+			if (buildingType === BuildingType.FACTORY_EXTENSION) {
+				if (this.isAboveOfFactory(row, col)) {
+					building.rotate(Math.PI);
+				} else if (this.isRightToFactory(row, col)) {
+					building.rotate(-Math.PI / 2);
+				} else if (this.isLeftToFactory(row, col)) {
+					building.rotate(Math.PI / 2);
+				} else if (!this.isBelowOfFactory(row, col)) {
+					return undefined;
+				}
+			} 
+
 			building.adjustPosition(position);
 			building.adjustRotation()
 			if (asWireframe) {

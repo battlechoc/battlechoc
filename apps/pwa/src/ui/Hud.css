@@ -76,9 +76,32 @@
   position: absolute;
 }
 
+#buildings {
+  display: flex;
+}
+
+.previewContainer {
+  position: relative;
+}
+
 .preview {
   margin-left: 5px;
   height: auto;
+}
+
+.disabled {
+  width: 94%;
+  height: 98%;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  margin-top: -1px;
+  margin-left: 4px;
+  background-color: rgba(32, 32, 32, 0.8);
+}
+
+.enabled {
+  cursor: pointer;
 }
 
 .choose {
@@ -155,15 +178,15 @@
   font-size: 1.6vw;
 }
 
-@media screen and (min-width: 901px) {
+@media screen and (max-width: 900px) {
   .preview {
-    width: 80px;
+    width: 40px;
   }
 }
 
-@media screen and (min-width: 601px) {
+@media screen and (min-width: 901px) {
   .preview {
-    width: 40px;
+    width: 50px;
   }
 }
 
@@ -175,9 +198,5 @@
 
   .menuButton {
     font-size: 10px;
-  }
-
-  .preview {
-    width: 40px;
   }
 }

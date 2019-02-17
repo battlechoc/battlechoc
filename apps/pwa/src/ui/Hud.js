@@ -21,7 +21,23 @@ class Hud extends Component {
 
         this.activeUi = true;
         // -1 no color, 0 player (blue), 1 opponent (red)
-        this.colorStartButton = -1; 
+        this.colorStartButton = -1;
+        this.buildingsForSeclection = [{
+            type: BuildingType.CACAOTREE,
+            image: 'images/cacaotree_icon.png',
+            alt: 'cacao tree preview',
+            costs: 20
+        }, {
+            type: BuildingType.RUM_TRUFFLE_CANNON,
+            image: 'images/cannon_icon.png',
+            alt: 'cannon preview',
+            costs: 60
+        }, {
+            type: BuildingType.FACTORY_EXTENSION,
+            image: 'images/factory_extension_icon.png',
+            alt: 'factory extension preview',
+            costs: 150
+        }]
     }
 
     componentWillReceiveProps(nextProps) {
@@ -142,6 +158,12 @@ class Hud extends Component {
             this.props.game.currentPlayerIndex === 0;
     }
 
+    playerCanBuild(costs) {
+        return this.props.game.players[0].hasFactory && 
+               this.props.game.players[0].cacao >= costs &&
+               this.props.game.players[0].buildings > 0;
+    }
+
     render() {
         let skipButtons = undefined;
         if (typeof this.props.game !== 'undefined') {
@@ -180,18 +202,22 @@ class Hud extends Component {
                                 <p>Cacao: {this.props.game.players[0].cacao}<br />
                                 Buildings: {this.props.game.players[0].buildings + '/' + this.props.game.players[0].buildingsPerTurn}<br />
                                 Attacks: {this.props.game.players[0].attacks + '/' + this.props.game.players[0].attacksPerTurn}</p>
+                                <div id="buildings">
                                 {(() => {
                                     if (this.buildingSelectionIsVisible()) {
-                                        return (<div id="buildings">
-                                                    <img alt="cacao tree preview" id="cacaotreeIcon" className="preview" src="images/cacaotree_icon.png" onClick={() => {
-                                                        this.props.selectBuilding(BuildingType.CACAOTREE);
+                                        return this.buildingsForSeclection.map((building, i) => {
+                                            return <div className="previewContainer" key={i}>
+                                                    <div className={this.playerCanBuild(building.costs) ? '' : 'disabled'}></div>
+                                                    <img alt={building.alt} className={this.playerCanBuild(building.costs) ? 'enabled preview' : 'preview'} src={building.image} onClick={() => {
+                                                        if (this.playerCanBuild(building.costs)) {
+                                                            this.props.selectBuilding(building.type);
+                                                        }
                                                     }} />
-                                                    <img alt="cannon preview" id="cannonIcon" className="preview" src="images/cannon_icon.png" onClick={() => {
-                                                        this.props.selectBuilding(BuildingType.RUM_TRUFFLE_CANNON);
-                                                    }} />
-                                                </div>);
+                                            </div>
+                                        });
                                     }
                                 })()}
+                                </div>
                             </div>
                         );
                     } else if (this.isInitalStage()) {
