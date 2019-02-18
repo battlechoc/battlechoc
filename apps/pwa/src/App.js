@@ -120,6 +120,8 @@ class App extends Component {
       }
     } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
       this.opponent.simulateBuildPhase();
+    } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
+      this.opponent.simulateAttackPhase();
     }
   }
 

@@ -86,7 +86,7 @@ class Augustus {
 
     simulateBuildPhase() {
         setTimeout(() => {
-            this.actions.finishTurn();
+            this.actions.finishBuildPhase();
         }, 3000);   
     }
 }

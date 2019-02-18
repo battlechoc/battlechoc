@@ -41,7 +41,7 @@ class Gamefield {
                 this.gameField.add(field);
 
 				if (cell.occupiedBy.includes(BuildingType.CREAM)) {
-					this.setBuilding(field.position, BuildingType.CREAM, this.isPlayerGameField);
+					this.setBuilding(field.position, BuildingType.CREAM);
 				}
 			}
 		}
@@ -129,16 +129,15 @@ class Gamefield {
 		}
 	}
 
-	setBuilding(position, buildingType, asWireframe) {
-		if (typeof asWireframe == 'undefined') {
-			asWireframe = false;
-		}
-
+	setBuilding(position, buildingType) {
+		let asWireframe = buildingType === BuildingType.CREAM && this.isPlayerGameField;
+		
 		const idx = this.getCellIndex(position);
-
+        
 		if (this.buildings[idx.row][idx.col].buildingType === BuildingType.EMPTY ||
-			(this.buildings[idx.row][idx.col].buildingType === BuildingType.CREAM && buildingType !== BuildingType.CREAM)) {
-			let building = new Building(buildingType);
+		   (this.buildings[idx.row][idx.col].buildingType === BuildingType.CREAM && buildingType !== BuildingType.CREAM) ||
+		   (this.buildings[idx.row][idx.col].buildingType !== BuildingType.CREAM && buildingType === BuildingType.CREAM)) {
+		    let building = new Building(buildingType);
 
 			if (buildingType === BuildingType.FACTORY_EXTENSION) {
 				if (this.isAboveOfFactory(idx)) {

@@ -5,6 +5,77 @@
   color: white;
 }
 
+#buildings {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  margin-bottom: 5px;
+  margin-left: 5px;
+  display: flex;
+}
+
+.enabled {
+  cursor: pointer;
+}
+
+.preview {
+  margin-left: 5px;
+  height: auto;
+  width: 5vw;
+}
+
+.disabled {
+  width: 94%;
+  height: 98%;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  margin-top: -1px;
+  margin-left: 4px;
+  background-color: rgba(32, 32, 32, 0.8);
+}
+
+#tooltip {
+  position: absolute;
+  top: 0;
+  right: 0;
+  border: 1px solid white;
+  margin-top: 5px;
+  margin-right: 5px;
+  padding: 0px;
+  width: 20%;
+  color: #fff;
+  background: #000;
+  z-index: 1;
+}
+
+#tooltip > h3 {
+  background-color: rgba(125, 125, 125, 0.2);
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  padding: 5px;
+  font-size: 1.4vw;
+}
+
+#tooltip > h3.extendable {
+  cursor: pointer;
+}
+
+#tooltip > h3.extendable:hover {
+  background-color: rgba(125, 125, 125, 0.5);
+}
+
+#tooltip > p {
+  padding: 10px;
+  font-size: 1.4vw;
+}
+
+.invisible {
+  display: none;
+}
+
 #textAnimationCanvas {
   position: absolute;
   top: 0px;
@@ -38,16 +109,20 @@
   width: 18vw;
   font-size: 2vw;
   text-align: center;
-  background: rgba(50,50,50,0.5);
+  background: rgba(125, 125, 125, 0.2);
   margin: 5px;
 }
 
 #mainMenu > div:hover {
-  background: rgba(50,50,50,0.7);
+  background: rgba(125, 125, 125, 0.5);
 }
 
 #gameMenu {
   margin-left: 5px; 
+}
+
+#gameMenu > p {
+  font-size: 1.4vw;
 }
 
 .skipMenu {
@@ -62,7 +137,7 @@
 
 .menuButton {
   border: 1px solid #fff;
-  font-size: 1.2vw;
+  font-size: 1.4vw;
   padding: 5px;
   cursor: pointer;
 }
@@ -76,32 +151,8 @@
   position: absolute;
 }
 
-#buildings {
-  display: flex;
-}
-
 .previewContainer {
   position: relative;
-}
-
-.preview {
-  margin-left: 5px;
-  height: auto;
-}
-
-.disabled {
-  width: 94%;
-  height: 98%;
-  border-radius: 50%;
-  position: absolute;
-  top: 0;
-  margin-top: -1px;
-  margin-left: 4px;
-  background-color: rgba(32, 32, 32, 0.8);
-}
-
-.enabled {
-  cursor: pointer;
 }
 
 .choose {
@@ -175,18 +226,32 @@
 
 #hud > p {
   margin: 5px 5px;
-  font-size: 1.6vw;
+  font-size: 1.4vw;
 }
 
-@media screen and (max-width: 900px) {
-  .preview {
-    width: 40px;
+@media screen and (min-width: 1100px) {
+  #hud > p {
+    font-size: 16px;
   }
-}
 
-@media screen and (min-width: 901px) {
+  .menuButton {
+    font-size: 16px;
+  }
+
+  #tooltip > h3 {
+    font-size: 16px;
+  }
+
+  #tooltip > p {
+    font-size: 16px;
+  }
+
+  #gameMenu > p {
+    font-size: 16px;
+  }
+
   .preview {
-    width: 50px;
+    width: 55px;
   }
 }
 
@@ -198,5 +263,21 @@
 
   .menuButton {
     font-size: 10px;
+  }
+
+  #tooltip > h3 {
+    font-size: 10px;
+  }
+
+  #tooltip > p {
+    font-size: 10px;
+  }
+
+  #gameMenu > p {
+    font-size: 10px;
+  }
+
+  .preview {
+    width: 40px;
   }
 }
