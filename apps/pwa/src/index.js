@@ -6,13 +6,12 @@ import App from './App';
 import * as serviceWorker from './serviceWorker';
 import rootReducer from './RootReducer';
 import { gameplayLogger } from './gameplay/GamePlayLogger';
+import actionValidator from './gameplay/ActionValidator';
 import { configureStore, getDefaultMiddleware } from 'redux-starter-kit'
-
-const middleware = [...getDefaultMiddleware(), gameplayLogger]
 
 const store = configureStore({ 
     reducer: rootReducer,
-    middleware: middleware
+    middleware: [...getDefaultMiddleware(), actionValidator, gameplayLogger]
 });
 
 ReactDOM.render(

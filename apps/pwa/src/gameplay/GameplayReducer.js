@@ -44,6 +44,12 @@ function prepareBuildPhase(gameState) {
 
 const gameplayReducer = createReducer({}, {
     [GameActions.startGame]: (state, action) => {
+        console.log(action);
+        if (action.valid === true) {
+            console.log("action is valid");
+        } else {
+            console.log(action.valid.error);
+        }
         let coinToss = Math.round(Math.random());
         if (action.payload[1].type === PlayerType.AUGUSTUS_GLOOP) {
             coinToss = 0;
@@ -53,8 +59,16 @@ const gameplayReducer = createReducer({}, {
             currentPlayerIndex: coinToss,
             state: GameStateTypes.START
         };
+
+        //let s = {triggeredBy: action, actionProcessed: true/false, error: undefined };
+        //let turn = {currentPlayer: 1, turnCount: 2};
     },
     [GameActions.createBoard]: (state, action) => {
+        if (action.valid === true) {
+            console.log("createBoard action is valid");
+        } else {
+            console.log(action.valid.error);
+        }
         state.game.board = GameEntities.Board.generate(action.payload.boardSize, action.payload.boardSeed);
         state.game.state = GameStateTypes.CHOOSE_FIELD_OR_START;
     },
