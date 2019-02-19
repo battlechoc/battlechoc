@@ -3,9 +3,8 @@ import './Hud.css';
 import PropTypes from 'prop-types';
 import { BuildingType } from '../gameplay/GameEntities';
 import { connect } from 'react-redux';
-import { startGame, chooseField, chooseStart, createBoard, finishTurn, finishBuildPhase } from '../gameplay/GameActions';
+import { chooseField, chooseStart, finishTurn, finishBuildPhase } from '../gameplay/GameActions';
 import { selectBuilding, showMessage, hideMessage } from './UiActions';
-import { createPlayer, PlayerType } from '../gameplay/Player';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { GameTransitions, getGameTransition } from '../gameplay/GameTransitions';
 
@@ -132,22 +131,6 @@ class Hud extends Component {
                 this.props.hideMessage();
             }, 1000);
         }
-    }
-
-    fireGameStart() {
-        let player = [
-            createPlayer("Charlie Bucket", PlayerType.HUMAN), 
-            createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
-        ];
-
-        this.props.startGame(player).then(() => {
-            setTimeout(() => {
-                this.props.createBoard({
-                    boardSize: {rows: 8, cols: 8},
-                    boardSeed: 42
-                });
-            }, 1000);
-        });
     }
 
     renderAnimation = () => {
@@ -291,7 +274,7 @@ class Hud extends Component {
                         if (this.isTitleScreen()) {
                             return (
                                 <div id="mainMenu">
-                                    <div onClick={() => this.fireGameStart()}>New Game</div>
+                                    <div onClick={() => this.props.prepareGameCallback()}>New Game</div>
                                     <div>Settings</div>
                                 </div>
                             );
@@ -349,7 +332,7 @@ class Hud extends Component {
 
 Hud.propTypes = {
     toggleMusic: PropTypes.func.isRequired,
-    startGameCallback: PropTypes.func.isRequired,
+    prepareGameCallback: PropTypes.func.isRequired,
     triggerAugustusAction: PropTypes.func.isRequired
 }
 
@@ -361,10 +344,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = {
-  startGame,
   chooseField,
   chooseStart,
-  createBoard,
   selectBuilding,
   hideMessage,
   showMessage,

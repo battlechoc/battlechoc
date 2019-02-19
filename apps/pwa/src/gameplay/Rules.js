@@ -1,6 +1,7 @@
 import { GameActionTypes } from './GameActions';
 import { UiActionTypes } from '../ui/UiActions';
 import * as GameEntities from './GameEntities';
+import * as Errors from './Errors.js';
 
 class Rules {
 	static currentPlayer(gameState) {
@@ -9,9 +10,8 @@ class Rules {
 
     static isActionValid(action, state) {
         let currentState = typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state;
-        console.log(action, currentState);
 
-        if (action.type === GameActionTypes.startGame) {
+        if (typeof currentState === 'undefined' && action.type === GameActionTypes.startGame) {
             return true;
         } else if (action.type === GameActionTypes.createBoard) {
         	return true;
@@ -28,9 +28,9 @@ class Rules {
         } else if (action.type === GameActionTypes.build) {
         	if (this.currentPlayer(state.gameplay.game).buildings === 0 &&
         		action.payload.type !== GameEntities.BuildingType.FACTORY){
-        		return { error: 'No more buildings can be built'};
+        		return new Errors.NoBuildingsLeftError();
         	} else if (this.currentPlayer(state.gameplay.game).cacao < action.payload.costs) {
-        		return { error: 'Not enough cacao left'};
+        		return new Errors.NoCacaoLeftError();
         	} else {
         		return true;
         	}
@@ -43,7 +43,7 @@ class Rules {
         } else if (action.type === UiActionTypes.selectBuilding) {
         	return true;
         } else {
-            return { error: action.type + ' is not a valid action'};
+            return new Errors.ActionValidationError(action);
         }
     }
 }

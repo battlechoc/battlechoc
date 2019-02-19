@@ -1,5 +1,6 @@
 import uuidv4 from 'uuid/v4';
 import { BuildingType, getEntity } from './GameEntities';
+import { NoBuildingsLeftError, NoCacaoLeftError } from './Errors';
 
 const PlayerType = Object.freeze({
     HUMAN: 'PlayerType.HUMAN',
@@ -70,11 +71,23 @@ class Augustus {
 
         setTimeout(() => {
             let building = getEntity(BuildingType.FACTORY);
-            building.position = uiGamefield.setBuilding(randomPosition, building.type, false);
-            if (building.position !== undefined) {
-              this.actions.build(building);
+            building.position = {
+              row: randomPosition.x / uiGamefield.fieldSize,
+              col: randomPosition.z / uiGamefield.fieldSize
+            }   
+            console.log(building) 
+            this.actions.build(building).then(() => {
+              uiGamefield.setBuilding(randomPosition, building.type);
               this.actions.finishTurn();
-            }
+            }).catch(error => {
+              if (error instanceof NoBuildingsLeftError) {
+                console.log(error.message);
+              } else if (error instanceof NoCacaoLeftError) {
+                console.log(error.message);
+              } else {
+                throw error;
+              }
+            });
         }, 3000);     
     }
 

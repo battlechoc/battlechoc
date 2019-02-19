@@ -44,12 +44,6 @@ function prepareBuildPhase(gameState) {
 
 const gameplayReducer = createReducer({}, {
     [GameActions.startGame]: (state, action) => {
-        console.log(action);
-        if (action.valid === true) {
-            console.log("action is valid");
-        } else {
-            console.log(action.valid.error);
-        }
         let coinToss = Math.round(Math.random());
         if (action.payload[1].type === PlayerType.AUGUSTUS_GLOOP) {
             coinToss = 0;
@@ -59,16 +53,8 @@ const gameplayReducer = createReducer({}, {
             currentPlayerIndex: coinToss,
             state: GameStateTypes.START
         };
-
-        //let s = {triggeredBy: action, actionProcessed: true/false, error: undefined };
-        //let turn = {currentPlayer: 1, turnCount: 2};
     },
     [GameActions.createBoard]: (state, action) => {
-        if (action.valid === true) {
-            console.log("createBoard action is valid");
-        } else {
-            console.log(action.valid.error);
-        }
         state.game.board = GameEntities.Board.generate(action.payload.boardSize, action.payload.boardSeed);
         state.game.state = GameStateTypes.CHOOSE_FIELD_OR_START;
     },
@@ -100,19 +86,21 @@ const gameplayReducer = createReducer({}, {
             currentPlayer(state.game).buildingsPerTurn = 2;
             currentPlayer(state.game).hasFactory = true;
             currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy.push(action.payload.type);
-        } else if (action.payload.type === GameEntities.BuildingType.CACAOTREE) {
-            currentPlayer(state.game).cacaoPerTurn += 30;
-        } else if (action.payload.type === GameEntities.BuildingType.RUM_TRUFFLE_CANNON) {
-            currentPlayer(state.game).attacksPerTurn += 1;
-            currentPlayer(state.game).attacks += 1;
-        } else if (action.payload.type === GameEntities.BuildingType.FACTORY_EXTENSION) {
-            currentPlayer(state.game).buildingsPerTurn += 2;
-        }
+        } else {
+            if (action.payload.type === GameEntities.BuildingType.CACAOTREE) {
+                currentPlayer(state.game).cacaoPerTurn += 30;
+            } else if (action.payload.type === GameEntities.BuildingType.RUM_TRUFFLE_CANNON) {
+                currentPlayer(state.game).attacksPerTurn += 1;
+                currentPlayer(state.game).attacks += 1;
+            } else if (action.payload.type === GameEntities.BuildingType.FACTORY_EXTENSION) {
+                currentPlayer(state.game).buildingsPerTurn += 2;
+            }
                                 
-        currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy.push(action.payload.type);
-        // Pay cacao and decrease the buildings
-        currentPlayer(state.game).buildings -= 1;
-        currentPlayer(state.game).cacao -= action.payload.costs;
+            currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy.push(action.payload.type);
+            // Pay cacao and decrease the buildings
+            currentPlayer(state.game).buildings -= 1;
+            currentPlayer(state.game).cacao -= action.payload.costs;
+        }
     },
     [GameActions.attack]: (state, action) => {
         if (currentPlayer(state.game).attacks > 0) {

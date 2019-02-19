@@ -1,14 +1,15 @@
 import Rules from './Rules';
+import { BattlechocError } from './Errors';
 
 function actionValidatorMiddleware() {
     return ({ getState }) => next => action => {
         return new Promise((resolve, reject) => {
-        	action.valid = Rules.isActionValid(action, getState());
+        	let validity = Rules.isActionValid(action, getState());
         	
-        	if (typeof action.valid.error === 'undefined') {
-        		resolve(next(action));
+        	if (validity instanceof BattlechocError) {
+        		reject(validity);
         	} else {
-        		reject(action.valid.error);
+        		resolve(next(action));
         	}
         });
     }

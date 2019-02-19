@@ -6,11 +6,13 @@ import ModelLoader from './ModelLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import { BuildingType, getEntity } from './gameplay/GameEntities';
-import { chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
+import { startGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
 import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 import { GameStateTypes } from './gameplay/GameplayReducer'
+import { NoBuildingsLeftError, NoCacaoLeftError } from './gameplay/Errors';
+import { createPlayer, PlayerType } from './gameplay/Player';
 
 class App extends Component {
 
@@ -175,6 +177,14 @@ class App extends Component {
         }    
         this.props.build(building).then(() => {
           this.playerGameField.setBuilding(position, building.type);
+        }).catch(error => {
+          if (error instanceof NoBuildingsLeftError) {
+            console.log(error.message);
+          } else if (error instanceof NoCacaoLeftError) {
+            console.log(error.message);
+          } else {
+            throw error;
+          }
         });
       }
     }
@@ -282,7 +292,23 @@ class App extends Component {
     this.frameId = window.requestAnimationFrame(this.animate);    
   }
 
-  startGame = () => {
+  prepareGame = () => {
+    let player = [
+        createPlayer("Charlie Bucket", PlayerType.HUMAN), 
+        createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
+    ];
+
+    this.props.startGame(player).then(() => {
+      setTimeout(() => {
+        this.props.createBoard({
+          boardSize: {rows: 8, cols: 8},
+          boardSeed: 42
+        });
+      }, 1000);
+    });
+  }
+
+  startGame() {
     let playerFieldIndex = this.props.game.players[0].fieldIndex;
     let opponentFieldIndex = this.props.game.players[1].fieldIndex;
     this.lookAtOpponent = this.props.game.currentPlayerIndex === 1;
@@ -323,7 +349,7 @@ class App extends Component {
       <div className="app-container">
         <Hud
           toggleMusic={() => this.toggleMusic()}
-          startGameCallback={this.startGame}
+          prepareGameCallback={this.prepareGame}
           triggerAugustusAction={() => this.triggerAugustusAction()}
           ref={overlay => { this.overlay = overlay }} />
         <div
@@ -341,6 +367,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = {
+  startGame,
+  createBoard,
   chooseStart, 
   chooseField, 
   finishTurn,
