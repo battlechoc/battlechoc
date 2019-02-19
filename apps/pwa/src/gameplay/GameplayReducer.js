@@ -100,24 +100,19 @@ const gameplayReducer = createReducer({}, {
             currentPlayer(state.game).buildingsPerTurn = 2;
             currentPlayer(state.game).hasFactory = true;
             currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy.push(action.payload.type);
-        } else if (currentPlayer(state.game).buildings > 0) {
-            // Check if Player has enough cacao
-            if (currentPlayer(state.game).cacao >= action.payload.costs) {
-                if (action.payload.type === GameEntities.BuildingType.CACAOTREE) {
-                    currentPlayer(state.game).cacaoPerTurn += 30;
-                } else if (action.payload.type === GameEntities.BuildingType.RUM_TRUFFLE_CANNON) {
-                    currentPlayer(state.game).attacksPerTurn += 1;
-                    currentPlayer(state.game).attacks += 1;
-                } else if (action.payload.type === GameEntities.BuildingType.FACTORY_EXTENSION) {
-                    currentPlayer(state.game).buildingsPerTurn += 2;
-                }
-                                
-                currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy.push(action.payload.type);
-                // Pay cacao and decrease the buildings
-                currentPlayer(state.game).buildings -= 1;
-                currentPlayer(state.game).cacao -= action.payload.costs;
-            }
+        } else if (action.payload.type === GameEntities.BuildingType.CACAOTREE) {
+            currentPlayer(state.game).cacaoPerTurn += 30;
+        } else if (action.payload.type === GameEntities.BuildingType.RUM_TRUFFLE_CANNON) {
+            currentPlayer(state.game).attacksPerTurn += 1;
+            currentPlayer(state.game).attacks += 1;
+        } else if (action.payload.type === GameEntities.BuildingType.FACTORY_EXTENSION) {
+            currentPlayer(state.game).buildingsPerTurn += 2;
         }
+                                
+        currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy.push(action.payload.type);
+        // Pay cacao and decrease the buildings
+        currentPlayer(state.game).buildings -= 1;
+        currentPlayer(state.game).cacao -= action.payload.costs;
     },
     [GameActions.attack]: (state, action) => {
         if (currentPlayer(state.game).attacks > 0) {

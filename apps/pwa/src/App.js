@@ -168,14 +168,14 @@ class App extends Component {
         }
       } else if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
         let building = getEntity(this.props.selectedBuilding);
-        // Check for resources
-        if (this.props.game.players[0].cacao >= building.costs &&
-            this.props.game.players[0].buildings > 0) {
-          building.position = this.playerGameField.setBuilding(intersects[intersects.length - 1].object.parent.position, building.type);
-          if (building.position !== undefined) {
-            this.props.build(building);
-          }
-        }
+        let position = intersects[intersects.length - 1].object.parent.position;
+        building.position = {
+          row: position.x / this.playerGameField.fieldSize,
+          col: position.z / this.playerGameField.fieldSize
+        }    
+        this.props.build(building).then(() => {
+          this.playerGameField.setBuilding(position, building.type);
+        });
       }
     }
   }
@@ -185,7 +185,7 @@ class App extends Component {
       var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
 
       if (intersects.length > 0 && !this.isSwiping && this.props.game.players[0].attacks > 0) {
-        let position = intersects[0].object.parent.position;
+        let position = intersects[intersects.length - 1].object.parent.position;
         this.opponentGameField.attack(position);
         
         let row = position.x / this.opponentGameField.fieldSize;
