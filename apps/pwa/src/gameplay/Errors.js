@@ -33,5 +33,18 @@ class BuildNotPossibleError extends BattlechocError {
     }
 }
 
+class NoAttacksLeftError extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'No attacks left';
+    }
+}
 
-export { BattlechocError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError };
+class UnexpectedStateError extends BattlechocError {
+    constructor(state, ...args) {
+        super(...args);
+        this.message = 'Unexpected state for action: ' + state;
+    }
+}
+
+export { BattlechocError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, UnexpectedStateError };

@@ -103,20 +103,18 @@ const gameplayReducer = createReducer({}, {
         }
     },
     [GameActions.attack]: (state, action) => {
-        if (currentPlayer(state.game).attacks > 0) {
-            currentPlayer(state.game).attacks = currentPlayer(state.game).attacks - 1;
-            let attackedCell = otherPlayerBoardCell(state.game, action.payload.targetRow, action.payload.targetCol);
-            if (attackedCell.occupiedBy.length > 0) {
-                if (state.ui === undefined) {
-                    state.ui = {};
-                }
-                state.ui.attackOutcome = {
-                    fieldIndex: otherPlayer(state.game).fieldIndex,
-                    target: { col: action.payload.targetCol, row: action.payload.targetRow },
-                    wasOccupiedBy: attackedCell.occupiedBy
-                };
-                attackedCell.occupiedBy = [];
+        currentPlayer(state.game).attacks = currentPlayer(state.game).attacks - 1;
+        let attackedCell = otherPlayerBoardCell(state.game, action.payload.targetRow, action.payload.targetCol);
+        if (attackedCell.occupiedBy.length > 0) {
+            if (state.ui === undefined) {
+                state.ui = {};
             }
+            state.ui.attackOutcome = {
+                fieldIndex: otherPlayer(state.game).fieldIndex,
+                target: { col: action.payload.targetCol, row: action.payload.targetRow },
+                wasOccupiedBy: attackedCell.occupiedBy
+            };
+            attackedCell.occupiedBy = [];
         }
     }
 });

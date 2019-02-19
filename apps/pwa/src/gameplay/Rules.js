@@ -20,11 +20,11 @@ class Rules {
     static playerBoardCell(gameState, playerIndex, cellIdx) {
         return gameState.board.fields[gameState.players[playerIndex].fieldIndex].grid[cellIdx.row * gameState.board.size.cols + cellIdx.col];
     }
-    
+
     static currentPlayerBoardCell(gameState, cellIdx) {
         return this.playerBoardCell(gameState, gameState.currentPlayerIndex, cellIdx);
     }
-    
+
     static otherPlayerBoardCell(gameState, cellIdx) {
         return this.playerBoardCell(gameState, 1 - gameState.currentPlayerIndex, cellIdx);
     }
@@ -63,7 +63,9 @@ class Rules {
         } else if (action.type === GameActionTypes.finishBuildPhase) {
             return currentState === GameStateTypes.BUILD_PHASE;
         } else if (action.type === GameActionTypes.build) {
-        	if (this.currentPlayer(state.gameplay.game).buildings === 0 &&
+			if (currentState !== GameStateTypes.BUILD_PHASE && currentState !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && currentState !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
+                return new Errors.UnexpectedStateError(currentState);
+            } else if (this.currentPlayer(state.gameplay.game).buildings === 0 &&
         		action.payload.type !== GameEntities.BuildingType.FACTORY){
         		return new Errors.NoBuildingsLeftError();
         	} else if (this.currentPlayer(state.gameplay.game).cacao < action.payload.costs) {
@@ -72,7 +74,11 @@ class Rules {
         		return this.canBuildOnCell(action.payload.position, action.payload.type, state.gameplay.game);
         	}
         } else if (action.type === GameActionTypes.attack) {
-            return true;
+        	if (this.currentPlayer(state.gameplay.game).attacks === 0) {
+        		return new Errors.NoAttacksLeftError();
+        	} else {
+        		return true;
+        	}
         } else if (action.type === UiActionTypes.showMessage) {
             return true;
         } else if (action.type === UiActionTypes.hideMessage) {
