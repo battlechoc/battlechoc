@@ -14,11 +14,11 @@ class Rules {
     static playerBoardCell(gameState, playerIndex, cellIdx) {
         return gameState.board.fields[gameState.players[playerIndex].fieldIndex].grid[cellIdx.row * gameState.board.size.cols + cellIdx.col];
     }
-    
+
     static currentPlayerBoardCell(gameState, cellIdx) {
         return Rules.playerBoardCell(gameState, gameState.currentPlayerIndex, cellIdx);
     }
-    
+
     static otherPlayerBoardCell(gameState, cellIdx) {
         return Rules.playerBoardCell(gameState, 1 - gameState.currentPlayerIndex, cellIdx);
     }
@@ -60,7 +60,9 @@ class Rules {
         } else if (action.type === GameActionTypes.finishBuildPhase) {
             return currentState === GameStateTypes.BUILD_PHASE;
         } else if (action.type === GameActionTypes.build) {
-            if (this.currentPlayer(state.gameplay.game).buildings === 0 &&
+            if (currentState !== GameStateTypes.BUILD_PHASE && currentState !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && currentState !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
+                return { error: 'Cannot build in current game phase: ' + currentState };
+            } else if (this.currentPlayer(state.gameplay.game).buildings === 0 &&
                 action.payload.type !== GameEntities.BuildingType.FACTORY) {
                 return { error: 'No more buildings can be built' };
             } else if (this.currentPlayer(state.gameplay.game).cacao < action.payload.costs) {
@@ -69,7 +71,11 @@ class Rules {
                 return Rules.canBuildOnCell(action.payload.position, action.payload.type, state.gameplay.game);
             }
         } else if (action.type === GameActionTypes.attack) {
-            return true;
+            if (this.currentPlayer(state.gameplay.game).attacks === 0) {
+                return { error: 'Player has no attacks left.' };
+            } else {
+                return true;
+            }
         } else {
             return { error: action.type + ' is not a valid game action' };
         }
