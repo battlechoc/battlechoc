@@ -140,13 +140,14 @@ class Hud extends Component {
             createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
         ];
 
-        this.props.startGame(player);
-        setTimeout(() => {
-            this.props.createBoard({
-              boardSize: {rows: 8, cols: 8},
-              boardSeed: 42
-            });
-        }, 1000);
+        this.props.startGame(player).then(() => {
+            setTimeout(() => {
+                this.props.createBoard({
+                    boardSize: {rows: 8, cols: 8},
+                    boardSeed: 42
+                });
+            }, 1000);
+        });
     }
 
     renderAnimation = () => {

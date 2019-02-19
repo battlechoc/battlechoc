@@ -1,9 +1,15 @@
 import { createAction } from 'redux-starter-kit';
 
-const showMessage = createAction('battlechoc/ui/showMessage');
-const hideMessage = createAction('battlechoc/ui/hideMessage');
-const selectBuilding = createAction('battlechoc/ui/selectBuilding');
+const UiActionTypes = Object.freeze({
+    showMessage: 'battlechoc/ui/showMessage',
+    hideMessage: 'battlechoc/ui/hideMessage',
+    selectBuilding: 'battlechoc/ui/selectBuilding'
+});
+
+const showMessage = createAction(UiActionTypes.showMessage);
+const hideMessage = createAction(UiActionTypes.hideMessage);
+const selectBuilding = createAction(UiActionTypes.selectBuilding);
 
 export {
-    showMessage, hideMessage, selectBuilding
+    UiActionTypes, showMessage, hideMessage, selectBuilding
 };
