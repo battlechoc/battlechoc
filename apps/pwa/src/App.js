@@ -160,35 +160,35 @@ class App extends Component {
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
 
     if (intersects.length > 0 && !this.isSwiping) {
-      if (this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-          this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
-        let building = getEntity(BuildingType.FACTORY);
-        building.position = this.playerGameField.setBuilding(intersects[intersects.length - 1].object.parent.position, building.type);
-        if (building.position !== undefined) {
-          this.props.build(building);
+      let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
+                             this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
+
+      let building = getEntity(this.props.selectedBuilding);
+      if (initialPlacement) {
+        building = getEntity(BuildingType.FACTORY);
+      }
+      
+      let position = intersects[intersects.length - 1].object.parent.position;
+      building.position = {
+        row: position.x / this.playerGameField.fieldSize,
+        col: position.z / this.playerGameField.fieldSize
+      }    
+      this.props.build(building).then(() => {
+        this.playerGameField.setBuilding(position, building.type);
+        if (initialPlacement) {
           this.props.finishTurn();
         }
-      } else if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
-        let building = getEntity(this.props.selectedBuilding);
-        let position = intersects[intersects.length - 1].object.parent.position;
-        building.position = {
-          row: position.x / this.playerGameField.fieldSize,
-          col: position.z / this.playerGameField.fieldSize
-        }    
-        this.props.build(building).then(() => {
-          this.playerGameField.setBuilding(position, building.type);
-        }).catch(error => {
-          if (error instanceof NoBuildingsLeftError) {
-            console.log(error.message);
-          } else if (error instanceof NoCacaoLeftError) {
-            console.log(error.message);
-          } else if (error instanceof BuildNotPossibleError) {
-            console.log(error.message);
-          } else {
-            throw error;
-          }
-        });
-      }
+      }).catch(error => {
+        if (error instanceof NoBuildingsLeftError) {
+          console.log(error.message);
+        } else if (error instanceof NoCacaoLeftError) {
+          console.log(error.message);
+        } else if (error instanceof BuildNotPossibleError) {
+          console.log(error.message);
+        } else {
+          throw error;
+        }
+      });
     }
   }
 
