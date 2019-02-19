@@ -11,7 +11,7 @@ import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 import { GameStateTypes } from './gameplay/GameplayReducer'
-import { NoBuildingsLeftError, NoCacaoLeftError } from './gameplay/Errors';
+import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
 
 class App extends Component {
@@ -181,6 +181,8 @@ class App extends Component {
           if (error instanceof NoBuildingsLeftError) {
             console.log(error.message);
           } else if (error instanceof NoCacaoLeftError) {
+            console.log(error.message);
+          } else if (error instanceof BuildNotPossibleError) {
             console.log(error.message);
           } else {
             throw error;

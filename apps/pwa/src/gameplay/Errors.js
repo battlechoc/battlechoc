@@ -26,5 +26,12 @@ class NoCacaoLeftError extends BattlechocError {
     }
 }
 
+class BuildNotPossibleError extends BattlechocError {
+    constructor(message, ...args) {
+        super(...args);
+        this.message = message;
+    }
+}
 
-export { BattlechocError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError };
+
+export { BattlechocError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError };

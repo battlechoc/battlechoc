@@ -1,30 +1,67 @@
 import { GameActionTypes } from './GameActions';
-import { UiActionTypes } from '../ui/UiActions';
+import { UiActionTypes } from '../ui/UiActions';
 import * as GameEntities from './GameEntities';
 import * as Errors from './Errors.js';
+import { GameStateTypes } from './GameplayReducer';
 
 class Rules {
-	static currentPlayer(gameState) {
-    	return gameState.players[gameState.currentPlayerIndex];
-	}
+    static currentPlayer(gameState) {
+        return gameState.players[gameState.currentPlayerIndex];
+    }
+
+    static isGameAction(action) {
+        return action.type.includes('battlechoc/gameplay/');
+    }
+
+    static isUiAction(action) {
+        return action.type.includes('battlechoc/ui/');
+    }
+
+    static playerBoardCell(gameState, playerIndex, cellIdx) {
+        return gameState.board.fields[gameState.players[playerIndex].fieldIndex].grid[cellIdx.row * gameState.board.size.cols + cellIdx.col];
+    }
+    
+    static currentPlayerBoardCell(gameState, cellIdx) {
+        return this.playerBoardCell(gameState, gameState.currentPlayerIndex, cellIdx);
+    }
+    
+    static otherPlayerBoardCell(gameState, cellIdx) {
+        return this.playerBoardCell(gameState, 1 - gameState.currentPlayerIndex, cellIdx);
+    }
+
+    static canBuildOnCell(cellIdx, buildingType, gameState) {
+        let cell = this.currentPlayerBoardCell(gameState, cellIdx);
+        if (cell.occupiedBy.length === 0 ||
+            (buildingType === GameEntities.BuildingType.CREAM && !cell.occupiedBy.includes(GameEntities.BuildingType.CREAM)) ||
+            (buildingType !== GameEntities.BuildingType.CREAM && cell.occupiedBy.length === 1 && cell.occupiedBy[0] === GameEntities.BuildingType.CREAM)) {
+            return true;
+        } else {
+            return new Errors.BuildNotPossibleError('Build not possible on given field row: ' + 
+            	cellIdx.row + ' col: ' + cellIdx.col + ', building type: ' + buildingType + ' cell occupied by: ' + cell.occupiedBy); 
+        }
+    }
 
     static isActionValid(action, state) {
+        if (!(this.isGameAction(action) || this.isUiAction(action))) {
+            return new Errors.ActionValidationError(action);
+        }
+
         let currentState = typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state;
 
         if (typeof currentState === 'undefined' && action.type === GameActionTypes.startGame) {
             return true;
         } else if (action.type === GameActionTypes.createBoard) {
-        	return true;
+            return currentState === GameStateTypes.START;
         } else if (action.type === GameActionTypes.chooseStart) {
-        	return true;
+            return currentState === GameStateTypes.CHOOSE_FIELD_OR_START;
         } else if (action.type === GameActionTypes.chooseField) {
-        	return true;
+            return currentState === GameStateTypes.CHOOSE_FIELD_OR_START || currentState === GameStateTypes.CHOOSE_FIELD;
         } else if (action.type === GameActionTypes.finishGame) {
-        	return true;
+            return true;
         } else if (action.type === GameActionTypes.finishTurn) {
-        	return true;
+            return true;
         } else if (action.type === GameActionTypes.finishBuildPhase) {
-        	return true;
+            return currentState === GameStateTypes.BUILD_PHASE;
         } else if (action.type === GameActionTypes.build) {
         	if (this.currentPlayer(state.gameplay.game).buildings === 0 &&
         		action.payload.type !== GameEntities.BuildingType.FACTORY){
@@ -32,16 +69,16 @@ class Rules {
         	} else if (this.currentPlayer(state.gameplay.game).cacao < action.payload.costs) {
         		return new Errors.NoCacaoLeftError();
         	} else {
-        		return true;
+        		return this.canBuildOnCell(action.payload.position, action.payload.type, state.gameplay.game);
         	}
         } else if (action.type === GameActionTypes.attack) {
-        	return true;
+            return true;
         } else if (action.type === UiActionTypes.showMessage) {
-        	return true;
+            return true;
         } else if (action.type === UiActionTypes.hideMessage) {
-        	return true;
+            return true;
         } else if (action.type === UiActionTypes.selectBuilding) {
-        	return true;
+            return true;
         } else {
             return new Errors.ActionValidationError(action);
         }
