@@ -36,46 +36,6 @@
   background-color: rgba(32, 32, 32, 0.8);
 }
 
-#tooltip {
-  position: absolute;
-  top: 0;
-  right: 0;
-  border: 1px solid white;
-  margin-top: 5px;
-  margin-right: 5px;
-  padding: 0px;
-  width: 20%;
-  color: #fff;
-  background: #000;
-  z-index: 1;
-}
-
-#tooltip > h3 {
-  background-color: rgba(125, 125, 125, 0.2);
-  margin: 0;
-  display: flex;
-  justify-content: center;
-  padding: 5px;
-  font-size: 1.4vw;
-}
-
-#tooltip > h3.extendable {
-  cursor: pointer;
-}
-
-#tooltip > h3.extendable:hover {
-  background-color: rgba(125, 125, 125, 0.5);
-}
-
-#tooltip > p {
-  padding: 10px;
-  font-size: 1.4vw;
-}
-
-.invisible {
-  display: none;
-}
-
 #textAnimationCanvas {
   position: absolute;
   top: 0px;
@@ -238,14 +198,6 @@
     font-size: 16px;
   }
 
-  #tooltip > h3 {
-    font-size: 16px;
-  }
-
-  #tooltip > p {
-    font-size: 16px;
-  }
-
   #gameMenu > p {
     font-size: 16px;
   }
@@ -262,14 +214,6 @@
   }
 
   .menuButton {
-    font-size: 10px;
-  }
-
-  #tooltip > h3 {
-    font-size: 10px;
-  }
-
-  #tooltip > p {
     font-size: 10px;
   }
 

@@ -7,13 +7,11 @@ import { chooseField, chooseStart, finishTurn, finishBuildPhase } from '../gamep
 import { selectBuilding, showMessage, hideMessage } from './UiActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { GameTransitions, getGameTransition } from '../gameplay/GameTransitions';
+import Tooltip from './Tooltip';
 
 class Hud extends Component {
     constructor(props) {
         super(props);
-        this.state = {
-            expandTooltip: true
-        };
     }
 
     componentDidMount() {
@@ -56,64 +54,13 @@ class Hud extends Component {
 
         if (gameTransition === GameTransitions.PLAYER_BEGINS_GAME) {
             this.showTurnMessage('It\'s up on you', true);
-            this.setState({
-                tooltipTitle: 'Initial Turn',
-                tooltipMessage: 'In the first round you can choose a playing field or the first move'
-            });
         } else if (gameTransition === GameTransitions.OPPONENT_BEGINS_GAME) {
             this.activeUi = false;
             this.showTurnMessage('Your opponent decides', true);
-            this.setState({
-                tooltipTitle: 'Initial Turn',
-                tooltipMessage: ''
-            });
         } else if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
             this.activeUi = true;
             this.colorStartButton = 1;
-            this.setState({
-                tooltipTitle: 'Initial Turn',
-                tooltipMessage: this.props.game.players[0].name + ' can now select a game field'
-            });
-        } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
-            this.setState({
-                tooltipTitle: 'Initial Placement',
-                tooltipMessage: 'Now you can build the factory once. Set the factory carefully: If it is destroyed, you cannot build any other buildings'
-            });
-        } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT ||
-            gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
-            if (this.props.game.players[1].hasFactory) {
-                this.setState({
-                    tooltipTitle: 'Build Phase',
-                    tooltipMessage: ''
-                }); 
-            } else {
-                this.setState({
-                    tooltipTitle: 'Initial Placement',
-                    tooltipMessage: ''
-                });
-            }
-        } else if (gameTransition === GameTransitions.PLAYER_BUILD_PHASE ||
-            gameTransition === GameTransitions.OPPONENT_FINISHED_INITIAL_PLACEMENT) {
-            this.setState({
-                tooltipTitle: 'Build Phase',
-                tooltipMessage: 'Choose a building from the list below and build it on any of the free fields. The cream is displayed translucent. A building built in cream will be invisible to the enemy'
-            });
-        } else if (gameTransition === GameTransitions.PLAYER_ATTACK_PHASE) {
-            this.setState({
-                tooltipTitle: 'Attack Phase',
-                tooltipMessage: 'Click on an enemy building to destroy it. Hint: Smart enemies hide buildings within cream'
-            });
-        } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
-            this.setState({
-                tooltipTitle: 'Build Phase',
-                tooltipMessage: ''
-            });           
-        } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
-            this.setState({
-                tooltipTitle: 'Attack Phase',
-                tooltipMessage: ''
-            });             
-        }
+        } 
     }
 
     showTurnMessage(message, animated) {
@@ -169,10 +116,6 @@ class Hud extends Component {
             if (option === 'START' && this.colorStartButton === -1) {
                 this.props.chooseStart();
                 this.colorStartButton = 0;
-                this.setState({
-                    tooltipTitle: 'Initial Turn',
-                    tooltipMessage: this.props.game.players[1].name + ' can now select a game field'
-                });
             } else if (option === 'LEFT_GAMEFIELD') {
                 this.props.chooseField(0);
             } else if (option === 'RIGHT_GAMEFIELD') {
@@ -221,26 +164,6 @@ class Hud extends Component {
             }
         }
 
-        let tooltip = undefined;
-        let tooltipMessage = undefined;
-
-        if (this.state.tooltipMessage !== '') {
-            tooltipMessage = <p className={!this.state.expandTooltip ? 'invisible' : ''}>{ this.state.tooltipMessage }</p>;
-        }
-
-        if (typeof this.state.tooltipTitle !== 'undefined') {
-            tooltip = <div id="tooltip">
-                    <h3 className={typeof tooltipMessage !== 'undefined' ? 'extendable' : ''} onClick={() => {
-                        if (typeof tooltipMessage !== 'undefined') {
-                            this.setState({
-                                expandTooltip: !this.state.expandTooltip
-                            });
-                        }
-                    }}>{ this.state.tooltipTitle }</h3>
-                    {tooltipMessage}
-                  </div>;
-        }
-
         let buildingMenu = undefined;
         if (!this.isInitalStage() && !this.isTitleScreen()) {
             buildingMenu = <div id="buildings">
@@ -263,7 +186,7 @@ class Hud extends Component {
 
         return (
             <div>
-                { tooltip }
+                <Tooltip />
                 { buildingMenu }
                 <div id="hud" className={this.isInitalStage() || this.isTitleScreen() || this.props.messageAnimation ? 'fullscreen' : ''} ref={hud => {this.hud = hud}}>
                     <div id="toggleMusic" 
