@@ -119,12 +119,14 @@ class App extends Component {
     } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
       let oppoentGameBoard = nextProps.game.board.fields[this.props.game.players[1].fieldIndex];
       if (this.props.game.players[1].hasFactory) {
-        this.opponent.simulateBuildPhase();
+        let opponentGameBoard = nextProps.game.board.fields[nextProps.game.players[1].fieldIndex];
+        this.opponent.simulateBuildPhase(opponentGameBoard, this.opponentGameField);
       } else {
         this.opponent.simulateInitialPlacement(oppoentGameBoard, this.opponentGameField);
       }
     } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
-      this.opponent.simulateBuildPhase();
+      let opponentGameBoard = nextProps.game.board.fields[nextProps.game.players[1].fieldIndex];
+      this.opponent.simulateBuildPhase(opponentGameBoard, this.opponentGameField);
     } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
       this.opponent.simulateAttackPhase();
     }
@@ -310,7 +312,7 @@ class App extends Component {
         this.hud.lockUi();
         this.hud.showTurnMessage('Your opponent decides');
       }
-      
+
       setTimeout(() => {
         this.props.createBoard({
           boardSize: {rows: 8, cols: 8},

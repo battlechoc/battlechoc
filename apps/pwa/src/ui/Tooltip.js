@@ -21,25 +21,25 @@ class Tooltip extends Component {
                 var message = 'In the first round you can choose a playing field or the first move';
             }
         } else if (gameState === GameStateTypes.CHOOSE_FIELD) {
-            var title = 'Initial Turn';
-            var message = this.props.game.players[currentPlayer].name + ' can now select a game field';
+            title = 'Initial Turn';
+            message = this.props.game.players[currentPlayer].name + ' can now select a game field';
         } else if (gameState === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || 
                    gameState === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
-            var title = 'Initial Placement';
+            title = 'Initial Placement';
             if (currentPlayer === 0) {
-                var message = 'Now you can build the factory once. Set the factory carefully: ' +
+                message = 'Now you can build the factory once. Set the factory carefully: ' +
                           'If it is destroyed, you cannot build any other buildings';
             } 
         } else if (gameState === GameStateTypes.BUILD_PHASE) {
-            var title = 'Build Phase';
+            title = 'Build Phase';
             if (currentPlayer === 0) {
-                var message = 'Choose a building from the list below and build it on any of the free fields. ' + 
+                message = 'Choose a building from the list below and build it on any of the free fields. ' + 
                           'The cream is displayed translucent. A building built in cream will be invisible to the enemy';
             }
         } else if (gameState === GameStateTypes.ATTACK_PHASE) {
-            var title = 'Attack Phase';
+            title = 'Attack Phase';
             if (currentPlayer === 0) {
-                var message = 'Click on an enemy building to destroy it. Hint: Smart enemies hide buildings within cream';
+                message = 'Click on an enemy building to destroy it. Hint: Smart enemies hide buildings within cream';
             }
         }
 
