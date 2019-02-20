@@ -10,10 +10,6 @@ import { GameTransitions, getGameTransition } from '../gameplay/GameTransitions'
 import Tooltip from './Tooltip';
 
 class Hud extends Component {
-    constructor(props) {
-        super(props);
-    }
-
     componentDidMount() {
         const width = this.hud.clientWidth;
         const height = this.hud.clientHeight;

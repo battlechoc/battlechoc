@@ -93,7 +93,7 @@ class Tooltip extends Component {
 	      		</div>
 	      	);
 	    } else {
-	    	return <div></div>;
+	    	return null;
 	    }
 	}
 }
