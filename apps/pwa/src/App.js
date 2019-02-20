@@ -11,7 +11,7 @@ import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 import { GameStateTypes } from './gameplay/GameplayReducer'
-import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError } from './gameplay/Errors';
+import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
 
 class App extends Component {
@@ -203,7 +203,6 @@ class App extends Component {
 
       if (intersects.length > 0 && !this.isSwiping && this.props.game.players[0].attacks > 0) {
         let position = intersects[intersects.length - 1].object.parent.position;
-        this.opponentGameField.attack(position);
         
         let row = position.x / this.opponentGameField.fieldSize;
         let col = position.z / this.opponentGameField.fieldSize;
@@ -211,7 +210,17 @@ class App extends Component {
         this.props.attack({
           targetRow: row,
           targetCol: col
-        });
+        }).then(() => {
+          this.opponentGameField.attack(position);
+        }).catch(error => {
+          if (error instanceof NoAttacksLeftError) {
+            console.log(error.message);
+          } else if (error instanceof TargetEmptyError) {
+            console.log(error.message);
+          } else {
+            throw error;
+          }
+        })  
       }
     }
   }

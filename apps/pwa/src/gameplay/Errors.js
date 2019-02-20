@@ -40,6 +40,13 @@ class NoAttacksLeftError extends BattlechocError {
     }
 }
 
+class TargetEmptyError extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'The target field is empty';
+    }
+}
+
 class UnexpectedStateError extends BattlechocError {
     constructor(state, ...args) {
         super(...args);
@@ -47,4 +54,4 @@ class UnexpectedStateError extends BattlechocError {
     }
 }
 
-export { BattlechocError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, UnexpectedStateError };
+export { BattlechocError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, TargetEmptyError, NoAttacksLeftError, UnexpectedStateError };

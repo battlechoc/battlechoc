@@ -105,17 +105,23 @@ const gameplayReducer = createReducer({}, {
     [GameActions.attack]: (state, action) => {
         currentPlayer(state.game).attacks = currentPlayer(state.game).attacks - 1;
         let attackedCell = otherPlayerBoardCell(state.game, action.payload.targetRow, action.payload.targetCol);
-        if (attackedCell.occupiedBy.length > 0) {
-            if (state.ui === undefined) {
-                state.ui = {};
+        let opponent = otherPlayer(state.game);
+
+        if (attackedCell.occupiedBy.includes(GameEntities.BuildingType.FACTORY) || attackedCell.occupiedBy.includes(GameEntities.BuildingType.FACTORY_EXTENSION)) {
+            opponent.buildingsPerTurn -= 2;
+            if (opponent.buildingsPerTurn === 0) {
+                opponent.hasFactory = false;
+                console.log('FACTORY DESTROYED');
             }
-            state.ui.attackOutcome = {
-                fieldIndex: otherPlayer(state.game).fieldIndex,
-                target: { col: action.payload.targetCol, row: action.payload.targetRow },
-                wasOccupiedBy: attackedCell.occupiedBy
-            };
-            attackedCell.occupiedBy = [];
+        } else if (attackedCell.occupiedBy.includes(GameEntities.BuildingType.CACAOTREE)) {
+            opponent.cacaoPerTurn -= 30;
+            console.log('CACAOTREE DESTROYED');
+        } else if (attackedCell.occupiedBy.includes(GameEntities.BuildingType.RUM_TRUFFLE_CANNON)) { 
+            opponent.attacksPerTurn -= 1;
+            console.log('CANNON DESTROYED');
         }
+
+        attackedCell.occupiedBy = [];
     }
 });
 
