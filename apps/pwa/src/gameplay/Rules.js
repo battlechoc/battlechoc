@@ -74,8 +74,11 @@ class Rules {
         		return this.canBuildOnCell(action.payload.position, action.payload.type, state.gameplay.game);
         	}
         } else if (action.type === GameActionTypes.attack) {
+        	let attackedCell = otherPlayerBoardCell(state.gameplay.game, action.payload.targetRow, action.payload.targetCol);
         	if (this.currentPlayer(state.gameplay.game).attacks === 0) {
         		return new Errors.NoAttacksLeftError();
+        	} else if (attackedCell.occupiedBy.length === 0) {
+        		return new Errors.TargetEmptyError();
         	} else {
         		return true;
         	}
