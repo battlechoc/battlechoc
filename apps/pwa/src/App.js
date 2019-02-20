@@ -105,7 +105,10 @@ class App extends Component {
     let gameTransition = getGameTransition(this.props.game, nextProps.game);
     console.log(gameTransition);
 
-    if (gameTransition === GameTransitions.OPPONENT_STARTS_GAME) {
+    if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
+        this.hud.unlockUi();
+        this.colorStartButton = 1;
+    } else if (gameTransition === GameTransitions.OPPONENT_STARTS_GAME) {
       this.opponent.simulateChooseFieldOrStartDecision();
     } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START) {
       this.opponent.simulateChooseFieldDecision();
@@ -301,6 +304,13 @@ class App extends Component {
     ];
 
     this.props.startGame(player).then(() => {
+      if (this.props.game.currentPlayerIndex === 0) {
+        this.hud.showTurnMessage('It\'s up on you');
+      } else {
+        this.hud.lockUi();
+        this.hud.showTurnMessage('Your opponent decides');
+      }
+      
       setTimeout(() => {
         this.props.createBoard({
           boardSize: {rows: 8, cols: 8},
@@ -352,8 +362,7 @@ class App extends Component {
         <Hud
           toggleMusic={() => this.toggleMusic()}
           prepareGameCallback={this.prepareGame}
-          triggerAugustusAction={() => this.triggerAugustusAction()}
-          ref={overlay => { this.overlay = overlay }} />
+          onRef={hud => (this.hud = hud)} />
         <div
           className="app"
           ref={container => { this.container = container }}

@@ -79,10 +79,6 @@ class Rules {
         	} else {
         		return true;
         	}
-        } else if (action.type === UiActionTypes.showMessage) {
-            return true;
-        } else if (action.type === UiActionTypes.hideMessage) {
-            return true;
         } else if (action.type === UiActionTypes.selectBuilding) {
             return true;
         } else {

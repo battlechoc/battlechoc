@@ -15,10 +15,10 @@ class Gamefield {
 			field => Array(this.cols).fill(new Building(BuildingType.EMPTY))
 		);
 
-		this._build(playerField);
+		this.build(playerField);
 	}
 
-	async _build(playerField) {
+	async build(playerField) {
 		this.gameField = new THREE.Group();
 		
 		for (let i = 0; i < this.rows; i++) {
@@ -89,83 +89,71 @@ class Gamefield {
 		    this.mixer.addEventListener('finished', () => this.explosionCallback());
 		}
 	}
-
-	getCellIndex(position) {
-		return {
-			row: position.x / this.fieldSize,
-			col: position.z / this.fieldSize
-		};
-	}
 	
-	isAboveOfFactory(idx) {
-		if ((idx.col + 1) < this.fieldSize) {
-			return this.buildings[idx.row][idx.col + 1].buildingType === BuildingType.FACTORY;
+	isAboveOfFactory(row, col) {
+		if ((col + 1) < this.fieldSize) {
+			return this.buildings[row][col + 1].buildingType === BuildingType.FACTORY;
 		} else {
 			return false;
 		}
 	}
 
-	isRightToFactory(idx) {
-		if ((idx.row + 1) < this.fieldSize) {
-			return this.buildings[idx.row + 1][idx.col].buildingType === BuildingType.FACTORY;
+	isRightToFactory(row, col) {
+		if ((row + 1) < this.fieldSize) {
+			return this.buildings[row + 1][col].buildingType === BuildingType.FACTORY;
 		} else {
 			return false;
 		}
 	}
 
-	isBelowOfFactory(idx) {
-		if ((idx.col - 1) >= 0) {
-			return this.buildings[idx.row][idx.col - 1].buildingType === BuildingType.FACTORY;
+	isBelowOfFactory(row, col) {
+		if ((col - 1) >= 0) {
+			return this.buildings[row][col - 1].buildingType === BuildingType.FACTORY;
 		} else {
 			return false
 		}
 	}
 
-	isLeftToFactory(idx) {
-		if ((idx.row - 1) >= 0) {
-			return this.buildings[idx.row - 1][idx.col].buildingType === BuildingType.FACTORY;
+	isLeftToFactory(row, col) {
+		if ((row - 1) >= 0) {
+			return this.buildings[row - 1][col].buildingType === BuildingType.FACTORY;
 		} else {
 			return false;
 		}
 	}
 
-	setBuilding(position, buildingType) {
-		let asWireframe = buildingType === BuildingType.CREAM && this.isPlayerGameField;
-		
-		const idx = this.getCellIndex(position);
-        
-		if (this.buildings[idx.row][idx.col].buildingType === BuildingType.EMPTY ||
-		   (this.buildings[idx.row][idx.col].buildingType === BuildingType.CREAM && buildingType !== BuildingType.CREAM) ||
-		   (this.buildings[idx.row][idx.col].buildingType !== BuildingType.CREAM && buildingType === BuildingType.CREAM)) {
-		    let building = new Building(buildingType);
+	setBuilding(position, buildingType) {		
+		const row = position.x / this.fieldSize;
+		const col = position.z / this.fieldSize;
 
-			if (buildingType === BuildingType.FACTORY_EXTENSION) {
-				if (this.isAboveOfFactory(idx)) {
-					building.rotate(Math.PI);
-				} else if (this.isRightToFactory(idx)) {
-					building.rotate(-Math.PI / 2);
-				} else if (this.isLeftToFactory(idx)) {
-					building.rotate(Math.PI / 2);
-				} else if (!this.isBelowOfFactory(idx)) {
-					return undefined;
-				}
-			} 
+	    let building = new Building(buildingType);
 
-			building.adjustPosition(position);
-			building.adjustRotation()
-			if (asWireframe) {
-				this.gameField.add(building.getModelWireframe());
-			} else {
-				this.gameField.add(building.getModel());
+		if (buildingType === BuildingType.FACTORY_EXTENSION) {
+			if (this.isAboveOfFactory(row, col)) {
+				building.rotate(Math.PI);
+			} else if (this.isRightToFactory(row, col)) {
+				building.rotate(-Math.PI / 2);
+			} else if (this.isLeftToFactory(row, col)) {
+				building.rotate(Math.PI / 2);
+			} else if (!this.isBelowOfFactory(row, col)) {
+				return undefined;
 			}
-			if (this.buildings[idx.row][idx.col].buildingType === BuildingType.CREAM && this.isPlayerGameField === false) {
-				building.hide();
-			}
-			this.buildings[idx.row][idx.col] = building;
-			return idx;
+		} 
+
+		building.adjustPosition(position);
+		building.adjustRotation()
+
+		if (buildingType === BuildingType.CREAM && this.isPlayerGameField) {
+			this.gameField.add(building.getModelWireframe());
 		} else {
-			return undefined;
+			this.gameField.add(building.getModel());
 		}
+
+		if (this.buildings[row][col].buildingType === BuildingType.CREAM && this.isPlayerGameField === false) {
+			building.hide();
+		}
+
+		this.buildings[row][col] = building;
 	}
 }
 

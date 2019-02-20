@@ -1,0 +1,33 @@
+.actionbar {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  padding-top: 5px;
+  flex-direction: row;
+}
+
+.actionbar > div {
+  margin-right: 10px; 
+}
+
+.menuButton {
+  color: white;
+  background-color: black;
+  border: 1px solid #fff;
+  font-size: 1.4vw;
+  user-select: none;
+  padding: 5px;
+  cursor: pointer;
+}
+
+@media screen and (min-width: 1100px) {
+  .menuButton {
+    font-size: 16px;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .menuButton {
+    font-size: 10px;
+  }
+}

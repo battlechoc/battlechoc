@@ -10,6 +10,7 @@
   color: #fff;
   background: #000;
   z-index: 1;
+  user-select: none;
 }
 
 #tooltip > h3 {

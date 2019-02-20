@@ -5,49 +5,15 @@
   color: white;
 }
 
-#buildings {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  z-index: 1;
-  margin-bottom: 5px;
-  margin-left: 5px;
-  display: flex;
-}
-
-.enabled {
-  cursor: pointer;
-}
-
-.preview {
-  margin-left: 5px;
-  height: auto;
-  width: 5vw;
-}
-
-.disabled {
-  width: 94%;
-  height: 98%;
-  border-radius: 50%;
-  position: absolute;
-  top: 0;
-  margin-top: -1px;
-  margin-left: 4px;
-  background-color: rgba(32, 32, 32, 0.8);
-}
-
 #textAnimationCanvas {
   position: absolute;
   top: 0px;
   left: 0px;
+  z-index: -1;
 }
 
 .ontop {
-  z-index: 10;
-}
-
-.below {
-  z-index: -10;
+  z-index: 1 !important;
 }
 
 .fullscreen {
@@ -78,41 +44,18 @@
 }
 
 #gameMenu {
-  margin-left: 5px; 
+  position: absolute;
+  white-space: nowrap;
+  margin-left: 5px;
+  position: absolute;
+  top: 40px;
+  left: 0px;
+  z-index: 1;
 }
 
 #gameMenu > p {
   font-size: 1.4vw;
-}
-
-.skipMenu {
-  display: flex;
-  padding-top: 5px;
-  flex-direction: row;
-}
-
-.skipMenu > div {
-  margin-right: 10px; 
-}
-
-.menuButton {
-  border: 1px solid #fff;
-  font-size: 1.4vw;
-  padding: 5px;
-  cursor: pointer;
-}
-
-#toggleMusic {
-  margin: 5px;
-  display: inline-block;
-}
-
-.overlay {
-  position: absolute;
-}
-
-.previewContainer {
-  position: relative;
+  user-select: none;
 }
 
 .choose {
@@ -194,16 +137,8 @@
     font-size: 16px;
   }
 
-  .menuButton {
-    font-size: 16px;
-  }
-
   #gameMenu > p {
     font-size: 16px;
-  }
-
-  .preview {
-    width: 55px;
   }
 }
 
@@ -213,15 +148,7 @@
     font-size: 10px;
   }
 
-  .menuButton {
-    font-size: 10px;
-  }
-
   #gameMenu > p {
     font-size: 10px;
-  }
-
-  .preview {
-    width: 40px;
   }
 }

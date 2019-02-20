@@ -17,7 +17,6 @@ const GameTransitions = Object.freeze({
     INVALID: 'GameTransitions.INVALID'
 });
 
-
 function getGameTransition(currentState, nextState) {
     if (typeof currentState === 'undefined' &&
         typeof nextState !== 'undefined') {
