@@ -208,8 +208,8 @@ class App extends Component {
         let col = position.z / this.opponentGameField.fieldSize;
 
         this.props.attack({
-          targetRow: row,
-          targetCol: col
+          row: row,
+          col: col
         }).then(() => {
           this.opponentGameField.attack(position);
         }).catch(error => {

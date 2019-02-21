@@ -30,8 +30,8 @@ function currentPlayerBoardCell(gameState, row, col) {
     return playerBoardCell(gameState, gameState.currentPlayerIndex, row, col);
 }
 
-function otherPlayerBoardCell(gameState, row, col) {
-    return playerBoardCell(gameState, 1 - gameState.currentPlayerIndex, row, col);
+function otherPlayerBoardCell(gameState, cell) {
+    return playerBoardCell(gameState, 1 - gameState.currentPlayerIndex, cell.row, cell.col);
 }
 
 function prepareBuildPhase(gameState) {
@@ -102,7 +102,7 @@ const gameplayReducer = createReducer({}, {
     },
     [GameActions.attack]: (state, action) => {
         currentPlayer(state.game).attacks = currentPlayer(state.game).attacks - 1;
-        let attackedCell = otherPlayerBoardCell(state.game, action.payload.targetRow, action.payload.targetCol);
+        let attackedCell = otherPlayerBoardCell(state.game, action.payload);
         let opponent = otherPlayer(state.game);
 
         if (attackedCell.occupiedBy.includes(GameEntities.BuildingType.FACTORY) || attackedCell.occupiedBy.includes(GameEntities.BuildingType.FACTORY_EXTENSION)) {
