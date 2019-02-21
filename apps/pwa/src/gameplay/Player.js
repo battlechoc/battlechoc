@@ -53,6 +53,35 @@ class Augustus {
         }, 3000);
     }
 
+    static createFlatBoard(board) {
+        let flatBoard = [];
+        for (let player = 0; player < 2; player++) {
+            for (let row = 0; row < board.size.rows; row++) {
+                for (let col = 0; col < board.size.cols; col++) {
+                    let cell = (board.fields[player].grid[row * board.size.cols + col].occupiedBy.includes(BuildingType.CREAM)) ? 1 : 0;
+                    if (board.fields[player].grid[row * board.size.cols + col].occupiedBy.includes(BuildingType.FACTORY)) {
+                        cell += 2;
+                    } else if (board.fields[player].grid[row * board.size.cols + col].occupiedBy.includes(BuildingType.FACTORY_EXTENSION)) {
+                        cell += 4;
+                    } else if (board.fields[player].grid[row * board.size.cols + col].occupiedBy.includes(BuildingType.RUM_TRUFFLE_CANNON)) {
+                        cell += 8;
+                    } else if (board.fields[player].grid[row * board.size.cols + col].occupiedBy.includes(BuildingType.CACAOTREE)) {
+                        cell += 16;
+                    }
+                }
+            }
+        }
+        return flatBoard;
+    }
+
+    evaluateBestTurn(board, players) {
+        const initialBoard = Augustus.getFlatBoardRepresentation(board);
+        
+        // get possible actions for board and state and player --> evaluate board value
+        console.log(initialBoard);
+        return {};
+    }
+
     simulateInitialPlacement(gamefield, uiGamefield) {        
         setTimeout(() => {
             let creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(BuildingType.CREAM));
