@@ -82,10 +82,10 @@ const gameplayReducer = createReducer({}, {
         state.game.state = GameStateTypes.ATTACK_PHASE;
     },
     [GameActions.build]: (state, action) => {
+        currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy.push(action.payload.type);
         if (action.payload.type === GameEntities.BuildingType.FACTORY) {
             currentPlayer(state.game).buildingsPerTurn = 2;
-            currentPlayer(state.game).hasFactory = true;
-            currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy.push(action.payload.type);
+            currentPlayer(state.game).hasFactory = true;            
         } else {
             if (action.payload.type === GameEntities.BuildingType.CACAOTREE) {
                 currentPlayer(state.game).cacaoPerTurn += 30;
@@ -95,8 +95,6 @@ const gameplayReducer = createReducer({}, {
             } else if (action.payload.type === GameEntities.BuildingType.FACTORY_EXTENSION) {
                 currentPlayer(state.game).buildingsPerTurn += 2;
             }
-                                
-            currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy.push(action.payload.type);
             // Pay cacao and decrease the buildings
             currentPlayer(state.game).buildings -= 1;
             currentPlayer(state.game).cacao -= action.payload.costs;
