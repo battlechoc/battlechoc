@@ -59,52 +59,64 @@ class Gamefield {
         }       
     }
 
-    attack(position) {
+    triggerExplosion(building, position) {
         if (typeof this.mixer !== 'undefined') {
             this.mixer.stopAllAction();
             this.explosionCallback();
         }
 
+        this.gameField.remove(building.getModel());
+
+        building.explode();
+        building.adjustPosition(position);
+        this.gameField.add(building.getModel());
+
+        this.mixer = new THREE.AnimationMixer(building.getModel());
+        let animationNumber = 8;
+
+        if (building.buildingType === BuildingType.CACAOTREE) {
+            animationNumber = 9;
+        } else if (building.buildingType === BuildingType.FACTORY) {
+            animationNumber = 10;
+        } else if (building.buildingType === BuildingType.RUM_TRUFFLE_CANNON) {
+            animationNumber = 11;
+        }
+
+        for (let i = 0; i < ModelLoader.models[animationNumber].animations.length; i++) {
+            this.mixer.clipAction(ModelLoader.models[animationNumber].animations[i]).setLoop(THREE.LoopOnce).play()
+        }
+
+        this.explosionCallback = () => {
+            this.mixer = undefined;
+            this.gameField.remove(building.getModel());
+        }
+
+        this.mixer.addEventListener('finished', () => this.explosionCallback());
+    }
+
+    attack(position) {
         let row = position.x / this.fieldSize;
         let col = position.z / this.fieldSize;
         let creamyBuildings = this.buildings[row][col].filter(building => building.buildingType === BuildingType.CREAM);
 
         if (creamyBuildings.length > 0) {
             let cream = creamyBuildings[0];
-            this.gameField.remove(cream.getModel());
-
-            cream.explode();
-            cream.adjustPosition(position);
-            this.gameField.add(cream.getModel());
-
-            this.mixer = new THREE.AnimationMixer(cream.getModel());
-            for (let i = 0; i < ModelLoader.models[8].animations.length; i++) {
-                this.mixer.clipAction(ModelLoader.models[8].animations[i]).setLoop(THREE.LoopOnce).play()
-            }
+            this.triggerExplosion(cream, position);
 
             let otherBuildings = this.buildings[row][col].filter(building => building.buildingType !== BuildingType.CREAM);
             otherBuildings.forEach(otherBuilding => {
                 otherBuilding.show();
             });
 
-            this.explosionCallback = () => {
-                this.mixer = undefined;
-                this.gameField.remove(cream.getModel());
-            }
-
             setTimeout(() => {
-                // TODO: Trigger next explosion
                 otherBuildings.forEach(otherBuilding => {
-                    this.gameField.remove(otherBuilding.getModel());
+                    this.triggerExplosion(otherBuilding, position);
                 });                
                 this.buildings[row][col] = [ new Building(BuildingType.EMPTY) ];
             }, 1000);
-            
-            this.mixer.addEventListener('finished', () => this.explosionCallback());
         } else {
-            // TODO: Other explosion animations
             this.buildings[row][col].forEach(building => {
-                this.gameField.remove(building.getModel());
+                this.triggerExplosion(building, position);
             });
             this.buildings[row][col] = [ new Building(BuildingType.EMPTY) ];
         }
