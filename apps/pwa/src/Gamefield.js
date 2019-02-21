@@ -64,7 +64,7 @@ class Gamefield {
             this.mixer.stopAllAction();
             this.explosionCallback();
         }
-        
+
         this.gameField.remove(building.getModel());
 
         building.explode();
@@ -76,6 +76,8 @@ class Gamefield {
 
         if (building.buildingType === BuildingType.CACAOTREE) {
             animationNumber = 9;
+        } else if (building.buildingType === BuildingType.FACTORY) {
+            animationNumber = 10;
         }
 
         for (let i = 0; i < ModelLoader.models[animationNumber].animations.length; i++) {
