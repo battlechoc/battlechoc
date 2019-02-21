@@ -120,6 +120,9 @@ const gameplayReducer = createReducer({}, {
         }
 
         attackedCell.occupiedBy = [];
+    },
+    [GameActions.finishGame]: (state, action) => {
+        state.game = undefined;
     }
 });
 

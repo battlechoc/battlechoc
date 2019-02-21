@@ -14,6 +14,7 @@ const GameTransitions = Object.freeze({
     PLAYER_ATTACK_PHASE: 'GameTransitions.PLAYER_ATTACK_PHASE',
     OPPONENT_BUILD_PHASE: 'GameTransitions.OPPONENT_BUILD_PHASE',
     OPPONENT_ATTACK_PHASE: 'GameTransitions.OPPONENT_ATTACK_PHASE',
+    GAME_FINISHED: 'GameTransitions.GAME_FINISHED',
     INVALID: 'GameTransitions.INVALID'
 });
 
@@ -25,7 +26,10 @@ function getGameTransition(currentState, nextState) {
         } else {
             return GameTransitions.OPPONENT_BEGINS_GAME;
         }
-    } else if (currentState.state === GameStateTypes.START && 
+    } else if (typeof currentState !== 'undefined' &&
+        typeof nextState === 'undefined') {
+            return GameTransitions.GAME_FINISHED;
+    } else if (currentState.state === GameStateTypes.START &&
         currentState.currentPlayerIndex === 1 &&
         nextState.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
         return GameTransitions.OPPONENT_STARTS_GAME;
@@ -41,7 +45,7 @@ function getGameTransition(currentState, nextState) {
     } else if ((currentState.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
         nextState.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) ||
         (currentState.state === GameStateTypes.CHOOSE_FIELD &&
-        nextState.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT)) {
+            nextState.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT)) {
         if (nextState.currentPlayerIndex === 0) {
             return GameTransitions.PLAYER_INITAL_PLACEMENT;
         } else {
@@ -50,7 +54,7 @@ function getGameTransition(currentState, nextState) {
     } else if ((currentState.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT &&
         nextState.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) ||
         (currentState.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT &&
-        nextState.state === GameStateTypes.BUILD_PHASE)) {
+            nextState.state === GameStateTypes.BUILD_PHASE)) {
         if (nextState.currentPlayerIndex === 0) {
             return GameTransitions.OPPONENT_FINISHED_INITIAL_PLACEMENT;
         } else {
@@ -79,7 +83,7 @@ function getGameTransition(currentState, nextState) {
             return GameTransitions.PLAYER_ATTACK_PHASE;
         } else {
             return GameTransitions.OPPONENT_ATTACK_PHASE;
-        }        
+        }
     } else {
         return GameTransitions.INVALID;
     }

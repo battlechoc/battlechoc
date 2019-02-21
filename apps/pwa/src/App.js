@@ -6,7 +6,7 @@ import ModelLoader from './ModelLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import { BuildingType, getEntity } from './gameplay/GameEntities';
-import { startGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
+import { startGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
 import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -29,7 +29,6 @@ class App extends Component {
     // Setup scene, camera and renderer
     this.scene = new THREE.Scene();
     this.clock = new THREE.Clock();
-    // Set target FPS to 60
     this.targetFps = 1 / 30;
     this.delta = 0;
 
@@ -44,7 +43,7 @@ class App extends Component {
     this.camera.position.z = 95;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setPixelRatio( window.devicePixelRatio );
+    this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setClearColor('#000000');
     this.renderer.setSize(width, height);
     this.renderer.domElement.id = 'game-canvas'
@@ -56,7 +55,7 @@ class App extends Component {
     this.swipeStartPosition = 0;
     this.swipePosition = 0;
     this.isSwiping = false;
-    
+
     // animations and renderer
     this.mixer = null;
     this.container.appendChild(this.renderer.domElement);
@@ -64,11 +63,6 @@ class App extends Component {
     // Allow clicking
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
-
-    // Add Light
-    var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2.0);
-    directionalLight.position.set(20, 24, -10);
-    this.scene.add(directionalLight);
 
     // Start render loop
     this.start();
@@ -93,7 +87,7 @@ class App extends Component {
     );
 
     this.opponent = new Augustus({
-      chooseStart: this.props.chooseStart, 
+      chooseStart: this.props.chooseStart,
       chooseField: this.props.chooseField,
       build: this.props.build,
       attack: this.props.attack,
@@ -103,30 +97,28 @@ class App extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) {
-      let winners = Rules.determineWinner(nextProps.game);
+    if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
+      const winners = Rules.determineWinner(nextProps.game);
       if (winners !== undefined) {
-        console.log("we have a winner (or two)");
-        console.log("winners");
-        this.hud.lockUi();
         if (winners.length === 1) {
           if (winners[0].type === PlayerType.HUMAN) {
             this.hud.showTurnMessage('Congratulations! You won this game.');
           } else {
-            this.hud.showTurnMessage('You\'ve lost. It\'s your wife.');
+            this.hud.showTurnMessage('You\'ve lost.');
           }
         } else if (winners.length === 2) {
-          this.hud.showTurnMessage('Draw Game!');
+          this.hud.showTurnMessage('Draw game!');
         }
+        this.endGame();
       }
     }
 
-    let gameTransition = getGameTransition(this.props.game, nextProps.game);
+    const gameTransition = getGameTransition(this.props.game, nextProps.game);
     console.log(gameTransition);
 
     if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
-        this.hud.unlockUi();
-        this.colorStartButton = 1;
+      this.hud.unlockUi();
+      this.colorStartButton = 1;
     } else if (gameTransition === GameTransitions.OPPONENT_STARTS_GAME) {
       this.opponent.simulateChooseFieldOrStartDecision();
     } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START) {
@@ -144,24 +136,30 @@ class App extends Component {
         this.opponent.simulateInitialPlacement(oppoentGameBoard, this.opponentGameField);
       }
     } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
-      let opponentGameBoard = nextProps.game.board.fields[nextProps.game.players[1].fieldIndex];
+      const opponentGameBoard = nextProps.game.board.fields[nextProps.game.players[1].fieldIndex];
       this.opponent.simulateBuildPhase(opponentGameBoard, this.opponentGameField);
     } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
       this.opponent.simulateAttackPhase();
+    } else if (gameTransition === GameTransitions.GAME_FINISHED) {
+      while (this.scene.children.length > 0) {
+        this.scene.remove(this.scene.children[0]);
+      }
     }
   }
 
   componentDidUpdate() {
-    if (this.triggerUiEvent === 'START_GAME') {
-      this.startGame();
-      if (this.props.game.currentPlayerIndex === 1) {
-        let opponentGameBoard = this.props.game.board.fields[this.props.game.players[1].fieldIndex];
-        this.opponent.simulateInitialPlacement(opponentGameBoard, this.opponentGameField);
+    if (typeof this.props.game !== 'undefined') {
+      if (this.triggerUiEvent === 'START_GAME') {
+        this.startGame();
+        if (this.props.game.currentPlayerIndex === 1) {
+          const opponentGameBoard = this.props.game.board.fields[this.props.game.players[1].fieldIndex];
+          this.opponent.simulateInitialPlacement(opponentGameBoard, this.opponentGameField);
+        }
       }
+      this.triggerUiEvent = undefined;
+      this.lookAtOpponent = this.props.game.currentPlayerIndex === 1 ||
+        this.props.game.state === GameStateTypes.ATTACK_PHASE;
     }
-    this.triggerUiEvent = undefined;
-    this.lookAtOpponent = this.props.game.currentPlayerIndex === 1 || 
-                          this.props.game.state === GameStateTypes.ATTACK_PHASE;
   }
 
   onClick = event => {
@@ -180,24 +178,24 @@ class App extends Component {
     this.isSwiping = false;
   }
 
-  playerFieldClick() {    
+  playerFieldClick() {
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
     intersects = intersects.filter(intersect => intersect.object.name.startsWith('Cell'));
 
     if (intersects.length > 0 && !this.isSwiping) {
       let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-                             this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
+        this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
 
       let building = getEntity(this.props.selectedBuilding);
       if (initialPlacement) {
         building = getEntity(BuildingType.FACTORY);
       }
-      
+
       let position = intersects[0].object.parent.position;
       building.position = {
         row: position.x / this.playerGameField.fieldSize,
         col: position.z / this.playerGameField.fieldSize
-      }    
+      }
       this.props.build(building).then(() => {
         this.playerGameField.setBuilding(position, building.type);
         if (initialPlacement) {
@@ -224,7 +222,7 @@ class App extends Component {
 
       if (intersects.length > 0 && !this.isSwiping && this.props.game.players[0].attacks > 0) {
         let position = intersects[0].object.parent.position;
-        
+
         let row = position.x / this.opponentGameField.fieldSize;
         let col = position.z / this.opponentGameField.fieldSize;
 
@@ -241,7 +239,7 @@ class App extends Component {
           } else {
             throw error;
           }
-        })  
+        })
       }
     }
   }
@@ -326,13 +324,13 @@ class App extends Component {
     if (this.opponentGameField) {
       this.opponentGameField.animate(this.delta);
     }
-    this.frameId = window.requestAnimationFrame(this.animate);    
+    this.frameId = window.requestAnimationFrame(this.animate);
   }
 
   prepareGame = () => {
     let player = [
-        createPlayer("Charlie Bucket", PlayerType.HUMAN), 
-        createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
+      createPlayer("Charlie Bucket", PlayerType.HUMAN),
+      createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
     ];
 
     this.props.startGame(player).then(() => {
@@ -345,11 +343,17 @@ class App extends Component {
 
       setTimeout(() => {
         this.props.createBoard({
-          boardSize: {rows: 8, cols: 8},
+          boardSize: { rows: 8, cols: 8 },
           boardSeed: 42
         });
       }, 1000);
     });
+  }
+
+  endGame() {
+    setTimeout(() => {
+      this.props.finishGame();
+    }, 1000);
   }
 
   startGame() {
@@ -357,6 +361,11 @@ class App extends Component {
     let opponentFieldIndex = this.props.game.players[1].fieldIndex;
     this.lookAtOpponent = this.props.game.currentPlayerIndex === 1;
 
+    // Add Light
+    var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2.0);
+    directionalLight.position.set(20, 24, -10);
+    this.scene.add(directionalLight);
+    
     this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board.fields[playerFieldIndex]);
     this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.game.board.fields[opponentFieldIndex]);
     this.scene.add(this.playerGameField.gameField);
@@ -412,9 +421,10 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = {
   startGame,
   createBoard,
-  chooseStart, 
-  chooseField, 
+  chooseStart,
+  chooseField,
   finishTurn,
+  finishGame,
   build,
   finishBuildPhase,
   attack
