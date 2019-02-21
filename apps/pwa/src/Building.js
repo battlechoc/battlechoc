@@ -30,8 +30,12 @@ class Building {
 	}
 
 	explode() {
-		this._model = ModelLoader.models[8].scene.clone();
-		this._model.scale.set(3,3,3);
+		if (this.buildingType === BuildingType.CACAOTREE) {
+			this._model = ModelLoader.models[9].scene.clone();	
+		} else {
+			this._model = ModelLoader.models[8].scene.clone();
+			this._model.scale.set(3,3,3);
+		}
 	}
 
 	adjustPosition(position) {
