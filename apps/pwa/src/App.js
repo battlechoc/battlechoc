@@ -163,6 +163,7 @@ class App extends Component {
 
   playerFieldClick() {    
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
+    intersects = intersects.filter(intersect => intersect.object.name.startsWith('Cell'));
 
     if (intersects.length > 0 && !this.isSwiping) {
       let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
@@ -173,7 +174,7 @@ class App extends Component {
         building = getEntity(BuildingType.FACTORY);
       }
       
-      let position = intersects[intersects.length - 1].object.parent.position;
+      let position = intersects[0].object.parent.position;
       building.position = {
         row: position.x / this.playerGameField.fieldSize,
         col: position.z / this.playerGameField.fieldSize
@@ -200,9 +201,10 @@ class App extends Component {
   opponentFieldClick() {
     if (this.lookAtOpponent && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
       var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
+      intersects = intersects.filter(intersect => intersect.object.name.startsWith('Cell'));
 
       if (intersects.length > 0 && !this.isSwiping && this.props.game.players[0].attacks > 0) {
-        let position = intersects[intersects.length - 1].object.parent.position;
+        let position = intersects[0].object.parent.position;
         
         let row = position.x / this.opponentGameField.fieldSize;
         let col = position.z / this.opponentGameField.fieldSize;
