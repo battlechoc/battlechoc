@@ -78,6 +78,8 @@ class Gamefield {
             animationNumber = 9;
         } else if (building.buildingType === BuildingType.FACTORY) {
             animationNumber = 10;
+        } else if (building.buildingType === BuildingType.RUM_TRUFFLE_CANNON) {
+            animationNumber = 11;
         }
 
         for (let i = 0; i < ModelLoader.models[animationNumber].animations.length; i++) {
