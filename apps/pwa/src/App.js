@@ -13,6 +13,7 @@ import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 import { GameStateTypes } from './gameplay/GameplayReducer'
 import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
+import Rules from './gameplay/Rules';
 
 class App extends Component {
 
@@ -102,6 +103,24 @@ class App extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
+    if (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) {
+      let winners = Rules.determineWinner(nextProps.game);
+      if (winners !== undefined) {
+        console.log("we have a winner (or two)");
+        console.log("winners");
+        this.hud.lockUi();
+        if (winners.length === 1) {
+          if (winners[0].type === PlayerType.HUMAN) {
+            this.hud.showTurnMessage('Congratulations! You won this game.');
+          } else {
+            this.hud.showTurnMessage('You\'ve lost. It\'s your wife.');
+          }
+        } else if (winners.length === 2) {
+          this.hud.showTurnMessage('Draw Game!');
+        }
+      }
+    }
+
     let gameTransition = getGameTransition(this.props.game, nextProps.game);
     console.log(gameTransition);
 
