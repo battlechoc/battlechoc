@@ -82,23 +82,31 @@ class Gamefield {
                 this.mixer.clipAction(ModelLoader.models[8].animations[i]).setLoop(THREE.LoopOnce).play()
             }
 
-            this.explosionCallback = () => {
-                this.mixer = undefined;
-                this.gameField.remove(cream.getModel());        
-            }
-
             let otherBuildings = this.buildings[row][col].filter(building => building.buildingType !== BuildingType.CREAM);
             otherBuildings.forEach(otherBuilding => {
                 otherBuilding.show();
             });
 
-            if (otherBuildings) {
-                this.buildings[row][col] = otherBuildings;
-            } else {
-                this.buildings[row][col] = [ new Building(BuildingType.EMPTY) ];
+            this.explosionCallback = () => {
+                this.mixer = undefined;
+                this.gameField.remove(cream.getModel());
             }
 
+            setTimeout(() => {
+                // TODO: Trigger next explosion
+                otherBuildings.forEach(otherBuilding => {
+                    this.gameField.remove(otherBuilding.getModel());
+                });                
+                this.buildings[row][col] = [ new Building(BuildingType.EMPTY) ];
+            }, 1000);
+            
             this.mixer.addEventListener('finished', () => this.explosionCallback());
+        } else {
+            // TODO: Other explosion animations
+            this.buildings[row][col].forEach(building => {
+                this.gameField.remove(building.getModel());
+            });
+            this.buildings[row][col] = [ new Building(BuildingType.EMPTY) ];
         }
     }
     
