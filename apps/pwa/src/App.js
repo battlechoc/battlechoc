@@ -100,16 +100,18 @@ class App extends Component {
     if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
       const winners = Rules.determineWinner(nextProps.game);
       if (winners !== undefined) {
-        if (winners.length === 1) {
-          if (winners[0].type === PlayerType.HUMAN) {
-            this.hud.showTurnMessage('Congratulations! You won this game.');
-          } else {
-            this.hud.showTurnMessage('You\'ve lost.');
+        setTimeout(() => {
+          if (winners.length === 1) {
+            if (winners[0].type === PlayerType.HUMAN) {
+              this.hud.showTurnMessage('Congratulations! You won this game.');
+            } else {
+              this.hud.showTurnMessage('You\'ve lost.');
+            }
+          } else if (winners.length === 2) {
+            this.hud.showTurnMessage('Draw game!');
           }
-        } else if (winners.length === 2) {
-          this.hud.showTurnMessage('Draw game!');
-        }
-        this.endGame();
+          setTimeout(() => this.endGame(), 1000);
+        }, 2000);
       }
     }
 
