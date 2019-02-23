@@ -138,10 +138,10 @@ class Hud extends Component {
                         if (this.isTitleScreen()) {
                             return (
                                 <div id="mainMenu">
-                                    <Button className="menuButton" variant="contained" onClick={() => this.props.prepareGameCallback()}>
+                                    <Button aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareGameCallback()}>
                                         New Game
                                     </Button>
-                                    <Button className="menuButton" variant="contained">
+                                    <Button aria-label="settings" className="menuButton" variant="contained">
                                         Settings
                                     </Button>
                                 </div>
