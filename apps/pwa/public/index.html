@@ -16,14 +16,6 @@
       if (window.location.port !== '3000' && typeof window.__REACT_DEVTOOLS_GLOBAL_HOOK__ === 'object') {
         window.__REACT_DEVTOOLS_GLOBAL_HOOK__.inject = function () {}
       }
-      
-      try {
-        // Force landscape
-        let screenRotation = screen.orientation.lock("portrait-primary");
-        screenRotation.then(() => console.log('works')).catch(e => console.log(e))
-      } catch (e) {
-        console.log(e)
-      }
     </script>    
     <div id="root"></div>
     <script src="https://www.gstatic.com/firebasejs/5.8.4/firebase-app.js"></script>

@@ -16,6 +16,34 @@ html, body, #root {
 	justify-content: center;
 }
 
+.pauseView {
+	position: absolute;
+	z-index: 90;
+	height: 100%;
+	width: 100%;
+	background-color: black;
+	display: flex;
+	align-items: center;
+	flex-direction: column;
+	color: white;
+	justify-content: flex-start;	
+}
+
+.pauseView > h2 {
+	margin: 4em 0;
+}
+
+.pauseView > p {
+	margin: 1em 2em;
+	align-self: flex-start;
+}
+
+.rotationIcon {
+	margin-top: 2em;
+	width: auto !important;
+	height: 2.5em !important;
+}
+
 .app-container {
   height: 100%;
   width: 100%;

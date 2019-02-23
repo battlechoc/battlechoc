@@ -32,8 +32,9 @@
 .menuButton {
   cursor: pointer;
   padding: 5px;
-  width: 18vw;
-  font-size: 2vw;
+  width: 20vw;
+  min-width: 120px !important;
+  max-width: 200px !important;
   border-radius: 0 !important;
   text-align: center;
   color: white !important;

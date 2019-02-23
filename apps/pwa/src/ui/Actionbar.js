@@ -36,7 +36,9 @@ class Actionbar extends Component {
     }
 
     toggleFullscreen() {
-        document.documentElement.requestFullscreen();
+        document.documentElement.requestFullscreen().then(() => {
+            window.screen.orientation.lock('landscape').catch(error => console.log(error));
+        });
     }
 
     render() {
@@ -55,6 +57,10 @@ class Actionbar extends Component {
                 </Fab>
             );            
         }
+
+        //if (window.matchMedia('(display-mode: standalone)').matches) {  
+        
+        //} 
 
         if (this.state.activeFullscreenButton) {
             buttons.push(

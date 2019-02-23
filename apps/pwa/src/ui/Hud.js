@@ -25,6 +25,17 @@ class Hud extends Component {
         this.gameStartCanvas.width = this.hud.clientWidth;
         this.gameStartCanvas.height = this.hud.clientHeight;
         this.gameStartBitmap = this.gameStartCanvas.getContext('2d');
+
+        window.addEventListener("resize", () => this.updateDimensions());
+    }
+
+    updateDimensions() {
+        this.gameStartCanvas.width = this.hud.clientWidth;
+        this.gameStartCanvas.height = this.hud.clientHeight;
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener("resize", () => this.updateDimensions());
     }
 
     unlockUi() {

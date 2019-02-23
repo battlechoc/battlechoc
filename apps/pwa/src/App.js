@@ -15,6 +15,7 @@ import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttack
 import { createPlayer, PlayerType } from './gameplay/Player';
 import Rules from './gameplay/Rules';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import { ScreenRotation } from '@material-ui/icons';
 
 class App extends Component {
   constructor(props) {
@@ -338,7 +339,22 @@ class App extends Component {
     this.frameId = window.requestAnimationFrame(this.animate);
   }
 
-  prepareGame = () => {
+  deviceOrientationChanged(orientation) {
+    this.setState({ landscapeOrientation: this.orientationQuery.matches });
+  }
+
+  prepareGame = async () => {
+    try {
+      await document.documentElement.requestFullscreen();
+      await window.screen.orientation.lock('landscape');
+    } catch (error) {
+      console.log(error.name + ': ' + error.message);
+    }
+
+    this.orientationQuery = window.matchMedia("(orientation:landscape)");
+    this.setState({ landscapeOrientation: this.orientationQuery.matches });
+    this.orientationQuery.addListener(orientation => this.deviceOrientationChanged(orientation));
+
     let player = [
       createPlayer("Charlie Bucket", PlayerType.HUMAN),
       createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
@@ -413,8 +429,18 @@ class App extends Component {
       <CircularProgress className="progress" variant="static" value={this.state.loadingProgress} />
     </div> : null;
 
+    let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    let pauseView = !this.state.landscapeOrientation && isMobile && typeof this.props.game !== 'undefined' ? 
+    <div className="pauseView">
+      <h2>Pause</h2>
+      <p>We ask for your understanding that our games are mainly programmed by meerkats who only know the landscape mode</p>
+      <p>Please turn the phone to resume the game</p>
+      <ScreenRotation className="rotationIcon" />
+    </div> : null;
+
     return (
       <div className="app-container">
+        { pauseView }
         { loadingView }
         <Hud
           toggleMusic={() => this.toggleMusic()}
