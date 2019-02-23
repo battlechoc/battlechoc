@@ -11,8 +11,13 @@
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
+    <script>
+      if (window.location.port !== '3000' && typeof window.__REACT_DEVTOOLS_GLOBAL_HOOK__ === 'object') {
+        window.__REACT_DEVTOOLS_GLOBAL_HOOK__.inject = function () {}
+      } 
+    </script>    
     <div id="root"></div>
-    <script src="https://www.gstatic.com/firebasejs/5.8.4/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/5.8.4/firebase-app.js"></script>
     <script>
       // Initialize Firebase
       var config = {
@@ -24,6 +29,6 @@
         messagingSenderId: "618424349380"
       };
       firebase.initializeApp(config);
-    </script>
+    </script>   
   </body>
 </html>
