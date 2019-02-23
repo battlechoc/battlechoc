@@ -10,6 +10,16 @@
   margin-right: 10px; 
 }
 
+.icon {
+	margin-left: 5px !important;
+	color: white !important;
+	background-color: #81c784 !important;
+}
+
+.icon:hover {
+	background-color: #388e3c !important;
+}
+
 .menuButton {
   color: white;
   background-color: black;

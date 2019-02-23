@@ -7,6 +7,7 @@ import { GameStateTypes } from '../gameplay/GameplayReducer';
 import Tooltip from './Tooltip';
 import Actionbar from './Actionbar';
 import BuildingPalette from './BuildingPalette';
+import Button from '@material-ui/core/Button';
 
 class Hud extends Component {
     constructor(props) {
@@ -126,8 +127,12 @@ class Hud extends Component {
                         if (this.isTitleScreen()) {
                             return (
                                 <div id="mainMenu">
-                                    <div onClick={() => this.props.prepareGameCallback()}>New Game</div>
-                                    <div>Settings</div>
+                                    <Button className="menuButton" variant="contained" onClick={() => this.props.prepareGameCallback()}>
+                                        New Game
+                                    </Button>
+                                    <Button className="menuButton" variant="contained">
+                                        Settings
+                                    </Button>
                                 </div>
                             );
                         } else if (!this.isInitalStage() && !this.isTitleScreen()) {

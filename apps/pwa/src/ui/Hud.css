@@ -29,18 +29,20 @@
   height: 100vh;
 }
 
-#mainMenu > div {
+.menuButton {
   cursor: pointer;
   padding: 5px;
   width: 18vw;
   font-size: 2vw;
+  border-radius: 0 !important;
   text-align: center;
-  background: rgba(125, 125, 125, 0.2);
-  margin: 5px;
+  color: white !important;
+  background-color: #81c784 !important;
+  margin: 5px !important;
 }
 
-#mainMenu > div:hover {
-  background: rgba(125, 125, 125, 0.5);
+.menuButton:hover {
+  background-color: #388e3c !important;
 }
 
 #gameMenu {

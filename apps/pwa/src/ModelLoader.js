@@ -7,21 +7,20 @@ class ModelLoader {
         this.models = [];
     }
 
-    async loadModels() {
-        this.models = [
-            await this.loadGLTFModel('models/white_tile.gltf'),
-            await this.loadGLTFModel('models/brown_tile.gltf'),
-            await this.loadGLTFModel('models/black_tile.gltf'),
-            await this.loadGLTFModel('models/factory.gltf'),
-            await this.loadGLTFModel('models/factory-extension.gltf'),
-            await this.loadGLTFModel('models/cacaotree.gltf'),
-            await this.loadGLTFModel('models/cannon.gltf'),
-            await this.loadGLTFModel('models/cream.gltf'),
-            await this.loadGLTFModel('models/cream-explosion.gltf'),
-            await this.loadGLTFModel('models/cacaotree-explosion.gltf'),
-            await this.loadGLTFModel('models/factory-explosion.gltf'),
-            await this.loadGLTFModel('models/cannon-explosion.gltf')
-        ];
+    async loadModels(callback) {
+        const files = ['white_tile.gltf', 'brown_tile.gltf', 'black_tile.gltf', 
+                        'factory.gltf', 'factory-extension.gltf', 'cacaotree.gltf',
+                        'cannon.gltf', 'cream.gltf', 'cream-explosion.gltf',
+                        'cacaotree-explosion.gltf', 'factory-explosion.gltf', 'cannon-explosion.gltf'];
+        this.models = [];
+        for (let i = 0; i < files.length; i++) {
+            this.models.push(await this.loadGLTFModel('models/' + files[i]));
+            if (i === files.length - 1) {
+                callback(100);
+            } else {
+                callback(Math.round((i / (files.length - 1)) * 100));
+            }
+        }
     }
 
     loadGLTFModel(filename) {

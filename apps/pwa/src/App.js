@@ -14,12 +14,21 @@ import { GameStateTypes } from './gameplay/GameplayReducer'
 import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import Rules from './gameplay/Rules';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { loadingProgress: 0 }
+  }
+
+  updateProgressbar(progress) {
+    this.setState({ loadingProgress: progress });
+  }
 
   async componentDidMount() {
     // Load Models
-    await ModelLoader.loadModels();
+    await ModelLoader.loadModels(progress => this.updateProgressbar(progress));
 
     // Basic window and game setup
     const width = this.container.clientWidth;
@@ -400,8 +409,13 @@ class App extends Component {
   }
 
   render() {
+    let loadingView = this.state.loadingProgress < 100 ? <div className="loadingView">
+      <CircularProgress className="progress" variant="static" value={this.state.loadingProgress} />
+    </div> : null;
+
     return (
       <div className="app-container">
+        { loadingView }
         <Hud
           toggleMusic={() => this.toggleMusic()}
           prepareGameCallback={this.prepareGame}
