@@ -10,9 +10,13 @@ import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward } from '@mater
 class Actionbar extends Component {
     constructor(props) {
         super(props);
+
+        const searchParams = new URLSearchParams(window.location.search);
+        const isPwa = searchParams.get('app_runs_as') === 'pwa';
+
         this.state = { 
             activeMusicButton: false,
-            activeFullscreenButton: document.fullscreenElement == null
+            activeFullscreenButton: document.fullscreenElement == null && !isPwa
         }
     }
 
@@ -30,8 +34,11 @@ class Actionbar extends Component {
     }
 
     fullscreenchange = () => {
+        const searchParams = new URLSearchParams(window.location.search);
+        const isPwa = searchParams.get('app_runs_as') === 'pwa';
+
         this.setState({
-            activeFullscreenButton: document.fullscreenElement == null
+            activeFullscreenButton: document.fullscreenElement == null && !isPwa
         });
     }
 

@@ -344,11 +344,17 @@ class App extends Component {
   }
 
   prepareGame = async () => {
-    try {
-      await document.documentElement.requestFullscreen();
-      await window.screen.orientation.lock('landscape');
-    } catch (error) {
-      console.log(error.name + ': ' + error.message);
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const isPwa = searchParams.get('app_runs_as') === 'pwa';
+
+    if (!isPwa) {
+      try {
+        await document.documentElement.requestFullscreen();
+        await window.screen.orientation.lock('landscape');
+      } catch (error) {
+        console.log(error.name + ': ' + error.message);
+      }
     }
 
     this.orientationQuery = window.matchMedia("(orientation:landscape)");

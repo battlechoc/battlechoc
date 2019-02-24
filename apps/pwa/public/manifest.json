@@ -18,7 +18,7 @@
       "type": "image/png"
     }
   ],
-  "start_url": "./index.html",
+  "start_url": "./index.html?app_runs_as=pwa&app_version=1",
   "display": "fullscreen",
   "orientation":  "landscape",
   "theme_color": "#000000",
