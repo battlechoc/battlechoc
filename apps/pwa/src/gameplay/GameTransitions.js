@@ -9,7 +9,6 @@ const GameTransitions = Object.freeze({
     PLAYER_INITAL_PLACEMENT: 'GameTransitions.PLAYER_INITAL_PLACEMENT',
     PLAYER_FINISHED_INITIAL_PLACEMENT: 'GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT',
     OPPONENT_INITAL_PLACEMENT: 'GameTransitions.OPPONENT_INITAL_PLACEMENT',
-    OPPONENT_FINISHED_INITIAL_PLACEMENT: 'GameTransitions.OPPONENT_FINISHED_INITIAL_PLACEMENT',
     PLAYER_BUILD_PHASE: 'GameTransitions.PLAYER_BUILD_PHASE',
     PLAYER_ATTACK_PHASE: 'GameTransitions.PLAYER_ATTACK_PHASE',
     OPPONENT_BUILD_PHASE: 'GameTransitions.OPPONENT_BUILD_PHASE',
@@ -28,7 +27,7 @@ function getGameTransition(currentState, nextState) {
         }
     } else if (typeof currentState !== 'undefined' &&
         typeof nextState === 'undefined') {
-            return GameTransitions.GAME_FINISHED;
+        return GameTransitions.GAME_FINISHED;
     } else if (currentState.state === GameStateTypes.START &&
         currentState.currentPlayerIndex === 1 &&
         nextState.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
@@ -51,15 +50,10 @@ function getGameTransition(currentState, nextState) {
         } else {
             return GameTransitions.OPPONENT_INITAL_PLACEMENT;
         }
-    } else if ((currentState.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT &&
-        nextState.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) ||
-        (currentState.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT &&
-            nextState.state === GameStateTypes.BUILD_PHASE)) {
-        if (nextState.currentPlayerIndex === 0) {
-            return GameTransitions.OPPONENT_FINISHED_INITIAL_PLACEMENT;
-        } else {
-            return GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT;
-        }
+    } else if (currentState.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT &&
+        nextState.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT &&
+        nextState.currentPlayerIndex === 1) {
+        return GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT;
     } else if (nextState.state === GameStateTypes.BUILD_PHASE &&
         currentState.state !== GameStateTypes.BUILD_PHASE) {
         if (nextState.currentPlayerIndex === 0) {

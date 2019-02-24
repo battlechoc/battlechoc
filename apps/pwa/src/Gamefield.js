@@ -97,6 +97,7 @@ class Gamefield {
     attack(position) {
         let row = position.x / this.fieldSize;
         let col = position.z / this.fieldSize;
+        console.dir(position);
         let creamyBuildings = this.buildings[row][col].filter(building => building.buildingType === BuildingType.CREAM);
 
         if (creamyBuildings.length > 0) {
