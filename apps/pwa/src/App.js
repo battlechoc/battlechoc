@@ -431,33 +431,39 @@ class App extends Component {
   }
 
   render() {
-    let loadingView = this.state.loadingProgress < 100 ? <div className="loadingView">
-      <CircularProgress className="progress" variant="static" value={this.state.loadingProgress} />
-    </div> : null;
-
-    let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    let pauseView = !this.state.landscapeOrientation && isMobile && typeof this.props.game !== 'undefined' ? 
-    <div className="pauseView">
-      <h2>Pause</h2>
-      <p>We ask for your understanding that our games are mainly programmed by meerkats who only know the landscape mode</p>
-      <p>Please turn the phone to resume the game</p>
-      <ScreenRotation className="rotationIcon" />
-    </div> : null;
-
-    return (
-      <div className="app-container">
-        { pauseView }
-        { loadingView }
-        <Hud
-          toggleMusic={() => this.toggleMusic()}
-          prepareGameCallback={this.prepareGame}
-          onRef={hud => (this.hud = hud)} />
-        <div
-          className="app"
-          ref={container => { this.container = container }}
-        />
-      </div>
-    )
+    if (this.state.loadingProgress < 100) {
+      return (
+        <div className="loadingView">
+          <CircularProgress className="progress" variant="static" value={this.state.loadingProgress} />
+        </div>
+      )
+    } else {
+      return (
+        <div className="app-container">
+          {(() => {
+            let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (!this.state.landscapeOrientation && isMobile && typeof this.props.game !== 'undefined') {
+              return (
+                <div className="pauseView">
+                  <h2>Pause</h2>
+                  <p>We ask for your understanding that our games are mainly programmed by meerkats who only know the landscape mode</p>
+                  <p>Please turn the phone to resume the game</p>
+                  <ScreenRotation className="rotationIcon" />
+                </div>
+              )
+            }
+          })()}
+          <Hud
+            toggleMusic={() => this.toggleMusic()}
+            prepareGameCallback={this.prepareGame}
+            onRef={hud => (this.hud = hud)} />
+          <div
+            className="app"
+            ref={container => { this.container = container }}
+          />
+        </div>
+      )
+    }
   }
 }
 

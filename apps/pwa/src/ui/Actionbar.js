@@ -65,10 +65,6 @@ class Actionbar extends Component {
             );            
         }
 
-        //if (window.matchMedia('(display-mode: standalone)').matches) {  
-        
-        //} 
-
         if (this.state.activeFullscreenButton) {
             buttons.push(
                 <Fab size="small" key="1" aria-label="toggle fullscreen" className="icon">

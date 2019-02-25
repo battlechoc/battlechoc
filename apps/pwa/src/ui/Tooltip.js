@@ -2,6 +2,47 @@ import React, { Component } from 'react';
 import './Tooltip.css';
 import { connect } from 'react-redux';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import { withStyles } from '@material-ui/core/styles';
+import ExpansionPanel from '@material-ui/core/ExpansionPanel';
+import MuiExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
+import MuiExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
+import Typography from '@material-ui/core/Typography';
+import { withTheme } from '@material-ui/core/styles';
+
+const ExpansionPanelSummary = withStyles(theme => ({
+  root: {
+    backgroundColor: 'rgba(50, 77, 92, 1)',
+    border: '1px solid rgba(50, 77, 92, 0.2)',
+    color: 'rgba(255, 255, 255, 1)',
+    marginBottom: -1,
+    marginLeft: -1,
+    minHeight: 32,
+    paddingLeft: theme.spacing.unit * 2,
+    paddingRight: theme.spacing.unit * 2,
+    '&$expanded': {
+      minHeight: 32,
+    },
+  },
+  content: {
+    margin: '8px 0',
+    '&$expanded': {
+      margin: '8px 0',
+    }
+  },
+  expanded: {},
+}))(props => <MuiExpansionPanelSummary {...props} />);
+
+ExpansionPanelSummary.muiName = 'ExpansionPanelSummary';
+
+const ExpansionPanelDetails = withStyles(theme => ({
+  root: {
+    paddingTop: theme.spacing.unit * 1,
+    paddingRight: theme.spacing.unit * 2,
+    paddingBottom: 0,
+    paddingLeft: theme.spacing.unit * 2
+  },
+}))(MuiExpansionPanelDetails);
 
 class Tooltip extends Component {
     constructor(props) {
@@ -51,14 +92,18 @@ class Tooltip extends Component {
             let { title, message } = this.getContent()
             if (typeof title !== 'undefined') {
                 return(
-                    <div id="tooltip">
-                        <h3 className={typeof message !== 'undefined' ? 'extendable' : ''} onClick={() => 
-                            this.setState({ expanded: !this.state.expanded })
-                        }>
-                            { title }
-                        </h3>
-                        <p className={this.state.expanded && typeof message !== 'undefined' ? '' : 'invisible'}>{ message }</p>
-                    </div>
+                    <ExpansionPanel square id="tooltip" expanded={this.state.expanded && typeof message !== 'undefined'} onChange={() => {
+                        if (typeof message !== 'undefined') {
+                            this.setState({expanded: !this.state.expanded});
+                        }
+                    }}>
+                        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                            <Typography variant="h6" color="textSecondary">{ title }</Typography>
+                        </ExpansionPanelSummary>
+                        <ExpansionPanelDetails>
+                            <Typography paragraph={true}>{ message }</Typography>
+                        </ExpansionPanelDetails>
+                    </ExpansionPanel>
                 );
             } else {
                 return null;
@@ -77,4 +122,4 @@ const TooltipContainer = connect(
   mapStateToProps
 )(Tooltip);
 
-export default TooltipContainer;
+export default withTheme()(TooltipContainer);

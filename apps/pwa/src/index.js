@@ -8,6 +8,88 @@ import rootReducer from './RootReducer';
 import { gameplayLogger } from './gameplay/GamePlayLogger';
 import actionValidator from './gameplay/ActionValidator';
 import { configureStore, getDefaultMiddleware } from 'redux-starter-kit'
+import { createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
+
+const defaultTheme = createMuiTheme({
+	palette: {
+		primary: { main: '#324D5C' },
+    	secondary: { main: '#457B82' },
+    	text: {
+    		primary: 'rgba(0, 0, 0, 0.87)',
+    		secondary: 'rgba(255, 255, 255, 0.87)'
+    	}
+  	},
+  	typography: {
+    	useNextVariants: true,
+    }
+});
+
+const { breakpoints } = defaultTheme
+
+const theme = createMuiTheme({
+	...defaultTheme,
+  	overrides: {
+	    MuiTypography: {
+	    	h6: {
+	        	fontSize: '0.7rem',
+		    	[breakpoints.up("sm")]: {
+			        fontSize: '0.8rem'
+			    },
+			    [breakpoints.up("md")]: {
+			        fontSize: '1.2rem',
+			        margin: 4
+			    },
+			    [breakpoints.up("lg")]: {
+			        fontSize: '1.4rem',
+			        margin: 4
+			    }
+	      	},
+	      	paragraph: {
+	      		marginBottom: 8,
+	      		fontSize: '0.6rem',
+		    	[breakpoints.up("sm")]: {
+			        fontSize: '0.7rem'
+			    },
+			    [breakpoints.up("md")]: {
+			        fontSize: '0.9rem',
+			       	marginBottom: 8,
+			        margin: 4
+			    },
+			    [breakpoints.up("lg")]: {
+			        fontSize: '1.1rem',
+			        marginBottom: 16,
+			        margin: 8
+			    }
+	      	}
+    	},
+    	MuiFab: {
+    		sizeSmall: {
+	    		width: 36,
+	    		height: 36,
+	    		[breakpoints.up("sm")]: {
+		    		width: 40,
+		    		height: 40
+			    },
+			   	[breakpoints.up("md")]: {
+		    		width: 48,
+		    		height: 48
+			    }
+    		}
+    	},
+    	MuiSvgIcon: {
+    		root: {
+    			fontSize: 18,
+    			[breakpoints.up("sm")]: {
+		    		fontSize: 22
+			    },
+			    [breakpoints.up("md")]: {
+		    		width: 28,
+		    		height: 28
+			    }
+    		}
+    	}
+    }
+});
 
 const store = configureStore({ 
     reducer: rootReducer,
@@ -16,7 +98,9 @@ const store = configureStore({
 
 ReactDOM.render(
     <Provider store={store}>
-        <App />
+    	<MuiThemeProvider theme={theme}>
+        	<App />
+        </MuiThemeProvider>
     </Provider>,
     document.getElementById('root')
 );
