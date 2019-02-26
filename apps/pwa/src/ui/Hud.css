@@ -5,7 +5,7 @@
   color: white;
 }
 
-.progress { color: #324D5C !important; }
+/* choose menu */
 
 .choose {
   margin-top: 20px;
@@ -14,6 +14,18 @@
   width: 100%;
   display: flex;
   flex-direction: row;
+}
+
+.active:hover {
+  background-color: #457B82;
+}
+
+.selectedByPlayer {
+  background-color: rgba(128, 128, 255, 0.4);
+}
+
+.selectedByOpponent {
+  background-color: rgba(255, 128, 128, 0.4);
 }
 
 .button {
@@ -26,10 +38,6 @@
   justify-content: center;
   cursor: pointer;
   flex: 1;
-}
-
-.button:hover {
-  background-color: #457B82;
 }
 
 .stackedIcon {
@@ -49,49 +57,33 @@
   color: #92ABB8;
 }
 
-.gamefield {
+.fields {
+  width: 20vw;
+  height: 20vw;
   display: flex;
-  flex-direction: row;
+  flex-wrap: wrap;
+  transform: rotateY(50deg);
+  transform: rotateZ(135deg);
 }
 
-.loadingView {
-  position: absolute;
-  z-index: 100;
-  height: 100%;
-  width: 100%;
-  background-color: black;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.fields > div {
+  flex: 1 0 12.5%;
+  border-radius: 15%;
 }
 
-.pauseView {
-  position: absolute;
-  z-index: 90;
-  height: 100%;
-  width: 100%;
-  background-color: black;
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  color: white;
-  justify-content: flex-start;  
+.white {
+  background-color: #ffe4c4;  
 }
 
-.pauseView > h2 {
-  margin: 4em 0;
+.brown {
+  background-color: #cd853f;
 }
 
-.pauseView > p {
-  margin: 1em 2em;
-  align-self: flex-start;
+.black {
+  background-color: #3d1600;
 }
 
-.rotationIcon {
-  margin-top: 2em;
-  width: auto !important;
-  height: 2.5em !important;
-}
+/* flying text animation */
 
 #textAnimationCanvas {
   position: absolute;
@@ -149,50 +141,7 @@
   user-select: none;
 }
 
-.selectedByPlayer {
-  background-color: rgba(128, 128, 255, 0.4);
-}
-
-.selectedByOpponent {
-  background-color: rgba(255, 128, 128, 0.4);
-}
-
-.fields {
-  width: 20vw;
-  height: 20vw;
-  display: flex;
-  flex-wrap: wrap;
-  transform: rotateY(50deg);
-  transform: rotateZ(135deg);
-}
-
-.fields > div {
-  flex: 1 0 12.5%;
-  border-radius: 15%;
-}
-
-.white {
-  background-color: #ffe4c4;  
-}
-
-.brown {
-  background-color: #cd853f;
-}
-
-.black {
-  background-color: #3d1600;
-}
-
-#hud > p {
-  margin: 5px 5px;
-  font-size: 1.4vw;
-}
-
 @media screen and (min-width: 960px) {
-  #hud > p {
-    font-size: 16px;
-  }
-
   #gameMenu > p {
     font-size: 16px;
   }
@@ -203,11 +152,6 @@
 }
 
 @media screen and (max-width: 600px) {
-  #hud > p {
-    margin: 5px 5px;
-    font-size: 10px;
-  }
-
   #gameMenu > p {
     font-size: 10px;
   }

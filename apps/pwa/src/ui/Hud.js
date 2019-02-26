@@ -113,7 +113,7 @@ class Hud extends Component {
     }
 
     estimateButtonClasses() {
-        let classNames =  'button start'
+        let classNames =  'button'
         if (this.state.clickable && this.props.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
             classNames += ' active'; 
         } else if (this.props.state === GameStateTypes.CHOOSE_FIELD) {
@@ -159,7 +159,7 @@ class Hud extends Component {
                             return (
                                 <div className="choose">
 
-                                    <div className={(this.state.clickable ? 'active ' : null) + ' button left'} onClick={() => this.choose('LEFT_GAMEFIELD')}>
+                                    <div className={(this.state.clickable ? 'active ' : null) + ' button'} onClick={() => this.choose('LEFT_GAMEFIELD')}>
                                         <div className="fields">
                                         {(() => {
                                             if (typeof this.props.game.board !== 'undefined') {
@@ -178,7 +178,7 @@ class Hud extends Component {
                                         <div className="stackedIcon"><div className="firstIcon">#1</div><StartIcon fontSize="large"/></div>
                                     </div>
 
-                                    <div className={(this.state.clickable ? 'active ' : null) + ' button right'} onClick={() => this.choose('RIGHT_GAMEFIELD')}>
+                                    <div className={(this.state.clickable ? 'active ' : null) + ' button'} onClick={() => this.choose('RIGHT_GAMEFIELD')}>
                                         <div className="fields">
                                         {(() => {
                                             if (typeof this.props.game.board !== 'undefined') {
