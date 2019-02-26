@@ -86,6 +86,22 @@ const theme = createMuiTheme({
 		    		width: 28,
 		    		height: 28
 			    }
+    		},
+    		fontSizeLarge: {
+    			width: 64,
+		    	height: 64,
+		    	[breakpoints.up("sm")]: {
+	    			width: 102,
+			    	height: 102
+			    },
+			    [breakpoints.up("md")]: {
+		    		width: 192,
+		    		height: 192
+			    },
+				[breakpoints.up("lg")]: {
+	    			width: 212,
+			    	height: 212
+				}
     		}
     	}
     }

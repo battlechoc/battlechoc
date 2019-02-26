@@ -8,6 +8,7 @@ import Tooltip from './Tooltip';
 import Actionbar from './Actionbar';
 import BuildingPalette from './BuildingPalette';
 import Button from '@material-ui/core/Button';
+import StartIcon from '@material-ui/icons/SupervisorAccount';
 
 class Hud extends Component {
     constructor(props) {
@@ -157,33 +158,38 @@ class Hud extends Component {
                         } else if (this.isInitalStage()) {
                             return (
                                 <div className="choose">
-                                    <div className={this.estimateButtonClasses()} onClick={() => this.choose('START')}><p>Choose First Turn</p></div>
-                                    <div className="gamefield">
-                                        <div className={(this.state.clickable ? 'active ' : null) + 'button left'} onClick={() => this.choose('LEFT_GAMEFIELD')}><p>Choose this field</p>
-                                            <div className="fields">
-                                            {(() => {
-                                                if (typeof this.props.game.board !== 'undefined') {
-                                                    return this.props.game.board.fields[0].grid.map(
-                                                        (preview, i) => {
-                                                            return <div key={i} className={preview.previewStyle}></div>
-                                                        }
-                                                    );
-                                                }
-                                            })()}                                    
-                                            </div>
-                                        </div>
-                                        <div className={(this.state.clickable ? 'active ' : null) + 'button right'} onClick={() => this.choose('RIGHT_GAMEFIELD')}><p>Choose this field</p>
-                                            <div className="fields">
-                                            {(() => {
-                                                if (typeof this.props.game.board !== 'undefined') {
-                                                    return this.props.game.board.fields[1].grid.map(
-                                                        (preview, i) => <div key={i} className={preview.previewStyle}></div>
-                                                    );
-                                                }
-                                            })()}                                    
-                                            </div>
+
+                                    <div className={(this.state.clickable ? 'active ' : null) + ' button left'} onClick={() => this.choose('LEFT_GAMEFIELD')}>
+                                        <div className="fields">
+                                        {(() => {
+                                            if (typeof this.props.game.board !== 'undefined') {
+                                                return this.props.game.board.fields[0].grid.map(
+                                                    (preview, i) => {
+                                                        return <div key={i} className={preview.previewStyle}></div>
+                                                    }
+                                                );
+                                            }
+                                        })()}                                    
                                         </div>
                                     </div>
+
+
+                                    <div id="chooseStart" className={this.estimateButtonClasses()} onClick={() => this.choose('START')}>
+                                        <div className="stackedIcon"><div className="firstIcon">#1</div><StartIcon fontSize="large"/></div>
+                                    </div>
+
+                                    <div className={(this.state.clickable ? 'active ' : null) + ' button right'} onClick={() => this.choose('RIGHT_GAMEFIELD')}>
+                                        <div className="fields">
+                                        {(() => {
+                                            if (typeof this.props.game.board !== 'undefined') {
+                                                return this.props.game.board.fields[1].grid.map(
+                                                    (preview, i) => <div key={i} className={preview.previewStyle}></div>
+                                                );
+                                            }
+                                        })()}                                    
+                                        </div>
+                                    </div>
+
                                 </div>
                             );
                         }

@@ -7,6 +7,53 @@
 
 .progress { color: #324D5C !important; }
 
+.choose {
+  margin-top: 20px;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+}
+
+.button {
+  background-color: #324D5C;
+  height: 30vw;
+  display: flex;
+  align-self: center;
+  align-items: center;
+  margin: 10px;
+  justify-content: center;
+  cursor: pointer;
+  flex: 1;
+}
+
+.button:hover {
+  background-color: #457B82;
+}
+
+.stackedIcon {
+  position: relative;
+}
+
+.stackedIcon > .firstIcon {
+  position: absolute;
+  font-size: 4rem;
+  text-shadow: 1px 1px #292F33;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+  align-items: flex-end;
+  display: flex;
+  user-select: none;
+  color: #92ABB8;
+}
+
+.gamefield {
+  display: flex;
+  flex-direction: row;
+}
+
 .loadingView {
   position: absolute;
   z-index: 100;
@@ -102,39 +149,6 @@
   user-select: none;
 }
 
-.choose {
-  position: absolute;
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.start {
-  flex: 1;
-  justify-content: center;
-}
-
-.choose p {
-  font-size: 2vw;
-  text-shadow: 2px 2px #333;
-}
-
-.gamefield {
-  flex: 5;
-  display: flex;
-  flex-direction: row;
-}
-
-.button {
-  flex-direction: column;
-  background-color: rgba(255, 255, 255, 0.1);
-  margin: 20px;
-  display: flex;
-  align-items: center;
-  flex: 1;  
-}
-
 .selectedByPlayer {
   background-color: rgba(128, 128, 255, 0.4);
 }
@@ -143,20 +157,18 @@
   background-color: rgba(255, 128, 128, 0.4);
 }
 
-.active:hover {
-  background-color: rgba(128, 128, 255, 0.4);
-  cursor: pointer;
-}
-
 .fields {
   width: 20vw;
   height: 20vw;
   display: flex;
   flex-wrap: wrap;
+  transform: rotateY(50deg);
+  transform: rotateZ(135deg);
 }
 
 .fields > div {
   flex: 1 0 12.5%;
+  border-radius: 15%;
 }
 
 .white {
@@ -176,7 +188,7 @@
   font-size: 1.4vw;
 }
 
-@media screen and (min-width: 1100px) {
+@media screen and (min-width: 960px) {
   #hud > p {
     font-size: 16px;
   }
@@ -184,9 +196,13 @@
   #gameMenu > p {
     font-size: 16px;
   }
+
+  .stackedIcon > .firstIcon {
+    font-size: 6rem;
+  }
 }
 
-@media screen and (max-width: 800px) {
+@media screen and (max-width: 600px) {
   #hud > p {
     margin: 5px 5px;
     font-size: 10px;
@@ -194,5 +210,9 @@
 
   #gameMenu > p {
     font-size: 10px;
+  }
+
+  .stackedIcon > .firstIcon {
+    font-size: 2rem;
   }
 }
