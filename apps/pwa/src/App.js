@@ -140,15 +140,14 @@ class App extends Component {
     } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
       this.triggerUiEvent = 'START_GAME';
     } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
-      const opponentGameBoard = nextProps.game.board.fields[this.props.game.players[1].fieldIndex];
+      const opponentGameBoard = nextProps.game.board.fields[nextProps.game.players[1].fieldIndex];
       this.opponent.simulateInitialPlacement(opponentGameBoard, this.opponentGameField);
     } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
       const opponentGameBoard = nextProps.game.board.fields[nextProps.game.players[1].fieldIndex];
-      this.opponent.simulateBuildPhase(opponentGameBoard, this.props.game.players[1].buildingsPerTurn, this.props.game.players[1].cacao, this.opponentGameField);
+      this.opponent.simulateBuildPhase(opponentGameBoard, nextProps.game.players[1].buildingsPerTurn, nextProps.game.players[1].cacao, this.opponentGameField);
     } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
-      const playersBoard = nextProps.game.board.fields[this.props.game.players[0].fieldIndex];
-      console.dir(this.props.game.players[1].attacks);
-      this.opponent.simulateAttackPhase(playersBoard, this.playerGameField, this.props.game.players[1].attacksPerTurn);
+      const playersBoard = nextProps.game.board.fields[nextProps.game.players[0].fieldIndex];
+      this.opponent.simulateAttackPhase(playersBoard, this.playerGameField, nextProps.game.players[1].attacksPerTurn);
     } else if (gameTransition === GameTransitions.GAME_FINISHED) {
       while (this.scene.children.length > 0) {
         this.scene.remove(this.scene.children[0]);
