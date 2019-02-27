@@ -52,9 +52,11 @@ class App extends Component {
     this.camera.position.y = 55;
     this.camera.position.z = 95;
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer = new THREE.WebGLRenderer({ 
+      antialias: true,
+      alpha: true 
+    });
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setClearColor('#000000');
     this.renderer.setSize(width, height);
     this.renderer.domElement.id = 'game-canvas'
     this.renderer.gammaOutput = true;
