@@ -285,15 +285,10 @@ class App extends Component {
   }
 
   estimateDistance(ratio) {
-    if (ratio < 0.9) {
-      return 60;
-    } else if (ratio < 1.1) {
-      return 50;
-    } else if (ratio < 1.4) {
-      return 40;
-    } else {
-      return 30;
-    }
+    if (ratio < 0.9) { return 60; } 
+    else if (ratio < 1.1) { return 50; } 
+    else if (ratio < 1.4) { return 40; } 
+    else { return 30; }
   }
 
   updateDimensions() {
@@ -346,6 +341,11 @@ class App extends Component {
     if (this.opponentGameField) {
       this.opponentGameField.animate(this.delta);
     }
+
+    if (this.playerGameField) {
+      this.playerGameField.animate(this.delta);
+    }
+
     this.frameId = window.requestAnimationFrame(this.animate);
   }
 
