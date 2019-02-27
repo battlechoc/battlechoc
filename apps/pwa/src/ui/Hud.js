@@ -167,8 +167,7 @@ class Hud extends Component {
                                         </div>
                                     </div>
 
-
-                                    <div id="chooseStart" className={this.estimateButtonClasses()} onClick={() => this.choose('START')}>
+                                    <div className={this.estimateButtonClasses()} onClick={() => this.choose('START')}>
                                         <div className="stackedIcon"><div className="firstIcon">#1</div><StartIcon fontSize="large"/></div>
                                     </div>
 

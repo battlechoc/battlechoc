@@ -45,8 +45,8 @@ class App extends Component {
     let distance = this.estimateDistance(width / height);
     let aspect = width / height;
 
-    this.camera = new THREE.OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, -100, 1000);
-    this.camera.position.set(140, 140, 140);
+    this.camera = new THREE.OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, 0, 250);
+    this.camera.position.set(40, 40, 40);
     this.camera.lookAt(this.scene.position);
     this.camera.position.x = 20;
     this.camera.position.y = 55;
@@ -164,9 +164,11 @@ class App extends Component {
           this.opponent.simulateInitialPlacement(opponentGameBoard, this.opponentGameField);
         }
       }
-      this.triggerUiEvent = undefined;
-      this.lookAtOpponent = this.props.game.currentPlayerIndex === 1 ||
-        this.props.game.state === GameStateTypes.ATTACK_PHASE;
+      this.triggerUiEvent = undefined; 
+      this.lookAtOpponent = (this.props.game.currentPlayerIndex === 1 && 
+                             this.props.game.state !== GameStateTypes.ATTACK_PHASE) ||
+                            (this.props.game.currentPlayerIndex === 0 &&
+                             this.props.game.state === GameStateTypes.ATTACK_PHASE);
     }
   }
 

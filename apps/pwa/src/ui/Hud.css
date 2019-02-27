@@ -21,11 +21,11 @@
 }
 
 .selectedByPlayer {
-  background-color: rgba(128, 128, 255, 0.4);
+  background-color: rgba(128, 128, 255, 0.4) !important;
 }
 
 .selectedByOpponent {
-  background-color: rgba(255, 128, 128, 0.4);
+  background-color: rgba(255, 128, 128, 0.4) !important;
 }
 
 .button {
