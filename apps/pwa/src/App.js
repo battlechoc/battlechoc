@@ -42,14 +42,14 @@ class App extends Component {
     this.targetFps = 1 / 30;
     this.delta = 0;
 
-    let distance = 30;
+    let distance = this.estimateDistance(width / height);
     let aspect = width / height;
 
     this.camera = new THREE.OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, -100, 1000);
     this.camera.position.set(140, 140, 140);
     this.camera.lookAt(this.scene.position);
-    this.camera.position.y = 60;
-    this.camera.position.x = 30;
+    this.camera.position.x = 20;
+    this.camera.position.y = 55;
     this.camera.position.z = 95;
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -286,12 +286,24 @@ class App extends Component {
     }
   }
 
+  estimateDistance(ratio) {
+    if (ratio < 0.9) {
+      return 60;
+    } else if (ratio < 1.1) {
+      return 50;
+    } else if (ratio < 1.4) {
+      return 40;
+    } else {
+      return 30;
+    }
+  }
+
   updateDimensions() {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
     this.renderer.setSize(width, height);
+    let distance = this.estimateDistance(width / height);
 
-    let distance = 30;
     let aspect = width / height;
 
     this.camera.left = -distance * aspect;
@@ -323,10 +335,10 @@ class App extends Component {
       // Render all objects
       this.renderScene();
       // Swipe animation to another game field
-      if (this.lookAtOpponent && this.camera.position.y < 120) {
+      if (this.lookAtOpponent && this.camera.position.y < 128) {
         this.camera.position.y += 2.0;
         this.camera.position.x += 4.0;
-      } else if (!this.lookAtOpponent && this.camera.position.y > 60) {
+      } else if (!this.lookAtOpponent && this.camera.position.y > 58) {
         this.camera.position.y -= 2.0;
         this.camera.position.x -= 4.0;
       }

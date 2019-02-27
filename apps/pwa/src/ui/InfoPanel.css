@@ -1,0 +1,54 @@
+#gameMenu {
+  position: absolute;
+  white-space: nowrap;
+  margin-right: 5px;
+  margin-bottom: 5px;
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  z-index: 1;
+}
+
+.infoIcon > p {
+  font-size: 1.4vw;
+  color: white;
+  user-select: none;
+}
+
+.infoIcon {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.infoIcon > p {
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  margin-left: 10px;
+}
+
+.infoIcon > img {
+  width: 40px;
+  height: 40px;
+}
+
+@media screen and (min-width: 960px) {
+  .infoIcon > p {
+    font-size: 16px;
+  }
+
+  .infoIcon > img {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .infoIcon > p {
+    font-size: 10px;
+  }
+
+  .infoIcon > img {
+    width: 34px;
+    height: 34px;
+  }
+}

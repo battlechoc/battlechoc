@@ -77,9 +77,8 @@ class Building {
 		this._model.rotation.y = rad;
 	}
 
-	getModelWireframe() {
-		this._model.children[2].material = new THREE.MeshBasicMaterial({opacity: 0.2, transparent: true, wireframe: true});
-		return this._model;
+	makeTransparent() {
+		this._model.children[2].material = new THREE.MeshBasicMaterial({opacity: 0.6, transparent: true});
 	}
 
 	getModel() {

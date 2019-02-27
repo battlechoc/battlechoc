@@ -6,6 +6,7 @@ import { chooseField, chooseStart } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import Tooltip from './Tooltip';
 import Actionbar from './Actionbar';
+import InfoPanel from './InfoPanel';
 import BuildingPalette from './BuildingPalette';
 import Button from '@material-ui/core/Button';
 import StartIcon from '@material-ui/icons/SupervisorAccount';
@@ -127,12 +128,13 @@ class Hud extends Component {
    } 
 
     render() {
+        let showInGameMenu = !this.isInitalStage() && !this.isTitleScreen();
         return (
             <div>
                 <Tooltip />
                 <Actionbar toggleMusic={ this.props.toggleMusic } />
-                <BuildingPalette isVisible={!this.isInitalStage() && !this.isTitleScreen()} />
-
+                <BuildingPalette isVisible={showInGameMenu} />
+                <InfoPanel isVisible={showInGameMenu} />
                 <div id="hud" className={this.isInitalStage() || this.isTitleScreen() || this.state.messageAnimation ? 'fullscreen' : null} ref={hud => {this.hud = hud}}>
                     <canvas id="textAnimationCanvas" className={this.state.messageAnimation ? 'ontop' : null}></canvas>
                     {(() => {
@@ -145,14 +147,6 @@ class Hud extends Component {
                                     <Button aria-label="settings" className="menuButton" variant="contained">
                                         Settings
                                     </Button>
-                                </div>
-                            );
-                        } else if (!this.isInitalStage() && !this.isTitleScreen()) {
-                            return (
-                                <div id="gameMenu">
-                                    <p>Cacao: {this.props.game.players[0].cacao}<br />
-                                    Buildings: {this.props.game.players[0].buildings + '/' + this.props.game.players[0].buildingsPerTurn}<br />
-                                    Attacks: {this.props.game.players[0].attacks + '/' + this.props.game.players[0].attacksPerTurn}</p>
                                 </div>
                             );
                         } else if (this.isInitalStage()) {

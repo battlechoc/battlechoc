@@ -180,21 +180,21 @@ class Gamefield {
         building.adjustRotation()
 
         if (buildingType === BuildingType.CREAM && this.isPlayerGameField) {
-            this.gameField.add(building.getModelWireframe());
-        } else {
-            this.gameField.add(building.getModel());
+            building.makeTransparent();
         }
+        
+        this.gameField.add(building.getModel());
 
         if (this.cellContains(row, col, BuildingType.CREAM)) {
             this.buildings[row][col].push(building);
             if (this.isPlayerGameField === false) {
                 building.hide();
+            } else {
+                // TODO; building.showCreamy();
             }
         } else {
             this.buildings[row][col] = [building];
         }
-
-        
     }
 }
 

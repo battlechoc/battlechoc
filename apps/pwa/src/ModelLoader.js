@@ -10,7 +10,7 @@ class ModelLoader {
     async loadModels(callback) {
         const files = ['white_tile.gltf', 'brown_tile.gltf', 'black_tile.gltf', 
                         'factory.gltf', 'factory-extension.gltf', 'cacaotree.gltf',
-                        'cannon.gltf', 'cream.gltf', 'cream-explosion.gltf',
+                        'cannon.gltf', 'cream-min.glb', 'cream-explosion.gltf',
                         'cacaotree-explosion.gltf', 'factory-explosion.gltf', 'cannon-explosion.gltf'];
         this.models = [];
         for (let i = 0; i < files.length; i++) {
