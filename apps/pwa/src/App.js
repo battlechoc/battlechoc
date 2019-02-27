@@ -15,7 +15,7 @@ import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttack
 import { createPlayer, PlayerType } from './gameplay/Player';
 import Rules from './gameplay/Rules';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { ScreenRotation } from '@material-ui/icons';
+import { ScreenRotation } from '@material-ui/icons';
 
 class App extends Component {
   constructor(props) {
@@ -132,26 +132,22 @@ class App extends Component {
       this.hud.unlockUi();
       this.colorStartButton = 1;
     } else if (gameTransition === GameTransitions.OPPONENT_STARTS_GAME) {
-      this.opponent.simulateChooseFieldOrStartDecision();
+      this.opponent.simulateChooseFieldOrStartDecision(nextProps.game.board);
     } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START) {
-      this.opponent.simulateChooseFieldDecision();
+      this.opponent.simulateChooseFieldDecision(nextProps.game.board);
     } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
       this.triggerUiEvent = 'START_GAME';
     } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
       this.triggerUiEvent = 'START_GAME';
     } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
-      let oppoentGameBoard = nextProps.game.board.fields[this.props.game.players[1].fieldIndex];
-      if (this.props.game.players[1].hasFactory) {
-        let opponentGameBoard = nextProps.game.board.fields[nextProps.game.players[1].fieldIndex];
-        this.opponent.simulateBuildPhase(opponentGameBoard, this.opponentGameField);
-      } else {
-        this.opponent.simulateInitialPlacement(oppoentGameBoard, this.opponentGameField);
-      }
+      const opponentGameBoard = nextProps.game.board.fields[nextProps.game.players[1].fieldIndex];
+      this.opponent.simulateInitialPlacement(opponentGameBoard, this.opponentGameField);
     } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
       const opponentGameBoard = nextProps.game.board.fields[nextProps.game.players[1].fieldIndex];
-      this.opponent.simulateBuildPhase(opponentGameBoard, this.opponentGameField);
+      this.opponent.simulateBuildPhase(opponentGameBoard, nextProps.game.players[1].buildingsPerTurn, nextProps.game.players[1].cacao, this.opponentGameField);
     } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
-      this.opponent.simulateAttackPhase();
+      const playersBoard = nextProps.game.board.fields[nextProps.game.players[0].fieldIndex];
+      this.opponent.simulateAttackPhase(playersBoard, this.playerGameField, nextProps.game.players[1].attacksPerTurn);
     } else if (gameTransition === GameTransitions.GAME_FINISHED) {
       while (this.scene.children.length > 0) {
         this.scene.remove(this.scene.children[0]);
@@ -410,7 +406,7 @@ class App extends Component {
     var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2.0);
     directionalLight.position.set(20, 24, -10);
     this.scene.add(directionalLight);
-    
+
     this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board.fields[playerFieldIndex]);
     this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.game.board.fields[opponentFieldIndex]);
     this.scene.add(this.playerGameField.gameField);
