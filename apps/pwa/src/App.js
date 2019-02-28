@@ -452,6 +452,7 @@ class App extends Component {
     } else {
       return (
         <div className="app-container">
+          <div id="clouds"></div>
           {(() => {
             let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
             if (!this.state.landscapeOrientation && isMobile && typeof this.props.game !== 'undefined') {
