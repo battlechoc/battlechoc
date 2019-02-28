@@ -3,8 +3,6 @@ import * as UiActions from './UiActions';
 import { BuildingType } from '../gameplay/GameEntities';
 
 const uiReducer = createReducer({
-        screen: 'START_SCREEN',
-        messageAnimation: false,
         selectedBuilding: BuildingType.CACAOTREE
     }, {
     [UiActions.selectBuilding]: (state, action) => {

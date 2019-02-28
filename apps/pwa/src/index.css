@@ -7,14 +7,13 @@ body {
   margin: 0px;
   padding: 0px;
   overflow: hidden;
-background: rgb(235,235,235);
-background: -moz-linear-gradient(0deg, rgba(235,235,235,1) 0%, rgba(232,218,198,1) 98%);
-background: -webkit-linear-gradient(0deg, rgba(235,235,235,1) 0%, rgba(232,218,198,1) 98%);
-background: linear-gradient(0deg, rgba(235,235,235,1) 0%, rgba(232,218,198,1) 98%);
-filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#ebebeb",endColorstr="#e8dac6",GradientType=1);
+  background: rgb(235,235,235);
+  background: -moz-linear-gradient(0deg, rgba(235,235,235,1) 0%, rgba(232,218,198,1) 98%);
+  background: -webkit-linear-gradient(0deg, rgba(235,235,235,1) 0%, rgba(232,218,198,1) 98%);
+  background: linear-gradient(0deg, rgba(235,235,235,1) 0%, rgba(232,218,198,1) 98%);
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#ebebeb",endColorstr="#e8dac6",GradientType=1);
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }

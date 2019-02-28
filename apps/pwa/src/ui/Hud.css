@@ -16,10 +16,6 @@
   flex-direction: row;
 }
 
-.active:hover {
-  background-color: #457B82;
-}
-
 .selectedByPlayer {
   background-color: rgba(128, 128, 255, 0.4) !important;
 }
@@ -29,7 +25,7 @@
 }
 
 .button {
-  background-color: #324D5C;
+  background-color: #457B82;
   height: 30vw;
   display: flex;
   align-self: center;
@@ -118,12 +114,15 @@
   border-radius: 0 !important;
   text-align: center;
   color: white !important;
-  background-color: #324D5C !important;
   margin: 5px !important;
 }
 
+.active:hover {
+  background-color: #324D5C;
+}
+
 .menuButton:hover {
-  background-color: #457B82 !important;
+  background-color: #324D5C !important;
 }
 
 @media screen and (min-width: 960px) {

@@ -56,6 +56,7 @@ class Actionbar extends Component {
                 <Fab 
                     size="small" 
                     key="0" 
+                    color="primary"
                     aria-label="volume up" 
                     className="icon"
                     onClick={() => this.toggleMusic()}>
@@ -67,6 +68,7 @@ class Actionbar extends Component {
                 <Fab 
                     size="small" 
                     key="0" 
+                    color="primary"
                     aria-label="volume off" 
                     className="icon"
                     onClick={() => this.toggleMusic()}>
@@ -79,7 +81,8 @@ class Actionbar extends Component {
             buttons.push(
                 <Fab 
                     size="small" 
-                    key="1" 
+                    key="1"
+                    color="primary"
                     aria-label="toggle fullscreen" 
                     className="icon" 
                     onClick={this.toggleFullscreen}>
@@ -94,7 +97,8 @@ class Actionbar extends Component {
                     buttons.push([
                         <Fab 
                             size="small" 
-                            key="2" 
+                            key="2"
+                            color="primary"
                             aria-label="skip build phase" 
                             className="icon"
                             onClick={() => this.props.finishBuildPhase()}>
@@ -102,7 +106,8 @@ class Actionbar extends Component {
                         </Fab>,
                         <Fab 
                             size="small" 
-                            key="3" 
+                            key="3"
+                            color="primary"
                             aria-label="finish turn" 
                             className="icon" 
                             onClick={() => this.props.finishTurn()}>
@@ -113,7 +118,8 @@ class Actionbar extends Component {
                     buttons.push(
                         <Fab 
                             size="small" 
-                            key="3" 
+                            key="3"
+                            color="primary"
                             aria-label="finish turn" 
                             className="icon" 
                             onClick={() => this.props.finishTurn()}>

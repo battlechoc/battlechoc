@@ -12,8 +12,8 @@ import { withTheme } from '@material-ui/core/styles';
 
 const ExpansionPanelSummary = withStyles(theme => ({
   root: {
-    backgroundColor: 'rgba(50, 77, 92, 1)',
-    border: '1px solid rgba(50, 77, 92, 0.2)',
+    backgroundColor: 'rgba(69, 123, 130, 1)',
+    border: '1px solid rgba(69, 123, 130, 0.2)',
     color: 'rgba(255, 255, 255, 1)',
     marginBottom: -1,
     marginLeft: -1,
@@ -97,7 +97,7 @@ class Tooltip extends Component {
                             this.setState({expanded: !this.state.expanded});
                         }
                     }}>
-                        <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
+                        <ExpansionPanelSummary className="tooltipHeader" expandIcon={<ExpandMoreIcon />}>
                             <Typography variant="h6" color="textSecondary">{ title }</Typography>
                         </ExpansionPanelSummary>
                         <ExpansionPanelDetails>
