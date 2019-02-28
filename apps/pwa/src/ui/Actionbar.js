@@ -53,22 +53,37 @@ class Actionbar extends Component {
 
         if (this.state.activeMusicButton) {
             buttons.push(
-                <Fab size="small" key="0" aria-label="volume up" className="icon">
-                    <VolumeUp onClick={() => this.toggleMusic()}/>
+                <Fab 
+                    size="small" 
+                    key="0" 
+                    aria-label="volume up" 
+                    className="icon"
+                    onClick={() => this.toggleMusic()}>
+                    <VolumeUp />
                 </Fab>
             );
         } else {
             buttons.push(
-                <Fab size="small" key="0" aria-label="volume off" className="icon">
-                    <VolumeOff onClick={() => this.toggleMusic()}/>
+                <Fab 
+                    size="small" 
+                    key="0" 
+                    aria-label="volume off" 
+                    className="icon"
+                    onClick={() => this.toggleMusic()}>
+                    <VolumeOff />
                 </Fab>
             );            
         }
 
         if (this.state.activeFullscreenButton) {
             buttons.push(
-                <Fab size="small" key="1" aria-label="toggle fullscreen" className="icon">
-                    <Fullscreen onClick={this.toggleFullscreen} />
+                <Fab 
+                    size="small" 
+                    key="1" 
+                    aria-label="toggle fullscreen" 
+                    className="icon" 
+                    onClick={this.toggleFullscreen}>
+                    <Fullscreen />
                 </Fab>
             );
         }
@@ -77,17 +92,32 @@ class Actionbar extends Component {
             if (this.props.game.currentPlayerIndex === 0) {
                 if (this.props.game.state  === GameStateTypes.BUILD_PHASE) {
                     buttons.push([
-                        <Fab size="small" key="2" aria-label="skip build phase" className="icon">
-                            <PlayArrow onClick={() => this.props.finishBuildPhase()}/>
+                        <Fab 
+                            size="small" 
+                            key="2" 
+                            aria-label="skip build phase" 
+                            className="icon"
+                            onClick={() => this.props.finishBuildPhase()}>
+                            <PlayArrow />
                         </Fab>,
-                        <Fab size="small" key="3" aria-label="finish turn" className="icon">
-                            <FastForward onClick={() => this.props.finishTurn()}/>
+                        <Fab 
+                            size="small" 
+                            key="3" 
+                            aria-label="finish turn" 
+                            className="icon" 
+                            onClick={() => this.props.finishTurn()}>
+                            <FastForward />
                         </Fab>
                     ]);
                 } else if (this.props.game.state  === GameStateTypes.ATTACK_PHASE) {
                     buttons.push(
-                        <Fab size="small" key="3" aria-label="finish turn" className="icon">
-                            <FastForward onClick={() => this.props.finishTurn()}/>
+                        <Fab 
+                            size="small" 
+                            key="3" 
+                            aria-label="finish turn" 
+                            className="icon" 
+                            onClick={() => this.props.finishTurn()}>
+                            <FastForward />
                         </Fab>
                     );              
                 }
