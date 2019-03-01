@@ -51,10 +51,12 @@ class BuildingPalette extends Component {
                 {(() => {
                     if (this.buildingSelectionIsVisible()) {
                         return this.buildingsForSeclection.map((building, i) => {
-                            return <div className="previewContainer" key={i}>
-                                    <div className={this.playerCanBuild(building.costs) ? '' : 'disabled'}></div>
-                                    <img alt={building.alt} className={this.playerCanBuild(building.costs) ? 'enabled preview' : 'preview'} src={building.image} onClick={() => {
-                                        if (this.playerCanBuild(building.costs)) {
+                            let canBuild = this.playerCanBuild(building.costs);
+                            let className = canBuild && this.props.selectedBuilding === building.type ? 'selected previewContainer' : 'previewContainer';
+                            return <div className={className} key={i}>
+                                    <div className={ canBuild ? '' : 'disabled'}></div>
+                                    <img alt={building.alt} className={canBuild ? 'enabled preview' : 'preview'} src={building.image} onClick={() => {
+                                        if (canBuild) {
                                             this.props.selectBuilding(building.type);
                                         }
                                     }} />
@@ -76,7 +78,8 @@ BuildingPalette.propTypes = {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
-    state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state
+    state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
+    selectedBuilding: state.ui.selectedBuilding
 });
 
 const mapDispatchToProps = {

@@ -193,14 +193,15 @@ class App extends Component {
   playerFieldClick() {
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
     intersects = intersects.filter(intersect => intersect.object.name.startsWith('Cell'));
-
-    if (intersects.length > 0 && !this.isSwiping) {
-      let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-        this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
-
-      let building = getEntity(this.props.selectedBuilding);
+    let buildingSelected = this.props.selectedBuilding && this.props.selectedBuilding !== BuildingType.EMPTY;
+    let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
+                           this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
+    if (intersects.length > 0 && !this.isSwiping && (buildingSelected || initialPlacement)) {
+      let building = null;
       if (initialPlacement) {
         building = getEntity(BuildingType.FACTORY);
+      } else {
+        building = getEntity(this.props.selectedBuilding);
       }
 
       let position = intersects[0].object.parent.position;
