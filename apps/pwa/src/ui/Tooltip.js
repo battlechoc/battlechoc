@@ -64,19 +64,17 @@ class Tooltip extends Component {
             }
         } else if (gameState === GameStateTypes.CHOOSE_FIELD) {
             title = t[this.props.language].TOOLTIP_INITIAL_TURN_TITLE;
-            message = this.props.game.players[currentPlayer].name + ' can now select a game field';
+            message = t[this.props.language].TOOLTIP_INITIAL_TURN_OPPONENT(this.props.game.players[currentPlayer].name);
         } else if (gameState === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || 
                    gameState === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
-            title = 'Initial Placement';
+            title = t[this.props.language].TOOLTIP_INITIAL_PLACEMENT_TITLE;
             if (currentPlayer === 0) {
-                message = 'Now you can build the factory once. Set the factory carefully: ' +
-                          'If it is destroyed, you cannot build any other buildings';
+                message = t[this.props.language].TOOLTIP_INITIAL_PLACEMENT_MESSAGE;
             } 
         } else if (gameState === GameStateTypes.BUILD_PHASE) {
-            title = 'Build Phase';
+            title = t[this.props.language].TOOLTIP_BUILD_PHASE_TITLE;
             if (currentPlayer === 0) {
-                message = 'Choose a building from the list below and build it on any of the free fields. ' + 
-                          'The cream is displayed translucent. A building built in cream will be invisible to the enemy';
+                message = t[this.props.language].TOOLTIP_BUILD_PHASE_MESSAGE;
             }
         } else if (gameState === GameStateTypes.ATTACK_PHASE) {
             title = 'Attack Phase';
