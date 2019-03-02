@@ -7,6 +7,7 @@ import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import { BuildingType, getEntity } from './gameplay/GameEntities';
 import { startGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
+import { changeLanguage } from './ui/UiActions';
 import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -16,11 +17,23 @@ import { createPlayer, PlayerType } from './gameplay/Player';
 import Rules from './gameplay/Rules';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { ScreenRotation } from '@material-ui/icons';
+import Button from '@material-ui/core/Button';
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import InputLabel from '@material-ui/core/InputLabel';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import FormControl from '@material-ui/core/FormControl';
+import Select from '@material-ui/core/Select';
+import t from './ui/Translation';
 
 class App extends Component {
   constructor(props) {
     super(props);
-    this.state = { loadingProgress: 0 }
+    this.state = { 
+      loadingProgress: 0,
+      showSettings: false
+    }
   }
 
   updateProgressbar(progress) {
@@ -381,10 +394,10 @@ class App extends Component {
 
     this.props.startGame(player).then(() => {
       if (this.props.game.currentPlayerIndex === 0) {
-        this.hud.showTurnMessage('It\'s up on you');
+        this.hud.showTurnMessage(t[this.props.language].MESSAGE_PLAYER_DECIDE);
       } else {
         this.hud.lockUi();
-        this.hud.showTurnMessage('Your opponent decides');
+        this.hud.showTurnMessage(t[this.props.language].MESSAGE_OPPONENT_DECIDE);
       }
 
       setTimeout(() => {
@@ -402,7 +415,7 @@ class App extends Component {
     }, 1000);
   }
 
-  startGame() {
+  startGame = () => {
     let playerFieldIndex = this.props.game.players[0].fieldIndex;
     let opponentFieldIndex = this.props.game.players[1].fieldIndex;
     this.lookAtOpponent = this.props.game.currentPlayerIndex === 1;
@@ -439,7 +452,7 @@ class App extends Component {
     this.opponentClickTargets = this.opponentGameField.getClickableFields();
   }
 
-  renderScene = () => {
+  renderScene() {
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -464,12 +477,44 @@ class App extends Component {
                   <p>Please turn the phone to resume the game</p>
                   <ScreenRotation className="rotationIcon" />
                 </div>
-              )
+              );
             }
           })()}
+
+          <Dialog
+            open={this.state.showSettings}
+            onClose={() => this.setState({ showSettings: false })}
+            aria-labelledby="form-dialog-title"
+          >
+            <DialogTitle id="form-dialog-title">{t[this.props.language].SETTINGS}</DialogTitle>
+            <DialogContent>
+              <FormControl>
+                <InputLabel htmlFor="lang-selection">{t[this.props.language].LANGUAGE}</InputLabel>
+                <Select
+                  native
+                  value={this.props.language}
+                  onChange={event => this.props.changeLanguage(event.target.value)}
+                  inputProps={{
+                    name: 'language',
+                    id: 'lang-selection',
+                  }}
+                >
+                  <option value="en">{t[this.props.language].ENGLISH}</option>
+                  <option value="de">{t[this.props.language].GERMAN}</option>
+                </Select>
+              </FormControl>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => this.setState({ showSettings: false })} color="primary">
+                { t[this.props.language].BUTTON_BACK }
+              </Button>
+            </DialogActions>
+          </Dialog>
+
           <Hud
             toggleMusic={() => this.toggleMusic()}
             prepareGameCallback={this.prepareGame}
+            showSettings={() => this.setState({ showSettings: true })}
             onRef={hud => (this.hud = hud)} />
           <div
             className="app"
@@ -483,7 +528,8 @@ class App extends Component {
 
 const mapStateToProps = state => ({
   game: state.gameplay.game,
-  selectedBuilding: state.ui.selectedBuilding
+  selectedBuilding: state.ui.selectedBuilding,
+  language: state.ui.language
 });
 
 const mapDispatchToProps = {
@@ -495,7 +541,8 @@ const mapDispatchToProps = {
   finishGame,
   build,
   finishBuildPhase,
-  attack
+  attack,
+  changeLanguage
 };
 
 const AppContainer = connect(

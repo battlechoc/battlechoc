@@ -10,6 +10,7 @@ import InfoPanel from './InfoPanel';
 import BuildingPalette from './BuildingPalette';
 import Button from '@material-ui/core/Button';
 import StartIcon from '@material-ui/icons/SupervisorAccount';
+import t from './Translation';
 
 class Hud extends Component {
     constructor(props) {
@@ -142,10 +143,10 @@ class Hud extends Component {
                             return (
                                 <div id="mainMenu">
                                     <Button color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareGameCallback()}>
-                                        New Game
+                                        {t[this.props.language].NEW_GAME}
                                     </Button>
-                                    <Button color="primary" aria-label="settings" className="menuButton" variant="contained">
-                                        Settings
+                                    <Button color="primary" aria-label="settings" className="menuButton" variant="contained" onClick={() => this.props.showSettings()}>
+                                        {t[this.props.language].SETTINGS}
                                     </Button>
                                 </div>
                             );
@@ -195,12 +196,14 @@ class Hud extends Component {
 
 Hud.propTypes = {
     toggleMusic: PropTypes.func.isRequired,
-    prepareGameCallback: PropTypes.func.isRequired
+    prepareGameCallback: PropTypes.func.isRequired,
+    showSettings: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({
   game: state.gameplay.game,
-  state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state
+  state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
+  language: state.ui.language
 });
 
 const mapDispatchToProps = {

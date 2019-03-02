@@ -132,6 +132,8 @@ class Rules {
             }
         } else if (action.type === UiActionTypes.selectBuilding) {
             return true;
+        } else if (action.type === UiActionTypes.changeLanguage) {
+            return true;
         } else {
             return new Errors.ActionValidationError(action);
         }

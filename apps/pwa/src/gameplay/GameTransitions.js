@@ -19,6 +19,11 @@ const GameTransitions = Object.freeze({
 
 function getGameTransition(currentState, nextState) {
     if (typeof currentState === 'undefined' &&
+        typeof nextState === 'undefined') {
+        return;
+    }
+
+    if (typeof currentState === 'undefined' &&
         typeof nextState !== 'undefined') {
         if (nextState.currentPlayerIndex === 0) {
             return GameTransitions.PLAYER_BEGINS_GAME;

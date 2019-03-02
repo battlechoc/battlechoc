@@ -9,6 +9,7 @@ import MuiExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import MuiExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import Typography from '@material-ui/core/Typography';
 import { withTheme } from '@material-ui/core/styles';
+import t from './Translation';
 
 const ExpansionPanelSummary = withStyles(theme => ({
   root: {
@@ -57,12 +58,12 @@ class Tooltip extends Component {
         let currentPlayer = this.props.game.currentPlayerIndex;
 
         if (gameState === GameStateTypes.CHOOSE_FIELD_OR_START) {
-            var title = 'Initial Turn';
+            var title = t[this.props.language].TOOLTIP_INITIAL_TURN_TITLE;
             if (currentPlayer === 0) {
-                var message = 'In the first round you can choose a playing field or the first move';
+                var message = t[this.props.language].TOOLTIP_INITIAL_TURN_MESSAGE;
             }
         } else if (gameState === GameStateTypes.CHOOSE_FIELD) {
-            title = 'Initial Turn';
+            title = t[this.props.language].TOOLTIP_INITIAL_TURN_TITLE;
             message = this.props.game.players[currentPlayer].name + ' can now select a game field';
         } else if (gameState === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || 
                    gameState === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
@@ -115,7 +116,8 @@ class Tooltip extends Component {
 }
 
 const mapStateToProps = state => ({
-  game: state.gameplay.game
+  game: state.gameplay.game,
+  language: state.ui.language
 });
 
 const TooltipContainer = connect(

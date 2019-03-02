@@ -99,6 +99,16 @@ html, body, #root {
   align-self: flex-start;
 }
 
+.settings {
+  position: absolute;
+  z-index: 100;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;	
+}
+
 .rotationIcon {
   margin-top: 2em;
   width: auto !important;
