@@ -19,6 +19,25 @@
 	background-color: #324D5C !important;
 }
 
+.blinking {
+  animation: blink-animation 1s steps(25, start) infinite;
+  animation-direction: alternate;
+  -webkit-animation: blink-animation 1s steps(25, start) infinite;
+  -webkit-animation-direction: alternate;
+}
+
+@keyframes blink-animation {
+  to {
+    background-color: goldenrod;
+  }
+}
+
+@-webkit-keyframes blink-animation {
+  to {
+    background-color: goldenrod;
+  }
+}
+
 @media screen and (min-width: 1100px) {
   .menuButton {
     font-size: 16px;

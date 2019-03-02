@@ -62,6 +62,12 @@
   transform: rotateZ(135deg);
 }
 
+.creamedCellCount {
+  color: black;
+  writing-mode: vertical-rl;
+  transform: rotateZ(180deg) translateX(60px);
+}
+
 .fields > div {
   flex: 1 0 12.5%;
   border-radius: 15%;
@@ -77,6 +83,10 @@
 
 .black {
   background-color: #140e09;
+}
+
+.creamed {
+  background-color: white;
 }
 
 /* flying text animation */

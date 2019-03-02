@@ -30,7 +30,7 @@ import t from './ui/Translation';
 class App extends Component {
   constructor(props) {
     super(props);
-    this.state = { 
+    this.state = {
       loadingProgress: 0,
       showSettings: false
     }
@@ -65,9 +65,9 @@ class App extends Component {
     this.camera.position.y = 55;
     this.camera.position.z = 95;
 
-    this.renderer = new THREE.WebGLRenderer({ 
+    this.renderer = new THREE.WebGLRenderer({
       antialias: true,
-      alpha: true 
+      alpha: true
     });
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height);
@@ -167,6 +167,10 @@ class App extends Component {
       while (this.scene.children.length > 0) {
         this.scene.remove(this.scene.children[0]);
       }
+    } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
+      setTimeout(() => {
+        this.props.finishTurn();
+      }, 3000);
     }
   }
 
@@ -179,11 +183,11 @@ class App extends Component {
           this.opponent.simulateInitialPlacement(opponentGameBoard, this.opponentGameField);
         }
       }
-      this.triggerUiEvent = undefined; 
-      this.lookAtOpponent = (this.props.game.currentPlayerIndex === 1 && 
-                             this.props.game.state !== GameStateTypes.ATTACK_PHASE) ||
-                            (this.props.game.currentPlayerIndex === 0 &&
-                             this.props.game.state === GameStateTypes.ATTACK_PHASE);
+      this.triggerUiEvent = undefined;
+      this.lookAtOpponent = (this.props.game.currentPlayerIndex === 1 &&
+        this.props.game.state !== GameStateTypes.ATTACK_PHASE) ||
+        (this.props.game.currentPlayerIndex === 0 &&
+          this.props.game.state === GameStateTypes.ATTACK_PHASE);
     }
   }
 
@@ -208,7 +212,7 @@ class App extends Component {
     intersects = intersects.filter(intersect => intersect.object.name.startsWith('Cell'));
     let buildingSelected = this.props.selectedBuilding && this.props.selectedBuilding !== BuildingType.EMPTY;
     let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-                           this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
+      this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
     if (intersects.length > 0 && !this.isSwiping && (buildingSelected || initialPlacement)) {
       let building = null;
       if (initialPlacement) {
@@ -301,9 +305,9 @@ class App extends Component {
   }
 
   estimateDistance(ratio) {
-    if (ratio < 0.9) { return 60; } 
-    else if (ratio < 1.1) { return 50; } 
-    else if (ratio < 1.4) { return 40; } 
+    if (ratio < 0.9) { return 60; }
+    else if (ratio < 1.1) { return 50; }
+    else if (ratio < 1.4) { return 40; }
     else { return 30; }
   }
 
@@ -506,7 +510,7 @@ class App extends Component {
             </DialogContent>
             <DialogActions>
               <Button onClick={() => this.setState({ showSettings: false })} color="primary">
-                { t[this.props.language].BUTTON_BACK }
+                {t[this.props.language].BUTTON_BACK}
               </Button>
             </DialogActions>
           </Dialog>

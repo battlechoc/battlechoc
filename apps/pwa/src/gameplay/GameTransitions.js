@@ -14,6 +14,7 @@ const GameTransitions = Object.freeze({
     OPPONENT_BUILD_PHASE: 'GameTransitions.OPPONENT_BUILD_PHASE',
     OPPONENT_ATTACK_PHASE: 'GameTransitions.OPPONENT_ATTACK_PHASE',
     GAME_FINISHED: 'GameTransitions.GAME_FINISHED',
+    ATTACKS_DEPLETED: 'GameTransitions.ATTACKS_DEPLETED',
     INVALID: 'GameTransitions.INVALID'
 });
 
@@ -83,6 +84,11 @@ function getGameTransition(currentState, nextState) {
         } else {
             return GameTransitions.OPPONENT_ATTACK_PHASE;
         }
+    } else if (nextState.state === GameStateTypes.ATTACK_PHASE &&
+        currentState.state === GameStateTypes.ATTACK_PHASE &&
+        nextState.currentPlayerIndex === 0 &&
+        nextState.players[0].attacks === 0) {
+        return GameTransitions.ATTACKS_DEPLETED;
     } else {
         return GameTransitions.INVALID;
     }

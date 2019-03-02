@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { finishTurn, finishBuildPhase } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import Fab from '@material-ui/core/Fab';
-import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward } from '@material-ui/icons';
+import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward } from '@material-ui/icons';
 
 class Actionbar extends Component {
     constructor(props) {
@@ -14,7 +14,7 @@ class Actionbar extends Component {
         const searchParams = new URLSearchParams(window.location.search);
         const isPwa = searchParams.get('app_runs_as') === 'pwa';
 
-        this.state = { 
+        this.state = {
             activeMusicButton: false,
             activeFullscreenButton: document.fullscreenElement == null && !isPwa
         }
@@ -53,11 +53,11 @@ class Actionbar extends Component {
 
         if (this.state.activeMusicButton) {
             buttons.push(
-                <Fab 
-                    size="small" 
-                    key="0" 
+                <Fab
+                    size="small"
+                    key="0"
                     color="primary"
-                    aria-label="volume up" 
+                    aria-label="volume up"
                     className="icon"
                     onClick={() => this.toggleMusic()}>
                     <VolumeUp />
@@ -65,26 +65,26 @@ class Actionbar extends Component {
             );
         } else {
             buttons.push(
-                <Fab 
-                    size="small" 
-                    key="0" 
+                <Fab
+                    size="small"
+                    key="0"
                     color="primary"
-                    aria-label="volume off" 
+                    aria-label="volume off"
                     className="icon"
                     onClick={() => this.toggleMusic()}>
                     <VolumeOff />
                 </Fab>
-            );            
+            );
         }
 
         if (this.state.activeFullscreenButton) {
             buttons.push(
-                <Fab 
-                    size="small" 
+                <Fab
+                    size="small"
                     key="1"
                     color="primary"
-                    aria-label="toggle fullscreen" 
-                    className="icon" 
+                    aria-label="toggle fullscreen"
+                    className="icon"
                     onClick={this.toggleFullscreen}>
                     <Fullscreen />
                 </Fab>
@@ -93,44 +93,44 @@ class Actionbar extends Component {
 
         if (typeof this.props.game !== 'undefined') {
             if (this.props.game.currentPlayerIndex === 0) {
-                if (this.props.game.state  === GameStateTypes.BUILD_PHASE) {
+                if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
                     buttons.push([
-                        <Fab 
-                            size="small" 
+                        <Fab
+                            size="small"
                             key="2"
                             color="primary"
-                            aria-label="skip build phase" 
-                            className="icon"
+                            aria-label="skip build phase"
+                            className={(this.props.game.players[0].buildings > 0) ? "icon" : "icon blinking" }
                             onClick={() => this.props.finishBuildPhase()}>
                             <PlayArrow />
                         </Fab>,
-                        <Fab 
-                            size="small" 
+                        <Fab
+                            size="small"
                             key="3"
                             color="primary"
-                            aria-label="finish turn" 
-                            className="icon" 
+                            aria-label="finish turn"
+                            className={(this.props.game.players[0].buildings === 0 && this.props.game.players[0].attacks === 0) ? "icon blinking" : "icon" }
                             onClick={() => this.props.finishTurn()}>
                             <FastForward />
                         </Fab>
                     ]);
-                } else if (this.props.game.state  === GameStateTypes.ATTACK_PHASE) {
+                } else if (this.props.game.state === GameStateTypes.ATTACK_PHASE) {
                     buttons.push(
-                        <Fab 
-                            size="small" 
+                        <Fab
+                            size="small"
                             key="3"
                             color="primary"
-                            aria-label="finish turn" 
-                            className="icon" 
+                            aria-label="finish turn"
+                            className={(this.props.game.players[0].attacks > 0) ? "icon" : "icon blinking" }
                             onClick={() => this.props.finishTurn()}>
                             <FastForward />
                         </Fab>
-                    );              
+                    );
                 }
-            } 
+            }
         }
 
-        return <div className="actionbar"> { buttons } </div>;
+        return <div className="actionbar"> {buttons} </div>;
     }
 }
 
@@ -139,16 +139,17 @@ Actionbar.propTypes = {
 }
 
 const mapStateToProps = state => ({
-  game: state.gameplay.game,
+    game: state.gameplay.game,
+    players: state.players
 });
 
 const mapDispatchToProps = {
-  finishBuildPhase,
-  finishTurn
+    finishBuildPhase,
+    finishTurn
 };
 
 const ActionbarContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps
+    mapStateToProps,
+    mapDispatchToProps
 )(Actionbar);
 export default ActionbarContainer;

@@ -8,7 +8,7 @@ const BoardCellTypes = Object.freeze({
 
 const BuildingType = Object.freeze({
     EMPTY: 'BuildingsType.EMPTY',
-    CREAM: 'BuildingsType.CREAM', 
+    CREAM: 'BuildingsType.CREAM',
     FACTORY: 'BuildingsType.FACTORY',
     FACTORY_EXTENSION: 'BuildingType.FACTORY_EXTENSION',
     CACAOTREE: 'BuildingsType.CACAOTREE',
@@ -22,7 +22,7 @@ const BuildingType = Object.freeze({
             buildingType === BuildingType.FACTORY_EXTENSION)
             return true;
         else
-            return false; 
+            return false;
     }
 });
 
@@ -37,19 +37,23 @@ class Board {
                     let fieldtype = Math.floor(Math.random() * 3);
                     let creamed = Math.floor(Math.random() * 2) === 1;
                     let cellType = BoardCellTypes.BLACK;
-                    let previewStyle = 'black'; 
-                    if (fieldtype === 0) {
-                        cellType = BoardCellTypes.WHITE;
-                        previewStyle = 'white';
-                    } else if (fieldtype === 1) {
-                        cellType = BoardCellTypes.BROWN;
-                        previewStyle = 'brown';
+                    let previewStyle = 'black';
+                    if (creamed) {
+                        previewStyle = 'creamed';
+                    } else {
+                        if (fieldtype === 0) {
+                            cellType = BoardCellTypes.WHITE;
+                            previewStyle = 'white';
+                        } else if (fieldtype === 1) {
+                            cellType = BoardCellTypes.BROWN;
+                            previewStyle = 'brown';
+                        }
                     }
                     field.grid.push({
-                        type: cellType, 
+                        type: cellType,
                         previewStyle: previewStyle,
                         row: row,
-                        col: col, 
+                        col: col,
                         occupiedBy: creamed ? [BuildingType.CREAM] : []
                     });
                 }
@@ -63,38 +67,38 @@ class Board {
 function getEntity(type) {
     switch (type) {
         case BuildingType.FACTORY:
-            return { 
-                id: uuidv4(), 
-                type: BuildingType.FACTORY, 
+            return {
+                id: uuidv4(),
+                type: BuildingType.FACTORY,
                 costs: 0,
-                cells: 1 
+                cells: 1
             };
         case BuildingType.FACTORY_EXTENSION:
-            return { 
-                id: uuidv4(), 
-                type: BuildingType.FACTORY_EXTENSION, 
-                costs: 150, 
+            return {
+                id: uuidv4(),
+                type: BuildingType.FACTORY_EXTENSION,
+                costs: 150,
                 cells: 1
             };
         case BuildingType.CACAOTREE:
-            return { 
-                id: uuidv4(), 
-                type: BuildingType.CACAOTREE, 
-                costs: 20, 
-                cells: 1 
+            return {
+                id: uuidv4(),
+                type: BuildingType.CACAOTREE,
+                costs: 20,
+                cells: 1
             };
         case BuildingType.RUM_TRUFFLE_CANNON:
-            return { 
-                id: uuidv4(), 
-                type: BuildingType.RUM_TRUFFLE_CANNON, 
-                costs: 60, 
-                cells: 1 
+            return {
+                id: uuidv4(),
+                type: BuildingType.RUM_TRUFFLE_CANNON,
+                costs: 60,
+                cells: 1
             };
         case BuildingType.CREAM:
-            return { 
-                id: uuidv4(), 
-                type: BuildingType.CREAM, 
-                costs: 10, 
+            return {
+                id: uuidv4(),
+                type: BuildingType.CREAM,
+                costs: 10,
                 cells: 1
             };
         default:

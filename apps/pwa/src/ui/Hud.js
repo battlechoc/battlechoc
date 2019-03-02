@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { chooseField, chooseStart } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
+import { BuildingType } from '../gameplay/GameEntities';
 import Tooltip from './Tooltip';
 import Actionbar from './Actionbar';
 import InfoPanel from './InfoPanel';
@@ -15,9 +16,9 @@ import t from './Translation';
 class Hud extends Component {
     constructor(props) {
         super(props);
-        this.state = { 
+        this.state = {
             clickable: true,
-            messageAnimation: false 
+            messageAnimation: false
         }
     }
 
@@ -50,13 +51,13 @@ class Hud extends Component {
     }
 
     showTurnMessage(message) {
-        this.setState({ 
+        this.setState({
             message: message,
-            messageAnimation: true 
+            messageAnimation: true
         });
-     
+
         this.fontAlpha = 1.0;
-        this.fontSize = 40; 
+        this.fontSize = 40;
         this.renderText(message);
 
         setTimeout(() => this.renderAnimation(), 1000);
@@ -64,7 +65,7 @@ class Hud extends Component {
 
     renderAnimation = () => {
         this.gameStartBitmap.clearRect(0, 0, this.hud.clientWidth, this.hud.clientHeight);
-        
+
         if (this.state.messageAnimation) {
             if (this.fontSize < 250) {
                 this.fontAlpha -= 0.01;
@@ -75,9 +76,9 @@ class Hud extends Component {
                 this.gameStartBitmap.clearRect(0, 0, this.hud.clientWidth, this.hud.clientHeight);
                 this.setState({
                     message: undefined,
-                    messageAnimation: false 
+                    messageAnimation: false
                 });
-            } 
+            }
         }
     }
 
@@ -106,8 +107,8 @@ class Hud extends Component {
 
     isInitalStage() {
         return this.props.state === GameStateTypes.START ||
-               this.props.state === GameStateTypes.CHOOSE_FIELD_OR_START ||
-               this.props.state === GameStateTypes.CHOOSE_FIELD;
+            this.props.state === GameStateTypes.CHOOSE_FIELD_OR_START ||
+            this.props.state === GameStateTypes.CHOOSE_FIELD;
     }
 
     isTitleScreen() {
@@ -115,9 +116,9 @@ class Hud extends Component {
     }
 
     estimateButtonClasses() {
-        let classNames =  'button'
+        let classNames = 'button'
         if (this.state.clickable && this.props.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
-            classNames += ' active'; 
+            classNames += ' active';
         } else if (this.props.state === GameStateTypes.CHOOSE_FIELD) {
             if (this.props.game.currentPlayerIndex === 0) {
                 classNames += ' selectedByOpponent';
@@ -126,17 +127,17 @@ class Hud extends Component {
             }
         }
         return classNames;
-   } 
+    }
 
     render() {
         let showInGameMenu = !this.isInitalStage() && !this.isTitleScreen();
         return (
             <div>
                 <Tooltip />
-                <Actionbar toggleMusic={ this.props.toggleMusic } />
+                <Actionbar toggleMusic={this.props.toggleMusic} />
                 <BuildingPalette isVisible={showInGameMenu} />
                 <InfoPanel isVisible={showInGameMenu} />
-                <div id="hud" className={this.isInitalStage() || this.isTitleScreen() || this.state.messageAnimation ? 'fullscreen' : null} ref={hud => {this.hud = hud}}>
+                <div id="hud" className={this.isInitalStage() || this.isTitleScreen() || this.state.messageAnimation ? 'fullscreen' : null} ref={hud => { this.hud = hud }}>
                     <canvas id="textAnimationCanvas" className={this.state.messageAnimation ? 'ontop' : null}></canvas>
                     {(() => {
                         if (this.isTitleScreen()) {
@@ -155,32 +156,44 @@ class Hud extends Component {
                                 <div className="choose">
 
                                     <div className={(this.state.clickable ? 'active ' : null) + ' button'} onClick={() => this.choose('LEFT_GAMEFIELD')}>
-                                        <div className="fields">
                                         {(() => {
                                             if (typeof this.props.game.board !== 'undefined') {
-                                                return this.props.game.board.fields[0].grid.map(
-                                                    (preview, i) => {
-                                                        return <div key={i} className={preview.previewStyle}></div>
-                                                    }
-                                                );
+                                                const creamedCells = this.props.game.board.fields[0].grid.filter(cell => cell.occupiedBy.includes(BuildingType.CREAM));
+                                                return <div className="creamedCellCount">creamed cells: {creamedCells.length}</div>
                                             }
-                                        })()}                                    
+                                        })()}
+                                        <div className="fields">
+                                            {(() => {
+                                                if (typeof this.props.game.board !== 'undefined') {
+                                                    return this.props.game.board.fields[0].grid.map(
+                                                        (preview, i) => {
+                                                            return <div key={i} className={preview.previewStyle}></div>
+                                                        }
+                                                    );
+                                                }
+                                            })()}
                                         </div>
                                     </div>
 
                                     <div className={this.estimateButtonClasses()} onClick={() => this.choose('START')}>
-                                        <div className="stackedIcon"><div className="firstIcon">#1</div><StartIcon fontSize="large"/></div>
+                                        <div className="stackedIcon"><div className="firstIcon">#1</div><StartIcon fontSize="large" /></div>
                                     </div>
 
                                     <div className={(this.state.clickable ? 'active ' : null) + ' button'} onClick={() => this.choose('RIGHT_GAMEFIELD')}>
-                                        <div className="fields">
                                         {(() => {
                                             if (typeof this.props.game.board !== 'undefined') {
-                                                return this.props.game.board.fields[1].grid.map(
-                                                    (preview, i) => <div key={i} className={preview.previewStyle}></div>
-                                                );
+                                                const creamedCells = this.props.game.board.fields[1].grid.filter(cell => cell.occupiedBy.includes(BuildingType.CREAM));
+                                                return <div className="creamedCellCount">creamed cells: {creamedCells.length}</div>
                                             }
-                                        })()}                                    
+                                        })()}
+                                        <div className="fields">
+                                            {(() => {
+                                                if (typeof this.props.game.board !== 'undefined') {
+                                                    return this.props.game.board.fields[1].grid.map(
+                                                        (preview, i) => <div key={i} className={preview.previewStyle}></div>
+                                                    );
+                                                }
+                                            })()}
                                         </div>
                                     </div>
 
@@ -201,19 +214,19 @@ Hud.propTypes = {
 }
 
 const mapStateToProps = state => ({
-  game: state.gameplay.game,
-  state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
-  language: state.ui.language
+    game: state.gameplay.game,
+    state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
+    language: state.ui.language
 });
 
 const mapDispatchToProps = {
-  chooseField,
-  chooseStart
+    chooseField,
+    chooseStart
 };
 
 const HudContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps
+    mapStateToProps,
+    mapDispatchToProps
 )(Hud);
 
 export default HudContainer;
