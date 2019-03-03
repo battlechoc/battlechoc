@@ -159,15 +159,24 @@ class Hud extends Component {
                                         {(() => {
                                             if (typeof this.props.game.board !== 'undefined') {
                                                 const creamedCells = this.props.game.board.fields[0].grid.filter(cell => cell.occupiedBy.includes(BuildingType.CREAM));
-                                                return <div className="creamedCellCount">creamed cells: {creamedCells.length}</div>
+                                                return <div className="creamedCellCount">
+                                                            <img alt="filled with cream" src="images/cream_preview.png" />
+                                                            <p>{creamedCells.length}</p>
+                                                        </div>
                                             }
                                         })()}
                                         <div className="fields">
                                             {(() => {
                                                 if (typeof this.props.game.board !== 'undefined') {
                                                     return this.props.game.board.fields[0].grid.map(
-                                                        (preview, i) => {
-                                                            return <div key={i} className={preview.previewStyle}></div>
+                                                        (cell, i) => {
+                                                            if (cell.occupiedBy.includes(BuildingType.CREAM)) {
+                                                                return <div key={i} className={cell.previewStyle}>
+                                                                            <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
+                                                                        </div>
+                                                            } else {
+                                                                return <div key={i} className={cell.previewStyle}></div>
+                                                            }
                                                         }
                                                     );
                                                 }
@@ -183,14 +192,25 @@ class Hud extends Component {
                                         {(() => {
                                             if (typeof this.props.game.board !== 'undefined') {
                                                 const creamedCells = this.props.game.board.fields[1].grid.filter(cell => cell.occupiedBy.includes(BuildingType.CREAM));
-                                                return <div className="creamedCellCount">creamed cells: {creamedCells.length}</div>
+                                                return <div className="creamedCellCount">
+                                                            <img alt="filled with cream" src="images/cream_preview.png" />
+                                                            <p>{creamedCells.length}</p>
+                                                        </div>
                                             }
                                         })()}
                                         <div className="fields">
                                             {(() => {
                                                 if (typeof this.props.game.board !== 'undefined') {
                                                     return this.props.game.board.fields[1].grid.map(
-                                                        (preview, i) => <div key={i} className={preview.previewStyle}></div>
+                                                        (cell, i) => {
+                                                            if (cell.occupiedBy.includes(BuildingType.CREAM)) {
+                                                                return <div key={i} className={cell.previewStyle}>
+                                                                            <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
+                                                                        </div>
+                                                            } else {
+                                                                return <div key={i} className={cell.previewStyle}></div>
+                                                            }
+                                                        }
                                                     );
                                                 }
                                             })()}

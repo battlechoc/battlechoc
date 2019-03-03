@@ -38,17 +38,15 @@ class Board {
                     let creamed = Math.floor(Math.random() * 2) === 1;
                     let cellType = BoardCellTypes.BLACK;
                     let previewStyle = 'black';
-                    if (creamed) {
-                        previewStyle = 'creamed';
-                    } else {
-                        if (fieldtype === 0) {
-                            cellType = BoardCellTypes.WHITE;
-                            previewStyle = 'white';
-                        } else if (fieldtype === 1) {
-                            cellType = BoardCellTypes.BROWN;
-                            previewStyle = 'brown';
-                        }
+
+                    if (fieldtype === 0) {
+                        cellType = BoardCellTypes.WHITE;
+                        previewStyle = 'white';
+                    } else if (fieldtype === 1) {
+                        cellType = BoardCellTypes.BROWN;
+                        previewStyle = 'brown';
                     }
+                    
                     field.grid.push({
                         type: cellType,
                         previewStyle: previewStyle,
