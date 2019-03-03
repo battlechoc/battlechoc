@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { finishTurn, finishBuildPhase } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import Fab from '@material-ui/core/Fab';
-import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward } from '@material-ui/icons';
+import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings } from '@material-ui/icons';
 
 class Actionbar extends Component {
     constructor(props) {
@@ -49,13 +49,23 @@ class Actionbar extends Component {
     }
 
     render() {
-        let buttons = [];
+        let buttons = [
+            <Fab
+                size="small"
+                key="0"
+                color="primary"
+                aria-label="settings"
+                className="icon"
+                onClick={() => this.props.showSettings()}>
+                <Settings />
+            </Fab>
+        ];
 
         if (this.state.activeMusicButton) {
             buttons.push(
                 <Fab
                     size="small"
-                    key="0"
+                    key="1"
                     color="primary"
                     aria-label="volume up"
                     className="icon"
@@ -67,7 +77,7 @@ class Actionbar extends Component {
             buttons.push(
                 <Fab
                     size="small"
-                    key="0"
+                    key="1"
                     color="primary"
                     aria-label="volume off"
                     className="icon"
@@ -81,7 +91,7 @@ class Actionbar extends Component {
             buttons.push(
                 <Fab
                     size="small"
-                    key="1"
+                    key="2"
                     color="primary"
                     aria-label="toggle fullscreen"
                     className="icon"
@@ -97,7 +107,7 @@ class Actionbar extends Component {
                     buttons.push([
                         <Fab
                             size="small"
-                            key="2"
+                            key="3"
                             color="primary"
                             aria-label="skip build phase"
                             className={(this.props.game.players[0].buildings > 0) ? "icon" : "icon blinking" }
@@ -106,7 +116,7 @@ class Actionbar extends Component {
                         </Fab>,
                         <Fab
                             size="small"
-                            key="3"
+                            key="4"
                             color="primary"
                             aria-label="finish turn"
                             className={(this.props.game.players[0].buildings === 0 && this.props.game.players[0].attacks === 0) ? "icon blinking" : "icon" }
@@ -118,7 +128,7 @@ class Actionbar extends Component {
                     buttons.push(
                         <Fab
                             size="small"
-                            key="3"
+                            key="4"
                             color="primary"
                             aria-label="finish turn"
                             className={(this.props.game.players[0].attacks > 0) ? "icon" : "icon blinking" }
@@ -135,7 +145,8 @@ class Actionbar extends Component {
 }
 
 Actionbar.propTypes = {
-    toggleMusic: PropTypes.func.isRequired
+    toggleMusic: PropTypes.func.isRequired,
+    showSettings: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({

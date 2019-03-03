@@ -13,8 +13,13 @@ const languages = {
 		TOOLTIP_INITIAL_PLACEMENT_MESSAGE: 'Now you can build the factory once. Set the factory carefully: If it is destroyed, you cannot build any other buildings',
 		TOOLTIP_BUILD_PHASE_TITLE: 'Build Phase',
 		TOOLTIP_BUILD_PHASE_MESSAGE: 'Choose a building from the list below and build it on any of the free fields. The cream is displayed translucent. A building built in cream will be invisible to the enemy',
+		TOOLTIP_ATTACK_PHASE_TITLE: 'Attack Phase',
+		TOOLTIP_ATTACK_PHASE_MESSAGE: 'Click on an enemy building to destroy it. Hint: Smart enemies hide buildings within cream',
 		MESSAGE_PLAYER_DECIDE: 'It\'s up on you',
-		MESSAGE_OPPONENT_DECIDE: 'Your opponent decides'
+		MESSAGE_OPPONENT_DECIDE: 'Your opponent decides',
+		MESSAGE_WIN_GAME: 'Congratulations! You won this game',
+		MESSAGE_LOST_GAME: 'You lost',
+		MESSAGE_DRAW_GAME: 'Draw game!'
 	},
 	de: {
 		NEW_GAME: 'Neues Spiel',
@@ -30,8 +35,13 @@ const languages = {
 		TOOLTIP_INITIAL_PLACEMENT_MESSAGE: 'In der ersten Bauphase kannst du einmalig die Fabrik setzen. Überlege daher gut: Ist die Fabrik zerstört kannst du keine weiteren Gebäude bauen',
 		TOOLTIP_BUILD_PHASE_TITLE: 'Bauphase',
 		TOOLTIP_BUILD_PHASE_MESSAGE: 'Wähle ein Gebäude aus der unteren Symbolleiste aus und plaziere es. Sahne ist durchsichtig dargestellt. Ein Gebäude, dass in Sahne gebaut wird ist unsichtbar für den Gegner',
+		TOOLTIP_ATTACK_PHASE_TITLE: 'Angiffsphase',
+		TOOLTIP_ATTACK_PHASE_MESSAGE: 'Klicke auf ein gegnerisches Gebäude um es anzugreifen. Hinweis: Kluge Gegner verstecken ihre Gebäude unter Sahne',
 		MESSAGE_PLAYER_DECIDE: 'Entscheide dich jetzt!',
-		MESSAGE_OPPONENT_DECIDE: 'Dein Gegner entscheidet'
+		MESSAGE_OPPONENT_DECIDE: 'Dein Gegner entscheidet',
+		MESSAGE_WIN_GAME: 'Glückwunsch! Du hast das Spiel gewonnen',
+		MESSAGE_LOST_GAME: 'Du hast verloren',
+		MESSAGE_DRAW_GAME: 'Unentschieden!',
 	}
 };
 

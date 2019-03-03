@@ -77,9 +77,9 @@ class Tooltip extends Component {
                 message = t[this.props.language].TOOLTIP_BUILD_PHASE_MESSAGE;
             }
         } else if (gameState === GameStateTypes.ATTACK_PHASE) {
-            title = 'Attack Phase';
+            title = t[this.props.language].TOOLTIP_ATTACK_PHASE_TITLE;
             if (currentPlayer === 0) {
-                message = 'Click on an enemy building to destroy it. Hint: Smart enemies hide buildings within cream';
+                message = t[this.props.language].TOOLTIP_ATTACK_PHASE_MESSAGE;
             }
         }
 

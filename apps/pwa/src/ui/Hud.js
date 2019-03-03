@@ -134,7 +134,7 @@ class Hud extends Component {
         return (
             <div>
                 <Tooltip />
-                <Actionbar toggleMusic={this.props.toggleMusic} />
+                <Actionbar toggleMusic={this.props.toggleMusic} showSettings={this.props.showSettings} />
                 <BuildingPalette isVisible={showInGameMenu} />
                 <InfoPanel isVisible={showInGameMenu} />
                 <div id="hud" className={this.isInitalStage() || this.isTitleScreen() || this.state.messageAnimation ? 'fullscreen' : null} ref={hud => { this.hud = hud }}>
@@ -145,9 +145,6 @@ class Hud extends Component {
                                 <div id="mainMenu">
                                     <Button color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareGameCallback()}>
                                         {t[this.props.language].NEW_GAME}
-                                    </Button>
-                                    <Button color="primary" aria-label="settings" className="menuButton" variant="contained" onClick={() => this.props.showSettings()}>
-                                        {t[this.props.language].SETTINGS}
                                     </Button>
                                 </div>
                             );

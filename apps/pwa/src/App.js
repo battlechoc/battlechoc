@@ -128,12 +128,12 @@ class App extends Component {
         setTimeout(() => {
           if (winners.length === 1) {
             if (winners[0].type === PlayerType.HUMAN) {
-              this.hud.showTurnMessage('Congratulations! You won this game');
+              this.hud.showTurnMessage(t[this.props.language].MESSAGE_WIN_GAME);
             } else {
-              this.hud.showTurnMessage('You lost');
+              this.hud.showTurnMessage(t[this.props.language].MESSAGE_LOST_GAME);
             }
           } else if (winners.length === 2) {
-            this.hud.showTurnMessage('Draw game!');
+            this.hud.showTurnMessage(t[this.props.language].MESSAGE_DRAW_GAME);
           }
           setTimeout(() => this.endGame(), 1000);
         }, 2000);

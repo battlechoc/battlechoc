@@ -69,6 +69,7 @@ class Gamefield {
 
         building.explode();
         building.adjustPosition(position);
+        building.adjustRotation();
         this.gameField.add(building.getModel());
 
         this.mixer = new THREE.AnimationMixer(building.getModel());
