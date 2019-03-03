@@ -89,20 +89,25 @@ class Tooltip extends Component {
     render() {
         if (typeof this.props.game !== 'undefined') {
             let { title, message } = this.getContent()
+            let currentPlayer = this.props.game.currentPlayerIndex;
+            let loadingAnimation = currentPlayer === 1 ? <img className="loadingAnimation" src="animations/loading.gif" alt="loading" /> : null;
             if (typeof title !== 'undefined') {
                 return(
-                    <ExpansionPanel square id="tooltip" expanded={this.state.expanded && typeof message !== 'undefined'} onChange={() => {
-                        if (typeof message !== 'undefined') {
-                            this.setState({expanded: !this.state.expanded});
-                        }
-                    }}>
-                        <ExpansionPanelSummary className="tooltipHeader" expandIcon={<ExpandMoreIcon />}>
-                            <Typography variant="h6" color="textSecondary">{ title }</Typography>
-                        </ExpansionPanelSummary>
-                        <ExpansionPanelDetails>
-                            <Typography paragraph={true}>{ message }</Typography>
-                        </ExpansionPanelDetails>
-                    </ExpansionPanel>
+                    <div id="tooltipContainer">
+                        <ExpansionPanel square id="tooltip" expanded={this.state.expanded && typeof message !== 'undefined'} onChange={() => {
+                            if (typeof message !== 'undefined') {
+                                this.setState({expanded: !this.state.expanded});
+                            }
+                        }}>
+                            <ExpansionPanelSummary className="tooltipHeader" expandIcon={<ExpandMoreIcon />}>
+                                <Typography variant="h6" color="textSecondary">{ title }</Typography>
+                            </ExpansionPanelSummary>
+                            <ExpansionPanelDetails>
+                                <Typography paragraph={true}>{ message }</Typography>
+                            </ExpansionPanelDetails>
+                        </ExpansionPanel>
+                        { loadingAnimation }
+                    </div>
                 );
             } else {
                 return null;
