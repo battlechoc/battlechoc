@@ -1,6 +1,6 @@
 import uuidv4 from 'uuid/v4';
 import { BuildingType, getEntity } from './GameEntities';
-import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError } from './Errors';
+import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError, InvalidActionIssuer } from './Errors';
 
 const PlayerType = Object.freeze({
     HUMAN: 'PlayerType.HUMAN',
@@ -23,7 +23,7 @@ function createPlayer(name, type, activePlayer) {
 }
 
 class Augustus {
-    constructor(actions) {
+    constructor(actions, player) {
         this.actions = actions;
         this.attackedCells = [];
     }
@@ -38,11 +38,11 @@ class Augustus {
         setTimeout(() => {
             const scores = this.scoreFields(board);
             if (scores[0] === scores[1]) {
-                this.actions.chooseStart();
+                this.actions.chooseStart({ issuer: this.player.id });
             } else if (scores[0] > scores[1]) {
-                this.actions.chooseField(0);
+                this.actions.chooseField({ fieldIdx: 0, issuer: this.player.id });
             } else {
-                this.actions.chooseField(1);
+                this.actions.chooseField({ fieldIdx: 1, issuer: this.player.id });
             }
         }, 3000);
     }
@@ -53,14 +53,14 @@ class Augustus {
             if (scores[0] === scores[1]) {
                 const decision = Math.round(Math.random());
                 if (decision === 0) {
-                    this.actions.chooseField(0);
+                    this.actions.chooseField({ fieldIdx: 0, issuer: this.player.id });
                 } else {
-                    this.actions.chooseField(1);
+                    this.actions.chooseField({ fieldIdx: 1, issuer: this.player.id });
                 }
             } else if (scores[0] > scores[1]) {
-                this.actions.chooseField(0);
+                this.actions.chooseField({ fieldIdx: 0, issuer: this.player.id });
             } else {
-                this.actions.chooseField(1);
+                this.actions.chooseField({ fieldIdx: 1, issuer: this.player.id });
             }
         }, 3000);
     }
@@ -70,13 +70,15 @@ class Augustus {
             const creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(BuildingType.CREAM));
             const building = getEntity(BuildingType.FACTORY);
             this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
-                this.actions.finishTurn();
+                this.actions.finishTurn({ issuer: this.player.id });
             }).catch(error => {
                 if (error instanceof NoBuildingsLeftError) {
                     console.log(error.message);
                 } else if (error instanceof NoCacaoLeftError) {
                     console.log(error.message);
                 } else if (error instanceof BuildNotPossibleError) {
+                    console.log(error.message);
+                } else if (error instanceof InvalidActionIssuer) {
                     console.log(error.message);
                 } else {
                     throw error;
@@ -116,6 +118,7 @@ class Augustus {
             }
 
             this.actions.attack({
+                issuer: this.player.id,
                 row: cellToAttack.row,
                 col: cellToAttack.col
             }).then(() => {
@@ -133,7 +136,7 @@ class Augustus {
             if (attacks > 1) {
                 this.simulateAttack(gamefield, uiGamefield, attacks - 1);
             } else {
-                this.actions.finishTurn();
+                this.actions.finishTurn({ issuer: this.player.id });
             }
         }, 2000);
     }
@@ -156,7 +159,7 @@ class Augustus {
                 col: randomPosition.z / uiGamefield.fieldSize
             }
 
-            this.actions.build(building).then(() => {
+            this.actions.build({ issuer: this.player.id, building: building }).then(() => {
                 uiGamefield.setBuilding(randomPosition, building.type);
                 resolve();
             }).catch(error => { reject(error); });
@@ -166,7 +169,7 @@ class Augustus {
     simulateBuild(gamefield, buildingsToBuild, cacao, uiGamefield) {
         setTimeout(() => {
             if (buildingsToBuild === 0) {
-                this.actions.finishBuildPhase();
+                this.actions.finishBuildPhase({ issuer: this.player.id });
             } else {
                 const creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(BuildingType.CREAM) && cell.occupiedBy.length === 1);
                 const freeCells = gamefield.grid.filter(cell => cell.occupiedBy.length === 0);
@@ -199,10 +202,12 @@ class Augustus {
                             console.log(error.message);
                         } else if (error instanceof BuildNotPossibleError) {
                             console.log(error.message);
+                        } else if (error instanceof InvalidActionIssuer) {
+                            console.log(error.message);
                         } else {
                             throw error;
                         }
-                        this.actions.finishBuildPhase();
+                        this.actions.finishBuildPhase({ issuer: this.player.id });
                     });
                 } else if (freeCells.length > 0 && cacao >= cream.costs) {
                     let building = cream;
@@ -215,13 +220,15 @@ class Augustus {
                             console.log(error.message);
                         } else if (error instanceof BuildNotPossibleError) {
                             console.log(error.message);
+                        } else if (error instanceof InvalidActionIssuer) {
+                            console.log(error.message);
                         } else {
                             throw error;
                         }
-                        this.actions.finishBuildPhase();
+                        this.actions.finishBuildPhase({ issuer: this.player.id });
                     });
                 } else {
-                    this.actions.finishBuildPhase();
+                    this.actions.finishBuildPhase({ issuer: this.player.id });
                 }
             }
         }, 3000);

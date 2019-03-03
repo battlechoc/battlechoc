@@ -110,8 +110,8 @@ class Actionbar extends Component {
                             key="3"
                             color="primary"
                             aria-label="skip build phase"
-                            className={(this.props.game.players[0].buildings > 0) ? "icon" : "icon blinking" }
-                            onClick={() => this.props.finishBuildPhase()}>
+                            className={(this.props.game.players[0].buildings > 0) ? "icon" : "icon blinking"}
+                            onClick={() => this.props.finishBuildPhase({ issuer: this.props.game.players[0].id })}>
                             <PlayArrow />
                         </Fab>,
                         <Fab
@@ -119,23 +119,25 @@ class Actionbar extends Component {
                             key="4"
                             color="primary"
                             aria-label="finish turn"
-                            className={(this.props.game.players[0].buildings === 0 && this.props.game.players[0].attacks === 0) ? "icon blinking" : "icon" }
-                            onClick={() => this.props.finishTurn()}>
+                            className={(this.props.game.players[0].buildings === 0 && this.props.game.players[0].attacks === 0) ? "icon blinking" : "icon"}
+                            onClick={() => this.props.finishTurn({ issuer: this.props.game.players[0].id })}>
                             <FastForward />
                         </Fab>
                     ]);
                 } else if (this.props.game.state === GameStateTypes.ATTACK_PHASE) {
-                    buttons.push(
-                        <Fab
-                            size="small"
-                            key="4"
-                            color="primary"
-                            aria-label="finish turn"
-                            className={(this.props.game.players[0].attacks > 0) ? "icon" : "icon blinking" }
-                            onClick={() => this.props.finishTurn()}>
-                            <FastForward />
-                        </Fab>
-                    );
+                    if (this.props.game.players[0].attacks > 0 || this.props.game.players[0].attacksPerTurn === 0) {
+                        buttons.push(
+                            <Fab
+                                size="small"
+                                key="4"
+                                color="primary"
+                                aria-label="finish turn"
+                                className={(this.props.game.players[0].attacks > 0) ? "icon" : "icon blinking"}
+                                onClick={() => this.props.finishTurn({ issuer: this.props.game.players[0].id })}>
+                                <FastForward />
+                            </Fab>
+                        );
+                    }
                 }
             }
         }

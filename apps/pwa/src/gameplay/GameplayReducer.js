@@ -59,8 +59,8 @@ const gameplayReducer = createReducer({}, {
         state.game.state = GameStateTypes.CHOOSE_FIELD_OR_START;
     },
     [GameActions.chooseField]: (state, action) => {
-        currentPlayer(state.game).fieldIndex = action.payload;
-        otherPlayer(state.game).fieldIndex = 1 - action.payload;
+        currentPlayer(state.game).fieldIndex = action.payload.fieldIdx;
+        otherPlayer(state.game).fieldIndex = 1 - action.payload.fieldIdx;
         state.game.currentPlayerIndex = 1 - state.game.currentPlayerIndex;
         state.game.state = GameStateTypes.PLAYER_1_INITIAL_PLACEMENT;
     },
@@ -82,22 +82,22 @@ const gameplayReducer = createReducer({}, {
         state.game.state = GameStateTypes.ATTACK_PHASE;
     },
     [GameActions.build]: (state, action) => {
-        currentPlayerBoardCell(state.game, action.payload.position.row, action.payload.position.col).occupiedBy.push(action.payload.type);
-        if (action.payload.type === GameEntities.BuildingType.FACTORY) {
+        currentPlayerBoardCell(state.game, action.payload.building.position.row, action.payload.building.position.col).occupiedBy.push(action.payload.building.type);
+        if (action.payload.building.type === GameEntities.BuildingType.FACTORY) {
             currentPlayer(state.game).buildingsPerTurn = 2;
             currentPlayer(state.game).hasFactory = true;
         } else {
-            if (action.payload.type === GameEntities.BuildingType.CACAOTREE) {
+            if (action.payload.building.type === GameEntities.BuildingType.CACAOTREE) {
                 currentPlayer(state.game).cacaoPerTurn += 30;
-            } else if (action.payload.type === GameEntities.BuildingType.RUM_TRUFFLE_CANNON) {
+            } else if (action.payload.building.type === GameEntities.BuildingType.RUM_TRUFFLE_CANNON) {
                 currentPlayer(state.game).attacksPerTurn += 1;
                 currentPlayer(state.game).attacks += 1;
-            } else if (action.payload.type === GameEntities.BuildingType.FACTORY_EXTENSION) {
+            } else if (action.payload.building.type === GameEntities.BuildingType.FACTORY_EXTENSION) {
                 currentPlayer(state.game).buildingsPerTurn += 2;
             }
             // Pay cacao and decrease the buildings
             currentPlayer(state.game).buildings -= 1;
-            currentPlayer(state.game).cacao -= action.payload.costs;
+            currentPlayer(state.game).cacao -= action.payload.building.costs;
         }
     },
     [GameActions.attack]: (state, action) => {

@@ -96,11 +96,11 @@ class Hud extends Component {
     choose(option) {
         if (this.state.clickable) {
             if (option === 'START' && this.props.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
-                this.props.chooseStart();
+                this.props.chooseStart({ issuer: this.props.game.players[0].id });
             } else if (option === 'LEFT_GAMEFIELD') {
-                this.props.chooseField(0);
+                this.props.chooseField({ fieldIdx: 0, issuer: this.props.game.players[0].id });
             } else if (option === 'RIGHT_GAMEFIELD') {
-                this.props.chooseField(1);
+                this.props.chooseField({ fieldIdx: 1, issuer: this.props.game.players[0].id });
             }
         }
     }

@@ -1,4 +1,4 @@
-import { GameActionTypes } from './GameActions';
+import { GameActionTypes, IssuerRelevantActions } from './GameActions';
 import { UiActionTypes } from '../ui/UiActions';
 import * as GameEntities from './GameEntities';
 import * as Errors from './Errors.js';
@@ -89,12 +89,31 @@ class Rules {
         }
     }
 
+    static issuerIsInvalid(action, state) {
+        if (IssuerRelevantActions.includes(action.type)) {
+            if (typeof action.payload === 'undefined' ||
+                typeof action.payload.issuer === 'undefined' ||
+                action.payload.issuer !== this.currentPlayer(state).id) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     static isActionValid(action, state) {
         if (!(this.isGameAction(action) || this.isUiAction(action))) {
             return new Errors.ActionValidationError(action);
         }
 
         let currentState = typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state;
+
+        if (Rules.issuerIsInvalid(action, state.gameplay.game)) {
+            let issuerId;
+            if (typeof action.payload !== 'undefined') {
+                issuerId = action.payload.issuer;
+            }
+            return new Errors.InvalidActionIssuer(action, issuerId, this.currentPlayer(state.gameplay.game).id);
+        }
 
         if (typeof currentState === 'undefined' && action.type === GameActionTypes.startGame) {
             return true;
@@ -113,13 +132,13 @@ class Rules {
         } else if (action.type === GameActionTypes.build) {
             if (currentState !== GameStateTypes.BUILD_PHASE && currentState !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && currentState !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
                 return new Errors.UnexpectedStateError(currentState);
-            } else if (this.currentPlayer(state.gameplay.game).buildings === 0 &&
-                action.payload.type !== GameEntities.BuildingType.FACTORY) {
+            } else if (Rules.currentPlayer(state.gameplay.game).buildings === 0 &&
+                action.payload.building.type !== GameEntities.BuildingType.FACTORY) {
                 return new Errors.NoBuildingsLeftError();
-            } else if (this.currentPlayer(state.gameplay.game).cacao < action.payload.costs) {
+            } else if (Rules.currentPlayer(state.gameplay.game).cacao < action.payload.building.costs) {
                 return new Errors.NoCacaoLeftError();
             } else {
-                return this.canBuildOnCell(action.payload.position, action.payload.type, state.gameplay.game);
+                return this.canBuildOnCell(action.payload.building.position, action.payload.building.type, state.gameplay.game);
             }
         } else if (action.type === GameActionTypes.attack) {
             let attackedCell = this.otherPlayerBoardCell(state.gameplay.game, action.payload);

@@ -12,6 +12,14 @@ class ActionValidationError extends BattlechocError {
     }
 }
 
+class InvalidActionIssuer extends BattlechocError {
+    constructor(action, issuerId, currentPlayerId, ...args) {
+        super(...args);
+        console.dir(action);
+        this.message = action.type + ' issued by ' + issuerId + ' cannot be issued by this issuer because it is not her turn. Current player is ' + currentPlayerId;
+    }
+}
+
 class NoBuildingsLeftError extends BattlechocError {
     constructor(...args) {
         super(...args);
@@ -54,4 +62,4 @@ class UnexpectedStateError extends BattlechocError {
     }
 }
 
-export { BattlechocError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, TargetEmptyError, NoAttacksLeftError, UnexpectedStateError };
+export { BattlechocError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, TargetEmptyError, NoAttacksLeftError, UnexpectedStateError, InvalidActionIssuer };

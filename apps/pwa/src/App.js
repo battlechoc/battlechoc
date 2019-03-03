@@ -12,7 +12,7 @@ import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 import { GameStateTypes } from './gameplay/GameplayReducer'
-import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError } from './gameplay/Errors';
+import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError, InvalidActionIssuer } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import Rules from './gameplay/Rules';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -169,7 +169,14 @@ class App extends Component {
       }
     } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
       setTimeout(() => {
-        this.props.finishTurn();
+        this.props.finishTurn({ issuer: this.props.game.players[0].id })
+          .catch(error => {
+            if (error instanceof InvalidActionIssuer) {
+              console.log(error.message);
+            } else {
+              throw error;
+            }
+          })
       }, 3000);
     }
   }
@@ -226,10 +233,10 @@ class App extends Component {
         row: position.x / this.playerGameField.fieldSize,
         col: position.z / this.playerGameField.fieldSize
       }
-      this.props.build(building).then(() => {
+      this.props.build({ issuer: this.props.game.players[0].id, building: building }).then(() => {
         this.playerGameField.setBuilding(position, building.type);
         if (initialPlacement) {
-          this.props.finishTurn();
+          this.props.finishTurn({ issuer: this.props.game.players[0].id });
         }
       }).catch(error => {
         if (error instanceof NoBuildingsLeftError) {
@@ -237,6 +244,8 @@ class App extends Component {
         } else if (error instanceof NoCacaoLeftError) {
           console.log(error.message);
         } else if (error instanceof BuildNotPossibleError) {
+          console.log(error.message);
+        } else if (error instanceof InvalidActionIssuer) {
           console.log(error.message);
         } else {
           throw error;
@@ -257,6 +266,7 @@ class App extends Component {
         let col = position.z / this.opponentGameField.fieldSize;
 
         this.props.attack({
+          issuer: this.props.game.players[0].id,
           row: row,
           col: col
         }).then(() => {
@@ -391,12 +401,14 @@ class App extends Component {
     this.setState({ landscapeOrientation: this.orientationQuery.matches });
     this.orientationQuery.addListener(orientation => this.deviceOrientationChanged(orientation));
 
-    let player = [
+    let players = [
       createPlayer("Charlie Bucket", PlayerType.HUMAN),
       createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
     ];
 
-    this.props.startGame(player).then(() => {
+    this.opponent.player = players[1];
+
+    this.props.startGame(players).then(() => {
       if (this.props.game.currentPlayerIndex === 0) {
         this.hud.showTurnMessage(t[this.props.language].MESSAGE_PLAYER_DECIDE);
       } else {

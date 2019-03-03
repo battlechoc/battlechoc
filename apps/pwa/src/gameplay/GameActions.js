@@ -12,6 +12,15 @@ const GameActionTypes = Object.freeze({
     attack: 'battlechoc/gameplay/attack',
 });
 
+const IssuerRelevantActions = [
+    GameActionTypes.chooseField,
+    GameActionTypes.chooseStart,
+    GameActionTypes.finishTurn,
+    GameActionTypes.finishBuildPhase,
+    GameActionTypes.build,
+    GameActionTypes.attack
+];
+
 const startGame = createAction(GameActionTypes.startGame);
 const finishGame = createAction(GameActionTypes.finishGame);
 const chooseField = createAction(GameActionTypes.chooseField);
@@ -23,5 +32,5 @@ const build = createAction(GameActionTypes.build);
 const attack = createAction(GameActionTypes.attack);
 
 export {
-    GameActionTypes, startGame, finishGame, chooseField, chooseStart, createBoard, finishTurn, finishBuildPhase, build, attack
+    GameActionTypes, IssuerRelevantActions, startGame, finishGame, chooseField, chooseStart, createBoard, finishTurn, finishBuildPhase, build, attack
 };
