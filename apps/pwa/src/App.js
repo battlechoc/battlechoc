@@ -224,7 +224,7 @@ class App extends Component {
     let buildingSelected = this.props.selectedBuilding && this.props.selectedBuilding !== BuildingType.EMPTY;
     let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
       this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
-    if (intersects.length > 0 && !this.isSwiping && (buildingSelected || initialPlacement)) {
+    if (intersects.length > 0 && !this.isSwiping && (buildingSelected || (initialPlacement && this.props.game.players[0].hasFactory !== true))) {
       let building = null;
       if (initialPlacement) {
         building = getEntity(BuildingType.FACTORY);
@@ -232,7 +232,7 @@ class App extends Component {
         building = getEntity(this.props.selectedBuilding);
       }
 
-      let position = intersects[0].object.parent.position;
+      const position = intersects[0].object.parent.position;
       building.position = {
         row: position.x / this.playerGameField.fieldSize,
         col: position.z / this.playerGameField.fieldSize
@@ -240,7 +240,9 @@ class App extends Component {
       this.props.build({ issuer: this.props.game.players[0].id, building: building }).then(() => {
         this.playerGameField.setBuilding(position, building.type);
         if (initialPlacement) {
-          this.props.finishTurn({ issuer: this.props.game.players[0].id });
+          setTimeout(() => {
+            this.props.finishTurn({ issuer: this.props.game.players[0].id });
+          }, 3000);
         }
       }).catch(error => {
         if (error instanceof NoBuildingsLeftError) {

@@ -95,7 +95,6 @@ const gameplayReducer = createReducer({}, {
             } else if (action.payload.building.type === GameEntities.BuildingType.FACTORY_EXTENSION) {
                 currentPlayer(state.game).buildingsPerTurn += 2;
             }
-            // Pay cacao and decrease the buildings
             currentPlayer(state.game).buildings -= 1;
             currentPlayer(state.game).cacao -= action.payload.building.costs;
         }

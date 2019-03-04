@@ -89,7 +89,9 @@ class Augustus {
             const creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(BuildingType.CREAM));
             const building = getEntity(BuildingType.FACTORY);
             this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
-                this.actions.finishTurn({ issuer: this.player.id });
+                setTimeout(() => {
+                    this.actions.finishTurn({ issuer: this.player.id });
+                }, 3000);
             }).catch(error => {
                 if (error instanceof NoBuildingsLeftError) {
                     console.log(error.message);
