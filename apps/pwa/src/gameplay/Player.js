@@ -26,6 +26,25 @@ class Augustus {
     constructor(actions, player) {
         this.actions = actions;
         this.attackedCells = [];
+        this.timers = [];
+    }
+
+    stopThinking() {
+        while (this.timers.length > 0) {
+            clearTimeout(this.timers[0]);
+            this.timers.splice(0, 1);
+        }
+    }
+
+    startThinking(thoughts) {
+        let timer = setTimeout(() => {
+            thoughts();
+            let index = this.timers.indexOf(timer);
+            if (index > -1) {
+                this.timers.splice(index, 1);
+            }
+        }, 1500);
+        this.timers.push(timer);
     }
 
     scoreFields(board) {
@@ -35,7 +54,7 @@ class Augustus {
     }
 
     simulateChooseFieldOrStartDecision(board) {
-        setTimeout(() => {
+        this.startThinking(() => {
             const scores = this.scoreFields(board);
             if (scores[0] === scores[1]) {
                 this.actions.chooseStart({ issuer: this.player.id });
@@ -44,11 +63,11 @@ class Augustus {
             } else {
                 this.actions.chooseField({ fieldIdx: 1, issuer: this.player.id });
             }
-        }, 3000);
+        });
     }
 
     simulateChooseFieldDecision(board) {
-        setTimeout(() => {
+        this.startThinking(() => {
             const scores = this.scoreFields(board);
             if (scores[0] === scores[1]) {
                 const decision = Math.round(Math.random());
@@ -62,15 +81,17 @@ class Augustus {
             } else {
                 this.actions.chooseField({ fieldIdx: 1, issuer: this.player.id });
             }
-        }, 3000);
+        });
     }
 
     simulateInitialPlacement(gamefield, uiGamefield) {
-        setTimeout(() => {
+        this.startThinking(() => {
             const creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(BuildingType.CREAM));
             const building = getEntity(BuildingType.FACTORY);
             this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
-                this.actions.finishTurn({ issuer: this.player.id });
+                setTimeout(() => {
+                    this.actions.finishTurn({ issuer: this.player.id });
+                }, 3000);
             }).catch(error => {
                 if (error instanceof NoBuildingsLeftError) {
                     console.log(error.message);
@@ -84,11 +105,11 @@ class Augustus {
                     throw error;
                 }
             });
-        }, 3000);
+        });
     }
 
     simulateAttack(gamefield, uiGamefield, attacks) {
-        setTimeout(() => {
+        this.startThinking(() => {
             let cellToAttack = undefined;
             const unveiledFactories = gamefield.grid.filter(cell => !cell.occupiedBy.includes(BuildingType.CREAM) && cell.occupiedBy.includes(BuildingType.FACTORY));
             if (unveiledFactories.length > 0) {
@@ -138,7 +159,7 @@ class Augustus {
             } else {
                 this.actions.finishTurn({ issuer: this.player.id });
             }
-        }, 2000);
+        });
     }
 
     simulateAttackPhase(gamefield, uiGamefield, attacks) {
@@ -167,7 +188,7 @@ class Augustus {
     }
 
     simulateBuild(gamefield, buildingsToBuild, cacao, uiGamefield) {
-        setTimeout(() => {
+        this.startThinking(() => {
             if (buildingsToBuild === 0) {
                 this.actions.finishBuildPhase({ issuer: this.player.id });
             } else {
@@ -231,7 +252,7 @@ class Augustus {
                     this.actions.finishBuildPhase({ issuer: this.player.id });
                 }
             }
-        }, 3000);
+        });
     }
 
     simulateBuildPhase(gamefield, buildingsToBuild, cacao, uiGamefield) {
