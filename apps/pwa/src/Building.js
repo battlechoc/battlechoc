@@ -50,12 +50,6 @@ class Building {
 		);		
 	}
 
-	adjustRotation() {
-		if (this.buildingType === BuildingType.RUM_TRUFFLE_CANNON) {
-			this._model.rotation.y = Math.PI * -(1/3);
-		}
-	}
-
 	show() {
 		this._model.traverse(child => {
 			if (child instanceof THREE.Mesh) {
@@ -79,6 +73,27 @@ class Building {
 
 	makeTransparent() {
 		this._model.children[2].material = new THREE.MeshBasicMaterial({opacity: 0.6, transparent: true});
+	}
+
+	makeCreamy() {
+		let creamAround = ModelLoader.models[12].scene.clone();
+		creamAround.traverse(child => {
+			if (child instanceof THREE.Mesh) {
+				child.material.opacity = 0.8;
+				child.material.transparent = true;
+			}
+		});
+		this._model.traverse(child => {
+			if (child instanceof THREE.Mesh) {
+				child.renderOrder = 2;
+			}
+		});
+
+		creamAround.position.x -= this._offset[0];
+		creamAround.position.y -= this._offset[1];
+		creamAround.position.z -= this._offset[2];
+
+		this._model.add(creamAround);
 	}
 
 	getModel() {

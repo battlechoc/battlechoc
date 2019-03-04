@@ -69,7 +69,6 @@ class Gamefield {
 
         building.explode();
         building.adjustPosition(position);
-        building.adjustRotation();
         this.gameField.add(building.getModel());
 
         this.mixer = new THREE.AnimationMixer(building.getModel());
@@ -178,10 +177,19 @@ class Gamefield {
         } 
 
         building.adjustPosition(position);
-        building.adjustRotation()
 
         if (buildingType === BuildingType.CREAM && this.isPlayerGameField) {
             building.makeTransparent();
+            let otherBuildings = this.buildings[row][col].filter(building => building.buildingType !== BuildingType.CREAM && building.buildingType !== BuildingType.EMPTY);
+            if (otherBuildings.length > 0) {
+                building.hide();
+                this.buildings[row][col].forEach(other => {
+                    if (other.buildingType !== BuildingType.CREAM &&
+                        other.buildingType !== BuildingType.EMPTY) {
+                        other.makeCreamy();
+                    }
+                });
+            }
         }
         
         this.gameField.add(building.getModel());
@@ -191,7 +199,12 @@ class Gamefield {
             if (this.isPlayerGameField === false) {
                 building.hide();
             } else {
-                // TODO; building.showCreamy();
+                building.makeCreamy();
+                this.buildings[row][col].forEach(cream => {
+                    if (cream.buildingType === BuildingType.CREAM) {
+                        cream.hide();
+                    }
+                });
             }
         } else {
             this.buildings[row][col] = [building];
