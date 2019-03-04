@@ -124,7 +124,10 @@ class App extends Component {
   componentWillReceiveProps(nextProps) {
     if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
       const winners = Rules.determineWinner(nextProps.game);
-      if (winners !== undefined) {
+      if (typeof winners !== 'undefined') {
+        if (typeof this.opponent.stopThinking === 'function') {
+          this.opponent.stopThinking();
+        }
         setTimeout(() => {
           if (winners.length === 1) {
             if (winners[0].type === PlayerType.HUMAN) {
@@ -137,6 +140,7 @@ class App extends Component {
           }
           setTimeout(() => this.endGame(), 1000);
         }, 2000);
+        return;
       }
     }
 
