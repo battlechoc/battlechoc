@@ -11,7 +11,8 @@ class ModelLoader {
         const files = ['white_tile.glb', 'brown_tile.glb', 'black_tile.glb', 
                         'factory.gltf', 'factory-extension.gltf', 'cacaotree.gltf',
                         'cannon.glb', 'cream.glb', 'cream-explosion.gltf',
-                        'cacaotree-explosion.gltf', 'factory-explosion.gltf', 'cannon-explosion.glb'];
+                        'cacaotree-explosion.gltf', 'factory-explosion.gltf', 'cannon-explosion.glb', 
+                        'creamAroundBuilding.glb'];
         this.models = [];
         for (let i = 0; i < files.length; i++) {
             this.models.push(await this.loadGLTFModel('models/' + files[i]));
