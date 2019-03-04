@@ -43,7 +43,7 @@ class Augustus {
             if (index > -1) {
                 this.timers.splice(index, 1);
             }
-        }, 3000);
+        }, 1500);
         this.timers.push(timer);
     }
 
