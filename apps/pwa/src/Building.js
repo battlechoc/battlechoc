@@ -1,4 +1,4 @@
-import ModelLoader from './ModelLoader.js';
+import AssetLoader from './AssetLoader.js';
 import * as THREE from 'three';
 import { BuildingType } from './gameplay/GameEntities'
 
@@ -11,19 +11,19 @@ class Building {
 		}
 
 		if (this.buildingType === BuildingType.FACTORY) {
-			this._model = ModelLoader.models[3].scene.clone();
+			this._model = AssetLoader.models[3].scene.clone();
 			this._offset = [0, 3, 0];
 		} else if (this.buildingType === BuildingType.FACTORY_EXTENSION) {
-			this._model = ModelLoader.models[4].scene.clone();
+			this._model = AssetLoader.models[4].scene.clone();
 			this._offset = [0, 3, 0];
 		} else if (this.buildingType === BuildingType.CACAOTREE) {
-			this._model = ModelLoader.models[5].scene.clone();
+			this._model = AssetLoader.models[5].scene.clone();
 			this._offset = [1, 2, 1.5];
 		} else if (this.buildingType === BuildingType.RUM_TRUFFLE_CANNON) {
-			this._model = ModelLoader.models[6].scene.clone();
+			this._model = AssetLoader.models[6].scene.clone();
 			this._offset = [2, 4, 1.5];
 		} else if (this.buildingType === BuildingType.CREAM) {
-			this._model = ModelLoader.models[7].scene.clone();
+			this._model = AssetLoader.models[7].scene.clone();
 			this._model.scale.set(3,3,3);
 			this._offset = [0, 0, 0];
 		}
@@ -31,13 +31,13 @@ class Building {
 
 	explode() {
 		if (this.buildingType === BuildingType.CACAOTREE) {
-			this._model = ModelLoader.models[9].scene.clone();	
+			this._model = AssetLoader.models[9].scene.clone();	
 		} else if (this.buildingType === BuildingType.FACTORY) {
-			this._model = ModelLoader.models[10].scene.clone();
+			this._model = AssetLoader.models[10].scene.clone();
 		} else if (this.buildingType === BuildingType.RUM_TRUFFLE_CANNON) {
-			this._model = ModelLoader.models[11].scene.clone();
+			this._model = AssetLoader.models[11].scene.clone();
 		} else {
-			this._model = ModelLoader.models[8].scene.clone();
+			this._model = AssetLoader.models[8].scene.clone();
 			this._model.scale.set(3,3,3);
 		}
 	}
@@ -76,7 +76,7 @@ class Building {
 	}
 
 	makeCreamy() {
-		let creamAround = ModelLoader.models[12].scene.clone();
+		let creamAround = AssetLoader.models[12].scene.clone();
 		creamAround.traverse(child => {
 			if (child instanceof THREE.Mesh) {
 				child.material.opacity = 0.8;

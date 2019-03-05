@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import './App.css';
 import * as THREE from 'three';
 
-import ModelLoader from './ModelLoader'
+import AssetLoader from './AssetLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import { BuildingType, getEntity } from './gameplay/GameEntities';
@@ -42,7 +42,7 @@ class App extends Component {
 
   async componentDidMount() {
     // Load Models
-    await ModelLoader.loadModels(progress => this.updateProgressbar(progress));
+    await AssetLoader.loadAssets(progress => this.updateProgressbar(progress));
 
     // Basic window and game setup
     const width = this.container.clientWidth;

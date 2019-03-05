@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import Building from './Building.js';
 import { BuildingType, BoardCellTypes } from './gameplay/GameEntities';
-import ModelLoader from './ModelLoader.js';
+import AssetLoader from './AssetLoader.js';
 
 class Gamefield {
     constructor(isPlayerGameField, position, playerField) {
@@ -27,11 +27,11 @@ class Gamefield {
                 var fieldClone = undefined;
 
                 if (cell.type === BoardCellTypes.WHITE) {
-                    fieldClone = ModelLoader.models[0].scene.clone();
+                    fieldClone = AssetLoader.models[0].scene.clone();
                 } else if (cell.type === BoardCellTypes.BROWN) {
-                    fieldClone = ModelLoader.models[1].scene.clone();
+                    fieldClone = AssetLoader.models[1].scene.clone();
                 } else if (cell.type === BoardCellTypes.BLACK) {
-                    fieldClone = ModelLoader.models[2].scene.clone();
+                    fieldClone = AssetLoader.models[2].scene.clone();
                 }
 
                 var field = fieldClone.children[2]
@@ -82,8 +82,8 @@ class Gamefield {
             animationNumber = 11;
         }
 
-        for (let i = 0; i < ModelLoader.models[animationNumber].animations.length; i++) {
-            this.mixer.clipAction(ModelLoader.models[animationNumber].animations[i]).setLoop(THREE.LoopOnce).play()
+        for (let i = 0; i < AssetLoader.models[animationNumber].animations.length; i++) {
+            this.mixer.clipAction(AssetLoader.models[animationNumber].animations[i]).setLoop(THREE.LoopOnce).play()
         }
 
         this.explosionCallback = () => {
