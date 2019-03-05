@@ -1,0 +1,30 @@
+{
+  "name": "battlechoc-server",
+  "version": "1.0.0",
+  "description": "battlechoc backend",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fabianbormann/battlechoc-server.git"
+  },
+  "keywords": [
+    "turn-based",
+    "game",
+    "choclate",
+    "pwa",
+    "backend"
+  ],
+  "author": "battlechoc.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fabianbormann/battlechoc-server/issues"
+  },
+  "homepage": "https://github.com/fabianbormann/battlechoc-server#readme",
+  "dependencies": {
+    "express": "^4.16.4"
+  }
+}
