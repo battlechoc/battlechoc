@@ -12,16 +12,16 @@ class Building {
 
 		if (this.buildingType === BuildingType.FACTORY) {
 			this._model = ModelLoader.models[3].scene.clone();
-			this._offset = [1.5, 6, 1.5];
+			this._offset = [0, 3, 0];
 		} else if (this.buildingType === BuildingType.FACTORY_EXTENSION) {
 			this._model = ModelLoader.models[4].scene.clone();
-			this._offset = [1.5, 6, 1.5];
+			this._offset = [0, 3, 0];
 		} else if (this.buildingType === BuildingType.CACAOTREE) {
 			this._model = ModelLoader.models[5].scene.clone();
-			this._offset = [3, 6, 3.5];
+			this._offset = [1, 2, 1.5];
 		} else if (this.buildingType === BuildingType.RUM_TRUFFLE_CANNON) {
 			this._model = ModelLoader.models[6].scene.clone();
-			this._offset = [3, 6, 2.5];
+			this._offset = [2, 4, 1.5];
 		} else if (this.buildingType === BuildingType.CREAM) {
 			this._model = ModelLoader.models[7].scene.clone();
 			this._model.scale.set(3,3,3);
@@ -92,8 +92,10 @@ class Building {
 		creamAround.position.x -= this._offset[0];
 		creamAround.position.y -= this._offset[1];
 		creamAround.position.z -= this._offset[2];
-
+		creamAround.rotation.y = -this._model.rotation.y;
 		this._model.add(creamAround);
+		console.log(this._model);
+
 	}
 
 	getModel() {
