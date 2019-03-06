@@ -104,4 +104,8 @@ function getEntity(type) {
     }
 }
 
-export { BoardCellTypes, Board, BuildingType, getEntity };
+function getCheapest() {
+    return getEntity(BuildingType.CREAM);
+}
+
+export { BoardCellTypes, Board, BuildingType, getEntity, getCheapest };
