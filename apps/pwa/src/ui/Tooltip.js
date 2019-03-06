@@ -79,7 +79,12 @@ class Tooltip extends Component {
                     message = t[this.props.language].TOOLTIP_BUILD_PHASE_MESSAGE;
                 } else {
                     const building = getEntity(this.props.selectedBuilding);
-                    message = t[this.props.language].TOOLTIP_BUILDING_INFO(building);
+                    const { info, costs, advantages } = t[this.props.language].TOOLTIP_BUILDING_INFO(building);
+                    message = <div class="tooltipBuildingInfo">
+                                <p>{info}</p>
+                                {typeof costs !== 'undefined' ? <p>{ costs }</p> : null}
+                                {typeof advantages !== 'undefined' ? <p>{ advantages }</p> : null}
+                              </div>;
                 }
             }
         } else if (gameState === GameStateTypes.ATTACK_PHASE) {

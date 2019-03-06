@@ -14,21 +14,29 @@ const languages = {
 		TOOLTIP_BUILDING_INFO: building => {
 			switch(building.type) {
 				case BuildingType.CREAM:
-					return 'Buildings built in cream will be hidden from the enemy. The building order of cream and buildings does not matter\n' +
-						   'Cacao costs: ' + building.costs
+					return {
+								info: 'Buildings built in cream will be hidden from the enemy. The building order of cream and buildings does not matter',
+						   		costs:'Cacao costs: ' + building.costs
+						    }
 				case BuildingType.FACTORY_EXTENSION:
-					return 'A factory extension can only be placed directly next to your factory\n' +
-						   'Cacao costs: ' + building.costs + '\n' +
-						   'Buildings per turn + 2'
+					return {
+								info: 'A factory extension can only be placed directly next to your factory',
+						   		costs: 'Cacao costs: ' + building.costs,
+						   		advantages: 'Buildings per turn +2'
+						   	}
 				case BuildingType.CACAOTREE:
-					return 'The cacao tree offers you all the resources you need\n' +
-						   'Cacao costs: ' + building.costs + '\n' +
-						   'Cacao per turn + 30'
+					return {
+								info: 'The cacao tree offers you all the resources you need',
+						   		costs: 'Cacao costs: ' + building.costs,
+						   		advantages: 'Cacao per turn +30'
+						    }
 				case BuildingType.RUM_TRUFFLE_CANNON:
-					return 'The rum truffle cannon leads you to victory\n' +
-						   'Cacao costs: ' + building.costs + '\n' +
-						   'Attacks per turn + 1'
-				default: return 'Unkown Building'
+					return {
+								info: 'The rum truffle cannon leads you to victory',
+						   		costs: 'Cacao costs: ' + building.costs,
+						   		advantages: 'Attacks per turn +1'
+						   	}
+				default: return { info: 'Unkown building' }
 			}
 		},
 		TOOLTIP_INITIAL_PLACEMENT_TITLE: 'Initial Placement',
@@ -56,21 +64,29 @@ const languages = {
 		TOOLTIP_BUILDING_INFO: building => {
 			switch(building.type) {
 				case BuildingType.CREAM:
-					return 'Gebäude die in Sahne gebaut sind bleiben dem Gegner verborgen. Die Baureihenfolge von Sahne und Gebäude sind dabei egal\n' +
-						   'Kakaokosten: ' + building.costs
+					return {
+								info: 'Gebäude die in Sahne gebaut sind bleiben dem Gegner verborgen. Die Baureihenfolge von Sahne und Gebäude sind dabei egal',
+						   		costs:'Kakaokosten: ' + building.costs
+						    }
 				case BuildingType.FACTORY_EXTENSION:
-					return 'Eine Fabrikerweiterung kann nur direkt neben deiner Fabrik platziert werden\n' +
-						   'Kakaokosten: ' + building.costs + '\n' +
-						   'Gebäude pro Runde + 2'
+					return {
+								info: 'Eine Fabrikerweiterung kann nur direkt neben deiner Fabrik platziert werden',
+						   		costs: 'Kakaokosten: ' + building.costs,
+						   		advantages: 'Gebäude pro Runde +2'
+						   	}
 				case BuildingType.CACAOTREE:
-					return 'Der Kakaobaum gibt dir alles was du an Rohstoffen brauchst\n' +
-						   'Kakaokosten: ' + building.costs + '\n' +
-						   'Kakao pro Runde + 30'
+					return {
+								info: 'Der Kakaobaum gibt dir alles was du an Rohstoffen brauchst',
+						   		costs: 'Kakaokosten: ' + building.costs,
+						   		advantages: 'Kakao pro Runde +30'
+						    }
 				case BuildingType.RUM_TRUFFLE_CANNON:
-					return 'Die Rumtrüffelkanone führt dich zum Sieg\n' +
-						   'Kakaokosten: ' + building.costs + '\n' +
-						   'Angriffe pro Runde + 1'
-				default: return 'Unkown Building'
+					return {
+								info: 'Die Rumtrüffelkanone führt dich zum Sieg',
+						   		costs: 'Kakaokosten: ' + building.costs,
+						   		advantages: 'Angriffe pro Runde +1'
+						   	}
+				default: return { info: 'Unbekanntes Gebäude' }
 			}
 		},
 		TOOLTIP_INITIAL_PLACEMENT_TITLE: 'Erste Bauphase',

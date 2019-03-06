@@ -16,6 +16,26 @@
   margin-right: 5px;
 }
 
+#tooltip > * {
+  user-select: none;
+}
+
+.tooltipBuildingInfo > p {
+  margin: 0;
+  padding: 0;
+}
+
+.tooltipBuildingInfo > p:nth-child(2) {
+  margin-top: 5px;
+  font-size: 0.8rem;
+  color: #B93021;
+}
+
+.tooltipBuildingInfo > p:nth-child(3) {
+  font-size: 0.8rem;
+  color: #31974A;
+}
+
 .tooltipHeader:hover {
   background-color: #324D5C !important;
 }
