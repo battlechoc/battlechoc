@@ -1,3 +1,5 @@
+import { BuildingType } from '../gameplay/GameEntities';
+
 const languages = {
 	en: {
 		NEW_GAME: 'New Game',
@@ -9,6 +11,26 @@ const languages = {
 		TOOLTIP_INITIAL_TURN_TITLE: 'Initial Turn',
 		TOOLTIP_INITIAL_TURN_MESSAGE: 'In the first round you can choose a playing field or the first move',
 		TOOLTIP_INITIAL_TURN_OPPONENT: name => name + ' can now select a game field',
+		TOOLTIP_BUILDING_INFO: building => {
+			switch(building.type) {
+				case BuildingType.CREAM:
+					return 'Buildings built in cream will be hidden from the enemy. The building order of cream and buildings does not matter\n' +
+						   'Cacao costs: ' + building.costs
+				case BuildingType.FACTORY_EXTENSION:
+					return 'A factory extension can only be placed directly next to your factory\n' +
+						   'Cacao costs: ' + building.costs + '\n' +
+						   'Buildings per turn + 2'
+				case BuildingType.CACAOTREE:
+					return 'The cacao tree offers you all the resources you need\n' +
+						   'Cacao costs: ' + building.costs + '\n' +
+						   'Cacao per turn + 30'
+				case BuildingType.RUM_TRUFFLE_CANNON:
+					return 'The rum truffle cannon leads you to victory\n' +
+						   'Cacao costs: ' + building.costs + '\n' +
+						   'Attacks per turn + 1'
+				default: return 'Unkown Building'
+			}
+		},
 		TOOLTIP_INITIAL_PLACEMENT_TITLE: 'Initial Placement',
 		TOOLTIP_INITIAL_PLACEMENT_MESSAGE: 'Now you can build the factory once. Set the factory carefully: If it is destroyed, you cannot build any other buildings',
 		TOOLTIP_BUILD_PHASE_TITLE: 'Build Phase',
@@ -31,6 +53,26 @@ const languages = {
 		TOOLTIP_INITIAL_TURN_TITLE: 'Erste Runde',
 		TOOLTIP_INITIAL_TURN_MESSAGE: 'In der ersten Runde kannst du dich für eines der Spielfelder, oder den ersten Zug entscheiden',
 		TOOLTIP_INITIAL_TURN_OPPONENT: name => name + ' kann nun ein Spielfeld aussuchen',
+		TOOLTIP_BUILDING_INFO: building => {
+			switch(building.type) {
+				case BuildingType.CREAM:
+					return 'Gebäude die in Sahne gebaut sind bleiben dem Gegner verborgen. Die Baureihenfolge von Sahne und Gebäude sind dabei egal\n' +
+						   'Kakaokosten: ' + building.costs
+				case BuildingType.FACTORY_EXTENSION:
+					return 'Eine Fabrikerweiterung kann nur direkt neben deiner Fabrik platziert werden\n' +
+						   'Kakaokosten: ' + building.costs + '\n' +
+						   'Gebäude pro Runde + 2'
+				case BuildingType.CACAOTREE:
+					return 'Der Kakaobaum gibt dir alles was du an Rohstoffen brauchst\n' +
+						   'Kakaokosten: ' + building.costs + '\n' +
+						   'Kakao pro Runde + 30'
+				case BuildingType.RUM_TRUFFLE_CANNON:
+					return 'Die Rumtrüffelkanone führt dich zum Sieg\n' +
+						   'Kakaokosten: ' + building.costs + '\n' +
+						   'Angriffe pro Runde + 1'
+				default: return 'Unkown Building'
+			}
+		},
 		TOOLTIP_INITIAL_PLACEMENT_TITLE: 'Erste Bauphase',
 		TOOLTIP_INITIAL_PLACEMENT_MESSAGE: 'In der ersten Bauphase kannst du einmalig die Fabrik setzen. Überlege daher gut: Ist die Fabrik zerstört kannst du keine weiteren Gebäude bauen',
 		TOOLTIP_BUILD_PHASE_TITLE: 'Bauphase',

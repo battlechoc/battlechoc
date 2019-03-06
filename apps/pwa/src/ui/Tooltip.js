@@ -78,10 +78,9 @@ class Tooltip extends Component {
                 if (typeof this.props.selectedBuilding === 'undefined' || this.props.selectedBuilding === BuildingType.EMPTY) {
                     message = t[this.props.language].TOOLTIP_BUILD_PHASE_MESSAGE;
                 } else {
-                    const buildingInfo = getEntity(this.props.selectedBuilding);
-                    message = "building props for " + buildingInfo.type + " " + buildingInfo.costs;
+                    const building = getEntity(this.props.selectedBuilding);
+                    message = t[this.props.language].TOOLTIP_BUILDING_INFO(building);
                 }
-
             }
         } else if (gameState === GameStateTypes.ATTACK_PHASE) {
             title = t[this.props.language].TOOLTIP_ATTACK_PHASE_TITLE;
