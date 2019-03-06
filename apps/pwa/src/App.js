@@ -7,7 +7,7 @@ import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import { BuildingType, getEntity } from './gameplay/GameEntities';
 import { startGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
-import { changeLanguage } from './ui/UiActions';
+import { changeLanguage, deselectBuildings } from './ui/UiActions';
 import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -240,8 +240,10 @@ class App extends Component {
       this.props.build({ issuer: this.props.game.players[0].id, building: building }).then(() => {
         this.playerGameField.setBuilding(position, building.type);
         if (initialPlacement) {
+          this.props.deselectBuildings();
           setTimeout(() => {
             this.props.finishTurn({ issuer: this.props.game.players[0].id });
+            this.props.deselectBuildings();
           }, 3000);
         }
       }).catch(error => {
@@ -564,7 +566,8 @@ const mapDispatchToProps = {
   build,
   finishBuildPhase,
   attack,
-  changeLanguage
+  changeLanguage,
+  deselectBuildings
 };
 
 const AppContainer = connect(

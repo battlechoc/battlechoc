@@ -3,7 +3,7 @@ import * as UiActions from './UiActions';
 import { BuildingType } from '../gameplay/GameEntities';
 
 const uiReducer = createReducer({
-        selectedBuilding: BuildingType.EMPTY,
+        selectedBuilding: BuildingType.FACTORY,
         language: 'en'
     }, {
     [UiActions.selectBuilding]: (state, action) => {
@@ -12,6 +12,9 @@ const uiReducer = createReducer({
     [UiActions.changeLanguage]: (state, action) => {
         console.log(action.payload);
         state.language = action.payload;
+    },
+    [UiActions.deselectBuildings]: (state, action) => {
+        state.selectedBuilding = BuildingType.EMPTY;
     }
 })
 

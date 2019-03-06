@@ -9,6 +9,11 @@ import { GameStateTypes } from '../gameplay/GameplayReducer';
 class BuildingPalette extends Component {
     componentWillMount() {
         this.buildingsForSeclection = [{
+            type: BuildingType.FACTORY,
+            image: 'images/factory_icon.png',
+            alt: 'factory preview',
+            costs: 20
+        }, {
             type: BuildingType.CACAOTREE,
             image: 'images/cacaotree_icon.png',
             alt: 'cacao tree preview',
@@ -52,6 +57,13 @@ class BuildingPalette extends Component {
                     if (this.buildingSelectionIsVisible()) {
                         return this.buildingsForSeclection.map((building, i) => {
                             let canBuild = this.playerCanBuild(building.costs);
+                            if (building.type === BuildingType.FACTORY) {
+                                canBuild = (this.props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
+                                           this.props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) && 
+                                           this.props.game.currentPlayerIndex === 0 &&
+                                           !this.props.game.players[0].hasFactory;
+                            }
+
                             let className = canBuild && this.props.selectedBuilding === building.type ? 'selected previewContainer' : 'previewContainer';
                             return <div className={className} key={i}>
                                     <div className={ canBuild ? '' : 'disabled'}></div>

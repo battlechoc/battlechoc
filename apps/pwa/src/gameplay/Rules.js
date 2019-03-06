@@ -153,6 +153,8 @@ class Rules {
             return true;
         } else if (action.type === UiActionTypes.changeLanguage) {
             return true;
+        } else if (action.type === UiActionTypes.deselectBuildings) {
+            return true;
         } else {
             return new Errors.ActionValidationError(action);
         }

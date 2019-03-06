@@ -3,6 +3,7 @@ import './Actionbar.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { finishTurn, finishBuildPhase } from '../gameplay/GameActions';
+import { deselectBuildings } from './UiActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import Fab from '@material-ui/core/Fab';
 import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings } from '@material-ui/icons';
@@ -111,7 +112,10 @@ class Actionbar extends Component {
                             color="primary"
                             aria-label="skip build phase"
                             className={(this.props.game.players[0].buildings > 0) ? "icon" : "icon blinking"}
-                            onClick={() => this.props.finishBuildPhase({ issuer: this.props.game.players[0].id })}>
+                            onClick={() => {
+                                this.props.finishBuildPhase({ issuer: this.props.game.players[0].id });
+                                this.props.deselectBuildings();
+                            }}>
                             <PlayArrow />
                         </Fab>,
                         <Fab
@@ -120,7 +124,10 @@ class Actionbar extends Component {
                             color="primary"
                             aria-label="finish turn"
                             className={(this.props.game.players[0].buildings === 0 && this.props.game.players[0].attacks === 0) ? "icon blinking" : "icon"}
-                            onClick={() => this.props.finishTurn({ issuer: this.props.game.players[0].id })}>
+                            onClick={() => {
+                                this.props.finishTurn({ issuer: this.props.game.players[0].id });
+                                this.props.deselectBuildings();
+                            }}>
                             <FastForward />
                         </Fab>
                     ]);
@@ -133,7 +140,10 @@ class Actionbar extends Component {
                                 color="primary"
                                 aria-label="finish turn"
                                 className={(this.props.game.players[0].attacks > 0) ? "icon" : "icon blinking"}
-                                onClick={() => this.props.finishTurn({ issuer: this.props.game.players[0].id })}>
+                                onClick={() => {
+                                    this.props.finishTurn({ issuer: this.props.game.players[0].id });
+                                    this.props.deselectBuildings();
+                                }}>
                                 <FastForward />
                             </Fab>
                         );
@@ -158,7 +168,8 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = {
     finishBuildPhase,
-    finishTurn
+    finishTurn,
+    deselectBuildings
 };
 
 const ActionbarContainer = connect(
