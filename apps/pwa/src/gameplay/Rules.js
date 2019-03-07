@@ -29,11 +29,42 @@ class Rules {
         return this.playerBoardCell(gameState, 1 - gameState.currentPlayerIndex, cellIdx);
     }
 
+    static getCellNeighbors(cellIdx, gameState) {
+        let neighbors = [];
+
+        const idxLeftOf = { row: cellIdx.row, col: cellIdx.col - 1 };
+        if (idxLeftOf.col >= 0) {
+            neighbors.push(this.currentPlayerBoardCell(gameState, idxLeftOf));
+        }
+
+        const idxRightOf = { row: cellIdx.row, col: cellIdx.col + 1 };
+        if (idxRightOf.col < gameState.board.size.cols) {
+            neighbors.push(this.currentPlayerBoardCell(gameState, idxRightOf));
+        }
+        
+        const idxTopOf = { row: cellIdx.row - 1, col: cellIdx.col };
+        if (idxTopOf.row >= 0) {
+            neighbors.push(this.currentPlayerBoardCell(gameState, idxTopOf));
+        }
+
+        const idxBelowOf = { row: cellIdx.row + 1, col: cellIdx.col };
+        if (idxBelowOf.row < gameState.board.size.row) {
+            neighbors.push(this.currentPlayerBoardCell(gameState, idxBelowOf));
+        }
+
+        return neighbors;
+    }
+
+    static canBuildFactoryExtensionOnCell(cellIdx, gameState) {
+        return this.getCellNeighbors(cellIdx, gameState).filter(cell => cell.occupiedBy.includes(GameEntities.BuildingType.FACTORY)).length > 0;
+    }
+
     static canBuildOnCell(cellIdx, buildingType, gameState) {
         let cell = this.currentPlayerBoardCell(gameState, cellIdx);
-        if (cell.occupiedBy.length === 0 ||
+        if ((buildingType !== GameEntities.BuildingType.FACTORY_EXTENSION && cell.occupiedBy.length === 0) ||
             (buildingType === GameEntities.BuildingType.CREAM && !cell.occupiedBy.includes(GameEntities.BuildingType.CREAM)) ||
-            (buildingType !== GameEntities.BuildingType.CREAM && cell.occupiedBy.length === 1 && cell.occupiedBy[0] === GameEntities.BuildingType.CREAM)) {
+            (buildingType === GameEntities.BuildingType.FACTORY_EXTENSION && ((cell.occupiedBy.length === 1 && cell.occupiedBy[0] === GameEntities.BuildingType.CREAM) || cell.occupiedBy.length === 0) && this.canBuildFactoryExtensionOnCell(cellIdx, gameState)) ||
+            (buildingType !== GameEntities.BuildingType.CREAM && buildingType !== GameEntities.BuildingType.FACTORY_EXTENSION && cell.occupiedBy.length === 1 && cell.occupiedBy[0] === GameEntities.BuildingType.CREAM)) {
             return true;
         } else {
             return new Errors.BuildNotPossibleError('Build not possible on given field row: ' +
