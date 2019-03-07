@@ -109,6 +109,11 @@ html, body, #root {
   justify-content: center;	
 }
 
+.quitGame {
+  margin-top: 20px !important;
+  margin-bottom: 5px !important;
+}
+
 .rotationIcon {
   margin-top: 2em;
   width: auto !important;

@@ -9,6 +9,7 @@ import { gameplayLogger } from './gameplay/GamePlayLogger';
 import actionValidator from './gameplay/ActionValidator';
 import { configureStore, getDefaultMiddleware } from 'redux-starter-kit'
 import { createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
+import red from '@material-ui/core/colors/red';
 
 const defaultTheme = createMuiTheme({
 	palette: {
@@ -16,7 +17,8 @@ const defaultTheme = createMuiTheme({
 		secondary: { main: '#324D5C' },
     	text: {
     		primary: 'rgba(0, 0, 0, 0.87)',
-    		secondary: 'rgba(255, 255, 255, 0.87)'
+    		secondary: 'rgba(255, 255, 255, 0.87)',
+    		error: red
     	}
   	},
   	typography: {
@@ -107,6 +109,12 @@ const theme = createMuiTheme({
     	MuiDialogContent: {
     		root: {
     			padding: '8px 64px'
+    		}
+    	},
+    	MuiButton: {
+    		outlined: {
+    			color: 'rgb(244, 67, 54)',
+    			border: '1px solid rgba(244, 67, 54, 0.23);'
     		}
     	}
     }

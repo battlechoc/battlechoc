@@ -19,6 +19,8 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { ScreenRotation } from '@material-ui/icons';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
+import Typography from '@material-ui/core/Typography';
+import Divider from '@material-ui/core/Divider';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -32,7 +34,8 @@ class App extends Component {
     super(props);
     this.state = {
       loadingProgress: 0,
-      showSettings: false
+      showSettings: false,
+      attentionTextVisible: false
     }
   }
 
@@ -507,7 +510,7 @@ class App extends Component {
 
           <Dialog
             open={this.state.showSettings}
-            onClose={() => this.setState({ showSettings: false })}
+            onClose={() => this.setState({ showSettings: false, attentionTextVisible: false })}
             aria-labelledby="form-dialog-title"
           >
             <DialogTitle id="form-dialog-title">{t[this.props.language].SETTINGS}</DialogTitle>
@@ -526,10 +529,29 @@ class App extends Component {
                   <option value="en">{t[this.props.language].ENGLISH}</option>
                   <option value="de">{t[this.props.language].GERMAN}</option>
                 </Select>
+                {
+                  typeof this.props.game !== 'undefined' ?
+                  <Button variant="outlined" className="quitGame" onClick={() => {
+                    if (this.state.attentionTextVisible) {
+                      this.endGame();
+                      this.setState({ showSettings: false, attentionTextVisible: false });
+                    } else {
+                      this.setState({ attentionTextVisible: true });
+                    }
+                  }}>
+                    { t[this.props.language].SETTINGS_QUIT }
+                  </Button>
+                  : null
+                }
+                {
+                  this.state.attentionTextVisible && typeof this.props.game !== 'undefined' ? 
+                  <Typography color="error" className="attentionText">{ t[this.props.language].SETTINGS_ATTENTION_TEXT }</Typography> 
+                  : null
+                }
               </FormControl>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => this.setState({ showSettings: false })} color="primary">
+              <Button onClick={() => this.setState({ showSettings: false, attentionTextVisible: false })} color="primary">
                 {t[this.props.language].BUTTON_BACK}
               </Button>
             </DialogActions>
