@@ -105,7 +105,11 @@ const gameplayReducer = createReducer({}, {
         let opponent = otherPlayer(state.game);
 
         if (attackedCell.occupiedBy.includes(GameEntities.BuildingType.FACTORY) || attackedCell.occupiedBy.includes(GameEntities.BuildingType.FACTORY_EXTENSION)) {
-            opponent.buildingsPerTurn -= 2;
+            if (attackedCell.occupiedBy.includes(GameEntities.BuildingType.FACTORY)) {
+                opponent.buildingsPerTurn = 0;
+            } else {
+                opponent.buildingsPerTurn = Math.max(0, opponent.buildingsPerTurn - 2);
+            }
             if (opponent.buildingsPerTurn === 0) {
                 opponent.hasFactory = false;
                 console.log('FACTORY DESTROYED');
