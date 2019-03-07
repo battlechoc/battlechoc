@@ -16,6 +16,7 @@ const BuildingType = Object.freeze({
     EASTER_FACTORY: 'BuildingType.EASTER_FACTORY',
     XMAS_FACTORY: 'BuildingType.XMAS_FACTORY',
     HOT_CHOCOLATE_BALISTA: 'BuildingType.HOT_CHOCOLATE_BALISTA',
+    CHOCOLATE_FOUNTAIN: 'BuildingType.CHOCOLATE_FOUNTAIN',
     isInstanceOf: function (buildingType) {
         if (buildingType === BuildingType.EMPTY ||
             buildingType === BuildingType.CREAM ||
@@ -25,7 +26,8 @@ const BuildingType = Object.freeze({
             buildingType === BuildingType.FACTORY_EXTENSION ||
             buildingType === BuildingType.EASTER_FACTORY ||
             buildingType === BuildingType.XMAS_FACTORY ||
-            buildingType === BuildingType.HOT_CHOCOLATE_BALISTA)
+            buildingType === BuildingType.HOT_CHOCOLATE_BALISTA ||
+            buildingType === BuildingType.CHOCOLATE_FOUNTAIN)
             return true;
         else
             return false;
@@ -124,6 +126,13 @@ function getEntity(entityType) {
                 id: uuidv4(),
                 type: entityType,
                 costs: 100,
+                cells: 1
+            };
+        case BuildingType.CHOCOLATE_FOUNTAIN:
+            return {
+                id: uuidv4(),
+                type: entityType,
+                costs: 180,
                 cells: 1
             };
         default:
