@@ -7,19 +7,25 @@ const BoardCellTypes = Object.freeze({
 });
 
 const BuildingType = Object.freeze({
-    EMPTY: 'BuildingsType.EMPTY',
-    CREAM: 'BuildingsType.CREAM',
-    FACTORY: 'BuildingsType.FACTORY',
+    EMPTY: 'BuildingType.EMPTY',
+    CREAM: 'BuildingType.CREAM',
+    FACTORY: 'BuildingType.FACTORY',
     FACTORY_EXTENSION: 'BuildingType.FACTORY_EXTENSION',
-    CACAOTREE: 'BuildingsType.CACAOTREE',
-    RUM_TRUFFLE_CANNON: 'BuildingsType.RUM_TRUFFLE_CANNON',
+    CACAOTREE: 'BuildingType.CACAOTREE',
+    RUM_TRUFFLE_CANNON: 'BuildingType.RUM_TRUFFLE_CANNON',
+    EASTER_FACTORY: 'BuildingType.EASTER_FACTORY',
+    XMAS_FACTORY: 'BuildingType.XMAS_FACTORY',
+    HOT_CHOCOLATE_BALISTA: 'BuildingType.HOT_CHOCOLATE_BALISTA',
     isInstanceOf: function (buildingType) {
         if (buildingType === BuildingType.EMPTY ||
             buildingType === BuildingType.CREAM ||
             buildingType === BuildingType.FACTORY ||
             buildingType === BuildingType.CACAOTREE ||
             buildingType === BuildingType.RUM_TRUFFLE_CANNON ||
-            buildingType === BuildingType.FACTORY_EXTENSION)
+            buildingType === BuildingType.FACTORY_EXTENSION ||
+            buildingType === BuildingType.EASTER_FACTORY ||
+            buildingType === BuildingType.XMAS_FACTORY ||
+            buildingType === BuildingType.HOT_CHOCOLATE_BALISTA)
             return true;
         else
             return false;
@@ -46,7 +52,7 @@ class Board {
                         cellType = BoardCellTypes.BROWN;
                         previewStyle = 'brown';
                     }
-                    
+
                     field.grid.push({
                         type: cellType,
                         previewStyle: previewStyle,
@@ -62,45 +68,66 @@ class Board {
     }
 }
 
-function getEntity(type) {
-    switch (type) {
+function getEntity(entityType) {
+    switch (entityType) {
         case BuildingType.FACTORY:
             return {
                 id: uuidv4(),
-                type: BuildingType.FACTORY,
+                type: entityType,
                 costs: 0,
                 cells: 1
             };
         case BuildingType.FACTORY_EXTENSION:
             return {
                 id: uuidv4(),
-                type: BuildingType.FACTORY_EXTENSION,
+                type: entityType,
                 costs: 150,
                 cells: 1
             };
         case BuildingType.CACAOTREE:
             return {
                 id: uuidv4(),
-                type: BuildingType.CACAOTREE,
+                type: entityType,
                 costs: 20,
                 cells: 1
             };
         case BuildingType.RUM_TRUFFLE_CANNON:
             return {
                 id: uuidv4(),
-                type: BuildingType.RUM_TRUFFLE_CANNON,
+                type: entityType,
                 costs: 60,
                 cells: 1
             };
         case BuildingType.CREAM:
             return {
                 id: uuidv4(),
-                type: BuildingType.CREAM,
+                type: entityType,
                 costs: 10,
                 cells: 1
             };
+        case BuildingType.EASTER_FACTORY:
+            return {
+                id: uuidv4(),
+                type: entityType,
+                costs: 240,
+                cells: 1
+            };
+        case BuildingType.XMAS_FACTORY:
+            return {
+                id: uuidv4(),
+                type: entityType,
+                costs: 100,
+                cells: 1
+            };
+        case BuildingType.HOT_CHOCOLATE_BALISTA:
+            return {
+                id: uuidv4(),
+                type: entityType,
+                costs: 100,
+                cells: 1
+            };
         default:
-            throw new Error("Invalid entity type given: " + type);
+            throw new Error("Invalid entity type given: " + entityType);
     }
 }
 
