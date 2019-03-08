@@ -51,7 +51,9 @@ const languages = {
 		MESSAGE_OPPONENT_DECIDE: 'Your opponent decides',
 		MESSAGE_WIN_GAME: 'Congratulations! You won this game',
 		MESSAGE_LOST_GAME: 'You lost',
-		MESSAGE_DRAW_GAME: 'Draw game!'
+		MESSAGE_DRAW_GAME: 'Draw game!',
+		META_DESCRIPTION: 'You like chocolate and games? Get started now and play battlechoc, a turn-based strategy game with cocoa flavor. Do you prefer apps over websites when it comes to gaming? Sure: Just add battlechoc to your home screen and play it offline wherever and whenever you want!',
+		META_KEYWORDS: 'Chocolate, Games, Strategy game, Board game, PWA, Cocoa, turn-based, Chocolate gun, Cocoa tree'
 	},
 	de: {
 		NEW_GAME: 'Neues Spiel',
@@ -104,6 +106,8 @@ const languages = {
 		MESSAGE_WIN_GAME: 'Glückwunsch! Du hast das Spiel gewonnen',
 		MESSAGE_LOST_GAME: 'Du hast verloren',
 		MESSAGE_DRAW_GAME: 'Unentschieden!',
+		META_DESCRIPTION: 'Du magst Schokolade und Spiele? Lege jetzt los und spiele battlechoc ein rundenbasiertes Strategiespiel mit Kakaoflavor. Apps sind dir lieber als Websites wenn es ums spielen geht? Klar: Füge battlechoc einfach zu deinem Homescreen hinzu und spiele es offline wo und wann du willst!',
+		META_KEYWORDS: 'Schokolade, Spiele, Strategiespiel, Brettspiel, PWA, Kakao, rundenbasiert, Schokoladenkanone, Kakaobaum'
 	}
 };
 

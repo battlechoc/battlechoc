@@ -20,7 +20,6 @@ import { ScreenRotation } from '@material-ui/icons';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import Typography from '@material-ui/core/Typography';
-import Divider from '@material-ui/core/Divider';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -122,6 +121,12 @@ class App extends Component {
       finishTurn: this.props.finishTurn,
       finishBuildPhase: this.props.finishBuildPhase
     });
+
+    // SEO optimization
+    if (this.props.language !== 'en') {
+      document.querySelector('meta[name="description"]').setAttribute("content", t[this.props.language].META_DESCRIPTION);
+      document.querySelector('meta[name="keywords"]').setAttribute("content", t[this.props.language].META_KEYWORDS);
+    } 
   }
 
   componentWillReceiveProps(nextProps) {
@@ -147,8 +152,13 @@ class App extends Component {
       }
     }
 
+    // switch language also for meta tags #SEO
+    if (nextProps.language !== this.props.language) {
+      document.querySelector('meta[name="description"]').setAttribute("content", t[nextProps.language].META_DESCRIPTION);
+      document.querySelector('meta[name="keywords"]').setAttribute("content", t[nextProps.language].META_KEYWORDS);
+    } 
+
     const gameTransition = getGameTransition(this.props.game, nextProps.game);
-    console.log(gameTransition);
 
     if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
       this.hud.unlockUi();
