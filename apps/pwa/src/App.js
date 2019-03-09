@@ -15,6 +15,7 @@ import { GameStateTypes } from './gameplay/GameplayReducer'
 import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError, InvalidActionIssuer } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import Rules from './gameplay/Rules';
+import { openDb, deleteDb } from 'idb';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { ScreenRotation } from '@material-ui/icons';
 import Button from '@material-ui/core/Button';
@@ -42,7 +43,48 @@ class App extends Component {
     this.setState({ loadingProgress: progress });
   }
 
+  async setupOfflineStorage() {
+    const dbPromise = openDb('battlechoc-store', 1, upgradeDB => {
+      upgradeDB.createObjectStore('gamestate');
+    });
+
+    const idbKeyval = {
+      async get(key) {
+        const db = await dbPromise;
+        return db.transaction('gamestate').objectStore('gamestate').get(key);
+      },
+      async set(key, val) {
+        const db = await dbPromise;
+        const tx = db.transaction('gamestate', 'readwrite');
+        tx.objectStore('gamestate').put(val, key);
+        return tx.complete;
+      },
+      async delete(key) {
+        const db = await dbPromise;
+        const tx = db.transaction('gamestate', 'readwrite');
+        tx.objectStore('gamestate').delete(key);
+        return tx.complete;
+      },
+      async clear() {
+        const db = await dbPromise;
+        const tx = db.transaction('gamestate', 'readwrite');
+        tx.objectStore('gamestate').clear();
+        return tx.complete;
+      },
+      async keys() {
+        const db = await dbPromise;
+        return db.transaction('gamestate').objectStore('gamestate').getAllKeys();
+      },
+    };
+
+    //idbKeyval.set('testkey', { hello: 'world' });
+    idbKeyval.get('testkey').then(val => console.log(val));
+  }
+
   async componentDidMount() {
+    // prepare indexedDB
+    this.setupOfflineStorage();
+
     // Load Models
     await AssetLoader.loadAssets(progress => this.updateProgressbar(progress));
 
@@ -126,7 +168,7 @@ class App extends Component {
     if (this.props.language !== 'en') {
       document.querySelector('meta[name="description"]').setAttribute("content", t[this.props.language].META_DESCRIPTION);
       document.querySelector('meta[name="keywords"]').setAttribute("content", t[this.props.language].META_KEYWORDS);
-    } 
+    }
   }
 
   componentWillReceiveProps(nextProps) {
@@ -156,7 +198,7 @@ class App extends Component {
     if (nextProps.language !== this.props.language) {
       document.querySelector('meta[name="description"]').setAttribute("content", t[nextProps.language].META_DESCRIPTION);
       document.querySelector('meta[name="keywords"]').setAttribute("content", t[nextProps.language].META_KEYWORDS);
-    } 
+    }
 
     const gameTransition = getGameTransition(this.props.game, nextProps.game);
 
@@ -541,22 +583,22 @@ class App extends Component {
                 </Select>
                 {
                   typeof this.props.game !== 'undefined' ?
-                  <Button variant="outlined" className="quitGame" onClick={() => {
-                    if (this.state.attentionTextVisible) {
-                      this.endGame();
-                      this.setState({ showSettings: false, attentionTextVisible: false });
-                    } else {
-                      this.setState({ attentionTextVisible: true });
-                    }
-                  }}>
-                    { t[this.props.language].SETTINGS_QUIT }
-                  </Button>
-                  : null
+                    <Button variant="outlined" className="quitGame" onClick={() => {
+                      if (this.state.attentionTextVisible) {
+                        this.endGame();
+                        this.setState({ showSettings: false, attentionTextVisible: false });
+                      } else {
+                        this.setState({ attentionTextVisible: true });
+                      }
+                    }}>
+                      {t[this.props.language].SETTINGS_QUIT}
+                    </Button>
+                    : null
                 }
                 {
-                  this.state.attentionTextVisible && typeof this.props.game !== 'undefined' ? 
-                  <Typography color="error" className="attentionText">{ t[this.props.language].SETTINGS_ATTENTION_TEXT }</Typography> 
-                  : null
+                  this.state.attentionTextVisible && typeof this.props.game !== 'undefined' ?
+                    <Typography color="error" className="attentionText">{t[this.props.language].SETTINGS_ATTENTION_TEXT}</Typography>
+                    : null
                 }
               </FormControl>
             </DialogContent>
