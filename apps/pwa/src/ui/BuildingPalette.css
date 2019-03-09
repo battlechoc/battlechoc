@@ -1,3 +1,13 @@
+#buildings_row_one {
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  z-index: 1;
+  margin-bottom: 5px;
+  margin-left: 5px;
+  display: flex;
+}
+
 #buildings {
   position: absolute;
   bottom: 0;

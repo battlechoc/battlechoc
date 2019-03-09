@@ -41,7 +41,7 @@ class Rules {
         if (idxRightOf.col < gameState.board.size.cols) {
             neighbors.push(this.currentPlayerBoardCell(gameState, idxRightOf));
         }
-        
+
         const idxTopOf = { row: cellIdx.row - 1, col: cellIdx.col };
         if (idxTopOf.row >= 0) {
             neighbors.push(this.currentPlayerBoardCell(gameState, idxTopOf));
@@ -56,26 +56,29 @@ class Rules {
     }
 
     static canBuildFactoryExtensionOnCell(cellIdx, gameState) {
-        return this.getCellNeighbors(cellIdx, gameState).filter(cell => cell.occupiedBy.includes(GameEntities.BuildingType.FACTORY)).length > 0;
+        return this.getCellNeighbors(cellIdx, gameState).filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.FACTORY)).length > 0;
     }
 
-    static canBuildOnCell(cellIdx, buildingType, gameState) {
+    static canBuildOnCell(cellIdx, entityType, gameState) {
         let cell = this.currentPlayerBoardCell(gameState, cellIdx);
-        if ((buildingType !== GameEntities.BuildingType.FACTORY_EXTENSION && cell.occupiedBy.length === 0) ||
-            (buildingType === GameEntities.BuildingType.CREAM && !cell.occupiedBy.includes(GameEntities.BuildingType.CREAM)) ||
-            (buildingType === GameEntities.BuildingType.FACTORY_EXTENSION && ((cell.occupiedBy.length === 1 && cell.occupiedBy[0] === GameEntities.BuildingType.CREAM) || cell.occupiedBy.length === 0) && this.canBuildFactoryExtensionOnCell(cellIdx, gameState)) ||
-            (buildingType !== GameEntities.BuildingType.CREAM && buildingType !== GameEntities.BuildingType.FACTORY_EXTENSION && cell.occupiedBy.length === 1 && cell.occupiedBy[0] === GameEntities.BuildingType.CREAM)) {
+        if (entityType === GameEntities.EntityType.FRUIT_CANNON && cell.occupiedBy.includes(GameEntities.EntityType.RUM_TRUFFLE_CANNON)) {
+            return true;
+        } else if (entityType !== GameEntities.EntityType.FRUIT_CANNON &&
+            ((entityType !== GameEntities.EntityType.FACTORY_EXTENSION && cell.occupiedBy.length === 0) ||
+                (entityType === GameEntities.EntityType.CREAM && !cell.occupiedBy.includes(GameEntities.EntityType.CREAM)) ||
+                (entityType === GameEntities.EntityType.FACTORY_EXTENSION && ((cell.occupiedBy.length === 1 && cell.occupiedBy[0] === GameEntities.EntityType.CREAM) || cell.occupiedBy.length === 0) && this.canBuildFactoryExtensionOnCell(cellIdx, gameState)) ||
+                (entityType !== GameEntities.EntityType.CREAM && entityType !== GameEntities.EntityType.FACTORY_EXTENSION && cell.occupiedBy.length === 1 && cell.occupiedBy[0] === GameEntities.EntityType.CREAM))) {
             return true;
         } else {
             return new Errors.BuildNotPossibleError('Build not possible on given field row: ' +
-                cellIdx.row + ' col: ' + cellIdx.col + ', building type: ' + buildingType + ' cell occupied by: ' + cell.occupiedBy);
+                cellIdx.row + ' col: ' + cellIdx.col + ', entity type: ' + entityType + ' cell occupied by: ' + cell.occupiedBy);
         }
     }
 
     static countTrees(grid) {
         let count = 0;
         for (var cell in grid) {
-            if (grid[cell].occupiedBy.includes(GameEntities.BuildingType.CACAOTREE)) {
+            if (grid[cell].occupiedBy.includes(GameEntities.EntityType.CACAOTREE)) {
                 ++count;
             }
         }
@@ -163,8 +166,8 @@ class Rules {
         } else if (action.type === GameActionTypes.build) {
             if (currentState !== GameStateTypes.BUILD_PHASE && currentState !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && currentState !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
                 return new Errors.UnexpectedStateError(currentState);
-            } else if ((this.currentPlayer(state.gameplay.game).buildings === 0 || (this.currentPlayer(state.gameplay.game).hasFactory === false && action.payload.building.type === GameEntities.BuildingType.FACTORY_EXTENSION)) &&
-                action.payload.building.type !== GameEntities.BuildingType.FACTORY) {
+            } else if ((this.currentPlayer(state.gameplay.game).buildings === 0 || (this.currentPlayer(state.gameplay.game).hasFactory === false && action.payload.building.type === GameEntities.EntityType.FACTORY_EXTENSION)) &&
+                action.payload.building.type !== GameEntities.EntityType.FACTORY) {
                 return new Errors.NoBuildingsLeftError();
             } else if (this.currentPlayer(state.gameplay.game).cacao < action.payload.building.costs) {
                 return new Errors.NoCacaoLeftError();

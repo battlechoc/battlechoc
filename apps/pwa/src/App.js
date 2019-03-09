@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import AssetLoader from './AssetLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
-import { BuildingType, getEntity } from './gameplay/GameEntities';
+import { EntityType, createEntity } from './gameplay/GameEntities';
 import { startGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
 import { changeLanguage, deselectBuildings } from './ui/UiActions';
 import { connect } from 'react-redux';
@@ -234,15 +234,15 @@ class App extends Component {
   playerFieldClick() {
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
     intersects = intersects.filter(intersect => intersect.object.name.startsWith('Cell'));
-    let buildingSelected = this.props.selectedBuilding && this.props.selectedBuilding !== BuildingType.EMPTY;
+    let buildingSelected = this.props.selectedBuilding && this.props.selectedBuilding !== EntityType.EMPTY;
     let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
       this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
     if (intersects.length > 0 && !this.isSwiping && (buildingSelected || (initialPlacement && this.props.game.players[0].hasFactory !== true))) {
       let building = null;
       if (initialPlacement) {
-        building = getEntity(BuildingType.FACTORY);
+        building = createEntity(EntityType.FACTORY);
       } else {
-        building = getEntity(this.props.selectedBuilding);
+        building = createEntity(this.props.selectedBuilding);
       }
 
       const position = intersects[0].object.parent.position;

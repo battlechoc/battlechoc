@@ -1,9 +1,9 @@
 import { createReducer } from 'redux-starter-kit';
 import * as UiActions from './UiActions';
-import { BuildingType } from '../gameplay/GameEntities';
+import { EntityType } from '../gameplay/GameEntities';
 
 const uiReducer = createReducer({
-        selectedBuilding: BuildingType.FACTORY,
+        selectedBuilding: EntityType.FACTORY,
         language: window.location.pathname.substr(1,2) === 'de' ? 'de' : 'en'
     }, {
     [UiActions.selectBuilding]: (state, action) => {
@@ -13,7 +13,7 @@ const uiReducer = createReducer({
         state.language = action.payload;
     },
     [UiActions.deselectBuildings]: (state, action) => {
-        state.selectedBuilding = BuildingType.EMPTY;
+        state.selectedBuilding = EntityType.EMPTY;
     }
 })
 

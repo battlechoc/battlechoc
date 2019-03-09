@@ -1,44 +1,59 @@
 import AssetLoader from './AssetLoader.js';
 import * as THREE from 'three';
-import { BuildingType } from './gameplay/GameEntities'
+import { EntityType } from './gameplay/GameEntities'
 
 class Building {
-	constructor(buildingType) {
-		if (BuildingType.isInstanceOf(buildingType)) {
-			this.buildingType = buildingType;
+	constructor(entityType) {
+		if (EntityType.isInstanceOf(entityType)) {
+			this.entityType = entityType;
 		} else {
-			throw new Error(buildingType + ' is not instance of BuildingType');
+			throw new Error(entityType + ' is not instance of EntityType');
 		}
 
-		if (this.buildingType === BuildingType.FACTORY) {
+		if (this.entityType === EntityType.FACTORY) {
 			this._model = AssetLoader.models[3].scene.clone();
 			this._offset = [0, 3, 0];
-		} else if (this.buildingType === BuildingType.FACTORY_EXTENSION) {
+		} else if (this.entityType === EntityType.FACTORY_EXTENSION) {
 			this._model = AssetLoader.models[4].scene.clone();
 			this._offset = [0, 3, 0];
-		} else if (this.buildingType === BuildingType.CACAOTREE) {
+		} else if (this.entityType === EntityType.CACAOTREE) {
 			this._model = AssetLoader.models[5].scene.clone();
 			this._offset = [1, 2, 1.5];
-		} else if (this.buildingType === BuildingType.RUM_TRUFFLE_CANNON) {
+		} else if (this.entityType === EntityType.RUM_TRUFFLE_CANNON) {
 			this._model = AssetLoader.models[6].scene.clone();
 			this._offset = [2, 4, 1.5];
-		} else if (this.buildingType === BuildingType.CREAM) {
+		} else if (this.entityType === EntityType.CREAM) {
 			this._model = AssetLoader.models[7].scene.clone();
-			this._model.scale.set(3,3,3);
+			this._model.scale.set(3, 3, 3);
 			this._offset = [0, 0, 0];
+		} else if (this.entityType === EntityType.EASTER_FACTORY) {
+			this._model = AssetLoader.models[5].scene.clone();
+			this._offset = [1, 2, 1.5];
+		} else if (this.entityType === EntityType.XMAS_FACTORY) {
+			this._model = AssetLoader.models[5].scene.clone();
+			this._offset = [1, 2, 1.5];
+		} else if (this.entityType === EntityType.HOT_CHOCOLATE_BALISTA) {
+			this._model = AssetLoader.models[5].scene.clone();
+			this._offset = [1, 2, 1.5];
+		} else if (this.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
+			this._model = AssetLoader.models[5].scene.clone();
+			this._offset = [1, 2, 1.5];
+		} else if (this.entityType === EntityType.FRUIT_CANNON) {
+			this._model = AssetLoader.models[5].scene.clone();
+			this._offset = [1, 2, 1.5];
 		}
 	}
 
 	explode() {
-		if (this.buildingType === BuildingType.CACAOTREE) {
-			this._model = AssetLoader.models[9].scene.clone();	
-		} else if (this.buildingType === BuildingType.FACTORY) {
+		if (this.entityType === EntityType.CACAOTREE) {
+			this._model = AssetLoader.models[9].scene.clone();
+		} else if (this.entityType === EntityType.FACTORY) {
 			this._model = AssetLoader.models[10].scene.clone();
-		} else if (this.buildingType === BuildingType.RUM_TRUFFLE_CANNON) {
+		} else if (this.entityType === EntityType.RUM_TRUFFLE_CANNON) {
 			this._model = AssetLoader.models[11].scene.clone();
 		} else {
 			this._model = AssetLoader.models[8].scene.clone();
-			this._model.scale.set(3,3,3);
+			this._model.scale.set(3, 3, 3);
 		}
 	}
 
@@ -47,7 +62,7 @@ class Building {
 			position.x + this._offset[0],
 			position.y + this._offset[1],
 			position.z + this._offset[2],
-		);		
+		);
 	}
 
 	show() {
@@ -72,7 +87,7 @@ class Building {
 	}
 
 	makeTransparent() {
-		this._model.children[2].material = new THREE.MeshBasicMaterial({opacity: 0.6, transparent: true});
+		this._model.children[2].material = new THREE.MeshBasicMaterial({ opacity: 0.6, transparent: true });
 	}
 
 	makeCreamy() {

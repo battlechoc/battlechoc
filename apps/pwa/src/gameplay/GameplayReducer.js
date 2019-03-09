@@ -83,17 +83,25 @@ const gameplayReducer = createReducer({}, {
     },
     [GameActions.build]: (state, action) => {
         currentPlayerBoardCell(state.game, action.payload.building.position.row, action.payload.building.position.col).occupiedBy.push(action.payload.building.type);
-        if (action.payload.building.type === GameEntities.BuildingType.FACTORY) {
-            currentPlayer(state.game).buildingsPerTurn = 2;
+        if (action.payload.building.type === GameEntities.EntityType.FACTORY) {
+            currentPlayer(state.game).buildingsPerTurn = action.payload.building.buildingsPerTurn;
             currentPlayer(state.game).hasFactory = true;
         } else {
-            if (action.payload.building.type === GameEntities.BuildingType.CACAOTREE) {
-                currentPlayer(state.game).cacaoPerTurn += 30;
-            } else if (action.payload.building.type === GameEntities.BuildingType.RUM_TRUFFLE_CANNON) {
-                currentPlayer(state.game).attacksPerTurn += 1;
-                currentPlayer(state.game).attacks += 1;
-            } else if (action.payload.building.type === GameEntities.BuildingType.FACTORY_EXTENSION) {
-                currentPlayer(state.game).buildingsPerTurn += 2;
+            if (action.payload.building.type === GameEntities.EntityType.CACAOTREE) {
+                currentPlayer(state.game).cacaoPerTurn += action.payload.building.cacaoPerTurn;
+            } else if (action.payload.building.type === GameEntities.EntityType.RUM_TRUFFLE_CANNON) {
+                currentPlayer(state.game).attacksPerTurn += action.payload.building.attacksPerTurn;
+                currentPlayer(state.game).attacks += action.payload.building.attacksPerTurn;
+            } else if (action.payload.building.type === GameEntities.EntityType.FRUIT_CANNON) {
+                currentPlayer(state.game).fruitAttacksPerTurn += action.payload.building.fruitAttacksPerTurn;
+                currentPlayer(state.game).fruitAttacks += action.payload.building.fruitAttacksPerTurn;
+                let cell = currentPlayerBoardCell(state.game, action.payload.building.position.row, action.payload.building.position.col);
+                cell.occupiedBy.splice(cell.occupiedBy.indexOf(GameEntities.EntityType.RUM_TRUFFLE_CANNON, 1));
+            } else if (action.payload.building.type === GameEntities.EntityType.HOT_CHOCOLATE_BALLISTA) {
+                currentPlayer(state.game).hotChocolateAttacksPerTurn += action.payload.building.hotChocolateAttacksPerTurn;
+                currentPlayer(state.game).hotChocolateAttacks += action.payload.building.hotChocolateAttacksPerTurn;
+            } else if (action.payload.building.type === GameEntities.EntityType.FACTORY_EXTENSION) {
+                currentPlayer(state.game).buildingsPerTurn += action.payload.building.buildingsPerTurn;
             }
             currentPlayer(state.game).buildings -= 1;
             currentPlayer(state.game).cacao -= action.payload.building.costs;
@@ -103,21 +111,21 @@ const gameplayReducer = createReducer({}, {
         currentPlayer(state.game).attacks = currentPlayer(state.game).attacks - 1;
         let attackedCell = otherPlayerBoardCell(state.game, action.payload);
         let opponent = otherPlayer(state.game);
-
-        if (attackedCell.occupiedBy.includes(GameEntities.BuildingType.FACTORY) || attackedCell.occupiedBy.includes(GameEntities.BuildingType.FACTORY_EXTENSION)) {
-            opponent.buildingsPerTurn = opponent.buildingsPerTurn - 2;
+        if (attackedCell.occupiedBy.includes(GameEntities.EntityType.FACTORY) || attackedCell.occupiedBy.includes(GameEntities.EntityType.FACTORY_EXTENSION)) {
+            opponent.buildingsPerTurn -= (attackedCell.occupiedBy.includes(GameEntities.EntityType.FACTORY)) ?
+                GameEntities.getEntityDescriptor(GameEntities.EntityType.FACTORY).buildingsPerTurn :
+                GameEntities.getEntityDescriptor(GameEntities.EntityType.FACTORY_EXTENSION).buildingsPerTurn;
             if (opponent.buildingsPerTurn === 0) {
                 opponent.hasFactory = false;
                 console.log('FACTORY DESTROYED');
             }
-        } else if (attackedCell.occupiedBy.includes(GameEntities.BuildingType.CACAOTREE)) {
-            opponent.cacaoPerTurn -= 30;
+        } else if (attackedCell.occupiedBy.includes(GameEntities.EntityType.CACAOTREE)) {
+            opponent.cacaoPerTurn -= GameEntities.getEntityDescriptor(GameEntities.EntityType.CACAOTREE).cacaoPerTurn;
             console.log('CACAOTREE DESTROYED');
-        } else if (attackedCell.occupiedBy.includes(GameEntities.BuildingType.RUM_TRUFFLE_CANNON)) {
-            opponent.attacksPerTurn -= 1;
+        } else if (attackedCell.occupiedBy.includes(GameEntities.EntityType.RUM_TRUFFLE_CANNON)) {
+            opponent.attacksPerTurn -= GameEntities.getEntityDescriptor(GameEntities.EntityType.RUM_TRUFFLE_CANNON).attacksPerTurn;
             console.log('CANNON DESTROYED');
         }
-
         attackedCell.occupiedBy = [];
     },
     [GameActions.finishGame]: (state, action) => {

@@ -3,79 +3,104 @@ import './BuildingPalette.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { selectBuilding } from './UiActions';
-import { BuildingType } from '../gameplay/GameEntities';
+import { EntityType, getEntityDescriptor } from '../gameplay/GameEntities';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 class BuildingPalette extends Component {
     componentWillMount() {
         this.buildingsForSeclection = [{
-            type: BuildingType.FACTORY,
+            type: EntityType.FACTORY,
             image: 'images/factory_icon.png',
             alt: 'factory preview',
-            costs: 20
+            costs: getEntityDescriptor(EntityType.FACTORY).costs
         }, {
-            type: BuildingType.CACAOTREE,
+            type: EntityType.CACAOTREE,
             image: 'images/cacaotree_icon.png',
             alt: 'cacao tree preview',
-            costs: 20
+            costs: getEntityDescriptor(EntityType.CACAOTREE).costs
         }, {
-            type: BuildingType.RUM_TRUFFLE_CANNON,
+            type: EntityType.RUM_TRUFFLE_CANNON,
             image: 'images/cannon_icon.png',
             alt: 'cannon preview',
-            costs: 60
+            costs: getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON).costs
         }, {
-            type: BuildingType.FACTORY_EXTENSION,
+            type: EntityType.FACTORY_EXTENSION,
             image: 'images/factory_extension_icon.png',
             alt: 'factory extension preview',
-            costs: 150
+            costs: getEntityDescriptor(EntityType.FACTORY_EXTENSION).costs
         }, {
-            type: BuildingType.CREAM,
+            type: EntityType.CREAM,
             image: 'images/cream_icon.png',
             alt: 'cream preview',
-            costs: 10
+            costs: getEntityDescriptor(EntityType.CREAM).costs
+        }, {
+            type: EntityType.FRUIT_CANNON,
+            image: 'images/cacaotree_icon.png',
+            alt: 'fruit cannon',
+            costs: getEntityDescriptor(EntityType.FRUIT_CANNON).costs
+        }, {
+            type: EntityType.EASTER_FACTORY,
+            image: 'images/cacaotree_icon.png',
+            alt: 'easter factory',
+            costs: getEntityDescriptor(EntityType.EASTER_FACTORY).costs
+        }, {
+            type: EntityType.XMAS_FACTORY,
+            image: 'images/cacaotree_icon.png',
+            alt: 'xmas factory',
+            costs: getEntityDescriptor(EntityType.XMAS_FACTORY).costs
+        }, {
+            type: EntityType.HOT_CHOCOLATE_BALLISTA,
+            image: 'images/cacaotree_icon.png',
+            alt: 'hot chocolate ballista',
+            costs: getEntityDescriptor(EntityType.HOT_CHOCOLATE_BALLISTA).costs
+        }, {
+            type: EntityType.CHOCOLATE_FOUNTAIN,
+            image: 'images/cacaotree_icon.png',
+            alt: 'chocolate fountain',
+            costs: getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN).costs
         }];
     }
 
     buildingSelectionIsVisible() {
         return (this.props.state === GameStateTypes.BUILD_PHASE ||
             this.props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-            this.props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) && 
+            this.props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) &&
             this.props.game.currentPlayerIndex === 0;
     }
 
     playerCanBuild(costs) {
-        return this.props.game.players[0].hasFactory && 
-               this.props.game.players[0].cacao >= costs &&
-               this.props.game.players[0].buildings > 0;
+        return this.props.game.players[0].hasFactory &&
+            this.props.game.players[0].cacao >= costs &&
+            this.props.game.players[0].buildings > 0;
     }
 
     render() {
         if (this.props.isVisible) {
-            return(
+            return (
                 <div id="buildings">
-                {(() => {
-                    if (this.buildingSelectionIsVisible()) {
-                        return this.buildingsForSeclection.map((building, i) => {
-                            let canBuild = this.playerCanBuild(building.costs);
-                            if (building.type === BuildingType.FACTORY) {
-                                canBuild = (this.props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-                                           this.props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) && 
-                                           this.props.game.currentPlayerIndex === 0 &&
-                                           !this.props.game.players[0].hasFactory;
-                            }
+                    {(() => {
+                        if (this.buildingSelectionIsVisible()) {
+                            return this.buildingsForSeclection.map((building, i) => {
+                                let canBuild = this.playerCanBuild(building.costs);
+                                if (building.type === EntityType.FACTORY) {
+                                    canBuild = (this.props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
+                                        this.props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) &&
+                                        this.props.game.currentPlayerIndex === 0 &&
+                                        !this.props.game.players[0].hasFactory;
+                                }
 
-                            let className = canBuild && this.props.selectedBuilding === building.type ? 'selected previewContainer' : 'previewContainer';
-                            return <div className={className} key={i}>
-                                    <div className={ canBuild ? '' : 'disabled'}></div>
+                                let className = canBuild && this.props.selectedBuilding === building.type ? 'selected previewContainer' : 'previewContainer';
+                                return <div className={className} key={i}>
+                                    <div className={canBuild ? '' : 'disabled'}></div>
                                     <img alt={building.alt} className={canBuild ? 'enabled preview' : 'preview'} src={building.image} onClick={() => {
                                         if (canBuild) {
                                             this.props.selectBuilding(building.type);
                                         }
                                     }} />
-                            </div>
-                        });
-                    }
-                })()}
+                                </div>
+                            });
+                        }
+                    })()}
                 </div>
             );
         } else {

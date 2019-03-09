@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { chooseField, chooseStart } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
-import { BuildingType } from '../gameplay/GameEntities';
+import { EntityType } from '../gameplay/GameEntities';
 import Tooltip from './Tooltip';
 import Actionbar from './Actionbar';
 import InfoPanel from './InfoPanel';
@@ -155,7 +155,7 @@ class Hud extends Component {
                                     <div className={(this.state.clickable ? 'active ' : null) + ' button'} onClick={() => this.choose('LEFT_GAMEFIELD')}>
                                         {(() => {
                                             if (typeof this.props.game.board !== 'undefined') {
-                                                const creamedCells = this.props.game.board.fields[0].grid.filter(cell => cell.occupiedBy.includes(BuildingType.CREAM));
+                                                const creamedCells = this.props.game.board.fields[0].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
                                                 return <div className="creamedCellCount">
                                                             <img alt="filled with cream" src="images/cream_preview.png" />
                                                             <p>{creamedCells.length}</p>
@@ -167,7 +167,7 @@ class Hud extends Component {
                                                 if (typeof this.props.game.board !== 'undefined') {
                                                     return this.props.game.board.fields[0].grid.map(
                                                         (cell, i) => {
-                                                            if (cell.occupiedBy.includes(BuildingType.CREAM)) {
+                                                            if (cell.occupiedBy.includes(EntityType.CREAM)) {
                                                                 return <div key={i} className={cell.previewStyle}>
                                                                             <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
                                                                         </div>
@@ -188,7 +188,7 @@ class Hud extends Component {
                                     <div className={(this.state.clickable ? 'active ' : null) + ' button'} onClick={() => this.choose('RIGHT_GAMEFIELD')}>
                                         {(() => {
                                             if (typeof this.props.game.board !== 'undefined') {
-                                                const creamedCells = this.props.game.board.fields[1].grid.filter(cell => cell.occupiedBy.includes(BuildingType.CREAM));
+                                                const creamedCells = this.props.game.board.fields[1].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
                                                 return <div className="creamedCellCount">
                                                             <img alt="filled with cream" src="images/cream_preview.png" />
                                                             <p>{creamedCells.length}</p>
@@ -200,7 +200,7 @@ class Hud extends Component {
                                                 if (typeof this.props.game.board !== 'undefined') {
                                                     return this.props.game.board.fields[1].grid.map(
                                                         (cell, i) => {
-                                                            if (cell.occupiedBy.includes(BuildingType.CREAM)) {
+                                                            if (cell.occupiedBy.includes(EntityType.CREAM)) {
                                                                 return <div key={i} className={cell.previewStyle}>
                                                                             <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
                                                                         </div>

@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import './Tooltip.css';
 import { connect } from 'react-redux';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
-import { getEntity, BuildingType } from '../gameplay/GameEntities';
+import { getEntityDescriptor, EntityType } from '../gameplay/GameEntities';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { withStyles } from '@material-ui/core/styles';
 import ExpansionPanel from '@material-ui/core/ExpansionPanel';
@@ -75,16 +75,16 @@ class Tooltip extends Component {
         } else if (gameState === GameStateTypes.BUILD_PHASE) {
             title = t[this.props.language].TOOLTIP_BUILD_PHASE_TITLE;
             if (currentPlayer === 0) {
-                if (typeof this.props.selectedBuilding === 'undefined' || this.props.selectedBuilding === BuildingType.EMPTY) {
+                if (typeof this.props.selectedBuilding === 'undefined' || this.props.selectedBuilding === EntityType.EMPTY) {
                     message = t[this.props.language].TOOLTIP_BUILD_PHASE_MESSAGE;
                 } else {
-                    const building = getEntity(this.props.selectedBuilding);
-                    const { info, costs, advantages } = t[this.props.language].TOOLTIP_BUILDING_INFO(building);
+                    const building = getEntityDescriptor(this.props.selectedBuilding);
+                    const { info, costs, advantages } = t[this.props.language].TOOLTIP_BUILDING_INFO(this.props.selectedBuilding, building);
                     message = <div class="tooltipBuildingInfo">
-                                <p>{info}</p>
-                                {typeof costs !== 'undefined' ? <p>{ costs }</p> : null}
-                                {typeof advantages !== 'undefined' ? <p>{ advantages }</p> : null}
-                              </div>;
+                        <p>{info}</p>
+                        {typeof costs !== 'undefined' ? <p>{costs}</p> : null}
+                        {typeof advantages !== 'undefined' ? <p>{advantages}</p> : null}
+                    </div>;
                 }
             }
         } else if (gameState === GameStateTypes.ATTACK_PHASE) {

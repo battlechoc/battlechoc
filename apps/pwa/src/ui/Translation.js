@@ -1,4 +1,4 @@
-import { BuildingType } from '../gameplay/GameEntities';
+import { EntityType } from '../gameplay/GameEntities';
 
 const languages = {
 	en: {
@@ -13,26 +13,26 @@ const languages = {
 		TOOLTIP_INITIAL_TURN_TITLE: 'Initial Turn',
 		TOOLTIP_INITIAL_TURN_MESSAGE: 'In the first round you can choose a playing field or the first move',
 		TOOLTIP_INITIAL_TURN_OPPONENT: name => name + ' can now select a game field',
-		TOOLTIP_BUILDING_INFO: building => {
-			switch(building.type) {
-				case BuildingType.CREAM:
+		TOOLTIP_BUILDING_INFO: (type, building) => {
+			switch(type) {
+				case EntityType.CREAM:
 					return {
 								info: 'Buildings built in cream will be hidden from the enemy. The building order of cream and buildings does not matter',
 						   		costs:'Cacao costs: ' + building.costs
 						    }
-				case BuildingType.FACTORY_EXTENSION:
+				case EntityType.FACTORY_EXTENSION:
 					return {
 								info: 'A factory extension can only be placed directly next to your factory',
 						   		costs: 'Cacao costs: ' + building.costs,
 						   		advantages: 'Buildings per turn +2'
 						   	}
-				case BuildingType.CACAOTREE:
+				case EntityType.CACAOTREE:
 					return {
 								info: 'The cacao tree offers you all the resources you need',
 						   		costs: 'Cacao costs: ' + building.costs,
 						   		advantages: 'Cacao per turn +30'
 						    }
-				case BuildingType.RUM_TRUFFLE_CANNON:
+				case EntityType.RUM_TRUFFLE_CANNON:
 					return {
 								info: 'The rum truffle cannon leads you to victory',
 						   		costs: 'Cacao costs: ' + building.costs,
@@ -69,24 +69,24 @@ const languages = {
 		TOOLTIP_INITIAL_TURN_OPPONENT: name => name + ' kann nun ein Spielfeld aussuchen',
 		TOOLTIP_BUILDING_INFO: building => {
 			switch(building.type) {
-				case BuildingType.CREAM:
+				case EntityType.CREAM:
 					return {
 								info: 'Gebäude die in Sahne gebaut sind bleiben dem Gegner verborgen. Die Baureihenfolge von Sahne und Gebäude sind dabei egal',
 						   		costs:'Kakaokosten: ' + building.costs
 						    }
-				case BuildingType.FACTORY_EXTENSION:
+				case EntityType.FACTORY_EXTENSION:
 					return {
 								info: 'Eine Fabrikerweiterung kann nur direkt neben deiner Fabrik platziert werden',
 						   		costs: 'Kakaokosten: ' + building.costs,
 						   		advantages: 'Gebäude pro Runde +2'
 						   	}
-				case BuildingType.CACAOTREE:
+				case EntityType.CACAOTREE:
 					return {
 								info: 'Der Kakaobaum gibt dir alles was du an Rohstoffen brauchst',
 						   		costs: 'Kakaokosten: ' + building.costs,
 						   		advantages: 'Kakao pro Runde +30'
 						    }
-				case BuildingType.RUM_TRUFFLE_CANNON:
+				case EntityType.RUM_TRUFFLE_CANNON:
 					return {
 								info: 'Die Rumtrüffelkanone führt dich zum Sieg',
 						   		costs: 'Kakaokosten: ' + building.costs,
