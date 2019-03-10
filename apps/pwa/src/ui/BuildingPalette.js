@@ -39,10 +39,10 @@ class BuildingPalette extends Component {
             alt: 'fruit cannon',
             costs: getEntityDescriptor(EntityType.FRUIT_CANNON).costs
         }, {
-            type: EntityType.EASTER_FACTORY,
-            image: 'images/cacaotree_icon.png',
+            type: EntityType.SPYING_EASTER_BUNNY,
+            image: 'images/spying_easter_bunny_icon.png',
             alt: 'easter factory',
-            costs: getEntityDescriptor(EntityType.EASTER_FACTORY).costs
+            costs: getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY).costs
         }, {
             type: EntityType.XMAS_FACTORY,
             image: 'images/cacaotree_icon.png',
