@@ -16,29 +16,29 @@ class OfflineStore {
         return {
             async get(key) {
                 const db = await dbPromise;
-                return db.transaction(storeName + getPostfix).objectStore(storeName).get(key);
+                return db.transaction(storeName).objectStore(storeName).get(key);
             },
             async set(key, val) {
                 const db = await dbPromise;
-                const tx = db.transaction(storeName + setPostfix, 'readwrite');
+                const tx = db.transaction(storeName, 'readwrite');
                 tx.objectStore(storeName).put(val, key);
                 return tx.complete;
             },
             async delete(key) {
                 const db = await dbPromise;
-                const tx = db.transaction(storeName + deletePostfix, 'readwrite');
+                const tx = db.transaction(storeName, 'readwrite');
                 tx.objectStore(storeName).delete(key);
                 return tx.complete;
             },
             async clear() {
                 const db = await dbPromise;
-                const tx = db.transaction(storeName + clearPostfix, 'readwrite');
+                const tx = db.transaction(storeName, 'readwrite');
                 tx.objectStore(storeName).clear();
                 return tx.complete;
             },
             async keys() {
                 const db = await dbPromise;
-                return db.transaction(storeName + keysPostfix).objectStore(storeName).getAllKeys();
+                return db.transaction(storeName).objectStore(storeName).getAllKeys();
             }
         };
     }
@@ -47,14 +47,22 @@ class OfflineStore {
         this.setup();
     }
 
-    async setup() {
+    setup() {
         const dbPromise = openDb(dbName, dbVersion, upgradeDB => {
-            upgradeDB.deleteObjectStore(gamestateStoreName);
-            upgradeDB.createObjectStore(gamestateStoreName);
-            upgradeDB.deleteObjectStore(turnHistoryStoreName);
-            upgradeDB.createObjectStore(turnHistoryStoreName);
-            upgradeDB.deleteObjectStore(settingsStoreName);
-            upgradeDB.createObjectStore(settingsStoreName);
+            if (upgradeDB.oldVersion < 1) {
+                upgradeDB.createObjectStore(gamestateStoreName);
+                upgradeDB.createObjectStore(turnHistoryStoreName);
+                upgradeDB.createObjectStore(settingsStoreName);              
+            } else {
+                upgradeDB.deleteObjectStore(gamestateStoreName);
+                upgradeDB.createObjectStore(gamestateStoreName);
+                
+                upgradeDB.deleteObjectStore(turnHistoryStoreName);
+                upgradeDB.createObjectStore(turnHistoryStoreName);
+                
+                upgradeDB.deleteObjectStore(settingsStoreName);
+                upgradeDB.createObjectStore(settingsStoreName);
+            }            
         });
 
         this.gamestateStore = OfflineStore.wrapObjectStore(gamestateStoreName, dbPromise);

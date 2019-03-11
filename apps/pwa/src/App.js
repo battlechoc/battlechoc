@@ -162,18 +162,15 @@ class App extends Component {
     console.dir(OfflineStore);
     if (nextProps.game !== undefined) {
       //uncomment me for error!
-      //OfflineStore.gamestateStore.keys().then(keys => {
-      //  console.log("keys");
-      //  console.dir(keys);
-      //});
-      /*OfflineStore.gamestateStore.get("gamestate").then(storedGamestate => {
+      OfflineStore.gamestateStore.keys().then(keys => {
+        console.log("keys");
+        console.dir(keys);
+      });
+      OfflineStore.gamestateStore.get("gamestate").then(storedGamestate => {
         console.log("gamestate");
         console.dir(storedGamestate);
-      });*/
-      /*if (typeof this.offlineStorage.get("gamestate") !== 'undefined') {
-        console.dir(this.offlineStorage.get("gamestate"));
-      }*/
-      //OfflineStore.gamestateStore.set("gamestate", nextProps.game);
+      });
+      OfflineStore.gamestateStore.set("gamestate", nextProps.game);
     }
 
     if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
