@@ -14,7 +14,7 @@ const EntityType = Object.freeze({
     CACAOTREE: 'EntityType.CACAOTREE',
     RUM_TRUFFLE_CANNON: 'EntityType.RUM_TRUFFLE_CANNON',
     FRUIT_CANNON: 'EntityType.FRUIT_CANNON',
-    EASTER_FACTORY: 'EntityType.EASTER_FACTORY',
+    SPYING_EASTER_BUNNY: 'EntityType.SPYING_EASTER_BUNNY',
     XMAS_FACTORY: 'EntityType.XMAS_FACTORY',
     HOT_CHOCOLATE_BALLISTA: 'EntityType.HOT_CHOCOLATE_BALLISTA',
     CHOCOLATE_FOUNTAIN: 'EntityType.CHOCOLATE_FOUNTAIN',
@@ -25,7 +25,7 @@ const EntityType = Object.freeze({
             entityType === EntityType.CACAOTREE ||
             entityType === EntityType.RUM_TRUFFLE_CANNON ||
             entityType === EntityType.FACTORY_EXTENSION ||
-            entityType === EntityType.EASTER_FACTORY ||
+            entityType === EntityType.SPYING_EASTER_BUNNY ||
             entityType === EntityType.XMAS_FACTORY ||
             entityType === EntityType.HOT_CHOCOLATE_BALLISTA ||
             entityType === EntityType.CHOCOLATE_FOUNTAIN ||
@@ -105,7 +105,7 @@ const EntityDescriptors = Object.freeze(new Map([
         cells: 1,
         fruitAttacksPerTurn: 1
     }],
-    [EntityType.EASTER_FACTORY, {
+    [EntityType.SPYING_EASTER_BUNNY, {
         costs: 180,
         cells: 1
     }],

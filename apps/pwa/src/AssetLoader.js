@@ -12,8 +12,9 @@ class AssetLoader {
                         'factory.gltf', 'factory-extension.gltf', 'cacaotree.gltf',
                         'cannon.glb', 'cream.glb', 'cream-explosion.gltf',
                         'cacaotree-explosion.gltf', 'factory-explosion.gltf', 'cannon-explosion.glb', 
-                        'creamAroundBuilding.glb', 'attacks_icon.png', 'cacao_icon.png', 'cannon_icon.png', 'cream_preview.png', 'fog_background.png',
-                        'buildings_icon.png', 'cacaotree_icon.png', 'cream_icon.png', 'factory_extension_icon.png', 'fog_foreground.png'];
+                        'creamAroundBuilding.glb', 'spyingEasterBunny.glb', 'spyingEasterBunny-explosion.glb', 'attacks_icon.png', 'cacao_icon.png', 'cannon_icon.png', 'cream_preview.png', 'fog_background.png',
+                        'buildings_icon.png', 'cacaotree_icon.png', 'cream_icon.png', 'factory_extension_icon.png', 'fog_foreground.png', 'factory_icon.png',
+                        'spying_easter_bunny_icon.png'];
         this.models = [];
         for (let i = 0; i < files.length; i++) {
             if (files[i].endsWith('.glb') || files[i].endsWith('.gltf')) {

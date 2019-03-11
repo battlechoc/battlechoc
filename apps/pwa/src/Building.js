@@ -26,8 +26,9 @@ class Building {
 			this._model = AssetLoader.models[7].scene.clone();
 			this._model.scale.set(3, 3, 3);
 			this._offset = [0, 0, 0];
-		} else if (this.entityType === EntityType.EASTER_FACTORY) {
-			this._model = AssetLoader.models[5].scene.clone();
+		} else if (this.entityType === EntityType.SPYING_EASTER_BUNNY) {
+			this._model = AssetLoader.models[13].scene.clone();
+			this._model.scale.set(3, 3, 3);
 			this._offset = [1, 2, 1.5];
 		} else if (this.entityType === EntityType.XMAS_FACTORY) {
 			this._model = AssetLoader.models[5].scene.clone();
@@ -51,6 +52,9 @@ class Building {
 			this._model = AssetLoader.models[10].scene.clone();
 		} else if (this.entityType === EntityType.RUM_TRUFFLE_CANNON) {
 			this._model = AssetLoader.models[11].scene.clone();
+		} else if (this.entityType === EntityType.SPYING_EASTER_BUNNY) {
+			this._model = AssetLoader.models[14].scene.clone();
+			this._model.scale.set(3, 3, 3);
 		} else {
 			this._model = AssetLoader.models[8].scene.clone();
 			this._model.scale.set(3, 3, 3);
@@ -87,7 +91,7 @@ class Building {
 	}
 
 	makeTransparent() {
-		this._model.children[2].material = new THREE.MeshBasicMaterial({ opacity: 0.6, transparent: true });
+		this._model.children[0].material = new THREE.MeshBasicMaterial({ opacity: 0.6, transparent: true });
 	}
 
 	makeCreamy() {
@@ -98,19 +102,12 @@ class Building {
 				child.material.transparent = true;
 			}
 		});
-		this._model.traverse(child => {
-			if (child instanceof THREE.Mesh) {
-				child.renderOrder = 2;
-			}
-		});
-
+		
 		creamAround.position.x -= this._offset[0];
 		creamAround.position.y -= this._offset[1];
 		creamAround.position.z -= this._offset[2];
 		creamAround.rotation.y = -this._model.rotation.y;
 		this._model.add(creamAround);
-		console.log(this._model);
-
 	}
 
 	getModel() {
