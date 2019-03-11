@@ -67,8 +67,8 @@ const languages = {
 		TOOLTIP_INITIAL_TURN_TITLE: 'Erste Runde',
 		TOOLTIP_INITIAL_TURN_MESSAGE: 'In der ersten Runde kannst du dich für eines der Spielfelder, oder den ersten Zug entscheiden',
 		TOOLTIP_INITIAL_TURN_OPPONENT: name => name + ' kann nun ein Spielfeld aussuchen',
-		TOOLTIP_BUILDING_INFO: building => {
-			switch(building.type) {
+		TOOLTIP_BUILDING_INFO: (type, building) => {
+			switch(type) {
 				case EntityType.CREAM:
 					return {
 								info: 'Gebäude die in Sahne gebaut sind bleiben dem Gegner verborgen. Die Baureihenfolge von Sahne und Gebäude sind dabei egal',

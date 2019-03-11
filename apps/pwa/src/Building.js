@@ -102,19 +102,12 @@ class Building {
 				child.material.transparent = true;
 			}
 		});
-		this._model.traverse(child => {
-			if (child instanceof THREE.Mesh) {
-				child.renderOrder = 2;
-			}
-		});
-
+		
 		creamAround.position.x -= this._offset[0];
 		creamAround.position.y -= this._offset[1];
 		creamAround.position.z -= this._offset[2];
 		creamAround.rotation.y = -this._model.rotation.y;
 		this._model.add(creamAround);
-		console.log(this._model);
-
 	}
 
 	getModel() {

@@ -105,22 +105,22 @@ class App extends Component {
     let distance = this.estimateDistance(width / height);
     let aspect = width / height;
 
-    this.camera = new THREE.OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, 0, 250);
-    this.camera.position.set(40, 40, 40);
+    this.camera = new THREE.OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, -100, 200);
+    this.camera.position.set(1, 1, 1);
     this.camera.lookAt(this.scene.position);
-    this.camera.position.x = 20;
-    this.camera.position.y = 55;
-    this.camera.position.z = 95;
+    this.camera.position.x = 0;
+    this.camera.position.y = 30;
+    this.camera.position.z = 70;
 
     this.renderer = new THREE.WebGLRenderer({
-      antialias: true,
       alpha: true
     });
+
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height);
     this.renderer.domElement.id = 'game-canvas'
     this.renderer.gammaOutput = true;
-    this.renderer.gammaFactor = 1.9;
+    this.renderer.gammaFactor = 1.7;
 
     // Enable swipe
     this.mousedown = false;
@@ -453,10 +453,10 @@ class App extends Component {
     let delta = this.clock.getDelta();
 
     // Swipe animation to another game field
-    if (this.lookAtOpponent && this.camera.position.y < 128) {
+    if (this.lookAtOpponent && this.camera.position.y < 100) {
       this.camera.position.y += 2.0;
       this.camera.position.x += 4.0;
-    } else if (!this.lookAtOpponent && this.camera.position.y > 58) {
+    } else if (!this.lookAtOpponent && this.camera.position.y > 30) {
       this.camera.position.y -= 2.0;
       this.camera.position.x -= 4.0;
     }
