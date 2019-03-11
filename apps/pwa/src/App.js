@@ -28,6 +28,10 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import t from './ui/Translation';
+import rStats from 'rstatsjs/src/rStats';
+import { glStats, threeStats, BrowserStats } from 'rstatsjs/src/rStats.extras';
+import Checkbox from '@material-ui/core/Checkbox';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 
 class App extends Component {
   constructor(props) {
@@ -35,7 +39,8 @@ class App extends Component {
     this.state = {
       loadingProgress: 0,
       showSettings: false,
-      attentionTextVisible: false
+      attentionTextVisible: false,
+      statistics: false
     }
   }
 
@@ -169,6 +174,30 @@ class App extends Component {
       document.querySelector('meta[name="description"]').setAttribute("content", t[this.props.language].META_DESCRIPTION);
       document.querySelector('meta[name="keywords"]').setAttribute("content", t[this.props.language].META_KEYWORDS);
     }
+
+    let browserStats = new BrowserStats();
+    this.glStats = new glStats();
+    this.renderStats = new rStats({
+        userTimingAPI: true,
+        values: {
+            frame: { caption: 'Total frame time (ms)', over: 16, average: true, avgMs: 100 },
+            fps: { caption: 'Framerate (FPS)', below: 30 },
+            calls: { caption: 'Calls (three.js)', over: 3000 },
+            raf: { caption: 'Time since last rAF (ms)', average: true, avgMs: 100 },
+            rstats: { caption: 'rStats update (ms)', average: true, avgMs: 100 },
+        },
+        groups: [
+            { caption: 'Framerate', values: [ 'fps', 'raf' ] },
+            { caption: 'Frame Budget', values: [ 'frame', 'render' ] }
+        ],
+        fractions: [
+            { base: 'frame', steps: [ 'render' ] }
+        ],
+        plugins: [
+            browserStats,
+            this.glStats
+        ]
+    });
   }
 
   componentWillReceiveProps(nextProps) {
@@ -416,20 +445,33 @@ class App extends Component {
   }
 
   animate = () => {
-    this.delta += this.clock.getDelta();
-    if (this.delta > this.targetFps) {
-      // Render all objects
-      this.renderScene();
-      // Swipe animation to another game field
-      if (this.lookAtOpponent && this.camera.position.y < 128) {
-        this.camera.position.y += 2.0;
-        this.camera.position.x += 4.0;
-      } else if (!this.lookAtOpponent && this.camera.position.y > 58) {
-        this.camera.position.y -= 2.0;
-        this.camera.position.x -= 4.0;
-      }
-      this.delta = this.delta % this.targetFps;
+    if (this.state.statistics) {
+      this.renderStats( 'frame' ).start();
+      this.glStats.start();
+      this.renderStats( 'rAF' ).tick();
+      this.renderStats( 'FPS' ).frame();
     }
+
+    this.delta = this.clock.getDelta();
+
+    // Swipe animation to another game field
+    if (this.lookAtOpponent && this.camera.position.y < 128) {
+      this.camera.position.y += 2.0;
+      this.camera.position.x += 4.0;
+    } else if (!this.lookAtOpponent && this.camera.position.y > 58) {
+      this.camera.position.y -= 2.0;
+      this.camera.position.x -= 4.0;
+    }
+
+    // Render all objects
+    if (this.state.statistics) {
+      this.renderStats( 'render' ).start();
+      this.renderScene();
+      this.renderStats( 'render' ).end();
+    } else {
+      this.renderScene();
+    }
+
 
     if (this.opponentGameField) {
       this.opponentGameField.animate(this.delta);
@@ -437,6 +479,13 @@ class App extends Component {
 
     if (this.playerGameField) {
       this.playerGameField.animate(this.delta);
+    }
+
+    if (this.state.statistics) {
+      this.renderStats( 'frame' ).end();
+      this.renderStats( 'rStats' ).start();
+      this.renderStats().update();
+      this.renderStats( 'rStats' ).end();
     }
 
     this.frameId = window.requestAnimationFrame(this.animate);
@@ -581,6 +630,23 @@ class App extends Component {
                   <option value="en">{t[this.props.language].ENGLISH}</option>
                   <option value="de">{t[this.props.language].GERMAN}</option>
                 </Select>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={this.state.statistics}
+                      onChange={event => {
+                        if (event.target.checked) {
+                          document.getElementsByClassName('rs-base')[0].style.display = 'block';
+                          this.setState({statistics: true});
+                        } else {
+                          document.getElementsByClassName('rs-base')[0].style.display = 'none';
+                          this.setState({statistics: false});                          
+                        }
+                      }}
+                    />
+                  }
+                  label="Development Statistics"
+                />
                 {
                   typeof this.props.game !== 'undefined' ?
                     <Button variant="outlined" className="quitGame" onClick={() => {

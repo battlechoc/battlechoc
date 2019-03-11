@@ -119,3 +119,37 @@ html, body, #root {
   width: auto !important;
   height: 2.5em !important;
 }
+
+/* render stats */
+
+.rs-base {
+  position: absolute;
+  z-index: 100;
+  top: 60px;
+  left: 0;
+  margin-right: 20px;
+  display: none;
+}
+
+.rs-container * {
+  margin: 0;
+  padding: 0;
+}
+
+.rs-container > h1 {
+  font-size: 0.8em;
+}
+
+.rs-container span {
+  font-size: 0.6em;
+}
+
+.rs-counter-value {
+  display: inline;
+  margin-left: 5px;
+  font-size: 0.6em;
+}
+
+.rs-fraction {
+  height: auto !important;
+}

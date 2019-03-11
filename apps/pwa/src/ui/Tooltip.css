@@ -20,18 +20,18 @@
   user-select: none;
 }
 
-.tooltipBuildingInfo > p {
+.tooltipBuildingInfo > span {
   margin: 0;
   padding: 0;
 }
 
-.tooltipBuildingInfo > p:nth-child(2) {
+.tooltipBuildingInfo > span:nth-child(2) {
   margin-top: 5px;
   font-size: 0.8rem;
   color: #B93021;
 }
 
-.tooltipBuildingInfo > p:nth-child(3) {
+.tooltipBuildingInfo > span:nth-child(3) {
   font-size: 0.8rem;
   color: #31974A;
 }

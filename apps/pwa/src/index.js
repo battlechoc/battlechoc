@@ -116,6 +116,11 @@ const theme = createMuiTheme({
     			color: 'rgb(244, 67, 54)',
     			border: '1px solid rgba(244, 67, 54, 0.23);'
     		}
+    	},
+    	MuiCheckbox: {
+    		root: {
+    			color: 'rgba(64, 64, 64, 0.5)'
+    		}
     	}
     }
 });
