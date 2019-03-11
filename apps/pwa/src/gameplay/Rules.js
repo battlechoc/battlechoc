@@ -48,7 +48,7 @@ class Rules {
         }
 
         const idxBelowOf = { row: cellIdx.row + 1, col: cellIdx.col };
-        if (idxBelowOf.row < gameState.board.size.row) {
+        if (idxBelowOf.row < gameState.board.size.rows) {
             neighbors.push(this.currentPlayerBoardCell(gameState, idxBelowOf));
         }
 
@@ -56,6 +56,8 @@ class Rules {
     }
 
     static canBuildFactoryExtensionOnCell(cellIdx, gameState) {
+        console.dir(cellIdx);
+        console.dir(this.getCellNeighbors(cellIdx, gameState));
         return this.getCellNeighbors(cellIdx, gameState).filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.FACTORY)).length > 0;
     }
 

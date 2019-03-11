@@ -15,7 +15,7 @@ import { GameStateTypes } from './gameplay/GameplayReducer'
 import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError, InvalidActionIssuer } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import Rules from './gameplay/Rules';
-import { openDb, deleteDb } from 'idb';
+import OfflineStore from './OfflineStore';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { ScreenRotation } from '@material-ui/icons';
 import Button from '@material-ui/core/Button';
@@ -43,48 +43,8 @@ class App extends Component {
     this.setState({ loadingProgress: progress });
   }
 
-  async setupOfflineStorage() {
-    const dbPromise = openDb('battlechoc-store', 1, upgradeDB => {
-      upgradeDB.createObjectStore('gamestate');
-    });
-
-    const idbKeyval = {
-      async get(key) {
-        const db = await dbPromise;
-        return db.transaction('gamestate').objectStore('gamestate').get(key);
-      },
-      async set(key, val) {
-        const db = await dbPromise;
-        const tx = db.transaction('gamestate', 'readwrite');
-        tx.objectStore('gamestate').put(val, key);
-        return tx.complete;
-      },
-      async delete(key) {
-        const db = await dbPromise;
-        const tx = db.transaction('gamestate', 'readwrite');
-        tx.objectStore('gamestate').delete(key);
-        return tx.complete;
-      },
-      async clear() {
-        const db = await dbPromise;
-        const tx = db.transaction('gamestate', 'readwrite');
-        tx.objectStore('gamestate').clear();
-        return tx.complete;
-      },
-      async keys() {
-        const db = await dbPromise;
-        return db.transaction('gamestate').objectStore('gamestate').getAllKeys();
-      },
-    };
-
-    //idbKeyval.set('testkey', { hello: 'world' });
-    idbKeyval.get('testkey').then(val => console.log(val));
-  }
 
   async componentDidMount() {
-    // prepare indexedDB
-    this.setupOfflineStorage();
-
     // Load Models
     await AssetLoader.loadAssets(progress => this.updateProgressbar(progress));
 
@@ -172,6 +132,23 @@ class App extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
+    console.dir(OfflineStore);
+    if (nextProps.game !== undefined) {
+      //uncomment me for error!
+      //OfflineStore.gamestateStore.keys().then(keys => {
+      //  console.log("keys");
+      //  console.dir(keys);
+      //});
+      /*OfflineStore.gamestateStore.get("gamestate").then(storedGamestate => {
+        console.log("gamestate");
+        console.dir(storedGamestate);
+      });*/
+      /*if (typeof this.offlineStorage.get("gamestate") !== 'undefined') {
+        console.dir(this.offlineStorage.get("gamestate"));
+      }*/
+      //OfflineStore.gamestateStore.set("gamestate", nextProps.game);
+    }
+
     if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
       const winners = Rules.determineWinner(nextProps.game);
       if (typeof winners !== 'undefined') {
