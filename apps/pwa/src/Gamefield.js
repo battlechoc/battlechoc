@@ -34,7 +34,8 @@ class Gamefield {
                     fieldClone = AssetLoader.models[2].scene.clone();
                 }
 
-                let field = fieldClone.children[0]
+                let field = fieldClone.children[0];
+                console.dir(field)
                 field.position.set(this.fieldSize * i, 0, this.fieldSize * j);
                 
                 this.gameField.add(field);

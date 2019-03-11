@@ -548,6 +548,7 @@ class App extends Component {
     // Add Light
     var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2.0);
     directionalLight.position.set(20, 24, -10);
+    directionalLight.castShadow = false;
     this.scene.add(directionalLight);
 
     this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board.fields[playerFieldIndex]);
