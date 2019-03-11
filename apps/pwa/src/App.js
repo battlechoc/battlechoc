@@ -101,8 +101,6 @@ class App extends Component {
     // Setup scene, camera and renderer
     this.scene = new THREE.Scene();
     this.clock = new THREE.Clock();
-    this.targetFps = 1 / 30;
-    this.delta = 0;
 
     let distance = this.estimateDistance(width / height);
     let aspect = width / height;
@@ -452,7 +450,7 @@ class App extends Component {
       this.renderStats( 'FPS' ).frame();
     }
 
-    this.delta = this.clock.getDelta();
+    let delta = this.clock.getDelta();
 
     // Swipe animation to another game field
     if (this.lookAtOpponent && this.camera.position.y < 128) {
@@ -472,13 +470,12 @@ class App extends Component {
       this.renderScene();
     }
 
-
     if (this.opponentGameField) {
-      this.opponentGameField.animate(this.delta);
+      this.opponentGameField.animate(delta);
     }
 
     if (this.playerGameField) {
-      this.playerGameField.animate(this.delta);
+      this.playerGameField.animate(delta);
     }
 
     if (this.state.statistics) {

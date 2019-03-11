@@ -91,7 +91,7 @@ class Building {
 	}
 
 	makeTransparent() {
-		this._model.children[2].material = new THREE.MeshBasicMaterial({ opacity: 0.6, transparent: true });
+		this._model.children[0].material = new THREE.MeshBasicMaterial({ opacity: 0.6, transparent: true });
 	}
 
 	makeCreamy() {

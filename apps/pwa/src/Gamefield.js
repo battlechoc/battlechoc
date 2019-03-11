@@ -24,7 +24,7 @@ class Gamefield {
         for (let i = 0; i < this.rows; i++) {
             for (let j = 0; j < this.cols; j++) {
                 let cell = playerField.grid[i * this.cols + j];
-                var fieldClone = undefined;
+                let fieldClone = undefined;
 
                 if (cell.type === BoardCellTypes.WHITE) {
                     fieldClone = AssetLoader.models[0].scene.clone();
@@ -34,8 +34,7 @@ class Gamefield {
                     fieldClone = AssetLoader.models[2].scene.clone();
                 }
 
-                var field = fieldClone.children[2]
-                field.scale.set(3, 3, 3);
+                let field = fieldClone.children[0]
                 field.position.set(this.fieldSize * i, 0, this.fieldSize * j);
                 
                 this.gameField.add(field);
