@@ -191,6 +191,8 @@ class Rules {
             return true;
         } else if (action.type === UiActionTypes.deselectBuildings) {
             return true;
+        } else if (action.type === UiActionTypes.gameResumeable) {
+            return true;
         } else {
             return new Errors.ActionValidationError(action);
         }

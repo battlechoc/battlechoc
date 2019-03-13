@@ -1,25 +1,21 @@
+import Rules from './Rules';
+
 class GameplayLog {
     constructor() {
+        this.clear();
+    }
+
+    clear() {
         this.turns = [];
-    }
-
-    save() {
-        // persists the log to file
-    }
-
-    load() {
-        // loads a log from file
     }
 }
 
 const gameplayLog = new GameplayLog();
 
-function gameplayLoggerMiddleware(log) {
+function gameplayLoggerMiddleware() {
     return ({ dispatch, getState }) => next => action => {
-        if (typeof action.payload !== 'undefined') {
-            if (action.payload.isGameplayAction) {
-
-            }
+        if (Rules.isGameAction(action)) {
+            gameplayLog.turns.push(action);
         }
         return next(action);
     }

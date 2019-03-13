@@ -5,11 +5,6 @@ const dbName = 'battclechoc';
 const gamestateStoreName = 'gamestate';
 const turnHistoryStoreName = 'turn-history';
 const settingsStoreName = 'settings';
-/*const setPostfix = '_set';
-const getPostfix = '_get';
-const deletePostfix = '_delete';
-const clearPostfix = '_clear';
-const keysPostfix = '_keys';*/
 
 class OfflineStore {
     static wrapObjectStore(storeName, dbPromise) {
@@ -52,22 +47,38 @@ class OfflineStore {
             if (upgradeDB.oldVersion < 1) {
                 upgradeDB.createObjectStore(gamestateStoreName);
                 upgradeDB.createObjectStore(turnHistoryStoreName);
-                upgradeDB.createObjectStore(settingsStoreName);              
+                upgradeDB.createObjectStore(settingsStoreName);
             } else {
                 upgradeDB.deleteObjectStore(gamestateStoreName);
                 upgradeDB.createObjectStore(gamestateStoreName);
-                
+
                 upgradeDB.deleteObjectStore(turnHistoryStoreName);
                 upgradeDB.createObjectStore(turnHistoryStoreName);
-                
+
                 upgradeDB.deleteObjectStore(settingsStoreName);
                 upgradeDB.createObjectStore(settingsStoreName);
-            }            
+            }
         });
 
         this.gamestateStore = OfflineStore.wrapObjectStore(gamestateStoreName, dbPromise);
         this.turnHistoryStore = OfflineStore.wrapObjectStore(turnHistoryStoreName, dbPromise);
         this.settingsStore = OfflineStore.wrapObjectStore(settingsStoreName, dbPromise);
+    }
+
+    async hasGameToResume() {
+        let result = false;
+        if (typeof this.gamestateStore !== 'undefined') {
+            let prom = this.gamestateStore.keys();
+            prom.then(keys => {
+                result = keys.includes("gamestate");
+            });
+            await prom;
+        }
+        return result;
+    }
+
+    async saveCurrentGame(gamestate) {
+        await this.gamestateStore.set("gamestate", gamestate);
     }
 }
 

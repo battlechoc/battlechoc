@@ -141,16 +141,26 @@ class Hud extends Component {
                     <canvas id="textAnimationCanvas" className={this.state.messageAnimation ? 'ontop' : null}></canvas>
                     {(() => {
                         if (this.isTitleScreen()) {
-                            return (
-                                <div id="mainMenu">
-                                    <Button color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareGameCallback()}>
-                                        {t[this.props.language].NEW_GAME}
-                                    </Button>
-                                    <Button color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareGameCallback()}>
-                                        {t[this.props.language].RESUME_GAME}
-                                    </Button>
-                                </div>
-                            );
+                            if (this.props.resumeGamePossible === true) {
+                                return (
+                                    <div id="mainMenu">
+                                        <Button color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback()}>
+                                            {t[this.props.language].NEW_GAME}
+                                        </Button>
+                                        <Button color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareResumedGameCallback()}>
+                                            {t[this.props.language].RESUME_GAME}
+                                        </Button>
+                                    </div>
+                                );
+                            } else {
+                                return (
+                                    <div id="mainMenu">
+                                        <Button color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback()}>
+                                            {t[this.props.language].NEW_GAME}
+                                        </Button>
+                                    </div>
+                                );
+                            }
                         } else if (this.isInitalStage()) {
                             return (
                                 <div className="choose">
@@ -160,9 +170,9 @@ class Hud extends Component {
                                             if (typeof this.props.game.board !== 'undefined') {
                                                 const creamedCells = this.props.game.board.fields[0].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
                                                 return <div className="creamedCellCount">
-                                                            <img alt="filled with cream" src="images/cream_preview.png" />
-                                                            <p>{creamedCells.length}</p>
-                                                        </div>
+                                                    <img alt="filled with cream" src="images/cream_preview.png" />
+                                                    <p>{creamedCells.length}</p>
+                                                </div>
                                             }
                                         })()}
                                         <div className="fields">
@@ -172,8 +182,8 @@ class Hud extends Component {
                                                         (cell, i) => {
                                                             if (cell.occupiedBy.includes(EntityType.CREAM)) {
                                                                 return <div key={i} className={cell.previewStyle}>
-                                                                            <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
-                                                                        </div>
+                                                                    <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
+                                                                </div>
                                                             } else {
                                                                 return <div key={i} className={cell.previewStyle}></div>
                                                             }
@@ -193,9 +203,9 @@ class Hud extends Component {
                                             if (typeof this.props.game.board !== 'undefined') {
                                                 const creamedCells = this.props.game.board.fields[1].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
                                                 return <div className="creamedCellCount">
-                                                            <img alt="filled with cream" src="images/cream_preview.png" />
-                                                            <p>{creamedCells.length}</p>
-                                                        </div>
+                                                    <img alt="filled with cream" src="images/cream_preview.png" />
+                                                    <p>{creamedCells.length}</p>
+                                                </div>
                                             }
                                         })()}
                                         <div className="fields">
@@ -205,8 +215,8 @@ class Hud extends Component {
                                                         (cell, i) => {
                                                             if (cell.occupiedBy.includes(EntityType.CREAM)) {
                                                                 return <div key={i} className={cell.previewStyle}>
-                                                                            <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
-                                                                        </div>
+                                                                    <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
+                                                                </div>
                                                             } else {
                                                                 return <div key={i} className={cell.previewStyle}></div>
                                                             }
@@ -229,14 +239,16 @@ class Hud extends Component {
 
 Hud.propTypes = {
     toggleMusic: PropTypes.func.isRequired,
-    prepareGameCallback: PropTypes.func.isRequired,
+    prepareNewGameCallback: PropTypes.func.isRequired,
+    prepareResumedGameCallback: PropTypes.func.isRequired,
     showSettings: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
     state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
-    language: state.ui.language
+    language: state.ui.language,
+    resumeGamePossible: state.ui.resumeGamePossible
 });
 
 const mapDispatchToProps = {
