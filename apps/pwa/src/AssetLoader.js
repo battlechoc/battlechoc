@@ -4,31 +4,61 @@ class AssetLoader {
 
     constructor(){
         this.loader = new GLTFLoader();
-        this.models = [];
+        this.assets = {
+            models: {
+                WHITE_TILE: { filename: 'white_tile.glb', model: null },
+                BROWN_TILE: { filename: 'brown_tile.glb', model: null },
+                BLACK_TILE: { filename: 'black_tile.glb', model: null },
+                FACTORY: { filename: 'factory.gltf', model: null },
+                FACTORY_EXPLOSION: { filename: 'factory-explosion.gltf', model: null },
+                FACTORY_EXTENSION: { filename: 'factory-extension.gltf', model: null },
+                CACAOTREE: { filename: 'cacaotree.gltf', model: null },
+                CACAOTREE_EXPLOSION: { filename: 'cacaotree-explosion.gltf', model: null },
+                RUM_TRUFFLE_CANNON: { filename: 'cannon.glb', model: null },
+                RUM_TRUFFLE_CANNON_EXPLOSION: { filename: 'cannon-explosion.glb', model: null },
+                CREAM: { filename: 'cream.glb', model: null },
+                CREAM_EXPLOSION: { filename: 'cream-explosion.gltf', model: null },
+                CREAM_AROUND_BUILDING: { filename: 'creamAroundBuilding.glb', model: null },
+                SPYING_EASTER_BUNNY: { filename: 'spyingEasterBunny.glb', model: null },
+                SPYING_EASTER_BUNNY_EXPLOSION: { filename: 'spyingEasterBunny-explosion.glb', model: null },
+                XMAS_FACTORY: { filename: 'xmasFactory.glb', model: null },
+                HOT_CHOCOLATE_BALISTA: { filename: 'cacaotree.gltf', model: null },
+                CHOCOLATE_FOUNTAIN: { filename: 'cacaotree.gltf', model: null },
+                FRUIT_CANNON: { filename: 'cacaotree.gltf', model: null }
+            },
+            images: {
+                ATTACKS: { filename: 'attacks_icon.png' },
+                CACAO: { filename: 'cacao_icon.png' },
+                CANNON: { filename: 'cannon_icon.png' },
+                CREAM_PREVIEW: { filename: 'cream_preview.png' },
+                FOG_BACKGROUND: { filename: 'fog_background.png' },
+                FOG_FOREGROUND: { filename: 'fog_foreground.png' },
+                FACTORY: { filename: 'factory_icon.png' },
+                BUILDINGS: { filename: 'buildings_icon.png' },
+                CACAOTREE: { filename: 'cacaotree_icon.png' },
+                CREAM: { filename: 'cream_icon.png' },
+                FACTORY_EXTENSION: { filename: 'factory_extension_icon.png' },
+                SPYING_EASTER_BUNNY: { filename: 'spying_easter_bunny_icon.png' },
+            }
+        }
     }
 
     async loadAssets(callback) {
-        const files = ['white_tile.glb', 'brown_tile.glb', 'black_tile.glb', 
-                        'factory.gltf', 'factory-extension.gltf', 'cacaotree.gltf',
-                        'cannon.glb', 'cream.glb', 'cream-explosion.gltf',
-                        'cacaotree-explosion.gltf', 'factory-explosion.gltf', 'cannon-explosion.glb', 
-                        'creamAroundBuilding.glb', 'spyingEasterBunny.glb', 'spyingEasterBunny-explosion.glb', 'attacks_icon.png', 'cacao_icon.png', 'cannon_icon.png', 'cream_preview.png', 'fog_background.png',
-                        'buildings_icon.png', 'cacaotree_icon.png', 'cream_icon.png', 'factory_extension_icon.png', 'fog_foreground.png', 'factory_icon.png',
-                        'spying_easter_bunny_icon.png'];
-        this.models = [];
-        for (let i = 0; i < files.length; i++) {
-            if (files[i].endsWith('.glb') || files[i].endsWith('.gltf')) {
-                this.models.push(await this.loadGLTFModel('models/' + files[i]));
-            } else {
-                await this.loadImage('images/' + files[i]);
-            }
-
-            if (i === files.length - 1) {
-                callback(100);
-            } else {
-                callback(Math.round((i / (files.length - 1)) * 100));
-            }
+        const totalResources = Object.keys(this.assets.models).length + Object.keys(this.assets.images).length;
+        let loadedResources = 0;
+        for (let i = 0; i < Object.keys(this.assets.models).length; i++) {
+            this.assets.models[Object.keys(this.assets.models)[i]].model = await this.loadGLTFModel('models/' + this.assets.models[Object.keys(this.assets.models)[i]].filename);
+            callback(Math.round((loadedResources / (totalResources - 1)) * 100));
+            loadedResources += 1;
         }
+
+        for (let i = 0; i < Object.keys(this.assets.images).length; i++) {
+            await this.loadImage('images/' + this.assets.images[Object.keys(this.assets.images)[i]].filename);
+            callback(Math.round((loadedResources / (totalResources - 1)) * 100));
+            loadedResources += 1;
+        }
+
+        callback(100);
     }
 
     loadGLTFModel(filename) {

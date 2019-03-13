@@ -26,12 +26,13 @@ class Gamefield {
                 let cell = playerField.grid[i * this.cols + j];
                 let fieldClone = undefined;
 
+                const assets = AssetLoader.assets.models;
                 if (cell.type === BoardCellTypes.WHITE) {
-                    fieldClone = AssetLoader.models[0].scene.clone();
+                    fieldClone = assets['WHITE_TILE'].model.scene.clone();  
                 } else if (cell.type === BoardCellTypes.BROWN) {
-                    fieldClone = AssetLoader.models[1].scene.clone();
+                    fieldClone = assets['BROWN_TILE'].model.scene.clone();
                 } else if (cell.type === BoardCellTypes.BLACK) {
-                    fieldClone = AssetLoader.models[2].scene.clone();
+                    fieldClone = assets['BLACK_TILE'].model.scene.clone();
                 }
 
                 let field = fieldClone.children[0];
@@ -71,18 +72,22 @@ class Gamefield {
         this.gameField.add(building.getModel());
 
         this.mixer = new THREE.AnimationMixer(building.getModel());
-        let animationNumber = 8;
+        const assets = AssetLoader.assets.models;
+
+        let explosion = assets.CREAM_EXPLOSION;
 
         if (building.entityType === EntityType.CACAOTREE) {
-            animationNumber = 9;
+            explosion = assets.CACAOTREE_EXPLOSION;
         } else if (building.entityType === EntityType.FACTORY) {
-            animationNumber = 10;
+            explosion = assets.FACTORY_EXPLOSION;
         } else if (building.entityType === EntityType.RUM_TRUFFLE_CANNON) {
-            animationNumber = 11;
+            explosion = assets.RUM_TRUFFLE_CANNON_EXPLOSION;
+        } else if (building.entityType === EntityType.SPYING_EASTER_BUNNY) {
+            explosion = assets.SPYING_EASTER_BUNNY_EXPLOSION;
         }
 
-        for (let i = 0; i < AssetLoader.models[animationNumber].animations.length; i++) {
-            this.mixer.clipAction(AssetLoader.models[animationNumber].animations[i]).setLoop(THREE.LoopOnce).play()
+        for (let i = 0; i < explosion.model.animations.length; i++) {
+            this.mixer.clipAction(explosion.model.animations[i]).setLoop(THREE.LoopOnce).play()
         }
 
         this.explosionCallback = () => {

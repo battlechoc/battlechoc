@@ -10,53 +10,55 @@ class Building {
 			throw new Error(entityType + ' is not instance of EntityType');
 		}
 
+		const assets = AssetLoader.assets.models;
 		if (this.entityType === EntityType.FACTORY) {
-			this._model = AssetLoader.models[3].scene.clone();
+			this._model = assets.FACTORY.model.scene.clone();
 			this._offset = [0, 3, 0];
 		} else if (this.entityType === EntityType.FACTORY_EXTENSION) {
-			this._model = AssetLoader.models[4].scene.clone();
+			this._model = assets.FACTORY_EXTENSION.model.scene.clone();
 			this._offset = [0, 3, 0];
 		} else if (this.entityType === EntityType.CACAOTREE) {
-			this._model = AssetLoader.models[5].scene.clone();
+			this._model = assets.CACAOTREE.model.scene.clone();
 			this._offset = [1, 2, 1.5];
 		} else if (this.entityType === EntityType.RUM_TRUFFLE_CANNON) {
-			this._model = AssetLoader.models[6].scene.clone();
+			this._model = assets.RUM_TRUFFLE_CANNON.model.scene.clone();
 			this._offset = [2, 4, 1.5];
 		} else if (this.entityType === EntityType.CREAM) {
-			this._model = AssetLoader.models[7].scene.clone();
+			this._model = assets.CREAM.model.scene.clone();
 			this._model.scale.set(3, 3, 3);
 			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.SPYING_EASTER_BUNNY) {
-			this._model = AssetLoader.models[13].scene.clone();
+			this._model = assets.SPYING_EASTER_BUNNY.model.scene.clone();
 			this._model.scale.set(3, 3, 3);
 			this._offset = [1, 2, 1.5];
 		} else if (this.entityType === EntityType.XMAS_FACTORY) {
-			this._model = AssetLoader.models[5].scene.clone();
-			this._offset = [1, 2, 1.5];
+			this._model = assets.XMAS_FACTORY.model.scene.clone();
+			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.HOT_CHOCOLATE_BALISTA) {
-			this._model = AssetLoader.models[5].scene.clone();
+			this._model = assets.HOT_CHOCOLATE_BALISTA.model.scene.clone();
 			this._offset = [1, 2, 1.5];
 		} else if (this.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
-			this._model = AssetLoader.models[5].scene.clone();
+			this._model = assets.CHOCOLATE_FOUNTAIN.model.scene.clone();
 			this._offset = [1, 2, 1.5];
 		} else if (this.entityType === EntityType.FRUIT_CANNON) {
-			this._model = AssetLoader.models[5].scene.clone();
+			this._model = assets.FRUIT_CANNON.model.scene.clone();
 			this._offset = [1, 2, 1.5];
 		}
 	}
 
 	explode() {
+		const assets = AssetLoader.assets.models;
 		if (this.entityType === EntityType.CACAOTREE) {
-			this._model = AssetLoader.models[9].scene.clone();
+			this._model = assets.CACAOTREE_EXPLOSION.model.scene.clone();
 		} else if (this.entityType === EntityType.FACTORY) {
-			this._model = AssetLoader.models[10].scene.clone();
+			this._model = assets.FACTORY_EXPLOSION.model.scene.clone();
 		} else if (this.entityType === EntityType.RUM_TRUFFLE_CANNON) {
-			this._model = AssetLoader.models[11].scene.clone();
+			this._model = assets.RUM_TRUFFLE_CANNON_EXPLOSION.model.scene.clone();
 		} else if (this.entityType === EntityType.SPYING_EASTER_BUNNY) {
-			this._model = AssetLoader.models[14].scene.clone();
+			this._model = assets.SPYING_EASTER_BUNNY_EXPLOSION.model.scene.clone();
 			this._model.scale.set(3, 3, 3);
 		} else {
-			this._model = AssetLoader.models[8].scene.clone();
+			this._model = assets.CREAM_EXPLOSION.model.scene.clone();
 			this._model.scale.set(3, 3, 3);
 		}
 	}
@@ -95,14 +97,15 @@ class Building {
 	}
 
 	makeCreamy() {
-		let creamAround = AssetLoader.models[12].scene.clone();
+		const assets = AssetLoader.assets.models;
+		let creamAround = assets.CREAM_AROUND_BUILDING.model.scene.clone();
 		creamAround.traverse(child => {
 			if (child instanceof THREE.Mesh) {
 				child.material.opacity = 0.8;
 				child.material.transparent = true;
 			}
 		});
-		
+
 		creamAround.position.x -= this._offset[0];
 		creamAround.position.y -= this._offset[1];
 		creamAround.position.z -= this._offset[2];

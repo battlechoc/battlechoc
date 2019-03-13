@@ -15,7 +15,7 @@ import { GameStateTypes } from './gameplay/GameplayReducer'
 import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError, InvalidActionIssuer } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import Rules from './gameplay/Rules';
-import OfflineStore from './OfflineStore';
+// import OfflineStore from './OfflineStore';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { ScreenRotation } from '@material-ui/icons';
 import Button from '@material-ui/core/Button';
@@ -29,7 +29,7 @@ import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import t from './ui/Translation';
 import rStats from 'rstatsjs/src/rStats';
-import { glStats, threeStats, BrowserStats } from 'rstatsjs/src/rStats.extras';
+import { glStats, BrowserStats } from 'rstatsjs/src/rStats.extras';
 import Checkbox from '@material-ui/core/Checkbox';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 
@@ -159,7 +159,7 @@ class App extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    console.dir(OfflineStore);
+    /*console.dir(OfflineStore);
     if (nextProps.game !== undefined) {
       //uncomment me for error!
       OfflineStore.gamestateStore.keys().then(keys => {
@@ -171,7 +171,7 @@ class App extends Component {
         console.dir(storedGamestate);
       });
       OfflineStore.gamestateStore.set("gamestate", nextProps.game);
-    }
+    } */
 
     if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
       const winners = Rules.determineWinner(nextProps.game);
@@ -524,7 +524,7 @@ class App extends Component {
     directionalLight.position.set(20, 24, -10);
     directionalLight.castShadow = false;
     this.scene.add(directionalLight);
-
+    
     this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board.fields[playerFieldIndex]);
     this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.game.board.fields[opponentFieldIndex]);
     this.scene.add(this.playerGameField.gameField);

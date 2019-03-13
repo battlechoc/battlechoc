@@ -5,11 +5,11 @@ const dbName = 'battclechoc';
 const gamestateStoreName = 'gamestate';
 const turnHistoryStoreName = 'turn-history';
 const settingsStoreName = 'settings';
-const setPostfix = '_set';
+/*const setPostfix = '_set';
 const getPostfix = '_get';
 const deletePostfix = '_delete';
 const clearPostfix = '_clear';
-const keysPostfix = '_keys';
+const keysPostfix = '_keys';*/
 
 class OfflineStore {
     static wrapObjectStore(storeName, dbPromise) {
