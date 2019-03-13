@@ -84,6 +84,8 @@ class Gamefield {
             explosion = assets.RUM_TRUFFLE_CANNON_EXPLOSION;
         } else if (building.entityType === EntityType.SPYING_EASTER_BUNNY) {
             explosion = assets.SPYING_EASTER_BUNNY_EXPLOSION;
+        } else if (building.entityType === EntityType.XMAS_FACTORY) {
+            explosion = assets.XMAS_FACTORY_EXPLOSION;
         }
 
         for (let i = 0; i < explosion.model.animations.length; i++) {

@@ -57,6 +57,8 @@ class Building {
 		} else if (this.entityType === EntityType.SPYING_EASTER_BUNNY) {
 			this._model = assets.SPYING_EASTER_BUNNY_EXPLOSION.model.scene.clone();
 			this._model.scale.set(3, 3, 3);
+		} else if (this.entityType === EntityType.XMAS_FACTORY) {
+			this._model = assets.XMAS_FACTORY_EXPLOSION.model.scene.clone();
 		} else {
 			this._model = assets.CREAM_EXPLOSION.model.scene.clone();
 			this._model.scale.set(3, 3, 3);

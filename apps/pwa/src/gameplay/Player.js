@@ -112,35 +112,37 @@ class Augustus {
         });
     }
 
+    estimateCellToAttack(gamefield) {
+        const unveiledFactories = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY));
+        const unveiledCannons = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
+        const unveiledFactoryExtensions = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION));
+        const unveiledTrees = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.CACAOTREE));
+        const unveiledSpyingEasterBunny = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY));
+        const unveiledXmasFactory= gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.XMAS_FACTORY));
+        const creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
+
+        if (unveiledFactories.length > 0) {
+            return unveiledFactories[0];
+        } else if (unveiledFactoryExtensions.length > 0) {
+            return unveiledFactoryExtensions[0];
+        } else if (unveiledSpyingEasterBunny.length > 0) {
+            return unveiledSpyingEasterBunny[0];
+        } else if (unveiledCannons.length > 0) {
+            return unveiledCannons[0];
+        } else if (unveiledTrees.length > 0) {
+            return unveiledTrees[0];
+        } else if (unveiledXmasFactory.length > 0) {
+            return unveiledXmasFactory[0];
+        } else if (creamedCells.length > 0) {
+            return creamedCells[Math.floor(Math.random() * creamedCells.length)];
+        } else {
+            return gamefield.grid[Math.floor(Math.random() * gamefield.grid.length)];
+        }        
+    }
+
     simulateAttack(gamefield, uiGamefield, attacks) {
         this.startThinking(() => {
-            let cellToAttack = undefined;
-            const unveiledFactories = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY));
-            if (unveiledFactories.length > 0) {
-                cellToAttack = unveiledFactories[0];
-            } else {
-                const unveiledCannons = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
-                if (unveiledCannons.length > 0) {
-                    cellToAttack = unveiledCannons[0];
-                } else {
-                    const unveiledFactoryExtensions = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION));
-                    if (unveiledFactoryExtensions.length > 0) {
-                        cellToAttack = unveiledFactoryExtensions[0];
-                    } else {
-                        const unveiledTrees = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.CACAOTREE));
-                        if (unveiledTrees.length > 0) {
-                            cellToAttack = unveiledTrees[0];
-                        } else {
-                            const creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
-                            if (creamedCells.length > 0) {
-                                cellToAttack = creamedCells[Math.floor(Math.random() * creamedCells.length)];
-                            } else {
-                                cellToAttack = gamefield.grid[Math.floor(Math.random() * gamefield.grid.length)];
-                            }
-                        }
-                    }
-                }
-            }
+            let cellToAttack = this.estimateCellToAttack(gamefield);
 
             this.actions.attack({
                 issuer: this.player.id,
