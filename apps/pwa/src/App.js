@@ -7,7 +7,7 @@ import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import { EntityType, createEntity } from './gameplay/GameEntities';
 import { startGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
-import { changeLanguage, deselectBuildings } from './ui/UiActions';
+import { changeLanguage, deselectBuildings, gameResumeable } from './ui/UiActions';
 import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -15,7 +15,8 @@ import { GameStateTypes } from './gameplay/GameplayReducer'
 import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError, InvalidActionIssuer } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import Rules from './gameplay/Rules';
-// import OfflineStore from './OfflineStore';
+import { gameplayLog } from './gameplay/GamePlayLogger';
+import OfflineStore from './OfflineStore';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { ScreenRotation } from '@material-ui/icons';
 import Button from '@material-ui/core/Button';
@@ -50,6 +51,10 @@ class App extends Component {
 
 
   async componentDidMount() {
+    OfflineStore.hasGameToResume().then((resumeable) => {
+      this.props.gameResumeable(resumeable);
+    });
+
     // Load Models
     await AssetLoader.loadAssets(progress => this.updateProgressbar(progress));
 
@@ -136,43 +141,34 @@ class App extends Component {
     let browserStats = new BrowserStats();
     this.glStats = new glStats();
     this.renderStats = new rStats({
-        userTimingAPI: true,
-        values: {
-            frame: { caption: 'Total frame time (ms)', over: 16, average: true, avgMs: 100 },
-            fps: { caption: 'Framerate (FPS)', below: 30 },
-            calls: { caption: 'Calls (three.js)', over: 3000 },
-            raf: { caption: 'Time since last rAF (ms)', average: true, avgMs: 100 },
-            rstats: { caption: 'rStats update (ms)', average: true, avgMs: 100 },
-        },
-        groups: [
-            { caption: 'Framerate', values: [ 'fps', 'raf' ] },
-            { caption: 'Frame Budget', values: [ 'frame', 'render' ] }
-        ],
-        fractions: [
-            { base: 'frame', steps: [ 'render' ] }
-        ],
-        plugins: [
-            browserStats,
-            this.glStats
-        ]
+      userTimingAPI: true,
+      values: {
+        frame: { caption: 'Total frame time (ms)', over: 16, average: true, avgMs: 100 },
+        fps: { caption: 'Framerate (FPS)', below: 30 },
+        calls: { caption: 'Calls (three.js)', over: 3000 },
+        raf: { caption: 'Time since last rAF (ms)', average: true, avgMs: 100 },
+        rstats: { caption: 'rStats update (ms)', average: true, avgMs: 100 },
+      },
+      groups: [
+        { caption: 'Framerate', values: ['fps', 'raf'] },
+        { caption: 'Frame Budget', values: ['frame', 'render'] }
+      ],
+      fractions: [
+        { base: 'frame', steps: ['render'] }
+      ],
+      plugins: [
+        browserStats,
+        this.glStats
+      ]
     });
   }
 
   componentWillReceiveProps(nextProps) {
-    /*console.dir(OfflineStore);
-    if (nextProps.game !== undefined) {
-      //uncomment me for error!
-      OfflineStore.gamestateStore.keys().then(keys => {
-        console.log("keys");
-        console.dir(keys);
-      });
-      OfflineStore.gamestateStore.get("gamestate").then(storedGamestate => {
-        console.log("gamestate");
-        console.dir(storedGamestate);
-      });
-      OfflineStore.gamestateStore.set("gamestate", nextProps.game);
-    } */
-
+    if (nextProps.game !== undefined && typeof OfflineStore.gamestateStore !== 'undefined') {
+      OfflineStore.saveCurrentGame(nextProps.game);
+      this.props.gameResumeable(true);
+    }
+console.dir(gameplayLog.turns);
     if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
       const winners = Rules.determineWinner(nextProps.game);
       if (typeof winners !== 'undefined') {
@@ -418,10 +414,10 @@ class App extends Component {
 
   animate = () => {
     if (this.state.statistics) {
-      this.renderStats( 'frame' ).start();
+      this.renderStats('frame').start();
       this.glStats.start();
-      this.renderStats( 'rAF' ).tick();
-      this.renderStats( 'FPS' ).frame();
+      this.renderStats('rAF').tick();
+      this.renderStats('FPS').frame();
     }
 
     let delta = this.clock.getDelta();
@@ -437,9 +433,9 @@ class App extends Component {
 
     // Render all objects
     if (this.state.statistics) {
-      this.renderStats( 'render' ).start();
+      this.renderStats('render').start();
       this.renderScene();
-      this.renderStats( 'render' ).end();
+      this.renderStats('render').end();
     } else {
       this.renderScene();
     }
@@ -453,10 +449,10 @@ class App extends Component {
     }
 
     if (this.state.statistics) {
-      this.renderStats( 'frame' ).end();
-      this.renderStats( 'rStats' ).start();
+      this.renderStats('frame').end();
+      this.renderStats('rStats').start();
       this.renderStats().update();
-      this.renderStats( 'rStats' ).end();
+      this.renderStats('rStats').end();
     }
 
     this.frameId = window.requestAnimationFrame(this.animate);
@@ -466,7 +462,13 @@ class App extends Component {
     this.setState({ landscapeOrientation: this.orientationQuery.matches });
   }
 
-  prepareGame = async () => {
+  prepareResumedGame = async () => {
+    this.prepareNewGame();
+  }
+
+  prepareNewGame = async () => {
+
+    gameplayLog.clear();
 
     const searchParams = new URLSearchParams(window.location.search);
     const isPwa = searchParams.get('app_runs_as') === 'pwa';
@@ -524,7 +526,7 @@ class App extends Component {
     directionalLight.position.set(20, 24, -10);
     directionalLight.castShadow = false;
     this.scene.add(directionalLight);
-    
+
     this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board.fields[playerFieldIndex]);
     this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.game.board.fields[opponentFieldIndex]);
     this.scene.add(this.playerGameField.gameField);
@@ -609,10 +611,10 @@ class App extends Component {
                       onChange={event => {
                         if (event.target.checked) {
                           document.getElementsByClassName('rs-base')[0].style.display = 'block';
-                          this.setState({statistics: true});
+                          this.setState({ statistics: true });
                         } else {
                           document.getElementsByClassName('rs-base')[0].style.display = 'none';
-                          this.setState({statistics: false});                          
+                          this.setState({ statistics: false });
                         }
                       }}
                     />
@@ -649,7 +651,8 @@ class App extends Component {
 
           <Hud
             toggleMusic={() => this.toggleMusic()}
-            prepareGameCallback={this.prepareGame}
+            prepareNewGameCallback={this.prepareNewGame}
+            prepareResumedGameCallback={this.prepareResumedGame}
             showSettings={() => this.setState({ showSettings: true })}
             onRef={hud => (this.hud = hud)} />
           <div
@@ -679,7 +682,8 @@ const mapDispatchToProps = {
   finishBuildPhase,
   attack,
   changeLanguage,
-  deselectBuildings
+  deselectBuildings,
+  gameResumeable
 };
 
 const AppContainer = connect(

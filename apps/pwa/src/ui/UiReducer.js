@@ -14,6 +14,9 @@ const uiReducer = createReducer({
     },
     [UiActions.deselectBuildings]: (state, action) => {
         state.selectedBuilding = EntityType.EMPTY;
+    },
+    [UiActions.gameResumeable]: (state, action) => {
+        state.resumeGamePossible = action.payload;
     }
 })
 
