@@ -149,6 +149,7 @@ class Hud extends Component {
                                     <Button color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareGameCallback()}>
                                         {t[this.props.language].RESUME_GAME}
                                     </Button>
+                                    <p id="version">0.5-alpha</p>
                                 </div>
                             );
                         } else if (this.isInitalStage()) {
