@@ -6,7 +6,7 @@ import AssetLoader from './AssetLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import { EntityType, createEntity } from './gameplay/GameEntities';
-import { startGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
+import { startGame, resumeGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
 import { changeLanguage, deselectBuildings, gameResumeable } from './ui/UiActions';
 import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
@@ -164,11 +164,11 @@ class App extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.game !== undefined && typeof OfflineStore.gamestateStore !== 'undefined') {
-      OfflineStore.saveCurrentGame(nextProps.game);
-      this.props.gameResumeable(true);
+    if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined' && typeof OfflineStore.gamestateStore !== 'undefined' &&
+      (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (nextProps.game.currentPlayerIndex === 0)) {
+      OfflineStore.saveCurrentGame(nextProps.game).then(() => { this.props.gameResumeable(true); })
     }
-console.dir(gameplayLog.turns);
+
     if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
       const winners = Rules.determineWinner(nextProps.game);
       if (typeof winners !== 'undefined') {
@@ -178,14 +178,17 @@ console.dir(gameplayLog.turns);
         setTimeout(() => {
           if (winners.length === 1) {
             if (winners[0].type === PlayerType.HUMAN) {
+              console.log("YOU WON DISPLAYING MESSAGE");
               this.hud.showTurnMessage(t[this.props.language].MESSAGE_WIN_GAME);
             } else {
+              console.log("YOU LOST DISPLAYING MESSAGE");
               this.hud.showTurnMessage(t[this.props.language].MESSAGE_LOST_GAME);
             }
           } else if (winners.length === 2) {
+            console.log("DRAW GAME DISPLAYING MESSAGE");
             this.hud.showTurnMessage(t[this.props.language].MESSAGE_DRAW_GAME);
           }
-          setTimeout(() => this.endGame(), 1000);
+          setTimeout(() => this.endGame(), 2000);
         }, 2000);
         return;
       }
@@ -463,10 +466,16 @@ console.dir(gameplayLog.turns);
   }
 
   prepareResumedGame = async () => {
-    this.prepareNewGame();
+    OfflineStore.getResumeableGame().then((resumeableGame) => {
+      if (typeof resumeableGame === 'undefined') {
+        this.prepareNewGame();
+      } else {
+        this.prepareNewGame(resumeableGame);
+      }
+    })
   }
 
-  prepareNewGame = async () => {
+  prepareNewGame = async (resumeableGame) => {
 
     gameplayLog.clear();
 
@@ -486,28 +495,35 @@ console.dir(gameplayLog.turns);
     this.setState({ landscapeOrientation: this.orientationQuery.matches });
     this.orientationQuery.addListener(orientation => this.deviceOrientationChanged(orientation));
 
-    let players = [
-      createPlayer("Charlie Bucket", PlayerType.HUMAN),
-      createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
-    ];
+    if (typeof resumeableGame === 'undefined') {
+      let players = [
+        createPlayer("Charlie Bucket", PlayerType.HUMAN),
+        createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
+      ];
 
-    this.opponent.player = players[1];
+      this.opponent.player = players[1];
 
-    this.props.startGame(players).then(() => {
-      if (this.props.game.currentPlayerIndex === 0) {
-        this.hud.showTurnMessage(t[this.props.language].MESSAGE_PLAYER_DECIDE);
-      } else {
-        this.hud.lockUi();
-        this.hud.showTurnMessage(t[this.props.language].MESSAGE_OPPONENT_DECIDE);
-      }
+      this.props.startGame(players).then(() => {
+        if (this.props.game.currentPlayerIndex === 0) {
+          this.hud.showTurnMessage(t[this.props.language].MESSAGE_PLAYER_DECIDE);
+        } else {
+          this.hud.lockUi();
+          this.hud.showTurnMessage(t[this.props.language].MESSAGE_OPPONENT_DECIDE);
+        }
 
-      setTimeout(() => {
-        this.props.createBoard({
-          boardSize: { rows: 8, cols: 8 },
-          boardSeed: 42
-        });
-      }, 1000);
-    });
+        setTimeout(() => {
+          this.props.createBoard({
+            boardSize: { rows: 8, cols: 8 },
+            boardSeed: 42
+          });
+        }, 1000);
+      });
+    } else {
+      this.props.resumeGame(resumeableGame).then(() => {
+        this.opponent.player = resumeableGame.players[1];
+        this.startGame(true);
+      });
+    }
   }
 
   endGame() {
@@ -516,7 +532,7 @@ console.dir(gameplayLog.turns);
     }, 1000);
   }
 
-  startGame = () => {
+  startGame = (createUnits) => {
     let playerFieldIndex = this.props.game.players[0].fieldIndex;
     let opponentFieldIndex = this.props.game.players[1].fieldIndex;
     this.lookAtOpponent = this.props.game.currentPlayerIndex === 1;
@@ -552,6 +568,26 @@ console.dir(gameplayLog.turns);
     // Prepare click targets
     this.clickTargets = this.playerGameField.getClickableFields();
     this.opponentClickTargets = this.opponentGameField.getClickableFields();
+
+    if (createUnits === true) {
+      this.lookAtOpponent = (this.props.game.currentPlayerIndex === 1 || this.props.game.state === GameStateTypes.ATTACK_PHASE);
+      this.props.game.board.fields[this.props.game.players[0].fieldIndex].grid.forEach((cell) => {
+        cell.occupiedBy.forEach((building) => {
+          if (building !== EntityType.EMPTY && building !== EntityType.CREAM) {
+            const position = { x: cell.row * this.playerGameField.fieldSize, y: 0, z: cell.col * this.playerGameField.fieldSize };
+            this.playerGameField.setBuilding(position, building);
+          }
+        });
+      });
+      this.props.game.board.fields[this.props.game.players[1].fieldIndex].grid.forEach((cell) => {
+        cell.occupiedBy.forEach((building) => {
+          if (building !== EntityType.EMPTY && building !== EntityType.CREAM) {
+            const position = { x: cell.row * this.playerGameField.fieldSize, y: 0, z: cell.col * this.playerGameField.fieldSize };
+            this.opponentGameField.setBuilding(position, building);
+          }
+        });
+      });
+    }
   }
 
   renderScene() {
@@ -673,6 +709,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = {
   startGame,
+  resumeGame,
   createBoard,
   chooseStart,
   chooseField,

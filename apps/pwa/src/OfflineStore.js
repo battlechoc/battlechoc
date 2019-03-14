@@ -70,15 +70,23 @@ class OfflineStore {
         if (typeof this.gamestateStore !== 'undefined') {
             let prom = this.gamestateStore.keys();
             prom.then(keys => {
-                result = keys.includes("gamestate");
+                result = keys.includes('gamestate');
             });
             await prom;
         }
         return result;
     }
 
-    async saveCurrentGame(gamestate) {
-        await this.gamestateStore.set("gamestate", gamestate);
+    async getResumeableGame() {
+        if (typeof this.gamestateStore !== 'undefined') {
+            return this.gamestateStore.get('gamestate');
+        } else {
+            return undefined;
+        }
+    }
+
+    saveCurrentGame(gamestate) {
+        return this.gamestateStore.set("gamestate", gamestate);
     }
 }
 

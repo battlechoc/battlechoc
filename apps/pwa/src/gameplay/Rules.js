@@ -151,7 +151,7 @@ class Rules {
             return new Errors.InvalidActionIssuer(action, issuerId, this.currentPlayer(state.gameplay.game).id);
         }
 
-        if (typeof currentState === 'undefined' && action.type === GameActionTypes.startGame) {
+        if (typeof currentState === 'undefined' && (action.type === GameActionTypes.startGame || action.type === GameActionTypes.resumeGame)) {
             return true;
         } else if (action.type === GameActionTypes.createBoard) {
             return currentState === GameStateTypes.START;

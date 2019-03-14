@@ -54,6 +54,14 @@ const gameplayReducer = createReducer({}, {
             state: GameStateTypes.START
         };
     },
+    [GameActions.resumeGame]: (state, action) => {
+        state.game = {
+            players: action.payload.players,
+            currentPlayerIndex: action.payload.currentPlayerIndex,
+            state: action.payload.state,
+            board: action.payload.board
+        };
+    },
     [GameActions.createBoard]: (state, action) => {
         state.game.board = GameEntities.Board.generate(action.payload.boardSize, action.payload.boardSeed);
         state.game.state = GameStateTypes.CHOOSE_FIELD_OR_START;
