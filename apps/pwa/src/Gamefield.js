@@ -86,6 +86,8 @@ class Gamefield {
             explosion = assets.SPYING_EASTER_BUNNY_EXPLOSION;
         } else if (building.entityType === EntityType.XMAS_FACTORY) {
             explosion = assets.XMAS_FACTORY_EXPLOSION;
+        } else if (building.entityType === EntityType.HOT_CHOCOLATE_BALISTA) {
+            explosion = assets.HOT_CHOCOLATE_BALISTA_EXPLOSION;
         }
 
         for (let i = 0; i < explosion.model.animations.length; i++) {
