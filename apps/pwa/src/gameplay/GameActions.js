@@ -2,6 +2,7 @@ import { createAction } from 'redux-starter-kit';
 
 const GameActionTypes = Object.freeze({
     startGame: 'battlechoc/gameplay/startGame',
+    resumeGame: 'battlechoc/gameplay/resumeGame',
     finishGame: 'battlechoc/gameplay/finishGame',
     chooseField: 'battlechoc/gameplay/chooseField',
     chooseStart: 'battlechoc/gameplay/chooseStart',
@@ -22,6 +23,7 @@ const IssuerRelevantActions = [
 ];
 
 const startGame = createAction(GameActionTypes.startGame);
+const resumeGame = createAction(GameActionTypes.resumeGame);
 const finishGame = createAction(GameActionTypes.finishGame);
 const chooseField = createAction(GameActionTypes.chooseField);
 const chooseStart = createAction(GameActionTypes.chooseStart);
@@ -32,5 +34,5 @@ const build = createAction(GameActionTypes.build);
 const attack = createAction(GameActionTypes.attack);
 
 export {
-    GameActionTypes, IssuerRelevantActions, startGame, finishGame, chooseField, chooseStart, createBoard, finishTurn, finishBuildPhase, build, attack
+    GameActionTypes, IssuerRelevantActions, startGame, resumeGame, finishGame, chooseField, chooseStart, createBoard, finishTurn, finishBuildPhase, build, attack
 };
