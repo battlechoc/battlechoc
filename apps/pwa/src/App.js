@@ -168,7 +168,7 @@ class App extends Component {
       OfflineStore.saveCurrentGame(nextProps.game);
       this.props.gameResumeable(true);
     }
-console.dir(gameplayLog.turns);
+    console.dir(gameplayLog.turns);
     if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
       const winners = Rules.determineWinner(nextProps.game);
       if (typeof winners !== 'undefined') {
