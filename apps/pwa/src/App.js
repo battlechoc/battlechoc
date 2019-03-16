@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import AssetLoader from './AssetLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
-import { EntityType, createEntity } from './gameplay/GameEntities';
+import { EntityType, AttackType, createEntity } from './gameplay/GameEntities';
 import { startGame, resumeGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
 import { changeLanguage, deselectBuildings, gameResumeable } from './ui/UiActions';
 import { connect } from 'react-redux';
@@ -13,7 +13,7 @@ import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 import { GameStateTypes } from './gameplay/GameplayReducer'
 import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError, InvalidActionIssuer } from './gameplay/Errors';
-import { createPlayer, PlayerType } from './gameplay/Player';
+import { createPlayer, playerHasAttacks, PlayerType } from './gameplay/Player';
 import Rules from './gameplay/Rules';
 import { gameplayLog } from './gameplay/GamePlayLogger';
 import OfflineStore from './OfflineStore';
@@ -220,7 +220,7 @@ class App extends Component {
       this.opponent.simulateBuildPhase(opponentGameBoard, nextProps.game.players[1].buildingsPerTurn, nextProps.game.players[1].cacao, this.opponentGameField);
     } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
       const playersBoard = nextProps.game.board.fields[nextProps.game.players[0].fieldIndex];
-      this.opponent.simulateAttackPhase(playersBoard, this.playerGameField, nextProps.game.players[1].attacksPerTurn);
+      this.opponent.simulateAttackPhase(playersBoard, this.playerGameField, nextProps.game.players[1].attacksPerTurn[AttackType.TRUFFLE]);
     } else if (gameTransition === GameTransitions.GAME_FINISHED) {
       while (this.scene.children.length > 0) {
         this.scene.remove(this.scene.children[0]);
@@ -321,18 +321,16 @@ class App extends Component {
       var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
       intersects = intersects.filter(intersect => intersect.object.name.startsWith('Cell'));
 
-      if (intersects.length > 0 && !this.isSwiping && this.props.game.players[0].attacks > 0) {
+      if (intersects.length > 0 && !this.isSwiping && playerHasAttacks(this.props.game.players[0]) === true) {
         let position = intersects[0].object.parent.position;
-
-        let row = position.x / this.opponentGameField.fieldSize;
-        let col = position.z / this.opponentGameField.fieldSize;
 
         this.props.attack({
           issuer: this.props.game.players[0].id,
-          row: row,
-          col: col
+          attackType: this.props.selectedAttack,
+          row: position.x / this.opponentGameField.fieldSize,
+          col: position.z / this.opponentGameField.fieldSize
         }).then(() => {
-          this.opponentGameField.attack(position);
+          this.opponentGameField.attack(position, this.props.selectedAttack);
         }).catch(error => {
           if (error instanceof NoAttacksLeftError) {
             console.log(error.message);
@@ -703,6 +701,7 @@ class App extends Component {
 const mapStateToProps = state => ({
   game: state.gameplay.game,
   selectedBuilding: state.ui.selectedBuilding,
+  selectedAttack: state.ui.selectedAttack,
   language: state.ui.language
 });
 
