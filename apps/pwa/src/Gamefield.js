@@ -4,15 +4,16 @@ import { EntityType, BoardCellTypes } from './gameplay/GameEntities';
 import AssetLoader from './AssetLoader.js';
 
 class Gamefield {
-    constructor(isPlayerGameField, position, playerField) {
+    constructor(isPlayerGameField, position, playerField, fieldIdx) {
         this.isPlayerGameField = isPlayerGameField;
         this.rows = 8;
         this.cols = 8;
         this.fieldSize = 8;
         this.position = position;
+        this.fieldIdx = fieldIdx;
 
         this.buildings = [...Array(this.rows)].map(
-            field => Array(this.cols).fill([ new Building(EntityType.EMPTY) ])
+            field => Array(this.cols).fill([new Building(EntityType.EMPTY)])
         );
 
         this.build(playerField);
@@ -20,15 +21,15 @@ class Gamefield {
 
     async build(playerField) {
         this.gameField = new THREE.Group();
-        
-        for (let i = 0; i < this.rows; i++) {
-            for (let j = 0; j < this.cols; j++) {
-                let cell = playerField.grid[i * this.cols + j];
+
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                let cell = playerField.grid[row * this.cols + col];
                 let fieldClone = undefined;
 
                 const assets = AssetLoader.assets.models;
                 if (cell.type === BoardCellTypes.WHITE) {
-                    fieldClone = assets['WHITE_TILE'].model.scene.clone();  
+                    fieldClone = assets['WHITE_TILE'].model.scene.clone();
                 } else if (cell.type === BoardCellTypes.BROWN) {
                     fieldClone = assets['BROWN_TILE'].model.scene.clone();
                 } else if (cell.type === BoardCellTypes.BLACK) {
@@ -36,8 +37,13 @@ class Gamefield {
                 }
 
                 let field = fieldClone.children[0];
-                field.position.set(this.fieldSize * i, 0, this.fieldSize * j);
-                
+                field.position.set(this.fieldSize * row, 0, this.fieldSize * col);
+                field.traverse(child => {
+                    if (child instanceof THREE.Mesh) {
+                        child._cellIdx = { row: row, col: col };
+                        child._fieldIdx = this.fieldIdx;
+                    }
+                });
                 this.gameField.add(field);
 
                 if (cell.occupiedBy.includes(EntityType.CREAM)) {
@@ -56,7 +62,7 @@ class Gamefield {
     animate(delta) {
         if (this.mixer) {
             this.mixer.update(delta);
-        }       
+        }
     }
 
     triggerExplosion(building, position) {
@@ -119,17 +125,17 @@ class Gamefield {
             setTimeout(() => {
                 otherBuildings.forEach(otherBuilding => {
                     this.triggerExplosion(otherBuilding, position);
-                });                
-                this.buildings[row][col] = [ new Building(EntityType.EMPTY) ];
+                });
+                this.buildings[row][col] = [new Building(EntityType.EMPTY)];
             }, 1000);
         } else {
             this.buildings[row][col].forEach(building => {
                 this.triggerExplosion(building, position);
             });
-            this.buildings[row][col] = [ new Building(EntityType.EMPTY) ];
+            this.buildings[row][col] = [new Building(EntityType.EMPTY)];
         }
     }
-    
+
     isAboveOfFactory(row, col) {
         if ((col + 1) < this.fieldSize) {
             return this.cellContains(row, col + 1, EntityType.FACTORY);
@@ -166,11 +172,11 @@ class Gamefield {
         return this.buildings[row][col].filter(building => building.entityType === entityType).length > 0;
     }
 
-    setBuilding(position, entityType) {       
+    setBuilding(position, entityType) {
         const row = position.x / this.fieldSize;
         const col = position.z / this.fieldSize;
 
-        let building = new Building(entityType);
+        let building = new Building(entityType, { col: col, row: row }, this.fieldIdx);
 
         if (entityType === EntityType.FACTORY_EXTENSION) {
             if (this.isAboveOfFactory(row, col)) {
@@ -182,7 +188,7 @@ class Gamefield {
             } else if (!this.isBelowOfFactory(row, col)) {
                 return undefined;
             }
-        } 
+        }
 
         building.adjustPosition(position);
 
@@ -199,7 +205,7 @@ class Gamefield {
                 });
             }
         }
-        
+
         this.gameField.add(building.getModel());
 
         if (this.cellContains(row, col, EntityType.CREAM)) {

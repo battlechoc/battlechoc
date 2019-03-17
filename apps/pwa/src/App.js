@@ -285,7 +285,7 @@ class App extends Component {
 
   playerFieldClick() {
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
-    intersects = intersects.filter(intersect => intersect.object.name.startsWith('Cell'));
+    intersects = intersects.filter(intersect => (typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined'));
     let buildingSelected = this.props.selectedBuilding && this.props.selectedBuilding !== EntityType.EMPTY;
     let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
       this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
@@ -299,8 +299,8 @@ class App extends Component {
 
       const position = intersects[0].object.parent.position;
       building.position = {
-        row: position.x / this.playerGameField.fieldSize,
-        col: position.z / this.playerGameField.fieldSize
+        row: intersects[0].object._cellIdx.row,
+        col: intersects[0].object._cellIdx.col
       }
       this.props.build({ issuer: this.props.game.players[0].id, building: building }).then(() => {
         this.playerGameField.setBuilding(position, building.type);
@@ -330,16 +330,14 @@ class App extends Component {
   opponentFieldClick() {
     if (this.lookAtOpponent && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
       var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
-      intersects = intersects.filter(intersect => intersect.object.name.startsWith('Cell'));
-
+      intersects = intersects.filter(intersect => (typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined'));
       if (intersects.length > 0 && !this.isSwiping && playerHasAttacks(this.props.game.players[0]) === true) {
         let position = intersects[0].object.parent.position;
-
         this.props.attack({
           issuer: this.props.game.players[0].id,
           attackType: this.props.selectedAttack,
-          row: position.x / this.opponentGameField.fieldSize,
-          col: position.z / this.opponentGameField.fieldSize
+          row: intersects[0].object._cellIdx.row,
+          col: intersects[0].object._cellIdx.col
         }).then(() => {
           this.opponentGameField.attack(position, this.props.selectedAttack);
         }).catch(error => {
@@ -551,8 +549,8 @@ class App extends Component {
     directionalLight.castShadow = false;
     this.scene.add(directionalLight);
 
-    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board.fields[playerFieldIndex]);
-    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.game.board.fields[opponentFieldIndex]);
+    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board.fields[playerFieldIndex], playerFieldIndex);
+    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex);
     this.scene.add(this.playerGameField.gameField);
     this.scene.add(this.opponentGameField.gameField);
 
@@ -634,10 +632,12 @@ class App extends Component {
             }}
             open={this.state.snackbar.visible}
             autoHideDuration={4000}
-            onClose={() => this.setState({snackbar: {
-                  text: this.state.snackbar.text, 
-                  visible: false
-            }})}
+            onClose={() => this.setState({
+              snackbar: {
+                text: this.state.snackbar.text,
+                visible: false
+              }
+            })}
             ContentProps={{
               'aria-describedby': 'message-id',
             }}
@@ -647,10 +647,12 @@ class App extends Component {
                 key="close"
                 aria-label="Close"
                 color="inherit"
-                onClick={() => this.setState({snackbar: {
-                  text: this.state.snackbar.text, 
-                  visible: false
-                }})}
+                onClick={() => this.setState({
+                  snackbar: {
+                    text: this.state.snackbar.text,
+                    visible: false
+                  }
+                })}
               >
                 <CloseIcon />
               </IconButton>
@@ -683,7 +685,7 @@ class App extends Component {
                   }}
                   className="additionalMessage"
                   variant="outlined"
-                  onChange={event => this.setState({ additionalReportMessage: event.target.value})}
+                  onChange={event => this.setState({ additionalReportMessage: event.target.value })}
                 />
               </form>
               <FormControlLabel
@@ -707,46 +709,47 @@ class App extends Component {
                 {t[this.props.language].BUTTON_BACK}
               </Button>
               <Button onClick={() => {
-                  OfflineStore.gamestateStore.get('gamestate').then(gamestate => {
-                    let report = {
-                      deviceInformation: this.state.includeDeviceInformation ? navigator.userAgent : undefined,
-                      gamestate: gamestate,
-                      message: this.state.additionalReportMessage
-                    };
+                OfflineStore.gamestateStore.get('gamestate').then(gamestate => {
+                  let report = {
+                    deviceInformation: this.state.includeDeviceInformation ? navigator.userAgent : undefined,
+                    gamestate: gamestate,
+                    message: this.state.additionalReportMessage
+                  };
 
-                    let user = 'battlechoc-pwa';
-                    let password = '***REMOVED***';
-                    let auth = btoa(user + ':' + password);
-                    
-                    fetch('https://us-central1-battlechoc.cloudfunctions.net/api/debugging/gamestate', {
-                        method: 'post',
-                        headers: new Headers({ 
-                          'Authorization': 'Basic '+ auth,
-                          'Accept': 'application/json',
-                          'Content-Type': 'application/json'
-                        }),
-                        body: JSON.stringify({ report: report })
-                      })
-                      .then(response => response.json())
-                      .then(data => this.setState({
-                        snackbar: {
-                          text: t[this.props.language].SNACKBAR_SEND, 
-                          visible: true
-                        }
-                      }));
-                    this.setState({ additionalReportMessage: '', includeDeviceInformation: false, showErrorReport: false });
-                  }).catch(error => {
-                    console.log(error);
-                    this.setState({ 
-                      additionalReportMessage: '', 
-                      includeDeviceInformation: false, 
-                      showErrorReport: false,
-                      snackbar: {
-                        text: t[this.props.language].SNACKBAR_ERROR, 
-                        visible: true
-                      } });
+                  let user = 'battlechoc-pwa';
+                  let password = '***REMOVED***';
+                  let auth = btoa(user + ':' + password);
+
+                  fetch('https://us-central1-battlechoc.cloudfunctions.net/api/debugging/gamestate', {
+                    method: 'post',
+                    headers: new Headers({
+                      'Authorization': 'Basic ' + auth,
+                      'Accept': 'application/json',
+                      'Content-Type': 'application/json'
+                    }),
+                    body: JSON.stringify({ report: report })
                   })
-                }} color="primary">
+                    .then(response => response.json())
+                    .then(data => this.setState({
+                      snackbar: {
+                        text: t[this.props.language].SNACKBAR_SEND,
+                        visible: true
+                      }
+                    }));
+                  this.setState({ additionalReportMessage: '', includeDeviceInformation: false, showErrorReport: false });
+                }).catch(error => {
+                  console.log(error);
+                  this.setState({
+                    additionalReportMessage: '',
+                    includeDeviceInformation: false,
+                    showErrorReport: false,
+                    snackbar: {
+                      text: t[this.props.language].SNACKBAR_ERROR,
+                      visible: true
+                    }
+                  });
+                })
+              }} color="primary">
                 {t[this.props.language].REPORT_PROBLEM}
               </Button>
             </DialogActions>
@@ -774,8 +777,8 @@ class App extends Component {
                   <option value="de">{t[this.props.language].GERMAN}</option>
                 </Select>
                 <Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {
-                  this.setState({ 
-                    showSettings: false, 
+                  this.setState({
+                    showSettings: false,
                     attentionTextVisible: false,
                     showErrorReport: true
                   });

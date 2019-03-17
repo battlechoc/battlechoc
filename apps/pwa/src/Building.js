@@ -3,13 +3,14 @@ import * as THREE from 'three';
 import { EntityType } from './gameplay/GameEntities'
 
 class Building {
-	constructor(entityType) {
-		if (EntityType.isInstanceOf(entityType)) {
-			this.entityType = entityType;
-		} else {
+	constructor(entityType, cellIdx, fieldIdx) {
+		if (!EntityType.isInstanceOf(entityType)) {
 			throw new Error(entityType + ' is not instance of EntityType');
 		}
 
+		this.entityType = entityType;
+		this._cellIdx = cellIdx;
+		this._fieldIdx = fieldIdx;
 		const assets = AssetLoader.assets.models;
 		if (this.entityType === EntityType.FACTORY) {
 			this._model = assets.FACTORY.model.scene.clone();
@@ -29,7 +30,7 @@ class Building {
 			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.SPYING_EASTER_BUNNY) {
 			this._model = assets.SPYING_EASTER_BUNNY.model.scene.clone();
-			this._offset = [0, 0, 0];			
+			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.XMAS_FACTORY) {
 			this._model = assets.XMAS_FACTORY.model.scene.clone();
 			this._offset = [0, 0, 0];
@@ -42,6 +43,14 @@ class Building {
 		} else if (this.entityType === EntityType.FRUIT_CANNON) {
 			this._model = assets.FRUIT_CANNON.model.scene.clone();
 			this._offset = [1, 2, 1.5];
+		}
+		if (typeof this._model !== 'undefined') {
+			this._model.traverse(child => {
+				if (child instanceof THREE.Mesh) {
+					child._cellIdx = this._cellIdx;
+					child._fieldIdx = this._fieldIdx;
+				}
+			});
 		}
 	}
 
