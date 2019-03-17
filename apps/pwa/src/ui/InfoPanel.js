@@ -5,6 +5,20 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
 class InfoPanel extends Component {
+    calculateAttacks() {
+        let player = this.props.game.players[0];
+        return  player.attacks[AttackType.TRUFFLE] +
+                player.attacks[AttackType.HOT_CHOCOLATE] +
+                player.attacks[AttackType.BUNNY];
+    }
+
+    calculateAttacksPerTurn() {
+        let player = this.props.game.players[0];
+        return  player.attacksPerTurn[AttackType.TRUFFLE] +
+                player.attacksPerTurn[AttackType.HOT_CHOCOLATE] +
+                player.attacksPerTurn[AttackType.BUNNY];
+    }
+
     render() {
         if (this.props.isVisible) {
             return(
@@ -16,10 +30,10 @@ class InfoPanel extends Component {
                     <div className="infoIcon">
                         <img className="infoIcon"alt="buildings" src="images/buildings_icon.png" />
                         <p>{this.props.game.players[0].buildings + '/' + this.props.game.players[0].buildingsPerTurn}</p>
-                    </div>
+                    </div>    
                     <div className="infoIcon">
-                        <img className="infoIcon"alt="attacks" src="images/attacks_icon.png" />
-                        <p>{this.props.game.players[0].attacks[AttackType.TRUFFLE] + '/' + this.props.game.players[0].attacksPerTurn[AttackType.TRUFFLE]}</p>
+                        <img alt="cannon attacks" src="images/attacks_icon.png" />
+                        <p>{this.calculateAttacks() + '/' + this.calculateAttacksPerTurn()}</p>
                     </div>
                 </div>
             );

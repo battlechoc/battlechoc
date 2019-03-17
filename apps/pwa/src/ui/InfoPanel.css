@@ -7,6 +7,30 @@
   bottom: 0px;
   right: 0px;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.attacks {
+  display: flex;
+}
+
+.attacks > .previewContainer > * {
+  width: 40px;
+  height: 40px;
+  user-select: none;
+  margin-left: 0;
+}
+
+.attacks > .previewContainer {
+  display: flex;
+  align-self: flex-end;
+  margin-right: 5px;
+}
+
+.attacks > .previewContainer > .disabled {
+  margin-top: 0;
 }
 
 .infoIcon > p {
@@ -41,6 +65,11 @@
     width: 56px;
     height: 56px;
   }
+
+  .attacks > .previewContainer > * {
+    width: 56px;
+    height: 56px;
+  }
 }
 
 @media screen and (max-width: 600px) {
@@ -49,6 +78,11 @@
   }
 
   .infoIcon > img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .attacks > .previewContainer > * {
     width: 34px;
     height: 34px;
   }

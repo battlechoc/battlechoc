@@ -40,7 +40,7 @@ const AttackType = Object.freeze({
     TRUFFLE: 'AttackType.TRUFFLE',
     FRUIT: 'AttackType.FRUIT',
     HOT_CHOCOLATE: 'AttackType.HOT_CHOCOLATE',
-    BUNNY: 'AttackType.FACTORY_EXTENSION',
+    BUNNY: 'AttackType.BUNNY',
     isInstanceOf: function (attackType) {
         if (attackType === AttackType.TRUFFLE ||
             attackType === AttackType.FRUIT ||

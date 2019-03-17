@@ -41,6 +41,7 @@ class AssetLoader {
                 CREAM: { filename: 'cream_icon.png' },
                 FACTORY_EXTENSION: { filename: 'factory_extension_icon.png' },
                 SPYING_EASTER_BUNNY: { filename: 'spying_easter_bunny_icon.png' },
+                SPYING_EASTER_BUNNY_ATTACK: { filename: 'spyingEasterBunnyAttack.png' },
                 XMAS_FACTORY: { filename: 'xmasFactory_icon.png' }
             }
         }

@@ -72,7 +72,7 @@ class BuildingPalette extends Component {
     render() {
         if (this.props.isVisible) {
             return (
-                <div id="buildings">
+                <div id="buildingSelection">
                     {(() => {
                         if (this.buildingSelectionIsVisible()) {
                             return this.buildingsForSeclection.map((building, i) => {

@@ -9,6 +9,7 @@ import Tooltip from './Tooltip';
 import Actionbar from './Actionbar';
 import InfoPanel from './InfoPanel';
 import BuildingPalette from './BuildingPalette';
+import AttackPalette from './AttackPalette';
 import Button from '@material-ui/core/Button';
 import StartIcon from '@material-ui/icons/SupervisorAccount';
 import t from './Translation';
@@ -135,6 +136,7 @@ class Hud extends Component {
             <div>
                 <Tooltip />
                 <Actionbar toggleMusic={this.props.toggleMusic} showSettings={this.props.showSettings} />
+                <AttackPalette isVisible={showInGameMenu} />
                 <BuildingPalette isVisible={showInGameMenu} />
                 <InfoPanel isVisible={showInGameMenu} />
                 <div id="hud" className={this.isInitalStage() || this.isTitleScreen() || this.state.messageAnimation ? 'fullscreen' : null} ref={hud => { this.hud = hud }}>
