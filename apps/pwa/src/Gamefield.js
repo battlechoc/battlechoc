@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import Building from './Building.js';
-import { EntityType, BoardCellTypes } from './gameplay/GameEntities';
+import { EntityType, AttackType, BoardCellTypes } from './gameplay/GameEntities';
 import AssetLoader from './AssetLoader.js';
 
 class Gamefield {
@@ -14,6 +14,10 @@ class Gamefield {
 
         this.buildings = [...Array(this.rows)].map(
             field => Array(this.cols).fill([new Building(EntityType.EMPTY)])
+        );
+
+        this.grid = [...Array(this.rows)].map(
+            field => new Array(this.cols)
         );
 
         this.build(playerField);
@@ -45,12 +49,14 @@ class Gamefield {
                     }
                 });
                 this.gameField.add(field);
+                this.grid[row][col] = field;
 
                 if (cell.occupiedBy.includes(EntityType.CREAM)) {
                     this.setBuilding(field.position, EntityType.CREAM);
                 }
             }
         }
+        console.dir(this.grid);
 
         this.gameField.position.set(this.position[0], this.position[1], this.position[2]);
     }
@@ -108,31 +114,47 @@ class Gamefield {
         this.mixer.addEventListener('finished', () => this.explosionCallback());
     }
 
-    attack(position) {
+    attack(position, attackType) {
         let row = position.x / this.fieldSize;
         let col = position.z / this.fieldSize;
         let creamyBuildings = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
 
-        if (creamyBuildings.length > 0) {
-            let cream = creamyBuildings[0];
-            this.triggerExplosion(cream, position);
+        if (attackType === AttackType.TRUFFLE || attackType === AttackType.HOT_CHOCOLATE) {
+            if (creamyBuildings.length > 0) {
+                let cream = creamyBuildings[0];
+                this.triggerExplosion(cream, position);
 
-            let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM);
-            otherBuildings.forEach(otherBuilding => {
-                otherBuilding.show();
-            });
-
-            setTimeout(() => {
+                let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM);
                 otherBuildings.forEach(otherBuilding => {
-                    this.triggerExplosion(otherBuilding, position);
+                    otherBuilding.show();
+                });
+
+                setTimeout(() => {
+                    otherBuildings.forEach(otherBuilding => {
+                        this.triggerExplosion(otherBuilding, position);
+                    });
+                    this.buildings[row][col] = [new Building(EntityType.EMPTY)];
+                }, 1000);
+            } else {
+                this.buildings[row][col].forEach(building => {
+                    this.triggerExplosion(building, position);
                 });
                 this.buildings[row][col] = [new Building(EntityType.EMPTY)];
-            }, 1000);
-        } else {
-            this.buildings[row][col].forEach(building => {
-                this.triggerExplosion(building, position);
-            });
-            this.buildings[row][col] = [new Building(EntityType.EMPTY)];
+            }
+
+            if (attackType === AttackType.HOT_CHOCOLATE) {
+                this.this.grid[row][col].traverse(child => {
+                    if (child instanceof THREE.Mesh) {
+                        child.visible = false;
+                    }
+                });
+            }
+        } else if (attackType === AttackType.BUNNY) {
+            // check if bunny got destroyed (player.attacksPerTurn[BUNNY] === 0)
+            // if not desotryed explode creams
+            // if destroyed --> replace xmas factory building with balista and destroy the factory
+        } else if (attackType === AttackType.FRUIT) {
+
         }
     }
 
