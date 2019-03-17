@@ -66,8 +66,8 @@ class Rules {
 
     static canBuildOnCell(cellIdx, entityType, gameState) {
         let cell = this.currentPlayerBoardCell(gameState, cellIdx);
-        if (entityType === GameEntities.EntityType.SPYING_EASTER_BUNNY && this.currentPlayerField(gameState).grid.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.SPYING_EASTER_BUNNY).length > 0)) {
-            return new Errors.BuildNotPossibleError('Can only build one spying easter bunny factory.');
+        if (entityType === GameEntities.EntityType.SPYING_EASTER_BUNNY && this.currentPlayerField(gameState).grid.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.SPYING_EASTER_BUNNY)).length > 0) {
+            return new Errors.BuildNotPossibleError('Can only build one spying easter bunny.');
         } else if (entityType === GameEntities.EntityType.FRUIT_CANNON && cell.occupiedBy.includes(GameEntities.EntityType.RUM_TRUFFLE_CANNON)) {
             return true;
         } else if (entityType !== GameEntities.EntityType.FRUIT_CANNON &&
