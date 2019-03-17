@@ -3,6 +3,7 @@ import './Actionbar.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { finishTurn, finishBuildPhase } from '../gameplay/GameActions';
+import { playerHasAttacks, playerHasAttacksPerTurn } from '../gameplay/Player';
 import { getCheapest } from '../gameplay/GameEntities';
 import { deselectBuildings } from './UiActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
@@ -106,7 +107,7 @@ class Actionbar extends Component {
         if (typeof this.props.game !== 'undefined') {
             if (this.props.game.currentPlayerIndex === 0) {
                 if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
-                    if (this.props.game.players[0].attacksPerTurn > 0) {
+                    if (playerHasAttacksPerTurn(this.props.game.players[0]) === true) {
                         buttons.push([
                             <Fab
                                 size="small"
@@ -125,7 +126,7 @@ class Actionbar extends Component {
                                 key="4"
                                 color="primary"
                                 aria-label="finish turn"
-                                className={(this.props.game.players[0].buildings === 0 && this.props.game.players[0].attacks === 0) ? "icon blinking" : "icon"}
+                                className={(this.props.game.players[0].buildings === 0 && playerHasAttacks(this.props.game.players[0]) === false) ? "icon blinking" : "icon"}
                                 onClick={() => {
                                     this.props.finishTurn({ issuer: this.props.game.players[0].id });
                                     this.props.deselectBuildings();
@@ -150,14 +151,14 @@ class Actionbar extends Component {
                         ]);
                     }
                 } else if (this.props.game.state === GameStateTypes.ATTACK_PHASE) {
-                    if (this.props.game.players[0].attacks > 0 || this.props.game.players[0].attacksPerTurn === 0) {
+                    if (playerHasAttacks(this.props.game.players[0]) === true || playerHasAttacksPerTurn(this.props.game.players[0]) === false) {
                         buttons.push(
                             <Fab
                                 size="small"
                                 key="4"
                                 color="primary"
                                 aria-label="finish turn"
-                                className={(this.props.game.players[0].attacks > 0) ? "icon" : "icon blinking"}
+                                className={(playerHasAttacks(this.props.game.players[0]) === true) ? "icon" : "icon blinking"}
                                 onClick={() => {
                                     this.props.finishTurn({ issuer: this.props.game.players[0].id });
                                     this.props.deselectBuildings();
