@@ -3,6 +3,7 @@ import { UiActionTypes } from '../ui/UiActions';
 import * as GameEntities from './GameEntities';
 import * as Errors from './Errors.js';
 import { GameStateTypes } from './GameplayReducer';
+import { playerHasHarmfulAttacksPerTurn } from './Player';
 
 class Rules {
     static currentPlayer(gameState) {
@@ -23,6 +24,10 @@ class Rules {
 
     static currentPlayerBoardCell(gameState, cellIdx) {
         return this.playerBoardCell(gameState, gameState.currentPlayerIndex, cellIdx);
+    }
+
+    static currentPlayerField(gameState) {
+        return gameState.board.fields[gameState.players[gameState.currentPlayerIndex].fieldIndex];
     }
 
     static otherPlayerBoardCell(gameState, cellIdx) {
@@ -56,14 +61,14 @@ class Rules {
     }
 
     static canBuildFactoryExtensionOnCell(cellIdx, gameState) {
-        console.dir(cellIdx);
-        console.dir(this.getCellNeighbors(cellIdx, gameState));
         return this.getCellNeighbors(cellIdx, gameState).filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.FACTORY)).length > 0;
     }
 
     static canBuildOnCell(cellIdx, entityType, gameState) {
         let cell = this.currentPlayerBoardCell(gameState, cellIdx);
-        if (entityType === GameEntities.EntityType.FRUIT_CANNON && cell.occupiedBy.includes(GameEntities.EntityType.RUM_TRUFFLE_CANNON)) {
+        if (entityType === GameEntities.EntityType.SPYING_EASTER_BUNNY && this.currentPlayerField(gameState).grid.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.SPYING_EASTER_BUNNY).length > 0)) {
+            return new Errors.BuildNotPossibleError('Can only build one spying easter bunny factory.');
+        } else if (entityType === GameEntities.EntityType.FRUIT_CANNON && cell.occupiedBy.includes(GameEntities.EntityType.RUM_TRUFFLE_CANNON)) {
             return true;
         } else if (entityType !== GameEntities.EntityType.FRUIT_CANNON &&
             ((entityType !== GameEntities.EntityType.FACTORY_EXTENSION && cell.occupiedBy.length === 0) ||
@@ -77,16 +82,6 @@ class Rules {
         }
     }
 
-    static countTrees(grid) {
-        let count = 0;
-        for (var cell in grid) {
-            if (grid[cell].occupiedBy.includes(GameEntities.EntityType.CACAOTREE)) {
-                ++count;
-            }
-        }
-        return count;
-    }
-
     /**
      * Determines who won the game.
      * 
@@ -98,7 +93,7 @@ class Rules {
         let potentialWinners = [];
         for (var playerIdx = 0; playerIdx < 2; ++playerIdx) {
             const player = gameState.players[playerIdx];
-            if (player.buildingsPerTurn === 0 && player.attacksPerTurn === 0) {
+            if (player.buildingsPerTurn === 0 && playerHasHarmfulAttacksPerTurn(player) === false) {
                 potentialWinners.push(gameState.players[1 - playerIdx]);
             }
         }
@@ -112,8 +107,8 @@ class Rules {
             } else if (potentialWinners[1].cacao > potentialWinners[0].cacao) {
                 return potentialWinners.slice(1, 2);
             } else {
-                const player0Trees = Rules.countTrees(gameState.board.fields[potentialWinners[0].fieldIndex].grid, gameState.board.size);
-                const player1Trees = Rules.countTrees(gameState.board.fields[potentialWinners[1].fieldIndex].grid, gameState.board.size);
+                const player0Trees = gameState.board.fields[potentialWinners[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.CACAOTREE)).length;
+                const player1Trees = gameState.board.fields[potentialWinners[1].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.CACAOTREE)).length;
                 if (player0Trees > player1Trees) {
                     return potentialWinners.slice(0, 1);
                 } else if (player1Trees > player0Trees) {
@@ -177,15 +172,16 @@ class Rules {
                 return this.canBuildOnCell(action.payload.building.position, action.payload.building.type, state.gameplay.game);
             }
         } else if (action.type === GameActionTypes.attack) {
-            let attackedCell = this.otherPlayerBoardCell(state.gameplay.game, action.payload);
-            if (this.currentPlayer(state.gameplay.game).attacks === 0) {
+            if (this.currentPlayer(state.gameplay.game).attacks[action.payload.attackType] === 0) {
                 return new Errors.NoAttacksLeftError();
-            } else if (attackedCell.occupiedBy.length === 0) {
+            } else if (this.otherPlayerBoardCell(state.gameplay.game, action.payload).occupiedBy.length === 0) {
                 return new Errors.TargetEmptyError();
             } else {
                 return true;
             }
         } else if (action.type === UiActionTypes.selectBuilding) {
+            return true;
+        } else if (action.type === UiActionTypes.selectAttack) {
             return true;
         } else if (action.type === UiActionTypes.changeLanguage) {
             return true;

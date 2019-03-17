@@ -36,6 +36,24 @@ const EntityType = Object.freeze({
     }
 });
 
+const AttackType = Object.freeze({
+    TRUFFLE: 'AttackType.TRUFFLE',
+    FRUIT: 'AttackType.FRUIT',
+    HOT_CHOCOLATE: 'AttackType.HOT_CHOCOLATE',
+    BUNNY: 'AttackType.FACTORY_EXTENSION',
+    isInstanceOf: function (attackType) {
+        if (attackType === AttackType.TRUFFLE ||
+            attackType === AttackType.FRUIT ||
+            attackType === AttackType.HOT_CHOCOLATE ||
+            attackType === AttackType.BUNNY) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+});
+
 class Board {
     static generate(size, seed) {
         let playerFields = [];
@@ -61,7 +79,9 @@ class Board {
                         previewStyle: previewStyle,
                         row: row,
                         col: col,
-                        occupiedBy: creamed ? [EntityType.CREAM] : []
+                        occupiedBy: creamed ? [EntityType.CREAM] : [],
+                        molten: false,
+                        shielded: false
                     });
                 }
             }
@@ -98,16 +118,20 @@ const EntityDescriptors = Object.freeze(new Map([
     [EntityType.RUM_TRUFFLE_CANNON, {
         costs: 60,
         cells: 1,
+        attackType: AttackType.TRUFFLE,
         attacksPerTurn: 1
     }],
     [EntityType.FRUIT_CANNON, {
         costs: 40,
         cells: 1,
-        fruitAttacksPerTurn: 1
+        attackType: AttackType.FRUIT,
+        attacksPerTurn: 1
     }],
     [EntityType.SPYING_EASTER_BUNNY, {
         costs: 180,
-        cells: 1
+        cells: 1,
+        attackType: AttackType.BUNNY,
+        attacksPerTurn: 1
     }],
     [EntityType.XMAS_FACTORY, {
         costs: 180,
@@ -116,7 +140,8 @@ const EntityDescriptors = Object.freeze(new Map([
     [EntityType.HOT_CHOCOLATE_BALLISTA, {
         costs: 120,
         cells: 1,
-        hotChocolateAttacksPerTurn: 1
+        attackType: AttackType.HOT_CHOCOLATE,
+        attacksPerTurn: 1
     }],
     [EntityType.CHOCOLATE_FOUNTAIN, {
         costs: 120,
@@ -152,4 +177,4 @@ function getCheapest() {
     return getEntityDescriptor(EntityType.CREAM);
 }
 
-export { BoardCellTypes, Board, EntityType, EntityDescriptors, createEntity, getEntityDescriptor, getCheapest };
+export { BoardCellTypes, Board, EntityType, AttackType, EntityDescriptors, createEntity, getEntityDescriptor, getCheapest };

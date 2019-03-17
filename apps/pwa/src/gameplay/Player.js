@@ -1,5 +1,5 @@
 import uuidv4 from 'uuid/v4';
-import { EntityType, createEntity, getEntityDescriptor } from './GameEntities';
+import { EntityType, AttackType, createEntity, getEntityDescriptor } from './GameEntities';
 import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError, InvalidActionIssuer } from './Errors';
 
 const PlayerType = Object.freeze({
@@ -8,7 +8,7 @@ const PlayerType = Object.freeze({
 });
 
 function createPlayer(name, type, activePlayer) {
-    return {
+    let player = {
         name: name,
         type: type,
         id: uuidv4(),
@@ -16,14 +16,37 @@ function createPlayer(name, type, activePlayer) {
         cacaoPerTurn: 0,
         buildings: 0,
         buildingsPerTurn: 0,
-        attacks: 0,
-        attacksPerTurn: 0,
-        fruitAttacks: 0,
-        fruitAttacksPerTurn: 0,
-        hotChocolateAttacks: 0,
-        hotChocolateAttacksPerTurn: 0,
+        attacks: {},
+        attacksPerTurn: {},
         hasFactory: false
     };
+    player.attacks[AttackType.TRUFFLE] = 0;
+    player.attacks[AttackType.HOT_CHOCOLATE] = 0;
+    player.attacks[AttackType.FRUIT] = 0;
+    player.attacks[AttackType.BUNNY] = 0;
+    player.attacksPerTurn[AttackType.TRUFFLE] = 0;
+    player.attacksPerTurn[AttackType.HOT_CHOCOLATE] = 0;
+    player.attacksPerTurn[AttackType.FRUIT] = 0;
+    player.attacksPerTurn[AttackType.BUNNY] = 0;
+    return player;
+}
+
+function playerHasAttacks(player) {
+    return (player.attacks[AttackType.TRUFFLE] +
+        player.attacks[AttackType.HOT_CHOCOLATE] +
+        player.attacks[AttackType.FRUIT] +
+        player.attacks[AttackType.BUNNY]) > 0;
+}
+
+function playerHasAttacksPerTurn(player) {
+    return (player.attacksPerTurn[AttackType.TRUFFLE] +
+        player.attacksPerTurn[AttackType.HOT_CHOCOLATE] +
+        player.attacksPerTurn[AttackType.FRUIT] +
+        player.attacksPerTurn[AttackType.BUNNY]) > 0;
+}
+
+function playerHasHarmfulAttacksPerTurn(player) {
+    return (player.attacksPerTurn[AttackType.TRUFFLE] + player.attacksPerTurn[AttackType.HOT_CHOCOLATE]) > 0;
 }
 
 class Augustus {
@@ -118,7 +141,7 @@ class Augustus {
         const unveiledFactoryExtensions = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION));
         const unveiledTrees = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.CACAOTREE));
         const unveiledSpyingEasterBunny = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY));
-        const unveiledXmasFactory= gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.XMAS_FACTORY));
+        const unveiledXmasFactory = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.XMAS_FACTORY));
         const creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
 
         if (unveiledFactories.length > 0) {
@@ -137,7 +160,7 @@ class Augustus {
             return creamedCells[Math.floor(Math.random() * creamedCells.length)];
         } else {
             return gamefield.grid[Math.floor(Math.random() * gamefield.grid.length)];
-        }        
+        }
     }
 
     simulateAttack(gamefield, uiGamefield, attacks) {
@@ -146,6 +169,7 @@ class Augustus {
 
             this.actions.attack({
                 issuer: this.player.id,
+                attackType: AttackType.TRUFFLE,
                 row: cellToAttack.row,
                 col: cellToAttack.col
             }).then(() => {
@@ -265,4 +289,4 @@ class Augustus {
     }
 }
 
-export { PlayerType, createPlayer, Augustus };
+export { PlayerType, createPlayer, playerHasAttacksPerTurn, playerHasHarmfulAttacksPerTurn, playerHasAttacks, Augustus };

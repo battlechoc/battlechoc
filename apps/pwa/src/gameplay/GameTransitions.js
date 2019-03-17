@@ -1,4 +1,5 @@
 import { GameStateTypes } from './GameplayReducer';
+import { playerHasAttacks } from './Player';
 
 const GameTransitions = Object.freeze({
     PLAYER_BEGINS_GAME: 'GameTransitions.PLAYER_BEGINS_GAME',
@@ -87,7 +88,7 @@ function getGameTransition(currentState, nextState) {
     } else if (nextState.state === GameStateTypes.ATTACK_PHASE &&
         currentState.state === GameStateTypes.ATTACK_PHASE &&
         nextState.currentPlayerIndex === 0 &&
-        nextState.players[0].attacks === 0) {
+        playerHasAttacks(nextState.players[0]) === false) {
         return GameTransitions.ATTACKS_DEPLETED;
     } else {
         return GameTransitions.INVALID;

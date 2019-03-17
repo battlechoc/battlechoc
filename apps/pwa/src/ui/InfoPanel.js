@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import './InfoPanel.css';
+import { AttackType } from '../gameplay/GameEntities';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 
@@ -18,7 +19,7 @@ class InfoPanel extends Component {
                     </div>
                     <div className="infoIcon">
                         <img className="infoIcon"alt="attacks" src="images/attacks_icon.png" />
-                        <p>{this.props.game.players[0].attacks + '/' + this.props.game.players[0].attacksPerTurn}</p>
+                        <p>{this.props.game.players[0].attacks[AttackType.TRUFFLE] + '/' + this.props.game.players[0].attacksPerTurn[AttackType.TRUFFLE]}</p>
                     </div>
                 </div>
             );

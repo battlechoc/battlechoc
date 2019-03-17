@@ -1,23 +1,27 @@
 import { createReducer } from 'redux-starter-kit';
 import * as UiActions from './UiActions';
-import { EntityType } from '../gameplay/GameEntities';
+import { EntityType, AttackType } from '../gameplay/GameEntities';
 
 const uiReducer = createReducer({
-        selectedBuilding: EntityType.FACTORY,
-        language: window.location.pathname.substr(1,2) === 'de' ? 'de' : 'en'
-    }, {
-    [UiActions.selectBuilding]: (state, action) => {
-        state.selectedBuilding = action.payload;
-    },
-    [UiActions.changeLanguage]: (state, action) => {
-        state.language = action.payload;
-    },
-    [UiActions.deselectBuildings]: (state, action) => {
-        state.selectedBuilding = EntityType.EMPTY;
-    },
-    [UiActions.gameResumeable]: (state, action) => {
-        state.resumeGamePossible = action.payload;
-    }
-})
+    selectedBuilding: EntityType.FACTORY,
+    selectedAttack: AttackType.TRUFFLE,
+    language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
+}, {
+        [UiActions.selectBuilding]: (state, action) => {
+            state.selectedBuilding = action.payload;
+        },
+        [UiActions.selectAttack]: (state, action) => {
+            state.selectedAttack = action.payload;
+        },
+        [UiActions.changeLanguage]: (state, action) => {
+            state.language = action.payload;
+        },
+        [UiActions.deselectBuildings]: (state, action) => {
+            state.selectedBuilding = EntityType.EMPTY;
+        },
+        [UiActions.gameResumeable]: (state, action) => {
+            state.resumeGamePossible = action.payload;
+        }
+    })
 
 export default uiReducer
