@@ -65,7 +65,14 @@ const languages = {
         MESSAGE_LOST_GAME: 'You lost',
         MESSAGE_DRAW_GAME: 'Draw game!',
         META_DESCRIPTION: 'You like chocolate and games? Get started now and play battlechoc, a turn-based strategy game with cacao flavor. Do you prefer apps over websites when it comes to gaming? Sure: Just add battlechoc to your home screen and play it offline wherever and whenever you want!',
-        META_KEYWORDS: 'Chocolate, Games, Strategy game, Board game, PWA, Cocoa, turn-based, Chocolate gun, Cocoa tree'
+        META_KEYWORDS: 'Chocolate, Games, Strategy game, Board game, PWA, Cocoa, turn-based, Chocolate gun, Cocoa tree',
+        REPORT_CUSTOM_MESSAGE: 'Additional Message',
+        REPORT_CUSTOM_MESSAGE_PLACEHOLDER: 'The problem occurs when you ...',
+        REPORT_DEVICE_INFO: 'Add device information',
+        REPORT_PROBLEM: 'Report Problem',
+        SNACKBAR_ERROR: 'Error sending the problem report. Check your Internet connection',
+        SNACKBAR_SEND: 'The problem report was sent successfully!',
+        REPORT_INFORMATION: 'The report will automatically include your turn history so we can reproduce your game and the problem. Further observations in the form of an additional message, or your device information (operating system, etc.) will help enormously. We delete this information immediately after the bug has been fixed, or the problem could not be recreated. Thanks for your help!'
     },
     de: {
         NEW_GAME: 'Neues Spiel',
@@ -131,7 +138,14 @@ const languages = {
         MESSAGE_LOST_GAME: 'Du hast verloren',
         MESSAGE_DRAW_GAME: 'Unentschieden!',
         META_DESCRIPTION: 'Du magst Schokolade und Spiele? Lege jetzt los und spiele battlechoc ein rundenbasiertes Strategiespiel mit Kakaoflavor. Apps sind dir lieber als Websites wenn es ums spielen geht? Klar: Füge battlechoc einfach zu deinem Homescreen hinzu und spiele es offline wo und wann du willst!',
-        META_KEYWORDS: 'Schokolade, Spiele, Strategiespiel, Brettspiel, PWA, Kakao, rundenbasiert, Schokoladenkanone, Kakaobaum'
+        META_KEYWORDS: 'Schokolade, Spiele, Strategiespiel, Brettspiel, PWA, Kakao, rundenbasiert, Schokoladenkanone, Kakaobaum',
+        REPORT_CUSTOM_MESSAGE: 'Zusätzliche Nachricht',
+        REPORT_CUSTOM_MESSAGE_PLACEHOLDER: 'Das Problem tritt auf, wenn du ...',
+        REPORT_PROBLEM: 'Problembericht senden',
+        REPORT_DEVICE_INFO: 'Geräteinformationen anhängen',
+        SNACKBAR_ERROR: 'Fehler beim Senden des Problemberichts. Prüfe deine Internetverbindung',
+        SNACKBAR_SEND: 'Der Problembericht wurde erfolgreich gesendet!',
+        REPORT_INFORMATION: 'Der Bericht enthält automatisch deine Zug History, damit wir dein Spiel und damit den Fehler nachstellen können. Weitere Beobachtungen in Form einer zusätzlichen Nachricht, oder deine Geräteinformationen (Betriebssystem, etc.) helfen dabei enorm. Wir verwenden diese Informationen ausschließlich zum nachstellen und beheben des Fehlers und löschen diese im Anschluss. Danke für deine Hilfe!'
     }
 };
 

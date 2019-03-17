@@ -28,11 +28,15 @@ import InputLabel from '@material-ui/core/InputLabel';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
+import Snackbar from '@material-ui/core/Snackbar';
+import IconButton from '@material-ui/core/IconButton';
+import CloseIcon from '@material-ui/icons/Close';
 import t from './ui/Translation';
 import rStats from 'rstatsjs/src/rStats';
 import { glStats, BrowserStats } from 'rstatsjs/src/rStats.extras';
 import Checkbox from '@material-ui/core/Checkbox';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
+import TextField from '@material-ui/core/TextField';
 
 class App extends Component {
   constructor(props) {
@@ -41,7 +45,14 @@ class App extends Component {
       loadingProgress: 0,
       showSettings: false,
       attentionTextVisible: false,
-      statistics: false
+      statistics: false,
+      showErrorReport: false,
+      includeDeviceInformation: false,
+      additionalReportMessage: '',
+      snackbar: {
+        visible: false,
+        text: 'The problem report was sent successfully!'
+      }
     }
   }
 
@@ -618,6 +629,131 @@ class App extends Component {
             }
           })()}
 
+          <Snackbar
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left',
+            }}
+            open={this.state.snackbar.visible}
+            autoHideDuration={4000}
+            onClose={() => this.setState({snackbar: {
+                  text: this.state.snackbar.text, 
+                  visible: false
+            }})}
+            ContentProps={{
+              'aria-describedby': 'message-id',
+            }}
+            message={<span id="message-id">{this.state.snackbar.text}</span>}
+            action={
+              <IconButton
+                key="close"
+                aria-label="Close"
+                color="inherit"
+                onClick={() => this.setState({snackbar: {
+                  text: this.state.snackbar.text, 
+                  visible: false
+                }})}
+              >
+                <CloseIcon />
+              </IconButton>
+            }
+          />
+
+          <Dialog
+            open={this.state.showErrorReport}
+            onClose={() => this.setState({ additionalReportMessage: '', includeDeviceInformation: false, showErrorReport: false })}
+            aria-labelledby="report-form-dialog-title"
+            PaperProps={{
+              style: { width: '80%' }
+            }}
+          >
+            <DialogTitle id="report-form-dialog-title">{t[this.props.language].REPORT_PROBLEM}</DialogTitle>
+            <DialogContent>
+              <form noValidate autoComplete="off">
+                <Typography>{t[this.props.language].REPORT_INFORMATION}</Typography>
+                <TextField
+                  label={t[this.props.language].REPORT_CUSTOM_MESSAGE}
+                  placeholder={t[this.props.language].REPORT_CUSTOM_MESSAGE_PLACEHOLDER}
+                  multiline
+                  fullWidth
+                  InputProps={{
+                    style: { fontSize: '0.9rem' },
+                  }}
+                  InputLabelProps={{
+                    style: { color: '#457B82' },
+                    shrink: true
+                  }}
+                  className="additionalMessage"
+                  variant="outlined"
+                  onChange={event => this.setState({ additionalReportMessage: event.target.value})}
+                />
+              </form>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={this.state.includeDeviceInformation}
+                    onChange={event => {
+                      if (event.target.checked) {
+                        this.setState({ includeDeviceInformation: true });
+                      } else {
+                        this.setState({ includeDeviceInformation: false });
+                      }
+                    }}
+                  />
+                }
+                label={t[this.props.language].REPORT_DEVICE_INFO}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => this.setState({ showErrorReport: false })} color="primary">
+                {t[this.props.language].BUTTON_BACK}
+              </Button>
+              <Button onClick={() => {
+                  OfflineStore.gamestateStore.get('gamestate').then(gamestate => {
+                    let report = {
+                      deviceInformation: this.state.includeDeviceInformation ? navigator.userAgent : undefined,
+                      gamestate: gamestate,
+                      message: this.state.additionalReportMessage
+                    };
+
+                    let user = 'battlechoc-pwa';
+                    let password = '***REMOVED***';
+                    let auth = btoa(user + ':' + password);
+                    
+                    fetch('https://us-central1-battlechoc.cloudfunctions.net/api/debugging/gamestate', {
+                        method: 'post',
+                        headers: new Headers({ 
+                          'Authorization': 'Basic '+ auth,
+                          'Accept': 'application/json',
+                          'Content-Type': 'application/json'
+                        }),
+                        body: JSON.stringify({ report: report })
+                      })
+                      .then(response => response.json())
+                      .then(data => this.setState({
+                        snackbar: {
+                          text: t[this.props.language].SNACKBAR_SEND, 
+                          visible: true
+                        }
+                      }));
+                    this.setState({ additionalReportMessage: '', includeDeviceInformation: false, showErrorReport: false });
+                  }).catch(error => {
+                    console.log(error);
+                    this.setState({ 
+                      additionalReportMessage: '', 
+                      includeDeviceInformation: false, 
+                      showErrorReport: false,
+                      snackbar: {
+                        text: t[this.props.language].SNACKBAR_ERROR, 
+                        visible: true
+                      } });
+                  })
+                }} color="primary">
+                {t[this.props.language].REPORT_PROBLEM}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
           <Dialog
             open={this.state.showSettings}
             onClose={() => this.setState({ showSettings: false, attentionTextVisible: false })}
@@ -639,6 +775,15 @@ class App extends Component {
                   <option value="en">{t[this.props.language].ENGLISH}</option>
                   <option value="de">{t[this.props.language].GERMAN}</option>
                 </Select>
+                <Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {
+                  this.setState({ 
+                    showSettings: false, 
+                    attentionTextVisible: false,
+                    showErrorReport: true
+                  });
+                }}>
+                  {t[this.props.language].REPORT_PROBLEM}
+                </Button>
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -658,7 +803,7 @@ class App extends Component {
                 />
                 {
                   typeof this.props.game !== 'undefined' ?
-                    <Button variant="outlined" className="quitGame" onClick={() => {
+                    <Button variant="outlined" className="dialogButton" onClick={() => {
                       if (this.state.attentionTextVisible) {
                         this.endGame();
                         this.setState({ showSettings: false, attentionTextVisible: false });
