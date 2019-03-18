@@ -1,4 +1,4 @@
-import { openDb, deleteDb } from 'idb';
+import { openDb } from 'idb';
 
 const dbVersion = 3;
 const dbName = 'battclechoc';

@@ -47,11 +47,11 @@ function boardCell(grid, size, cellIdx) {
 }
 
 function getCellNeighbors3x3(cellIdx, board, grid) {
-    let neighbors = [];
-    for (var row = cellIdx.row - 1; row <= cellIdx.row + 1; row++) {
-        for (var col = cellIdx.col - 1; col <= cellIdx.col + 1; col++) {
-            if (row >= 0 && col >= 0 && row !== cellIdx.row && col !== cellIdx.col && row < board.size.rows && col < board.size.cols) {
-                neighbors.push(boardCell(grid, { row: row, col: col }));
+    var neighbors = [];
+    for (let row = cellIdx.row - 1; row < cellIdx.row + 2; row++) {
+        for (let col = cellIdx.col - 1; col < cellIdx.col + 2; col++) {
+            if (row >= 0 && col >= 0 && !(row === cellIdx.row && col === cellIdx.col) && row < board.size.rows && col < board.size.cols) {
+                neighbors.push(boardCell(grid, board.size, { row: row, col: col }));
             }
         }
     }
@@ -199,7 +199,7 @@ const gameplayReducer = createReducer({}, {
                 });
             }
         } else if (action.payload.attackType === GameEntities.AttackType.BUNNY) {
-            const neighbors = getCellNeighbors3x3({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game));
+            const neighbors = getCellNeighbors3x3({ row: action.payload.row, col: action.payload.col }, state.game.board,  otherPlayerField(state.game).grid);
             const xmasFactoryFiltered = neighbors.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.XMAS_FACTORY));
             if (xmasFactoryFiltered.length === 0) {
                 console.log("Bunny reveals some secrets.");

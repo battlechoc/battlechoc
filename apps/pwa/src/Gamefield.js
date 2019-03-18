@@ -56,8 +56,6 @@ class Gamefield {
                 }
             }
         }
-        console.dir(this.grid);
-
         this.gameField.position.set(this.position[0], this.position[1], this.position[2]);
     }
 

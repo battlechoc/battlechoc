@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { selectAttack } from './UiActions';
-import { EntityType, AttackType, getEntityDescriptor } from '../gameplay/GameEntities';
+import { AttackType } from '../gameplay/GameEntities';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 class AttackPalette extends Component {
