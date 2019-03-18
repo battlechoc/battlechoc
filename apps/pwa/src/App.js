@@ -37,6 +37,7 @@ import { glStats, BrowserStats } from 'rstatsjs/src/rStats.extras';
 import Checkbox from '@material-ui/core/Checkbox';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import TextField from '@material-ui/core/TextField';
+import InfoDialog from './ui/InfoDialog';
 
 class App extends Component {
   constructor(props) {
@@ -829,6 +830,8 @@ class App extends Component {
               </Button>
             </DialogActions>
           </Dialog>
+
+          <InfoDialog />
 
           <Hud
             toggleMusic={() => this.toggleMusic()}

@@ -152,7 +152,6 @@ class Hud extends Component {
                                         <Button color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareResumedGameCallback()}>
                                             {t[this.props.language].RESUME_GAME}
                                         </Button>
-                                        <p id="version">0.5-alpha</p>
                                     </div>
                                 );
                             } else {
@@ -161,7 +160,6 @@ class Hud extends Component {
                                         <Button color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback()}>
                                             {t[this.props.language].NEW_GAME}
                                         </Button>
-                                        <p id="version">0.5-alpha</p>
                                     </div>
                                 );
                             }

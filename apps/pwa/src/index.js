@@ -121,6 +121,11 @@ const theme = createMuiTheme({
     		root: {
     			color: 'rgba(64, 64, 64, 0.5)'
     		}
+    	},
+    	MuiDialogContentText: {
+    		root: {
+    			color: '#457B82'
+    		}
     	}
     }
 });

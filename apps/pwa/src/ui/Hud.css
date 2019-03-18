@@ -37,17 +37,6 @@
   flex: 1;
 }
 
-#version {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  font-size: 1.6vw;
-  color: #324D5C;
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
-  text-shadow: 1px 1px 2px #aeaeae;
-  margin-right: 5px; 
-}
-
 .stackedIcon {
   position: relative;
 }

@@ -1,0 +1,12 @@
+.InfoDialog {
+  position: absolute;
+  z-index: 2;
+  bottom: 0;
+  right: 0;
+  margin-bottom: 5px;
+  margin-right: 5px;
+}
+
+.info-dialog-content h5, .info-dialog-content h6, .info-dialog-content p { 
+	margin: 5px 0 !important; 
+}
