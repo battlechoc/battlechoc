@@ -119,13 +119,13 @@ class Augustus {
     }
 
     estimateCellToAttack(gamefield) {
-        const unveiledFactories = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY));
-        const unveiledCannons = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
-        const unveiledFactoryExtensions = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION));
-        const unveiledTrees = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.CACAOTREE));
-        const unveiledSpyingEasterBunny = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY));
-        const unveiledXmasFactory = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.XMAS_FACTORY));
-        const creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
+        let unveiledFactories = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY));
+        let unveiledCannons = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
+        let unveiledFactoryExtensions = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION));
+        let unveiledTrees = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.CACAOTREE));
+        let unveiledSpyingEasterBunny = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY));
+        let unveiledXmasFactory = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.XMAS_FACTORY));
+        let creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
 
         if (unveiledFactories.length > 0) {
             return unveiledFactories[0];
@@ -146,10 +146,10 @@ class Augustus {
         }
     }
 
-    async simulateAttack(gamefield, uiGamefield, attacks, timeToThink) {
+    async simulateAttack(getGamefield, uiGamefield, attacks, timeToThink) {
+        let gamefield = getGamefield();
         await this.simulateThinking(timeToThink);
         let cellToAttack = this.estimateCellToAttack(gamefield);
-        console.log(cellToAttack);
         this.actions.attack({
             issuer: this.player.id,
             attackType: AttackType.TRUFFLE,
@@ -157,27 +157,30 @@ class Augustus {
             col: cellToAttack.col
         }).then(() => {
             uiGamefield.attack({ x: cellToAttack.row * uiGamefield.fieldSize, y: 0, z: cellToAttack.col * uiGamefield.fieldSize }, AttackType.TRUFFLE);
+            if (attacks > 1) {
+                this.simulateAttack(getGamefield, uiGamefield, attacks - 1, 1500);
+            } else {
+                this.actions.finishTurn({ issuer: this.player.id });
+            }
         }).catch(error => {
             if (error instanceof NoAttacksLeftError) {
                 console.log(error.message);
+                this.actions.finishTurn({ issuer: this.player.id });
             } else if (error instanceof TargetEmptyError) {
                 console.log(error.message);
+                if (attacks > 1) {
+                    this.simulateAttack(getGamefield, uiGamefield, attacks - 1, 1500);
+                } else {
+                    this.actions.finishTurn({ issuer: this.player.id });
+                }
             } else {
                 throw error;
             }
         });
-
-        console.log(attacks);
-
-        if (attacks > 1) {
-            this.simulateAttack(gamefield, uiGamefield, attacks - 1, 1000);
-        } else {
-            this.actions.finishTurn({ issuer: this.player.id });
-        }
     }
 
-    simulateAttackPhase(gamefield, uiGamefield, attacks) {
-        this.simulateAttack(gamefield, uiGamefield, attacks, 1500);
+    simulateAttackPhase(getGamefield, uiGamefield, attacks) {
+        this.simulateAttack(getGamefield, uiGamefield, attacks, 1500);
     }
 
     setBuildingAtRandomPosition(possibleCells, building, uiGamefield) {
@@ -201,18 +204,19 @@ class Augustus {
         });
     }
 
-    async simulateBuild(gamefield, buildingsToBuild, cacao, uiGamefield, timeToThink) {
+    async simulateBuild(getGamefield, buildingsToBuild, cacao, uiGamefield, timeToThink) {
+        let gamefield = getGamefield();
         await this.simulateThinking(timeToThink);
         if (buildingsToBuild === 0) {
             this.actions.finishBuildPhase({ issuer: this.player.id });
         } else {
-            const creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
-            const freeCells = gamefield.grid.filter(cell => cell.occupiedBy.length === 0);
-            const treeCount = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE));
-            const cannonCount = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
-            const cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
-            const tree = getEntityDescriptor(EntityType.CACAOTREE);
-            const cream = getEntityDescriptor(EntityType.CREAM);
+            let creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
+            let freeCells = gamefield.grid.filter(cell => cell.occupiedBy.length === 0);
+            let treeCount = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE));
+            let cannonCount = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
+            let cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
+            let tree = getEntityDescriptor(EntityType.CACAOTREE);
+            let cream = getEntityDescriptor(EntityType.CREAM);
             if (creamedCells.length > 0 && (cacao >= tree.costs || cacao >= cannon.costs)) {
                 let building;
                 if (treeCount < 2) {
@@ -229,7 +233,7 @@ class Augustus {
                 }
 
                 this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
-                    this.simulateBuild(gamefield, buildingsToBuild - 1, cacao - building.costs, uiGamefield, 500);
+                    this.simulateBuild(getGamefield, buildingsToBuild - 1, cacao - building.costs, uiGamefield, 1000);
                 }).catch(error => {
                     if (error instanceof NoBuildingsLeftError) {
                         console.log(error.message);
@@ -246,7 +250,7 @@ class Augustus {
                 });
             } else if (freeCells.length > 0 && cacao >= cream.costs) {
                 this.setBuildingAtRandomPosition(freeCells, createEntity(EntityType.CREAM), uiGamefield).then(() => {
-                    this.simulateBuild(gamefield, buildingsToBuild - 1, cacao - cream.costs, uiGamefield, 500);
+                    this.simulateBuild(getGamefield, buildingsToBuild - 1, cacao - cream.costs, uiGamefield, 1000);
                 }).catch(error => {
                     if (error instanceof NoBuildingsLeftError) {
                         console.log(error.message);
@@ -267,8 +271,8 @@ class Augustus {
         }
     }
 
-    simulateBuildPhase(gamefield, buildingsToBuild, cacao, uiGamefield) {
-        this.simulateBuild(gamefield, buildingsToBuild, cacao, uiGamefield, 1500);
+    simulateBuildPhase(getGamefield, buildingsToBuild, cacao, uiGamefield) {
+        this.simulateBuild(getGamefield, buildingsToBuild, cacao, uiGamefield, 1500);
     }
 }
 

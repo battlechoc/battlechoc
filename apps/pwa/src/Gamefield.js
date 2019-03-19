@@ -115,15 +115,13 @@ class Gamefield {
     attack(position, attackType) {
         let row = position.x / this.fieldSize;
         let col = position.z / this.fieldSize;
-
         let creamyBuildings = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
-
         if (attackType === AttackType.TRUFFLE || attackType === AttackType.HOT_CHOCOLATE) {
             if (creamyBuildings.length > 0) {
                 let cream = creamyBuildings[0];
                 this.triggerExplosion(cream, position);
-
                 let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM);
+
                 otherBuildings.forEach(otherBuilding => {
                     otherBuilding.show();
                 });
@@ -220,7 +218,7 @@ class Gamefield {
                 otherBuildings.forEach(other => other.makeCreamy());
             }
         }
-        
+
         this.gameField.add(building.getModel());
 
         if (this.cellContains(row, col, EntityType.CREAM)) {
