@@ -129,7 +129,7 @@ class App extends Component {
       audioBuffer => {
         this.ambientSound.setBuffer(audioBuffer);
         this.ambientSound.setLoop(true);
-        this.ambientSound.setVolume(0.1);
+        this.ambientSound.setVolume(0.5);
         this.ambientSound.pause();
       }
     );
@@ -179,69 +179,78 @@ class App extends Component {
       (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (nextProps.game.currentPlayerIndex === 0)) {
       OfflineStore.saveCurrentGame(nextProps.game).then(() => { this.props.gameResumeable(true); })
     }
+
+    let gameFinished = false;
     if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
       const winners = Rules.determineWinner(nextProps.game);
       if (typeof winners !== 'undefined') {
+        gameFinished = true;
+        OfflineStore.gamestateStore.clear('gamestate').then(() => {
+          OfflineStore.hasGameToResume().then((resumeable) => {
+            this.props.gameResumeable(resumeable);
+          });
+          setTimeout(() => {
+            if (winners.length === 1) {
+              if (winners[0].type === PlayerType.HUMAN) {
+                console.log("YOU WON DISPLAYING MESSAGE");
+                this.hud.showTurnMessage(t[this.props.language].MESSAGE_WIN_GAME);
+              } else {
+                console.log("YOU LOST DISPLAYING MESSAGE");
+                this.hud.showTurnMessage(t[this.props.language].MESSAGE_LOST_GAME);
+              }
+            } else if (winners.length === 2) {
+              console.log("DRAW GAME DISPLAYING MESSAGE");
+              this.hud.showTurnMessage(t[this.props.language].MESSAGE_DRAW_GAME);
+            }
+            setTimeout(() => this.endGame(), 2000);
+          }, 2000);
+        });
+      }
+    }
+
+    if (!gameFinished) {
+      // switch language also for meta tags #SEO
+      if (nextProps.language !== this.props.language) {
+        document.querySelector('meta[name="description"]').setAttribute("content", t[nextProps.language].META_DESCRIPTION);
+        document.querySelector('meta[name="keywords"]').setAttribute("content", t[nextProps.language].META_KEYWORDS);
+      }
+
+      const gameTransition = getGameTransition(this.props.game, nextProps.game);
+
+      if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
+        this.hud.unlockUi();
+        this.colorStartButton = 1;
+      } else if (gameTransition === GameTransitions.OPPONENT_STARTS_GAME) {
+        this.opponent.simulateChooseFieldOrStartDecision(nextProps.game.board);
+      } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START) {
+        this.opponent.simulateChooseFieldDecision(nextProps.game.board);
+      } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
+        this.triggerUiEvent = 'START_GAME';
+      } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
+        this.triggerUiEvent = 'START_GAME';
+      } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
+        const opponentGameBoard = nextProps.game.board.fields[nextProps.game.players[1].fieldIndex];
+        this.opponent.simulateInitialPlacement(opponentGameBoard, this.opponentGameField);
+      } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
+        this.opponent.simulateBuildPhase(() => this.props.game.board.fields[nextProps.game.players[1].fieldIndex], nextProps.game.players[1].buildingsPerTurn, nextProps.game.players[1].cacao, this.opponentGameField);
+      } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
+        this.opponent.simulateAttackPhase(() => this.props.game.board.fields[nextProps.game.players[0].fieldIndex], this.playerGameField, nextProps.game.players[1].attacksPerTurn[AttackType.TRUFFLE]);
+      } else if (gameTransition === GameTransitions.GAME_FINISHED) {
+        while (this.scene.children.length > 0) {
+          this.scene.remove(this.scene.children[0]);
+        }
+      } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
         setTimeout(() => {
-          if (winners.length === 1) {
-            if (winners[0].type === PlayerType.HUMAN) {
-              console.log("YOU WON DISPLAYING MESSAGE");
-              this.hud.showTurnMessage(t[this.props.language].MESSAGE_WIN_GAME);
-            } else {
-              console.log("YOU LOST DISPLAYING MESSAGE");
-              this.hud.showTurnMessage(t[this.props.language].MESSAGE_LOST_GAME);
-            }
-          } else if (winners.length === 2) {
-            console.log("DRAW GAME DISPLAYING MESSAGE");
-            this.hud.showTurnMessage(t[this.props.language].MESSAGE_DRAW_GAME);
-          }
-          setTimeout(() => this.endGame(), 2000);
-        }, 2000);
-        return;
+          this.props.finishTurn({ issuer: this.props.game.players[0].id })
+            .catch(error => {
+              if (error instanceof InvalidActionIssuer) {
+                console.log(error.message);
+              } else {
+                throw error;
+              }
+            })
+        }, 3000);
       }
-    }
-
-    // switch language also for meta tags #SEO
-    if (nextProps.language !== this.props.language) {
-      document.querySelector('meta[name="description"]').setAttribute("content", t[nextProps.language].META_DESCRIPTION);
-      document.querySelector('meta[name="keywords"]').setAttribute("content", t[nextProps.language].META_KEYWORDS);
-    }
-
-    const gameTransition = getGameTransition(this.props.game, nextProps.game);
-
-    if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
-      this.hud.unlockUi();
-      this.colorStartButton = 1;
-    } else if (gameTransition === GameTransitions.OPPONENT_STARTS_GAME) {
-      this.opponent.simulateChooseFieldOrStartDecision(nextProps.game.board);
-    } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START) {
-      this.opponent.simulateChooseFieldDecision(nextProps.game.board);
-    } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
-      this.triggerUiEvent = 'START_GAME';
-    } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
-      this.triggerUiEvent = 'START_GAME';
-    } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
-      const opponentGameBoard = nextProps.game.board.fields[nextProps.game.players[1].fieldIndex];
-      this.opponent.simulateInitialPlacement(opponentGameBoard, this.opponentGameField);
-    } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
-      this.opponent.simulateBuildPhase(() => this.props.game.board.fields[nextProps.game.players[1].fieldIndex], nextProps.game.players[1].buildingsPerTurn, nextProps.game.players[1].cacao, this.opponentGameField);
-    } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
-      this.opponent.simulateAttackPhase(() => this.props.game.board.fields[nextProps.game.players[0].fieldIndex], this.playerGameField, nextProps.game.players[1].attacksPerTurn[AttackType.TRUFFLE]);
-    } else if (gameTransition === GameTransitions.GAME_FINISHED) {
-      while (this.scene.children.length > 0) {
-        this.scene.remove(this.scene.children[0]);
-      }
-    } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
-      setTimeout(() => {
-        this.props.finishTurn({ issuer: this.props.game.players[0].id })
-          .catch(error => {
-            if (error instanceof InvalidActionIssuer) {
-              console.log(error.message);
-            } else {
-              throw error;
-            }
-          })
-      }, 3000);
     }
   }
 

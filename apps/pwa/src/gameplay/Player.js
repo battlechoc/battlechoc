@@ -12,7 +12,7 @@ function createPlayer(name, type, activePlayer) {
         name: name,
         type: type,
         id: uuidv4(),
-        cacao: 50,
+        cacao: 500,
         cacaoPerTurn: 0,
         buildings: 0,
         buildingsPerTurn: 0,
