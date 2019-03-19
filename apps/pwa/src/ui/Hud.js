@@ -13,6 +13,7 @@ import AttackPalette from './AttackPalette';
 import Button from '@material-ui/core/Button';
 import StartIcon from '@material-ui/icons/SupervisorAccount';
 import t from './Translation';
+import InfoDialog from './InfoDialog';
 
 class Hud extends Component {
     constructor(props) {
@@ -136,6 +137,7 @@ class Hud extends Component {
             <div>
                 <Tooltip />
                 <Actionbar toggleMusic={this.props.toggleMusic} showSettings={this.props.showSettings} />
+                <InfoDialog isVisible={this.isTitleScreen()} />
                 <AttackPalette isVisible={showInGameMenu} />
                 <BuildingPalette isVisible={showInGameMenu} />
                 <InfoPanel isVisible={showInGameMenu} />
