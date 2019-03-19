@@ -39,10 +39,10 @@ class Building {
 			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
 			this._model = assets.CHOCOLATE_FOUNTAIN.model.scene.clone();
-			this._offset = [1, 2, 1.5];
+			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.FRUIT_CANNON) {
 			this._model = assets.FRUIT_CANNON.model.scene.clone();
-			this._offset = [1, 2, 1.5];
+			this._offset = [0, 0, 0];
 		}
 		if (typeof this._model !== 'undefined') {
 			this._model.traverse(child => {

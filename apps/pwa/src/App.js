@@ -182,9 +182,6 @@ class App extends Component {
     if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
       const winners = Rules.determineWinner(nextProps.game);
       if (typeof winners !== 'undefined') {
-        if (typeof this.opponent.stopThinking === 'function') {
-          this.opponent.stopThinking();
-        }
         setTimeout(() => {
           if (winners.length === 1) {
             if (winners[0].type === PlayerType.HUMAN) {
@@ -296,14 +293,13 @@ class App extends Component {
       } else {
         building = createEntity(this.props.selectedBuilding);
       }
-
-      const position = intersects[0].object.parent.position;
       building.position = {
         row: intersects[0].object._cellIdx.row,
         col: intersects[0].object._cellIdx.col
       }
+      const position = { x: intersects[0].object._cellIdx.row * this.playerGameField.fieldSize, y: 0, z: intersects[0].object._cellIdx.col * this.playerGameField.fieldSize };
       this.props.build({ issuer: this.props.game.players[0].id, building: building }).then(() => {
-        this.playerGameField.setBuilding(position, building.type);
+        this.playerGameField.setBuilding(position, building.type, building.position);
         if (initialPlacement) {
           this.props.deselectBuildings();
           setTimeout(() => {
@@ -581,7 +577,7 @@ class App extends Component {
         cell.occupiedBy.forEach((building) => {
           if (building !== EntityType.EMPTY && building !== EntityType.CREAM) {
             const position = { x: cell.row * this.playerGameField.fieldSize, y: 0, z: cell.col * this.playerGameField.fieldSize };
-            this.playerGameField.setBuilding(position, building);
+            this.playerGameField.setBuilding(position, building, {row: cell.row, col: cell.col });
           }
         });
       });
@@ -589,7 +585,7 @@ class App extends Component {
         cell.occupiedBy.forEach((building) => {
           if (building !== EntityType.EMPTY && building !== EntityType.CREAM) {
             const position = { x: cell.row * this.playerGameField.fieldSize, y: 0, z: cell.col * this.playerGameField.fieldSize };
-            this.opponentGameField.setBuilding(position, building);
+            this.opponentGameField.setBuilding(position, building, {row: cell.row, col: cell.col });
           }
         });
       });
