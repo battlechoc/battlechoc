@@ -339,7 +339,7 @@ class App extends Component {
             if (this.props.game.players[0].attacksPerTurn[AttackType.BUNNY] > 0) {
               this.opponentGameField.attack(target, AttackType.BUNNY);
             } else {
-              // BUNNY CATCHED
+              console.log('BUNNY CATCHED');
             }
           } else if (this.props.selectedAttack === AttackType.TRUFFLE) {
             this.opponentGameField.attack(target, AttackType.TRUFFLE);

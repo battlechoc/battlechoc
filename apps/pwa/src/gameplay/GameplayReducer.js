@@ -221,19 +221,16 @@ const gameplayReducer = createReducer({}, {
                     }
                 });
             } else {
-                console.log("Bunny got captured. Bunny home base destroyed and xmas factory converted to ballista.");
+                console.log("Bunny got captured. Bunny destroyed and xmas factory converted to ballista.");
                 currentPlayer(state.game).attacksPerTurn[GameEntities.AttackType.BUNNY] = 0;
-                const spyingEasterBunnyCell = currentPlayerField(state.game).grid.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.SPYING_EASTER_BUNNY));
-                if (spyingEasterBunnyCell.length === 1) {
-                    spyingEasterBunnyCell.occupiedBy.splice(spyingEasterBunnyCell.occupiedBy.indexOf(GameEntities.EntityType.SPYING_EASTER_BUNNY), 1);
-                    xmasFactoryFiltered[0].occupiedBy.splice(xmasFactoryFiltered.occupiedBy.indexOf(GameEntities.EntityType.XMAS_FACTORY), 1);
-                    xmasFactoryFiltered[0].occupiedBy.push(GameEntities.EntityType.HOT_CHOCOLATE_BALLISTA);
-                    const balistaDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.HOT_CHOCOLATE_BALLISTA);
-                    otherPlayer(state.game).attacksPerTurn[balistaDescriptor.attackType] += balistaDescriptor.attacksPerTurn;
-                    otherPlayer(state.game).attacks[balistaDescriptor.attackType] = otherPlayer(state.game).attacksPerTurn[balistaDescriptor.attackType];
-                } else {
-                    console.log("bunny attacked and got captured but no spying easter bunny factory exists? This must be a hack or a bug.")
-                }
+                const spyingEasterBunnyCell = currentPlayerField(state.game).grid.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.SPYING_EASTER_BUNNY))[0];
+                
+                spyingEasterBunnyCell.occupiedBy.splice(spyingEasterBunnyCell.occupiedBy.indexOf(GameEntities.EntityType.SPYING_EASTER_BUNNY), 1);
+                xmasFactoryFiltered[0].occupiedBy.splice(xmasFactoryFiltered[0].occupiedBy.indexOf(GameEntities.EntityType.XMAS_FACTORY), 1);
+                xmasFactoryFiltered[0].occupiedBy.push(GameEntities.EntityType.HOT_CHOCOLATE_BALLISTA);
+                const balistaDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.HOT_CHOCOLATE_BALLISTA);
+                otherPlayer(state.game).attacksPerTurn[balistaDescriptor.attackType] += balistaDescriptor.attacksPerTurn;
+                otherPlayer(state.game).attacks[balistaDescriptor.attackType] = otherPlayer(state.game).attacksPerTurn[balistaDescriptor.attackType];
             }
         }
     },
