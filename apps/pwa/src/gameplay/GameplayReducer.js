@@ -58,6 +58,18 @@ function getCellNeighbors3x3(cellIdx, board, grid) {
     return neighbors;
 }
 
+function getCellPatch3x3(cellIdx, board, grid) {
+    var patch = [];
+    for (let row = cellIdx.row - 1; row < cellIdx.row + 2; row++) {
+        for (let col = cellIdx.col - 1; col < cellIdx.col + 2; col++) {
+            if (row >= 0 && col >= 0 && row < board.size.rows && col < board.size.cols) {
+                patch.push(boardCell(grid, board.size, { row: row, col: col }));
+            }
+        }
+    }
+    return patch;
+}
+
 function prepareBuildPhase(gameState) {
     gameState.currentPlayerIndex = 1 - gameState.currentPlayerIndex;
     currentPlayer(gameState).cacao += currentPlayer(gameState).cacaoPerTurn;
@@ -179,7 +191,7 @@ const gameplayReducer = createReducer({}, {
                 } else if (attackedCell.occupiedBy.includes(GameEntities.EntityType.SPYING_EASTER_BUNNY)) {
                     const desrtoyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.SPYING_EASTER_BUNNY);
                     opponent.attacksPerTurn[desrtoyedBuildingDescriptor.attackType] -= desrtoyedBuildingDescriptor.attacksPerTurn;
-                    console.log('SPYING EASTER BUNNY NEST DESTROYED');
+                    console.log('SPYING EASTER BUNNY DESTROYED');
                 }
                 attackedCell.occupiedBy = [];
                 attackedCell.molten = action.payload.attackType === GameEntities.AttackType.HOT_CHOCOLATE;
@@ -199,20 +211,22 @@ const gameplayReducer = createReducer({}, {
                 });
             }
         } else if (action.payload.attackType === GameEntities.AttackType.BUNNY) {
-            const neighbors = getCellNeighbors3x3({ row: action.payload.row, col: action.payload.col }, state.game.board,  otherPlayerField(state.game).grid);
-            const xmasFactoryFiltered = neighbors.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.XMAS_FACTORY));
+            const patch = getCellPatch3x3({ row: action.payload.row, col: action.payload.col }, state.game.board,  otherPlayerField(state.game).grid);
+            const xmasFactoryFiltered = patch.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.XMAS_FACTORY));
             if (xmasFactoryFiltered.length === 0) {
                 console.log("Bunny reveals some secrets.");
-                neighbors.forEach((cell) => {
-                    cell.occupiedBy.splice(cell.occupiedBy.indexOf(GameEntities.EntityType.CREAM, 1));
+                patch.forEach((cell) => {
+                    if (cell.occupiedBy.indexOf(GameEntities.EntityType.CREAM) > 0) {
+                        cell.occupiedBy.splice(cell.occupiedBy.indexOf(GameEntities.EntityType.CREAM), 1);
+                    }
                 });
             } else {
                 console.log("Bunny got captured. Bunny home base destroyed and xmas factory converted to ballista.");
                 currentPlayer(state.game).attacksPerTurn[GameEntities.AttackType.BUNNY] = 0;
                 const spyingEasterBunnyCell = currentPlayerField(state.game).grid.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.SPYING_EASTER_BUNNY));
                 if (spyingEasterBunnyCell.length === 1) {
-                    spyingEasterBunnyCell.occupiedBy.splice(spyingEasterBunnyCell.occupiedBy.indexOf(GameEntities.EntityType.SPYING_EASTER_BUNNY, 1));
-                    xmasFactoryFiltered[0].occupiedBy.splice(xmasFactoryFiltered.occupiedBy.indexOf(GameEntities.EntityType.XMAS_FACTORY, 1));
+                    spyingEasterBunnyCell.occupiedBy.splice(spyingEasterBunnyCell.occupiedBy.indexOf(GameEntities.EntityType.SPYING_EASTER_BUNNY), 1);
+                    xmasFactoryFiltered[0].occupiedBy.splice(xmasFactoryFiltered.occupiedBy.indexOf(GameEntities.EntityType.XMAS_FACTORY), 1);
                     xmasFactoryFiltered[0].occupiedBy.push(GameEntities.EntityType.HOT_CHOCOLATE_BALLISTA);
                     const balistaDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.HOT_CHOCOLATE_BALLISTA);
                     otherPlayer(state.game).attacksPerTurn[balistaDescriptor.attackType] += balistaDescriptor.attacksPerTurn;

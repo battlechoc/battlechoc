@@ -12,7 +12,7 @@ function createPlayer(name, type, activePlayer) {
         name: name,
         type: type,
         id: uuidv4(),
-        cacao: 500,
+        cacao: 50,
         cacaoPerTurn: 0,
         buildings: 0,
         buildingsPerTurn: 0,
@@ -156,7 +156,7 @@ class Augustus {
             row: cellToAttack.row,
             col: cellToAttack.col
         }).then(() => {
-            uiGamefield.attack({ x: cellToAttack.row * uiGamefield.fieldSize, y: 0, z: cellToAttack.col * uiGamefield.fieldSize }, AttackType.TRUFFLE);
+            uiGamefield.attack({ row: cellToAttack.row, col: cellToAttack.col }, AttackType.TRUFFLE);
             if (attacks > 1) {
                 this.simulateAttack(getGamefield, uiGamefield, attacks - 1, 1500);
             } else {

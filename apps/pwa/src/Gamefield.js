@@ -112,14 +112,28 @@ class Gamefield {
         this.mixer.addEventListener('finished', () => this.explosionCallback());
     }
 
-    attack(position, attackType) {
-        let row = position.x / this.fieldSize;
-        let col = position.z / this.fieldSize;
-        let creamyBuildings = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
+    getCellPatch3x3(selectedRow, selectedCol) {
+        var patch = [];
+        for (let row = selectedRow - 1; row < selectedRow + 2; row++) {
+            for (let col = selectedCol - 1; col < selectedCol + 2; col++) {
+                if (row >= 0 && col >= 0 && row < this.rows && col < this.cols) {
+                    patch.push({ row: row, col: col });
+                }
+            }
+        }
+        return patch;
+    }
+
+    attack(target, attackType) {
+        let row = target.row;
+        let col = target.col;
+        let position3d = { x: row * this.fieldSize, y: 0, z: col * this.fieldSize };
+        
         if (attackType === AttackType.TRUFFLE || attackType === AttackType.HOT_CHOCOLATE) {
+            let creamyBuildings = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
             if (creamyBuildings.length > 0) {
                 let cream = creamyBuildings[0];
-                this.triggerExplosion(cream, position);
+                this.triggerExplosion(cream, position3d);
                 let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM);
 
                 otherBuildings.forEach(otherBuilding => {
@@ -128,13 +142,13 @@ class Gamefield {
 
                 setTimeout(() => {
                     otherBuildings.forEach(otherBuilding => {
-                        this.triggerExplosion(otherBuilding, position);
+                        this.triggerExplosion(otherBuilding, position3d);
                     });
                     this.buildings[row][col] = [new Building(EntityType.EMPTY)];
                 }, 1000);
             } else {
                 this.buildings[row][col].forEach(building => {
-                    this.triggerExplosion(building, position);
+                    this.triggerExplosion(building, position3d);
                 });
                 this.buildings[row][col] = [new Building(EntityType.EMPTY)];
             }
@@ -147,9 +161,18 @@ class Gamefield {
                 });
             }
         } else if (attackType === AttackType.BUNNY) {
-            // check if bunny got destroyed (player.attacksPerTurn[BUNNY] === 0)
-            // if not desotryed explode creams
-            // if destroyed --> replace xmas factory building with balista and destroy the factory
+            let patch = this.getCellPatch3x3(row, col);
+            patch.forEach(field => {
+                let creamyfieldIndex = this.buildings[field.row][field.col].findIndex(building => building.entityType === EntityType.CREAM)
+                if (creamyfieldIndex > -1) {
+                    let cream = this.buildings[field.row][field.col][creamyfieldIndex];
+                    this.triggerExplosion(cream, position3d);
+                    this.buildings[field.row][field.col].splice(creamyfieldIndex, 1);
+
+                    let otherBuildings = this.buildings[field.row][field.col].filter(building => building.entityType !== EntityType.CREAM);
+                    otherBuildings.forEach(otherBuilding => otherBuilding.show());
+                }
+            });
         } else if (attackType === AttackType.FRUIT) {
 
         }

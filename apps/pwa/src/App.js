@@ -185,26 +185,21 @@ class App extends Component {
       const winners = Rules.determineWinner(nextProps.game);
       if (typeof winners !== 'undefined') {
         gameFinished = true;
-        OfflineStore.gamestateStore.clear('gamestate').then(() => {
-          OfflineStore.hasGameToResume().then((resumeable) => {
-            this.props.gameResumeable(resumeable);
-          });
-          setTimeout(() => {
-            if (winners.length === 1) {
-              if (winners[0].type === PlayerType.HUMAN) {
-                console.log("YOU WON DISPLAYING MESSAGE");
-                this.hud.showTurnMessage(t[this.props.language].MESSAGE_WIN_GAME);
-              } else {
-                console.log("YOU LOST DISPLAYING MESSAGE");
-                this.hud.showTurnMessage(t[this.props.language].MESSAGE_LOST_GAME);
-              }
-            } else if (winners.length === 2) {
-              console.log("DRAW GAME DISPLAYING MESSAGE");
-              this.hud.showTurnMessage(t[this.props.language].MESSAGE_DRAW_GAME);
+        setTimeout(() => {
+          if (winners.length === 1) {
+            if (winners[0].type === PlayerType.HUMAN) {
+              console.log("YOU WON DISPLAYING MESSAGE");
+              this.hud.showTurnMessage(t[this.props.language].MESSAGE_WIN_GAME);
+            } else {
+              console.log("YOU LOST DISPLAYING MESSAGE");
+              this.hud.showTurnMessage(t[this.props.language].MESSAGE_LOST_GAME);
             }
-            setTimeout(() => this.endGame(), 2000);
-          }, 2000);
-        });
+          } else if (winners.length === 2) {
+            console.log("DRAW GAME DISPLAYING MESSAGE");
+            this.hud.showTurnMessage(t[this.props.language].MESSAGE_DRAW_GAME);
+          }
+          setTimeout(() => this.endGame(), 2000);
+        }, 2000);
       }
     }
 
@@ -335,14 +330,22 @@ class App extends Component {
       var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
       intersects = intersects.filter(intersect => (typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined'));
       if (intersects.length > 0 && !this.isSwiping && playerHasAttacks(this.props.game.players[0]) === true) {
-        let position = intersects[0].object.parent.position;
+        let target = {row: intersects[0].object._cellIdx.row, col: intersects[0].object._cellIdx.col};
         this.props.attack({
           issuer: this.props.game.players[0].id,
           attackType: this.props.selectedAttack,
-          row: intersects[0].object._cellIdx.row,
-          col: intersects[0].object._cellIdx.col
+          row: target.row,
+          col: target.col
         }).then(() => {
-          this.opponentGameField.attack(position, this.props.selectedAttack);
+          if (this.props.selectedAttack === AttackType.BUNNY) {
+            if (this.props.game.players[0].attacksPerTurn[AttackType.BUNNY] > 0) {
+              this.opponentGameField.attack(target, AttackType.BUNNY);
+            } else {
+              // BUNNY CATCHED
+            }
+          } else if (this.props.selectedAttack === AttackType.TRUFFLE) {
+            this.opponentGameField.attack(target, AttackType.TRUFFLE);
+          }
         }).catch(error => {
           if (error instanceof NoAttacksLeftError) {
             console.log(error.message);
