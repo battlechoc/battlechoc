@@ -166,11 +166,21 @@ class Gamefield {
                 let creamyfieldIndex = this.buildings[field.row][field.col].findIndex(building => building.entityType === EntityType.CREAM)
                 if (creamyfieldIndex > -1) {
                     let cream = this.buildings[field.row][field.col][creamyfieldIndex];
-                    this.triggerExplosion(cream, position3d);
-                    this.buildings[field.row][field.col].splice(creamyfieldIndex, 1);
+                    if (this.isPlayerGameField) {
+                        this.buildings[field.row][field.col].splice(creamyfieldIndex, 1);
+                        let otherBuildings = this.buildings[field.row][field.col].filter(building => building.entityType !== EntityType.CREAM);
+                        if (otherBuildings.length > 0) {
+                            otherBuildings.forEach(otherBuilding => otherBuilding.makeUncreamy());
+                        } else {
+                            this.triggerExplosion(cream, position3d);
+                        }
+                    } else {
+                        this.triggerExplosion(cream, position3d);
+                        this.buildings[field.row][field.col].splice(creamyfieldIndex, 1);
 
-                    let otherBuildings = this.buildings[field.row][field.col].filter(building => building.entityType !== EntityType.CREAM);
-                    otherBuildings.forEach(otherBuilding => otherBuilding.show());
+                        let otherBuildings = this.buildings[field.row][field.col].filter(building => building.entityType !== EntityType.CREAM);
+                        otherBuildings.forEach(otherBuilding => otherBuilding.show());                        
+                    }
                 }
             });
         } else if (attackType === AttackType.FRUIT) {

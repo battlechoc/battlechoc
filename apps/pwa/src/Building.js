@@ -121,7 +121,13 @@ class Building {
 		creamAround.position.y -= this._offset[1];
 		creamAround.position.z -= this._offset[2];
 		creamAround.rotation.y = -this._model.rotation.y;
+		creamAround.name = 'CREAMY_FIELD';
 		this._model.add(creamAround);
+	}
+
+	makeUncreamy() {
+		let creamyField = this._model.getObjectByName('CREAMY_FIELD');
+    	this._model.remove(creamyField);
 	}
 
 	getModel() {

@@ -226,7 +226,7 @@ class App extends Component {
       } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
         this.opponent.simulateInitialPlacement(this.opponentGameField);
       } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
-        this.opponent.simulateBuildPhase(nextProps.game.players[1].buildingsPerTurn, nextProps.game.players[1].cacao, this.opponentGameField);
+        this.opponent.simulateBuildPhase(this.opponentGameField);
       } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
         this.opponent.simulateAttackPhase(this.playerGameField);
       } else if (gameTransition === GameTransitions.GAME_FINISHED) {

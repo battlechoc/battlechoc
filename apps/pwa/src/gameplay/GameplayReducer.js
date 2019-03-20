@@ -216,7 +216,7 @@ const gameplayReducer = createReducer({}, {
             if (xmasFactoryFiltered.length === 0) {
                 console.log("Bunny reveals some secrets.");
                 patch.forEach((cell) => {
-                    if (cell.occupiedBy.indexOf(GameEntities.EntityType.CREAM) > 0) {
+                    if (cell.occupiedBy.indexOf(GameEntities.EntityType.CREAM) > -1) {
                         cell.occupiedBy.splice(cell.occupiedBy.indexOf(GameEntities.EntityType.CREAM), 1);
                     }
                 });

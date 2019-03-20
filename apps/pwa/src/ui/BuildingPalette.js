@@ -63,10 +63,16 @@ class BuildingPalette extends Component {
             this.props.game.currentPlayerIndex === 0;
     }
 
-    playerCanBuild(costs) {
-        return this.props.game.players[0].hasFactory &&
-            this.props.game.players[0].cacao >= costs &&
-            this.props.game.players[0].buildings > 0;
+    playerCanBuild(building) {
+        let canBuild = this.props.game.players[0].hasFactory &&
+                       this.props.game.players[0].cacao >= building.costs &&
+                       this.props.game.players[0].buildings > 0;
+        if (building.type === EntityType.SPYING_EASTER_BUNNY) {
+            let playerField = this.props.game.players[0].fieldIndex;
+            return canBuild && this.props.game.board.fields[playerField].grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length === 0
+        } else {
+            return canBuild;
+        }
     }
 
     render() {
@@ -76,7 +82,7 @@ class BuildingPalette extends Component {
                     {(() => {
                         if (this.buildingSelectionIsVisible()) {
                             return this.buildingsForSeclection.map((building, i) => {
-                                let canBuild = this.playerCanBuild(building.costs);
+                                let canBuild = this.playerCanBuild(building);
                                 if (building.type === EntityType.FACTORY) {
                                     canBuild = (this.props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
                                         this.props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) &&
