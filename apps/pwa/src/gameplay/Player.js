@@ -12,7 +12,7 @@ function createPlayer(name, type, activePlayer) {
         name: name,
         type: type,
         id: uuidv4(),
-        cacao: 50,
+        cacao: 500,
         cacaoPerTurn: 0,
         buildings: 0,
         buildingsPerTurn: 0,
@@ -52,23 +52,31 @@ function playerHasHarmfulAttacksPerTurn(player) {
 class Augustus {
     constructor(actions, player) {
         this.actions = actions;
-        this.attackedCells = [];
-        this.timers = [];
+    }
+
+    connectGamestate(callback) {
+        this.refreshGameState = () => {
+            let game = callback();
+            this.player = game.players[1];
+            this.gamefields = game.board.fields;
+            this.board = game.board.fields[this.player.fieldIndex];
+            this.opponentBoard = game.board.fields[game.players[0].fieldIndex];
+        };
     }
 
     simulateThinking(timeToThink) {
         return new Promise(resolve => setTimeout(resolve, timeToThink));
     }
 
-    scoreFields(board) {
-        const scores = [board.fields[0].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM)).length,
-        board.fields[0].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM)).length];
-        return scores;
+    scoreFields() {
+        return [this.gamefields[0].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM)).length,
+                this.gamefields[1].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM)).length];
     }
 
-    async simulateChooseFieldOrStartDecision(board) {
+    async simulateChooseFieldOrStartDecision() {
+        this.refreshGameState();
         await this.simulateThinking(1500);
-        const scores = this.scoreFields(board);
+        const scores = this.scoreFields();
         if (scores[0] === scores[1]) {
             this.actions.chooseStart({ issuer: this.player.id });
         } else if (scores[0] > scores[1]) {
@@ -78,9 +86,10 @@ class Augustus {
         }
     }
 
-    async simulateChooseFieldDecision(board) {
+    async simulateChooseFieldDecision() {
+        this.refreshGameState();
         await this.simulateThinking(1500);
-        const scores = this.scoreFields(board);
+        const scores = this.scoreFields();
         if (scores[0] === scores[1]) {
             const decision = Math.round(Math.random());
             if (decision === 0) {
@@ -95,9 +104,10 @@ class Augustus {
         }
     }
 
-    async simulateInitialPlacement(gamefield, uiGamefield) {
+    async simulateInitialPlacement(uiGamefield) {
+        this.refreshGameState();
         await this.simulateThinking(1500);
-        const creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
+        const creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
         const building = createEntity(EntityType.FACTORY);
         this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
             setTimeout(() => {
@@ -118,14 +128,14 @@ class Augustus {
         });
     }
 
-    estimateCellToAttack(gamefield) {
-        let unveiledFactories = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY));
-        let unveiledCannons = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
-        let unveiledFactoryExtensions = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION));
-        let unveiledTrees = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.CACAOTREE));
-        let unveiledSpyingEasterBunny = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY));
-        let unveiledXmasFactory = gamefield.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.XMAS_FACTORY));
-        let creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
+    estimateAttackTarget() {
+        let unveiledFactories = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY));
+        let unveiledCannons = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
+        let unveiledFactoryExtensions = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION));
+        let unveiledTrees = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.CACAOTREE));
+        let unveiledSpyingEasterBunny = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY));
+        let unveiledXmasFactory = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.XMAS_FACTORY));
+        let creamedCells = this.opponentBoard.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
 
         if (unveiledFactories.length > 0) {
             return unveiledFactories[0];
@@ -142,45 +152,48 @@ class Augustus {
         } else if (creamedCells.length > 0) {
             return creamedCells[Math.floor(Math.random() * creamedCells.length)];
         } else {
-            return gamefield.grid[Math.floor(Math.random() * gamefield.grid.length)];
+            return this.opponentBoard.grid[Math.floor(Math.random() * this.opponentBoard.grid.length)];
         }
     }
 
-    async simulateAttack(getGamefield, uiGamefield, attacks, timeToThink) {
-        let gamefield = getGamefield();
-        await this.simulateThinking(timeToThink);
-        let cellToAttack = this.estimateCellToAttack(gamefield);
-        this.actions.attack({
-            issuer: this.player.id,
-            attackType: AttackType.TRUFFLE,
-            row: cellToAttack.row,
-            col: cellToAttack.col
-        }).then(() => {
-            uiGamefield.attack({ row: cellToAttack.row, col: cellToAttack.col }, AttackType.TRUFFLE);
-            if (attacks > 1) {
-                this.simulateAttack(getGamefield, uiGamefield, attacks - 1, 1500);
-            } else {
-                this.actions.finishTurn({ issuer: this.player.id });
-            }
-        }).catch(error => {
-            if (error instanceof NoAttacksLeftError) {
-                console.log(error.message);
-                this.actions.finishTurn({ issuer: this.player.id });
-            } else if (error instanceof TargetEmptyError) {
-                console.log(error.message);
-                if (attacks > 1) {
-                    this.simulateAttack(getGamefield, uiGamefield, attacks - 1, 1500);
-                } else {
-                    this.actions.finishTurn({ issuer: this.player.id });
-                }
-            } else {
-                throw error;
-            }
-        });
+    handleAttackError(error) {
+        if (error instanceof NoAttacksLeftError) {
+            console.error(error.message);
+            this.actions.finishTurn({ issuer: this.player.id });
+        } else if (error instanceof TargetEmptyError) {
+            console.error(error.message);
+            this.actions.finishTurn({ issuer: this.player.id });
+        } else {
+            throw error;
+        }        
     }
 
-    simulateAttackPhase(getGamefield, uiGamefield, attacks) {
-        this.simulateAttack(getGamefield, uiGamefield, attacks, 1500);
+    simulateAttack(target, attackType, gamefield3d) {
+        this.actions.attack({
+            issuer: this.player.id,
+            attackType: attackType,
+            row: target.row,
+            col: target.col
+        }).then(() => {
+            gamefield3d.attack({ row: target.row, col: target.col }, attackType);
+            this.simulateAttackPhase(gamefield3d);
+        }).catch(error => this.handleAttackError(error));  
+    }
+
+    async simulateAttackPhase(gamefield3d) {
+        this.refreshGameState();
+        await this.simulateThinking(1500);
+        let creamyFields = this.opponentBoard.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
+
+        if (this.player.attacks[AttackType.BUNNY] > 0 && creamyFields.length) {
+            let target = creamyFields[Math.floor(Math.random()*creamyFields.length)];
+            this.simulateAttack(target, AttackType.BUNNY, gamefield3d);
+        } else if (this.player.attacks[AttackType.TRUFFLE] > 0) {
+            let target = this.estimateAttackTarget();
+            this.simulateAttack(target, AttackType.TRUFFLE, gamefield3d);
+        } else {
+            this.actions.finishTurn({ issuer: this.player.id });
+        }
     }
 
     setBuildingAtRandomPosition(possibleCells, building, uiGamefield) {
@@ -193,8 +206,8 @@ class Augustus {
                 z: randomCell.col * uiGamefield.fieldSize
             }
             building.position = {
-                row: randomPosition.x / uiGamefield.fieldSize,
-                col: randomPosition.z / uiGamefield.fieldSize
+                row: randomCell.row,
+                col: randomCell.col
             }
 
             this.actions.build({ issuer: this.player.id, building: building }).then(() => {
@@ -204,20 +217,44 @@ class Augustus {
         });
     }
 
-    async simulateBuild(getGamefield, buildingsToBuild, cacao, uiGamefield, timeToThink) {
-        let gamefield = getGamefield();
+    handleBuildError(error) {
+        if (error instanceof NoBuildingsLeftError) {
+            console.log(error.message);
+        } else if (error instanceof NoCacaoLeftError) {
+            console.log(error.message);
+        } else if (error instanceof BuildNotPossibleError) {
+            console.log(error.message);
+        } else if (error instanceof InvalidActionIssuer) {
+            console.log(error.message);
+        } else {
+            throw error;
+        }
+        this.actions.finishBuildPhase({ issuer: this.player.id });      
+    }
+
+    async simulateBuild(buildingsToBuild, cacao, uiGamefield, timeToThink) {
+        this.refreshGameState();
         await this.simulateThinking(timeToThink);
         if (buildingsToBuild === 0) {
             this.actions.finishBuildPhase({ issuer: this.player.id });
         } else {
-            let creamedCells = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
-            let freeCells = gamefield.grid.filter(cell => cell.occupiedBy.length === 0);
-            let treeCount = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE));
-            let cannonCount = gamefield.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
+            let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
+            let freeCells = this.board.grid.filter(cell => cell.occupiedBy.length === 0);
+            let treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE));
+            let bunnyCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY));
+            let cannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
             let cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
             let tree = getEntityDescriptor(EntityType.CACAOTREE);
+            // let xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
+            let easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
             let cream = getEntityDescriptor(EntityType.CREAM);
-            if (creamedCells.length > 0 && (cacao >= tree.costs || cacao >= cannon.costs)) {
+
+            if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0) {
+                let building = createEntity(EntityType.SPYING_EASTER_BUNNY);
+                this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
+                    this.simulateBuild(buildingsToBuild - 1, cacao - building.costs, uiGamefield, 1000);
+                }).catch(error => this.handleBuildError(error));
+            } else if (creamedCells.length > 0 && (cacao >= tree.costs || cacao >= cannon.costs)) {
                 let building;
                 if (treeCount < 2) {
                     building = createEntity(EntityType.CACAOTREE);
@@ -233,46 +270,20 @@ class Augustus {
                 }
 
                 this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
-                    this.simulateBuild(getGamefield, buildingsToBuild - 1, cacao - building.costs, uiGamefield, 1000);
-                }).catch(error => {
-                    if (error instanceof NoBuildingsLeftError) {
-                        console.log(error.message);
-                    } else if (error instanceof NoCacaoLeftError) {
-                        console.log(error.message);
-                    } else if (error instanceof BuildNotPossibleError) {
-                        console.log(error.message);
-                    } else if (error instanceof InvalidActionIssuer) {
-                        console.log(error.message);
-                    } else {
-                        throw error;
-                    }
-                    this.actions.finishBuildPhase({ issuer: this.player.id });
-                });
+                    this.simulateBuild(buildingsToBuild - 1, cacao - building.costs, uiGamefield, 1000);
+                }).catch(error => this.handleBuildError(error));
             } else if (freeCells.length > 0 && cacao >= cream.costs) {
                 this.setBuildingAtRandomPosition(freeCells, createEntity(EntityType.CREAM), uiGamefield).then(() => {
-                    this.simulateBuild(getGamefield, buildingsToBuild - 1, cacao - cream.costs, uiGamefield, 1000);
-                }).catch(error => {
-                    if (error instanceof NoBuildingsLeftError) {
-                        console.log(error.message);
-                    } else if (error instanceof NoCacaoLeftError) {
-                        console.log(error.message);
-                    } else if (error instanceof BuildNotPossibleError) {
-                        console.log(error.message);
-                    } else if (error instanceof InvalidActionIssuer) {
-                        console.log(error.message);
-                    } else {
-                        throw error;
-                    }
-                    this.actions.finishBuildPhase({ issuer: this.player.id });
-                });
+                    this.simulateBuild(buildingsToBuild - 1, cacao - cream.costs, uiGamefield, 1000);
+                }).catch(error => this.handleBuildError(error));
             } else {
                 this.actions.finishBuildPhase({ issuer: this.player.id });
             }
         }
     }
 
-    simulateBuildPhase(getGamefield, buildingsToBuild, cacao, uiGamefield) {
-        this.simulateBuild(getGamefield, buildingsToBuild, cacao, uiGamefield, 1500);
+    simulateBuildPhase(buildingsToBuild, cacao, uiGamefield) {
+        this.simulateBuild(buildingsToBuild, cacao, uiGamefield, 1500);
     }
 }
 

@@ -134,11 +134,11 @@ const EntityDescriptors = Object.freeze(new Map([
         attacksPerTurn: 1
     }],
     [EntityType.XMAS_FACTORY, {
-        costs: 180,
+        costs: 80,
         cells: 1
     }],
     [EntityType.HOT_CHOCOLATE_BALLISTA, {
-        costs: 120,
+        costs: 1,
         cells: 1,
         attackType: AttackType.HOT_CHOCOLATE,
         attacksPerTurn: 1

@@ -216,20 +216,19 @@ class App extends Component {
         this.hud.unlockUi();
         this.colorStartButton = 1;
       } else if (gameTransition === GameTransitions.OPPONENT_STARTS_GAME) {
-        this.opponent.simulateChooseFieldOrStartDecision(nextProps.game.board);
+        this.opponent.simulateChooseFieldOrStartDecision();
       } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START) {
-        this.opponent.simulateChooseFieldDecision(nextProps.game.board);
+        this.opponent.simulateChooseFieldDecision();
       } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
         this.triggerUiEvent = 'START_GAME';
       } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
         this.triggerUiEvent = 'START_GAME';
       } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
-        const opponentGameBoard = nextProps.game.board.fields[nextProps.game.players[1].fieldIndex];
-        this.opponent.simulateInitialPlacement(opponentGameBoard, this.opponentGameField);
+        this.opponent.simulateInitialPlacement(this.opponentGameField);
       } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
-        this.opponent.simulateBuildPhase(() => this.props.game.board.fields[nextProps.game.players[1].fieldIndex], nextProps.game.players[1].buildingsPerTurn, nextProps.game.players[1].cacao, this.opponentGameField);
+        this.opponent.simulateBuildPhase(nextProps.game.players[1].buildingsPerTurn, nextProps.game.players[1].cacao, this.opponentGameField);
       } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
-        this.opponent.simulateAttackPhase(() => this.props.game.board.fields[nextProps.game.players[0].fieldIndex], this.playerGameField, nextProps.game.players[1].attacksPerTurn[AttackType.TRUFFLE]);
+        this.opponent.simulateAttackPhase(this.playerGameField);
       } else if (gameTransition === GameTransitions.GAME_FINISHED) {
         while (this.scene.children.length > 0) {
           this.scene.remove(this.scene.children[0]);
@@ -254,8 +253,7 @@ class App extends Component {
       if (this.triggerUiEvent === 'START_GAME') {
         this.startGame();
         if (this.props.game.currentPlayerIndex === 1) {
-          const opponentGameBoard = this.props.game.board.fields[this.props.game.players[1].fieldIndex];
-          this.opponent.simulateInitialPlacement(opponentGameBoard, this.opponentGameField);
+          this.opponent.simulateInitialPlacement(this.opponentGameField);
         }
       }
       this.triggerUiEvent = undefined;
@@ -513,8 +511,6 @@ class App extends Component {
         createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
       ];
 
-      this.opponent.player = players[1];
-
       this.props.startGame(players).then(() => {
         if (this.props.game.currentPlayerIndex === 0) {
           this.hud.showTurnMessage(t[this.props.language].MESSAGE_PLAYER_DECIDE);
@@ -522,6 +518,8 @@ class App extends Component {
           this.hud.lockUi();
           this.hud.showTurnMessage(t[this.props.language].MESSAGE_OPPONENT_DECIDE);
         }
+
+        this.opponent.connectGamestate(() => this.props.game);
 
         setTimeout(() => {
           this.props.createBoard({
