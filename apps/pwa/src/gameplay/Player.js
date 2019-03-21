@@ -1,6 +1,6 @@
 import uuidv4 from 'uuid/v4';
 import { EntityType, AttackType, createEntity, getEntityDescriptor } from './GameEntities';
-import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError, InvalidActionIssuer } from './Errors';
+import { BattlechocError } from './Errors';
 
 const PlayerType = Object.freeze({
     HUMAN: 'PlayerType.HUMAN',
@@ -57,7 +57,7 @@ class Augustus {
     connectGamestate(callback) {
         this.refreshGameState = () => {
             let game = callback();
-            this.gameIsRunning = typeof game !== 'undefined';
+            this.gameIsRunning = game.isRunning;
             if (this.gameIsRunning) { 
                 this.player = game.players[1];
                 this.gamefields = game.board.fields;
@@ -122,14 +122,8 @@ class Augustus {
                     this.actions.finishTurn({ issuer: this.player.id });
                 }, 3000);
             }).catch(error => {
-                if (error instanceof NoBuildingsLeftError) {
-                    console.log(error.message);
-                } else if (error instanceof NoCacaoLeftError) {
-                    console.log(error.message);
-                } else if (error instanceof BuildNotPossibleError) {
-                    console.log(error.message);
-                } else if (error instanceof InvalidActionIssuer) {
-                    console.log(error.message);
+                if (error instanceof BattlechocError) {
+                    console.warn(error); 
                 } else {
                     throw error;
                 }
@@ -166,11 +160,8 @@ class Augustus {
     }
 
     handleAttackError(error) {
-        if (error instanceof NoAttacksLeftError) {
-            console.error(error.message);
-            this.actions.finishTurn({ issuer: this.player.id });
-        } else if (error instanceof TargetEmptyError) {
-            console.error(error.message);
+        if (error instanceof BattlechocError) {
+            console.warn(error.message);
             this.actions.finishTurn({ issuer: this.player.id });
         } else {
             throw error;
@@ -240,14 +231,8 @@ class Augustus {
     }
 
     handleBuildError(error) {
-        if (error instanceof NoBuildingsLeftError) {
-            console.log(error.message);
-        } else if (error instanceof NoCacaoLeftError) {
-            console.log(error.message);
-        } else if (error instanceof BuildNotPossibleError) {
-            console.log(error.message);
-        } else if (error instanceof InvalidActionIssuer) {
-            console.log(error.message);
+        if (error instanceof BattlechocError) {
+            console.warn(error); 
         } else {
             throw error;
         }

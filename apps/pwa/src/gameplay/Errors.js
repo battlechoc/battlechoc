@@ -12,7 +12,7 @@ class ActionValidationError extends BattlechocError {
     }
 }
 
-class InvalidActionIssuer extends BattlechocError {
+class InvalidActionIssuerError extends BattlechocError {
     constructor(action, issuerId, currentPlayerId, ...args) {
         super(...args);
         console.dir(action);
@@ -62,4 +62,11 @@ class UnexpectedStateError extends BattlechocError {
     }
 }
 
-export { BattlechocError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, TargetEmptyError, NoAttacksLeftError, UnexpectedStateError, InvalidActionIssuer };
+class GameAlreadyEndedError extends BattlechocError {
+    constructor(action, ...args) {
+        super(...args);
+        this.message = 'Action ' + action.type + ' cannot be executed, because the game has already ended!';
+    }
+}
+
+export { BattlechocError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, TargetEmptyError, NoAttacksLeftError, UnexpectedStateError, InvalidActionIssuerError, GameAlreadyEndedError };

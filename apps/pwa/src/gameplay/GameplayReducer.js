@@ -90,7 +90,9 @@ const gameplayReducer = createReducer({}, {
         state.game = {
             players: action.payload,
             currentPlayerIndex: coinToss,
-            state: GameStateTypes.START
+            state: GameStateTypes.START,
+            isRunning: true,
+            winners: []
         };
     },
     [GameActions.resumeGame]: (state, action) => {
@@ -233,6 +235,10 @@ const gameplayReducer = createReducer({}, {
                 otherPlayer(state.game).attacks[balistaDescriptor.attackType] = otherPlayer(state.game).attacksPerTurn[balistaDescriptor.attackType];
             }
         }
+    },
+    [GameActions.endGame]: (state, action) => {
+        state.game.isRunning = false;
+        state.game.winners = action.payload;
     },
     [GameActions.finishGame]: (state, action) => {
         state.game = undefined;

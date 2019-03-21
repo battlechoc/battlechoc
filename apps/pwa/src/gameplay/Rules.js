@@ -1,7 +1,7 @@
 import { GameActionTypes, IssuerRelevantActions } from './GameActions';
 import { UiActionTypes } from '../ui/UiActions';
 import * as GameEntities from './GameEntities';
-import * as Errors from './Errors.js';
+import * as Errors from './Errors';
 import { GameStateTypes } from './GameplayReducer';
 import { playerHasHarmfulAttacksPerTurn } from './Player';
 
@@ -143,7 +143,13 @@ class Rules {
             if (typeof action.payload !== 'undefined') {
                 issuerId = action.payload.issuer;
             }
-            return new Errors.InvalidActionIssuer(action, issuerId, this.currentPlayer(state.gameplay.game).id);
+            return new Errors.InvalidActionIssuerError(action, issuerId, this.currentPlayer(state.gameplay.game).id);
+        }
+
+        if (typeof currentState !== 'undefined') {
+            if (!state.gameplay.game.isRunning && (action.type !== GameActionTypes.finishGame && action.type !== UiActionTypes.gameResumeable)) {
+                return new Errors.GameAlreadyEndedError(action);
+            }
         }
 
         if (typeof currentState === 'undefined' && (action.type === GameActionTypes.startGame || action.type === GameActionTypes.resumeGame)) {
@@ -154,6 +160,8 @@ class Rules {
             return currentState === GameStateTypes.CHOOSE_FIELD_OR_START;
         } else if (action.type === GameActionTypes.chooseField) {
             return currentState === GameStateTypes.CHOOSE_FIELD_OR_START || currentState === GameStateTypes.CHOOSE_FIELD;
+        } else if (action.type === GameActionTypes.endGame) {
+            return true;
         } else if (action.type === GameActionTypes.finishGame) {
             return true;
         } else if (action.type === GameActionTypes.finishTurn) {

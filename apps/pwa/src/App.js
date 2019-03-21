@@ -6,13 +6,13 @@ import AssetLoader from './AssetLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import { EntityType, AttackType, createEntity } from './gameplay/GameEntities';
-import { startGame, resumeGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase } from './gameplay/GameActions';
+import { startGame, resumeGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase, endGame } from './gameplay/GameActions';
 import { changeLanguage, deselectBuildings, gameResumeable } from './ui/UiActions';
 import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 import { GameStateTypes } from './gameplay/GameplayReducer'
-import { NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, NoAttacksLeftError, TargetEmptyError, InvalidActionIssuer } from './gameplay/Errors';
+import { BattlechocError } from './gameplay/Errors';
 import { createPlayer, playerHasAttacks, PlayerType } from './gameplay/Player';
 import Rules from './gameplay/Rules';
 import { gameplayLog } from './gameplay/GamePlayLogger';
@@ -175,27 +175,19 @@ class App extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined' && typeof OfflineStore.gamestateStore !== 'undefined' &&
-      (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (nextProps.game.currentPlayerIndex === 0)) {
-      OfflineStore.saveCurrentGame(nextProps.game).then(() => { this.props.gameResumeable(true); })
-    }
-
-    let gameFinished = false;
-    if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
-      const winners = Rules.determineWinner(nextProps.game);
-      if (typeof winners !== 'undefined') {
-        gameFinished = true;
+    const gameTransition = getGameTransition(this.props.game, nextProps.game);
+    let gameStopped = typeof this.props.game !== 'undefined' ? !this.props.game.isRunning : false;
+    if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined') {
+      if (this.props.game.isRunning === true && nextProps.game.isRunning === false) {
+        gameStopped = true;
         setTimeout(() => {
-          if (winners.length === 1) {
-            if (winners[0].type === PlayerType.HUMAN) {
-              console.log("YOU WON DISPLAYING MESSAGE");
+          if (nextProps.game.winners.length === 1) {
+            if (nextProps.game.winners[0].type === PlayerType.HUMAN) {
               this.hud.showTurnMessage(t[this.props.language].MESSAGE_WIN_GAME);
             } else {
-              console.log("YOU LOST DISPLAYING MESSAGE");
               this.hud.showTurnMessage(t[this.props.language].MESSAGE_LOST_GAME);
             }
-          } else if (winners.length === 2) {
-            console.log("DRAW GAME DISPLAYING MESSAGE");
+          } else if (nextProps.game.winners.length === 2) {
             this.hud.showTurnMessage(t[this.props.language].MESSAGE_DRAW_GAME);
           }
           setTimeout(() => this.endGame(), 2000);
@@ -203,14 +195,41 @@ class App extends Component {
       }
     }
 
-    if (!gameFinished) {
+    if (gameTransition === GameTransitions.GAME_FINISHED) {
+      while (this.scene.children.length > 0) {
+        this.scene.remove(this.scene.children[0]);
+        this.props.gameResumeable(false);
+      }
+    }
+
+    if (!gameStopped) {
+      if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined' && typeof OfflineStore.gamestateStore !== 'undefined' &&
+        (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (nextProps.game.currentPlayerIndex === 0)) {
+        OfflineStore.saveCurrentGame(nextProps.game)
+        .then(() => { 
+          this.props.gameResumeable(true)
+          .catch(error => {
+            if (error instanceof BattlechocError) {
+              console.warn(error);
+            } else {
+              throw error;
+            }
+          });
+        });
+      }
+
+      if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
+        const winners = Rules.determineWinner(nextProps.game);
+        if (typeof winners !== 'undefined') {
+          this.props.endGame(winners)
+        }
+      }
+
       // switch language also for meta tags #SEO
       if (nextProps.language !== this.props.language) {
         document.querySelector('meta[name="description"]').setAttribute("content", t[nextProps.language].META_DESCRIPTION);
         document.querySelector('meta[name="keywords"]').setAttribute("content", t[nextProps.language].META_KEYWORDS);
       }
-
-      const gameTransition = getGameTransition(this.props.game, nextProps.game);
 
       if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
         this.hud.unlockUi();
@@ -229,16 +248,12 @@ class App extends Component {
         this.opponent.simulateBuildPhase(this.opponentGameField);
       } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
         this.opponent.simulateAttackPhase(this.opponentGameField, this.playerGameField);
-      } else if (gameTransition === GameTransitions.GAME_FINISHED) {
-        while (this.scene.children.length > 0) {
-          this.scene.remove(this.scene.children[0]);
-        }
       } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
         setTimeout(() => {
           this.props.finishTurn({ issuer: this.props.game.players[0].id })
             .catch(error => {
-              if (error instanceof InvalidActionIssuer) {
-                console.log(error.message);
+              if (error instanceof BattlechocError) {
+                console.warn(error);
               } else {
                 throw error;
               }
@@ -308,17 +323,11 @@ class App extends Component {
           }, 3000);
         }
       }).catch(error => {
-        if (error instanceof NoBuildingsLeftError) {
-          console.log(error.message);
-        } else if (error instanceof NoCacaoLeftError) {
-          console.log(error.message);
-        } else if (error instanceof BuildNotPossibleError) {
-          console.log(error.message);
-        } else if (error instanceof InvalidActionIssuer) {
-          console.log(error.message);
-        } else {
-          throw error;
-        }
+          if (error instanceof BattlechocError) {
+            console.warn(error);
+          } else {
+            throw error;
+          }
       });
     }
   }
@@ -346,10 +355,8 @@ class App extends Component {
             this.opponentGameField.attack(target, this.props.selectedAttack);
           }
         }).catch(error => {
-          if (error instanceof NoAttacksLeftError) {
-            console.log(error.message);
-          } else if (error instanceof TargetEmptyError) {
-            console.log(error.message);
+          if (error instanceof BattlechocError) {
+            console.warn(error);
           } else {
             throw error;
           }
@@ -743,7 +750,7 @@ class App extends Component {
                     }));
                   this.setState({ additionalReportMessage: '', includeDeviceInformation: false, showErrorReport: false });
                 }).catch(error => {
-                  console.log(error);
+                  console.warn(error);
                   this.setState({
                     additionalReportMessage: '',
                     includeDeviceInformation: false,
@@ -860,6 +867,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = {
   startGame,
+  endGame,
   resumeGame,
   createBoard,
   chooseStart,
