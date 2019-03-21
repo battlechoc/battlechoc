@@ -177,20 +177,20 @@ const gameplayReducer = createReducer({}, {
                     opponent.cacaoPerTurn -= GameEntities.getEntityDescriptor(GameEntities.EntityType.CACAOTREE).cacaoPerTurn;
                     console.log('CACAOTREE DESTROYED');
                 } else if (attackedCell.occupiedBy.includes(GameEntities.EntityType.RUM_TRUFFLE_CANNON)) {
-                    const desrtoyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.RUM_TRUFFLE_CANNON);
-                    opponent.attacksPerTurn[desrtoyedBuildingDescriptor.attackType] -= desrtoyedBuildingDescriptor.attacksPerTurn;
+                    const destroyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.RUM_TRUFFLE_CANNON);
+                    opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
                     console.log('CANNON DESTROYED');
                 } else if (attackedCell.occupiedBy.includes(GameEntities.EntityType.HOT_CHOCOLATE_BALLISTA)) {
-                    const desrtoyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.HOT_CHOCOLATE_BALLISTA);
-                    opponent.attacksPerTurn[desrtoyedBuildingDescriptor.attackType] -= desrtoyedBuildingDescriptor.attacksPerTurn;
+                    const destroyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.HOT_CHOCOLATE_BALLISTA);
+                    opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
                     console.log('BALISTA DESTROYED');
                 } else if (attackedCell.occupiedBy.includes(GameEntities.EntityType.FRUIT_CANNON)) {
-                    const desrtoyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.FRUIT_CANNON);
-                    opponent.attacksPerTurn[desrtoyedBuildingDescriptor.attackType] -= desrtoyedBuildingDescriptor.attacksPerTurn;
+                    const destroyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.FRUIT_CANNON);
+                    opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
                     console.log('FRUIT CANNON DESTROYED');
                 } else if (attackedCell.occupiedBy.includes(GameEntities.EntityType.SPYING_EASTER_BUNNY)) {
-                    const desrtoyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.SPYING_EASTER_BUNNY);
-                    opponent.attacksPerTurn[desrtoyedBuildingDescriptor.attackType] -= desrtoyedBuildingDescriptor.attacksPerTurn;
+                    const destroyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.SPYING_EASTER_BUNNY);
+                    opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
                     console.log('SPYING EASTER BUNNY DESTROYED');
                 }
                 attackedCell.occupiedBy = [];

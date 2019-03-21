@@ -192,8 +192,8 @@ class Augustus {
                   gamefield3d.meltDownEasterBunny();
                   opponentGameField3d.receiveBallista({ row: target.row, col: target.col });
                 }
-            } else if (attackType === AttackType.TRUFFLE) {
-                opponentGameField3d.attack({ row: target.row, col: target.col }, AttackType.TRUFFLE);
+            } else {
+                opponentGameField3d.attack({ row: target.row, col: target.col }, attackType);
             }
             this.simulateAttackPhase(gamefield3d, opponentGameField3d);
         }).catch(error => this.handleAttackError(error));  
@@ -264,7 +264,7 @@ class Augustus {
                 let cacao = this.player.cacao;
 
                 let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
-                let freeCells = this.board.grid.filter(cell => cell.occupiedBy.length === 0);
+                let freeCells = this.board.grid.filter(cell => cell.molten === false && cell.occupiedBy.length === 0);
                 let treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE)).length;
                 let bunnyCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length;
                 let cannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length;

@@ -342,8 +342,8 @@ class App extends Component {
               this.playerGameField.meltDownEasterBunny();
               this.opponentGameField.receiveBallista(target);
             }
-          } else if (this.props.selectedAttack === AttackType.TRUFFLE) {
-            this.opponentGameField.attack(target, AttackType.TRUFFLE);
+          } else  {
+            this.opponentGameField.attack(target, this.props.selectedAttack);
           }
         }).catch(error => {
           if (error instanceof NoAttacksLeftError) {
