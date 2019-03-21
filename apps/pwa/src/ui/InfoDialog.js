@@ -43,7 +43,7 @@ class InfoDialog extends Component {
                       onClose={this.handleClose}
                       aria-labelledby="info-dialog-title"
                     >
-                        <DialogTitle id="info-dialog-title">battlechoc - version 0.5-alpha</DialogTitle>
+                        <DialogTitle id="info-dialog-title">battlechoc - version 0.7-alpha</DialogTitle>
                         <DialogContent className="info-dialog-content">
                             <Typography variant="h5">{t[this.props.language].INFO_IMPRESS}</Typography>
                             <Typography>
