@@ -96,8 +96,8 @@ class Gamefield {
             explosion = assets.SPYING_EASTER_BUNNY_EXPLOSION;
         } else if (building.entityType === EntityType.XMAS_FACTORY) {
             explosion = assets.XMAS_FACTORY_EXPLOSION;
-        } else if (building.entityType === EntityType.HOT_CHOCOLATE_BALISTA) {
-            explosion = assets.HOT_CHOCOLATE_BALISTA_EXPLOSION;
+        } else if (building.entityType === EntityType.HOT_CHOCOLATE_BALLISTA) {
+            explosion = assets.HOT_CHOCOLATE_BALLISTA_EXPLOSION;
         }
 
         for (let i = 0; i < explosion.model.animations.length; i++) {
@@ -112,16 +112,75 @@ class Gamefield {
         this.mixer.addEventListener('finished', () => this.explosionCallback());
     }
 
-    getCellPatch3x3(selectedRow, selectedCol) {
+    getCellPatch3x3(selectedRow, selectedCol, returnFields) {
         var patch = [];
         for (let row = selectedRow - 1; row < selectedRow + 2; row++) {
             for (let col = selectedCol - 1; col < selectedCol + 2; col++) {
                 if (row >= 0 && col >= 0 && row < this.rows && col < this.cols) {
-                    patch.push({ row: row, col: col });
+                    if (returnFields) {
+                        patch.push(this.buildings[row][col]);
+                    } else {
+                        patch.push({ row: row, col: col });
+                    }
                 }
             }
         }
         return patch;
+    }
+
+    locateEasterBunny() {
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                var index = this.buildings[row][col].findIndex(building => building.entityType === EntityType.SPYING_EASTER_BUNNY)
+                if (index > -1) {
+                    return {
+                        row: row,
+                        col: col,
+                        index: index
+                    };
+                }
+            }             
+        } 
+    }
+
+    meltDownEasterBunny() {
+        let { row, col, index } = this.locateEasterBunny();
+        
+        let position3d = { x: row * this.fieldSize, y: 0, z: col * this.fieldSize };
+        let bunny = this.buildings[row][col][index];
+        this.triggerExplosion(bunny, position3d);
+        this.buildings[row][col].splice(index, 1);
+
+        let cream = this.buildings[row][col].findIndex(building => building.entityType === EntityType.CREAM);
+        if (this.isPlayerGameField && cream > -1) {
+            this.buildings[row][col][cream].show();
+        }
+    }
+
+    receiveBallista(target) {
+        const patch = this.getCellPatch3x3(target.row, target.col, true);
+        const xmasFactoryCell = patch.filter(cell => cell.findIndex(building => building.entityType === EntityType.XMAS_FACTORY) > -1)[0];
+
+        let row = xmasFactoryCell[0]._cellIdx.row;
+        let col = xmasFactoryCell[0]._cellIdx.col;
+        let position3d = { x: row * this.fieldSize, y: 0, z: col * this.fieldSize };
+        console.log(row, col, position3d);
+
+        let xmasFactoryIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.XMAS_FACTORY);        
+        let xmasFactory = this.buildings[row][col][xmasFactoryIndex];  
+        
+        this.gameField.remove(xmasFactory.getModel());
+        this.buildings[row][col].splice(xmasFactoryIndex, 1);
+        let hotChocolateBallista = new Building(EntityType.HOT_CHOCOLATE_BALLISTA)
+        this.buildings[row][col].push();
+        this.setBuilding(position3d, EntityType.HOT_CHOCOLATE_BALLISTA, { row: row, col: col });
+
+        let cream = this.buildings[row][col].findIndex(building => building.entityType === EntityType.CREAM);
+        if (this.isPlayerGameField && cream > -1) {
+            hotChocolateBallista.makeCreamy();
+        } else if (cream > -1) {
+            hotChocolateBallista.hide();
+        }
     }
 
     attack(target, attackType) {
@@ -161,7 +220,7 @@ class Gamefield {
                 });
             }
         } else if (attackType === AttackType.BUNNY) {
-            let patch = this.getCellPatch3x3(row, col);
+            let patch = this.getCellPatch3x3(row, col, false);
             patch.forEach(field => {
                 let creamyfieldIndex = this.buildings[field.row][field.col].findIndex(building => building.entityType === EntityType.CREAM)
                 if (creamyfieldIndex > -1) {

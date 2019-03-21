@@ -12,7 +12,7 @@ function createPlayer(name, type, activePlayer) {
         name: name,
         type: type,
         id: uuidv4(),
-        cacao: 50,
+        cacao: 500,
         cacaoPerTurn: 0,
         buildings: 0,
         buildingsPerTurn: 0,
@@ -177,19 +177,28 @@ class Augustus {
         }        
     }
 
-    simulateAttack(target, attackType, gamefield3d) {
+    simulateAttack(target, attackType, gamefield3d, opponentGameField3d) {
         this.actions.attack({
             issuer: this.player.id,
             attackType: attackType,
             row: target.row,
             col: target.col
         }).then(() => {
-            gamefield3d.attack({ row: target.row, col: target.col }, attackType);
-            this.simulateAttackPhase(gamefield3d);
+            if (attackType === AttackType.BUNNY) {
+                if (this.player.attacksPerTurn[AttackType.BUNNY] > 0) {
+                  opponentGameField3d.attack({ row: target.row, col: target.col }, AttackType.BUNNY);
+                } else {
+                  gamefield3d.meltDownEasterBunny();
+                  opponentGameField3d.receiveBallista({ row: target.row, col: target.col });
+                }
+            } else if (attackType === AttackType.TRUFFLE) {
+                opponentGameField3d.attack({ row: target.row, col: target.col }, AttackType.TRUFFLE);
+            }
+            this.simulateAttackPhase(gamefield3d, opponentGameField3d);
         }).catch(error => this.handleAttackError(error));  
     }
 
-    async simulateAttackPhase(gamefield3d) {
+    async simulateAttackPhase(gamefield3d, opponentGameField3d) {
         await this.simulateThinking(1500);
         this.refreshGameState();
         if (this.gameIsRunning) {
@@ -198,10 +207,10 @@ class Augustus {
             if (this.player.attacks[AttackType.BUNNY] > 0 && creamyFields.length) {
                 let target = creamyFields[Math.floor(Math.random()*creamyFields.length)];
                 console.log('OPPONENT BUNNY IS GOING TO SPY :', target);
-                this.simulateAttack(target, AttackType.BUNNY, gamefield3d);
+                this.simulateAttack(target, AttackType.BUNNY, gamefield3d, opponentGameField3d);
             } else if (this.player.attacks[AttackType.TRUFFLE] > 0) {
                 let target = this.estimateAttackTarget();
-                this.simulateAttack(target, AttackType.TRUFFLE, gamefield3d);
+                this.simulateAttack(target, AttackType.TRUFFLE, gamefield3d, opponentGameField3d);
             } else {
                 this.actions.finishTurn({ issuer: this.player.id });
             }

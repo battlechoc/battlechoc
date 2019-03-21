@@ -228,7 +228,7 @@ class App extends Component {
       } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
         this.opponent.simulateBuildPhase(this.opponentGameField);
       } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
-        this.opponent.simulateAttackPhase(this.playerGameField);
+        this.opponent.simulateAttackPhase(this.opponentGameField, this.playerGameField);
       } else if (gameTransition === GameTransitions.GAME_FINISHED) {
         while (this.scene.children.length > 0) {
           this.scene.remove(this.scene.children[0]);
@@ -339,7 +339,8 @@ class App extends Component {
             if (this.props.game.players[0].attacksPerTurn[AttackType.BUNNY] > 0) {
               this.opponentGameField.attack(target, AttackType.BUNNY);
             } else {
-              console.log('BUNNY CATCHED');
+              this.playerGameField.meltDownEasterBunny();
+              this.opponentGameField.receiveBallista(target);
             }
           } else if (this.props.selectedAttack === AttackType.TRUFFLE) {
             this.opponentGameField.attack(target, AttackType.TRUFFLE);
