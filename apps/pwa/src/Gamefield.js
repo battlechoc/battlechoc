@@ -164,11 +164,11 @@ class Gamefield {
         let row = xmasFactoryCell[0]._cellIdx.row;
         let col = xmasFactoryCell[0]._cellIdx.col;
         let position3d = { x: row * this.fieldSize, y: 0, z: col * this.fieldSize };
-        console.log(row, col, position3d);
-
+        console.log(position3d);
         let xmasFactoryIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.XMAS_FACTORY);        
         let xmasFactory = this.buildings[row][col][xmasFactoryIndex];  
-        
+        console.log(xmasFactoryIndex);
+        console.log(this.buildings[row][col][xmasFactoryIndex]);
         this.gameField.remove(xmasFactory.getModel());
         this.buildings[row][col].splice(xmasFactoryIndex, 1);
         let hotChocolateBallista = new Building(EntityType.HOT_CHOCOLATE_BALLISTA)

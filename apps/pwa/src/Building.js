@@ -34,8 +34,8 @@ class Building {
 		} else if (this.entityType === EntityType.XMAS_FACTORY) {
 			this._model = assets.XMAS_FACTORY.model.scene.clone();
 			this._offset = [0, 0, 0];
-		} else if (this.entityType === EntityType.HOT_CHOCOLATE_BALISTA) {
-			this._model = assets.HOT_CHOCOLATE_BALISTA.model.scene.clone();
+		} else if (this.entityType === EntityType.HOT_CHOCOLATE_BALLISTA) {
+			this._model = assets.HOT_CHOCOLATE_BALLISTA.model.scene.clone();
 			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
 			this._model = assets.CHOCOLATE_FOUNTAIN.model.scene.clone();
@@ -66,8 +66,8 @@ class Building {
 			this._model = assets.SPYING_EASTER_BUNNY_EXPLOSION.model.scene.clone();
 		} else if (this.entityType === EntityType.XMAS_FACTORY) {
 			this._model = assets.XMAS_FACTORY_EXPLOSION.model.scene.clone();
-		} else if (this.entityType === EntityType.HOT_CHOCOLATE_BALISTA) {
-			this._model = assets.HOT_CHOCOLATE_BALISTA_EXPLOSION.model.scene.clone();
+		} else if (this.entityType === EntityType.HOT_CHOCOLATE_BALLISTA) {
+			this._model = assets.HOT_CHOCOLATE_BALLISTA_EXPLOSION.model.scene.clone();
 		} else {
 			this._model = assets.CREAM_EXPLOSION.model.scene.clone();
 			this._model.scale.set(3, 3, 3);

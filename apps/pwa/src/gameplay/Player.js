@@ -184,6 +184,7 @@ class Augustus {
             row: target.row,
             col: target.col
         }).then(() => {
+            this.refreshGameState();
             if (attackType === AttackType.BUNNY) {
                 if (this.player.attacksPerTurn[AttackType.BUNNY] > 0) {
                   opponentGameField3d.attack({ row: target.row, col: target.col }, AttackType.BUNNY);
