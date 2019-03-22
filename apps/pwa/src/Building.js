@@ -23,7 +23,7 @@ class Building {
 			this._offset = [1, 2, 1.5];
 		} else if (this.entityType === EntityType.RUM_TRUFFLE_CANNON) {
 			this._model = assets.RUM_TRUFFLE_CANNON.model.scene.clone();
-			this._offset = [2, 4, 1.5];
+			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.CREAM) {
 			this._model = assets.CREAM.model.scene.clone();
 			this._model.scale.set(3, 3, 3);

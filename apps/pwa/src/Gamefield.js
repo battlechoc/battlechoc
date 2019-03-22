@@ -79,6 +79,14 @@ class Gamefield {
 
         building.explode();
         building.adjustPosition(position);
+        
+        if (!this.isPlayerGameField && 
+            (building.entityType === EntityType.RUM_TRUFFLE_CANNON ||
+             building.entityType === EntityType.SPYING_EASTER_BUNNY ||
+             building.entityType === EntityType.HOT_CHOCOLATE_BALLISTA)) {
+            building.rotate(Math.PI);
+        }
+
         this.gameField.add(building.getModel());
 
         this.mixer = new THREE.AnimationMixer(building.getModel());
@@ -292,6 +300,13 @@ class Gamefield {
             } else if (!this.isBelowOfFactory(row, col)) {
                 return undefined;
             }
+        }
+
+        if (!this.isPlayerGameField && 
+            (entityType === EntityType.RUM_TRUFFLE_CANNON ||
+             entityType === EntityType.SPYING_EASTER_BUNNY ||
+             entityType === EntityType.HOT_CHOCOLATE_BALLISTA)) {
+            building.rotate(Math.PI);
         }
 
         building.adjustPosition(position);
