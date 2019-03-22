@@ -120,18 +120,6 @@ class Actionbar extends Component {
                                     this.props.deselectBuildings();
                                 }}>
                                 <PlayArrow />
-                            </Fab>,
-                            <Fab
-                                size="small"
-                                key="4"
-                                color="primary"
-                                aria-label="finish turn"
-                                className={(this.props.game.players[0].buildings === 0 && playerHasAttacks(this.props.game.players[0]) === false) ? "icon blinking" : "icon"}
-                                onClick={() => {
-                                    this.props.finishTurn({ issuer: this.props.game.players[0].id });
-                                    this.props.deselectBuildings();
-                                }}>
-                                <FastForward />
                             </Fab>
                         ]);
                     } else {

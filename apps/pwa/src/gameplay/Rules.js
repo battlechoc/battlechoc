@@ -183,7 +183,8 @@ class Rules {
         } else if (action.type === GameActionTypes.attack) {
             if (this.currentPlayer(state.gameplay.game).attacks[action.payload.attackType] === 0) {
                 return new Errors.NoAttacksLeftError();
-            } else if (this.otherPlayerBoardCell(state.gameplay.game, action.payload).occupiedBy.length === 0) {
+            } else if (this.otherPlayerBoardCell(state.gameplay.game, action.payload).occupiedBy.length === 0 &&
+                action.payload.attackType !== GameEntities.AttackType.BUNNY && action.payload.attackType !== GameEntities.AttackType.HOT_CHOCOLATE) {
                 return new Errors.TargetEmptyError();
             } else {
                 return true;
