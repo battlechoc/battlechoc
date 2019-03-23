@@ -62,7 +62,7 @@ class Board {
             for (let row = 0; row < size.rows; row++) {
                 for (let col = 0; col < size.cols; col++) {
                     let fieldtype = Math.floor(Math.random() * 3);
-                    let creamed = Math.floor(Math.random() * 2) === 1;
+                    let creamed = Math.random() < 0.7
                     let cellType = BoardCellTypes.BLACK;
                     let previewStyle = 'black';
 
@@ -103,7 +103,7 @@ const EntityDescriptors = Object.freeze(new Map([
     [EntityType.FACTORY, {
         costs: 0,
         cells: 1,
-        buildingsPerTurn: 2
+        buildingsPerTurn: 3
     }],
     [EntityType.FACTORY_EXTENSION, {
         costs: 120,
@@ -128,7 +128,7 @@ const EntityDescriptors = Object.freeze(new Map([
         attacksPerTurn: 1
     }],
     [EntityType.SPYING_EASTER_BUNNY, {
-        costs: 180,
+        costs: 120,
         cells: 1,
         attackType: AttackType.BUNNY,
         attacksPerTurn: 1

@@ -12,7 +12,7 @@ function createPlayer(name, type, activePlayer) {
         name: name,
         type: type,
         id: uuidv4(),
-        cacao: 50,
+        cacao: 100,
         cacaoPerTurn: 0,
         buildings: 0,
         buildingsPerTurn: 0,
@@ -200,6 +200,9 @@ class Augustus {
                 let target = creamyFields[Math.floor(Math.random()*creamyFields.length)];
                 console.log('OPPONENT BUNNY IS GOING TO SPY :', target);
                 this.simulateAttack(target, AttackType.BUNNY, gamefield3d, opponentGameField3d);
+            } else if (this.player.attacks[AttackType.HOT_CHOCOLATE] > 0) {
+                let target = this.estimateAttackTarget();
+                this.simulateAttack(target, AttackType.HOT_CHOCOLATE, gamefield3d, opponentGameField3d);
             } else if (this.player.attacks[AttackType.TRUFFLE] > 0) {
                 let target = this.estimateAttackTarget();
                 this.simulateAttack(target, AttackType.TRUFFLE, gamefield3d, opponentGameField3d);
@@ -266,7 +269,7 @@ class Augustus {
                     this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
                         this.simulateBuildPhase(uiGamefield);
                     }).catch(error => this.handleBuildError(error));
-                } else if (creamedCells.length > 0 && cacao >= xmasFactory.costs && xmasFactoryCount < 2) {
+                } else if (creamedCells.length > 0 && cacao >= xmasFactory.costs && xmasFactoryCount < 2 && cannonCount > 2 && treeCount > 2) {
                     let building = createEntity(EntityType.XMAS_FACTORY);
                     this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
                         this.simulateBuildPhase(uiGamefield);
