@@ -7,6 +7,12 @@ const PlayerType = Object.freeze({
     AUGUSTUS_GLOOP: 'PlayerType.AUGUSTUS_GLOOP'
 });
 
+const AugustusType = Object.freeze({
+    DEFENSIVE: 'AugustusType.DEFENSIVE',
+    AGGRESSIVE: 'AugustusType.AGGRESSIVE',
+    BALANCED: 'AugustusType.BALANCED'
+})
+
 function createPlayer(name, type, activePlayer) {
     let player = {
         name: name,
@@ -52,13 +58,25 @@ function playerHasHarmfulAttacksPerTurn(player) {
 class Augustus {
     constructor(actions, player) {
         this.actions = actions;
+        this.type = AugustusType.BALANCED;
+    }
+
+    static randomizeType() {
+        const typeIdx = Math.floor(Math.random() * 3);
+        if (typeIdx === 0) {
+            return AugustusType.DEFENSIVE;
+        } else if (typeIdx === 1) {
+            return AugustusType.AGGRESSIVE;
+        } else {
+            return AugustusType.BALANCED;
+        }
     }
 
     connectGamestate(callback) {
         this.refreshGameState = () => {
             let game = callback();
             this.gameIsRunning = game.isRunning;
-            if (this.gameIsRunning) { 
+            if (this.gameIsRunning) {
                 this.player = game.players[1];
                 this.gamefields = game.board.fields;
                 this.board = game.board.fields[this.player.fieldIndex];
@@ -73,7 +91,7 @@ class Augustus {
 
     scoreFields() {
         return [this.gamefields[0].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM)).length,
-                this.gamefields[1].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM)).length];
+        this.gamefields[1].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM)).length];
     }
 
     async simulateChooseFieldOrStartDecision() {
@@ -123,7 +141,7 @@ class Augustus {
                 }, 3000);
             }).catch(error => {
                 if (error instanceof BattlechocError) {
-                    console.warn(error); 
+                    console.warn(error);
                 } else {
                     throw error;
                 }
@@ -165,7 +183,7 @@ class Augustus {
             this.actions.finishTurn({ issuer: this.player.id });
         } else {
             throw error;
-        }        
+        }
     }
 
     simulateAttack(target, attackType, gamefield3d, opponentGameField3d) {
@@ -178,16 +196,16 @@ class Augustus {
             this.refreshGameState();
             if (attackType === AttackType.BUNNY) {
                 if (this.player.attacksPerTurn[AttackType.BUNNY] > 0) {
-                  opponentGameField3d.attack({ row: target.row, col: target.col }, AttackType.BUNNY);
+                    opponentGameField3d.attack({ row: target.row, col: target.col }, AttackType.BUNNY);
                 } else {
-                  gamefield3d.meltDownEasterBunny();
-                  opponentGameField3d.receiveBallista({ row: target.row, col: target.col });
+                    gamefield3d.meltDownEasterBunny();
+                    opponentGameField3d.receiveBallista({ row: target.row, col: target.col });
                 }
             } else {
                 opponentGameField3d.attack({ row: target.row, col: target.col }, attackType);
             }
             this.simulateAttackPhase(gamefield3d, opponentGameField3d);
-        }).catch(error => this.handleAttackError(error));  
+        }).catch(error => this.handleAttackError(error));
     }
 
     async simulateAttackPhase(gamefield3d, opponentGameField3d) {
@@ -197,7 +215,7 @@ class Augustus {
             let creamyFields = this.opponentBoard.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
 
             if (this.player.attacks[AttackType.BUNNY] > 0 && creamyFields.length) {
-                let target = creamyFields[Math.floor(Math.random()*creamyFields.length)];
+                let target = creamyFields[Math.floor(Math.random() * creamyFields.length)];
                 console.log('OPPONENT BUNNY IS GOING TO SPY :', target);
                 this.simulateAttack(target, AttackType.BUNNY, gamefield3d, opponentGameField3d);
             } else if (this.player.attacks[AttackType.TRUFFLE] > 0) {
@@ -224,7 +242,7 @@ class Augustus {
             }
 
             this.actions.build({ issuer: this.player.id, building: building }).then(() => {
-                uiGamefield.setBuilding(randomPosition, building.type, {row: randomCell.row, col: randomCell.col});
+                uiGamefield.setBuilding(randomPosition, building.type, { row: randomCell.row, col: randomCell.col });
                 resolve();
             }).catch(error => { reject(error); });
         });
@@ -232,69 +250,187 @@ class Augustus {
 
     handleBuildError(error) {
         if (error instanceof BattlechocError) {
-            console.warn(error); 
+            console.warn(error);
         } else {
             throw error;
         }
-        this.actions.finishBuildPhase({ issuer: this.player.id });      
+        this.actions.finishBuildPhase({ issuer: this.player.id });
+    }
+
+    simulateBuildPhaseDefensive(uiGamefield) {
+        let cacao = this.player.cacao;
+
+        let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
+        let freeCells = this.board.grid.filter(cell => cell.molten === false && cell.occupiedBy.length === 0);
+        let treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE)).length;
+        let bunnyCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length;
+        let cannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length;
+        let xmasFactoryCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.XMAS_FACTORY)).length;
+
+        let cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
+        let tree = getEntityDescriptor(EntityType.CACAOTREE);
+        let xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
+        let easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
+        let cream = getEntityDescriptor(EntityType.CREAM);
+
+        if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0) {
+            let building = createEntity(EntityType.SPYING_EASTER_BUNNY);
+            this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else if (creamedCells.length > 0 && cacao >= xmasFactory.costs && xmasFactoryCount < 3) {
+            let building = createEntity(EntityType.XMAS_FACTORY);
+            this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else if (creamedCells.length > 0 && (cacao >= tree.costs || cacao >= cannon.costs)) {
+            let building;
+            if (treeCount < 2) {
+                building = createEntity(EntityType.CACAOTREE);
+            } else if (cannonCount < 2 && cacao >= cannon.costs) {
+                building = createEntity(EntityType.RUM_TRUFFLE_CANNON);
+            } else {
+                const decision = Math.floor(Math.random() * 3);
+                if (decision === 0 || cacao < cannon.costs) {
+                    building = createEntity(EntityType.CACAOTREE);
+                } else if (decision === 1) {
+                    building = createEntity(EntityType.RUM_TRUFFLE_CANNON);
+                } else {
+                    building = createEntity(EntityType.CREAM);
+                }
+            }
+
+            this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else if (freeCells.length > 0 && cacao >= cream.costs) {
+            this.setBuildingAtRandomPosition(freeCells, createEntity(EntityType.CREAM), uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else {
+            this.actions.finishBuildPhase({ issuer: this.player.id });
+        }
+    }
+
+    simulateBuildPhaseAggressive(uiGamefield) {
+        let cacao = this.player.cacao;
+
+        let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
+        let freeCells = this.board.grid.filter(cell => cell.molten === false && cell.occupiedBy.length === 0);
+        let treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE)).length;
+        let bunnyCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length;
+        let cannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length;
+        let xmasFactoryCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.XMAS_FACTORY)).length;
+
+        let cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
+        let tree = getEntityDescriptor(EntityType.CACAOTREE);
+        let xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
+        let easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
+        let cream = getEntityDescriptor(EntityType.CREAM);
+
+        if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0) {
+            let building = createEntity(EntityType.SPYING_EASTER_BUNNY);
+            this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else if (creamedCells.length > 0 && cacao >= xmasFactory.costs && xmasFactoryCount < 1) {
+            let building = createEntity(EntityType.XMAS_FACTORY);
+            this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else if (creamedCells.length > 0 && (cacao >= tree.costs || cacao >= cannon.costs)) {
+            let building;
+            if (treeCount < 2) {
+                building = createEntity(EntityType.CACAOTREE);
+            } else if (cannonCount < 6 && cacao >= cannon.costs) {
+                building = createEntity(EntityType.RUM_TRUFFLE_CANNON);
+            } else {
+                const decision = Math.round(Math.random());
+                if (decision === 0 || cacao < cannon.costs) {
+                    building = createEntity(EntityType.CACAOTREE);
+                } else {
+                    building = createEntity(EntityType.RUM_TRUFFLE_CANNON);
+                }
+            }
+
+            this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else if (freeCells.length > 0 && cacao >= cream.costs) {
+            this.setBuildingAtRandomPosition(freeCells, createEntity(EntityType.CREAM), uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else {
+            this.actions.finishBuildPhase({ issuer: this.player.id });
+        }
+    }
+
+    simulateBuildPhaseBalanced(uiGamefield) {
+        let cacao = this.player.cacao;
+
+        let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
+        let freeCells = this.board.grid.filter(cell => cell.molten === false && cell.occupiedBy.length === 0);
+        let treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE)).length;
+        let bunnyCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length;
+        let cannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length;
+        let xmasFactoryCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.XMAS_FACTORY)).length;
+
+        let cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
+        let tree = getEntityDescriptor(EntityType.CACAOTREE);
+        let xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
+        let easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
+        let cream = getEntityDescriptor(EntityType.CREAM);
+
+        if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0) {
+            let building = createEntity(EntityType.SPYING_EASTER_BUNNY);
+            this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else if (creamedCells.length > 0 && cacao >= xmasFactory.costs && xmasFactoryCount < 2) {
+            let building = createEntity(EntityType.XMAS_FACTORY);
+            this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else if (creamedCells.length > 0 && (cacao >= tree.costs || cacao >= cannon.costs)) {
+            let building;
+            if (treeCount < 2) {
+                building = createEntity(EntityType.CACAOTREE);
+            } else if (cannonCount < 3 && cacao >= cannon.costs) {
+                building = createEntity(EntityType.RUM_TRUFFLE_CANNON);
+            } else {
+                const decision = Math.round(Math.random());
+                if (decision === 0 || cacao < cannon.costs) {
+                    building = createEntity(EntityType.CACAOTREE);
+                } else {
+                    building = createEntity(EntityType.RUM_TRUFFLE_CANNON);
+                }
+            }
+
+            this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else if (freeCells.length > 0 && cacao >= cream.costs) {
+            this.setBuildingAtRandomPosition(freeCells, createEntity(EntityType.CREAM), uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else {
+            this.actions.finishBuildPhase({ issuer: this.player.id });
+        }
     }
 
     async simulateBuildPhase(uiGamefield) {
-        await this.simulateThinking(1500);
+        await this.simulateThinking(1000);
         this.refreshGameState();
         if (this.gameIsRunning) {
             if (this.player.buildings === 0) {
                 this.actions.finishBuildPhase({ issuer: this.player.id });
             } else {
-                let cacao = this.player.cacao;
-
-                let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
-                let freeCells = this.board.grid.filter(cell => cell.molten === false && cell.occupiedBy.length === 0);
-                let treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE)).length;
-                let bunnyCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length;
-                let cannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length;
-                let xmasFactoryCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.XMAS_FACTORY)).length;
-
-                let cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
-                let tree = getEntityDescriptor(EntityType.CACAOTREE);
-                let xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
-                let easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
-                let cream = getEntityDescriptor(EntityType.CREAM);
-
-                if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0) {
-                    let building = createEntity(EntityType.SPYING_EASTER_BUNNY);
-                    this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
-                        this.simulateBuildPhase(uiGamefield);
-                    }).catch(error => this.handleBuildError(error));
-                } else if (creamedCells.length > 0 && cacao >= xmasFactory.costs && xmasFactoryCount < 2) {
-                    let building = createEntity(EntityType.XMAS_FACTORY);
-                    this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
-                        this.simulateBuildPhase(uiGamefield);
-                    }).catch(error => this.handleBuildError(error));
-                } else if (creamedCells.length > 0 && (cacao >= tree.costs || cacao >= cannon.costs)) {
-                    let building;
-                    if (treeCount < 2) {
-                        building = createEntity(EntityType.CACAOTREE);
-                    } else if (cannonCount < 3 && cacao >= cannon.costs) {
-                        building = createEntity(EntityType.RUM_TRUFFLE_CANNON);
-                    } else {
-                        const decision = Math.round(Math.random());
-                        if (decision === 0 || cacao < cannon.costs) {
-                            building = createEntity(EntityType.CACAOTREE);
-                        } else {
-                            building = createEntity(EntityType.RUM_TRUFFLE_CANNON);
-                        }
-                    }
-
-                    this.setBuildingAtRandomPosition(creamedCells, building, uiGamefield).then(() => {
-                        this.simulateBuildPhase(uiGamefield);
-                    }).catch(error => this.handleBuildError(error));
-                } else if (freeCells.length > 0 && cacao >= cream.costs) {
-                    this.setBuildingAtRandomPosition(freeCells, createEntity(EntityType.CREAM), uiGamefield).then(() => {
-                        this.simulateBuildPhase(uiGamefield);
-                    }).catch(error => this.handleBuildError(error));
-                } else {
-                    this.actions.finishBuildPhase({ issuer: this.player.id });
+                if (this.type === AugustusType.BALANCED) {
+                    this.simulateBuildPhaseBalanced(uiGamefield);
+                } else if (this.type === AugustusType.AGGRESSIVE) {
+                    this.simulateBuildPhaseAggressive(uiGamefield);
+                } else if (this.type === AugustusType.DEFENSIVE) {
+                    this.simulateBuildPhaseDefensive(uiGamefield);
                 }
             }
         }
