@@ -16,47 +16,63 @@ class Gamefield {
             field => Array(this.cols).fill([new Building(EntityType.EMPTY)])
         );
 
-        this.grid = [...Array(this.rows)].map(
-            field => new Array(this.cols)
-        );
-
+        this.gameField = new THREE.Group();
         this.build(playerField);
     }
 
-    async build(playerField) {
-        this.gameField = new THREE.Group();
+    build(playerField) {
+        const assets = AssetLoader.assets.models;
+        let pivot = assets['FIELD'].model.scene.children[0];
+        let materialMap = assets['FIELD'].model.scene.children[1];
 
-        for (let row = 0; row < this.rows; row++) {
-            for (let col = 0; col < this.cols; col++) {
-                let cell = playerField.grid[row * this.cols + col];
-                let fieldClone = undefined;
-
-                const assets = AssetLoader.assets.models;
-                if (cell.type === BoardCellTypes.WHITE) {
-                    fieldClone = assets['WHITE_TILE'].model.scene.clone();
-                } else if (cell.type === BoardCellTypes.BROWN) {
-                    fieldClone = assets['BROWN_TILE'].model.scene.clone();
+        let materials = [materialMap.children[0].material, materialMap.children[1].material, materialMap.children[2].material];
+        let board = new THREE.Mesh(new THREE.Geometry(), materials);
+        playerField.grid.forEach((cell, i) => {
+            if (!cell.molten) {
+                let materialIndex = 0;
+                if (cell.type === BoardCellTypes.BROWN) {
+                    materialIndex = 1;
                 } else if (cell.type === BoardCellTypes.BLACK) {
-                    fieldClone = assets['BLACK_TILE'].model.scene.clone();
+                    materialIndex = 2;
                 }
 
-                let field = fieldClone.children[0];
-                field.position.set(this.fieldSize * row, 0, this.fieldSize * col);
-                field.traverse(child => {
+                let geometryLowerBound = board.geometry.faces.length;
+                
+                pivot.position.set(this.fieldSize * cell.row, 0, this.fieldSize * cell.col);
+                pivot.traverse(child => {
                     if (child instanceof THREE.Mesh) {
-                        child._cellIdx = { row: row, col: col };
-                        child._fieldIdx = this.fieldIdx;
+                        child.updateMatrix();
+                        let geometry = new THREE.Geometry().fromBufferGeometry(child.geometry);
+                        geometry.faces.forEach(face => {
+                            face.materialIndex = materialIndex;
+                        });
+                        board.geometry.merge(geometry, child.matrix);
                     }
                 });
-                this.gameField.add(field);
-                this.grid[row][col] = field;
+
+                for (let i = geometryLowerBound; i < board.geometry.faces.length; i++) {
+                    board.geometry.faces[i]._cellIdx = { row: cell.row, col: cell.col };
+                    board.geometry.faces[i]._fieldIndex = this.fieldIdx;
+                }
 
                 if (cell.occupiedBy.includes(EntityType.CREAM)) {
-                    this.setBuilding(field.position, EntityType.CREAM, { row: row, col: col });
+                    this.setBuilding(pivot.position, EntityType.CREAM, { row: cell.row, col: cell.col });
                 }
             }
-        }
+        });
+
+        board.groupsNeedUpdate = true;
+        board.geometry.sortFacesByMaterialIndex(); 
+        board.name = 'BOARD' + this.fieldIdx;
+
+        this.gameField.add(board);
         this.gameField.position.set(this.position[0], this.position[1], this.position[2]);
+    }
+
+    rebuild(playerField) {
+        let board = this.gameField.getObjectByName('BOARD' + this.fieldIdx);
+        this.gameField.remove(board);
+        this.build(playerField);
     }
 
     getClickableFields() {
@@ -220,7 +236,6 @@ class Gamefield {
             }
         } else if (attackType === AttackType.HOT_CHOCOLATE) {
             this.buildings[row][col].forEach(building => this.gameField.remove(building.getModel()));
-            this.gameField.remove(this.grid[row][col]);
         } else if (attackType === AttackType.BUNNY) {
             let patch = this.getCellPatch3x3(row, col, false);
             patch.forEach(field => {

@@ -6,9 +6,7 @@ class AssetLoader {
         this.loader = new GLTFLoader();
         this.assets = {
             models: {
-                WHITE_TILE: { filename: 'white_tile.glb', model: null },
-                BROWN_TILE: { filename: 'brown_tile.glb', model: null },
-                BLACK_TILE: { filename: 'black_tile.glb', model: null },
+                FIELD: { filename: 'field.glb', model: null },
                 FACTORY: { filename: 'factory.gltf', model: null },
                 FACTORY_EXPLOSION: { filename: 'factory-explosion.gltf', model: null },
                 FACTORY_EXTENSION: { filename: 'factory-extension.gltf', model: null },

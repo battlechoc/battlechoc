@@ -185,6 +185,9 @@ class Augustus {
                 }
             } else {
                 opponentGameField3d.attack({ row: target.row, col: target.col }, attackType);
+                if (attackType === AttackType.HOT_CHOCOLATE) {
+                  opponentGameField3d.rebuild(this.opponentBoard);
+                }                
             }
             this.simulateAttackPhase(gamefield3d, opponentGameField3d);
         }).catch(error => this.handleAttackError(error));  
@@ -197,7 +200,7 @@ class Augustus {
             let creamyFields = this.opponentBoard.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
 
             if (this.player.attacks[AttackType.BUNNY] > 0 && creamyFields.length) {
-                let target = creamyFields[Math.floor(Math.random()*creamyFields.length)];
+                let target = creamyFields[Math.floor(Math.random() * creamyFields.length)];
                 console.log('OPPONENT BUNNY IS GOING TO SPY :', target);
                 this.simulateAttack(target, AttackType.BUNNY, gamefield3d, opponentGameField3d);
             } else if (this.player.attacks[AttackType.HOT_CHOCOLATE] > 0) {

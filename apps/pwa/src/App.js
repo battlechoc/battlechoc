@@ -297,7 +297,8 @@ class App extends Component {
 
   playerFieldClick() {
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
-    intersects = intersects.filter(intersect => (typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined'));
+      intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
+                                                   (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));
     let buildingSelected = this.props.selectedBuilding && this.props.selectedBuilding !== EntityType.EMPTY;
     let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
       this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
@@ -308,11 +309,12 @@ class App extends Component {
       } else {
         building = createEntity(this.props.selectedBuilding);
       }
+      let cellIndex = intersects[0].object._cellIdx || intersects[0].face._cellIdx;
       building.position = {
-        row: intersects[0].object._cellIdx.row,
-        col: intersects[0].object._cellIdx.col
+        row: cellIndex.row,
+        col: cellIndex.col
       }
-      const position = { x: intersects[0].object._cellIdx.row * this.playerGameField.fieldSize, y: 0, z: intersects[0].object._cellIdx.col * this.playerGameField.fieldSize };
+      const position = { x: cellIndex.row * this.playerGameField.fieldSize, y: 0, z: cellIndex.col * this.playerGameField.fieldSize };
       this.props.build({ issuer: this.props.game.players[0].id, building: building }).then(() => {
         this.playerGameField.setBuilding(position, building.type, building.position);
         if (initialPlacement) {
@@ -335,9 +337,11 @@ class App extends Component {
   opponentFieldClick() {
     if (this.lookAtOpponent && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
       var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
-      intersects = intersects.filter(intersect => (typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined'));
+      intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
+                                                   (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));
       if (intersects.length > 0 && !this.isSwiping && playerHasAttacks(this.props.game.players[0]) === true) {
-        let target = {row: intersects[0].object._cellIdx.row, col: intersects[0].object._cellIdx.col};
+        let cellIndex = intersects[0].object._cellIdx || intersects[0].face._cellIdx;
+        let target = {row: cellIndex.row, col: cellIndex.col};
         this.props.attack({
           issuer: this.props.game.players[0].id,
           attackType: this.props.selectedAttack,
@@ -353,6 +357,10 @@ class App extends Component {
             }
           } else  {
             this.opponentGameField.attack(target, this.props.selectedAttack);
+            if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
+              let opponentFieldIndex = this.props.game.players[1].fieldIndex;
+              this.opponentGameField.rebuild(this.props.game.board.fields[opponentFieldIndex]);
+            }
           }
         }).catch(error => {
           if (error instanceof BattlechocError) {

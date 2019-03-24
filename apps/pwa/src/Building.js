@@ -44,6 +44,7 @@ class Building {
 			this._model = assets.FRUIT_CANNON.model.scene.clone();
 			this._offset = [0, 0, 0];
 		}
+
 		if (typeof this._model !== 'undefined') {
 			this._model.traverse(child => {
 				if (child instanceof THREE.Mesh) {
