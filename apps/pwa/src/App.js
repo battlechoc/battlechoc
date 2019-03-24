@@ -535,6 +535,8 @@ class App extends Component {
           this.hud.showTurnMessage(t[this.props.language].MESSAGE_OPPONENT_DECIDE);
         }
 
+        this.opponent.type = Augustus.randomizeType();
+        console.log("type of Augustus is: " + this.opponent.type);
         this.opponent.connectGamestate(() => this.props.game);
 
         setTimeout(() => {
