@@ -17,7 +17,7 @@ const uiReducer = createReducer({
             state.language = action.payload;
         },
         [UiActions.deselectBuildings]: (state, action) => {
-            state.selectedBuilding = EntityType.EMPTY;
+            state.selectedBuilding = undefined;
         },
         [UiActions.gameResumeable]: (state, action) => {
             state.resumeGamePossible = action.payload;

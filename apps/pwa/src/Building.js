@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { EntityType } from './gameplay/GameEntities'
 
 class Building {
-	constructor(entityType, cellIdx, fieldIdx) {
+	constructor(entityType, cellIdx, position3d, fieldIdx) {
 		if (!EntityType.isInstanceOf(entityType)) {
 			throw new Error(entityType + ' is not instance of EntityType');
 		}
@@ -14,38 +14,28 @@ class Building {
 		const assets = AssetLoader.assets.models;
 		if (this.entityType === EntityType.FACTORY) {
 			this._model = assets.FACTORY.model.scene.clone();
-			this._offset = [0, 3, 0];
 		} else if (this.entityType === EntityType.FACTORY_EXTENSION) {
 			this._model = assets.FACTORY_EXTENSION.model.scene.clone();
-			this._offset = [0, 3, 0];
 		} else if (this.entityType === EntityType.CACAOTREE) {
 			this._model = assets.CACAOTREE.model.scene.clone();
-			this._offset = [1, 2, 1.5];
 		} else if (this.entityType === EntityType.RUM_TRUFFLE_CANNON) {
 			this._model = assets.RUM_TRUFFLE_CANNON.model.scene.clone();
-			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.CREAM) {
 			this._model = assets.CREAM.model.scene.clone();
-			this._model.scale.set(3, 3, 3);
-			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.SPYING_EASTER_BUNNY) {
 			this._model = assets.SPYING_EASTER_BUNNY.model.scene.clone();
-			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.XMAS_FACTORY) {
 			this._model = assets.XMAS_FACTORY.model.scene.clone();
-			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.HOT_CHOCOLATE_BALLISTA) {
 			this._model = assets.HOT_CHOCOLATE_BALLISTA.model.scene.clone();
-			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
 			this._model = assets.CHOCOLATE_FOUNTAIN.model.scene.clone();
-			this._offset = [0, 0, 0];
 		} else if (this.entityType === EntityType.FRUIT_CANNON) {
 			this._model = assets.FRUIT_CANNON.model.scene.clone();
-			this._offset = [0, 0, 0];
 		}
 
 		if (typeof this._model !== 'undefined') {
+			this._model.position.set(position3d.x, position3d.y, position3d.z);
 			this._model.traverse(child => {
 				if (child instanceof THREE.Mesh) {
 					child._cellIdx = this._cellIdx;
@@ -56,11 +46,14 @@ class Building {
 	}
 
 	explode() {
+		let position = this._model.position;
 		const assets = AssetLoader.assets.models;
 		if (this.entityType === EntityType.CACAOTREE) {
 			this._model = assets.CACAOTREE_EXPLOSION.model.scene.clone();
 		} else if (this.entityType === EntityType.FACTORY) {
 			this._model = assets.FACTORY_EXPLOSION.model.scene.clone();
+		} else if (this.entityType === EntityType.FACTORY_EXTENSION) {
+			this._model = assets.FACTORY_EXTENSION_EXPLOSION.model.scene.clone();
 		} else if (this.entityType === EntityType.RUM_TRUFFLE_CANNON) {
 			this._model = assets.RUM_TRUFFLE_CANNON_EXPLOSION.model.scene.clone();
 		} else if (this.entityType === EntityType.SPYING_EASTER_BUNNY) {
@@ -71,16 +64,8 @@ class Building {
 			this._model = assets.HOT_CHOCOLATE_BALLISTA_EXPLOSION.model.scene.clone();
 		} else {
 			this._model = assets.CREAM_EXPLOSION.model.scene.clone();
-			this._model.scale.set(3, 3, 3);
 		}
-	}
-
-	adjustPosition(position) {
-		this._model.position.set(
-			position.x + this._offset[0],
-			position.y + this._offset[1],
-			position.z + this._offset[2],
-		);
+		this._model.position.set(position.x, position.y, position.z);
 	}
 
 	show() {
@@ -105,7 +90,7 @@ class Building {
 	}
 
 	makeTransparent() {
-		this._model.children[0].material = new THREE.MeshBasicMaterial({ opacity: 0.6, transparent: true });
+		this._model.children[0].material = new THREE.MeshBasicMaterial({ opacity: 0.7, transparent: true, depthWrite: false });
 	}
 
 	makeCreamy() {
@@ -118,9 +103,6 @@ class Building {
 			}
 		});
 
-		creamAround.position.x -= this._offset[0];
-		creamAround.position.y -= this._offset[1];
-		creamAround.position.z -= this._offset[2];
 		creamAround.rotation.y = -this._model.rotation.y;
 		creamAround.name = 'CREAMY_FIELD';
 		this._model.add(creamAround);

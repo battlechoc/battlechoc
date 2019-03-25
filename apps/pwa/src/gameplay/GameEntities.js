@@ -7,7 +7,6 @@ const BoardCellTypes = Object.freeze({
 });
 
 const EntityType = Object.freeze({
-    EMPTY: 'EntityType.EMPTY',
     CREAM: 'EntityType.CREAM',
     FACTORY: 'EntityType.FACTORY',
     FACTORY_EXTENSION: 'EntityType.FACTORY_EXTENSION',
@@ -19,8 +18,7 @@ const EntityType = Object.freeze({
     HOT_CHOCOLATE_BALLISTA: 'EntityType.HOT_CHOCOLATE_BALLISTA',
     CHOCOLATE_FOUNTAIN: 'EntityType.CHOCOLATE_FOUNTAIN',
     isInstanceOf: function (entityType) {
-        if (entityType === EntityType.EMPTY ||
-            entityType === EntityType.CREAM ||
+        if (entityType === EntityType.CREAM ||
             entityType === EntityType.FACTORY ||
             entityType === EntityType.CACAOTREE ||
             entityType === EntityType.RUM_TRUFFLE_CANNON ||
@@ -92,10 +90,6 @@ class Board {
 }
 
 const EntityDescriptors = Object.freeze(new Map([
-    [EntityType.EMPTY, {
-        costs: 0,
-        cells: 1
-    }],
     [EntityType.CREAM, {
         costs: 10,
         cells: 1

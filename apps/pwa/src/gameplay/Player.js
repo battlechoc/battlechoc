@@ -237,18 +237,14 @@ class Augustus {
         return new Promise((resolve, reject) => {
             let randomCell = possibleCells[Math.floor(Math.random() * possibleCells.length)];
             console.log('DEV HINT: ', building.type, randomCell.row, randomCell.col);
-            let randomPosition = {
-                x: randomCell.row * uiGamefield.fieldSize,
-                y: 0,
-                z: randomCell.col * uiGamefield.fieldSize
-            }
+
             building.position = {
                 row: randomCell.row,
                 col: randomCell.col
             }
 
             this.actions.build({ issuer: this.player.id, building: building }).then(() => {
-                uiGamefield.setBuilding(randomPosition, building.type, { row: randomCell.row, col: randomCell.col });
+                uiGamefield.setBuilding(building.type, { row: randomCell.row, col: randomCell.col });
                 resolve();
             }).catch(error => { reject(error); });
         });

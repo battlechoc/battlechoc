@@ -75,7 +75,7 @@ class Tooltip extends Component {
         } else if (gameState === GameStateTypes.BUILD_PHASE) {
             title = t[this.props.language].TOOLTIP_BUILD_PHASE_TITLE;
             if (currentPlayer === 0) {
-                if (typeof this.props.selectedBuilding === 'undefined' || this.props.selectedBuilding === EntityType.EMPTY) {
+                if (typeof this.props.selectedBuilding === 'undefined') {
                     message = t[this.props.language].TOOLTIP_BUILD_PHASE_MESSAGE;
                 } else {
                     const building = getEntityDescriptor(this.props.selectedBuilding);

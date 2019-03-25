@@ -299,7 +299,7 @@ class App extends Component {
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
       intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
                                                    (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));
-    let buildingSelected = this.props.selectedBuilding && this.props.selectedBuilding !== EntityType.EMPTY;
+    let buildingSelected = this.props.selectedBuilding;
     let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
       this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
     if (intersects.length > 0 && !this.isSwiping && (buildingSelected || (initialPlacement && this.props.game.players[0].hasFactory !== true))) {
@@ -314,9 +314,8 @@ class App extends Component {
         row: cellIndex.row,
         col: cellIndex.col
       }
-      const position = { x: cellIndex.row * this.playerGameField.fieldSize, y: 0, z: cellIndex.col * this.playerGameField.fieldSize };
       this.props.build({ issuer: this.props.game.players[0].id, building: building }).then(() => {
-        this.playerGameField.setBuilding(position, building.type, building.position);
+        this.playerGameField.setBuilding(building.type, building.position);
         if (initialPlacement) {
           this.props.deselectBuildings();
           setTimeout(() => {
@@ -601,17 +600,15 @@ class App extends Component {
       this.lookAtOpponent = (this.props.game.currentPlayerIndex === 1 || this.props.game.state === GameStateTypes.ATTACK_PHASE);
       this.props.game.board.fields[this.props.game.players[0].fieldIndex].grid.forEach((cell) => {
         cell.occupiedBy.forEach((building) => {
-          if (building !== EntityType.EMPTY && building !== EntityType.CREAM) {
-            const position = { x: cell.row * this.playerGameField.fieldSize, y: 0, z: cell.col * this.playerGameField.fieldSize };
-            this.playerGameField.setBuilding(position, building, {row: cell.row, col: cell.col });
+          if (building !== EntityType.CREAM) {
+            this.playerGameField.setBuilding(building, {row: cell.row, col: cell.col });
           }
         });
       });
       this.props.game.board.fields[this.props.game.players[1].fieldIndex].grid.forEach((cell) => {
         cell.occupiedBy.forEach((building) => {
-          if (building !== EntityType.EMPTY && building !== EntityType.CREAM) {
-            const position = { x: cell.row * this.playerGameField.fieldSize, y: 0, z: cell.col * this.playerGameField.fieldSize };
-            this.opponentGameField.setBuilding(position, building, {row: cell.row, col: cell.col });
+          if (building !== EntityType.CREAM) {
+            this.opponentGameField.setBuilding(building, {row: cell.row, col: cell.col });
           }
         });
       });

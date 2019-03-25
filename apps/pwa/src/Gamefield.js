@@ -13,7 +13,7 @@ class Gamefield {
         this.fieldIdx = fieldIdx;
 
         this.buildings = [...Array(this.rows)].map(
-            field => Array(this.cols).fill([new Building(EntityType.EMPTY)])
+            field => Array(this.cols).fill([])
         );
 
         this.gameField = new THREE.Group();
@@ -56,7 +56,7 @@ class Gamefield {
                 }
 
                 if (cell.occupiedBy.includes(EntityType.CREAM)) {
-                    this.setBuilding(pivot.position, EntityType.CREAM, { row: cell.row, col: cell.col });
+                    this.setBuilding(EntityType.CREAM, { row: cell.row, col: cell.col });
                 }
             }
         });
@@ -94,7 +94,6 @@ class Gamefield {
         this.gameField.remove(building.getModel());
 
         building.explode();
-        building.adjustPosition(position);
         
         if (!this.isPlayerGameField && 
             (building.entityType === EntityType.RUM_TRUFFLE_CANNON ||
@@ -187,23 +186,14 @@ class Gamefield {
 
         let row = xmasFactoryCell[0]._cellIdx.row;
         let col = xmasFactoryCell[0]._cellIdx.col;
-        let position3d = { x: row * this.fieldSize, y: 0, z: col * this.fieldSize };
 
         let xmasFactoryIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.XMAS_FACTORY);        
         let xmasFactory = this.buildings[row][col][xmasFactoryIndex];  
 
         this.gameField.remove(xmasFactory.getModel());
         this.buildings[row][col].splice(xmasFactoryIndex, 1);
-        let hotChocolateBallista = new Building(EntityType.HOT_CHOCOLATE_BALLISTA)
-        this.buildings[row][col].push();
-        this.setBuilding(position3d, EntityType.HOT_CHOCOLATE_BALLISTA, { row: row, col: col });
 
-        let cream = this.buildings[row][col].findIndex(building => building.entityType === EntityType.CREAM);
-        if (this.isPlayerGameField && cream > -1) {
-            hotChocolateBallista.makeCreamy();
-        } else if (cream > -1) {
-            hotChocolateBallista.hide();
-        }
+        this.setBuilding(EntityType.HOT_CHOCOLATE_BALLISTA, { row: row, col: col });
     }
 
     attack(target, attackType) {
@@ -226,13 +216,13 @@ class Gamefield {
                     otherBuildings.forEach(otherBuilding => {
                         this.triggerExplosion(otherBuilding, position3d);
                     });
-                    this.buildings[row][col] = [new Building(EntityType.EMPTY)];
+                    this.buildings[row][col] = [];
                 }, 1000);
             } else {
                 this.buildings[row][col].forEach(building => {
                     this.triggerExplosion(building, position3d);
                 });
-                this.buildings[row][col] = [new Building(EntityType.EMPTY)];
+                this.buildings[row][col] = [];
             }
         } else if (attackType === AttackType.HOT_CHOCOLATE) {
             this.buildings[row][col].forEach(building => this.gameField.remove(building.getModel()));
@@ -300,11 +290,12 @@ class Gamefield {
         return this.buildings[row][col].filter(building => building.entityType === entityType).length > 0;
     }
 
-    setBuilding(position, entityType, entityPosition) {
+    setBuilding(entityType, entityPosition) {
         const row = entityPosition.row;
         const col = entityPosition.col;
 
-        let building = new Building(entityType, { col: col, row: row }, this.fieldIdx);
+        let position3d = { x: row * this.fieldSize, y: 0, z: col * this.fieldSize };
+        let building = new Building(entityType, { col: col, row: row }, position3d, this.fieldIdx);
         if (building.entityType === EntityType.FACTORY_EXTENSION) {
             if (this.isAboveOfFactory(row, col)) {
                 building.rotate(Math.PI);
@@ -324,11 +315,9 @@ class Gamefield {
             building.rotate(Math.PI);
         }
 
-        building.adjustPosition(position);
-
         if (building.entityType === EntityType.CREAM && this.isPlayerGameField) {
             building.makeTransparent();
-            let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM && building.entityType !== EntityType.EMPTY);
+            let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM);
             if (otherBuildings.length > 0) {
                 building.hide();
                 otherBuildings.forEach(other => other.makeCreamy());
@@ -336,10 +325,10 @@ class Gamefield {
         }
 
         this.gameField.add(building.getModel());
-
+        
         if (this.cellContains(row, col, EntityType.CREAM)) {
             this.buildings[row][col].push(building);
-            if (this.isPlayerGameField === false) {
+            if (!this.isPlayerGameField) {
                 building.hide();
             } else {
                 building.makeCreamy();
