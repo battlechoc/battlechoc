@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import './Tooltip.css';
 import { connect } from 'react-redux';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
-import { getEntityDescriptor, EntityType } from '../gameplay/GameEntities';
+import { getEntityDescriptor } from '../gameplay/GameEntities';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { withStyles } from '@material-ui/core/styles';
 import ExpansionPanel from '@material-ui/core/ExpansionPanel';
