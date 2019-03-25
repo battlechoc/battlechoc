@@ -303,7 +303,7 @@ class App extends Component {
     let buildingSelected = this.props.selectedBuilding;
     let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
       this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
-    if (intersects.length > 0 && !this.isSwiping && (buildingSelected || (initialPlacement && this.props.game.players[0].hasFactory !== true))) {
+    if (intersects.length > 0 && !this.isSwiping && (buildingSelected || (initialPlacement && this.props.game.players[0].buildingsPerTurn === 0))) {
       let building = null;
       if (initialPlacement) {
         building = createEntity(EntityType.FACTORY);

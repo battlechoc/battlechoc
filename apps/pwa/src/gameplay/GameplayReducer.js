@@ -186,14 +186,13 @@ const gameplayReducer = createReducer({}, {
             if (attackedCell.shielded === true && action.payload.attackType === GameEntities.AttackType.TRUFFLE) {
                 console.log("attacked cell was shielded");
             } else {
-                if (attackedCell.occupiedBy.includes(GameEntities.EntityType.FACTORY) || attackedCell.occupiedBy.includes(GameEntities.EntityType.FACTORY_EXTENSION)) {
-                    opponent.buildingsPerTurn -= (attackedCell.occupiedBy.includes(GameEntities.EntityType.FACTORY)) ?
-                        calculateBuildingsPerTurn(GameEntities.getEntityDescriptor(GameEntities.EntityType.FACTORY), cellColor) :
-                        calculateBuildingsPerTurn(GameEntities.getEntityDescriptor(GameEntities.EntityType.FACTORY_EXTENSION), cellColor);
-                    if (opponent.buildingsPerTurn === 0) {
-                        opponent.hasFactory = false;
-                        console.log('FACTORY DESTROYED');
-                    }
+                if (attackedCell.occupiedBy.includes(GameEntities.EntityType.FACTORY)) {
+                    opponent.hasFactory = false;
+                    opponent.buildingsPerTurn -= calculateBuildingsPerTurn(GameEntities.getEntityDescriptor(GameEntities.EntityType.FACTORY), cellColor);
+                    console.log('FACTORY DESTROYED');
+                } else if (attackedCell.occupiedBy.includes(GameEntities.EntityType.FACTORY_EXTENSION)) {
+                    opponent.buildingsPerTurn -= calculateBuildingsPerTurn(GameEntities.getEntityDescriptor(GameEntities.EntityType.FACTORY_EXTENSION), cellColor);
+                    console.log('FACTORY EXTENSION DESTROYED');
                 } else if (attackedCell.occupiedBy.includes(GameEntities.EntityType.CACAOTREE)) {
                     opponent.cacaoPerTurn -= calculateCacaoPerTurn(GameEntities.getEntityDescriptor(GameEntities.EntityType.CACAOTREE), cellColor);
                     console.log('CACAOTREE DESTROYED');

@@ -173,7 +173,7 @@ class Rules {
         } else if (action.type === GameActionTypes.build) {
             if (currentState !== GameStateTypes.BUILD_PHASE && currentState !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && currentState !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
                 return new Errors.UnexpectedStateError(currentState);
-            } else if ((this.currentPlayer(state.gameplay.game).buildings === 0 || (this.currentPlayer(state.gameplay.game).hasFactory === false && action.payload.building.type === GameEntities.EntityType.FACTORY_EXTENSION)) &&
+            } else if ((this.currentPlayer(state.gameplay.game).buildings === 0 || (this.currentPlayer(state.gameplay.game).buildingsPerTurn === 0 && action.payload.building.type === GameEntities.EntityType.FACTORY_EXTENSION)) &&
                 action.payload.building.type !== GameEntities.EntityType.FACTORY) {
                 return new Errors.NoBuildingsLeftError();
             } else if (this.currentPlayer(state.gameplay.game).cacao < action.payload.building.costs) {
