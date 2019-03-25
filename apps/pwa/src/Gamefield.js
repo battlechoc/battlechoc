@@ -17,10 +17,10 @@ class Gamefield {
         );
 
         this.gameField = new THREE.Group();
-        this.build(playerField);
+        this.build(playerField , false);
     }
 
-    build(playerField) {
+    build(playerField, rebuild) {
         const assets = AssetLoader.assets.models;
         let pivot = assets['FIELD'].model.scene.children[0];
         let materialMap = assets['FIELD'].model.scene.children[1];
@@ -55,7 +55,7 @@ class Gamefield {
                     board.geometry.faces[i]._fieldIndex = this.fieldIdx;
                 }
 
-                if (cell.occupiedBy.includes(EntityType.CREAM)) {
+                if (cell.occupiedBy.includes(EntityType.CREAM) && !rebuild) {
                     this.setBuilding(EntityType.CREAM, { row: cell.row, col: cell.col });
                 }
             }
@@ -72,7 +72,7 @@ class Gamefield {
     rebuild(playerField) {
         let board = this.gameField.getObjectByName('BOARD' + this.fieldIdx);
         this.gameField.remove(board);
-        this.build(playerField);
+        this.build(playerField, true);
     }
 
     getClickableFields() {

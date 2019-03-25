@@ -94,10 +94,11 @@ class Rules {
         for (var playerIdx = 0; playerIdx < 2; ++playerIdx) {
             const player = gameState.players[playerIdx];
             if ((player.buildingsPerTurn === 0 && playerHasHarmfulAttacksPerTurn(player) === false) ||
-                (playerHasHarmfulAttacksPerTurn(player) === false && player.cacaoPerTurn === 0 && player.cacao < GameEntities.getEntityDescriptor(GameEntities.EntityType.CACAOTREE).costs)) {
+                (!playerHasHarmfulAttacksPerTurn(player) && player.cacaoPerTurn === 0 && player.cacao < GameEntities.getEntityDescriptor(GameEntities.EntityType.CACAOTREE).costs)) {
                 potentialWinners.push(gameState.players[1 - playerIdx]);
             }
         }
+
         if (potentialWinners.length === 0) {
             return undefined;
         } else if (potentialWinners.length === 1) {

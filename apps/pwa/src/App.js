@@ -199,6 +199,7 @@ class App extends Component {
       while (this.scene.children.length > 0) {
         this.scene.remove(this.scene.children[0]);
         this.props.gameResumeable(false);
+        OfflineStore.gamestateStore.clear();
       }
     }
 
@@ -548,6 +549,7 @@ class App extends Component {
     } else {
       this.props.resumeGame(resumeableGame).then(() => {
         this.opponent.player = resumeableGame.players[1];
+        this.opponent.connectGamestate(() => this.props.game);
         this.startGame(true);
       });
     }

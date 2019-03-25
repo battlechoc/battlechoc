@@ -100,7 +100,8 @@ const gameplayReducer = createReducer({}, {
             players: action.payload.players,
             currentPlayerIndex: action.payload.currentPlayerIndex,
             state: action.payload.state,
-            board: action.payload.board
+            board: action.payload.board,
+            isRunning: action.payload.isRunning
         };
     },
     [GameActions.createBoard]: (state, action) => {
