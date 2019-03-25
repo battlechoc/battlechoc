@@ -29,11 +29,11 @@ class Gamefield {
         let board = new THREE.Mesh(new THREE.Geometry(), materials);
         playerField.grid.forEach((cell, i) => {
             if (!cell.molten) {
-                let materialIndex = 0;
+                let materialIndex = 1;
                 if (cell.type === BoardCellTypes.BROWN) {
-                    materialIndex = 1;
-                } else if (cell.type === BoardCellTypes.BLACK) {
                     materialIndex = 2;
+                } else if (cell.type === BoardCellTypes.BLACK) {
+                    materialIndex = 0;
                 }
 
                 let geometryLowerBound = board.geometry.faces.length;
