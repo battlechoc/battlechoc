@@ -7,7 +7,7 @@ import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import { EntityType, AttackType, createEntity } from './gameplay/GameEntities';
 import { startGame, resumeGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase, endGame } from './gameplay/GameActions';
-import { changeLanguage, deselectBuildings, gameResumeable } from './ui/UiActions';
+import { changeLanguage, deselectBuildings, selectAttack, gameResumeable } from './ui/UiActions';
 import { connect } from 'react-redux';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -207,16 +207,16 @@ class App extends Component {
       if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined' && typeof OfflineStore.gamestateStore !== 'undefined' &&
         (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (nextProps.game.currentPlayerIndex === 0)) {
         OfflineStore.saveCurrentGame(nextProps.game)
-        .then(() => { 
-          this.props.gameResumeable(true)
-          .catch(error => {
-            if (error instanceof BattlechocError) {
-              console.warn(error);
-            } else {
-              throw error;
-            }
+          .then(() => {
+            this.props.gameResumeable(true)
+              .catch(error => {
+                if (error instanceof BattlechocError) {
+                  console.warn(error);
+                } else {
+                  throw error;
+                }
+              });
           });
-        });
       }
 
       if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
@@ -298,8 +298,8 @@ class App extends Component {
 
   playerFieldClick() {
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
-      intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
-                                                   (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));
+    intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
+      (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));
     let buildingSelected = this.props.selectedBuilding;
     let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
       this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
@@ -325,11 +325,11 @@ class App extends Component {
           }, 3000);
         }
       }).catch(error => {
-          if (error instanceof BattlechocError) {
-            console.warn(error);
-          } else {
-            throw error;
-          }
+        if (error instanceof BattlechocError) {
+          console.warn(error);
+        } else {
+          throw error;
+        }
       });
     }
   }
@@ -338,10 +338,10 @@ class App extends Component {
     if (this.lookAtOpponent && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
       var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
       intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
-                                                   (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));
+        (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));
       if (intersects.length > 0 && !this.isSwiping && playerHasAttacks(this.props.game.players[0]) === true) {
         let cellIndex = intersects[0].object._cellIdx || intersects[0].face._cellIdx;
-        let target = {row: cellIndex.row, col: cellIndex.col};
+        let target = { row: cellIndex.row, col: cellIndex.col };
         this.props.attack({
           issuer: this.props.game.players[0].id,
           attackType: this.props.selectedAttack,
@@ -355,11 +355,19 @@ class App extends Component {
               this.playerGameField.meltDownEasterBunny();
               this.opponentGameField.receiveBallista(target);
             }
-          } else  {
+          } else {
             this.opponentGameField.attack(target, this.props.selectedAttack);
             if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
               let opponentFieldIndex = this.props.game.players[1].fieldIndex;
               this.opponentGameField.rebuild(this.props.game.board.fields[opponentFieldIndex]);
+            }
+          }
+
+          if (this.props.game.players[0].attacks[this.props.selectedAttack] === 0) {
+            const attackTypes = [AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.BUNNY];
+            let undepletedAttack = attackTypes.filter(attackType => this.props.game.players[0].attacks[attackType]);
+            if (undepletedAttack.length > 0) {
+              this.props.selectAttack(undepletedAttack[0]);
             }
           }
         }).catch(error => {
@@ -603,14 +611,14 @@ class App extends Component {
       this.props.game.board.fields[this.props.game.players[0].fieldIndex].grid.forEach((cell) => {
         cell.occupiedBy.forEach((building) => {
           if (building !== EntityType.CREAM) {
-            this.playerGameField.setBuilding(building, {row: cell.row, col: cell.col });
+            this.playerGameField.setBuilding(building, { row: cell.row, col: cell.col });
           }
         });
       });
       this.props.game.board.fields[this.props.game.players[1].fieldIndex].grid.forEach((cell) => {
         cell.occupiedBy.forEach((building) => {
           if (building !== EntityType.CREAM) {
-            this.opponentGameField.setBuilding(building, {row: cell.row, col: cell.col });
+            this.opponentGameField.setBuilding(building, { row: cell.row, col: cell.col });
           }
         });
       });
@@ -888,6 +896,7 @@ const mapDispatchToProps = {
   attack,
   changeLanguage,
   deselectBuildings,
+  selectAttack,
   gameResumeable
 };
 

@@ -91,12 +91,9 @@ function calculateCacaoPerTurn(building, cellColor) {
 
 function calculateBuildingsPerTurn(building, cellColor) {
     let buildingsPerTurn = building.buildingsPerTurn;
-    console.log(buildingsPerTurn);
-    console.log(cellColor);
     if (cellColor === GameEntities.BoardCellTypes.BLACK) {
         buildingsPerTurn *= 2;
     }
-    console.log(buildingsPerTurn);
     return buildingsPerTurn;
 }
 

@@ -241,6 +241,7 @@ class Gamefield {
                             this.triggerExplosion(cream, position3d);
                         }
                     } else {
+                        console.log("uncreaming fields " + field.row +","+field.col);
                         this.triggerExplosion(cream, position3d);
                         this.buildings[field.row][field.col].splice(creamyfieldIndex, 1);
 
