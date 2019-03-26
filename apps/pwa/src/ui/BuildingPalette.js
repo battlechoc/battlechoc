@@ -43,17 +43,17 @@ class BuildingPalette extends Component {
             image: 'images/xmasFactory_icon.png',
             alt: 'xmas factory',
             costs: getEntityDescriptor(EntityType.XMAS_FACTORY).costs
-        }/*, {
+        }, {
+            type: EntityType.CHOCOLATE_FOUNTAIN,
+            image: 'images/chocolateFountain_icon.png',
+            alt: 'chocolate fountain',
+            costs: getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN).costs
+        } /*, {
             type: EntityType.FRUIT_CANNON,
             image: 'images/cacaotree_icon.png',
             alt: 'fruit cannon',
             costs: getEntityDescriptor(EntityType.FRUIT_CANNON).costs
-        }, {
-            type: EntityType.CHOCOLATE_FOUNTAIN,
-            image: 'images/cacaotree_icon.png',
-            alt: 'chocolate fountain',
-            costs: getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN).costs
-        } */];
+        }*/];
     }
 
     buildingSelectionIsVisible() {

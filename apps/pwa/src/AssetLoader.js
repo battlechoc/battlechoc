@@ -24,8 +24,9 @@ class AssetLoader {
                 XMAS_FACTORY_EXPLOSION: { filename: 'xmasFactory-explosion.glb', model: null },
                 HOT_CHOCOLATE_BALLISTA: { filename: 'hotChocolateBallista.glb', model: null },
                 HOT_CHOCOLATE_BALLISTA_EXPLOSION: { filename: 'hotChocolateBallista-explosion.glb', model: null },
-                CHOCOLATE_FOUNTAIN: { filename: 'cream.glb', model: null },
-                FRUIT_CANNON: { filename: 'cream.glb', model: null },
+                CHOCOLATE_FOUNTAIN: { filename: 'chocolateFountain.glb', model: null },
+                CHOCOLATE_FOUNTAIN_EXPLOSION: { filename: 'chocolateFountain-explosion.glb', model: null },
+                FRUIT_CANNON: { filename: 'cream.glb', model: null }
             },
             images: {
                 ATTACKS: { filename: 'attacks_icon.png' },
@@ -41,6 +42,7 @@ class AssetLoader {
                 FACTORY_EXTENSION: { filename: 'factory_extension_icon.png' },
                 SPYING_EASTER_BUNNY: { filename: 'spying_easter_bunny_icon.png' },
                 SPYING_EASTER_BUNNY_ATTACK: { filename: 'spyingEasterBunnyAttack.png' },
+                CHOCOLATE_FOUNTAIN: { filename: 'chocolateFountain_icon.png' },
                 XMAS_FACTORY: { filename: 'xmasFactory_icon.png' }
             }
         }
