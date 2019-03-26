@@ -356,10 +356,13 @@ class App extends Component {
               this.opponentGameField.receiveBallista(target);
             }
           } else {
-            this.opponentGameField.attack(target, this.props.selectedAttack);
-            if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
-              let opponentFieldIndex = this.props.game.players[1].fieldIndex;
-              this.opponentGameField.rebuild(this.props.game.board.fields[opponentFieldIndex]);
+            const attackedCell = this.props.game.board.fields[this.props.game.players[1].fieldIndex].grid[target.row * this.props.game.board.size.cols + target.col];
+            if (attackedCell.shielded !== true || (this.props.selectedAttack !== AttackType.TRUFFLE && this.props.selectedAttack !== AttackType.FRUIT)) {
+              this.opponentGameField.attack(target, this.props.selectedAttack);
+              if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
+                let opponentFieldIndex = this.props.game.players[1].fieldIndex;
+                this.opponentGameField.rebuild(this.props.game.board.fields[opponentFieldIndex]);
+              }
             }
           }
 

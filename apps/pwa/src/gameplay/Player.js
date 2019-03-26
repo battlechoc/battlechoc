@@ -202,10 +202,13 @@ class Augustus {
                     opponentGameField3d.receiveBallista({ row: target.row, col: target.col });
                 }
             } else {
-                opponentGameField3d.attack({ row: target.row, col: target.col }, attackType);
-                if (attackType === AttackType.HOT_CHOCOLATE) {
-                  opponentGameField3d.rebuild(this.opponentBoard);
-                }                
+                const attackedCell = this.opponentBoard.grid[target.row * 8 + target.col];
+                if (attackedCell.shielded !== true || (attackType !== AttackType.TRUFFLE && attackType !== AttackType.FRUIT)) {
+                    opponentGameField3d.attack({ row: target.row, col: target.col }, attackType);
+                    if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
+                        opponentGameField3d.rebuild(this.opponentBoard);
+                    }
+                }
             }
             this.simulateAttackPhase(gamefield3d, opponentGameField3d);
         }).catch(error => this.handleAttackError(error));

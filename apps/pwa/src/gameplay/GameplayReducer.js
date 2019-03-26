@@ -173,12 +173,10 @@ const gameplayReducer = createReducer({}, {
             } else if (action.payload.building.type === GameEntities.EntityType.FACTORY_EXTENSION) {
                 currentPlayer(state.game).buildingsPerTurn += calculateBuildingsPerTurn(action.payload.building, cellColor);
             } else if (action.payload.building.type === GameEntities.EntityType.CHOCOLATE_FOUNTAIN) {
-                getCellNeighbors3x3({ row: action.payload.building.position.row, col: action.payload.building.position.col }, state.game.board, currentPlayerField(state.game)).map(cell => {
-                    let shieldedCell = {};
-                    Object.assign(shieldedCell, cell);
-                    shieldedCell.shielded = true;
-                    return shieldedCell;
-                });
+                const neighbors = getCellPatch3x3({ row: action.payload.building.position.row, col: action.payload.building.position.col }, state.game.board, currentPlayerField(state.game).grid);
+                for (let i = 0; i < neighbors.length; i++) {
+                    neighbors[i].shielded = true;
+                }
             }
             currentPlayer(state.game).buildings -= 1;
             currentPlayer(state.game).cacao -= action.payload.building.costs;
@@ -230,15 +228,14 @@ const gameplayReducer = createReducer({}, {
             }
             if (attackedCell.occupiedBy.includes(GameEntities.EntityType.CHOCOLATE_FOUNTAIN) === true) {
                 attackedCell.occupiedBy.splice(attackedCell.occupiedBy.indexOf(GameEntities.EntityType.CHOCOLATE_FOUNTAIN), 1);
-                getCellNeighbors3x3({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game)).map(cell => {
-                    let unshieldedCell = {};
-                    Object.assign(unshieldedCell, cell);
-                    const cellNeighbors = getCellNeighbors3x3({ row: cell.row, col: cell.col }, state.game.board, otherPlayerField(state.game)).filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.CHOCOLATE_FOUNTAIN));
+                const neighbors = getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, state.game.board, otherPlayerField(state.game).grid);
+                for (let i = 0; i < neighbors.length; i++) {
+                    const neighbor = neighbors[i];
+                    const cellNeighbors = getCellNeighbors3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.CHOCOLATE_FOUNTAIN));
                     if (cellNeighbors.length > 0) {
-                        unshieldedCell.shielded = false;
+                        neighbors[i].shielded = false;
                     }
-                    return unshieldedCell;
-                });
+                }
             }
         } else if (action.payload.attackType === GameEntities.AttackType.BUNNY) {
             const patch = getCellPatch3x3({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
