@@ -59,17 +59,17 @@ class Board {
             let field = { grid: [] };
             for (let row = 0; row < size.rows; row++) {
                 for (let col = 0; col < size.cols; col++) {
-                    let fieldtype = Math.floor(Math.random() * 3);
+                    let fieldtype = Math.floor(Math.random() * 6);
                     let creamed = Math.random() < 0.7
-                    let cellType = BoardCellTypes.BLACK;
-                    let previewStyle = 'black';
+                    let cellType = BoardCellTypes.BROWN;
+                    let previewStyle = 'brown';
 
                     if (fieldtype === 0) {
                         cellType = BoardCellTypes.WHITE;
                         previewStyle = 'white';
                     } else if (fieldtype === 1) {
-                        cellType = BoardCellTypes.BROWN;
-                        previewStyle = 'brown';
+                        cellType = BoardCellTypes.BLACK;
+                        previewStyle = 'black';
                     }
 
                     field.grid.push({
