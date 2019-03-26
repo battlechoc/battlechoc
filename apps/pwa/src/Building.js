@@ -62,6 +62,10 @@ class Building {
 			this._model = assets.XMAS_FACTORY_EXPLOSION.model.scene.clone();
 		} else if (this.entityType === EntityType.HOT_CHOCOLATE_BALLISTA) {
 			this._model = assets.HOT_CHOCOLATE_BALLISTA_EXPLOSION.model.scene.clone();
+		} else if (this.entityType === EntityType.FRUIT_CANNON) {
+			this._model = assets.FRUIT_CANNON_EXPLOSION.model.scene.clone();
+		} else if (this.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
+			this._model = assets.CHOCOLATE_FOUNTAIN_EXPLOSION.model.scene.clone();
 		} else {
 			this._model = assets.CREAM_EXPLOSION.model.scene.clone();
 		}

@@ -121,7 +121,11 @@ class Gamefield {
             explosion = assets.XMAS_FACTORY_EXPLOSION;
         } else if (building.entityType === EntityType.HOT_CHOCOLATE_BALLISTA) {
             explosion = assets.HOT_CHOCOLATE_BALLISTA_EXPLOSION;
-        }
+        } else if (building.entityType === EntityType.FRUIT_CANNON) {
+            explosion = assets.FRUIT_CANNON_EXPLOSION;
+        } else if (building.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
+            explosion = assets.CHOCOLATE_FOUNTAIN_EXPLOSION;
+        } 
 
         for (let i = 0; i < explosion.model.animations.length; i++) {
             this.mixer.clipAction(explosion.model.animations[i]).setLoop(THREE.LoopOnce).play()
