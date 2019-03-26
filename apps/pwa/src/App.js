@@ -367,7 +367,13 @@ class App extends Component {
             const attackTypes = [AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.BUNNY];
             let undepletedAttack = attackTypes.filter(attackType => this.props.game.players[0].attacks[attackType]);
             if (undepletedAttack.length > 0) {
-              this.props.selectAttack(undepletedAttack[0]);
+              this.props.selectAttack(undepletedAttack[0]).catch(error => {
+                if (error instanceof BattlechocError) {
+                  console.warn(error);
+                } else {
+                  throw error;
+                }
+              });
             }
           }
         }).catch(error => {
