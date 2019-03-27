@@ -19,29 +19,12 @@ class Hud extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            clickable: true,
-            messageAnimation: false
+            clickable: true
         }
     }
 
     componentDidMount() {
         this.props.onRef(this)
-
-        this.gameStartCanvas = document.getElementById('textAnimationCanvas');
-        this.gameStartCanvas.width = this.hud.clientWidth;
-        this.gameStartCanvas.height = this.hud.clientHeight;
-        this.gameStartBitmap = this.gameStartCanvas.getContext('2d');
-
-        window.addEventListener("resize", () => this.updateDimensions());
-    }
-
-    updateDimensions() {
-        this.gameStartCanvas.width = this.hud.clientWidth;
-        this.gameStartCanvas.height = this.hud.clientHeight;
-    }
-
-    componentWillUnmount() {
-        window.removeEventListener("resize", () => this.updateDimensions());
     }
 
     unlockUi() {
@@ -53,46 +36,30 @@ class Hud extends Component {
     }
 
     showTurnMessage(message) {
-        this.setState({
-            message: message,
-            messageAnimation: true
-        });
+        this.setState({ message: message });
+        // estimate browser animation type
+        let pivot = document.createElement("fakeelement");
+        let animations = {
+            "animation"      : "animationend",
+            "OAnimation"     : "oAnimationEnd",
+            "MozAnimation"   : "animationend",
+            "WebkitAnimation": "webkitAnimationEnd"
+        }
+        let supportedAnimation = 'animation';
 
-        this.fontAlpha = 1.0;
-        this.fontSize = 40;
-        this.renderText(message);
-
-        setTimeout(() => this.renderAnimation(), 1000);
-    }
-
-    renderAnimation = () => {
-        this.gameStartBitmap.clearRect(0, 0, this.hud.clientWidth, this.hud.clientHeight);
-
-        if (this.state.messageAnimation) {
-            if (this.fontSize < 250) {
-                this.fontAlpha -= 0.01;
-                this.fontSize += 2;
-                this.renderText(this.state.message);
-                requestAnimationFrame(this.renderAnimation);
-            } else {
-                this.gameStartBitmap.clearRect(0, 0, this.hud.clientWidth, this.hud.clientHeight);
-                this.setState({
-                    message: undefined,
-                    messageAnimation: false
-                });
+        for (let animation in animations) {
+            if (typeof pivot.style[animation] !== 'undefined') {
+                supportedAnimation = animations[animation];
             }
         }
-    }
 
-    renderText = text => {
-        this.gameStartBitmap.font = "Normal " + Math.round(this.fontSize) + "px Arial";
-        this.gameStartBitmap.fillStyle = "rgba(245,245,245," + this.fontAlpha + ")";
-        this.gameStartBitmap.shadowColor = "rgba(0,0,0,0.3)";
-        this.gameStartBitmap.shadowOffsetX = 3;
-        this.gameStartBitmap.shadowOffsetY = 3;
-        this.gameStartBitmap.shadowBlur = 4;
-        this.gameStartBitmap.textAlign = 'center';
-        this.gameStartBitmap.fillText(text, this.hud.clientWidth / 2, this.hud.clientHeight / 2);
+        let textAnimation = document.getElementById('textAnimation');
+        textAnimation.addEventListener(supportedAnimation, () => {
+            this.setState({ message: undefined });
+        });
+        textAnimation.addEventListener('click', () => {
+            this.setState({ message: undefined });
+        });
     }
 
     choose(option) {
@@ -133,6 +100,7 @@ class Hud extends Component {
 
     render() {
         let showInGameMenu = !this.isInitalStage() && !this.isTitleScreen();
+        let textAnimation = typeof this.state.message === 'undefined' ? undefined : <div id="textAnimation" className="zoom">{this.state.message}</div>
         return (
             <div>
                 <Tooltip />
@@ -141,101 +109,87 @@ class Hud extends Component {
                 <AttackPalette isVisible={showInGameMenu} />
                 <BuildingPalette isVisible={showInGameMenu} />
                 <InfoPanel isVisible={showInGameMenu} />
-                <div id="hud" className={this.isInitalStage() || this.isTitleScreen() || this.state.messageAnimation ? 'fullscreen' : null} ref={hud => { this.hud = hud }}>
-                    <canvas id="textAnimationCanvas" className={this.state.messageAnimation ? 'ontop' : null}></canvas>
-                    {(() => {
-                        if (this.isTitleScreen()) {
-                            if (this.props.resumeGamePossible === true) {
-                                return (
-                                    <div id="mainMenu">
-                                        <Button color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback()}>
-                                            {t[this.props.language].NEW_GAME}
-                                        </Button>
-                                        <Button color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareResumedGameCallback()}>
-                                            {t[this.props.language].RESUME_GAME}
-                                        </Button>
-                                    </div>
-                                );
-                            } else {
-                                return (
-                                    <div id="mainMenu">
-                                        <Button color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback()}>
-                                            {t[this.props.language].NEW_GAME}
-                                        </Button>
-                                    </div>
-                                );
-                            }
-                        } else if (this.isInitalStage()) {
-                            return (
-                                <div className="choose">
-
-                                    <div className={(this.state.clickable ? 'active ' : null) + ' button'} onClick={() => this.choose('LEFT_GAMEFIELD')}>
-                                        {(() => {
-                                            if (typeof this.props.game.board !== 'undefined') {
-                                                const creamedCells = this.props.game.board.fields[0].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
-                                                return <div className="creamedCellCount">
-                                                    <img alt="filled with cream" src="images/cream_preview.png" />
-                                                    <p>{creamedCells.length}</p>
-                                                </div>
-                                            }
-                                        })()}
-                                        <div className="fields">
-                                            {(() => {
-                                                if (typeof this.props.game.board !== 'undefined') {
-                                                    return this.props.game.board.fields[0].grid.map(
-                                                        (cell, i) => {
-                                                            if (cell.occupiedBy.includes(EntityType.CREAM)) {
-                                                                return <div key={i} className={cell.previewStyle}>
-                                                                    <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
-                                                                </div>
-                                                            } else {
-                                                                return <div key={i} className={cell.previewStyle}></div>
-                                                            }
-                                                        }
-                                                    );
-                                                }
-                                            })()}
-                                        </div>
-                                    </div>
-
-                                    <div className={this.estimateButtonClasses()} onClick={() => this.choose('START')}>
-                                        <div className="stackedIcon"><div className="firstIcon">#1</div><StartIcon fontSize="large" /></div>
-                                    </div>
-
-                                    <div className={(this.state.clickable ? 'active ' : null) + ' button'} onClick={() => this.choose('RIGHT_GAMEFIELD')}>
-                                        {(() => {
-                                            if (typeof this.props.game.board !== 'undefined') {
-                                                const creamedCells = this.props.game.board.fields[1].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
-                                                return <div className="creamedCellCount">
-                                                    <img alt="filled with cream" src="images/cream_preview.png" />
-                                                    <p>{creamedCells.length}</p>
-                                                </div>
-                                            }
-                                        })()}
-                                        <div className="fields">
-                                            {(() => {
-                                                if (typeof this.props.game.board !== 'undefined') {
-                                                    return this.props.game.board.fields[1].grid.map(
-                                                        (cell, i) => {
-                                                            if (cell.occupiedBy.includes(EntityType.CREAM)) {
-                                                                return <div key={i} className={cell.previewStyle}>
-                                                                    <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
-                                                                </div>
-                                                            } else {
-                                                                return <div key={i} className={cell.previewStyle}></div>
-                                                            }
-                                                        }
-                                                    );
-                                                }
-                                            })()}
-                                        </div>
-                                    </div>
-
-                                </div>
-                            );
+                { textAnimation }
+                
+                {(() => {
+                    if (this.isTitleScreen()) {
+                        let buttons = [<Button key="0" color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback()}>{t[this.props.language].NEW_GAME}</Button>];
+                        if (this.props.resumeGamePossible === true) {
+                            buttons.push(<Button key="1" color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareResumedGameCallback()}>{t[this.props.language].RESUME_GAME}</Button>);
                         }
-                    })()}
-                </div>
+                        return (
+                            <div id="mainMenu">
+                                { buttons }
+                            </div>
+                        );
+                    } else if (this.isInitalStage()) {
+                        return (
+                            <div className="choose">
+                                <div className={(this.state.clickable ? 'active ' : null) + ' button'} onClick={() => this.choose('LEFT_GAMEFIELD')}>
+                                    {(() => {
+                                        if (typeof this.props.game.board !== 'undefined') {
+                                            const creamedCells = this.props.game.board.fields[0].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
+                                            return <div className="creamedCellCount">
+                                                <img alt="filled with cream" src="images/cream_preview.png" />
+                                                <p>{creamedCells.length}</p>
+                                            </div>
+                                        }
+                                    })()}
+                                    <div className="fields">
+                                        {(() => {
+                                            if (typeof this.props.game.board !== 'undefined') {
+                                                return this.props.game.board.fields[0].grid.map(
+                                                    (cell, i) => {
+                                                        if (cell.occupiedBy.includes(EntityType.CREAM)) {
+                                                            return <div key={i} className={cell.previewStyle}>
+                                                                <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
+                                                            </div>
+                                                        } else {
+                                                            return <div key={i} className={cell.previewStyle}></div>
+                                                        }
+                                                    }
+                                                );
+                                            }
+                                        })()}
+                                    </div>
+                                </div>
+
+                                <div className={this.estimateButtonClasses()} onClick={() => this.choose('START')}>
+                                    <div className="stackedIcon"><div className="firstIcon">#1</div><StartIcon fontSize="large" /></div>
+                                </div>
+
+                                <div className={(this.state.clickable ? 'active ' : null) + ' button'} onClick={() => this.choose('RIGHT_GAMEFIELD')}>
+                                    {(() => {
+                                        if (typeof this.props.game.board !== 'undefined') {
+                                            const creamedCells = this.props.game.board.fields[1].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
+                                            return <div className="creamedCellCount">
+                                                <img alt="filled with cream" src="images/cream_preview.png" />
+                                                <p>{creamedCells.length}</p>
+                                            </div>
+                                        }
+                                    })()}
+                                    <div className="fields">
+                                        {(() => {
+                                            if (typeof this.props.game.board !== 'undefined') {
+                                                return this.props.game.board.fields[1].grid.map(
+                                                    (cell, i) => {
+                                                        if (cell.occupiedBy.includes(EntityType.CREAM)) {
+                                                            return <div key={i} className={cell.previewStyle}>
+                                                                <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
+                                                            </div>
+                                                        } else {
+                                                            return <div key={i} className={cell.previewStyle}></div>
+                                                        }
+                                                    }
+                                                );
+                                            }
+                                        })()}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    }
+                })()}
             </div>
         );
     }

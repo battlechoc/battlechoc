@@ -1,10 +1,3 @@
-#hud {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  color: white;
-}
-
 /* choose menu */
 
 .choose {
@@ -14,6 +7,7 @@
   width: 100%;
   display: flex;
   flex-direction: row;
+  color: white;
 }
 
 .selectedByPlayer {
@@ -128,20 +122,33 @@
 
 /* flying text animation */
 
-#textAnimationCanvas {
+@keyframes zoom {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        font-size: 15vw;
+    }
+}
+
+#textAnimation {
   position: absolute;
-  top: 0px;
-  left: 0px;
-  z-index: -1;
-}
-
-.ontop {
-  z-index: 1 !important;
-}
-
-.fullscreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 100%;
   width: 100%;
+  z-index: 1;
+  font-size: 3vw;
+  color: white;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  text-shadow: 2px 2px 8px #222;
+  animation-name: zoom;
+  animation-duration: 2s;
+  animation-delay: 1s;
+  animation-timing-function: ease-in;
+  white-space: nowrap;
 }
 
 #mainMenu {
