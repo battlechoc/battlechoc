@@ -329,6 +329,14 @@ class Gamefield {
             }
         }
 
+        if (building.entityType === EntityType.FRUIT_CANNON) {
+            var index = this.buildings[row][col].findIndex(building => building.entityType === EntityType.RUM_TRUFFLE_CANNON)
+            if (index > -1) {
+                this.gameField.remove(this.buildings[row][col][index].getModel());
+                this.buildings[row][col].splice(index, 1);
+            }
+        }
+
         this.gameField.add(building.getModel());
         
         if (this.cellContains(row, col, EntityType.CREAM)) {
