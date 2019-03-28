@@ -179,6 +179,30 @@
   background-color: #324D5C !important;
 }
 
+@media screen and (orientation:portrait) and (max-width: 600px) { 
+  .fields {
+    width: 25vw;
+    height: 25vw;
+  }
+}
+
+@media screen and (orientation:portrait) {
+  .menuButton { 
+    width: 100vw;
+  }
+
+  .button {
+    width: 50vw;
+    max-width: 250px;
+  }
+
+  .choose {
+    flex-direction: column;
+    height: 87.5vh;
+    margin-top: 12.5vh;
+  }
+}
+
 @media screen and (min-width: 960px) {
   .stackedIcon > .firstIcon {
     font-size: 6rem;

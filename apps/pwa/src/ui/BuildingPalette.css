@@ -62,3 +62,14 @@
     width: 40px;
   }
 }
+
+@media screen and (max-width: 600px) {
+  .preview {
+    width: 34px;
+  }
+
+  #buildingSelection {
+    width: 80vw;
+    flex-flow: row wrap;
+  }
+}

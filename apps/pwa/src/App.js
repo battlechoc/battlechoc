@@ -18,7 +18,6 @@ import Rules from './gameplay/Rules';
 import { gameplayLog } from './gameplay/GamePlayLogger';
 import OfflineStore from './OfflineStore';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { ScreenRotation } from '@material-ui/icons';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import Typography from '@material-ui/core/Typography';
@@ -285,8 +284,8 @@ class App extends Component {
     info.appendChild(document.createTextNode(text));
     info.classList.add('flyingInfo');
     info.classList.add(messageType);
-    info.style.top = position.y + "px";
-    info.style.left = position.x + "px";
+    info.style.top = (position.y - Math.round(window.innerHeight * 0.12)) + "px";
+    info.style.left = (position.x - Math.round(window.innerWidth * 0.01)) + "px";
     
     let animations = {
         "animation"      : "animationend",
@@ -536,10 +535,6 @@ class App extends Component {
     this.frameId = window.requestAnimationFrame(this.animate);
   }
 
-  deviceOrientationChanged(orientation) {
-    this.setState({ landscapeOrientation: this.orientationQuery.matches });
-  }
-
   prepareResumedGame = async () => {
     OfflineStore.getResumeableGame().then((resumeableGame) => {
       if (typeof resumeableGame === 'undefined') {
@@ -556,19 +551,18 @@ class App extends Component {
 
     const searchParams = new URLSearchParams(window.location.search);
     const isPwa = searchParams.get('app_runs_as') === 'pwa';
+    let isAndroid = /Android/i.test(navigator.userAgent);
 
     if (!isPwa) {
       try {
         await document.documentElement.requestFullscreen();
-        await window.screen.orientation.lock('landscape');
+        if (isAndroid) {
+          await window.screen.orientation.lock('landscape');
+        }
       } catch (error) {
         console.log(error.name + ': ' + error.message);
       }
     }
-
-    this.orientationQuery = window.matchMedia("(orientation:landscape)");
-    this.setState({ landscapeOrientation: this.orientationQuery.matches });
-    this.orientationQuery.addListener(orientation => this.deviceOrientationChanged(orientation));
 
     if (typeof resumeableGame === 'undefined') {
       let players = [
@@ -681,20 +675,6 @@ class App extends Component {
       return (
         <div className="app-container">
           <div id="clouds"></div>
-          {(() => {
-            let isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-            if (!this.state.landscapeOrientation && isMobile && typeof this.props.game !== 'undefined') {
-              return (
-                <div className="pauseView">
-                  <h2>Pause</h2>
-                  <p>We ask for your understanding that our games are mainly programmed by meerkats who only know the landscape mode</p>
-                  <p>Please turn the phone to resume the game</p>
-                  <ScreenRotation className="rotationIcon" />
-                </div>
-              );
-            }
-          })()}
-
           <Snackbar
             anchorOrigin={{
               vertical: 'bottom',

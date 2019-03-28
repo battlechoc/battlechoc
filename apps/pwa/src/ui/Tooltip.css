@@ -50,3 +50,13 @@
   width: 10vw;
   height: 10vw;
 }
+
+@media screen and (max-width: 600px) {
+  #tooltipContainer {
+    width: 40vw;
+  }
+
+  #tooltip {
+    width: 40vw;
+  }
+}
