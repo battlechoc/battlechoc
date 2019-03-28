@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import AssetLoader from './AssetLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
-import { EntityType, AttackType, createEntity } from './gameplay/GameEntities';
+import { EntityType, AttackType, createEntity, getEntityDescriptor } from './gameplay/GameEntities';
 import { startGame, resumeGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase, endGame } from './gameplay/GameActions';
 import { changeLanguage, deselectBuildings, selectAttack, gameResumeable } from './ui/UiActions';
 import { connect } from 'react-redux';
@@ -280,6 +280,34 @@ class App extends Component {
     }
   }
 
+  spawnInfoText(position, text, messageType) {
+    let info = document.createElement("p");
+    info.appendChild(document.createTextNode(text));
+    info.classList.add('flyingInfo');
+    info.classList.add(messageType);
+    info.style.top = position.y + "px";
+    info.style.left = position.x + "px";
+    
+    let animations = {
+        "animation"      : "animationend",
+        "OAnimation"     : "oAnimationEnd",
+        "MozAnimation"   : "animationend",
+        "WebkitAnimation": "webkitAnimationEnd"
+    }
+    let supportedAnimation = 'animation';
+
+    for (let animation in animations) {
+        if (typeof info.style[animation] !== 'undefined') {
+            supportedAnimation = animations[animation];
+        }
+    }
+
+    info.addEventListener(supportedAnimation, () => {
+        this.container.removeChild(info);
+    });
+    this.container.appendChild(info);
+  }
+
   onClick = event => {
     // Get mouse position and use raycaster
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -288,7 +316,7 @@ class App extends Component {
 
     // Check clickable objects
     if (this.props.game.currentPlayerIndex === 0) {
-      this.playerFieldClick();
+      this.playerFieldClick(event);
       this.opponentFieldClick();
     }
 
@@ -296,7 +324,7 @@ class App extends Component {
     this.isSwiping = false;
   }
 
-  playerFieldClick() {
+  playerFieldClick(event) {
     var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
     intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
       (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));
@@ -318,11 +346,15 @@ class App extends Component {
       this.props.build({ issuer: this.props.game.players[0].id, building: building }).then(() => {
         this.playerGameField.setBuilding(building.type, building.position);
         if (initialPlacement) {
+          this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn + ' buildings per turn', 'positive');
           this.props.deselectBuildings();
           setTimeout(() => {
             this.props.finishTurn({ issuer: this.props.game.players[0].id });
             this.props.deselectBuildings();
           }, 3000);
+        } else {
+          let costs = getEntityDescriptor(this.props.selectedBuilding).costs
+          this.spawnInfoText({ x: event.clientX, y: event.clientY }, '-' + costs + ' cacao', 'negative');
         }
       }).catch(error => {
         if (error instanceof BattlechocError) {

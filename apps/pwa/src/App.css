@@ -157,3 +157,32 @@ html, body, #root {
 .rs-fraction {
   height: auto !important;
 }
+
+@keyframes flyaway {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        font-size: 1.3vw;
+        transform: translateY(-100px)
+    }
+}
+
+.positive {
+  color: #31974A;
+}
+
+.negative {
+  color: #B93021;
+}
+
+.flyingInfo {
+  position: absolute;
+  font-size: 1.1vw;
+  font-weight: bold;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  animation-name: flyaway;
+  animation-duration: 2s;
+  animation-timing-function: ease-in;
+}
