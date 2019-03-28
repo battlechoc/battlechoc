@@ -205,7 +205,7 @@ class Augustus {
                 const attackedCell = this.opponentBoard.grid[target.row * 8 + target.col];
                 if (attackedCell.shielded !== true || (attackType !== AttackType.TRUFFLE && attackType !== AttackType.FRUIT)) {
                     opponentGameField3d.attack({ row: target.row, col: target.col }, attackType);
-                    if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
+                    if (attackType === AttackType.HOT_CHOCOLATE) {
                         opponentGameField3d.rebuild(this.opponentBoard);
                     }
                 }

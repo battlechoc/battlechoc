@@ -316,7 +316,7 @@ class App extends Component {
     // Check clickable objects
     if (this.props.game.currentPlayerIndex === 0) {
       this.playerFieldClick(event);
-      this.opponentFieldClick();
+      this.opponentFieldClick(event);
     }
 
     // Part of "ignore click if it was just an end of swiping"
@@ -365,7 +365,7 @@ class App extends Component {
     }
   }
 
-  opponentFieldClick() {
+  opponentFieldClick(event) {
     if (this.lookAtOpponent && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
       var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
       intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
@@ -385,6 +385,7 @@ class App extends Component {
             } else {
               this.playerGameField.meltDownEasterBunny();
               this.opponentGameField.receiveBallista(target);
+              this.spawnInfoText({ x: event.clientX, y: event.clientY }, 'Xmas factory caught your spying easter bunny!', 'negative');
             }
           } else {
             const attackedCell = this.props.game.board.fields[this.props.game.players[1].fieldIndex].grid[target.row * this.props.game.board.size.cols + target.col];
