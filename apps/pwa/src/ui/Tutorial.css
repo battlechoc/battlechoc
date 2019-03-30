@@ -1,0 +1,28 @@
+#tutorial {
+  z-index: 1;
+  position: absolute;
+  width: 100%;
+}
+
+.tutorial-headline {
+  flex-grow: 1;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.tutorial-message {
+  padding: 10px;
+  margin: 4vh 2vw;
+}
+
+.microGamefield {
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.microGamefield > * {
+	height: 80vw;
+	width: 80vw;
+}

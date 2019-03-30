@@ -10,6 +10,16 @@
   margin-right: 10px; 
 }
 
+.displayBottom {
+  bottom: 0;
+  margin-bottom: 5px;
+  flex-direction: column-reverse !important;
+}
+
+.displayBottom > button {
+  margin-top: 5px;
+}
+
 .icon {
 	margin-left: 5px !important;
 	color: white !important;

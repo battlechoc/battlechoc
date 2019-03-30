@@ -284,8 +284,23 @@ class App extends Component {
     info.appendChild(document.createTextNode(text));
     info.classList.add('flyingInfo');
     info.classList.add(messageType);
-    info.style.top = (position.y - Math.round(window.innerHeight * 0.12)) + "px";
-    info.style.left = (position.x - Math.round(window.innerWidth * 0.01)) + "px";
+
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    let ratio = width / height;
+
+    if (ratio < 1.1) {
+      info.style.top = (position.y - Math.round(window.innerHeight * 0.07)) + "px";
+      info.style.left = (position.x - Math.round(window.innerWidth * 0.015)) + "px";
+    }
+    else if (ratio < 1.4) { 
+      info.style.top = (position.y - Math.round(window.innerHeight * 0.1)) + "px";
+      info.style.left = (position.x - Math.round(window.innerWidth * 0.015)) + "px"; 
+    }
+    else { 
+      info.style.top = (position.y - Math.round(window.innerHeight * 0.12)) + "px";
+      info.style.left = (position.x - Math.round(window.innerWidth * 0.01)) + "px";
+    }
     
     let animations = {
         "animation"      : "animationend",
@@ -616,8 +631,8 @@ class App extends Component {
     directionalLight.castShadow = false;
     this.scene.add(directionalLight);
 
-    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board.fields[playerFieldIndex], playerFieldIndex);
-    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex);
+    this.playerGameField = new Gamefield(true, [-72, -16, 0], this.props.game.board.fields[playerFieldIndex], playerFieldIndex, this.props.game.board.size);
+    this.opponentGameField = new Gamefield(false, [72, 56, 0], this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, this.props.game.board.size);
     this.scene.add(this.playerGameField.gameField);
     this.scene.add(this.opponentGameField.gameField);
 
