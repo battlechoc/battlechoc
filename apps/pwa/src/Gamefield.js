@@ -113,6 +113,8 @@ class Gamefield {
             explosion = assets.CACAOTREE_EXPLOSION;
         } else if (building.entityType === EntityType.FACTORY) {
             explosion = assets.FACTORY_EXPLOSION;
+        } else if (building.entityType === EntityType.FACTORY_EXTENSION) {
+            explosion = assets.FACTORY_EXTENSION_EXPLOSION;
         } else if (building.entityType === EntityType.RUM_TRUFFLE_CANNON) {
             explosion = assets.RUM_TRUFFLE_CANNON_EXPLOSION;
         } else if (building.entityType === EntityType.SPYING_EASTER_BUNNY) {
