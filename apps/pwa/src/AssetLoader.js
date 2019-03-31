@@ -26,6 +26,7 @@ class AssetLoader {
                 HOT_CHOCOLATE_BALLISTA_EXPLOSION: { filename: 'hotChocolateBallista-explosion.glb', model: null },
                 CHOCOLATE_FOUNTAIN: { filename: 'chocolateFountain.glb', model: null },
                 CHOCOLATE_FOUNTAIN_EXPLOSION: { filename: 'chocolateFountain-explosion.glb', model: null },
+                ATTACK_AT_SHIELD_EXPLOSION: { filename: 'attackAtShield-explosion.glb', model: null },
                 FRUIT_CANNON: { filename: 'fruitCannon.glb', model: null },
                 FRUIT_CANNON_EXPLOSION: { filename: 'fruitCannon-explosion.glb', model: null }
             },

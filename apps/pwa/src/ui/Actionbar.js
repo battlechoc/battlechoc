@@ -3,6 +3,7 @@ import './Actionbar.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { finishTurn, finishBuildPhase } from '../gameplay/GameActions';
+import { BattlechocError } from '../gameplay/Errors';
 import { playerHasAttacks, playerHasAttacksPerTurn } from '../gameplay/Player';
 import { getCheapest } from '../gameplay/GameEntities';
 import { deselectBuildings } from './UiActions';
@@ -116,8 +117,15 @@ class Actionbar extends Component {
                                 aria-label="skip build phase"
                                 className={(this.props.game.players[0].buildings > 0 && this.props.game.players[0].cacao >= getCheapest().costs) ? "icon" : "icon blinking"}
                                 onClick={() => {
-                                    this.props.finishBuildPhase({ issuer: this.props.game.players[0].id });
-                                    this.props.deselectBuildings();
+                                    this.props.finishBuildPhase({ issuer: this.props.game.players[0].id }).then(() => {
+                                        this.props.deselectBuildings();
+                                    }).catch(error => {
+                                        if (error instanceof BattlechocError) {
+                                            console.warn(error);
+                                        } else {
+                                            throw error;
+                                        }
+                                    });
                                 }}>
                                 <PlayArrow />
                             </Fab>
@@ -131,8 +139,15 @@ class Actionbar extends Component {
                                 aria-label="finish turn"
                                 className={(this.props.game.players[0].buildings === 0 || this.props.game.players[0].cacao < getCheapest().costs) ? "icon blinking" : "icon"}
                                 onClick={() => {
-                                    this.props.finishTurn({ issuer: this.props.game.players[0].id });
-                                    this.props.deselectBuildings();
+                                    this.props.finishTurn({ issuer: this.props.game.players[0].id }).then(() => {
+                                        this.props.deselectBuildings();
+                                    }).catch(error => {
+                                        if (error instanceof BattlechocError) {
+                                            console.warn(error);
+                                        } else {
+                                            throw error;
+                                        }
+                                    });
                                 }}>
                                 <FastForward />
                             </Fab>
@@ -148,8 +163,15 @@ class Actionbar extends Component {
                                 aria-label="finish turn"
                                 className={(playerHasAttacks(this.props.game.players[0]) === true) ? "icon" : "icon blinking"}
                                 onClick={() => {
-                                    this.props.finishTurn({ issuer: this.props.game.players[0].id });
-                                    this.props.deselectBuildings();
+                                    this.props.finishTurn({ issuer: this.props.game.players[0].id }).then(() => {
+                                        this.props.deselectBuildings();
+                                    }).catch(error => {
+                                        if (error instanceof BattlechocError) {
+                                            console.warn(error);
+                                        } else {
+                                            throw error;
+                                        }
+                                    });
                                 }}>
                                 <FastForward />
                             </Fab>

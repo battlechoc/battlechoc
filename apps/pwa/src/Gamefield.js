@@ -85,6 +85,32 @@ class Gamefield {
         }
     }
 
+    triggerExplosionAtShield(position) {
+        if (typeof this.mixer !== 'undefined') {
+            this.mixer.stopAllAction();
+            this.explosionCallback();
+        }
+
+        const explosion = AssetLoader.assets.models.ATTACK_AT_SHIELD_EXPLOSION.model;
+
+        let model = explosion.scene.clone();
+        model.position.set(position.x, position.y, position.z);
+        
+        this.gameField.add(model);
+        this.mixer = new THREE.AnimationMixer(model);
+
+        for (let i = 0; i < explosion.animations.length; i++) {
+            this.mixer.clipAction(explosion.animations[i]).setLoop(THREE.LoopOnce).play()
+        }
+
+        this.explosionCallback = () => {
+            this.mixer = undefined;
+            this.gameField.remove(model);
+        }
+
+        this.mixer.addEventListener('finished', () => this.explosionCallback());
+    } 
+
     triggerExplosion(building, position) {
         if (typeof this.mixer !== 'undefined') {
             this.mixer.stopAllAction();
@@ -113,6 +139,8 @@ class Gamefield {
             explosion = assets.CACAOTREE_EXPLOSION;
         } else if (building.entityType === EntityType.FACTORY) {
             explosion = assets.FACTORY_EXPLOSION;
+        } else if (building.entityType === EntityType.FACTORY_EXTENSION) {
+            explosion = assets.FACTORY_EXTENSION_EXPLOSION;
         } else if (building.entityType === EntityType.RUM_TRUFFLE_CANNON) {
             explosion = assets.RUM_TRUFFLE_CANNON_EXPLOSION;
         } else if (building.entityType === EntityType.SPYING_EASTER_BUNNY) {
@@ -200,33 +228,35 @@ class Gamefield {
         this.setBuilding(EntityType.HOT_CHOCOLATE_BALLISTA, { row: row, col: col });
     }
 
-    attack(target, attackType) {
+    attack(target, attackType, shielded) {
         let row = target.row;
         let col = target.col;
         let position3d = { x: row * this.fieldSize, y: 0, z: col * this.fieldSize };
         
         if (attackType === AttackType.TRUFFLE) {
-            let creamyBuildings = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
-            if (creamyBuildings.length > 0) {
-                let cream = creamyBuildings[0];
-                this.triggerExplosion(cream, position3d);
-                let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM);
+            if (shielded) {
+                this.triggerExplosionAtShield(position3d);
+            } else {
+                let creamyBuildings = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
+                if (creamyBuildings.length > 0) {
+                    let cream = creamyBuildings[0];
+                    this.triggerExplosion(cream, position3d);
+                    let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM);
 
-                otherBuildings.forEach(otherBuilding => {
-                    otherBuilding.show();
-                });
+                    otherBuildings.forEach(otherBuilding => otherBuilding.show());
 
-                setTimeout(() => {
-                    otherBuildings.forEach(otherBuilding => {
-                        this.triggerExplosion(otherBuilding, position3d);
+                    setTimeout(() => {
+                        otherBuildings.forEach(otherBuilding => {
+                            this.triggerExplosion(otherBuilding, position3d);
+                        });
+                        this.buildings[row][col] = [];
+                    }, 1000);
+                } else {
+                    this.buildings[row][col].forEach(building => {
+                        this.triggerExplosion(building, position3d);
                     });
                     this.buildings[row][col] = [];
-                }, 1000);
-            } else {
-                this.buildings[row][col].forEach(building => {
-                    this.triggerExplosion(building, position3d);
-                });
-                this.buildings[row][col] = [];
+                }
             }
         } else if (attackType === AttackType.HOT_CHOCOLATE) {
             this.buildings[row][col].forEach(building => this.gameField.remove(building.getModel()));
@@ -245,7 +275,6 @@ class Gamefield {
                             this.triggerExplosion(cream, position3d);
                         }
                     } else {
-                        console.log("uncreaming fields " + field.row +","+field.col);
                         this.triggerExplosion(cream, position3d);
                         this.buildings[field.row][field.col].splice(creamyfieldIndex, 1);
 
@@ -255,7 +284,23 @@ class Gamefield {
                 }
             });
         } else if (attackType === AttackType.FRUIT) {
+            let chocolateFountainIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.CHOCOLATE_FOUNTAIN);
+            let creamyBuildings = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
+            if (creamyBuildings.length > 0) {
+                let cream = creamyBuildings[0];
+                this.triggerExplosion(cream, position3d);
 
+                if (chocolateFountainIndex > -1) {
+                    this.buildings[row][col][chocolateFountainIndex].show();
+                    setTimeout(() => {
+                        this.triggerExplosion(this.buildings[row][col][chocolateFountainIndex], position3d);
+                        this.buildings[row][col] = [];
+                    }, 1000);
+                }
+            } else if (chocolateFountainIndex > -1) {
+                this.triggerExplosion(this.buildings[row][col][chocolateFountainIndex], position3d);
+                this.buildings[row][col] = [];
+            }
         }
     }
 
@@ -320,12 +365,23 @@ class Gamefield {
             building.rotate(Math.PI);
         }
 
-        if (building.entityType === EntityType.CREAM && this.isPlayerGameField) {
-            building.makeTransparent();
+        if (building.entityType === EntityType.CREAM) {
             let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM);
-            if (otherBuildings.length > 0) {
-                building.hide();
-                otherBuildings.forEach(other => other.makeCreamy());
+            if (this.isPlayerGameField) {
+                building.makeTransparent();
+                if (otherBuildings.length > 0) {
+                    building.hide();
+                    otherBuildings.forEach(other => other.makeCreamy());
+                }
+                const patch = this.getCellPatch3x3(row, col, true);
+                let withinShield = patch.filter(cell => cell.findIndex(building => building.entityType === EntityType.CHOCOLATE_FOUNTAIN) > -1).length > 0;
+                if (withinShield) {
+                    building._model.children[0].renderOrder = -1;
+                }
+            } else {
+                if (otherBuildings.length > 0) {
+                    otherBuildings.forEach(other => other.hide());
+                }
             }
         }
 
@@ -335,6 +391,16 @@ class Gamefield {
                 this.gameField.remove(this.buildings[row][col][index].getModel());
                 this.buildings[row][col].splice(index, 1);
             }
+        }
+
+        if (building.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
+            const patch = this.getCellPatch3x3(row, col, true);
+            patch.forEach(cell => {
+                let creamIndex = cell.findIndex(building => building.entityType === EntityType.CREAM);
+                if (creamIndex > -1) {
+                    cell[creamIndex]._model.children[0].renderOrder = -1;
+                }
+            });           
         }
 
         this.gameField.add(building.getModel());

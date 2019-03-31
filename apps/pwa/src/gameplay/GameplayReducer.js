@@ -46,18 +46,6 @@ function boardCell(grid, size, cellIdx) {
     return grid[cellIdx.row * size.cols + cellIdx.col];
 }
 
-function getCellNeighbors3x3(cellIdx, board, grid) {
-    var neighbors = [];
-    for (let row = cellIdx.row - 1; row < cellIdx.row + 2; row++) {
-        for (let col = cellIdx.col - 1; col < cellIdx.col + 2; col++) {
-            if (row >= 0 && col >= 0 && !(row === cellIdx.row && col === cellIdx.col) && row < board.size.rows && col < board.size.cols) {
-                neighbors.push(boardCell(grid, board.size, { row: row, col: col }));
-            }
-        }
-    }
-    return neighbors;
-}
-
 function getCellPatch3x3(cellIdx, board, grid) {
     var patch = [];
     for (let row = cellIdx.row - 1; row < cellIdx.row + 2; row++) {
@@ -84,7 +72,7 @@ function prepareBuildPhase(gameState) {
 function calculateCacaoPerTurn(building, cellColor) {
     let cacaoPerTurn = building.cacaoPerTurn;
     if (cellColor === GameEntities.BoardCellTypes.WHITE) {
-        cacaoPerTurn *= 2;
+        cacaoPerTurn = Math.round(cacaoPerTurn * 1.5);
     }
     return cacaoPerTurn;
 }
@@ -92,7 +80,7 @@ function calculateCacaoPerTurn(building, cellColor) {
 function calculateBuildingsPerTurn(building, cellColor) {
     let buildingsPerTurn = building.buildingsPerTurn;
     if (cellColor === GameEntities.BoardCellTypes.BLACK) {
-        buildingsPerTurn *= 2;
+        buildingsPerTurn += 1;
     }
     return buildingsPerTurn;
 }
@@ -163,7 +151,7 @@ const gameplayReducer = createReducer({}, {
                 currentPlayer(state.game).attacksPerTurn[action.payload.building.attackType] += action.payload.building.attacksPerTurn;
                 currentPlayer(state.game).attacks[action.payload.building.attackType] += action.payload.building.attacksPerTurn;
                 let cell = currentPlayerBoardCell(state.game, action.payload.building.position.row, action.payload.building.position.col);
-                cell.occupiedBy.splice(cell.occupiedBy.indexOf(GameEntities.EntityType.RUM_TRUFFLE_CANNON, 1));
+                cell.occupiedBy.splice(cell.occupiedBy.indexOf(GameEntities.EntityType.RUM_TRUFFLE_CANNON), 1);
             } else if (action.payload.building.type === GameEntities.EntityType.HOT_CHOCOLATE_BALLISTA) {
                 currentPlayer(state.game).attacksPerTurn[action.payload.building.attackType] += action.payload.building.attacksPerTurn;
                 currentPlayer(state.game).attacks[action.payload.building.attackType] += action.payload.building.attacksPerTurn;
@@ -212,6 +200,8 @@ const gameplayReducer = createReducer({}, {
                 } else if (attackedCell.occupiedBy.includes(GameEntities.EntityType.FRUIT_CANNON)) {
                     const destroyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.FRUIT_CANNON);
                     opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
+                    const rumTruffleCannon = GameEntities.getEntityDescriptor(GameEntities.EntityType.RUM_TRUFFLE_CANNON);
+                    opponent.attacksPerTurn[rumTruffleCannon.attackType] -= rumTruffleCannon.attacksPerTurn;
                     console.log('FRUIT CANNON DESTROYED');
                 } else if (attackedCell.occupiedBy.includes(GameEntities.EntityType.SPYING_EASTER_BUNNY)) {
                     const destroyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.SPYING_EASTER_BUNNY);
@@ -222,20 +212,20 @@ const gameplayReducer = createReducer({}, {
                 attackedCell.molten = action.payload.attackType === GameEntities.AttackType.HOT_CHOCOLATE;
             }
         } else if (action.payload.attackType === GameEntities.AttackType.FRUIT) {
-            attackedCell.shielded = false;
             if (attackedCell.occupiedBy.includes(GameEntities.EntityType.CREAM) === true) {
                 attackedCell.occupiedBy.splice(attackedCell.occupiedBy.indexOf(GameEntities.EntityType.CREAM), 1);
             }
             if (attackedCell.occupiedBy.includes(GameEntities.EntityType.CHOCOLATE_FOUNTAIN) === true) {
+                attackedCell.shielded = false;
                 attackedCell.occupiedBy.splice(attackedCell.occupiedBy.indexOf(GameEntities.EntityType.CHOCOLATE_FOUNTAIN), 1);
                 const neighbors = getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, state.game.board, otherPlayerField(state.game).grid);
-                for (let i = 0; i < neighbors.length; i++) {
-                    const neighbor = neighbors[i];
-                    const cellNeighbors = getCellNeighbors3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.CHOCOLATE_FOUNTAIN));
-                    if (cellNeighbors.length > 0) {
-                        neighbors[i].shielded = false;
+                neighbors.forEach(neighbor => {
+                    const otherFountainNearby = getCellPatch3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.CHOCOLATE_FOUNTAIN));
+                    if (otherFountainNearby.length === 0) {
+                        neighbor.shielded = false;
                     }
-                }
+                });
+                console.log('CHOCOLATE FOUNTAIN DESTROYED');
             }
         } else if (action.payload.attackType === GameEntities.AttackType.BUNNY) {
             const patch = getCellPatch3x3({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);

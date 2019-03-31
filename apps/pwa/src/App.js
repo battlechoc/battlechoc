@@ -357,6 +357,8 @@ class App extends Component {
         row: cellIndex.row,
         col: cellIndex.col
       }
+      let playerCacaoPerTurnBefore = this.props.game.players[0].cacaoPerTurn;
+      let buildingsPerTurnBefore = this.props.game.players[0].buildingsPerTurn;
       this.props.build({ issuer: this.props.game.players[0].id, building: building }).then(() => {
         this.playerGameField.setBuilding(building.type, building.position);
         if (initialPlacement) {
@@ -367,8 +369,19 @@ class App extends Component {
             this.props.deselectBuildings();
           }, 3000);
         } else {
-          let costs = getEntityDescriptor(this.props.selectedBuilding).costs
-          this.spawnInfoText({ x: event.clientX, y: event.clientY }, '-' + costs + ' cacao', 'negative');
+          let description = getEntityDescriptor(this.props.selectedBuilding)
+          this.spawnInfoText({ x: event.clientX, y: event.clientY }, '-' + description.costs + ' cacao', 'negative');
+          setTimeout(() => {
+            if (building.type === EntityType.CACAOTREE) {
+              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].cacaoPerTurn - playerCacaoPerTurnBefore + ' cacao per turn', 'positive');
+            } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
+              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 attack per turn', 'positive');
+            } else if (building.type === EntityType.FACTORY_EXTENSION) {
+              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn - buildingsPerTurnBefore + ' buildings per turn', 'positive');
+            } else if (building.type === EntityType.SPYING_EASTER_BUNNY) { 
+              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 spy attack per turn', 'positive');
+            }
+          }, 400);
         }
       }).catch(error => {
         if (error instanceof BattlechocError) {
@@ -404,12 +417,10 @@ class App extends Component {
             }
           } else {
             const attackedCell = this.props.game.board.fields[this.props.game.players[1].fieldIndex].grid[target.row * this.props.game.board.size.cols + target.col];
-            if (attackedCell.shielded !== true || (this.props.selectedAttack !== AttackType.TRUFFLE && this.props.selectedAttack !== AttackType.FRUIT)) {
-              this.opponentGameField.attack(target, this.props.selectedAttack);
-              if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
-                let opponentFieldIndex = this.props.game.players[1].fieldIndex;
-                this.opponentGameField.rebuild(this.props.game.board.fields[opponentFieldIndex]);
-              }
+            this.opponentGameField.attack(target, this.props.selectedAttack, attackedCell.shielded);
+            if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
+              let opponentFieldIndex = this.props.game.players[1].fieldIndex;
+              this.opponentGameField.rebuild(this.props.game.board.fields[opponentFieldIndex]);
             }
           }
 
