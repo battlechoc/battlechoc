@@ -155,6 +155,8 @@ class Augustus {
     estimateAttackTarget() {
         let unveiledFactories = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY) && !this.discoveredShieldedCells.includes(cell));
         let unveiledCannons = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON) && !this.discoveredShieldedCells.includes(cell));
+        let unveiledFruitCannons = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FRUIT_CANNON) && !this.discoveredShieldedCells.includes(cell));
+        let unveiledBallistas = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.HOT_CHOCOLATE_BALLISTA) && !this.discoveredShieldedCells.includes(cell));
         let unveiledFactoryExtensions = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION) && !this.discoveredShieldedCells.includes(cell));
         let unveiledTrees = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.CACAOTREE) && !this.discoveredShieldedCells.includes(cell));
         let unveiledSpyingEasterBunny = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY) && !this.discoveredShieldedCells.includes(cell));
@@ -169,6 +171,10 @@ class Augustus {
             return unveiledSpyingEasterBunny[0];
         } else if (unveiledCannons.length > 0) {
             return unveiledCannons[0];
+        } else if (unveiledFruitCannons.length > 0) {
+            return unveiledFruitCannons[0];
+        } else if (unveiledBallistas.length > 0) {
+            return unveiledBallistas[0];
         } else if (unveiledTrees.length > 0) {
             return unveiledTrees[0];
         } else if (unveiledXmasFactory.length > 0) {
@@ -185,7 +191,7 @@ class Augustus {
         for (let row = cellIdx.row - 1; row < cellIdx.row + 2; row++) {
             for (let col = cellIdx.col - 1; col < cellIdx.col + 2; col++) {
                 if (row >= 0 && col >= 0 && row < this.boardSize.rows && col < this.boardSize.cols) {
-                    patch.push(grid[row * this.boardSize + col]);
+                    patch.push(grid[row * this.boardSize.cols + col]);
                 }
             }
         }
@@ -286,6 +292,14 @@ class Augustus {
             return cells.filter(cell => cell.type === BoardCellTypes.WHITE);
         } else if (building === EntityType.FRUIT_CANNON) {
             return this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
+        } else if (building === EntityType.CHOCOLATE_FOUNTAIN) {
+            const creamedPossible = cells.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
+            console.log(creamedPossible.length);
+            if (creamedPossible.length > 0) {
+                return creamedPossible;
+            } else {
+                return cells.filter(cell => cell.occupiedBy.length === 0 || (cell.occupiedBy.length === 1 && cell.occupiedBy.includes(EntityType.CREAM)));
+            }
         } else {
             return cells;
         }
@@ -319,41 +333,54 @@ class Augustus {
     }
 
     simulateBuildPhaseDefensive(uiGamefield) {
-        let cacao = this.player.cacao;
+        const cacao = this.player.cacao;
 
         let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
-        let freeCells = this.board.grid.filter(cell => cell.molten === false && cell.occupiedBy.length === 0);
-        let treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE)).length;
-        let bunnyCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length;
-        let cannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length;
-        let fruitCannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.FRUIT_CANNON)).length;
-        let xmasFactoryCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.XMAS_FACTORY)).length;
+        const uncoveredBuildings = this.board.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length > 0);
+        const freeCells = this.board.grid.filter(cell => cell.molten === false && cell.occupiedBy.length === 0);
 
-        let cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
-        let fruitCannon = getEntityDescriptor(EntityType.FRUIT_CANNON);
-        let tree = getEntityDescriptor(EntityType.CACAOTREE);
-        let xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
-        let easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
-        let cream = getEntityDescriptor(EntityType.CREAM);
+        const treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE)).length;
+        const bunnyCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length;
+        const cannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length;
+        const fruitCannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.FRUIT_CANNON)).length;
+        const xmasFactoryCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.XMAS_FACTORY)).length;
+        const fountainCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CHOCOLATE_FOUNTAIN)).length;
+        const factoryCell = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.FACTORY));
 
-        if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0) {
-            let building = createEntity(EntityType.SPYING_EASTER_BUNNY);
-            this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
+        const cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
+        const fruitCannon = getEntityDescriptor(EntityType.FRUIT_CANNON);
+        const tree = getEntityDescriptor(EntityType.CACAOTREE);
+        const xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
+        const easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
+        const cream = getEntityDescriptor(EntityType.CREAM);
+        const fountain = getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN);
+
+        if (uncoveredBuildings.length > 0 && cacao > cream.costs) {
+            this.setBuildingAtBestPosition(uncoveredBuildings, createEntity(EntityType.CREAM), uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
             }).catch(error => this.handleBuildError(error));
-        } else if (creamedCells.length > 0 && cacao >= xmasFactory.costs && xmasFactoryCount < 3) {
-            let building = createEntity(EntityType.XMAS_FACTORY);
-            this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
+        } else if (creamedCells.length > 0 && cacao >= fountain.costs && fountainCount < 1 && factoryCell.length > 0) {
+            const fountainCells = this.getCellPatch3x3(factoryCell[0], this.board.grid);
+            this.setBuildingAtBestPosition(fountainCells, createEntity(EntityType.CHOCOLATE_FOUNTAIN), uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0) {
+            this.setBuildingAtBestPosition(creamedCells, createEntity(EntityType.SPYING_EASTER_BUNNY), uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else if (creamedCells.length > 0 && cacao >= xmasFactory.costs && xmasFactoryCount < 2) {
+            this.setBuildingAtBestPosition(creamedCells, createEntity(EntityType.XMAS_FACTORY), uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
             }).catch(error => this.handleBuildError(error));
         } else if (creamedCells.length > 0 && (cacao >= tree.costs || cacao >= cannon.costs)) {
             let building;
-            if (treeCount < 2) {
+            if (treeCount < 4) {
                 building = createEntity(EntityType.CACAOTREE);
             } else if (cannonCount < 2 && cacao >= cannon.costs) {
                 building = createEntity(EntityType.RUM_TRUFFLE_CANNON);
-            } else if (cacao >= fruitCannon.costs && fruitCannonCount < 2 && cannonCount > 0 && this.discoveredShieldedCells.length > 0) {
+            } else if (cacao >= fruitCannon.costs && fruitCannonCount < 1 && cannonCount > 0 && this.discoveredShieldedCells.length > 0) {
                 building = createEntity(EntityType.FRUIT_CANNON);
+                creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
             } else {
                 const decision = Math.floor(Math.random() * 3);
                 if (decision === 0 || cacao < cannon.costs) {
@@ -362,6 +389,7 @@ class Augustus {
                     building = createEntity(EntityType.RUM_TRUFFLE_CANNON);
                 } else {
                     building = createEntity(EntityType.CREAM);
+                    creamedCells = freeCells;
                 }
             }
 
@@ -378,30 +406,31 @@ class Augustus {
     }
 
     simulateBuildPhaseAggressive(uiGamefield) {
-        let cacao = this.player.cacao;
+        const cacao = this.player.cacao;
 
         let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
-        let freeCells = this.board.grid.filter(cell => cell.molten === false && cell.occupiedBy.length === 0);
-        let treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE)).length;
-        let bunnyCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length;
-        let cannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length;
-        let fruitCannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.FRUIT_CANNON)).length;
-        let xmasFactoryCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.XMAS_FACTORY)).length;
+        const freeCells = this.board.grid.filter(cell => cell.molten === false && cell.occupiedBy.length === 0);
 
-        let cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
-        let fruitCannon = getEntityDescriptor(EntityType.FRUIT_CANNON);
-        let tree = getEntityDescriptor(EntityType.CACAOTREE);
-        let xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
-        let easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
-        let cream = getEntityDescriptor(EntityType.CREAM);
+        const treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE)).length;
+        const bunnyCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length;
+        const cannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length;
+        const fruitCannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.FRUIT_CANNON)).length;
+        const xmasFactoryCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.XMAS_FACTORY)).length;
+
+        const cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
+        const fruitCannon = getEntityDescriptor(EntityType.FRUIT_CANNON);
+        const tree = getEntityDescriptor(EntityType.CACAOTREE);
+        const xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
+        const easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
+        const cream = getEntityDescriptor(EntityType.CREAM);
 
         if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0) {
-            let building = createEntity(EntityType.SPYING_EASTER_BUNNY);
+            const building = createEntity(EntityType.SPYING_EASTER_BUNNY);
             this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
             }).catch(error => this.handleBuildError(error));
         } else if (creamedCells.length > 0 && cacao >= xmasFactory.costs && xmasFactoryCount < 1) {
-            let building = createEntity(EntityType.XMAS_FACTORY);
+            const building = createEntity(EntityType.XMAS_FACTORY);
             this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
             }).catch(error => this.handleBuildError(error));
@@ -413,6 +442,7 @@ class Augustus {
                 building = createEntity(EntityType.RUM_TRUFFLE_CANNON);
             } else if (cacao >= fruitCannon.costs && fruitCannonCount < 2 && cannonCount > 0 && this.discoveredShieldedCells.length > 0) {
                 building = createEntity(EntityType.FRUIT_CANNON);
+                creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
             } else {
                 const decision = Math.round(Math.random());
                 if (decision === 0 || cacao < cannon.costs) {
@@ -435,22 +465,26 @@ class Augustus {
     }
 
     simulateBuildPhaseBalanced(uiGamefield) {
-        let cacao = this.player.cacao;
+        const cacao = this.player.cacao;
 
         let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
-        let freeCells = this.board.grid.filter(cell => cell.molten === false && cell.occupiedBy.length === 0);
-        let treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE)).length;
-        let bunnyCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length;
-        let cannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length;
-        let fruitCannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.FRUIT_CANNON)).length;
-        let xmasFactoryCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.XMAS_FACTORY)).length;
+        const freeCells = this.board.grid.filter(cell => cell.molten === false && cell.occupiedBy.length === 0);
 
-        let cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
-        let fruitCannon = getEntityDescriptor(EntityType.FRUIT_CANNON);
-        let tree = getEntityDescriptor(EntityType.CACAOTREE);
-        let xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
-        let easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
-        let cream = getEntityDescriptor(EntityType.CREAM);
+        const treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE)).length;
+        const bunnyCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length;
+        const cannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length;
+        const fruitCannonCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.FRUIT_CANNON)).length;
+        const xmasFactoryCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.XMAS_FACTORY)).length;
+        const fountainCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CHOCOLATE_FOUNTAIN)).length;
+        const factoryCell = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.FACTORY)).length;
+
+        const cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
+        const fruitCannon = getEntityDescriptor(EntityType.FRUIT_CANNON);
+        const tree = getEntityDescriptor(EntityType.CACAOTREE);
+        const xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
+        const easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
+        const cream = getEntityDescriptor(EntityType.CREAM);
+        const fountain = getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN);
 
         if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0) {
             let building = createEntity(EntityType.SPYING_EASTER_BUNNY);
@@ -462,14 +496,21 @@ class Augustus {
             this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
             }).catch(error => this.handleBuildError(error));
+        } else if (creamedCells.length > 0 && cacao >= fountain.costs && fountainCount < 1 && factoryCell.length > 0) {
+            const building = createEntity(EntityType.CHOCOLATE_FOUNTAIN);
+            const fountainCells = this.getCellPatch3x3(factoryCell[0], this.board.grid);
+            this.setBuildingAtBestPosition(fountainCells, building, uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
         } else if (creamedCells.length > 0 && (cacao >= tree.costs || cacao >= cannon.costs)) {
             let building;
             if (treeCount < 2) {
                 building = createEntity(EntityType.CACAOTREE);
             } else if (cannonCount < 3 && cacao >= cannon.costs) {
                 building = createEntity(EntityType.RUM_TRUFFLE_CANNON);
-            } else if (cacao >= fruitCannon.costs && fruitCannonCount < 2 && cannonCount > 0 && this.discoveredShieldedCells.length > 0) {
+            } else if (cacao >= fruitCannon.costs && fruitCannonCount < 1 && cannonCount > 0 && this.discoveredShieldedCells.length > 0) {
                 building = createEntity(EntityType.FRUIT_CANNON);
+                creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
             } else {
                 const decision = Math.round(Math.random());
                 if (decision === 0 || cacao < cannon.costs) {

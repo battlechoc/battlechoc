@@ -163,7 +163,7 @@ const gameplayReducer = createReducer({}, {
                 currentPlayer(state.game).attacksPerTurn[action.payload.building.attackType] += action.payload.building.attacksPerTurn;
                 currentPlayer(state.game).attacks[action.payload.building.attackType] += action.payload.building.attacksPerTurn;
                 let cell = currentPlayerBoardCell(state.game, action.payload.building.position.row, action.payload.building.position.col);
-                cell.occupiedBy.splice(cell.occupiedBy.indexOf(GameEntities.EntityType.RUM_TRUFFLE_CANNON, 1));
+                cell.occupiedBy.splice(cell.occupiedBy.indexOf(GameEntities.EntityType.RUM_TRUFFLE_CANNON), 1);
             } else if (action.payload.building.type === GameEntities.EntityType.HOT_CHOCOLATE_BALLISTA) {
                 currentPlayer(state.game).attacksPerTurn[action.payload.building.attackType] += action.payload.building.attacksPerTurn;
                 currentPlayer(state.game).attacks[action.payload.building.attackType] += action.payload.building.attacksPerTurn;
@@ -212,6 +212,8 @@ const gameplayReducer = createReducer({}, {
                 } else if (attackedCell.occupiedBy.includes(GameEntities.EntityType.FRUIT_CANNON)) {
                     const destroyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.FRUIT_CANNON);
                     opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
+                    const rumTruffleCannon = GameEntities.getEntityDescriptor(GameEntities.EntityType.RUM_TRUFFLE_CANNON);
+                    opponent.attacksPerTurn[rumTruffleCannon.attackType] -= rumTruffleCannon.attacksPerTurn;
                     console.log('FRUIT CANNON DESTROYED');
                 } else if (attackedCell.occupiedBy.includes(GameEntities.EntityType.SPYING_EASTER_BUNNY)) {
                     const destroyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.SPYING_EASTER_BUNNY);
@@ -222,11 +224,11 @@ const gameplayReducer = createReducer({}, {
                 attackedCell.molten = action.payload.attackType === GameEntities.AttackType.HOT_CHOCOLATE;
             }
         } else if (action.payload.attackType === GameEntities.AttackType.FRUIT) {
-            attackedCell.shielded = false;
             if (attackedCell.occupiedBy.includes(GameEntities.EntityType.CREAM) === true) {
                 attackedCell.occupiedBy.splice(attackedCell.occupiedBy.indexOf(GameEntities.EntityType.CREAM), 1);
             }
             if (attackedCell.occupiedBy.includes(GameEntities.EntityType.CHOCOLATE_FOUNTAIN) === true) {
+                attackedCell.shielded = false;
                 attackedCell.occupiedBy.splice(attackedCell.occupiedBy.indexOf(GameEntities.EntityType.CHOCOLATE_FOUNTAIN), 1);
                 const neighbors = getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, state.game.board, otherPlayerField(state.game).grid);
                 for (let i = 0; i < neighbors.length; i++) {

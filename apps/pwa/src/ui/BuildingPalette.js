@@ -64,15 +64,19 @@ class BuildingPalette extends Component {
     }
 
     playerCanBuild(building) {
-        let canBuild = this.props.game.players[0].buildingsPerTurn > 0 &&
-                       this.props.game.players[0].cacao >= building.costs &&
-                       this.props.game.players[0].buildings > 0;
+        const canBuild = this.props.game.players[0].buildingsPerTurn > 0 &&
+            this.props.game.players[0].cacao >= building.costs &&
+            this.props.game.players[0].buildings > 0;
         if (building.type === EntityType.SPYING_EASTER_BUNNY) {
-            let playerField = this.props.game.players[0].fieldIndex;
+            const playerField = this.props.game.players[0].fieldIndex;
             return canBuild && this.props.game.board.fields[playerField].grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length === 0
         } else if (building.type === EntityType.FACTORY_EXTENSION) {
-            let hasFactory = this.props.game.players[0].hasFactory;
+            const hasFactory = this.props.game.players[0].hasFactory;
             return canBuild && hasFactory;
+        } else if (building.type === EntityType.FRUIT_CANNON) {
+            const playerField = this.props.game.players[0].fieldIndex;
+            const hasCannons = this.props.game.board.fields[playerField].grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length > 0;
+            return canBuild && hasCannons;
         } else {
             return canBuild;
         }
