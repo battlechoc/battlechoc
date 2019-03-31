@@ -286,23 +286,23 @@ class App extends Component {
     info.classList.add(messageType);
     info.style.top = (position.y - Math.round(window.innerHeight * 0.12)) + "px";
     info.style.left = (position.x - Math.round(window.innerWidth * 0.01)) + "px";
-
+    
     let animations = {
-      "animation": "animationend",
-      "OAnimation": "oAnimationEnd",
-      "MozAnimation": "animationend",
-      "WebkitAnimation": "webkitAnimationEnd"
+        "animation"      : "animationend",
+        "OAnimation"     : "oAnimationEnd",
+        "MozAnimation"   : "animationend",
+        "WebkitAnimation": "webkitAnimationEnd"
     }
     let supportedAnimation = 'animation';
 
     for (let animation in animations) {
-      if (typeof info.style[animation] !== 'undefined') {
-        supportedAnimation = animations[animation];
-      }
+        if (typeof info.style[animation] !== 'undefined') {
+            supportedAnimation = animations[animation];
+        }
     }
 
     info.addEventListener(supportedAnimation, () => {
-      this.container.removeChild(info);
+        this.container.removeChild(info);
     });
     this.container.appendChild(info);
   }
@@ -363,7 +363,7 @@ class App extends Component {
               this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 attack per turn', 'positive');
             } else if (building.type === EntityType.FACTORY_EXTENSION) {
               this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn - buildingsPerTurnBefore + ' buildings per turn', 'positive');
-            } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
+            } else if (building.type === EntityType.SPYING_EASTER_BUNNY) { 
               this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 spy attack per turn', 'positive');
             }
           }, 400);
@@ -402,7 +402,7 @@ class App extends Component {
             }
           } else {
             const attackedCell = this.props.game.board.fields[this.props.game.players[1].fieldIndex].grid[target.row * this.props.game.board.size.cols + target.col];
-            this.opponentGameField.attack(target, this.props.selectedAttack);
+            this.opponentGameField.attack(target, this.props.selectedAttack, attackedCell.shielded);
             if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
               let opponentFieldIndex = this.props.game.players[1].fieldIndex;
               this.opponentGameField.rebuild(this.props.game.board.fields[opponentFieldIndex]);

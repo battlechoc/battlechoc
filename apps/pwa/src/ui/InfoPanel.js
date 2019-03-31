@@ -9,6 +9,7 @@ class InfoPanel extends Component {
         let player = this.props.game.players[0];
         return  player.attacks[AttackType.TRUFFLE] +
                 player.attacks[AttackType.HOT_CHOCOLATE] +
+                player.attacks[AttackType.FRUIT] +
                 player.attacks[AttackType.BUNNY];
     }
 
@@ -16,6 +17,7 @@ class InfoPanel extends Component {
         let player = this.props.game.players[0];
         return  player.attacksPerTurn[AttackType.TRUFFLE] +
                 player.attacksPerTurn[AttackType.HOT_CHOCOLATE] +
+                player.attacksPerTurn[AttackType.FRUIT] +
                 player.attacksPerTurn[AttackType.BUNNY];
     }
 

@@ -16,6 +16,10 @@ class AttackPalette extends Component {
             image: 'images/spying_easter_bunny_icon.png',
             alt: 'easter factory'
         }, {
+            type: AttackType.FRUIT,
+            image: 'images/fruitCannon_icon.png',
+            alt: 'fruit cannon'
+        }, {
             type: AttackType.HOT_CHOCOLATE,
             image: 'images/hotChocolateBallista_icon.png',
             alt: 'hot chocolate ballista'

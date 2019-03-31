@@ -46,18 +46,6 @@ function boardCell(grid, size, cellIdx) {
     return grid[cellIdx.row * size.cols + cellIdx.col];
 }
 
-function getCellNeighbors3x3(cellIdx, board, grid) {
-    var neighbors = [];
-    for (let row = cellIdx.row - 1; row < cellIdx.row + 2; row++) {
-        for (let col = cellIdx.col - 1; col < cellIdx.col + 2; col++) {
-            if (row >= 0 && col >= 0 && !(row === cellIdx.row && col === cellIdx.col) && row < board.size.rows && col < board.size.cols) {
-                neighbors.push(boardCell(grid, board.size, { row: row, col: col }));
-            }
-        }
-    }
-    return neighbors;
-}
-
 function getCellPatch3x3(cellIdx, board, grid) {
     var patch = [];
     for (let row = cellIdx.row - 1; row < cellIdx.row + 2; row++) {
@@ -84,7 +72,7 @@ function prepareBuildPhase(gameState) {
 function calculateCacaoPerTurn(building, cellColor) {
     let cacaoPerTurn = building.cacaoPerTurn;
     if (cellColor === GameEntities.BoardCellTypes.WHITE) {
-        cacaoPerTurn *= 2;
+        cacaoPerTurn = Math.round(cacaoPerTurn * 1.5);
     }
     return cacaoPerTurn;
 }
@@ -231,13 +219,13 @@ const gameplayReducer = createReducer({}, {
                 attackedCell.shielded = false;
                 attackedCell.occupiedBy.splice(attackedCell.occupiedBy.indexOf(GameEntities.EntityType.CHOCOLATE_FOUNTAIN), 1);
                 const neighbors = getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, state.game.board, otherPlayerField(state.game).grid);
-                for (let i = 0; i < neighbors.length; i++) {
-                    const neighbor = neighbors[i];
-                    const cellNeighbors = getCellNeighbors3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.CHOCOLATE_FOUNTAIN));
-                    if (cellNeighbors.length > 0) {
-                        neighbors[i].shielded = false;
+                neighbors.forEach(neighbor => {
+                    const otherFountainNearby = getCellPatch3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.CHOCOLATE_FOUNTAIN));
+                    if (otherFountainNearby.length === 0) {
+                        neighbor.shielded = false;
                     }
-                }
+                });
+                console.log('CHOCOLATE FOUNTAIN DESTROYED');
             }
         } else if (action.payload.attackType === GameEntities.AttackType.BUNNY) {
             const patch = getCellPatch3x3({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
