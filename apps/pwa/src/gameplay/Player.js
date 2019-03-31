@@ -236,11 +236,9 @@ class Augustus {
                 }
             } else {
                 const attackedCell = this.opponentBoard.grid[target.row * this.boardSize.cols + target.col];
-                if (attackedCell.shielded !== true || (attackType !== AttackType.TRUFFLE && attackType !== AttackType.FRUIT)) {
-                    opponentGameField3d.attack({ row: target.row, col: target.col }, attackType);
-                    if (attackType === AttackType.HOT_CHOCOLATE) {
-                        opponentGameField3d.rebuild(this.opponentBoard);
-                    }
+                opponentGameField3d.attack({ row: target.row, col: target.col }, attackType, attackedCell.shielded);
+                if (attackType === AttackType.HOT_CHOCOLATE) {
+                    opponentGameField3d.rebuild(this.opponentBoard);
                 }
             }
             this.simulateAttackPhase(gamefield3d, opponentGameField3d);

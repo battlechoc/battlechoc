@@ -30,6 +30,8 @@ class Building {
 			this._model = assets.HOT_CHOCOLATE_BALLISTA.model.scene.clone();
 		} else if (this.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
 			this._model = assets.CHOCOLATE_FOUNTAIN.model.scene.clone();
+			let shield = this._model.getObjectByName('Shield');
+			shield.material = new THREE.MeshLambertMaterial({ color: 0x6C5710, opacity: 0.3, transparent: true });
 		} else if (this.entityType === EntityType.FRUIT_CANNON) {
 			this._model = assets.FRUIT_CANNON.model.scene.clone();
 		}
@@ -38,8 +40,10 @@ class Building {
 			this._model.position.set(position3d.x, position3d.y, position3d.z);
 			this._model.traverse(child => {
 				if (child instanceof THREE.Mesh) {
-					child._cellIdx = this._cellIdx;
-					child._fieldIdx = this._fieldIdx;
+					if (child.name !== 'Shield') {
+						child._cellIdx = this._cellIdx;
+						child._fieldIdx = this._fieldIdx;
+					}
 				}
 			});
 		}
@@ -104,6 +108,7 @@ class Building {
 			if (child instanceof THREE.Mesh) {
 				child.material.opacity = 0.8;
 				child.material.transparent = true;
+				child.renderOrder = -1;
 			}
 		});
 

@@ -329,6 +329,11 @@ class Gamefield {
                 building.hide();
                 otherBuildings.forEach(other => other.makeCreamy());
             }
+            const patch = this.getCellPatch3x3(row, col, true);
+            let withinShield = patch.filter(cell => cell.findIndex(building => building.entityType === EntityType.CHOCOLATE_FOUNTAIN) > -1).length > 0;
+            if (withinShield) {
+                building._model.children[0].renderOrder = -1;
+            }
         }
 
         if (building.entityType === EntityType.FRUIT_CANNON) {
@@ -337,6 +342,16 @@ class Gamefield {
                 this.gameField.remove(this.buildings[row][col][index].getModel());
                 this.buildings[row][col].splice(index, 1);
             }
+        }
+
+        if (building.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
+            const patch = this.getCellPatch3x3(row, col, true);
+            patch.forEach(cell => {
+                let creamIndex = cell.findIndex(building => building.entityType === EntityType.CREAM);
+                if (creamIndex > -1) {
+                    cell[creamIndex]._model.children[0].renderOrder = -1;
+                }
+            });           
         }
 
         this.gameField.add(building.getModel());
