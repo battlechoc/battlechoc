@@ -13,6 +13,7 @@
 .tutorial-message {
   padding: 10px;
   margin: 4vh 2vw;
+  font-weight: 500 !important;
 }
 
 .microGamefield {
@@ -29,4 +30,54 @@
 
 .tutorial.fields > div {
   flex: 1 0 33.3%;
+}
+
+#tutorialchooseContainer {
+  position: unset;
+}
+
+.speechBubbles {
+  margin: 5vh 0;
+}
+
+.speechBubbles > .speechBubble {
+  opacity: 0;
+  animation: fadeIn 0.2s;
+  animation-fill-mode: forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+      to { opacity: 1; }
+}
+
+.speechBubble {
+  position: relative;
+  color: white;
+  padding: 10px;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-align-items: center;
+  align-items: center;
+  background: #457B82;
+  width: 80vw;
+  border-top-right-radius: 0px;
+  border-radius: .4em;
+  margin: 1vh auto;
+  animation: pop 1.25s steps(25, end) 0s infinite;
+}
+
+.speechBubble:after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border: 1em solid transparent;
+  border-left-color: #457B82;
+  border-right: 0;
+  border-top: 0px;
+  margin-top: -0.5em;
+  margin-right: -1em;
 }

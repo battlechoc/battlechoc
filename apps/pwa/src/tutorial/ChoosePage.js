@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import Paper from '@material-ui/core/Paper';
-import Typography from '@material-ui/core/Typography';
 import { EntityType } from '../gameplay/GameEntities';
 import StartIcon from '@material-ui/icons/SupervisorAccount';
+import ChatLikeInstructions from './ChatLikeInstructions';
 
 class ChoosePage extends Component {
     constructor(props) {
@@ -36,20 +35,7 @@ class ChoosePage extends Component {
     }
 
     render() {
-        return (
-            <div>
-                <Paper className="tutorial-message" elevation={1}>
-                    <Typography component="p">
-                       Welcome to our interactive battlechoc tutorial! This is where you will be introduced to the rules, menus and displays to become a battlechoc master one day.
-                       But for now we can keep things simple: When you start a new game we generate two game fields. The fields are randomly covered with cream and there are white and black fields in addition to the regular brown fields. You can find out what these mean on the next pages.
-                    </Typography>
-                    <br />
-                    <Typography component="p">
-                       Choose one of the options below to continue with the tutorial. 
-                    </Typography>
-                </Paper>
-
-                <div className="choose">
+        let choose = <div id="tutorialchooseContainer" className="choose">
                     <div className="active button" onClick={this.props.fulfilled}>
                         {(() => {
                             const creamedCells = this.state.fields[0].filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
@@ -103,8 +89,14 @@ class ChoosePage extends Component {
                             })()}
                         </div>
                     </div>
-                </div>
-            </div>
+                </div>;
+        let messages = [
+            { text: 'Welcome to our interactive battlechoc tutorial!', type:'text', delay: 2000 },
+            { text: 'Choose between first turn or one of the game fields to continue with the tutorial', type:'text', delay: 2500 },
+            { element: choose, type: 'challenge' }
+        ]
+        return (
+            <ChatLikeInstructions messages={messages}/>
         );
     }
 }
