@@ -187,7 +187,7 @@ class Augustus {
     }
 
     getCellPatch3x3(cellIdx, grid) {
-        var patch = [];
+        let patch = [];
         for (let row = cellIdx.row - 1; row < cellIdx.row + 2; row++) {
             for (let col = cellIdx.col - 1; col < cellIdx.col + 2; col++) {
                 if (row >= 0 && col >= 0 && row < this.boardSize.rows && col < this.boardSize.cols) {
@@ -199,18 +199,23 @@ class Augustus {
     }
 
     estimateFruitAttackTarget() {
-        let unveiledFountains = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.CHOCOLATE_FOUNTAIN));
+        const unveiledFountains = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.CHOCOLATE_FOUNTAIN));
         if (unveiledFountains.length > 0) {
             return unveiledFountains[0];
         } else if (this.discoveredShieldedCells.length > 0) {
-            let cellsToVisit = this.getCellPatch3x3(this.discoveredShieldedCells[0], this.opponentBoard.grid);
-            let unvisitedCells = cellsToVisit.filter(cell => !this.visitedShieldedCells.includes(cell));
+            const cellsToVisit = this.getCellPatch3x3(this.discoveredShieldedCells[0], this.opponentBoard.grid).filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
+            const unvisitedCells = cellsToVisit.filter(cell => !this.visitedShieldedCells.includes(cell));
             if (unvisitedCells.length > 0) {
                 this.visitedShieldedCells.push(unvisitedCells[0]);
                 return unvisitedCells[0];
-            } else {
+            } else if (cellsToVisit.length > 0) {
                 return cellsToVisit[0];
             }
+        }
+
+        const remainingCells = this.opponentBoard.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
+        if (remainingCells.length > 0) {
+            return remainingCells[Math.floor(Math.random() * remainingCells.length)];
         } else {
             return this.opponentBoard.grid[Math.floor(Math.random() * this.opponentBoard.grid.length)];
         }
@@ -292,13 +297,29 @@ class Augustus {
             return cells.filter(cell => cell.type === BoardCellTypes.WHITE);
         } else if (building === EntityType.FRUIT_CANNON) {
             return this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON));
+        } else if (building === EntityType.XMAS_FACTORY) {
+            const cellsWithXMas = cells.filter(cell => cell.occupiedBy.includes(EntityType.XMAS_FACTORY));
+            if (cellsWithXMas.length === 0) {
+                return cells;
+            } else {
+                const cellsNotShielded = cells.filter(cell => cell.shielded === false);
+                if (cellsNotShielded.length > 0) {
+                    return cellsNotShielded;
+                } else {
+                    return cells;
+                }
+            }
         } else if (building === EntityType.CHOCOLATE_FOUNTAIN) {
             const creamedPossible = cells.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
-            console.log(creamedPossible.length);
             if (creamedPossible.length > 0) {
                 return creamedPossible;
             } else {
-                return cells.filter(cell => cell.occupiedBy.length === 0 || (cell.occupiedBy.length === 1 && cell.occupiedBy.includes(EntityType.CREAM)));
+                const emptyCells = cells.filter(cell => cell.occupiedBy.length === 0);
+                if (emptyCells.length > 0) {
+                    return emptyCells;
+                } else {
+                    return this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
+                }
             }
         } else {
             return cells;
@@ -307,9 +328,9 @@ class Augustus {
 
     setBuildingAtBestPosition(possibleCells, building, uiGamefield) {
         return new Promise((resolve, reject) => {
-            let bestCellsForBuilding = this.getBestCellsForBuilding(possibleCells, building);
+            let bestCellsForBuilding = this.getBestCellsForBuilding(possibleCells, building.type);
             let targetCell = (bestCellsForBuilding.length > 0) ? bestCellsForBuilding[Math.floor(Math.random() * bestCellsForBuilding.length)] : possibleCells[Math.floor(Math.random() * possibleCells.length)];
-            console.log('DEV HINT: ', building.type, targetCell.row, targetCell.col);
+            console.log('DEV HINT: ', building.type, targetCell.row, targetCell.col, targetCell.type);
 
             building.position = {
                 row: targetCell.row,
@@ -364,7 +385,7 @@ class Augustus {
             this.setBuildingAtBestPosition(fountainCells, createEntity(EntityType.CHOCOLATE_FOUNTAIN), uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
             }).catch(error => this.handleBuildError(error));
-        } else if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0) {
+        } else if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0 && cannonCount >= 2) {
             this.setBuildingAtBestPosition(creamedCells, createEntity(EntityType.SPYING_EASTER_BUNNY), uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
             }).catch(error => this.handleBuildError(error));
@@ -424,12 +445,12 @@ class Augustus {
         const easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
         const cream = getEntityDescriptor(EntityType.CREAM);
 
-        if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0) {
+        if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0 && cannonCount >= 1) {
             const building = createEntity(EntityType.SPYING_EASTER_BUNNY);
             this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
             }).catch(error => this.handleBuildError(error));
-        } else if (creamedCells.length > 0 && cacao >= xmasFactory.costs && xmasFactoryCount < 1) {
+        } else if (creamedCells.length > 0 && cacao >= xmasFactory.costs && xmasFactoryCount < 1 && cannonCount >= 2) {
             const building = createEntity(EntityType.XMAS_FACTORY);
             this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
@@ -486,12 +507,12 @@ class Augustus {
         const cream = getEntityDescriptor(EntityType.CREAM);
         const fountain = getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN);
 
-        if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0) {
+        if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0 && cannonCount >= 2) {
             let building = createEntity(EntityType.SPYING_EASTER_BUNNY);
             this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
             }).catch(error => this.handleBuildError(error));
-        } else if (creamedCells.length > 0 && cacao >= xmasFactory.costs && xmasFactoryCount < 2) {
+        } else if (creamedCells.length > 0 && cacao >= xmasFactory.costs && xmasFactoryCount < 2 && cannonCount >= 1) {
             let building = createEntity(EntityType.XMAS_FACTORY);
             this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
@@ -504,7 +525,7 @@ class Augustus {
             }).catch(error => this.handleBuildError(error));
         } else if (creamedCells.length > 0 && (cacao >= tree.costs || cacao >= cannon.costs)) {
             let building;
-            if (treeCount < 2) {
+            if (treeCount < 3) {
                 building = createEntity(EntityType.CACAOTREE);
             } else if (cannonCount < 3 && cacao >= cannon.costs) {
                 building = createEntity(EntityType.RUM_TRUFFLE_CANNON);
