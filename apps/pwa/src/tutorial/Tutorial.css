@@ -26,3 +26,7 @@
 	height: 80vw;
 	width: 80vw;
 }
+
+.tutorial.fields > div {
+  flex: 1 0 33.3%;
+}

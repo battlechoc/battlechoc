@@ -10,7 +10,7 @@ import Actionbar from './Actionbar';
 import InfoPanel from './InfoPanel';
 import BuildingPalette from './BuildingPalette';
 import AttackPalette from './AttackPalette';
-import Tutorial from './Tutorial';
+import Tutorial from '../tutorial/Tutorial';
 import Button from '@material-ui/core/Button';
 import StartIcon from '@material-ui/icons/SupervisorAccount';
 import t from './Translation';
