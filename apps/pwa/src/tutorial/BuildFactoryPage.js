@@ -5,12 +5,12 @@ import ChatLikeInstructions from './ChatLikeInstructions';
 
 class ChoosePage extends Component {
     render() {
-    	let gamefield = <div>
+    	let gamefield = <div className="microGame">
 	                <div className="microGamefield">
 	                    <MicroGamefield size={3} />
 	                </div>
 
-	                <div id="buildingSelection">
+	                <div className="tutorial" id="buildingSelection">
 	                    <div className="selected previewContainer">
 	                        <img alt="factory preview" className="enabled preview" src="images/factory_icon.png"/>
 	                    </div>

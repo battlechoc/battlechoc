@@ -19,6 +19,8 @@ class ChatLikeInstructions extends Component {
             let messagesLength = this.state.visibleMessages.length;
             this.messageDelay = setTimeout(() => this.showNextMessage(), this.state.messages[messagesLength].delay);
             this.setState({visibleMessages: [...this.state.visibleMessages, this.state.messages[messagesLength]]});
+            let speechBubbles = document.getElementsByClassName('speechBubbles')[0];
+            speechBubbles.scrollTop = speechBubbles.scrollHeight;
         }
     }
 
@@ -34,6 +36,8 @@ class ChatLikeInstructions extends Component {
                 return <div key={i} className="speechBubble">{message.text}</div>;
             } else if (message.type === 'challenge') {
                 return <div key={i}>{message.element}</div>;
+            } else {
+                return null;
             }
         });
         return (
