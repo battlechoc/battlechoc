@@ -410,7 +410,7 @@ class App extends Component {
           }
 
           if (this.props.game.players[0].attacks[this.props.selectedAttack] === 0) {
-            const attackTypes = [AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.BUNNY];
+            const attackTypes = [AttackType.TRUFFLE, AttackType.FRUIT, AttackType.HOT_CHOCOLATE, AttackType.BUNNY];
             let undepletedAttack = attackTypes.filter(attackType => this.props.game.players[0].attacks[attackType]);
             if (undepletedAttack.length > 0) {
               this.props.selectAttack(undepletedAttack[0]).catch(error => {

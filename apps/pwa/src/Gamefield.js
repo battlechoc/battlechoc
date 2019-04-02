@@ -17,7 +17,7 @@ class Gamefield {
         );
 
         this.gameField = new THREE.Group();
-        this.build(playerField , false);
+        this.build(playerField, false);
     }
 
     build(playerField, rebuild) {
@@ -37,7 +37,7 @@ class Gamefield {
                 }
 
                 let geometryLowerBound = board.geometry.faces.length;
-                
+
                 pivot.position.set(this.fieldSize * cell.row, 0, this.fieldSize * cell.col);
                 pivot.traverse(child => {
                     if (child instanceof THREE.Mesh) {
@@ -62,7 +62,7 @@ class Gamefield {
         });
 
         board.groupsNeedUpdate = true;
-        board.geometry.sortFacesByMaterialIndex(); 
+        board.geometry.sortFacesByMaterialIndex();
         board.name = 'BOARD' + this.fieldIdx;
 
         this.gameField.add(board);
@@ -95,7 +95,7 @@ class Gamefield {
 
         let model = explosion.scene.clone();
         model.position.set(position.x, position.y, position.z);
-        
+
         this.gameField.add(model);
         this.mixer = new THREE.AnimationMixer(model);
 
@@ -109,7 +109,7 @@ class Gamefield {
         }
 
         this.mixer.addEventListener('finished', () => this.explosionCallback());
-    } 
+    }
 
     triggerExplosion(building, position) {
         if (typeof this.mixer !== 'undefined') {
@@ -120,11 +120,11 @@ class Gamefield {
         this.gameField.remove(building.getModel());
 
         building.explode();
-        
-        if (!this.isPlayerGameField && 
+
+        if (!this.isPlayerGameField &&
             (building.entityType === EntityType.RUM_TRUFFLE_CANNON ||
-             building.entityType === EntityType.SPYING_EASTER_BUNNY ||
-             building.entityType === EntityType.HOT_CHOCOLATE_BALLISTA)) {
+                building.entityType === EntityType.SPYING_EASTER_BUNNY ||
+                building.entityType === EntityType.HOT_CHOCOLATE_BALLISTA)) {
             building.rotate(Math.PI);
         }
 
@@ -153,7 +153,7 @@ class Gamefield {
             explosion = assets.FRUIT_CANNON_EXPLOSION;
         } else if (building.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
             explosion = assets.CHOCOLATE_FOUNTAIN_EXPLOSION;
-        } 
+        }
 
         for (let i = 0; i < explosion.model.animations.length; i++) {
             this.mixer.clipAction(explosion.model.animations[i]).setLoop(THREE.LoopOnce).play()
@@ -194,13 +194,13 @@ class Gamefield {
                         index: index
                     };
                 }
-            }             
-        } 
+            }
+        }
     }
 
     meltDownEasterBunny() {
         let { row, col, index } = this.locateEasterBunny();
-        
+
         let position3d = { x: row * this.fieldSize, y: 0, z: col * this.fieldSize };
         let bunny = this.buildings[row][col][index];
         this.triggerExplosion(bunny, position3d);
@@ -219,8 +219,8 @@ class Gamefield {
         let row = xmasFactoryCell[0]._cellIdx.row;
         let col = xmasFactoryCell[0]._cellIdx.col;
 
-        let xmasFactoryIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.XMAS_FACTORY);        
-        let xmasFactory = this.buildings[row][col][xmasFactoryIndex];  
+        let xmasFactoryIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.XMAS_FACTORY);
+        let xmasFactory = this.buildings[row][col][xmasFactoryIndex];
 
         this.gameField.remove(xmasFactory.getModel());
         this.buildings[row][col].splice(xmasFactoryIndex, 1);
@@ -232,7 +232,7 @@ class Gamefield {
         let row = target.row;
         let col = target.col;
         let position3d = { x: row * this.fieldSize, y: 0, z: col * this.fieldSize };
-        
+
         if (attackType === AttackType.TRUFFLE) {
             if (shielded) {
                 this.triggerExplosionAtShield(position3d);
@@ -279,16 +279,17 @@ class Gamefield {
                         this.buildings[field.row][field.col].splice(creamyfieldIndex, 1);
 
                         let otherBuildings = this.buildings[field.row][field.col].filter(building => building.entityType !== EntityType.CREAM);
-                        otherBuildings.forEach(otherBuilding => otherBuilding.show());                        
+                        otherBuildings.forEach(otherBuilding => otherBuilding.show());
                     }
                 }
             });
         } else if (attackType === AttackType.FRUIT) {
             let chocolateFountainIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.CHOCOLATE_FOUNTAIN);
             let creamyBuildings = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
+            let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM && building.entityType !== EntityType.CHOCOLATE_FOUNTAIN);
             if (creamyBuildings.length > 0) {
-                let cream = creamyBuildings[0];
-                this.triggerExplosion(cream, position3d);
+                this.buildings[row][col].splice(this.buildings[row][col].indexOf(creamyBuildings[0]), 1);
+                this.triggerExplosion(creamyBuildings[0], position3d);
 
                 if (chocolateFountainIndex > -1) {
                     this.buildings[row][col][chocolateFountainIndex].show();
@@ -297,6 +298,7 @@ class Gamefield {
                         this.buildings[row][col] = [];
                     }, 1000);
                 }
+                otherBuildings.forEach(building => building.show());
             } else if (chocolateFountainIndex > -1) {
                 this.triggerExplosion(this.buildings[row][col][chocolateFountainIndex], position3d);
                 this.buildings[row][col] = [];
@@ -358,10 +360,10 @@ class Gamefield {
             }
         }
 
-        if (!this.isPlayerGameField && 
+        if (!this.isPlayerGameField &&
             (entityType === EntityType.RUM_TRUFFLE_CANNON ||
-             entityType === EntityType.SPYING_EASTER_BUNNY ||
-             entityType === EntityType.HOT_CHOCOLATE_BALLISTA)) {
+                entityType === EntityType.SPYING_EASTER_BUNNY ||
+                entityType === EntityType.HOT_CHOCOLATE_BALLISTA)) {
             building.rotate(Math.PI);
         }
 
@@ -400,11 +402,11 @@ class Gamefield {
                 if (creamIndex > -1) {
                     cell[creamIndex]._model.children[0].renderOrder = -1;
                 }
-            });           
+            });
         }
 
         this.gameField.add(building.getModel());
-        
+
         if (this.cellContains(row, col, EntityType.CREAM)) {
             this.buildings[row][col].push(building);
             if (!this.isPlayerGameField) {
