@@ -14,6 +14,13 @@ class ChatLikeInstructions extends Component {
         this.messageDelay = setTimeout(() => this.showNextMessage(), 1000);
     }
 
+    componentWillReceiveProps(nextProps) {
+        this.setState({
+            messages: nextProps.messages,
+            visibleMessages: nextProps.messages.slice(0, this.state.visibleMessages.length)
+        });
+    }
+
     showNextMessage() {
         if (this.state.visibleMessages.length !== this.state.messages.length) {
             let messagesLength = this.state.visibleMessages.length;

@@ -15,15 +15,15 @@ class MicroGamefield extends Component {
         this.scene = new THREE.Scene();
         this.clock = new THREE.Clock();
 
-        let distance = 10;
+        let distance = 30;
         let aspect = width / height;
 
-        this.camera = new THREE.OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, -10, 10);
+        this.camera = new THREE.OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, -100, 200);
         this.camera.position.set(1, 1, 1);
         this.camera.lookAt(this.scene.position);
         this.camera.position.x = 0;
-        this.camera.position.y = 0;
-        this.camera.position.z = 0;
+        this.camera.position.y = 30;
+        this.camera.position.z = 70;
 
         this.container.onclick = event => this.onClick(event);
         this.renderer = new THREE.WebGLRenderer({ alpha: true });
@@ -38,6 +38,7 @@ class MicroGamefield extends Component {
 
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
+
         let size = {rows: this.props.size, cols: this.props.size}
         let field = { grid: [] };
         for (let row = 0; row < size.rows; row++) {
@@ -62,16 +63,15 @@ class MicroGamefield extends Component {
                 });
             }
         }
+
         var light = new THREE.DirectionalLight( 0xffffff, 1 );
-        light.position.set( 1, 1, 1 ).normalize();
+        light.position.set( 20, 24, -10 ).normalize();
+        light.castShadow = false;
         this.scene.add( light );
 
-        this.microGamefield = new Gamefield(true, [0, 30, 0], field, 0, size);
-        //this.scene.add(this.microGamefield.gameField);
-        let geometry = new THREE.BoxGeometry( 1, 1, 1 );
-        let material = new THREE.MeshBasicMaterial( {color: 0x00ff00} );
-        let cube = new THREE.Mesh(geometry, material);
-        this.scene.add(cube)
+        this.microGamefield = new Gamefield(true, [-72, -16, 0], field, 0, size);
+        this.scene.add(this.microGamefield.gameField);
+        
         this.start();
     }
 
@@ -85,7 +85,7 @@ class MicroGamefield extends Component {
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
         this.renderer.setSize(width, height);
-        let distance = 10;
+        let distance = 30;
         let aspect = width / height;
 
         this.camera.left = -distance * aspect;
@@ -107,25 +107,25 @@ class MicroGamefield extends Component {
     }
 
     onClick = event => {
-        var rect = this.renderer.domElement.getBoundingClientRect();
-        this.mouse.x = ( ( event.clientX - rect.left ) / rect.width ) * 2 - 1;
-        this.mouse.y = - ( ( event.clientY - rect.top ) / rect.height ) * 2 + 1;
-        this.raycaster.setFromCamera(this.mouse, this.camera);
-        console.log(this.mouse);
-        var intersects = this.raycaster.intersectObjects(this.scene.children, true);
-        console.log(intersects)
-        intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
-                                                    (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));    
-        console.log(intersects)
-        if ( intersects.length > 0 ) {
-            let building = createEntity(EntityType.FACTORY);
-            let cellIndex = intersects[0].object._cellIdx || intersects[0].face._cellIdx;
-            building.position = {
-                row: cellIndex.row,
-                col: cellIndex.col
+        if (typeof this.props.selectedBuilding !== 'undefined') {
+            var rect = this.renderer.domElement.getBoundingClientRect();
+            this.mouse.x = ( ( event.clientX - rect.left ) / rect.width ) * 2 - 1;
+            this.mouse.y = - ( ( event.clientY - rect.top ) / rect.height ) * 2 + 1;
+            this.raycaster.setFromCamera(this.mouse, this.camera);
+            var intersects = this.raycaster.intersectObjects(this.microGamefield.getClickableFields(), true);
+            intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
+                                                        (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));    
+            if ( intersects.length > 0 ) {
+                let building = createEntity(this.props.selectedBuilding);
+                let cellIndex = intersects[0].object._cellIdx || intersects[0].face._cellIdx;
+                building.position = {
+                    row: cellIndex.row,
+                    col: cellIndex.col
+                }
+                this.microGamefield.setBuilding(building.type, building.position);
+                this.props.buildCallback();
+                // this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn + ' buildings per turn', 'positive');
             }
-            this.microGamefield.setBuilding(building.type, building.position);
-            // this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn + ' buildings per turn', 'positive');
         }
     }
 
@@ -146,7 +146,9 @@ class MicroGamefield extends Component {
 }
 
 MicroGamefield.propTypes = {
-    size: PropTypes.number.isRequired
+    size: PropTypes.number.isRequired,
+    selectedBuilding: PropTypes.string,
+    buildCallback: PropTypes.func
 }
 
 const mapStateToProps = state => ({ language: state.ui.language });

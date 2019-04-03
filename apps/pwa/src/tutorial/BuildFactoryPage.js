@@ -2,17 +2,31 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import MicroGamefield from './MicroGamefield';
 import ChatLikeInstructions from './ChatLikeInstructions';
+import { EntityType } from '../gameplay/GameEntities';
 
 class ChoosePage extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            selectedBuilding: EntityType.FACTORY
+        };
+    }
+
+    buildCallback() {
+        this.setState({ selectedBuilding: undefined });
+        setTimeout(() => this.props.fulfilled(), 1000);
+    }
+
     render() {
-    	let gamefield = <div className="microGame">
+        let previewClasses = this.state.selectedBuilding === EntityType.FACTORY ? 'selected previewContainer' : 'previewContainer';
+        let gamefield = <div className="microGame">
 	                <div className="microGamefield">
-	                    <MicroGamefield size={3} />
+	                    <MicroGamefield size={3} selectedBuilding={this.state.selectedBuilding} buildCallback={() => this.buildCallback()}/>
 	                </div>
 
 	                <div className="tutorial" id="buildingSelection">
-	                    <div className="selected previewContainer">
-	                        <img alt="factory preview" className="enabled preview" src="images/factory_icon.png"/>
+	                    <div className={previewClasses}>
+	                        <img alt="factory preview" className="preview" src="images/factory_icon.png"/>
 	                    </div>
 	                </div>
                 </div>;

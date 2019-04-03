@@ -11,6 +11,7 @@ import ArrowForwardIcon from '@material-ui/icons/ArrowForwardIos';
 import CloseIcon from '@material-ui/icons/Close';
 import ChoosePage from './ChoosePage';
 import BuildFactoryPage from './BuildFactoryPage';
+import TreesAndCannonsPage from './TreesAndCannonsPage';
 //import t from './Translation';
 
 class Tutorial extends Component {
@@ -20,7 +21,8 @@ class Tutorial extends Component {
             page: 0,
             pages: [
                 <ChoosePage fulfilled={this.fulfilled} />, 
-                <BuildFactoryPage fulfilled={this.fulfilled} />
+                <BuildFactoryPage fulfilled={this.fulfilled} />,
+                <TreesAndCannonsPage fulfilled={this.fulfilled} />
             ]
         }
     }
