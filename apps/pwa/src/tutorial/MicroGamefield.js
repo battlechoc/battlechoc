@@ -40,6 +40,11 @@ class MicroGamefield extends Component {
         this.mouse = new THREE.Vector2();
 
         let size = {rows: this.props.size, cols: this.props.size}
+
+        this.buildings = [...Array(size.rows)].map(
+            field => Array(size.cols).fill([])
+        );
+
         let field = { grid: [] };
         for (let row = 0; row < size.rows; row++) {
             for (let col = 0; col < size.cols; col++) {
@@ -64,13 +69,53 @@ class MicroGamefield extends Component {
             }
         }
 
-        var light = new THREE.DirectionalLight( 0xffffff, 1 );
-        light.position.set( 20, 24, -10 ).normalize();
-        light.castShadow = false;
-        this.scene.add( light );
+        var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2.0);
+        directionalLight.position.set(20, 24, -10);
+        directionalLight.castShadow = false;
+        this.scene.add( directionalLight );
 
-        this.microGamefield = new Gamefield(true, [-72, -16, 0], field, 0, size);
-        this.scene.add(this.microGamefield.gameField);
+        if (!this.props.opponentGamefield) {
+            this.microGamefield = new Gamefield(true, [-72, -16, 0], field, 0, size);
+            this.scene.add(this.microGamefield.gameField);
+        } else if (this.props.opponentGamefield) {
+            this.microGamefield = new Gamefield(true, [-100, -30, 0], field, 0, size);
+            this.scene.add(this.microGamefield.gameField);
+            
+            field = { grid: [] };
+            for (let row = 0; row < size.rows; row++) {
+                for (let col = 0; col < size.cols; col++) {
+                    let fieldtype = row;
+                    let creamed = false;
+                    let cellType = BoardCellTypes.BROWN;
+
+                    if (fieldtype === 0) {
+                        cellType = BoardCellTypes.WHITE;
+                    } else if (fieldtype === 1) {
+                        cellType = BoardCellTypes.BLACK;
+                    }
+
+                    field.grid.push({
+                        type: cellType,
+                        row: row,
+                        col: col,
+                        occupiedBy: creamed ? [EntityType.CREAM] : [],
+                        molten: false,
+                        shielded: false
+                    });
+                }
+            }
+
+            this.opponentGamefield = new Gamefield(false, [-50, -5, 0], field, 1, size);
+
+            let building = createEntity(EntityType.FACTORY);
+            building.position = {
+                row: 1,
+                col: 1
+            }
+            this.opponentGamefield.setBuilding(building.type, building.position);
+
+            this.scene.add(this.opponentGamefield.gameField);
+        }
         
         this.start();
     }
@@ -82,17 +127,19 @@ class MicroGamefield extends Component {
     }
 
     updateDimensions() {
-        const width = this.container.clientWidth;
-        const height = this.container.clientHeight;
-        this.renderer.setSize(width, height);
-        let distance = 30;
-        let aspect = width / height;
+        if (typeof this.container !== 'undefined') {
+            const width = this.container.clientWidth;
+            const height = this.container.clientHeight;
+            this.renderer.setSize(width, height);
+            let distance = 30;
+            let aspect = width / height;
 
-        this.camera.left = -distance * aspect;
-        this.camera.right = distance * aspect;
-        this.camera.top = distance;
-        this.camera.bottom = -distance;
-        this.camera.updateProjectionMatrix();
+            this.camera.left = -distance * aspect;
+            this.camera.right = distance * aspect;
+            this.camera.top = distance;
+            this.camera.bottom = -distance;
+            this.camera.updateProjectionMatrix();
+        }
     }
 
 
@@ -116,15 +163,20 @@ class MicroGamefield extends Component {
             intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
                                                         (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));    
             if ( intersects.length > 0 ) {
-                let building = createEntity(this.props.selectedBuilding);
                 let cellIndex = intersects[0].object._cellIdx || intersects[0].face._cellIdx;
-                building.position = {
-                    row: cellIndex.row,
-                    col: cellIndex.col
+                console.log(this.buildings[cellIndex.row][cellIndex.col].length)
+                if (this.buildings[cellIndex.row][cellIndex.col].length === 0) {
+                    let building = createEntity(this.props.selectedBuilding);
+                    building.position = {
+                        row: cellIndex.row,
+                        col: cellIndex.col
+                    }
+
+                    this.microGamefield.setBuilding(building.type, building.position);
+                    this.props.buildCallback(building.type);
+                    this.buildings[cellIndex.row][cellIndex.col] = [building.type];
+                    // this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn + ' buildings per turn', 'positive');
                 }
-                this.microGamefield.setBuilding(building.type, building.position);
-                this.props.buildCallback();
-                // this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn + ' buildings per turn', 'positive');
             }
         }
     }
@@ -148,7 +200,8 @@ class MicroGamefield extends Component {
 MicroGamefield.propTypes = {
     size: PropTypes.number.isRequired,
     selectedBuilding: PropTypes.string,
-    buildCallback: PropTypes.func
+    buildCallback: PropTypes.func,
+    opponentGamefield: PropTypes.bool.isRequired
 }
 
 const mapStateToProps = state => ({ language: state.ui.language });

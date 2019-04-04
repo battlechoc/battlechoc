@@ -21,7 +21,7 @@ class ChoosePage extends Component {
         let previewClasses = this.state.selectedBuilding === EntityType.FACTORY ? 'selected previewContainer' : 'previewContainer';
         let gamefield = <div className="microGame">
 	                <div className="microGamefield">
-	                    <MicroGamefield size={3} selectedBuilding={this.state.selectedBuilding} buildCallback={() => this.buildCallback()}/>
+	                    <MicroGamefield opponentGamefield={false} size={3} selectedBuilding={this.state.selectedBuilding} buildCallback={() => this.buildCallback()}/>
 	                </div>
 
 	                <div className="tutorial" id="buildingSelection">
@@ -32,6 +32,7 @@ class ChoosePage extends Component {
                 </div>;
     	let messages = [
     		{ text: 'To build e.g. cacao trees or cannons, you need to build a chocolate factory', type: 'text', delay: 2500 },
+            { src: 'factory_icon.png', type: 'image', delay: 2500, alt: 'factory message icon' },
     		{ text: 'The factory allows you to build 2 buildings per turn', type: 'text', delay: 2500 },
     		{ text: 'Hint: If you build a factory on a black field it can work better and manages 3 buildings per round', type: 'text', delay: 3500 },
     		{ text: 'Build the factory by clicking on a field of your choice to continue with the tutorial', type: 'text', delay: 3500 },

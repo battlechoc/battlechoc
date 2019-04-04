@@ -47,9 +47,13 @@ class Tutorial extends Component {
 
     render() {
         let backIcon = <IconButton color="inherit" aria-label="back" onClick={this.back}><ArrowBackIcon /></IconButton>
-
+        let nextIcon = <IconButton color="inherit" aria-label="next" onClick={this.next}><ArrowForwardIcon /></IconButton>
         if (this.state.page === 0) {
             backIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={this.props.closeTutorial}><CloseIcon /></IconButton>
+        }
+
+        if (this.state.page >= this.state.pages.length - 1) {
+            nextIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={this.props.closeTutorial}><CloseIcon /></IconButton>
         }
 
         return (
@@ -60,9 +64,7 @@ class Tutorial extends Component {
                   <Typography variant="h6" className="tutorial-headline" color="inherit">
                     Interactive battlechoc Tutorial 
                   </Typography>
-                  <IconButton color="inherit" aria-label="next" onClick={this.next}>
-                    <ArrowForwardIcon />
-                  </IconButton>
+                  { nextIcon }
                 </Toolbar>
                 </AppBar>
                 {this.state.pages[this.state.page]}
