@@ -8,12 +8,12 @@ import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 class BuildingPalette extends Component {
     componentWillMount() {
-        this.buildingsForSeclection = [/*{
+        this.buildingsForSeclection = [{
             type: EntityType.FACTORY,
             image: 'images/factory_icon.png',
             alt: 'factory preview',
             costs: getEntityDescriptor(EntityType.FACTORY).costs
-        },*/ {
+        }, {
             type: EntityType.CACAOTREE,
             image: 'images/cacaotree_icon.png',
             alt: 'cacao tree preview',
@@ -97,18 +97,23 @@ class BuildingPalette extends Component {
                                         !this.props.game.players[0].hasFactory;
                                 }
 
-                                let className = canBuild && this.props.selectedBuilding === building.type ? 'selected previewContainer' : 'previewContainer';
-                                return <div className={className} key={i}>
-                                    <div className={canBuild ? '' : 'disabled'} onClick={() => {
-                                        this.props.tapBuilding(building.type);
-                                    }} />
-                                    <img alt={building.alt} className={canBuild ? 'enabled preview' : 'preview'} src={building.image} onClick={() => {
-                                        this.props.tapBuilding(building.type);
-                                        if (canBuild) {
-                                            this.props.selectBuilding(building.type);
-                                        }
-                                    }} />
-                                </div>
+                                if (building.type !== EntityType.FACTORY || ((this.props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
+                                    this.props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) &&
+                                    this.props.game.currentPlayerIndex === 0 &&
+                                    !this.props.game.players[0].hasFactory)) {
+                                    let className = canBuild && this.props.selectedBuilding === building.type ? 'selected previewContainer' : 'previewContainer';
+                                    return <div className={className} key={i}>
+                                        <div className={canBuild ? '' : 'disabled'} onClick={() => {
+                                            this.props.tapBuilding(building.type);
+                                        }} />
+                                        <img alt={building.alt} className={canBuild ? 'enabled preview' : 'preview'} src={building.image} onClick={() => {
+                                            this.props.tapBuilding(building.type);
+                                            if (canBuild) {
+                                                this.props.selectBuilding(building.type);
+                                            }
+                                        }} />
+                                    </div>
+                                }
                             });
                         }
                     })()}
