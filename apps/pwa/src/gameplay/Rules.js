@@ -190,15 +190,7 @@ class Rules {
             } else {
                 return true;
             }
-        } else if (action.type === UiActionTypes.selectBuilding) {
-            return true;
-        } else if (action.type === UiActionTypes.selectAttack) {
-            return true;
-        } else if (action.type === UiActionTypes.changeLanguage) {
-            return true;
-        } else if (action.type === UiActionTypes.deselectBuildings) {
-            return true;
-        } else if (action.type === UiActionTypes.gameResumeable) {
+        } else if ([UiActionTypes.selectBuilding, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.deselectBuildings, UiActionTypes.gameResumeable].includes(action.type)) {
             return true;
         } else {
             return new Errors.ActionValidationError(action);

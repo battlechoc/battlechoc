@@ -75,11 +75,11 @@ class Tooltip extends Component {
         } else if (gameState === GameStateTypes.BUILD_PHASE) {
             title = t[this.props.language].TOOLTIP_BUILD_PHASE_TITLE;
             if (currentPlayer === 0) {
-                if (typeof this.props.selectedBuilding === 'undefined') {
+                if (typeof this.props.tappedBuilding === 'undefined') {
                     message = t[this.props.language].TOOLTIP_BUILD_PHASE_MESSAGE;
                 } else {
-                    const building = getEntityDescriptor(this.props.selectedBuilding);
-                    const { info, costs, advantages } = t[this.props.language].TOOLTIP_BUILDING_INFO(this.props.selectedBuilding, building);
+                    const building = getEntityDescriptor(this.props.tappedBuilding);
+                    const { info, costs, advantages } = t[this.props.language].TOOLTIP_BUILDING_INFO(this.props.tappedBuilding, building);
                     message = <span className="tooltipBuildingInfo">
                         <span>{info}</span>
                         {typeof costs !== 'undefined' ? <span>{costs}</span> : null}
@@ -132,7 +132,7 @@ class Tooltip extends Component {
 const mapStateToProps = state => ({
     game: state.gameplay.game,
     language: state.ui.language,
-    selectedBuilding: state.ui.selectedBuilding
+    tappedBuilding: state.ui.tappedBuilding
 });
 
 const TooltipContainer = connect(

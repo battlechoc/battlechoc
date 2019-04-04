@@ -4,11 +4,15 @@ import { EntityType, AttackType } from '../gameplay/GameEntities';
 
 const uiReducer = createReducer({
     selectedBuilding: EntityType.FACTORY,
+    tappedBuilding: EntityType.FACTORY,
     selectedAttack: AttackType.TRUFFLE,
     language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
 }, {
         [UiActions.selectBuilding]: (state, action) => {
             state.selectedBuilding = action.payload;
+        },
+        [UiActions.tapBuilding]: (state, action) => {
+            state.tappedBuilding = action.payload;
         },
         [UiActions.selectAttack]: (state, action) => {
             state.selectedAttack = action.payload;
@@ -18,6 +22,7 @@ const uiReducer = createReducer({
         },
         [UiActions.deselectBuildings]: (state, action) => {
             state.selectedBuilding = undefined;
+            state.tappedBuilding = undefined;
         },
         [UiActions.gameResumeable]: (state, action) => {
             state.resumeGamePossible = action.payload;

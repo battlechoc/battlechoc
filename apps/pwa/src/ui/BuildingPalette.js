@@ -2,18 +2,18 @@ import React, { Component } from 'react';
 import './BuildingPalette.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { selectBuilding } from './UiActions';
+import { selectBuilding, tapBuilding } from './UiActions';
 import { EntityType, getEntityDescriptor } from '../gameplay/GameEntities';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 class BuildingPalette extends Component {
     componentWillMount() {
-        this.buildingsForSeclection = [{
+        this.buildingsForSeclection = [/*{
             type: EntityType.FACTORY,
             image: 'images/factory_icon.png',
             alt: 'factory preview',
             costs: getEntityDescriptor(EntityType.FACTORY).costs
-        }, {
+        },*/ {
             type: EntityType.CACAOTREE,
             image: 'images/cacaotree_icon.png',
             alt: 'cacao tree preview',
@@ -99,8 +99,11 @@ class BuildingPalette extends Component {
 
                                 let className = canBuild && this.props.selectedBuilding === building.type ? 'selected previewContainer' : 'previewContainer';
                                 return <div className={className} key={i}>
-                                    <div className={canBuild ? '' : 'disabled'}></div>
+                                    <div className={canBuild ? '' : 'disabled'} onClick={() => {
+                                        this.props.tapBuilding(building.type);
+                                    }} />
                                     <img alt={building.alt} className={canBuild ? 'enabled preview' : 'preview'} src={building.image} onClick={() => {
+                                        this.props.tapBuilding(building.type);
                                         if (canBuild) {
                                             this.props.selectBuilding(building.type);
                                         }
@@ -128,7 +131,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = {
-    selectBuilding
+    selectBuilding,
+    tapBuilding
 };
 
 const BuildingPaletteContainer = connect(
