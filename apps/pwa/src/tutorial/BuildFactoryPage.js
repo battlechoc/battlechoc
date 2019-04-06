@@ -31,7 +31,7 @@ class ChoosePage extends Component {
 	                </div>
                 </div>;
     	let messages = [
-    		{ text: 'To build e.g. cacao trees or cannons, you need to build a chocolate factory', type: 'text', delay: 2500 },
+    		{ text: 'To build e.g. cacao trees or cannons, you need to build a chocolate factory', type: 'text', delay: 1000 },
             { src: 'factory_icon.png', type: 'image', delay: 2500, alt: 'factory message icon' },
     		{ text: 'The factory allows you to build 2 buildings per turn', type: 'text', delay: 2500 },
     		{ text: 'Hint: If you build a factory on a black field it can work better and manages 3 buildings per round', type: 'text', delay: 3500 },

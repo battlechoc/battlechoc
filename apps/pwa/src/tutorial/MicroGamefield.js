@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Gamefield from '../Gamefield';
-import { EntityType, BoardCellTypes, createEntity } from '../gameplay/GameEntities';
+import { EntityType, BoardCellTypes, createEntity, getEntityDescriptor } from '../gameplay/GameEntities';
 import * as THREE from 'three';
 //import t from './Translation';
 
@@ -45,6 +45,10 @@ class MicroGamefield extends Component {
             field => Array(size.cols).fill([])
         );
 
+        this.playerCells = [...Array(size.rows)].map(
+            field => Array(size.cols).fill(BoardCellTypes.WHITE)
+        );
+
         let field = { grid: [] };
         for (let row = 0; row < size.rows; row++) {
             for (let col = 0; col < size.cols; col++) {
@@ -57,6 +61,8 @@ class MicroGamefield extends Component {
                 } else if (fieldtype === 1) {
                     cellType = BoardCellTypes.BLACK;
                 }
+
+                this.playerCells[row][col] = cellType;
 
                 field.grid.push({
                     type: cellType,
@@ -81,6 +87,10 @@ class MicroGamefield extends Component {
             this.microGamefield = new Gamefield(true, [-100, -30, 0], field, 0, size);
             this.scene.add(this.microGamefield.gameField);
             
+            this.opponentCells = [...Array(size.rows)].map(
+                field => Array(size.cols).fill(BoardCellTypes.WHITE)
+            );
+
             field = { grid: [] };
             for (let row = 0; row < size.rows; row++) {
                 for (let col = 0; col < size.cols; col++) {
@@ -93,6 +103,8 @@ class MicroGamefield extends Component {
                     } else if (fieldtype === 1) {
                         cellType = BoardCellTypes.BLACK;
                     }
+
+                    this.opponentCells[row][col] = cellType;
 
                     field.grid.push({
                         type: cellType,
@@ -128,17 +140,19 @@ class MicroGamefield extends Component {
 
     updateDimensions() {
         if (typeof this.container !== 'undefined') {
-            const width = this.container.clientWidth;
-            const height = this.container.clientHeight;
-            this.renderer.setSize(width, height);
-            let distance = 30;
-            let aspect = width / height;
+            if (this.container !== null) {
+                const width = this.container.clientWidth;
+                const height = this.container.clientHeight;
+                this.renderer.setSize(width, height);
+                let distance = 30;
+                let aspect = width / height;
 
-            this.camera.left = -distance * aspect;
-            this.camera.right = distance * aspect;
-            this.camera.top = distance;
-            this.camera.bottom = -distance;
-            this.camera.updateProjectionMatrix();
+                this.camera.left = -distance * aspect;
+                this.camera.right = distance * aspect;
+                this.camera.top = distance;
+                this.camera.bottom = -distance;
+                this.camera.updateProjectionMatrix();
+            }
         }
     }
 
@@ -153,7 +167,53 @@ class MicroGamefield extends Component {
         cancelAnimationFrame(this.frameId);
     }
 
+    spawnInfoText(position, text, messageType) {
+        let info = document.createElement("p");
+        info.appendChild(document.createTextNode(text));
+        info.classList.add('flyingInfo');
+        info.classList.add(messageType);
+
+        const width = this.container.clientWidth;
+        const height = this.container.clientHeight;
+        let ratio = width / height;
+
+        if (ratio < 1.1) {
+            info.style.top = (position.y - Math.round(window.innerHeight * 0.07)) + "px";
+            info.style.left = (position.x - Math.round(window.innerWidth * 0.015)) + "px";
+        }
+        else if (ratio < 1.4) { 
+            info.style.top = (position.y - Math.round(window.innerHeight * 0.1)) + "px";
+            info.style.left = (position.x - Math.round(window.innerWidth * 0.015)) + "px"; 
+        }
+        else { 
+            info.style.top = (position.y - Math.round(window.innerHeight * 0.12)) + "px";
+            info.style.left = (position.x - Math.round(window.innerWidth * 0.01)) + "px";
+        }
+        
+        let animations = {
+            "animation"      : "animationend",
+            "OAnimation"     : "oAnimationEnd",
+            "MozAnimation"   : "animationend",
+            "WebkitAnimation": "webkitAnimationEnd"
+        }
+        let supportedAnimation = 'animation';
+
+        for (let animation in animations) {
+            if (typeof info.style[animation] !== 'undefined') {
+                supportedAnimation = animations[animation];
+            }
+        }
+
+        info.addEventListener(supportedAnimation, () => {
+            document.getElementById('tutorial').removeChild(info);
+        });
+
+        document.getElementById('tutorial').appendChild(info);
+    }
+
     onClick = event => {
+        console.log({ x: event.clientX, y: event.clientY })
+
         if (typeof this.props.selectedBuilding !== 'undefined') {
             var rect = this.renderer.domElement.getBoundingClientRect();
             this.mouse.x = ( ( event.clientX - rect.left ) / rect.width ) * 2 - 1;
@@ -175,7 +235,25 @@ class MicroGamefield extends Component {
                     this.microGamefield.setBuilding(building.type, building.position);
                     this.props.buildCallback(building.type);
                     this.buildings[cellIndex.row][cellIndex.col] = [building.type];
-                    // this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn + ' buildings per turn', 'positive');
+                    let description = getEntityDescriptor(building.type)
+
+                    if (building.type === EntityType.FACTORY) {
+                        if (this.playerCells[cellIndex.row][cellIndex.col] === BoardCellTypes.BLACK) {
+                            this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + (description.buildingsPerTurn + 1) + ' buildings per turn', 'positive');
+                        } else {
+                            this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + description.buildingsPerTurn + ' buildings per turn', 'positive');
+                        }
+                    } else if (building.type === EntityType.CACAOTREE) {
+                        this.spawnInfoText({ x: event.clientX, y: event.clientY }, '-' + description.costs + ' cacao', 'negative');
+                        if (this.playerCells[cellIndex.row][cellIndex.col] === BoardCellTypes.WHITE) {
+                            setTimeout(() => this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + Math.round(description.cacaoPerTurn * 1.5) + ' cacao per turn', 'positive'), 400);
+                        } else {
+                            setTimeout(() => this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + description.cacaoPerTurn + ' cacao per turn', 'positive'), 400);
+                        }                        
+                    } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
+                        this.spawnInfoText({ x: event.clientX, y: event.clientY }, '-' + description.costs + ' cacao', 'negative');
+                        setTimeout(() => this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 attack per turn', 'positive'), 400);                   
+                    }
                 }
             }
         }
