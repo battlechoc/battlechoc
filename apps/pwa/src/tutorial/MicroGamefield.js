@@ -212,8 +212,6 @@ class MicroGamefield extends Component {
     }
 
     onClick = event => {
-        console.log({ x: event.clientX, y: event.clientY })
-
         if (typeof this.props.selectedBuilding !== 'undefined') {
             var rect = this.renderer.domElement.getBoundingClientRect();
             this.mouse.x = ( ( event.clientX - rect.left ) / rect.width ) * 2 - 1;
@@ -224,7 +222,6 @@ class MicroGamefield extends Component {
                                                         (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));    
             if ( intersects.length > 0 ) {
                 let cellIndex = intersects[0].object._cellIdx || intersects[0].face._cellIdx;
-                console.log(this.buildings[cellIndex.row][cellIndex.col].length)
                 if (this.buildings[cellIndex.row][cellIndex.col].length === 0) {
                     let building = createEntity(this.props.selectedBuilding);
                     building.position = {

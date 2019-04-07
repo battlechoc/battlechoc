@@ -3,6 +3,9 @@ import PropTypes from 'prop-types';
 import MicroGamefield from './MicroGamefield';
 import ChatLikeInstructions from './ChatLikeInstructions';
 import { EntityType, getEntityDescriptor } from '../gameplay/GameEntities';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import Dialog from '@material-ui/core/Dialog';
+import Typography from '@material-ui/core/Typography';
 
 class TreesAndCannonsPage extends Component {
     constructor(props) {
@@ -15,13 +18,22 @@ class TreesAndCannonsPage extends Component {
 
     buildCallback(building) {
     	if (building === EntityType.CACAOTREE) {
-    		this.setState({ cacao: this.state.cacao - 20 });
+    		if ((this.state.cacao - 20) < 20) {
+    			this.setState({ 
+    				cacao: this.state.cacao - 20,
+    				selectedBuilding: undefined 
+    			});
+    		} else {
+    			this.setState({ cacao: this.state.cacao - 20 });
+    		}
     	}
         //setTimeout(() => this.props.fulfilled(), 1000);
     }
 
     select(building) {
-    	this.setState({ selectedBuilding: building });
+    	if (this.canBuild(building)) {
+    		this.setState({ selectedBuilding: building });
+    	}
     }
 
     canBuild(building) {
@@ -29,9 +41,12 @@ class TreesAndCannonsPage extends Component {
     }
 
     render() {
+    	console.log(this.canBuild(EntityType.CACAOTREE));
+    	console.log(this.canBuild(EntityType.RUM_TRUFFLE_CANNON));
+
         let gamefield = <div className="microGame">
 	                <div className="microGamefield">
-	                    <MicroGamefield opponentGamefield={true} size={3} selectedBuilding={this.state.selectedBuilding} buildCallback={() => this.buildCallback()}/>
+	                    <MicroGamefield opponentGamefield={true} size={3} selectedBuilding={this.state.selectedBuilding} buildCallback={building => this.buildCallback(building)}/>
 	                </div>
 
 	                <div className="tutorial" id="buildingSelection">
@@ -51,6 +66,12 @@ class TreesAndCannonsPage extends Component {
 	                        <p>{this.state.cacao}</p>
 	                    </div>
 	                </div>
+
+					<Dialog onClose={this.handleClose} aria-labelledby="explain-turns-dialog">
+        				<DialogTitle id="simple-dialog-title">Game phases and turns</DialogTitle>
+        				<Typography>battlechoc is a turn-based strategy game. A turn consists of two game phases: Build and attack</Typography>
+        				<Typography>use this button to finish your build phase and this one to end your turn.</Typography>
+        			</Dialog>
                 </div>;
     	let messages = [
     		{ text: 'The most important buildings are the cacao tree and the rum truffle cannon', type: 'text', delay: 500 },
