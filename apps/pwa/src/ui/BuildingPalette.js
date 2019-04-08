@@ -100,7 +100,7 @@ class BuildingPalette extends Component {
                                 if ((building.type === EntityType.FACTORY && ((this.props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
                                     this.props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) && this.props.game.currentPlayerIndex === 0 && !this.props.game.players[0].hasFactory)) ||
                                     (building.type !== EntityType.FACTORY && this.props.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && this.props.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT)) {
-                                    let className = canBuild && this.props.selectedBuilding === building.type ? 'selected previewContainer' : 'previewContainer';
+                                    let className = canBuild ? (this.props.selectedBuilding === building.type ? 'selected previewContainer' : 'canbuild previewContainer') : 'previewContainer';
                                     return <div className={className} key={i}>
                                         <div className={canBuild ? '' : 'disabled'} onClick={() => {
                                             this.props.tapBuilding(building.type);
@@ -112,6 +112,8 @@ class BuildingPalette extends Component {
                                             }
                                         }} />
                                     </div>
+                                } else {
+                                    return '';
                                 }
                             });
                         }

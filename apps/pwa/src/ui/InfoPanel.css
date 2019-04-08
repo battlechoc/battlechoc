@@ -30,6 +30,8 @@
   width: 40px;
   height: 40px;
   user-select: none;
+  -webkit-filter: brightness(130%);
+	-moz-filter: brightness(130%);
 }
 
 @media screen and (min-width: 960px) {

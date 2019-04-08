@@ -42,7 +42,7 @@ class AttackPalette extends Component {
                         if (this.attackSelectionIsVisible()) {
                             return this.attacksForSeclection.map((attack, i) => {
                                 let canAttack = this.playerCanAttack(attack.type);
-                                let className = canAttack && this.props.selectedAttack === attack.type ? 'selected previewContainer' : 'previewContainer';
+                                let className = canAttack ? (this.props.selectedAttack === attack.type ? 'selected previewContainer' : 'canbuild previewContainer') : 'previewContainer';
                                 return <div className={className} key={i}>
                                     <div className={canAttack ? '' : 'disabled'}></div>
                                     <img alt={attack.alt} className={canAttack ? 'enabled preview' : 'preview'} src={attack.image} onClick={() => {
