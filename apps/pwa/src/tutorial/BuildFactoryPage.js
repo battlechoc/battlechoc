@@ -35,17 +35,20 @@ class ChoosePage extends Component {
             { src: 'factory_icon.png', type: 'image', delay: 2500, alt: 'factory message icon' },
     		{ text: 'The factory allows you to build 2 buildings per turn', type: 'text', delay: 2500 },
     		{ text: 'Hint: If you build a factory on a black field it can work better and manages 3 buildings per round', type: 'text', delay: 3500 },
-    		{ text: 'Build the factory by clicking on a field of your choice to continue with the tutorial', type: 'text', delay: 3500 },
-    		{ element: gamefield, type: 'challenge'}
+    		{ text: 'Build the factory by clicking on a field of your choice to continue with the tutorial', type: 'text'},
     	]
         return (
-            <ChatLikeInstructions messages={messages}/>
+            <div>
+                { gamefield }
+                <ChatLikeInstructions messages={messages} appbar={this.props.appbar}/>
+            </div>
         );
     }
 }
 
 ChoosePage.propTypes = {
-    fulfilled: PropTypes.func.isRequired
+    fulfilled: PropTypes.func.isRequired,
+    appbar: PropTypes.object.isRequired
 }
 
 export default ChoosePage

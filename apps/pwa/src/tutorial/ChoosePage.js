@@ -35,7 +35,7 @@ class ChoosePage extends Component {
     }
 
     render() {
-        let choose = <div id="tutorialchooseContainer" className="choose">
+        let choose = <div id="tutorialchooseContainer" className="challenge choose">
                     <div className="active button" onClick={this.props.fulfilled}>
                         {(() => {
                             const creamedCells = this.state.fields[0].filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
@@ -92,17 +92,20 @@ class ChoosePage extends Component {
                 </div>;
         let messages = [
             { text: 'Welcome to our interactive battlechoc tutorial!', type:'text', delay: 2000 },
-            { text: 'Choose between first turn or one of the game fields to continue with the tutorial', type:'text', delay: 2500 },
-            { element: choose, type: 'challenge' }
+            { text: 'Choose between first turn or one of the game fields to continue with the tutorial', type:'text'}
         ]
         return (
-            <ChatLikeInstructions messages={messages}/>
+            <div>
+                {choose}
+                <ChatLikeInstructions messages={messages} appbar={this.props.appbar}/>
+            </div>
         );
     }
 }
 
 ChoosePage.propTypes = {
-    fulfilled: PropTypes.func.isRequired
+    fulfilled: PropTypes.func.isRequired,
+    appbar: PropTypes.element.isRequired
 }
 
 export default ChoosePage

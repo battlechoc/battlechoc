@@ -15,7 +15,7 @@ class MicroGamefield extends Component {
         this.scene = new THREE.Scene();
         this.clock = new THREE.Clock();
 
-        let distance = 30;
+        let distance = 18;
         let aspect = width / height;
 
         this.camera = new THREE.OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, -100, 200);
@@ -81,10 +81,10 @@ class MicroGamefield extends Component {
         this.scene.add( directionalLight );
 
         if (!this.props.opponentGamefield) {
-            this.microGamefield = new Gamefield(true, [-72, -16, 0], field, 0, size);
+            this.microGamefield = new Gamefield(true, [-65, -35, 0], field, 0, size);
             this.scene.add(this.microGamefield.gameField);
         } else if (this.props.opponentGamefield) {
-            this.microGamefield = new Gamefield(true, [-100, -30, 0], field, 0, size);
+            this.microGamefield = new Gamefield(true, [-95, -44.5, 0], field, 0, size);
             this.scene.add(this.microGamefield.gameField);
             
             this.opponentCells = [...Array(size.rows)].map(
@@ -117,7 +117,7 @@ class MicroGamefield extends Component {
                 }
             }
 
-            this.opponentGamefield = new Gamefield(false, [-50, -5, 0], field, 1, size);
+            this.opponentGamefield = new Gamefield(false, [-45, -19.5, 0], field, 1, size);
 
             let building = createEntity(EntityType.FACTORY);
             building.position = {
@@ -144,7 +144,7 @@ class MicroGamefield extends Component {
                 const width = this.container.clientWidth;
                 const height = this.container.clientHeight;
                 this.renderer.setSize(width, height);
-                let distance = 30;
+                let distance = 18;
                 let aspect = width / height;
 
                 this.camera.left = -distance * aspect;

@@ -19,16 +19,12 @@ class Tutorial extends Component {
         super(props);
         this.state = {
             page: 0,
-            pages: [
-                <ChoosePage fulfilled={this.fulfilled} />, 
-                <BuildFactoryPage fulfilled={this.fulfilled} />,
-                <TreesAndCannonsPage fulfilled={this.fulfilled} />
-            ]
+            maxPages: 3
         }
     }
 
     fulfilled = () => {
-        if ((this.state.page + 1) === this.state.pages.length) {
+        if ((this.state.page + 1) === this.state.maxPages) {
             this.props.closeTutorial();
         } else {
             this.next();
@@ -52,22 +48,36 @@ class Tutorial extends Component {
             backIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={this.props.closeTutorial}><CloseIcon /></IconButton>
         }
 
-        if (this.state.page >= this.state.pages.length - 1) {
+        if (this.state.page >= this.state.maxPages - 1) {
             nextIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={this.props.closeTutorial}><CloseIcon /></IconButton>
         }
 
+        let title = 'Interactive battlechoc Tutorial';
+        if (this.state.page === 1) {
+            title = 'The chocolate factory';
+        } else if (this.state.page === 2) {
+            title = 'About trees and cannons';
+        }
+
+        let appbar = <AppBar position="static" color="secondary">
+                        <Toolbar>
+                          { backIcon }
+                          <Typography variant="h6" className="tutorial-headline" color="inherit">
+                          { title }
+                          </Typography>
+                          { nextIcon }
+                        </Toolbar>
+                     </AppBar>
+
+        let pages = [
+            <ChoosePage fulfilled={this.fulfilled} appbar={appbar}/>, 
+            <BuildFactoryPage fulfilled={this.fulfilled} appbar={appbar}/>,
+            <TreesAndCannonsPage fulfilled={this.fulfilled} appbar={appbar}/>
+        ];
+
         return (
             <div id="tutorial">
-                <AppBar position="static">
-                <Toolbar>
-                  { backIcon }
-                  <Typography variant="h6" className="tutorial-headline" color="inherit">
-                    Interactive battlechoc Tutorial 
-                  </Typography>
-                  { nextIcon }
-                </Toolbar>
-                </AppBar>
-                {this.state.pages[this.state.page]}
+                {pages[this.state.page]}
             </div>
         );
     }

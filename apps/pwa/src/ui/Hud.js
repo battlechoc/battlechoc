@@ -110,7 +110,7 @@ class Hud extends Component {
         return (
             <div>
                 <Tooltip />
-                <Actionbar toggleMusic={this.props.toggleMusic} showSettings={this.props.showSettings} displayBottom={this.state.showTutorial} />
+                <Actionbar toggleMusic={this.props.toggleMusic} showSettings={this.props.showSettings} />
                 <InfoDialog isVisible={this.isTitleScreen() && !this.state.showTutorial} />
                 <AttackPalette isVisible={showInGameMenu} />
                 <BuildingPalette isVisible={showInGameMenu} />

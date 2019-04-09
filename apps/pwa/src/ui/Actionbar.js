@@ -180,15 +180,13 @@ class Actionbar extends Component {
                 }
             }
         }
-        let classes = (this.props.displayBottom ? 'displayBottom' : '') + ' actionbar'; 
-        return <div className={classes}> {buttons} </div>;
+        return <div className="actionbar"> {buttons} </div>;
     }
 }
 
 Actionbar.propTypes = {
     toggleMusic: PropTypes.func.isRequired,
-    showSettings: PropTypes.func.isRequired,
-    displayBottom: PropTypes.bool.isRequired
+    showSettings: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({

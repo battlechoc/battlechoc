@@ -22,16 +22,40 @@ class ChatLikeInstructions extends Component {
         });
     }
 
+    componentDidUpdate() {
+        if (this.state.indicatorVisible) {
+            this.scrollDown();
+        }
+
+        console.log('UPDATE')
+
+        if (this.state.visibleMessages.length !== this.state.messages.length && typeof this.messageDelay === 'undefined') {
+            console.log('retrigger next message');
+            this.showNextMessage();
+        }
+    }
+
     showNextMessage() {
+        console.log('showNextMessage')
         if (this.state.visibleMessages.length !== this.state.messages.length) {
             let messagesLength = this.state.visibleMessages.length;
+            console.log(this.state.messages[messagesLength].delay);
             let delay = this.state.messages[messagesLength].delay;
             this.messageDelay = setTimeout(() => this.showNextMessage(), delay);
             this.showIndicator = setTimeout(() => this.setState({ indicatorVisible: true }) ,delay / 3);
             this.setState({indicatorVisible: false, visibleMessages: [...this.state.visibleMessages, this.state.messages[messagesLength]]});
-            let speechBubbles = document.getElementsByClassName('speechBubbles')[0];
-            speechBubbles.scrollTop = speechBubbles.scrollHeight;
+            this.scrollDown();
+        } else {
+            this.messageDelay = undefined;
+            this.showIndicator = undefined;
         }
+    }
+
+    scrollDown() {
+        let speechBubbles = document.getElementsByClassName('speechBubbles')[0];
+        if (typeof speechBubbles === 'object') {
+            speechBubbles.scrollTop = speechBubbles.scrollHeight;
+        }      
     }
 
     componentWillUnmount() {
@@ -63,16 +87,20 @@ class ChatLikeInstructions extends Component {
             }
         });
         return (
-            <div className="speechBubbles">   
-                { speechBubbles }
-                { typingIndicator }
+            <div>
+                { this.props.appbar }
+                <div className="speechBubbles">   
+                    { speechBubbles }
+                    { typingIndicator }
+                </div>
             </div>
         );
     }
 }
 
 ChatLikeInstructions.propTypes = {
-    messages: PropTypes.array.isRequired
+    messages: PropTypes.array.isRequired,
+    appbar: PropTypes.element.isRequired
 }
 
 export default ChatLikeInstructions
