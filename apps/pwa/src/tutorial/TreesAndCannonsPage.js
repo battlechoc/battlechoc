@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import MicroGamefield from './MicroGamefield';
 import ChatLikeInstructions from './ChatLikeInstructions';
 import { EntityType, getEntityDescriptor } from '../gameplay/GameEntities';
+import Fab from '@material-ui/core/Fab';
+import { PlayArrow, FastForward } from '@material-ui/icons';
 
 class TreesAndCannonsPage extends Component {
     constructor(props) {
@@ -19,7 +21,9 @@ class TreesAndCannonsPage extends Component {
                 { text: 'Plant a tree to get cacao. You need it to build a cannon', type: 'text', delay: 2500 },
                 { text: 'Build a cannon and attack your opponent\'s facotry to continue with the tutorial', type: 'text', delay: 2500 },
                 { text: 'Hint: If you build a cacao tree on a white field it grows better produces 1.5x more cacao per round', type: 'text', delay: 1000}
-            ]
+            ],
+            showPseudoActionbar: false,
+            pseudoPhase: 'build'
         };
     }
 
@@ -31,9 +35,9 @@ class TreesAndCannonsPage extends Component {
                     selectedBuilding: undefined,
                     messages: [...this.state.messages, 
                         { text: 'battlechoc is a turn-based strategy game. A turn consists of two game phases: Build and attack', type: 'text', delay: 2500},
-                        { text: 'use this button to finish your build phase..', type: 'text', delay: 2500},
-                        { text: '..and this one to end your turn', type: 'text', delay: 2500}
-                    ]
+                        { text: 'use this button to finish your build phase..', type: 'text', delay: 2500}
+                    ],
+                    showPseudoActionbar: true
                 });
             } else {
                 this.setState({ cacao: this.state.cacao - 20 });
@@ -52,11 +56,47 @@ class TreesAndCannonsPage extends Component {
         return this.state.cacao >= getEntityDescriptor(building).costs;
     }
 
+    gotoAttackPhase() {
+        this.setState({ 
+            pseudoPhase: 'attack',
+            messages: [...this.state.messages, { text: '..and this one to end your turn', type: 'text', delay: 2500}]
+        });
+    }
+
+    gotoBuildPhase() {
+        this.setState({ 
+            pseudoPhase: 'build',
+        });
+    }
+
     handleClose = () => {
         this.setState({explainDialogVisible: false});
     }
 
     render() {
+        let icon = <Fab
+                    size="small"
+                    key="3"
+                    color="primary"
+                    aria-label="skip build phase"
+                    className="icon blinking"
+                    onClick={() => this.gotoAttackPhase()}>
+                    <PlayArrow />
+                  </Fab>
+
+        if (this.state.pseudoPhase === 'attack') {
+            icon =<Fab
+                    size="small"
+                    key="4"
+                    color="primary"
+                    aria-label="finish turn"
+                    className="icon blinking"
+                    onClick={() => this.gotoBuildPhase()}>
+                    <FastForward />
+                 </Fab>
+        } 
+
+        let pseudoActionbar = <div className="pseudo actionbar">{ icon }</div>
         let gamefield = <div className="microGame">
                     <div className="microGamefield">
                         <MicroGamefield opponentGamefield={true} size={3} selectedBuilding={this.state.selectedBuilding} buildCallback={building => this.buildCallback(building)}/>
@@ -82,6 +122,7 @@ class TreesAndCannonsPage extends Component {
                 </div>;
         return (
             <div>
+                { this.state.showPseudoActionbar ? pseudoActionbar : null }
                 { gamefield }
                 <ChatLikeInstructions messages={this.state.messages} appbar={this.props.appbar}/>
             </div>

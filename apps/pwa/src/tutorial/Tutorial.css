@@ -40,6 +40,10 @@
   flex: 1 0 33.3%;
 }
 
+.pseudo.actionbar {
+  margin-left: 135px;
+}
+
 #tutorialchooseContainer {
   position: unset;
 }

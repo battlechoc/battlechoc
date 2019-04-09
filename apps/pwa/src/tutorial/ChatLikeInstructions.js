@@ -27,19 +27,14 @@ class ChatLikeInstructions extends Component {
             this.scrollDown();
         }
 
-        console.log('UPDATE')
-
         if (this.state.visibleMessages.length !== this.state.messages.length && typeof this.messageDelay === 'undefined') {
-            console.log('retrigger next message');
             this.showNextMessage();
         }
     }
 
     showNextMessage() {
-        console.log('showNextMessage')
         if (this.state.visibleMessages.length !== this.state.messages.length) {
             let messagesLength = this.state.visibleMessages.length;
-            console.log(this.state.messages[messagesLength].delay);
             let delay = this.state.messages[messagesLength].delay;
             this.messageDelay = setTimeout(() => this.showNextMessage(), delay);
             this.showIndicator = setTimeout(() => this.setState({ indicatorVisible: true }) ,delay / 3);
