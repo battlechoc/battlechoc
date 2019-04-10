@@ -88,10 +88,11 @@
   position: relative;
   color: white;
   padding: 10px;
+  font-size: 1rem;
   display: flex;
   align-items: center;
   background: #457B82;
-  width: 80vw;
+  width: 90vw;
   border-radius: .4em;
   margin: 1vh auto;
 }
@@ -123,7 +124,7 @@
 
 .media {
   display: flex;
-  width: 80vw;
+  width: 90vw;
   margin: 1vh auto;
   justify-content: flex-end;
 }
@@ -193,5 +194,59 @@
   #tutorialchooseContainer .button {
     height: 16vh;
     width: 16vh;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .speechBubble {
+    padding: 7px;
+    font-size: 0.9rem;
+    margin: 0.9vh auto;
+  }
+
+  .media {
+    margin: 0.9vh auto;
+  }
+
+  .media .speechBubble {
+    padding: 5px;
+  }
+
+  .speechBubbles {
+    height: calc(50vh - 42px);
+  }
+
+  .imageMessage {
+    max-width: 32px;
+    max-height: 32px;
+  }
+
+  .tutorialAppbar > div {
+    min-height: unset;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .pseudo.actionbar {
+    margin-left: 123px;
+  }
+}
+
+.highlighted {
+  animation: highlighted-animation 1s steps(25, start) infinite;
+  animation-direction: alternate;
+  -webkit-animation: highlighted-animation 1s steps(25, start) infinite;
+  -webkit-animation-direction: alternate;
+}
+
+@keyframes highlighted-animation {
+  to {
+    filter: brightness(0.5) contrast(1.2);
+  }
+}
+
+@-webkit-keyframes highlighted-animation {
+  to {
+    filter: brightness(4) contrast(0.8);
   }
 }

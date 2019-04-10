@@ -59,7 +59,7 @@ class Tutorial extends Component {
             title = 'About trees and cannons';
         }
 
-        let appbar = <AppBar position="static" color="secondary">
+        let appbar = <AppBar position="static" color="secondary" className="tutorialAppbar">
                         <Toolbar>
                           { backIcon }
                           <Typography variant="h6" className="tutorial-headline" color="inherit">

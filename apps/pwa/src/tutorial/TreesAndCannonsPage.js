@@ -11,14 +11,14 @@ class TreesAndCannonsPage extends Component {
         super(props);
         this.state = {
             selectedBuilding: EntityType.CACAOTREE,
-            cacao: 35,
+            cacao: 50,
             explainDialogVisible: false,
             messages: [
                 { text: 'The most important buildings are the cacao tree and the rum truffle cannon', type: 'text', delay: 500 },
                 { src: 'cannon_icon.png', type: 'image', delay: 500, alt: 'cannon message icon' },
                 { src: 'cacaotree_icon.png', type: 'image', delay: 2500, alt: 'cacao tree message icon' },
                 { text: 'You win a game if you destroy the factory and all cannons of your opponent', type: 'text', delay: 2500 },
-                { text: 'Plant a tree to get cacao. You need it to build a cannon', type: 'text', delay: 2500 },
+                { text: 'Plant a few trees to get cacao. You need it to build a cannon', type: 'text', delay: 2500 },
                 { text: 'Build a cannon and attack your opponent\'s facotry to continue with the tutorial', type: 'text', delay: 2500 },
                 { text: 'Hint: If you build a cacao tree on a white field it grows better produces 1.5x more cacao per round', type: 'text', delay: 1000}
             ],
@@ -60,7 +60,11 @@ class TreesAndCannonsPage extends Component {
                 });
             }
         } else if (building === EntityType.RUM_TRUFFLE_CANNON) {
-            console.log(description.costs);
+            if (this.state.messages.length < 12) {
+                this.setState({ 
+                    messages: [...this.state.messages, { text: 'now you can attack your opponent. Just finish your build phase and click on your opponent\s facotry!', type: 'text', delay: 2500}]
+                });
+            }
             this.setState({ 
                 cacao: this.state.cacao - description.costs,
                 attacksPerTurn: this.state.attacksPerTurn + 1,
@@ -98,10 +102,26 @@ class TreesAndCannonsPage extends Component {
     }
 
     gotoBuildPhase() {
-        this.setState({ 
-            pseudoPhase: 'build',
-            cacao: this.state.cacao + this.state.cacaoPerTurn
-        });
+        if (this.state.messages.length < 11) {
+            this.setState({ 
+                pseudoPhase: 'build',
+                selectedBuilding: EntityType.RUM_TRUFFLE_CANNON,
+                cacao: this.state.cacao + this.state.cacaoPerTurn,
+                messages: [...this.state.messages, { text: 'look: you gained some cacao! Now you can build a cannon. Select the cannon by clicking the icon', type: 'text', delay: 2500}]
+            });
+            this.highlight('totalCacao');
+        } else {
+            this.setState({ 
+                pseudoPhase: 'build',
+                cacao: this.state.cacao + this.state.cacaoPerTurn
+            });
+        }
+    }
+
+    highlight(id) {
+        let domElement = document.getElementById(id);
+        domElement.classList.add('highlighted');
+        setTimeout(() => domElement.classList.remove('highlighted'), 4000);
     }
 
     handleClose = () => {
@@ -168,7 +188,7 @@ class TreesAndCannonsPage extends Component {
                         })()}
 
                         <div className="tutorial" id="gameMenu">
-                            <div className="infoIcon">
+                            <div id="totalCacao" className="infoIcon">
                                 <img alt="cacao" src="images/cacao_icon.png" />
                                 <p>{this.state.cacao}</p>
                             </div>

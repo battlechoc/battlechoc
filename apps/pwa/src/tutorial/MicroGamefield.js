@@ -15,7 +15,7 @@ class MicroGamefield extends Component {
         this.scene = new THREE.Scene();
         this.clock = new THREE.Clock();
 
-        let distance = 18;
+        let distance = this.estimateDistance();
         let aspect = width / height;
 
         this.camera = new THREE.OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, -100, 200);
@@ -143,14 +143,34 @@ class MicroGamefield extends Component {
         this.container.removeChild(this.renderer.domElement);
     }
 
+    estimateDistance() {
+        let distance = 18;
+        const width = window.innerWidth;
+        if (this.props.opponentGamefield) {
+            if (width < 600) {
+                distance = 40;
+            } else if (width < 850) {
+                distance = 27;
+            } else if (width < 1100) {
+                distance = 22;
+            }
+        } else {
+            if (width < 500) {
+                distance = 25;
+            }            
+        }
+        return distance;
+    }
+
     updateDimensions() {
         if (typeof this.container !== 'undefined') {
             if (this.container !== null) {
                 const width = this.container.clientWidth;
                 const height = this.container.clientHeight;
                 this.renderer.setSize(width, height);
-                let distance = 18;
+                
                 let aspect = width / height;
+                let distance = this.estimateDistance();
 
                 this.camera.left = -distance * aspect;
                 this.camera.right = distance * aspect;
