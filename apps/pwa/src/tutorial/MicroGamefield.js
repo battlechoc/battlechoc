@@ -299,6 +299,9 @@ class MicroGamefield extends Component {
         let delta = this.clock.getDelta();
         this.renderScene();
         this.microGamefield.animate(delta);
+        if(this.props.opponentGamefield) {
+            this.opponentGamefield.animate(delta);
+        }
         this.frameId = window.requestAnimationFrame(this.animate);
     }
 

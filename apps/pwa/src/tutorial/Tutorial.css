@@ -232,21 +232,25 @@
   }
 }
 
+@media screen and (min-width: 960px) {
+  .pseudo.actionbar {
+    margin-left: 159px;
+  }
+}
+
 .highlighted {
   animation: highlighted-animation 1s steps(25, start) infinite;
   animation-direction: alternate;
-  -webkit-animation: highlighted-animation 1s steps(25, start) infinite;
-  -webkit-animation-direction: alternate;
 }
 
 @keyframes highlighted-animation {
   to {
-    filter: brightness(0.5) contrast(1.2);
+    filter: brightness(0.4) hue-rotate(45deg);
   }
 }
 
 @-webkit-keyframes highlighted-animation {
   to {
-    filter: brightness(4) contrast(0.8);
+    filter: brightness(6) hue-rotate(0deg);
   }
 }

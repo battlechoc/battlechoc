@@ -16,7 +16,7 @@ class TreesAndCannonsPage extends Component {
             messages: [
                 { text: 'The most important buildings are the cacao tree and the rum truffle cannon', type: 'text', delay: 500 },
                 { src: 'cannon_icon.png', type: 'image', delay: 500, alt: 'cannon message icon' },
-                { src: 'cacaotree_icon.png', type: 'image', delay: 2500, alt: 'cacao tree message icon' },
+                { src: 'cacaotree_icon.png', type: 'image', delay: 3500, alt: 'cacao tree message icon' },
                 { text: 'You win a game if you destroy the factory and all cannons of your opponent', type: 'text', delay: 2500 },
                 { text: 'Plant a few trees to get cacao. You need it to build a cannon', type: 'text', delay: 2500 },
                 { text: 'Build a cannon and attack your opponent\'s facotry to continue with the tutorial', type: 'text', delay: 2500 },
@@ -42,7 +42,7 @@ class TreesAndCannonsPage extends Component {
                         selectedBuilding: undefined,
                         messages: [...this.state.messages, 
                             { text: 'battlechoc is a turn-based strategy game. A turn consists of two game phases: Build and attack', type: 'text', delay: 2500},
-                            { text: 'use this button to finish your build phase..', type: 'text', delay: 2500}
+                            { text: 'Use the blinking button above to finish your build phase..', type: 'text', delay: 2500}
                         ],
                         showPseudoActionbar: true
                     });
@@ -62,7 +62,7 @@ class TreesAndCannonsPage extends Component {
         } else if (building === EntityType.RUM_TRUFFLE_CANNON) {
             if (this.state.messages.length < 12) {
                 this.setState({ 
-                    messages: [...this.state.messages, { text: 'now you can attack your opponent. Just finish your build phase and click on your opponent\s facotry!', type: 'text', delay: 2500}]
+                    messages: [...this.state.messages, { text: 'now you can attack your opponent. Just finish your build phase and click on your opponent\'s facotry!', type: 'text', delay: 2500}]
                 });
             }
             this.setState({ 
