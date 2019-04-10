@@ -46,6 +46,19 @@
 
 #tutorialchooseContainer {
   position: unset;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#tutorialchooseContainer .button {
+  max-height: 40vh;
+  max-width: 40vh;
+}
+
+#tutorialchooseContainer .fields {
+  max-height: 20vh;
+  max-width: 20vh;
 }
 
 .speechBubbles {
@@ -165,4 +178,20 @@
 .tutorial#gameMenu {
   bottom: 0px;
   right: 20%;
+}
+
+@media screen and (orientation:portrait) { 
+  #tutorialchooseContainer {
+    margin-top: 0;
+  }
+
+  #tutorialchooseContainer .fields {
+    width: 10vh;
+    height: 10vh;
+  }
+
+  #tutorialchooseContainer .button {
+    height: 16vh;
+    width: 16vh;
+  }
 }
