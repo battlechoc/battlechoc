@@ -10,6 +10,7 @@ import Actionbar from './Actionbar';
 import InfoPanel from './InfoPanel';
 import BuildingPalette from './BuildingPalette';
 import AttackPalette from './AttackPalette';
+import Tutorial from '../tutorial/Tutorial';
 import Button from '@material-ui/core/Button';
 import StartIcon from '@material-ui/icons/SupervisorAccount';
 import t from './Translation';
@@ -19,7 +20,8 @@ class Hud extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            clickable: true
+            clickable: true,
+            showTutorial: false
         }
     }
 
@@ -60,6 +62,10 @@ class Hud extends Component {
         textAnimation.addEventListener('click', () => {
             this.setState({ message: undefined });
         });
+    }
+
+    startTutorial() {
+        this.setState({ showTutorial: true });
     }
 
     choose(option) {
@@ -105,18 +111,22 @@ class Hud extends Component {
             <div>
                 <Tooltip />
                 <Actionbar toggleMusic={this.props.toggleMusic} showSettings={this.props.showSettings} />
-                <InfoDialog isVisible={this.isTitleScreen()} />
+                <InfoDialog isVisible={this.isTitleScreen() && !this.state.showTutorial} />
                 <AttackPalette isVisible={showInGameMenu} />
                 <BuildingPalette isVisible={showInGameMenu} />
                 <InfoPanel isVisible={showInGameMenu} />
                 { textAnimation }
                 
                 {(() => {
-                    if (this.isTitleScreen()) {
+                    if (this.state.showTutorial) {
+                        return <Tutorial closeTutorial={() => this.setState({ showTutorial: false })} />
+                    }
+                    else if (this.isTitleScreen()) {
                         let buttons = [<Button key="0" color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback()}>{t[this.props.language].NEW_GAME}</Button>];
                         if (this.props.resumeGamePossible === true) {
                             buttons.push(<Button key="1" color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareResumedGameCallback()}>{t[this.props.language].RESUME_GAME}</Button>);
                         }
+                        buttons.push([<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>]);
                         return (
                             <div id="mainMenu">
                                 { buttons }

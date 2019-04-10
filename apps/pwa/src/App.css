@@ -143,7 +143,7 @@ html, body, #root {
     100% {
         opacity: 0;
         font-size: 1.3vw;
-        transform: translateY(-100px)
+        transform: translateY(-10vh)
     }
 }
 

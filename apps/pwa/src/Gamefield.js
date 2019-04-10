@@ -4,10 +4,10 @@ import { EntityType, AttackType, BoardCellTypes } from './gameplay/GameEntities'
 import AssetLoader from './AssetLoader.js';
 
 class Gamefield {
-    constructor(isPlayerGameField, position, playerField, fieldIdx) {
+    constructor(isPlayerGameField, position, playerField, fieldIdx, size) {
         this.isPlayerGameField = isPlayerGameField;
-        this.rows = 8;
-        this.cols = 8;
+        this.rows = size.rows;
+        this.cols = size.cols;
         this.fieldSize = 8;
         this.position = position;
         this.fieldIdx = fieldIdx;
