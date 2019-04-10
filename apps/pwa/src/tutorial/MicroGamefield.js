@@ -87,6 +87,10 @@ class MicroGamefield extends Component {
             this.microGamefield = new Gamefield(true, [-95, -44.5, 0], field, 0, size);
             this.scene.add(this.microGamefield.gameField);
             
+            this.opponentBuildings = [...Array(size.rows)].map(
+                field => Array(size.cols).fill([])
+            );
+
             this.opponentCells = [...Array(size.rows)].map(
                 field => Array(size.cols).fill(BoardCellTypes.WHITE)
             );
@@ -120,6 +124,7 @@ class MicroGamefield extends Component {
             this.opponentGamefield = new Gamefield(false, [-45, -19.5, 0], field, 1, size);
 
             let building = createEntity(EntityType.FACTORY);
+            this.opponentBuildings[1][1] = [EntityType.FACTORY];
             building.position = {
                 row: 1,
                 col: 1
@@ -212,7 +217,7 @@ class MicroGamefield extends Component {
     }
 
     onClick = event => {
-        if (typeof this.props.selectedBuilding !== 'undefined') {
+        if (typeof this.props.selectedBuilding !== 'undefined' && this.props.pseudoPhase === 'build') {
             var rect = this.renderer.domElement.getBoundingClientRect();
             this.mouse.x = ( ( event.clientX - rect.left ) / rect.width ) * 2 - 1;
             this.mouse.y = - ( ( event.clientY - rect.top ) / rect.height ) * 2 + 1;
@@ -230,7 +235,7 @@ class MicroGamefield extends Component {
                     }
 
                     this.microGamefield.setBuilding(building.type, building.position);
-                    this.props.buildCallback(building.type);
+                    this.props.buildCallback(building.type, this.playerCells[cellIndex.row][cellIndex.col]);
                     this.buildings[cellIndex.row][cellIndex.col] = [building.type];
                     let description = getEntityDescriptor(building.type)
 
@@ -250,6 +255,24 @@ class MicroGamefield extends Component {
                     } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
                         this.spawnInfoText({ x: event.clientX, y: event.clientY }, '-' + description.costs + ' cacao', 'negative');
                         setTimeout(() => this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 attack per turn', 'positive'), 400);                   
+                    }
+                }
+            }
+        } else if (typeof this.props.selectedAttack !== 'undefined' && this.opponentGamefield && this.props.pseudoPhase === 'attack') {
+            var rect = this.renderer.domElement.getBoundingClientRect();
+            this.mouse.x = ( ( event.clientX - rect.left ) / rect.width ) * 2 - 1;
+            this.mouse.y = - ( ( event.clientY - rect.top ) / rect.height ) * 2 + 1;
+            this.raycaster.setFromCamera(this.mouse, this.camera);            
+            let opponentIntersects = this.raycaster.intersectObjects(this.opponentGamefield.getClickableFields(), true);
+
+            opponentIntersects = opponentIntersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
+                                                        (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));    
+            if ( opponentIntersects.length > 0 ) {
+                let cellIndex = opponentIntersects[0].object._cellIdx || opponentIntersects[0].face._cellIdx;
+                if (this.opponentBuildings[cellIndex.row][cellIndex.col].length > 0) {
+                    this.opponentGamefield.attack({row: cellIndex.row, col: cellIndex.col}, this.props.selectedAttack, false);
+                    if (typeof this.props.attackCallback !== 'undefined') {
+                        this.props.attackCallback();
                     }
                 }
             }
@@ -275,8 +298,11 @@ class MicroGamefield extends Component {
 MicroGamefield.propTypes = {
     size: PropTypes.number.isRequired,
     selectedBuilding: PropTypes.string,
+    selectedAttack: PropTypes.string,
     buildCallback: PropTypes.func,
-    opponentGamefield: PropTypes.bool.isRequired
+    attackCallback: PropTypes.func,
+    opponentGamefield: PropTypes.bool.isRequired,
+    pseudoPhase: PropTypes.string
 }
 
 const mapStateToProps = state => ({ language: state.ui.language });

@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import MicroGamefield from './MicroGamefield';
 import ChatLikeInstructions from './ChatLikeInstructions';
-import { EntityType, getEntityDescriptor } from '../gameplay/GameEntities';
+import { EntityType, getEntityDescriptor, BoardCellTypes, AttackType } from '../gameplay/GameEntities';
 import Fab from '@material-ui/core/Fab';
 import { PlayArrow, FastForward } from '@material-ui/icons';
 
@@ -11,7 +11,7 @@ class TreesAndCannonsPage extends Component {
         super(props);
         this.state = {
             selectedBuilding: EntityType.CACAOTREE,
-            cacao: 20,
+            cacao: 35,
             explainDialogVisible: false,
             messages: [
                 { text: 'The most important buildings are the cacao tree and the rum truffle cannon', type: 'text', delay: 500 },
@@ -23,27 +23,57 @@ class TreesAndCannonsPage extends Component {
                 { text: 'Hint: If you build a cacao tree on a white field it grows better produces 1.5x more cacao per round', type: 'text', delay: 1000}
             ],
             showPseudoActionbar: false,
-            pseudoPhase: 'build'
+            pseudoPhase: 'build',
+            cacaoPerTurn: 0,
+            attacksPerTurn: 0,
+            selectedAttack: undefined
         };
     }
 
-    buildCallback(building) {
+    buildCallback(building, celltype) {
+        let description = getEntityDescriptor(building)
         if (building === EntityType.CACAOTREE) {
-            if ((this.state.cacao - 20) < 20) {
-                this.setState({ 
-                    cacao: this.state.cacao - 20,
-                    selectedBuilding: undefined,
-                    messages: [...this.state.messages, 
-                        { text: 'battlechoc is a turn-based strategy game. A turn consists of two game phases: Build and attack', type: 'text', delay: 2500},
-                        { text: 'use this button to finish your build phase..', type: 'text', delay: 2500}
-                    ],
-                    showPseudoActionbar: true
-                });
+            let cacaoPerTurn = celltype === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn;
+            if ((this.state.cacao - description.costs) < description.costs) {
+                if (this.state.messages.length < 8) {
+                    this.setState({ 
+                        cacao: this.state.cacao - description.costs,
+                        cacaoPerTurn: this.state.cacaoPerTurn + cacaoPerTurn,
+                        selectedBuilding: undefined,
+                        messages: [...this.state.messages, 
+                            { text: 'battlechoc is a turn-based strategy game. A turn consists of two game phases: Build and attack', type: 'text', delay: 2500},
+                            { text: 'use this button to finish your build phase..', type: 'text', delay: 2500}
+                        ],
+                        showPseudoActionbar: true
+                    });
+                } else {
+                    this.setState({ 
+                        cacao: this.state.cacao - description.costs,
+                        cacaoPerTurn: this.state.cacaoPerTurn + cacaoPerTurn,
+                        selectedBuilding: undefined,
+                    });
+                }
             } else {
-                this.setState({ cacao: this.state.cacao - 20 });
+                this.setState({ 
+                    cacao: this.state.cacao - description.costs,
+                    cacaoPerTurn: this.state.cacaoPerTurn + cacaoPerTurn 
+                });
             }
+        } else if (building === EntityType.RUM_TRUFFLE_CANNON) {
+            console.log(description.costs);
+            this.setState({ 
+                cacao: this.state.cacao - description.costs,
+                attacksPerTurn: this.state.attacksPerTurn + 1,
+                selectedAttack: AttackType.TRUFFLE
+            });
+            if ((this.state.cacao - description.costs) < description.costs) {
+                this.setState({ selectedBuilding: undefined });                
+            }          
         }
-        //setTimeout(() => this.props.fulfilled(), 1000);
+    }
+
+    attackCallback() {
+        setTimeout(() => this.props.fulfilled(), 1000);
     }
 
     select(building) {
@@ -57,15 +87,20 @@ class TreesAndCannonsPage extends Component {
     }
 
     gotoAttackPhase() {
-        this.setState({ 
-            pseudoPhase: 'attack',
-            messages: [...this.state.messages, { text: '..and this one to end your turn', type: 'text', delay: 2500}]
-        });
+        if (this.state.messages.length < 10) {
+            this.setState({ 
+                pseudoPhase: 'attack',
+                messages: [...this.state.messages, { text: '..and this one to end your turn', type: 'text', delay: 2500}]
+            });
+        } else {
+            this.setState({ pseudoPhase: 'attack' });            
+        }
     }
 
     gotoBuildPhase() {
         this.setState({ 
             pseudoPhase: 'build',
+            cacao: this.state.cacao + this.state.cacaoPerTurn
         });
     }
 
@@ -99,18 +134,38 @@ class TreesAndCannonsPage extends Component {
         let pseudoActionbar = <div className="pseudo actionbar">{ icon }</div>
         let gamefield = <div className="microGame">
                     <div className="microGamefield">
-                        <MicroGamefield opponentGamefield={true} size={3} selectedBuilding={this.state.selectedBuilding} buildCallback={building => this.buildCallback(building)}/>
+                        <MicroGamefield opponentGamefield={true} size={3} 
+                                        selectedBuilding={this.state.selectedBuilding} 
+                                        selectedAttack={this.state.selectedAttack} 
+                                        pseudoPhase={this.state.pseudoPhase}
+                                        attackCallback={() => this.attackCallback()}
+                                        buildCallback={(building, celltype) => this.buildCallback(building, celltype)}/>
 
-                        <div className="tutorial" id="buildingSelection">
-                            <div onClick={() => this.select(EntityType.CACAOTREE)} className={this.state.selectedBuilding === EntityType.CACAOTREE ? 'selected previewContainer' : 'previewContainer'}>
-                                <div className={this.canBuild(EntityType.CACAOTREE) ? '' : 'disabled'}></div>
-                                <img alt="cacao tree preview" className="preview" src="images/cacaotree_icon.png"/>
-                            </div>
-                            <div onClick={() => this.select(EntityType.RUM_TRUFFLE_CANNON)} className={this.state.selectedBuilding === EntityType.RUM_TRUFFLE_CANNON ? 'selected previewContainer' : 'previewContainer'}>
-                                <div className={this.canBuild(EntityType.RUM_TRUFFLE_CANNON) ? '' : 'disabled'}></div>
-                                <img alt="cannon preview" className="preview" src="images/cannon_icon.png"/>
-                            </div>                      
-                        </div>
+                        {(() => {
+                            if (this.state.pseudoPhase === 'build') {
+                                return (
+                                    <div className="tutorial" id="buildingSelection">
+                                        <div onClick={() => this.select(EntityType.CACAOTREE)} className={this.state.selectedBuilding === EntityType.CACAOTREE ? 'selected previewContainer' : 'previewContainer'}>
+                                            <div className={this.canBuild(EntityType.CACAOTREE) ? '' : 'disabled'}></div>
+                                            <img alt="cacao tree preview" className="preview" src="images/cacaotree_icon.png"/>
+                                        </div>
+                                        <div onClick={() => this.select(EntityType.RUM_TRUFFLE_CANNON)} className={this.state.selectedBuilding === EntityType.RUM_TRUFFLE_CANNON ? 'selected previewContainer' : 'previewContainer'}>
+                                            <div className={this.canBuild(EntityType.RUM_TRUFFLE_CANNON) ? '' : 'disabled'}></div>
+                                            <img alt="cannon preview" className="preview" src="images/cannon_icon.png"/>
+                                        </div>                      
+                                    </div>
+                                );
+                            } else {
+                                return (
+                                    <div className="tutorial" id="attackSelection">
+                                        <div className={this.state.attacksPerTurn > 0 ? 'selected previewContainer' : 'previewContainer'}>
+                                            <div className={this.state.attacksPerTurn > 0 ? '' : 'disabled'}></div>
+                                            <img alt="cannon preview" className={this.state.attacksPerTurn > 0 ? 'enabled preview' : 'preview'} src="images/cannon_icon.png"/>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                        })()}
 
                         <div className="tutorial" id="gameMenu">
                             <div className="infoIcon">

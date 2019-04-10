@@ -157,6 +157,11 @@
   left: 20%;
 }
 
+.tutorial#attackSelection {
+  bottom: 0px;
+  left: 20%;
+}
+
 .tutorial#gameMenu {
   bottom: 0px;
   right: 20%;
