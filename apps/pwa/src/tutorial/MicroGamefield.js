@@ -217,11 +217,11 @@ class MicroGamefield extends Component {
     }
 
     onClick = event => {
+        var rect = this.renderer.domElement.getBoundingClientRect();
+        this.mouse.x = ( ( event.clientX - rect.left ) / rect.width ) * 2 - 1;
+        this.mouse.y = - ( ( event.clientY - rect.top ) / rect.height ) * 2 + 1;
+        this.raycaster.setFromCamera(this.mouse, this.camera); 
         if (typeof this.props.selectedBuilding !== 'undefined' && this.props.pseudoPhase === 'build') {
-            var rect = this.renderer.domElement.getBoundingClientRect();
-            this.mouse.x = ( ( event.clientX - rect.left ) / rect.width ) * 2 - 1;
-            this.mouse.y = - ( ( event.clientY - rect.top ) / rect.height ) * 2 + 1;
-            this.raycaster.setFromCamera(this.mouse, this.camera);
             var intersects = this.raycaster.intersectObjects(this.microGamefield.getClickableFields(), true);
             intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
                                                         (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));    
@@ -258,11 +258,7 @@ class MicroGamefield extends Component {
                     }
                 }
             }
-        } else if (typeof this.props.selectedAttack !== 'undefined' && this.opponentGamefield && this.props.pseudoPhase === 'attack') {
-            var rect = this.renderer.domElement.getBoundingClientRect();
-            this.mouse.x = ( ( event.clientX - rect.left ) / rect.width ) * 2 - 1;
-            this.mouse.y = - ( ( event.clientY - rect.top ) / rect.height ) * 2 + 1;
-            this.raycaster.setFromCamera(this.mouse, this.camera);            
+        } else if (typeof this.props.selectedAttack !== 'undefined' && this.opponentGamefield && this.props.pseudoPhase === 'attack') {           
             let opponentIntersects = this.raycaster.intersectObjects(this.opponentGamefield.getClickableFields(), true);
 
             opponentIntersects = opponentIntersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||

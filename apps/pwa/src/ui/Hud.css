@@ -162,7 +162,7 @@
 .menuButton {
   cursor: pointer;
   padding: 5px;
-  width: 20vw;
+  width: 50vw;
   min-width: 120px !important;
   max-width: 200px !important;
   border-radius: 0 !important;
