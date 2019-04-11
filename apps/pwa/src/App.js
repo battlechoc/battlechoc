@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import './App.css';
 import * as THREE from 'three';
 
@@ -59,6 +60,15 @@ class App extends Component {
     this.setState({ loadingProgress: progress });
   }
 
+  componentWillMount() {
+    OfflineStore.settingsStore.get('language').then(language => {
+      if (typeof language !== 'undefined') {
+        this.props.changeLanguage(language);
+      } else {
+        this.props.changeLanguage(this.props.browserLanguage);
+      }
+    });
+  }
 
   async componentDidMount() {
     OfflineStore.hasGameToResume().then((resumeable) => {
@@ -921,6 +931,10 @@ class App extends Component {
       )
     }
   }
+}
+
+App.propTypes = {
+  browserLanguage: PropTypes.string.isRequired,
 }
 
 const mapStateToProps = state => ({
