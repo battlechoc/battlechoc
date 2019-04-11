@@ -53,7 +53,7 @@ class MicroGamefield extends Component {
         for (let row = 0; row < size.rows; row++) {
             for (let col = 0; col < size.cols; col++) {
                 let fieldtype = col;
-                let creamed = col + row * size.cols === 4;
+                let creamed = (row + col) % 3 === 0;
                 let cellType = BoardCellTypes.BROWN;
 
                 if (fieldtype === 0) {
@@ -84,7 +84,7 @@ class MicroGamefield extends Component {
             this.microGamefield = new Gamefield(true, [-65, -35, 0], field, 0, size);
             this.scene.add(this.microGamefield.gameField);
         } else if (this.props.opponentGamefield) {
-            this.microGamefield = new Gamefield(true, [-95, -44.5, 0], field, 0, size);
+            this.microGamefield = new Gamefield(true, [-100, -47, 0], field, 0, size);
             this.scene.add(this.microGamefield.gameField);
             
             this.opponentBuildings = [...Array(size.rows)].map(
@@ -121,7 +121,7 @@ class MicroGamefield extends Component {
                 }
             }
 
-            this.opponentGamefield = new Gamefield(false, [-45, -19.5, 0], field, 1, size);
+            this.opponentGamefield = new Gamefield(false, [-40, -17, 0], field, 1, size);
 
             let building = createEntity(EntityType.FACTORY);
             this.opponentBuildings[1][1] = [EntityType.FACTORY];

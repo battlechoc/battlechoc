@@ -138,7 +138,7 @@ class App extends Component {
       audioBuffer => {
         this.ambientSound.setBuffer(audioBuffer);
         this.ambientSound.setLoop(true);
-        this.ambientSound.setVolume(0.5);
+        this.ambientSound.setVolume(1);
         this.ambientSound.pause();
       }
     );
@@ -181,6 +181,23 @@ class App extends Component {
         this.glStats
       ]
     });
+
+    // detect pause and resume
+    this.resumeMusicAfterPause = false;
+
+    window.onfocus = () => {
+      if (this.resumeMusicAfterPause) {
+        this.ambientSound.play();
+        this.resumeMusicAfterPause = false;
+      }    
+    };
+
+    window.onblur = () => {
+      if (this.ambientSound.isPlaying) {
+        this.ambientSound.pause();
+        this.resumeMusicAfterPause = true;
+      }    
+    };
   }
 
   componentWillReceiveProps(nextProps) {
