@@ -417,10 +417,16 @@ class Augustus {
             this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
             }).catch(error => this.handleBuildError(error));
-        } else if (freeCells.length > 0 && cacao >= cream.costs) {
-            this.setBuildingAtBestPosition(freeCells, createEntity(EntityType.CREAM), uiGamefield).then(() => {
-                this.simulateBuildPhase(uiGamefield);
-            }).catch(error => this.handleBuildError(error));
+        } else if ((freeCells.length > 0 || uncoveredBuildings.length > 0) && cacao >= cream.costs) {
+            if (uncoveredBuildings.length > 0) {
+                this.setBuildingAtBestPosition(uncoveredBuildings, createEntity(EntityType.CREAM), uiGamefield).then(() => {
+                    this.simulateBuildPhase(uiGamefield);
+                }).catch(error => this.handleBuildError(error));
+            } else {
+                this.setBuildingAtBestPosition(freeCells, createEntity(EntityType.CREAM), uiGamefield).then(() => {
+                    this.simulateBuildPhase(uiGamefield);
+                }).catch(error => this.handleBuildError(error));
+            }
         } else {
             this.actions.finishBuildPhase({ issuer: this.player.id });
         }
@@ -430,6 +436,7 @@ class Augustus {
         const cacao = this.player.cacao;
 
         let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
+        const uncoveredBuildings = this.board.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length > 0);
         const freeCells = this.board.grid.filter(cell => cell.molten === false && cell.occupiedBy.length === 0);
 
         const treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE)).length;
@@ -476,10 +483,16 @@ class Augustus {
             this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
             }).catch(error => this.handleBuildError(error));
-        } else if (freeCells.length > 0 && cacao >= cream.costs) {
-            this.setBuildingAtBestPosition(freeCells, createEntity(EntityType.CREAM), uiGamefield).then(() => {
-                this.simulateBuildPhase(uiGamefield);
-            }).catch(error => this.handleBuildError(error));
+        } else if ((freeCells.length > 0 || uncoveredBuildings.length > 0) && cacao >= cream.costs) {
+            if (uncoveredBuildings.length > 0) {
+                this.setBuildingAtBestPosition(uncoveredBuildings, createEntity(EntityType.CREAM), uiGamefield).then(() => {
+                    this.simulateBuildPhase(uiGamefield);
+                }).catch(error => this.handleBuildError(error));
+            } else {
+                this.setBuildingAtBestPosition(freeCells, createEntity(EntityType.CREAM), uiGamefield).then(() => {
+                    this.simulateBuildPhase(uiGamefield);
+                }).catch(error => this.handleBuildError(error));
+            }
         } else {
             this.actions.finishBuildPhase({ issuer: this.player.id });
         }
@@ -489,6 +502,7 @@ class Augustus {
         const cacao = this.player.cacao;
 
         let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
+        const uncoveredBuildings = this.board.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.length > 0);
         const freeCells = this.board.grid.filter(cell => cell.molten === false && cell.occupiedBy.length === 0);
 
         const treeCount = this.board.grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE)).length;
@@ -507,7 +521,11 @@ class Augustus {
         const cream = getEntityDescriptor(EntityType.CREAM);
         const fountain = getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN);
 
-        if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0 && cannonCount >= 2) {
+        if (uncoveredBuildings.length > 0 && cacao > cream.costs) {
+            this.setBuildingAtBestPosition(uncoveredBuildings, createEntity(EntityType.CREAM), uiGamefield).then(() => {
+                this.simulateBuildPhase(uiGamefield);
+            }).catch(error => this.handleBuildError(error));
+        } else if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0 && cannonCount >= 2) {
             let building = createEntity(EntityType.SPYING_EASTER_BUNNY);
             this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
@@ -544,10 +562,16 @@ class Augustus {
             this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
                 this.simulateBuildPhase(uiGamefield);
             }).catch(error => this.handleBuildError(error));
-        } else if (freeCells.length > 0 && cacao >= cream.costs) {
-            this.setBuildingAtBestPosition(freeCells, createEntity(EntityType.CREAM), uiGamefield).then(() => {
-                this.simulateBuildPhase(uiGamefield);
-            }).catch(error => this.handleBuildError(error));
+        } else if ((freeCells.length > 0 || uncoveredBuildings.length > 0) && cacao >= cream.costs) {
+            if (uncoveredBuildings.length > 0) {
+                this.setBuildingAtBestPosition(uncoveredBuildings, createEntity(EntityType.CREAM), uiGamefield).then(() => {
+                    this.simulateBuildPhase(uiGamefield);
+                }).catch(error => this.handleBuildError(error));
+            } else {
+                this.setBuildingAtBestPosition(freeCells, createEntity(EntityType.CREAM), uiGamefield).then(() => {
+                    this.simulateBuildPhase(uiGamefield);
+                }).catch(error => this.handleBuildError(error));
+            }
         } else {
             this.actions.finishBuildPhase({ issuer: this.player.id });
         }
