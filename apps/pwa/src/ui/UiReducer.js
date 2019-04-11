@@ -1,6 +1,7 @@
 import { createReducer } from 'redux-starter-kit';
 import * as UiActions from './UiActions';
 import { EntityType, AttackType } from '../gameplay/GameEntities';
+import OfflineStore from '../OfflineStore';
 
 const uiReducer = createReducer({
     selectedBuilding: EntityType.FACTORY,
@@ -19,6 +20,7 @@ const uiReducer = createReducer({
         },
         [UiActions.changeLanguage]: (state, action) => {
             state.language = action.payload;
+            OfflineStore.settingsStore.set("language", action.payload);
         },
         [UiActions.deselectBuildings]: (state, action) => {
             state.selectedBuilding = undefined;

@@ -1,0 +1,256 @@
+#tutorial {
+  z-index: 1;
+  position: absolute;
+  width: 100%;
+}
+
+.tutorial-headline {
+  flex-grow: 1;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.tutorial-message {
+  padding: 10px;
+  margin: 4vh 2vw;
+  font-weight: 500 !important;
+}
+
+.microGame {
+  position: relative;
+}
+
+.microGamefield {
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#microGamefield {
+  height: 50vh;
+  width: 80vw;
+}
+
+.challenge {
+  height: 50vh;
+}
+
+.tutorial.fields > div {
+  flex: 1 0 33.3%;
+}
+
+.pseudo.actionbar {
+  margin-left: 135px;
+}
+
+#tutorialchooseContainer {
+  position: unset;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#tutorialchooseContainer .button {
+  max-height: 40vh;
+  max-width: 40vh;
+}
+
+#tutorialchooseContainer .fields {
+  max-height: 20vh;
+  max-width: 20vh;
+}
+
+.speechBubbles {
+  height: calc(50vh - 64px);
+  overflow-y: scroll;
+  margin: 0 auto;
+  background: white;
+  padding: 5px;
+}
+
+.speechBubbles > .speechBubble:last-child {
+  margin-bottom: 5vh;
+}
+
+.speechBubbles > .speechBubble {
+  opacity: 0;
+  animation: fadeIn 0.2s;
+  animation-fill-mode: forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+      to { opacity: 1; }
+}
+
+.speechBubble {
+  position: relative;
+  color: white;
+  padding: 10px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  background: #457B82;
+  width: 90vw;
+  border-radius: .4em;
+  margin: 1vh auto;
+}
+
+.speechBubble:after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border: 1em solid transparent;
+  border-left-color: #457B82;
+  border-right: 0;
+  border-top: 0px;
+  margin-top: -0.5em;
+  margin-right: -1em;
+}
+
+.media .speechBubble {
+  position: relative;
+  color: white;
+  padding: 10px;
+  display: unset;
+  align-items: unset;
+  width: unset;
+  margin: 0;
+}
+
+.media {
+  display: flex;
+  width: 90vw;
+  margin: 1vh auto;
+  justify-content: flex-end;
+}
+
+.imageMessage {max-width: 50px; max-height: 50px;}
+
+#typingIndicator {
+  position: relative;
+  margin: 4vh auto;
+  text-align: center;
+  width: 100px;
+}
+
+#typingIndicator > .dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 3px;
+  background: #666;
+  animation: wave 1.3s linear infinite;
+}
+
+#typingIndicator > .dot:nth-child(2) {
+  animation-delay: -1.1s;
+}
+
+#typingIndicator > .dot:nth-child(3) {
+  animation-delay: -0.9s;
+}
+
+@keyframes wave {
+  0%, 60%, 100% {
+    transform: initial;
+  }
+
+  30% {
+    transform: translateY(-15px);
+  }
+}
+
+.tutorial#buildingSelection {
+  bottom: 0px;
+  left: 20%;
+}
+
+.tutorial#attackSelection {
+  bottom: 0px;
+  left: 20%;
+}
+
+.tutorial#gameMenu {
+  bottom: 0px;
+  right: 20%;
+}
+
+@media screen and (orientation:portrait) { 
+  #tutorialchooseContainer {
+    margin-top: 0;
+  }
+
+  #tutorialchooseContainer .fields {
+    width: 10vh;
+    height: 10vh;
+  }
+
+  #tutorialchooseContainer .button {
+    height: 16vh;
+    width: 16vh;
+  }
+}
+
+@media screen and (max-width: 900px) {
+  .speechBubble {
+    padding: 7px;
+    font-size: 0.9rem;
+    margin: 0.9vh auto;
+  }
+
+  .media {
+    margin: 0.9vh auto;
+  }
+
+  .media .speechBubble {
+    padding: 5px;
+  }
+
+  .speechBubbles {
+    height: calc(50vh - 42px);
+  }
+
+  .imageMessage {
+    max-width: 32px;
+    max-height: 32px;
+  }
+
+  .tutorialAppbar > div {
+    min-height: unset;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .pseudo.actionbar {
+    margin-left: 123px;
+  }
+}
+
+@media screen and (min-width: 960px) {
+  .pseudo.actionbar {
+    margin-left: 159px;
+  }
+}
+
+.highlighted {
+  animation: highlighted-animation 1s steps(25, start) infinite;
+  animation-direction: alternate;
+}
+
+@keyframes highlighted-animation {
+  to {
+    filter: brightness(0.4) hue-rotate(45deg);
+  }
+}
+
+@-webkit-keyframes highlighted-animation {
+  to {
+    filter: brightness(6) hue-rotate(0deg);
+  }
+}

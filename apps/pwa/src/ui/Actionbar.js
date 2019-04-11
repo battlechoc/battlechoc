@@ -180,7 +180,6 @@ class Actionbar extends Component {
                 }
             }
         }
-
         return <div className="actionbar"> {buttons} </div>;
     }
 }

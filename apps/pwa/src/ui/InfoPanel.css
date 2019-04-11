@@ -19,7 +19,7 @@
 }
 
 .infoIcon > p {
-  font-size: 1.4vw;
+  font-size: 1rem;
   color: #324D5C;
   user-select: none;
   font-family: "Roboto", "Helvetica", "Arial", sans-serif;
@@ -35,10 +35,6 @@
 }
 
 @media screen and (min-width: 960px) {
-  .infoIcon > p {
-    font-size: 16px;
-  }
-
   .infoIcon > img {
     width: 56px;
     height: 56px;
@@ -46,10 +42,6 @@
 }
 
 @media screen and (max-width: 600px) {
-  .infoIcon > p {
-    font-size: 10px;
-  }
-
   .infoIcon > img {
     width: 34px;
     height: 34px;
