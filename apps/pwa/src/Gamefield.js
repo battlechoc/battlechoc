@@ -260,6 +260,7 @@ class Gamefield {
             }
         } else if (attackType === AttackType.HOT_CHOCOLATE) {
             this.buildings[row][col].forEach(building => this.gameField.remove(building.getModel()));
+            this.buildings[row][col] = [];
         } else if (attackType === AttackType.BUNNY) {
             let patch = this.getCellPatch3x3(row, col, false);
             patch.forEach(field => {
