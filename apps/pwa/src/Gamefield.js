@@ -420,7 +420,7 @@ class Gamefield {
                 });
             }
         } else {
-            this.buildings[row][col] = [building];
+            this.buildings[row][col] = this.buildings[row][col].concat(building);
         }
     }
 }
