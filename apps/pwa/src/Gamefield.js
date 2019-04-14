@@ -286,23 +286,23 @@ class Gamefield {
             });
         } else if (attackType === AttackType.FRUIT) {
             let chocolateFountainIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.CHOCOLATE_FOUNTAIN);
-            let creamyBuildings = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
-            let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM && building.entityType !== EntityType.CHOCOLATE_FOUNTAIN);
-            if (creamyBuildings.length > 0) {
-                this.buildings[row][col].splice(this.buildings[row][col].indexOf(creamyBuildings[0]), 1);
-                this.triggerExplosion(creamyBuildings[0], position3d);
-
+            let cream = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
+            if (cream.length > 0) {
+                this.buildings[row][col].splice(this.buildings[row][col].indexOf(cream[0]), 1);
+                this.triggerExplosion(cream[0], position3d);
+                chocolateFountainIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.CHOCOLATE_FOUNTAIN);
                 if (chocolateFountainIndex > -1) {
                     this.buildings[row][col][chocolateFountainIndex].show();
                     setTimeout(() => {
                         this.triggerExplosion(this.buildings[row][col][chocolateFountainIndex], position3d);
-                        this.buildings[row][col] = [];
+                        this.buildings[row][col].splice(chocolateFountainIndex, 1);
                     }, 1000);
+                } else {
+                    this.buildings[row][col].forEach(building => building.show());
                 }
-                otherBuildings.forEach(building => building.show());
             } else if (chocolateFountainIndex > -1) {
                 this.triggerExplosion(this.buildings[row][col][chocolateFountainIndex], position3d);
-                this.buildings[row][col] = [];
+                this.buildings[row][col].splice(chocolateFountainIndex, 1);
             }
         }
     }

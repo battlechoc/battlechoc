@@ -1,12 +1,11 @@
 import { createReducer } from 'redux-starter-kit';
 import * as UiActions from './UiActions';
-import { EntityType, AttackType } from '../gameplay/GameEntities';
+import { EntityType } from '../gameplay/GameEntities';
 import OfflineStore from '../OfflineStore';
 
 const uiReducer = createReducer({
     selectedBuilding: EntityType.FACTORY,
     tappedBuilding: EntityType.FACTORY,
-    selectedAttack: AttackType.TRUFFLE,
     language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
 }, {
         [UiActions.selectBuilding]: (state, action) => {
@@ -21,6 +20,9 @@ const uiReducer = createReducer({
         [UiActions.changeLanguage]: (state, action) => {
             state.language = action.payload;
             OfflineStore.settingsStore.set("language", action.payload);
+        },
+        [UiActions.deselectAttack]: (state, action) => {
+            state.selectedAttack = undefined;
         },
         [UiActions.deselectBuildings]: (state, action) => {
             state.selectedBuilding = undefined;

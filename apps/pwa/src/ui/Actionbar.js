@@ -6,7 +6,7 @@ import { finishTurn, finishBuildPhase } from '../gameplay/GameActions';
 import { BattlechocError } from '../gameplay/Errors';
 import { playerHasAttacks, playerHasAttacksPerTurn } from '../gameplay/Player';
 import { getCheapest } from '../gameplay/GameEntities';
-import { deselectBuildings } from './UiActions';
+import { deselectBuildings, deselectAttack } from './UiActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import Fab from '@material-ui/core/Fab';
 import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings } from '@material-ui/icons';
@@ -123,6 +123,7 @@ class Actionbar extends Component {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                     this.props.finishBuildPhase({ issuer: this.props.game.players[0].id }).then(() => {
                                         this.props.deselectBuildings();
+                                        this.props.deselectAttack();
                                     }).catch(error => {
                                         if (error instanceof BattlechocError) {
                                             console.warn(error);
@@ -146,6 +147,7 @@ class Actionbar extends Component {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                     this.props.finishTurn({ issuer: this.props.game.players[0].id }).then(() => {
                                         this.props.deselectBuildings();
+                                        this.props.deselectAttack();
                                     }).catch(error => {
                                         if (error instanceof BattlechocError) {
                                             console.warn(error);
@@ -171,6 +173,7 @@ class Actionbar extends Component {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                     this.props.finishTurn({ issuer: this.props.game.players[0].id }).then(() => {
                                         this.props.deselectBuildings();
+                                        this.props.deselectAttack();
                                     }).catch(error => {
                                         if (error instanceof BattlechocError) {
                                             console.warn(error);
@@ -202,7 +205,8 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = {
     finishBuildPhase,
     finishTurn,
-    deselectBuildings
+    deselectBuildings,
+    deselectAttack
 };
 
 const ActionbarContainer = connect(

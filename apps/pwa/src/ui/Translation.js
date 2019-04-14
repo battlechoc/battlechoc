@@ -1,4 +1,4 @@
-import { EntityType } from '../gameplay/GameEntities';
+import { EntityType, AttackType } from '../gameplay/GameEntities';
 
 const languages = {
     en: {
@@ -14,6 +14,19 @@ const languages = {
         TOOLTIP_INITIAL_TURN_TITLE: 'Initial Turn',
         TOOLTIP_INITIAL_TURN_MESSAGE: 'In the first round you can choose a playing field or the first move',
         TOOLTIP_INITIAL_TURN_OPPONENT: name => name + ' can now select a game field',
+        TOOLTIP_BUILDING_TITLE: (type) => {
+            switch (type) {
+                case EntityType.CREAM: return 'Cream';
+                case EntityType.FACTORY_EXTENSION: return 'Factory extension';
+                case EntityType.CACAOTREE: return 'Cacao tree';
+                case EntityType.RUM_TRUFFLE_CANNON: return 'Rum truffle cannon';
+                case EntityType.XMAS_FACTORY: return 'X-mas factory';
+                case EntityType.SPYING_EASTER_BUNNY: return 'Spying easter bunny';
+                case EntityType.CHOCOLATE_FOUNTAIN: return 'Chocolate fountain';
+                case EntityType.FRUIT_CANNON: return 'Fruit cannon';
+                default: return 'Unkown';
+            }
+        },
         TOOLTIP_BUILDING_INFO: (type, building) => {
             switch (type) {
                 case EntityType.CREAM:
@@ -70,7 +83,25 @@ const languages = {
         TOOLTIP_BUILD_PHASE_TITLE: 'Build Phase',
         TOOLTIP_BUILD_PHASE_MESSAGE: 'Choose a building from the list below and build it on any of the free fields. The cream is displayed translucent. A building built in cream will be invisible to the enemy',
         TOOLTIP_ATTACK_PHASE_TITLE: 'Attack Phase',
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE: (attackType) => {
+            switch (attackType) {
+                case AttackType.TRUFFLE: return 'Rum truffle';
+                case AttackType.FRUIT: return 'Fruit';
+                case AttackType.HOT_CHOCOLATE: return 'Hot chocolate';
+                case AttackType.BUNNY: return 'Spying easter bunny';
+                default: return 'Unkown';
+            }
+        },
         TOOLTIP_ATTACK_PHASE_MESSAGE: 'Click on an enemy building to destroy it. Hint: Smart enemies hide buildings within cream',
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE: (attackType) => {
+            switch (attackType) {
+                case AttackType.TRUFFLE: return 'Destroys buildings and cream. Can be mitigated by the chocolate fountain shield.';
+                case AttackType.FRUIT: return 'Destroys creams and the chocolate fountain. Other buildings are not harmed by the fruit cannon.';
+                case AttackType.HOT_CHOCOLATE: return 'Destroys buildings, creams and even the part of the gamefield that is attacked. Cannot be mitigated by the chocolate fountain shield.';
+                case AttackType.BUNNY: return 'Reveals all the buildings under creams within a 3x3 region around the attacked cell. Gets caught by X-mas factories in the vincinity.';
+                default: return 'Unkown';
+            }
+        },
         MESSAGE_PLAYER_DECIDE: 'It\'s up on you',
         MESSAGE_OPPONENT_DECIDE: 'Your opponent decides',
         MESSAGE_WIN_GAME: 'Congratulations! You won this game',
@@ -113,6 +144,19 @@ const languages = {
         TOOLTIP_INITIAL_TURN_TITLE: 'Erste Runde',
         TOOLTIP_INITIAL_TURN_MESSAGE: 'In der ersten Runde kannst du dich für eines der Spielfelder, oder den ersten Zug entscheiden',
         TOOLTIP_INITIAL_TURN_OPPONENT: name => name + ' kann nun ein Spielfeld aussuchen',
+        TOOLTIP_BUILDING_TITLE: (type) => {
+            switch (type) {
+                case EntityType.CREAM: return 'Sahne';
+                case EntityType.FACTORY_EXTENSION: return 'Fabrikerweiterung';
+                case EntityType.CACAOTREE: return 'Kakaobaum';
+                case EntityType.RUM_TRUFFLE_CANNON: return 'Rumkugel-Kanone';
+                case EntityType.XMAS_FACTORY: return 'Weihnachtsfabrik';
+                case EntityType.SPYING_EASTER_BUNNY: return 'Osterhase';
+                case EntityType.CHOCOLATE_FOUNTAIN: return 'Schokoladenbrunnen';
+                case EntityType.FRUIT_CANNON: return 'Fruchtkanone';
+                default: return 'Unbekannt';
+            }
+        },
         TOOLTIP_BUILDING_INFO: (type, building) => {
             switch (type) {
                 case EntityType.CREAM:
@@ -169,7 +213,25 @@ const languages = {
         TOOLTIP_BUILD_PHASE_TITLE: 'Bauphase',
         TOOLTIP_BUILD_PHASE_MESSAGE: 'Wähle ein Gebäude aus der unteren Symbolleiste aus und plaziere es. Sahne ist durchsichtig dargestellt. Ein Gebäude, dass in Sahne gebaut wird ist unsichtbar für den Gegner',
         TOOLTIP_ATTACK_PHASE_TITLE: 'Angiffsphase',
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE: (attackType) => {
+            switch (attackType) {
+                case AttackType.TRUFFLE: return 'Rumkugel';
+                case AttackType.FRUIT: return 'Frucht';
+                case AttackType.HOT_CHOCOLATE: return 'Heiße Schokolade';
+                case AttackType.BUNNY: return 'Spionage-Osterhase';
+                default: return 'Unbekannt';
+            }
+        },
         TOOLTIP_ATTACK_PHASE_MESSAGE: 'Klicke auf ein gegnerisches Gebäude um es anzugreifen. Hinweis: Kluge Gegner verstecken ihre Gebäude unter Sahne',
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE: (attackType) => {
+            switch (attackType) {
+                case AttackType.TRUFFLE: return 'Zerstört Gebäude und Sahne. Kann durch den Schild des Schokobrunnens abgewehrt werden.';
+                case AttackType.FRUIT: return 'Zerstört Sahne und Schokobrunnen. Andere Gebäude werden durch die Fruchtkanone nicht gefährdet.';
+                case AttackType.HOT_CHOCOLATE: return 'Zerstört Gebäude, Sahne und sogar das Spielfeld an der Stelle des Angriffs. Kann nicht durch den Schokobrunnenschild abgewehrt werden.';
+                case AttackType.BUNNY: return 'Deckt alle Felder mit Sahne im 3x3 Umfeld des Angriffs auf. Wird von der Weihnachtsfabrik eingefangen, wenn sie in der Nähe des Angriffs ist.';
+                default: return 'Klicke auf ein gegnerisches Gebäude um es anzugreifen. Hinweis: Kluge Gegner verstecken ihre Gebäude unter Sahne';
+            }
+        },
         MESSAGE_PLAYER_DECIDE: 'Entscheide dich jetzt!',
         MESSAGE_OPPONENT_DECIDE: 'Dein Gegner entscheidet',
         MESSAGE_WIN_GAME: 'Glückwunsch! Du hast das Spiel gewonnen',
