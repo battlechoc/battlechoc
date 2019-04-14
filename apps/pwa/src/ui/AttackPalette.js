@@ -34,6 +34,16 @@ class AttackPalette extends Component {
         return this.props.game.players[0].attacks[type] > 0
     }
 
+    attacks(attackType) {
+        const player = this.props.game.players[0];
+        return player.attacks[attackType];
+    }
+
+    attacksPerTurn(attackType) {
+        const player = this.props.game.players[0];
+        return player.attacksPerTurn[attackType];
+    }
+
     render() {
         if (this.props.isVisible) {
             return (
@@ -43,13 +53,16 @@ class AttackPalette extends Component {
                             return this.attacksForSeclection.map((attack, i) => {
                                 let canAttack = this.playerCanAttack(attack.type);
                                 let className = canAttack ? (this.props.selectedAttack === attack.type ? 'selected previewContainer' : 'canbuild previewContainer') : 'previewContainer';
-                                return <div className={className} key={i}>
-                                    <div className={canAttack ? '' : 'disabled'}></div>
-                                    <img alt={attack.alt} className={canAttack ? 'enabled preview' : 'preview'} src={attack.image} onClick={() => {
-                                        if (canAttack) {
-                                            this.props.selectAttack(attack.type);
-                                        }
-                                    }} />
+                                return <div key={i}>
+                                    <p className="attackCount">{this.attacks(attack.type) + '/' + this.attacksPerTurn(attack.type)}</p>
+                                    <div className={className}>
+                                        <div className={canAttack ? '' : 'disabled'}></div>
+                                        <img alt={attack.alt} className={canAttack ? 'enabled preview' : 'preview'} src={attack.image} onClick={() => {
+                                            if (canAttack) {
+                                                this.props.selectAttack(attack.type);
+                                            }
+                                        }} />
+                                    </div>
                                 </div>
                             });
                         }
