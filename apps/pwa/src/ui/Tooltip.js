@@ -93,8 +93,10 @@ class Tooltip extends Component {
             if (currentPlayer === 0) {
                 if (typeof this.props.selectedAttack !== 'undefined') {
                     title = t[this.props.language].TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE(this.props.selectedAttack);
+                    message = t[this.props.language].TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE(this.props.selectedAttack);
+                } else {
+                    message = t[this.props.language].TOOLTIP_ATTACK_PHASE_MESSAGE;
                 }
-                message = t[this.props.language].TOOLTIP_ATTACK_PHASE_MESSAGE;
             }
         }
 
