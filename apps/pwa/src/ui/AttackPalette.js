@@ -55,15 +55,15 @@ class AttackPalette extends Component {
                                 let canAttack = this.playerCanAttack(attack.type);
                                 let className = canAttack ? (this.props.selectedAttack === attack.type ? 'selected previewContainer' : 'canbuild previewContainer') : 'previewContainer';
                                 return <div key={i}>
-                                    <p className="attackCount">{this.attacks(attack.type) + '/' + this.attacksPerTurn(attack.type)}</p>
-                                    <div className={className}>
-                                        <div className={canAttack ? '' : 'disabled'}></div>
-                                        <img alt={attack.alt} className={canAttack ? 'enabled preview' : 'preview'} src={attack.image} onClick={() => {
+                                    <div className={className} onClick={() => {
                                             if (canAttack) {
                                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                                 this.props.selectAttack(attack.type);
                                             }
-                                        }} />
+                                        }}>
+                                        <div className={canAttack ? '' : 'disabled'}></div>
+                                        <div className="attackCount">{this.attacks(attack.type)}</div>
+                                        <img alt={attack.alt} className={canAttack ? 'enabled preview' : 'preview'} src={attack.image} />
                                     </div>
                                 </div>
                             });

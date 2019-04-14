@@ -415,7 +415,7 @@ class App extends Component {
               this.opponentGameField.receiveBallista(target);
               this.spawnInfoText({ x: event.clientX, y: event.clientY }, 'Xmas factory caught your spying easter bunny!', 'negative');
             }
-          } else {
+          } else if (typeof this.props.selectedAttack !== 'undefined') {
             Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
             const attackedCell = this.props.game.board.fields[this.props.game.players[1].fieldIndex].grid[target.row * this.props.game.board.size.cols + target.col];
             this.opponentGameField.attack(target, this.props.selectedAttack, attackedCell.shielded);
