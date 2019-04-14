@@ -1,0 +1,5 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target" : { "namespace": "android_app", "package_name": "com.battlechoc.game",
+               "sha256_cert_fingerprints": ["0F:3B:D1:69:84:43:76:72:8A:2D:F3:8A:F7:6F:5F:0C:EB:7E:4E:F8:C6:2B:5A:06:F9:3F:6F:04:6A:CE:2D:16"] }
+}]
