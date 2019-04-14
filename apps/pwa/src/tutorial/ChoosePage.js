@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { EntityType } from '../gameplay/GameEntities';
 import StartIcon from '@material-ui/icons/SupervisorAccount';
 import ChatLikeInstructions from './ChatLikeInstructions';
+import Jukebox from '../ui/Jukebox';
 
 class ChoosePage extends Component {
     constructor(props) {
@@ -34,9 +35,14 @@ class ChoosePage extends Component {
         }
     }
 
+    fulfilled = () => {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        this.props.fulfilled();
+    }
+
     render() {
         let choose = <div id="tutorialchooseContainer" className="challenge choose">
-                    <div className="active button" onClick={this.props.fulfilled}>
+                    <div className="active button" onClick={this.fulfilled}>
                         {(() => {
                             const creamedCells = this.state.fields[0].filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
                             return <div className="creamedCellCount">
@@ -61,11 +67,11 @@ class ChoosePage extends Component {
                         </div>
                     </div>
 
-                    <div className="active button" onClick={this.props.fulfilled}>
+                    <div className="active button" onClick={this.fulfilled}>
                         <div className="stackedIcon"><div className="firstIcon">#1</div><StartIcon fontSize="large" /></div>
                     </div>
 
-                    <div className="active button" onClick={this.props.fulfilled}>
+                    <div className="active button" onClick={this.fulfilled}>
                         {(() => {     
                             const creamedCells = this.state.fields[1].filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
                             return <div className="creamedCellCount">

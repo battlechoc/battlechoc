@@ -5,6 +5,7 @@ import ChatLikeInstructions from './ChatLikeInstructions';
 import { EntityType, getEntityDescriptor, BoardCellTypes, AttackType } from '../gameplay/GameEntities';
 import Fab from '@material-ui/core/Fab';
 import { PlayArrow, FastForward } from '@material-ui/icons';
+import Jukebox from '../ui/Jukebox';
 
 class TreesAndCannonsPage extends Component {
     constructor(props) {
@@ -82,6 +83,7 @@ class TreesAndCannonsPage extends Component {
 
     select(building) {
         if (this.canBuild(building)) {
+            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
             this.setState({ selectedBuilding: building });
         }
     }
@@ -91,6 +93,7 @@ class TreesAndCannonsPage extends Component {
     }
 
     gotoAttackPhase() {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         if (this.state.messages.length < 10) {
             this.setState({ 
                 pseudoPhase: 'attack',
@@ -102,6 +105,7 @@ class TreesAndCannonsPage extends Component {
     }
 
     gotoBuildPhase() {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         if (this.state.messages.length < 11) {
             this.setState({ 
                 pseudoPhase: 'build',

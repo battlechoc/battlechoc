@@ -1,6 +1,7 @@
 import uuidv4 from 'uuid/v4';
 import { EntityType, AttackType, BoardCellTypes, createEntity, getEntityDescriptor } from './GameEntities';
 import { BattlechocError } from './Errors';
+import Jukebox from '../ui/Jukebox';
 
 const PlayerType = Object.freeze({
     HUMAN: 'PlayerType.HUMAN',
@@ -240,12 +241,15 @@ class Augustus {
             this.refreshGameState();
             if (attackType === AttackType.BUNNY) {
                 if (this.player.attacksPerTurn[AttackType.BUNNY] > 0) {
+                    Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
                     opponentGameField3d.attack({ row: target.row, col: target.col }, AttackType.BUNNY);
                 } else {
+                    Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
                     gamefield3d.meltDownEasterBunny();
                     opponentGameField3d.receiveBallista({ row: target.row, col: target.col });
                 }
             } else {
+                Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
                 const attackedCell = this.opponentBoard.grid[target.row * this.boardSize.cols + target.col];
                 opponentGameField3d.attack({ row: target.row, col: target.col }, attackType, attackedCell.shielded);
                 if (attackType === AttackType.HOT_CHOCOLATE) {

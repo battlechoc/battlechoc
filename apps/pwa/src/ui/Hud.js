@@ -17,6 +17,7 @@ import StartIcon from '@material-ui/icons/SupervisorAccount';
 import SvgIcon from '@material-ui/core/SvgIcon';
 import t from './Translation';
 import InfoDialog from './InfoDialog';
+import Jukebox from './Jukebox';
 
 class Hud extends Component {
     constructor(props) {
@@ -67,11 +68,14 @@ class Hud extends Component {
     }
 
     startTutorial() {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        Jukebox.startMusic(Jukebox.SONGS.TUTORIAL_THEME);
         this.setState({ showTutorial: true });
     }
 
     choose(option) {
         if (this.state.clickable) {
+            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
             if (option === 'START' && this.props.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
                 this.props.chooseStart({ issuer: this.props.game.players[0].id });
             } else if (option === 'LEFT_GAMEFIELD') {
@@ -140,7 +144,7 @@ class Hud extends Component {
         return (
             <div>
                 <Tooltip />
-                <Actionbar toggleMusic={this.props.toggleMusic} showSettings={this.props.showSettings} />
+                <Actionbar showSettings={this.props.showSettings} />
                 <InfoDialog isVisible={this.isTitleScreen() && !this.state.showTutorial} />
                 <AttackPalette isVisible={showInGameMenu} />
                 <BuildingPalette isVisible={showInGameMenu} />
@@ -149,7 +153,10 @@ class Hud extends Component {
                 
                 {(() => {
                     if (this.state.showTutorial) {
-                        return <Tutorial closeTutorial={() => this.setState({ showTutorial: false })} />
+                        return <Tutorial closeTutorial={() => {
+                            Jukebox.stopMusic();
+                            this.setState({ showTutorial: false })
+                        }} />
                     }
                     else if (this.isTitleScreen()) {
                         let buttons = [<Button key="0" color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback()}>{t[this.props.language].NEW_GAME}</Button>];
@@ -237,7 +244,6 @@ class Hud extends Component {
 }
 
 Hud.propTypes = {
-    toggleMusic: PropTypes.func.isRequired,
     prepareNewGameCallback: PropTypes.func.isRequired,
     prepareResumedGameCallback: PropTypes.func.isRequired,
     showSettings: PropTypes.func.isRequired

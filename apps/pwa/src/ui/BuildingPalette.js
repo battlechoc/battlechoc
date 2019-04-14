@@ -5,6 +5,7 @@ import { connect } from 'react-redux';
 import { selectBuilding, tapBuilding } from './UiActions';
 import { EntityType, getEntityDescriptor } from '../gameplay/GameEntities';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
+import Jukebox from './Jukebox';
 
 class BuildingPalette extends Component {
     componentWillMount() {
@@ -108,6 +109,7 @@ class BuildingPalette extends Component {
                                         <img alt={building.alt} className={canBuild ? 'enabled preview' : 'preview'} src={building.image} onClick={() => {
                                             this.props.tapBuilding(building.type);
                                             if (canBuild) {
+                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                                 this.props.selectBuilding(building.type);
                                             }
                                         }} />

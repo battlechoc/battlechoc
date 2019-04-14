@@ -37,6 +37,7 @@ import { glStats, BrowserStats } from 'rstatsjs/src/rStats.extras';
 import Checkbox from '@material-ui/core/Checkbox';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import TextField from '@material-ui/core/TextField';
+import Jukebox from './ui/Jukebox';
 
 class App extends Component {
   constructor(props) {
@@ -124,25 +125,6 @@ class App extends Component {
     // Start render loop
     this.start();
 
-    // Setup Music
-    var audioListener = new THREE.AudioListener();
-    this.camera.add(audioListener);
-
-    this.ambientSound = new THREE.Audio(audioListener);
-    this.scene.add(this.ambientSound);
-
-    var loader = new THREE.AudioLoader();
-
-    loader.load(
-      'music/CacaoLiving.mp3',
-      audioBuffer => {
-        this.ambientSound.setBuffer(audioBuffer);
-        this.ambientSound.setLoop(true);
-        this.ambientSound.setVolume(1);
-        this.ambientSound.pause();
-      }
-    );
-
     this.opponent = new Augustus({
       chooseStart: this.props.chooseStart,
       chooseField: this.props.chooseField,
@@ -182,22 +164,8 @@ class App extends Component {
       ]
     });
 
-    // detect pause and resume
-    this.resumeMusicAfterPause = false;
-
-    window.onfocus = () => {
-      if (this.resumeMusicAfterPause) {
-        this.ambientSound.play();
-        this.resumeMusicAfterPause = false;
-      }    
-    };
-
-    window.onblur = () => {
-      if (this.ambientSound.isPlaying) {
-        this.ambientSound.pause();
-        this.resumeMusicAfterPause = true;
-      }    
-    };
+    window.onfocus = () => Jukebox.playMusic();   
+    window.onblur = () => Jukebox.pauseMusic();
   }
 
   componentWillReceiveProps(nextProps) {
@@ -387,6 +355,7 @@ class App extends Component {
       let playerCacaoPerTurnBefore = this.props.game.players[0].cacaoPerTurn;
       let buildingsPerTurnBefore = this.props.game.players[0].buildingsPerTurn;
       this.props.build({ issuer: this.props.game.players[0].id, building: building }).then(() => {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
         this.playerGameField.setBuilding(building.type, building.position);
         if (initialPlacement) {
           this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn + ' buildings per turn', 'positive');
@@ -436,13 +405,16 @@ class App extends Component {
         }).then(() => {
           if (this.props.selectedAttack === AttackType.BUNNY) {
             if (this.props.game.players[0].attacksPerTurn[AttackType.BUNNY] > 0) {
+              Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
               this.opponentGameField.attack(target, AttackType.BUNNY);
             } else {
+              Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
               this.playerGameField.meltDownEasterBunny();
               this.opponentGameField.receiveBallista(target);
               this.spawnInfoText({ x: event.clientX, y: event.clientY }, 'Xmas factory caught your spying easter bunny!', 'negative');
             }
           } else {
+            Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
             const attackedCell = this.props.game.board.fields[this.props.game.players[1].fieldIndex].grid[target.row * this.props.game.board.size.cols + target.col];
             this.opponentGameField.attack(target, this.props.selectedAttack, attackedCell.shielded);
             if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
@@ -472,14 +444,6 @@ class App extends Component {
           }
         })
       }
-    }
-  }
-
-  toggleMusic() {
-    if (this.ambientSound.isPlaying) {
-      this.ambientSound.pause();
-    } else {
-      this.ambientSound.play();
     }
   }
 
@@ -600,7 +564,8 @@ class App extends Component {
   }
 
   prepareNewGame = async (resumeableGame) => {
-
+    Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
+    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     gameplayLog.clear();
 
     const searchParams = new URLSearchParams(window.location.search);
@@ -654,6 +619,7 @@ class App extends Component {
 
   endGame() {
     setTimeout(() => {
+      Jukebox.stopMusic();
       this.props.finishGame();
     }, 1000);
   }
@@ -797,6 +763,7 @@ class App extends Component {
                   <Checkbox
                     checked={this.state.includeDeviceInformation}
                     onChange={event => {
+                      Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                       if (event.target.checked) {
                         this.setState({ includeDeviceInformation: true });
                       } else {
@@ -809,10 +776,14 @@ class App extends Component {
               />
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => this.setState({ showErrorReport: false })} color="primary">
+              <Button onClick={() => {
+                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                this.setState({ showErrorReport: false });
+              }} color="primary">
                 {t[this.props.language].BUTTON_BACK}
               </Button>
               <Button onClick={() => {
+                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                 OfflineStore.gamestateStore.get('gamestate').then(gamestate => {
                   let report = {
                     deviceInformation: this.state.includeDeviceInformation ? navigator.userAgent : undefined,
@@ -871,7 +842,10 @@ class App extends Component {
                 <Select
                   native
                   value={this.props.language}
-                  onChange={event => this.props.changeLanguage(event.target.value)}
+                  onChange={event => {
+                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                    this.props.changeLanguage(event.target.value);
+                  }}
                   inputProps={{
                     name: 'language',
                     id: 'lang-selection',
@@ -881,6 +855,7 @@ class App extends Component {
                   <option value="de">{t[this.props.language].GERMAN}</option>
                 </Select>
                 <Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {
+                  Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                   this.setState({
                     showSettings: false,
                     attentionTextVisible: false,
@@ -894,6 +869,7 @@ class App extends Component {
                     <Checkbox
                       checked={this.state.statistics}
                       onChange={event => {
+                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                         if (event.target.checked) {
                           document.getElementsByClassName('rs-base')[0].style.display = 'block';
                           this.setState({ statistics: true });
@@ -909,6 +885,7 @@ class App extends Component {
                 {
                   typeof this.props.game !== 'undefined' ?
                     <Button variant="outlined" className="dialogButton" onClick={() => {
+                      Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                       if (this.state.attentionTextVisible) {
                         this.endGame();
                         this.setState({ showSettings: false, attentionTextVisible: false });
@@ -928,17 +905,22 @@ class App extends Component {
               </FormControl>
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => this.setState({ showSettings: false, attentionTextVisible: false })} color="primary">
+              <Button onClick={() => {
+                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                this.setState({ showSettings: false, attentionTextVisible: false })
+              }} color="primary">
                 {t[this.props.language].BUTTON_BACK}
               </Button>
             </DialogActions>
           </Dialog>
 
           <Hud
-            toggleMusic={() => this.toggleMusic()}
             prepareNewGameCallback={this.prepareNewGame}
             prepareResumedGameCallback={this.prepareResumedGame}
-            showSettings={() => this.setState({ showSettings: true })}
+            showSettings={() => {
+                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                this.setState({ showSettings: true });
+            }}
             onRef={hud => (this.hud = hud)} />
           <div
             className="app"

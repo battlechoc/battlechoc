@@ -10,6 +10,7 @@ import { deselectBuildings } from './UiActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import Fab from '@material-ui/core/Fab';
 import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings } from '@material-ui/icons';
+import Jukebox from './Jukebox';
 
 class Actionbar extends Component {
     constructor(props) {
@@ -19,7 +20,7 @@ class Actionbar extends Component {
         const isPwa = searchParams.get('app_runs_as') === 'pwa';
 
         this.state = {
-            activeMusicButton: false,
+            activeMusicButton: true,
             activeFullscreenButton: document.fullscreenElement == null && !isPwa
         }
     }
@@ -33,8 +34,9 @@ class Actionbar extends Component {
     }
 
     toggleMusic() {
+        Jukebox.toggleMute();
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         this.setState({ activeMusicButton: !this.state.activeMusicButton });
-        this.props.toggleMusic();
     }
 
     fullscreenchange = () => {
@@ -47,6 +49,7 @@ class Actionbar extends Component {
     }
 
     toggleFullscreen() {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         document.documentElement.requestFullscreen().then(() => {
             window.screen.orientation.lock('landscape').catch(error => console.log(error));
         });
@@ -117,6 +120,7 @@ class Actionbar extends Component {
                                 aria-label="skip build phase"
                                 className={(this.props.game.players[0].buildings > 0 && this.props.game.players[0].cacao >= getCheapest().costs) ? "icon" : "icon blinking"}
                                 onClick={() => {
+                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                     this.props.finishBuildPhase({ issuer: this.props.game.players[0].id }).then(() => {
                                         this.props.deselectBuildings();
                                     }).catch(error => {
@@ -139,6 +143,7 @@ class Actionbar extends Component {
                                 aria-label="finish turn"
                                 className={(this.props.game.players[0].buildings === 0 || this.props.game.players[0].cacao < getCheapest().costs) ? "icon blinking" : "icon"}
                                 onClick={() => {
+                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                     this.props.finishTurn({ issuer: this.props.game.players[0].id }).then(() => {
                                         this.props.deselectBuildings();
                                     }).catch(error => {
@@ -163,6 +168,7 @@ class Actionbar extends Component {
                                 aria-label="finish turn"
                                 className={(playerHasAttacks(this.props.game.players[0]) === true) ? "icon" : "icon blinking"}
                                 onClick={() => {
+                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                     this.props.finishTurn({ issuer: this.props.game.players[0].id }).then(() => {
                                         this.props.deselectBuildings();
                                     }).catch(error => {
@@ -185,7 +191,6 @@ class Actionbar extends Component {
 }
 
 Actionbar.propTypes = {
-    toggleMusic: PropTypes.func.isRequired,
     showSettings: PropTypes.func.isRequired
 }
 

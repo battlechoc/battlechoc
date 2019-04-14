@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import Gamefield from '../Gamefield';
 import { EntityType, BoardCellTypes, createEntity, getEntityDescriptor } from '../gameplay/GameEntities';
 import * as THREE from 'three';
+import Jukebox from '../ui/Jukebox';
 //import t from './Translation';
 
 class MicroGamefield extends Component {
@@ -253,6 +254,7 @@ class MicroGamefield extends Component {
                         row: cellIndex.row,
                         col: cellIndex.col
                     }
+                    Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
 
                     this.microGamefield.setBuilding(building.type, building.position);
                     this.props.buildCallback(building.type, this.playerCells[cellIndex.row][cellIndex.col]);
@@ -287,6 +289,7 @@ class MicroGamefield extends Component {
                 let cellIndex = opponentIntersects[0].object._cellIdx || opponentIntersects[0].face._cellIdx;
                 if (this.opponentBuildings[cellIndex.row][cellIndex.col].length > 0) {
                     this.opponentGamefield.attack({row: cellIndex.row, col: cellIndex.col}, this.props.selectedAttack, false);
+                    Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
                     if (typeof this.props.attackCallback !== 'undefined') {
                         this.props.attackCallback();
                     }

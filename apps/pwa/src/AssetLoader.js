@@ -47,12 +47,21 @@ class AssetLoader {
                 CHOCOLATE_FOUNTAIN: { filename: 'chocolateFountain_icon.png' },
                 XMAS_FACTORY: { filename: 'xmasFactory_icon.png' },
                 FRUIT_CANNON: { filename: 'fruitCannon_icon.png' }
+            },
+            audio: {
+                UI_ACCEPT: { filename: 'sound/ui_accept.mp3' },
+                UI_BUILD: { filename: 'sound/ui_build.mp3' },
+                ATTACK_EXPLOSION: { filename: 'sound/attack_explosion.mp3' },
+                ATTACK_BUNNY: { filename: 'sound/attack_bunny.mp3' },
+                BUNNY_CAUGHT: { filename: 'sound/bunny_caught.mp3' },
+                MAIN_THEME: { filename: 'music/CacaoLiving.mp3' },
+                TUTORIAL_THEME: { filename: 'music/SaleAtTheChocolateFactory.mp3' }
             }
         }
     }
 
     async loadAssets(callback) {
-        const totalResources = Object.keys(this.assets.models).length + Object.keys(this.assets.images).length;
+        const totalResources = Object.keys(this.assets.models).length + Object.keys(this.assets.images).length + Object.keys(this.assets.audio).length;
         let loadedResources = 0;
         for (let i = 0; i < Object.keys(this.assets.models).length; i++) {
             this.assets.models[Object.keys(this.assets.models)[i]].model = await this.loadGLTFModel('models/' + this.assets.models[Object.keys(this.assets.models)[i]].filename);
@@ -62,6 +71,12 @@ class AssetLoader {
 
         for (let i = 0; i < Object.keys(this.assets.images).length; i++) {
             await this.loadImage('images/' + this.assets.images[Object.keys(this.assets.images)[i]].filename);
+            callback(Math.round((loadedResources / (totalResources - 1)) * 100));
+            loadedResources += 1;
+        }
+
+        for (let i = 0; i < Object.keys(this.assets.audio).length; i++) {
+            await this.loadAudio(this.assets.audio[Object.keys(this.assets.audio)[i]].filename);
             callback(Math.round((loadedResources / (totalResources - 1)) * 100));
             loadedResources += 1;
         }
@@ -80,6 +95,13 @@ class AssetLoader {
             const image = new Image();
             image.src = src; 
             image.onload = () => resolve();
+        });
+    }
+
+    loadAudio(filename) {
+        return new Promise((resolve, reject) => {
+            let audio = new Audio(filename);
+            audio.oncanplaythrough = () => resolve();
         });
     }
 

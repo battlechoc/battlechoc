@@ -12,6 +12,7 @@ import withMobileDialog from '@material-ui/core/withMobileDialog';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import t from './Translation';
+import Jukebox from './Jukebox';
 
 class InfoDialog extends Component {
     constructor(props) {
@@ -34,7 +35,10 @@ class InfoDialog extends Component {
                         color="primary"
                         aria-label="info"
                         className="icon"
-                        onClick={() => this.setState({ open: true })}>
+                        onClick={() => {
+                            this.setState({ open: true });
+                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                        }}>
                         <InfoOutlined />
                     </Fab>
                     <Dialog
@@ -69,7 +73,10 @@ class InfoDialog extends Component {
                             <Typography>{t[this.props.language].INFO_GOOGLE_ANALYTICS_PREVENT}</Typography>
                         </DialogContent>
                         <DialogActions>
-                            <Button onClick={this.handleClose} color="primary" autoFocus>
+                            <Button onClick={() => {
+                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                this.handleClose();
+                            }} color="primary" autoFocus>
                                 {t[this.props.language].BUTTON_BACK}
                             </Button>
                         </DialogActions>

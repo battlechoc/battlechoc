@@ -12,6 +12,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import ChoosePage from './ChoosePage';
 import BuildFactoryPage from './BuildFactoryPage';
 import TreesAndCannonsPage from './TreesAndCannonsPage';
+import Jukebox from '../ui/Jukebox';
 //import t from './Translation';
 
 class Tutorial extends Component {
@@ -32,10 +33,12 @@ class Tutorial extends Component {
     }
 
     next = () => {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         this.setState({ page: this.state.page + 1});
     }
 
     back = () => {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         if (this.state.page > 0) {
             this.setState({ page: this.state.page - 1});
         }

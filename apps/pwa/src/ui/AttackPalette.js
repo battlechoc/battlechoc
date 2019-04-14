@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { selectAttack } from './UiActions';
 import { AttackType } from '../gameplay/GameEntities';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
+import Jukebox from './Jukebox';
 
 class AttackPalette extends Component {
     componentWillMount() {
@@ -47,6 +48,7 @@ class AttackPalette extends Component {
                                     <div className={canAttack ? '' : 'disabled'}></div>
                                     <img alt={attack.alt} className={canAttack ? 'enabled preview' : 'preview'} src={attack.image} onClick={() => {
                                         if (canAttack) {
+                                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                             this.props.selectAttack(attack.type);
                                         }
                                     }} />
