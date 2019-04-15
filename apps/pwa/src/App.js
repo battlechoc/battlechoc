@@ -164,7 +164,7 @@ class App extends Component {
       ]
     });
 
-    window.onfocus = () => Jukebox.playMusic();   
+    window.onfocus = () => Jukebox.playMusic();
     window.onblur = () => Jukebox.pauseMusic();
   }
 
@@ -239,6 +239,23 @@ class App extends Component {
         this.triggerUiEvent = 'START_GAME';
       } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
         this.opponent.simulateInitialPlacement(this.opponentGameField);
+      } else if (gameTransition === GameTransitions.PLAYER_ATTACK_PHASE) {
+        const attacks = [AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.FRUIT, AttackType.BUNNY];
+        for (var attackType in attacks) {
+          if (nextProps.game.players[0].attacks[attacks[attackType]] > 0) {
+            setTimeout(() => {
+              this.props.selectAttack(attacks[attackType])
+                .catch(error => {
+                  if (error instanceof BattlechocError) {
+                    console.warn(error);
+                  } else {
+                    throw error;
+                  }
+                })
+            }, 200);
+            break;
+          }
+        }
       } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
         this.opponent.simulateBuildPhase(this.opponentGameField);
       } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
@@ -288,31 +305,31 @@ class App extends Component {
       info.style.top = (position.y - Math.round(window.innerHeight * 0.07)) + "px";
       info.style.left = (position.x - Math.round(window.innerWidth * 0.015)) + "px";
     }
-    else if (ratio < 1.4) { 
+    else if (ratio < 1.4) {
       info.style.top = (position.y - Math.round(window.innerHeight * 0.1)) + "px";
-      info.style.left = (position.x - Math.round(window.innerWidth * 0.015)) + "px"; 
+      info.style.left = (position.x - Math.round(window.innerWidth * 0.015)) + "px";
     }
-    else { 
+    else {
       info.style.top = (position.y - Math.round(window.innerHeight * 0.12)) + "px";
       info.style.left = (position.x - Math.round(window.innerWidth * 0.01)) + "px";
     }
-    
+
     let animations = {
-        "animation"      : "animationend",
-        "OAnimation"     : "oAnimationEnd",
-        "MozAnimation"   : "animationend",
-        "WebkitAnimation": "webkitAnimationEnd"
+      "animation": "animationend",
+      "OAnimation": "oAnimationEnd",
+      "MozAnimation": "animationend",
+      "WebkitAnimation": "webkitAnimationEnd"
     }
     let supportedAnimation = 'animation';
 
     for (let animation in animations) {
-        if (typeof info.style[animation] !== 'undefined') {
-            supportedAnimation = animations[animation];
-        }
+      if (typeof info.style[animation] !== 'undefined') {
+        supportedAnimation = animations[animation];
+      }
     }
 
     info.addEventListener(supportedAnimation, () => {
-        this.container.removeChild(info);
+      this.container.removeChild(info);
     });
     this.container.appendChild(info);
   }
@@ -376,7 +393,7 @@ class App extends Component {
               this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 attack per turn', 'positive');
             } else if (building.type === EntityType.FACTORY_EXTENSION) {
               this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn - buildingsPerTurnBefore + ' buildings per turn', 'positive');
-            } else if (building.type === EntityType.SPYING_EASTER_BUNNY) { 
+            } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
               this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 spy attack per turn', 'positive');
             }
           }, 400);
@@ -920,8 +937,8 @@ class App extends Component {
             prepareNewGameCallback={this.prepareNewGame}
             prepareResumedGameCallback={this.prepareResumedGame}
             showSettings={() => {
-                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                this.setState({ showSettings: true });
+              Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+              this.setState({ showSettings: true });
             }}
             onRef={hud => (this.hud = hud)} />
           <div
