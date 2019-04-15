@@ -85,6 +85,15 @@ class Gamefield {
         }
     }
 
+    computeClientPosition(position, camera, renderer) {
+        const vector = new THREE.Vector3(position.x, 0, position.y);
+        const canvas = renderer.domElement;
+        vector.project(camera);
+        vector.x = Math.round((0.5 + vector.x / 2) * (canvas.width / window.devicePixelRatio));
+        vector.y = Math.round((0.5 - vector.y / 2) * (canvas.height / window.devicePixelRatio));
+        return { x: vector.x, y: vector.y };
+    }
+
     triggerExplosionAtShield(position) {
         if (typeof this.mixer !== 'undefined') {
             this.mixer.stopAllAction();
