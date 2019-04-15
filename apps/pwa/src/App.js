@@ -239,22 +239,31 @@ class App extends Component {
         this.triggerUiEvent = 'START_GAME';
       } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
         this.opponent.simulateInitialPlacement(this.opponentGameField);
+      } else if (gameTransition === GameTransitions.PLAYER_BUILD_PHASE) {
+        const trees = nextProps.game.board.fields[this.props.game.players[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE));
+        trees.forEach((cell) => {          
+          this.spawnInfoText3d({ x: cell.row * nextProps.game.board.size.rows, y: cell.col * nextProps.game.board.size.cols }, 'cacao', 'positive');
+        });
       } else if (gameTransition === GameTransitions.PLAYER_ATTACK_PHASE) {
         const attacks = [AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.FRUIT, AttackType.BUNNY];
+        let availableAttackType = undefined;
         for (var attackType in attacks) {
           if (nextProps.game.players[0].attacks[attacks[attackType]] > 0) {
-            setTimeout(() => {
-              this.props.selectAttack(attacks[attackType])
-                .catch(error => {
-                  if (error instanceof BattlechocError) {
-                    console.warn(error);
-                  } else {
-                    throw error;
-                  }
-                })
-            }, 200);
+            availableAttackType = attacks[attackType];
             break;
           }
+        }
+        if (typeof availableAttackType !== 'undefined') {
+          setTimeout(() => {
+            this.props.selectAttack(attacks[attackType])
+              .catch(error => {
+                if (error instanceof BattlechocError) {
+                  console.warn(error);
+                } else {
+                  throw error;
+                }
+              })
+          }, 200);
         }
       } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
         this.opponent.simulateBuildPhase(this.opponentGameField);
@@ -291,7 +300,13 @@ class App extends Component {
     }
   }
 
+  spawnInfoText3d(position, text, messageType) {
+    const pos2d = this.playerGameField.computeClientPosition(position, this.camera, this.renderer);
+    this.spawnInfoText(pos2d, text, messageType);
+  }
+
   spawnInfoText(position, text, messageType) {
+    console.log(position);
     let info = document.createElement("p");
     info.appendChild(document.createTextNode(text));
     info.classList.add('flyingInfo');
@@ -375,6 +390,7 @@ class App extends Component {
         Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
         this.playerGameField.setBuilding(building.type, building.position);
         if (initialPlacement) {
+          console.log(event)
           this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn + ' buildings per turn', 'positive');
           this.props.deselectBuildings();
           this.props.deselectAttack();
@@ -409,7 +425,7 @@ class App extends Component {
   }
 
   opponentFieldClick(event) {
-    if (this.lookAtOpponent && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
+    if (this.lookAtOpponent && this.props.game.state === GameStateTypes.ATTACK_PHASE && typeof this.props.selectedAttack !== 'undefined') {
       var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
       intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
         (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));
@@ -644,8 +660,8 @@ class App extends Component {
   }
 
   startGame = (createUnits) => {
-    let playerFieldIndex = this.props.game.players[0].fieldIndex;
-    let opponentFieldIndex = this.props.game.players[1].fieldIndex;
+    const playerFieldIndex = this.props.game.players[0].fieldIndex;
+    const opponentFieldIndex = this.props.game.players[1].fieldIndex;
     this.lookAtOpponent = this.props.game.currentPlayerIndex === 1;
 
     // Add Light

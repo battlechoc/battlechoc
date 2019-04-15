@@ -142,7 +142,7 @@ html, body, #root {
     }
     100% {
         opacity: 0;
-        font-size: 1.3vw;
+        font-size: 1.8vw;
         transform: translateY(-10vh)
     }
 }
@@ -157,7 +157,7 @@ html, body, #root {
 
 .flyingInfo {
   position: absolute;
-  font-size: 1.1vw;
+  font-size: 2.0vw;
   font-weight: bold;
   font-family: "Roboto", "Helvetica", "Arial", sans-serif;
   animation-name: flyaway;
