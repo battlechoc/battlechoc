@@ -10,9 +10,9 @@ import Jukebox from './ui/Jukebox';
 import t from './ui/Translation';
 import OfflineStore from './OfflineStore';
 import Rules from './gameplay/Rules';
-import { EntityType, AttackType, createEntity, getEntityDescriptor } from './gameplay/GameEntities';
+import { BoardCellTypes, EntityType, AttackType, createEntity, getEntityDescriptor } from './gameplay/GameEntities';
 import { startGame, resumeGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase, endGame } from './gameplay/GameActions';
-import { deselectBuildings, selectAttack, deselectAttack, gameResumeable } from './ui/UiActions';
+import { changeLanguage, deselectBuildings, selectAttack, deselectAttack, gameResumeable } from './ui/UiActions';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 import { GameStateTypes } from './gameplay/GameplayReducer'
@@ -33,6 +33,23 @@ class App extends Component {
 
   updateProgressbar(progress) {
     this.setState({ loadingProgress: progress });
+  }
+
+  componentWillMount() {
+    let browserLanguage = 'en';
+    if (navigator.userLanguage) {
+        browserLanguage = navigator.userLanguage.substr(0,2);
+    } else if (navigator.language) {
+        browserLanguage = navigator.language.substr(0,2);
+    }
+
+    OfflineStore.settingsStore.get('language').then(language => {
+      if (typeof language !== 'undefined') {
+        this.props.changeLanguage(language);
+      } else {
+        this.props.changeLanguage(browserLanguage);
+      }
+    });
   }
 
   async componentDidMount() {
@@ -196,9 +213,14 @@ class App extends Component {
       } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
         this.opponent.simulateInitialPlacement(this.opponentGameField);
       } else if (gameTransition === GameTransitions.PLAYER_BUILD_PHASE) {
-        const trees = nextProps.game.board.fields[this.props.game.players[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE));
+        const specialTrees = nextProps.game.board.fields[this.props.game.players[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE) && cell.type === BoardCellTypes.WHITE);
+        const trees = nextProps.game.board.fields[this.props.game.players[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE) && cell.type !== BoardCellTypes.WHITE);
+        let description = getEntityDescriptor(EntityType.CACAOTREE)
         trees.forEach((cell) => {          
-          this.spawnInfoText3d({ x: cell.row * nextProps.game.board.size.rows, y: cell.col * nextProps.game.board.size.cols }, 'cacao', 'positive');
+          this.spawnInfoText3d(cell, '+' + description.cacaoPerTurn + ' cacao', 'positive');
+        });
+        specialTrees.forEach((cell) => {          
+          this.spawnInfoText3d(cell, '+' + Math.round(description.cacaoPerTurn * 1.5) + ' cacao', 'positive');
         });
       } else if (gameTransition === GameTransitions.PLAYER_ATTACK_PHASE) {
         const attacks = [AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.FRUIT, AttackType.BUNNY];
@@ -257,12 +279,15 @@ class App extends Component {
   }
 
   spawnInfoText3d(position, text, messageType) {
-    const pos2d = this.playerGameField.computeClientPosition(position, this.camera, this.renderer);
-    this.spawnInfoText(pos2d, text, messageType);
+    let building = this.playerGameField.getBuildingAtPosition(position);
+    let vector = building._model.getWorldPosition();
+    vector.project(this.camera);
+    vector.x = (vector.x + 1) / 2 * window.innerWidth;
+    vector.y = - (vector.y - 1) / 2 * window.innerHeight;
+    this.spawnInfoText(vector, text, messageType);
   }
 
   spawnInfoText(position, text, messageType) {
-    console.log(position);
     let info = document.createElement("p");
     info.appendChild(document.createTextNode(text));
     info.classList.add('flyingInfo');
@@ -674,6 +699,7 @@ const mapDispatchToProps = {
   finishBuildPhase,
   attack,
   deselectBuildings,
+  changeLanguage,
   selectAttack,
   deselectAttack,
   gameResumeable

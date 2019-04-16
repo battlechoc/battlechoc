@@ -39,23 +39,6 @@ class Settings extends Component {
         }
     }
 
-    componentWillMount() {
-        let browserLanguage = 'en';
-        if (navigator.userLanguage) {
-            browserLanguage = navigator.userLanguage.substr(0,2);
-        } else if (navigator.language) {
-            browserLanguage = navigator.language.substr(0,2);
-        }
-
-        OfflineStore.settingsStore.get('language').then(language => {
-          if (typeof language !== 'undefined') {
-            this.props.changeLanguage(language);
-          } else {
-            this.props.changeLanguage(browserLanguage);
-          }
-        });
-    }
-
     componentDidMount() {
         this.props.onRef(this);
     }
