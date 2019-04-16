@@ -4,10 +4,11 @@ import { EntityType } from '../gameplay/GameEntities';
 import OfflineStore from '../OfflineStore';
 
 const uiReducer = createReducer({
-    selectedBuilding: EntityType.FACTORY,
-    tappedBuilding: EntityType.FACTORY,
-    language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
-}, {
+        selectedBuilding: EntityType.FACTORY,
+        tappedBuilding: EntityType.FACTORY,
+        statistics: false,
+        language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
+    }, {
         [UiActions.selectBuilding]: (state, action) => {
             state.selectedBuilding = action.payload;
         },
@@ -30,7 +31,10 @@ const uiReducer = createReducer({
         },
         [UiActions.gameResumeable]: (state, action) => {
             state.resumeGamePossible = action.payload;
+        },
+        [UiActions.showStatistics]: (state, action) => {
+            state.statistics = action.payload;
         }
-    })
+});
 
 export default uiReducer

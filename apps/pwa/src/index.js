@@ -135,17 +135,10 @@ const store = configureStore({
     middleware: [...getDefaultMiddleware(), actionValidator, gameplayLogger]
 });
 
-let language = 'en';
-
-if (navigator.userLanguage)
-	language = navigator.userLanguage;
-else if (navigator.language)
-	language = navigator.language;
-
 ReactDOM.render(
     <Provider store={store}>
     	<MuiThemeProvider theme={theme}>
-        	<App browserLanguage={ language.substr(0,2) }/>
+        	<App />
         </MuiThemeProvider>
     </Provider>,
     document.getElementById('root')

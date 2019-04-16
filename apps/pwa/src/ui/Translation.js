@@ -102,8 +102,6 @@ const languages = {
                 default: return 'Unkown';
             }
         },
-        MESSAGE_PLAYER_DECIDE: 'It\'s up on you',
-        MESSAGE_OPPONENT_DECIDE: 'Your opponent decides',
         MESSAGE_WIN_GAME: 'Congratulations! You won this game',
         MESSAGE_LOST_GAME: 'You lost',
         MESSAGE_DRAW_GAME: 'Draw game!',
@@ -232,8 +230,6 @@ const languages = {
                 default: return 'Klicke auf ein gegnerisches Gebäude um es anzugreifen. Hinweis: Kluge Gegner verstecken ihre Gebäude unter Sahne';
             }
         },
-        MESSAGE_PLAYER_DECIDE: 'Entscheide dich jetzt!',
-        MESSAGE_OPPONENT_DECIDE: 'Dein Gegner entscheidet',
         MESSAGE_WIN_GAME: 'Glückwunsch! Du hast das Spiel gewonnen',
         MESSAGE_LOST_GAME: 'Du hast verloren',
         MESSAGE_DRAW_GAME: 'Unentschieden!',

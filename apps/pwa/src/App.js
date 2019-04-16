@@ -1,74 +1,38 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
 import './App.css';
 import * as THREE from 'three';
 
 import AssetLoader from './AssetLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
+import Jukebox from './ui/Jukebox';
+import t from './ui/Translation';
+import OfflineStore from './OfflineStore';
+import Rules from './gameplay/Rules';
 import { EntityType, AttackType, createEntity, getEntityDescriptor } from './gameplay/GameEntities';
 import { startGame, resumeGame, finishGame, createBoard, chooseStart, chooseField, finishTurn, attack, build, finishBuildPhase, endGame } from './gameplay/GameActions';
-import { changeLanguage, deselectBuildings, selectAttack, deselectAttack, gameResumeable } from './ui/UiActions';
-import { connect } from 'react-redux';
+import { deselectBuildings, selectAttack, deselectAttack, gameResumeable } from './ui/UiActions';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 import { GameStateTypes } from './gameplay/GameplayReducer'
 import { BattlechocError } from './gameplay/Errors';
 import { createPlayer, playerHasAttacks, PlayerType } from './gameplay/Player';
-import Rules from './gameplay/Rules';
 import { gameplayLog } from './gameplay/GamePlayLogger';
-import OfflineStore from './OfflineStore';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import Button from '@material-ui/core/Button';
-import Dialog from '@material-ui/core/Dialog';
-import Typography from '@material-ui/core/Typography';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import InputLabel from '@material-ui/core/InputLabel';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import FormControl from '@material-ui/core/FormControl';
-import Select from '@material-ui/core/Select';
-import Snackbar from '@material-ui/core/Snackbar';
-import IconButton from '@material-ui/core/IconButton';
-import CloseIcon from '@material-ui/icons/Close';
-import t from './ui/Translation';
 import rStats from 'rstatsjs/src/rStats';
 import { glStats, BrowserStats } from 'rstatsjs/src/rStats.extras';
-import Checkbox from '@material-ui/core/Checkbox';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import TextField from '@material-ui/core/TextField';
-import Jukebox from './ui/Jukebox';
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      loadingProgress: 0,
-      showSettings: false,
-      attentionTextVisible: false,
-      statistics: false,
-      showErrorReport: false,
-      includeDeviceInformation: false,
-      additionalReportMessage: '',
-      snackbar: {
-        visible: false,
-        text: 'The problem report was sent successfully!'
-      }
+      loadingProgress: 0
     }
   }
 
   updateProgressbar(progress) {
     this.setState({ loadingProgress: progress });
-  }
-
-  componentWillMount() {
-    OfflineStore.settingsStore.get('language').then(language => {
-      if (typeof language !== 'undefined') {
-        this.props.changeLanguage(language);
-      } else {
-        this.props.changeLanguage(this.props.browserLanguage);
-      }
-    });
   }
 
   async componentDidMount() {
@@ -98,21 +62,13 @@ class App extends Component {
     this.camera.position.y = 30;
     this.camera.position.z = 70;
 
-    this.renderer = new THREE.WebGLRenderer({
-      alpha: true
-    });
+    this.renderer = new THREE.WebGLRenderer({ alpha: true });
 
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(width, height);
     this.renderer.domElement.id = 'game-canvas'
     this.renderer.gammaOutput = true;
     this.renderer.gammaFactor = 1.7;
-
-    // Enable swipe
-    this.mousedown = false;
-    this.swipeStartPosition = 0;
-    this.swipePosition = 0;
-    this.isSwiping = false;
 
     // animations and renderer
     this.mixer = null;
@@ -350,19 +306,14 @@ class App extends Component {
   }
 
   onClick = event => {
-    // Get mouse position and use raycaster
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
-    // Check clickable objects
     if (this.props.game.currentPlayerIndex === 0) {
       this.playerFieldClick(event);
       this.opponentFieldClick(event);
     }
-
-    // Part of "ignore click if it was just an end of swiping"
-    this.isSwiping = false;
   }
 
   playerFieldClick(event) {
@@ -372,7 +323,7 @@ class App extends Component {
     let buildingSelected = this.props.selectedBuilding;
     let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
       this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
-    if (intersects.length > 0 && !this.isSwiping && (buildingSelected || (initialPlacement && this.props.game.players[0].buildingsPerTurn === 0))) {
+    if (intersects.length > 0 && (buildingSelected || (initialPlacement && this.props.game.players[0].buildingsPerTurn === 0))) {
       let building = null;
       if (initialPlacement) {
         building = createEntity(EntityType.FACTORY);
@@ -429,7 +380,7 @@ class App extends Component {
       var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
       intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
         (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));
-      if (intersects.length > 0 && !this.isSwiping && playerHasAttacks(this.props.game.players[0]) === true) {
+      if (intersects.length > 0 && playerHasAttacks(this.props.game.players[0]) === true) {
         let cellIndex = intersects[0].object._cellIdx || intersects[0].face._cellIdx;
         let target = { row: cellIndex.row, col: cellIndex.col };
         this.props.attack({
@@ -482,28 +433,6 @@ class App extends Component {
     }
   }
 
-  startSwipe(event) {
-    this.swipeStartPosition = event.clientX / event.target.width;
-    this.mousedown = true;
-  }
-
-  endSwipe() {
-    this.mousedown = false;
-
-    if (this.swipePosition < 0.4 && this.swipeStartPosition > 0.6 && !this.lookAtOpponent && this.isSwiping) {
-      this.lookAtOpponent = true;
-    } else if (this.swipePosition > 0.6 && this.swipeStartPosition < 0.4 && this.lookAtOpponent && this.isSwiping) {
-      this.lookAtOpponent = false;
-    }
-  }
-
-  swipe(event) {
-    if (this.mousedown) {
-      this.swipePosition = event.clientX / event.target.width;
-      this.isSwiping = true;
-    }
-  }
-
   estimateDistance(ratio) {
     if (ratio < 0.9) { return 60; }
     else if (ratio < 1.1) { return 50; }
@@ -543,7 +472,7 @@ class App extends Component {
   }
 
   animate = () => {
-    if (this.state.statistics) {
+    if (this.props.statistics) {
       this.renderStats('frame').start();
       this.glStats.start();
       this.renderStats('rAF').tick();
@@ -562,7 +491,7 @@ class App extends Component {
     }
 
     // Render all objects
-    if (this.state.statistics) {
+    if (this.props.statistics) {
       this.renderStats('render').start();
       this.renderScene();
       this.renderStats('render').end();
@@ -578,7 +507,7 @@ class App extends Component {
       this.playerGameField.animate(delta);
     }
 
-    if (this.state.statistics) {
+    if (this.props.statistics) {
       this.renderStats('frame').end();
       this.renderStats('rStats').start();
       this.renderStats().update();
@@ -625,13 +554,6 @@ class App extends Component {
       ];
 
       this.props.startGame(players).then(() => {
-        if (this.props.game.currentPlayerIndex === 0) {
-          this.hud.showTurnMessage(t[this.props.language].MESSAGE_PLAYER_DECIDE);
-        } else {
-          this.hud.lockUi();
-          this.hud.showTurnMessage(t[this.props.language].MESSAGE_OPPONENT_DECIDE);
-        }
-
         this.opponent.type = Augustus.randomizeType();
         console.log("type of Augustus is: " + this.opponent.type);
         this.opponent.connectGamestate(() => this.props.game);
@@ -677,20 +599,6 @@ class App extends Component {
 
     // Setup Game EventListener
     this.container.onclick = event => this.onClick(event);
-    this.renderer.domElement.addEventListener('mousedown', event => this.startSwipe(event));
-    this.renderer.domElement.addEventListener('mousemove', event => this.swipe(event));
-    this.renderer.domElement.addEventListener('mouseup', () => this.endSwipe());
-    this.renderer.domElement.addEventListener('touchstart', event => {
-      event.clientX = event.touches[0].clientX;
-      this.startSwipe(event)
-    });
-
-    this.renderer.domElement.addEventListener('touchmove', event => {
-      event.clientX = event.touches[0].clientX;
-      this.swipe(event)
-    });
-
-    this.renderer.domElement.addEventListener('touchend', () => this.endSwipe());
 
     // Prepare click targets
     this.clickTargets = this.playerGameField.getClickableFields();
@@ -727,255 +635,30 @@ class App extends Component {
         </div>
       )
     } else {
-      return (
+      return(
         <div className="app-container">
           <div id="clouds"></div>
-          <Snackbar
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'left',
-            }}
-            open={this.state.snackbar.visible}
-            autoHideDuration={4000}
-            onClose={() => this.setState({
-              snackbar: {
-                text: this.state.snackbar.text,
-                visible: false
-              }
-            })}
-            ContentProps={{
-              'aria-describedby': 'message-id',
-            }}
-            message={<span id="message-id">{this.state.snackbar.text}</span>}
-            action={
-              <IconButton
-                key="close"
-                aria-label="Close"
-                color="inherit"
-                onClick={() => this.setState({
-                  snackbar: {
-                    text: this.state.snackbar.text,
-                    visible: false
-                  }
-                })}
-              >
-                <CloseIcon />
-              </IconButton>
-            }
-          />
-
-          <Dialog
-            open={this.state.showErrorReport}
-            onClose={() => this.setState({ additionalReportMessage: '', includeDeviceInformation: false, showErrorReport: false })}
-            aria-labelledby="report-form-dialog-title"
-            PaperProps={{
-              style: { width: '80%' }
-            }}
-          >
-            <DialogTitle id="report-form-dialog-title">{t[this.props.language].REPORT_PROBLEM}</DialogTitle>
-            <DialogContent>
-              <form noValidate autoComplete="off">
-                <Typography>{t[this.props.language].REPORT_INFORMATION}</Typography>
-                <TextField
-                  label={t[this.props.language].REPORT_CUSTOM_MESSAGE}
-                  placeholder={t[this.props.language].REPORT_CUSTOM_MESSAGE_PLACEHOLDER}
-                  multiline
-                  fullWidth
-                  InputProps={{
-                    style: { fontSize: '0.9rem' },
-                  }}
-                  InputLabelProps={{
-                    style: { color: '#457B82' },
-                    shrink: true
-                  }}
-                  className="additionalMessage"
-                  variant="outlined"
-                  onChange={event => this.setState({ additionalReportMessage: event.target.value })}
-                />
-              </form>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={this.state.includeDeviceInformation}
-                    onChange={event => {
-                      Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                      if (event.target.checked) {
-                        this.setState({ includeDeviceInformation: true });
-                      } else {
-                        this.setState({ includeDeviceInformation: false });
-                      }
-                    }}
-                  />
-                }
-                label={t[this.props.language].REPORT_DEVICE_INFO}
-              />
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => {
-                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                this.setState({ showErrorReport: false });
-              }} color="primary">
-                {t[this.props.language].BUTTON_BACK}
-              </Button>
-              <Button onClick={() => {
-                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                OfflineStore.gamestateStore.get('gamestate').then(gamestate => {
-                  let report = {
-                    deviceInformation: this.state.includeDeviceInformation ? navigator.userAgent : undefined,
-                    gamestate: gamestate,
-                    message: this.state.additionalReportMessage
-                  };
-
-                  let user = 'battlechoc-pwa';
-                  let password = '***REMOVED***';
-                  let auth = btoa(user + ':' + password);
-
-                  fetch('https://us-central1-battlechoc.cloudfunctions.net/api/debugging/gamestate', {
-                    method: 'post',
-                    headers: new Headers({
-                      'Authorization': 'Basic ' + auth,
-                      'Accept': 'application/json',
-                      'Content-Type': 'application/json'
-                    }),
-                    body: JSON.stringify({ report: report })
-                  })
-                    .then(response => response.json())
-                    .then(data => this.setState({
-                      snackbar: {
-                        text: t[this.props.language].SNACKBAR_SEND,
-                        visible: true
-                      }
-                    }));
-                  this.setState({ additionalReportMessage: '', includeDeviceInformation: false, showErrorReport: false });
-                }).catch(error => {
-                  console.warn(error);
-                  this.setState({
-                    additionalReportMessage: '',
-                    includeDeviceInformation: false,
-                    showErrorReport: false,
-                    snackbar: {
-                      text: t[this.props.language].SNACKBAR_ERROR,
-                      visible: true
-                    }
-                  });
-                })
-              }} color="primary">
-                {t[this.props.language].REPORT_PROBLEM}
-              </Button>
-            </DialogActions>
-          </Dialog>
-
-          <Dialog
-            open={this.state.showSettings}
-            onClose={() => this.setState({ showSettings: false, attentionTextVisible: false })}
-            aria-labelledby="form-dialog-title"
-          >
-            <DialogTitle id="form-dialog-title">{t[this.props.language].SETTINGS}</DialogTitle>
-            <DialogContent>
-              <FormControl>
-                <InputLabel htmlFor="lang-selection">{t[this.props.language].LANGUAGE}</InputLabel>
-                <Select
-                  native
-                  value={this.props.language}
-                  onChange={event => {
-                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                    this.props.changeLanguage(event.target.value);
-                  }}
-                  inputProps={{
-                    name: 'language',
-                    id: 'lang-selection',
-                  }}
-                >
-                  <option value="en">{t[this.props.language].ENGLISH}</option>
-                  <option value="de">{t[this.props.language].GERMAN}</option>
-                </Select>
-                <Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {
-                  Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                  this.setState({
-                    showSettings: false,
-                    attentionTextVisible: false,
-                    showErrorReport: true
-                  });
-                }}>
-                  {t[this.props.language].REPORT_PROBLEM}
-                </Button>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={this.state.statistics}
-                      onChange={event => {
-                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                        if (event.target.checked) {
-                          document.getElementsByClassName('rs-base')[0].style.display = 'block';
-                          this.setState({ statistics: true });
-                        } else {
-                          document.getElementsByClassName('rs-base')[0].style.display = 'none';
-                          this.setState({ statistics: false });
-                        }
-                      }}
-                    />
-                  }
-                  label="Development Statistics"
-                />
-                {
-                  typeof this.props.game !== 'undefined' ?
-                    <Button variant="outlined" className="dialogButton" onClick={() => {
-                      Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                      if (this.state.attentionTextVisible) {
-                        this.endGame();
-                        this.setState({ showSettings: false, attentionTextVisible: false });
-                      } else {
-                        this.setState({ attentionTextVisible: true });
-                      }
-                    }}>
-                      {t[this.props.language].SETTINGS_QUIT}
-                    </Button>
-                    : null
-                }
-                {
-                  this.state.attentionTextVisible && typeof this.props.game !== 'undefined' ?
-                    <Typography color="error" className="attentionText">{t[this.props.language].SETTINGS_ATTENTION_TEXT}</Typography>
-                    : null
-                }
-              </FormControl>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => {
-                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                this.setState({ showSettings: false, attentionTextVisible: false })
-              }} color="primary">
-                {t[this.props.language].BUTTON_BACK}
-              </Button>
-            </DialogActions>
-          </Dialog>
-
-          <Hud
-            prepareNewGameCallback={this.prepareNewGame}
-            prepareResumedGameCallback={this.prepareResumedGame}
-            showSettings={() => {
-              Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-              this.setState({ showSettings: true });
-            }}
-            onRef={hud => (this.hud = hud)} />
-          <div
-            className="app"
-            ref={container => { this.container = container }}
-          />
+            <Hud
+              prepareNewGameCallback={this.prepareNewGame}
+              prepareResumedGameCallback={this.prepareResumedGame}
+              endGame={() => this.endGame}
+              onRef={hud => (this.hud = hud)} />
+            <div
+              className="app"
+              ref={container => { this.container = container }}
+            />
         </div>
       )
     }
   }
 }
 
-App.propTypes = {
-  browserLanguage: PropTypes.string.isRequired,
-}
-
 const mapStateToProps = state => ({
   game: state.gameplay.game,
   selectedBuilding: state.ui.selectedBuilding,
   selectedAttack: state.ui.selectedAttack,
-  language: state.ui.language
+  language: state.ui.language,
+  statistics: state.ui.statistics
 });
 
 const mapDispatchToProps = {
@@ -990,7 +673,6 @@ const mapDispatchToProps = {
   build,
   finishBuildPhase,
   attack,
-  changeLanguage,
   deselectBuildings,
   selectAttack,
   deselectAttack,

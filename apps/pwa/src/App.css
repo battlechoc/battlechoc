@@ -63,7 +63,7 @@ html, body, #root {
   width: 100%;
 }
 
-/* loading, pause view */
+/* loading view */
 
 .progress { color: #457B82 !important; }
 
@@ -75,31 +75,6 @@ html, body, #root {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.settings {
-  position: absolute;
-  z-index: 100;
-  height: 100%;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;	
-}
-
-.dialogButton {
-  margin-top: 20px !important;
-  margin-bottom: 5px !important;
-}
-
-.additionalMessage {
-  margin: 20px 0 10px 0 !important;
-}
-
-.rotationIcon {
-  margin-top: 2em;
-  width: auto !important;
-  height: 2.5em !important;
 }
 
 /* render stats */

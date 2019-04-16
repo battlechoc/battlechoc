@@ -17,6 +17,7 @@ import StartIcon from '@material-ui/icons/SupervisorAccount';
 import SvgIcon from '@material-ui/core/SvgIcon';
 import t from './Translation';
 import InfoDialog from './InfoDialog';
+import Settings from './dialogs/Settings';
 import Jukebox from './Jukebox';
 
 class Hud extends Component {
@@ -144,7 +145,11 @@ class Hud extends Component {
         return (
             <div>
                 <Tooltip />
-                <Actionbar showSettings={this.props.showSettings} />
+                <Settings endGame={this.props.endGame} onRef={settings => (this.settings = settings)} />
+                <Actionbar showSettings={() => {
+                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                    this.settings.open();
+                }} />
                 <InfoDialog isVisible={this.isTitleScreen() && !this.state.showTutorial} />
                 <AttackPalette isVisible={showInGameMenu} />
                 <BuildingPalette isVisible={showInGameMenu} />
@@ -246,7 +251,7 @@ class Hud extends Component {
 Hud.propTypes = {
     prepareNewGameCallback: PropTypes.func.isRequired,
     prepareResumedGameCallback: PropTypes.func.isRequired,
-    showSettings: PropTypes.func.isRequired
+    endGame: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({

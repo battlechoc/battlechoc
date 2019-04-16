@@ -76,7 +76,11 @@ class AssetLoader {
         }
 
         for (let i = 0; i < Object.keys(this.assets.audio).length; i++) {
-            await this.loadAudio(this.assets.audio[Object.keys(this.assets.audio)[i]].filename);
+            try {
+                await this.loadAudio(this.assets.audio[Object.keys(this.assets.audio)[i]].filename);
+            } catch (error) {
+                console.error('could not load audio resource: ' + error);
+            }
             callback(Math.round((loadedResources / (totalResources - 1)) * 100));
             loadedResources += 1;
         }
@@ -100,8 +104,11 @@ class AssetLoader {
 
     loadAudio(filename) {
         return new Promise((resolve, reject) => {
-            let audio = new Audio(filename);
+            let audio = new Audio();
             audio.oncanplaythrough = () => resolve();
+            audio.addEventListener('error', error => reject(error));
+            audio.src = filename;
+            audio.load();
         });
     }
 
