@@ -115,27 +115,44 @@ html, body, #root {
     0% {
         opacity: 1;
     }
+    80% {
+        opacity: 1;
+    }
     100% {
         opacity: 0;
-        font-size: 1.8vw;
-        transform: translateY(-10vh)
+        transform: translateX(-1vw) translateY(-10vh) scale(1.2);
     }
 }
 
 .positive {
-  color: #31974A;
+  color: #70bf31;
+  text-shadow: 2px 2px 1px #44741e;
 }
 
 .negative {
-  color: #B93021;
+  color: #c70000;
+  text-shadow: 2px 2px 1px #7b0000;
 }
 
 .flyingInfo {
   position: absolute;
-  font-size: 2.0vw;
-  font-weight: bold;
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
   animation-name: flyaway;
   animation-duration: 2s;
   animation-timing-function: ease-in;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+}
+
+.flyingInfo > p {
+  font-size: 1.8vw;
+  font-weight: bold;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  
+}
+
+.flyingInfo > img {
+  max-height: 55px;
+  max-width: 55px;
 }

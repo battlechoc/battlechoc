@@ -217,10 +217,10 @@ class App extends Component {
         const trees = nextProps.game.board.fields[this.props.game.players[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE) && cell.type !== BoardCellTypes.WHITE);
         let description = getEntityDescriptor(EntityType.CACAOTREE)
         trees.forEach((cell) => {          
-          this.spawnInfoText3d(cell, '+' + description.cacaoPerTurn + ' cacao', 'positive');
+          this.spawnInfoText3d(cell, '+' + description.cacaoPerTurn + ' [cacao]', 'positive');
         });
         specialTrees.forEach((cell) => {          
-          this.spawnInfoText3d(cell, '+' + Math.round(description.cacaoPerTurn * 1.5) + ' cacao', 'positive');
+          this.spawnInfoText3d(cell, '+' + Math.round(description.cacaoPerTurn * 1.5) + ' [cacao]', 'positive');
         });
       } else if (gameTransition === GameTransitions.PLAYER_ATTACK_PHASE) {
         const attacks = [AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.FRUIT, AttackType.BUNNY];
@@ -288,8 +288,14 @@ class App extends Component {
   }
 
   spawnInfoText(position, text, messageType) {
-    let info = document.createElement("p");
-    info.appendChild(document.createTextNode(text));
+    const info = document.createElement("div");
+
+    if (text.indexOf('[cacao]') > -1) {
+      info.innerHTML = '<p>' + text.substr(0, text.indexOf('[cacao]')) + '</p><img src="/images/cacao_no_background.png" />';
+    } else {
+      info.innerHTML = '<p>' + text + '</p>';
+    }
+
     info.classList.add('flyingInfo');
     info.classList.add(messageType);
 
@@ -377,7 +383,7 @@ class App extends Component {
           }, 3000);
         } else {
           let description = getEntityDescriptor(this.props.selectedBuilding)
-          this.spawnInfoText({ x: event.clientX, y: event.clientY }, '-' + description.costs + ' cacao', 'negative');
+          this.spawnInfoText({ x: event.clientX, y: event.clientY }, '-' + description.costs + ' [cacao]', 'negative');
           setTimeout(() => {
             if (building.type === EntityType.CACAOTREE) {
               this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].cacaoPerTurn - playerCacaoPerTurnBefore + ' cacao per turn', 'positive');

@@ -31,7 +31,7 @@ class AssetLoader {
                 FRUIT_CANNON_EXPLOSION: { filename: 'fruitCannon-explosion.glb', model: null }
             },
             images: {
-                ATTACKS: { filename: 'attacks_icon.png' },
+                CACAO_NO_BACKGROUND: { filename: 'cacao_no_background.png' },
                 CACAO: { filename: 'cacao_icon.png' },
                 CANNON: { filename: 'cannon_icon.png' },
                 CREAM_PREVIEW: { filename: 'cream_preview.png' },
