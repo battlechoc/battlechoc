@@ -106,6 +106,8 @@ class TreesAndCannonsPage extends Component {
 
     gotoBuildPhase() {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        this.gamefield.triggerFlyingTreeInfo();
+        
         if (this.state.messages.length < 11) {
             this.setState({ 
                 pseudoPhase: 'build',
@@ -113,19 +115,12 @@ class TreesAndCannonsPage extends Component {
                 cacao: this.state.cacao + this.state.cacaoPerTurn,
                 messages: [...this.state.messages, { text: 'look: you gained some cacao! Now you can build a cannon. Select the cannon by clicking the icon', type: 'text', delay: 2500}]
             });
-            this.highlight('totalCacao');
         } else {
             this.setState({ 
                 pseudoPhase: 'build',
                 cacao: this.state.cacao + this.state.cacaoPerTurn
             });
         }
-    }
-
-    highlight(id) {
-        let domElement = document.getElementById(id);
-        domElement.classList.add('highlighted');
-        setTimeout(() => domElement.classList.remove('highlighted'), 4000);
     }
 
     handleClose = () => {
@@ -163,6 +158,7 @@ class TreesAndCannonsPage extends Component {
                                         selectedAttack={this.state.selectedAttack} 
                                         pseudoPhase={this.state.pseudoPhase}
                                         attackCallback={() => this.attackCallback()}
+                                        onRef={gamefield => this.gamefield = gamefield}
                                         buildCallback={(building, celltype) => this.buildCallback(building, celltype)}/>
 
                         {(() => {

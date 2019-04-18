@@ -627,7 +627,7 @@ class App extends Component {
               prepareNewGameCallback={this.prepareNewGame}
               prepareResumedGameCallback={this.prepareResumedGame}
               endGame={() => this.endGame()}
-              onRef={hud => (this.hud = hud)} />
+              onRef={hud => this.hud = hud} />
             <div
               className="app"
               ref={container => { this.container = container }}

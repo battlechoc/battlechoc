@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Gamefield from '../Gamefield';
+import { InfoType, spawnInfoAtBuilding, spawnInfo } from '../ui/FlyingInfo';
 import { EntityType, BoardCellTypes, createEntity, getEntityDescriptor } from '../gameplay/GameEntities';
 import * as THREE from 'three';
 import Jukebox from '../ui/Jukebox';
@@ -9,6 +10,7 @@ import Jukebox from '../ui/Jukebox';
 
 class MicroGamefield extends Component {
     componentDidMount() {
+        this.props.onRef(this)
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
         window.addEventListener("resize", () => this.updateDimensions());
@@ -40,19 +42,19 @@ class MicroGamefield extends Component {
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
 
-        let size = {rows: this.props.size, cols: this.props.size}
+        this.size = {rows: this.props.size, cols: this.props.size}
 
-        this.buildings = [...Array(size.rows)].map(
-            field => Array(size.cols).fill([])
+        this.buildings = [...Array(this.size.rows)].map(
+            field => Array(this.size.cols).fill([])
         );
 
-        this.playerCells = [...Array(size.rows)].map(
-            field => Array(size.cols).fill(BoardCellTypes.WHITE)
+        this.playerCells = [...Array(this.size.rows)].map(
+            field => Array(this.size.cols).fill(BoardCellTypes.WHITE)
         );
 
         let field = { grid: [] };
-        for (let row = 0; row < size.rows; row++) {
-            for (let col = 0; col < size.cols; col++) {
+        for (let row = 0; row < this.size.rows; row++) {
+            for (let col = 0; col < this.size.cols; col++) {
                 let fieldtype = col;
                 let creamed = (row + col) % 3 === 0;
                 let cellType = BoardCellTypes.BROWN;
@@ -82,23 +84,23 @@ class MicroGamefield extends Component {
         this.scene.add( directionalLight );
 
         if (!this.props.opponentGamefield) {
-            this.microGamefield = new Gamefield(true, [-65, -35, 0], field, 0, size);
+            this.microGamefield = new Gamefield(true, [-65, -35, 0], field, 0, this.size);
             this.scene.add(this.microGamefield.gameField);
         } else if (this.props.opponentGamefield) {
-            this.microGamefield = new Gamefield(true, [-100, -47, 0], field, 0, size);
+            this.microGamefield = new Gamefield(true, [-100, -47, 0], field, 0, this.size);
             this.scene.add(this.microGamefield.gameField);
             
-            this.opponentBuildings = [...Array(size.rows)].map(
-                field => Array(size.cols).fill([])
+            this.opponentBuildings = [...Array(this.size.rows)].map(
+                field => Array(this.size.cols).fill([])
             );
 
-            this.opponentCells = [...Array(size.rows)].map(
-                field => Array(size.cols).fill(BoardCellTypes.WHITE)
+            this.opponentCells = [...Array(this.size.rows)].map(
+                field => Array(this.size.cols).fill(BoardCellTypes.WHITE)
             );
 
             field = { grid: [] };
-            for (let row = 0; row < size.rows; row++) {
-                for (let col = 0; col < size.cols; col++) {
+            for (let row = 0; row < this.size.rows; row++) {
+                for (let col = 0; col < this.size.cols; col++) {
                     let fieldtype = row;
                     let creamed = false;
                     let cellType = BoardCellTypes.BROWN;
@@ -122,7 +124,7 @@ class MicroGamefield extends Component {
                 }
             }
 
-            this.opponentGamefield = new Gamefield(false, [-40, -17, 0], field, 1, size);
+            this.opponentGamefield = new Gamefield(false, [-40, -17, 0], field, 1, this.size);
 
             let building = createEntity(EntityType.FACTORY);
             this.opponentBuildings[1][1] = [EntityType.FACTORY];
@@ -182,6 +184,24 @@ class MicroGamefield extends Component {
         }
     }
 
+    triggerFlyingTreeInfo() {
+        let description = getEntityDescriptor(EntityType.CACAOTREE);
+        var rect = this.renderer.domElement.getBoundingClientRect();
+        for (let row = 0; row < this.size.rows; row++) {
+            for (let col = 0; col < this.size.cols; col++) {
+                if (this.buildings[row][col].includes(EntityType.CACAOTREE)) {
+                    spawnInfoAtBuilding({ 
+                        rect: rect,
+                        tree: this.microGamefield.getBuildingAtPosition({ row: row, col: col }), 
+                        cacao: this.playerCells[row][col] === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn, 
+                        camera: this.camera, 
+                        type: InfoType.CACAO_HARVESTED,
+                        container: this.container
+                    });
+                }
+            }            
+        }
+    }
 
     start = () => {
         if (!this.frameId) {
@@ -191,50 +211,6 @@ class MicroGamefield extends Component {
 
     stop = () => {
         cancelAnimationFrame(this.frameId);
-    }
-
-    spawnInfoText(position, text, messageType) {
-        let info = document.createElement("p");
-        info.appendChild(document.createTextNode(text));
-        info.classList.add('flyingInfo');
-        info.classList.add(messageType);
-
-        const width = this.container.clientWidth;
-        const height = this.container.clientHeight;
-        let ratio = width / height;
-
-        if (ratio < 1.1) {
-            info.style.top = (position.y - Math.round(window.innerHeight * 0.07)) + "px";
-            info.style.left = (position.x - Math.round(window.innerWidth * 0.015)) + "px";
-        }
-        else if (ratio < 1.4) { 
-            info.style.top = (position.y - Math.round(window.innerHeight * 0.1)) + "px";
-            info.style.left = (position.x - Math.round(window.innerWidth * 0.015)) + "px"; 
-        }
-        else { 
-            info.style.top = (position.y - Math.round(window.innerHeight * 0.12)) + "px";
-            info.style.left = (position.x - Math.round(window.innerWidth * 0.01)) + "px";
-        }
-        
-        let animations = {
-            "animation"      : "animationend",
-            "OAnimation"     : "oAnimationEnd",
-            "MozAnimation"   : "animationend",
-            "WebkitAnimation": "webkitAnimationEnd"
-        }
-        let supportedAnimation = 'animation';
-
-        for (let animation in animations) {
-            if (typeof info.style[animation] !== 'undefined') {
-                supportedAnimation = animations[animation];
-            }
-        }
-
-        info.addEventListener(supportedAnimation, () => {
-            document.getElementById('tutorial').removeChild(info);
-        });
-
-        document.getElementById('tutorial').appendChild(info);
     }
 
     onClick = event => {
@@ -261,22 +237,23 @@ class MicroGamefield extends Component {
                     this.buildings[cellIndex.row][cellIndex.col] = [building.type];
                     let description = getEntityDescriptor(building.type)
 
+                    let buildingsDelta = this.playerCells[cellIndex.row][cellIndex.col] === BoardCellTypes.BLACK ? Math.round(description.buildingsPerTurn * 1.5) : description.buildingsPerTurn;
                     if (building.type === EntityType.FACTORY) {
-                        if (this.playerCells[cellIndex.row][cellIndex.col] === BoardCellTypes.BLACK) {
-                            this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + (description.buildingsPerTurn + 1) + ' buildings per turn', 'positive');
-                        } else {
-                            this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + description.buildingsPerTurn + ' buildings per turn', 'positive');
-                        }
-                    } else if (building.type === EntityType.CACAOTREE) {
-                        this.spawnInfoText({ x: event.clientX, y: event.clientY }, '-' + description.costs + ' cacao', 'negative');
-                        if (this.playerCells[cellIndex.row][cellIndex.col] === BoardCellTypes.WHITE) {
-                            setTimeout(() => this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + Math.round(description.cacaoPerTurn * 1.5) + ' cacao per turn', 'positive'), 400);
-                        } else {
-                            setTimeout(() => this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + description.cacaoPerTurn + ' cacao per turn', 'positive'), 400);
-                        }                        
-                    } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
-                        this.spawnInfoText({ x: event.clientX, y: event.clientY }, '-' + description.costs + ' cacao', 'negative');
-                        setTimeout(() => this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 attack per turn', 'positive'), 400);                   
+                        spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: buildingsDelta, x: event.clientX, y: event.clientY, container: this.container });
+                    } else {
+                        spawnInfo({ type: InfoType.CACAO_CONSUMED, cacao: description.costs, x: event.clientX, y: event.clientY, container: this.container });
+                        let cacaoDelta = this.playerCells[cellIndex.row][cellIndex.col] === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn;
+                        setTimeout(() => {
+                            if (building.type === EntityType.CACAOTREE) {
+                                spawnInfo({ type: InfoType.INCREASE_CACAO_PER_TURN, cacao: cacaoDelta, x: event.clientX, y: event.clientY, container: this.container });
+                            } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
+                                spawnInfo({ type: InfoType.INCREASE_ATTACKS_PER_TURN, attacks: 1, x: event.clientX, y: event.clientY, container: this.container });
+                            } else if (building.type === EntityType.FACTORY_EXTENSION) {
+                                spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: buildingsDelta, x: event.clientX, y: event.clientY, container: this.container });
+                            } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
+                                spawnInfo({ type: InfoType.INCREASE_SPY_ATTACKS_PER_TURN, attacks: 1, x: event.clientX, y: event.clientY, container: this.container });
+                            }
+                        }, 1000);
                     }
                 }
             }

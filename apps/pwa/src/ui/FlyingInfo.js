@@ -14,8 +14,13 @@ function spawnInfoAtBuilding(message) {
     if (message.type === InfoType.CACAO_HARVESTED) {
         let vector = message.tree._model.getWorldPosition(new THREE.Vector3());
         vector.project(message.camera);
-        message.x = (vector.x + 1) / 2 * window.innerWidth;
-        message.y = - (vector.y - 1) / 2 * window.innerHeight;
+        if (typeof message.rect === 'undefined') {
+            message.x = (vector.x + 1) / 2 * window.innerWidth;
+            message.y = - (vector.y - 1) / 2 * window.innerHeight;
+        } else {
+            message.x = ((vector.x + 1) / 2 * message.rect.width) + message.rect.left;
+            message.y = (- (vector.y - 1) / 2 * message.rect.height) + message.rect.top;     
+        }
         spawnInfo(message);
     }
 }

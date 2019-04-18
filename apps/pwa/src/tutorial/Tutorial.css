@@ -237,20 +237,3 @@
     margin-left: 159px;
   }
 }
-
-.highlighted {
-  animation: highlighted-animation 1s steps(25, start) infinite;
-  animation-direction: alternate;
-}
-
-@keyframes highlighted-animation {
-  to {
-    filter: brightness(0.4) hue-rotate(45deg);
-  }
-}
-
-@-webkit-keyframes highlighted-animation {
-  to {
-    filter: brightness(6) hue-rotate(0deg);
-  }
-}

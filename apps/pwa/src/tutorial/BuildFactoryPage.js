@@ -21,7 +21,7 @@ class ChoosePage extends Component {
         let previewClasses = this.state.selectedBuilding === EntityType.FACTORY ? 'selected previewContainer' : 'previewContainer';
         let gamefield = <div className="microGame">
 	                <div className="microGamefield">
-	                    <MicroGamefield opponentGamefield={false} size={3} selectedBuilding={this.state.selectedBuilding} pseudoPhase="build" buildCallback={() => this.buildCallback()}/>
+	                    <MicroGamefield onRef={gamefield => this.gamefield = gamefield} opponentGamefield={false} size={3} selectedBuilding={this.state.selectedBuilding} pseudoPhase="build" buildCallback={() => this.buildCallback()}/>
 	                </div>
 
 	                <div className="tutorial" id="buildingSelection">
