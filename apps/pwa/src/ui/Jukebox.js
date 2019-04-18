@@ -10,8 +10,7 @@ class Jukebox {
 		});
 
 		this.SONGS = Object.freeze({
-		    MAIN_THEME: 'music/CacaoLiving.mp3',
-		    TUTORIAL_THEME: 'music/SaleAtTheChocolateFactory.mp3',
+		    MAIN_THEME: 'music/CacaoLiving.mp3'
 		});
 	}
 

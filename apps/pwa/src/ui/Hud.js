@@ -70,7 +70,7 @@ class Hud extends Component {
 
     startTutorial() {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        Jukebox.startMusic(Jukebox.SONGS.TUTORIAL_THEME);
+        Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
         this.setState({ showTutorial: true });
     }
 

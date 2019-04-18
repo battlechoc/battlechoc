@@ -280,7 +280,7 @@ class App extends Component {
 
   spawnInfoText3d(position, text, messageType) {
     let building = this.playerGameField.getBuildingAtPosition(position);
-    let vector = building._model.getWorldPosition();
+    let vector = building._model.getWorldPosition(new THREE.Vector3());
     vector.project(this.camera);
     vector.x = (vector.x + 1) / 2 * window.innerWidth;
     vector.y = - (vector.y - 1) / 2 * window.innerHeight;
@@ -292,6 +292,14 @@ class App extends Component {
 
     if (text.indexOf('[cacao]') > -1) {
       info.innerHTML = '<p>' + text.substr(0, text.indexOf('[cacao]')) + '</p><img src="/images/cacao_no_background.png" />';
+    } else if (text.indexOf('[cacao per turn]') > -1) {
+      info.innerHTML = '<p>' + text.substr(0, text.indexOf('[cacao per turn]')) + '</p><img src="/images/cacaoPerTurn.png" />';
+    } else if (text.indexOf('[attack per turn]') > -1) {
+      info.innerHTML = '<p>' + text.substr(0, text.indexOf('[attack per turn]')) + '</p><img src="/images/attacksPerTurn.png" />';
+    } else if (text.indexOf('[buildings per turn]') > -1) {
+      info.innerHTML = '<p>' + text.substr(0, text.indexOf('[buildings per turn]')) + '</p><img src="/images/buildingsPerTurn.png" />';
+    } else if (text.indexOf('[spy attack per turn]') > -1) {
+      info.innerHTML = '<p>' + text.substr(0, text.indexOf('[spy attack per turn]')) + '</p><img src="/images/spyAttacksPerTurn.png" />';
     } else {
       info.innerHTML = '<p>' + text + '</p>';
     }
@@ -299,6 +307,13 @@ class App extends Component {
     info.classList.add('flyingInfo');
     info.classList.add(messageType);
 
+    if (text.indexOf('[Bunny caught]') > -1) {
+      info.classList.remove('flyingInfo');
+      info.classList.remove(messageType);
+      info.classList.add('flyingCaughtBunny');
+      info.innerHTML = '<img src="/images/bunnyCaught.png" />';
+    }
+    
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
     let ratio = width / height;
@@ -373,7 +388,7 @@ class App extends Component {
         this.playerGameField.setBuilding(building.type, building.position);
         if (initialPlacement) {
           console.log(event)
-          this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn + ' buildings per turn', 'positive');
+          this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn + ' [buildings per turn]', 'positive');
           this.props.deselectBuildings();
           this.props.deselectAttack();
           setTimeout(() => {
@@ -386,15 +401,15 @@ class App extends Component {
           this.spawnInfoText({ x: event.clientX, y: event.clientY }, '-' + description.costs + ' [cacao]', 'negative');
           setTimeout(() => {
             if (building.type === EntityType.CACAOTREE) {
-              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].cacaoPerTurn - playerCacaoPerTurnBefore + ' cacao per turn', 'positive');
+              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].cacaoPerTurn - playerCacaoPerTurnBefore + ' [cacao per turn]', 'positive');
             } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
-              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 attack per turn', 'positive');
+              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 [attack per turn]', 'positive');
             } else if (building.type === EntityType.FACTORY_EXTENSION) {
-              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn - buildingsPerTurnBefore + ' buildings per turn', 'positive');
+              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn - buildingsPerTurnBefore + ' [buildings per turn]', 'positive');
             } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
-              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 spy attack per turn', 'positive');
+              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 [spy attack per turn]', 'positive');
             }
-          }, 400);
+          }, 1000);
         }
       }).catch(error => {
         if (error instanceof BattlechocError) {
@@ -428,7 +443,7 @@ class App extends Component {
               Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
               this.playerGameField.meltDownEasterBunny();
               this.opponentGameField.receiveBallista(target);
-              this.spawnInfoText({ x: event.clientX, y: event.clientY }, 'Xmas factory caught your spying easter bunny!', 'negative');
+              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '[Bunny caught]', 'negative');
             }
           } else if (typeof this.props.selectedAttack !== 'undefined') {
             Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);

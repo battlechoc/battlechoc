@@ -33,6 +33,7 @@ class AssetLoader {
             images: {
                 CACAO_NO_BACKGROUND: { filename: 'cacao_no_background.png' },
                 CACAO: { filename: 'cacao_icon.png' },
+                CACAO_PER_TURN: { filename: 'cacaoPerTurn.png' },
                 CANNON: { filename: 'cannon_icon.png' },
                 CREAM_PREVIEW: { filename: 'cream_preview.png' },
                 FOG_BACKGROUND: { filename: 'fog_background.png' },
@@ -46,7 +47,9 @@ class AssetLoader {
                 SPYING_EASTER_BUNNY_ATTACK: { filename: 'spyingEasterBunnyAttack.png' },
                 CHOCOLATE_FOUNTAIN: { filename: 'chocolateFountain_icon.png' },
                 XMAS_FACTORY: { filename: 'xmasFactory_icon.png' },
-                FRUIT_CANNON: { filename: 'fruitCannon_icon.png' }
+                HOT_CHOCOLATE_BALLISTA: { filename: 'hotChocolateBallista_icon.png'},
+                FRUIT_CANNON: { filename: 'fruitCannon_icon.png' },
+                LOADING: { filename: '../animations/loading.gif' }
             },
             audio: {
                 UI_ACCEPT: { filename: 'sound/ui_accept.mp3' },
@@ -54,8 +57,7 @@ class AssetLoader {
                 ATTACK_EXPLOSION: { filename: 'sound/attack_explosion.mp3' },
                 ATTACK_BUNNY: { filename: 'sound/attack_bunny.mp3' },
                 BUNNY_CAUGHT: { filename: 'sound/bunny_caught.mp3' },
-                MAIN_THEME: { filename: 'music/CacaoLiving.mp3' },
-                TUTORIAL_THEME: { filename: 'music/SaleAtTheChocolateFactory.mp3' }
+                MAIN_THEME: { filename: 'music/CacaoLiving.mp3' }
             }
         }
     }

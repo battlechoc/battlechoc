@@ -48,6 +48,8 @@
 .loadingAnimation {
   margin-top: -2%;
   width: 10vw;
+  max-width: 180px;
+  max-height: 180px;
   height: 10vw;
 }
 
