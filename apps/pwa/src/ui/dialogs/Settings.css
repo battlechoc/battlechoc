@@ -17,11 +17,6 @@
   margin: 20px 0 10px 0 !important;
 }
 
-#settingsDialogTitle {
-	display: flex;
-	justify-content: center;
-}
-
 #settingsFormControl {
 	width: 100%;
 }

@@ -687,7 +687,7 @@ class App extends Component {
             <Hud
               prepareNewGameCallback={this.prepareNewGame}
               prepareResumedGameCallback={this.prepareResumedGame}
-              endGame={() => this.endGame}
+              endGame={() => this.endGame()}
               onRef={hud => (this.hud = hud)} />
             <div
               className="app"

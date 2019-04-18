@@ -90,12 +90,10 @@ class Settings extends Component {
 
               <Dialog
                 fullWidth={true}
+                fullScreen={this.props.fullScreen}
                 open={this.state.showErrorReport}
                 onClose={() => this.setState({ additionalReportMessage: '', includeDeviceInformation: false, showErrorReport: false })}
                 aria-labelledby="report-form-dialog-title"
-                PaperProps={{
-                  style: { width: '80%' }
-                }}
               >
                 <DialogTitle id="report-form-dialog-title">{t[this.props.language].REPORT_PROBLEM}</DialogTitle>
                 <DialogContent>
@@ -192,6 +190,7 @@ class Settings extends Component {
 
               <Dialog
                 fullWidth={true}
+                fullScreen={this.props.fullScreen}
                 open={this.state.open}
                 onClose={() => this.setState({ open: false, attentionTextVisible: false })}
                 aria-labelledby="settingsDialogTitle"
@@ -280,6 +279,7 @@ class Settings extends Component {
 }
 
 Settings.propTypes = {
+    fullScreen: PropTypes.bool.isRequired,
     endGame: PropTypes.func.isRequired
 }
 
@@ -299,4 +299,4 @@ const SettingsContainer = connect(
     mapDispatchToProps
 )(Settings);
 
-export default withMobileDialog()(SettingsContainer);
+export default withMobileDialog({breakpoint: 'sm'})(SettingsContainer);
