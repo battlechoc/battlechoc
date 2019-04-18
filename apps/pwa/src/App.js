@@ -8,6 +8,7 @@ import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import Jukebox from './ui/Jukebox';
 import t from './ui/Translation';
+import { InfoType, spawnInfoAtBuilding, spawnInfo } from './ui/FlyingInfo';
 import OfflineStore from './OfflineStore';
 import Rules from './gameplay/Rules';
 import { BoardCellTypes, EntityType, AttackType, createEntity, getEntityDescriptor } from './gameplay/GameEntities';
@@ -216,12 +217,22 @@ class App extends Component {
         const specialTrees = nextProps.game.board.fields[this.props.game.players[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE) && cell.type === BoardCellTypes.WHITE);
         const trees = nextProps.game.board.fields[this.props.game.players[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE) && cell.type !== BoardCellTypes.WHITE);
         let description = getEntityDescriptor(EntityType.CACAOTREE)
-        trees.forEach((cell) => {          
-          this.spawnInfoText3d(cell, '+' + description.cacaoPerTurn + ' [cacao]', 'positive');
-        });
-        specialTrees.forEach((cell) => {          
-          this.spawnInfoText3d(cell, '+' + Math.round(description.cacaoPerTurn * 1.5) + ' [cacao]', 'positive');
-        });
+        trees.forEach(cell => spawnInfoAtBuilding({ 
+            tree: this.playerGameField.getBuildingAtPosition(cell), 
+            cacao: description.cacaoPerTurn, 
+            camera: this.camera, 
+            type: InfoType.CACAO_HARVESTED,
+            container: this.container
+          })
+        );
+        specialTrees.forEach(cell => spawnInfoAtBuilding({ 
+            tree: this.playerGameField.getBuildingAtPosition(cell), 
+            cacao: Math.round(description.cacaoPerTurn * 1.5), 
+            camera: this.camera, 
+            type: InfoType.CACAO_HARVESTED,
+            container: this.container
+          })
+        ); 
       } else if (gameTransition === GameTransitions.PLAYER_ATTACK_PHASE) {
         const attacks = [AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.FRUIT, AttackType.BUNNY];
         let availableAttackType = undefined;
@@ -278,79 +289,6 @@ class App extends Component {
     }
   }
 
-  spawnInfoText3d(position, text, messageType) {
-    let building = this.playerGameField.getBuildingAtPosition(position);
-    let vector = building._model.getWorldPosition(new THREE.Vector3());
-    vector.project(this.camera);
-    vector.x = (vector.x + 1) / 2 * window.innerWidth;
-    vector.y = - (vector.y - 1) / 2 * window.innerHeight;
-    this.spawnInfoText(vector, text, messageType);
-  }
-
-  spawnInfoText(position, text, messageType) {
-    const info = document.createElement("div");
-
-    if (text.indexOf('[cacao]') > -1) {
-      info.innerHTML = '<p>' + text.substr(0, text.indexOf('[cacao]')) + '</p><img src="/images/cacao_no_background.png" />';
-    } else if (text.indexOf('[cacao per turn]') > -1) {
-      info.innerHTML = '<p>' + text.substr(0, text.indexOf('[cacao per turn]')) + '</p><img src="/images/cacaoPerTurn.png" />';
-    } else if (text.indexOf('[attack per turn]') > -1) {
-      info.innerHTML = '<p>' + text.substr(0, text.indexOf('[attack per turn]')) + '</p><img src="/images/attacksPerTurn.png" />';
-    } else if (text.indexOf('[buildings per turn]') > -1) {
-      info.innerHTML = '<p>' + text.substr(0, text.indexOf('[buildings per turn]')) + '</p><img src="/images/buildingsPerTurn.png" />';
-    } else if (text.indexOf('[spy attack per turn]') > -1) {
-      info.innerHTML = '<p>' + text.substr(0, text.indexOf('[spy attack per turn]')) + '</p><img src="/images/spyAttacksPerTurn.png" />';
-    } else {
-      info.innerHTML = '<p>' + text + '</p>';
-    }
-
-    info.classList.add('flyingInfo');
-    info.classList.add(messageType);
-
-    if (text.indexOf('[Bunny caught]') > -1) {
-      info.classList.remove('flyingInfo');
-      info.classList.remove(messageType);
-      info.classList.add('flyingCaughtBunny');
-      info.innerHTML = '<img src="/images/bunnyCaught.png" />';
-    }
-    
-    const width = this.container.clientWidth;
-    const height = this.container.clientHeight;
-    let ratio = width / height;
-
-    if (ratio < 1.1) {
-      info.style.top = (position.y - Math.round(window.innerHeight * 0.07)) + "px";
-      info.style.left = (position.x - Math.round(window.innerWidth * 0.015)) + "px";
-    }
-    else if (ratio < 1.4) {
-      info.style.top = (position.y - Math.round(window.innerHeight * 0.1)) + "px";
-      info.style.left = (position.x - Math.round(window.innerWidth * 0.015)) + "px";
-    }
-    else {
-      info.style.top = (position.y - Math.round(window.innerHeight * 0.12)) + "px";
-      info.style.left = (position.x - Math.round(window.innerWidth * 0.01)) + "px";
-    }
-
-    let animations = {
-      "animation": "animationend",
-      "OAnimation": "oAnimationEnd",
-      "MozAnimation": "animationend",
-      "WebkitAnimation": "webkitAnimationEnd"
-    }
-    let supportedAnimation = 'animation';
-
-    for (let animation in animations) {
-      if (typeof info.style[animation] !== 'undefined') {
-        supportedAnimation = animations[animation];
-      }
-    }
-
-    info.addEventListener(supportedAnimation, () => {
-      this.container.removeChild(info);
-    });
-    this.container.appendChild(info);
-  }
-
   onClick = event => {
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
@@ -387,8 +325,7 @@ class App extends Component {
         Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
         this.playerGameField.setBuilding(building.type, building.position);
         if (initialPlacement) {
-          console.log(event)
-          this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn + ' [buildings per turn]', 'positive');
+          spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: this.props.game.players[0].buildingsPerTurn, x: event.clientX,  y: event.clientY, container: this.container });
           this.props.deselectBuildings();
           this.props.deselectAttack();
           setTimeout(() => {
@@ -398,16 +335,18 @@ class App extends Component {
           }, 3000);
         } else {
           let description = getEntityDescriptor(this.props.selectedBuilding)
-          this.spawnInfoText({ x: event.clientX, y: event.clientY }, '-' + description.costs + ' [cacao]', 'negative');
+          spawnInfo({ type: InfoType.CACAO_CONSUMED, cacao: description.costs, x: event.clientX, y: event.clientY, container: this.container });
+          let cacaoDelta = this.props.game.players[0].cacaoPerTurn - playerCacaoPerTurnBefore;
+          let buildingsDelta = this.props.game.players[0].buildingsPerTurn - buildingsPerTurnBefore;
           setTimeout(() => {
             if (building.type === EntityType.CACAOTREE) {
-              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].cacaoPerTurn - playerCacaoPerTurnBefore + ' [cacao per turn]', 'positive');
+              spawnInfo({ type: InfoType.INCREASE_CACAO_PER_TURN, cacao: cacaoDelta, x: event.clientX, y: event.clientY, container: this.container });
             } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
-              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 [attack per turn]', 'positive');
+              spawnInfo({ type: InfoType.INCREASE_ATTACKS_PER_TURN, attacks: 1, x: event.clientX, y: event.clientY, container: this.container });
             } else if (building.type === EntityType.FACTORY_EXTENSION) {
-              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+' + this.props.game.players[0].buildingsPerTurn - buildingsPerTurnBefore + ' [buildings per turn]', 'positive');
+              spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: buildingsDelta, x: event.clientX, y: event.clientY, container: this.container });
             } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
-              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '+1 [spy attack per turn]', 'positive');
+              spawnInfo({ type: InfoType.INCREASE_SPY_ATTACKS_PER_TURN, attacks: 1, x: event.clientX, y: event.clientY, container: this.container });
             }
           }, 1000);
         }
@@ -443,7 +382,7 @@ class App extends Component {
               Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
               this.playerGameField.meltDownEasterBunny();
               this.opponentGameField.receiveBallista(target);
-              this.spawnInfoText({ x: event.clientX, y: event.clientY }, '[Bunny caught]', 'negative');
+              spawnInfo({ type: InfoType.BUNNY_CAUGHT, x: event.clientX, y: event.clientY, container: this.container });
             }
           } else if (typeof this.props.selectedAttack !== 'undefined') {
             Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
