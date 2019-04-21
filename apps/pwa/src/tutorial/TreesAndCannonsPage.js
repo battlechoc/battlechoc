@@ -13,7 +13,6 @@ class TreesAndCannonsPage extends Component {
         this.state = {
             selectedBuilding: EntityType.CACAOTREE,
             cacao: 50,
-            explainDialogVisible: false,
             messages: [
                 { text: 'The most important buildings are the cacao tree and the rum truffle cannon', type: 'text', delay: 500 },
                 { src: 'cannon_icon.png', type: 'image', delay: 500, alt: 'cannon message icon' },
@@ -123,10 +122,6 @@ class TreesAndCannonsPage extends Component {
         }
     }
 
-    handleClose = () => {
-        this.setState({explainDialogVisible: false});
-    }
-
     render() {
         let icon = <Fab
                     size="small"
@@ -150,12 +145,16 @@ class TreesAndCannonsPage extends Component {
                  </Fab>
         } 
 
+        let playerSetup = [{ type: EntityType.FACTORY, row: 1, col: 1 }, { type: EntityType.CREAM, row: 1, col: 1}, { type: EntityType.CREAM, row: 0, col: 1}, { type: EntityType.CREAM, row: 0, col: 0}];
+        let opponentSetup = [{ type: EntityType.FACTORY, row: 1, col: 1 }];
         let pseudoActionbar = <div className="pseudo actionbar">{ icon }</div>
         let gamefield = <div className="microGame">
                     <div className="microGamefield">
                         <MicroGamefield opponentGamefield={true} size={3} 
                                         selectedBuilding={this.state.selectedBuilding} 
                                         selectedAttack={this.state.selectedAttack} 
+                                        playerSetup={playerSetup}
+                                        opponentSetup={opponentSetup}
                                         pseudoPhase={this.state.pseudoPhase}
                                         attackCallback={() => this.attackCallback()}
                                         onRef={gamefield => this.gamefield = gamefield}

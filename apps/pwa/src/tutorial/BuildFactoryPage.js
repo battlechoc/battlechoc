@@ -18,10 +18,20 @@ class ChoosePage extends Component {
     }
 
     render() {
+        let playerSetup = [{ type: EntityType.CREAM, row: 0, col: 2},
+                           { type: EntityType.CREAM, row: 1, col: 1},
+                           { type: EntityType.CREAM, row: 1, col: 2},
+                           { type: EntityType.CREAM, row: 2, col: 0}];
         let previewClasses = this.state.selectedBuilding === EntityType.FACTORY ? 'selected previewContainer' : 'previewContainer';
         let gamefield = <div className="microGame">
 	                <div className="microGamefield">
-	                    <MicroGamefield onRef={gamefield => this.gamefield = gamefield} opponentGamefield={false} size={3} selectedBuilding={this.state.selectedBuilding} pseudoPhase="build" buildCallback={() => this.buildCallback()}/>
+	                    <MicroGamefield onRef={gamefield => this.gamefield = gamefield} 
+                                        opponentGamefield={false} 
+                                        size={3}
+                                        playerSetup={playerSetup}
+                                        selectedBuilding={this.state.selectedBuilding} 
+                                        pseudoPhase="build" 
+                                        buildCallback={() => this.buildCallback()}/>
 	                </div>
 
 	                <div className="tutorial" id="buildingSelection">

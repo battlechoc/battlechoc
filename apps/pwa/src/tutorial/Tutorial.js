@@ -12,6 +12,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import ChoosePage from './ChoosePage';
 import BuildFactoryPage from './BuildFactoryPage';
 import TreesAndCannonsPage from './TreesAndCannonsPage';
+import EasterBunnyAndXmasFactoryPage from './EasterBunnyAndXmasFactory';
 import Jukebox from '../ui/Jukebox';
 //import t from './Translation';
 
@@ -20,7 +21,7 @@ class Tutorial extends Component {
         super(props);
         this.state = {
             page: 0,
-            maxPages: 3
+            maxPages: 4
         }
     }
 
@@ -60,6 +61,8 @@ class Tutorial extends Component {
             title = 'The chocolate factory';
         } else if (this.state.page === 2) {
             title = 'About trees and cannons';
+        } else if (this.state.page === 3) {
+            title = 'X-mas and bunnies';
         }
 
         let appbar = <AppBar position="static" color="secondary" className="tutorialAppbar">
@@ -75,7 +78,8 @@ class Tutorial extends Component {
         let pages = [
             <ChoosePage fulfilled={this.fulfilled} appbar={appbar}/>, 
             <BuildFactoryPage fulfilled={this.fulfilled} appbar={appbar}/>,
-            <TreesAndCannonsPage fulfilled={this.fulfilled} appbar={appbar}/>
+            <TreesAndCannonsPage fulfilled={this.fulfilled} appbar={appbar}/>,
+            <EasterBunnyAndXmasFactoryPage fulfilled={this.fulfilled} appbar={appbar}/>
         ];
 
         return (

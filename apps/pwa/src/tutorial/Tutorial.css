@@ -181,6 +181,12 @@
   right: 20%;
 }
 
+.tutorial .loadingAnimation {
+  position: absolute;
+  right: 0;
+  top: 2vh;
+}
+
 @media screen and (orientation:portrait) { 
   #tutorialchooseContainer {
     margin-top: 0;
