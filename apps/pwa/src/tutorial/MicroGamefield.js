@@ -83,7 +83,7 @@ class MicroGamefield extends Component {
         this.scene.add( directionalLight );
 
         if (!this.props.opponentGamefield) {
-            this.microGamefield = new Gamefield(true, [-65, -35, 0], this.playerField, 0, this.size);
+            this.microGamefield = new Gamefield(true, [-70, -34.5, 0], this.playerField, 0, this.size);
             if (typeof this.props.playerSetup !== 'undefined') {
                 this.props.playerSetup.forEach(building => {
                     if (this.buildings[building.row][building.col].length === 0) {
@@ -96,7 +96,7 @@ class MicroGamefield extends Component {
             }
             this.scene.add(this.microGamefield.gameField);
         } else if (this.props.opponentGamefield) {
-            this.microGamefield = new Gamefield(true, [-100, -47, 0], this.playerField, 0, this.size);
+            this.microGamefield = new Gamefield(true, [-98, -46, 0], this.playerField, 0, this.size);
             
             if (typeof this.props.playerSetup !== 'undefined') {
                 this.props.playerSetup.forEach(building => {
@@ -144,7 +144,7 @@ class MicroGamefield extends Component {
                 }
             }
 
-            this.opponentGamefield = new Gamefield(false, [-40, -17, 0], this.opponentField, 1, this.size);
+            this.opponentGamefield = new Gamefield(false, [-42, -18, 0], this.opponentField, 1, this.size);
 
             if (typeof this.props.opponentSetup !== 'undefined') {
                 this.props.opponentSetup.forEach(building => {
@@ -166,20 +166,46 @@ class MicroGamefield extends Component {
     }
 
     estimateDistance() {
-        let distance = 18;
+        let distance = 16;
+        const landscape = window.innerWidth > window.innerHeight;
         const width = window.innerWidth;
+        const height = window.innerHeight;
         if (this.props.opponentGamefield) {
-            if (width < 600) {
-                distance = 40;
-            } else if (width < 850) {
-                distance = 27;
-            } else if (width < 1100) {
-                distance = 22;
+            if (landscape) {
+                if (width < 500) {
+                    distance = 24;
+                } else if (width < 600) {
+                    distance = 18;
+                } else {
+                    distance = 16;
+                }
+            } else {
+                if (height < 400) {
+                    distance = 38;
+                } else if (height < 600) {
+                    distance = 36;
+                } else {
+                    distance = 34;
+                }
             }
         } else {
-            if (width < 500) {
-                distance = 25;
-            }            
+            if (landscape) {
+                if (width < 400) {
+                    distance = 20;
+                } else if (width < 600) {
+                    distance = 15;
+                } else {
+                    distance = 13;
+                }
+            } else {
+                if (height < 400) {
+                    distance = 25;
+                } else if (height < 600) {
+                    distance = 20;
+                } else {
+                    distance = 18;
+                }               
+            }         
         }
         return distance;
     }

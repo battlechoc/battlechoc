@@ -29,7 +29,7 @@
 
 #microGamefield {
   height: 50vh;
-  width: 80vw;
+  width: 100vw;
 }
 
 .challenge {
@@ -164,21 +164,6 @@
   30% {
     transform: translateY(-15px);
   }
-}
-
-.tutorial#buildingSelection {
-  bottom: 0px;
-  left: 20%;
-}
-
-.tutorial#attackSelection {
-  bottom: 0px;
-  left: 20%;
-}
-
-.tutorial#gameMenu {
-  bottom: 0px;
-  right: 20%;
 }
 
 .tutorial .loadingAnimation {

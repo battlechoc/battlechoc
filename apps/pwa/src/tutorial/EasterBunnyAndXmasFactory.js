@@ -3,8 +3,6 @@ import PropTypes from 'prop-types';
 import MicroGamefield from './MicroGamefield';
 import ChatLikeInstructions from './ChatLikeInstructions';
 import { EntityType, getEntityDescriptor, AttackType } from '../gameplay/GameEntities';
-import Fab from '@material-ui/core/Fab';
-import { PlayArrow } from '@material-ui/icons';
 import Jukebox from '../ui/Jukebox';
 
 class TreesAndCannonsPage extends Component {
@@ -21,7 +19,6 @@ class TreesAndCannonsPage extends Component {
                 { text: 'The bunny is going to uncover the area around the selected field', type: 'text', delay: 3000 }
             ],
             pseudoPhase: 'attack',
-            attacksPerTurn: 0,
             ballistaAttacks: 0,
             ballistaAttacksPerTurn: 0,
             opponentTurn: false,
@@ -48,9 +45,9 @@ class TreesAndCannonsPage extends Component {
                     opponentTurn: false,
                     ballistaAttacksPerTurn: 1,
                     ballistaAttacks: 1,
+                    pseudoPhase: 'attack',
                     selectedAttack: AttackType.HOT_CHOCOLATE
                 });
-                this.gotoBuildPhase();
             }, 4000);
         }
     }
@@ -82,21 +79,10 @@ class TreesAndCannonsPage extends Component {
         }
         else if (creamUncovered && this.state.messages.length === 3) {
             this.setState({
-                spyAttacks: 0,
-                selectedAttack: undefined,
                 messages: [...this.state.messages, 
                            { text: 'Oh no! Your opponent also has a spying easter bunny ...', type: 'text', delay: 2500}]
             });
             this.gotoBuildPhase();
-        } else {
-            this.setState({
-                spyAttacks: this.state.spyAttacks - (this.selectedAttack === AttackType.BUNNY ? 1 : 0),
-                ballistaAttacks: this.state.ballistaAttacks - (this.selectedAttack === AttackType.HOT_CHOCOLATE ? 1 : 0),
-                selectedAttack: undefined
-            });
-            if (this.state.spyAttacks === 0 && this.state.ballistaAttacks === 0) {
-                this.gotoBuildPhase();
-            }
         }
     }
 
@@ -111,14 +97,6 @@ class TreesAndCannonsPage extends Component {
         return this.state.cacao >= getEntityDescriptor(building).costs;
     }
 
-    gotoAttackPhase() {
-        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.setState({ 
-            pseudoPhase: 'attack',
-            selectedAttack: this.state.ballistaAttacks > 0 ? AttackType.HOT_CHOCOLATE : AttackType.BUNNY
-        });
-    }
-
     gotoBuildPhase() {
         if (this.state.messages.length === 4) {
             this.setState({ 
@@ -129,7 +107,7 @@ class TreesAndCannonsPage extends Component {
                 cacao: 100,
                 messages: [...this.state.messages, 
                 { text: 'Take this cacao to build a xmas factory. It will protect you from spying attacks', type: 'text', delay: 2500},
-                { text: 'If a spying bunny is going to spy an area that also conatins a xmas factory..', type: 'text', delay: 2500},
+                { text: 'If the bunny is going to spy an area that also conatins a xmas factory..', type: 'text', delay: 2500},
                 { text: 'It gets melted down and you get a hot chocolate ballista', type: 'text', delay: 2500}]
             });
         } else {
@@ -154,18 +132,7 @@ class TreesAndCannonsPage extends Component {
     }
 
     render() {
-        let icon = <Fab
-                    size="small"
-                    key="3"
-                    color="primary"
-                    aria-label="skip build phase"
-                    className="icon blinking"
-                    onClick={() => this.gotoAttackPhase()}>
-                    <PlayArrow />
-                  </Fab>
         let loadingAnimation = this.state.opponentTurn ? <div className="tutorial"><img className="loadingAnimation" src="animations/loading.gif" alt="loading" /></div> : null;
-
-        let pseudoActionbar = <div className="pseudo actionbar">{ icon }</div>
         let playerSetup = [{ type: EntityType.FACTORY, row: 1, col: 1 }, { type: EntityType.CREAM, row: 1, col: 1}, 
                            { type: EntityType.CREAM, row: 0, col: 1 }, { type: EntityType.CREAM, row: 2, col: 1 }, 
                            { type: EntityType.CREAM, row: 2, col: 2 }, { type: EntityType.SPYING_EASTER_BUNNY, row: 2, col: 2 },
@@ -234,7 +201,6 @@ class TreesAndCannonsPage extends Component {
                 </div>;
         return (
             <div>
-                { this.state.pseudoPhase === 'build' ? pseudoActionbar : null }
                 { loadingAnimation }
                 { gamefield }
                 <ChatLikeInstructions messages={this.state.messages} appbar={this.props.appbar}/>
