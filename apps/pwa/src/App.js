@@ -576,6 +576,7 @@ class App extends Component {
     this.opponentClickTargets = this.opponentGameField.getClickableFields();
 
     if (createUnits === true) {
+      this.props.deselectBuildings();
       this.lookAtOpponent = (this.props.game.currentPlayerIndex === 1 || this.props.game.state === GameStateTypes.ATTACK_PHASE);
       this.props.game.board.fields[this.props.game.players[0].fieldIndex].grid.forEach((cell) => {
         cell.occupiedBy.forEach((building) => {

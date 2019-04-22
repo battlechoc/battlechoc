@@ -332,7 +332,7 @@ class Augustus {
 
     setBuildingAtBestPosition(possibleCells, building, uiGamefield) {
         return new Promise((resolve, reject) => {
-            let bestCellsForBuilding = this.getBestCellsForBuilding(possibleCells, building.type);
+            let bestCellsForBuilding = this.getBestCellsForBuilding(possibleCells.filter(cell => cell.molten === false), building.type);
             let targetCell = (bestCellsForBuilding.length > 0) ? bestCellsForBuilding[Math.floor(Math.random() * bestCellsForBuilding.length)] : possibleCells[Math.floor(Math.random() * possibleCells.length)];
             console.log('DEV HINT: ', building.type, targetCell.row, targetCell.col, targetCell.type);
 
