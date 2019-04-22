@@ -56,14 +56,6 @@ class AssetLoader {
                 HOT_CHOCOLATE_BALLISTA: { filename: 'hotChocolateBallista_icon.png'},
                 FRUIT_CANNON: { filename: 'fruitCannon_icon.png' },
                 LOADING: { filename: '../animations/loading.gif' }
-            },
-            audio: {
-                UI_ACCEPT: { filename: 'sound/ui_accept.mp3' },
-                UI_BUILD: { filename: 'sound/ui_build.mp3' },
-                ATTACK_EXPLOSION: { filename: 'sound/attack_explosion.mp3' },
-                ATTACK_BUNNY: { filename: 'sound/attack_bunny.mp3' },
-                BUNNY_CAUGHT: { filename: 'sound/bunny_caught.mp3' },
-                MAIN_THEME: { filename: 'music/CacaoLiving.mp3' }
             }
         }
     }    
@@ -79,7 +71,7 @@ class AssetLoadingView extends Component {
     }
 
     componentDidMount() {
-        this.totalResources = Object.keys(assetLoader.assets.models).length + Object.keys(assetLoader.assets.images).length + Object.keys(assetLoader.assets.audio).length;
+        this.totalResources = Object.keys(assetLoader.assets.models).length + Object.keys(assetLoader.assets.images).length;
         this.loadedResources = 0;
 
         for (let i = 0; i < Object.keys(assetLoader.assets.models).length; i++) {
@@ -88,10 +80,6 @@ class AssetLoadingView extends Component {
 
         for (let i = 0; i < Object.keys(assetLoader.assets.images).length; i++) {
             this.loadImage('images/' + assetLoader.assets.images[Object.keys(assetLoader.assets.images)[i]].filename);
-        }
-
-        for (let i = 0; i < Object.keys(assetLoader.assets.audio).length; i++) {
-            this.loadAudio(assetLoader.assets.audio[Object.keys(assetLoader.assets.audio)[i]].filename);
         }
     }
 
@@ -116,17 +104,6 @@ class AssetLoadingView extends Component {
         const image = new Image();
         image.src = src; 
         image.onload = () => this.updateProgress();
-    }
-
-    loadAudio(filename) {
-        const audio = new Audio();
-        audio.oncanplaythrough = () => this.updateProgress();
-        audio.addEventListener('error', error => {
-            console.error(error);
-            this.updateProgress();
-        });
-        audio.src = filename;
-        audio.load();
     }
 
     render() {
