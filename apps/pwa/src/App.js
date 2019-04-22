@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import './App.css';
 import * as THREE from 'three';
 
-import AssetLoader from './AssetLoader'
+import { AssetLoadingViewContainer as AssetLoadingView } from './AssetLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import Jukebox from './ui/Jukebox';
@@ -20,21 +20,10 @@ import { GameStateTypes } from './gameplay/GameplayReducer'
 import { BattlechocError } from './gameplay/Errors';
 import { createPlayer, playerHasAttacks, PlayerType } from './gameplay/Player';
 import { gameplayLog } from './gameplay/GamePlayLogger';
-import CircularProgress from '@material-ui/core/CircularProgress';
 import rStats from 'rstatsjs/src/rStats';
 import { glStats, BrowserStats } from 'rstatsjs/src/rStats.extras';
 
 class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      loadingProgress: 0
-    }
-  }
-
-  updateProgressbar(progress) {
-    this.setState({ loadingProgress: progress });
-  }
 
   componentWillMount() {
     let browserLanguage = 'en';
@@ -53,13 +42,10 @@ class App extends Component {
     });
   }
 
-  async componentDidMount() {
+  componentDidMount() {
     OfflineStore.hasGameToResume().then((resumeable) => {
       this.props.gameResumeable(resumeable);
     });
-
-    // Load Models
-    await AssetLoader.loadAssets(progress => this.updateProgressbar(progress));
 
     // Basic window and game setup
     const width = this.container.clientWidth;
@@ -114,32 +100,9 @@ class App extends Component {
       document.querySelector('meta[name="keywords"]').setAttribute("content", t[this.props.language].META_KEYWORDS);
     }
 
-    let browserStats = new BrowserStats();
-    this.glStats = new glStats();
-    this.renderStats = new rStats({
-      userTimingAPI: true,
-      values: {
-        frame: { caption: 'Total frame time (ms)', over: 16, average: true, avgMs: 100 },
-        fps: { caption: 'Framerate (FPS)', below: 30 },
-        calls: { caption: 'Calls (three.js)', over: 3000 },
-        raf: { caption: 'Time since last rAF (ms)', average: true, avgMs: 100 },
-        rstats: { caption: 'rStats update (ms)', average: true, avgMs: 100 },
-      },
-      groups: [
-        { caption: 'Framerate', values: ['fps', 'raf'] },
-        { caption: 'Frame Budget', values: ['frame', 'render'] }
-      ],
-      fractions: [
-        { base: 'frame', steps: ['render'] }
-      ],
-      plugins: [
-        browserStats,
-        this.glStats
-      ]
-    });
-
     window.onfocus = () => Jukebox.playMusic();
     window.onblur = () => Jukebox.pauseMusic();
+    window.onload = () => this.setupStatistics();
   }
 
   componentWillReceiveProps(nextProps) {
@@ -456,6 +419,32 @@ class App extends Component {
     cancelAnimationFrame(this.frameId);
   }
 
+  setupStatistics() {
+    let browserStats = new BrowserStats();
+    this.glStats = new glStats();
+    this.renderStats = new rStats({
+      userTimingAPI: true,
+      values: {
+        frame: { caption: 'Total frame time (ms)', over: 16, average: true, avgMs: 100 },
+        fps: { caption: 'Framerate (FPS)', below: 30 },
+        calls: { caption: 'Calls (three.js)', over: 3000 },
+        raf: { caption: 'Time since last rAF (ms)', average: true, avgMs: 100 },
+        rstats: { caption: 'rStats update (ms)', average: true, avgMs: 100 },
+      },
+      groups: [
+        { caption: 'Framerate', values: ['fps', 'raf'] },
+        { caption: 'Frame Budget', values: ['frame', 'render'] }
+      ],
+      fractions: [
+        { base: 'frame', steps: ['render'] }
+      ],
+      plugins: [
+        browserStats,
+        this.glStats
+      ]
+    });
+  }
+
   animate = () => {
     if (this.props.statistics) {
       this.renderStats('frame').start();
@@ -502,17 +491,7 @@ class App extends Component {
     this.frameId = window.requestAnimationFrame(this.animate);
   }
 
-  prepareResumedGame = async () => {
-    OfflineStore.getResumeableGame().then((resumeableGame) => {
-      if (typeof resumeableGame === 'undefined') {
-        this.prepareNewGame();
-      } else {
-        this.prepareNewGame(resumeableGame);
-      }
-    })
-  }
-
-  prepareNewGame = async (resumeableGame) => {
+  prepareNewGame = async (resumeGame) => {
     Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     gameplayLog.clear();
@@ -532,31 +511,33 @@ class App extends Component {
       }
     }
 
-    if (typeof resumeableGame === 'undefined') {
-      let players = [
-        createPlayer("Charlie Bucket", PlayerType.HUMAN),
-        createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
-      ];
+    OfflineStore.getResumeableGame().then((resumeableGame) => {
+      if (typeof resumeableGame !== 'undefined' && resumeGame) {
+        this.props.resumeGame(resumeableGame).then(() => {
+          this.opponent.player = resumeableGame.players[1];
+          this.opponent.connectGamestate(() => this.props.game);
+          this.startGame(true);
+        });
+      } else {
+        let players = [
+          createPlayer("Charlie Bucket", PlayerType.HUMAN),
+          createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
+        ];
 
-      this.props.startGame(players).then(() => {
-        this.opponent.type = Augustus.randomizeType();
-        console.log("type of Augustus is: " + this.opponent.type);
-        this.opponent.connectGamestate(() => this.props.game);
+        this.props.startGame(players).then(() => {
+          this.opponent.type = Augustus.randomizeType();
+          console.log("type of Augustus is: " + this.opponent.type);
+          this.opponent.connectGamestate(() => this.props.game);
 
-        setTimeout(() => {
-          this.props.createBoard({
-            boardSize: { rows: 8, cols: 8 },
-            boardSeed: 42
-          });
-        }, 1000);
-      });
-    } else {
-      this.props.resumeGame(resumeableGame).then(() => {
-        this.opponent.player = resumeableGame.players[1];
-        this.opponent.connectGamestate(() => this.props.game);
-        this.startGame(true);
-      });
-    }
+          setTimeout(() => {
+            this.props.createBoard({
+              boardSize: { rows: 8, cols: 8 },
+              boardSeed: 42
+            });
+          }, 1000);
+        });        
+      }
+    });
   }
 
   endGame() {
@@ -613,28 +594,16 @@ class App extends Component {
   }
 
   render() {
-    if (this.state.loadingProgress < 100) {
-      return (
-        <div className="loadingView">
-          <CircularProgress className="progress" variant="static" value={this.state.loadingProgress} />
-        </div>
-      )
-    } else {
-      return(
-        <div className="app-container">
-          <div id="clouds"></div>
-            <Hud
-              prepareNewGameCallback={this.prepareNewGame}
-              prepareResumedGameCallback={this.prepareResumedGame}
-              endGame={() => this.endGame()}
-              onRef={hud => this.hud = hud} />
-            <div
-              className="app"
-              ref={container => { this.container = container }}
-            />
-        </div>
-      )
-    }
+    return (
+      <div className="app-container">
+        <div id="clouds"></div>
+        {this.props.assetsReady ? <Hud prepareNewGameCallback={this.prepareNewGame} endGame={() => this.endGame()} onRef={hud => this.hud = hud} /> : <AssetLoadingView />}
+        <div
+          className="app"
+          ref={container => { this.container = container }}
+        />
+      </div>
+    );
   }
 }
 
@@ -643,7 +612,8 @@ const mapStateToProps = state => ({
   selectedBuilding: state.ui.selectedBuilding,
   selectedAttack: state.ui.selectedAttack,
   language: state.ui.language,
-  statistics: state.ui.statistics
+  statistics: state.ui.statistics,
+  assetsReady: state.ui.assetsReady
 });
 
 const mapDispatchToProps = {

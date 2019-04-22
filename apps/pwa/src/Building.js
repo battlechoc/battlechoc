@@ -1,4 +1,4 @@
-import AssetLoader from './AssetLoader.js';
+import { assetLoader as AssetLoader } from './AssetLoader.js';
 import * as THREE from 'three';
 import { EntityType } from './gameplay/GameEntities'
 

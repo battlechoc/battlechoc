@@ -8,7 +8,8 @@ const UiActionTypes = Object.freeze({
     changeLanguage: 'battlechoc/ui/changeLanguage',
     deselectBuildings: 'battlechoc/ui/deselectBuildings',
     gameResumeable: 'battlechoc/ui/gameResumeable',
-    showStatistics: 'battlechoc/ui/showStatistics'
+    showStatistics: 'battlechoc/ui/showStatistics',
+    assetsReady: 'battlechoc/ui/assetsReady'
 });
 
 const selectBuilding = createAction(UiActionTypes.selectBuilding);
@@ -19,5 +20,6 @@ const deselectBuildings = createAction(UiActionTypes.deselectBuildings);
 const changeLanguage = createAction(UiActionTypes.changeLanguage);
 const gameResumeable = createAction(UiActionTypes.gameResumeable);
 const showStatistics = createAction(UiActionTypes.showStatistics);
+const assetsReady = createAction(UiActionTypes.assetsReady);
 
-export { UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, showStatistics };
+export { UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, showStatistics, assetsReady };

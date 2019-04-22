@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import Building from './Building.js';
 import { EntityType, AttackType, BoardCellTypes } from './gameplay/GameEntities';
-import AssetLoader from './AssetLoader.js';
+import { assetLoader as AssetLoader} from './AssetLoader.js';
 
 class Gamefield {
     constructor(isPlayerGameField, position, playerField, fieldIdx, size) {

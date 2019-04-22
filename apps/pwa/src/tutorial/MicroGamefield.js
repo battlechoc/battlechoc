@@ -312,7 +312,6 @@ class MicroGamefield extends Component {
                 let cellIndex = opponentIntersects[0].object._cellIdx || opponentIntersects[0].face._cellIdx;
                 
                 if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
-                    console.log('melt down field ' + (cellIndex.row * this.size.cols + cellIndex.col));
                     this.opponentField.grid[cellIndex.row * this.size.cols + cellIndex.col].molten = true;
                     this.opponentGamefield.rebuild(this.opponentField);
                 }

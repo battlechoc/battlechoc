@@ -164,9 +164,9 @@ class Hud extends Component {
                         }} />
                     }
                     else if (this.isTitleScreen()) {
-                        let buttons = [<Button key="0" color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback()}>{t[this.props.language].NEW_GAME}</Button>];
+                        let buttons = [<Button key="0" color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(false)}>{t[this.props.language].NEW_GAME}</Button>];
                         if (this.props.resumeGamePossible === true) {
-                            buttons.push(<Button key="1" color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareResumedGameCallback()}>{t[this.props.language].RESUME_GAME}</Button>);
+                            buttons.push(<Button key="1" color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(true)}>{t[this.props.language].RESUME_GAME}</Button>);
                         }
                         buttons.push([<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>]);
                         return (
@@ -250,7 +250,6 @@ class Hud extends Component {
 
 Hud.propTypes = {
     prepareNewGameCallback: PropTypes.func.isRequired,
-    prepareResumedGameCallback: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired
 }
 

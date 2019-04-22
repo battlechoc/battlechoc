@@ -1,9 +1,11 @@
+import React, { Component } from 'react';
 import GLTFLoader from 'three-gltf-loader';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import { connect } from 'react-redux';
+import { assetsReady } from './ui/UiActions';
 
 class AssetLoader {
-
     constructor(){
-        this.loader = new GLTFLoader();
         this.assets = {
             models: {
                 FIELD: { filename: 'field.glb', model: null },
@@ -64,61 +66,82 @@ class AssetLoader {
                 MAIN_THEME: { filename: 'music/CacaoLiving.mp3' }
             }
         }
+    }    
+}
+
+const assetLoader = new AssetLoader();
+
+class AssetLoadingView extends Component {
+    constructor(props) {
+        super(props);
+        this.state = { loadingProgress: 0 }
+        this.loader = new GLTFLoader();
     }
 
-    async loadAssets(callback) {
-        const totalResources = Object.keys(this.assets.models).length + Object.keys(this.assets.images).length + Object.keys(this.assets.audio).length;
-        let loadedResources = 0;
-        for (let i = 0; i < Object.keys(this.assets.models).length; i++) {
-            this.assets.models[Object.keys(this.assets.models)[i]].model = await this.loadGLTFModel('models/' + this.assets.models[Object.keys(this.assets.models)[i]].filename);
-            callback(Math.round((loadedResources / (totalResources - 1)) * 100));
-            loadedResources += 1;
+    componentDidMount() {
+        this.totalResources = Object.keys(assetLoader.assets.models).length + Object.keys(assetLoader.assets.images).length + Object.keys(assetLoader.assets.audio).length;
+        this.loadedResources = 0;
+
+        for (let i = 0; i < Object.keys(assetLoader.assets.models).length; i++) {
+            this.loadGLTF(Object.keys(assetLoader.assets.models)[i]);
         }
 
-        for (let i = 0; i < Object.keys(this.assets.images).length; i++) {
-            await this.loadImage('images/' + this.assets.images[Object.keys(this.assets.images)[i]].filename);
-            callback(Math.round((loadedResources / (totalResources - 1)) * 100));
-            loadedResources += 1;
+        for (let i = 0; i < Object.keys(assetLoader.assets.images).length; i++) {
+            this.loadImage('images/' + assetLoader.assets.images[Object.keys(assetLoader.assets.images)[i]].filename);
         }
 
-        for (let i = 0; i < Object.keys(this.assets.audio).length; i++) {
-            try {
-                await this.loadAudio(this.assets.audio[Object.keys(this.assets.audio)[i]].filename);
-            } catch (error) {
-                console.error('could not load audio resource: ' + error);
-            }
-            callback(Math.round((loadedResources / (totalResources - 1)) * 100));
-            loadedResources += 1;
+        for (let i = 0; i < Object.keys(assetLoader.assets.audio).length; i++) {
+            this.loadAudio(assetLoader.assets.audio[Object.keys(assetLoader.assets.audio)[i]].filename);
         }
-
-        callback(100);
     }
 
-    loadGLTFModel(filename) {
-        return new Promise((resolve, reject) => {
-            this.loader.load(filename, resolve);
+    updateProgress() {
+        this.loadedResources += 1;
+        if (this.loadedResources === this.totalResources) {
+            this.setState({ loadingProgress: 100 });
+            this.props.assetsReady();
+        } else {
+            this.setState({ loadingProgress: Math.round((this.loadedResources / (this.totalResources - 1)) * 100) });
+        }
+    }
+
+    loadGLTF(model) {
+        this.loader.load('models/' + assetLoader.assets.models[model].filename, gltf => {
+            assetLoader.assets.models[model].model = gltf;
+            this.updateProgress();
         });
     }
 
     loadImage(src) {
-        return new Promise((resolve, reject) => {
-            const image = new Image();
-            image.src = src; 
-            image.onload = () => resolve();
-        });
+        const image = new Image();
+        image.src = src; 
+        image.onload = () => this.updateProgress();
     }
 
     loadAudio(filename) {
-        return new Promise((resolve, reject) => {
-            let audio = new Audio();
-            audio.oncanplaythrough = () => resolve();
-            audio.addEventListener('error', error => reject(error));
-            audio.src = filename;
-            audio.load();
+        const audio = new Audio();
+        audio.oncanplaythrough = () => this.updateProgress();
+        audio.addEventListener('error', error => {
+            console.error(error);
+            this.updateProgress();
         });
+        audio.src = filename;
+        audio.load();
     }
 
+    render() {
+        return(
+            <div className="loadingView">
+                <CircularProgress className="progress" variant="static" value={this.state.loadingProgress} />
+            </div>
+        );
+    }
 }
 
-const assetLoader = new AssetLoader();
-export default assetLoader;
+const mapStateToProps = state => ({ game: state.gameplay.game });
+const mapDispatchToProps = { assetsReady };
+const AssetLoadingViewContainer = connect(
+    mapStateToProps, 
+    mapDispatchToProps
+)(AssetLoadingView);
+export { assetLoader, AssetLoadingViewContainer };
