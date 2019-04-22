@@ -47,53 +47,6 @@ class App extends Component {
       this.props.gameResumeable(resumeable);
     });
 
-    // Basic window and game setup
-    const width = this.container.clientWidth;
-    const height = this.container.clientHeight;
-    window.addEventListener("resize", () => this.updateDimensions());
-
-    // Setup scene, camera and renderer
-    this.scene = new THREE.Scene();
-    this.clock = new THREE.Clock();
-
-    let distance = this.estimateDistance(width / height);
-    let aspect = width / height;
-
-    this.camera = new THREE.OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, -100, 200);
-    this.camera.position.set(1, 1, 1);
-    this.camera.lookAt(this.scene.position);
-    this.camera.position.x = 0;
-    this.camera.position.y = 30;
-    this.camera.position.z = 70;
-
-    this.renderer = new THREE.WebGLRenderer({ alpha: true });
-
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setSize(width, height);
-    this.renderer.domElement.id = 'game-canvas'
-    this.renderer.gammaOutput = true;
-    this.renderer.gammaFactor = 1.7;
-
-    // animations and renderer
-    this.mixer = null;
-    this.container.appendChild(this.renderer.domElement);
-
-    // Allow clicking
-    this.raycaster = new THREE.Raycaster();
-    this.mouse = new THREE.Vector2();
-
-    // Start render loop
-    this.start();
-
-    this.opponent = new Augustus({
-      chooseStart: this.props.chooseStart,
-      chooseField: this.props.chooseField,
-      build: this.props.build,
-      attack: this.props.attack,
-      finishTurn: this.props.finishTurn,
-      finishBuildPhase: this.props.finishBuildPhase
-    });
-
     // SEO optimization
     if (this.props.language !== 'en') {
       document.querySelector('meta[name="description"]').setAttribute("content", t[this.props.language].META_DESCRIPTION);
@@ -250,6 +203,55 @@ class App extends Component {
         (this.props.game.currentPlayerIndex === 0 &&
           this.props.game.state === GameStateTypes.ATTACK_PHASE);
     }
+  }
+
+  setupScene() {
+    // Basic window and game setup
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    window.addEventListener("resize", () => this.updateDimensions());
+
+    // Setup scene, camera and renderer
+    this.scene = new THREE.Scene();
+    this.clock = new THREE.Clock();
+
+    let distance = this.estimateDistance(width / height);
+    let aspect = width / height;
+
+    this.camera = new THREE.OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, -100, 200);
+    this.camera.position.set(1, 1, 1);
+    this.camera.lookAt(this.scene.position);
+    this.camera.position.x = 0;
+    this.camera.position.y = 30;
+    this.camera.position.z = 70;
+
+    this.renderer = new THREE.WebGLRenderer({ alpha: true });
+
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(width, height);
+    this.renderer.domElement.id = 'game-canvas'
+    this.renderer.gammaOutput = true;
+    this.renderer.gammaFactor = 1.7;
+
+    // animations and renderer
+    this.mixer = null;
+    this.container.appendChild(this.renderer.domElement);
+
+    // Allow clicking
+    this.raycaster = new THREE.Raycaster();
+    this.mouse = new THREE.Vector2();
+
+    // Start render loop
+    this.start();
+
+    this.opponent = new Augustus({
+      chooseStart: this.props.chooseStart,
+      chooseField: this.props.chooseField,
+      build: this.props.build,
+      attack: this.props.attack,
+      finishTurn: this.props.finishTurn,
+      finishBuildPhase: this.props.finishBuildPhase
+    });
   }
 
   onClick = event => {
@@ -499,7 +501,8 @@ class App extends Component {
     const searchParams = new URLSearchParams(window.location.search);
     const isPwa = searchParams.get('app_runs_as') === 'pwa';
     let isAndroid = /Android/i.test(navigator.userAgent);
-
+    this.setupScene();
+    
     if (!isPwa) {
       try {
         await document.documentElement.requestFullscreen();
