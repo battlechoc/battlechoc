@@ -3,7 +3,6 @@ import { connect } from 'react-redux';
 import './App.css';
 import * as THREE from 'three';
 
-import { AssetLoadingViewContainer as AssetLoadingView } from './AssetLoader'
 import Gamefield from './Gamefield';
 import Hud from './ui/Hud';
 import Jukebox from './ui/Jukebox';
@@ -501,7 +500,10 @@ class App extends Component {
     const searchParams = new URLSearchParams(window.location.search);
     const isPwa = searchParams.get('app_runs_as') === 'pwa';
     let isAndroid = /Android/i.test(navigator.userAgent);
-    this.setupScene();
+    
+    if (typeof this.scene === 'undefined') {
+      this.setupScene();
+    }
     
     if (!isPwa) {
       try {
@@ -599,8 +601,8 @@ class App extends Component {
   render() {
     return (
       <div className="app-container">
-        <div id="clouds"></div>
-        {this.props.assetsReady ? <Hud prepareNewGameCallback={this.prepareNewGame} endGame={() => this.endGame()} onRef={hud => this.hud = hud} /> : <AssetLoadingView />}
+        { this.props.assetsReady ? <div id="clouds"></div> : null }
+        <Hud prepareNewGameCallback={this.prepareNewGame} endGame={() => this.endGame()} onRef={hud => this.hud = hud} />
         <div
           className="app"
           ref={container => { this.container = container }}

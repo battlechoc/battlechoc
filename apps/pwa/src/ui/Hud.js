@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import './Hud.css';
+import { AssetLoadingViewContainer as AssetLoadingView } from '../AssetLoader';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { chooseField, chooseStart } from '../gameplay/GameActions';
@@ -164,14 +165,14 @@ class Hud extends Component {
                         }} />
                     }
                     else if (this.isTitleScreen()) {
-                        let buttons = [<Button key="0" color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(false)}>{t[this.props.language].NEW_GAME}</Button>];
+                        let controls = [<Button key="0" color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(false)}>{t[this.props.language].NEW_GAME}</Button>];
                         if (this.props.resumeGamePossible === true) {
-                            buttons.push(<Button key="1" color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(true)}>{t[this.props.language].RESUME_GAME}</Button>);
+                            controls.push(<Button key="1" color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(true)}>{t[this.props.language].RESUME_GAME}</Button>);
                         }
-                        buttons.push([<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>]);
+                        controls.push([<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>]);
                         return (
                             <div id="mainMenu">
-                                { buttons }
+                                { this.props.assetsReady ? controls : <AssetLoadingView /> }
                                 { instagramIcon }
                             </div>
                         );
@@ -257,7 +258,8 @@ const mapStateToProps = state => ({
     game: state.gameplay.game,
     state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
     language: state.ui.language,
-    resumeGamePossible: state.ui.resumeGamePossible
+    resumeGamePossible: state.ui.resumeGamePossible,
+    assetsReady: state.ui.assetsReady
 });
 
 const mapDispatchToProps = {

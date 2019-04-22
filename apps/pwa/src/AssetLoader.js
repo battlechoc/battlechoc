@@ -107,11 +107,7 @@ class AssetLoadingView extends Component {
     }
 
     render() {
-        return(
-            <div className="loadingView">
-                <CircularProgress className="progress" variant="static" value={this.state.loadingProgress} />
-            </div>
-        );
+        return <CircularProgress variant="static" value={this.state.loadingProgress} />
     }
 }
 

@@ -63,20 +63,6 @@ html, body, #root {
   width: 100%;
 }
 
-/* loading view */
-
-.progress { color: #457B82 !important; }
-
-.loadingView {
-  position: absolute;
-  z-index: 100;
-  height: 100%;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* render stats */
 
 .rs-base {
