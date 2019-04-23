@@ -17,15 +17,39 @@
       gtag('js', new Date());
       gtag('config', 'UA-135265930-1');
     </script>
+    <link rel="prefetch" href="icon-144x144.png">
+    <link rel="preload" href="https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700,300" as="font" crossorigin>
+    <link rel="prefetch" href="manifest.json">
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-
-    <!-- prefetch audio 
-    <link rel="prefetch" href="music/CacaoLiving.mp3"> -->
-    <link rel="prefetch" href="sound/attack_bunny.mp3">
-    <link rel="prefetch" href="sound/attack_explosion.mp3">
-    <link rel="prefetch" href="sound/bunny_caught.mp3">
+    <!-- prefetch animations -->
+    <link rel="prefetch" href="animations/loading.gif">
+    <!-- prefetch music --> 
+    <link rel="prefetch" href="music/CacaoLiving.mp3">
+    <!-- prefetch sound -->
     <link rel="prefetch" href="sound/ui_accept.mp3">
     <link rel="prefetch" href="sound/ui_build.mp3">
+    <link rel="prefetch" href="sound/attack_explosion.mp3">
+    <link rel="prefetch" href="sound/attack_bunny.mp3">
+    <link rel="prefetch" href="sound/bunny_caught.mp3">
+    <!-- prefetch models -->
+    <link rel="prefetch" href="models/cacaotree.glb">
+    <link rel="prefetch" href="models/field.glb">
+    <link rel="prefetch" href="models/factory.glb">
+    <link rel="prefetch" href="models/factory-explosion.glb">
+    <link rel="prefetch" href="models/factoryExtension.glb">
+    <link rel="prefetch" href="models/factoryExtension-explosion.glb">
+    <link rel="prefetch" href="models/cannon-explosion.glb">
+    <link rel="prefetch" href="models/spyingEasterBunny-explosion.glb">
+    <!-- prefetch images -->
+    <link rel="prefetch" href="images/cacao_no_background.png">
+    <link rel="prefetch" href="images/cacao_icon.png">
+    <link rel="prefetch" href="images/cacaoPerTurn.png">
+    <link rel="prefetch" href="images/cannon_icon.png">
+    <link rel="prefetch" href="images/attacksPerTurn.png">
+    <link rel="prefetch" href="images/cream_preview.png">
+    <link rel="prefetch" href="images/cacaoPerTurn.png">
+    <link rel="prefetch" href="images/fog_background.png">
+    <link rel="prefetch" href="images/fog_foreground.png">
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
@@ -36,6 +60,7 @@
       }
     </script>    
     <div id="root"></div>
+    <audio></audio>
     <script src="https://www.gstatic.com/firebasejs/5.8.4/firebase-app.js"></script>
     <script>
       // Initialize Firebase

@@ -23,7 +23,7 @@
         "value": "max-age=0, no-cache"
       } ]
     }, {
-      "source": "**/*.@(jpg|jpeg|gif|png|gltf|js|css|mp3)",
+      "source": "**/*.@(jpg|jpeg|gif|png|gltf|glb|js|css|mp3)",
       "headers": [ {
         "key": "Cache-Control",
         "value": "max-age=1209600"
