@@ -347,6 +347,18 @@ class Gamefield {
         return this.buildings[row][col].filter(building => building.entityType === entityType).length > 0;
     }
 
+    highlightCannons(unhighlight) {
+        for (let row = 0; row < this.rows; row++) {
+            for (let col = 0; col < this.cols; col++) {
+                this.buildings[row][col].forEach(building => {
+                    if (building.entityType === EntityType.RUM_TRUFFLE_CANNON) {
+                        building.highlight(unhighlight);
+                    }
+                })
+            }
+        }
+    }
+
     setBuilding(entityType, entityPosition) {
         const row = entityPosition.row;
         const col = entityPosition.col;

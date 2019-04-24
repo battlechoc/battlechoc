@@ -82,7 +82,6 @@ class Building {
 				child.visible = true;
 			}
 		});
-
 	}
 
 	hide() {
@@ -91,6 +90,28 @@ class Building {
 				child.visible = false;
 			}
 		});
+	}
+
+	highlight(unhighlight) {
+		var highlighted = false;
+		this._model.traverse(child => {
+			if (child instanceof THREE.SpotLight) {
+				highlighted = true;
+			}
+		});
+
+		if (unhighlight === true && highlighted === true) {
+			this._model.traverse(child => {
+				if (child instanceof THREE.SpotLight) {
+					this._model.remove(child);
+				}
+			});
+		} else if (highlighted === false) {
+			var spotLight = new THREE.SpotLight(0xffffff, 8.0, 64, 0.2);
+			spotLight.position.set(0, 32, 0);
+			spotLight.target = this._model;
+			this._model.add(spotLight);
+		}
 	}
 
 	rotate(rad) {
@@ -119,7 +140,7 @@ class Building {
 
 	makeUncreamy() {
 		let creamyField = this._model.getObjectByName('CREAMY_FIELD');
-    	this._model.remove(creamyField);
+		this._model.remove(creamyField);
 	}
 
 	getModel() {

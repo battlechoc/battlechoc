@@ -27,9 +27,9 @@ class App extends Component {
   componentWillMount() {
     let browserLanguage = 'en';
     if (navigator.userLanguage) {
-        browserLanguage = navigator.userLanguage.substr(0,2);
+      browserLanguage = navigator.userLanguage.substr(0, 2);
     } else if (navigator.language) {
-        browserLanguage = navigator.language.substr(0,2);
+      browserLanguage = navigator.language.substr(0, 2);
     }
 
     OfflineStore.settingsStore.get('language').then(language => {
@@ -86,6 +86,16 @@ class App extends Component {
       }
     }
 
+    if (typeof this.playerGameField !== 'undefined') {
+      if (nextProps.selectedBuilding === EntityType.FRUIT_CANNON && this.props.selectedBuilding !== EntityType.FRUIT_CANNON) {
+        this.dimLight();
+        this.playerGameField.highlightCannons();
+      } else if (nextProps.selectedBuilding !== EntityType.FRUIT_CANNON && this.props.selectedBuilding === EntityType.FRUIT_CANNON) {
+        this.resetLight();
+        this.playerGameField.highlightCannons(true);
+      }
+    }
+
     if (!gameStopped) {
       if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined' && typeof OfflineStore.gamestateStore !== 'undefined' &&
         (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (nextProps.game.currentPlayerIndex === 0)) {
@@ -114,7 +124,13 @@ class App extends Component {
         document.querySelector('meta[name="description"]').setAttribute("content", t[nextProps.language].META_DESCRIPTION);
         document.querySelector('meta[name="keywords"]').setAttribute("content", t[nextProps.language].META_KEYWORDS);
       }
-
+/*
+      if (typeof nextProps.game !== 'undefined' && (nextProps.game.state !== GameStateTypes.BUILD_PHASE || nextProps.currentPlayerIndex !== 0 ||
+        nextProps.game.players[0].buildings === 0)) {
+        this.resetLight();
+        this.playerGameField.highlightCannons(true);
+      }
+*/
       if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
         this.hud.unlockUi();
         this.colorStartButton = 1;
@@ -132,22 +148,22 @@ class App extends Component {
         const specialTrees = nextProps.game.board.fields[this.props.game.players[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE) && cell.type === BoardCellTypes.WHITE);
         const trees = nextProps.game.board.fields[this.props.game.players[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE) && cell.type !== BoardCellTypes.WHITE);
         let description = getEntityDescriptor(EntityType.CACAOTREE)
-        trees.forEach(cell => spawnInfoAtBuilding({ 
-            tree: this.playerGameField.getBuildingAtPosition(cell), 
-            cacao: description.cacaoPerTurn, 
-            camera: this.camera, 
-            type: InfoType.CACAO_HARVESTED,
-            container: this.container
-          })
+        trees.forEach(cell => spawnInfoAtBuilding({
+          tree: this.playerGameField.getBuildingAtPosition(cell),
+          cacao: description.cacaoPerTurn,
+          camera: this.camera,
+          type: InfoType.CACAO_HARVESTED,
+          container: this.container
+        })
         );
-        specialTrees.forEach(cell => spawnInfoAtBuilding({ 
-            tree: this.playerGameField.getBuildingAtPosition(cell), 
-            cacao: Math.round(description.cacaoPerTurn * 1.5), 
-            camera: this.camera, 
-            type: InfoType.CACAO_HARVESTED,
-            container: this.container
-          })
-        ); 
+        specialTrees.forEach(cell => spawnInfoAtBuilding({
+          tree: this.playerGameField.getBuildingAtPosition(cell),
+          cacao: Math.round(description.cacaoPerTurn * 1.5),
+          camera: this.camera,
+          type: InfoType.CACAO_HARVESTED,
+          container: this.container
+        })
+        );
       } else if (gameTransition === GameTransitions.PLAYER_ATTACK_PHASE) {
         const attacks = [AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.FRUIT, AttackType.BUNNY];
         let availableAttackType = undefined;
@@ -289,7 +305,7 @@ class App extends Component {
         Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
         this.playerGameField.setBuilding(building.type, building.position);
         if (initialPlacement) {
-          spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: this.props.game.players[0].buildingsPerTurn, x: event.clientX,  y: event.clientY, container: this.container });
+          spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: this.props.game.players[0].buildingsPerTurn, x: event.clientX, y: event.clientY, container: this.container });
           this.props.deselectBuildings();
           this.props.deselectAttack();
           setTimeout(() => {
@@ -500,11 +516,11 @@ class App extends Component {
     const searchParams = new URLSearchParams(window.location.search);
     const isPwa = searchParams.get('app_runs_as') === 'pwa';
     let isAndroid = /Android/i.test(navigator.userAgent);
-    
+
     if (typeof this.scene === 'undefined') {
       this.setupScene();
     }
-    
+
     if (!isPwa) {
       try {
         await document.documentElement.requestFullscreen();
@@ -540,7 +556,7 @@ class App extends Component {
               boardSeed: 42
             });
           }, 1000);
-        });        
+        });
       }
     });
   }
@@ -550,6 +566,22 @@ class App extends Component {
       Jukebox.stopMusic();
       this.props.finishGame();
     }, 1000);
+  }
+
+  dimLight = () => {
+    this.scene.traverse(child => {
+      if (child instanceof THREE.DirectionalLight) {
+        child.intensity = 0.1;
+      }
+    });
+  }
+
+  resetLight = () => {
+    this.scene.traverse(child => {
+      if (child instanceof THREE.DirectionalLight) {
+        child.intensity = 2.0;
+      }
+    });
   }
 
   startGame = (createUnits) => {
@@ -602,7 +634,7 @@ class App extends Component {
   render() {
     return (
       <div className="app-container">
-        { this.props.assetsReady ? <div id="clouds"></div> : null }
+        {this.props.assetsReady ? <div id="clouds"></div> : null}
         <Hud prepareNewGameCallback={this.prepareNewGame} endGame={() => this.endGame()} onRef={hud => this.hud = hud} />
         <div
           className="app"
