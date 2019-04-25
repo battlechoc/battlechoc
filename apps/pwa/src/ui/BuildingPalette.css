@@ -54,8 +54,6 @@
 .ballista.preview { background-position: -200% -100%; }
 
 .preview {
-  border-radius: 100%;
-  border: 3px solid turquoise;
   margin-left: 5px;
   user-select: none;
 }
@@ -67,7 +65,9 @@
 }
 
 .selected .preview {
-  border-color: yellow;
+  border-radius: 100%;
+  margin: -3px -3px 0 2px;
+  border: 3px solid yellow;
   filter: brightness(150%);
   -webkit-filter: brightness(150%);
   -moz-filter: brightness(150%);
@@ -103,8 +103,12 @@
   .preview {
     width: 30px;
     height: 30px;
-    border-width: 2px;
+    border-width: 2px !important;
     background-size: 120px 90px;
+  }
+
+  .selected .preview {
+    margin: -2px -2px -2px 3px !important;
   }
 
   #buildingSelection {
