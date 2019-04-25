@@ -34,27 +34,15 @@ class AssetLoader {
             },
             images: {
                 CACAO_NO_BACKGROUND: { filename: 'cacao_no_background.png' },
-                CACAO: { filename: 'cacao_icon.png' },
                 CACAO_PER_TURN: { filename: 'cacaoPerTurn.png' },
-                CANNON: { filename: 'cannon_icon.png' },
+                TOOLBAR_ICON_PALETTE: { filename: 'toolbar_icon_palette.png' },
                 ATTACKS_PER_TUN: { filename: 'attacksPerTurn.png '},
                 CREAM_PREVIEW: { filename: 'cream_preview.png' },
                 FOG_BACKGROUND: { filename: 'fog_background.png' },
                 FOG_FOREGROUND: { filename: 'fog_foreground.png' },
-                FACTORY: { filename: 'factory_icon.png' },
-                BUILDINGS: { filename: 'buildings_icon.png' },
                 BUILDINGS_PER_TURN: { filename: 'buildingsPerTurn.png' },
-                CACAOTREE: { filename: 'cacaotree_icon.png' },
-                CREAM: { filename: 'cream_icon.png' },
-                FACTORY_EXTENSION: { filename: 'factory_extension_icon.png' },
-                SPYING_EASTER_BUNNY: { filename: 'spying_easter_bunny_icon.png' },
-                SPYING_EASTER_BUNNY_ATTACK: { filename: 'spyingEasterBunnyAttack.png' },
                 SPY_ATTACKS_PER_TURN: { filename: 'spyAttacksPerTurn.png '},
-                CHOCOLATE_FOUNTAIN: { filename: 'chocolateFountain_icon.png' },
                 BUNNY_CAUGHT: { filename: 'bunnyCaught.png' },
-                XMAS_FACTORY: { filename: 'xmasFactory_icon.png' },
-                HOT_CHOCOLATE_BALLISTA: { filename: 'hotChocolateBallista_icon.png'},
-                FRUIT_CANNON: { filename: 'fruitCannon_icon.png' },
                 LOADING: { filename: '../animations/loading.gif' }
             },
             audio: {
@@ -97,7 +85,9 @@ class AssetLoadingView extends Component {
 
     updateProgress() {
         this.loadedResources += 1;
-        if (this.loadedResources === this.totalResources) {
+        console.log(this.loadedResources)
+        console.log(this.totalResources - 1)
+        if (this.loadedResources === (this.totalResources - 1)) {
             this.setState({ loadingProgress: 100 });
             this.props.assetsReady();
         } else {

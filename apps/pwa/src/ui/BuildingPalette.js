@@ -11,47 +11,47 @@ class BuildingPalette extends Component {
     componentWillMount() {
         this.buildingsForSeclection = [{
             type: EntityType.FACTORY,
-            image: 'images/factory_icon.png',
+            className: 'factory',
             alt: 'factory preview',
             costs: getEntityDescriptor(EntityType.FACTORY).costs
         }, {
             type: EntityType.CACAOTREE,
-            image: 'images/cacaotree_icon.png',
+            className: 'cacaotree',
             alt: 'cacao tree preview',
             costs: getEntityDescriptor(EntityType.CACAOTREE).costs
         }, {
             type: EntityType.RUM_TRUFFLE_CANNON,
-            image: 'images/cannon_icon.png',
+            className: 'cannon',
             alt: 'cannon preview',
             costs: getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON).costs
         }, {
             type: EntityType.FACTORY_EXTENSION,
-            image: 'images/factory_extension_icon.png',
+            className: 'factoryExtension',
             alt: 'factory extension preview',
             costs: getEntityDescriptor(EntityType.FACTORY_EXTENSION).costs
         }, {
             type: EntityType.CREAM,
-            image: 'images/cream_icon.png',
+            className: 'cream',
             alt: 'cream preview',
             costs: getEntityDescriptor(EntityType.CREAM).costs
         }, {
             type: EntityType.SPYING_EASTER_BUNNY,
-            image: 'images/spying_easter_bunny_icon.png',
+            className: 'bunny',
             alt: 'easter factory',
             costs: getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY).costs
         }, {
             type: EntityType.XMAS_FACTORY,
-            image: 'images/xmasFactory_icon.png',
+            className: 'xmasFactory',
             alt: 'xmas factory',
             costs: getEntityDescriptor(EntityType.XMAS_FACTORY).costs
         }, {
             type: EntityType.CHOCOLATE_FOUNTAIN,
-            image: 'images/chocolateFountain_icon.png',
+            className: 'fountain',
             alt: 'chocolate fountain',
             costs: getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN).costs
         }, {
             type: EntityType.FRUIT_CANNON,
-            image: 'images/fruitCannon_icon.png',
+            className: 'fruitCannon',
             alt: 'fruit cannon',
             costs: getEntityDescriptor(EntityType.FRUIT_CANNON).costs
         }];
@@ -103,10 +103,8 @@ class BuildingPalette extends Component {
                                     (building.type !== EntityType.FACTORY && this.props.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && this.props.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT)) {
                                     let className = canBuild ? (this.props.selectedBuilding === building.type ? 'selected previewContainer' : 'canbuild previewContainer') : 'previewContainer';
                                     return <div className={className} key={i}>
-                                        <div className={canBuild ? '' : 'disabled'} onClick={() => {
-                                            this.props.tapBuilding(building.type);
-                                        }} />
-                                        <img alt={building.alt} className={canBuild ? 'enabled preview' : 'preview'} src={building.image} onClick={() => {
+                                        <div className={building.className + (canBuild ? ' enabled preview' : ' disabled preview')} 
+                                             style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }} onClick={() => {
                                             this.props.tapBuilding(building.type);
                                             if (canBuild) {
                                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);

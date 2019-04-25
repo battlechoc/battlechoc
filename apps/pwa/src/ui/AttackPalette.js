@@ -10,19 +10,19 @@ class AttackPalette extends Component {
     componentWillMount() {
         this.attacksForSeclection = [{
             type: AttackType.TRUFFLE,
-            image: 'images/cannon_icon.png',
+            className: 'cannon',
             alt: 'cannon preview'
         }, {
             type: AttackType.BUNNY,
-            image: 'images/spying_easter_bunny_icon.png',
+            className: 'bunny',
             alt: 'easter factory'
         }, {
             type: AttackType.FRUIT,
-            image: 'images/fruitCannon_icon.png',
+            className: 'fruitCannon',
             alt: 'fruit cannon'
         }, {
             type: AttackType.HOT_CHOCOLATE,
-            image: 'images/hotChocolateBallista_icon.png',
+            className: 'ballista',
             alt: 'hot chocolate ballista'
         }];
     }
@@ -61,9 +61,9 @@ class AttackPalette extends Component {
                                                 this.props.selectAttack(attack.type);
                                             }
                                         }}>
-                                        <div className={canAttack ? '' : 'disabled'}></div>
                                         <div className="attackCount">{this.attacks(attack.type)}</div>
-                                        <img alt={attack.alt} className={canAttack ? 'enabled preview' : 'preview'} src={attack.image} />
+                                        <div style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }} 
+                                             className={attack.className + (canAttack ? ' enabled preview' : ' disabled preview')} />
                                     </div>
                                 </div>
                             });

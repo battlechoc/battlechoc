@@ -9,11 +9,11 @@ class InfoPanel extends Component {
             return (
                 <div id="gameMenu">
                     <div className="infoIcon">
-                        <img alt="cacao" src="images/cacao_icon.png" />
+                        <div className="cacao info" style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }} />
                         <p>{this.props.game.players[0].cacao}</p>
                     </div>
                     <div className="infoIcon">
-                        <img className="infoIcon" alt="buildings" src="images/buildings_icon.png" />
+                        <div className="buildings info" style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }} />
                         <p>{this.props.game.players[0].buildings + '/' + this.props.game.players[0].buildingsPerTurn}</p>
                     </div>
                 </div>

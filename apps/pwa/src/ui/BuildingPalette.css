@@ -42,69 +42,75 @@
   cursor: pointer;
 }
 
-.previewContainer>img {
+.cannon.preview { background-position: -100% 0%; }
+.factory.preview { background-position: -100% -200%; }
+.cacaotree.preview { background-position: 0% 0%; }
+.factoryExtension.preview { background-position: -200% 0%; }
+.cream.preview { background-position: -300% 0%; }
+.bunny.preview { background-position: -100% -100%; }
+.xmasFactory.preview { background-position: 0% -100%; }
+.fountain.preview { background-position: -300% -100%; }
+.fruitCannon.preview { background-position: 0% -200%; }
+.ballista.preview { background-position: -200% -100%; }
+
+.preview {
   border-radius: 100%;
-  border-color: turquoise;
-  border-style: solid;
+  border: 3px solid turquoise;
+  margin-left: 5px;
+  user-select: none;
 }
 
-.canbuild img {
-  border-radius: 100%;
-  border-color: transparent;
-  border-style: solid;
+.canbuild .preview {
+  filter: brightness(130%);
   -webkit-filter: brightness(130%);
   -moz-filter: brightness(130%);
 }
 
-.selected img {
-  box-shadow: 0px 0px 20px 2px rgba(50, 77, 92, 1);
-  border-radius: 100%;
+.selected .preview {
   border-color: yellow;
-  border-style: solid;
+  filter: brightness(150%);
   -webkit-filter: brightness(150%);
   -moz-filter: brightness(150%);
 }
 
 .disabled {
-  width: 94%;
-  height: 98%;
-  border-radius: 50%;
-  position: absolute;
-  top: 0;
-  margin-top: -1px;
-  margin-left: 4px;
-  background-color: rgba(56, 56, 56, 0.7);
+  filter: brightness(20%);
+  -webkit-filter: brightness(20%);
+  -moz-filter: brightness(20%);
 }
 
 .previewContainer {
   position: relative;
 }
 
-.preview {
-  margin-left: 5px;
-  height: auto;
-  user-select: none;
-  width: 5vw;
-}
-
-@media screen and (min-width: 1100px) {
+@media screen and (min-width: 901px) {
   .preview {
-    width: 55px;
+    width: 54px;
+    height: 54px;
+    background-size: 216px 162px;
   }
 }
 
-@media screen and (max-width: 800px) {
+@media screen and (max-width: 900px) {
   .preview {
-    width: 40px;
+    width: 42px;
+    height: 42px;
+    background-size: 168px 126px;
   }
 }
 
 @media screen and (max-width: 600px) {
   .preview {
-    width: 34px;
+    width: 30px;
+    height: 30px;
+    border-width: 2px;
+    background-size: 120px 90px;
   }
+
   #buildingSelection {
     width: 80vw;
     flex-flow: row wrap;
+    margin-bottom: 0px;
+    margin-left: 0px;
   }
 }
