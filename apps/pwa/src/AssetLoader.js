@@ -63,19 +63,16 @@ class AssetLoadingView extends Component {
         this.loadedResources = 0;
 
         for (let i = 0; i < Object.keys(assetLoader.assets.models).length; i++) {
-            this.loadGLTF(Object.keys(assetLoader.assets.models)[i]);
+            this.loadGLTF(Object.keys(assetLoader.assets.models)[i]).then(() => this.updateProgress());
         }
 
         for (let i = 0; i < Object.keys(assetLoader.assets.images).length; i++) {
-            this.loadImage('images/' + assetLoader.assets.images[Object.keys(assetLoader.assets.images)[i]].filename);
+            this.loadImage('images/' + assetLoader.assets.images[Object.keys(assetLoader.assets.images)[i]].filename).then(() => this.updateProgress());
         }
     }
 
-    updateProgress(resource) {
-        console.log(resource);
+    updateProgress() {
         this.loadedResources += 1;
-        console.log(this.loadedResources)
-        console.log(this.totalResources)
         if (this.loadedResources === this.totalResources) {
             this.props.assetsReady();
         } else {
@@ -84,16 +81,29 @@ class AssetLoadingView extends Component {
     }
 
     loadGLTF(model) {
-        this.loader.load('models/' + assetLoader.assets.models[model].filename, gltf => {
-            assetLoader.assets.models[model].model = gltf;
-            this.updateProgress(model);
+        return new Promise((resolve, reject) => {
+            this.loader.load('models/' + assetLoader.assets.models[model].filename, gltf => {
+                assetLoader.assets.models[model].model = gltf;
+                resolve();
+            });
         });
     }
 
     loadImage(src) {
-        const image = new Image();
-        image.src = src; 
-        image.onload = () => this.updateProgress(src);
+        return new Promise((resolve, reject) => {
+            let xhr = new XMLHttpRequest();
+            xhr.open('GET', src);
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(xhr.response);
+              } else {
+                reject({ status: this.status, statusText: xhr.statusText });
+              }
+            };
+            
+            xhr.onerror = () => reject({ status: this.status, statusText: xhr.statusText });
+            xhr.send();
+        });
     }
 
     render() {

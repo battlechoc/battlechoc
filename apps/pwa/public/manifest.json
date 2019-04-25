@@ -21,6 +21,6 @@
   "start_url": "./index.html?app_runs_as=pwa&app_version=1",
   "display": "fullscreen",
   "orientation":  "landscape",
-  "theme_color": "#000000",
+  "theme_color": "#457B82",
   "background_color": "#ffffff"
 }
