@@ -1,5 +1,100 @@
-/* choose menu */
+/* title */
+.headline {
+  position: absolute;
+  z-index: 2;
+  top: 15vh;
+}
 
+.headline span {
+  color: #c7c585;
+  text-shadow: 1px 1px 1px #a7a565,
+        2px 2px 1px #a7a565,
+        4px 3px 1px #a7a565,
+        6px 4px 3px #a7a565;
+  font-size: 10vw;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  font-weight: bold;
+  user-select: none;
+  display: inline-block;
+}
+
+.headline span:first-child {
+  animation: moveup 1s forwards;
+}
+
+.headline span:last-child { 
+  animation: movedown 1s forwards;
+  color: #442c12;
+  text-shadow: 1px 1px 1px #341c02,
+        2px 2px 1px #341c02,
+        4px 3px 1px #341c02,
+        6px 4px 3px #341c02;
+}
+
+.titleMenu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  position: absolute;
+  top: 50%;
+}
+
+.backgroundEntity {
+  position: absolute;
+  filter: contrast(0.8) blur(0.03em);
+  height: 15vw;
+  z-index: -1;
+  animation: moving 3s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+.foregroundEntity {
+  position: absolute;
+  height: 20vw;
+  z-index: -1;
+  animation: moving 3s ease-in-out infinite;
+}
+
+#cannonTitlePage {
+  bottom: 2%;
+  left: 3%;
+}
+
+#treeTitlePage {
+  top: 14%;
+  right: 2%;
+}
+
+#creamTitlePageTop {
+  top: 15%;
+  left: 5%;
+}
+
+#creamTitlePageBottom {
+  bottom: 15%;
+  right: 5%;
+}
+
+@keyframes moving {
+  0% { transform: translateY(0vh); }
+  50% { height: 20vw; transform: translateY(1vh); }
+  100% { transform: translateY(0vh); }
+}
+
+@keyframes moveup {
+    to {
+        transform: translateY(-2vh);
+    }
+}
+
+@keyframes movedown {
+    to {
+        transform: translateY(2vh);
+    }
+}
+
+/* choose menu */
 .choose {
   margin-top: 20px;
   position: absolute;
@@ -162,13 +257,12 @@ img.cream {
 .menuButton {
   cursor: pointer;
   padding: 5px;
-  width: 50vw;
+  width: 40vw;
   min-width: 120px !important;
-  max-width: 200px !important;
   border-radius: 0 !important;
   text-align: center;
   color: white !important;
-  margin: 5px !important;
+  margin-top: 20px !important;
 }
 
 .active:hover {
@@ -207,8 +301,12 @@ img.cream {
 }
 
 @media screen and (orientation:portrait) {
-  .menuButton { 
-    width: 100vw;
+  .menuButton {
+    width: 70vw;
+  }
+
+  .titleMenu {
+    top: unset;
   }
 
   .button {
@@ -221,9 +319,21 @@ img.cream {
     height: 87.5vh;
     margin-top: 12.5vh;
   }
+
+  .backgroundEntity {
+    height: 15vh;
+  }
+
+  .foregroundEntity {
+    height: 20vh;
+  }
 }
 
 @media screen and (min-width: 960px) {
+  .menuButton {
+    font-size: 1.6rem !important;
+  }
+
   .stackedIcon > .firstIcon {
     font-size: 6rem;
   }
@@ -233,7 +343,19 @@ img.cream {
   }
 }
 
+@media screen and (max-width: 959px) {
+  .menuButton {
+    font-size: 1.3rem !important;
+    margin-top: 10px !important;
+    width: 50vw;
+  }
+}
+
 @media screen and (max-width: 600px) {
+  .menuButton {
+    font-size: 1.3rem !important;
+  }
+
   .stackedIcon > .firstIcon {
     font-size: 2rem;
   }

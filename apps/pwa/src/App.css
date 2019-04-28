@@ -3,7 +3,13 @@ html, body, #root {
   width: 100%;
 }
 
-.app-container {
+.app {
+  height: 100%;
+  width: 100%;
+}
+
+.scene {
+  position: absolute;
   height: 100%;
   width: 100%;
 }
@@ -56,11 +62,6 @@ html, body, #root {
 #clouds:after {
   background-image: url('/images/fog_background.png');
   animation: fog 30s linear 0s infinite;
-}
-
-.app {
-  height: 100%;
-  width: 100%;
 }
 
 /* render stats */

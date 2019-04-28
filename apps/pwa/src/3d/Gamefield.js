@@ -1,7 +1,7 @@
-import * as THREE from 'three';
+import { AnimationMixer, LoopOnce, Group, Geometry, Mesh } from 'three';
 import Building from './Building.js';
-import { EntityType, AttackType, BoardCellTypes } from './gameplay/GameEntities';
-import { assetLoader as AssetLoader} from './AssetLoader.js';
+import { EntityType, AttackType, BoardCellTypes } from '../gameplay/GameEntities';
+import { assetLoader as AssetLoader} from '../AssetLoader.js';
 
 class Gamefield {
     constructor(isPlayerGameField, position, playerField, fieldIdx, size) {
@@ -16,7 +16,7 @@ class Gamefield {
             field => Array(this.cols).fill([])
         );
 
-        this.gameField = new THREE.Group();
+        this.gameField = new Group();
         this.build(playerField, false);
     }
 
@@ -26,7 +26,7 @@ class Gamefield {
         let materialMap = assets['FIELD'].model.scene.children[1];
 
         let materials = [materialMap.children[0].material, materialMap.children[1].material, materialMap.children[2].material];
-        let board = new THREE.Mesh(new THREE.Geometry(), materials);
+        let board = new Mesh(new Geometry(), materials);
         playerField.grid.forEach((cell, i) => {
             if (!cell.molten) {
                 let materialIndex = 1;
@@ -40,9 +40,9 @@ class Gamefield {
 
                 pivot.position.set(this.fieldSize * cell.row, 0, this.fieldSize * cell.col);
                 pivot.traverse(child => {
-                    if (child instanceof THREE.Mesh) {
+                    if (child instanceof Mesh) {
                         child.updateMatrix();
-                        let geometry = new THREE.Geometry().fromBufferGeometry(child.geometry);
+                        let geometry = new Geometry().fromBufferGeometry(child.geometry);
                         geometry.faces.forEach(face => {
                             face.materialIndex = materialIndex;
                         });
@@ -101,10 +101,10 @@ class Gamefield {
         model.position.set(position.x, position.y, position.z);
 
         this.gameField.add(model);
-        this.mixer = new THREE.AnimationMixer(model);
+        this.mixer = new AnimationMixer(model);
 
         for (let i = 0; i < explosion.animations.length; i++) {
-            this.mixer.clipAction(explosion.animations[i]).setLoop(THREE.LoopOnce).play()
+            this.mixer.clipAction(explosion.animations[i]).setLoop(LoopOnce).play()
         }
 
         this.explosionCallback = () => {
@@ -134,7 +134,7 @@ class Gamefield {
 
         this.gameField.add(building.getModel());
 
-        this.mixer = new THREE.AnimationMixer(building.getModel());
+        this.mixer = new AnimationMixer(building.getModel());
         const assets = AssetLoader.assets.models;
 
         let explosion = assets.CREAM_EXPLOSION;
@@ -160,7 +160,7 @@ class Gamefield {
         }
 
         for (let i = 0; i < explosion.model.animations.length; i++) {
-            this.mixer.clipAction(explosion.model.animations[i]).setLoop(THREE.LoopOnce).play()
+            this.mixer.clipAction(explosion.model.animations[i]).setLoop(LoopOnce).play()
         }
 
         this.explosionCallback = () => {

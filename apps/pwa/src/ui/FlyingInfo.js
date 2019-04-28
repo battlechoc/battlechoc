@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 
 const InfoType = Object.freeze({
     CACAO_HARVESTED: 'InfoType.CACAO_HARVESTED',
@@ -12,7 +12,7 @@ const InfoType = Object.freeze({
 
 function spawnInfoAtBuilding(message) {
     if (message.type === InfoType.CACAO_HARVESTED) {
-        let vector = message.tree._model.getWorldPosition(new THREE.Vector3());
+        let vector = message.tree._model.getWorldPosition(new Vector3());
         vector.project(message.camera);
         if (typeof message.rect === 'undefined') {
             message.x = (vector.x + 1) / 2 * window.innerWidth;

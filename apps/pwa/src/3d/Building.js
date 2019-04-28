@@ -1,6 +1,6 @@
-import { assetLoader as AssetLoader } from './AssetLoader.js';
-import * as THREE from 'three';
-import { EntityType } from './gameplay/GameEntities'
+import { assetLoader as AssetLoader } from '../AssetLoader.js';
+import { Mesh, MeshLambertMaterial, MeshBasicMaterial } from 'three';
+import { EntityType } from '../gameplay/GameEntities'
 
 class Building {
 	constructor(entityType, cellIdx, position3d, fieldIdx) {
@@ -31,7 +31,7 @@ class Building {
 		} else if (this.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
 			this._model = assets.CHOCOLATE_FOUNTAIN.model.scene.clone();
 			let shield = this._model.getObjectByName('Shield');
-			shield.material = new THREE.MeshLambertMaterial({ color: 0x6C5710, opacity: 0.3, transparent: true });
+			shield.material = new MeshLambertMaterial({ color: 0x6C5710, opacity: 0.3, transparent: true });
 		} else if (this.entityType === EntityType.FRUIT_CANNON) {
 			this._model = assets.FRUIT_CANNON.model.scene.clone();
 		}
@@ -39,7 +39,7 @@ class Building {
 		if (typeof this._model !== 'undefined') {
 			this._model.position.set(position3d.x, position3d.y, position3d.z);
 			this._model.traverse(child => {
-				if (child instanceof THREE.Mesh) {
+				if (child instanceof Mesh) {
 					if (child.name !== 'Shield') {
 						child._cellIdx = this._cellIdx;
 						child._fieldIdx = this._fieldIdx;
@@ -78,7 +78,7 @@ class Building {
 
 	show() {
 		this._model.traverse(child => {
-			if (child instanceof THREE.Mesh) {
+			if (child instanceof Mesh) {
 				child.visible = true;
 			}
 		});
@@ -87,7 +87,7 @@ class Building {
 
 	hide() {
 		this._model.traverse(child => {
-			if (child instanceof THREE.Mesh) {
+			if (child instanceof Mesh) {
 				child.visible = false;
 			}
 		});
@@ -98,14 +98,14 @@ class Building {
 	}
 
 	makeTransparent() {
-		this._model.children[0].material = new THREE.MeshBasicMaterial({ opacity: 0.7, transparent: true, depthWrite: false });
+		this._model.children[0].material = new MeshBasicMaterial({ opacity: 0.7, transparent: true, depthWrite: false });
 	}
 
 	makeCreamy() {
 		const assets = AssetLoader.assets.models;
 		let creamAround = assets.CREAM_AROUND_BUILDING.model.scene.clone();
 		creamAround.traverse(child => {
-			if (child instanceof THREE.Mesh) {
+			if (child instanceof Mesh) {
 				child.material.opacity = 0.8;
 				child.material.transparent = true;
 				child.renderOrder = -1;

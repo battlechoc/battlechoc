@@ -31,7 +31,7 @@ class Hud extends Component {
     }
 
     componentDidMount() {
-        this.props.onRef(this)
+        this.props.onRef(this);
     }
 
     unlockUi() {
@@ -113,7 +113,6 @@ class Hud extends Component {
     }
 
     render() {
-
         let instagramIcon = <div id="socialIcons">
                                 <Fab
                                   size="small"
@@ -144,7 +143,7 @@ class Hud extends Component {
         let showInGameMenu = !this.isInitalStage() && !this.isTitleScreen();
         let textAnimation = typeof this.state.message === 'undefined' ? undefined : <div id="textAnimation" className="zoom">{this.state.message}</div>
         return (
-            <div>
+            <div className="hud">
                 <Tooltip />
                 <Settings endGame={this.props.endGame} onRef={settings => (this.settings = settings)} />
                 <Actionbar showSettings={() => {
@@ -172,7 +171,16 @@ class Hud extends Component {
                         controls.push([<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>]);
                         return (
                             <div id="mainMenu">
-                                { this.props.assetsReady ? controls : <AssetLoadingView /> }
+                                <div className="headline">
+                                    <span>battle</span><span>choc</span>
+                                </div>
+                                <img id="cannonTitlePage" className="foregroundEntity" alt="cannon field" src="images/cannonAtField.png" />
+                                <img id="treeTitlePage" className="backgroundEntity" alt="cacao tree field" src="images/treeAtField.png" />
+                                <img id="creamTitlePageTop" className="backgroundEntity" alt="creamy field top" src="images/creamAtField.png" />
+                                <img id="creamTitlePageBottom" className="foregroundEntity" alt="creamy field bottom" src="images/creamAtField.png" />
+                                <div className="titleMenu">
+                                    { this.props.assetsReady ? controls : <AssetLoadingView /> }
+                                </div>
                                 { instagramIcon }
                             </div>
                         );

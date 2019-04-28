@@ -1,10 +1,10 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import Gamefield from '../Gamefield';
+import Gamefield from '../3d/Gamefield';
 import { InfoType, spawnInfoAtBuilding, spawnInfo } from '../ui/FlyingInfo';
 import { EntityType, BoardCellTypes, createEntity, getEntityDescriptor, AttackType } from '../gameplay/GameEntities';
-import * as THREE from 'three';
+import { Scene, Clock, OrthographicCamera, WebGLRenderer, Raycaster, Vector2, DirectionalLight } from 'three';
 import Jukebox from '../ui/Jukebox';
 //import t from './Translation';
 
@@ -15,13 +15,13 @@ class MicroGamefield extends Component {
         const height = this.container.clientHeight;
         window.addEventListener("resize", () => this.updateDimensions());
 
-        this.scene = new THREE.Scene();
-        this.clock = new THREE.Clock();
+        this.scene = new Scene();
+        this.clock = new Clock();
 
         let distance = this.estimateDistance();
         let aspect = width / height;
 
-        this.camera = new THREE.OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, -100, 200);
+        this.camera = new OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, -100, 200);
         this.camera.position.set(1, 1, 1);
         this.camera.lookAt(this.scene.position);
         this.camera.position.x = 0;
@@ -29,7 +29,7 @@ class MicroGamefield extends Component {
         this.camera.position.z = 70;
 
         this.container.onclick = event => this.onClick(event);
-        this.renderer = new THREE.WebGLRenderer({ alpha: true });
+        this.renderer = new WebGLRenderer({ alpha: true });
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(width, height);
         this.renderer.domElement.id = 'micro-game-canvas'
@@ -39,8 +39,8 @@ class MicroGamefield extends Component {
         this.mixer = null;
         this.container.appendChild(this.renderer.domElement);
 
-        this.raycaster = new THREE.Raycaster();
-        this.mouse = new THREE.Vector2();
+        this.raycaster = new Raycaster();
+        this.mouse = new Vector2();
 
         this.size = {rows: this.props.size, cols: this.props.size}
 
@@ -77,7 +77,7 @@ class MicroGamefield extends Component {
             }
         }
 
-        var directionalLight = new THREE.DirectionalLight(0xfef8cb, 2.0);
+        var directionalLight = new DirectionalLight(0xfef8cb, 2.0);
         directionalLight.position.set(20, 24, -10);
         directionalLight.castShadow = false;
         this.scene.add( directionalLight );
