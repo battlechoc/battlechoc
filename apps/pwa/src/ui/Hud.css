@@ -37,12 +37,12 @@
   justify-content: center;
   flex-direction: column;
   position: absolute;
-  top: 50%;
+  top: 45%;
 }
 
 .backgroundEntity {
   position: absolute;
-  filter: contrast(0.8) blur(0.03em);
+  filter: contrast(0.6) blur(0.05em);
   height: 15vw;
   z-index: -1;
   animation: moving 3s ease-in-out infinite;
@@ -257,7 +257,7 @@ img.cream {
 .menuButton {
   cursor: pointer;
   padding: 5px;
-  width: 40vw;
+  width: 30vw;
   min-width: 120px !important;
   border-radius: 0 !important;
   text-align: center;
@@ -302,7 +302,7 @@ img.cream {
 
 @media screen and (orientation:portrait) {
   .menuButton {
-    width: 70vw;
+    width: 80vw;
   }
 
   .titleMenu {
@@ -331,6 +331,7 @@ img.cream {
 
 @media screen and (min-width: 960px) {
   .menuButton {
+    width: 35vw;
     font-size: 1.6rem !important;
   }
 
@@ -345,15 +346,16 @@ img.cream {
 
 @media screen and (max-width: 959px) {
   .menuButton {
-    font-size: 1.3rem !important;
+    width: 35vw;
+    font-size: 1.1rem !important;
     margin-top: 10px !important;
-    width: 50vw;
   }
 }
 
 @media screen and (max-width: 600px) {
   .menuButton {
-    font-size: 1.3rem !important;
+    width: 58vw;
+    font-size: 1.2rem !important;
   }
 
   .stackedIcon > .firstIcon {
@@ -362,5 +364,16 @@ img.cream {
 
   #version {
     font-size: 0.8rem;
+  }
+}
+
+@media screen and (max-height: 400px) {
+  .menuButton {
+    font-size: 1rem !important;
+    width: 50vw;
+  }
+
+  .titleMenu {
+    top: 40%;
   }
 }

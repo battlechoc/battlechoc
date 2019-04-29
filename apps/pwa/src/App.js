@@ -1,7 +1,6 @@
 import React, { Component, Suspense } from 'react';
 import { connect } from 'react-redux';
 import './App.css';
-import Hud from './ui/Hud';
 import Jukebox from './ui/Jukebox';
 import t from './ui/Translation';
 import OfflineStore from './OfflineStore';
@@ -16,6 +15,7 @@ import { BattlechocError } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import { gameplayLog } from './gameplay/GamePlayLogger';
 const Scene = React.lazy(() => import('./3d/Scene'));
+const Hud = React.lazy(() => import('./ui/Hud'));
 
 class App extends Component {
     componentWillMount() {
@@ -223,10 +223,12 @@ class App extends Component {
         return (
             <div className="app">
                 { this.props.assetsReady ? <div id="clouds"></div> : null }
-                { typeof this.props.game !== 'undefined' ? <Suspense fallback={<div>Loading...</div>}><Scene onRef={scene => this.scene = scene} /></Suspense> : null }
-                <Hud prepareNewGameCallback={this.prepareNewGame} 
-                     endGame={() => this.endGame()} 
-                     onRef={hud => this.hud = hud} />
+                { typeof this.props.game !== 'undefined' ? <Suspense fallback={null}><Scene onRef={scene => this.scene = scene} /></Suspense> : null }
+                <Suspense fallback={null}>
+                    <Hud prepareNewGameCallback={this.prepareNewGame} 
+                         endGame={() => this.endGame()} 
+                         onRef={hud => this.hud = hud} />
+                </Suspense>
             </div>
         );
     }

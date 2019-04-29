@@ -8606,11 +8606,6 @@ ripemd160@^2.0.0, ripemd160@^2.0.1:
     hash-base "^3.0.0"
     inherits "^2.0.1"
 
-rstatsjs@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/rstatsjs/-/rstatsjs-1.0.1.tgz#3db07e805df22bb1a22ddf31e6df65f4d8203fac"
-  integrity sha512-WNZOul/QRj1qUzkGHwemvA31x8e1RmgrgJd7uHkR/SGfdajgRahlCscr+HvZHY16+E5M8T+e84h1z2gPqqfjVA==
-
 rsvp@^4.8.4:
   version "4.8.4"
   resolved "https://registry.yarnpkg.com/rsvp/-/rsvp-4.8.4.tgz#b50e6b34583f3dd89329a2f23a8a2be072845911"
