@@ -92,7 +92,6 @@ class Scene extends Component {
     dimLight = () => {
         this.scene.traverse(child => {
             if (child instanceof DirectionalLight) {
-                console.log("dimm");
                 child.intensity = 0.1;
             }
         });
@@ -101,7 +100,6 @@ class Scene extends Component {
     resetLight = () => {
         this.scene.traverse(child => {
             if (child instanceof DirectionalLight) {
-                console.log("reset");
                 child.intensity = 2.0;
             }
         });

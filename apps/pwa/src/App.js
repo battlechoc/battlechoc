@@ -81,15 +81,11 @@ class App extends Component {
     }
 
     if (typeof this.scene !== 'undefined') {
-      console.log("scene ok");
       if (typeof this.scene.playerGameField !== 'undefined') {
-        console.log("checking");
         if (nextProps.selectedBuilding === EntityType.FRUIT_CANNON && this.props.selectedBuilding !== EntityType.FRUIT_CANNON) {
-          console.log("dimming");
           this.scene.dimLight();
           this.scene.playerGameField.highlightCannons();
         } else if (nextProps.selectedBuilding !== EntityType.FRUIT_CANNON && this.props.selectedBuilding === EntityType.FRUIT_CANNON) {
-          console.log("resetting");
           this.scene.resetLight();
           this.scene.playerGameField.highlightCannons(true);
         }
@@ -116,10 +112,10 @@ class App extends Component {
         }
       }
 
-      if (typeof this.scene !== 'undefined' && typeof this.scene.playerGameField !== 'undefined' && typeof nextProps.game !== 'undefined' && (nextProps.game.state !== GameStateTypes.BUILD_PHASE || nextProps.currentPlayerIndex !== 0 ||
-        nextProps.game.players[0].buildings === 0)) {
-        //this.scene.resetLight();
-        //this.scene.playerGameField.highlightCannons(true);
+      if (this.props.selectedBuilding === EntityType.FRUIT_CANNON && typeof this.scene !== 'undefined' && typeof this.scene.playerGameField !== 'undefined' && typeof nextProps.game !== 'undefined' && (nextProps.game.state !== GameStateTypes.BUILD_PHASE || nextProps.currentPlayerIndex !== 0 ||
+        nextProps.game.players[0].buildings === 0 || nextProps.selectedBuilding !== EntityType.FRUIT_CANNON)) {
+        this.scene.resetLight();
+        this.scene.playerGameField.highlightCannons(true);
       }
 
       if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
