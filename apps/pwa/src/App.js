@@ -117,7 +117,7 @@ class App extends Component {
             } else if (gameTransition === GameTransitions.PLAYER_BUILD_PHASE) {
                 this.scene.triggerCacaoInfo();
             } else if (gameTransition === GameTransitions.PLAYER_ATTACK_PHASE) {
-                const attacks = [AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.FRUIT, AttackType.BUNNY];
+                const attacks = [AttackType.BUNNY, AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.FRUIT];
                 let availableAttackType = undefined;
                 for (var attackType in attacks) {
                     if (nextProps.game.players[0].attacks[attacks[attackType]] > 0) {
