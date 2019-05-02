@@ -11,6 +11,7 @@ class Building {
 		this.entityType = entityType;
 		this._cellIdx = cellIdx;
 		this._fieldIdx = fieldIdx;
+		this._creamy = false;
 		const assets = AssetLoader.assets.models;
 		if (this.entityType === EntityType.FACTORY) {
 			this._model = assets.FACTORY.model.scene.clone();
@@ -94,23 +95,27 @@ class Building {
 
 	highlight(unhighlight) {
 		var highlighted = false;
+		let spotlight = undefined;
 		this._model.traverse(child => {
 			if (child instanceof THREE.SpotLight) {
+				spotlight = child;
 				highlighted = true;
 			}
 		});
 
 		if (unhighlight === true && highlighted === true) {
-			this._model.traverse(child => {
-				if (child instanceof THREE.SpotLight) {
-					this._model.remove(child);
-				}
-			});
-		} else if (highlighted === false) {
-			var spotLight = new THREE.SpotLight(0xffffff, 8.0, 64, 0.2);
-			spotLight.position.set(0, 32, 0);
-			spotLight.target = this._model;
-			this._model.add(spotLight);
+			if (this._creamy === true) {
+				this._showCream();
+			}
+			this._model.remove(spotlight);
+		} else if (unhighlight !== true && highlighted === false) {
+			if (this._creamy === true) {
+				this._hideCream();
+			}
+			spotlight = new THREE.SpotLight(0xffffff, 4.0, 64, 0.2);
+			spotlight.position.set(0, 32, 0);
+			spotlight.target = this._model;
+			this._model.add(spotlight);
 		}
 	}
 
@@ -122,7 +127,7 @@ class Building {
 		this._model.children[0].material = new THREE.MeshBasicMaterial({ opacity: 0.7, transparent: true, depthWrite: false });
 	}
 
-	makeCreamy() {
+	_cream() {
 		const assets = AssetLoader.assets.models;
 		let creamAround = assets.CREAM_AROUND_BUILDING.model.scene.clone();
 		creamAround.traverse(child => {
@@ -138,9 +143,41 @@ class Building {
 		this._model.add(creamAround);
 	}
 
-	makeUncreamy() {
+	makeCreamy() {
+		this._creamy = true;
+		this._cream();
+	}
+
+	_uncream() {
 		let creamyField = this._model.getObjectByName('CREAMY_FIELD');
 		this._model.remove(creamyField);
+	}
+
+	_hideCream() {
+		let creamyField = this._model.getObjectByName('CREAMY_FIELD');
+		if (creamyField) {
+			creamyField.traverse(child => {
+				if (child instanceof THREE.Mesh) {
+					child.visible = false;
+				}
+			});
+		}
+	}
+
+	_showCream() {
+		let creamyField = this._model.getObjectByName('CREAMY_FIELD');
+		if (creamyField) {
+			creamyField.traverse(child => {
+				if (child instanceof THREE.Mesh) {
+					child.visible = true;
+				}
+			});
+		}
+	}
+
+	makeUncreamy() {
+		this._creamy = false;
+		this._uncream();
 	}
 
 	getModel() {

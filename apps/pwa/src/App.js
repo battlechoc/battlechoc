@@ -124,13 +124,13 @@ class App extends Component {
         document.querySelector('meta[name="description"]').setAttribute("content", t[nextProps.language].META_DESCRIPTION);
         document.querySelector('meta[name="keywords"]').setAttribute("content", t[nextProps.language].META_KEYWORDS);
       }
-/*
-      if (typeof nextProps.game !== 'undefined' && (nextProps.game.state !== GameStateTypes.BUILD_PHASE || nextProps.currentPlayerIndex !== 0 ||
-        nextProps.game.players[0].buildings === 0)) {
+
+      if (this.props.selectedBuilding === EntityType.FRUIT_CANNON && typeof nextProps.game !== 'undefined' && (nextProps.game.state !== GameStateTypes.BUILD_PHASE || nextProps.currentPlayerIndex !== 0 ||
+        nextProps.game.players[0].buildings === 0 || nextProps.selectedBuilding !== EntityType.FRUIT_CANNON)) {
         this.resetLight();
         this.playerGameField.highlightCannons(true);
       }
-*/
+
       if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
         this.hud.unlockUi();
         this.colorStartButton = 1;
