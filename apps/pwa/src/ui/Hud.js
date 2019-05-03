@@ -41,7 +41,8 @@ class Hud extends Component {
         this.props.onRef(this);
 
         let iOSDevice = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-        if (iOSDevice) {
+        let isPwa = searchParams.get('app_runs_as') === 'pwa';
+        if (iOSDevice && !isPwa) {
             OfflineStore.settingsStore.get('iOSMessage').then(iOSMessage => {
                 if (typeof iOSMessage === 'undefined') {
                     this.setState({ showiOSMessage: true });
