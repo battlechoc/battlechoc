@@ -14,7 +14,7 @@ import { GameStateTypes } from './gameplay/GameplayReducer';
 import { BattlechocError } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import { gameplayLog } from './gameplay/GamePlayLogger';
-const Scene = React.lazy(() => import('./3d/Scene'));
+import Scene from './3d/Scene';
 const Hud = React.lazy(() => import('./ui/Hud'));
 
 class App extends Component {
@@ -186,6 +186,7 @@ class App extends Component {
 
             if (typeof resumeableGame !== 'undefined' && resumeGame) {
                 this.props.resumeGame(resumeableGame).then(() => {
+                    console.log(this.props.game);
                     this.opponent.player = resumeableGame.players[1];
                     this.opponent.connectGamestate(() => this.props.game);
                     this.scene.startGame(true, this.props.game);
@@ -223,7 +224,7 @@ class App extends Component {
         return (
             <div className="app">
                 { this.props.assetsReady ? <div id="clouds"></div> : null }
-                { typeof this.props.game !== 'undefined' ? <Suspense fallback={null}><Scene onRef={scene => this.scene = scene} /></Suspense> : null }
+                { typeof this.props.game !== 'undefined' ? <Scene onRef={scene => this.scene = scene} /> : null }
                 <Suspense fallback={null}>
                     <Hud prepareNewGameCallback={this.prepareNewGame} 
                          endGame={() => this.endGame()} 
