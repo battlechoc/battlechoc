@@ -18,10 +18,11 @@ class Actionbar extends Component {
 
         const searchParams = new URLSearchParams(window.location.search);
         const isPwa = searchParams.get('app_runs_as') === 'pwa';
+        let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
 
         this.state = {
             activeMusicButton: true,
-            activeFullscreenButton: document.fullscreenElement == null && !isPwa
+            activeFullscreenButton: document.fullscreenElement == null && !isPwa && !isiOS
         }
     }
 
