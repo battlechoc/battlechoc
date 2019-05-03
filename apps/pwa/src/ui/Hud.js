@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import './Hud.css';
 import { AssetLoadingViewContainer as AssetLoadingView } from '../AssetLoader';
+import { multiplayer } from '../Multiplayer';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { chooseField, chooseStart } from '../gameplay/GameActions';
@@ -73,6 +74,12 @@ class Hud extends Component {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
         this.setState({ showTutorial: true });
+    }
+
+    startMultiplayerGame() {
+        console.log("signing in");
+        multiplayer.signIn();
+        multiplayer.createGameSession();
     }
 
     choose(option) {
@@ -169,6 +176,7 @@ class Hud extends Component {
                             controls.push(<Button key="1" color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(true)}>{t[this.props.language].RESUME_GAME}</Button>);
                         }
                         controls.push([<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>]);
+                        controls.push([<Button key="3" color="primary" aria-label="new multiplayer game" className="menuButton" variant="contained" onClick={() => this.startMultiplayerGame()}>Multiplayer</Button>]);
                         return (
                             <div id="mainMenu">
                                 <div className="headline">

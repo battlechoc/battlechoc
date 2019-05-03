@@ -99,7 +99,7 @@ class App extends Component {
         if (!gameStopped) {
             if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined' && typeof OfflineStore.gamestateStore !== 'undefined' &&
                 (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (nextProps.game.currentPlayerIndex === 0)) {
-                
+
                 OfflineStore.saveCurrentGame(nextProps.game).then(() => {
                     this.props.gameResumeable(true).catch(this.handleError);
                 });
@@ -223,12 +223,12 @@ class App extends Component {
     render() {
         return (
             <div className="app">
-                { this.props.assetsReady ? <div id="clouds"></div> : null }
-                { typeof this.props.game !== 'undefined' ? <Scene onRef={scene => this.scene = scene} /> : null }
+                {this.props.assetsReady ? <div id="clouds"></div> : null}
+                {typeof this.props.game !== 'undefined' ? <Scene onRef={scene => this.scene = scene} /> : null}
                 <Suspense fallback={null}>
-                    <Hud prepareNewGameCallback={this.prepareNewGame} 
-                         endGame={() => this.endGame()} 
-                         onRef={hud => this.hud = hud} />
+                    <Hud prepareNewGameCallback={this.prepareNewGame}
+                        endGame={() => this.endGame()}
+                        onRef={hud => this.hud = hud} />
                 </Suspense>
             </div>
         );
