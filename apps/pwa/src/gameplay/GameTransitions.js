@@ -11,6 +11,8 @@ const GameTransitions = Object.freeze({
     PLAYER_FINISHED_INITIAL_PLACEMENT: 'GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT',
     OPPONENT_INITAL_PLACEMENT: 'GameTransitions.OPPONENT_INITAL_PLACEMENT',
     PLAYER_BUILD_PHASE: 'GameTransitions.PLAYER_BUILD_PHASE',
+    PLAYER_LEFT_BUILD_PHASE: 'GameTransitions.PLAYER_LEFT_BUILD_PHASE',
+    PLAYER_CANNOT_BUILD_FRUIT_CANNON: 'GameTransitions.PLAYER_CANNOT_BUILD_FRUIT_CANNON',
     PLAYER_ATTACK_PHASE: 'GameTransitions.PLAYER_ATTACK_PHASE',
     OPPONENT_BUILD_PHASE: 'GameTransitions.OPPONENT_BUILD_PHASE',
     OPPONENT_ATTACK_PHASE: 'GameTransitions.OPPONENT_ATTACK_PHASE',
@@ -90,6 +92,8 @@ function getGameTransition(currentState, nextState) {
         nextState.currentPlayerIndex === 0 &&
         playerHasAttacks(nextState.players[0]) === false) {
         return GameTransitions.ATTACKS_DEPLETED;
+    } else if (nextState.state !== GameStateTypes.BUILD_PHASE || nextState.currentPlayerIndex !== 0) {
+        return GameTransitions.PLAYER_LEFT_BUILD_PHASE;
     } else {
         return GameTransitions.INVALID;
     }
