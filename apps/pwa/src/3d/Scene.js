@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { deselectBuildings, selectAttack, deselectAttack } from '../ui/UiActions';
+import { deselectBuildings, selectAttack, deselectAttack, selectBuilding } from '../ui/UiActions';
 import { build, attack, finishTurn } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { BoardCellTypes, EntityType, AttackType, createEntity, getEntityDescriptor } from '../gameplay/GameEntities';
@@ -254,6 +254,7 @@ class Scene extends Component {
         // Prepare click targets
         this.clickTargets = this.playerGameField.getClickableFields();
         this.opponentClickTargets = this.opponentGameField.getClickableFields();
+        this.props.selectBuilding(EntityType.FACTORY);
 
         if (createUnits === true) {
             this.props.deselectBuildings();
@@ -361,6 +362,7 @@ const mapDispatchToProps = {
     attack,
     deselectBuildings,
     selectAttack,
+    selectBuilding,
     deselectAttack,
 };
 
