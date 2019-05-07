@@ -28,9 +28,9 @@ class Multiplayer {
             // setup presence system callbacks
             firebase.auth().onAuthStateChanged((user) => {
                 if (user) {
-                    this.localPlayer = user.uid;
-                    const userStatusDatabaseRef = firebase.database().ref('/status/' + this.localPlayer);
-                    const userStatusFirestoreRef = firebase.firestore().doc('/status/' + this.localPlayer);
+                    this.localPlayer = user;
+                    const userStatusDatabaseRef = firebase.database().ref('/status/' + this.localPlayer.uid);
+                    const userStatusFirestoreRef = firebase.firestore().doc('/status/' + this.localPlayer.uid);
 
                     let isOfflineForDatabase = {
                         state: 'offlinedb',
@@ -74,21 +74,70 @@ class Multiplayer {
     }
 
     signIn() {
-        firebase.auth().signInAnonymously().catch(function (error) {
-            console.log(error);
+        return new Promise((resolve, reject) => {
+            if (typeof this.localPlayer === 'undefined') {
+                firebase.auth().signInAnonymously().catch(function (error) {
+                    reject(error);
+                });
+                firebase.auth().onAuthStateChanged((user) => {
+                    if (user) {
+                        resolve(user);
+                    }
+                });
+            } else {
+                resolve(this.localPlayer);
+            }
         });
     }
 
-    createGameSession() {
-        firebase.firestore().collection('multiplayerGameSessions').add({
-            state: MultiplayerGameSessionState.CREATED,
-            players: [this.localPlayer, null],
-            last_changed: firebase.firestore.FieldValue.serverTimestamp(),
-        }).then(ref => {
-            this.currentGameSession = ref.id;
-            console.dir(ref);
-            console.log(ref.path);
-            console.log('Added document with ID: ', ref.id);
+    joinGameSession(sessionId) {
+        return new Promise((resolve, reject) => {
+            this.signIn().then((player) => {
+                if (typeof player !== 'undefined') {
+                    const sessionRef = firebase.firestore().collection('multiplayerGameSessions').doc(sessionId);
+                    sessionRef.get().then(doc => {
+                        if (!doc.exists) {
+                            console.log('No such document!');
+                            reject('No such multiplayer game session!');
+                        } else {
+                            let docData = doc.data();
+                            docData.players = [doc.data().players[0], this.localPlayer.uid];
+                            sessionRef.set(docData);
+                            resolve(doc.data());
+                        }
+                    }).catch(err => {
+                        console.log('Error getting document', err);
+                    });
+                }
+            }).catch(error => {
+                reject(error);
+            });
+        });
+    }
+
+    createGameSession(gameState) {
+        return new Promise((resolve, reject) => {
+            this.signIn().then((player) => {
+                if (typeof player !== 'undefined') {
+                    console.dir(player);
+                    firebase.firestore().collection('multiplayerGameSessions').add({
+                        state: MultiplayerGameSessionState.CREATED,
+                        players: [player.uid, null],
+                        game: gameState,
+                        last_changed: firebase.firestore.FieldValue.serverTimestamp(),
+                    }).then(ref => {
+                        console.log("game created");
+                        this.currentGameSession = ref.id;
+                        console.log(this.currentGameSession);
+                        resolve({
+                            url: window.location.origin + '?sessionid=' + ref.id,
+                            id: ref.id
+                        });
+                    });
+                }
+            }).catch(error => {
+                reject(error);
+            });
         });
     }
 }

@@ -5,6 +5,7 @@ import Jukebox from './ui/Jukebox';
 import t from './ui/Translation';
 import OfflineStore from './OfflineStore';
 import Rules from './gameplay/Rules';
+import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
 import { changeLanguage, selectAttack, gameResumeable } from './ui/UiActions';
@@ -47,6 +48,14 @@ class App extends Component {
 
         window.onfocus = () => Jukebox.playMusic();
         window.onblur = () => Jukebox.pauseMusic();
+
+        const multiplayerSessionId = window.location.search.split("sessionid=")[1];
+        if (typeof multiplayerSessionId !== 'undefined') {
+            multiplayer.joinGameSession(multiplayerSessionId).then(session => {
+                console.dir(session);
+                // TODO recover from initial state and join the game
+            });
+        }
     }
 
     handleError = error => {

@@ -8,8 +8,10 @@ import { playerHasAttacks, playerHasAttacksPerTurn } from '../gameplay/Player';
 import { getCheapest } from '../gameplay/GameEntities';
 import { deselectBuildings, deselectAttack } from './UiActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
+import { multiplayer } from '../Multiplayer';
 import Fab from '@material-ui/core/Fab';
-import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings } from '@material-ui/icons';
+import t from './Translation';
+import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, Share } from '@material-ui/icons';
 import Jukebox from './Jukebox';
 
 class Actionbar extends Component {
@@ -52,6 +54,28 @@ class Actionbar extends Component {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         document.documentElement.requestFullscreen().then(() => {
             window.screen.orientation.lock('landscape').catch(error => console.log(error));
+        });
+    }
+
+    shareMultiplayerGame() {
+        console.log('sharing current game session');
+        multiplayer.createGameSession(this.props.game).then((session) => {
+            console.log('created now sharing');
+            if (typeof session !== 'undefined') {
+                console.dir(session);
+                if (navigator.share) {
+                    navigator.share({
+                        title: window.document.title,
+                        text: t[this.props.language].INVITATION,
+                        url: session.url,
+                    }).then(() => console.log('successfully shared'))
+                        .catch((error) => console.log('error sharing multiplayer session', error));
+                } else {
+                    window.location.href = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + session.url);
+                }
+            }
+        }).catch((error) => {
+            console.error('could not create a multiplayer game session.', error);
         });
     }
 
@@ -109,13 +133,27 @@ class Actionbar extends Component {
         }
 
         if (typeof this.props.game !== 'undefined') {
+            buttons.push(
+                <Fab
+                    size="small"
+                    key="3"
+                    color="primary"
+                    aria-label="share game"
+                    className="icon"
+                    onClick={() => this.shareMultiplayerGame()}>
+                    <Share />
+                </Fab>
+            );
+        }
+
+        if (typeof this.props.game !== 'undefined') {
             if (this.props.game.currentPlayerIndex === 0) {
                 if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
                     if (playerHasAttacksPerTurn(this.props.game.players[0]) === true) {
                         buttons.push([
                             <Fab
                                 size="small"
-                                key="3"
+                                key="4"
                                 color="primary"
                                 aria-label="skip build phase"
                                 className={(this.props.game.players[0].buildings > 0 && this.props.game.players[0].cacao >= getCheapest().costs) ? "icon" : "icon blinking"}
@@ -139,7 +177,7 @@ class Actionbar extends Component {
                         buttons.push([
                             <Fab
                                 size="small"
-                                key="4"
+                                key="5"
                                 color="primary"
                                 aria-label="finish turn"
                                 className={(this.props.game.players[0].buildings === 0 || this.props.game.players[0].cacao < getCheapest().costs) ? "icon blinking" : "icon"}
@@ -165,7 +203,7 @@ class Actionbar extends Component {
                         buttons.push(
                             <Fab
                                 size="small"
-                                key="4"
+                                key="5"
                                 color="primary"
                                 aria-label="finish turn"
                                 className={(playerHasAttacks(this.props.game.players[0]) === true) ? "icon" : "icon blinking"}
@@ -199,7 +237,8 @@ Actionbar.propTypes = {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
-    players: state.players
+    players: state.players,
+    language: state.ui.language
 });
 
 const mapDispatchToProps = {
