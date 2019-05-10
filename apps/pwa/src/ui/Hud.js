@@ -218,12 +218,10 @@ class Hud extends Component {
                         controls.push([<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>]);
                         return (
                             <div id="mainMenu">
-                                <div className="headline">
-                                    <span>battle</span><span>choc</span>
+                                <div className="logo">
+                                    <img alt="logo" src="images/logo.png" />
                                 </div>
                                 <img id="cannonTitlePage" className="foregroundEntity" alt="cannon field" src="images/cannonAtField.png" />
-                                <img id="treeTitlePage" className="backgroundEntity" alt="cacao tree field" src="images/treeAtField.png" />
-                                <img id="creamTitlePageTop" className="backgroundEntity" alt="creamy field top" src="images/creamAtField.png" />
                                 <img id="creamTitlePageBottom" className="foregroundEntity" alt="creamy field bottom" src="images/creamAtField.png" />
                                 <div className="titleMenu">
                                     { this.props.assetsReady ? controls : <AssetLoadingView /> }
