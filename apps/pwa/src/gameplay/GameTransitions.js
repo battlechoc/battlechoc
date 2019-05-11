@@ -1,5 +1,5 @@
 import { GameStateTypes } from './GameplayReducer';
-import { playerHasAttacks } from './Player';
+import { playerHasAttacks, PlayerType } from './Player';
 
 const GameTransitions = Object.freeze({
     PLAYER_BEGINS_GAME: 'GameTransitions.PLAYER_BEGINS_GAME',
@@ -18,6 +18,7 @@ const GameTransitions = Object.freeze({
     OPPONENT_ATTACK_PHASE: 'GameTransitions.OPPONENT_ATTACK_PHASE',
     GAME_FINISHED: 'GameTransitions.GAME_FINISHED',
     ATTACKS_DEPLETED: 'GameTransitions.ATTACKS_DEPLETED',
+    PLAYER_JOINED: 'GameTransitions.PLAYER_JOINED',
     INVALID: 'GameTransitions.INVALID'
 });
 
@@ -92,8 +93,10 @@ function getGameTransition(currentState, nextState) {
         nextState.currentPlayerIndex === 0 &&
         playerHasAttacks(nextState.players[0]) === false) {
         return GameTransitions.ATTACKS_DEPLETED;
-    } else if (nextState.state !== GameStateTypes.BUILD_PHASE || nextState.currentPlayerIndex !== 0) {
+    } else if (currentState.state === GameStateTypes.BUILD_PHASE && (nextState.state !== GameStateTypes.BUILD_PHASE || nextState.currentPlayerIndex !== 0)) {
         return GameTransitions.PLAYER_LEFT_BUILD_PHASE;
+    } else if (currentState.players[1].type === PlayerType.AUGUSTUS_GLOOP && nextState.players[1].type === PlayerType.HUMAN) {
+        return GameTransitions.PLAYER_JOINED;
     } else {
         return GameTransitions.INVALID;
     }

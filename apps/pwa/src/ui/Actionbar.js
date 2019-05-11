@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import './Actionbar.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { finishTurn, finishBuildPhase } from '../gameplay/GameActions';
+import { finishTurn, finishBuildPhase, playerJoined } from '../gameplay/GameActions';
 import { BattlechocError } from '../gameplay/Errors';
 import { playerHasAttacks, playerHasAttacksPerTurn } from '../gameplay/Player';
 import { getCheapest } from '../gameplay/GameEntities';
@@ -59,7 +59,7 @@ class Actionbar extends Component {
 
     shareMultiplayerGame() {
         console.log('sharing current game session');
-        multiplayer.createGameSession(this.props.game).then((session) => {
+        multiplayer.createGameSession(this.props.game, this.props.playerJoined).then((session) => {
             console.log('created now sharing');
             if (typeof session !== 'undefined') {
                 console.dir(session);
@@ -71,7 +71,8 @@ class Actionbar extends Component {
                     }).then(() => console.log('successfully shared'))
                         .catch((error) => console.log('error sharing multiplayer session', error));
                 } else {
-                    window.location.href = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + session.url);
+                    window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + session.url));
+                    console.log(session.url);
                 }
             }
         }).catch((error) => {
@@ -132,7 +133,7 @@ class Actionbar extends Component {
             );
         }
 
-        if (typeof this.props.game !== 'undefined') {
+        if (typeof this.props.game !== 'undefined' && this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
             buttons.push(
                 <Fab
                     size="small"
@@ -245,6 +246,7 @@ const mapDispatchToProps = {
     finishBuildPhase,
     finishTurn,
     deselectBuildings,
+    playerJoined,
     deselectAttack
 };
 

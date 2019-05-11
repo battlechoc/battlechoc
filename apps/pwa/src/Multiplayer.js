@@ -1,4 +1,5 @@
 import * as firebase from 'firebase';
+import { createPlayer, PlayerType } from './gameplay/Player';
 
 const MultiplayerGameSessionState = Object.freeze({
     UNINITIALIZED: 'MultiplayerGameSessionState.Uninitialized',
@@ -19,7 +20,10 @@ class Multiplayer {
         };
 
         this.currentGameSession = undefined;
+        this.sessionData = undefined;
         this.localPlayer = undefined;
+        this.currentEventIndex = undefined;
+        this.localPlayerIndex = undefined;
 
         try {
             // initialize firebase
@@ -90,11 +94,60 @@ class Multiplayer {
         });
     }
 
+    processEvents(events) {
+        console.log("processEvents");
+        //console.dir(events_from);
+        //let events = Array.from(events_from);
+        console.log(events);
+        console.log(this.currentEventIndex);
+        if (events.length > 0 && (this.currentEventIndex < events.length - 1)) {
+            console.log("received new events");
+            console.log(events);
+            //events.splice(this.currentEventIndex + 1);
+            console.dir(events);
+            console.dir(this.currentEventIndex);
+            // TODO emit actions in sequence!!!
+            this.currentEventIndex = events.length - 1;
+        }
+    }
+
+    relayAction(action) {
+        if (typeof this.currentGameSession !== 'undefined' && action.payload.issuer === this.localPlayerId) {
+            const sessionRef = firebase.firestore().collection('multiplayerGameSessions').doc(this.currentGameSession);
+            sessionRef.get().then(doc => {
+                if (!doc.exists) {
+                    console.log('No such document!');
+                } else {
+                    console.log("adding action to doc");
+                    let sessionData = doc.data();
+                    if (this.localPlayerIndex === 0) {
+                        sessionData.events_from_0.push(action);
+                    } else {
+                        sessionData.events_from_1.push(action);
+                    }
+                    console.dir(sessionData);
+                    sessionRef.set(sessionData);
+                }
+            }).catch(err => {
+                console.log('Error getting document', err);
+            });
+        }
+    }
+    
     joinGameSession(sessionId) {
         return new Promise((resolve, reject) => {
             this.signIn().then((player) => {
                 if (typeof player !== 'undefined') {
+                    this.currentEventIndex = -1;
+                    this.localPlayerIndex = 1;
                     const sessionRef = firebase.firestore().collection('multiplayerGameSessions').doc(sessionId);
+                    sessionRef.onSnapshot(session => {
+                        console.log("on snap");
+                        console.dir(session.data());
+                        this.processEvents(session.data().events_from_0);
+                    }, error => {
+                        console.error('Encountered error while trying to establish observer of multiplayer session', error);
+                    });
                     sessionRef.get().then(doc => {
                         if (!doc.exists) {
                             console.log('No such document!');
@@ -102,6 +155,7 @@ class Multiplayer {
                         } else {
                             let docData = doc.data();
                             docData.players = [doc.data().players[0], this.localPlayer.uid];
+                            docData.state = MultiplayerGameSessionState.RUNNING;
                             sessionRef.set(docData);
                             resolve(doc.data());
                         }
@@ -115,20 +169,32 @@ class Multiplayer {
         });
     }
 
-    createGameSession(gameState) {
+    createGameSession(gameState, playerJoinedAction) {
         return new Promise((resolve, reject) => {
             this.signIn().then((player) => {
                 if (typeof player !== 'undefined') {
-                    console.dir(player);
+                    this.currentEventIndex = -1;
+                    this.localPlayerIndex = 0;
+                    this.localPlayerId = gameState.players[0].id;
                     firebase.firestore().collection('multiplayerGameSessions').add({
                         state: MultiplayerGameSessionState.CREATED,
                         players: [player.uid, null],
+                        events_from_0: [],
+                        events_from_1: [],
                         game: gameState,
                         last_changed: firebase.firestore.FieldValue.serverTimestamp(),
                     }).then(ref => {
-                        console.log("game created");
                         this.currentGameSession = ref.id;
-                        console.log(this.currentGameSession);
+                        ref.onSnapshot(session => {
+                            if (session.data().players[1] !== null && (typeof this.sessionData === 'undefined' || this.sessionData.players[1] === null)) {
+                                console.log("player joined");
+                                playerJoinedAction({ players: [gameState.players[0], createPlayer("Your mom", PlayerType.HUMAN)] });
+                            }
+                            this.sessionData = session.data();
+                            this.processEvents(session.data().events_from_1);
+                        }, error => {
+                            console.error('Encountered error while trying to establish observer of multiplayer session', error);
+                        });
                         resolve({
                             url: window.location.origin + '?sessionid=' + ref.id,
                             id: ref.id
