@@ -6,6 +6,7 @@ import { connect } from 'react-redux';
 import { chooseField, chooseStart } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { EntityType } from '../gameplay/GameEntities';
+import { multiplayer } from '../Multiplayer';
 import Tooltip from './Tooltip';
 import Actionbar from './Actionbar';
 import InfoPanel from './InfoPanel';
@@ -79,11 +80,11 @@ class Hud extends Component {
         if (this.state.clickable) {
             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
             if (option === 'START' && this.props.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
-                this.props.chooseStart({ issuer: this.props.game.players[0].id });
+                this.props.chooseStart({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
             } else if (option === 'LEFT_GAMEFIELD') {
-                this.props.chooseField({ fieldIdx: 0, issuer: this.props.game.players[0].id });
+                this.props.chooseField({ fieldIdx: 0, issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
             } else if (option === 'RIGHT_GAMEFIELD') {
-                this.props.chooseField({ fieldIdx: 1, issuer: this.props.game.players[0].id });
+                this.props.chooseField({ fieldIdx: 1, issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
             }
         }
     }
@@ -103,7 +104,7 @@ class Hud extends Component {
         if (this.state.clickable && this.props.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
             classNames += ' active';
         } else if (this.props.state === GameStateTypes.CHOOSE_FIELD) {
-            if (this.props.game.currentPlayerIndex === 0) {
+            if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true) {
                 classNames += ' selectedByOpponent';
             } else {
                 classNames += ' selectedByPlayer';

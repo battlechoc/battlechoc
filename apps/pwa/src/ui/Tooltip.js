@@ -11,6 +11,7 @@ import MuiExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import Typography from '@material-ui/core/Typography';
 import { withTheme } from '@material-ui/core/styles';
 import t from './Translation';
+import { multiplayer } from '../Multiplayer';
 
 const ExpansionPanelSummary = withStyles(theme => ({
     root: {
@@ -56,25 +57,25 @@ class Tooltip extends Component {
 
     getContent() {
         let gameState = this.props.game.state;
-        let currentPlayer = this.props.game.currentPlayerIndex;
+        const currentPlayerIsLocalPlayer = multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex);
 
         if (gameState === GameStateTypes.CHOOSE_FIELD_OR_START) {
             var title = t[this.props.language].TOOLTIP_INITIAL_TURN_TITLE;
-            if (currentPlayer === 0) {
+            if (currentPlayerIsLocalPlayer) {
                 var message = t[this.props.language].TOOLTIP_INITIAL_TURN_MESSAGE;
             }
         } else if (gameState === GameStateTypes.CHOOSE_FIELD) {
             title = t[this.props.language].TOOLTIP_INITIAL_TURN_TITLE;
-            message = t[this.props.language].TOOLTIP_INITIAL_TURN_OPPONENT(this.props.game.players[currentPlayer].name);
+            message = t[this.props.language].TOOLTIP_INITIAL_TURN_OPPONENT(this.props.game.players[this.props.game.currentPlayerIndex].name);
         } else if (gameState === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
             gameState === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
             title = t[this.props.language].TOOLTIP_INITIAL_PLACEMENT_TITLE;
-            if (currentPlayer === 0) {
+            if (currentPlayerIsLocalPlayer) {
                 message = t[this.props.language].TOOLTIP_INITIAL_PLACEMENT_MESSAGE;
             }
         } else if (gameState === GameStateTypes.BUILD_PHASE) {
             title = t[this.props.language].TOOLTIP_BUILD_PHASE_TITLE;
-            if (currentPlayer === 0) {
+            if (currentPlayerIsLocalPlayer) {
                 if (typeof this.props.tappedBuilding === 'undefined') {
                     message = t[this.props.language].TOOLTIP_BUILD_PHASE_MESSAGE;
                 } else {
@@ -90,7 +91,7 @@ class Tooltip extends Component {
             }
         } else if (gameState === GameStateTypes.ATTACK_PHASE) {
             title = t[this.props.language].TOOLTIP_ATTACK_PHASE_TITLE;
-            if (currentPlayer === 0) {
+            if (currentPlayerIsLocalPlayer) {
                 if (typeof this.props.selectedAttack !== 'undefined') {
                     title = t[this.props.language].TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE(this.props.selectedAttack);
                     message = t[this.props.language].TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE(this.props.selectedAttack);
@@ -106,8 +107,7 @@ class Tooltip extends Component {
     render() {
         if (typeof this.props.game !== 'undefined') {
             let { title, message } = this.getContent()
-            let currentPlayer = this.props.game.currentPlayerIndex;
-            let loadingAnimation = currentPlayer === 1 ? <img className="loadingAnimation" src="animations/loading.gif" alt="loading" /> : null;
+            let loadingAnimation = multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === false ? <img className="loadingAnimation" src="animations/loading.gif" alt="loading" /> : null;
             if (typeof title !== 'undefined') {
                 return (
                     <div id="tooltipContainer">

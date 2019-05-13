@@ -113,6 +113,8 @@ const gameplayReducer = createReducer({}, {
     },
     [GameActions.playerJoined]: (state, action) => {
         state.game.players = action.payload.players;
+        console.log("joinGame ... hopefully setting correct player ids");
+        console.log(state.game.players);
     },
     [GameActions.createBoard]: (state, action) => {
         state.game.board = GameEntities.Board.generate(action.payload.boardSize, action.payload.boardSeed);

@@ -52,7 +52,7 @@ class App extends Component {
         const multiplayerSessionId = window.location.search.split("sessionid=")[1];
         if (typeof multiplayerSessionId !== 'undefined') {
             setTimeout(() => {
-                multiplayer.joinGameSession(multiplayerSessionId).then(session => {
+                multiplayer.joinGameSession(multiplayerSessionId, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField }).then(session => {
                     console.dir(session);
                     this.prepareNewGame(true, true, session.game);
                 })
@@ -110,7 +110,7 @@ class App extends Component {
 
         if (!gameStopped) {
             if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined' && typeof OfflineStore.gamestateStore !== 'undefined' &&
-                (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (nextProps.game.currentPlayerIndex === 0)) {
+                (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (multiplayer.isLocalPlayer(nextProps.game.currentPlayerIndex) === true)) {
 
                 OfflineStore.saveCurrentGame(nextProps.game).then(() => {
                     this.props.gameResumeable(true).catch(this.handleError);
@@ -123,8 +123,8 @@ class App extends Component {
                 }
             }
 
-            if (this.props.selectedBuilding === EntityType.FRUIT_CANNON && typeof this.scene !== 'undefined' && typeof this.scene.playerGameField !== 'undefined' && typeof nextProps.game !== 'undefined' && (nextProps.game.state !== GameStateTypes.BUILD_PHASE || nextProps.game.currentPlayerIndex !== 0 ||
-                nextProps.game.players[0].buildings === 0 || nextProps.selectedBuilding !== EntityType.FRUIT_CANNON)) {
+            if (this.props.selectedBuilding === EntityType.FRUIT_CANNON && typeof this.scene !== 'undefined' && typeof this.scene.playerGameField !== 'undefined' && typeof nextProps.game !== 'undefined' && (nextProps.game.state !== GameStateTypes.BUILD_PHASE || multiplayer.isLocalPlayer(nextProps.game.currentPlayerIndex) === false ||
+                nextProps.game.players[multiplayer.localPlayerIndex].buildings === 0 || nextProps.selectedBuilding !== EntityType.FRUIT_CANNON)) {
                 this.scene.resetLight();
                 this.scene.playerGameField.highlightCannons(true);
             }
@@ -157,7 +157,7 @@ class App extends Component {
                 const attacks = [AttackType.BUNNY, AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.FRUIT];
                 let availableAttackType = undefined;
                 for (var attackType in attacks) {
-                    if (nextProps.game.players[0].attacks[attacks[attackType]] > 0) {
+                    if (nextProps.game.players[multiplayer.localPlayerIndex].attacks[attacks[attackType]] > 0) {
                         availableAttackType = attacks[attackType];
                         break;
                     }
@@ -174,7 +174,7 @@ class App extends Component {
                     this.opponent.simulateAttackPhase(this.scene.opponentGameField, this.scene.playerGameField);
                 }
             } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
-                setTimeout(() => this.props.finishTurn({ issuer: this.props.game.players[0].id }).catch(this.handleError), 3000);
+                setTimeout(() => this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
             } else if (gameTransition === GameTransitions.PLAYER_JOINED) {
                 console.log("player joined ... updating opponent");
                 console.dir(nextProps);
@@ -206,9 +206,7 @@ class App extends Component {
         }
 
         if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
-            multiplayerGameState.players[1] = createPlayer("Your mom", PlayerType.HUMAN);
             this.props.joinGame(multiplayerGameState).then(() => {
-                // implement events over backend --> use pub/sub thing from firestore?
                 this.opponent = { player: this.props.game.players[0] };
             });
         } else {

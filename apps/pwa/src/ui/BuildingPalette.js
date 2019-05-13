@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import './BuildingPalette.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import { multiplayer } from '../Multiplayer';
 import { selectBuilding, tapBuilding } from './UiActions';
 import { EntityType, getEntityDescriptor } from '../gameplay/GameEntities';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
@@ -61,21 +62,21 @@ class BuildingPalette extends Component {
         return (this.props.state === GameStateTypes.BUILD_PHASE ||
             this.props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
             this.props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) &&
-            this.props.game.currentPlayerIndex === 0;
+            multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true;
     }
 
     playerCanBuild(building) {
-        const canBuild = this.props.game.players[0].buildingsPerTurn > 0 &&
-            this.props.game.players[0].cacao >= building.costs &&
-            this.props.game.players[0].buildings > 0;
+        const canBuild = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn > 0 &&
+            this.props.game.players[multiplayer.localPlayerIndex].cacao >= building.costs &&
+            this.props.game.players[multiplayer.localPlayerIndex].buildings > 0;
         if (building.type === EntityType.SPYING_EASTER_BUNNY) {
-            const playerField = this.props.game.players[0].fieldIndex;
+            const playerField = this.props.game.players[multiplayer.localPlayerIndex].fieldIndex;
             return canBuild && this.props.game.board.fields[playerField].grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length === 0
         } else if (building.type === EntityType.FACTORY_EXTENSION) {
-            const hasFactory = this.props.game.players[0].hasFactory;
+            const hasFactory = this.props.game.players[multiplayer.localPlayerIndex].hasFactory;
             return canBuild && hasFactory;
         } else if (building.type === EntityType.FRUIT_CANNON) {
-            const playerField = this.props.game.players[0].fieldIndex;
+            const playerField = this.props.game.players[multiplayer.localPlayerIndex].fieldIndex;
             const hasCannons = this.props.game.board.fields[playerField].grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length > 0;
             return canBuild && hasCannons;
         } else {
@@ -94,12 +95,12 @@ class BuildingPalette extends Component {
                                 if (building.type === EntityType.FACTORY) {
                                     canBuild = (this.props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
                                         this.props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) &&
-                                        this.props.game.currentPlayerIndex === 0 &&
-                                        !this.props.game.players[0].hasFactory;
+                                        multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true &&
+                                        !this.props.game.players[multiplayer.localPlayerIndex].hasFactory;
                                 }
 
                                 if ((building.type === EntityType.FACTORY && ((this.props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-                                    this.props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) && this.props.game.currentPlayerIndex === 0 && !this.props.game.players[0].hasFactory)) ||
+                                    this.props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) && multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true && !this.props.game.players[multiplayer.localPlayerIndex].hasFactory)) ||
                                     (building.type !== EntityType.FACTORY && this.props.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && this.props.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT)) {
                                     let className = canBuild ? (this.props.selectedBuilding === building.type ? 'selected previewContainer' : 'canbuild previewContainer') : 'previewContainer';
                                     return <div className={className} key={i}>
