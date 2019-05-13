@@ -1,5 +1,5 @@
 import { assetLoader as AssetLoader } from '../AssetLoader.js';
-import { Mesh, MeshLambertMaterial, MeshBasicMaterial, SpotLight } from 'three';
+import { Mesh, MeshLambertMaterial, SpotLight } from 'three';
 import { EntityType } from '../gameplay/GameEntities'
 
 class Building {
@@ -123,22 +123,9 @@ class Building {
 		this._model.rotation.y = rad;
 	}
 
-	makeTransparent() {
-		this._model.children[0].material = new MeshBasicMaterial({ opacity: 0.7, transparent: true, depthWrite: false });
-	}
-
 	_cream() {
 		const assets = AssetLoader.assets.models;
 		let creamAround = assets.CREAM_AROUND_BUILDING.model.scene.clone();
-		creamAround.traverse(child => {
-			if (child instanceof Mesh) {
-				child.material.opacity = 0.8;
-				child.material.transparent = true;
-				child.renderOrder = -1;
-			}
-		});
-
-		creamAround.rotation.y = -this._model.rotation.y;
 		creamAround.name = 'CREAMY_FIELD';
 		this._model.add(creamAround);
 	}

@@ -34,13 +34,13 @@ class Scene extends Component {
         this.camera.position.y = 30;
         this.camera.position.z = 70;
 
-        this.renderer = new WebGLRenderer({ alpha: true });
+        this.renderer = new WebGLRenderer({ alpha: true, antialias: true });
 
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(width, height);
         this.renderer.domElement.id = 'game-canvas'
         this.renderer.gammaOutput = true;
-        this.renderer.gammaFactor = 1.7;
+        this.renderer.gammaFactor = 1.4;
 
         // animations and renderer
         this.mixer = null;
@@ -238,9 +238,9 @@ class Scene extends Component {
         this.lookAtOpponent = game.currentPlayerIndex === 1;
 
         // Add Light
-        var directionalLight = new DirectionalLight(0xfef8cb, 2.0);
-        directionalLight.position.set(20, 24, -10);
-        directionalLight.castShadow = false;
+        var directionalLight = new DirectionalLight(0xffffff, 2);
+        directionalLight.position.set(40, 44, 1);
+        directionalLight.castShadow = false; 
         this.scene.add(directionalLight);
 
         this.playerGameField = new Gamefield(true, [-72, -16, 0], game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size);
@@ -256,23 +256,25 @@ class Scene extends Component {
         this.opponentClickTargets = this.opponentGameField.getClickableFields();
         this.props.selectBuilding(EntityType.FACTORY);
 
+        let create3dEntities = (cell, gamefield) => {
+            cell.occupiedBy.forEach(building => {
+                if (building !== EntityType.CREAM) {
+                    gamefield.setBuilding(building, { row: cell.row, col: cell.col });
+                }
+            });
+        };
+
         if (createUnits === true) {
             this.props.deselectBuildings();
             this.lookAtOpponent = (game.currentPlayerIndex === 1 || game.state === GameStateTypes.ATTACK_PHASE);
-            game.board.fields[game.players[0].fieldIndex].grid.forEach((cell) => {
-                cell.occupiedBy.forEach((building) => {
-                    if (building !== EntityType.CREAM) {
-                        this.playerGameField.setBuilding(building, { row: cell.row, col: cell.col });
-                    }
-                });
-            });
-            game.board.fields[game.players[1].fieldIndex].grid.forEach((cell) => {
-                cell.occupiedBy.forEach((building) => {
-                    if (building !== EntityType.CREAM) {
-                        this.opponentGameField.setBuilding(building, { row: cell.row, col: cell.col });
-                    }
-                });
-            });
+            game.board.fields[game.players[0].fieldIndex].grid.filter(cell => !cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
+                .forEach(cell => create3dEntities(cell, this.playerGameField));
+            game.board.fields[game.players[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
+                .forEach(cell => create3dEntities(cell, this.playerGameField));    
+            game.board.fields[game.players[1].fieldIndex].grid.filter(cell => !cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
+                .forEach(cell => create3dEntities(cell, this.opponentGameField));
+            game.board.fields[game.players[1].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
+                .forEach(cell => create3dEntities(cell, this.opponentGameField));
         }
     }
 
