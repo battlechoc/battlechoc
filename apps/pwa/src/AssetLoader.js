@@ -97,11 +97,11 @@ class AssetLoadingView extends Component {
               if (xhr.status >= 200 && xhr.status < 300) {
                 resolve(xhr.response);
               } else {
-                reject({ status: this.status, statusText: xhr.statusText });
+                reject({ status: xhr.status, statusText: xhr.statusText });
               }
             };
             
-            xhr.onerror = () => reject({ status: this.status, statusText: xhr.statusText });
+            xhr.onerror = () => reject({ status: xhr.status, statusText: xhr.statusText });
             xhr.send();
         });
     }

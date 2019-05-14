@@ -78,13 +78,15 @@ class Augustus {
     connectGamestate(callback) {
         this.refreshGameState = () => {
             let game = callback();
-            this.gameIsRunning = game.isRunning;
-            if (this.gameIsRunning) {
-                this.player = game.players[1];
-                this.gamefields = game.board.fields;
-                this.boardSize = game.board.size;
-                this.board = game.board.fields[this.player.fieldIndex];
-                this.opponentBoard = game.board.fields[game.players[0].fieldIndex];
+            if (typeof game !== 'undefined') { 
+                this.gameIsRunning = game.isRunning;
+                if (this.gameIsRunning) {
+                    this.player = game.players[1];
+                    this.gamefields = game.board.fields;
+                    this.boardSize = game.board.size;
+                    this.board = game.board.fields[this.player.fieldIndex];
+                    this.opponentBoard = game.board.fields[game.players[0].fieldIndex];
+                }
             }
         };
     }
@@ -153,7 +155,7 @@ class Augustus {
         }
     }
 
-    estimateAttackTarget() {
+    estimateAttackTarget(attackType) {
         let unveiledFactories = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FACTORY) && !this.discoveredShieldedCells.includes(cell));
         let unveiledCannons = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON) && !this.discoveredShieldedCells.includes(cell));
         let unveiledFruitCannons = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.FRUIT_CANNON) && !this.discoveredShieldedCells.includes(cell));
@@ -162,7 +164,12 @@ class Augustus {
         let unveiledTrees = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.CACAOTREE) && !this.discoveredShieldedCells.includes(cell));
         let unveiledSpyingEasterBunny = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY) && !this.discoveredShieldedCells.includes(cell));
         let unveiledXmasFactory = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.XMAS_FACTORY) && !this.discoveredShieldedCells.includes(cell));
+        let unveiledFountains = this.opponentBoard.grid.filter(cell => !cell.occupiedBy.includes(EntityType.CREAM) && cell.occupiedBy.includes(EntityType.CHOCOLATE_FOUNTAIN));
         let creamedCells = this.opponentBoard.grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM) && !this.discoveredShieldedCells.includes(cell));
+
+        if (attackType === AttackType.HOT_CHOCOLATE && unveiledFountains.length > 0) {
+            return unveiledFountains[0];
+        }
 
         if (unveiledFactories.length > 0) {
             return unveiledFactories[0];
@@ -276,14 +283,14 @@ class Augustus {
                     target = this.discoveredShieldedCells[0];
                     this.discoveredShieldedCells.splice(this.discoveredShieldedCells.indexOf(target), 1);
                 } else {
-                    target = this.estimateAttackTarget();
+                    target = this.estimateAttackTarget(AttackType.HOT_CHOCOLATE);
                 }
                 this.simulateAttack(target, AttackType.HOT_CHOCOLATE, gamefield3d, opponentGameField3d);
             } else if (this.player.attacks[AttackType.FRUIT] > 0) {
                 let target = this.estimateFruitAttackTarget();
                 this.simulateAttack(target, AttackType.FRUIT, gamefield3d, opponentGameField3d);
             } else if (this.player.attacks[AttackType.TRUFFLE] > 0) {
-                let target = this.estimateAttackTarget();
+                let target = this.estimateAttackTarget(AttackType.TRUFFLE);
                 if (target.shielded === true) {
                     this.discoveredShieldedCells.push(target);
                 }

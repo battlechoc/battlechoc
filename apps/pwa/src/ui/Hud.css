@@ -1,34 +1,11 @@
-/* title */
-.headline {
+.logo {
   position: absolute;
   z-index: 2;
-  top: 15vh;
+  top: 5vh;
 }
 
-.headline span {
-  color: #c7c585;
-  text-shadow: 1px 1px 1px #a7a565,
-        2px 2px 1px #a7a565,
-        4px 3px 1px #a7a565,
-        6px 4px 3px #a7a565;
-  font-size: 10vw;
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
-  font-weight: bold;
-  user-select: none;
-  display: inline-block;
-}
-
-.headline span:first-child {
-  animation: moveup 1s forwards;
-}
-
-.headline span:last-child { 
-  animation: movedown 1s forwards;
-  color: #442c12;
-  text-shadow: 1px 1px 1px #341c02,
-        2px 2px 1px #341c02,
-        4px 3px 1px #341c02,
-        6px 4px 3px #341c02;
+.logo img {
+  width: 36vw;
 }
 
 .titleMenu {
@@ -37,43 +14,24 @@
   justify-content: center;
   flex-direction: column;
   position: absolute;
-  top: 45%;
-}
-
-.backgroundEntity {
-  position: absolute;
-  filter: contrast(0.6) blur(0.05em);
-  height: 15vw;
-  z-index: -1;
-  animation: moving 3s ease-in-out infinite;
-  animation-delay: 1s;
+  top: 55%;
 }
 
 .foregroundEntity {
   position: absolute;
-  height: 20vw;
+  height: 15vw;
   z-index: -1;
   animation: moving 3s ease-in-out infinite;
 }
 
 #cannonTitlePage {
-  bottom: 2%;
-  left: 3%;
-}
-
-#treeTitlePage {
-  top: 14%;
-  right: 2%;
-}
-
-#creamTitlePageTop {
-  top: 15%;
-  left: 5%;
+  bottom: 8%;
+  left: 8%;
 }
 
 #creamTitlePageBottom {
-  bottom: 15%;
-  right: 5%;
+  bottom: 40%;
+  right: 8%;
 }
 
 @keyframes moving {
@@ -92,6 +50,18 @@
     to {
         transform: translateY(2vh);
     }
+}
+
+.iosMessage > div {
+  flex-direction: column-reverse;
+}
+
+.iosMessage button {
+  padding-bottom: 0 !important;
+}
+
+.iosMessage span > svg {
+  margin-bottom: -5px;
 }
 
 /* choose menu */
@@ -254,6 +224,10 @@ img.cream {
   height: 100vh;
 }
 
+.menuButton:first-child {
+  margin-top: 20px !important;
+}
+
 .menuButton {
   cursor: pointer;
   padding: 5px;
@@ -262,7 +236,7 @@ img.cream {
   border-radius: 0 !important;
   text-align: center;
   color: white !important;
-  margin-top: 20px !important;
+  margin-top: 10px !important;
 }
 
 .active:hover {
@@ -293,25 +267,9 @@ img.cream {
   color: white;
 }
 
-@media screen and (orientation:portrait) and (max-width: 600px) { 
-  .fields {
-    width: 25vw;
-    height: 25vw;
-  }
-}
-
 @media screen and (orientation:portrait) {
-  .menuButton {
-    width: 80vw;
-  }
-
-  .titleMenu {
-    top: unset;
-  }
-
   .button {
-    width: 50vw;
-    max-width: 250px;
+    width: 48vw;
   }
 
   .choose {
@@ -319,61 +277,154 @@ img.cream {
     height: 87.5vh;
     margin-top: 12.5vh;
   }
+}
 
-  .backgroundEntity {
-    height: 15vh;
+@media screen and (min-width: 601px) and (orientation: portrait) {
+  .logo { top: 10vh; }
+  .logo img { width: 60vw; }
+  .titleMenu { top: 53%; }
+  .button {
+    width: 40vw;
   }
-
+  .menuButton {
+    width: 54vw;
+    font-size: 1.2rem !important;
+  }
   .foregroundEntity {
-    height: 20vh;
+    height: 13vh;
+  }
+  #cannonTitlePage {
+    left: 6%;
+    bottom: 5%;
+  }
+  #creamTitlePageBottom {
+    right: 3%;
+    top: 40%;
   }
 }
 
-@media screen and (min-width: 960px) {
+@media screen and (max-width: 600px) and (orientation: portrait) {
+  .logo { top: 12vh; }
+  .logo img { width: 75vw; }
+  .titleMenu { top: 53%; }
+  .menuButton {
+    width: 54vw;
+    font-size: 1.2rem !important;
+  }
+  .foregroundEntity {
+    height: 13vh;
+  }
+  #cannonTitlePage {
+    left: 6%;
+    bottom: 5%;
+  }
+  #creamTitlePageBottom {
+    right: 3%;
+    top: 40%;
+  }
+  .fields {
+    width: 25vw;
+    height: 25vw;
+  }
+}
+
+@media screen and (max-width: 400px) and (orientation: portrait) {
+  .logo { top: 11vh; }
+  .logo img { width: 70vw; }
+  .titleMenu { top: 50%; }
+  .menuButton {
+    width: 48vw;
+    font-size: 1rem !important;
+  }
+  .foregroundEntity {
+    height: 24vw;
+  }
+  #creamTitlePageBottom {
+    right: 3%;
+    top: 40%;
+  }
+  #cannonTitlePage {
+    left: 6%;
+    bottom: 5%;
+  }
+}
+
+@media screen and (max-width: 400px) and (min-height: 800px) and (orientation: portrait) {
+  .menuButton {
+    width: 60vw;
+    font-size: 1.2rem !important;
+  }
+  #cannonTitlePage {
+    bottom: 10%;
+  }
+  #creamTitlePageBottom {
+    top: 35%;
+  }
+}
+
+@media screen and (max-width: 400px) and (max-height: 568px) and (orientation: portrait) {
+  .menuButton {
+    width: 48vw;
+    font-size: 0.9rem !important;
+  }
+}
+
+@media screen and (max-width: 400px) and (max-height: 480px) and (orientation: portrait) {
+  .logo { top: 11vh; }
+  .logo img { width: 70vw; }
+  .titleMenu { top: 48%; }
+  .menuButton {
+    width: 47vw;
+    font-size: 0.8rem !important;
+  }
+  .foregroundEntity {
+    height: 22vw;
+  }
+}
+
+@media screen and (orientation:landscape) {
+  .iosMessage { display: none !important; }
+}
+
+@media screen and (min-width: 901px) and (orientation: landscape) {
+  .logo { top: 5vh; }
+  .logo img { width: 52vh; }
+  .titleMenu { top: 50%; }
   .menuButton {
     width: 35vw;
-    font-size: 1.6rem !important;
+    font-size: 1.2rem !important;
   }
 
   .stackedIcon > .firstIcon {
     font-size: 6rem;
   }
-
-  #version {
-    font-size: 1rem;
-  }
 }
 
-@media screen and (max-width: 959px) {
+@media screen and (max-width: 900px) and (orientation: landscape) {
+  .logo { top: 5px; }
+  .logo img { width: 60vh; }
+  .titleMenu { top: 45vh; }
   .menuButton {
-    width: 35vw;
-    font-size: 1.1rem !important;
-    margin-top: 10px !important;
-  }
-}
-
-@media screen and (max-width: 600px) {
-  .menuButton {
-    width: 58vw;
+    width: 45vw;
     font-size: 1.2rem !important;
   }
+}
 
-  .stackedIcon > .firstIcon {
-    font-size: 2rem;
-  }
-
-  #version {
-    font-size: 0.8rem;
+@media screen and (max-width: 680px) and (orientation: landscape) {
+  .logo { top: 5px; }
+  .logo img { width: 60vh; }
+  .titleMenu { top: 45vh; }
+  .menuButton {
+    width: 45vw;
+    font-size: 1rem !important;
   }
 }
 
-@media screen and (max-height: 400px) {
+@media screen and (max-width: 500px) and (orientation: landscape) {
+  .logo { top: 5vh; }
+  .logo img { width: 52vh; } 
   .menuButton {
-    font-size: 1rem !important;
-    width: 50vw;
-  }
-
-  .titleMenu {
-    top: 40%;
+    width: 42vw;
+    font-size: 0.9rem !important;
   }
 }

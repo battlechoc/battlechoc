@@ -29,16 +29,16 @@ class Gamefield {
         let board = new Mesh(new Geometry(), materials);
         playerField.grid.forEach((cell, i) => {
             if (!cell.molten) {
-                let materialIndex = 1;
+                let materialIndex = 2;
                 if (cell.type === BoardCellTypes.BROWN) {
-                    materialIndex = 2;
+                    materialIndex = 1;
                 } else if (cell.type === BoardCellTypes.BLACK) {
                     materialIndex = 0;
                 }
 
                 let geometryLowerBound = board.geometry.faces.length;
 
-                pivot.position.set(this.fieldSize * cell.row, 0, this.fieldSize * cell.col);
+                pivot.position.set(this.fieldSize * cell.row, 3, this.fieldSize * cell.col);
                 pivot.traverse(child => {
                     if (child instanceof Mesh) {
                         child.updateMatrix();
@@ -387,7 +387,6 @@ class Gamefield {
         if (building.entityType === EntityType.CREAM) {
             let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM);
             if (this.isPlayerGameField) {
-                building.makeTransparent();
                 if (otherBuildings.length > 0) {
                     building.hide();
                     otherBuildings.forEach(other => other.makeCreamy());
@@ -410,16 +409,6 @@ class Gamefield {
                 this.gameField.remove(this.buildings[row][col][index].getModel());
                 this.buildings[row][col].splice(index, 1);
             }
-        }
-
-        if (building.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
-            const patch = this.getCellPatch3x3(row, col, true);
-            patch.forEach(cell => {
-                let creamIndex = cell.findIndex(building => building.entityType === EntityType.CREAM);
-                if (creamIndex > -1) {
-                    cell[creamIndex]._model.children[0].renderOrder = -1;
-                }
-            });
         }
 
         this.gameField.add(building.getModel());

@@ -215,6 +215,17 @@ const gameplayReducer = createReducer({}, {
                     const destroyedBuildingDescriptor = GameEntities.getEntityDescriptor(GameEntities.EntityType.SPYING_EASTER_BUNNY);
                     opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
                     console.log('SPYING EASTER BUNNY DESTROYED');
+                } else if (action.payload.attackType === GameEntities.AttackType.HOT_CHOCOLATE && attackedCell.occupiedBy.includes(GameEntities.EntityType.CHOCOLATE_FOUNTAIN)) {
+                    attackedCell.shielded = false;
+                    attackedCell.occupiedBy.splice(attackedCell.occupiedBy.indexOf(GameEntities.EntityType.CHOCOLATE_FOUNTAIN), 1);
+                    const neighbors = getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, state.game.board, otherPlayerField(state.game).grid);
+                    neighbors.forEach(neighbor => {
+                        const otherFountainNearby = getCellPatch3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.CHOCOLATE_FOUNTAIN));
+                        if (otherFountainNearby.length === 0) {
+                            neighbor.shielded = false;
+                        }
+                    });
+                    console.log('CHOCOLATE FOUNTAIN DESTROYED');
                 }
                 attackedCell.occupiedBy = [];
                 attackedCell.molten = action.payload.attackType === GameEntities.AttackType.HOT_CHOCOLATE;
