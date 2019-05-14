@@ -1,6 +1,8 @@
 import * as firebase from 'firebase';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import { GameActionTypes } from './gameplay/GameActions';
+import { AttackType } from './gameplay/GameEntities';
+import Jukebox from './ui/Jukebox';
 
 const MultiplayerGameSessionState = Object.freeze({
     UNINITIALIZED: 'MultiplayerGameSessionState.Uninitialized',
@@ -98,10 +100,27 @@ class Multiplayer {
     emitAction(action) {
         switch (action.type) {
             case GameActionTypes.build:
-                this.gameActions.build(action.payload);
+                this.gameActions.build(action.payload).then(() => {
+                    if (typeof this.opponentGameField3d !== 'undefined') {
+                        this.opponentGameField3d.setBuilding(action.payload.building.type, action.payload.building.position);
+                    }
+                });
                 break;
             case GameActionTypes.attack:
-                this.gameActions.attack(action.payload);
+                this.gameActions.attack(action.payload).then(() => {
+                    let row = action.payload.row;
+                    let col = action.payload.col;
+                    let attackType = action.payload.attackType;
+                    // TODO: how do I securely get the information if bunny was melt down
+
+                    Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
+                    // TODO: same for opponent grid -> 
+                    // const attackedCell = this.opponentBoard.grid[target.row * this.boardSize.cols + target.col];
+                    this.gameField3d.attack({ row: row, col: col }, attackType, false);//, attackedCell.shielded);
+                    if (attackType === AttackType.HOT_CHOCOLATE) {
+                        this.gameField3d.rebuild(this.opponentBoard);
+                    }
+                });
                 break;
             case GameActionTypes.chooseField:
                 this.gameActions.chooseField(action.payload);
@@ -168,6 +187,11 @@ class Multiplayer {
         this.localPlayerIndex = 0;
         this.currentEventIndex = 0;
         this.currentGameSession = undefined;
+    }
+
+    connectUiGamefields(gameField3d, opponentGameField3d) {
+        this.gameField3d = gameField3d;
+        this.opponentGameField3d = opponentGameField3d;
     }
 
     joinGameSession(sessionId, gameActions) {

@@ -249,6 +249,8 @@ class Scene extends Component {
         this.scene.add(this.playerGameField.gameField);
         this.scene.add(this.opponentGameField.gameField);
 
+        multiplayer.connectUiGamefields(this.playerGameField, this.opponentGameField);
+
         // Setup Game EventListener
         this.container.onclick = event => this.onClick(event);
 
