@@ -1,5 +1,6 @@
 import { GameStateTypes } from './GameplayReducer';
-import { playerHasAttacks } from './Player';
+import { playerHasAttacks, PlayerType } from './Player';
+import { multiplayer } from '../Multiplayer';
 
 const GameTransitions = Object.freeze({
     PLAYER_BEGINS_GAME: 'GameTransitions.PLAYER_BEGINS_GAME',
@@ -18,6 +19,7 @@ const GameTransitions = Object.freeze({
     OPPONENT_ATTACK_PHASE: 'GameTransitions.OPPONENT_ATTACK_PHASE',
     GAME_FINISHED: 'GameTransitions.GAME_FINISHED',
     ATTACKS_DEPLETED: 'GameTransitions.ATTACKS_DEPLETED',
+    PLAYER_JOINED: 'GameTransitions.PLAYER_JOINED',
     INVALID: 'GameTransitions.INVALID'
 });
 
@@ -29,7 +31,7 @@ function getGameTransition(currentState, nextState) {
 
     if (typeof currentState === 'undefined' &&
         typeof nextState !== 'undefined') {
-        if (nextState.currentPlayerIndex === 0) {
+        if (multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === true) {
             return GameTransitions.PLAYER_BEGINS_GAME;
         } else {
             return GameTransitions.OPPONENT_BEGINS_GAME;
@@ -38,62 +40,64 @@ function getGameTransition(currentState, nextState) {
         typeof nextState === 'undefined') {
         return GameTransitions.GAME_FINISHED;
     } else if (currentState.state === GameStateTypes.START &&
-        currentState.currentPlayerIndex === 1 &&
+        multiplayer.isLocalPlayer(currentState.currentPlayerIndex) === false &&
         nextState.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
         return GameTransitions.OPPONENT_STARTS_GAME;
-    } else if (nextState.currentPlayerIndex === 0 &&
+    } else if (multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === true &&
         currentState.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
         nextState.state === GameStateTypes.CHOOSE_FIELD &&
-        currentState.currentPlayerIndex === 1) {
+        multiplayer.isLocalPlayer(currentState.currentPlayerIndex) === false) {
         return GameTransitions.OPPONENT_HAS_CHOSEN_START;
     } else if (currentState.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
         nextState.state === GameStateTypes.CHOOSE_FIELD &&
-        currentState.currentPlayerIndex === 0) {
+        multiplayer.isLocalPlayer(currentState.currentPlayerIndex) === true) {
         return GameTransitions.PLAYER_HAS_CHOSEN_START;
     } else if ((currentState.state === GameStateTypes.CHOOSE_FIELD_OR_START &&
         nextState.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) ||
         (currentState.state === GameStateTypes.CHOOSE_FIELD &&
             nextState.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT)) {
-        if (nextState.currentPlayerIndex === 0) {
+        if (multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === true) {
             return GameTransitions.PLAYER_INITAL_PLACEMENT;
         } else {
             return GameTransitions.OPPONENT_INITAL_PLACEMENT;
         }
     } else if (currentState.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT &&
         nextState.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT &&
-        nextState.currentPlayerIndex === 1) {
+        multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === false) {
         return GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT;
     } else if (nextState.state === GameStateTypes.BUILD_PHASE &&
         currentState.state !== GameStateTypes.BUILD_PHASE) {
-        if (nextState.currentPlayerIndex === 0) {
+        if (multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === true) {
             return GameTransitions.PLAYER_BUILD_PHASE;
         } else {
             return GameTransitions.OPPONENT_BUILD_PHASE;
         }
     } else if (nextState.state === GameStateTypes.BUILD_PHASE &&
         currentState.state === GameStateTypes.BUILD_PHASE &&
-        nextState.currentPlayerIndex === 1 &&
-        currentState.currentPlayerIndex === 0) {
+        multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === false &&
+        multiplayer.isLocalPlayer(currentState.currentPlayerIndex) === true) {
         return GameTransitions.OPPONENT_BUILD_PHASE;
     } else if (nextState.state === GameStateTypes.BUILD_PHASE &&
         currentState.state === GameStateTypes.BUILD_PHASE &&
-        nextState.currentPlayerIndex === 0 &&
-        currentState.currentPlayerIndex === 1) {
+        multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === true &&
+        multiplayer.isLocalPlayer(currentState.currentPlayerIndex) === false) {
         return GameTransitions.PLAYER_BUILD_PHASE;
     } else if (nextState.state === GameStateTypes.ATTACK_PHASE &&
         currentState.state === GameStateTypes.BUILD_PHASE) {
-        if (nextState.currentPlayerIndex === 0) {
+        if (multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === true) {
             return GameTransitions.PLAYER_ATTACK_PHASE;
         } else {
             return GameTransitions.OPPONENT_ATTACK_PHASE;
         }
     } else if (nextState.state === GameStateTypes.ATTACK_PHASE &&
         currentState.state === GameStateTypes.ATTACK_PHASE &&
-        nextState.currentPlayerIndex === 0 &&
-        playerHasAttacks(nextState.players[0]) === false) {
+        multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === true &&
+        playerHasAttacks(nextState.players[multiplayer.localPlayerIndex]) === false) {
         return GameTransitions.ATTACKS_DEPLETED;
-    } else if (nextState.state !== GameStateTypes.BUILD_PHASE || nextState.currentPlayerIndex !== 0) {
+    } else if (currentState.state === GameStateTypes.BUILD_PHASE && (nextState.state !== GameStateTypes.BUILD_PHASE || multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === false)) {
         return GameTransitions.PLAYER_LEFT_BUILD_PHASE;
+    } else if (currentState.players[1].type === PlayerType.AUGUSTUS_GLOOP && nextState.players[1].type === PlayerType.HUMAN) {
+        return GameTransitions.PLAYER_JOINED;
     } else {
         return GameTransitions.INVALID;
     }

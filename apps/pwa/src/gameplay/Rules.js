@@ -10,6 +10,10 @@ class Rules {
         return gameState.players[gameState.currentPlayerIndex];
     }
 
+    static isIssuerRelevant(action) {
+        return IssuerRelevantActions.includes(action.type);
+    }
+
     static isGameAction(action) {
         return action.type.includes('battlechoc/gameplay/');
     }
@@ -156,8 +160,10 @@ class Rules {
             }
         }
 
-        if (typeof currentState === 'undefined' && (action.type === GameActionTypes.startGame || action.type === GameActionTypes.resumeGame)) {
+        if (typeof currentState === 'undefined' && [GameActionTypes.startGame, GameActionTypes.resumeGame, GameActionTypes.joinGame].includes(action.type)) {
             return true;
+        } else if (action.type === GameActionTypes.playerJoined) {
+            return currentState === GameStateTypes.CHOOSE_FIELD_OR_START && state.gameplay.game.currentPlayerIndex === 0;
         } else if (action.type === GameActionTypes.createBoard) {
             return currentState === GameStateTypes.START;
         } else if (action.type === GameActionTypes.chooseStart) {

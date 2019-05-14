@@ -7,6 +7,7 @@ import * as serviceWorker from './serviceWorker';
 import rootReducer from './RootReducer';
 import { gameplayLogger } from './gameplay/GamePlayLogger';
 import actionValidator from './gameplay/ActionValidator';
+import multiplayerActionRelay from './gameplay/MultiplayerActionRelay';
 import { configureStore, getDefaultMiddleware } from 'redux-starter-kit'
 import { createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
 import red from '@material-ui/core/colors/red';
@@ -132,7 +133,7 @@ const theme = createMuiTheme({
 
 const store = configureStore({ 
     reducer: rootReducer,
-    middleware: [...getDefaultMiddleware(), actionValidator, gameplayLogger]
+    middleware: [...getDefaultMiddleware(), actionValidator, multiplayerActionRelay, gameplayLogger]
 });
 
 ReactDOM.render(

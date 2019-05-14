@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import { multiplayer } from '../Multiplayer';
 import { selectAttack } from './UiActions';
 import { AttackType } from '../gameplay/GameEntities';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
@@ -28,20 +29,20 @@ class AttackPalette extends Component {
     }
 
     attackSelectionIsVisible() {
-        return this.props.state === GameStateTypes.ATTACK_PHASE && this.props.game.currentPlayerIndex === 0;
+        return this.props.state === GameStateTypes.ATTACK_PHASE && multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true;
     }
 
     playerCanAttack(type) {
-        return this.props.game.players[0].attacks[type] > 0
+        return this.props.game.players[multiplayer.localPlayerIndex].attacks[type] > 0
     }
 
     attacks(attackType) {
-        const player = this.props.game.players[0];
+        const player = this.props.game.players[multiplayer.localPlayerIndex];
         return player.attacks[attackType];
     }
 
     attacksPerTurn(attackType) {
-        const player = this.props.game.players[0];
+        const player = this.props.game.players[multiplayer.localPlayerIndex];
         return player.attacksPerTurn[attackType];
     }
 

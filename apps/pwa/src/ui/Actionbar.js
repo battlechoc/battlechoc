@@ -2,14 +2,16 @@ import React, { Component } from 'react';
 import './Actionbar.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { finishTurn, finishBuildPhase } from '../gameplay/GameActions';
+import { build, attack, chooseStart, chooseField, finishTurn, finishBuildPhase, playerJoined } from '../gameplay/GameActions';
 import { BattlechocError } from '../gameplay/Errors';
 import { playerHasAttacks, playerHasAttacksPerTurn } from '../gameplay/Player';
 import { getCheapest } from '../gameplay/GameEntities';
 import { deselectBuildings, deselectAttack } from './UiActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
+import { multiplayer } from '../Multiplayer';
 import Fab from '@material-ui/core/Fab';
-import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings } from '@material-ui/icons';
+import t from './Translation';
+import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, Share } from '@material-ui/icons';
 import Jukebox from './Jukebox';
 
 class Actionbar extends Component {
@@ -53,6 +55,29 @@ class Actionbar extends Component {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         document.documentElement.requestFullscreen().then(() => {
             window.screen.orientation.lock('landscape').catch(error => console.log(error));
+        });
+    }
+
+    shareMultiplayerGame() {
+        console.log('sharing current game session');
+        multiplayer.createGameSession(this.props.game, this.props.playerJoined, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField }).then((session) => {
+            console.log('created now sharing');
+            if (typeof session !== 'undefined') {
+                console.dir(session);
+                if (navigator.share) {
+                    navigator.share({
+                        title: window.document.title,
+                        text: t[this.props.language].INVITATION,
+                        url: session.url,
+                    }).then(() => console.log('successfully shared'))
+                        .catch((error) => console.log('error sharing multiplayer session', error));
+                } else {
+                    window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + session.url));
+                    console.log(session.url);
+                }
+            }
+        }).catch((error) => {
+            console.error('could not create a multiplayer game session.', error);
         });
     }
 
@@ -109,20 +134,34 @@ class Actionbar extends Component {
             );
         }
 
+        if (typeof this.props.game !== 'undefined' && this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
+            buttons.push(
+                <Fab
+                    size="small"
+                    key="3"
+                    color="primary"
+                    aria-label="share game"
+                    className="icon"
+                    onClick={() => this.shareMultiplayerGame()}>
+                    <Share />
+                </Fab>
+            );
+        }
+
         if (typeof this.props.game !== 'undefined') {
-            if (this.props.game.currentPlayerIndex === 0) {
+            if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true) {
                 if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
-                    if (playerHasAttacksPerTurn(this.props.game.players[0]) === true) {
+                    if (playerHasAttacksPerTurn(this.props.game.players[multiplayer.localPlayerIndex]) === true) {
                         buttons.push([
                             <Fab
                                 size="small"
-                                key="3"
+                                key="4"
                                 color="primary"
                                 aria-label="skip build phase"
-                                className={(this.props.game.players[0].buildings > 0 && this.props.game.players[0].cacao >= getCheapest().costs) ? "icon" : "icon blinking"}
+                                className={(this.props.game.players[multiplayer.localPlayerIndex].buildings > 0 && this.props.game.players[multiplayer.localPlayerIndex].cacao >= getCheapest().costs) ? "icon" : "icon blinking"}
                                 onClick={() => {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                    this.props.finishBuildPhase({ issuer: this.props.game.players[0].id }).then(() => {
+                                    this.props.finishBuildPhase({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
                                         this.props.deselectBuildings();
                                         this.props.deselectAttack();
                                     }).catch(error => {
@@ -140,13 +179,13 @@ class Actionbar extends Component {
                         buttons.push([
                             <Fab
                                 size="small"
-                                key="4"
+                                key="5"
                                 color="primary"
                                 aria-label="finish turn"
-                                className={(this.props.game.players[0].buildings === 0 || this.props.game.players[0].cacao < getCheapest().costs) ? "icon blinking" : "icon"}
+                                className={(this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) ? "icon blinking" : "icon"}
                                 onClick={() => {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                    this.props.finishTurn({ issuer: this.props.game.players[0].id }).then(() => {
+                                    this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
                                         this.props.deselectBuildings();
                                         this.props.deselectAttack();
                                     }).catch(error => {
@@ -162,17 +201,17 @@ class Actionbar extends Component {
                         ]);
                     }
                 } else if (this.props.game.state === GameStateTypes.ATTACK_PHASE) {
-                    if (playerHasAttacks(this.props.game.players[0]) === true || playerHasAttacksPerTurn(this.props.game.players[0]) === false) {
+                    if (playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true || playerHasAttacksPerTurn(this.props.game.players[multiplayer.localPlayerIndex]) === false) {
                         buttons.push(
                             <Fab
                                 size="small"
-                                key="4"
+                                key="5"
                                 color="primary"
                                 aria-label="finish turn"
-                                className={(playerHasAttacks(this.props.game.players[0]) === true) ? "icon" : "icon blinking"}
+                                className={(playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true) ? "icon" : "icon blinking"}
                                 onClick={() => {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                    this.props.finishTurn({ issuer: this.props.game.players[0].id }).then(() => {
+                                    this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
                                         this.props.deselectBuildings();
                                         this.props.deselectAttack();
                                     }).catch(error => {
@@ -200,14 +239,20 @@ Actionbar.propTypes = {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
-    players: state.players
+    players: state.players,
+    language: state.ui.language
 });
 
 const mapDispatchToProps = {
     finishBuildPhase,
     finishTurn,
     deselectBuildings,
-    deselectAttack
+    playerJoined,
+    deselectAttack,
+    build,
+    attack,
+    chooseStart,
+    chooseField
 };
 
 const ActionbarContainer = connect(

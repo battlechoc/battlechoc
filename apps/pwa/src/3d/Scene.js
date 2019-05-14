@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { multiplayer } from '../Multiplayer';
 import { deselectBuildings, selectAttack, deselectAttack, selectBuilding } from '../ui/UiActions';
 import { build, attack, finishTurn } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
@@ -54,16 +55,16 @@ class Scene extends Component {
 
     componentDidUpdate() {
         if (typeof this.props.game !== 'undefined') {
-            this.lookAtOpponent = (this.props.game.currentPlayerIndex === 1 &&
+            this.lookAtOpponent = (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === false &&
                 this.props.game.state !== GameStateTypes.ATTACK_PHASE) ||
-                (this.props.game.currentPlayerIndex === 0 &&
+                (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true &&
                     this.props.game.state === GameStateTypes.ATTACK_PHASE);
         }
     }
 
     triggerCacaoInfo() {
-        const specialTrees = this.props.game.board.fields[this.props.game.players[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE) && cell.type === BoardCellTypes.WHITE);
-        const trees = this.props.game.board.fields[this.props.game.players[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE) && cell.type !== BoardCellTypes.WHITE);
+        const specialTrees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE) && cell.type === BoardCellTypes.WHITE);
+        const trees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE) && cell.type !== BoardCellTypes.WHITE);
         let description = getEntityDescriptor(EntityType.CACAOTREE)
         trees.forEach(cell => spawnInfoAtBuilding({
             tree: this.playerGameField.getBuildingAtPosition(cell),
@@ -111,7 +112,7 @@ class Scene extends Component {
         this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
         this.raycaster.setFromCamera(this.mouse, this.camera);
 
-        if (this.props.game.currentPlayerIndex === 0) {
+        if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
             this.playerFieldClick(event);
             this.opponentFieldClick(event);
         }
@@ -124,7 +125,7 @@ class Scene extends Component {
         let buildingSelected = this.props.selectedBuilding;
         let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
             this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
-        if (intersects.length > 0 && (buildingSelected || (initialPlacement && this.props.game.players[0].buildingsPerTurn === 0))) {
+        if (intersects.length > 0 && (buildingSelected || (initialPlacement && this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn === 0))) {
             let building = null;
             if (initialPlacement) {
                 building = createEntity(EntityType.FACTORY);
@@ -133,25 +134,25 @@ class Scene extends Component {
             }
             let cellIndex = intersects[0].object._cellIdx || intersects[0].face._cellIdx;
             building.position = { row: cellIndex.row, col: cellIndex.col }
-            let playerCacaoPerTurnBefore = this.props.game.players[0].cacaoPerTurn;
-            let buildingsPerTurnBefore = this.props.game.players[0].buildingsPerTurn;
-            this.props.build({ issuer: this.props.game.players[0].id, building: building }).then(() => {
+            let playerCacaoPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn;
+            let buildingsPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn;
+            this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
                 this.playerGameField.setBuilding(building.type, building.position);
                 if (initialPlacement) {
-                    spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: this.props.game.players[0].buildingsPerTurn, x: event.clientX, y: event.clientY, container: this.container });
+                    spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn, x: event.clientX, y: event.clientY, container: this.container });
                     this.props.deselectBuildings();
                     this.props.deselectAttack();
                     setTimeout(() => {
-                        this.props.finishTurn({ issuer: this.props.game.players[0].id });
+                        this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
                         this.props.deselectBuildings();
                         this.props.deselectAttack();
                     }, 3000);
                 } else {
                     let description = getEntityDescriptor(this.props.selectedBuilding)
                     spawnInfo({ type: InfoType.CACAO_CONSUMED, cacao: description.costs, x: event.clientX, y: event.clientY, container: this.container });
-                    let cacaoDelta = this.props.game.players[0].cacaoPerTurn - playerCacaoPerTurnBefore;
-                    let buildingsDelta = this.props.game.players[0].buildingsPerTurn - buildingsPerTurnBefore;
+                    let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
+                    let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;
                     setTimeout(() => {
                         if (building.type === EntityType.CACAOTREE) {
                             spawnInfo({ type: InfoType.INCREASE_CACAO_PER_TURN, cacao: cacaoDelta, x: event.clientX, y: event.clientY, container: this.container });
@@ -179,17 +180,17 @@ class Scene extends Component {
             var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
             intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
                 (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));
-            if (intersects.length > 0 && playerHasAttacks(this.props.game.players[0]) === true) {
+            if (intersects.length > 0 && playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true) {
                 let cellIndex = intersects[0].object._cellIdx || intersects[0].face._cellIdx;
                 let target = { row: cellIndex.row, col: cellIndex.col };
                 this.props.attack({
-                    issuer: this.props.game.players[0].id,
+                    issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
                     attackType: this.props.selectedAttack,
                     row: target.row,
                     col: target.col
                 }).then(() => {
                     if (this.props.selectedAttack === AttackType.BUNNY) {
-                        if (this.props.game.players[0].attacksPerTurn[AttackType.BUNNY] > 0) {
+                        if (this.props.game.players[multiplayer.localPlayerIndex].attacksPerTurn[AttackType.BUNNY] > 0) {
                             Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
                             this.opponentGameField.attack(target, AttackType.BUNNY);
                         } else {
@@ -208,9 +209,9 @@ class Scene extends Component {
                         }
                     }
 
-                    if (this.props.game.players[0].attacks[this.props.selectedAttack] === 0) {
+                    if (this.props.game.players[multiplayer.localPlayerIndex].attacks[this.props.selectedAttack] === 0) {
                         const attackTypes = [AttackType.TRUFFLE, AttackType.FRUIT, AttackType.HOT_CHOCOLATE, AttackType.BUNNY];
-                        let undepletedAttack = attackTypes.filter(attackType => this.props.game.players[0].attacks[attackType]);
+                        let undepletedAttack = attackTypes.filter(attackType => this.props.game.players[multiplayer.localPlayerIndex].attacks[attackType]);
                         if (undepletedAttack.length > 0) {
                             this.props.selectAttack(undepletedAttack[0]).catch(error => {
                                 if (error instanceof BattlechocError) {
@@ -233,9 +234,9 @@ class Scene extends Component {
     }
 
     startGame = (createUnits, game) => {
-        const playerFieldIndex = game.players[0].fieldIndex;
+        const playerFieldIndex = game.players[multiplayer.localPlayerIndex].fieldIndex;
         const opponentFieldIndex = game.players[1].fieldIndex;
-        this.lookAtOpponent = game.currentPlayerIndex === 1;
+        this.lookAtOpponent = multiplayer.isLocalPlayer(game.currentPlayerIndex) === false;
 
         // Add Light
         var directionalLight = new DirectionalLight(0xffffff, 2);
@@ -266,10 +267,10 @@ class Scene extends Component {
 
         if (createUnits === true) {
             this.props.deselectBuildings();
-            this.lookAtOpponent = (game.currentPlayerIndex === 1 || game.state === GameStateTypes.ATTACK_PHASE);
-            game.board.fields[game.players[0].fieldIndex].grid.filter(cell => !cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
+            this.lookAtOpponent = (multiplayer.isLocalPlayer(game.currentPlayerIndex) === false || game.state === GameStateTypes.ATTACK_PHASE);
+            game.board.fields[game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => !cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
                 .forEach(cell => create3dEntities(cell, this.playerGameField));
-            game.board.fields[game.players[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
+            game.board.fields[game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
                 .forEach(cell => create3dEntities(cell, this.playerGameField));    
             game.board.fields[game.players[1].fieldIndex].grid.filter(cell => !cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
                 .forEach(cell => create3dEntities(cell, this.opponentGameField));

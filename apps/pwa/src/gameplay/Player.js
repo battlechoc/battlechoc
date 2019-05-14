@@ -57,7 +57,7 @@ function playerHasHarmfulAttacksPerTurn(player) {
 }
 
 class Augustus {
-    constructor(actions, player) {
+    constructor(actions) {
         this.actions = actions;
         this.type = AugustusType.BALANCED;
         this.discoveredShieldedCells = [];

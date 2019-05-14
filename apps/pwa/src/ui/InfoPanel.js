@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { multiplayer } from '../Multiplayer';
 import './InfoPanel.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
@@ -10,11 +11,11 @@ class InfoPanel extends Component {
                 <div id="gameMenu">
                     <div className="infoIcon">
                         <div className="cacao info" style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }} />
-                        <p>{this.props.game.players[0].cacao}</p>
+                        <p>{this.props.game.players[multiplayer.localPlayerIndex].cacao}</p>
                     </div>
                     <div className="infoIcon">
                         <div className="buildings info" style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }} />
-                        <p>{this.props.game.players[0].buildings + '/' + this.props.game.players[0].buildingsPerTurn}</p>
+                        <p>{this.props.game.players[multiplayer.localPlayerIndex].buildings + '/' + this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn}</p>
                     </div>
                 </div>
             );
