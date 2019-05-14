@@ -235,7 +235,7 @@ class Scene extends Component {
 
     startGame = (createUnits, game) => {
         const playerFieldIndex = game.players[multiplayer.localPlayerIndex].fieldIndex;
-        const opponentFieldIndex = game.players[1].fieldIndex;
+        const opponentFieldIndex = game.players[1 - multiplayer.localPlayerIndex].fieldIndex;
         this.lookAtOpponent = multiplayer.isLocalPlayer(game.currentPlayerIndex) === false;
 
         // Add Light
