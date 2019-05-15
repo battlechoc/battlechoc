@@ -269,6 +269,7 @@ class App extends Component {
                 multiplayerSessionId: undefined
             })
             this.props.finishGame();
+            multiplayer.reset();
         }, 1000);
     }
 

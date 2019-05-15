@@ -249,6 +249,10 @@ class Multiplayer {
         });
     }
 
+    reset() {
+        this.currentGameSession = undefined;
+    }
+
     createGameSession(gameState, playerJoinedAction, joinedMultiplayer, gameActions) {
         return new Promise((resolve, reject) => {
             this.signIn().then((player) => {

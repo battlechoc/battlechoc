@@ -135,7 +135,7 @@ class Actionbar extends Component {
             );
         }
 
-        if (typeof this.props.game !== 'undefined' && this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
+        if (typeof this.props.game !== 'undefined' && this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START && typeof multiplayer.currentGameSession === 'undefined') {
             buttons.push(
                 <Fab
                     size="small"
