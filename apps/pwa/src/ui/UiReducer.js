@@ -38,7 +38,13 @@ const uiReducer = createReducer({
         },
         [UiActions.assetsReady]: (state, action) => {
             state.assetsReady = true;
-        }
+        },
+        [UiActions.waitForMultiplayer]: (state, action) => {
+            state.multiplayerWaiting = true;
+        },
+        [UiActions.joinedMultiplayer]: (state, action) => {
+            state.multiplayerWaiting = undefined;
+        } 
 });
 
 export default uiReducer

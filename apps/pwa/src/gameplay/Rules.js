@@ -199,7 +199,7 @@ class Rules {
             } else {
                 return true;
             }
-        } else if ([UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable].includes(action.type)) {
+        } else if ([UiActionTypes.joinedMultiplayer, UiActionTypes.waitForMultiplayer, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable].includes(action.type)) {
             return true;
         } else {
             return new Errors.ActionValidationError(action);

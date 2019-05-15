@@ -6,7 +6,7 @@ import { build, attack, chooseStart, chooseField, finishTurn, finishBuildPhase, 
 import { BattlechocError } from '../gameplay/Errors';
 import { playerHasAttacks, playerHasAttacksPerTurn } from '../gameplay/Player';
 import { getCheapest } from '../gameplay/GameEntities';
-import { deselectBuildings, deselectAttack } from './UiActions';
+import { deselectBuildings, deselectAttack, joinedMultiplayer, waitForMultiplayer } from './UiActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { multiplayer } from '../Multiplayer';
 import Fab from '@material-ui/core/Fab';
@@ -60,7 +60,8 @@ class Actionbar extends Component {
 
     shareMultiplayerGame() {
         console.log('sharing current game session');
-        multiplayer.createGameSession(this.props.game, this.props.playerJoined, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField }).then((session) => {
+        multiplayer.createGameSession(this.props.game, this.props.playerJoined, this.props.joinedMultiplayer, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField }).then((session) => {
+            this.props.waitForMultiplayer();
             console.log('created now sharing');
             if (typeof session !== 'undefined') {
                 console.dir(session);
@@ -252,7 +253,9 @@ const mapDispatchToProps = {
     build,
     attack,
     chooseStart,
-    chooseField
+    chooseField,
+    joinedMultiplayer, 
+    waitForMultiplayer
 };
 
 const ActionbarContainer = connect(

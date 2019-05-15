@@ -27,6 +27,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import AddBox from '@material-ui/icons/AddBox';
 import ScreenRotation from '@material-ui/icons/ScreenRotation';
 import OfflineStore from '../OfflineStore';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 class Hud extends Component {
     constructor(props) {
@@ -123,10 +124,12 @@ class Hud extends Component {
             classNames += ' active';
         } else if (this.props.state === GameStateTypes.CHOOSE_FIELD) {
             if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true) {
-                classNames += ' selectedByOpponent';
+                classNames += ' inactive';
             } else {
                 classNames += ' selectedByPlayer';
             }
+        } else {
+            classNames += ' inactive';
         }
         return classNames;
     }
@@ -212,11 +215,16 @@ class Hud extends Component {
                         }} />
                     }
                     else if (this.isTitleScreen()) {
-                        let controls = [<Button key="0" color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(false)}>{t[this.props.language].NEW_GAME}</Button>];
-                        if (this.props.resumeGamePossible === true) {
-                            controls.push(<Button key="1" color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(true)}>{t[this.props.language].RESUME_GAME}</Button>);
+                        let controls = []
+                        if (!this.props.multiplayerLandingPage) {
+                            controls.push(<Button key="0" color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(false)}>{t[this.props.language].NEW_GAME}</Button>);
+                            if (this.props.resumeGamePossible === true) {
+                                controls.push(<Button key="1" color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(true)}>{t[this.props.language].RESUME_GAME}</Button>);
+                            }
+                            controls.push(<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>);
+                        } else {
+                            controls.push(<Button key="3" color="primary" aria-label="join multiplayer" className="menuButton" variant="contained" onClick={this.props.joinMultiplayerGame}>{t[this.props.language].JOIN_MULTIPLAYER}</Button>);
                         }
-                        controls.push([<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>]);
                         return (
                             <div id="mainMenu">
                                 <div className="logo">
@@ -231,9 +239,15 @@ class Hud extends Component {
                             </div>
                         );
                     } else if (this.isInitalStage()) {
+                        let waitingNotification = null;
+                        if (typeof this.props.multiplayerWaiting !== 'undefined') {
+                            waitingNotification = <div className="multiplayerNotification"><p>Wait for second player..</p><CircularProgress /></div>;
+                        }
                         return (
+                            <div>
+                            { waitingNotification }
                             <div className="choose">
-                                <div className={(this.state.clickable ? 'active ' : null) + ' button'} onClick={() => this.choose('LEFT_GAMEFIELD')}>
+                                <div className={(this.state.clickable ? 'active ' : 'inactive') + ' button'} onClick={() => this.choose('LEFT_GAMEFIELD')}>
                                     {(() => {
                                         if (typeof this.props.game.board !== 'undefined') {
                                             const creamedCells = this.props.game.board.fields[0].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
@@ -266,7 +280,7 @@ class Hud extends Component {
                                     <div className="stackedIcon"><div className="firstIcon">#1</div><StartIcon fontSize="large" /></div>
                                 </div>
 
-                                <div className={(this.state.clickable ? 'active ' : null) + ' button'} onClick={() => this.choose('RIGHT_GAMEFIELD')}>
+                                <div className={(this.state.clickable ? 'active ' : 'inactive') + ' button'} onClick={() => this.choose('RIGHT_GAMEFIELD')}>
                                     {(() => {
                                         if (typeof this.props.game.board !== 'undefined') {
                                             const creamedCells = this.props.game.board.fields[1].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
@@ -295,6 +309,7 @@ class Hud extends Component {
                                     </div>
                                 </div>
                             </div>
+                            </div>
                         );
                     }
                 })()}
@@ -313,7 +328,8 @@ const mapStateToProps = state => ({
     state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
     language: state.ui.language,
     resumeGamePossible: state.ui.resumeGamePossible,
-    assetsReady: state.ui.assetsReady
+    assetsReady: state.ui.assetsReady,
+    multiplayerWaiting: state.ui.multiplayerWaiting
 });
 
 const mapDispatchToProps = {

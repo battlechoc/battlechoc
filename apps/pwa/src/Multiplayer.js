@@ -235,7 +235,7 @@ class Multiplayer {
         });
     }
 
-    createGameSession(gameState, playerJoinedAction, gameActions) {
+    createGameSession(gameState, playerJoinedAction, joinedMultiplayer, gameActions) {
         return new Promise((resolve, reject) => {
             this.signIn().then((player) => {
                 if (typeof player !== 'undefined') {
@@ -257,6 +257,7 @@ class Multiplayer {
                             if (session.data().players[1] !== null && (typeof this.sessionData === 'undefined' || this.sessionData.players[1] === null)) {
                                 console.log("player joined");
                                 console.log(session.data().players);
+                                joinedMultiplayer();
                                 playerJoinedAction({ players: session.data().game.players });
                             }
                             this.sessionData = session.data();

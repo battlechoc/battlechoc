@@ -1,4 +1,4 @@
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import './App.css';
 import Jukebox from './ui/Jukebox';
@@ -16,9 +16,24 @@ import { BattlechocError } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import { gameplayLog } from './gameplay/GamePlayLogger';
 import Scene from './3d/Scene';
-const Hud = React.lazy(() => import('./ui/Hud'));
+import Hud from './ui/Hud';
 
 class App extends Component {
+    constructor(props) {
+        super(props);
+        let multiplayerSessionId = window.location.search.split("sessionid=")[1];
+        this.state = { 
+            multiplayerLandingPage:  typeof multiplayerSessionId !== 'undefined',
+            multiplayerSessionId: multiplayerSessionId
+        }
+        let query = window.location.search.substring(1)
+        if(query.length) {
+           if(typeof window.history !== 'undefined' && typeof window.history.pushState !== 'undefined') {
+                window.history.pushState({}, document.title, window.location.pathname);
+           }
+        }
+    }
+
     componentWillMount() {
         let browserLanguage = 'en';
         if (navigator.userLanguage) {
@@ -48,16 +63,6 @@ class App extends Component {
 
         window.onfocus = () => Jukebox.playMusic();
         window.onblur = () => Jukebox.pauseMusic();
-
-        const multiplayerSessionId = window.location.search.split("sessionid=")[1];
-        if (typeof multiplayerSessionId !== 'undefined') {
-            setTimeout(() => {
-                multiplayer.joinGameSession(multiplayerSessionId, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField }).then(session => {
-                    console.dir(session);
-                    this.prepareNewGame(true, true, session.game);
-                })
-            }, 3000);
-        }
     }
 
     handleError = error => {
@@ -183,6 +188,15 @@ class App extends Component {
         }
     }
 
+    joinMultiplayerGame = () => {
+        multiplayer.joinGameSession(this.state.multiplayerSessionId, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField })
+        .then(session => {    
+            console.dir(session);
+            this.prepareNewGame(true, true, session.game);
+        });
+        this.hud.lockUi();
+    }
+
     prepareNewGame = async (resumeGame, joinMultiplayer, multiplayerGameState) => {
         Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -249,6 +263,10 @@ class App extends Component {
     endGame() {
         setTimeout(() => {
             Jukebox.stopMusic();
+            this.setState({
+                multiplayerLandingPage: undefined,
+                multiplayerSessionId: undefined
+            })
             this.props.finishGame();
         }, 1000);
     }
@@ -258,11 +276,11 @@ class App extends Component {
             <div className="app">
                 {this.props.assetsReady ? <div id="clouds"></div> : null}
                 {typeof this.props.game !== 'undefined' ? <Scene onRef={scene => this.scene = scene} /> : null}
-                <Suspense fallback={null}>
-                    <Hud prepareNewGameCallback={this.prepareNewGame}
-                        endGame={() => this.endGame()}
-                        onRef={hud => this.hud = hud} />
-                </Suspense>
+                <Hud prepareNewGameCallback={this.prepareNewGame}
+                     multiplayerLandingPage={this.state.multiplayerLandingPage}
+                     joinMultiplayerGame={this.joinMultiplayerGame}
+                     endGame={() => this.endGame()}
+                     onRef={hud => this.hud = hud} />
             </div>
         );
     }

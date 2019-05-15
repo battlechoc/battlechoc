@@ -64,6 +64,24 @@
   margin-bottom: -5px;
 }
 
+.multiplayerNotification {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  background-color: rgba(55,55,55,0.9);
+  flex-direction: column;
+}
+
+.multiplayerNotification p {
+  font-size: 1.2rem;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+}
+
 /* choose menu */
 .choose {
   margin-top: 20px;
@@ -76,11 +94,7 @@
 }
 
 .selectedByPlayer {
-  background-color: rgba(128, 128, 255, 0.4) !important;
-}
-
-.selectedByOpponent {
-  background-color: rgba(255, 128, 128, 0.4) !important;
+  background-color: #324D5C !important;
 }
 
 .button {
@@ -241,6 +255,11 @@ img.cream {
 
 .active:hover {
   background-color: #324D5C;
+}
+
+.inactive {
+  filter: grayscale(0.8);
+  cursor: unset;
 }
 
 .menuButton:hover {
