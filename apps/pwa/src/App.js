@@ -133,22 +133,22 @@ class App extends Component {
                 this.hud.unlockUi();
                 this.colorStartButton = 1;
             } else if (gameTransition === GameTransitions.OPPONENT_STARTS_GAME) {
-                if (typeof this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
+                if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
                     this.opponent.simulateChooseFieldOrStartDecision();
                 }
             } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START) {
-                if (typeof this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
+                if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
                     this.opponent.simulateChooseFieldDecision();
                 }
             } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
                 this.scene.startGame(false, nextProps.game);
             } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
                 this.scene.startGame(false, nextProps.game);
-                if (typeof this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
+                if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
                     this.opponent.simulateInitialPlacement(this.scene.opponentGameField);
                 }
             } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
-                if (typeof this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
+                if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
                     this.opponent.simulateInitialPlacement(this.scene.opponentGameField);
                 }
             } else if (gameTransition === GameTransitions.PLAYER_BUILD_PHASE) {
@@ -166,18 +166,16 @@ class App extends Component {
                     setTimeout(() => this.props.selectAttack(attacks[attackType]).catch(this.handleError), 200);
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
-                if (typeof this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
+                if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
                     this.opponent.simulateBuildPhase(this.scene.opponentGameField);
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
-                if (typeof this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
+                if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
                     this.opponent.simulateAttackPhase(this.scene.opponentGameField, this.scene.playerGameField);
                 }
             } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
                 setTimeout(() => this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
             } else if (gameTransition === GameTransitions.PLAYER_JOINED) {
-                console.log("player joined ... updating opponent");
-                console.dir(nextProps);
                 this.opponent.player = {
                     player: nextProps.game.players[1]
                 };
@@ -234,7 +232,6 @@ class App extends Component {
 
                     this.props.startGame(players).then(() => {
                         this.opponent.type = Augustus.randomizeType();
-                        console.log("type of Augustus is: " + this.opponent.type);
                         this.opponent.connectGamestate(() => this.props.game);
 
                         setTimeout(() => {

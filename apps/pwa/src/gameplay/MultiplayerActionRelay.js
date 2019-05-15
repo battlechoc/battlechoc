@@ -4,7 +4,6 @@ import Rules from './Rules';
 function multiplayerActionRelayMiddleware() {
     return () => next => action => {
         if (Rules.isIssuerRelevant(action) === true) {
-            console.log("relaying action");
             console.dir(action);
             multiplayer.relayAction(action);
         }

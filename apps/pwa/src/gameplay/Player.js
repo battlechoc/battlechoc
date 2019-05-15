@@ -82,13 +82,16 @@ class Augustus {
                 this.gameIsRunning = game.isRunning;
                 if (this.gameIsRunning) {
                     this.player = game.players[1];
-                    this.gamefields = game.board.fields;
-                    this.boardSize = game.board.size;
-                    this.board = game.board.fields[this.player.fieldIndex];
-                    this.opponentBoard = game.board.fields[game.players[0].fieldIndex];
+                    if (typeof game.board !== 'undefined') {
+                        this.gamefields = game.board.fields;
+                        this.boardSize = game.board.size;
+                        this.board = game.board.fields[this.player.fieldIndex];
+                        this.opponentBoard = game.board.fields[game.players[0].fieldIndex];
+                    }
                 }
             }
         };
+        this.refreshGameState();
     }
 
     simulateThinking(timeToThink) {
@@ -143,7 +146,13 @@ class Augustus {
             const building = createEntity(EntityType.FACTORY);
             this.setBuildingAtBestPosition(creamedCells, building, uiGamefield).then(() => {
                 setTimeout(() => {
-                    this.actions.finishTurn({ issuer: this.player.id });
+                    this.actions.finishTurn({ issuer: this.player.id }).catch(error => {
+                        if (error instanceof BattlechocError) {
+                            console.warn(error);
+                        } else {
+                            throw error;
+                        }
+                    });
                 }, 3000);
             }).catch(error => {
                 if (error instanceof BattlechocError) {

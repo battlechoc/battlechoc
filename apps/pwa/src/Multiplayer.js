@@ -1,4 +1,7 @@
-import * as firebase from 'firebase';
+import firebase from 'firebase/app';
+import 'firebase/auth';
+import 'firebase/database';
+import 'firebase/firestore';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import { GameActionTypes } from './gameplay/GameActions';
 import { AttackType } from './gameplay/GameEntities';
@@ -158,9 +161,6 @@ class Multiplayer {
     }
 
     relayAction(action) {
-        console.log(this.currentGameSession);
-        console.log(this.localPlayerId);
-        console.log(action);
         if (typeof this.currentGameSession !== 'undefined' && action.payload.issuer === this.localPlayerId) {
             const sessionRef = firebase.firestore().collection('multiplayerGameSessions').doc(this.currentGameSession);
             sessionRef.get().then(doc => {
