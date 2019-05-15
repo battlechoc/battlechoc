@@ -77,7 +77,7 @@ class App extends Component {
                 gameStopped = true;
                 setTimeout(() => {
                     if (nextProps.game.winners.length === 1) {
-                        if (nextProps.game.winners[0].type === PlayerType.HUMAN) {
+                        if (multiplayer.isLocalPlayer(nextProps.game.winners[0].idx)) {
                             this.hud.showTurnMessage(t[this.props.language].MESSAGE_WIN_GAME);
                         } else {
                             this.hud.showTurnMessage(t[this.props.language].MESSAGE_LOST_GAME);
