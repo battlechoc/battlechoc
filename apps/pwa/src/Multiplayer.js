@@ -82,7 +82,7 @@ class Multiplayer {
     isLocalPlayer(playerIdx) {
         return playerIdx === this.localPlayerIndex;
     }
-    
+
     signIn() {
         return new Promise((resolve, reject) => {
             if (typeof this.localPlayer === 'undefined') {
@@ -100,6 +100,10 @@ class Multiplayer {
         });
     }
 
+    refreshGameState(gameState) {
+        this.gameState = gameState;
+    }
+
     emitAction(action) {
         switch (action.type) {
             case GameActionTypes.build:
@@ -111,17 +115,27 @@ class Multiplayer {
                 break;
             case GameActionTypes.attack:
                 this.gameActions.attack(action.payload).then(() => {
-                    let row = action.payload.row;
-                    let col = action.payload.col;
-                    let attackType = action.payload.attackType;
-                    // TODO: how do I securely get the information if bunny was melt down
-
-                    Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
-                    // TODO: same for opponent grid -> 
-                    // const attackedCell = this.opponentBoard.grid[target.row * this.boardSize.cols + target.col];
-                    this.gameField3d.attack({ row: row, col: col }, attackType, false);//, attackedCell.shielded);
-                    if (attackType === AttackType.HOT_CHOCOLATE) {
-                        this.gameField3d.rebuild(this.opponentBoard);
+                    console.dir(this.gameState);
+                    const row = action.payload.row;
+                    const col = action.payload.col;
+                    const attackType = action.payload.attackType;
+                    if (attackType === AttackType.BUNNY) {
+                        if (this.gameState.players[1 - this.localPlayerIndex].attacksPerTurn[AttackType.BUNNY] > 0) {
+                            Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
+                            this.gameField3d.attack({ row: row, col: col }, AttackType.BUNNY);
+                        } else {
+                            Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
+                            this.opponentGameField3d.meltDownEasterBunny();
+                            this.gameField3d.receiveBallista({ row: row, col: col });
+                        }
+                    } else {
+                        Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
+                        const playerBoard = this.gameState.board.fields[this.gameState.players[this.localPlayerIndex].fieldIndex];
+                        const attackedCell = playerBoard.grid[row * this.gameState.board.size.cols + col];
+                        this.gameField3d.attack({ row: row, col: col }, attackType, attackedCell.shielded);
+                        if (attackType === AttackType.HOT_CHOCOLATE) {
+                            this.gameField3d.rebuild(playerBoard);
+                        }
                     }
                 });
                 break;

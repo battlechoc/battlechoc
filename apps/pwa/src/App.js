@@ -69,6 +69,7 @@ class App extends Component {
     }
 
     componentWillReceiveProps(nextProps) {
+        multiplayer.refreshGameState(nextProps.game);
         const gameTransition = getGameTransition(this.props.game, nextProps.game);
 
         let gameStopped = typeof this.props.game !== 'undefined' ? !this.props.game.isRunning : false;
