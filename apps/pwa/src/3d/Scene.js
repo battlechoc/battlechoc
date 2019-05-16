@@ -201,10 +201,10 @@ class Scene extends Component {
                         }
                     } else if (typeof this.props.selectedAttack !== 'undefined') {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
-                        const attackedCell = this.props.game.board.fields[this.props.game.players[1].fieldIndex].grid[target.row * this.props.game.board.size.cols + target.col];
+                        const attackedCell = this.props.game.board.fields[this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex].grid[target.row * this.props.game.board.size.cols + target.col];
                         this.opponentGameField.attack(target, this.props.selectedAttack, attackedCell.shielded);
                         if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
-                            let opponentFieldIndex = this.props.game.players[1].fieldIndex;
+                            let opponentFieldIndex = this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex;
                             this.opponentGameField.rebuild(this.props.game.board.fields[opponentFieldIndex]);
                         }
                     }
