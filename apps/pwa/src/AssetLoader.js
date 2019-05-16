@@ -54,7 +54,7 @@ const assetLoader = new AssetLoader();
 class AssetLoadingView extends Component {
     constructor(props) {
         super(props);
-        this.assetVersion = '1.0';
+        this.assetVersion = '2.0';
         this.state = { loadingProgress: 0 }
         this.loader = new GLTFLoader();
     }
