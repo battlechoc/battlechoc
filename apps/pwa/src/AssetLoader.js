@@ -54,6 +54,7 @@ const assetLoader = new AssetLoader();
 class AssetLoadingView extends Component {
     constructor(props) {
         super(props);
+        this.assetVersion = '1.0';
         this.state = { loadingProgress: 0 }
         this.loader = new GLTFLoader();
     }
@@ -82,7 +83,7 @@ class AssetLoadingView extends Component {
 
     loadGLTF(model) {
         return new Promise((resolve, reject) => {
-            this.loader.load('models/' + assetLoader.assets.models[model].filename, gltf => {
+            this.loader.load('models/' + assetLoader.assets.models[model].filename + '?v=' + this.assetVersion, gltf => {
                 assetLoader.assets.models[model].model = gltf;
                 resolve();
             });
@@ -92,7 +93,7 @@ class AssetLoadingView extends Component {
     loadImage(src) {
         return new Promise((resolve, reject) => {
             let xhr = new XMLHttpRequest();
-            xhr.open('GET', src);
+            xhr.open('GET', src + '?v=' + this.assetVersion);
             xhr.onload = () => {
               if (xhr.status >= 200 && xhr.status < 300) {
                 resolve(xhr.response);
