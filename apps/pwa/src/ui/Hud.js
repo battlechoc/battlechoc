@@ -43,8 +43,8 @@ class Hud extends Component {
         this.props.onRef(this);
 
         let iOSDevice = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-        const searchParams = new URLSearchParams(window.location.search);
-        if (iOSDevice && !this.props.runAsPwa) {
+        let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+        if (iOSDevice && !isFullscreen) {
             OfflineStore.settingsStore.get('iOSMessage').then(iOSMessage => {
                 if (typeof iOSMessage === 'undefined') {
                     this.setState({ showiOSMessage: true });
@@ -196,7 +196,7 @@ class Hud extends Component {
             <div className="hud">
                 <Tooltip />
                 <Settings endGame={this.props.endGame} onRef={settings => (this.settings = settings)} />
-                <Actionbar runAsPwa={this.props.runAsPwa} showSettings={() => {
+                <Actionbar showSettings={() => {
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     this.settings.open();
                 }} />
@@ -319,8 +319,7 @@ class Hud extends Component {
 
 Hud.propTypes = {
     prepareNewGameCallback: PropTypes.func.isRequired,
-    endGame: PropTypes.func.isRequired,
-    runAsPwa: PropTypes.bool.isRequired
+    endGame: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({

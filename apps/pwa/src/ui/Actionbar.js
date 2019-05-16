@@ -19,10 +19,11 @@ class Actionbar extends Component {
         super(props);
 
         let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-
+        let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+        
         this.state = {
             activeMusicButton: true,
-            activeFullscreenButton: document.fullscreenElement == null && !this.props.runAsPwa && !isiOS
+            activeFullscreenButton: !isFullscreen && !isiOS
         }
     }
 
@@ -41,8 +42,9 @@ class Actionbar extends Component {
     }
 
     fullscreenchange = () => {
+        let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
         this.setState({
-            activeFullscreenButton: document.fullscreenElement == null && !this.props.runAsPwa
+            activeFullscreenButton: !isFullscreen
         });
     }
 
@@ -230,8 +232,7 @@ class Actionbar extends Component {
 }
 
 Actionbar.propTypes = {
-    showSettings: PropTypes.func.isRequired,
-    runAsPwa: PropTypes.bool.isRequired
+    showSettings: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({

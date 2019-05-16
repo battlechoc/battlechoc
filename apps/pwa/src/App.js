@@ -22,11 +22,9 @@ class App extends Component {
     constructor(props) {
         super(props);
         let multiplayerSessionId = window.location.search.split("sessionid=")[1];
-        const searchParams = new URLSearchParams(window.location.search);
         this.state = { 
             multiplayerLandingPage:  typeof multiplayerSessionId !== 'undefined',
             multiplayerSessionId: multiplayerSessionId,
-            runAsPwa: searchParams.get('app_runs_as') === 'pwa'
         }
         let query = window.location.search.substring(1)
         if(query.length) {
@@ -206,8 +204,8 @@ class App extends Component {
         gameplayLog.clear();
 
         let isAndroid = /Android/i.test(navigator.userAgent);
-
-        if (!this.state.runAsPwa) {
+        let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+        if (!isFullscreen) {
             try {
                 await document.documentElement.requestFullscreen();
                 if (isAndroid) {
@@ -281,7 +279,6 @@ class App extends Component {
                 <Hud prepareNewGameCallback={this.prepareNewGame}
                      multiplayerLandingPage={this.state.multiplayerLandingPage}
                      joinMultiplayerGame={this.joinMultiplayerGame}
-                     runAsPwa={this.state.runAsPwa}
                      endGame={() => this.endGame()}
                      onRef={hud => this.hud = hud} />
             </div>
