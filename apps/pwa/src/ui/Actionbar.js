@@ -18,13 +18,11 @@ class Actionbar extends Component {
     constructor(props) {
         super(props);
 
-        const searchParams = new URLSearchParams(window.location.search);
-        const isPwa = searchParams.get('app_runs_as') === 'pwa';
         let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
 
         this.state = {
             activeMusicButton: true,
-            activeFullscreenButton: document.fullscreenElement == null && !isPwa && !isiOS
+            activeFullscreenButton: document.fullscreenElement == null && !this.props.runAsPwa && !isiOS
         }
     }
 
@@ -43,11 +41,8 @@ class Actionbar extends Component {
     }
 
     fullscreenchange = () => {
-        const searchParams = new URLSearchParams(window.location.search);
-        const isPwa = searchParams.get('app_runs_as') === 'pwa';
-
         this.setState({
-            activeFullscreenButton: document.fullscreenElement == null && !isPwa
+            activeFullscreenButton: document.fullscreenElement == null && !this.props.runAsPwa
         });
     }
 
@@ -235,7 +230,8 @@ class Actionbar extends Component {
 }
 
 Actionbar.propTypes = {
-    showSettings: PropTypes.func.isRequired
+    showSettings: PropTypes.func.isRequired,
+    runAsPwa: PropTypes.bool.isRequired
 }
 
 const mapStateToProps = state => ({
