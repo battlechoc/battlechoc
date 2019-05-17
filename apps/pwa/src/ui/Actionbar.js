@@ -19,11 +19,12 @@ class Actionbar extends Component {
         super(props);
 
         let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
+        let isPWA = window.matchMedia('(display-mode: fullscreen)').matches;
         let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
         
         this.state = {
             activeMusicButton: true,
-            activeFullscreenButton: !isFullscreen && !isiOS
+            activeFullscreenButton: !isFullscreen && !isiOS && !isPWA
         }
     }
 
