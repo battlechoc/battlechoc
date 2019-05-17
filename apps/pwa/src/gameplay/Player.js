@@ -56,10 +56,10 @@ function playerHasShieldedCannon(otherPlayerGrid) {
     return otherPlayerGrid.filter(cell => cell.shielded && (cell.occupiedBy.includes(GameEntities.EntityType.RUM_TRUFFLE_CANNON) || cell.occupiedBy.includes(GameEntities.EntityType.FRUIT_CANNON) || cell.occupiedBy.includes(GameEntities.EntityType.HOT_CHOCOLATE_BALLISTA))).length > 0;
 }
 
-function playerHasHarmfulAttacksPerTurn(player, otherPlayer, otherPlayerGrid) {
+function playerHasHarmfulAttacksPerTurn(player, playerGrid, otherPlayerGrid) {
     if (player.attacksPerTurn[AttackType.HOT_CHOCOLATE] > 0 ||
         (player.attacksPerTurn[AttackType.TRUFFLE] > 0 && player.attacksPerTurn[AttackType.FRUIT] > 0) ||
-        (player.attacksPerTurn[AttackType.TRUFFLE] > 0 /*&& !playerHasShieldedCannon(otherPlayerGrid)*/)) {
+        (player.attacksPerTurn[AttackType.TRUFFLE] > 0 /*&& playerGrid.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.XMAS_FACTORY)).length > 0 && !playerHasShieldedCannon(otherPlayerGrid)*/)) {
         return true;
     } else {
         return false;
