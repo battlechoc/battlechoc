@@ -198,7 +198,7 @@ class App extends Component {
         this.hud.lockUi();
     }
 
-    prepareNewGame = async (resumeGame, joinMultiplayer, multiplayerGameState) => {
+    prepareNewGame = (resumeGame, joinMultiplayer, multiplayerGameState) => {
         Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         gameplayLog.clear();
@@ -206,14 +206,13 @@ class App extends Component {
         let isAndroid = /Android/i.test(navigator.userAgent);
         let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
         if (!isFullscreen) {
-            try {
-                await document.documentElement.requestFullscreen();
+            document.documentElement.requestFullscreen().then(() =>  {
                 if (isAndroid) {
-                    await window.screen.orientation.lock('landscape');
+                    window.screen.orientation.lock('landscape');
                 }
-            } catch (error) {
+            }).catch(error => {
                 console.log(error.name + ': ' + error.message);
-            }
+            });
         }
 
         if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
