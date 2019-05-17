@@ -204,8 +204,9 @@ class App extends Component {
         gameplayLog.clear();
 
         let isAndroid = /Android/i.test(navigator.userAgent);
+        let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
         let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-        if (!isFullscreen) {
+        if (!isFullscreen && !isiOS) {
             document.documentElement.requestFullscreen().then(() =>  {
                 if (isAndroid) {
                     window.screen.orientation.lock('landscape');
