@@ -36,7 +36,7 @@ class TreesAndCannonsPage extends Component {
                 messages: [...this.state.messages, 
                            { text: 'Now it\'s your opponent\'s turn. This animation:', type: 'text', delay: 1000},
                            { src: '../animations/loading.gif', type: 'image', delay: 500, alt: 'opponent turn animation' },
-                           { text: 'shows you that your opponent is thinking', type: 'text', delay: 1000}]
+                           { text: 'indicates that your opponent is thinking', type: 'text', delay: 1000}]
             });
             this.simulateOpponentTurn = setTimeout(() => {
                 this.gamefield.microGamefield.receiveBallista({row: 1, col: 1});

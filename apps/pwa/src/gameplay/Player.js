@@ -52,8 +52,18 @@ function playerHasAttacksPerTurn(player) {
         player.attacksPerTurn[AttackType.BUNNY]) > 0;
 }
 
-function playerHasHarmfulAttacksPerTurn(player) {
-    return (player.attacksPerTurn[AttackType.TRUFFLE] + player.attacksPerTurn[AttackType.HOT_CHOCOLATE]) > 0;
+function playerHasShieldedCannon(otherPlayerGrid) {
+    return otherPlayerGrid.filter(cell => cell.shielded && (cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON) || cell.occupiedBy.includes(EntityType.FRUIT_CANNON) || cell.occupiedBy.includes(EntityType.HOT_CHOCOLATE_BALLISTA))).length > 0;
+}
+
+function playerHasHarmfulAttacksPerTurn(player, playerGrid, otherPlayerGrid) {
+    if (player.attacksPerTurn[AttackType.HOT_CHOCOLATE] > 0 ||
+        (player.attacksPerTurn[AttackType.TRUFFLE] > 0 && player.attacksPerTurn[AttackType.FRUIT] > 0) ||
+        (player.attacksPerTurn[AttackType.TRUFFLE] > 0 /*&& playerGrid.filter(cell => cell.occupiedBy.includes(EntityType.XMAS_FACTORY)).length > 0 && !playerHasShieldedCannon(otherPlayerGrid)*/)) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 class Augustus {

@@ -66,7 +66,11 @@ function prepareBuildPhase(gameState) {
     currentPlayer(gameState).attacks[GameEntities.AttackType.HOT_CHOCOLATE] = currentPlayer(gameState).attacksPerTurn[GameEntities.AttackType.HOT_CHOCOLATE];
     currentPlayer(gameState).attacks[GameEntities.AttackType.BUNNY] = currentPlayer(gameState).attacksPerTurn[GameEntities.AttackType.BUNNY];
     currentPlayer(gameState).buildings = currentPlayer(gameState).buildingsPerTurn;
-    gameState.state = GameStateTypes.BUILD_PHASE;
+    if (currentPlayer(gameState).buildings > 0) {
+        gameState.state = GameStateTypes.BUILD_PHASE;
+    } else {
+        gameState.state = GameStateTypes.ATTACK_PHASE;
+    }
 }
 
 function calculateCacaoPerTurn(building, cellColor) {
