@@ -305,7 +305,13 @@ class Augustus {
                 }
                 this.simulateAttack(target, AttackType.TRUFFLE, gamefield3d, opponentGameField3d);
             } else {
-                this.actions.finishTurn({ issuer: this.player.id });
+                this.actions.finishTurn({ issuer: this.player.id }).catch(error => {
+                    if (error instanceof BattlechocError) {
+                        console.warn(error);
+                    } else {
+                        throw error;
+                    }
+                });
             }
         }
     }

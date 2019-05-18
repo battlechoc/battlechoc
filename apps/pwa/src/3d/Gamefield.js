@@ -1,4 +1,4 @@
-import { AnimationMixer, LoopOnce, Group, Geometry, Mesh } from 'three';
+import { AnimationMixer, TextureLoader, LoopOnce, Group, Geometry, Mesh, PointCloudMaterial, PointCloud, AdditiveBlending, Vector3} from 'three';
 import Building from './Building.js';
 import { EntityType, AttackType, BoardCellTypes } from '../gameplay/GameEntities';
 import { assetLoader as AssetLoader} from '../AssetLoader.js';
@@ -29,11 +29,11 @@ class Gamefield {
         let board = new Mesh(new Geometry(), materials);
         playerField.grid.forEach((cell, i) => {
             if (!cell.molten) {
-                let materialIndex = 2;
+                let materialIndex = 0;
                 if (cell.type === BoardCellTypes.BROWN) {
                     materialIndex = 1;
                 } else if (cell.type === BoardCellTypes.BLACK) {
-                    materialIndex = 0;
+                    materialIndex = 2;
                 }
 
                 let geometryLowerBound = board.geometry.faces.length;
@@ -88,6 +88,48 @@ class Gamefield {
     getBuildingAtPosition(position) {
         return this.buildings[position.row][position.col][0];
     }
+
+    triggerHotChocolate() {
+        this.particleCount = 14000;
+        let loader = new TextureLoader();
+        loader.crossOrigin = '';
+        let material = new PointCloudMaterial({
+            color: 0xFFFFFF,
+            size: 0.8,
+            map: loader.load(
+                "images/raindrop.png"
+            ),
+            blending: AdditiveBlending,
+            depthTest: false,
+            transparent: true
+        });
+
+        this.particles = new Geometry();
+        for (let i = 0; i < this.particleCount; i++) {
+            let x = Math.random() * 10;
+            let y = Math.random() * 10;
+            let z = Math.random() * 10;
+            let particle = new Vector3(x, y, z);
+            particle.velocity = {};
+            particle.velocity.y = 0;
+            this.particles.vertices.push(particle);
+        }
+        let particleSystem = new PointCloud(this.particles, material);
+        this.gameField.add(particleSystem);
+    }
+
+    simulateHotChocolateRain() {
+        for (let i = 0; i < this.particleCount; i++) {
+            var particle = this.particles.vertices[i];
+            if (particle.y < -200) {
+                particle.y = 200;
+                particle.velocity.y = 0;
+            }
+            particle.velocity.y -= Math.random() * .02;
+            particle.y += particle.velocity.y;
+        }
+        this.particles.verticesNeedUpdate = true;
+    };
 
     triggerExplosionAtShield(position) {
         if (typeof this.mixer !== 'undefined') {
