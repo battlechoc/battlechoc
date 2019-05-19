@@ -91,6 +91,14 @@ function getGameTransition(currentState, nextState) {
         }
     } else if (nextState.state === GameStateTypes.ATTACK_PHASE &&
         currentState.state === GameStateTypes.ATTACK_PHASE &&
+        nextState.currentPlayerIndex !== currentState.currentPlayerIndex) {
+        if (multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === true) {
+            return GameTransitions.PLAYER_ATTACK_PHASE;
+        } else {
+            return GameTransitions.OPPONENT_ATTACK_PHASE;
+        }        
+    } else if (nextState.state === GameStateTypes.ATTACK_PHASE &&
+        currentState.state === GameStateTypes.ATTACK_PHASE &&
         multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === true &&
         playerHasAttacks(nextState.players[multiplayer.localPlayerIndex]) === false) {
         return GameTransitions.ATTACKS_DEPLETED;
