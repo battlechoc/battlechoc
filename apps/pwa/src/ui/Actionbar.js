@@ -21,7 +21,7 @@ class Actionbar extends Component {
         let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
         let isPWA = window.matchMedia('(display-mode: fullscreen)').matches;
         let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-        
+
         this.state = {
             activeMusicButton: true,
             activeFullscreenButton: !isFullscreen && !isiOS && !isPWA
@@ -151,53 +151,57 @@ class Actionbar extends Component {
             if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true) {
                 if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
                     if (playerHasAttacksPerTurn(this.props.game.players[multiplayer.localPlayerIndex]) === true) {
-                        buttons.push([
-                            <Fab
-                                size="small"
-                                key="4"
-                                color="primary"
-                                aria-label="skip build phase"
-                                className={(this.props.game.players[multiplayer.localPlayerIndex].buildings > 0 && this.props.game.players[multiplayer.localPlayerIndex].cacao >= getCheapest().costs) ? "icon" : "icon blinking"}
-                                onClick={() => {
-                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                    this.props.finishBuildPhase({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
-                                        this.props.deselectBuildings();
-                                        this.props.deselectAttack();
-                                    }).catch(error => {
-                                        if (error instanceof BattlechocError) {
-                                            console.warn(error);
-                                        } else {
-                                            throw error;
-                                        }
-                                    });
-                                }}>
-                                <PlayArrow />
-                            </Fab>
-                        ]);
+                        if ((this.props.game.players[multiplayer.localPlayerIndex].buildings > 0 && this.props.game.players[multiplayer.localPlayerIndex].cacao >= getCheapest().costs)) {
+                            buttons.push([
+                                <Fab
+                                    size="small"
+                                    key="4"
+                                    color="primary"
+                                    aria-label="skip build phase"
+                                    className="icon"
+                                    onClick={() => {
+                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                        this.props.finishBuildPhase({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
+                                            this.props.deselectBuildings();
+                                            this.props.deselectAttack();
+                                        }).catch(error => {
+                                            if (error instanceof BattlechocError) {
+                                                console.warn(error);
+                                            } else {
+                                                throw error;
+                                            }
+                                        });
+                                    }}>
+                                    <PlayArrow />
+                                </Fab>
+                            ]);
+                        }
                     } else {
-                        buttons.push([
-                            <Fab
-                                size="small"
-                                key="5"
-                                color="primary"
-                                aria-label="finish turn"
-                                className={(this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) ? "icon blinking" : "icon"}
-                                onClick={() => {
-                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                    this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
-                                        this.props.deselectBuildings();
-                                        this.props.deselectAttack();
-                                    }).catch(error => {
-                                        if (error instanceof BattlechocError) {
-                                            console.warn(error);
-                                        } else {
-                                            throw error;
-                                        }
-                                    });
-                                }}>
-                                <FastForward />
-                            </Fab>
-                        ]);
+                        if ((this.props.game.players[multiplayer.localPlayerIndex].buildings > 0 && this.props.game.players[multiplayer.localPlayerIndex].cacao >= getCheapest().costs)) {
+                            buttons.push([
+                                <Fab
+                                    size="small"
+                                    key="5"
+                                    color="primary"
+                                    aria-label="finish turn"
+                                    className={(this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) ? "icon blinking" : "icon"}
+                                    onClick={() => {
+                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                        this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
+                                            this.props.deselectBuildings();
+                                            this.props.deselectAttack();
+                                        }).catch(error => {
+                                            if (error instanceof BattlechocError) {
+                                                console.warn(error);
+                                            } else {
+                                                throw error;
+                                            }
+                                        });
+                                    }}>
+                                    <FastForward />
+                                </Fab>
+                            ]);
+                        }
                     }
                 } else if (this.props.game.state === GameStateTypes.ATTACK_PHASE) {
                     if (playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true || playerHasAttacksPerTurn(this.props.game.players[multiplayer.localPlayerIndex]) === false) {
@@ -252,7 +256,7 @@ const mapDispatchToProps = {
     attack,
     chooseStart,
     chooseField,
-    joinedMultiplayer, 
+    joinedMultiplayer,
     waitForMultiplayer
 };
 
