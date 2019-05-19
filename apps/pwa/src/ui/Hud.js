@@ -227,7 +227,7 @@ class Hud extends Component {
                         return (
                             <div id="mainMenu">
                                 <div className="logo">
-                                    <img alt="logo" src="images/logo.png" />
+                                    <img alt="logo" src="images/logo.png?v=1.0" />
                                 </div>
                                 <img id="cannonTitlePage" className="foregroundEntity" alt="cannon field" src="images/cannonAtField.png" />
                                 <img id="creamTitlePageBottom" className="foregroundEntity" alt="creamy field bottom" src="images/creamAtField.png" />
