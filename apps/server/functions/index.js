@@ -35,7 +35,7 @@ app.get('/debugging/gamestate', (req, res) => {
 
 app.post('/debugging/gamestate', (req, res) => {
     let report = req.body.report;
-    return admin.firestore().collection('report').add({"report": report})
+    return admin.firestore().collection('reports').add({"report": report})
            .then(rows => res.json({result: 'Bugreport with ID: ' + rows.id + ' added.'}))
            .catch(error => res.json({result: error}));
 });
