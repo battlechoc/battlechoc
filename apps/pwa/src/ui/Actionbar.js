@@ -57,10 +57,12 @@ class Actionbar extends Component {
     }
 
     shareMultiplayerGame() {
-        console.log('sharing current game session');
+        let whatsappWindowRef = undefined;
+        if (typeof navigator.share === 'undefined') {
+            whatsappWindowRef = window.open();
+        }
         multiplayer.createGameSession(this.props.game, this.props.playerJoined, this.props.joinedMultiplayer, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField }).then((session) => {
             this.props.waitForMultiplayer();
-            console.log('created now sharing');
             if (typeof session !== 'undefined') {
                 console.dir(session);
                 if (navigator.share) {
@@ -71,8 +73,7 @@ class Actionbar extends Component {
                     }).then(() => console.log('successfully shared'))
                         .catch((error) => console.log('error sharing multiplayer session', error));
                 } else {
-                    window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + session.url));
-                    console.log(session.url);
+                    whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + session.url);
                 }
             }
         }).catch((error) => {
