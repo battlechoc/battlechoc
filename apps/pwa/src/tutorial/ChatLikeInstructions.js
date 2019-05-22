@@ -83,7 +83,7 @@ class ChatLikeInstructions extends Component {
                 } else if (message.src === 'cannon') {
                     return <div key={i} className="media"><div className="speechBubble"><div className="cannon preview" style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }}></div></div></div>;
                 } else {
-                    return <div key={i} className="media"><div className="speechBubble"><img src={message.src} /></div></div>;
+                    return <div key={i} className="media"><div className="speechBubble"><img alt={message.alt} src={message.src} /></div></div>;
                 }
             } else {
                 return null;

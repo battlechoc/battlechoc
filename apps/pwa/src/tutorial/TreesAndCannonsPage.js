@@ -9,41 +9,12 @@ import Jukebox from '../ui/Jukebox';
 import BuildingPalette from '../ui/BuildingPalette';
 import AttackPalette from '../ui/AttackPalette';
 import InfoPanel from '../ui/InfoPanel';
-import { createPlayer, PlayerType } from '../gameplay/Player';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
+import TreeAndCannonTutorialSituation from '../situations/tutorial/TreeAndCannonTutorial';
 
 class TreesAndCannonsPage extends Component {
     constructor(props) {
         super(props);
-
-        let playerfield = { grid: [] };
-        playerfield.grid.push(this.createField(0, 0, BoardCellTypes.WHITE));
-        playerfield.grid.push(this.createField(0, 1));
-        playerfield.grid.push(this.createField(0, 2, BoardCellTypes.BLACK));
-        playerfield.grid.push(this.createField(1, 0));
-        playerfield.grid.push(this.createField(1, 1, BoardCellTypes.BLACK, [EntityType.CREAM, EntityType.FACTORY]));
-        playerfield.grid.push(this.createField(1, 2));
-        playerfield.grid.push(this.createField(2, 0));
-        playerfield.grid.push(this.createField(2, 1, BoardCellTypes.WHITE));
-        playerfield.grid.push(this.createField(2, 2, BoardCellTypes.WHITE));
-
-        let opponentfield = { grid: [] };
-        opponentfield.grid.push(this.createField(0, 0, BoardCellTypes.BLACK, []));
-        opponentfield.grid.push(this.createField(0, 1, BoardCellTypes.WHITE, []));
-        opponentfield.grid.push(this.createField(0, 2, BoardCellTypes.WHITE, []));
-        opponentfield.grid.push(this.createField(1, 0, BoardCellTypes.BROWN, []));
-        opponentfield.grid.push(this.createField(1, 1, BoardCellTypes.BLACK, [EntityType.FACTORY]));
-        opponentfield.grid.push(this.createField(1, 2, BoardCellTypes.BROWN, []));
-        opponentfield.grid.push(this.createField(2, 0, BoardCellTypes.BROWN, []));
-        opponentfield.grid.push(this.createField(2, 1, BoardCellTypes.BLACK, []));
-        opponentfield.grid.push(this.createField(2, 2, BoardCellTypes.BROWN, []));
-
-        let player = createPlayer("Charlie Bucket", PlayerType.HUMAN);
-        player.fieldIndex = 0;
-        player.buildingsPerTurn = 3;
-        player.buildings = 3;
-        player.cacao = 50;
-
         this.state = {
             showPseudoActionbar: false,
             messages: [
@@ -56,31 +27,8 @@ class TreesAndCannonsPage extends Component {
                 { text: 'Hint: If you build a cacao tree on a white field it grows better produces 1.5x more cacao per round', type: 'text', delay: 1000}
             ]
         };
-
-        this.game = {
-            gameplay: {
-                game:{
-                    state: GameStateTypes.BUILD_PHASE,
-                    players: [player],
-                    board: { fields: [playerfield, opponentfield], size: 3, seed: 1337 },
-                }
-            },
-            ui: {
-                selectedBuilding: EntityType.CACAOTREE,
-                selectedAttack: AttackType.TRUFFLE
-            }
-        }
-    }
-
-    createField(row, col, cellType = BoardCellTypes.BROWN, buildings = [EntityType.CREAM]) {
-        return {
-            type: cellType,
-            row: row,
-            col: col,
-            occupiedBy: buildings,
-            molten: false,
-            shielded: false
-        }
+        this.game = TreeAndCannonTutorialSituation.game;
+        console.log(this.game);
     }
 
     buildCallback(building, celltype) {

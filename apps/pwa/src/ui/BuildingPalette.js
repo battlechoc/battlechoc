@@ -119,12 +119,12 @@ class BuildingPalette extends Component {
                     {(() => {
                         if (this.buildingSelectionIsVisible(game)) {
                             return this.buildingsForSeclection.map((building, i) => {
-                                let canBuild = this.playerCanBuild(game, building);
                                 if (typeof this.props.whitelist !== 'undefined') {
                                     if (!this.props.whitelist.includes(building.type)) {
                                         return null;
                                     }
                                 }
+                                let canBuild = this.playerCanBuild(game, building);
 
                                 if (building.type === EntityType.FACTORY) {
                                     canBuild = (game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||

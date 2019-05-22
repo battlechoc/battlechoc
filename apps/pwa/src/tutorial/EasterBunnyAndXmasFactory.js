@@ -9,41 +9,11 @@ import AttackPalette from '../ui/AttackPalette';
 import InfoPanel from '../ui/InfoPanel';
 import { createPlayer, PlayerType } from '../gameplay/Player';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
+import BunnyAndXmasTutorialSituation from '../situations/tutorial/BunnyAndXmasTutorial';
 
 class TreesAndCannonsPage extends Component {
     constructor(props) {
         super(props);
-
-        let playerfield = { grid: [] };
-        playerfield.grid.push(this.createField(0, 0, BoardCellTypes.WHITE));
-        playerfield.grid.push(this.createField(0, 1));
-        playerfield.grid.push(this.createField(0, 2, BoardCellTypes.BLACK));
-        playerfield.grid.push(this.createField(1, 0));
-        playerfield.grid.push(this.createField(1, 1, BoardCellTypes.BLACK, [EntityType.CREAM, EntityType.FACTORY]));
-        playerfield.grid.push(this.createField(1, 2));
-        playerfield.grid.push(this.createField(2, 0));
-        playerfield.grid.push(this.createField(2, 1, BoardCellTypes.WHITE));
-        playerfield.grid.push(this.createField(2, 2, BoardCellTypes.WHITE, [EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY]));
-
-        let opponentfield = { grid: [] };
-        opponentfield.grid.push(this.createField(0, 0, BoardCellTypes.BLACK));
-        opponentfield.grid.push(this.createField(0, 1, BoardCellTypes.WHITE, [EntityType.CREAM, EntityType.FACTORY]));
-        opponentfield.grid.push(this.createField(0, 2, BoardCellTypes.WHITE));
-        opponentfield.grid.push(this.createField(1, 0));
-        opponentfield.grid.push(this.createField(1, 1, BoardCellTypes.BLACK, [EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY]));
-        opponentfield.grid.push(this.createField(1, 2));
-        opponentfield.grid.push(this.createField(2, 0));
-        opponentfield.grid.push(this.createField(2, 1, BoardCellTypes.BLACK));
-        opponentfield.grid.push(this.createField(2, 2));
-
-        let player = createPlayer("Charlie Bucket", PlayerType.HUMAN);
-        player.fieldIndex = 0;
-        player.buildingsPerTurn = 3;
-        player.buildings = 3;
-        player.cacao = 50;
-        player.attacks[AttackType.BUNNY] = 1;
-        player.attacksPerTurn[AttackType.BUNNY] = 1;
-
         this.state = {
             messages: [
                 { text: 'The opponent\'s gamefield is filled with cream. Would you like to bring some light into the darkness?', type: 'text', delay: 2500 },
@@ -51,32 +21,7 @@ class TreesAndCannonsPage extends Component {
                 { text: 'The bunny is going to uncover the area around the selected field', type: 'text', delay: 3000 }
             ]
         };
-
-        this.game = {
-            gameplay: {
-                game:{
-                    currentPlayerIndex: 0,
-                    state: GameStateTypes.ATTACK_PHASE,
-                    players: [player],
-                    board: { fields: [playerfield, opponentfield], size: 3, seed: 1337 }
-                }
-            },
-            ui: {
-                selectedBuilding: EntityType.XMAS_FACTORY,
-                selectedAttack: AttackType.BUNNY
-            }
-        }
-    }
-
-    createField(row, col, cellType = BoardCellTypes.BROWN, buildings = [EntityType.CREAM]) {
-        return {
-            type: cellType,
-            row: row,
-            col: col,
-            occupiedBy: buildings,
-            molten: false,
-            shielded: false
-        }
+        this.game = BunnyAndXmasTutorialSituation.game;
     }
 
     buildCallback(building, celltype) {
