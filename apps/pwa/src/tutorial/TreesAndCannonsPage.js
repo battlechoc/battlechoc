@@ -6,120 +6,163 @@ import { EntityType, getEntityDescriptor, BoardCellTypes, AttackType } from '../
 import Fab from '@material-ui/core/Fab';
 import { PlayArrow, FastForward } from '@material-ui/icons';
 import Jukebox from '../ui/Jukebox';
+import BuildingPalette from '../ui/BuildingPalette';
+import AttackPalette from '../ui/AttackPalette';
+import InfoPanel from '../ui/InfoPanel';
+import { createPlayer, PlayerType } from '../gameplay/Player';
+import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 class TreesAndCannonsPage extends Component {
     constructor(props) {
         super(props);
+
+        let playerfield = { grid: [] };
+        playerfield.grid.push(this.createField(0, 0, BoardCellTypes.WHITE));
+        playerfield.grid.push(this.createField(0, 1));
+        playerfield.grid.push(this.createField(0, 2, BoardCellTypes.BLACK));
+        playerfield.grid.push(this.createField(1, 0));
+        playerfield.grid.push(this.createField(1, 1, BoardCellTypes.BLACK, [EntityType.CREAM, EntityType.FACTORY]));
+        playerfield.grid.push(this.createField(1, 2));
+        playerfield.grid.push(this.createField(2, 0));
+        playerfield.grid.push(this.createField(2, 1, BoardCellTypes.WHITE));
+        playerfield.grid.push(this.createField(2, 2, BoardCellTypes.WHITE));
+
+        let opponentfield = { grid: [] };
+        opponentfield.grid.push(this.createField(0, 0, BoardCellTypes.BLACK, []));
+        opponentfield.grid.push(this.createField(0, 1, BoardCellTypes.WHITE, []));
+        opponentfield.grid.push(this.createField(0, 2, BoardCellTypes.WHITE, []));
+        opponentfield.grid.push(this.createField(1, 0, BoardCellTypes.BROWN, []));
+        opponentfield.grid.push(this.createField(1, 1, BoardCellTypes.BLACK, [EntityType.FACTORY]));
+        opponentfield.grid.push(this.createField(1, 2, BoardCellTypes.BROWN, []));
+        opponentfield.grid.push(this.createField(2, 0, BoardCellTypes.BROWN, []));
+        opponentfield.grid.push(this.createField(2, 1, BoardCellTypes.BLACK, []));
+        opponentfield.grid.push(this.createField(2, 2, BoardCellTypes.BROWN, []));
+
+        let player = createPlayer("Charlie Bucket", PlayerType.HUMAN);
+        player.fieldIndex = 0;
+        player.buildingsPerTurn = 3;
+        player.buildings = 3;
+        player.cacao = 50;
+
         this.state = {
-            selectedBuilding: EntityType.CACAOTREE,
-            cacao: 50,
+            showPseudoActionbar: false,
             messages: [
                 { text: 'The most important buildings are the cacao tree and the rum truffle cannon', type: 'text', delay: 500 },
-                { src: 'cannon_icon.png', type: 'image', delay: 500, alt: 'cannon message icon' },
-                { src: 'cacaotree_icon.png', type: 'image', delay: 3500, alt: 'cacao tree message icon' },
+                { src: 'cannon', type: 'image', delay: 500, alt: 'cannon message icon' },
+                { src: 'cacaotree', type: 'image', delay: 3500, alt: 'cacao tree message icon' },
                 { text: 'You win a game if you destroy the factory and all cannons of your opponent', type: 'text', delay: 2500 },
                 { text: 'Plant a few trees to get cacao. You need it to build a cannon', type: 'text', delay: 2500 },
                 { text: 'Build a cannon and attack your opponent\'s facotry to continue with the tutorial', type: 'text', delay: 2500 },
                 { text: 'Hint: If you build a cacao tree on a white field it grows better produces 1.5x more cacao per round', type: 'text', delay: 1000}
-            ],
-            showPseudoActionbar: false,
-            pseudoPhase: 'build',
-            cacaoPerTurn: 0,
-            attacksPerTurn: 0,
-            selectedAttack: undefined
+            ]
         };
+
+        this.game = {
+            gameplay: {
+                game:{
+                    state: GameStateTypes.BUILD_PHASE,
+                    players: [player],
+                    board: { fields: [playerfield, opponentfield], size: 3, seed: 1337 },
+                }
+            },
+            ui: {
+                selectedBuilding: EntityType.CACAOTREE,
+                selectedAttack: AttackType.TRUFFLE
+            }
+        }
+    }
+
+    createField(row, col, cellType = BoardCellTypes.BROWN, buildings = [EntityType.CREAM]) {
+        return {
+            type: cellType,
+            row: row,
+            col: col,
+            occupiedBy: buildings,
+            molten: false,
+            shielded: false
+        }
     }
 
     buildCallback(building, celltype) {
         let description = getEntityDescriptor(building)
         if (building === EntityType.CACAOTREE) {
             let cacaoPerTurn = celltype === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn;
-            if ((this.state.cacao - description.costs) < description.costs) {
-                if (this.state.messages.length < 8) {
-                    this.setState({ 
-                        cacao: this.state.cacao - description.costs,
-                        cacaoPerTurn: this.state.cacaoPerTurn + cacaoPerTurn,
-                        selectedBuilding: undefined,
-                        messages: [...this.state.messages, 
-                            { text: 'battlechoc is a turn-based strategy game. A turn consists of two game phases: Build and attack', type: 'text', delay: 2500},
-                            { text: 'Use the blinking button above to finish your build phase..', type: 'text', delay: 2500}
-                        ],
-                        showPseudoActionbar: true
-                    });
-                } else {
-                    this.setState({ 
-                        cacao: this.state.cacao - description.costs,
-                        cacaoPerTurn: this.state.cacaoPerTurn + cacaoPerTurn,
-                        selectedBuilding: undefined,
-                    });
-                }
-            } else {
-                this.setState({ 
-                    cacao: this.state.cacao - description.costs,
-                    cacaoPerTurn: this.state.cacaoPerTurn + cacaoPerTurn 
-                });
-            }
+            this.game.gameplay.game.players[0].cacao -= description.costs;
+            this.game.gameplay.game.players[0].cacaoPerTurn += cacaoPerTurn;
+            this.game.gameplay.game.players[0].buildings -= 1;
         } else if (building === EntityType.RUM_TRUFFLE_CANNON) {
             if (this.state.messages.length < 12) {
                 this.setState({ 
                     messages: [...this.state.messages, { text: 'now you can attack your opponent. Just finish your build phase and click on your opponent\'s facotry!', type: 'text', delay: 2500}]
                 });
             }
-            this.setState({ 
-                cacao: this.state.cacao - description.costs,
-                attacksPerTurn: this.state.attacksPerTurn + 1,
-                selectedAttack: AttackType.TRUFFLE
-            });
-            if ((this.state.cacao - description.costs) < description.costs) {
-                this.setState({ selectedBuilding: undefined });                
-            }          
+            this.game.gameplay.game.players[0].cacao -= description.costs;
+            this.game.gameplay.game.players[0].attacksPerTurn[AttackType.TRUFFLE] += 1;
+            this.game.gameplay.game.players[0].attacks[AttackType.TRUFFLE] += 1;
+            this.game.gameplay.game.players[0].buildings -= 1;
         }
+
+        if (this.game.gameplay.game.players[0].cacao < description.costs) {
+            if (building === EntityType.RUM_TRUFFLE_CANNON && this.game.gameplay.game.players[0].cacao >= getEntityDescriptor(EntityType.CACAOTREE).costs) {
+                this.simulateBuildingSelection(EntityType.CACAOTREE);
+            } else {
+                this.simulateBuildingSelection(undefined);
+            }
+            if (this.state.messages.length < 8) {
+                this.setState({
+                    messages: [...this.state.messages, 
+                        { text: 'battlechoc is a turn-based strategy game. A turn consists of two game phases: Build and attack', type: 'text', delay: 2500},
+                        { text: 'Use the blinking button above to finish your build phase..', type: 'text', delay: 2500}
+                    ],
+                    showPseudoActionbar: true
+                });
+            }
+        }
+        this.forceUpdate();
     }
 
     attackCallback() {
         setTimeout(() => this.props.fulfilled(), 1000);
     }
 
-    select(building) {
-        if (this.canBuild(building)) {
-            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-            this.setState({ selectedBuilding: building });
-        }
+    simulateBuildingSelection = buildingType => {
+        this.game.ui.selectedBuilding = buildingType;
+        this.forceUpdate();
     }
 
-    canBuild(building) {
-        return this.state.cacao >= getEntityDescriptor(building).costs;
+    simulateAttackSelection = attackType => {
+        this.game.ui.selectedAttack = attackType;
+        this.forceUpdate();
     }
 
     gotoAttackPhase() {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        this.game.gameplay.game.state = GameStateTypes.ATTACK_PHASE;
+        if (this.game.gameplay.game.players[0].attacks[AttackType.TRUFFLE] > 0) {
+            this.game.ui.selectedAttack = AttackType.TRUFFLE;
+        }
         if (this.state.messages.length < 10) {
-            this.setState({ 
-                pseudoPhase: 'attack',
+            this.setState({
                 messages: [...this.state.messages, { text: '..and this one to end your turn', type: 'text', delay: 2500}]
             });
-        } else {
-            this.setState({ pseudoPhase: 'attack' });            
         }
+        this.forceUpdate();
     }
 
     gotoBuildPhase() {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         this.gamefield.triggerFlyingTreeInfo();
+        this.game.gameplay.game.state = GameStateTypes.BUILD_PHASE;
+        this.game.gameplay.game.players[0].cacao += this.game.gameplay.game.players[0].cacaoPerTurn;
+        this.game.gameplay.game.players[0].buildings = this.game.gameplay.game.players[0].buildingsPerTurn;
         
         if (this.state.messages.length < 11) {
+            this.simulateBuildingSelection(EntityType.RUM_TRUFFLE_CANNON);
             this.setState({ 
-                pseudoPhase: 'build',
-                selectedBuilding: EntityType.RUM_TRUFFLE_CANNON,
-                cacao: this.state.cacao + this.state.cacaoPerTurn,
                 messages: [...this.state.messages, { text: 'look: you gained some cacao! Now you can build a cannon. Select the cannon by clicking the icon', type: 'text', delay: 2500}]
             });
-        } else {
-            this.setState({ 
-                pseudoPhase: 'build',
-                cacao: this.state.cacao + this.state.cacaoPerTurn
-            });
-        }
+        }   
+        this.forceUpdate();
     }
 
     render() {
@@ -133,7 +176,7 @@ class TreesAndCannonsPage extends Component {
                     <PlayArrow />
                   </Fab>
 
-        if (this.state.pseudoPhase === 'attack') {
+        if (this.game.gameplay.game.state === GameStateTypes.ATTACK_PHASE) {
             icon =<Fab
                     size="small"
                     key="4"
@@ -144,60 +187,27 @@ class TreesAndCannonsPage extends Component {
                     <FastForward />
                  </Fab>
         } 
-
-        let playerSetup = [{ type: EntityType.FACTORY, row: 1, col: 1 }, { type: EntityType.CREAM, row: 1, col: 1}, { type: EntityType.CREAM, row: 0, col: 1}, { type: EntityType.CREAM, row: 0, col: 0}];
-        let opponentSetup = [{ type: EntityType.FACTORY, row: 1, col: 1 }];
         let pseudoActionbar = <div className="pseudo actionbar">{ icon }</div>
-        let gamefield = <div className="microGame">
+        return (
+            <div>
+                { this.state.showPseudoActionbar ? pseudoActionbar : null }
+                <div className="microGame">
                     <div className="microGamefield">
                         <MicroGamefield opponentGamefield={true} size={3} 
-                                        selectedBuilding={this.state.selectedBuilding} 
-                                        selectedAttack={this.state.selectedAttack} 
-                                        playerSetup={playerSetup}
-                                        opponentSetup={opponentSetup}
-                                        pseudoPhase={this.state.pseudoPhase}
+                                        selectedBuilding={this.game.ui.selectedBuilding} 
+                                        selectedAttack={this.game.ui.selectedAttack} 
+                                        playerSetup={this.game.gameplay.game.board.fields[0]}
+                                        opponentSetup={this.game.gameplay.game.board.fields[1]}
+                                        pseudoPhase={this.game.gameplay.game.state}
                                         attackCallback={() => this.attackCallback()}
                                         onRef={gamefield => this.gamefield = gamefield}
                                         buildCallback={(building, celltype) => this.buildCallback(building, celltype)}/>
 
-                        {(() => {
-                            if (this.state.pseudoPhase === 'build') {
-                                return (
-                                    <div className="tutorial" id="buildingSelection">
-                                        <div onClick={() => this.select(EntityType.CACAOTREE)} className={this.state.selectedBuilding === EntityType.CACAOTREE ? 'selected previewContainer' : 'previewContainer'}>
-                                            <div className={this.canBuild(EntityType.CACAOTREE) ? '' : 'disabled'}></div>
-                                            <img alt="cacao tree preview" className="preview" src="images/cacaotree_icon.png"/>
-                                        </div>
-                                        <div onClick={() => this.select(EntityType.RUM_TRUFFLE_CANNON)} className={this.state.selectedBuilding === EntityType.RUM_TRUFFLE_CANNON ? 'selected previewContainer' : 'previewContainer'}>
-                                            <div className={this.canBuild(EntityType.RUM_TRUFFLE_CANNON) ? '' : 'disabled'}></div>
-                                            <img alt="cannon preview" className="preview" src="images/cannon_icon.png"/>
-                                        </div>                      
-                                    </div>
-                                );
-                            } else {
-                                return (
-                                    <div className="tutorial" id="attackSelection">
-                                        <div className={this.state.attacksPerTurn > 0 ? 'selected previewContainer' : 'previewContainer'}>
-                                            <div className={this.state.attacksPerTurn > 0 ? '' : 'disabled'}></div>
-                                            <img alt="cannon preview" className={this.state.attacksPerTurn > 0 ? 'enabled preview' : 'preview'} src="images/cannon_icon.png"/>
-                                        </div>
-                                    </div>
-                                );
-                            }
-                        })()}
-
-                        <div className="tutorial" id="gameMenu">
-                            <div id="totalCacao" className="infoIcon">
-                                <img alt="cacao" src="images/cacao_icon.png" />
-                                <p>{this.state.cacao}</p>
-                            </div>
-                        </div>
+                        <BuildingPalette simulateBuildingSelection={this.simulateBuildingSelection} pseudoGame={this.game} isVisible={this.game.gameplay.game.state === GameStateTypes.BUILD_PHASE} whitelist={[EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON]}/>
+                        <AttackPalette simulateAttackSelection={this.simulateAttackSelection} pseudoGame={this.game} isVisible={this.game.gameplay.game.state === GameStateTypes.ATTACK_PHASE} whitelist={[AttackType.TRUFFLE]}/>
+                        <InfoPanel pseudoGame={this.game.gameplay.game} isVisible={true} onRef={info => this.info = info}/>
                     </div>
-                </div>;
-        return (
-            <div>
-                { this.state.showPseudoActionbar ? pseudoActionbar : null }
-                { gamefield }
+                </div>
                 <ChatLikeInstructions messages={this.state.messages} appbar={this.props.appbar}/>
             </div>
         );

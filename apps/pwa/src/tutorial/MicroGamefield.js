@@ -6,6 +6,7 @@ import { InfoType, spawnInfoAtBuilding, spawnInfo } from '../ui/FlyingInfo';
 import { EntityType, BoardCellTypes, createEntity, getEntityDescriptor, AttackType } from '../gameplay/GameEntities';
 import { Scene, Clock, OrthographicCamera, WebGLRenderer, Raycaster, Vector2, DirectionalLight } from 'three';
 import Jukebox from '../ui/Jukebox';
+import { GameStateTypes } from '../gameplay/GameplayReducer';
 //import t from './Translation';
 
 class MicroGamefield extends Component {
@@ -48,64 +49,29 @@ class MicroGamefield extends Component {
             field => Array(this.size.cols).fill([])
         );
 
-        this.playerCells = [...Array(this.size.rows)].map(
-            field => Array(this.size.cols).fill(BoardCellTypes.WHITE)
-        );
-
-        this.playerField = { grid: [] };
-        for (let row = 0; row < this.size.rows; row++) {
-            for (let col = 0; col < this.size.cols; col++) {
-                let fieldtype = col;
-                let cellType = BoardCellTypes.BROWN;
-
-                if (fieldtype === 0) {
-                    cellType = BoardCellTypes.WHITE;
-                } else if (fieldtype === 1) {
-                    cellType = BoardCellTypes.BLACK;
-                }
-
-                this.playerCells[row][col] = cellType;
-
-                this.playerField.grid.push({
-                    type: cellType,
-                    row: row,
-                    col: col,
-                    occupiedBy: [],
-                    molten: false,
-                    shielded: false
-                });
-            }
-        }
-
         var directionalLight = new DirectionalLight(0xfef8cb, 2.0);
         directionalLight.position.set(20, 24, -10);
         directionalLight.castShadow = false;
         this.scene.add( directionalLight );
 
         if (!this.props.opponentGamefield) {
-            this.microGamefield = new Gamefield(true, [-70, -34.5, 0], this.playerField, 0, this.size);
+            this.microGamefield = new Gamefield(true, [-70, -34.5, 0], this.props.playerSetup, 0, this.size);
             if (typeof this.props.playerSetup !== 'undefined') {
-                this.props.playerSetup.forEach(building => {
-                    if (this.buildings[building.row][building.col].length === 0) {
-                        this.buildings[building.row][building.col] = [building.type];
-                    } else {
-                        this.buildings[building.row][building.col].push(building.type);
-                    }
-                    this.microGamefield.setBuilding(building.type, { row: building.row, col: building.col });                
+                this.props.playerSetup.grid.forEach(field => {
+                    this.buildings[field.row][field.col] = field.occupiedBy;
+                    field.occupiedBy.filter(building => building !== EntityType.CREAM)
+                    .forEach(building => this.microGamefield.setBuilding(building, { row: field.row, col: field.col }));                
                 });
             }
             this.scene.add(this.microGamefield.gameField);
         } else if (this.props.opponentGamefield) {
-            this.microGamefield = new Gamefield(true, [-98, -46, 0], this.playerField, 0, this.size);
+            this.microGamefield = new Gamefield(true, [-98, -46, 0], this.props.playerSetup, 0, this.size);
             
             if (typeof this.props.playerSetup !== 'undefined') {
-                this.props.playerSetup.forEach(building => {
-                    if (this.buildings[building.row][building.col].length === 0) {
-                        this.buildings[building.row][building.col] = [building.type];
-                    } else {
-                        this.buildings[building.row][building.col].push(building.type);
-                    }
-                    this.microGamefield.setBuilding(building.type, { row: building.row, col: building.col });                
+                this.props.playerSetup.grid.forEach(field => {
+                    this.buildings[field.row][field.col] = field.occupiedBy;
+                    field.occupiedBy.filter(building => building !== EntityType.CREAM)
+                    .forEach(building => this.microGamefield.setBuilding(building, { row: field.row, col: field.col }));                
                 });
             }
 
@@ -115,41 +81,13 @@ class MicroGamefield extends Component {
                 field => Array(this.size.cols).fill([])
             );
 
-            this.opponentCells = [...Array(this.size.rows)].map(
-                field => Array(this.size.cols).fill(BoardCellTypes.WHITE)
-            );
-
-            this.opponentField = { grid: [] };
-            for (let row = 0; row < this.size.rows; row++) {
-                for (let col = 0; col < this.size.cols; col++) {
-                    let fieldtype = row;
-                    let cellType = BoardCellTypes.BROWN;
-
-                    if (fieldtype === 0) {
-                        cellType = BoardCellTypes.WHITE;
-                    } else if (fieldtype === 1) {
-                        cellType = BoardCellTypes.BLACK;
-                    }
-
-                    this.opponentCells[row][col] = cellType;
-
-                    this.opponentField.grid.push({
-                        type: cellType,
-                        row: row,
-                        col: col,
-                        occupiedBy: [],
-                        molten: false,
-                        shielded: false
-                    });
-                }
-            }
-
-            this.opponentGamefield = new Gamefield(false, [-42, -18, 0], this.opponentField, 1, this.size);
+            this.opponentGamefield = new Gamefield(false, [-42, -18, 0], this.props.opponentSetup, 1, this.size);
 
             if (typeof this.props.opponentSetup !== 'undefined') {
-                this.props.opponentSetup.forEach(building => {
-                    this.opponentBuildings[building.row][building.col].push(building.type);
-                    this.opponentGamefield.setBuilding(building.type, { row: building.row, col: building.col });                
+                this.props.opponentSetup.grid.forEach(field => {
+                    this.opponentBuildings[field.row][field.col] = field.occupiedBy;
+                    field.occupiedBy.filter(building => building !== EntityType.CREAM)
+                    .forEach(building => this.opponentGamefield.setBuilding(building, { row: field.row, col: field.col }));                  
                 });
             }
 
@@ -238,7 +176,7 @@ class MicroGamefield extends Component {
                     spawnInfoAtBuilding({ 
                         rect: rect,
                         tree: this.microGamefield.getBuildingAtPosition({ row: row, col: col }), 
-                        cacao: this.playerCells[row][col] === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn, 
+                        cacao: this.props.playerSetup.grid[row * this.size.cols + col].type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn, 
                         camera: this.camera, 
                         type: InfoType.CACAO_HARVESTED,
                         container: this.container
@@ -263,7 +201,8 @@ class MicroGamefield extends Component {
         this.mouse.x = ( ( event.clientX - rect.left ) / rect.width ) * 2 - 1;
         this.mouse.y = - ( ( event.clientY - rect.top ) / rect.height ) * 2 + 1;
         this.raycaster.setFromCamera(this.mouse, this.camera); 
-        if (typeof this.props.selectedBuilding !== 'undefined' && this.props.pseudoPhase === 'build') {
+
+        if (typeof this.props.selectedBuilding !== 'undefined' && (this.props.pseudoPhase === GameStateTypes.BUILD_PHASE || this.props.pseudoPhase === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT)) {
             var intersects = this.raycaster.intersectObjects(this.microGamefield.getClickableFields(), true);
             intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
                                                         (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));    
@@ -279,16 +218,16 @@ class MicroGamefield extends Component {
                     Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
 
                     this.microGamefield.setBuilding(building.type, building.position);
-                    this.props.buildCallback(building.type, this.playerCells[cellIndex.row][cellIndex.col]);
+                    this.props.buildCallback(building.type, this.props.playerSetup.grid[cellIndex.row * this.size.cols + cellIndex.col].type);
                     this.buildings[cellIndex.row][cellIndex.col] = [building.type];
                     let description = getEntityDescriptor(building.type)
 
-                    let buildingsDelta = this.playerCells[cellIndex.row][cellIndex.col] === BoardCellTypes.BLACK ? Math.round(description.buildingsPerTurn * 1.5) : description.buildingsPerTurn;
+                    let buildingsDelta = this.props.playerSetup.grid[cellIndex.row * this.size.cols + cellIndex.col].type === BoardCellTypes.BLACK ? Math.round(description.buildingsPerTurn * 1.5) : description.buildingsPerTurn;
                     if (building.type === EntityType.FACTORY) {
                         spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: buildingsDelta, x: event.clientX, y: event.clientY, container: this.container });
                     } else {
                         spawnInfo({ type: InfoType.CACAO_CONSUMED, cacao: description.costs, x: event.clientX, y: event.clientY, container: this.container });
-                        let cacaoDelta = this.playerCells[cellIndex.row][cellIndex.col] === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn;
+                        let cacaoDelta = this.props.playerSetup.grid[cellIndex.row * this.size.cols + cellIndex.col].type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn;
                         setTimeout(() => {
                             if (building.type === EntityType.CACAOTREE) {
                                 spawnInfo({ type: InfoType.INCREASE_CACAO_PER_TURN, cacao: cacaoDelta, x: event.clientX, y: event.clientY, container: this.container });
@@ -303,7 +242,7 @@ class MicroGamefield extends Component {
                     }
                 }
             }
-        } else if (typeof this.props.selectedAttack !== 'undefined' && this.opponentGamefield && this.props.pseudoPhase === 'attack') {           
+        } else if (typeof this.props.selectedAttack !== 'undefined' && this.opponentGamefield && this.props.pseudoPhase === GameStateTypes.ATTACK_PHASE) {           
             let opponentIntersects = this.raycaster.intersectObjects(this.opponentGamefield.getClickableFields(), true);
 
             opponentIntersects = opponentIntersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
@@ -311,20 +250,19 @@ class MicroGamefield extends Component {
             if ( opponentIntersects.length > 0 ) {
                 let cellIndex = opponentIntersects[0].object._cellIdx || opponentIntersects[0].face._cellIdx;
                 
-                if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
-                    this.opponentField.grid[cellIndex.row * this.size.cols + cellIndex.col].molten = true;
-                    this.opponentGamefield.rebuild(this.opponentField);
-                }
-
                 if (this.opponentBuildings[cellIndex.row][cellIndex.col].length > 0) {
                     this.opponentGamefield.attack({row: cellIndex.row, col: cellIndex.col}, this.props.selectedAttack, false);
                     Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
                     if (typeof this.props.attackCallback !== 'undefined') {
-                        this.props.attackCallback(this.opponentGamefield.buildings);
+                        this.props.attackCallback(this.props.selectedAttack, {row: cellIndex.row, col: cellIndex.col});
                     }
                 }
             }
         }
+    }
+
+    meltDownField() {
+        this.opponentGamefield.rebuild(this.props.opponentSetup);
     }
 
     animate = () => {
@@ -354,8 +292,8 @@ MicroGamefield.propTypes = {
     attackCallback: PropTypes.func,
     opponentGamefield: PropTypes.bool.isRequired,
     pseudoPhase: PropTypes.string,
-    opponentSetup: PropTypes.array,
-    playerSetup: PropTypes.array
+    opponentSetup: PropTypes.object,
+    playerSetup: PropTypes.object
 }
 
 const mapStateToProps = state => ({ language: state.ui.language });

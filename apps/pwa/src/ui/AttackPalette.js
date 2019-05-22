@@ -28,41 +28,67 @@ class AttackPalette extends Component {
         }];
     }
 
-    attackSelectionIsVisible() {
-        return this.props.state === GameStateTypes.ATTACK_PHASE && multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true;
+    attackSelectionIsVisible(game) {
+        return this.props.state === GameStateTypes.ATTACK_PHASE && multiplayer.isLocalPlayer(game.currentPlayerIndex) === true;
     }
 
-    playerCanAttack(type) {
-        return this.props.game.players[multiplayer.localPlayerIndex].attacks[type] > 0
+    playerCanAttack(game, type) {
+        return game.players[multiplayer.localPlayerIndex].attacks[type] > 0
     }
 
-    attacks(attackType) {
-        const player = this.props.game.players[multiplayer.localPlayerIndex];
+    getPlayerIndex() {
+        if (typeof this.props.pseudoGame === 'undefined') {
+            return multiplayer.localPlayerIndex;
+        } else {
+            return 0;
+        }
+    }
+
+    attacks(game, attackType) {
+        const player = game.players[this.getPlayerIndex()];
         return player.attacks[attackType];
     }
 
-    attacksPerTurn(attackType) {
-        const player = this.props.game.players[multiplayer.localPlayerIndex];
-        return player.attacksPerTurn[attackType];
+    selectAttack(attackType) {
+        if (typeof this.props.pseudoGame === 'undefined') {
+            this.props.selectAttack(attackType);
+        } else {
+            this.props.simulateAttackSelection(attackType);
+        }        
+    }
+
+    isAttackSelected(attackType) {
+        if (typeof this.props.pseudoGame === 'undefined') {
+            return this.props.selectedAttack === attackType;
+        } else {
+            return this.props.pseudoGame.ui.selectedAttack === attackType;
+        }         
     }
 
     render() {
+        const game = typeof this.props.pseudoGame !== 'undefined' ? this.props.pseudoGame.gameplay.game : this.props.game;
         if (this.props.isVisible) {
             return (
                 <div id="attackSelection">
                     {(() => {
-                        if (this.attackSelectionIsVisible()) {
+                        if (this.attackSelectionIsVisible(game) || typeof this.props.pseudoGame !== 'undefined') {
                             return this.attacksForSeclection.map((attack, i) => {
-                                let canAttack = this.playerCanAttack(attack.type);
-                                let className = canAttack ? (this.props.selectedAttack === attack.type ? 'selected previewContainer' : 'canbuild previewContainer') : 'previewContainer';
+                                if (typeof this.props.whitelist !== 'undefined') {
+                                    if (!this.props.whitelist.includes(attack.type)) {
+                                        return null;
+                                    }
+                                }
+
+                                let canAttack = this.playerCanAttack(game, attack.type);
+                                let className = canAttack ? (this.isAttackSelected(attack.type) ? 'selected previewContainer' : 'canbuild previewContainer') : 'previewContainer';
                                 return <div key={i}>
                                     <div className={className} onClick={() => {
                                             if (canAttack) {
                                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                this.props.selectAttack(attack.type);
+                                                this.selectAttack(attack.type);
                                             }
                                         }}>
-                                        <div className="attackCount">{this.attacks(attack.type)}</div>
+                                        <div className="attackCount">{this.attacks(game, attack.type)}</div>
                                         <div style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }} 
                                              className={attack.className + (canAttack ? ' enabled preview' : ' disabled preview')} />
                                     </div>
@@ -79,7 +105,9 @@ class AttackPalette extends Component {
 }
 
 AttackPalette.propTypes = {
-    isVisible: PropTypes.bool.isRequired
+    isVisible: PropTypes.bool.isRequired,
+    pseudoGame: PropTypes.object,
+    whitelist: PropTypes.array
 }
 
 const mapStateToProps = state => ({
