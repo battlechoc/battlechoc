@@ -2,12 +2,11 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import MicroGamefield from './MicroGamefield';
 import ChatLikeInstructions from './ChatLikeInstructions';
-import { EntityType, getEntityDescriptor, BoardCellTypes, AttackType } from '../gameplay/GameEntities';
+import { EntityType, getEntityDescriptor, AttackType } from '../gameplay/GameEntities';
 import Jukebox from '../ui/Jukebox';
 import BuildingPalette from '../ui/BuildingPalette';
 import AttackPalette from '../ui/AttackPalette';
 import InfoPanel from '../ui/InfoPanel';
-import { createPlayer, PlayerType } from '../gameplay/Player';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import BunnyAndXmasTutorialSituation from '../situations/tutorial/BunnyAndXmasTutorial';
 
