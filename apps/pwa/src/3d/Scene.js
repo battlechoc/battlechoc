@@ -2,9 +2,9 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { multiplayer } from '../Multiplayer';
 import { deselectBuildings, selectAttack, deselectAttack, selectBuilding } from '../ui/UiActions';
-import { build, attack, finishTurn } from '../gameplay/GameActions';
+import { build, attack, finishTurn, finishBuildPhase } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
-import { BoardCellTypes, EntityType, AttackType, createEntity, getEntityDescriptor } from '../gameplay/GameEntities';
+import { BoardCellTypes, EntityType, AttackType, createEntity, getEntityDescriptor, getCheapest } from '../gameplay/GameEntities';
 import Gamefield from './Gamefield';
 import Jukebox from '../ui/Jukebox';
 import { InfoType, spawnInfo, spawnInfoAtBuilding } from '../ui/FlyingInfo';
@@ -163,6 +163,32 @@ class Scene extends Component {
                         } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
                             spawnInfo({ type: InfoType.INCREASE_SPY_ATTACKS_PER_TURN, attacks: 1, x: event.clientX, y: event.clientY, container: this.container });
                         }
+                        setTimeout(() => {
+                            if (this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) {
+                                if (playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true) {
+                                    this.props.finishBuildPhase({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
+                                        this.props.deselectBuildings();
+                                    }).catch(error => {
+                                        if (error instanceof BattlechocError) {
+                                            console.warn(error);
+                                        } else {
+                                            throw error;
+                                        }
+                                    });
+                                } else {
+                                    this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
+                                        this.props.deselectBuildings();
+                                        this.props.deselectAttack();
+                                    }).catch(error => {
+                                        if (error instanceof BattlechocError) {
+                                            console.warn(error);
+                                        } else {
+                                            throw error;
+                                        }
+                                    });
+                                }
+                            }
+                        }, 2000);
                     }, 1000);
                 }
             }).catch(error => {
@@ -241,7 +267,7 @@ class Scene extends Component {
         // Add Light
         var directionalLight = new DirectionalLight(0xffffff, 2);
         directionalLight.position.set(40, 44, 1);
-        directionalLight.castShadow = false; 
+        directionalLight.castShadow = false;
         this.scene.add(directionalLight);
 
         this.playerGameField = new Gamefield(true, [-72, -16, 0], game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size);
@@ -273,7 +299,7 @@ class Scene extends Component {
             game.board.fields[game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => !cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
                 .forEach(cell => create3dEntities(cell, this.playerGameField));
             game.board.fields[game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
-                .forEach(cell => create3dEntities(cell, this.playerGameField));    
+                .forEach(cell => create3dEntities(cell, this.playerGameField));
             game.board.fields[game.players[1].fieldIndex].grid.filter(cell => !cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
                 .forEach(cell => create3dEntities(cell, this.opponentGameField));
             game.board.fields[game.players[1].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
@@ -369,6 +395,7 @@ const mapDispatchToProps = {
     selectAttack,
     selectBuilding,
     deselectAttack,
+    finishBuildPhase
 };
 
 const SceneContainer = connect(
