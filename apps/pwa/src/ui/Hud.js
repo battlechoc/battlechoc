@@ -7,7 +7,6 @@ import { chooseField, chooseStart } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { EntityType } from '../gameplay/GameEntities';
 import { multiplayer } from '../Multiplayer';
-import Tooltip from './Tooltip';
 import Actionbar from './Actionbar';
 import InfoPanel from './InfoPanel';
 import BuildingPalette from './BuildingPalette';
@@ -18,7 +17,8 @@ import Fab from '@material-ui/core/Fab';
 import StartIcon from '@material-ui/icons/SupervisorAccount';
 import SvgIcon from '@material-ui/core/SvgIcon';
 import t from './Translation';
-import InfoDialog from './InfoDialog';
+import Info from './dialogs/Info';
+import Tooltip from './dialogs/Tooltip';
 import Settings from './dialogs/Settings';
 import AppleHint from './dialogs/AppleHint';
 import Jukebox from './Jukebox';
@@ -156,7 +156,7 @@ class Hud extends Component {
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     this.settings.open();
                 }} />
-                <InfoDialog isVisible={this.isTitleScreen() && !this.state.showTutorial} />
+                <Info isVisible={this.isTitleScreen() && !this.state.showTutorial} />
                 <AttackPalette isVisible={showInGameMenu} />
                 <BuildingPalette isVisible={showInGameMenu} />
                 <InfoPanel isVisible={showInGameMenu} />

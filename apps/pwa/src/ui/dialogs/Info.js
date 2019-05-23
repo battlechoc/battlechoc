@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import './InfoDialog.css';
+import './Info.css';
 import { connect } from 'react-redux';
 import Fab from '@material-ui/core/Fab';
 import { InfoOutlined } from '@material-ui/icons';
@@ -11,10 +11,10 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import withMobileDialog from '@material-ui/core/withMobileDialog';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
-import t from './Translation';
-import Jukebox from './Jukebox';
+import t from '../Translation';
+import Jukebox from '../Jukebox';
 
-class InfoDialog extends Component {
+class Info extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -29,7 +29,7 @@ class InfoDialog extends Component {
     render() {
         if (this.props.isVisible) {
             return (
-                <div className="InfoDialog">
+                <div className="info-dialog">
                     <Fab
                         size="small"
                         color="primary"
@@ -89,7 +89,7 @@ class InfoDialog extends Component {
     }
 }
 
-InfoDialog.propTypes = {
+Info.propTypes = {
   fullScreen: PropTypes.bool.isRequired,
   isVisible: PropTypes.bool.isRequired
 };
@@ -98,8 +98,8 @@ const mapStateToProps = state => ({
     language: state.ui.language
 });
 
-const InfoDialogContainer = connect(
+const InfoContainer = connect(
     mapStateToProps
-)(InfoDialog);
+)(Info);
 
-export default withMobileDialog()(InfoDialogContainer);
+export default withMobileDialog()(InfoContainer);
