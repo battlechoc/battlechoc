@@ -29,8 +29,7 @@ class Hud extends Component {
         super(props);
         this.state = {
             clickable: true,
-            showTutorial: false,
-            showiOSMessage: false
+            showTutorial: false
         }
     }
 
@@ -48,7 +47,6 @@ class Hud extends Component {
 
     showTurnMessage(message) {
         this.setState({ message: message });
-        // estimate browser animation type
         let pivot = document.createElement("fakeelement");
         let animations = {
             "animation": "animationend",
