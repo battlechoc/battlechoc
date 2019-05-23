@@ -2,6 +2,7 @@
   z-index: 1;
   position: absolute;
   width: 100%;
+  bottom: 0;
 }
 
 .tutorial-headline {
@@ -36,7 +37,7 @@
   height: 50vh;
 }
 
-.tutorial.fields > div {
+#tutorialGameStartSelection .fields > div {
   flex: 1 0 33.3%;
 }
 
@@ -44,21 +45,21 @@
   margin-left: 135px;
 }
 
-#tutorialchooseContainer {
+#tutorialGameStartSelection .choose {
   position: unset;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-#tutorialchooseContainer .button {
-  max-height: 40vh;
-  max-width: 40vh;
+#tutorialGameStartSelection .button {
+  max-height: 36vh;
+  max-width: 36vh;
 }
 
-#tutorialchooseContainer .fields {
-  max-height: 20vh;
-  max-width: 20vh;
+#tutorialGameStartSelection .fields {
+  max-height: 18vh;
+  max-width: 18vh;
 }
 
 .speechBubbles {
@@ -171,18 +172,18 @@
 }
 
 @media screen and (orientation:portrait) { 
-  #tutorialchooseContainer {
+  #tutorialGameStartSelection {
     margin-top: 0;
   }
 
-  #tutorialchooseContainer .fields {
-    width: 10vh;
-    height: 10vh;
+  #tutorialGameStartSelection .choose {
+    flex-direction: row;
+    height: 50vh;
   }
 
-  #tutorialchooseContainer .button {
-    height: 16vh;
-    width: 16vh;
+  #tutorialGameStartSelection .fields {
+    width: 9vh;
+    height: 9vh;
   }
 }
 

@@ -111,7 +111,7 @@ class BuildingPalette extends Component {
     }
 
     render() {
-        const game = typeof this.props.pseudoGame !== 'undefined' ? this.props.pseudoGame.gameplay.game : this.props.game; 
+        const game = typeof this.props.pseudoGame !== 'undefined' ? this.props.pseudoGame.gameplay.game : this.props.game;
         const selectedBuilding = typeof this.props.pseudoGame !== 'undefined' ? this.props.pseudoGame.ui.selectedBuilding : this.props.selectedBuilding;
         if (this.props.isVisible) {
             return (
