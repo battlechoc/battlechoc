@@ -1,4 +1,4 @@
-import { EntityType, AttackType } from '../gameplay/GameEntities';
+import { EntityType, AttackType } from '../../gameplay/GameEntities';
 
 const languages = {
     en: {

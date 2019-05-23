@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import './App.css';
-import Jukebox from './ui/Jukebox';
-import t from './ui/Translation';
+import { Jukebox, Translation as t } from './ui/misc';
 import OfflineStore from './OfflineStore';
 import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';

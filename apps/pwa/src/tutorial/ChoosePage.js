@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { EntityType } from '../gameplay/GameEntities';
 import StartIcon from '@material-ui/icons/SupervisorAccount';
 import ChatLikeInstructions from './ChatLikeInstructions';
-import Jukebox from '../ui/Jukebox';
+import { Jukebox } from '../ui/misc';
 
 class ChoosePage extends Component {
     constructor(props) {

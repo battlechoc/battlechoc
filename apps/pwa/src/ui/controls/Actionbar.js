@@ -2,17 +2,16 @@ import React, { Component } from 'react';
 import './Actionbar.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { build, attack, chooseStart, chooseField, finishTurn, finishBuildPhase, playerJoined } from '../gameplay/GameActions';
-import { BattlechocError } from '../gameplay/Errors';
-import { playerHasAttacks, playerHasAttacksPerTurn } from '../gameplay/Player';
-import { getCheapest } from '../gameplay/GameEntities';
-import { deselectBuildings, deselectAttack, joinedMultiplayer, waitForMultiplayer } from './UiActions';
-import { GameStateTypes } from '../gameplay/GameplayReducer';
-import { multiplayer } from '../Multiplayer';
+import { build, attack, chooseStart, chooseField, finishTurn, finishBuildPhase, playerJoined } from '../../gameplay/GameActions';
+import { BattlechocError } from '../../gameplay/Errors';
+import { playerHasAttacks, playerHasAttacksPerTurn } from '../../gameplay/Player';
+import { getCheapest } from '../../gameplay/GameEntities';
+import { deselectBuildings, deselectAttack, joinedMultiplayer, waitForMultiplayer } from '../UiActions';
+import { GameStateTypes } from '../../gameplay/GameplayReducer';
+import { multiplayer } from '../../Multiplayer';
 import Fab from '@material-ui/core/Fab';
-import t from './Translation';
 import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, Share } from '@material-ui/icons';
-import Jukebox from './Jukebox';
+import { Jukebox, Translation as t } from '../misc';
 
 class Actionbar extends Component {
     constructor(props) {

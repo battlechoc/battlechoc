@@ -6,8 +6,8 @@ import { build, attack, finishTurn, finishBuildPhase } from '../gameplay/GameAct
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { BoardCellTypes, EntityType, AttackType, createEntity, getEntityDescriptor, getCheapest } from '../gameplay/GameEntities';
 import Gamefield from './Gamefield';
-import Jukebox from '../ui/Jukebox';
-import { InfoType, spawnInfo, spawnInfoAtBuilding } from '../ui/FlyingInfo';
+import { Jukebox } from '../ui/misc';
+import { InfoType, spawnInfo, spawnInfoAtBuilding } from '../ui/misc/FlyingInfo';
 import { BattlechocError } from '../gameplay/Errors';
 import { playerHasAttacks } from '../gameplay/Player';
 import { DirectionalLight, Clock, Scene as ThreeScene, WebGLRenderer, OrthographicCamera, Raycaster, Vector2 } from 'three';

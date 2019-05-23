@@ -7,22 +7,12 @@ import { chooseField, chooseStart } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { EntityType } from '../gameplay/GameEntities';
 import { multiplayer } from '../Multiplayer';
-import Actionbar from './Actionbar';
-import InfoPanel from './InfoPanel';
-import BuildingPalette from './BuildingPalette';
-import AttackPalette from './AttackPalette';
 import Tutorial from '../tutorial/Tutorial';
-import Button from '@material-ui/core/Button';
-import Fab from '@material-ui/core/Fab';
+import { Actionbar, InfoPanel, BuildingPalette, AttackPalette } from './controls';
+import { Jukebox, Translation as t } from './misc';
+import { Info, Tooltip, Settings, AppleHint } from './dialogs';
+import { CircularProgress, Button, Fab, SvgIcon } from '@material-ui/core';
 import StartIcon from '@material-ui/icons/SupervisorAccount';
-import SvgIcon from '@material-ui/core/SvgIcon';
-import t from './Translation';
-import Info from './dialogs/Info';
-import Tooltip from './dialogs/Tooltip';
-import Settings from './dialogs/Settings';
-import AppleHint from './dialogs/AppleHint';
-import Jukebox from './Jukebox';
-import CircularProgress from '@material-ui/core/CircularProgress';
 
 class Hud extends Component {
     constructor(props) {

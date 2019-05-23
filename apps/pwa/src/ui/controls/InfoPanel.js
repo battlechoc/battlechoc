@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { multiplayer } from '../Multiplayer';
+import { multiplayer } from '../../Multiplayer';
 import './InfoPanel.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';

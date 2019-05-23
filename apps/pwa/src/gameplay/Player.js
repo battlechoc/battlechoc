@@ -1,7 +1,7 @@
 import uuidv4 from 'uuid/v4';
 import { EntityType, AttackType, BoardCellTypes, createEntity, getEntityDescriptor } from './GameEntities';
 import { BattlechocError } from './Errors';
-import Jukebox from '../ui/Jukebox';
+import { Jukebox } from '../ui/misc';
 
 const PlayerType = Object.freeze({
     HUMAN: 'PlayerType.HUMAN',

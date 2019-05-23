@@ -5,10 +5,8 @@ import ChatLikeInstructions from './ChatLikeInstructions';
 import { EntityType, getEntityDescriptor, BoardCellTypes, AttackType } from '../gameplay/GameEntities';
 import Fab from '@material-ui/core/Fab';
 import { PlayArrow, FastForward } from '@material-ui/icons';
-import Jukebox from '../ui/Jukebox';
-import BuildingPalette from '../ui/BuildingPalette';
-import AttackPalette from '../ui/AttackPalette';
-import InfoPanel from '../ui/InfoPanel';
+import { Jukebox } from '../ui/misc';
+import { BuildingPalette, AttackPalette, InfoPanel } from '../ui/controls';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import TreeAndCannonTutorialSituation from '../situations/tutorial/TreeAndCannonTutorial';
 

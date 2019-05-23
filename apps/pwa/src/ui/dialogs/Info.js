@@ -11,8 +11,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import withMobileDialog from '@material-ui/core/withMobileDialog';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
-import t from '../Translation';
-import Jukebox from '../Jukebox';
+import { Jukebox, Translation as t } from '../misc';
 
 class Info extends Component {
     constructor(props) {

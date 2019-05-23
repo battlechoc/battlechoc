@@ -5,7 +5,7 @@ import 'firebase/firestore';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import { GameActionTypes } from './gameplay/GameActions';
 import { AttackType } from './gameplay/GameEntities';
-import Jukebox from './ui/Jukebox';
+import { Jukebox } from './ui/misc';
 
 const MultiplayerGameSessionState = Object.freeze({
     UNINITIALIZED: 'MultiplayerGameSessionState.Uninitialized',

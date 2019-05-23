@@ -10,7 +10,7 @@ import MuiExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import MuiExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import Typography from '@material-ui/core/Typography';
 import { withTheme } from '@material-ui/core/styles';
-import t from '../Translation';
+import { Translation as t } from '../misc';
 import { multiplayer } from '../../Multiplayer';
 
 const ExpansionPanelSummary = withStyles(theme => ({

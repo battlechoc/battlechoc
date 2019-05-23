@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { multiplayer } from '../Multiplayer';
-import { selectAttack } from './UiActions';
-import { AttackType } from '../gameplay/GameEntities';
-import { GameStateTypes } from '../gameplay/GameplayReducer';
-import Jukebox from './Jukebox';
+import { multiplayer } from '../../Multiplayer';
+import { selectAttack } from '../UiActions';
+import { AttackType } from '../../gameplay/GameEntities';
+import { GameStateTypes } from '../../gameplay/GameplayReducer';
+import { Jukebox } from '../misc';
 
 class AttackPalette extends Component {
     componentWillMount() {

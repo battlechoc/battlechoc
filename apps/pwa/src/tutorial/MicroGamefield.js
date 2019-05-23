@@ -2,12 +2,11 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Gamefield from '../3d/Gamefield';
-import { InfoType, spawnInfoAtBuilding, spawnInfo } from '../ui/FlyingInfo';
+import { InfoType, spawnInfoAtBuilding, spawnInfo } from '../ui/misc';
 import { EntityType, BoardCellTypes, createEntity, getEntityDescriptor } from '../gameplay/GameEntities';
 import { Scene, Clock, OrthographicCamera, WebGLRenderer, Raycaster, Vector2, DirectionalLight } from 'three';
-import Jukebox from '../ui/Jukebox';
+import { Jukebox } from '../ui/misc';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
-//import t from './Translation';
 
 class MicroGamefield extends Component {
     componentDidMount() {

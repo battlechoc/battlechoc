@@ -2,19 +2,14 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import './Tutorial.css';
 import { connect } from 'react-redux';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import IconButton from '@material-ui/core/IconButton';
-import ArrowBackIcon from '@material-ui/icons/ArrowBackIos';
-import ArrowForwardIcon from '@material-ui/icons/ArrowForwardIos';
-import CloseIcon from '@material-ui/icons/Close';
+import { AppBar, Toolbar, Typography, IconButton } from '@material-ui/core';
+import { ArrowForwardIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Close as CloseIcon } from '@material-ui/icons';
 import ChoosePage from './ChoosePage';
 import BuildFactoryPage from './BuildFactoryPage';
 import TreesAndCannonsPage from './TreesAndCannonsPage';
 import EasterBunnyAndXmasFactoryPage from './EasterBunnyAndXmasFactory';
-import Jukebox from '../ui/Jukebox';
-//import t from './Translation';
+import { Jukebox } from '../ui/misc';
+
 
 class Tutorial extends Component {
     constructor(props) {

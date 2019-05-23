@@ -2,11 +2,11 @@ import React, { Component } from 'react';
 import './BuildingPalette.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { multiplayer } from '../Multiplayer';
-import { selectBuilding, tapBuilding } from './UiActions';
-import { EntityType, getEntityDescriptor } from '../gameplay/GameEntities';
-import { GameStateTypes } from '../gameplay/GameplayReducer';
-import Jukebox from './Jukebox';
+import { multiplayer } from '../../Multiplayer';
+import { selectBuilding, tapBuilding } from '../UiActions';
+import { EntityType, getEntityDescriptor } from '../../gameplay/GameEntities';
+import { GameStateTypes } from '../../gameplay/GameplayReducer';
+import { Jukebox } from '../misc';
 
 class BuildingPalette extends Component {
     componentWillMount() {

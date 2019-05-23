@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import MicroGamefield from './MicroGamefield';
 import ChatLikeInstructions from './ChatLikeInstructions';
 import { EntityType } from '../gameplay/GameEntities';
-import BuildingPalette from '../ui/BuildingPalette';
+import { BuildingPalette } from '../ui/controls';
 import FactoryTutorialSituation from '../situations/tutorial/FactoryTutorial';
 
 class ChoosePage extends Component {
