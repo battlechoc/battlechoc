@@ -16,11 +16,11 @@ import { Jukebox, Translation as t } from '../misc';
 class Actionbar extends Component {
     constructor(props) {
         super(props);
-
+        let userAgent = navigator.userAgent || navigator.vendor || window.opera;
         let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-        let isPWA = window.matchMedia('(display-mode: fullscreen)').matches;
+        let isPWA = window.matchMedia('(display-mode: fullscreen)').matches && /iPad|iPhone|iPod|android/.test(userAgent);
         let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-
+        console.log(isiOS, isPWA, isFullscreen);
         this.state = {
             activeMusicButton: true,
             activeFullscreenButton: !isFullscreen && !isiOS && !isPWA

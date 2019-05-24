@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import './Tutorial.css';
 import { connect } from 'react-redux';
 import { AppBar, Toolbar, Typography, IconButton } from '@material-ui/core';
-import { ArrowForwardIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Close as CloseIcon } from '@material-ui/icons';
+import { ArrowBackIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Close as CloseIcon } from '@material-ui/icons';
 import ChoosePage from './ChoosePage';
 import BuildFactoryPage from './BuildFactoryPage';
 import TreesAndCannonsPage from './TreesAndCannonsPage';

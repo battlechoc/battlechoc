@@ -26,8 +26,31 @@ class TreesAndCannonsPage extends Component {
             ]
         };
         this.game = TreeAndCannonTutorialSituation.game;
-        console.log(this.game);
     }
+
+    componentDidMount() {
+        window.addEventListener('resize', this.handleResize);
+        if (document.addEventListener) {
+            document.addEventListener('webkitfullscreenchange', this.handleResize);
+            document.addEventListener('mozfullscreenchange', this.handleResize);
+            document.addEventListener('fullscreenchange', this.handleResize);
+            document.addEventListener('MSFullscreenChange', this.handleResize);
+        }
+    }
+
+    componentWillUnmount(){
+        window.removeEventListener('resize', this.handleResize);
+        if (document.removeEventListener) {
+            document.removeEventListener('webkitfullscreenchange', this.handleResize);
+            document.removeEventListener('mozfullscreenchange', this.handleResize);
+            document.removeEventListener('fullscreenchange', this.handleResize);
+            document.removeEventListener('MSFullscreenChange', this.handleResize);
+        }
+    }
+
+    handleResize = () => {
+        this.forceUpdate();
+    };
 
     buildCallback(building, celltype) {
         let description = getEntityDescriptor(building)
@@ -111,6 +134,22 @@ class TreesAndCannonsPage extends Component {
         this.forceUpdate();
     }
 
+    calculateMargin() {
+        let userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
+        let isPWA = window.matchMedia('(display-mode: fullscreen)').matches && /iPad|iPhone|iPod|android/.test(userAgent);
+        let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+        let buttonCount = !isPWA && !isiOS && !isFullscreen ? 3 : 2;
+        let paddingLeft = 5;
+        let buttonSize = 36;
+        if (window.innerWidth > 959) {
+            buttonSize = 48;
+        } else if (window.innerWidth > 599) {
+            buttonSize = 40;
+        }
+        return buttonCount * (paddingLeft + buttonSize);
+    }
+
     render() {
         let icon = <Fab
                     size="small"
@@ -133,7 +172,7 @@ class TreesAndCannonsPage extends Component {
                     <FastForward />
                  </Fab>
         } 
-        let pseudoActionbar = <div className="pseudo actionbar">{ icon }</div>
+        let pseudoActionbar = <div className="actionbar" style={{marginLeft: this.calculateMargin()}}>{ icon }</div>
         return (
             <div>
                 { this.state.showPseudoActionbar ? pseudoActionbar : null }

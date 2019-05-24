@@ -2,7 +2,6 @@
   z-index: 1;
   position: absolute;
   width: 100%;
-  bottom: 0;
 }
 
 .tutorial-headline {
@@ -39,10 +38,6 @@
 
 #tutorialGameStartSelection .fields > div {
   flex: 1 0 33.3%;
-}
-
-.pseudo.actionbar {
-  margin-left: 135px;
 }
 
 #tutorialGameStartSelection .choose {
@@ -213,17 +208,5 @@
 
   .tutorialAppbar > div {
     min-height: unset;
-  }
-}
-
-@media screen and (max-width: 600px) {
-  .pseudo.actionbar {
-    margin-left: 123px;
-  }
-}
-
-@media screen and (min-width: 960px) {
-  .pseudo.actionbar {
-    margin-left: 159px;
   }
 }
