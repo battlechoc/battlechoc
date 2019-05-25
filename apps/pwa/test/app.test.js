@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 const iPhone = puppeteer.devices['iPhone 6'];
+const timeout = 120000;
 
 describe(
   'browser', () => {
@@ -10,11 +11,11 @@ describe(
       await page.evaluateOnNewDocument(() => {
         Object.defineProperty(navigator, 'language', { get: () => 'en-US' });
       });
-    }, 10000);
+    }, timeout);
 
     beforeEach(async () => {
-        await page.goto('http://localhost:3000')
-    });
+        await page.goto('http://localhost:3000', {waitUntil: 'load', timeout: timeout})
+    }, timeout);
 
     afterAll(async () => {
       await page.close()
@@ -28,7 +29,7 @@ describe(
       await page.waitForSelector('.active.button .stackedIcon');
       await page.click('.active.button .stackedIcon');
       await page.waitForSelector('.factory.enabled.preview');
-    });
+    }, timeout);
 
     it('should start the tutorial', async () => {
       await page.waitForSelector('.titleMenu .menuButton:nth-child(2)');
@@ -37,7 +38,7 @@ describe(
       await expect(page).toMatchElement('h6', { text: 'Interactive battlechoc Tutorial' });
       await page.click('.active.button .stackedIcon');
       await expect(page).toMatchElement('h6', { text: 'The chocolate factory' });
-    }, 20000);
+    }, timeout);
   },
   10000
 )
@@ -51,11 +52,11 @@ describe('iPhone', () => {
     await page.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, 'platform', { get: () => 'iPhone' });
     });
-  }, 10000);
+  }, timeout);
 
   beforeEach(async () => {
       await page.goto('http://localhost:3000')
-  });
+  }, timeout);
 
   afterAll(async () => {
     await page.close()
@@ -65,5 +66,5 @@ describe('iPhone', () => {
     await page.waitForSelector('.titleMenu .menuButton:first-child');
     await page.screenshot({path: 'screenshot.png'});
     await page.waitForSelector('.iosMessage');
-  }, 20000);
+  }, timeout);
 });
