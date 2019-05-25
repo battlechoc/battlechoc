@@ -38,6 +38,7 @@
   ],
   "devDependencies": {
     "chalk": "^2.4.2",
+    "expect-puppeteer": "^4.1.1",
     "jest": "^24.8.0",
     "puppeteer": "^1.17.0",
     "rimraf": "^2.6.3"
