@@ -16,7 +16,6 @@ variables:
 build:
   stage: build
   script:
-    - npm install
     - apt-get update
     - apt-get install -y $PUPPETEER_DEPS
     - yarn install --pure-lockfile --cache-folder .yarn
