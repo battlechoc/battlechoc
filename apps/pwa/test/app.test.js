@@ -14,7 +14,7 @@ describe(
     }, timeout);
 
     beforeEach(async () => {
-        await page.goto('http://localhost:3000', {waitUntil: 'load', timeout: timeout})
+        await page.goto('http://localhost:5000', {waitUntil: 'load', timeout: timeout})
     }, timeout);
 
     afterAll(async () => {
@@ -55,7 +55,7 @@ describe('iPhone', () => {
   }, timeout);
 
   beforeEach(async () => {
-      await page.goto('http://localhost:3000')
+      await page.goto('http://localhost:5000')
   }, timeout);
 
   afterAll(async () => {

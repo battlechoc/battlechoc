@@ -10,9 +10,9 @@ const DIR = path.join(os.tmpdir(), 'jest_puppeteer_global_setup')
 module.exports = async function() {
   console.log(chalk.green('\nStart Development Server'))
   await setupDevServer({
-    command: 'yarn start',
-    launchTimeout: 120000,
-    port: 3000,
+    command: 'serve -s build',
+    launchTimeout: 20000,
+    port: 5000,
   });
   console.log(chalk.green('Setup Puppeteer'))
   const browser = await puppeteer.launch({
