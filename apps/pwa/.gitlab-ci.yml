@@ -1,12 +1,23 @@
-# Using this convenient image which uses Node.js as a base
-image: alekzonder/puppeteer:latest
-# This folder is cached between builds for faster runs
-# http://docs.gitlab.com/ce/ci/yaml/README.html#cache
+stages:
+ - build
+ - test
+
 cache:
   paths:
-  - node_modules/
-# The pipeline which should run our unit tests on every commit
-unit_tests:
+   - node_modules/ 
+
+build:
+  stage: build
+  image: node:carbon
+  when: manual
   script:
-    - npm install
-    - npm test
+   - npm install
+  tags:
+    - docker
+
+test:
+  stage: test
+  image: alekzonder/puppeteer:latest
+  script:
+   - npm install
+   - npm test
