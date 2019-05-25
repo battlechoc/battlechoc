@@ -1,14 +1,11 @@
 module.exports = {
   launch: {
-    dumpio: true,
     headless: true,
     args: [
       '— headless',
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
+      '--no-sandbox'
     ]
   },
-  browserContext: 'incognito',
   server: {
     command: 'yarn start',
     port: 3000,
