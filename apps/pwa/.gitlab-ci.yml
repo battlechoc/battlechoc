@@ -8,5 +8,5 @@ cache:
 # The pipeline which should run our unit tests on every commit
 unit_tests:
   script:
-    - yarn install
-    - yarn test
+    - npm install
+    - npm test
