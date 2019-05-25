@@ -3,6 +3,7 @@ module.exports = {
     dumpio: true,
     headless: true,
     args: [
+      '— headless',
       '--no-sandbox',
       '--disable-setuid-sandbox',
     ]
