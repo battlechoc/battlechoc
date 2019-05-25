@@ -1,8 +1,29 @@
-const puppeteer = require('puppeteer');
-const devices = require('puppeteer/DeviceDescriptors');
-const iPhone = devices['iPhone 6'];
+describe(
+  '/ (Home Page)',
+  () => {
+    let page
+    beforeAll(async () => {
+      page = await global.__BROWSER__.newPage()
+      await page.goto('https://google.com')
+    }, 10000)
 
-describe('browser', () => {
+    afterAll(async () => {
+      await page.close()
+    })
+
+    it('should load without error', async () => {
+      let text = await page.evaluate(() => document.body.textContent)
+      expect(text).toContain('google')
+    })
+  },
+  10000
+)
+
+//const puppeteer = require('puppeteer');
+//const devices = require('puppeteer/DeviceDescriptors');
+//const iPhone = devices['iPhone 6'];
+
+/*describe('browser', () => {
 	beforeAll(async () => {
         await page.evaluateOnNewDocument(() => {
 		    Object.defineProperty(navigator, "language", {
@@ -35,9 +56,9 @@ describe('browser', () => {
         await page.click('.active.button .stackedIcon');
         await expect(page).toMatchElement('h6', { text: 'The chocolate factory' });
     }, 20000);
-});
+});*/
 
-describe('iPhone', () => {
+/*describe('iPhone', () => {
 	beforeAll(async () => {
 		await page.emulate(iPhone);
         await page.evaluateOnNewDocument(() => {
@@ -58,4 +79,4 @@ describe('iPhone', () => {
     	await page.screenshot({path: 'screenshot.png'});
         await page.waitForSelector('.iosMessage');
     });
-});
+});*/
