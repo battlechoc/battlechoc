@@ -3,7 +3,8 @@ module.exports = {
     headless: true,
     args: [
       '— headless',
-      '--no-sandbox'
+      '--no-sandbox',
+      '--disable-setuid-sandbox'
     ]
   },
   server: {
