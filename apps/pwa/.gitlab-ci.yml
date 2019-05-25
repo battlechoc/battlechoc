@@ -16,6 +16,9 @@ build:
     - yarn install 
   script:
     - npm run build
+  artifacts:
+    paths:
+     - build/
 
 test:
   stage: test

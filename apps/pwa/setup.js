@@ -11,7 +11,7 @@ module.exports = async function() {
   console.log(chalk.green('\nStart Development Server'))
   await setupDevServer({
     command: 'serve -s build',
-    launchTimeout: 20000,
+    launchTimeout: 60000,
     port: 5000,
   });
   console.log(chalk.green('Setup Puppeteer'))
