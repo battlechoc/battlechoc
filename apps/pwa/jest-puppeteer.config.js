@@ -8,4 +8,9 @@ module.exports = {
     ]
   },
   browserContext: 'incognito',
+  server: {
+    command: 'yarn start',
+    port: 3000,
+    launchTimeout: 20000
+  }
 }
