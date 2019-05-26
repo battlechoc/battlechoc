@@ -36,5 +36,6 @@ test:
     - yarn test
   artifacts:
     expire_in: 2 days
+    when: always
     paths:
      - test/output/
