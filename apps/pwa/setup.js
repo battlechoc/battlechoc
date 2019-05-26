@@ -25,7 +25,11 @@ module.exports = async function() {
   		'--disable-setuid-sandbox', 
   		'--disable-dev-shm-usage',
   		"--proxy-server='direct://'", 
-  		'--proxy-bypass-list=*'
+  		'--proxy-bypass-list=*',
+  		'--disable-gpu',
+  		'--no-first-run',
+  		'--no-zygote',
+  		'--single-process' 
   	]
   });
   // This global is not available inside tests but only in global teardown

@@ -25,16 +25,16 @@ describe(
     }, timeout);
 
     beforeEach(async () => {
-        await page.goto('http://127.0.0.1:5000', {waitUntil: 'networkidle0', timeout: timeout})
+        await page.goto('http://127.0.0.1:5000', {waitUntil: 'networkidle0', timeout: 0})
     }, timeout);
 
     afterAll(async () => {
       await page.close()
     });
 
-    it('should load without error', async () => {
+    test('should load without error', async () => {
       await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test001.png' })
-      await page.waitForSelector('.titleMenu .menuButton:first-child');
+      await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
       await expect(page).toMatchElement('.titleMenu', { text: 'New Game' });
       await expect(page).toMatchElement('.titleMenu', { text: 'Tutorial' });
       await page.click('.titleMenu .menuButton:first-child');
@@ -43,9 +43,9 @@ describe(
       await page.waitForSelector('.factory.enabled.preview');
     }, timeout);
 
-    it('should start the tutorial', async () => {
+    test('should start the tutorial', async () => {
       await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test002.png' })
-      await page.waitForSelector('.titleMenu .menuButton:nth-child(2)');
+      await page.waitForSelector('.titleMenu .menuButton:nth-child(2)', {timeout: timeout});
       await page.click('.titleMenu .menuButton:nth-child(2)');
       await page.screenshot({path: 'screenshot.png'});
       await expect(page).toMatchElement('h6', { text: 'Interactive battlechoc Tutorial' });
@@ -68,17 +68,17 @@ describe('iPhone', () => {
   }, timeout);
 
   beforeEach(async () => {
-      await page.goto('http://127.0.0.1:5000', {waitUntil: 'networkidle0', timeout: timeout})
+      await page.goto('http://127.0.0.1:5000', {waitUntil: 'networkidle0', timeout: 0})
   }, timeout);
 
   afterAll(async () => {
     await page.close()
   });  
 
-  it('should show an info on iOS', async () => {
+  test('should show an info on iOS', async () => {
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test003.png' })
-    await page.waitForSelector('.titleMenu .menuButton:first-child');
-    await page.screenshot({path: 'screenshot.png'});
+    await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
+    await page.screenshot({path: 'test/output/screenshot_test004.png'});
     await page.waitForSelector('.iosMessage');
   }, timeout);
 }, timeout);
