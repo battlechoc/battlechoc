@@ -17,6 +17,7 @@ build:
   script:
     - npm run build
   artifacts:
+    expire_in: 20 mins
     paths:
      - build/
 
@@ -33,3 +34,7 @@ test:
     - curl localhost:5000
     - curl 127.0.0.1:5000
     - yarn test
+  artifacts:
+    expire_in: 2 days
+    paths:
+     - test/output/

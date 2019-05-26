@@ -53,6 +53,7 @@ describe(
     });
 
     it('should load without error', async () => {
+      await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test001.png' })
       await page.waitForSelector('.titleMenu .menuButton:first-child');
       await expect(page).toMatchElement('.titleMenu', { text: 'New Game' });
       await expect(page).toMatchElement('.titleMenu', { text: 'Tutorial' });
@@ -63,6 +64,7 @@ describe(
     }, timeout);
 
     it('should start the tutorial', async () => {
+      await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test002.png' })
       await page.waitForSelector('.titleMenu .menuButton:nth-child(2)');
       await page.click('.titleMenu .menuButton:nth-child(2)');
       await page.screenshot({path: 'screenshot.png'});
@@ -94,6 +96,7 @@ describe('iPhone', () => {
   });  
 
   it('should show an info on iOS', async () => {
+    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test003.png' })
     await page.waitForSelector('.titleMenu .menuButton:first-child');
     await page.screenshot({path: 'screenshot.png'});
     await page.waitForSelector('.iosMessage');
