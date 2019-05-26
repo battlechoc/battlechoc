@@ -11,32 +11,12 @@ describe(
       await page.setRequestInterception(true);
       console.log('SETUP LISTENER')
       page.on('request', request => {
-          console.log('request', request);
-          if (request.url() === 'http://127.0.0.1:5000') {
-              console.log('request made');
-          }
+          console.log('request for ' + request.url());
           request.continue();
       });
 
-      page.on('requestfailed', request => {   
-          console.log('requestfailed', request);
-          if (request.url().indexOf('summary') !== -1) {
-               console.log('request failed');
-          }
-      });
-
-      page.on('requestfinished', request => {     
-          console.log('requestfinished', request);
-          if (request.url().indexOf('summary') !== -1) {
-               console.log('request finished');
-          }
-      });
-
-      page.on('response', response => {
-        console.log('response', response);
-        if (response.url().indexOf('summary') !== -1) {
-          console.log('response!')
-        }
+      page.on('response', async response => {
+        console.log('response from ' + response.url() + ' with status ' + response.status() + ' and headers ' + JSON.stringify(response.headers()));
       });
 
       await page.evaluateOnNewDocument(() => {
