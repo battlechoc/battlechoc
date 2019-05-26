@@ -73,7 +73,7 @@ describe(
       await expect(page).toMatchElement('h6', { text: 'The chocolate factory' });
     }, timeout);
   },
-  10000
+  timeout
 )
 
 describe('iPhone', () => {
@@ -101,4 +101,4 @@ describe('iPhone', () => {
     await page.screenshot({path: 'screenshot.png'});
     await page.waitForSelector('.iosMessage');
   }, timeout);
-});
+}, timeout);
