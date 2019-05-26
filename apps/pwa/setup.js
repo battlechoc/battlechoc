@@ -16,7 +16,9 @@ module.exports = async function() {
   });*/
   console.log(chalk.green('Setup Puppeteer'))
   const browser = await puppeteer.launch({
-  	args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+  	headless: true, 
+  	devtools: false,
+  	args: ['--headless', '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
   });
   // This global is not available inside tests but only in global teardown
   global.__BROWSER_GLOBAL__ = browser
