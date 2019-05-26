@@ -25,7 +25,7 @@ describe(
     }, timeout);
 
     beforeEach(async () => {
-        await page.goto('http://127.0.0.1:5000', {waitUntil: 'load', timeout: timeout})
+        await page.goto('http://127.0.0.1:5000', {waitUntil: 'networkidle0', timeout: timeout})
     }, timeout);
 
     afterAll(async () => {
@@ -68,7 +68,7 @@ describe('iPhone', () => {
   }, timeout);
 
   beforeEach(async () => {
-      await page.goto('http://127.0.0.1:5000')
+      await page.goto('http://127.0.0.1:5000', {waitUntil: 'networkidle0', timeout: timeout})
   }, timeout);
 
   afterAll(async () => {
