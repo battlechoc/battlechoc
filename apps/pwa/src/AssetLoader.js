@@ -38,8 +38,6 @@ class AssetLoader {
                 TOOLBAR_ICON_PALETTE: { filename: 'toolbar_icon_palette.png' },
                 ATTACKS_PER_TUN: { filename: 'attacksPerTurn.png '},
                 CREAM_PREVIEW: { filename: 'cream_preview.png' },
-                FOG_BACKGROUND: { filename: 'fog_background.png' },
-                FOG_FOREGROUND: { filename: 'fog_foreground.png' },
                 BUILDINGS_PER_TURN: { filename: 'buildingsPerTurn.png' },
                 SPY_ATTACKS_PER_TURN: { filename: 'spyAttacksPerTurn.png '},
                 BUNNY_CAUGHT: { filename: 'bunnyCaught.png' },

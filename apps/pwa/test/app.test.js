@@ -32,7 +32,11 @@ describe(
       await page.close()
     });
 
-    test('should load without error', async () => {
+    test('should show the titlepage without error', async () => {
+      await page.waitForSelector('.logo img', {timeout: timeout});
+    }, timeout);
+
+    test('should start the game without error', async () => {
       await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test001.png' })
       await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
       await expect(page).toMatchElement('.titleMenu', { text: 'New Game' });
