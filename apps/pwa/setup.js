@@ -16,7 +16,7 @@ module.exports = async function() {
   });*/
   console.log(chalk.green('Setup Puppeteer'))
   const browser = await puppeteer.launch({
-  	headless: true, 
+  	headless: false, 
   	devtools: false,
   	args: [
   		'--disable-web-security', 

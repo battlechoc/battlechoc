@@ -1,6 +1,6 @@
 const puppeteer = require('puppeteer');
 const iPhone = puppeteer.devices['iPhone 6'];
-const timeout = 360000;
+const timeout = 100000;
 
 describe(
   'browser', () => {
@@ -15,7 +15,7 @@ describe(
 
     beforeEach(async () => {
         console.log('GOTO PAGE')
-        await page.goto('http://127.0.0.1:5000', { waitUntil: 'load', timeout: 0 })
+        await page.goto('http://127.0.0.1:5000', { waitUntil: 'networkidle2', timeout: 0 })
     }, timeout);
 
     afterAll(async () => {
@@ -31,7 +31,8 @@ describe(
       console.log('START TEST 2');
       await page.waitFor(10000);
       console.log('WAIT 10 SEC BEFORE SCREENSHOT');
-      await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test001.png' })
+      await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test001.png' });
+      console.log('FINISHED SCREENSHOT');
       await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
       await expect(page).toMatchElement('.titleMenu', { text: 'New Game' });
       await expect(page).toMatchElement('.titleMenu', { text: 'Tutorial' });
@@ -42,6 +43,7 @@ describe(
     }, timeout);
 
     test('should start the tutorial', async () => {
+      console.log('START TEST 3');
       await page.waitForSelector('.titleMenu .menuButton:nth-child(2)', {timeout: timeout});
       await page.click('.titleMenu .menuButton:nth-child(2)');
       await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test002.png' })
@@ -65,7 +67,7 @@ describe('iPhone', () => {
   }, timeout);
 
   beforeEach(async () => {
-      await page.goto('http://127.0.0.1:5000', {waitUntil: 'networkidle0', timeout: 0})
+      await page.goto('http://127.0.0.1:5000', {waitUntil: 'networkidle2', timeout: 0})
   }, timeout);
 
   afterAll(async () => {
@@ -73,6 +75,7 @@ describe('iPhone', () => {
   });  
 
   test('should show an info on iOS', async () => {
+    console.log('START TEST 4');
     await page.waitForSelector('.iosMessage', {timeout: timeout});
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test003.png' })
   }, timeout);
