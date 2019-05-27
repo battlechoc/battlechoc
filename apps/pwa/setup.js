@@ -16,20 +16,12 @@ module.exports = async function() {
   });*/
   console.log(chalk.green('Setup Puppeteer'))
   const browser = await puppeteer.launch({
-  	headless: false, 
-  	devtools: false,
+  	dumpio: true,
+  	headless: true,
   	args: [
-  		'--disable-web-security', 
-  		'--headless', 
   		'--no-sandbox', 
   		'--disable-setuid-sandbox', 
   		'--disable-dev-shm-usage',
-  		"--proxy-server='direct://'", 
-  		'--proxy-bypass-list=*',
-  		'--disable-gpu',
-  		'--no-first-run',
-  		'--no-zygote',
-  		'--single-process' 
   	]
   });
   // This global is not available inside tests but only in global teardown
