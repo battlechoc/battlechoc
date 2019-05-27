@@ -8,24 +8,14 @@ describe(
 
     beforeAll(async () => {
       page = await global.__BROWSER__.newPage();
-      await page.setRequestInterception(true);
-      console.log('SETUP LISTENER')
-      page.on('request', request => {
-          console.log('request for ' + request.url());
-          request.continue();
-      });
-
-      page.on('response', async response => {
-        console.log('response from ' + response.url() + ' with status ' + response.status() + ' and headers ' + JSON.stringify(response.headers()));
-      });
-
       await page.evaluateOnNewDocument(() => {
         Object.defineProperty(navigator, 'language', { get: () => 'en-US' });
       });
     }, timeout);
 
     beforeEach(async () => {
-        await page.goto('http://127.0.0.1:5000', {waitUntil: 'networkidle0', timeout: 0})
+        console.log('GOTO PAGE')
+        await page.goto('http://127.0.0.1:5000', { waitUntil: 'load', timeout: 0 })
     }, timeout);
 
     afterAll(async () => {
@@ -33,10 +23,14 @@ describe(
     });
 
     test('should show the titlepage without error', async () => {
+      console.log('START TEST 1');
       await page.waitForSelector('.logo img', {timeout: timeout});
     }, timeout);
 
     test('should start the game without error', async () => {
+      console.log('START TEST 2');
+      await page.waitFor(10000);
+      console.log('WAIT 10 SEC BEFORE SCREENSHOT');
       await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test001.png' })
       await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
       await expect(page).toMatchElement('.titleMenu', { text: 'New Game' });
@@ -48,10 +42,9 @@ describe(
     }, timeout);
 
     test('should start the tutorial', async () => {
-      await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test002.png' })
       await page.waitForSelector('.titleMenu .menuButton:nth-child(2)', {timeout: timeout});
       await page.click('.titleMenu .menuButton:nth-child(2)');
-      await page.screenshot({path: 'screenshot.png'});
+      await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test002.png' })
       await expect(page).toMatchElement('h6', { text: 'Interactive battlechoc Tutorial' });
       await page.click('.active.button .stackedIcon');
       await expect(page).toMatchElement('h6', { text: 'The chocolate factory' });
@@ -80,9 +73,7 @@ describe('iPhone', () => {
   });  
 
   test('should show an info on iOS', async () => {
+    await page.waitForSelector('.iosMessage', {timeout: timeout});
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test003.png' })
-    await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
-    await page.screenshot({path: 'test/output/screenshot_test004.png'});
-    await page.waitForSelector('.iosMessage');
   }, timeout);
 }, timeout);

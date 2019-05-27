@@ -36,10 +36,10 @@ class AssetLoader {
                 CACAO_NO_BACKGROUND: { filename: 'cacao_no_background.png' },
                 CACAO_PER_TURN: { filename: 'cacaoPerTurn.png' },
                 TOOLBAR_ICON_PALETTE: { filename: 'toolbar_icon_palette.png' },
-                ATTACKS_PER_TUN: { filename: 'attacksPerTurn.png '},
+                ATTACKS_PER_TUN: { filename: 'attacksPerTurn.png' },
                 CREAM_PREVIEW: { filename: 'cream_preview.png' },
                 BUILDINGS_PER_TURN: { filename: 'buildingsPerTurn.png' },
-                SPY_ATTACKS_PER_TURN: { filename: 'spyAttacksPerTurn.png '},
+                SPY_ATTACKS_PER_TURN: { filename: 'spyAttacksPerTurn.png' },
                 BUNNY_CAUGHT: { filename: 'bunnyCaught.png' },
                 LOADING: { filename: '../animations/loading.gif' }
             }
