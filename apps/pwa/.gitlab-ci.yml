@@ -1,7 +1,7 @@
 image: buildkite/puppeteer
 
 stages:
-# - build
+ - build
  - test
 
 cache:
