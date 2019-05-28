@@ -9,19 +9,19 @@ cache:
    - node_modules/
    - .yarn
 
-#build:
-#  stage: build
-#  variables:
-#    CI: "true"
-#  before_script: 
-#    - yarn config set cache-folder .yarn
-#    - yarn install 
-#  script:
-#    - npm run build
-#  artifacts:
-#    expire_in: 20 mins
-#    paths:
-#     - build/
+build:
+  stage: build
+  variables:
+    CI: "true"
+  before_script: 
+    - yarn config set cache-folder .yarn
+    - yarn install 
+  script:
+    - yarn build
+  artifacts:
+    expire_in: 20 mins
+    paths:
+     - build/
 
 test:
   stage: test
