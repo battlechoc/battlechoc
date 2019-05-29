@@ -15,7 +15,7 @@ describe(
 
     beforeEach(async () => {
         console.log('GOTO PAGE')
-        await page.goto('http://127.0.0.1:5000', { waitUntil: 'networkidle2', timeout: 0 })
+        await page.goto('http://localhost:5000', { waitUntil: 'networkidle2', timeout: 0 })
     }, timeout);
 
     afterAll(async () => {
@@ -67,7 +67,7 @@ describe('iPhone', () => {
   }, timeout);
 
   beforeEach(async () => {
-      await page.goto('http://127.0.0.1:5000', {waitUntil: 'networkidle2', timeout: 0})
+      await page.goto('http://localhost:5000', {waitUntil: 'networkidle2', timeout: 0})
   }, timeout);
 
   afterAll(async () => {
