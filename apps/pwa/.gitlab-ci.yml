@@ -30,12 +30,11 @@ test:
     CI: "true"
   before_script: 
     - yarn config set cache-folder .yarn
-#    - yarn global add serve
-#    - ls
-#    - ls build/static/js/
-#    - nohup serve -s build/ &
     - yarn install
-    - nohup yarn start &
+    - yarn global add serve
+    - ls
+    - ls build/static/js/
+    - nohup serve -s build/ &
   script:
     - yarn test
   artifacts:
