@@ -31,7 +31,9 @@ test:
     - yarn config set cache-folder .yarn
     - yarn install
     - yarn global add serve
-    - nohup serve -s build &
+    - ls build/static/js/
+    - cat build/static/js/main.*.chunk.js
+    - nohup serve -s build/ &
   script:
     - yarn test
   artifacts:
