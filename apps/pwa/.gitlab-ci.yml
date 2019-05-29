@@ -41,5 +41,5 @@ test:
     expire_in: 2 days
     when: always
     paths:
-#     - build/
+     - build/
      - test/output/
