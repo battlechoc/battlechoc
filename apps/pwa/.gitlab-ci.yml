@@ -1,7 +1,7 @@
 image: buildkite/puppeteer
 
 stages:
- - build
+# - build
  - test
 
 cache:
@@ -9,20 +9,20 @@ cache:
    - node_modules/
    - .yarn
 
-build:
-  stage: build
-  variables:
-    CI: "true"
-  before_script: 
-    - yarn config set cache-folder .yarn
-    - yarn install 
-  script:
-    - yarn build
-  artifacts:
-    expire_in: 20 mins
-    paths:
-     - build/
-     - node_modules/
+#build:
+#  stage: build
+#  variables:
+#    CI: "true"
+#  before_script: 
+#    - yarn config set cache-folder .yarn
+#    - yarn install 
+#  script:
+#    - yarn build
+#  artifacts:
+#    expire_in: 20 mins
+#    paths:
+#     - build/
+#     - node_modules/
 
 test:
   stage: test
@@ -30,15 +30,17 @@ test:
     CI: "true"
   before_script: 
     - yarn config set cache-folder .yarn
-    - yarn global add serve
-    - ls
-    - ls build/static/js/
-    - nohup serve -s build/ &
+#    - yarn global add serve
+#    - ls
+#    - ls build/static/js/
+#    - nohup serve -s build/ &
+    - yarn install
+    - nohup yarn start &
   script:
     - yarn test
   artifacts:
     expire_in: 2 days
     when: always
     paths:
-     - build/
+#     - build/
      - test/output/
