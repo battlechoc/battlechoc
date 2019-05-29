@@ -1,0 +1,26 @@
+{
+  "short_name": "battlechoc",
+  "name": "battlechoc",
+  "icons": [
+    {
+      "src": "icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "./index.html?app_runs_as=pwa&app_version=1",
+  "display": "fullscreen",
+  "orientation":  "landscape",
+  "theme_color": "#457B82",
+  "background_color": "#ffffff"
+}
