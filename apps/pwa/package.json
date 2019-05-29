@@ -24,7 +24,6 @@
     "eject": "react-scripts eject",
     "analyze": "source-map-explorer 'build/static/js/*.js'"
   },
-  "proxy": "http://localhost:5000",
   "eslintConfig": {
     "extends": "react-app"
   },
