@@ -22,6 +22,7 @@ build:
     expire_in: 20 mins
     paths:
      - build/
+     - node_modules/
 
 test:
   stage: test
@@ -29,12 +30,9 @@ test:
     CI: "true"
   before_script: 
     - yarn config set cache-folder .yarn
-    - yarn install
     - yarn global add serve
+    - ls
     - ls build/static/js/
-    - head build/static/js/main.*.chunk.js
-    - ls build/static/js/
-    - head build/static/js/2.*.chunk.js
     - nohup serve -s build/ &
   script:
     - yarn test
@@ -42,4 +40,5 @@ test:
     expire_in: 2 days
     when: always
     paths:
+     - build/
      - test/output/
