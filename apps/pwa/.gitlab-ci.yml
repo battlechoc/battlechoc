@@ -32,8 +32,7 @@ test:
     - yarn config set cache-folder .yarn
     - yarn install
     - yarn global add serve
-    - ls
-    - ls build/static/js/
+    - ls build/ -al
     - nohup serve -s build/ &
   script:
     - yarn test
