@@ -22,10 +22,10 @@ describe('browser', () => {
 
     test('should show the titlepage without error', async () => {
       await page.waitForSelector('.logo img', { timeout: timeout });
+      await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test000.png' });
     }, timeout);
 
     test('should start the game without error', async () => {
-      await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test001.png' });
       await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
       await expect(page).toMatchElement('.titleMenu', { text: 'New Game' });
       await expect(page).toMatchElement('.titleMenu', { text: 'Tutorial' });
@@ -33,15 +33,16 @@ describe('browser', () => {
       await page.waitForSelector('.active.button .stackedIcon');
       await page.click('.active.button .stackedIcon');
       await page.waitForSelector('.factory.enabled.preview');
+      await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test001.png' });
     }, timeout);
 
     test('should start the tutorial', async () => {
       await page.waitForSelector('.titleMenu .menuButton:nth-child(2)', {timeout: timeout});
       await page.click('.titleMenu .menuButton:nth-child(2)');
-      await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test002.png' })
       await expect(page).toMatchElement('h6', { text: 'Interactive battlechoc Tutorial' });
       await page.click('.active.button .stackedIcon');
       await expect(page).toMatchElement('h6', { text: 'The chocolate factory' });
+      await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test002.png' })
     }, timeout);
   },
   timeout
@@ -72,7 +73,6 @@ describe('iPhone', () => {
   }, timeout);
 
   test('should move to opponent turn and back after building the factory', async () => {
-    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test001.png' });
     await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
     await expect(page).toMatchElement('.titleMenu', { text: 'New Game' });
     await expect(page).toMatchElement('.titleMenu', { text: 'Tutorial' });
@@ -80,9 +80,11 @@ describe('iPhone', () => {
     await page.waitForSelector('.active.button .stackedIcon');
     await page.click('.active.button .stackedIcon');
     await page.waitForSelector('.factory.enabled.preview');
-    await page.waitFor(3000);
-    await page.touchscreen.tap(324, 327);
+    await page.waitFor(5000);
+    await page.mouse.click(324, 327);
     await page.waitForSelector('img.loadingAnimation', {timeout: timeout});
     await page.waitForSelector('.cacaotree.enabled.preview');
+    await page.waitFor(3000);
+    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004.png' });
   }, timeout);
 }, timeout);
