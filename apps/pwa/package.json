@@ -19,8 +19,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "jest -c test/jest.config.js",
-    "live-testing": "jest -c test/jest.config.js --watch",
+    "test": "jest -c test/jest.config.js --port=5000 --headless=true",
+    "live-testing": "jest -c test/jest.config.js --port=3000 --headless=false",
     "eject": "react-scripts eject",
     "analyze": "source-map-explorer 'build/static/js/*.js'"
   },

@@ -19,6 +19,7 @@ class PuppeteerEnvironment extends NodeEnvironment {
     if (!wsEndpoint) {
       throw new Error('wsEndpoint not found')
     }
+    this.global.__PORT__ = Number(process.argv[4].split('=')[1])
     this.global.__BROWSER__ = await puppeteer.connect({
       browserWSEndpoint: wsEndpoint,
     })

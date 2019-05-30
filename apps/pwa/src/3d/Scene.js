@@ -112,6 +112,9 @@ class Scene extends Component {
         this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
         this.raycaster.setFromCamera(this.mouse, this.camera);
 
+        console.log(event.clientX);
+        console.log(event.clientY);
+
         if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
             this.playerFieldClick(event);
             this.opponentFieldClick(event);

@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-const iPhone = puppeteer.devices['iPhone 6'];
+const iPhone = puppeteer.devices['iPhone 6 landscape'];
 const timeout = 100000;
 
 describe('browser', () => {
@@ -13,7 +13,7 @@ describe('browser', () => {
     }, timeout);
 
     beforeEach(async () => {
-        await page.goto('http://localhost:5000', { waitUntil: 'networkidle2', timeout: 0 })
+        await page.goto('http://localhost:' + global.__PORT__, { waitUntil: 'networkidle2', timeout: 0 })
     }, timeout);
 
     afterAll(async () => {
@@ -59,7 +59,7 @@ describe('iPhone', () => {
   }, timeout);
 
   beforeEach(async () => {
-      await page.goto('http://localhost:5000', {waitUntil: 'networkidle2', timeout: 0})
+      await page.goto('http://localhost:' + global.__PORT__, {waitUntil: 'networkidle2', timeout: 0})
   }, timeout);
 
   afterAll(async () => {
@@ -69,5 +69,20 @@ describe('iPhone', () => {
   test('should show an info on iOS', async () => {
     await page.waitForSelector('.iosMessage', {timeout: timeout});
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test003.png' })
+  }, timeout);
+
+  test('should move to opponent turn and back after building the factory', async () => {
+    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test001.png' });
+    await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
+    await expect(page).toMatchElement('.titleMenu', { text: 'New Game' });
+    await expect(page).toMatchElement('.titleMenu', { text: 'Tutorial' });
+    await page.click('.titleMenu .menuButton:first-child');
+    await page.waitForSelector('.active.button .stackedIcon');
+    await page.click('.active.button .stackedIcon');
+    await page.waitForSelector('.factory.enabled.preview');
+    await page.waitFor(3000);
+    await page.touchscreen.tap(324, 327);
+    await page.waitForSelector('img.loadingAnimation', {timeout: timeout});
+    await page.waitForSelector('.cacaotree.enabled.preview');
   }, timeout);
 }, timeout);

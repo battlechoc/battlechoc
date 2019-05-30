@@ -11,7 +11,7 @@ module.exports = async function() {
   console.log(chalk.green('Setup Puppeteer'))
   const browser = await puppeteer.launch({
   	dumpio: true,
-  	headless: true,
+  	headless: process.argv[5].split('=') === 'true',
   	args: [
   		'--no-sandbox', 
   		'--disable-setuid-sandbox', 
