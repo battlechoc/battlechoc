@@ -34,7 +34,7 @@ test:
     - yarn global add serve
     - chmod -R 775 build
     - ls build/ -al
-    - ls build/static/js/ -al
+    - ls build/models -al
     - nohup serve -s build/ &
   script:
     - ls build/ -al
