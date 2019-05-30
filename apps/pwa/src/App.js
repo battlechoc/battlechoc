@@ -20,6 +20,9 @@ import Hud from './ui/Hud';
 class App extends Component {
     constructor(props) {
         super(props);
+
+        console.log(window.location.search);
+
         let multiplayerSessionId = window.location.search.split("sessionid=")[1];
         this.state = { 
             multiplayerLandingPage:  typeof multiplayerSessionId !== 'undefined',

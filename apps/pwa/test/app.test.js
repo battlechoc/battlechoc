@@ -81,10 +81,13 @@ describe('iPhone', () => {
     await page.click('.active.button .stackedIcon');
     await page.waitForSelector('.factory.enabled.preview');
     await page.waitFor(5000);
+    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_0.png' });
     await page.mouse.click(324, 327);
+    await page.waitFor(3000);
+    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_1.png' });
     await page.waitForSelector('img.loadingAnimation', {timeout: timeout});
     await page.waitForSelector('.cacaotree.enabled.preview');
     await page.waitFor(3000);
-    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004.png' });
+    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2.png' });
   }, timeout);
 }, timeout);
