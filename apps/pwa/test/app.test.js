@@ -80,7 +80,7 @@ describe('iPhone', () => {
     await page.waitForSelector('.active.button .stackedIcon');
     await page.click('.active.button .stackedIcon');
     await page.waitForSelector('.factory.enabled.preview');
-    await page.waitFor(5000);
+    await page.waitFor(10000);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_0.png' });
     await page.mouse.click(324, 327);
     await page.waitFor(3000);

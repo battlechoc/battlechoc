@@ -14,26 +14,23 @@ import { GameStateTypes } from './gameplay/GameplayReducer';
 import { BattlechocError } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import { gameplayLog } from './gameplay/GamePlayLogger';
+import BuildFactoryTestSituation from './situations/tests/BuildFactoryTest';
 import Scene from './3d/Scene';
 import Hud from './ui/Hud';
 
 class App extends Component {
     constructor(props) {
         super(props);
-
-        console.log(window.location.search);
-
-        let multiplayerSessionId = window.location.search.split("sessionid=")[1];
-        this.state = { 
-            multiplayerLandingPage:  typeof multiplayerSessionId !== 'undefined',
-            multiplayerSessionId: multiplayerSessionId,
-        }
-        let query = window.location.search.substring(1)
-        if(query.length) {
-           if(typeof window.history !== 'undefined' && typeof window.history.pushState !== 'undefined') {
+        let params = {};
+        if (window.location.search.length > 0) {
+            window.location.search.substr(1).split('&').forEach(param => {
+                params[param.split('=')[0]] = param.split('=')[1];
+            });
+            if(typeof window.history !== 'undefined' && typeof window.history.pushState !== 'undefined') {
                 window.history.pushState({}, document.title, window.location.pathname);
-           }
+            }
         }
+        this.state = { params: params };
     }
 
     componentWillMount() {
@@ -76,6 +73,28 @@ class App extends Component {
     }
 
     componentWillReceiveProps(nextProps) {
+        if (!this.props.assetsReady && nextProps.assetsReady) {
+            if (this.state.params.situation === 'd41d8cd98f00b204e9800998ecf8427e') {
+                let situation = BuildFactoryTestSituation.game;
+                this.opponent = new Augustus({
+                    chooseStart: this.props.chooseStart,
+                    chooseField: this.props.chooseField,
+                    build: this.props.build,
+                    attack: this.props.attack,
+                    finishTurn: this.props.finishTurn,
+                    finishBuildPhase: this.props.finishBuildPhase
+                });
+                this.props.resumeGame(situation).then(() => {
+                    console.log(this.props.game)
+                    this.opponent.player = situation.players[1];
+                    this.opponent.connectGamestate(() => this.props.game);
+                    this.setState({ params: { ...this.state.params, situation: undefined }}, () => {
+                        this.scene.startGame(true, this.props.game);
+                    });
+                });
+            }
+        }
+
         multiplayer.refreshGameState(nextProps.game);
         const gameTransition = getGameTransition(this.props.game, nextProps.game);
 
@@ -192,7 +211,7 @@ class App extends Component {
     }
 
     joinMultiplayerGame = () => {
-        multiplayer.joinGameSession(this.state.multiplayerSessionId, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField })
+        multiplayer.joinGameSession(this.state.params.sessionid, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField })
         .then(session => {    
             console.dir(session);
             this.prepareNewGame(true, true, session.game);
@@ -232,7 +251,6 @@ class App extends Component {
                     finishTurn: this.props.finishTurn,
                     finishBuildPhase: this.props.finishBuildPhase
                 });
-
                 if (typeof resumeableGame !== 'undefined' && resumeGame) {
                     this.props.resumeGame(resumeableGame).then(() => {
                         this.opponent.player = resumeableGame.players[1];
@@ -264,12 +282,10 @@ class App extends Component {
     endGame() {
         setTimeout(() => {
             Jukebox.stopMusic();
-            this.setState({
-                multiplayerLandingPage: undefined,
-                multiplayerSessionId: undefined
-            })
+            this.setState({ params: { ...this.state.params, sessionid: undefined }});
             this.props.finishGame();
             multiplayer.reset();
+            this.forceUpdate();
         }, 1000);
     }
 
@@ -279,7 +295,7 @@ class App extends Component {
                 {this.props.assetsReady ? <div id="clouds"></div> : null}
                 {typeof this.props.game !== 'undefined' ? <Scene onRef={scene => this.scene = scene} /> : null}
                 <Hud prepareNewGameCallback={this.prepareNewGame}
-                     multiplayerLandingPage={this.state.multiplayerLandingPage}
+                     multiplayerLandingPage={typeof this.state.params.sessionid !== 'undefined'}
                      joinMultiplayerGame={this.joinMultiplayerGame}
                      endGame={() => this.endGame()}
                      onRef={hud => this.hud = hud} />

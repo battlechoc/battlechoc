@@ -89,6 +89,8 @@ class BuildingPalette extends Component {
             return canBuild && hasFactory;
         } else if (building.type === EntityType.FRUIT_CANNON) {
             const playerField = game.players[this.getPlayerIndex()].fieldIndex;
+            console.log(game.board.fields);
+            console.log(playerField);
             const hasCannons = game.board.fields[playerField].grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length > 0;
             return canBuild && hasCannons;
         } else {

@@ -18,7 +18,8 @@ export default class Situation {
 					players: players,
 		            currentPlayerIndex: 0,
 		            board: Board.generate({rows: this.boardSize, cols: this.boardSize}, 42),
-		            isRunning: true
+		            isRunning: true,
+		            winners: []
 				}
 			},
 			ui: {
