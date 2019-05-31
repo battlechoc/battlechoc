@@ -89,8 +89,6 @@ class BuildingPalette extends Component {
             return canBuild && hasFactory;
         } else if (building.type === EntityType.FRUIT_CANNON) {
             const playerField = game.players[this.getPlayerIndex()].fieldIndex;
-            console.log(game.board.fields);
-            console.log(playerField);
             const hasCannons = game.board.fields[playerField].grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length > 0;
             return canBuild && hasCannons;
         } else {
@@ -115,6 +113,7 @@ class BuildingPalette extends Component {
     render() {
         const game = typeof this.props.pseudoGame !== 'undefined' ? this.props.pseudoGame.gameplay.game : this.props.game;
         const selectedBuilding = typeof this.props.pseudoGame !== 'undefined' ? this.props.pseudoGame.ui.selectedBuilding : this.props.selectedBuilding;
+        console.log(selectedBuilding);
         if (this.props.isVisible) {
             return (
                 <div id="buildingSelection">

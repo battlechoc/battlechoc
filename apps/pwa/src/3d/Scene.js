@@ -107,6 +107,7 @@ class Scene extends Component {
     }
 
     onClick = event => {
+        // console.log(event.clientX, event.clientY);
         // TODO: implement new stats with console.log(this.renderer.info.render.calls)
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
@@ -259,7 +260,7 @@ class Scene extends Component {
         }
     }
 
-    startGame = (createUnits, game) => {
+    startGame = (createUnits, game, overrideUiState=true) => {
         const playerFieldIndex = game.players[multiplayer.localPlayerIndex].fieldIndex;
         const opponentFieldIndex = game.players[1 - multiplayer.localPlayerIndex].fieldIndex;
         this.lookAtOpponent = multiplayer.isLocalPlayer(game.currentPlayerIndex) === false;
@@ -294,7 +295,9 @@ class Scene extends Component {
         };
 
         if (createUnits === true) {
-            this.props.deselectBuildings();
+            if (overrideUiState) {
+                this.props.deselectBuildings();
+            }   
             this.lookAtOpponent = (multiplayer.isLocalPlayer(game.currentPlayerIndex) === false || game.state === GameStateTypes.ATTACK_PHASE);
             game.board.fields[game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => !cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
                 .forEach(cell => create3dEntities(cell, this.playerGameField));

@@ -44,6 +44,11 @@ const uiReducer = createReducer({
         },
         [UiActions.joinedMultiplayer]: (state, action) => {
             state.multiplayerWaiting = undefined;
+        },
+        [UiActions.loadUiState]: (state, action) => {
+            for (let property in action.payload) {
+                state[property] = action.payload[property];
+            }
         } 
 });
 

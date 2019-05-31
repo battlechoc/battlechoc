@@ -7,7 +7,7 @@ import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { changeLanguage, selectAttack, gameResumeable } from './ui/UiActions';
+import { changeLanguage, selectAttack, gameResumeable, loadUiState } from './ui/UiActions';
 import { Augustus } from './gameplay/Player';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 import { GameStateTypes } from './gameplay/GameplayReducer';
@@ -75,7 +75,6 @@ class App extends Component {
     componentWillReceiveProps(nextProps) {
         if (!this.props.assetsReady && nextProps.assetsReady) {
             if (this.state.params.situation === 'd41d8cd98f00b204e9800998ecf8427e') {
-                let situation = BuildFactoryTestSituation.game;
                 this.opponent = new Augustus({
                     chooseStart: this.props.chooseStart,
                     chooseField: this.props.chooseField,
@@ -84,12 +83,13 @@ class App extends Component {
                     finishTurn: this.props.finishTurn,
                     finishBuildPhase: this.props.finishBuildPhase
                 });
-                this.props.resumeGame(situation).then(() => {
-                    console.log(this.props.game)
-                    this.opponent.player = situation.players[1];
+                this.props.resumeGame(BuildFactoryTestSituation.gameplay).then(() => {
+                    this.opponent.player = this.props.game.players[1];
                     this.opponent.connectGamestate(() => this.props.game);
-                    this.setState({ params: { ...this.state.params, situation: undefined }}, () => {
-                        this.scene.startGame(true, this.props.game);
+                    this.props.loadUiState(BuildFactoryTestSituation.ui).then(() => {
+                        this.setState({ params: { ...this.state.params, situation: undefined }}, () => {
+                            this.scene.startGame(true, this.props.game, false);
+                        });
                     });
                 });
             }
@@ -308,7 +308,8 @@ const mapStateToProps = state => ({
     game: state.gameplay.game,
     language: state.ui.language,
     assetsReady: state.ui.assetsReady,
-    selectedBuilding: state.ui.selectedBuilding
+    selectedBuilding: state.ui.selectedBuilding,
+    ui: state.ui
 });
 
 const mapDispatchToProps = {
@@ -326,7 +327,8 @@ const mapDispatchToProps = {
     finishGame,
     changeLanguage,
     selectAttack,
-    gameResumeable
+    gameResumeable,
+    loadUiState
 };
 
 const AppContainer = connect(
