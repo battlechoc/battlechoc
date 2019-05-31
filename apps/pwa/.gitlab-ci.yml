@@ -45,6 +45,6 @@ test:
 deploy:
   stage: deploy
   script:
+    - npm install -g firebase-tools
     - firebase use battlechoc --token $FIREBASE_TOKEN
     - firebase deploy
-
