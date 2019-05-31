@@ -3,6 +3,7 @@ image: buildkite/puppeteer
 stages:
  - build
  - test
+ - deploy
 
 cache:
   paths:
@@ -40,3 +41,10 @@ test:
     when: always
     paths:
      - test/output/
+
+deploy:
+  stage: deploy
+  script:
+    - firebase use battlechoc --token $FIREBASE_TOKEN
+    - firebase deploy
+
