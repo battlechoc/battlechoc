@@ -75,7 +75,7 @@ describe('iPhone', () => {
     await page.waitFor(3000);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test005.png' });
     await page.mouse.click(364, 309);
-    await expect(page).toMatchElement('p', {text: '0/2', timeout: timout});
+    await expect(page).toMatchElement('p', {text: '0/2', timeout: timeout});
   }, timeout);
 
   test('should build a factory on a white field', async () => {
@@ -84,7 +84,7 @@ describe('iPhone', () => {
     await page.waitFor(3000);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test006.png' });
     await page.mouse.click(399, 282);
-    await expect(page).toMatchElement('p', {text: '0/2', timeout: timout});
+    await expect(page).toMatchElement('p', {text: '0/2', timeout: timeout});
   }, timeout);
 
   test('should move to opponent turn and back after building the factory', async () => {
@@ -93,12 +93,12 @@ describe('iPhone', () => {
     await page.waitFor(3000);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_0.png' });
     await page.mouse.click(324, 327);
-    await expect(page).toMatchElement('p', {text: '0/3', timeout: timout});
+    await expect(page).toMatchElement('p', {text: '0/3', timeout: timeout});
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_1.png' });
     await page.waitForSelector('img.loadingAnimation', {timeout: timeout});
     await page.waitForSelector('.cacaotree.enabled.preview');
     await page.waitFor(3000);
-    await expect(page).toMatchElement('p', {text: '3/3', timeout: timout});
+    await expect(page).toMatchElement('p', {text: '3/3', timeout: timeout});
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2.png' });
   }, timeout);
 }, timeout);
