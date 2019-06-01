@@ -50,33 +50,6 @@ class Building {
 		}
 	}
 
-	explode() {
-		let position = this._model.position;
-		const assets = AssetLoader.assets.models;
-		if (this.entityType === EntityType.CACAOTREE) {
-			this._model = assets.CACAOTREE_EXPLOSION.model.scene.clone();
-		} else if (this.entityType === EntityType.FACTORY) {
-			this._model = assets.FACTORY_EXPLOSION.model.scene.clone();
-		} else if (this.entityType === EntityType.FACTORY_EXTENSION) {
-			this._model = assets.FACTORY_EXTENSION_EXPLOSION.model.scene.clone();
-		} else if (this.entityType === EntityType.RUM_TRUFFLE_CANNON) {
-			this._model = assets.RUM_TRUFFLE_CANNON_EXPLOSION.model.scene.clone();
-		} else if (this.entityType === EntityType.SPYING_EASTER_BUNNY) {
-			this._model = assets.SPYING_EASTER_BUNNY_EXPLOSION.model.scene.clone();
-		} else if (this.entityType === EntityType.XMAS_FACTORY) {
-			this._model = assets.XMAS_FACTORY_EXPLOSION.model.scene.clone();
-		} else if (this.entityType === EntityType.HOT_CHOCOLATE_BALLISTA) {
-			this._model = assets.HOT_CHOCOLATE_BALLISTA_EXPLOSION.model.scene.clone();
-		} else if (this.entityType === EntityType.FRUIT_CANNON) {
-			this._model = assets.FRUIT_CANNON_EXPLOSION.model.scene.clone();
-		} else if (this.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
-			this._model = assets.CHOCOLATE_FOUNTAIN_EXPLOSION.model.scene.clone();
-		} else {
-			this._model = assets.CREAM_EXPLOSION.model.scene.clone();
-		}
-		this._model.position.set(position.x, position.y, position.z);
-	}
-
 	show() {
 		this._model.traverse(child => {
 			if (child instanceof Mesh) {
@@ -165,10 +138,6 @@ class Building {
 	makeUncreamy() {
 		this._creamy = false;
 		this._uncream();
-	}
-
-	getModel() {
-		return this._model;
 	}
 }
 

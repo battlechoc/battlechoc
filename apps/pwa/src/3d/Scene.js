@@ -6,6 +6,7 @@ import { build, attack, finishTurn, finishBuildPhase } from '../gameplay/GameAct
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { BoardCellTypes, EntityType, AttackType, createEntity, getEntityDescriptor, getCheapest } from '../gameplay/GameEntities';
 import Gamefield from './Gamefield';
+import Animation from './Animation';
 import { Jukebox } from '../ui/misc';
 import { InfoType, spawnInfo, spawnInfoAtBuilding } from '../ui/misc/FlyingInfo';
 import { BattlechocError } from '../gameplay/Errors';
@@ -41,25 +42,32 @@ class Scene extends Component {
         this.renderer.setSize(width, height);
         this.renderer.domElement.id = 'game-canvas'
         this.renderer.gammaOutput = true;
-        this.renderer.gammaFactor = 1.4;
+        this.renderer.gammaFactor = 1.7;
 
         // animations and renderer
-        this.mixer = null;
+        this.animations = [];
         this.container.appendChild(this.renderer.domElement);
 
         // Allow clicking
         this.raycaster = new Raycaster();
         this.mouse = new Vector2();
-        this.start();
+        this.lookAtOpponent = false;
     }
 
     componentDidUpdate() {
         if (typeof this.props.game !== 'undefined') {
-            this.lookAtOpponent = (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === false &&
+            if (this.lookAtOpponent !== ((multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === false &&
                 this.props.game.state !== GameStateTypes.ATTACK_PHASE) ||
                 (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true &&
-                    this.props.game.state === GameStateTypes.ATTACK_PHASE);
+                    this.props.game.state === GameStateTypes.ATTACK_PHASE))) {
+                this.updateView();
+            }
         }
+    }
+
+    updateView() {
+        this.lookAtOpponent = !this.lookAtOpponent;
+        this.start();
     }
 
     triggerCacaoInfo() {
@@ -96,6 +104,7 @@ class Scene extends Component {
                 child.intensity = 0.1;
             }
         });
+        this.renderScene();
     }
 
     resetLight = () => {
@@ -104,6 +113,7 @@ class Scene extends Component {
                 child.intensity = 2.0;
             }
         });
+        this.renderScene();
     }
 
     onClick = event => {
@@ -263,7 +273,12 @@ class Scene extends Component {
     startGame = (createUnits, game, overrideUiState=true) => {
         const playerFieldIndex = game.players[multiplayer.localPlayerIndex].fieldIndex;
         const opponentFieldIndex = game.players[1 - multiplayer.localPlayerIndex].fieldIndex;
-        this.lookAtOpponent = multiplayer.isLocalPlayer(game.currentPlayerIndex) === false;
+        
+        if (this.lookAtOpponent !== multiplayer.isLocalPlayer(game.currentPlayerIndex)) {
+            this.updateView();
+        } else {
+            this.start();
+        }
 
         // Add Light
         var directionalLight = new DirectionalLight(0xffffff, 2);
@@ -271,8 +286,8 @@ class Scene extends Component {
         directionalLight.castShadow = false;
         this.scene.add(directionalLight);
 
-        this.playerGameField = new Gamefield(true, [-72, -16, 0], game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size);
-        this.opponentGameField = new Gamefield(false, [72, 56, 0], game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size);
+        this.playerGameField = new Gamefield(true, [-72, -16, 0], game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.startAnimation, this.renderScene);
+        this.opponentGameField = new Gamefield(false, [72, 56, 0], game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.startAnimation, this.renderScene);
         this.scene.add(this.playerGameField.gameField);
         this.scene.add(this.opponentGameField.gameField);
 
@@ -331,6 +346,7 @@ class Scene extends Component {
             this.camera.top = distance;
             this.camera.bottom = -distance;
             this.camera.updateProjectionMatrix();
+            this.renderScene();
         }
     }
 
@@ -341,40 +357,51 @@ class Scene extends Component {
     }
 
     start = () => {
-        if (!this.frameId) {
+        if (typeof this.frameId === 'undefined') {
             this.frameId = requestAnimationFrame(this.animate);
         }
     }
 
     stop = () => {
-        cancelAnimationFrame(this.frameId);
+        if (this.animations.length === 0) {
+            cancelAnimationFrame(this.frameId);
+            this.frameId = undefined;
+        }
+    }
+
+    startAnimation = (gamefield, turned, asset, position) => {
+        let id = Math.random().toString().substr(2) + Date.now().toString();
+        let animation = new Animation(gamefield, turned, asset, position, id, () => {
+            this.animations = this.animations.filter(animation => animation.id !== id);
+        });
+        this.animations.push(animation);
+        animation.play();
+        this.start();
     }
 
     animate = () => {
         let delta = this.clock.getDelta();
+        this.renderScene();
 
         if (this.lookAtOpponent && this.camera.position.y < 100) {
             this.camera.position.y += 2.0;
             this.camera.position.x += 4.0;
+            this.frameId = window.requestAnimationFrame(this.animate);
         } else if (!this.lookAtOpponent && this.camera.position.y > 30) {
             this.camera.position.y -= 2.0;
             this.camera.position.x -= 4.0;
+            this.frameId = window.requestAnimationFrame(this.animate);
+        } else if (this.animations.length > 0) {
+            for (let i = 0; i < this.animations.length; i++) {
+                this.animations[i].mixer.update(delta);
+            }
+            this.frameId = window.requestAnimationFrame(this.animate);
+        } else {
+            this.stop();
         }
-
-        this.renderScene();
-
-        if (this.opponentGameField) {
-            this.opponentGameField.animate(delta);
-        }
-
-        if (this.playerGameField) {
-            this.playerGameField.animate(delta);
-        }
-
-        this.frameId = window.requestAnimationFrame(this.animate);
     }
 
-    renderScene() {
+    renderScene = () => {
         this.renderer.render(this.scene, this.camera);
     }
 

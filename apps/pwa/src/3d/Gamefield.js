@@ -1,16 +1,17 @@
-import { AnimationMixer, TextureLoader, LoopOnce, Group, Geometry, Mesh, PointCloudMaterial, PointCloud, AdditiveBlending, Vector3} from 'three';
+import { Group, Geometry, Mesh } from 'three';
 import Building from './Building.js';
 import { EntityType, AttackType, BoardCellTypes } from '../gameplay/GameEntities';
 import { assetLoader as AssetLoader} from '../AssetLoader.js';
 
 class Gamefield {
-    constructor(isPlayerGameField, position, playerField, fieldIdx, size) {
+    constructor(isPlayerGameField, position, playerField, fieldIdx, size, startAnimation, renderScene) {
         this.isPlayerGameField = isPlayerGameField;
         this.rows = size.rows;
         this.cols = size.cols;
         this.fieldSize = 8;
         this.position = position;
         this.fieldIdx = fieldIdx;
+        this.renderScene = () => renderScene();
 
         this.buildings = [...Array(this.rows)].map(
             field => Array(this.cols).fill([])
@@ -18,6 +19,7 @@ class Gamefield {
 
         this.gameField = new Group();
         this.build(playerField, false);
+        this.startAnimation = (turned, asset, position) => startAnimation(this.gameField, turned, asset, position);
     }
 
     build(playerField, rebuild) {
@@ -73,114 +75,27 @@ class Gamefield {
         let board = this.gameField.getObjectByName('BOARD' + this.fieldIdx);
         this.gameField.remove(board);
         this.build(playerField, true);
+        this.renderScene();
     }
 
     getClickableFields() {
         return this.gameField.children;
     }
 
-    animate(delta) {
-        if (this.mixer) {
-            this.mixer.update(delta);
-        }
-    }
-
     getBuildingAtPosition(position) {
         return this.buildings[position.row][position.col][0];
     }
 
-    triggerHotChocolate() {
-        this.particleCount = 14000;
-        let loader = new TextureLoader();
-        loader.crossOrigin = '';
-        let material = new PointCloudMaterial({
-            color: 0xFFFFFF,
-            size: 0.8,
-            map: loader.load(
-                "images/raindrop.png"
-            ),
-            blending: AdditiveBlending,
-            depthTest: false,
-            transparent: true
-        });
-
-        this.particles = new Geometry();
-        for (let i = 0; i < this.particleCount; i++) {
-            let x = Math.random() * 10;
-            let y = Math.random() * 10;
-            let z = Math.random() * 10;
-            let particle = new Vector3(x, y, z);
-            particle.velocity = {};
-            particle.velocity.y = 0;
-            this.particles.vertices.push(particle);
-        }
-        let particleSystem = new PointCloud(this.particles, material);
-        this.gameField.add(particleSystem);
-    }
-
-    simulateHotChocolateRain() {
-        for (let i = 0; i < this.particleCount; i++) {
-            var particle = this.particles.vertices[i];
-            if (particle.y < -200) {
-                particle.y = 200;
-                particle.velocity.y = 0;
-            }
-            particle.velocity.y -= Math.random() * .02;
-            particle.y += particle.velocity.y;
-        }
-        this.particles.verticesNeedUpdate = true;
-    };
-
-    triggerExplosionAtShield(position) {
-        if (typeof this.mixer !== 'undefined') {
-            this.mixer.stopAllAction();
-            this.explosionCallback();
-        }
-
-        const explosion = AssetLoader.assets.models.ATTACK_AT_SHIELD_EXPLOSION.model;
-
-        let model = explosion.scene.clone();
-        model.position.set(position.x, position.y, position.z);
-
-        this.gameField.add(model);
-        this.mixer = new AnimationMixer(model);
-
-        for (let i = 0; i < explosion.animations.length; i++) {
-            this.mixer.clipAction(explosion.animations[i]).setLoop(LoopOnce).play()
-        }
-
-        this.explosionCallback = () => {
-            this.mixer = undefined;
-            this.gameField.remove(model);
-        }
-
-        this.mixer.addEventListener('finished', () => this.explosionCallback());
-    }
-
     triggerExplosion(building, position) {
-        if (typeof this.mixer !== 'undefined') {
-            this.mixer.stopAllAction();
-            this.explosionCallback();
-        }
+        this.gameField.remove(building._model);
 
-        this.gameField.remove(building.getModel());
-
-        building.explode();
-
-        if (!this.isPlayerGameField &&
+        let turned = (!this.isPlayerGameField &&
             (building.entityType === EntityType.RUM_TRUFFLE_CANNON ||
                 building.entityType === EntityType.SPYING_EASTER_BUNNY ||
-                building.entityType === EntityType.HOT_CHOCOLATE_BALLISTA)) {
-            building.rotate(Math.PI);
-        }
+                building.entityType === EntityType.HOT_CHOCOLATE_BALLISTA))
 
-        this.gameField.add(building.getModel());
-
-        this.mixer = new AnimationMixer(building.getModel());
         const assets = AssetLoader.assets.models;
-
         let explosion = assets.CREAM_EXPLOSION;
-
         if (building.entityType === EntityType.CACAOTREE) {
             explosion = assets.CACAOTREE_EXPLOSION;
         } else if (building.entityType === EntityType.FACTORY) {
@@ -201,16 +116,7 @@ class Gamefield {
             explosion = assets.CHOCOLATE_FOUNTAIN_EXPLOSION;
         }
 
-        for (let i = 0; i < explosion.model.animations.length; i++) {
-            this.mixer.clipAction(explosion.model.animations[i]).setLoop(LoopOnce).play()
-        }
-
-        this.explosionCallback = () => {
-            this.mixer = undefined;
-            this.gameField.remove(building.getModel());
-        }
-
-        this.mixer.addEventListener('finished', () => this.explosionCallback());
+        this.startAnimation(turned, explosion, position);
     }
 
     getCellPatch3x3(selectedRow, selectedCol, returnFields) {
@@ -256,6 +162,7 @@ class Gamefield {
         if (this.isPlayerGameField && cream > -1) {
             this.buildings[row][col][cream].show();
         }
+        this.renderScene();
     }
 
     receiveBallista(target) {
@@ -268,10 +175,11 @@ class Gamefield {
         let xmasFactoryIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.XMAS_FACTORY);
         let xmasFactory = this.buildings[row][col][xmasFactoryIndex];
 
-        this.gameField.remove(xmasFactory.getModel());
+        this.gameField.remove(xmasFactory._model);
         this.buildings[row][col].splice(xmasFactoryIndex, 1);
 
         this.setBuilding(EntityType.HOT_CHOCOLATE_BALLISTA, { row: row, col: col });
+        this.renderScene();
     }
 
     attack(target, attackType, shielded) {
@@ -281,7 +189,7 @@ class Gamefield {
 
         if (attackType === AttackType.TRUFFLE) {
             if (shielded) {
-                this.triggerExplosionAtShield(position3d);
+                this.startAnimation(false, AssetLoader.assets.models.ATTACK_AT_SHIELD_EXPLOSION, position3d);
             } else {
                 let creamyBuildings = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
                 if (creamyBuildings.length > 0) {
@@ -305,8 +213,10 @@ class Gamefield {
                 }
             }
         } else if (attackType === AttackType.HOT_CHOCOLATE) {
-            this.buildings[row][col].forEach(building => this.gameField.remove(building.getModel()));
+            this.buildings[row][col].forEach(building => this.gameField.remove(building._model));
             this.buildings[row][col] = [];
+            // TODO: replace renderScene() with chocolate rain
+            this.renderScene();
         } else if (attackType === AttackType.BUNNY) {
             let patch = this.getCellPatch3x3(row, col, false);
             patch.forEach(field => {
@@ -330,6 +240,7 @@ class Gamefield {
                     }
                 }
             });
+            this.renderScene();
         } else if (attackType === AttackType.FRUIT) {
             let chocolateFountainIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.CHOCOLATE_FOUNTAIN);
             let cream = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
@@ -399,6 +310,7 @@ class Gamefield {
                 })
             }
         }
+        this.renderScene();
     }
 
     setBuilding(entityType, entityPosition) {
@@ -448,12 +360,12 @@ class Gamefield {
         if (building.entityType === EntityType.FRUIT_CANNON) {
             var index = this.buildings[row][col].findIndex(building => building.entityType === EntityType.RUM_TRUFFLE_CANNON)
             if (index > -1) {
-                this.gameField.remove(this.buildings[row][col][index].getModel());
+                this.gameField.remove(this.buildings[row][col][index]._model);
                 this.buildings[row][col].splice(index, 1);
             }
         }
 
-        this.gameField.add(building.getModel());
+        this.gameField.add(building._model);
 
         if (this.cellContains(row, col, EntityType.CREAM)) {
             this.buildings[row][col].push(building);
@@ -470,6 +382,7 @@ class Gamefield {
         } else {
             this.buildings[row][col] = this.buildings[row][col].concat(building);
         }
+        this.renderScene();
     }
 }
 

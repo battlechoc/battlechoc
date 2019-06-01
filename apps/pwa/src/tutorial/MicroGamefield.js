@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import Gamefield from '../3d/Gamefield';
+import Animation from '../3d/Animation';
 import { InfoType, spawnInfoAtBuilding, spawnInfo } from '../ui/misc';
 import { EntityType, BoardCellTypes, createEntity, getEntityDescriptor } from '../gameplay/GameEntities';
 import { Scene, Clock, OrthographicCamera, WebGLRenderer, Raycaster, Vector2, DirectionalLight } from 'three';
@@ -35,8 +36,8 @@ class MicroGamefield extends Component {
         this.renderer.domElement.id = 'micro-game-canvas'
         this.renderer.gammaOutput = true;
         this.renderer.gammaFactor = 1.7;
+        this.animations = [];
 
-        this.mixer = null;
         this.container.appendChild(this.renderer.domElement);
 
         this.raycaster = new Raycaster();
@@ -54,7 +55,7 @@ class MicroGamefield extends Component {
         this.scene.add( directionalLight );
 
         if (!this.props.opponentGamefield) {
-            this.microGamefield = new Gamefield(true, [-70, -34.5, 0], this.props.playerSetup, 0, this.size);
+            this.microGamefield = new Gamefield(true, [-70, -34.5, 0], this.props.playerSetup, 0, this.size, this.startAnimation, this.renderScene);
             if (typeof this.props.playerSetup !== 'undefined') {
                 this.props.playerSetup.grid.forEach(field => {
                     this.buildings[field.row][field.col] = field.occupiedBy;
@@ -64,7 +65,7 @@ class MicroGamefield extends Component {
             }
             this.scene.add(this.microGamefield.gameField);
         } else if (this.props.opponentGamefield) {
-            this.microGamefield = new Gamefield(true, [-98, -46, 0], this.props.playerSetup, 0, this.size);
+            this.microGamefield = new Gamefield(true, [-98, -46, 0], this.props.playerSetup, 0, this.size, this.startAnimation, this.renderScene);
             
             if (typeof this.props.playerSetup !== 'undefined') {
                 this.props.playerSetup.grid.forEach(field => {
@@ -75,12 +76,11 @@ class MicroGamefield extends Component {
             }
 
             this.scene.add(this.microGamefield.gameField);
-            
             this.opponentBuildings = [...Array(this.size.rows)].map(
                 field => Array(this.size.cols).fill([])
             );
 
-            this.opponentGamefield = new Gamefield(false, [-42, -18, 0], this.props.opponentSetup, 1, this.size);
+            this.opponentGamefield = new Gamefield(false, [-42, -18, 0], this.props.opponentSetup, 1, this.size, this.startAnimation, this.renderScene);
 
             if (typeof this.props.opponentSetup !== 'undefined') {
                 this.props.opponentSetup.grid.forEach(field => {
@@ -185,16 +185,6 @@ class MicroGamefield extends Component {
         }
     }
 
-    start = () => {
-        if (!this.frameId) {
-            this.frameId = requestAnimationFrame(this.animate);
-        }
-    }
-
-    stop = () => {
-        cancelAnimationFrame(this.frameId);
-    }
-
     onClick = event => {
         var rect = this.renderer.domElement.getBoundingClientRect();
         this.mouse.x = ( ( event.clientX - rect.left ) / rect.width ) * 2 - 1;
@@ -264,17 +254,44 @@ class MicroGamefield extends Component {
         this.opponentGamefield.rebuild(this.props.opponentSetup);
     }
 
+    start = () => {
+        if (typeof this.frameId === 'undefined') {
+            this.frameId = requestAnimationFrame(this.animate);
+        }
+    }
+
+    stop = () => {
+        if (this.animations.length === 0) {
+            cancelAnimationFrame(this.frameId);
+            this.frameId = undefined;
+        }
+    }
+
+    startAnimation = (gamefield, turned, asset, position) => {
+        let id = Math.random().toString().substr(2) + Date.now().toString();
+        let animation = new Animation(gamefield, turned, asset, position, id, () => {
+            this.animations = this.animations.filter(animation => animation.id !== id);
+        });
+        this.animations.push(animation);
+        animation.play();
+        this.start();
+    }
+
     animate = () => {
         let delta = this.clock.getDelta();
         this.renderScene();
-        this.microGamefield.animate(delta);
-        if(this.props.opponentGamefield) {
-            this.opponentGamefield.animate(delta);
+
+        if (this.animations.length > 0) {
+            for (let i = 0; i < this.animations.length; i++) {
+                this.animations[i].mixer.update(delta);
+            }
+            this.frameId = window.requestAnimationFrame(this.animate);
+        } else {
+            this.stop();
         }
-        this.frameId = window.requestAnimationFrame(this.animate);
     }
 
-    renderScene() {
+    renderScene = () => {
         this.renderer.render(this.scene, this.camera);
     }
 
