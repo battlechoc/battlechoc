@@ -65,22 +65,22 @@ class Rules {
     }
 
     static canBuildFactoryExtensionOnCell(cellIdx, gameState) {
-        return this.getCellNeighbors(cellIdx, gameState).filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.FACTORY)).length > 0;
+        return this.getCellNeighbors(cellIdx, gameState).filter(cell => cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.FACTORY)).length > 0;
     }
 
     static canBuildOnCell(cellIdx, entityType, gameState) {
         let cell = this.currentPlayerBoardCell(gameState, cellIdx);
-        if (entityType === GameEntities.EntityType.SPYING_EASTER_BUNNY && this.currentPlayerField(gameState).grid.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.SPYING_EASTER_BUNNY)).length > 0) {
+        if (entityType === GameEntities.EntityType.SPYING_EASTER_BUNNY && this.currentPlayerField(gameState).grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.SPYING_EASTER_BUNNY)).length > 0) {
             return new Errors.BuildNotPossibleError('Can only build one spying easter bunny.');
         } else if (cell.molten === true) {
             return new Errors.BuildNotPossibleError('Cannot build on molten cells.');
-        } else if (entityType === GameEntities.EntityType.FRUIT_CANNON && cell.occupiedBy.includes(GameEntities.EntityType.RUM_TRUFFLE_CANNON)) {
+        } else if (entityType === GameEntities.EntityType.FRUIT_CANNON && cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.RUM_TRUFFLE_CANNON)) {
             return true;
         } else if (entityType !== GameEntities.EntityType.FRUIT_CANNON &&
             ((entityType !== GameEntities.EntityType.FACTORY_EXTENSION && cell.occupiedBy.length === 0) ||
-                (entityType === GameEntities.EntityType.CREAM && !cell.occupiedBy.includes(GameEntities.EntityType.CREAM)) ||
-                (entityType === GameEntities.EntityType.FACTORY_EXTENSION && ((cell.occupiedBy.length === 1 && cell.occupiedBy[0] === GameEntities.EntityType.CREAM) || cell.occupiedBy.length === 0) && this.canBuildFactoryExtensionOnCell(cellIdx, gameState)) ||
-                (entityType !== GameEntities.EntityType.CREAM && entityType !== GameEntities.EntityType.FACTORY_EXTENSION && cell.occupiedBy.length === 1 && cell.occupiedBy[0] === GameEntities.EntityType.CREAM))) {
+                (entityType === GameEntities.EntityType.CREAM && !cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.CREAM)) ||
+                (entityType === GameEntities.EntityType.FACTORY_EXTENSION && ((cell.occupiedBy.length === 1 && cell.occupiedBy[0].type === GameEntities.EntityType.CREAM) || cell.occupiedBy.length === 0) && this.canBuildFactoryExtensionOnCell(cellIdx, gameState)) ||
+                (entityType !== GameEntities.EntityType.CREAM && entityType !== GameEntities.EntityType.FACTORY_EXTENSION && cell.occupiedBy.length === 1 && cell.occupiedBy[0].type === GameEntities.EntityType.CREAM))) {
             return true;
         } else {
             return new Errors.BuildNotPossibleError('Build not possible on given field row: ' +
@@ -117,8 +117,8 @@ class Rules {
             } else if (potentialWinners[1].cacao > potentialWinners[0].cacao) {
                 return potentialWinners.slice(1, 2);
             } else {
-                const player0Trees = gameState.board.fields[potentialWinners[0].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.CACAOTREE)).length;
-                const player1Trees = gameState.board.fields[potentialWinners[1].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(GameEntities.EntityType.CACAOTREE)).length;
+                const player0Trees = gameState.board.fields[potentialWinners[0].fieldIndex].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.CACAOTREE)).length;
+                const player1Trees = gameState.board.fields[potentialWinners[1].fieldIndex].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.CACAOTREE)).length;
                 if (player0Trees > player1Trees) {
                     return potentialWinners.slice(0, 1);
                 } else if (player1Trees > player0Trees) {

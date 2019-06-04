@@ -1,14 +1,14 @@
 import Situation from '../Situation';
-import { BoardCellTypes, EntityType, AttackType } from '../../gameplay/GameEntities';
+import { BoardCellTypes, EntityType, AttackType, createEntity } from '../../gameplay/GameEntities';
 import { GameStateTypes } from '../../gameplay/GameplayReducer';
 
 export default class BunnyAndXmasTutorialSituation extends Situation {
     constructor() {
         super(3);
-        this.modifyBoard({row: 1, col: 1, cellType: BoardCellTypes.BLACK, buildings: [EntityType.CREAM, EntityType.FACTORY] });
-        this.modifyBoard({row: 2, col: 2, buildings: [EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY]});
-        this.modifyBoard({row: 1, col: 1, playerIndex: 1, buildings: [EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY]});
-        this.modifyBoard({row: 0, col: 1, playerIndex: 1, buildings: [EntityType.CREAM, EntityType.FACTORY]});
+        this.modifyBoard({row: 1, col: 1, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.FACTORY)] });
+        this.modifyBoard({row: 2, col: 2, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.SPYING_EASTER_BUNNY)]});
+        this.modifyBoard({row: 1, col: 1, playerIndex: 1, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.SPYING_EASTER_BUNNY)]});
+        this.modifyBoard({row: 0, col: 1, playerIndex: 1, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.FACTORY)]});
         this.game.gameplay.game.state = GameStateTypes.ATTACK_PHASE;
         this.game.gameplay.game.players[0].fieldIndex = 0;
         this.game.gameplay.game.players[0].buildingsPerTurn = 3;

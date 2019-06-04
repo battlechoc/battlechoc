@@ -66,7 +66,7 @@ class GameStartSelection extends Component {
                 <div className={(this.props.clickable ? 'active ' : 'inactive') + ' button'} onClick={() => this.choose('LEFT_GAMEFIELD')}>
                     {(() => {
                         if (typeof game.board !== 'undefined') {
-                            const creamedCells = game.board.fields[0].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
+                            const creamedCells = game.board.fields[0].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM));
                             return <div className="creamedCellCount">
                                 <img alt="filled with cream" src="images/cream_preview.png" />
                                 <p>{creamedCells.length}</p>
@@ -78,7 +78,7 @@ class GameStartSelection extends Component {
                             if (typeof game.board !== 'undefined') {
                                 return game.board.fields[0].grid.map(
                                     (cell, i) => {
-                                        if (cell.occupiedBy.includes(EntityType.CREAM)) {
+                                        if (cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) {
                                             return <div key={i} className={cell.previewStyle}>
                                                 <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
                                             </div>
@@ -99,7 +99,7 @@ class GameStartSelection extends Component {
                 <div className={(this.props.clickable ? 'active ' : 'inactive') + ' button'} onClick={() => this.choose('RIGHT_GAMEFIELD')}>
                     {(() => {
                         if (typeof game.board !== 'undefined') {
-                            const creamedCells = game.board.fields[1].grid.filter(cell => cell.occupiedBy.includes(EntityType.CREAM));
+                            const creamedCells = game.board.fields[1].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM));
                             return <div className="creamedCellCount">
                                 <img alt="filled with cream" src="images/cream_preview.png" />
                                 <p>{creamedCells.length}</p>
@@ -111,7 +111,7 @@ class GameStartSelection extends Component {
                             if (typeof game.board !== 'undefined') {
                                 return game.board.fields[1].grid.map(
                                     (cell, i) => {
-                                        if (cell.occupiedBy.includes(EntityType.CREAM)) {
+                                        if (cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) {
                                             return <div key={i} className={cell.previewStyle}>
                                                 <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
                                             </div>

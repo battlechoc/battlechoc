@@ -83,13 +83,13 @@ class BuildingPalette extends Component {
             game.players[this.getPlayerIndex()].buildings > 0;
         if (building.type === EntityType.SPYING_EASTER_BUNNY) {
             const playerField = game.players[this.getPlayerIndex()].fieldIndex;
-            return canBuild && game.board.fields[playerField].grid.filter(cell => cell.occupiedBy.includes(EntityType.SPYING_EASTER_BUNNY)).length === 0
+            return canBuild && game.board.fields[playerField].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.SPYING_EASTER_BUNNY)).length === 0
         } else if (building.type === EntityType.FACTORY_EXTENSION) {
             const hasFactory = game.players[this.getPlayerIndex()].hasFactory;
             return canBuild && hasFactory;
         } else if (building.type === EntityType.FRUIT_CANNON) {
             const playerField = game.players[this.getPlayerIndex()].fieldIndex;
-            const hasCannons = game.board.fields[playerField].grid.filter(cell => cell.occupiedBy.includes(EntityType.RUM_TRUFFLE_CANNON)).length > 0;
+            const hasCannons = game.board.fields[playerField].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.RUM_TRUFFLE_CANNON)).length > 0;
             return canBuild && hasCannons;
         } else {
             return canBuild;

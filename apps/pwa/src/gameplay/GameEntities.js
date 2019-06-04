@@ -77,7 +77,7 @@ class Board {
                         previewStyle: previewStyle,
                         row: row,
                         col: col,
-                        occupiedBy: creamed ? [EntityType.CREAM] : [],
+                        occupiedBy: creamed ? [createEntity(EntityType.CREAM)] : [],
                         molten: false,
                         shielded: false
                     });
@@ -152,7 +152,7 @@ function createEntity(entityType) {
             type: entityType
         };
         const descriptor = EntityDescriptors.get(entityType);
-        for (var field in descriptor) {
+        for (let field in descriptor) {
             entity[field] = descriptor[field]
         };
         return entity;

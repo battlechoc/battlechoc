@@ -88,7 +88,7 @@ class App extends Component {
                     this.opponent.connectGamestate(() => this.props.game);
                     this.props.loadUiState(BuildFactoryTestSituation.ui).then(() => {
                         this.setState({ params: { ...this.state.params, situation: undefined }}, () => {
-                            this.scene.startGame(true, this.props.game, false);
+                            this.scene.startGame(this.props.game, false);
                         });
                     });
                 });
@@ -168,15 +168,15 @@ class App extends Component {
                     this.opponent.simulateChooseFieldDecision();
                 }
             } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
-                this.scene.startGame(false, nextProps.game);
+                this.scene.startGame(nextProps.game);
             } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
-                this.scene.startGame(false, nextProps.game);
+                this.scene.startGame(nextProps.game);
                 if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
-                    this.opponent.simulateInitialPlacement(this.scene.opponentGameField);
+                    this.opponent.simulateInitialPlacement();
                 }
             } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
                 if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
-                    this.opponent.simulateInitialPlacement(this.scene.opponentGameField);
+                    this.opponent.simulateInitialPlacement();
                 }
             } else if (gameTransition === GameTransitions.PLAYER_BUILD_PHASE) {
                 this.scene.triggerCacaoInfo();
@@ -194,11 +194,11 @@ class App extends Component {
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
                 if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
-                    this.opponent.simulateBuildPhase(this.scene.opponentGameField);
+                    this.opponent.simulateBuildPhase();
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
                 if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
-                    this.opponent.simulateAttackPhase(this.scene.opponentGameField, this.scene.playerGameField);
+                    this.opponent.simulateAttackPhase();
                 }
             } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
                 setTimeout(() => this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
@@ -255,7 +255,7 @@ class App extends Component {
                     this.props.resumeGame(resumeableGame).then(() => {
                         this.opponent.player = resumeableGame.players[1];
                         this.opponent.connectGamestate(() => this.props.game);
-                        this.scene.startGame(true, this.props.game);
+                        this.scene.startGame(this.props.game);
                     });
                 } else {
                     let players = [

@@ -1,10 +1,9 @@
 import { Group, Geometry, Mesh } from 'three';
-import Building from './Building.js';
-import { EntityType, AttackType, BoardCellTypes } from '../gameplay/GameEntities';
+import { EntityType, BoardCellTypes } from '../gameplay/GameEntities';
 import { assetLoader as AssetLoader} from '../AssetLoader.js';
 
 class Gamefield {
-    constructor(isPlayerGameField, position, playerField, fieldIdx, size, startAnimation, renderScene) {
+    constructor(isPlayerGameField, position, getPlayerField, fieldIdx, size, startAnimation, renderScene) {
         this.isPlayerGameField = isPlayerGameField;
         this.rows = size.rows;
         this.cols = size.cols;
@@ -17,19 +16,22 @@ class Gamefield {
             field => Array(this.cols).fill([])
         );
 
+        this.renderingEntities = {};
         this.gameField = new Group();
-        this.build(playerField, false);
-        this.startAnimation = (turned, asset, position) => startAnimation(this.gameField, turned, asset, position);
+        this.getPlayerField = () => getPlayerField();
+        this.playerField = JSON.parse(JSON.stringify(this.getPlayerField()));
+        this.build();
+        this.startAnimation = (turned, asset, position, offset=25) => startAnimation(this.gameField, turned, asset, position, offset);
     }
 
-    build(playerField, rebuild) {
+    build(skipEntities=false) {
         const assets = AssetLoader.assets.models;
         let pivot = assets['FIELD'].model.scene.children[0];
         let materialMap = assets['FIELD'].model.scene.children[1];
 
         let materials = [materialMap.children[0].material, materialMap.children[1].material, materialMap.children[2].material];
         let board = new Mesh(new Geometry(), materials);
-        playerField.grid.forEach((cell, i) => {
+        this.playerField.grid.forEach((cell, i) => {
             if (!cell.molten) {
                 let materialIndex = 0;
                 if (cell.type === BoardCellTypes.BROWN) {
@@ -57,8 +59,8 @@ class Gamefield {
                     board.geometry.faces[i]._fieldIndex = this.fieldIdx;
                 }
 
-                if (cell.occupiedBy.includes(EntityType.CREAM) && !rebuild) {
-                    this.setBuilding(EntityType.CREAM, { row: cell.row, col: cell.col });
+                if (!skipEntities) {
+                    this.renderEntities(cell);
                 }
             }
         });
@@ -71,233 +73,111 @@ class Gamefield {
         this.gameField.position.set(this.position[0], this.position[1], this.position[2]);
     }
 
-    rebuild(playerField) {
-        let board = this.gameField.getObjectByName('BOARD' + this.fieldIdx);
-        this.gameField.remove(board);
-        this.build(playerField, true);
-        this.renderScene();
-    }
-
-    getClickableFields() {
-        return this.gameField.children;
-    }
-
-    getBuildingAtPosition(position) {
-        return this.buildings[position.row][position.col][0];
-    }
-
-    triggerExplosion(building, position) {
-        this.gameField.remove(building._model);
-
-        let turned = (!this.isPlayerGameField &&
-            (building.entityType === EntityType.RUM_TRUFFLE_CANNON ||
-                building.entityType === EntityType.SPYING_EASTER_BUNNY ||
-                building.entityType === EntityType.HOT_CHOCOLATE_BALLISTA))
-
-        const assets = AssetLoader.assets.models;
-        let explosion = assets.CREAM_EXPLOSION;
-        if (building.entityType === EntityType.CACAOTREE) {
-            explosion = assets.CACAOTREE_EXPLOSION;
-        } else if (building.entityType === EntityType.FACTORY) {
-            explosion = assets.FACTORY_EXPLOSION;
-        } else if (building.entityType === EntityType.FACTORY_EXTENSION) {
-            explosion = assets.FACTORY_EXTENSION_EXPLOSION;
-        } else if (building.entityType === EntityType.RUM_TRUFFLE_CANNON) {
-            explosion = assets.RUM_TRUFFLE_CANNON_EXPLOSION;
-        } else if (building.entityType === EntityType.SPYING_EASTER_BUNNY) {
-            explosion = assets.SPYING_EASTER_BUNNY_EXPLOSION;
-        } else if (building.entityType === EntityType.XMAS_FACTORY) {
-            explosion = assets.XMAS_FACTORY_EXPLOSION;
-        } else if (building.entityType === EntityType.HOT_CHOCOLATE_BALLISTA) {
-            explosion = assets.HOT_CHOCOLATE_BALLISTA_EXPLOSION;
-        } else if (building.entityType === EntityType.FRUIT_CANNON) {
-            explosion = assets.FRUIT_CANNON_EXPLOSION;
-        } else if (building.entityType === EntityType.CHOCOLATE_FOUNTAIN) {
-            explosion = assets.CHOCOLATE_FOUNTAIN_EXPLOSION;
-        }
-
-        this.startAnimation(turned, explosion, position);
-    }
-
-    getCellPatch3x3(selectedRow, selectedCol, returnFields) {
-        var patch = [];
-        for (let row = selectedRow - 1; row < selectedRow + 2; row++) {
-            for (let col = selectedCol - 1; col < selectedCol + 2; col++) {
-                if (row >= 0 && col >= 0 && row < this.rows && col < this.cols) {
-                    if (returnFields) {
-                        patch.push(this.buildings[row][col]);
-                    } else {
-                        patch.push({ row: row, col: col });
-                    }
+    renderEntities(cell, remove=false) {
+        if (remove) {
+            cell.occupiedBy.forEach(entity => {
+                let phenotype = entity.type;
+                if (entity.type === EntityType.CREAM && cell.occupiedBy.length > 1 && this.isPlayerGameField) {
+                    phenotype = EntityType.CREAM + '.AROUND.BUILDING';
                 }
-            }
-        }
-        return patch;
-    }
-
-    locateEasterBunny() {
-        for (let row = 0; row < this.rows; row++) {
-            for (let col = 0; col < this.cols; col++) {
-                var index = this.buildings[row][col].findIndex(building => building.entityType === EntityType.SPYING_EASTER_BUNNY)
-                if (index > -1) {
-                    return {
-                        row: row,
-                        col: col,
-                        index: index
-                    };
-                }
-            }
-        }
-    }
-
-    meltDownEasterBunny() {
-        let { row, col, index } = this.locateEasterBunny();
-
-        let position3d = { x: row * this.fieldSize, y: 0, z: col * this.fieldSize };
-        let bunny = this.buildings[row][col][index];
-        this.triggerExplosion(bunny, position3d);
-        this.buildings[row][col].splice(index, 1);
-
-        let cream = this.buildings[row][col].findIndex(building => building.entityType === EntityType.CREAM);
-        if (this.isPlayerGameField && cream > -1) {
-            this.buildings[row][col][cream].show();
-        }
-        this.renderScene();
-    }
-
-    receiveBallista(target) {
-        const patch = this.getCellPatch3x3(target.row, target.col, true);
-        const xmasFactoryCell = patch.filter(cell => cell.findIndex(building => building.entityType === EntityType.XMAS_FACTORY) > -1)[0];
-
-        let row = xmasFactoryCell[0]._cellIdx.row;
-        let col = xmasFactoryCell[0]._cellIdx.col;
-
-        let xmasFactoryIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.XMAS_FACTORY);
-        let xmasFactory = this.buildings[row][col][xmasFactoryIndex];
-
-        this.gameField.remove(xmasFactory._model);
-        this.buildings[row][col].splice(xmasFactoryIndex, 1);
-
-        this.setBuilding(EntityType.HOT_CHOCOLATE_BALLISTA, { row: row, col: col });
-        this.renderScene();
-    }
-
-    attack(target, attackType, shielded) {
-        let row = target.row;
-        let col = target.col;
-        let position3d = { x: row * this.fieldSize, y: 0, z: col * this.fieldSize };
-
-        if (attackType === AttackType.TRUFFLE) {
-            if (shielded) {
-                this.startAnimation(false, AssetLoader.assets.models.ATTACK_AT_SHIELD_EXPLOSION, position3d);
-            } else {
-                let creamyBuildings = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
-                if (creamyBuildings.length > 0) {
-                    let cream = creamyBuildings[0];
-                    this.triggerExplosion(cream, position3d);
-                    let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM);
-
-                    otherBuildings.forEach(otherBuilding => otherBuilding.show());
-
-                    setTimeout(() => {
-                        otherBuildings.forEach(otherBuilding => {
-                            this.triggerExplosion(otherBuilding, position3d);
-                        });
-                        this.buildings[row][col] = [];
-                    }, 1000);
-                } else {
-                    this.buildings[row][col].forEach(building => {
-                        this.triggerExplosion(building, position3d);
-                    });
-                    this.buildings[row][col] = [];
-                }
-            }
-        } else if (attackType === AttackType.HOT_CHOCOLATE) {
-            this.buildings[row][col].forEach(building => this.gameField.remove(building._model));
-            this.buildings[row][col] = [];
-            // TODO: replace renderScene() with chocolate rain
-            this.renderScene();
-        } else if (attackType === AttackType.BUNNY) {
-            let patch = this.getCellPatch3x3(row, col, false);
-            patch.forEach(field => {
-                let creamyfieldIndex = this.buildings[field.row][field.col].findIndex(building => building.entityType === EntityType.CREAM)
-                if (creamyfieldIndex > -1) {
-                    let cream = this.buildings[field.row][field.col][creamyfieldIndex];
-                    if (this.isPlayerGameField) {
-                        this.buildings[field.row][field.col].splice(creamyfieldIndex, 1);
-                        let otherBuildings = this.buildings[field.row][field.col].filter(building => building.entityType !== EntityType.CREAM);
-                        if (otherBuildings.length > 0) {
-                            otherBuildings.forEach(otherBuilding => otherBuilding.makeUncreamy());
-                        } else {
-                            this.triggerExplosion(cream, position3d);
-                        }
-                    } else {
-                        this.triggerExplosion(cream, position3d);
-                        this.buildings[field.row][field.col].splice(creamyfieldIndex, 1);
-
-                        let otherBuildings = this.buildings[field.row][field.col].filter(building => building.entityType !== EntityType.CREAM);
-                        otherBuildings.forEach(otherBuilding => otherBuilding.show());
-                    }
+                if (entity.type === EntityType.CREAM || cell.occupiedBy.length === 1 || !cell.occupiedBy.map(building => building.type).includes(EntityType.CREAM) || this.isPlayerGameField) {
+                    this.renderingEntities[phenotype].geometry.faces = this.renderingEntities[phenotype].geometry.faces.filter(face => face.entityId !== entity.id);
+                    this.renderingEntities[phenotype].geometry.elementsNeedUpdate = true;
                 }
             });
-            this.renderScene();
-        } else if (attackType === AttackType.FRUIT) {
-            let chocolateFountainIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.CHOCOLATE_FOUNTAIN);
-            let cream = this.buildings[row][col].filter(building => building.entityType === EntityType.CREAM);
-            if (cream.length > 0) {
-                this.buildings[row][col].splice(this.buildings[row][col].indexOf(cream[0]), 1);
-                this.triggerExplosion(cream[0], position3d);
-                chocolateFountainIndex = this.buildings[row][col].findIndex(building => building.entityType === EntityType.CHOCOLATE_FOUNTAIN);
-                if (chocolateFountainIndex > -1) {
-                    this.buildings[row][col][chocolateFountainIndex].show();
-                    setTimeout(() => {
-                        this.triggerExplosion(this.buildings[row][col][chocolateFountainIndex], position3d);
-                        this.buildings[row][col].splice(chocolateFountainIndex, 1);
-                    }, 1000);
-                } else {
-                    this.buildings[row][col].forEach(building => building.show());
+        } else {
+            const assets = AssetLoader.assets.models;
+            cell.occupiedBy.forEach(entity => {
+                let phenotype = entity.type;
+                if (entity.type === EntityType.CREAM) {
+                    if (cell.occupiedBy.length > 1 && this.isPlayerGameField) {
+                        phenotype = EntityType.CREAM + '.AROUND.BUILDING';
+                    }
                 }
-            } else if (chocolateFountainIndex > -1) {
-                this.triggerExplosion(this.buildings[row][col][chocolateFountainIndex], position3d);
-                this.buildings[row][col].splice(chocolateFountainIndex, 1);
+
+                if (entity.type === EntityType.CREAM || cell.occupiedBy.length === 1 || !cell.occupiedBy.map(building => building.type).includes(EntityType.CREAM) || this.isPlayerGameField) {
+                    let pivot = assets[phenotype].model.scene.children[0];
+                    let material = assets[phenotype].model.scene.children[0].material;
+                    if (pivot instanceof Group) {
+                        material = [...new Set(pivot.children.map(child => child.material))];
+                    } 
+
+                    if (typeof this.renderingEntities[phenotype] === 'undefined') {
+                        this.renderingEntities[phenotype] = new Mesh(new Geometry(), material);
+                        this.gameField.add(this.renderingEntities[phenotype]);
+                    }
+
+                    let geometryLowerBound = this.renderingEntities[phenotype].geometry.faces.length;
+                    pivot.position.set(this.fieldSize * cell.row, assets[phenotype].model.scene.children[0].position.y, this.fieldSize * cell.col);
+                    pivot.traverse(child => {
+                        if (child instanceof Mesh) {
+                            child.updateMatrix();
+                            let geometry = new Geometry().fromBufferGeometry(child.geometry);
+                            if (pivot instanceof Group) {
+                                child.position.set(this.fieldSize * cell.row, assets[phenotype].model.scene.children[0].position.y, this.fieldSize * cell.col);
+                                child.scale.set(pivot.scale.x, pivot.scale.y, pivot.scale.z);
+                                child.rotation.set(pivot.rotation.x, pivot.rotation.y, pivot.rotation.z)
+                                child.updateMatrix();
+                                geometry.faces.forEach(face => {
+                                    face.materialIndex = material.findIndex(submaterial => child.material.uuid === submaterial.uuid);
+                                });
+                            }
+                            this.renderingEntities[phenotype].geometry.merge(geometry, child.matrix);
+                        }
+                    });
+
+                    for (let i = geometryLowerBound; i < this.renderingEntities[phenotype].geometry.faces.length; i++) {
+                        this.renderingEntities[phenotype].geometry.faces[i]._cellIdx = { row: cell.row, col: cell.col };
+                        this.renderingEntities[phenotype].geometry.faces[i]._fieldIndex = this.fieldIdx;
+                        this.renderingEntities[phenotype].geometry.faces[i].entityId = entity.id;
+                    }
+
+                    if (pivot instanceof Group) {
+                        this.renderingEntities[phenotype].geometry.groupsNeedUpdate = true;
+                        this.renderingEntities[phenotype].geometry.sortFacesByMaterialIndex();
+                    }
+                    this.renderingEntities[phenotype].geometry.elementsNeedUpdate = true;
+                }
+            });
+        }
+    }
+
+    rebuild() {
+        this.update();
+        let board = this.gameField.getObjectByName('BOARD' + this.fieldIdx);
+        this.gameField.remove(board);
+
+        this.build(true);
+        this.renderScene();
+    }
+
+    update() {
+        let playerField = this.getPlayerField();
+        let changes = playerField.grid.map((cell, i) => JSON.stringify(cell.occupiedBy) === JSON.stringify(this.playerField.grid[i].occupiedBy) ? null : i);
+        changes.filter(position => position !== null).forEach(position => {           
+            console.log(playerField.grid[position]);
+            if (playerField.grid[position].occupiedBy.length < this.playerField.grid[position].occupiedBy.length) {
+                const assets = AssetLoader.assets.models;
+                let isTurned = entity => (!this.isPlayerGameField &&
+                             (entity.type === EntityType.RUM_TRUFFLE_CANNON ||
+                              entity.type === EntityType.SPYING_EASTER_BUNNY ||
+                              entity.type === EntityType.HOT_CHOCOLATE_BALLISTA))                
+                if (playerField.grid[position].occupiedBy.length === 0) {
+                    let cellPosition = { x: this.playerField.grid[position].row * this.fieldSize, y: 0, z: this.playerField.grid[position].col * this.fieldSize };
+                    this.playerField.grid[position].occupiedBy.forEach(entity => {
+                        let offset = 25;
+                        if (entity.type !== EntityType.CREAM && this.playerField.grid[position].occupiedBy.filter(building => building.type === EntityType.CREAM).length > 0) {
+                            offset = 400;
+                        }
+                        this.startAnimation(isTurned(entity), assets[entity.type + '.EXPLOSION'], cellPosition, offset);
+                    });
+                }
             }
-        }
-    }
-
-    isAboveOfFactory(row, col) {
-        if ((col + 1) < this.fieldSize) {
-            return this.cellContains(row, col + 1, EntityType.FACTORY);
-        } else {
-            return false;
-        }
-    }
-
-    isRightToFactory(row, col) {
-        if ((row + 1) < this.fieldSize) {
-            return this.cellContains(row + 1, col, EntityType.FACTORY);
-        } else {
-            return false;
-        }
-    }
-
-    isBelowOfFactory(row, col) {
-        if ((col - 1) >= 0) {
-            return this.cellContains(row, col - 1, EntityType.FACTORY);
-        } else {
-            return false
-        }
-    }
-
-    isLeftToFactory(row, col) {
-        if ((row - 1) >= 0) {
-            return this.cellContains(row - 1, col, EntityType.FACTORY);
-        } else {
-            return false;
-        }
-    }
-
-    cellContains(row, col, entityType) {
-        return this.buildings[row][col].filter(building => building.entityType === entityType).length > 0;
+            this.renderEntities(this.playerField.grid[position], true);
+            this.playerField.grid[position] = JSON.parse(JSON.stringify(playerField.grid[position]));
+            this.renderEntities(this.playerField.grid[position]);  
+        });
+        this.renderScene();
     }
 
     highlightCannons(unhighlight) {
@@ -309,78 +189,6 @@ class Gamefield {
                     }
                 })
             }
-        }
-        this.renderScene();
-    }
-
-    setBuilding(entityType, entityPosition) {
-        const row = entityPosition.row;
-        const col = entityPosition.col;
-
-        let position3d = { x: row * this.fieldSize, y: 0, z: col * this.fieldSize };
-        let building = new Building(entityType, { col: col, row: row }, position3d, this.fieldIdx);
-        if (building.entityType === EntityType.FACTORY_EXTENSION) {
-            if (this.isAboveOfFactory(row, col)) {
-                building.rotate(Math.PI);
-            } else if (this.isRightToFactory(row, col)) {
-                building.rotate(-Math.PI / 2);
-            } else if (this.isLeftToFactory(row, col)) {
-                building.rotate(Math.PI / 2);
-            } else if (!this.isBelowOfFactory(row, col)) {
-                return undefined;
-            }
-        }
-
-        if (!this.isPlayerGameField &&
-            (entityType === EntityType.RUM_TRUFFLE_CANNON ||
-                entityType === EntityType.SPYING_EASTER_BUNNY ||
-                entityType === EntityType.HOT_CHOCOLATE_BALLISTA)) {
-            building.rotate(Math.PI);
-        }
-
-        if (building.entityType === EntityType.CREAM) {
-            let otherBuildings = this.buildings[row][col].filter(building => building.entityType !== EntityType.CREAM);
-            if (this.isPlayerGameField) {
-                if (otherBuildings.length > 0) {
-                    building.hide();
-                    otherBuildings.forEach(other => other.makeCreamy());
-                }
-                const patch = this.getCellPatch3x3(row, col, true);
-                let withinShield = patch.filter(cell => cell.findIndex(building => building.entityType === EntityType.CHOCOLATE_FOUNTAIN) > -1).length > 0;
-                if (withinShield) {
-                    building._model.children[0].renderOrder = -1;
-                }
-            } else {
-                if (otherBuildings.length > 0) {
-                    otherBuildings.forEach(other => other.hide());
-                }
-            }
-        }
-
-        if (building.entityType === EntityType.FRUIT_CANNON) {
-            var index = this.buildings[row][col].findIndex(building => building.entityType === EntityType.RUM_TRUFFLE_CANNON)
-            if (index > -1) {
-                this.gameField.remove(this.buildings[row][col][index]._model);
-                this.buildings[row][col].splice(index, 1);
-            }
-        }
-
-        this.gameField.add(building._model);
-
-        if (this.cellContains(row, col, EntityType.CREAM)) {
-            this.buildings[row][col].push(building);
-            if (!this.isPlayerGameField) {
-                building.hide();
-            } else {
-                building.makeCreamy();
-                this.buildings[row][col].forEach(cream => {
-                    if (cream.entityType === EntityType.CREAM) {
-                        cream.hide();
-                    }
-                });
-            }
-        } else {
-            this.buildings[row][col] = this.buildings[row][col].concat(building);
         }
         this.renderScene();
     }

@@ -18,13 +18,13 @@ export default class Animation {
         this.id = id;
 	}
 
-	play() {
+	play(offset=25) {
 		this.gamefield.add(this.model);
 		setTimeout(() => {
 	        for (let i = 0; i < this.subanimations.length; i++) {
 	            this.mixer.clipAction(this.subanimations[i]).setLoop(LoopOnce).play();
 	        }
-    	}, 25);
+    	}, offset);
         this.mixer.addEventListener('finished', () => this.callback());
 	}
 

@@ -1,4 +1,4 @@
-import { Board, EntityType, BoardCellTypes } from '../gameplay/GameEntities';
+import { Board, EntityType, BoardCellTypes, createEntity } from '../gameplay/GameEntities';
 import { createPlayer, PlayerType } from '../gameplay/Player';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 
@@ -28,7 +28,7 @@ export default class Situation {
         };
 	}
 
-	modifyBoard({row, col, playerIndex = 0, cellType = BoardCellTypes.BROWN, buildings = [EntityType.CREAM]}) {
+	modifyBoard({row, col, playerIndex = 0, cellType = BoardCellTypes.BROWN, buildings = [createEntity(EntityType.CREAM)]}) {
 		this.game.gameplay.game.board.fields[playerIndex].grid[row * this.boardSize + col].occupiedBy = buildings;
 		this.game.gameplay.game.board.fields[playerIndex].grid[row * this.boardSize + col].type = cellType;
 	}

@@ -59,7 +59,7 @@ class MicroGamefield extends Component {
             if (typeof this.props.playerSetup !== 'undefined') {
                 this.props.playerSetup.grid.forEach(field => {
                     this.buildings[field.row][field.col] = field.occupiedBy;
-                    field.occupiedBy.filter(building => building !== EntityType.CREAM)
+                    field.occupiedBy.filter(building => building.type !== EntityType.CREAM)
                     .forEach(building => this.microGamefield.setBuilding(building, { row: field.row, col: field.col }));                
                 });
             }
@@ -70,7 +70,7 @@ class MicroGamefield extends Component {
             if (typeof this.props.playerSetup !== 'undefined') {
                 this.props.playerSetup.grid.forEach(field => {
                     this.buildings[field.row][field.col] = field.occupiedBy;
-                    field.occupiedBy.filter(building => building !== EntityType.CREAM)
+                    field.occupiedBy.filter(building => building.type !== EntityType.CREAM)
                     .forEach(building => this.microGamefield.setBuilding(building, { row: field.row, col: field.col }));                
                 });
             }
@@ -85,7 +85,7 @@ class MicroGamefield extends Component {
             if (typeof this.props.opponentSetup !== 'undefined') {
                 this.props.opponentSetup.grid.forEach(field => {
                     this.opponentBuildings[field.row][field.col] = field.occupiedBy;
-                    field.occupiedBy.filter(building => building !== EntityType.CREAM)
+                    field.occupiedBy.filter(building => building.type !== EntityType.CREAM)
                     .forEach(building => this.opponentGamefield.setBuilding(building, { row: field.row, col: field.col }));                  
                 });
             }

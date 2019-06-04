@@ -55,7 +55,7 @@ class TreesAndCannonsPage extends Component {
             this.game.gameplay.game.board.fields[1].grid[position.row * 3 + position.col].molten = true;
             this.gamefield.meltDownField()
         }
-        if (attackedField.occupiedBy.includes(EntityType.FACTORY) && attackType === AttackType.HOT_CHOCOLATE) {
+        if (attackedField.occupiedBy.map(entity => entity.type).includes(EntityType.FACTORY) && attackType === AttackType.HOT_CHOCOLATE) {
             setTimeout(() => this.props.fulfilled(), 1000);
         } else if (this.state.messages.length === 3 && attackType === AttackType.BUNNY) {
             this.setState({

@@ -107,35 +107,18 @@ class Multiplayer {
     emitAction(action) {
         switch (action.type) {
             case GameActionTypes.build:
-                this.gameActions.build(action.payload).then(() => {
-                    if (typeof this.opponentGameField3d !== 'undefined') {
-                        this.opponentGameField3d.setBuilding(action.payload.building.type, action.payload.building.position);
-                    }
-                });
+                this.gameActions.build(action.payload);
                 break;
             case GameActionTypes.attack:
                 this.gameActions.attack(action.payload).then(() => {
-                    console.dir(this.gameState);
-                    const row = action.payload.row;
-                    const col = action.payload.col;
-                    const attackType = action.payload.attackType;
-                    if (attackType === AttackType.BUNNY) {
+                    if (action.payload.attackType === AttackType.BUNNY) {
                         if (this.gameState.players[1 - this.localPlayerIndex].attacksPerTurn[AttackType.BUNNY] > 0) {
                             Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
-                            this.gameField3d.attack({ row: row, col: col }, AttackType.BUNNY);
                         } else {
                             Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
-                            this.opponentGameField3d.meltDownEasterBunny();
-                            this.gameField3d.receiveBallista({ row: row, col: col });
                         }
                     } else {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
-                        const playerBoard = this.gameState.board.fields[this.gameState.players[this.localPlayerIndex].fieldIndex];
-                        const attackedCell = playerBoard.grid[row * this.gameState.board.size.cols + col];
-                        this.gameField3d.attack({ row: row, col: col }, attackType, attackedCell.shielded);
-                        if (attackType === AttackType.HOT_CHOCOLATE) {
-                            this.gameField3d.rebuild(playerBoard);
-                        }
                     }
                 });
                 break;
@@ -201,11 +184,6 @@ class Multiplayer {
         this.localPlayerIndex = 0;
         this.currentEventIndex = 0;
         this.currentGameSession = undefined;
-    }
-
-    connectUiGamefields(gameField3d, opponentGameField3d) {
-        this.gameField3d = gameField3d;
-        this.opponentGameField3d = opponentGameField3d;
     }
 
     joinGameSession(sessionId, gameActions) {
