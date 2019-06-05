@@ -1,4 +1,4 @@
-import { Group, Geometry, Mesh } from 'three';
+import { Group, Geometry, Mesh, MeshLambertMaterial } from 'three';
 import { EntityType, BoardCellTypes } from '../gameplay/GameEntities';
 import { assetLoader as AssetLoader} from '../AssetLoader.js';
 
@@ -80,13 +80,12 @@ class Gamefield {
                 if (entity.type === EntityType.CREAM && cell.occupiedBy.length > 1 && this.isPlayerGameField) {
                     phenotype = EntityType.CREAM + '.AROUND.BUILDING';
                 }
-                if (entity.type === EntityType.CREAM || cell.occupiedBy.length === 1 || !cell.occupiedBy.map(building => building.type).includes(EntityType.CREAM) || this.isPlayerGameField) {
-                    this.renderingEntities[phenotype].geometry.faces = this.renderingEntities[phenotype].geometry.faces.filter(face => face.entityId !== entity.id);
-                    this.renderingEntities[phenotype].geometry.elementsNeedUpdate = true;
+                this.removeEntity(entity, phenotype, cell);
+                if (entity.type === EntityType.CHOCOLATE_FOUNTAIN) {
+                    this.removeEntity(entity, EntityType.CHOCOLATE_FOUNTAIN + '.BUILDING', cell);
                 }
             });
         } else {
-            const assets = AssetLoader.assets.models;
             cell.occupiedBy.forEach(entity => {
                 let phenotype = entity.type;
                 if (entity.type === EntityType.CREAM) {
@@ -96,65 +95,96 @@ class Gamefield {
                 }
 
                 if (entity.type === EntityType.CREAM || cell.occupiedBy.length === 1 || !cell.occupiedBy.map(building => building.type).includes(EntityType.CREAM) || this.isPlayerGameField) {
-                    let pivot = assets[phenotype].model.scene.children[0];
-                    let material = assets[phenotype].model.scene.children[0].material;
-                    if (pivot instanceof Group) {
-                        material = [...new Set(pivot.children.map(child => child.material))];
-                    } 
-
-                    if (typeof this.renderingEntities[phenotype] === 'undefined') {
-                        this.renderingEntities[phenotype] = new Mesh(new Geometry(), material);
-                        this.gameField.add(this.renderingEntities[phenotype]);
+                    this.renderEntity(entity, phenotype, cell);
+                    if (entity.type === EntityType.CHOCOLATE_FOUNTAIN) {
+                        this.renderEntity(entity, EntityType.CHOCOLATE_FOUNTAIN + '.BUILDING', cell);
                     }
-
-                    let geometryLowerBound = this.renderingEntities[phenotype].geometry.faces.length;
-                    pivot.position.set(this.fieldSize * cell.row, assets[phenotype].model.scene.children[0].position.y, this.fieldSize * cell.col);
-                    if (entity.type === EntityType.FACTORY_EXTENSION) {
-                        if (this.playerField.grid[cell.row * this.cols + Math.min(cell.col + 1, this.cols - 1)].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
-                            pivot.rotation.y = -Math.PI / 2;
-                        } else if (this.playerField.grid[Math.max(cell.row - 1, 0) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
-                            pivot.rotation.y = Math.PI;
-                        } else if (this.playerField.grid[Math.min(cell.row + 1, this.rows - 1) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
-                            pivot.rotation.y = 0;
-                        } else {
-                            pivot.rotation.y = Math.PI / 2
-                        }
-
-                        console.log(pivot.rotation.y);
-                    }
-
-                    pivot.traverse(child => {
-                        if (child instanceof Mesh) {
-                            child.updateMatrix();
-                            let geometry = new Geometry().fromBufferGeometry(child.geometry);
-                            if (pivot instanceof Group) {
-                                child.position.set(this.fieldSize * cell.row, assets[phenotype].model.scene.children[0].position.y, this.fieldSize * cell.col);
-                                child.scale.set(pivot.scale.x, pivot.scale.y, pivot.scale.z);
-                                child.rotation.set(pivot.rotation.x, pivot.rotation.y, pivot.rotation.z)
-                                child.updateMatrix();
-                                geometry.faces.forEach(face => {
-                                    face.materialIndex = material.findIndex(submaterial => child.material.uuid === submaterial.uuid);
-                                });
-                            }
-                            this.renderingEntities[phenotype].geometry.merge(geometry, child.matrix);
-                        }
-                    });
-
-                    for (let i = geometryLowerBound; i < this.renderingEntities[phenotype].geometry.faces.length; i++) {
-                        this.renderingEntities[phenotype].geometry.faces[i]._cellIdx = { row: cell.row, col: cell.col };
-                        this.renderingEntities[phenotype].geometry.faces[i]._fieldIndex = this.fieldIdx;
-                        this.renderingEntities[phenotype].geometry.faces[i].entityId = entity.id;
-                    }
-
-                    if (pivot instanceof Group) {
-                        this.renderingEntities[phenotype].geometry.groupsNeedUpdate = true;
-                        this.renderingEntities[phenotype].geometry.sortFacesByMaterialIndex();
-                    }
-                    this.renderingEntities[phenotype].geometry.elementsNeedUpdate = true;
                 }
             });
         }
     }
+
+    removeEntity(entity, phenotype, cell) {
+        if (entity.type === EntityType.CREAM || cell.occupiedBy.length === 1 || !cell.occupiedBy.map(building => building.type).includes(EntityType.CREAM) || this.isPlayerGameField) {
+            this.renderingEntities[phenotype].geometry.faces = this.renderingEntities[phenotype].geometry.faces.filter(face => face.entityId !== entity.id);
+            this.renderingEntities[phenotype].geometry.elementsNeedUpdate = true;
+        }        
+    }
+
+    renderEntity(entity, phenotype, cell) {
+        const assets = AssetLoader.assets.models;
+        let pivot, material, position;
+
+        if (phenotype === EntityType.CHOCOLATE_FOUNTAIN  + '.BUILDING') {
+            pivot = assets[EntityType.CHOCOLATE_FOUNTAIN].model.scene.children[1];
+            material = assets[EntityType.CHOCOLATE_FOUNTAIN].model.scene.children[1].material;
+            position = assets[EntityType.CHOCOLATE_FOUNTAIN].model.scene.children[1].position;
+        } else {
+            pivot = assets[phenotype].model.scene.children[0];
+            material = assets[phenotype].model.scene.children[0].material;
+            position = assets[phenotype].model.scene.children[0].position;
+        }
+
+        if (pivot instanceof Group) {
+            material = [...new Set(pivot.children.map(child => child.material))];
+        } 
+
+        if (typeof this.renderingEntities[phenotype] === 'undefined') {
+            if (phenotype === EntityType.CHOCOLATE_FOUNTAIN) {
+                material = new MeshLambertMaterial({ color: 0x6C5710, opacity: 0.3, transparent: true });
+            }
+
+            this.renderingEntities[phenotype] = new Mesh(new Geometry(), material);
+            this.gameField.add(this.renderingEntities[phenotype]);
+        }
+
+        let geometryLowerBound = this.renderingEntities[phenotype].geometry.faces.length;
+        pivot.position.set(this.fieldSize * cell.row, position.y, this.fieldSize * cell.col);
+        if (entity.type === EntityType.FACTORY_EXTENSION) {
+            if (this.playerField.grid[cell.row * this.cols + Math.min(cell.col + 1, this.cols - 1)].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
+                pivot.rotation.y = -Math.PI / 2;
+            } else if (this.playerField.grid[Math.max(cell.row - 1, 0) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
+                pivot.rotation.y = Math.PI;
+            } else if (this.playerField.grid[Math.min(cell.row + 1, this.rows - 1) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
+                pivot.rotation.y = 0;
+            } else {
+                pivot.rotation.y = Math.PI / 2
+            }
+        }
+
+        pivot.traverse(child => {
+            if (child instanceof Mesh) {
+                child.updateMatrix();
+                let geometry = new Geometry().fromBufferGeometry(child.geometry);
+                if (pivot instanceof Group) {
+                    child.position.set(this.fieldSize * cell.row, position.y, this.fieldSize * cell.col);
+                    child.scale.set(pivot.scale.x, pivot.scale.y, pivot.scale.z);
+                    child.rotation.set(pivot.rotation.x, pivot.rotation.y, pivot.rotation.z);
+                    child.updateMatrix();
+                    geometry.faces.forEach(face => {
+                        face.materialIndex = material.findIndex(submaterial => child.material.uuid === submaterial.uuid);
+                    });
+                }
+                this.renderingEntities[phenotype].geometry.merge(geometry, child.matrix);
+            }
+        });
+
+        for (let i = geometryLowerBound; i < this.renderingEntities[phenotype].geometry.faces.length; i++) {
+            if (pivot.name !== 'Shield') {
+                this.renderingEntities[phenotype].geometry.faces[i]._cellIdx = { row: cell.row, col: cell.col };
+                this.renderingEntities[phenotype].geometry.faces[i]._fieldIndex = this.fieldIdx;
+            }
+            this.renderingEntities[phenotype].geometry.faces[i].entityId = entity.id;
+        }
+
+        if (pivot instanceof Group) {
+            this.renderingEntities[phenotype].geometry.groupsNeedUpdate = true;
+            this.renderingEntities[phenotype].geometry.sortFacesByMaterialIndex();
+        }
+        this.renderingEntities[phenotype].geometry.elementsNeedUpdate = true;
+    }
+
+
 
     rebuild() {
         this.update();
