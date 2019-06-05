@@ -51,7 +51,7 @@ class Scene extends Component {
         // Allow clicking
         this.raycaster = new Raycaster();
         this.mouse = new Vector2();
-        this.lookAtOpponent = false;
+        this.lookAtOpponent = true;
     }
 
     componentDidUpdate() {
@@ -264,11 +264,19 @@ class Scene extends Component {
         }
     }
 
-    startGame = (game, overrideUiState=true) => {
+    startGame = (game, overrideUiState=false) => {
         const playerFieldIndex = game.players[multiplayer.localPlayerIndex].fieldIndex;
         const opponentFieldIndex = game.players[1 - multiplayer.localPlayerIndex].fieldIndex;
-        
-        if (this.lookAtOpponent !== multiplayer.isLocalPlayer(game.currentPlayerIndex)) {
+        console.log(game.currentPlayerIndex);
+        console.log(multiplayer.localPlayerIndex)
+        console.log(this.lookAtOpponent)
+        console.log(multiplayer.isLocalPlayer(game.currentPlayerIndex))
+        console.log(multiplayer.isLocalPlayer(game.currentPlayerIndex))
+
+        if (this.lookAtOpponent !== ((multiplayer.isLocalPlayer(game.currentPlayerIndex) === false &&
+            game.state !== GameStateTypes.ATTACK_PHASE) ||
+            (multiplayer.isLocalPlayer(game.currentPlayerIndex) === true &&
+            game.state === GameStateTypes.ATTACK_PHASE))) {
             this.updateView();
         } else {
             this.start();

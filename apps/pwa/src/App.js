@@ -15,6 +15,7 @@ import { BattlechocError } from './gameplay/Errors';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import { gameplayLog } from './gameplay/GamePlayLogger';
 import BuildFactoryTestSituation from './situations/tests/BuildFactoryTest';
+import FactoryExtensionTest from './situations/tests/FactoryExtensionTest';
 import Scene from './3d/Scene';
 import Hud from './ui/Hud';
 
@@ -72,26 +73,32 @@ class App extends Component {
         }
     }
 
+    loadSituation(situation) {
+        this.opponent = new Augustus({
+            chooseStart: this.props.chooseStart,
+            chooseField: this.props.chooseField,
+            build: this.props.build,
+            attack: this.props.attack,
+            finishTurn: this.props.finishTurn,
+            finishBuildPhase: this.props.finishBuildPhase
+        });
+        this.props.resumeGame(situation.gameplay).then(() => {
+            this.opponent.player = this.props.game.players[1];
+            this.opponent.connectGamestate(() => this.props.game);
+            this.props.loadUiState(situation.ui).then(() => {
+                this.setState({ params: { ...this.state.params, situation: undefined }}, () => {
+                    this.scene.startGame(this.props.game, false);
+                });
+            });
+        });        
+    }
+
     componentWillReceiveProps(nextProps) {
         if (!this.props.assetsReady && nextProps.assetsReady) {
             if (this.state.params.situation === 'd41d8cd98f00b204e9800998ecf8427e') {
-                this.opponent = new Augustus({
-                    chooseStart: this.props.chooseStart,
-                    chooseField: this.props.chooseField,
-                    build: this.props.build,
-                    attack: this.props.attack,
-                    finishTurn: this.props.finishTurn,
-                    finishBuildPhase: this.props.finishBuildPhase
-                });
-                this.props.resumeGame(BuildFactoryTestSituation.gameplay).then(() => {
-                    this.opponent.player = this.props.game.players[1];
-                    this.opponent.connectGamestate(() => this.props.game);
-                    this.props.loadUiState(BuildFactoryTestSituation.ui).then(() => {
-                        this.setState({ params: { ...this.state.params, situation: undefined }}, () => {
-                            this.scene.startGame(this.props.game, false);
-                        });
-                    });
-                });
+                this.loadSituation(BuildFactoryTestSituation);
+            } else if (this.state.params.situation === '2042050de74e855affdb312da85badbf') {
+                this.loadSituation(FactoryExtensionTest);
             }
         }
 
@@ -255,7 +262,7 @@ class App extends Component {
                     this.props.resumeGame(resumeableGame).then(() => {
                         this.opponent.player = resumeableGame.players[1];
                         this.opponent.connectGamestate(() => this.props.game);
-                        this.scene.startGame(this.props.game);
+                        this.scene.startGame(this.props.game, false);
                     });
                 } else {
                     let players = [

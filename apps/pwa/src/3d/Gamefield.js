@@ -109,6 +109,20 @@ class Gamefield {
 
                     let geometryLowerBound = this.renderingEntities[phenotype].geometry.faces.length;
                     pivot.position.set(this.fieldSize * cell.row, assets[phenotype].model.scene.children[0].position.y, this.fieldSize * cell.col);
+                    if (entity.type === EntityType.FACTORY_EXTENSION) {
+                        if (this.playerField.grid[cell.row * this.cols + Math.min(cell.col + 1, this.cols - 1)].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
+                            pivot.rotation.y = -Math.PI / 2;
+                        } else if (this.playerField.grid[Math.max(cell.row - 1, 0) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
+                            pivot.rotation.y = Math.PI;
+                        } else if (this.playerField.grid[Math.min(cell.row + 1, this.rows - 1) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
+                            pivot.rotation.y = 0;
+                        } else {
+                            pivot.rotation.y = Math.PI / 2
+                        }
+
+                        console.log(pivot.rotation.y);
+                    }
+
                     pivot.traverse(child => {
                         if (child instanceof Mesh) {
                             child.updateMatrix();
