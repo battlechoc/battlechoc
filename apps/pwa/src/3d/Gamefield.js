@@ -1,4 +1,4 @@
-import { Group, Geometry, Mesh, MeshLambertMaterial } from 'three';
+import { Group, Geometry, Mesh, MeshLambertMaterial, Color, SpotLight, Object3D } from 'three';
 import { EntityType, BoardCellTypes } from '../gameplay/GameEntities';
 import { assetLoader as AssetLoader} from '../AssetLoader.js';
 
@@ -229,15 +229,48 @@ class Gamefield {
         this.renderScene();
     }
 
+    hideEntity(phenotype) {
+        if (typeof this.renderingEntities[phenotype] !== 'undefined') {
+            this.gameField.remove(this.renderingEntities[phenotype]);
+        }
+    }
+
+    showEntity(phenotype) {
+        if (typeof this.renderingEntities[phenotype] !== 'undefined') {
+            this.gameField.add(this.renderingEntities[phenotype]);
+        }        
+    }
+
     highlightCannons(unhighlight) {
-        for (let row = 0; row < this.rows; row++) {
-            for (let col = 0; col < this.cols; col++) {
-                this.buildings[row][col].forEach(building => {
-                    if (building.entityType === EntityType.RUM_TRUFFLE_CANNON) {
-                        building.highlight(unhighlight);
-                    }
-                })
+        if (unhighlight) {
+            for (let entityType in this.renderingEntities) {
+                if (entityType !== EntityType.RUM_TRUFFLE_CANNON) {
+                    this.showEntity(entityType);
+                }
             }
+
+            this.gameField.children.forEach(child => {
+                if (child.name === 'target' || child instanceof SpotLight) {
+                    this.gameField.remove(child);
+                }
+            });
+        } else {
+            for (let entityType in this.renderingEntities) {
+                if (entityType !== EntityType.RUM_TRUFFLE_CANNON) {
+                    this.hideEntity(entityType);
+                } 
+            }
+
+            this.playerField.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.RUM_TRUFFLE_CANNON)).forEach(cell => {
+                let spotlight = new SpotLight(0xffffff, 4.0, 64, 0.2);
+                spotlight.position.set(this.fieldSize * cell.row, 32, this.fieldSize * cell.col);
+                this.gameField.add(spotlight);
+                let pivot = new Object3D();
+                pivot.name = 'target';
+                pivot.position.set(this.fieldSize * cell.row, 3, this.fieldSize * cell.col)
+                this.gameField.add(pivot);
+                spotlight.target = pivot;
+            });
         }
         this.renderScene();
     }
