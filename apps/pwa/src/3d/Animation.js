@@ -5,7 +5,6 @@ export default class Animation {
 		this.animation = asset.model;
 		this.gamefield = gamefield;
 		this.onFinished = onFinished;
-
 		this.model = this.animation.scene.clone();
         this.model.position.set(position.x, position.y, position.z);
         if (turned) {

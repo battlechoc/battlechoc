@@ -12,6 +12,7 @@ import { InfoType, spawnInfo, spawnInfoAtBuilding } from '../ui/misc/FlyingInfo'
 import { BattlechocError } from '../gameplay/Errors';
 import { playerHasAttacks } from '../gameplay/Player';
 import { DirectionalLight, Clock, Scene as ThreeScene, WebGLRenderer, OrthographicCamera, Raycaster, Vector2, Vector3 } from 'three';
+import { assetLoader as AssetLoader} from '../AssetLoader.js';
 
 class Scene extends Component {
 
@@ -119,10 +120,19 @@ class Scene extends Component {
         this.renderScene();
     }
 
+    detonateAtShield(row, col, playerField=false) {
+        let position3d = { x: row * this.playerGameField.fieldSize, y: 0, z: col * this.playerGameField.fieldSize };
+        if (playerField) {
+            this.startAnimation(this.playerGameField.gameField, false, AssetLoader.assets.models.ATTACK_AT_SHIELD_EXPLOSION, position3d);
+        } else {
+            this.startAnimation(this.opponentGameField.gameField, false, AssetLoader.assets.models.ATTACK_AT_SHIELD_EXPLOSION, position3d);
+        }
+    }
+
     onClick = event => {
         // console.log(event.clientX, event.clientY);
         // TODO: implement new stats with console.log(this.renderer.info.render.calls)
-        console.log(this.renderer.info.render.calls); // creams + 3
+        console.log('RENDER CALLS', this.renderer.info.render.calls); // creams + 3
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
         this.raycaster.setFromCamera(this.mouse, this.camera);
@@ -238,6 +248,10 @@ class Scene extends Component {
                         }
                     } else if (typeof this.props.selectedAttack !== 'undefined') {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
+                        let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
+                        if (cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, target.row, target.col).shielded) {
+                            this.detonateAtShield(target.row, target.col);
+                        }
                     }
 
                     if (this.props.game.players[multiplayer.localPlayerIndex].attacks[this.props.selectedAttack] === 0) {
@@ -267,11 +281,6 @@ class Scene extends Component {
     startGame = (game, overrideUiState=false) => {
         const playerFieldIndex = game.players[multiplayer.localPlayerIndex].fieldIndex;
         const opponentFieldIndex = game.players[1 - multiplayer.localPlayerIndex].fieldIndex;
-        console.log(game.currentPlayerIndex);
-        console.log(multiplayer.localPlayerIndex)
-        console.log(this.lookAtOpponent)
-        console.log(multiplayer.isLocalPlayer(game.currentPlayerIndex))
-        console.log(multiplayer.isLocalPlayer(game.currentPlayerIndex))
 
         if (this.lookAtOpponent !== ((multiplayer.isLocalPlayer(game.currentPlayerIndex) === false &&
             game.state !== GameStateTypes.ATTACK_PHASE) ||

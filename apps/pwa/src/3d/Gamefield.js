@@ -198,8 +198,7 @@ class Gamefield {
     update() {
         let playerField = this.getPlayerField();
         let changes = playerField.grid.map((cell, i) => JSON.stringify(cell.occupiedBy) === JSON.stringify(this.playerField.grid[i].occupiedBy) ? null : i);
-        changes.filter(position => position !== null).forEach(position => {           
-            console.log(playerField.grid[position]);
+        changes.filter(position => position !== null).forEach(position => {
             if (playerField.grid[position].occupiedBy.length < this.playerField.grid[position].occupiedBy.length) {
                 const assets = AssetLoader.assets.models;
                 let isTurned = entity => (!this.isPlayerGameField &&

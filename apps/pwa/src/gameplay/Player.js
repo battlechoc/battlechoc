@@ -253,7 +253,7 @@ class Augustus {
         }
     }
 
-    simulateAttack(target, attackType) {
+    simulateAttack(target, attackType, detonateAtShield) {
         this.actions.attack({
             issuer: this.player.id,
             attackType: attackType,
@@ -269,12 +269,15 @@ class Augustus {
                 }
             } else {
                 Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
+                if (this.opponentBoard.grid[target.row * this.boardSize.cols + target.col].shielded) {
+                    detonateAtShield(target.row, target.col);
+                }
             }
             this.simulateAttackPhase();
         }).catch(error => this.handleAttackError(error));
     }
 
-    async simulateAttackPhase() {
+    async simulateAttackPhase(detonateAtShield) {
         await this.simulateThinking(1500);
         this.refreshGameState();
         if (this.gameIsRunning) {
@@ -283,7 +286,7 @@ class Augustus {
             if (this.player.attacks[AttackType.BUNNY] > 0 && creamyFields.length) {
                 let target = creamyFields[Math.floor(Math.random() * creamyFields.length)];
                 console.log('OPPONENT BUNNY IS GOING TO SPY :', target);
-                this.simulateAttack(target, AttackType.BUNNY);
+                this.simulateAttack(target, AttackType.BUNNY, detonateAtShield);
             } else if (this.player.attacks[AttackType.HOT_CHOCOLATE] > 0) {
                 let target;
                 if (this.discoveredShieldedCells.length > 0) {
@@ -292,16 +295,16 @@ class Augustus {
                 } else {
                     target = this.estimateAttackTarget(AttackType.HOT_CHOCOLATE);
                 }
-                this.simulateAttack(target, AttackType.HOT_CHOCOLATE);
+                this.simulateAttack(target, AttackType.HOT_CHOCOLATE, detonateAtShield);
             } else if (this.player.attacks[AttackType.FRUIT] > 0) {
                 let target = this.estimateFruitAttackTarget();
-                this.simulateAttack(target, AttackType.FRUIT);
+                this.simulateAttack(target, AttackType.FRUIT, detonateAtShield);
             } else if (this.player.attacks[AttackType.TRUFFLE] > 0) {
                 let target = this.estimateAttackTarget(AttackType.TRUFFLE);
                 if (target.shielded === true) {
                     this.discoveredShieldedCells.push(target);
                 }
-                this.simulateAttack(target, AttackType.TRUFFLE);
+                this.simulateAttack(target, AttackType.TRUFFLE, detonateAtShield);
             } else {
                 this.actions.finishTurn({ issuer: this.player.id }).catch(error => {
                     if (error instanceof BattlechocError) {
