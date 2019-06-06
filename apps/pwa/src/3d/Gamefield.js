@@ -106,8 +106,14 @@ class Gamefield {
 
     removeEntity(entity, phenotype, cell) {
         if (entity.type === EntityType.CREAM || cell.occupiedBy.length === 1 || !cell.occupiedBy.map(building => building.type).includes(EntityType.CREAM) || this.isPlayerGameField) {
-            this.renderingEntities[phenotype].geometry.faces = this.renderingEntities[phenotype].geometry.faces.filter(face => face.entityId !== entity.id);
-            this.renderingEntities[phenotype].geometry.elementsNeedUpdate = true;
+            let reducedGeometry = this.renderingEntities[phenotype].geometry.faces.filter(face => face.entityId !== entity.id);
+            if (reducedGeometry.length > 0) {
+                this.renderingEntities[phenotype].geometry.faces = reducedGeometry;
+                this.renderingEntities[phenotype].geometry.elementsNeedUpdate = true;
+            } else {
+                this.gameField.remove(this.renderingEntities[phenotype]);
+                delete this.renderingEntities[phenotype];
+            }
         }        
     }
 
