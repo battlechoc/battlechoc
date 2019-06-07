@@ -1,4 +1,4 @@
-import { Group, Geometry, Mesh, MeshLambertMaterial, Color, SpotLight, Object3D } from 'three';
+import { Group, Geometry, Mesh, MeshLambertMaterial, SpotLight, Object3D } from 'three';
 import { EntityType, BoardCellTypes } from '../gameplay/GameEntities';
 import { assetLoader as AssetLoader} from '../AssetLoader.js';
 
@@ -31,7 +31,8 @@ class Gamefield {
 
         let materials = [materialMap.children[0].material, materialMap.children[1].material, materialMap.children[2].material];
         let board = new Mesh(new Geometry(), materials);
-        this.playerField.grid.forEach((cell, i) => {
+        let playerField = this.getPlayerField();
+        playerField.grid.forEach((cell, i) => {
             if (!cell.molten) {
                 let materialIndex = 0;
                 if (cell.type === BoardCellTypes.BROWN) {
@@ -71,6 +72,9 @@ class Gamefield {
 
         this.gameField.add(board);
         this.gameField.position.set(this.position[0], this.position[1], this.position[2]);
+        if (!skipEntities) {
+            this.renderScene();
+        }
     }
 
     renderEntities(cell, remove=false) {
@@ -122,13 +126,13 @@ class Gamefield {
         let pivot, material, position;
 
         if (phenotype === EntityType.CHOCOLATE_FOUNTAIN  + '.BUILDING') {
-            pivot = assets[EntityType.CHOCOLATE_FOUNTAIN].model.scene.children[1];
-            material = assets[EntityType.CHOCOLATE_FOUNTAIN].model.scene.children[1].material;
-            position = assets[EntityType.CHOCOLATE_FOUNTAIN].model.scene.children[1].position;
+            pivot = assets[EntityType.CHOCOLATE_FOUNTAIN].model.scene.clone().children[1];
+            material = pivot.material;
+            position = pivot.position;
         } else {
-            pivot = assets[phenotype].model.scene.children[0];
-            material = assets[phenotype].model.scene.children[0].material;
-            position = assets[phenotype].model.scene.children[0].position;
+            pivot = assets[phenotype].model.scene.clone().children[0];
+            material = pivot.material;
+            position = pivot.position;
         }
 
         if (pivot instanceof Group) {
@@ -146,6 +150,17 @@ class Gamefield {
 
         let geometryLowerBound = this.renderingEntities[phenotype].geometry.faces.length;
         pivot.position.set(this.fieldSize * cell.row, position.y, this.fieldSize * cell.col);
+
+        if (!this.isPlayerGameField) {
+            if (entity.type === EntityType.RUM_TRUFFLE_CANNON) {
+                pivot.rotation.z = Math.PI / 4;
+            } else if (entity.type === EntityType.SPYING_EASTER_BUNNY) {
+                pivot.rotation.y = -Math.PI / 1.2;
+            } else if (entity.type === EntityType.HOT_CHOCOLATE_BALLISTA) {
+                pivot.rotation.y = -Math.PI / 1.5;
+            }
+        } 
+
         if (entity.type === EntityType.FACTORY_EXTENSION) {
             if (this.playerField.grid[cell.row * this.cols + Math.min(cell.col + 1, this.cols - 1)].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
                 pivot.rotation.y = -Math.PI / 2;
@@ -190,23 +205,19 @@ class Gamefield {
         this.renderingEntities[phenotype].geometry.elementsNeedUpdate = true;
     }
 
-
-
-    rebuild() {
-        this.update();
-        let board = this.gameField.getObjectByName('BOARD' + this.fieldIdx);
-        this.gameField.remove(board);
-
-        this.build(true);
-        this.renderScene();
-    }
-
     update() {
         let playerField = this.getPlayerField();
+        let fieldChanges = playerField.grid.map((cell, i) => cell.molten === this.playerField.grid[i].molten ? null : i);
+
+        if (fieldChanges.filter(position => position !== null).length > 0) {
+            let board = this.gameField.getObjectByName('BOARD' + this.fieldIdx);
+            this.gameField.remove(board);
+            this.build(true);
+        }
+
         let changes = playerField.grid.map((cell, i) => JSON.stringify(cell.occupiedBy) === JSON.stringify(this.playerField.grid[i].occupiedBy) ? null : i);
         changes.filter(position => position !== null).forEach(position => {
             if (playerField.grid[position].occupiedBy.length < this.playerField.grid[position].occupiedBy.length) {
-                const assets = AssetLoader.assets.models;
                 let isTurned = entity => (!this.isPlayerGameField &&
                              (entity.type === EntityType.RUM_TRUFFLE_CANNON ||
                               entity.type === EntityType.SPYING_EASTER_BUNNY ||
@@ -218,7 +229,7 @@ class Gamefield {
                         if (entity.type !== EntityType.CREAM && this.playerField.grid[position].occupiedBy.filter(building => building.type === EntityType.CREAM).length > 0) {
                             offset = 400;
                         }
-                        this.startAnimation(isTurned(entity), assets[entity.type + '.EXPLOSION'], cellPosition, offset);
+                        this.startAnimation(isTurned(entity), entity.type + '.EXPLOSION', cellPosition, offset);
                     });
                 }
             }
@@ -229,23 +240,11 @@ class Gamefield {
         this.renderScene();
     }
 
-    hideEntity(phenotype) {
-        if (typeof this.renderingEntities[phenotype] !== 'undefined') {
-            this.gameField.remove(this.renderingEntities[phenotype]);
-        }
-    }
-
-    showEntity(phenotype) {
-        if (typeof this.renderingEntities[phenotype] !== 'undefined') {
-            this.gameField.add(this.renderingEntities[phenotype]);
-        }        
-    }
-
     highlightCannons(unhighlight) {
         if (unhighlight) {
             for (let entityType in this.renderingEntities) {
-                if (entityType !== EntityType.RUM_TRUFFLE_CANNON) {
-                    this.showEntity(entityType);
+                if (entityType !== EntityType.RUM_TRUFFLE_CANNON && typeof this.renderingEntities[entityType] !== 'undefined') {
+                    this.gameField.add(this.renderingEntities[entityType]);
                 }
             }
 
@@ -256,8 +255,8 @@ class Gamefield {
             });
         } else {
             for (let entityType in this.renderingEntities) {
-                if (entityType !== EntityType.RUM_TRUFFLE_CANNON) {
-                    this.hideEntity(entityType);
+                if (entityType !== EntityType.RUM_TRUFFLE_CANNON && typeof this.renderingEntities[entityType] !== 'undefined') {
+                    this.gameField.remove(this.renderingEntities[entityType]);
                 } 
             }
 

@@ -273,7 +273,7 @@ class Augustus {
                     detonateAtShield(target.row, target.col);
                 }
             }
-            this.simulateAttackPhase();
+            this.simulateAttackPhase(detonateAtShield);
         }).catch(error => this.handleAttackError(error));
     }
 

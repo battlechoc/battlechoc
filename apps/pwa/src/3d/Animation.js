@@ -1,14 +1,21 @@
 import { AnimationMixer, LoopOnce } from 'three';
+import { assetLoader as AssetLoader} from '../AssetLoader.js';
+import { EntityType } from '../gameplay/GameEntities';
 
 export default class Animation {
 	constructor(gamefield, turned, asset, position, id, onFinished) {
-		this.animation = asset.model;
+		const assets = AssetLoader.assets.models;
+		this.animation = assets[asset].model;
 		this.gamefield = gamefield;
 		this.onFinished = onFinished;
 		this.model = this.animation.scene.clone();
         this.model.position.set(position.x, position.y, position.z);
         if (turned) {
         	this.model.rotation.y = Math.PI;
+        }
+
+        if (asset === EntityType.CREAM + '.EXPLOSION') {
+        	this.model.rotation.y = Math.random() * Math.PI;
         }
 
         this.mixer = new AnimationMixer(this.model);

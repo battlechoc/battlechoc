@@ -12,7 +12,6 @@ import { InfoType, spawnInfo, spawnInfoAtBuilding } from '../ui/misc/FlyingInfo'
 import { BattlechocError } from '../gameplay/Errors';
 import { playerHasAttacks } from '../gameplay/Player';
 import { DirectionalLight, Clock, Scene as ThreeScene, WebGLRenderer, OrthographicCamera, Raycaster, Vector2, Vector3 } from 'three';
-import { assetLoader as AssetLoader} from '../AssetLoader.js';
 
 class Scene extends Component {
 
@@ -123,9 +122,9 @@ class Scene extends Component {
     detonateAtShield(row, col, playerField=false) {
         let position3d = { x: row * this.playerGameField.fieldSize, y: 0, z: col * this.playerGameField.fieldSize };
         if (playerField) {
-            this.startAnimation(this.playerGameField.gameField, false, AssetLoader.assets.models.ATTACK_AT_SHIELD_EXPLOSION, position3d);
+            this.startAnimation(this.playerGameField.gameField, false, 'ATTACK_AT_SHIELD_EXPLOSION', position3d);
         } else {
-            this.startAnimation(this.opponentGameField.gameField, false, AssetLoader.assets.models.ATTACK_AT_SHIELD_EXPLOSION, position3d);
+            this.startAnimation(this.opponentGameField.gameField, false, 'ATTACK_AT_SHIELD_EXPLOSION', position3d);
         }
     }
 
