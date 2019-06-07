@@ -1,3 +1,8 @@
+.hud {
+  flex-grow: 1;
+  position: relative;
+}
+
 .logo {
   position: absolute;
   z-index: 2;
@@ -82,15 +87,19 @@
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
 }
 
-/* choose menu */
 .choose {
   margin-top: 20px;
-  position: absolute;
+  display: flex;
+  color: white;
+  height: 100%;
+  align-self: center;
+}
+
+.chooseStage {
   height: 100%;
   width: 100%;
-  display: flex;
-  flex-direction: row;
-  color: white;
+  position: absolute;
+  z-index: 2;
 }
 
 .selectedByPlayer {

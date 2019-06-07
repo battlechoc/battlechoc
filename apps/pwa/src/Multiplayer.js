@@ -70,7 +70,6 @@ class Multiplayer {
                         });
                     });
                 } else {
-                    console.log("signout");
                     this.localPlayer = undefined;
                 }
             });

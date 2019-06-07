@@ -1,15 +1,14 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import ChatLikeInstructions from './ChatLikeInstructions';
-import { GameStartSelection } from '../ui/controls';
-import Situation from '../situations/Situation';
+import { connect } from 'react-redux';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 class ChoosePage extends Component {
-    componentWillMount() {
-        let situation = new Situation(3);
-        situation.game.gameplay.game.state = GameStateTypes.CHOOSE_FIELD_OR_START;
-        this.game = situation.game;
+    componentWillReceiveProps(nextProps) {
+        if (nextProps.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START) {
+            this.props.fulfilled();
+        }
     }
 
     render() {
@@ -17,12 +16,7 @@ class ChoosePage extends Component {
             { text: 'Welcome to our interactive battlechoc tutorial!', type:'text', delay: 2000 },
             { text: 'Choose between first turn or one of the game fields to continue with the tutorial', type:'text'}
         ]
-        return (
-            <div id="tutorialGameStartSelection">
-                <GameStartSelection pseudoGame={this.game} pseudoCallback={() => this.props.fulfilled()} clickable={true} />
-                <ChatLikeInstructions messages={messages} appbar={this.props.appbar}/>
-            </div>
-        );
+        return <ChatLikeInstructions messages={messages} appbar={this.props.appbar}/>;
     }
 }
 
@@ -31,4 +25,9 @@ ChoosePage.propTypes = {
     appbar: PropTypes.element.isRequired
 }
 
-export default ChoosePage
+const mapStateToProps = state => ({
+    game: state.gameplay.game
+});
+
+const ChoosePageContainer = connect(mapStateToProps)(ChoosePage);
+export default ChoosePageContainer;

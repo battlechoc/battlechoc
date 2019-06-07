@@ -9,7 +9,9 @@ import BuildFactoryPage from './BuildFactoryPage';
 import TreesAndCannonsPage from './TreesAndCannonsPage';
 import EasterBunnyAndXmasFactoryPage from './EasterBunnyAndXmasFactory';
 import { Jukebox } from '../ui/misc';
-
+import ChoosePageTutorial from '../situations/tutorial/ChoosePageTutorial';
+import FactoryTutorial from '../situations/tutorial/FactoryTutorial';
+import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 class Tutorial extends Component {
     constructor(props) {
@@ -18,6 +20,10 @@ class Tutorial extends Component {
             page: 0,
             maxPages: 4
         }
+    }
+
+    componentDidMount() {
+        this.props.loadSituation(ChoosePageTutorial);
     }
 
     fulfilled = () => {
@@ -30,11 +36,18 @@ class Tutorial extends Component {
 
     next = () => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        if (this.state.page === 0) {
+            this.props.loadSituation(FactoryTutorial);
+        }
         this.setState({ page: this.state.page + 1});
     }
 
     back = () => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        if (this.state.page === 1) {
+            this.props.loadSituation(ChoosePageTutorial);
+        }
+
         if (this.state.page > 0) {
             this.setState({ page: this.state.page - 1});
         }
@@ -86,7 +99,8 @@ class Tutorial extends Component {
 }
 
 Tutorial.propTypes = {
-    closeTutorial: PropTypes.func.isRequired
+    closeTutorial: PropTypes.func.isRequired,
+    loadSituation: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({ language: state.ui.language });

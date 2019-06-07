@@ -1,6 +1,5 @@
 #tutorial {
   z-index: 1;
-  position: absolute;
   width: 100%;
 }
 
@@ -58,7 +57,7 @@
 }
 
 .speechBubbles {
-  height: calc(50vh - 64px);
+  height: calc(40vh - 64px);
   overflow-y: scroll;
   margin: 0 auto;
   background: white;
@@ -198,7 +197,7 @@
   }
 
   .speechBubbles {
-    height: calc(50vh - 42px);
+    height: calc(40vh - 42px);
   }
 
   .imageMessage {

@@ -4,7 +4,6 @@ import { AssetLoadingViewContainer as AssetLoadingView } from '../AssetLoader';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
-import Tutorial from '../tutorial/Tutorial';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons } from './controls';
 import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AppleHint } from './dialogs';
@@ -13,10 +12,7 @@ import { CircularProgress, Button } from '@material-ui/core';
 class Hud extends Component {
     constructor(props) {
         super(props);
-        this.state = {
-            clickable: true,
-            tutorial: false
-        }
+        this.state = { clickable: true }
     }
 
     componentDidMount() {
@@ -57,17 +53,9 @@ class Hud extends Component {
         });
     }
 
-    startTutorial() {
-        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
-        this.setState({ tutorial: true });
-    }
-
     estimateStage() {
         const state = this.props.state;
-        if (this.state.tutorial) {
-            return 'TUTORIAL';
-        } else if (typeof state === 'undefined') {
+        if (typeof state === 'undefined') {
             return 'TITLE_SCREEN'
         } else if (state === GameStateTypes.START ||
             state === GameStateTypes.CHOOSE_FIELD_OR_START ||
@@ -83,11 +71,6 @@ class Hud extends Component {
         this.settings.open();
     }
 
-    closeTutorial = () => {
-        Jukebox.stopMusic();
-        this.setState({ tutorial: false })
-    }
-
     render() {
         const stage = this.estimateStage();
         let textAnimation = typeof this.state.message === 'undefined' ? undefined : <div id="textAnimation" className="zoom">{this.state.message}</div>
@@ -100,17 +83,14 @@ class Hud extends Component {
                 <AppleHint message={t[this.props.language].IOS_MESSAGE} />
                 
                 {(() => {
-                    if (stage === 'TUTORIAL') {
-                        return <Tutorial closeTutorial={this.closeTutorial} />
-                    }
-                    else if (stage === 'TITLE_SCREEN') {
+                    if (stage === 'TITLE_SCREEN') {
                         let controls = []
                         if (!this.props.multiplayerLandingPage) {
                             controls.push(<Button key="0" color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(false)}>{t[this.props.language].NEW_GAME}</Button>);
                             if (this.props.resumeGamePossible === true) {
                                 controls.push(<Button key="1" color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(true)}>{t[this.props.language].RESUME_GAME}</Button>);
                             }
-                            controls.push(<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>);
+                            controls.push(<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.props.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>);
                         } else {
                             controls.push(<Button key="3" color="primary" aria-label="join multiplayer" className="menuButton" variant="contained" onClick={this.props.joinMultiplayerGame}>{t[this.props.language].JOIN_MULTIPLAYER}</Button>);
                         }
@@ -134,7 +114,7 @@ class Hud extends Component {
                             waitingNotification = <div className="multiplayerNotification"><p>Wait for second player..</p><CircularProgress /></div>;
                         }
                         return (
-                            <div>
+                            <div className="chooseStage">
                                 { waitingNotification }
                                 <GameStartSelection clickable={this.state.clickable} />
                             </div>
@@ -156,7 +136,10 @@ class Hud extends Component {
 
 Hud.propTypes = {
     prepareNewGameCallback: PropTypes.func.isRequired,
-    endGame: PropTypes.func.isRequired
+    startTutorial: PropTypes.func.isRequired,
+    joinMultiplayerGame: PropTypes.func.isRequired,
+    endGame: PropTypes.func.isRequired,
+    multiplayerLandingPage: PropTypes.bool.isRequired
 }
 
 const mapStateToProps = state => ({

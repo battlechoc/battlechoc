@@ -45,6 +45,7 @@ class GameStartSelection extends Component {
     estimateButtonClasses() {
         let classNames = 'button'
         console.log(this.getGameState())
+        console.log(this.props.game)
         if (this.props.clickable && this.getGameState() === GameStateTypes.CHOOSE_FIELD_OR_START) {
             classNames += ' active';
         } else if (this.getGameState() === GameStateTypes.CHOOSE_FIELD) {
