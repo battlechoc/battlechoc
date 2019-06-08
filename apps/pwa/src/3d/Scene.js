@@ -166,10 +166,13 @@ class Scene extends Component {
                     spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn, x: event.clientX, y: event.clientY, container: this.container });
                     this.props.deselectBuildings();
                     this.props.deselectAttack();
+                    let playerId = this.props.game.players[multiplayer.localPlayerIndex].id;
                     setTimeout(() => {
-                        this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
-                        this.props.deselectBuildings();
-                        this.props.deselectAttack();
+                        if (playerId === this.props.game.players[multiplayer.localPlayerIndex].id) {
+                            this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
+                            this.props.deselectBuildings();
+                            this.props.deselectAttack();
+                        }
                     }, 3000);
                 } else {
                     let description = getEntityDescriptor(this.props.selectedBuilding)

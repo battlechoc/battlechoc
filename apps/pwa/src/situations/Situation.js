@@ -3,12 +3,12 @@ import { createPlayer, PlayerType } from '../gameplay/Player';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 export default class Situation {
-	constructor(boardSize) {
+	constructor(boardSize, opponentName="Augustus Gloop", playerType=PlayerType.AUGUSTUS_GLOOP) {
 		this.boardSize = boardSize;
 
 		let players = [
 		    createPlayer("Charlie Bucket", PlayerType.HUMAN),
-		    createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
+		    createPlayer(opponentName, playerType)
 		];
 
 		this.game = {

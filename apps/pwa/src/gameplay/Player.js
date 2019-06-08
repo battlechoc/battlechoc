@@ -3,7 +3,8 @@ import { AttackType } from './GameEntities';
 
 const PlayerType = Object.freeze({
     HUMAN: 'PlayerType.HUMAN',
-    AUGUSTUS_GLOOP: 'PlayerType.AUGUSTUS_GLOOP'
+    AUGUSTUS_GLOOP: 'PlayerType.AUGUSTUS_GLOOP',
+    VIOLET_BEAUREGARDE: 'PlayerType.VIOLET_BEAUREGARDE'
 });
 
 function createPlayer(name, type, activePlayer) {
@@ -77,6 +78,13 @@ class NonPlayerCharacter {
                         this.opponentBoard = game.board.fields[game.players[0].fieldIndex];
                     }
                 }
+            } else {
+                this.gameIsRunning = undefined;
+                this.player = undefined;
+                this.gamefields = undefined;
+                this.boardSize = undefined;
+                this.board = undefined;
+                this.opponentBoard = undefined;
             }
         };
         this.refreshGameState();

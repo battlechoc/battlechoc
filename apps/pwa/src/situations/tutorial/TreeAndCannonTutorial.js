@@ -1,10 +1,11 @@
 import Situation from '../Situation';
 import { BoardCellTypes, EntityType, AttackType, createEntity } from '../../gameplay/GameEntities';
 import { GameStateTypes } from '../../gameplay/GameplayReducer';
+import { PlayerType } from '../../gameplay/Player';
 
 export default class TreeAndCannonTutorialSituation extends Situation {
     constructor() {
-        super(3);
+        super(3, 'Violet Beauregarde', PlayerType.VIOLET_BEAUREGARDE);
         this.modifyBoard({col: 1, row: 1, cellType: BoardCellTypes.BROWN, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.FACTORY)] });
         this.modifyBoard({col: 2, row: 0, cellType: BoardCellTypes.WHITE});
         this.modifyBoard({col: 1, row: 1, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY)]});

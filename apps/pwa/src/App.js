@@ -80,7 +80,11 @@ class App extends Component {
 
     async loadSituation(situation) {
         if (this.state.tutorial) {
-            this.opponent = new Violet({ finishTurn: this.props.finishTurn });
+            this.opponent = new Violet({ 
+                finishTurn: this.props.finishTurn, 
+                finishBuildPhase: this.props.finishBuildPhase,
+                attack: this.props.attack 
+            });
         } else {
             this.opponent = new Augustus({
                 chooseStart: this.props.chooseStart,
@@ -216,11 +220,11 @@ class App extends Component {
                     setTimeout(() => this.props.selectAttack(attacks[attackType]).catch(this.handleError), 200);
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
-                if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
+                if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP || this.opponent.player.type === PlayerType.VIOLET_BEAUREGARDE) {
                     this.opponent.simulateBuildPhase();
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
-                if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
+                if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP || this.opponent.player.type === PlayerType.VIOLET_BEAUREGARDE) {
                     this.opponent.simulateAttackPhase((row, col) => this.scene.detonateAtShield(row, col, true));
                 }
             } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
@@ -314,6 +318,9 @@ class App extends Component {
     closeTutorial = () => {
         Jukebox.stopMusic();
         this.setState({ tutorial: false })
+        if (typeof this.props.game !== 'undefined') {
+            this.props.finishGame();
+        }
     }
 
     startTutorial() {

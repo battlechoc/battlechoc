@@ -22,7 +22,7 @@ class TreesAndCannonsPage extends Component {
     }
 
     componentWillReceiveProps(nextProps) {
-        if (typeof this.props.game !== 'undefined') {
+        if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined') {
             if (nextProps.game.players[0].cacao < 50 && this.state.breakpoint === 0) {
                 this.setState({
                     breakpoint: 1,
@@ -44,7 +44,7 @@ class TreesAndCannonsPage extends Component {
                     messages: [...this.state.messages, { text: 'Now you are able to attack your opponent. Just finish your build phase and click on your opponent\'s facotry!', type: 'text', delay: 2500}]
                 });            
             } else if (!nextProps.game.players[1].hasFactory) {
-                this.props.fulfilled();
+                setTimeout(() => this.props.fulfilled(), 500);
             }
         }
     }
