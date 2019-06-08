@@ -11,8 +11,7 @@ const AugustusType = Object.freeze({
 
 export default class Augustus extends NonPlayerCharacter {
     constructor(actions) {
-    	super();
-        this.actions = actions;
+    	super(actions);
         this.type = AugustusType.BALANCED;
         this.discoveredShieldedCells = [];
         this.visitedShieldedCells = [];

@@ -307,7 +307,6 @@ class Scene extends Component {
         // Prepare click targets
         this.clickTargets = this.playerGameField.gameField.children;
         this.opponentClickTargets = this.opponentGameField.gameField.children;
-        this.props.selectBuilding(EntityType.FACTORY);
 
         if (overrideUiState) {
             this.props.deselectBuildings();

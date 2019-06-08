@@ -6,8 +6,10 @@ import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 class ChoosePage extends Component {
     componentWillReceiveProps(nextProps) {
-        if (nextProps.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START) {
-            this.props.fulfilled();
+        if (typeof nextProps.game !== 'undefined') {
+            if (nextProps.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START) {
+                this.props.fulfilled();
+            }
         }
     }
 

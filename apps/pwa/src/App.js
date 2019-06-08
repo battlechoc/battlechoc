@@ -80,7 +80,7 @@ class App extends Component {
 
     async loadSituation(situation) {
         if (this.state.tutorial) {
-            this.opponent = new Violet();
+            this.opponent = new Violet({ finishTurn: this.props.finishTurn });
         } else {
             this.opponent = new Augustus({
                 chooseStart: this.props.chooseStart,

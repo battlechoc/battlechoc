@@ -55,6 +55,10 @@ function playerHasHarmfulAttacksPerTurn(player, playerGrid, otherPlayerGrid) {
 }
 
 class NonPlayerCharacter {
+    constructor(actions) {
+        this.actions = actions;
+    }
+
     simulateThinking(timeToThink) {
         return new Promise(resolve => setTimeout(resolve, timeToThink));
     }

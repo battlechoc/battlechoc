@@ -1,20 +1,14 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import MicroGamefield from './MicroGamefield';
+import { connect } from 'react-redux';
 import ChatLikeInstructions from './ChatLikeInstructions';
-import { EntityType, getEntityDescriptor, BoardCellTypes, AttackType } from '../gameplay/GameEntities';
-import Fab from '@material-ui/core/Fab';
-import { PlayArrow, FastForward } from '@material-ui/icons';
-import { Jukebox } from '../ui/misc';
-import { BuildingPalette, AttackPalette, InfoPanel } from '../ui/controls';
-import { GameStateTypes } from '../gameplay/GameplayReducer';
-import TreeAndCannonTutorialSituation from '../situations/tutorial/TreeAndCannonTutorial';
+import { AttackType } from '../gameplay/GameEntities';
 
 class TreesAndCannonsPage extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            showPseudoActionbar: false,
+            breakpoint: 0,
             messages: [
                 { text: 'The most important buildings are the cacao tree and the rum truffle cannon', type: 'text', delay: 500 },
                 { src: 'cannon', type: 'image', delay: 500, alt: 'cannon message icon' },
@@ -25,177 +19,38 @@ class TreesAndCannonsPage extends Component {
                 { text: 'Hint: If you build a cacao tree on a white field it grows better produces 1.5x more cacao per round', type: 'text', delay: 1000}
             ]
         };
-        this.game = TreeAndCannonTutorialSituation.game;
     }
 
-    componentDidMount() {
-        window.addEventListener('resize', this.handleResize);
-        if (document.addEventListener) {
-            document.addEventListener('webkitfullscreenchange', this.handleResize);
-            document.addEventListener('mozfullscreenchange', this.handleResize);
-            document.addEventListener('fullscreenchange', this.handleResize);
-            document.addEventListener('MSFullscreenChange', this.handleResize);
-        }
-    }
-
-    componentWillUnmount(){
-        window.removeEventListener('resize', this.handleResize);
-        if (document.removeEventListener) {
-            document.removeEventListener('webkitfullscreenchange', this.handleResize);
-            document.removeEventListener('mozfullscreenchange', this.handleResize);
-            document.removeEventListener('fullscreenchange', this.handleResize);
-            document.removeEventListener('MSFullscreenChange', this.handleResize);
-        }
-    }
-
-    handleResize = () => {
-        this.forceUpdate();
-    };
-
-    buildCallback(building, celltype) {
-        let description = getEntityDescriptor(building)
-        if (building === EntityType.CACAOTREE) {
-            let cacaoPerTurn = celltype === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn;
-            this.game.gameplay.game.players[0].cacao -= description.costs;
-            this.game.gameplay.game.players[0].cacaoPerTurn += cacaoPerTurn;
-            this.game.gameplay.game.players[0].buildings -= 1;
-        } else if (building === EntityType.RUM_TRUFFLE_CANNON) {
-            if (this.state.messages.length < 12) {
-                this.setState({ 
-                    messages: [...this.state.messages, { text: 'now you can attack your opponent. Just finish your build phase and click on your opponent\'s facotry!', type: 'text', delay: 2500}]
-                });
-            }
-            this.game.gameplay.game.players[0].cacao -= description.costs;
-            this.game.gameplay.game.players[0].attacksPerTurn[AttackType.TRUFFLE] += 1;
-            this.game.gameplay.game.players[0].attacks[AttackType.TRUFFLE] += 1;
-            this.game.gameplay.game.players[0].buildings -= 1;
-        }
-
-        if (this.game.gameplay.game.players[0].cacao < description.costs) {
-            if (building === EntityType.RUM_TRUFFLE_CANNON && this.game.gameplay.game.players[0].cacao >= getEntityDescriptor(EntityType.CACAOTREE).costs) {
-                this.simulateBuildingSelection(EntityType.CACAOTREE);
-            } else {
-                this.simulateBuildingSelection(undefined);
-            }
-            if (this.state.messages.length < 8) {
+    componentWillReceiveProps(nextProps) {
+        if (typeof this.props.game !== 'undefined') {
+            if (nextProps.game.players[0].cacao < 50 && this.state.breakpoint === 0) {
                 this.setState({
+                    breakpoint: 1,
                     messages: [...this.state.messages, 
                         { text: 'battlechoc is a turn-based strategy game. A turn consists of two game phases: Build and attack', type: 'text', delay: 2500},
-                        { text: 'Use the blinking button above to finish your build phase..', type: 'text', delay: 2500}
-                    ],
-                    showPseudoActionbar: true
+                        { text: 'The game notices when no other action can be performed and guides you to the next phase or turn', type: 'text', delay: 2500},
+                        { text: 'If you want to end a phase earlier you can use the Play or Fast Forward button above', type: 'text', delay: 2500},
+                        { text: 'Build one more tree or use the button to end your turn', type: 'text', delay: 2500}
+                    ]
                 });
+            } else if (this.props.game.currentPlayerIndex === 1 && nextProps.game.currentPlayerIndex === 0 && this.state.breakpoint === 1) {
+                this.setState({
+                    breakpoint: 2,
+                    messages: [...this.state.messages, { text: 'look: you gained some cacao! Now you can build a cannon. Select the cannon by clicking the icon', delay: 2500 }]
+                });
+            } else if (nextProps.game.players[0].attacksPerTurn[AttackType.TRUFFLE] === 1 && this.state.breakpoint === 2) {
+                this.setState({
+                    breakpoint: 3,
+                    messages: [...this.state.messages, { text: 'Now you are able to attack your opponent. Just finish your build phase and click on your opponent\'s facotry!', type: 'text', delay: 2500}]
+                });            
+            } else if (!nextProps.game.players[1].hasFactory) {
+                this.props.fulfilled();
             }
         }
-        this.forceUpdate();
-    }
-
-    attackCallback() {
-        setTimeout(() => this.props.fulfilled(), 1000);
-    }
-
-    simulateBuildingSelection = buildingType => {
-        this.game.ui.selectedBuilding = buildingType;
-        this.forceUpdate();
-    }
-
-    simulateAttackSelection = attackType => {
-        this.game.ui.selectedAttack = attackType;
-        this.forceUpdate();
-    }
-
-    gotoAttackPhase() {
-        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.game.gameplay.game.state = GameStateTypes.ATTACK_PHASE;
-        if (this.game.gameplay.game.players[0].attacks[AttackType.TRUFFLE] > 0) {
-            this.game.ui.selectedAttack = AttackType.TRUFFLE;
-        }
-        if (this.state.messages.length < 10) {
-            this.setState({
-                messages: [...this.state.messages, { text: '..and this one to end your turn', type: 'text', delay: 2500}]
-            });
-        }
-        this.forceUpdate();
-    }
-
-    gotoBuildPhase() {
-        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.gamefield.triggerFlyingTreeInfo();
-        this.game.gameplay.game.state = GameStateTypes.BUILD_PHASE;
-        this.game.gameplay.game.players[0].cacao += this.game.gameplay.game.players[0].cacaoPerTurn;
-        this.game.gameplay.game.players[0].buildings = this.game.gameplay.game.players[0].buildingsPerTurn;
-        
-        if (this.state.messages.length < 11) {
-            this.simulateBuildingSelection(EntityType.RUM_TRUFFLE_CANNON);
-            this.setState({ 
-                messages: [...this.state.messages, { text: 'look: you gained some cacao! Now you can build a cannon. Select the cannon by clicking the icon', type: 'text', delay: 2500}]
-            });
-        }   
-        this.forceUpdate();
-    }
-
-    calculateMargin() {
-        let userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-        let isPWA = window.matchMedia('(display-mode: fullscreen)').matches && /iPad|iPhone|iPod|android/.test(userAgent);
-        let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-        let buttonCount = !isPWA && !isiOS && !isFullscreen ? 3 : 2;
-        let paddingLeft = 5;
-        let buttonSize = 36;
-        if (window.innerWidth > 959) {
-            buttonSize = 48;
-        } else if (window.innerWidth > 599) {
-            buttonSize = 40;
-        }
-        return buttonCount * (paddingLeft + buttonSize);
     }
 
     render() {
-        let icon = <Fab
-                    size="small"
-                    key="3"
-                    color="primary"
-                    aria-label="skip build phase"
-                    className="icon blinking"
-                    onClick={() => this.gotoAttackPhase()}>
-                    <PlayArrow />
-                  </Fab>
-
-        if (this.game.gameplay.game.state === GameStateTypes.ATTACK_PHASE) {
-            icon =<Fab
-                    size="small"
-                    key="4"
-                    color="primary"
-                    aria-label="finish turn"
-                    className="icon blinking"
-                    onClick={() => this.gotoBuildPhase()}>
-                    <FastForward />
-                 </Fab>
-        } 
-        let pseudoActionbar = <div className="actionbar" style={{marginLeft: this.calculateMargin()}}>{ icon }</div>
-        return (
-            <div>
-                { this.state.showPseudoActionbar ? pseudoActionbar : null }
-                <div className="microGame">
-                    <div className="microGamefield">
-                        <MicroGamefield opponentGamefield={true} size={3} 
-                                        selectedBuilding={this.game.ui.selectedBuilding} 
-                                        selectedAttack={this.game.ui.selectedAttack} 
-                                        playerSetup={this.game.gameplay.game.board.fields[0]}
-                                        opponentSetup={this.game.gameplay.game.board.fields[1]}
-                                        pseudoPhase={this.game.gameplay.game.state}
-                                        attackCallback={() => this.attackCallback()}
-                                        onRef={gamefield => this.gamefield = gamefield}
-                                        buildCallback={(building, celltype) => this.buildCallback(building, celltype)}/>
-
-                        <BuildingPalette simulateBuildingSelection={this.simulateBuildingSelection} pseudoGame={this.game} isVisible={this.game.gameplay.game.state === GameStateTypes.BUILD_PHASE} whitelist={[EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON]}/>
-                        <AttackPalette simulateAttackSelection={this.simulateAttackSelection} pseudoGame={this.game} isVisible={this.game.gameplay.game.state === GameStateTypes.ATTACK_PHASE} whitelist={[AttackType.TRUFFLE]}/>
-                        <InfoPanel pseudoGame={this.game.gameplay.game} isVisible={true} onRef={info => this.info = info}/>
-                    </div>
-                </div>
-                <ChatLikeInstructions messages={this.state.messages} appbar={this.props.appbar}/>
-            </div>
-        );
+        return <ChatLikeInstructions messages={this.state.messages} appbar={this.props.appbar} />;
     }
 }
 
@@ -204,4 +59,6 @@ TreesAndCannonsPage.propTypes = {
     appbar: PropTypes.object.isRequired
 }
 
-export default TreesAndCannonsPage
+const mapStateToProps = state => ({ game: state.gameplay.game });
+const TreesAndCannonsPageContainer = connect(mapStateToProps)(TreesAndCannonsPage);
+export default TreesAndCannonsPageContainer;

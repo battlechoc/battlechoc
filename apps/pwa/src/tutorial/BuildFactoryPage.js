@@ -6,8 +6,10 @@ import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 class BuildFactoryPage extends Component {
     componentWillReceiveProps(nextProps) {
-        if (nextProps.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) {
-            this.props.fulfilled();
+        if (typeof nextProps.game !== 'undefined') {
+            if (nextProps.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) {
+                this.props.fulfilled();
+            }
         }
     }
 
@@ -28,9 +30,6 @@ BuildFactoryPage.propTypes = {
     appbar: PropTypes.object.isRequired
 }
 
-const mapStateToProps = state => ({
-    game: state.gameplay.game
-});
-
+const mapStateToProps = state => ({ game: state.gameplay.game });
 const BuildFactoryPageContainer = connect(mapStateToProps)(BuildFactoryPage);
 export default BuildFactoryPageContainer;

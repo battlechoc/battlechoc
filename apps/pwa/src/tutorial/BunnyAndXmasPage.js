@@ -1,14 +1,13 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
-import MicroGamefield from './MicroGamefield';
 import ChatLikeInstructions from './ChatLikeInstructions';
+import { connect } from 'react-redux';
 import { EntityType, getEntityDescriptor, AttackType } from '../gameplay/GameEntities';
 import { Jukebox } from '../ui/misc';
-import { BuildingPalette, AttackPalette, InfoPanel } from '../ui/controls';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import BunnyAndXmasTutorialSituation from '../situations/tutorial/BunnyAndXmasTutorial';
 
-class TreesAndCannonsPage extends Component {
+class BunnyAndXmasPage extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -87,46 +86,15 @@ class TreesAndCannonsPage extends Component {
         this.forceUpdate();
     }
 
-    simulateBuildingSelection = buildingType => {
-        this.game.ui.selectedBuilding = buildingType;
-        this.forceUpdate();
-    }
-
-    simulateAttackSelection = attackType => {
-        this.game.ui.selectedAttack = attackType;
-        this.forceUpdate();
-    }
-
     render() {
-        let loadingAnimation = this.game.gameplay.game.currentPlayerIndex === 1 ? <div className="tutorial"><img className="loadingAnimation" src="animations/loading.gif" alt="loading" /></div> : null;
-        return (
-            <div>
-                { loadingAnimation }
-                <div className="microGame">
-                    <div className="microGamefield">
-                        <MicroGamefield opponentGamefield={true} size={3} 
-                                        selectedBuilding={this.game.ui.selectedBuilding} 
-                                        selectedAttack={this.game.ui.selectedAttack} 
-                                        playerSetup={this.game.gameplay.game.board.fields[0]}
-                                        opponentSetup={this.game.gameplay.game.board.fields[1]}
-                                        pseudoPhase={this.game.gameplay.game.state}
-                                        attackCallback={(attackType, position) => this.attackCallback(attackType, position)}
-                                        onRef={gamefield => this.gamefield = gamefield}
-                                        buildCallback={(building, celltype) => this.buildCallback(building, celltype)}/>
-                        <BuildingPalette simulateBuildingSelection={this.simulateBuildingSelection} pseudoGame={this.game} isVisible={this.game.gameplay.game.state === GameStateTypes.BUILD_PHASE} whitelist={[EntityType.XMAS_FACTORY]}/>
-                        <AttackPalette simulateAttackSelection={this.simulateAttackSelection} pseudoGame={this.game} isVisible={this.game.gameplay.game.state === GameStateTypes.ATTACK_PHASE} whitelist={[AttackType.BUNNY, AttackType.HOT_CHOCOLATE]}/>
-                        <InfoPanel pseudoGame={this.game.gameplay.game} isVisible={true} onRef={info => this.info = info}/>                        
-                    </div>
-                </div>
-                <ChatLikeInstructions messages={this.state.messages} appbar={this.props.appbar}/>
-            </div>
-        );
+        return <ChatLikeInstructions messages={this.state.messages} appbar={this.props.appbar}/>;
     }
 }
 
-TreesAndCannonsPage.propTypes = {
+BunnyAndXmasPage.propTypes = {
     fulfilled: PropTypes.func.isRequired,
     appbar: PropTypes.object.isRequired
 }
-
-export default TreesAndCannonsPage
+const mapStateToProps = state => ({ game: state.gameplay.game });
+const BunnyAndXmasPageContainer = connect(mapStateToProps)(BunnyAndXmasPage);
+export default BunnyAndXmasPageContainer;

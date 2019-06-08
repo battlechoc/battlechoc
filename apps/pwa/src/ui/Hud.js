@@ -122,9 +122,9 @@ class Hud extends Component {
                     } else {
                         return (
                             <div>
-                                <AttackPalette isVisible={true} />
-                                <BuildingPalette isVisible={true} />
-                                <InfoPanel isVisible={true} />
+                                <AttackPalette />
+                                <BuildingPalette />
+                                <InfoPanel />
                             </div>
                         )
                     }
