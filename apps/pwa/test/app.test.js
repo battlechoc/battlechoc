@@ -96,8 +96,11 @@ describe('iPhone', () => {
     await expect(page).toMatchElement('p', {text: '0/3', timeout: timeout});
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_1.png' });
     await page.waitForSelector('img.loadingAnimation', {timeout: timeout});
+    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2_2.png' });
     await page.waitForSelector('.cacaotree.enabled.preview', {timeout: timeout});
+    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2_1.png' });
     await page.waitFor(3000);
+    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2_0.png' });
     await expect(page).toMatchElement('p', {text: '3/3', timeout: timeout});
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2.png' });
   }, timeout);
