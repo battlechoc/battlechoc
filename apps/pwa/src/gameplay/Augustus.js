@@ -209,7 +209,7 @@ export default class Augustus extends NonPlayerCharacter {
 
             if (this.player.attacks[AttackType.BUNNY] > 0 && creamyFields.length) {
                 let target = creamyFields[Math.floor(Math.random() * creamyFields.length)];
-                console.log('OPPONENT BUNNY IS GOING TO SPY :', target);
+                this.devhint('OPPONENT BUNNY IS GOING TO SPY : ' + target);
                 this.simulateAttack(target, AttackType.BUNNY, detonateAtShield);
             } else if (this.player.attacks[AttackType.HOT_CHOCOLATE] > 0) {
                 let target;
@@ -281,11 +281,17 @@ export default class Augustus extends NonPlayerCharacter {
         }
     }
 
+    devhint(message) {
+    	if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    		console.log('DEV HINT: ', message);
+    	}
+    }
+
     setBuildingAtBestPosition(possibleCells, building) {
         return new Promise((resolve, reject) => {
             let bestCellsForBuilding = this.getBestCellsForBuilding(possibleCells.filter(cell => cell.molten === false), building.type);
             let targetCell = (bestCellsForBuilding.length > 0) ? bestCellsForBuilding[Math.floor(Math.random() * bestCellsForBuilding.length)] : possibleCells[Math.floor(Math.random() * possibleCells.length)];
-            console.log('DEV HINT: ', building.type, targetCell.row, targetCell.col, targetCell.type);
+            this.devhint(building.type + ' ' + targetCell.row + ' ' + targetCell.col + ' ' + targetCell.type);
 
             building.position = {
                 row: targetCell.row,

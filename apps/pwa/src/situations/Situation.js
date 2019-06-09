@@ -23,7 +23,9 @@ export default class Situation {
 				}
 			},
 			ui: {
-				selectedBuilding: EntityType.FACTORY
+				selectedBuilding: EntityType.FACTORY,
+				whitelistBuildings: undefined,
+				whitelistAttacks: undefined
 			}
         };
 	}

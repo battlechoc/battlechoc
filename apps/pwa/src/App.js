@@ -7,7 +7,7 @@ import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { changeLanguage, selectAttack, gameResumeable, loadUiState } from './ui/UiActions';
+import { resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -33,6 +33,7 @@ class App extends Component {
                 window.history.pushState({}, document.title, window.location.pathname);
             }
         }
+        this.timeouts = [];
         this.state = { 
             params: params,
             tutorial: false
@@ -98,6 +99,7 @@ class App extends Component {
 
         if (typeof this.props.game !== 'undefined') {
             await this.props.finishGame();
+            await this.props.resetUi();
         }
 
         this.props.resumeGame(situation.gameplay).then(() => {
@@ -129,7 +131,7 @@ class App extends Component {
         if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined') {
             if (this.props.game.isRunning === true && nextProps.game.isRunning === false) {
                 gameStopped = true;
-                setTimeout(() => {
+                let timeoutId = setTimeout(() => {
                     if (nextProps.game.winners.length === 1) {
                         if (multiplayer.isLocalPlayer(nextProps.game.winners[0].idx)) {
                             this.hud.showTurnMessage(t[this.props.language].MESSAGE_WIN_GAME);
@@ -139,15 +141,19 @@ class App extends Component {
                     } else if (nextProps.game.winners.length === 2) {
                         this.hud.showTurnMessage(t[this.props.language].MESSAGE_DRAW_GAME);
                     }
-                    setTimeout(() => this.endGame(), 2000);
+                    timeoutId = setTimeout(() => this.endGame(), 2000);
+                    this.timeouts.push(timeoutId);
                 }, 2000);
+                this.timeouts.push(timeoutId)
             }
         }
 
         if (gameTransition === GameTransitions.GAME_FINISHED) {
             this.scene.clear();
-            this.props.gameResumeable(false);
-            OfflineStore.gamestateStore.clear();
+            if (!this.state.tutorial) {
+                this.props.gameResumeable(false);
+                OfflineStore.gamestateStore.clear();
+            }
         }
 
         if (typeof this.scene !== 'undefined') {
@@ -166,9 +172,11 @@ class App extends Component {
             if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined' && typeof OfflineStore.gamestateStore !== 'undefined' &&
                 (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (multiplayer.isLocalPlayer(nextProps.game.currentPlayerIndex) === true)) {
 
-                OfflineStore.saveCurrentGame(nextProps.game).then(() => {
-                    this.props.gameResumeable(true).catch(this.handleError);
-                });
+                if (!this.state.tutorial) {
+                    OfflineStore.saveCurrentGame(nextProps.game).then(() => {
+                        this.props.gameResumeable(true).catch(this.handleError);
+                    });
+                }
             }
             if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
                 const winners = Rules.determineWinner(nextProps.game);
@@ -217,7 +225,8 @@ class App extends Component {
                     }
                 }
                 if (typeof availableAttackType !== 'undefined') {
-                    setTimeout(() => this.props.selectAttack(attacks[attackType]).catch(this.handleError), 200);
+                    let timeoutId = setTimeout(() => this.props.selectAttack(attacks[attackType]).catch(this.handleError), 200);
+                    this.timeouts.push(timeoutId);
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
                 if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP || this.opponent.player.type === PlayerType.VIOLET_BEAUREGARDE) {
@@ -228,7 +237,8 @@ class App extends Component {
                     this.opponent.simulateAttackPhase((row, col) => this.scene.detonateAtShield(row, col, true));
                 }
             } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
-                setTimeout(() => this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
+                let timeoutId =  setTimeout(() => this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
+                this.timeouts.push(timeoutId);
             } else if (gameTransition === GameTransitions.PLAYER_JOINED) {
                 this.opponent.player = {
                     player: nextProps.game.players[1]
@@ -307,19 +317,27 @@ class App extends Component {
     }
 
     endGame() {
-        setTimeout(() => {
-            Jukebox.stopMusic();
-            this.setState({ params: { ...this.state.params, sessionid: undefined }});
-            this.props.finishGame();
-            multiplayer.reset();
-        }, 1000);
+        if (this.state.tutorial) {
+            this.closeTutorial();
+        } else {
+            setTimeout(() => {
+                Jukebox.stopMusic();
+                this.setState({ params: { ...this.state.params, sessionid: undefined }});
+                this.props.finishGame();
+                this.props.resetUi();
+                multiplayer.reset();
+            }, 1000);
+        }
     }
 
     closeTutorial = () => {
+        this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
+
         Jukebox.stopMusic();
         this.setState({ tutorial: false })
         if (typeof this.props.game !== 'undefined') {
             this.props.finishGame();
+            this.props.resetUi();
         }
     }
 
@@ -371,7 +389,8 @@ const mapDispatchToProps = {
     changeLanguage,
     selectAttack,
     gameResumeable,
-    loadUiState
+    loadUiState,
+    resetUi
 };
 
 const AppContainer = connect(

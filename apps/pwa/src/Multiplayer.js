@@ -139,17 +139,10 @@ class Multiplayer {
     }
 
     processEvents(events) {
-        console.log("processEvents");
-        console.log(events);
-        console.log(this.currentEventIndex);
         if (events.length > this.currentEventIndex) {
             const newEventIndex = events.length;
-            console.log("received new events");
-            console.log(events);
             events.splice(0, this.currentEventIndex);
-            console.dir(events);
             events.forEach(action => {
-                console.log(action);
                 this.emitAction(action);
             });
             this.currentEventIndex = newEventIndex;
@@ -161,16 +154,14 @@ class Multiplayer {
             const sessionRef = firebase.firestore().collection('multiplayerGameSessions').doc(this.currentGameSession);
             sessionRef.get().then(doc => {
                 if (!doc.exists) {
-                    console.log('No such document!');
+                    console.warn('No such document!');
                 } else {
-                    console.log("adding action to doc");
                     let sessionData = doc.data();
                     if (this.localPlayerIndex === 0) {
                         sessionData.events_from_0.push(action);
                     } else {
                         sessionData.events_from_1.push(action);
                     }
-                    console.dir(sessionData);
                     sessionRef.set(sessionData);
                 }
             }).catch(err => {

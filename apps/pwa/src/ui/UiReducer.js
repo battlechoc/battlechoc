@@ -10,6 +10,14 @@ const uiReducer = createReducer({
         assetsReady: false,
         language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
     }, {
+        [UiActions.resetUi]: (state, action) => {
+            state.whitelistBuildings = undefined;
+            state.whitelistAttacks = undefined;
+            state.tappedBuilding = EntityType.FACTORY;
+            state.selectedBuilding = EntityType.FACTORY;
+            state.multiplayerWaiting = undefined;
+            state.selectedAttack = undefined;
+        },
         [UiActions.selectBuilding]: (state, action) => {
             state.selectedBuilding = action.payload;
         },
