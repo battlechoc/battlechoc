@@ -70,7 +70,6 @@ class Multiplayer {
                         });
                     });
                 } else {
-                    console.log("signout");
                     this.localPlayer = undefined;
                 }
             });
@@ -107,35 +106,18 @@ class Multiplayer {
     emitAction(action) {
         switch (action.type) {
             case GameActionTypes.build:
-                this.gameActions.build(action.payload).then(() => {
-                    if (typeof this.opponentGameField3d !== 'undefined') {
-                        this.opponentGameField3d.setBuilding(action.payload.building.type, action.payload.building.position);
-                    }
-                });
+                this.gameActions.build(action.payload);
                 break;
             case GameActionTypes.attack:
                 this.gameActions.attack(action.payload).then(() => {
-                    console.dir(this.gameState);
-                    const row = action.payload.row;
-                    const col = action.payload.col;
-                    const attackType = action.payload.attackType;
-                    if (attackType === AttackType.BUNNY) {
+                    if (action.payload.attackType === AttackType.BUNNY) {
                         if (this.gameState.players[1 - this.localPlayerIndex].attacksPerTurn[AttackType.BUNNY] > 0) {
                             Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
-                            this.gameField3d.attack({ row: row, col: col }, AttackType.BUNNY);
                         } else {
                             Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
-                            this.opponentGameField3d.meltDownEasterBunny();
-                            this.gameField3d.receiveBallista({ row: row, col: col });
                         }
                     } else {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
-                        const playerBoard = this.gameState.board.fields[this.gameState.players[this.localPlayerIndex].fieldIndex];
-                        const attackedCell = playerBoard.grid[row * this.gameState.board.size.cols + col];
-                        this.gameField3d.attack({ row: row, col: col }, attackType, attackedCell.shielded);
-                        if (attackType === AttackType.HOT_CHOCOLATE) {
-                            this.gameField3d.rebuild(playerBoard);
-                        }
                     }
                 });
                 break;
@@ -157,17 +139,10 @@ class Multiplayer {
     }
 
     processEvents(events) {
-        console.log("processEvents");
-        console.log(events);
-        console.log(this.currentEventIndex);
         if (events.length > this.currentEventIndex) {
             const newEventIndex = events.length;
-            console.log("received new events");
-            console.log(events);
             events.splice(0, this.currentEventIndex);
-            console.dir(events);
             events.forEach(action => {
-                console.log(action);
                 this.emitAction(action);
             });
             this.currentEventIndex = newEventIndex;
@@ -179,16 +154,14 @@ class Multiplayer {
             const sessionRef = firebase.firestore().collection('multiplayerGameSessions').doc(this.currentGameSession);
             sessionRef.get().then(doc => {
                 if (!doc.exists) {
-                    console.log('No such document!');
+                    console.warn('No such document!');
                 } else {
-                    console.log("adding action to doc");
                     let sessionData = doc.data();
                     if (this.localPlayerIndex === 0) {
                         sessionData.events_from_0.push(action);
                     } else {
                         sessionData.events_from_1.push(action);
                     }
-                    console.dir(sessionData);
                     sessionRef.set(sessionData);
                 }
             }).catch(err => {
@@ -201,11 +174,6 @@ class Multiplayer {
         this.localPlayerIndex = 0;
         this.currentEventIndex = 0;
         this.currentGameSession = undefined;
-    }
-
-    connectUiGamefields(gameField3d, opponentGameField3d) {
-        this.gameField3d = gameField3d;
-        this.opponentGameField3d = opponentGameField3d;
     }
 
     joinGameSession(sessionId, gameActions) {

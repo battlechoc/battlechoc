@@ -12,8 +12,6 @@ const GameTransitions = Object.freeze({
     PLAYER_FINISHED_INITIAL_PLACEMENT: 'GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT',
     OPPONENT_INITAL_PLACEMENT: 'GameTransitions.OPPONENT_INITAL_PLACEMENT',
     PLAYER_BUILD_PHASE: 'GameTransitions.PLAYER_BUILD_PHASE',
-    PLAYER_LEFT_BUILD_PHASE: 'GameTransitions.PLAYER_LEFT_BUILD_PHASE',
-    PLAYER_CANNOT_BUILD_FRUIT_CANNON: 'GameTransitions.PLAYER_CANNOT_BUILD_FRUIT_CANNON',
     PLAYER_ATTACK_PHASE: 'GameTransitions.PLAYER_ATTACK_PHASE',
     OPPONENT_BUILD_PHASE: 'GameTransitions.OPPONENT_BUILD_PHASE',
     OPPONENT_ATTACK_PHASE: 'GameTransitions.OPPONENT_ATTACK_PHASE',
@@ -102,8 +100,6 @@ function getGameTransition(currentState, nextState) {
         multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === true &&
         playerHasAttacks(nextState.players[multiplayer.localPlayerIndex]) === false) {
         return GameTransitions.ATTACKS_DEPLETED;
-    } else if (currentState.state === GameStateTypes.BUILD_PHASE && (nextState.state !== GameStateTypes.BUILD_PHASE || multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === false)) {
-        return GameTransitions.PLAYER_LEFT_BUILD_PHASE;
     } else if (currentState.players[1].type === PlayerType.AUGUSTUS_GLOOP && nextState.players[1].type === PlayerType.HUMAN) {
         return GameTransitions.PLAYER_JOINED;
     } else {

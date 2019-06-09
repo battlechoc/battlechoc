@@ -11,7 +11,7 @@ import { Jukebox } from '../ui/misc';
 import { InfoType, spawnInfo, spawnInfoAtBuilding } from '../ui/misc/FlyingInfo';
 import { BattlechocError } from '../gameplay/Errors';
 import { playerHasAttacks } from '../gameplay/Player';
-import { DirectionalLight, Clock, Scene as ThreeScene, WebGLRenderer, OrthographicCamera, Raycaster, Vector2 } from 'three';
+import { DirectionalLight, Clock, Scene as ThreeScene, WebGLRenderer, OrthographicCamera, Raycaster, Vector2, Vector3 } from 'three';
 
 class Scene extends Component {
 
@@ -51,7 +51,7 @@ class Scene extends Component {
         // Allow clicking
         this.raycaster = new Raycaster();
         this.mouse = new Vector2();
-        this.lookAtOpponent = false;
+        this.lookAtOpponent = true;
     }
 
     componentDidUpdate() {
@@ -63,6 +63,11 @@ class Scene extends Component {
                 this.updateView();
             }
         }
+
+        if (typeof this.opponentGameField !== 'undefined') {
+            this.opponentGameField.update();
+            this.playerGameField.update();
+        }
     }
 
     updateView() {
@@ -71,25 +76,23 @@ class Scene extends Component {
     }
 
     triggerCacaoInfo() {
-        const specialTrees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE) && cell.type === BoardCellTypes.WHITE);
-        const trees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.CACAOTREE) && cell.type !== BoardCellTypes.WHITE);
+        const specialTrees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE) && cell.type === BoardCellTypes.WHITE);
+        const trees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE) && cell.type !== BoardCellTypes.WHITE);
         let description = getEntityDescriptor(EntityType.CACAOTREE)
         trees.forEach(cell => spawnInfoAtBuilding({
-            tree: this.playerGameField.getBuildingAtPosition(cell),
+            position: (new Vector3(cell.row * this.playerGameField.fieldSize, 3, cell.col * this.playerGameField.fieldSize)).add(this.playerGameField.gameField.position),
             cacao: description.cacaoPerTurn,
             camera: this.camera,
             type: InfoType.CACAO_HARVESTED,
             container: this.container
-        })
-        );
+        }));
         specialTrees.forEach(cell => spawnInfoAtBuilding({
-            tree: this.playerGameField.getBuildingAtPosition(cell),
+            position: (new Vector3(cell.row * this.playerGameField.fieldSize, 3, cell.col * this.playerGameField.fieldSize)).add(this.playerGameField.gameField.position),
             cacao: Math.round(description.cacaoPerTurn * 1.5),
             camera: this.camera,
             type: InfoType.CACAO_HARVESTED,
             container: this.container
-        })
-        );
+        }));
     }
 
     clear() {
@@ -116,9 +119,19 @@ class Scene extends Component {
         this.renderScene();
     }
 
+    detonateAtShield(row, col, playerField=false) {
+        let position3d = { x: row * this.playerGameField.fieldSize, y: 0, z: col * this.playerGameField.fieldSize };
+        if (playerField) {
+            this.startAnimation(this.playerGameField.gameField, false, 'ATTACK_AT_SHIELD_EXPLOSION', position3d);
+        } else {
+            this.startAnimation(this.opponentGameField.gameField, false, 'ATTACK_AT_SHIELD_EXPLOSION', position3d);
+        }
+    }
+
     onClick = event => {
         // console.log(event.clientX, event.clientY);
         // TODO: implement new stats with console.log(this.renderer.info.render.calls)
+        // console.log('RENDER CALLS', this.renderer.info.render.calls); // creams + 3
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
         this.raycaster.setFromCamera(this.mouse, this.camera);
@@ -149,15 +162,17 @@ class Scene extends Component {
             let buildingsPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn;
             this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
-                this.playerGameField.setBuilding(building.type, building.position);
                 if (initialPlacement) {
                     spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn, x: event.clientX, y: event.clientY, container: this.container });
                     this.props.deselectBuildings();
                     this.props.deselectAttack();
+                    let playerId = this.props.game.players[multiplayer.localPlayerIndex].id;
                     setTimeout(() => {
-                        this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
-                        this.props.deselectBuildings();
-                        this.props.deselectAttack();
+                        if (playerId === this.props.game.players[multiplayer.localPlayerIndex].id) {
+                            this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
+                            this.props.deselectBuildings();
+                            this.props.deselectAttack();
+                        }
                     }, 3000);
                 } else {
                     let description = getEntityDescriptor(this.props.selectedBuilding)
@@ -229,20 +244,15 @@ class Scene extends Component {
                     if (this.props.selectedAttack === AttackType.BUNNY) {
                         if (this.props.game.players[multiplayer.localPlayerIndex].attacksPerTurn[AttackType.BUNNY] > 0) {
                             Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
-                            this.opponentGameField.attack(target, AttackType.BUNNY);
                         } else {
                             Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
-                            this.playerGameField.meltDownEasterBunny();
-                            this.opponentGameField.receiveBallista(target);
                             spawnInfo({ type: InfoType.BUNNY_CAUGHT, x: event.clientX, y: event.clientY, container: this.container });
                         }
                     } else if (typeof this.props.selectedAttack !== 'undefined') {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
-                        const attackedCell = this.props.game.board.fields[this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex].grid[target.row * this.props.game.board.size.cols + target.col];
-                        this.opponentGameField.attack(target, this.props.selectedAttack, attackedCell.shielded);
-                        if (this.props.selectedAttack === AttackType.HOT_CHOCOLATE) {
-                            let opponentFieldIndex = this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex;
-                            this.opponentGameField.rebuild(this.props.game.board.fields[opponentFieldIndex]);
+                        let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
+                        if (cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, target.row, target.col).shielded) {
+                            this.detonateAtShield(target.row, target.col);
                         }
                     }
 
@@ -270,11 +280,14 @@ class Scene extends Component {
         }
     }
 
-    startGame = (createUnits, game, overrideUiState=true) => {
+    startGame = (game, overrideUiState=false) => {
         const playerFieldIndex = game.players[multiplayer.localPlayerIndex].fieldIndex;
         const opponentFieldIndex = game.players[1 - multiplayer.localPlayerIndex].fieldIndex;
-        
-        if (this.lookAtOpponent !== multiplayer.isLocalPlayer(game.currentPlayerIndex)) {
+
+        if (this.lookAtOpponent !== ((multiplayer.isLocalPlayer(game.currentPlayerIndex) === false &&
+            game.state !== GameStateTypes.ATTACK_PHASE) ||
+            (multiplayer.isLocalPlayer(game.currentPlayerIndex) === true &&
+            game.state === GameStateTypes.ATTACK_PHASE))) {
             this.updateView();
         } else {
             this.start();
@@ -286,42 +299,20 @@ class Scene extends Component {
         directionalLight.castShadow = false;
         this.scene.add(directionalLight);
 
-        this.playerGameField = new Gamefield(true, [-72, -16, 0], game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.startAnimation, this.renderScene);
-        this.opponentGameField = new Gamefield(false, [72, 56, 0], game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.startAnimation, this.renderScene);
+        this.playerGameField = new Gamefield(true, [-72, -16, 0], () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.startAnimation, this.renderScene);
+        this.opponentGameField = new Gamefield(false, [72, 56, 0], () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.startAnimation, this.renderScene);
         this.scene.add(this.playerGameField.gameField);
         this.scene.add(this.opponentGameField.gameField);
-
-        multiplayer.connectUiGamefields(this.playerGameField, this.opponentGameField);
 
         // Setup Game EventListener
         this.container.onclick = event => this.onClick(event);
 
         // Prepare click targets
-        this.clickTargets = this.playerGameField.getClickableFields();
-        this.opponentClickTargets = this.opponentGameField.getClickableFields();
-        this.props.selectBuilding(EntityType.FACTORY);
+        this.clickTargets = this.playerGameField.gameField.children;
+        this.opponentClickTargets = this.opponentGameField.gameField.children;
 
-        let create3dEntities = (cell, gamefield) => {
-            cell.occupiedBy.forEach(building => {
-                if (building !== EntityType.CREAM) {
-                    gamefield.setBuilding(building, { row: cell.row, col: cell.col });
-                }
-            });
-        };
-
-        if (createUnits === true) {
-            if (overrideUiState) {
-                this.props.deselectBuildings();
-            }   
-            this.lookAtOpponent = (multiplayer.isLocalPlayer(game.currentPlayerIndex) === false || game.state === GameStateTypes.ATTACK_PHASE);
-            game.board.fields[game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => !cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
-                .forEach(cell => create3dEntities(cell, this.playerGameField));
-            game.board.fields[game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
-                .forEach(cell => create3dEntities(cell, this.playerGameField));
-            game.board.fields[game.players[1].fieldIndex].grid.filter(cell => !cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
-                .forEach(cell => create3dEntities(cell, this.opponentGameField));
-            game.board.fields[game.players[1].fieldIndex].grid.filter(cell => cell.occupiedBy.includes(EntityType.FACTORY_EXTENSION))
-                .forEach(cell => create3dEntities(cell, this.opponentGameField));
+        if (overrideUiState) {
+            this.props.deselectBuildings();
         }
     }
 
@@ -369,13 +360,13 @@ class Scene extends Component {
         }
     }
 
-    startAnimation = (gamefield, turned, asset, position) => {
+    startAnimation = (gamefield, turned, asset, position, offset=25) => {
         let id = Math.random().toString().substr(2) + Date.now().toString();
         let animation = new Animation(gamefield, turned, asset, position, id, () => {
             this.animations = this.animations.filter(animation => animation.id !== id);
         });
         this.animations.push(animation);
-        animation.play();
+        animation.play(offset);
         this.start();
     }
 

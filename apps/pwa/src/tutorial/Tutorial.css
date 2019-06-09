@@ -1,6 +1,5 @@
 #tutorial {
   z-index: 1;
-  position: absolute;
   width: 100%;
 }
 
@@ -16,49 +15,33 @@
   font-weight: 500 !important;
 }
 
-.microGame {
-  position: relative;
-}
-
-.microGamefield {
-  width: 100vw;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#microGamefield {
-  height: 50vh;
-  width: 100vw;
-}
-
 .challenge {
   height: 50vh;
 }
 
-#tutorialGameStartSelection .fields > div {
+.tutorial.hud .fields > div {
   flex: 1 0 33.3%;
 }
 
-#tutorialGameStartSelection .choose {
+.tutorial.hud .choose {
   position: unset;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-#tutorialGameStartSelection .button {
+.tutorial.hud .button {
   max-height: 36vh;
   max-width: 36vh;
 }
 
-#tutorialGameStartSelection .fields {
+.tutorial.hud .fields {
   max-height: 18vh;
   max-width: 18vh;
 }
 
 .speechBubbles {
-  height: calc(50vh - 64px);
+  height: calc(40vh - 64px);
   overflow-y: scroll;
   margin: 0 auto;
   background: white;
@@ -160,23 +143,17 @@
   }
 }
 
-.tutorial .loadingAnimation {
-  position: absolute;
-  right: 0;
-  top: 2vh;
-}
-
 @media screen and (orientation:portrait) { 
-  #tutorialGameStartSelection {
+  .tutorial.hud {
     margin-top: 0;
   }
 
-  #tutorialGameStartSelection .choose {
+  .tutorial.hud .choose {
     flex-direction: row;
     height: 50vh;
   }
 
-  #tutorialGameStartSelection .fields {
+  .tutorial.hud .fields {
     width: 9vh;
     height: 9vh;
   }
@@ -198,7 +175,7 @@
   }
 
   .speechBubbles {
-    height: calc(50vh - 42px);
+    height: calc(40vh - 42px);
   }
 
   .imageMessage {

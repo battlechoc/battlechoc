@@ -4,6 +4,8 @@ html, body, #root {
 }
 
 .app {
+  display: flex;
+  flex-direction: column;
   height: 100%;
   width: 100%;
 }
@@ -12,6 +14,7 @@ html, body, #root {
   position: absolute;
   height: 100%;
   width: 100%;
+  z-index: 1;
 }
 
 @keyframes fog {

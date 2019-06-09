@@ -1,6 +1,6 @@
 .actionbar {
   position: absolute;
-  z-index: 2;
+  z-index: 4;
   display: flex;
   padding-top: 5px;
   flex-direction: row;

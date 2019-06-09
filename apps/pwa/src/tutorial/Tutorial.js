@@ -7,9 +7,12 @@ import { ArrowBackIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Clo
 import ChoosePage from './ChoosePage';
 import BuildFactoryPage from './BuildFactoryPage';
 import TreesAndCannonsPage from './TreesAndCannonsPage';
-import EasterBunnyAndXmasFactoryPage from './EasterBunnyAndXmasFactory';
+import BunnyAndXmasPage from './BunnyAndXmasPage';
 import { Jukebox } from '../ui/misc';
-
+import ChoosePageTutorial from '../situations/tutorial/ChoosePageTutorial';
+import FactoryTutorial from '../situations/tutorial/FactoryTutorial';
+import TreeAndCannonTutorial from '../situations/tutorial/TreeAndCannonTutorial';
+import BunnyAndXmasTutorial from '../situations/tutorial/BunnyAndXmasTutorial';
 
 class Tutorial extends Component {
     constructor(props) {
@@ -18,6 +21,10 @@ class Tutorial extends Component {
             page: 0,
             maxPages: 4
         }
+    }
+
+    componentDidMount() {
+        this.props.loadSituation(ChoosePageTutorial);
     }
 
     fulfilled = () => {
@@ -30,11 +37,24 @@ class Tutorial extends Component {
 
     next = () => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        if (this.state.page === 0) {
+            this.props.loadSituation(FactoryTutorial);
+        } else if (this.state.page === 1) {
+            this.props.loadSituation(TreeAndCannonTutorial);
+        } else if (this.state.page === 2) {
+            this.props.loadSituation(BunnyAndXmasTutorial);
+        } 
         this.setState({ page: this.state.page + 1});
     }
 
     back = () => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        if (this.state.page === 1) {
+            this.props.loadSituation(ChoosePageTutorial);
+        } else if (this.state.page === 2) {
+            this.props.loadSituation(FactoryTutorial);
+        }
+
         if (this.state.page > 0) {
             this.setState({ page: this.state.page - 1});
         }
@@ -74,7 +94,7 @@ class Tutorial extends Component {
             <ChoosePage fulfilled={this.fulfilled} appbar={appbar}/>, 
             <BuildFactoryPage fulfilled={this.fulfilled} appbar={appbar}/>,
             <TreesAndCannonsPage fulfilled={this.fulfilled} appbar={appbar}/>,
-            <EasterBunnyAndXmasFactoryPage fulfilled={this.fulfilled} appbar={appbar}/>
+            <BunnyAndXmasPage fulfilled={this.fulfilled} appbar={appbar}/>
         ];
 
         return (
@@ -86,7 +106,8 @@ class Tutorial extends Component {
 }
 
 Tutorial.propTypes = {
-    closeTutorial: PropTypes.func.isRequired
+    closeTutorial: PropTypes.func.isRequired,
+    loadSituation: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({ language: state.ui.language });

@@ -3,34 +3,35 @@ import GLTFLoader from 'three-gltf-loader';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { connect } from 'react-redux';
 import { assetsReady } from './ui/UiActions';
+import { EntityType } from './gameplay/GameEntities';
 
 class AssetLoader {
     constructor(){
         this.assets = {
             models: {
                 FIELD: { filename: 'field.glb', model: null },
-                FACTORY: { filename: 'factory.glb', model: null },
-                FACTORY_EXPLOSION: { filename: 'factory-explosion.glb', model: null },
-                FACTORY_EXTENSION: { filename: 'factoryExtension.glb', model: null },
-                FACTORY_EXTENSION_EXPLOSION: { filename: 'factoryExtension-explosion.glb', model: null },
-                CACAOTREE: { filename: 'cacaotree.glb', model: null },
-                CACAOTREE_EXPLOSION: { filename: 'cacaotree-explosion.glb', model: null },
-                RUM_TRUFFLE_CANNON: { filename: 'cannon.glb', model: null },
-                RUM_TRUFFLE_CANNON_EXPLOSION: { filename: 'cannon-explosion.glb', model: null },
-                CREAM: { filename: 'cream.glb', model: null },
-                CREAM_EXPLOSION: { filename: 'cream-explosion.glb', model: null },
-                CREAM_AROUND_BUILDING: { filename: 'creamAroundBuilding.glb', model: null },
-                SPYING_EASTER_BUNNY: { filename: 'spyingEasterBunny.glb', model: null },
-                SPYING_EASTER_BUNNY_EXPLOSION: { filename: 'spyingEasterBunny-explosion.glb', model: null },
-                XMAS_FACTORY: { filename: 'xmasFactory.glb', model: null },
-                XMAS_FACTORY_EXPLOSION: { filename: 'xmasFactory-explosion.glb', model: null },
-                HOT_CHOCOLATE_BALLISTA: { filename: 'hotChocolateBallista.glb', model: null },
-                HOT_CHOCOLATE_BALLISTA_EXPLOSION: { filename: 'hotChocolateBallista-explosion.glb', model: null },
-                CHOCOLATE_FOUNTAIN: { filename: 'chocolateFountain.glb', model: null },
-                CHOCOLATE_FOUNTAIN_EXPLOSION: { filename: 'chocolateFountain-explosion.glb', model: null },
+                [EntityType.FACTORY]: { filename: 'factory.glb', model: null },
+                [EntityType.FACTORY + '.EXPLOSION']: { filename: 'factory-explosion.glb', model: null },
+                [EntityType.FACTORY_EXTENSION]: { filename: 'factoryExtension.glb', model: null },
+                [EntityType.FACTORY_EXTENSION + '.EXPLOSION']: { filename: 'factoryExtension-explosion.glb', model: null },
+                [EntityType.CACAOTREE]: { filename: 'cacaotree.glb', model: null },
+                [EntityType.CACAOTREE + '.EXPLOSION']: { filename: 'cacaotree-explosion.glb', model: null },
+                [EntityType.RUM_TRUFFLE_CANNON]: { filename: 'cannon.glb', model: null },
+                [EntityType.RUM_TRUFFLE_CANNON + '.EXPLOSION']: { filename: 'cannon-explosion.glb', model: null },
+                [EntityType.CREAM]: { filename: 'cream.glb', model: null },
+                [EntityType.CREAM + '.EXPLOSION']: { filename: 'cream-explosion.glb', model: null },
+                [EntityType.CREAM + '.AROUND.BUILDING']: { filename: 'creamAroundBuilding.glb', model: null },
+                [EntityType.SPYING_EASTER_BUNNY]: { filename: 'spyingEasterBunny.glb', model: null },
+                [EntityType.SPYING_EASTER_BUNNY + '.EXPLOSION']: { filename: 'spyingEasterBunny-explosion.glb', model: null },
+                [EntityType.XMAS_FACTORY]: { filename: 'xmasFactory.glb', model: null },
+                [EntityType.XMAS_FACTORY + '.EXPLOSION']: { filename: 'xmasFactory-explosion.glb', model: null },
+                [EntityType.HOT_CHOCOLATE_BALLISTA]: { filename: 'hotChocolateBallista.glb', model: null },
+                [EntityType.HOT_CHOCOLATE_BALLISTA + '.EXPLOSION']: { filename: 'hotChocolateBallista-explosion.glb', model: null },
+                [EntityType.CHOCOLATE_FOUNTAIN]: { filename: 'chocolateFountain.glb', model: null },
+                [EntityType.CHOCOLATE_FOUNTAIN + '.EXPLOSION']: { filename: 'chocolateFountain-explosion.glb', model: null },
                 ATTACK_AT_SHIELD_EXPLOSION: { filename: 'attackAtShield-explosion.glb', model: null },
-                FRUIT_CANNON: { filename: 'fruitCannon.glb', model: null },
-                FRUIT_CANNON_EXPLOSION: { filename: 'fruitCannon-explosion.glb', model: null }
+                [EntityType.FRUIT_CANNON]: { filename: 'fruitCannon.glb', model: null },
+                [EntityType.FRUIT_CANNON + '.EXPLOSION']: { filename: 'fruitCannon-explosion.glb', model: null }
             },
             images: {
                 CACAO_NO_BACKGROUND: { filename: 'cacao_no_background.png' },
@@ -52,7 +53,7 @@ const assetLoader = new AssetLoader();
 class AssetLoadingView extends Component {
     constructor(props) {
         super(props);
-        this.assetVersion = '2.0';
+        this.assetVersion = '3.0';
         this.state = { loadingProgress: 0 }
         this.loader = new GLTFLoader();
     }
