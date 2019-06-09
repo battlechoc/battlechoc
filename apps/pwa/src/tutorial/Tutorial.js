@@ -53,6 +53,8 @@ class Tutorial extends Component {
             this.props.loadSituation(ChoosePageTutorial);
         } else if (this.state.page === 2) {
             this.props.loadSituation(FactoryTutorial);
+        } else if (this.state.page === 3) {
+            this.props.loadSituation(TreeAndCannonTutorial);
         }
 
         if (this.state.page > 0) {

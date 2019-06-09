@@ -12,41 +12,21 @@ class GameStartSelection extends Component {
     choose(option) {
         if (this.props.clickable) {
             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-            if (typeof this.props.pseudoGame === 'undefined') {
-	            if (option === 'START' && this.getGameState() === GameStateTypes.CHOOSE_FIELD_OR_START) {
-	                this.props.chooseStart({ issuer: this.props.game.players[this.getPlayerIndex()].id });
-	            } else if (option === 'LEFT_GAMEFIELD') {
-	                this.props.chooseField({ fieldIdx: 0, issuer: this.props.game.players[this.getPlayerIndex()].id });
-	            } else if (option === 'RIGHT_GAMEFIELD') {
-	                this.props.chooseField({ fieldIdx: 1, issuer: this.props.game.players[this.getPlayerIndex()].id });
-	            }
-	        } else {
-	        	this.props.pseudoCallback();
-	        }
-        }
-    }
-
-    getPlayerIndex() {
-        if (typeof this.props.pseudoGame === 'undefined') {
-            return multiplayer.localPlayerIndex;
-        } else {
-            return 0;
-        }
-    }
-
-    getGameState() {
-		if (typeof this.props.pseudoGame === 'undefined') {
-            return this.props.state
-        } else {
-            return this.props.pseudoGame.gameplay.game.state;
+            if (option === 'START' && this.props.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
+                this.props.chooseStart({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
+            } else if (option === 'LEFT_GAMEFIELD') {
+                this.props.chooseField({ fieldIdx: 0, issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
+            } else if (option === 'RIGHT_GAMEFIELD') {
+                this.props.chooseField({ fieldIdx: 1, issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
+            }
         }
     }
 
     estimateButtonClasses() {
         let classNames = 'button'
-        if (this.props.clickable && this.getGameState() === GameStateTypes.CHOOSE_FIELD_OR_START) {
+        if (this.props.clickable && this.props.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
             classNames += ' active';
-        } else if (this.getGameState() === GameStateTypes.CHOOSE_FIELD) {
+        } else if (this.props.state === GameStateTypes.CHOOSE_FIELD) {
             if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true) {
                 classNames += ' inactive';
             } else {
@@ -59,13 +39,21 @@ class GameStartSelection extends Component {
     }
 
     render() {
-    	const game = typeof this.props.pseudoGame !== 'undefined' ? this.props.pseudoGame.gameplay.game : this.props.game; 
+        let drawCell = (cell, i) => {
+            let className = 'without cream';
+            if (cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) { 
+                className = 'cream';
+            }
+            return <div key={i} className={cell.previewStyle}>
+                <img className={className} alt="filled with cream" src="images/cream_preview.png" />
+            </div>
+        };
         return (
 			<div className="choose">
                 <div className={(this.props.clickable ? 'active ' : 'inactive') + ' button'} onClick={() => this.choose('LEFT_GAMEFIELD')}>
                     {(() => {
-                        if (typeof game.board !== 'undefined') {
-                            const creamedCells = game.board.fields[0].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM));
+                        if (typeof this.props.game.board !== 'undefined') {
+                            const creamedCells = this.props.game.board.fields[0].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM));
                             return <div className="creamedCellCount">
                                 <img alt="filled with cream" src="images/cream_preview.png" />
                                 <p>{creamedCells.length}</p>
@@ -74,18 +62,8 @@ class GameStartSelection extends Component {
                     })()}
                     <div className="fields">
                         {(() => {
-                            if (typeof game.board !== 'undefined') {
-                                return game.board.fields[0].grid.map(
-                                    (cell, i) => {
-                                        if (cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) {
-                                            return <div key={i} className={cell.previewStyle}>
-                                                <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
-                                            </div>
-                                        } else {
-                                            return <div key={i} className={cell.previewStyle}></div>
-                                        }
-                                    }
-                                );
+                            if (typeof this.props.game.board !== 'undefined') {
+                                return this.props.game.board.fields[0].grid.map(drawCell);
                             }
                         })()}
                     </div>
@@ -97,8 +75,8 @@ class GameStartSelection extends Component {
 
                 <div className={(this.props.clickable ? 'active ' : 'inactive') + ' button'} onClick={() => this.choose('RIGHT_GAMEFIELD')}>
                     {(() => {
-                        if (typeof game.board !== 'undefined') {
-                            const creamedCells = game.board.fields[1].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM));
+                        if (typeof this.props.game.board !== 'undefined') {
+                            const creamedCells = this.props.game.board.fields[1].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM));
                             return <div className="creamedCellCount">
                                 <img alt="filled with cream" src="images/cream_preview.png" />
                                 <p>{creamedCells.length}</p>
@@ -107,18 +85,8 @@ class GameStartSelection extends Component {
                     })()}
                     <div className="fields">
                         {(() => {
-                            if (typeof game.board !== 'undefined') {
-                                return game.board.fields[1].grid.map(
-                                    (cell, i) => {
-                                        if (cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) {
-                                            return <div key={i} className={cell.previewStyle}>
-                                                <img className="cream" alt="filled with cream" src="images/cream_preview.png" />
-                                            </div>
-                                        } else {
-                                            return <div key={i} className={cell.previewStyle}></div>
-                                        }
-                                    }
-                                );
+                            if (typeof this.props.game.board !== 'undefined') {
+                                return this.props.game.board.fields[1].grid.map(drawCell);
                             }
                         })()}
                     </div>
@@ -129,9 +97,7 @@ class GameStartSelection extends Component {
 }
 
 GameStartSelection.propTypes = {
-	clickable: PropTypes.bool.isRequired,
-	pseudoGame: PropTypes.object,
-	pseudoCallback: PropTypes.func
+	clickable: PropTypes.bool.isRequired
 }
 
 const mapStateToProps = state => ({

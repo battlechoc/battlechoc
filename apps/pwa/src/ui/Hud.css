@@ -208,6 +208,10 @@ img.cream {
   transform: rotateZ(-135deg);
 }
 
+img.without.cream {
+  opacity: 0;
+}
+
 /* flying text animation */
 
 @keyframes zoom {
