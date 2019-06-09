@@ -75,7 +75,7 @@ class Hud extends Component {
         const stage = this.estimateStage();
         let textAnimation = typeof this.state.message === 'undefined' ? undefined : <div id="textAnimation" className="zoom">{this.state.message}</div>
         return (
-            <div className="hud">
+            <div className={this.props.className}>
                 <Tooltip />
                 <Settings endGame={this.props.endGame} onRef={settings => (this.settings = settings)} />
                 <Actionbar showSettings={this.openSettings} />                
@@ -139,7 +139,8 @@ Hud.propTypes = {
     startTutorial: PropTypes.func.isRequired,
     joinMultiplayerGame: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired,
-    multiplayerLandingPage: PropTypes.bool.isRequired
+    multiplayerLandingPage: PropTypes.bool.isRequired,
+    className: PropTypes.string.isRequired
 }
 
 const mapStateToProps = state => ({

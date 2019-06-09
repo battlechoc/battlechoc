@@ -15,22 +15,6 @@
   font-weight: 500 !important;
 }
 
-.microGame {
-  position: relative;
-}
-
-.microGamefield {
-  width: 100vw;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-#microGamefield {
-  height: 50vh;
-  width: 100vw;
-}
-
 .challenge {
   height: 50vh;
 }
@@ -157,12 +141,6 @@
   30% {
     transform: translateY(-15px);
   }
-}
-
-.tutorial .loadingAnimation {
-  position: absolute;
-  right: 0;
-  top: 2vh;
 }
 
 @media screen and (orientation:portrait) { 

@@ -338,6 +338,7 @@ class App extends Component {
                      multiplayerLandingPage={typeof this.state.params.sessionid !== 'undefined'}
                      joinMultiplayerGame={this.joinMultiplayerGame}
                      startTutorial={() => this.startTutorial()}
+                     className={this.state.tutorial ? 'tutorial hud' : 'hud'}
                      endGame={() => this.endGame()}
                      onRef={hud => this.hud = hud} />
                 {this.state.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}

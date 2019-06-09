@@ -94,7 +94,6 @@ describe('iPhone', () => {
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_0.png' });
     await page.mouse.click(324, 327);
     await expect(page).toMatchElement('p', {text: '0/3', timeout: timeout});
-    await page.waitFor(3000);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_1.png' });
     await page.waitForSelector('img.loadingAnimation', {timeout: timeout});
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2_2.png' });
