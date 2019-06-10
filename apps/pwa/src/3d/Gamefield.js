@@ -69,6 +69,7 @@ class Gamefield {
         board.groupsNeedUpdate = true;
         board.geometry.sortFacesByMaterialIndex();
         board.name = 'BOARD' + this.fieldIdx;
+        board.frustumCulled = false;
 
         this.gameField.add(board);
         this.gameField.position.set(this.position[0], this.position[1], this.position[2]);
@@ -152,6 +153,7 @@ class Gamefield {
 
             this.renderingEntities[phenotype] = new Mesh(new Geometry(), material);
             this.renderingEntities[phenotype].matrixAutoUpdate = false;
+            this.renderingEntities[phenotype].frustumCulled = false;
             this.gameField.add(this.renderingEntities[phenotype]);
         }
 

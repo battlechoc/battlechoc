@@ -131,7 +131,7 @@ class Scene extends Component {
     onClick = event => {
         // console.log(event.clientX, event.clientY);
         // TODO: implement new stats with console.log(this.renderer.info.render.calls)
-        // console.log('RENDER CALLS', this.renderer.info.render.calls); // creams + 3
+        console.log('RENDER CALLS', this.renderer.info.render.calls); // creams + 3
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
         this.raycaster.setFromCamera(this.mouse, this.camera);
