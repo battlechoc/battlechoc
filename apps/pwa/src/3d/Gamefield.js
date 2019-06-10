@@ -131,7 +131,13 @@ class Gamefield {
             position = pivot.position;
         } else {
             pivot = assets[phenotype].model.scene.clone().children[0];
-            material = pivot.material;
+            
+            if (phenotype === EntityType.CREAM || phenotype === EntityType.CREAM + '.AROUND.BUILDING') {
+                material = new MeshLambertMaterial({ color: 0xffffff,  emissive: 0x606060 });
+            } else {
+                material = pivot.material;
+            }
+
             position = pivot.position;
         }
 
@@ -145,6 +151,7 @@ class Gamefield {
             }
 
             this.renderingEntities[phenotype] = new Mesh(new Geometry(), material);
+            this.renderingEntities[phenotype].matrixAutoUpdate = false;
             this.gameField.add(this.renderingEntities[phenotype]);
         }
 
