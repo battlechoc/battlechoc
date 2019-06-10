@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { Translation as t } from '../ui/misc';
 
 class ChatLikeInstructions extends Component {
     constructor(props) {
@@ -69,10 +71,9 @@ class ChatLikeInstructions extends Component {
         if (isTyping && this.state.indicatorVisible) {
             typingIndicator = <div id="typingIndicator"><span className="dot"></span><span className="dot"></span><span className="dot"></span></div>;
         }
-
         let speechBubbles = this.state.visibleMessages.map((message, i) => {
             if (message.type === 'text') {
-                return <div key={i} className="speechBubble">{message.text}</div>;
+                return <div key={i} className="speechBubble">{ t[this.props.language][message.text]}</div>;
             } else if (message.type === 'challenge') {
                 return <div key={i}>{message.element}</div>;
             } else if (message.type === 'image') {
@@ -102,4 +103,6 @@ ChatLikeInstructions.propTypes = {
     appbar: PropTypes.element.isRequired
 }
 
-export default ChatLikeInstructions
+const mapStateToProps = state => ({ language: state.ui.language });
+const ChatLikeInstructionsContainer = connect(mapStateToProps)(ChatLikeInstructions);
+export default ChatLikeInstructionsContainer;

@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import ChatLikeInstructions from './ChatLikeInstructions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
-import { Translation as t } from '../ui/misc';
 
 class BuildFactoryPage extends Component {
     componentWillReceiveProps(nextProps) {
@@ -16,11 +15,11 @@ class BuildFactoryPage extends Component {
 
     render() {
         let messages = [
-            { text: t[this.props.language].TUTORIAL_FACTORY_MESSAGE_1, type: 'text', delay: 1000 },
+            { text: 'TUTORIAL_FACTORY_MESSAGE_1', type: 'text', delay: 1000 },
             { src: 'factory', type: 'image', delay: 2500, alt: 'factory message icon' },
-            { text: t[this.props.language].TUTORIAL_FACTORY_MESSAGE_2, type: 'text', delay: 2500 },
-            { text: t[this.props.language].TUTORIAL_FACTORY_MESSAGE_3, type: 'text', delay: 3500 },
-            { text: t[this.props.language].TUTORIAL_FACTORY_MESSAGE_4, type: 'text'},
+            { text: 'TUTORIAL_FACTORY_MESSAGE_2', type: 'text', delay: 2500 },
+            { text: 'TUTORIAL_FACTORY_MESSAGE_3', type: 'text', delay: 3500 },
+            { text: 'TUTORIAL_FACTORY_MESSAGE_4', type: 'text'},
         ]
         return <ChatLikeInstructions messages={messages} appbar={this.props.appbar}/>;
     }
@@ -31,9 +30,6 @@ BuildFactoryPage.propTypes = {
     appbar: PropTypes.object.isRequired
 }
 
-const mapStateToProps = state => ({ 
-    game: state.gameplay.game,
-    language: state.ui.language 
-});
+const mapStateToProps = state => ({ game: state.gameplay.game });
 const BuildFactoryPageContainer = connect(mapStateToProps)(BuildFactoryPage);
 export default BuildFactoryPageContainer;
