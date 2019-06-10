@@ -76,12 +76,8 @@ class ChatLikeInstructions extends Component {
             } else if (message.type === 'challenge') {
                 return <div key={i}>{message.element}</div>;
             } else if (message.type === 'image') {
-                if (message.src === 'factory') {
-                    return <div key={i} className="media"><div className="speechBubble"><div className="factory preview" style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }}></div></div></div>;
-                } else if (message.src === 'cacaotree') {
-                    return <div key={i} className="media"><div className="speechBubble"><div className="cacaotree preview" style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }}></div></div></div>;
-                } else if (message.src === 'cannon') {
-                    return <div key={i} className="media"><div className="speechBubble"><div className="cannon preview" style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }}></div></div></div>;
+                if (['factory', 'cacaotree', 'cannon', 'fruitCannon'].includes(message.src)) {
+                    return <div key={i} className="media"><div className="speechBubble"><div className={message.src + ' preview'} style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }}></div></div></div>;
                 } else {
                     return <div key={i} className="media"><div className="speechBubble"><img alt={message.alt} src={message.src} /></div></div>;
                 }

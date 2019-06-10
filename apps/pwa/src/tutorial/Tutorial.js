@@ -8,11 +8,13 @@ import ChoosePage from './ChoosePage';
 import BuildFactoryPage from './BuildFactoryPage';
 import TreesAndCannonsPage from './TreesAndCannonsPage';
 import BunnyAndXmasPage from './BunnyAndXmasPage';
+import FountainAndFruitCannonPage from './FountainAndFruitCannonPage';
 import { Jukebox } from '../ui/misc';
 import ChoosePageTutorial from '../situations/tutorial/ChoosePageTutorial';
 import FactoryTutorial from '../situations/tutorial/FactoryTutorial';
 import TreeAndCannonTutorial from '../situations/tutorial/TreeAndCannonTutorial';
 import BunnyAndXmasTutorial from '../situations/tutorial/BunnyAndXmasTutorial';
+import FountainAndFruitCannonTutorial from '../situations/tutorial/FountainAndFruitCannonTutorial';
 import { Translation as t } from '../ui/misc';
 
 class Tutorial extends Component {
@@ -20,7 +22,7 @@ class Tutorial extends Component {
         super(props);
         this.state = {
             page: 0,
-            maxPages: 4
+            maxPages: 5
         }
     }
 
@@ -44,6 +46,8 @@ class Tutorial extends Component {
             this.props.loadSituation(TreeAndCannonTutorial);
         } else if (this.state.page === 2) {
             this.props.loadSituation(BunnyAndXmasTutorial);
+        } else if (this.state.page === 3) {
+            this.props.loadSituation(FountainAndFruitCannonTutorial);
         } 
         this.setState({ page: this.state.page + 1});
     }
@@ -56,7 +60,9 @@ class Tutorial extends Component {
             this.props.loadSituation(FactoryTutorial);
         } else if (this.state.page === 3) {
             this.props.loadSituation(TreeAndCannonTutorial);
-        }
+        } else if (this.state.page === 4) {
+            this.props.loadSituation(BunnyAndXmasTutorial);
+        } 
 
         if (this.state.page > 0) {
             this.setState({ page: this.state.page - 1});
@@ -81,6 +87,8 @@ class Tutorial extends Component {
             title = t[this.props.language].TUTORIAL_TITLE_3;
         } else if (this.state.page === 3) {
             title = t[this.props.language].TUTORIAL_TITLE_4;
+        } else if (this.state.page === 4) {
+            title = t[this.props.language].TUTORIAL_TITLE_5;
         }
 
         let appbar = <AppBar position="static" color="secondary" className="tutorialAppbar">
@@ -97,7 +105,8 @@ class Tutorial extends Component {
             <ChoosePage fulfilled={this.fulfilled} appbar={appbar}/>, 
             <BuildFactoryPage fulfilled={this.fulfilled} appbar={appbar}/>,
             <TreesAndCannonsPage fulfilled={this.fulfilled} appbar={appbar}/>,
-            <BunnyAndXmasPage fulfilled={this.fulfilled} appbar={appbar}/>
+            <BunnyAndXmasPage fulfilled={this.fulfilled} appbar={appbar}/>,
+            <FountainAndFruitCannonPage fulfilled={this.fulfilled} appbar={appbar}/>
         ];
 
         return (

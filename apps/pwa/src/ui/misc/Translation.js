@@ -156,10 +156,19 @@ const languages = {
         TUTORIAL_BUNNY_MESSAGE_7: 'It gets melted down and you receive a hot chocolate ballista!',
         TUTORIAL_BUNNY_MESSAGE_8: 'Now it\'s your opponent\'s turn. This animation ..',
         TUTORIAL_BUNNY_MESSAGE_9: '.. indicates that your opponent is thinking',
+        TUTORIAL_FOUNTAIN_MESSAGE_1: 'Build a cacao tree and then attack your opponent\'s factory',
+        TUTORIAL_FOUNTAIN_MESSAGE_2: 'Destroy your opponents Factory to finish this tutorial',
+        TUTORIAL_FOUNTAIN_MESSAGE_3: 'Oh no, your opponent has a cacao shield',
+        TUTORIAL_FOUNTAIN_MESSAGE_4: 'Truffles can\'t pass the shield',
+        TUTORIAL_FOUNTAIN_MESSAGE_5: 'Collect enough cocoa to build a fruit cannon',
+        TUTORIAL_FOUNTAIN_MESSAGE_6: 'Great! Now you can upgrade your cannons with a fruit extension',
+        TUTORIAL_FOUNTAIN_MESSAGE_7: 'While fruits can pass the shield, they can only destroy the chocolate fountain and cream',
+        TUTORIAL_FOUNTAIN_MESSAGE_8: 'Once the chocolate fountain is destroyed you can attack the factory with truffles',        
         TUTORIAL_TITLE_1: 'Interactive battlechoc Tutorial',
         TUTORIAL_TITLE_2: 'The chocolate factory',
         TUTORIAL_TITLE_3: 'About trees and cannons',
-        TUTORIAL_TITLE_4: 'X-mas and bunnies'
+        TUTORIAL_TITLE_4: 'X-mas and bunnies',
+        TUTORIAL_TITLE_5: 'About fruits and chocolate fountains'
     },
     de: {
         NEW_GAME: 'Neues Spiel',
@@ -316,10 +325,19 @@ const languages = {
         TUTORIAL_BUNNY_MESSAGE_7: '.. wird er eingeschmolzen und du erhältst eine heiße Schokoladenschleuder!',
         TUTORIAL_BUNNY_MESSAGE_8: 'Jetzt ist dein Gegner am Zug. Diese Animation ..',
         TUTORIAL_BUNNY_MESSAGE_9: '.. bedeutet, dass dein Gegner nachdenkt',
+        TUTORIAL_FOUNTAIN_MESSAGE_1: 'Baue einen Kakaobaum und greife die gegnerische Fabrik an',
+        TUTORIAL_FOUNTAIN_MESSAGE_2: 'Zerstöre die Schokoladenfabrik deines Gegners um das Tutorial zu beenden',
+        TUTORIAL_FOUNTAIN_MESSAGE_3: 'Oh nein! Dein Gegner hat einen Schokoladenschild',
+        TUTORIAL_FOUNTAIN_MESSAGE_4: 'Normale Rumtrüffel können das Schild nicht durchdringen',
+        TUTORIAL_FOUNTAIN_MESSAGE_5: 'Ernte genügend Kakao um eine Fruchtkanone zu bauen',
+        TUTORIAL_FOUNTAIN_MESSAGE_6: 'Super! Du kannst nun deine Kannonen mit einer Frucherweiterung upgraden',
+        TUTORIAL_FOUNTAIN_MESSAGE_7: 'Früchte können zwar den Schild durchdringen, jedoch zerstören sie nur den Schokobrunnen und Sahne',
+        TUTORIAL_FOUNTAIN_MESSAGE_8: 'Aber sobald der Schokobrunnen zerstört ist, können deine Rumtrüffelkanonen die Fabrik deines Gegners zerstören!',   
         TUTORIAL_TITLE_1: 'Interaktives battlechoc Tutorial',
         TUTORIAL_TITLE_2: 'Die Schokoladenfabrik',
         TUTORIAL_TITLE_3: 'Kakaobäume und Rumtrüffelkanonen',
-        TUTORIAL_TITLE_4: 'Die Wahrheit über Weihnachten und Ostern'
+        TUTORIAL_TITLE_4: 'Die Wahrheit über Weihnachten und Ostern',
+        TUTORIAL_TITLE_5: 'Schokobrunnen und Früchte'
     }
 };
 
