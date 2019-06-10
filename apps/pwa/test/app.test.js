@@ -1,6 +1,6 @@
 const puppeteer = require('puppeteer');
 const iPhone = puppeteer.devices['iPhone 6 landscape'];
-const timeout = 100000;
+const timeout = 120000;
 
 describe('browser', () => {
     let page;

@@ -13,6 +13,7 @@ import ChoosePageTutorial from '../situations/tutorial/ChoosePageTutorial';
 import FactoryTutorial from '../situations/tutorial/FactoryTutorial';
 import TreeAndCannonTutorial from '../situations/tutorial/TreeAndCannonTutorial';
 import BunnyAndXmasTutorial from '../situations/tutorial/BunnyAndXmasTutorial';
+import { Translation as t } from '../ui/misc';
 
 class Tutorial extends Component {
     constructor(props) {
@@ -73,13 +74,13 @@ class Tutorial extends Component {
             nextIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={this.props.closeTutorial}><CloseIcon /></IconButton>
         }
 
-        let title = 'Interactive battlechoc Tutorial';
+        let title = t[this.props.language].TUTORIAL_TITLE_1;
         if (this.state.page === 1) {
-            title = 'The chocolate factory';
+            title = t[this.props.language].TUTORIAL_TITLE_2;
         } else if (this.state.page === 2) {
-            title = 'About trees and cannons';
+            title = t[this.props.language].TUTORIAL_TITLE_3;
         } else if (this.state.page === 3) {
-            title = 'X-mas and bunnies';
+            title = t[this.props.language].TUTORIAL_TITLE_4;
         }
 
         let appbar = <AppBar position="static" color="secondary" className="tutorialAppbar">
