@@ -5,6 +5,8 @@
   "dependencies": {
     "@material-ui/core": "^3.9.2",
     "@material-ui/icons": "^3.0.2",
+    "babylonjs": "^4.0.3",
+    "babylonjs-loaders": "^4.0.3",
     "firebase": "^5.11.1",
     "idb": "^3.0.2",
     "react": "^16.7.0",

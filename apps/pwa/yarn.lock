@@ -2095,6 +2095,24 @@ babylon@^6.18.0:
   resolved "https://registry.yarnpkg.com/babylon/-/babylon-6.18.0.tgz#af2f3b88fa6f5c1e4c634d1a0f8eac4f55b395e3"
   integrity sha512-q/UEjfGJ2Cm3oKV71DJz9d25TPnq5rhBVL2Q4fA5wcC3jcrdn7+SssEybFIxwAvvP+YCsCYNKughoF33GxgycQ==
 
+babylonjs-gltf2interface@4.0.3:
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/babylonjs-gltf2interface/-/babylonjs-gltf2interface-4.0.3.tgz#e81cc65fac93b723feef4980b7497fa4643a8c4c"
+  integrity sha512-ys8cEhlkYmBCJ3F/aBemVNKPkaV5fPghR4wgQfvUTNCF9pFlwYZpJ1KXEPj4+z6OohXN14AQMcaiafL+bmVLlg==
+
+babylonjs-loaders@^4.0.3:
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/babylonjs-loaders/-/babylonjs-loaders-4.0.3.tgz#aab7fbc695eed29ebe7971e4d9797a385bd365dc"
+  integrity sha512-pdJElZpxZlh/c0wVeDcxhcQ2y5TRvEKbhO8HEiMo43At0FQm281EpIYIvvpWBkmNcPQoYJig63RSJxR9vHtUhw==
+  dependencies:
+    babylonjs "4.0.3"
+    babylonjs-gltf2interface "4.0.3"
+
+babylonjs@4.0.3, babylonjs@^4.0.3:
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/babylonjs/-/babylonjs-4.0.3.tgz#5dba9a96a7cb70634338e8dd7a17081e9f902cf6"
+  integrity sha512-S5PoPmf0Vo03FDmF9z8djBiIm8GSLvCesln/9aKV9RbD4W+NTqVmMKhR8CQoMRCQNb2JSKKUuyUygXxCRVG37Q==
+
 bail@^1.0.0:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/bail/-/bail-1.0.3.tgz#63cfb9ddbac829b02a3128cd53224be78e6c21a3"

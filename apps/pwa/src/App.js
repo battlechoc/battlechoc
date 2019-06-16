@@ -20,6 +20,7 @@ import FactoryExtensionTest from './situations/tests/FactoryExtensionTest';
 import Scene from './3d/Scene';
 import Hud from './ui/Hud';
 import Tutorial from './tutorial/Tutorial';
+import { AssetLoadingViewContainer as AssetLoadingView } from './AssetLoader';
 
 class App extends Component {
     constructor(props) {
@@ -302,14 +303,11 @@ class App extends Component {
 
                     this.props.startGame(players).then(() => {
                         this.opponent.type = Augustus.randomizeType();
-                        this.opponent.connectGamestate(() => this.props.game);
-
-                        setTimeout(() => {
-                            this.props.createBoard({
-                                boardSize: { rows: 8, cols: 8 },
-                                boardSeed: 42
-                            });
-                        }, 1000);
+                        this.opponent.connectGamestate(() => this.props.game);                        
+                        this.props.createBoard({
+                            boardSize: { rows: 10, cols: 10 },
+                            boardSeed: 42
+                        });
                     });
                 }
             });
@@ -350,8 +348,8 @@ class App extends Component {
     render() {
         return (
             <div className="app">
-                {this.props.assetsReady ? <div id="clouds"></div> : null}
-                {typeof this.props.game !== 'undefined' ? <Scene onRef={scene => this.scene = scene} /> : null}
+                {this.props.assetsReady ? <div id="clouds"></div> : <AssetLoadingView onRef={loadingView => this.loadingView = loadingView} />}
+                <Scene onRef={scene => this.scene = scene} loadAssets={scene => this.loadingView.loadAssets(scene)} />
                 <Hud prepareNewGameCallback={this.prepareNewGame}
                      multiplayerLandingPage={typeof this.state.params.sessionid !== 'undefined'}
                      joinMultiplayerGame={this.joinMultiplayerGame}

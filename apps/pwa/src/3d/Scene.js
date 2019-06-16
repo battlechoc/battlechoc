@@ -1,57 +1,53 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { multiplayer } from '../Multiplayer';
 import { deselectBuildings, selectAttack, deselectAttack, selectBuilding } from '../ui/UiActions';
 import { build, attack, finishTurn, finishBuildPhase } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
-import { BoardCellTypes, EntityType, AttackType, createEntity, getEntityDescriptor, getCheapest } from '../gameplay/GameEntities';
 import Gamefield from './Gamefield';
-import Animation from './Animation';
-import { Jukebox } from '../ui/misc';
-import { InfoType, spawnInfo, spawnInfoAtBuilding } from '../ui/misc/FlyingInfo';
+import { EntityType, AttackType, createEntity, getEntityDescriptor, getCheapest } from '../gameplay/GameEntities';
 import { BattlechocError } from '../gameplay/Errors';
+import { Jukebox } from '../ui/misc';
 import { playerHasAttacks } from '../gameplay/Player';
-import { DirectionalLight, Clock, Scene as ThreeScene, WebGLRenderer, OrthographicCamera, Raycaster, Vector2, Vector3 } from 'three';
-
+import { InfoType, spawnInfo } from '../ui/misc/FlyingInfo';
+import { Scene as BabylonScene, Engine, UniversalCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation } from 'babylonjs';
+import 'babylonjs-loaders';
 class Scene extends Component {
 
     componentDidMount() {
         this.props.onRef(this);
-        // Basic window and game setup
-        const width = this.container.clientWidth;
-        const height = this.container.clientHeight;
-        window.addEventListener("resize", this.updateDimensions);
+        this.engine = new Engine(this.container, false, { preserveDrawingBuffer: true, stencil: true }, true);
 
-        // Setup scene, camera and renderer
-        this.scene = new ThreeScene();
-        this.clock = new Clock();
+        let createScene = () => {
+            let scene = new BabylonScene(this.engine);
+            scene.clearColor = new Color4(0, 0, 0, 0);
+            this.camera = new UniversalCamera("camera", new Vector3(30, 30, 30), scene);
+            this.camera.orthographicSize = 6;
+            this.camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
+            let ratio = this.engine.getAspectRatio(this.camera);
+            this.camera.orthoTop = this.camera.orthographicSize;
+            this.camera.orthoBottom = -this.camera.orthographicSize;
+            this.camera.orthoLeft = - this.camera.orthographicSize * ratio;
+            this.camera.orthoRight = this.camera.orthographicSize * ratio;
+            this.camera.setTarget(Vector3.Zero());
+            let light = new HemisphericLight('light', new Vector3(40, 44, 1), scene);
+            light.intensity = 0.95;
+            light.diffuse = new Color3(1.0, 0.97, 0.93);
 
-        let distance = this.estimateDistance(width / height);
-        let aspect = width / height;
+            this.props.loadAssets(scene);
+            return scene;
+        }
 
-        this.camera = new OrthographicCamera(-distance * aspect, distance * aspect, distance, -distance, -100, 200);
-        this.camera.position.set(1, 1, 1);
-        this.camera.lookAt(this.scene.position);
-        this.camera.position.x = 0;
-        this.camera.position.y = 30;
-        this.camera.position.z = 70;
-
-        this.renderer = new WebGLRenderer({ alpha: true, antialias: true });
-
-        this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.setSize(width, height);
-        this.renderer.domElement.id = 'game-canvas'
-        this.renderer.gammaOutput = true;
-        this.renderer.gammaFactor = 1.7;
-
-        // animations and renderer
+        this.scene = createScene();
+        this.engine.runRenderLoop(() => this.scene.render());
+        window.addEventListener('resize', () => this.resize());
         this.animations = [];
-        this.container.appendChild(this.renderer.domElement);
-
-        // Allow clicking
-        this.raycaster = new Raycaster();
-        this.mouse = new Vector2();
         this.lookAtOpponent = true;
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('resize', () => this.resize());
     }
 
     componentDidUpdate() {
@@ -60,23 +56,19 @@ class Scene extends Component {
                 this.props.game.state !== GameStateTypes.ATTACK_PHASE) ||
                 (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true &&
                     this.props.game.state === GameStateTypes.ATTACK_PHASE))) {
-                this.updateView();
+                this.lookAtOpponent = !this.lookAtOpponent;
+                this.performCameraFlight();
             }
         }
 
-        if (typeof this.opponentGameField !== 'undefined') {
+        if (typeof this.playerGameField !== 'undefined') {
             this.opponentGameField.update();
             this.playerGameField.update();
         }
     }
 
-    updateView() {
-        this.lookAtOpponent = !this.lookAtOpponent;
-        this.start();
-    }
-
     triggerCacaoInfo() {
-        const specialTrees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE) && cell.type === BoardCellTypes.WHITE);
+        /*const specialTrees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE) && cell.type === BoardCellTypes.WHITE);
         const trees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE) && cell.type !== BoardCellTypes.WHITE);
         let description = getEntityDescriptor(EntityType.CACAOTREE)
         trees.forEach(cell => spawnInfoAtBuilding({
@@ -92,78 +84,74 @@ class Scene extends Component {
             camera: this.camera,
             type: InfoType.CACAO_HARVESTED,
             container: this.container
-        }));
+        }));*/
+    }
+
+    resize = () => {
+        const width = this.container.clientWidth;
+        const height = this.container.clientHeight;
+        let ratio = width / height;
+        this.camera.orthoTop = this.camera.orthographicSize;
+        this.camera.orthoBottom = -this.camera.orthographicSize;
+        this.camera.orthoLeft = - this.camera.orthographicSize * ratio;
+        this.camera.orthoRight = this.camera.orthographicSize * ratio;
+        this.engine.resize();
     }
 
     clear() {
-        while (this.scene.children.length > 0) {
-            this.scene.remove(this.scene.children[0]);
-        }
+        console.log('cleanup')
+        this.scene.meshes.forEach(mesh => {
+            this.scene.removeMesh(mesh, true);
+            mesh.dispose();
+        });
+        this.scene.dispose();﻿
+        this.engine.dispose();
+        this.playerGameField = undefined;
+        this.opponentGameField = undefined;
     }
 
     dimLight = () => {
-        this.scene.traverse(child => {
+        /*this.scene.traverse(child => {
             if (child instanceof DirectionalLight) {
                 child.intensity = 0.1;
             }
-        });
-        this.renderScene();
+        });*/
     }
 
     resetLight = () => {
-        this.scene.traverse(child => {
+        /*this.scene.traverse(child => {
             if (child instanceof DirectionalLight) {
                 child.intensity = 2.0;
             }
-        });
-        this.renderScene();
+        });*/
     }
 
     detonateAtShield(row, col, playerField=false) {
-        let position3d = { x: row * this.playerGameField.fieldSize, y: 0, z: col * this.playerGameField.fieldSize };
+        /*let position3d = { x: row * this.playerGameField.fieldSize, y: 0, z: col * this.playerGameField.fieldSize };
         if (playerField) {
             this.startAnimation(this.playerGameField.gameField, false, 'ATTACK_AT_SHIELD_EXPLOSION', position3d);
         } else {
             this.startAnimation(this.opponentGameField.gameField, false, 'ATTACK_AT_SHIELD_EXPLOSION', position3d);
-        }
+        }*/
     }
 
-    onClick = event => {
-        // console.log(event.clientX, event.clientY);
-        // TODO: implement new stats with console.log(this.renderer.info.render.calls)
-        console.log('RENDER CALLS', this.renderer.info.render.calls); // creams + 3
-        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-        this.raycaster.setFromCamera(this.mouse, this.camera);
-
-        if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
-            this.playerFieldClick(event);
-            this.opponentFieldClick(event);
-        }
-    }
-
-    playerFieldClick(event) {
-        var intersects = this.raycaster.intersectObjects(this.clickTargets, true);
-        intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
-            (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));
+    playerFieldClick(row, col, eventX, eventY) {
         let buildingSelected = this.props.selectedBuilding;
-        let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-            this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
-        if (intersects.length > 0 && (buildingSelected || (initialPlacement && this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn === 0))) {
-            let building = null;
+        let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
+        if (buildingSelected || (initialPlacement && this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn === 0)) {
+            let building;
             if (initialPlacement) {
                 building = createEntity(EntityType.FACTORY);
             } else {
                 building = createEntity(this.props.selectedBuilding);
             }
-            let cellIndex = intersects[0].object._cellIdx || intersects[0].face._cellIdx;
-            building.position = { row: cellIndex.row, col: cellIndex.col }
+            building.position = { row: row, col: col }
             let playerCacaoPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn;
             let buildingsPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn;
             this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
                 if (initialPlacement) {
-                    spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn, x: event.clientX, y: event.clientY, container: this.container });
+                    spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn, x: eventX, y: eventY, container: this.container });
                     this.props.deselectBuildings();
                     this.props.deselectAttack();
                     let playerId = this.props.game.players[multiplayer.localPlayerIndex].id;
@@ -176,18 +164,18 @@ class Scene extends Component {
                     }, 3000);
                 } else {
                     let description = getEntityDescriptor(this.props.selectedBuilding)
-                    spawnInfo({ type: InfoType.CACAO_CONSUMED, cacao: description.costs, x: event.clientX, y: event.clientY, container: this.container });
+                    spawnInfo({ type: InfoType.CACAO_CONSUMED, cacao: description.costs, x: eventX, y: eventY, container: this.container });
                     let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;
                     setTimeout(() => {
                         if (building.type === EntityType.CACAOTREE) {
-                            spawnInfo({ type: InfoType.INCREASE_CACAO_PER_TURN, cacao: cacaoDelta, x: event.clientX, y: event.clientY, container: this.container });
+                            spawnInfo({ type: InfoType.INCREASE_CACAO_PER_TURN, cacao: cacaoDelta, x: eventX, y: eventY, container: this.container });
                         } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
-                            spawnInfo({ type: InfoType.INCREASE_ATTACKS_PER_TURN, attacks: 1, x: event.clientX, y: event.clientY, container: this.container });
+                            spawnInfo({ type: InfoType.INCREASE_ATTACKS_PER_TURN, attacks: 1, x: eventX, y: eventY, container: this.container });
                         } else if (building.type === EntityType.FACTORY_EXTENSION) {
-                            spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: buildingsDelta, x: event.clientX, y: event.clientY, container: this.container });
+                            spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: buildingsDelta, x: eventX, y: eventY, container: this.container });
                         } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
-                            spawnInfo({ type: InfoType.INCREASE_SPY_ATTACKS_PER_TURN, attacks: 1, x: event.clientX, y: event.clientY, container: this.container });
+                            spawnInfo({ type: InfoType.INCREASE_SPY_ATTACKS_PER_TURN, attacks: 1, x: eventX, y: eventY, container: this.container });
                         }
                         setTimeout(() => {
                             if (this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) {
@@ -227,58 +215,73 @@ class Scene extends Component {
         }
     }
 
-    opponentFieldClick(event) {
+    opponentFieldClick(row, col, eventX, eventY) {
         if (this.lookAtOpponent && this.props.game.state === GameStateTypes.ATTACK_PHASE && typeof this.props.selectedAttack !== 'undefined') {
-            var intersects = this.raycaster.intersectObjects(this.opponentClickTargets, true);
-            intersects = intersects.filter(intersect => ((typeof intersect.object._cellIdx !== 'undefined' && typeof intersect.object._fieldIdx !== 'undefined') ||
-                (typeof intersect.face._cellIdx !== 'undefined' && typeof intersect.face._fieldIdx)));
-            if (intersects.length > 0 && playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true) {
-                let cellIndex = intersects[0].object._cellIdx || intersects[0].face._cellIdx;
-                let target = { row: cellIndex.row, col: cellIndex.col };
-                this.props.attack({
-                    issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
-                    attackType: this.props.selectedAttack,
-                    row: target.row,
-                    col: target.col
-                }).then(() => {
-                    if (this.props.selectedAttack === AttackType.BUNNY) {
-                        if (this.props.game.players[multiplayer.localPlayerIndex].attacksPerTurn[AttackType.BUNNY] > 0) {
-                            Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
-                        } else {
-                            Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
-                            spawnInfo({ type: InfoType.BUNNY_CAUGHT, x: event.clientX, y: event.clientY, container: this.container });
-                        }
-                    } else if (typeof this.props.selectedAttack !== 'undefined') {
-                        Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
-                        let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
-                        if (cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, target.row, target.col).shielded) {
-                            this.detonateAtShield(target.row, target.col);
-                        }
-                    }
-
-                    if (this.props.game.players[multiplayer.localPlayerIndex].attacks[this.props.selectedAttack] === 0) {
-                        const attackTypes = [AttackType.TRUFFLE, AttackType.FRUIT, AttackType.HOT_CHOCOLATE, AttackType.BUNNY];
-                        let undepletedAttack = attackTypes.filter(attackType => this.props.game.players[multiplayer.localPlayerIndex].attacks[attackType]);
-                        if (undepletedAttack.length > 0) {
-                            this.props.selectAttack(undepletedAttack[0]).catch(error => {
-                                if (error instanceof BattlechocError) {
-                                    console.warn(error);
-                                } else {
-                                    throw error;
-                                }
-                            });
-                        }
-                    }
-                }).catch(error => {
-                    if (error instanceof BattlechocError) {
-                        console.warn(error);
+            this.props.attack({
+                issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
+                attackType: this.props.selectedAttack,
+                row: row,
+                col: col
+            }).then(() => {
+                if (this.props.selectedAttack === AttackType.BUNNY) {
+                    if (this.props.game.players[multiplayer.localPlayerIndex].attacksPerTurn[AttackType.BUNNY] > 0) {
+                        Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
                     } else {
-                        throw error;
+                        Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
+                        spawnInfo({ type: InfoType.BUNNY_CAUGHT, x: eventX, y: eventY, container: this.container });
                     }
-                });
-            }
+                } else if (typeof this.props.selectedAttack !== 'undefined') {
+                    Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
+                    let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
+                    if (cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col).shielded) {
+                        this.detonateAtShield(row, col);
+                    }
+                }
+
+                if (this.props.game.players[multiplayer.localPlayerIndex].attacks[this.props.selectedAttack] === 0) {
+                    const attackTypes = [AttackType.TRUFFLE, AttackType.FRUIT, AttackType.HOT_CHOCOLATE, AttackType.BUNNY];
+                    let undepletedAttack = attackTypes.filter(attackType => this.props.game.players[multiplayer.localPlayerIndex].attacks[attackType]);
+                    if (undepletedAttack.length > 0) {
+                        this.props.selectAttack(undepletedAttack[0]).catch(error => {
+                            if (error instanceof BattlechocError) {
+                                console.warn(error);
+                            } else {
+                                throw error;
+                            }
+                        });
+                    }
+                }
+            }).catch(error => {
+                if (error instanceof BattlechocError) {
+                    console.warn(error);
+                } else {
+                    throw error;
+                }
+            });
         }
     }
+
+    performCameraFlight = () => {
+        let target = new Vector3(30, 30, 30);
+        if (this.lookAtOpponent) {
+            target = new Vector3(6, 18, 30);
+        }
+        let camera = this.scene.activeCamera;
+        let flight = new Animation("animCam", "position", 30, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE);
+        let keyframes = [];
+        keyframes.push({
+            frame: 0,
+            value: camera.position
+        });
+        keyframes.push({
+            frame: 30,
+            value: target
+        });
+
+        flight.setKeys(keyframes);
+        camera.animations.push(flight);
+        this.scene.beginAnimation(camera, 0, 60, false);
+    };
 
     startGame = (game, overrideUiState=false) => {
         const playerFieldIndex = game.players[multiplayer.localPlayerIndex].fieldIndex;
@@ -288,28 +291,12 @@ class Scene extends Component {
             game.state !== GameStateTypes.ATTACK_PHASE) ||
             (multiplayer.isLocalPlayer(game.currentPlayerIndex) === true &&
             game.state === GameStateTypes.ATTACK_PHASE))) {
-            this.updateView();
-        } else {
-            this.start();
-        }
+            this.lookAtOpponent = !this.lookAtOpponent;
+            this.performCameraFlight();
+        } 
 
-        // Add Light
-        var directionalLight = new DirectionalLight(0xffffff, 2);
-        directionalLight.position.set(40, 44, 1);
-        directionalLight.castShadow = false;
-        this.scene.add(directionalLight);
-
-        this.playerGameField = new Gamefield(true, [-72, -16, 0], () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.startAnimation, this.renderScene);
-        this.opponentGameField = new Gamefield(false, [72, 56, 0], () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.startAnimation, this.renderScene);
-        this.scene.add(this.playerGameField.gameField);
-        this.scene.add(this.opponentGameField.gameField);
-
-        // Setup Game EventListener
-        this.container.onclick = event => this.onClick(event);
-
-        // Prepare click targets
-        this.clickTargets = this.playerGameField.gameField.children;
-        this.opponentClickTargets = this.opponentGameField.gameField.children;
+        this.playerGameField = new Gamefield(true, new Vector3(0, 4, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.startAnimation, this.scene, (row, col) => this.playerFieldClick(row, col));
+        this.opponentGameField = new Gamefield(false, new Vector3(-12, 4, 12), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.startAnimation, this.scene, (row, col) => this.opponentFieldClick(row, col));
 
         if (overrideUiState) {
             this.props.deselectBuildings();
@@ -317,95 +304,34 @@ class Scene extends Component {
     }
 
     estimateDistance(ratio) {
-        if (ratio < 0.9) { return 60; }
-        else if (ratio < 1.1) { return 50; }
-        else if (ratio < 1.4) { return 40; }
-        else { return 30; }
+        if (ratio < 0.9) { return 8; }
+        else if (ratio < 1.1) { return 7; }
+        else if (ratio < 1.4) { return 6; }
+        else { return 5; }
     }
 
-    updateDimensions = () => {
-        if (typeof this.container !== 'undefined') {
-            const width = this.container.clientWidth;
-            const height = this.container.clientHeight;
-            this.renderer.setSize(width, height);
-            let distance = this.estimateDistance(width / height);
-
-            let aspect = width / height;
-
-            this.camera.left = -distance * aspect;
-            this.camera.right = distance * aspect;
-            this.camera.top = distance;
-            this.camera.bottom = -distance;
-            this.camera.updateProjectionMatrix();
-            this.renderScene();
-        }
-    }
-
-    componentWillUnmount() {
-        window.removeEventListener("resize", this.updateDimensions);
-        this.stop();
-        this.container.removeChild(this.renderer.domElement);
-    }
-
-    start = () => {
-        if (typeof this.frameId === 'undefined') {
-            this.frameId = requestAnimationFrame(this.animate);
-        }
-    }
-
-    stop = () => {
-        if (this.animations.length === 0) {
-            cancelAnimationFrame(this.frameId);
-            this.frameId = undefined;
-        }
-    }
-
-    startAnimation = (gamefield, turned, asset, position, offset=25) => {
-        let id = Math.random().toString().substr(2) + Date.now().toString();
+    startAnimation = (gamefield, turned, asset, position, offset=0) => {
+        /*let id = Math.random().toString().substr(2) + Date.now().toString();
         let animation = new Animation(gamefield, turned, asset, position, id, () => {
             this.animations = this.animations.filter(animation => animation.id !== id);
         });
         this.animations.push(animation);
-        animation.play(offset);
-        this.start();
-    }
-
-    animate = () => {
-        let delta = this.clock.getDelta();
-        this.renderScene();
-
-        if (this.lookAtOpponent && this.camera.position.y < 100) {
-            this.camera.position.y += 2.0;
-            this.camera.position.x += 4.0;
-            this.frameId = window.requestAnimationFrame(this.animate);
-        } else if (!this.lookAtOpponent && this.camera.position.y > 30) {
-            this.camera.position.y -= 2.0;
-            this.camera.position.x -= 4.0;
-            this.frameId = window.requestAnimationFrame(this.animate);
-        } else if (this.animations.length > 0) {
-            for (let i = 0; i < this.animations.length; i++) {
-                this.animations[i].mixer.update(delta);
-            }
-            this.frameId = window.requestAnimationFrame(this.animate);
-        } else {
-            this.stop();
-        }
-    }
-
-    renderScene = () => {
-        this.renderer.render(this.scene, this.camera);
+        animation.play(offset);*/
     }
 
     render() {
-        return <div className="scene" ref={container => { this.container = container }} />
+        return <canvas className="gameCanvas" ref={container => { this.container = container }} />
     }
+}
+
+Scene.propTypes = {
+    loadAssets: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
     selectedBuilding: state.ui.selectedBuilding,
-    selectedAttack: state.ui.selectedAttack,
-    // TODO: implement new statistics --> statistics: state.ui.statistics,
+    selectedAttack: state.ui.selectedAttack
 });
 
 const mapDispatchToProps = {
