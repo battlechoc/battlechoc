@@ -7,7 +7,7 @@ import { GameStateTypes } from '../gameplay/GameplayReducer';
 import Tutorial from '../tutorial/Tutorial';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons } from './controls';
 import { Jukebox, Translation as t } from './misc';
-import { Info, Tooltip, Settings, AppleHint } from './dialogs';
+import { Info, Tooltip, Settings, AppleHint, SignInOrUp } from './dialogs';
 import { CircularProgress, Button } from '@material-ui/core';
 
 class Hud extends Component {
@@ -83,6 +83,11 @@ class Hud extends Component {
         this.settings.open();
     }
 
+    openSignInOrUp = () => {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        this.signInOrUp.open();
+    }
+
     closeTutorial = () => {
         Jukebox.stopMusic();
         this.setState({ tutorial: false })
@@ -95,7 +100,8 @@ class Hud extends Component {
             <div className="hud">
                 <Tooltip />
                 <Settings endGame={this.props.endGame} onRef={settings => (this.settings = settings)} />
-                <Actionbar showSettings={this.openSettings} />                
+                <SignInOrUp onRef={signInOrUp => (this.signInOrUp = signInOrUp)} />
+                <Actionbar showSettings={this.openSettings} showSignInOrUp={this.openSignInOrUp} />
                 { textAnimation }
                 <AppleHint message={t[this.props.language].IOS_MESSAGE} />
                 

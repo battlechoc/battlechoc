@@ -44,7 +44,7 @@ const uiReducer = createReducer({
         },
         [UiActions.joinedMultiplayer]: (state, action) => {
             state.multiplayerWaiting = undefined;
-        } 
+        }
 });
 
 export default uiReducer

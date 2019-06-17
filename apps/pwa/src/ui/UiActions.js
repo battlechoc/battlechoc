@@ -11,7 +11,7 @@ const UiActionTypes = Object.freeze({
     showStatistics: 'battlechoc/ui/showStatistics',
     assetsReady: 'battlechoc/ui/assetsReady',
     waitForMultiplayer: 'battlechoc/ui/waitForMultiplayer',
-    joinedMultiplayer: 'battlechoc/ui/joinedMultiplayer',
+    joinedMultiplayer: 'battlechoc/ui/joinedMultiplayer'
 });
 
 const selectBuilding = createAction(UiActionTypes.selectBuilding);
