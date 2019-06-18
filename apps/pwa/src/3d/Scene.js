@@ -23,13 +23,13 @@ class Scene extends Component {
             let scene = new BabylonScene(this.engine);
             scene.clearColor = new Color4(0, 0, 0, 0);
             this.camera = new UniversalCamera("camera", new Vector3(30, 30, 30), scene);
-            this.camera.orthographicSize = 6;
+            this.orthographicSize = 6;
             this.camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
             let ratio = this.engine.getAspectRatio(this.camera);
-            this.camera.orthoTop = this.camera.orthographicSize;
-            this.camera.orthoBottom = -this.camera.orthographicSize;
-            this.camera.orthoLeft = - this.camera.orthographicSize * ratio;
-            this.camera.orthoRight = this.camera.orthographicSize * ratio;
+            this.camera.orthoTop = this.orthographicSize;
+            this.camera.orthoBottom = -this.orthographicSize;
+            this.camera.orthoLeft = - this.orthographicSize * ratio;
+            this.camera.orthoRight = this.orthographicSize * ratio;
             this.camera.setTarget(Vector3.Zero());
             let light = new HemisphericLight('light', new Vector3(40, 44, 1), scene);
             light.intensity = 0.95;
@@ -91,10 +91,10 @@ class Scene extends Component {
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
         let ratio = width / height;
-        this.camera.orthoTop = this.camera.orthographicSize;
-        this.camera.orthoBottom = -this.camera.orthographicSize;
-        this.camera.orthoLeft = - this.camera.orthographicSize * ratio;
-        this.camera.orthoRight = this.camera.orthographicSize * ratio;
+        this.camera.orthoTop = this.orthographicSize;
+        this.camera.orthoBottom = -this.orthographicSize;
+        this.camera.orthoLeft = - this.orthographicSize * ratio;
+        this.camera.orthoRight = this.orthographicSize * ratio;
         this.engine.resize();
     }
 
@@ -295,8 +295,8 @@ class Scene extends Component {
             this.performCameraFlight();
         } 
 
-        this.playerGameField = new Gamefield(true, new Vector3(0, 4, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.startAnimation, this.scene, (row, col) => this.playerFieldClick(row, col));
-        this.opponentGameField = new Gamefield(false, new Vector3(-12, 4, 12), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.startAnimation, this.scene, (row, col) => this.opponentFieldClick(row, col));
+        this.playerGameField = new Gamefield(true, new Vector3(0, 4, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.scene, (row, col) => this.playerFieldClick(row, col));
+        this.opponentGameField = new Gamefield(false, new Vector3(-12, 4, 12), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.scene, (row, col) => this.opponentFieldClick(row, col));
 
         if (overrideUiState) {
             this.props.deselectBuildings();

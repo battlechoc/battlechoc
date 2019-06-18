@@ -70,6 +70,9 @@ class AssetLoadingView extends Component {
                         mesh.material = material;
                     }
                     mesh.name = key + (mesh.name === '__root__' ? '__root__' : i);
+                    if (mesh.material) {
+                        mesh.material.sideOrientation = 1;
+                    }
                     mesh.isVisible = false;
                 });
                 this.updateProgress();

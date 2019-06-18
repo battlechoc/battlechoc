@@ -1,21 +1,18 @@
-import { EntityType, BoardCellTypes } from '../gameplay/GameEntities';
-import { Vector3, ActionManager, ExecuteCodeAction } from 'babylonjs';
+import { EntityType } from '../gameplay/GameEntities';
+import { Vector3, ActionManager, ExecuteCodeAction, SolidParticleSystem } from 'babylonjs';
 
 class Gamefield {
-    constructor(isPlayerGameField, position, getPlayerField, fieldIdx, size, startAnimation, scene, action) {
+    constructor(isPlayerGameField, position, getPlayerField, fieldIdx, size, scene, action) {
         this.isPlayerGameField = isPlayerGameField;
         this.rows = size.rows;
         this.cols = size.cols;
-        this.fieldSize = 1;
         this.position = position;
         this.fieldIdx = fieldIdx;
         this.scene = scene;
         this.action = action;
-        this.renderingEntities = {};
         this.getPlayerField = () => getPlayerField();
         this.playerField = JSON.parse(JSON.stringify(this.getPlayerField()));
         this.build();
-        this.startAnimation = (turned, asset, position, offset=25) => startAnimation(this.gameField, turned, asset, position, offset);
     }
 
     build() {
@@ -71,10 +68,7 @@ class Gamefield {
         children.forEach((pivot, i) => {
             let mesh = pivot.createInstance(this.fieldIdx + '.' + phenotype + '.' + meta.row + '.' + meta.col);
             mesh.id = this.fieldIdx + '.' + phenotype + '.' + meta.row + '.' + meta.col;
-            mesh.position = this.position.add(new Vector3(this.fieldSize * meta.row, 0, this.fieldSize * meta.col));
-            if (!Object.values(BoardCellTypes).includes(phenotype)) {
-                mesh.scaling = mesh.scaling.multiply(parent.scaling);
-            }
+            mesh.position = this.position.add(new Vector3(meta.row, 0, meta.col));
             mesh.actionManager = new ActionManager(this.scene);
             mesh.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickDownTrigger, event => this.action(meta.row, meta.col, event.pointerX, event.pointerY)));
         });
@@ -124,26 +118,76 @@ class Gamefield {
 
         let changes = playerField.grid.map((cell, i) => JSON.stringify(cell.occupiedBy) === JSON.stringify(this.playerField.grid[i].occupiedBy) ? null : i);
         changes.filter(position => position !== null).forEach(position => {
-            /*if (playerField.grid[position].occupiedBy.length < this.playerField.grid[position].occupiedBy.length) {
-                let isTurned = entity => (!this.isPlayerGameField &&
-                             (entity.type === EntityType.RUM_TRUFFLE_CANNON ||
-                              entity.type === EntityType.SPYING_EASTER_BUNNY ||
-                              entity.type === EntityType.HOT_CHOCOLATE_BALLISTA))                
+            if (playerField.grid[position].occupiedBy.length < this.playerField.grid[position].occupiedBy.length) {                
                 if (playerField.grid[position].occupiedBy.length === 0) {
-                    let cellPosition = { x: this.playerField.grid[position].row * this.fieldSize, y: 0, z: this.playerField.grid[position].col * this.fieldSize };
                     this.playerField.grid[position].occupiedBy.forEach(entity => {
-                        let offset = 25;
                         if (entity.type !== EntityType.CREAM && this.playerField.grid[position].occupiedBy.filter(building => building.type === EntityType.CREAM).length > 0) {
-                            offset = 400;
+                            let meshes = this.scene.getMeshesByID(this.fieldIdx + '.' + entity.type + '.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
+                            meshes.forEach(mesh => this.explode(mesh, 800));
+                        } else if (entity.type === EntityType.CREAM && this.playerField.grid[position].occupiedBy.filter(building => building.type !== EntityType.CREAM).length > 0 && this.isPlayerGameField) {
+                            let mesh = this.scene.getMeshByName(this.fieldIdx + '.' + EntityType.CREAM + '.AROUND.BUILDING.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
+                            this.explode(mesh);
+                        } else {
+                            let meshes = this.scene.getMeshesByID(this.fieldIdx + '.' + entity.type + '.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
+                            meshes.forEach(mesh => this.explode(mesh));
                         }
-                        this.startAnimation(isTurned(entity), entity.type + '.EXPLOSION', cellPosition, offset);
                     });
                 }
-            }*/
+            }
             this.renderEntities(this.playerField.grid[position], true);
             this.playerField.grid[position] = JSON.parse(JSON.stringify(playerField.grid[position]));
             this.renderEntities(this.playerField.grid[position]);
         });
+    }
+
+    explode(mesh, offset=100) {
+        let gravity = -0.04;
+        let solidParticleSystem = new SolidParticleSystem("solidParticleSystem", this.scene);
+        solidParticleSystem.digest(mesh, {number: 48});
+        let particleMesh = solidParticleSystem.buildMesh();
+        particleMesh.material = mesh.material;
+        particleMesh.material.freeze();
+        solidParticleSystem.refreshVisibleSize();
+
+        solidParticleSystem.updateParticle = particle => {
+            if (particle.position.y < -20) {
+                particle.alive = false;
+            } else {
+                particle.velocity.y += gravity;
+                particle.velocity.x -= 0.01;
+                particle.velocity.z -= 0.01;
+                (particle.position).addInPlace(particle.velocity);
+            }
+        }
+
+        solidParticleSystem.initParticles = () => {
+            for (let particle = 0; particle < solidParticleSystem.nbParticles; particle++) {
+                solidParticleSystem.particles[particle].position.addInPlace(mesh.position);
+            }
+        };
+
+        solidParticleSystem.computeParticleRotation = false;
+        solidParticleSystem.computeParticleTexture = false;
+        solidParticleSystem.computeParticleColor = false;
+
+        solidParticleSystem.isAlwaysVisible = true;
+        solidParticleSystem.initParticles();
+        solidParticleSystem.setParticles();
+
+        setTimeout(() => {
+            let speed = 1.2;
+            for (let particle = 0; particle < solidParticleSystem.nbParticles; particle++) {
+                solidParticleSystem.particles[particle].velocity.x = Math.random() * speed;
+                solidParticleSystem.particles[particle].velocity.y = Math.random() * speed;
+                solidParticleSystem.particles[particle].velocity.z = Math.random() * speed;
+            }
+            this.scene.registerBeforeRender(() => solidParticleSystem.setParticles())
+        }, offset);
+
+        setTimeout(() => {
+            this.scene.unregisterBeforeRender(() => solidParticleSystem.setParticles());
+            //solidParticleSystem.dispose();
+        }, offset + 2000);
     }
 
     highlightCannons(unhighlight) {
@@ -168,11 +212,11 @@ class Gamefield {
 
             this.playerField.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.RUM_TRUFFLE_CANNON)).forEach(cell => {
                 let spotlight = new SpotLight(0xffffff, 4.0, 64, 0.2);
-                spotlight.position.set(this.fieldSize * cell.row, 32, this.fieldSize * cell.col);
+                spotlight.position.set(cell.row, 32, cell.col);
                 this.gameField.add(spotlight);
                 let pivot = new Object3D();
                 pivot.name = 'target';
-                pivot.position.set(this.fieldSize * cell.row, 3, this.fieldSize * cell.col)
+                pivot.position.set(cell.row, 3, cell.col)
                 this.gameField.add(pivot);
                 spotlight.target = pivot;
             });
