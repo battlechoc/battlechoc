@@ -34,7 +34,7 @@ class Gamefield {
                 }
                 this.removeEntity(entity, phenotype, cell);
                 if (entity.type === EntityType.CHOCOLATE_FOUNTAIN) {
-                    this.removeEntity(entity, EntityType.CHOCOLATE_FOUNTAIN + '.BUILDING', cell);
+                    this.removeEntity(entity, EntityType.CHOCOLATE_FOUNTAIN + '.SHIELD', cell);
                 }
             });
         } else {
@@ -47,7 +47,7 @@ class Gamefield {
                 if (entity.type === EntityType.CREAM || cell.occupiedBy.length === 1 || !cell.occupiedBy.map(building => building.type).includes(EntityType.CREAM) || this.isPlayerGameField) {
                     this.renderEntity(entity, phenotype, cell);
                     if (entity.type === EntityType.CHOCOLATE_FOUNTAIN) {
-                        this.renderEntity(entity, EntityType.CHOCOLATE_FOUNTAIN + '.BUILDING', cell);
+                        this.renderEntity(entity, EntityType.CHOCOLATE_FOUNTAIN + '.SHIELD', cell);
                     }
                 }
             });
@@ -70,18 +70,19 @@ class Gamefield {
             mesh.id = this.fieldIdx + '.' + phenotype + '.' + meta.row + '.' + meta.col;
             mesh.position = this.position.add(new Vector3(meta.row, 0, meta.col));
             mesh.actionManager = new ActionManager(this.scene);
-            mesh.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickDownTrigger, event => this.action(meta.row, meta.col, event.pointerX, event.pointerY)));
+            mesh.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickDownTrigger, event => {
+                this.action(meta.row, meta.col, event.pointerX, event.pointerY)
+            }));
         });
     }
 
     renderEntity(entity, phenotype, cell) {
-        /*if (phenotype === EntityType.CHOCOLATE_FOUNTAIN  + '.BUILDING') {
-            pivot = assets[EntityType.CHOCOLATE_FOUNTAIN].model.scene.clone().children[1];
+        if (phenotype === EntityType.CHOCOLATE_FOUNTAIN  + '.SHIELD') {
+            /*pivot = assets[EntityType.CHOCOLATE_FOUNTAIN].model.scene.clone().children[1];
             material = pivot.material;
-            position = pivot.position;
-        } else {*/
-
-        this.createMeshInstance(phenotype, cell);
+            position = pivot.position;*/
+        } else {
+            this.createMeshInstance(phenotype, cell);
         
         /*if (!this.isPlayerGameField) {
             if (entity.type === EntityType.RUM_TRUFFLE_CANNON) {
@@ -102,8 +103,8 @@ class Gamefield {
                 mesh.rotation.y = 0;
             } else {
                 mesh.rotation.y = Math.PI / 2
-            }
-        }*/
+            }*/
+        }
     }
 
     update() {
@@ -174,6 +175,8 @@ class Gamefield {
         solidParticleSystem.initParticles();
         solidParticleSystem.setParticles();
 
+        let setParticles = () => solidParticleSystem.setParticles();
+
         setTimeout(() => {
             let speed = 1.2;
             for (let particle = 0; particle < solidParticleSystem.nbParticles; particle++) {
@@ -181,12 +184,13 @@ class Gamefield {
                 solidParticleSystem.particles[particle].velocity.y = Math.random() * speed;
                 solidParticleSystem.particles[particle].velocity.z = Math.random() * speed;
             }
-            this.scene.registerBeforeRender(() => solidParticleSystem.setParticles())
+            this.scene.registerBeforeRender(setParticles);
         }, offset);
 
         setTimeout(() => {
-            this.scene.unregisterBeforeRender(() => solidParticleSystem.setParticles());
-            //solidParticleSystem.dispose();
+            this.scene.unregisterBeforeRender(setParticles);
+            solidParticleSystem.dispose();
+            solidParticleSystem = null;
         }, offset + 2000);
     }
 

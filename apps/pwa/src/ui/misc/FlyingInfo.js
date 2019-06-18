@@ -47,9 +47,11 @@ function spawnInfo(message) {
         info.innerHTML = '<img src="/images/bunnyCaught.png" />';
         info.classList.add('flyingCaughtBunny');
     }
+
+    let container = document.getElementsByClassName('app')[0];
     
-    const width = message.container.clientWidth;
-    const height = message.container.clientHeight;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
     let ratio = width / height;
 
     if (ratio < 1.1) {
@@ -80,10 +82,10 @@ function spawnInfo(message) {
     }
 
     info.addEventListener(supportedAnimation, () => {
-        message.container.removeChild(info);
+        container.removeChild(info);
     });
 
-    message.container.appendChild(info);
+    container.appendChild(info);
 }
 
 export {InfoType, spawnInfoAtBuilding, spawnInfo};

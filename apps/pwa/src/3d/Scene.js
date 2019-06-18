@@ -11,8 +11,9 @@ import { BattlechocError } from '../gameplay/Errors';
 import { Jukebox } from '../ui/misc';
 import { playerHasAttacks } from '../gameplay/Player';
 import { InfoType, spawnInfo } from '../ui/misc/FlyingInfo';
-import { Scene as BabylonScene, Engine, UniversalCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation } from 'babylonjs';
+import { Scene as BabylonScene, Engine, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation } from 'babylonjs';
 import 'babylonjs-loaders';
+
 class Scene extends Component {
 
     componentDidMount() {
@@ -22,7 +23,7 @@ class Scene extends Component {
         let createScene = () => {
             let scene = new BabylonScene(this.engine);
             scene.clearColor = new Color4(0, 0, 0, 0);
-            this.camera = new UniversalCamera("camera", new Vector3(30, 30, 30), scene);
+            this.camera = new FlyCamera("camera", new Vector3(30, 30, 30), scene);
             this.orthographicSize = 6;
             this.camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
             let ratio = this.engine.getAspectRatio(this.camera);
@@ -99,7 +100,6 @@ class Scene extends Component {
     }
 
     clear() {
-        console.log('cleanup')
         this.scene.meshes.forEach(mesh => {
             this.scene.removeMesh(mesh, true);
             mesh.dispose();
@@ -151,7 +151,7 @@ class Scene extends Component {
             this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
                 if (initialPlacement) {
-                    spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn, x: eventX, y: eventY, container: this.container });
+                    spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn, x: eventX, y: eventY});
                     this.props.deselectBuildings();
                     this.props.deselectAttack();
                     let playerId = this.props.game.players[multiplayer.localPlayerIndex].id;
@@ -164,18 +164,18 @@ class Scene extends Component {
                     }, 3000);
                 } else {
                     let description = getEntityDescriptor(this.props.selectedBuilding)
-                    spawnInfo({ type: InfoType.CACAO_CONSUMED, cacao: description.costs, x: eventX, y: eventY, container: this.container });
+                    spawnInfo({ type: InfoType.CACAO_CONSUMED, cacao: description.costs, x: eventX, y: eventY});
                     let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;
                     setTimeout(() => {
                         if (building.type === EntityType.CACAOTREE) {
-                            spawnInfo({ type: InfoType.INCREASE_CACAO_PER_TURN, cacao: cacaoDelta, x: eventX, y: eventY, container: this.container });
+                            spawnInfo({ type: InfoType.INCREASE_CACAO_PER_TURN, cacao: cacaoDelta, x: eventX, y: eventY});
                         } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
-                            spawnInfo({ type: InfoType.INCREASE_ATTACKS_PER_TURN, attacks: 1, x: eventX, y: eventY, container: this.container });
+                            spawnInfo({ type: InfoType.INCREASE_ATTACKS_PER_TURN, attacks: 1, x: eventX, y: eventY});
                         } else if (building.type === EntityType.FACTORY_EXTENSION) {
-                            spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: buildingsDelta, x: eventX, y: eventY, container: this.container });
+                            spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: buildingsDelta, x: eventX, y: eventY});
                         } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
-                            spawnInfo({ type: InfoType.INCREASE_SPY_ATTACKS_PER_TURN, attacks: 1, x: eventX, y: eventY, container: this.container });
+                            spawnInfo({ type: InfoType.INCREASE_SPY_ATTACKS_PER_TURN, attacks: 1, x: eventX, y: eventY});
                         }
                         setTimeout(() => {
                             if (this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) {
@@ -228,7 +228,7 @@ class Scene extends Component {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
                     } else {
                         Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
-                        spawnInfo({ type: InfoType.BUNNY_CAUGHT, x: eventX, y: eventY, container: this.container });
+                        spawnInfo({ type: InfoType.BUNNY_CAUGHT, x: eventX, y: eventY});
                     }
                 } else if (typeof this.props.selectedAttack !== 'undefined') {
                     Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
@@ -279,8 +279,7 @@ class Scene extends Component {
         });
 
         flight.setKeys(keyframes);
-        camera.animations.push(flight);
-        this.scene.beginAnimation(camera, 0, 60, false);
+        this.scene.beginDirectAnimation(camera, [flight], 0, 60, false);
     };
 
     startGame = (game, overrideUiState=false) => {
@@ -295,28 +294,12 @@ class Scene extends Component {
             this.performCameraFlight();
         } 
 
-        this.playerGameField = new Gamefield(true, new Vector3(0, 4, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.scene, (row, col) => this.playerFieldClick(row, col));
-        this.opponentGameField = new Gamefield(false, new Vector3(-12, 4, 12), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.scene, (row, col) => this.opponentFieldClick(row, col));
+        this.playerGameField = new Gamefield(true, new Vector3(0, 4, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.playerFieldClick(row, col, eventX, eventY));
+        this.opponentGameField = new Gamefield(false, new Vector3(-12, 4, 12), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.opponentFieldClick(row, col, eventX, eventY));
 
         if (overrideUiState) {
             this.props.deselectBuildings();
         }
-    }
-
-    estimateDistance(ratio) {
-        if (ratio < 0.9) { return 8; }
-        else if (ratio < 1.1) { return 7; }
-        else if (ratio < 1.4) { return 6; }
-        else { return 5; }
-    }
-
-    startAnimation = (gamefield, turned, asset, position, offset=0) => {
-        /*let id = Math.random().toString().substr(2) + Date.now().toString();
-        let animation = new Animation(gamefield, turned, asset, position, id, () => {
-            this.animations = this.animations.filter(animation => animation.id !== id);
-        });
-        this.animations.push(animation);
-        animation.play(offset);*/
     }
 
     render() {
