@@ -6,12 +6,12 @@ import { deselectBuildings, selectAttack, deselectAttack, selectBuilding } from 
 import { build, attack, finishTurn, finishBuildPhase } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import Gamefield from './Gamefield';
-import { EntityType, AttackType, createEntity, getEntityDescriptor, getCheapest } from '../gameplay/GameEntities';
+import { EntityType, AttackType, BoardCellTypes, createEntity, getEntityDescriptor, getCheapest } from '../gameplay/GameEntities';
 import { BattlechocError } from '../gameplay/Errors';
 import { Jukebox } from '../ui/misc';
 import { playerHasAttacks } from '../gameplay/Player';
 import { InfoType, spawnInfo } from '../ui/misc/FlyingInfo';
-import { Scene as BabylonScene, Engine, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation } from 'babylonjs';
+import { Scene as BabylonScene, Engine, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation, Matrix } from 'babylonjs';
 import 'babylonjs-loaders';
 
 class Scene extends Component {
@@ -69,23 +69,20 @@ class Scene extends Component {
     }
 
     triggerCacaoInfo() {
-        /*const specialTrees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE) && cell.type === BoardCellTypes.WHITE);
-        const trees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE) && cell.type !== BoardCellTypes.WHITE);
-        let description = getEntityDescriptor(EntityType.CACAOTREE)
-        trees.forEach(cell => spawnInfoAtBuilding({
-            position: (new Vector3(cell.row * this.playerGameField.fieldSize, 3, cell.col * this.playerGameField.fieldSize)).add(this.playerGameField.gameField.position),
-            cacao: description.cacaoPerTurn,
-            camera: this.camera,
-            type: InfoType.CACAO_HARVESTED,
-            container: this.container
-        }));
-        specialTrees.forEach(cell => spawnInfoAtBuilding({
-            position: (new Vector3(cell.row * this.playerGameField.fieldSize, 3, cell.col * this.playerGameField.fieldSize)).add(this.playerGameField.gameField.position),
-            cacao: Math.round(description.cacaoPerTurn * 1.5),
-            camera: this.camera,
-            type: InfoType.CACAO_HARVESTED,
-            container: this.container
-        }));*/
+        const trees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE));
+        let description = getEntityDescriptor(EntityType.CACAOTREE);
+        trees.forEach(cell => {
+            let point = Vector3.Project(new Vector3(cell.row, 3, cell.col), 
+                Matrix.Identity(), 
+                this.scene.getTransformMatrix(), 
+                this.camera.viewport.toGlobal(this.engine.getRenderWidth(), this.engine.getRenderHeight()));
+            spawnInfo({
+                x: point.x,
+                y: point.y,
+                cacao: cell.type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn,
+                type: InfoType.CACAO_HARVESTED
+            });
+        });
     }
 
     resize = () => {

@@ -8,20 +8,6 @@ const InfoType = Object.freeze({
     BUNNY_CAUGHT: 'InfoType.BUNNY_CAUGHT'
 });
 
-function spawnInfoAtBuilding(message) {
-    if (message.type === InfoType.CACAO_HARVESTED) {
-        message.position.project(message.camera);
-        if (typeof message.rect === 'undefined') {
-            message.x = (message.position.x + 1) / 2 * window.innerWidth;
-            message.y = - (message.position.y - 1) / 2 * window.innerHeight;
-        } else {
-            message.x = ((message.position.x + 1) / 2 * message.rect.width) + message.rect.left;
-            message.y = (- (message.position.y - 1) / 2 * message.rect.height) + message.rect.top;     
-        }
-        spawnInfo(message);
-    }
-}
-
 function spawnInfo(message) {
     let info = document.createElement("div");
 
@@ -88,4 +74,4 @@ function spawnInfo(message) {
     container.appendChild(info);
 }
 
-export {InfoType, spawnInfoAtBuilding, spawnInfo};
+export {InfoType, spawnInfo};
