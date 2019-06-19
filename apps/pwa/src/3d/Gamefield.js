@@ -61,18 +61,30 @@ class Gamefield {
         }
     }
 
-    createMeshInstance(phenotype, meta) {
+    createMeshInstance(phenotype, cell) {
         let parent = this.scene.getMeshByName(phenotype + '__root__');
         let children = parent.getChildren()[0].getChildren().length > 0 ? parent.getChildren()[0].getChildren() : parent.getChildren();
 
         children.forEach((pivot, i) => {
-            let mesh = pivot.createInstance(this.fieldIdx + '.' + phenotype + '.' + meta.row + '.' + meta.col);
-            mesh.id = this.fieldIdx + '.' + phenotype + '.' + meta.row + '.' + meta.col;
-            mesh.position = this.position.add(new Vector3(meta.row, 0, meta.col));
+            let mesh = pivot.createInstance(this.fieldIdx + '.' + phenotype + '.' + cell.row + '.' + cell.col);
+            mesh.id = this.fieldIdx + '.' + phenotype + '.' + cell.row + '.' + cell.col;
+            mesh.position = this.position.add(new Vector3(cell.row, 0, cell.col));
             mesh.actionManager = new ActionManager(this.scene);
             mesh.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickDownTrigger, event => {
-                this.action(meta.row, meta.col, event.pointerX, event.pointerY)
+                this.action(cell.row, cell.col, event.pointerX, event.pointerY)
             }));
+
+            if (phenotype === EntityType.FACTORY_EXTENSION) {
+                if (this.playerField.grid[cell.row * this.rows + Math.min(cell.col + 1, this.cols - 1)].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
+                    mesh.rotation.y = 0;
+                } else if (this.playerField.grid[Math.max(cell.row - 1, 0) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
+                    mesh.rotation.y = -Math.PI / 2;
+                } else if (this.playerField.grid[Math.min(cell.row + 1, this.rows - 1) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
+                    mesh.rotation.y = Math.PI / 2;
+                } else {
+                    mesh.rotation.y = Math.PI;
+                }
+            }
         });
     }
 
@@ -93,17 +105,6 @@ class Gamefield {
                 mesh.rotation.y = -Math.PI / 1.5;
             }
         }*/
-
-        /*if (entity.type === EntityType.FACTORY_EXTENSION) {
-            if (this.playerField.grid[cell.row * this.cols + Math.min(cell.col + 1, this.cols - 1)].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
-                mesh.rotation.y = -Math.PI / 2;
-            } else if (this.playerField.grid[Math.max(cell.row - 1, 0) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
-                mesh.rotation.y = Math.PI;
-            } else if (this.playerField.grid[Math.min(cell.row + 1, this.rows - 1) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
-                mesh.rotation.y = 0;
-            } else {
-                mesh.rotation.y = Math.PI / 2
-            }*/
         }
     }
 

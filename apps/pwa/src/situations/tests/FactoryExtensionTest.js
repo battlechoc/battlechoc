@@ -3,7 +3,7 @@ import { BoardCellTypes, EntityType, createEntity, AttackType } from '../../game
 
 export default class FactoryExtensionTest extends Situation {
     constructor() {
-        let size = 8;
+        let size = 10;
         super(size);
         this.modifyBoard({col: 4, row: 3, cellType: BoardCellTypes.BLACK });
         this.modifyBoard({col: 3, row: 3, cellType: BoardCellTypes.BLACK });
@@ -12,7 +12,7 @@ export default class FactoryExtensionTest extends Situation {
         this.modifyBoard({col: 3, row: 4, cellType: BoardCellTypes.BLACK });
 
         this.modifyBoard({col: 1, row: 3, cellType: BoardCellTypes.WHITE, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.RUM_TRUFFLE_CANNON)] });
-        this.modifyBoard({col: 0, row: 1, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.FACTORY)] });
+        this.modifyBoard({col: 6, row: 6, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.FACTORY)] });
         this.modifyBoard({col: 2, row: 0, cellType: BoardCellTypes.WHITE});
         this.modifyBoard({col: 2, row: 2, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY)]});
         this.modifyBoard({col: 3, row: 3, playerIndex: 1, cellType: BoardCellTypes.WHITE, buildings: [createEntity(EntityType.CHOCOLATE_FOUNTAIN)]});

@@ -24,7 +24,7 @@ class Scene extends Component {
             let scene = new BabylonScene(this.engine);
             scene.clearColor = new Color4(0, 0, 0, 0);
             this.camera = new FlyCamera("camera", new Vector3(30, 30, 30), scene);
-            this.orthographicSize = 6;
+            this.orthographicSize = 7;
             this.camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
             let ratio = this.engine.getAspectRatio(this.camera);
             this.camera.orthoTop = this.orthographicSize;
