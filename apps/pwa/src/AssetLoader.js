@@ -73,7 +73,7 @@ class AssetLoadingView extends Component {
                     if (mesh.material) {
                         mesh.material.sideOrientation = 1;
                     }
-                    mesh.isVisible = false;
+                    mesh.setEnabled(false);
                 });
                 this.updateProgress();
             });

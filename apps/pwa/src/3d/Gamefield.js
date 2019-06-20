@@ -194,39 +194,6 @@ class Gamefield {
             solidParticleSystem = null;
         }, offset + 2000);
     }
-
-    highlightCannons(unhighlight) {
-        /*if (unhighlight) {
-            for (let entityType in this.renderingEntities) {
-                if (entityType !== EntityType.RUM_TRUFFLE_CANNON && typeof this.renderingEntities[entityType] !== 'undefined') {
-                    this.gameField.add(this.renderingEntities[entityType]);
-                }
-            }
-
-            this.gameField.children.forEach(child => {
-                if (child.name === 'target' || child instanceof SpotLight) {
-                    this.gameField.remove(child);
-                }
-            });
-        } else {
-            for (let entityType in this.renderingEntities) {
-                if (entityType !== EntityType.RUM_TRUFFLE_CANNON && typeof this.renderingEntities[entityType] !== 'undefined') {
-                    this.gameField.remove(this.renderingEntities[entityType]);
-                } 
-            }
-
-            this.playerField.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.RUM_TRUFFLE_CANNON)).forEach(cell => {
-                let spotlight = new SpotLight(0xffffff, 4.0, 64, 0.2);
-                spotlight.position.set(cell.row, 32, cell.col);
-                this.gameField.add(spotlight);
-                let pivot = new Object3D();
-                pivot.name = 'target';
-                pivot.position.set(cell.row, 3, cell.col)
-                this.gameField.add(pivot);
-                spotlight.target = pivot;
-            });
-        }*/
-    }
 }
 
 export default Gamefield;

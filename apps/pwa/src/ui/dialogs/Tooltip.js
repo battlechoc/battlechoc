@@ -21,8 +21,8 @@ const ExpansionPanelSummary = withStyles(theme => ({
         marginBottom: -1,
         marginLeft: -1,
         minHeight: 32,
-        paddingLeft: theme.spacing.unit * 2,
-        paddingRight: theme.spacing.unit * 2,
+        paddingLeft: theme.spacing(2),
+        paddingRight: theme.spacing(2),
         '&$expanded': {
             minHeight: 32,
         },
@@ -40,10 +40,10 @@ ExpansionPanelSummary.muiName = 'ExpansionPanelSummary';
 
 const ExpansionPanelDetails = withStyles(theme => ({
     root: {
-        paddingTop: theme.spacing.unit * 1,
-        paddingRight: theme.spacing.unit * 2,
+        paddingTop: theme.spacing(1),
+        paddingRight: theme.spacing(2),
         paddingBottom: 0,
-        paddingLeft: theme.spacing.unit * 2
+        paddingLeft: theme.spacing(2)
     },
 }))(MuiExpansionPanelDetails);
 
@@ -146,4 +146,4 @@ const TooltipContainer = connect(
     mapStateToProps
 )(Tooltip);
 
-export default withTheme()(TooltipContainer);
+export default withTheme(TooltipContainer);

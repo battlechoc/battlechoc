@@ -160,11 +160,9 @@ class App extends Component {
         if (typeof this.scene !== 'undefined') {
             if (typeof this.scene.playerGameField !== 'undefined') {
                 if (nextProps.selectedBuilding === EntityType.FRUIT_CANNON && this.props.selectedBuilding !== EntityType.FRUIT_CANNON) {
-                    this.scene.dimLight();
-                    this.scene.playerGameField.highlightCannons();
+                    this.scene.highlightCannons();
                 } else if (nextProps.selectedBuilding !== EntityType.FRUIT_CANNON && this.props.selectedBuilding === EntityType.FRUIT_CANNON) {
-                    this.scene.resetLight();
-                    this.scene.playerGameField.highlightCannons(true);
+                    this.scene.highlightCannons(false);
                 }
             }
         }
@@ -188,8 +186,7 @@ class App extends Component {
 
             if (this.props.selectedBuilding === EntityType.FRUIT_CANNON && typeof this.scene !== 'undefined' && typeof this.scene.playerGameField !== 'undefined' && typeof nextProps.game !== 'undefined' && (nextProps.game.state !== GameStateTypes.BUILD_PHASE || multiplayer.isLocalPlayer(nextProps.game.currentPlayerIndex) === false ||
                 nextProps.game.players[multiplayer.localPlayerIndex].buildings === 0 || nextProps.selectedBuilding !== EntityType.FRUIT_CANNON)) {
-                this.scene.resetLight();
-                this.scene.playerGameField.highlightCannons(true);
+                this.scene.highlightCannons(false);
             }
 
             if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {

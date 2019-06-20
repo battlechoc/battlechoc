@@ -11,7 +11,7 @@ import { BattlechocError } from '../gameplay/Errors';
 import { Jukebox } from '../ui/misc';
 import { playerHasAttacks } from '../gameplay/Player';
 import { InfoType, spawnInfo } from '../ui/misc/FlyingInfo';
-import { Scene as BabylonScene, Engine, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation, Matrix } from 'babylonjs';
+import { Scene as BabylonScene, Engine, HighlightLayer, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation, Matrix } from 'babylonjs';
 import 'babylonjs-loaders';
 
 class Scene extends Component {
@@ -32,19 +32,22 @@ class Scene extends Component {
             this.camera.orthoLeft = - this.orthographicSize * ratio;
             this.camera.orthoRight = this.orthographicSize * ratio;
             this.camera.setTarget(Vector3.Zero());
-            let light = new HemisphericLight('light', new Vector3(40, 44, 1), scene);
-            light.intensity = 0.95;
-            light.diffuse = new Color3(1.0, 0.97, 0.93);
+            this.light = new HemisphericLight('light', new Vector3(40, 44, 1), scene);
+            this.light.intensity = 0.95;
+            this.light.diffuse = new Color3(1.0, 0.97, 0.93);
 
             this.props.loadAssets(scene);
             return scene;
         }
 
         this.scene = createScene();
+        this.highlightLayer = new HighlightLayer('highlightLayer', this.scene);
         this.engine.runRenderLoop(() => this.scene.render());
         window.addEventListener('resize', () => this.resize());
         this.animations = [];
         this.lookAtOpponent = true;
+        this.playerGameField = null;
+        this.opponentGameField = null;
     }
 
     componentWillUnmount() {
@@ -62,14 +65,14 @@ class Scene extends Component {
             }
         }
 
-        if (typeof this.playerGameField !== 'undefined') {
+        if (this.playerGameField !== null) {
             this.opponentGameField.update();
             this.playerGameField.update();
         }
     }
 
     triggerCacaoInfo() {
-        const trees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE));
+        let trees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE));
         let description = getEntityDescriptor(EntityType.CACAOTREE);
         trees.forEach(cell => {
             let point = Vector3.Project(new Vector3(cell.row, 3, cell.col), 
@@ -97,30 +100,28 @@ class Scene extends Component {
     }
 
     clear() {
-        this.scene.meshes.forEach(mesh => {
-            this.scene.removeMesh(mesh, true);
-            mesh.dispose();
-        });
-        this.scene.dispose();﻿
-        this.engine.dispose();
-        this.playerGameField = undefined;
-        this.opponentGameField = undefined;
+        for (let mesh = 0; mesh < this.scene.meshes.length; mesh++) {
+            console.log(this.scene.meshes[mesh])
+            if (this.scene.meshes[mesh].isAnInstance) {
+                this.scene.meshes[mesh].dispose();
+            }            
+        }
+
+        this.playerGameField = null;
+        this.opponentGameField = null;
     }
 
-    dimLight = () => {
-        /*this.scene.traverse(child => {
-            if (child instanceof DirectionalLight) {
-                child.intensity = 0.1;
-            }
-        });*/
-    }
+    highlightCannons = (highlight=true) => {
+        let parent = this.scene.getMeshByName(EntityType.RUM_TRUFFLE_CANNON + '__root__');
+        let children = parent.getChildren()[0].getChildren().length > 0 ? parent.getChildren()[0].getChildren() : parent.getChildren();
 
-    resetLight = () => {
-        /*this.scene.traverse(child => {
-            if (child instanceof DirectionalLight) {
-                child.intensity = 2.0;
+        children.forEach(child => {
+            if (highlight) {
+                this.highlightLayer.addMesh(child, new Color3(1, 1, 0));   
+            } else {
+                this.highlightLayer.removeMesh(child);
             }
-        });*/
+        });                    
     }
 
     detonateAtShield(row, col, playerField=false) {
@@ -263,20 +264,10 @@ class Scene extends Component {
         if (this.lookAtOpponent) {
             target = new Vector3(6, 18, 30);
         }
-        let camera = this.scene.activeCamera;
         let flight = new Animation("animCam", "position", 30, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE);
-        let keyframes = [];
-        keyframes.push({
-            frame: 0,
-            value: camera.position
-        });
-        keyframes.push({
-            frame: 30,
-            value: target
-        });
-
+        let keyframes = [{ frame: 0, value: this.camera.position }, { frame: 30, value: target }];
         flight.setKeys(keyframes);
-        this.scene.beginDirectAnimation(camera, [flight], 0, 60, false);
+        this.scene.beginDirectAnimation(this.camera, [flight], 0, 60, false);
     };
 
     startGame = (game, overrideUiState=false) => {
