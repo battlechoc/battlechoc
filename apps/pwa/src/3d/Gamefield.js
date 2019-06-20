@@ -85,6 +85,16 @@ class Gamefield {
                     mesh.rotation.y = Math.PI;
                 }
             }
+
+            if (!this.isPlayerGameField) {
+                if (phenotype === EntityType.RUM_TRUFFLE_CANNON) {
+                    mesh.rotation.y = Math.PI;
+                } else if (phenotype === EntityType.SPYING_EASTER_BUNNY) {
+                    mesh.rotation.y = Math.PI;
+                } else if (phenotype === EntityType.HOT_CHOCOLATE_BALLISTA) {
+                    mesh.rotation.y = Math.PI;
+                }
+            }
         });
     }
 
@@ -95,16 +105,6 @@ class Gamefield {
             position = pivot.position;*/
         } else {
             this.createMeshInstance(phenotype, cell);
-        
-        /*if (!this.isPlayerGameField) {
-            if (entity.type === EntityType.RUM_TRUFFLE_CANNON) {
-                mesh.rotation.z = Math.PI / 4;
-            } else if (entity.type === EntityType.SPYING_EASTER_BUNNY) {
-                mesh.rotation.y = -Math.PI / 1.2;
-            } else if (entity.type === EntityType.HOT_CHOCOLATE_BALLISTA) {
-                mesh.rotation.y = -Math.PI / 1.5;
-            }
-        }*/
         }
     }
 

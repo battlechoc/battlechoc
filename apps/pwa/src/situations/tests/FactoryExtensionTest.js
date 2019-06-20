@@ -20,6 +20,7 @@ export default class FactoryExtensionTest extends Situation {
         this.modifyBoard({col: 6, row: 2, playerIndex: 1, cellType: BoardCellTypes.WHITE, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.RUM_TRUFFLE_CANNON)] });
         this.modifyBoard({col: 7, row: 1, playerIndex: 1, cellType: BoardCellTypes.BROWN, buildings: [createEntity(EntityType.RUM_TRUFFLE_CANNON)] });
         this.modifyBoard({col: 7, row: 2, playerIndex: 1, cellType: BoardCellTypes.BROWN, buildings: [createEntity(EntityType.SPYING_EASTER_BUNNY)] });
+        this.modifyBoard({col: 7, row: 3, playerIndex: 1, cellType: BoardCellTypes.BROWN, buildings: [createEntity(EntityType.HOT_CHOCOLATE_BALLISTA)] });
 
         this.game.gameplay.game.currentPlayerIndex = 0;
         this.game.gameplay.game.players[0].cacao = 2000;
