@@ -162,6 +162,7 @@ html, body, #root {
 
 .flyingCaughtBunny {
   position: absolute;
+  z-index: 2;
   animation-name: flyingBunny;
   animation-duration: 2s;
   animation-timing-function: ease-in;

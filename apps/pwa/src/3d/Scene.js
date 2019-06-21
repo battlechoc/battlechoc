@@ -18,7 +18,7 @@ class Scene extends Component {
 
     componentDidMount() {
         this.props.onRef(this);
-        this.engine = new Engine(this.container, false, { preserveDrawingBuffer: true, stencil: true }, true);
+        this.engine = new Engine(this.container, false, { preserveDrawingBuffer: true, stencil: true, useHighPrecisionFloats: false }, true);
 
         let createScene = () => {
             let scene = new BabylonScene(this.engine);
@@ -42,12 +42,13 @@ class Scene extends Component {
 
         this.scene = createScene();
         this.highlightLayer = new HighlightLayer('highlightLayer', this.scene);
-        this.engine.runRenderLoop(() => this.scene.render());
+        this.animate = () => this.scene.render();
         window.addEventListener('resize', () => this.resize());
         this.animations = [];
         this.lookAtOpponent = true;
         this.playerGameField = null;
         this.opponentGameField = null;
+        this.renderLoopRepetitions = 0;
     }
 
     componentWillUnmount() {
@@ -63,11 +64,12 @@ class Scene extends Component {
                 this.lookAtOpponent = !this.lookAtOpponent;
                 this.performCameraFlight();
             }
-        }
-
-        if (this.playerGameField !== null) {
-            this.opponentGameField.update();
-            this.playerGameField.update();
+        
+            if (this.playerGameField !== null) {
+                this.opponentGameField.update();
+                this.playerGameField.update();
+                this.scene.render();
+            }
         }
     }
 
@@ -97,18 +99,17 @@ class Scene extends Component {
         this.camera.orthoLeft = - this.orthographicSize * ratio;
         this.camera.orthoRight = this.orthographicSize * ratio;
         this.engine.resize();
+        this.scene.render();
     }
 
     clear() {
-        for (let mesh = 0; mesh < this.scene.meshes.length; mesh++) {
-            console.log(this.scene.meshes[mesh])
-            if (this.scene.meshes[mesh].isAnInstance) {
-                this.scene.meshes[mesh].dispose();
-            }            
+        let instances = this.scene.meshes.filter(mesh => mesh.isAnInstance);
+        for (let mesh = 0; mesh < instances.length; mesh++) {
+            instances[mesh].dispose();   
         }
-
         this.playerGameField = null;
         this.opponentGameField = null;
+        this.scene.render();
     }
 
     highlightCannons = (highlight=true) => {
@@ -259,7 +260,22 @@ class Scene extends Component {
         }
     }
 
+    setRenderLoop(run=true) {
+        if (run) {
+            if (this.renderLoopRepetitions === 0) {
+                this.engine.runRenderLoop(this.animate);
+            }
+            this.renderLoopRepetitions += 1;
+        } else if (!run) {
+            this.renderLoopRepetitions -= 1;
+            if (this.renderLoopRepetitions === 0) {
+                this.engine.stopRenderLoop(this.animate);
+            }
+        }
+    }
+
     performCameraFlight = () => {
+        this.setRenderLoop();
         let target = new Vector3(30, 30, 30);
         if (this.lookAtOpponent) {
             target = new Vector3(6, 18, 30);
@@ -267,7 +283,7 @@ class Scene extends Component {
         let flight = new Animation("animCam", "position", 30, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CYCLE);
         let keyframes = [{ frame: 0, value: this.camera.position }, { frame: 30, value: target }];
         flight.setKeys(keyframes);
-        this.scene.beginDirectAnimation(this.camera, [flight], 0, 60, false);
+        this.scene.beginDirectAnimation(this.camera, [flight], 0, 60, false, 1, () => this.setRenderLoop(false));
     };
 
     startGame = (game, overrideUiState=false) => {
@@ -282,8 +298,8 @@ class Scene extends Component {
             this.performCameraFlight();
         } 
 
-        this.playerGameField = new Gamefield(true, new Vector3(0, 4, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.playerFieldClick(row, col, eventX, eventY));
-        this.opponentGameField = new Gamefield(false, new Vector3(-12, 4, 12), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.opponentFieldClick(row, col, eventX, eventY));
+        this.playerGameField = new Gamefield(true, new Vector3(0, 4, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.playerFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
+        this.opponentGameField = new Gamefield(false, new Vector3(-12, 4, 12), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.opponentFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
 
         if (overrideUiState) {
             this.props.deselectBuildings();

@@ -149,14 +149,6 @@ class App extends Component {
             }
         }
 
-        if (gameTransition === GameTransitions.GAME_FINISHED) {
-            this.scene.clear();
-            if (!this.state.tutorial) {
-                this.props.gameResumeable(false);
-                OfflineStore.gamestateStore.clear();
-            }
-        }
-
         if (typeof this.scene !== 'undefined') {
             if (typeof this.scene.playerGameField !== 'undefined') {
                 if (nextProps.selectedBuilding === EntityType.FRUIT_CANNON && this.props.selectedBuilding !== EntityType.FRUIT_CANNON) {
@@ -321,6 +313,9 @@ class App extends Component {
                 this.props.finishGame();
                 this.props.resetUi();
                 multiplayer.reset();
+                this.scene.clear();
+                this.props.gameResumeable(false);
+                OfflineStore.gamestateStore.clear();
             }, 1000);
         }
     }

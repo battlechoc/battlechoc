@@ -2286,10 +2286,15 @@ babylonjs-loaders@^4.0.3:
     babylonjs "4.0.3"
     babylonjs-gltf2interface "4.0.3"
 
-babylonjs@4.0.3, babylonjs@^4.0.3:
+babylonjs@4.0.3:
   version "4.0.3"
   resolved "https://registry.yarnpkg.com/babylonjs/-/babylonjs-4.0.3.tgz#5dba9a96a7cb70634338e8dd7a17081e9f902cf6"
   integrity sha512-S5PoPmf0Vo03FDmF9z8djBiIm8GSLvCesln/9aKV9RbD4W+NTqVmMKhR8CQoMRCQNb2JSKKUuyUygXxCRVG37Q==
+
+babylonjs@4.1.0-alpha.5:
+  version "4.1.0-alpha.5"
+  resolved "https://registry.yarnpkg.com/babylonjs/-/babylonjs-4.1.0-alpha.5.tgz#4a96a24bbd8c79440a28fd7cb2b5173027f7865b"
+  integrity sha512-Grt7wTG7FfOpdRWqak+ReoLINSHBgV0xOI39F89U2CBx/ZOO91rFevpxaYrooDFtXquWkmOMeIrkYWj2pVnXDQ==
 
 bail@^1.0.0:
   version "1.0.3"
