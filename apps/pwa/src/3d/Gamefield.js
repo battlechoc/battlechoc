@@ -155,21 +155,21 @@ class Gamefield {
 
         particleSystem.emitter = fountain;
         particleSystem.minEmitBox = new Vector3(0, 0, 0);
-        particleSystem.maxEmitBox = new Vector3(0, 0, 0);
+        particleSystem.maxEmitBox = new Vector3(0.3, 0.3, 0.3);
 
         particleSystem.color1 = Color4.FromHexString("#824529FF");
         particleSystem.color2 = Color4.FromHexString("#3E211BFF");
         particleSystem.colorDead = new Color4(0, 0, 0, 0);
 
-        particleSystem.minSize = 0.08;
-        particleSystem.maxSize = 0.4;
+        particleSystem.minSize = 0.02;
+        particleSystem.maxSize = 0.1;
 
-        particleSystem.minLifeTime = 0.3;
+        particleSystem.minLifeTime = 0.4;
         particleSystem.maxLifeTime = 1.5;
 
         particleSystem.emitRate = 1500;
         particleSystem.blendMode = ParticleSystem.BLENDMODE_STANDARD;
-        particleSystem.gravity = new Vector3(0, 8*-9.81, 0);
+        particleSystem.gravity = new Vector3(0, 12*-9.81, 0);
 
         particleSystem.direction1 = new Vector3(Math.random(), Math.random(), Math.random());
         particleSystem.direction2 = new Vector3(Math.random(), Math.random(), Math.random());

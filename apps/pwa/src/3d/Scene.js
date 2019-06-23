@@ -24,13 +24,8 @@ class Scene extends Component {
             let scene = new BabylonScene(this.engine);
             scene.clearColor = new Color4(0, 0, 0, 0);
             this.camera = new FlyCamera("camera", new Vector3(30, 30, 30), scene);
-            this.orthographicSize = 7;
             this.camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
-            let ratio = this.engine.getAspectRatio(this.camera);
-            this.camera.orthoTop = this.orthographicSize;
-            this.camera.orthoBottom = -this.orthographicSize;
-            this.camera.orthoLeft = - this.orthographicSize * ratio;
-            this.camera.orthoRight = this.orthographicSize * ratio;
+            this.estimateOrthographicSize();
             this.camera.setTarget(Vector3.Zero());
             this.light = new HemisphericLight('light', new Vector3(40, 44, 1), scene);
             this.light.intensity = 0.95;
@@ -91,14 +86,19 @@ class Scene extends Component {
         });
     }
 
-    resize = () => {
+    estimateOrthographicSize() {
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
         let ratio = width / height;
-        this.camera.orthoTop = this.orthographicSize;
-        this.camera.orthoBottom = -this.orthographicSize;
-        this.camera.orthoLeft = - this.orthographicSize * ratio;
-        this.camera.orthoRight = this.orthographicSize * ratio;
+        let distance = Math.max(7.5 / ratio, 5);
+        this.camera.orthoTop = distance;
+        this.camera.orthoBottom = - distance;
+        this.camera.orthoLeft = - distance * ratio;
+        this.camera.orthoRight = distance * ratio;
+    }
+
+    resize = () => {
+        this.estimateOrthographicSize();
         this.engine.resize();
         this.scene.render();
     }
@@ -303,8 +303,8 @@ class Scene extends Component {
             this.performCameraFlight();
         } 
 
-        this.playerGameField = new Gamefield(true, new Vector3(0, 4, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.playerFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
-        this.opponentGameField = new Gamefield(false, new Vector3(-this.opponentGameFieldDistance, 4, this.opponentGameFieldDistance), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.opponentFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
+        this.playerGameField = new Gamefield(true, new Vector3(0, 5, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.playerFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
+        this.opponentGameField = new Gamefield(false, new Vector3(-this.opponentGameFieldDistance, 5, this.opponentGameFieldDistance), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.opponentFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
 
         if (overrideUiState) {
             this.props.deselectBuildings();
