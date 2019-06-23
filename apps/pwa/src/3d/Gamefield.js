@@ -34,9 +34,6 @@ class Gamefield {
                     phenotype = EntityType.CREAM + '.AROUND.BUILDING';
                 }
                 this.removeEntity(entity, phenotype, cell);
-                if (entity.type === EntityType.CHOCOLATE_FOUNTAIN) {
-                    this.removeEntity(entity, EntityType.CHOCOLATE_FOUNTAIN + '.SHIELD', cell);
-                }
             });
         } else {
             cell.occupiedBy.forEach(entity => {
@@ -60,21 +57,22 @@ class Gamefield {
     }
 
     createMeshInstance(phenotype, cell) {
-        if (phenotype === EntityType.CHOCOLATE_FOUNTAIN) {
-            /* TODO: Build shield */
-        } 
-
+        let meshId = this.fieldIdx + '.' + phenotype + '.' + cell.row + '.' + cell.col;
         let parent = this.scene.getMeshByName(phenotype + '__root__');
         let children = parent.getChildren()[0].getChildren().length > 0 ? parent.getChildren()[0].getChildren() : parent.getChildren();
 
         children.forEach((pivot, i) => {
-            let mesh = pivot.createInstance(this.fieldIdx + '.' + phenotype + '.' + cell.row + '.' + cell.col);
-            mesh.id = this.fieldIdx + '.' + phenotype + '.' + cell.row + '.' + cell.col;
+            let mesh = pivot.createInstance(meshId);
+            mesh.id = meshId;
             mesh.position = this.position.add(new Vector3(cell.row, 0, cell.col));
-            mesh.actionManager = new ActionManager(this.scene);
-            mesh.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickDownTrigger, event => {
-                this.action(cell.row, cell.col, event.pointerX, event.pointerY)
-            }));
+            if (pivot.material.name !==  phenotype + '.Shield.material') {
+                mesh.actionManager = new ActionManager(this.scene);
+                mesh.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickDownTrigger, event => {
+                    this.action(cell.row, cell.col, event.pointerX, event.pointerY)
+                }));
+            } else {
+                mesh.isPickable = false;
+            }
 
             if (phenotype === EntityType.FACTORY_EXTENSION) {
                 if (this.playerField.grid[cell.row * this.rows + Math.min(cell.col + 1, this.cols - 1)].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
@@ -146,7 +144,12 @@ class Gamefield {
         let fountain = Mesh.CreateBox("foutain", 1.0, this.scene);
         fountain.position.addInPlace(field.position);
         fountain.isVisible = false;
-        fountain.position.addInPlace(new Vector3(-0.2, 4, -0.2));
+        if (this.isPlayerGameField) {
+            fountain.position.addInPlace(new Vector3(-0.2, 4, -0.2));
+        } else {
+            fountain.position.addInPlace(new Vector3(0.2, 4, 0.2));
+        }
+        
         let particleSystem = new ParticleSystem("particles", 2000, this.scene);
         particleSystem.particleTexture = new Texture("images/raindrop.png", this.scene);
 

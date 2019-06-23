@@ -11,7 +11,7 @@ import { BattlechocError } from '../gameplay/Errors';
 import { Jukebox } from '../ui/misc';
 import { playerHasAttacks } from '../gameplay/Player';
 import { InfoType, spawnInfo } from '../ui/misc/FlyingInfo';
-import { Scene as BabylonScene, Engine, HighlightLayer, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation, Matrix } from 'babylonjs';
+import { Scene as BabylonScene, Engine, HighlightLayer, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation, Matrix, MeshBuilder } from 'babylonjs';
 import 'babylonjs-loaders';
 
 class Scene extends Component {
@@ -49,6 +49,7 @@ class Scene extends Component {
         this.playerGameField = null;
         this.opponentGameField = null;
         this.renderLoopRepetitions = 0;
+        this.opponentGameFieldDistance = 12;
     }
 
     componentWillUnmount() {
@@ -126,12 +127,16 @@ class Scene extends Component {
     }
 
     detonateAtShield(row, col, playerField=false) {
-        /*let position3d = { x: row * this.playerGameField.fieldSize, y: 0, z: col * this.playerGameField.fieldSize };
+        let truffle = MeshBuilder.CreateTorus('knot', {diameter: 0.1}, this.scene);
+        truffle.material = this.scene.getMaterialByName(BoardCellTypes.BROWN + '.material');
         if (playerField) {
-            this.startAnimation(this.playerGameField.gameField, false, 'ATTACK_AT_SHIELD_EXPLOSION', position3d);
+            truffle.position = new Vector3(row, 4, col);
+            this.playerGameField.explode(truffle);
         } else {
-            this.startAnimation(this.opponentGameField.gameField, false, 'ATTACK_AT_SHIELD_EXPLOSION', position3d);
-        }*/
+            truffle.position = new Vector3(row - this.opponentGameFieldDistance, 4, col + this.opponentGameFieldDistance);
+            this.opponentGameField.explode(truffle);
+        }
+        truffle.dispose();
     }
 
     playerFieldClick(row, col, eventX, eventY) {
@@ -299,7 +304,7 @@ class Scene extends Component {
         } 
 
         this.playerGameField = new Gamefield(true, new Vector3(0, 4, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.playerFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
-        this.opponentGameField = new Gamefield(false, new Vector3(-12, 4, 12), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.opponentFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
+        this.opponentGameField = new Gamefield(false, new Vector3(-this.opponentGameFieldDistance, 4, this.opponentGameFieldDistance), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.opponentFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
 
         if (overrideUiState) {
             this.props.deselectBuildings();
