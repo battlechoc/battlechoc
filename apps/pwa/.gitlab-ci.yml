@@ -14,8 +14,7 @@ build:
   stage: build
   variables:
     CI: "true"
-  before_script: 
-    - yarn config set cache-folder .yarn
+  before_script:
     - yarn install 
   script:
     - yarn build
