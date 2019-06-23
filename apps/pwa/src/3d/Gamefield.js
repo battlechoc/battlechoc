@@ -1,81 +1,29 @@
-import { Group, Geometry, Mesh, MeshLambertMaterial, SpotLight, Object3D } from 'three';
-import { EntityType, BoardCellTypes } from '../gameplay/GameEntities';
-import { assetLoader as AssetLoader} from '../AssetLoader.js';
+import { EntityType } from '../gameplay/GameEntities';
+import { Mesh, ParticleSystem, Vector3, Color4, ActionManager, ExecuteCodeAction, SolidParticleSystem, Texture } from 'babylonjs';
 
 class Gamefield {
-    constructor(isPlayerGameField, position, getPlayerField, fieldIdx, size, startAnimation, renderScene) {
+    constructor(isPlayerGameField, position, getPlayerField, fieldIdx, size, scene, action, setRenderLoop) {
         this.isPlayerGameField = isPlayerGameField;
         this.rows = size.rows;
         this.cols = size.cols;
-        this.fieldSize = 8;
         this.position = position;
         this.fieldIdx = fieldIdx;
-        this.renderScene = () => renderScene();
-
-        this.buildings = [...Array(this.rows)].map(
-            field => Array(this.cols).fill([])
-        );
-
-        this.renderingEntities = {};
-        this.gameField = new Group();
+        this.scene = scene;
+        this.action = action;
         this.getPlayerField = () => getPlayerField();
         this.playerField = JSON.parse(JSON.stringify(this.getPlayerField()));
         this.build();
-        this.startAnimation = (turned, asset, position, offset=25) => startAnimation(this.gameField, turned, asset, position, offset);
+        this.setRenderLoop = setRenderLoop;
     }
 
-    build(skipEntities=false) {
-        const assets = AssetLoader.assets.models;
-        let pivot = assets['FIELD'].model.scene.children[0];
-        let materialMap = assets['FIELD'].model.scene.children[1];
-
-        let materials = [materialMap.children[0].material, materialMap.children[1].material, materialMap.children[2].material];
-        let board = new Mesh(new Geometry(), materials);
+    build() {
         let playerField = this.getPlayerField();
         playerField.grid.forEach((cell, i) => {
             if (!cell.molten) {
-                let materialIndex = 0;
-                if (cell.type === BoardCellTypes.BROWN) {
-                    materialIndex = 1;
-                } else if (cell.type === BoardCellTypes.BLACK) {
-                    materialIndex = 2;
-                }
-
-                let geometryLowerBound = board.geometry.faces.length;
-
-                pivot.position.set(this.fieldSize * cell.row, 3, this.fieldSize * cell.col);
-                pivot.traverse(child => {
-                    if (child instanceof Mesh) {
-                        child.updateMatrix();
-                        let geometry = new Geometry().fromBufferGeometry(child.geometry);
-                        geometry.faces.forEach(face => {
-                            face.materialIndex = materialIndex;
-                        });
-                        board.geometry.merge(geometry, child.matrix);
-                    }
-                });
-
-                for (let i = geometryLowerBound; i < board.geometry.faces.length; i++) {
-                    board.geometry.faces[i]._cellIdx = { row: cell.row, col: cell.col };
-                    board.geometry.faces[i]._fieldIndex = this.fieldIdx;
-                }
-
-                if (!skipEntities) {
-                    this.renderEntities(cell);
-                }
+                this.createMeshInstance(cell.type, cell);
+                this.renderEntities(cell);
             }
         });
-
-        board.groupsNeedUpdate = true;
-        board.geometry.sortFacesByMaterialIndex();
-        board.name = 'BOARD' + this.fieldIdx;
-        board.frustumCulled = false;
-
-        this.gameField.add(board);
-        this.gameField.position.set(this.position[0], this.position[1], this.position[2]);
-        if (!skipEntities) {
-            this.renderScene();
-        }
     }
 
     renderEntities(cell, remove=false) {
@@ -86,24 +34,16 @@ class Gamefield {
                     phenotype = EntityType.CREAM + '.AROUND.BUILDING';
                 }
                 this.removeEntity(entity, phenotype, cell);
-                if (entity.type === EntityType.CHOCOLATE_FOUNTAIN) {
-                    this.removeEntity(entity, EntityType.CHOCOLATE_FOUNTAIN + '.BUILDING', cell);
-                }
             });
         } else {
             cell.occupiedBy.forEach(entity => {
                 let phenotype = entity.type;
-                if (entity.type === EntityType.CREAM) {
-                    if (cell.occupiedBy.length > 1 && this.isPlayerGameField) {
-                        phenotype = EntityType.CREAM + '.AROUND.BUILDING';
-                    }
+                if (entity.type === EntityType.CREAM && cell.occupiedBy.length > 1 && this.isPlayerGameField) {
+                    phenotype = EntityType.CREAM + '.AROUND.BUILDING';
                 }
 
                 if (entity.type === EntityType.CREAM || cell.occupiedBy.length === 1 || !cell.occupiedBy.map(building => building.type).includes(EntityType.CREAM) || this.isPlayerGameField) {
-                    this.renderEntity(entity, phenotype, cell);
-                    if (entity.type === EntityType.CHOCOLATE_FOUNTAIN) {
-                        this.renderEntity(entity, EntityType.CHOCOLATE_FOUNTAIN + '.BUILDING', cell);
-                    }
+                    this.createMeshInstance(phenotype, cell);
                 }
             });
         }
@@ -111,176 +51,204 @@ class Gamefield {
 
     removeEntity(entity, phenotype, cell) {
         if (entity.type === EntityType.CREAM || cell.occupiedBy.length === 1 || !cell.occupiedBy.map(building => building.type).includes(EntityType.CREAM) || this.isPlayerGameField) {
-            let reducedGeometry = this.renderingEntities[phenotype].geometry.faces.filter(face => face.entityId !== entity.id);
-            if (reducedGeometry.length > 0) {
-                this.renderingEntities[phenotype].geometry.faces = reducedGeometry;
-                this.renderingEntities[phenotype].geometry.elementsNeedUpdate = true;
-            } else {
-                this.gameField.remove(this.renderingEntities[phenotype]);
-                delete this.renderingEntities[phenotype];
-            }
-        }        
+            let meshes = this.scene.getMeshesByID(this.fieldIdx + '.' + phenotype + '.' + cell.row + '.' + cell.col);
+            meshes.forEach(mesh => mesh.dispose());
+        }
     }
 
-    renderEntity(entity, phenotype, cell) {
-        const assets = AssetLoader.assets.models;
-        let pivot, material, position;
+    createMeshInstance(phenotype, cell) {
+        let meshId = this.fieldIdx + '.' + phenotype + '.' + cell.row + '.' + cell.col;
+        let parent = this.scene.getMeshByName(phenotype + '__root__');
+        let children = parent.getChildren()[0].getChildren().length > 0 ? parent.getChildren()[0].getChildren() : parent.getChildren();
 
-        if (phenotype === EntityType.CHOCOLATE_FOUNTAIN  + '.BUILDING') {
-            pivot = assets[EntityType.CHOCOLATE_FOUNTAIN].model.scene.clone().children[1];
-            material = pivot.material;
-            position = pivot.position;
-        } else {
-            pivot = assets[phenotype].model.scene.clone().children[0];
-            
-            if (phenotype === EntityType.CREAM || phenotype === EntityType.CREAM + '.AROUND.BUILDING') {
-                material = new MeshLambertMaterial({ color: 0xffffff,  emissive: 0x606060 });
+        children.forEach((pivot, i) => {
+            let mesh = pivot.createInstance(meshId);
+            mesh.id = meshId;
+            mesh.position = this.position.add(new Vector3(cell.row, 0, cell.col));
+            if (pivot.material.name !==  phenotype + '.Shield.material') {
+                mesh.actionManager = new ActionManager(this.scene);
+                mesh.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickDownTrigger, event => {
+                    this.action(cell.row, cell.col, event.pointerX, event.pointerY)
+                }));
             } else {
-                material = pivot.material;
+                mesh.isPickable = false;
             }
 
-            position = pivot.position;
-        }
-
-        if (pivot instanceof Group) {
-            material = [...new Set(pivot.children.map(child => child.material))];
-        } 
-
-        if (typeof this.renderingEntities[phenotype] === 'undefined') {
-            if (phenotype === EntityType.CHOCOLATE_FOUNTAIN) {
-                material = new MeshLambertMaterial({ color: 0x6C5710, opacity: 0.3, transparent: true });
-            }
-
-            this.renderingEntities[phenotype] = new Mesh(new Geometry(), material);
-            this.renderingEntities[phenotype].matrixAutoUpdate = false;
-            this.renderingEntities[phenotype].frustumCulled = false;
-            this.gameField.add(this.renderingEntities[phenotype]);
-        }
-
-        let geometryLowerBound = this.renderingEntities[phenotype].geometry.faces.length;
-        pivot.position.set(this.fieldSize * cell.row, position.y, this.fieldSize * cell.col);
-
-        if (!this.isPlayerGameField) {
-            if (entity.type === EntityType.RUM_TRUFFLE_CANNON) {
-                pivot.rotation.z = Math.PI / 4;
-            } else if (entity.type === EntityType.SPYING_EASTER_BUNNY) {
-                pivot.rotation.y = -Math.PI / 1.2;
-            } else if (entity.type === EntityType.HOT_CHOCOLATE_BALLISTA) {
-                pivot.rotation.y = -Math.PI / 1.5;
-            }
-        } 
-
-        if (entity.type === EntityType.FACTORY_EXTENSION) {
-            if (this.playerField.grid[cell.row * this.cols + Math.min(cell.col + 1, this.cols - 1)].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
-                pivot.rotation.y = -Math.PI / 2;
-            } else if (this.playerField.grid[Math.max(cell.row - 1, 0) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
-                pivot.rotation.y = Math.PI;
-            } else if (this.playerField.grid[Math.min(cell.row + 1, this.rows - 1) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
-                pivot.rotation.y = 0;
-            } else {
-                pivot.rotation.y = Math.PI / 2
-            }
-        }
-
-        pivot.traverse(child => {
-            if (child instanceof Mesh) {
-                child.updateMatrix();
-                let geometry = new Geometry().fromBufferGeometry(child.geometry);
-                if (pivot instanceof Group) {
-                    child.position.set(this.fieldSize * cell.row, position.y, this.fieldSize * cell.col);
-                    child.scale.set(pivot.scale.x, pivot.scale.y, pivot.scale.z);
-                    child.rotation.set(pivot.rotation.x, pivot.rotation.y, pivot.rotation.z);
-                    child.updateMatrix();
-                    geometry.faces.forEach(face => {
-                        face.materialIndex = material.findIndex(submaterial => child.material.uuid === submaterial.uuid);
-                    });
+            if (phenotype === EntityType.FACTORY_EXTENSION) {
+                if (this.playerField.grid[cell.row * this.rows + Math.min(cell.col + 1, this.cols - 1)].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
+                    mesh.rotation.y = 0;
+                } else if (this.playerField.grid[Math.max(cell.row - 1, 0) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
+                    mesh.rotation.y = -Math.PI / 2;
+                } else if (this.playerField.grid[Math.min(cell.row + 1, this.rows - 1) * this.cols + cell.col].occupiedBy.map(building => building.type).includes(EntityType.FACTORY)) {
+                    mesh.rotation.y = Math.PI / 2;
+                } else {
+                    mesh.rotation.y = Math.PI;
                 }
-                this.renderingEntities[phenotype].geometry.merge(geometry, child.matrix);
+            }
+
+            if (!this.isPlayerGameField) {
+                if (phenotype === EntityType.RUM_TRUFFLE_CANNON) {
+                    mesh.rotation.y = Math.PI;
+                } else if (phenotype === EntityType.SPYING_EASTER_BUNNY) {
+                    mesh.rotation.y = Math.PI;
+                } else if (phenotype === EntityType.HOT_CHOCOLATE_BALLISTA) {
+                    mesh.rotation.y = Math.PI;
+                }
             }
         });
-
-        for (let i = geometryLowerBound; i < this.renderingEntities[phenotype].geometry.faces.length; i++) {
-            if (pivot.name !== 'Shield') {
-                this.renderingEntities[phenotype].geometry.faces[i]._cellIdx = { row: cell.row, col: cell.col };
-                this.renderingEntities[phenotype].geometry.faces[i]._fieldIndex = this.fieldIdx;
-            }
-            this.renderingEntities[phenotype].geometry.faces[i].entityId = entity.id;
-        }
-
-        if (pivot instanceof Group) {
-            this.renderingEntities[phenotype].geometry.groupsNeedUpdate = true;
-            this.renderingEntities[phenotype].geometry.sortFacesByMaterialIndex();
-        }
-        this.renderingEntities[phenotype].geometry.elementsNeedUpdate = true;
     }
 
     update() {
         let playerField = this.getPlayerField();
-        let fieldChanges = playerField.grid.map((cell, i) => cell.molten === this.playerField.grid[i].molten ? null : i);
-
-        if (fieldChanges.filter(position => position !== null).length > 0) {
-            let board = this.gameField.getObjectByName('BOARD' + this.fieldIdx);
-            this.gameField.remove(board);
-            this.build(true);
-        }
+        playerField.grid.filter((cell, i) => cell.molten !== this.playerField.grid[i].molten).forEach(cell => {
+            let field = this.scene.getMeshByName(this.fieldIdx + '.' + cell.type + '.' + cell.row + '.' + cell.col);
+            if (field) {
+                this.animateHotChocolate(field);
+            }
+        });
 
         let changes = playerField.grid.map((cell, i) => JSON.stringify(cell.occupiedBy) === JSON.stringify(this.playerField.grid[i].occupiedBy) ? null : i);
         changes.filter(position => position !== null).forEach(position => {
-            if (playerField.grid[position].occupiedBy.length < this.playerField.grid[position].occupiedBy.length) {
-                let isTurned = entity => (!this.isPlayerGameField &&
-                             (entity.type === EntityType.RUM_TRUFFLE_CANNON ||
-                              entity.type === EntityType.SPYING_EASTER_BUNNY ||
-                              entity.type === EntityType.HOT_CHOCOLATE_BALLISTA))                
+            if (playerField.grid[position].occupiedBy.length < this.playerField.grid[position].occupiedBy.length) {                
                 if (playerField.grid[position].occupiedBy.length === 0) {
-                    let cellPosition = { x: this.playerField.grid[position].row * this.fieldSize, y: 0, z: this.playerField.grid[position].col * this.fieldSize };
                     this.playerField.grid[position].occupiedBy.forEach(entity => {
-                        let offset = 25;
                         if (entity.type !== EntityType.CREAM && this.playerField.grid[position].occupiedBy.filter(building => building.type === EntityType.CREAM).length > 0) {
-                            offset = 400;
+                            if (!this.isPlayerGameField) {
+                                this.createMeshInstance(entity.type, this.playerField.grid[position]);
+                            }
+                            let meshes = this.scene.getMeshesByID(this.fieldIdx + '.' + entity.type + '.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
+                            meshes.forEach(mesh => {
+                                this.explode(mesh, 800);
+                                if (!this.isPlayerGameField) {
+                                    mesh.dispose();
+                                }
+                            });
+                        } else if (entity.type === EntityType.CREAM && this.playerField.grid[position].occupiedBy.filter(building => building.type !== EntityType.CREAM).length > 0 && this.isPlayerGameField) {
+                            let mesh = this.scene.getMeshByName(this.fieldIdx + '.' + EntityType.CREAM + '.AROUND.BUILDING.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
+                            this.explode(mesh);
+                        } else {
+                            let meshes = this.scene.getMeshesByID(this.fieldIdx + '.' + entity.type + '.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
+                            meshes.forEach(mesh => this.explode(mesh));
                         }
-                        this.startAnimation(isTurned(entity), entity.type + '.EXPLOSION', cellPosition, offset);
                     });
                 }
             }
             this.renderEntities(this.playerField.grid[position], true);
             this.playerField.grid[position] = JSON.parse(JSON.stringify(playerField.grid[position]));
-            this.renderEntities(this.playerField.grid[position]);  
+            this.renderEntities(this.playerField.grid[position]);
         });
-        this.renderScene();
     }
 
-    highlightCannons(unhighlight) {
-        if (unhighlight) {
-            for (let entityType in this.renderingEntities) {
-                if (entityType !== EntityType.RUM_TRUFFLE_CANNON && typeof this.renderingEntities[entityType] !== 'undefined') {
-                    this.gameField.add(this.renderingEntities[entityType]);
-                }
-            }
-
-            this.gameField.children.forEach(child => {
-                if (child.name === 'target' || child instanceof SpotLight) {
-                    this.gameField.remove(child);
-                }
-            });
+    animateHotChocolate(field) {
+        this.setRenderLoop();
+        let fountain = Mesh.CreateBox("foutain", 1.0, this.scene);
+        fountain.position.addInPlace(field.position);
+        fountain.isVisible = false;
+        if (this.isPlayerGameField) {
+            fountain.position.addInPlace(new Vector3(-0.2, 4, -0.2));
         } else {
-            for (let entityType in this.renderingEntities) {
-                if (entityType !== EntityType.RUM_TRUFFLE_CANNON && typeof this.renderingEntities[entityType] !== 'undefined') {
-                    this.gameField.remove(this.renderingEntities[entityType]);
-                } 
-            }
-
-            this.playerField.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.RUM_TRUFFLE_CANNON)).forEach(cell => {
-                let spotlight = new SpotLight(0xffffff, 4.0, 64, 0.2);
-                spotlight.position.set(this.fieldSize * cell.row, 32, this.fieldSize * cell.col);
-                this.gameField.add(spotlight);
-                let pivot = new Object3D();
-                pivot.name = 'target';
-                pivot.position.set(this.fieldSize * cell.row, 3, this.fieldSize * cell.col)
-                this.gameField.add(pivot);
-                spotlight.target = pivot;
-            });
+            fountain.position.addInPlace(new Vector3(0.2, 4, 0.2));
         }
-        this.renderScene();
+        
+        let particleSystem = new ParticleSystem("particles", 2000, this.scene);
+        particleSystem.particleTexture = new Texture("images/raindrop.png", this.scene);
+
+        particleSystem.emitter = fountain;
+        particleSystem.minEmitBox = new Vector3(0, 0, 0);
+        particleSystem.maxEmitBox = new Vector3(0.3, 0.3, 0.3);
+
+        particleSystem.color1 = Color4.FromHexString("#824529FF");
+        particleSystem.color2 = Color4.FromHexString("#3E211BFF");
+        particleSystem.colorDead = new Color4(0, 0, 0, 0);
+
+        particleSystem.minSize = 0.02;
+        particleSystem.maxSize = 0.1;
+
+        particleSystem.minLifeTime = 0.4;
+        particleSystem.maxLifeTime = 1.5;
+
+        particleSystem.emitRate = 1500;
+        particleSystem.blendMode = ParticleSystem.BLENDMODE_STANDARD;
+        particleSystem.gravity = new Vector3(0, 12*-9.81, 0);
+
+        particleSystem.direction1 = new Vector3(Math.random(), Math.random(), Math.random());
+        particleSystem.direction2 = new Vector3(Math.random(), Math.random(), Math.random());
+
+        particleSystem.minAngularSpeed = 0;
+        particleSystem.maxAngularSpeed = Math.PI;
+
+        particleSystem.minEmitPower = 1;
+        particleSystem.maxEmitPower = 3;
+        particleSystem.updateSpeed = 0.005;
+
+        particleSystem.start();
+        this.scene.beginAnimation(fountain, 0, 100, true);
+        setTimeout(() => {
+            field.dispose();
+        }, 1000);
+
+        setTimeout(() => {
+            this.scene.stopAnimation(fountain);
+            this.setRenderLoop(false);
+            particleSystem.dispose();
+            fountain.dispose();
+            this.scene.render();
+        }, 3000);      
+    }
+
+    explode(mesh, offset=100) {
+        let gravity = -0.04;
+        let solidParticleSystem = new SolidParticleSystem("solidParticleSystem", this.scene);
+        solidParticleSystem.digest(mesh, {number: 48});
+        let particleMesh = solidParticleSystem.buildMesh();
+        particleMesh.material = mesh.material;
+        particleMesh.material.freeze();
+        solidParticleSystem.refreshVisibleSize();
+
+        solidParticleSystem.updateParticle = particle => {
+            if (particle.position.y < -20) {
+                particle.alive = false;
+            } else {
+                particle.velocity.y += gravity;
+                particle.velocity.x -= 0.01;
+                particle.velocity.z -= 0.01;
+                (particle.position).addInPlace(particle.velocity);
+            }
+        }
+
+        solidParticleSystem.initParticles = () => {
+            for (let particle = 0; particle < solidParticleSystem.nbParticles; particle++) {
+                solidParticleSystem.particles[particle].rotation.addInPlace(mesh.rotation);
+                solidParticleSystem.particles[particle].position.addInPlace(mesh.position);
+            }
+        };
+
+        solidParticleSystem.computeParticleTexture = false;
+        solidParticleSystem.computeParticleColor = false;
+
+        solidParticleSystem.isAlwaysVisible = true;
+        solidParticleSystem.initParticles();
+        solidParticleSystem.setParticles();
+
+        let setParticles = () => solidParticleSystem.setParticles();
+
+        setTimeout(() => {
+            this.setRenderLoop()
+            let speed = 1.2;
+            for (let particle = 0; particle < solidParticleSystem.nbParticles; particle++) {
+                solidParticleSystem.particles[particle].velocity.x = Math.random() * speed;
+                solidParticleSystem.particles[particle].velocity.y = Math.random() * speed;
+                solidParticleSystem.particles[particle].velocity.z = Math.random() * speed;
+            }
+            this.scene.registerBeforeRender(setParticles);
+        }, offset);
+
+        setTimeout(() => {
+            this.scene.unregisterBeforeRender(setParticles);
+            solidParticleSystem.dispose();
+            solidParticleSystem = null;
+            this.setRenderLoop(false);
+        }, offset + 2000);
     }
 }
 

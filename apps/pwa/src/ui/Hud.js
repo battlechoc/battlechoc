@@ -1,10 +1,9 @@
 import React, { Component } from 'react';
 import './Hud.css';
-import { AssetLoadingViewContainer as AssetLoadingView } from '../AssetLoader';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
-import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons } from './controls';
+import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AppleHint } from './dialogs';
 import { CircularProgress, Button } from '@material-ui/core';
@@ -12,7 +11,10 @@ import { CircularProgress, Button } from '@material-ui/core';
 class Hud extends Component {
     constructor(props) {
         super(props);
-        this.state = { clickable: true }
+        this.state = { 
+            clickable: true,
+            statistics: false 
+        }
     }
 
     componentDidMount() {
@@ -103,7 +105,7 @@ class Hud extends Component {
                                 <img id="cannonTitlePage" className="foregroundEntity" alt="cannon field" src="images/cannonAtField.png" />
                                 <img id="creamTitlePageBottom" className="foregroundEntity" alt="creamy field bottom" src="images/creamAtField.png" />
                                 <div className="titleMenu">
-                                    {this.props.assetsReady ? controls : <AssetLoadingView />}
+                                    {this.props.assetsReady ? controls : null}
                                 </div>
                                 <Info />
                             </div>
@@ -125,6 +127,7 @@ class Hud extends Component {
                                 <AttackPalette />
                                 <BuildingPalette />
                                 <InfoPanel />
+                                { this.state.statistics ? <GameEndOverview finishGame={() => console.log('end')}/> : null }
                             </div>
                         )
                     }

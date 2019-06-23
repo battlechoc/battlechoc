@@ -20,6 +20,7 @@ import FactoryExtensionTest from './situations/tests/FactoryExtensionTest';
 import Scene from './3d/Scene';
 import Hud from './ui/Hud';
 import Tutorial from './tutorial/Tutorial';
+import { AssetLoadingViewContainer as AssetLoadingView } from './AssetLoader';
 
 class App extends Component {
     constructor(props) {
@@ -148,22 +149,12 @@ class App extends Component {
             }
         }
 
-        if (gameTransition === GameTransitions.GAME_FINISHED) {
-            this.scene.clear();
-            if (!this.state.tutorial) {
-                this.props.gameResumeable(false);
-                OfflineStore.gamestateStore.clear();
-            }
-        }
-
         if (typeof this.scene !== 'undefined') {
             if (typeof this.scene.playerGameField !== 'undefined') {
                 if (nextProps.selectedBuilding === EntityType.FRUIT_CANNON && this.props.selectedBuilding !== EntityType.FRUIT_CANNON) {
-                    this.scene.dimLight();
-                    this.scene.playerGameField.highlightCannons();
+                    this.scene.highlightCannons();
                 } else if (nextProps.selectedBuilding !== EntityType.FRUIT_CANNON && this.props.selectedBuilding === EntityType.FRUIT_CANNON) {
-                    this.scene.resetLight();
-                    this.scene.playerGameField.highlightCannons(true);
+                    this.scene.highlightCannons(false);
                 }
             }
         }
@@ -187,8 +178,7 @@ class App extends Component {
 
             if (this.props.selectedBuilding === EntityType.FRUIT_CANNON && typeof this.scene !== 'undefined' && typeof this.scene.playerGameField !== 'undefined' && typeof nextProps.game !== 'undefined' && (nextProps.game.state !== GameStateTypes.BUILD_PHASE || multiplayer.isLocalPlayer(nextProps.game.currentPlayerIndex) === false ||
                 nextProps.game.players[multiplayer.localPlayerIndex].buildings === 0 || nextProps.selectedBuilding !== EntityType.FRUIT_CANNON)) {
-                this.scene.resetLight();
-                this.scene.playerGameField.highlightCannons(true);
+                this.scene.highlightCannons(false);
             }
 
             if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
@@ -302,14 +292,11 @@ class App extends Component {
 
                     this.props.startGame(players).then(() => {
                         this.opponent.type = Augustus.randomizeType();
-                        this.opponent.connectGamestate(() => this.props.game);
-
-                        setTimeout(() => {
-                            this.props.createBoard({
-                                boardSize: { rows: 8, cols: 8 },
-                                boardSeed: 42
-                            });
-                        }, 1000);
+                        this.opponent.connectGamestate(() => this.props.game);                        
+                        this.props.createBoard({
+                            boardSize: { rows: 10, cols: 10 },
+                            boardSeed: 42
+                        });
                     });
                 }
             });
@@ -326,6 +313,9 @@ class App extends Component {
                 this.props.finishGame();
                 this.props.resetUi();
                 multiplayer.reset();
+                this.scene.clear();
+                this.props.gameResumeable(false);
+                OfflineStore.gamestateStore.clear();
             }, 1000);
         }
     }
@@ -350,8 +340,8 @@ class App extends Component {
     render() {
         return (
             <div className="app">
-                {this.props.assetsReady ? <div id="clouds"></div> : null}
-                {typeof this.props.game !== 'undefined' ? <Scene onRef={scene => this.scene = scene} /> : null}
+                {this.props.assetsReady ? <div id="clouds"></div> : <AssetLoadingView onRef={loadingView => this.loadingView = loadingView} />}
+                <Scene onRef={scene => this.scene = scene} loadAssets={scene => this.loadingView.loadAssets(scene)} />
                 <Hud prepareNewGameCallback={this.prepareNewGame}
                      multiplayerLandingPage={typeof this.state.params.sessionid !== 'undefined'}
                      joinMultiplayerGame={this.joinMultiplayerGame}

@@ -1,4 +1,4 @@
-import { openDb } from 'idb';
+import { openDB } from 'idb';
 
 const dbVersion = 3;
 const dbName = 'battclechoc';
@@ -43,7 +43,7 @@ class OfflineStore {
     }
 
     setup() {
-        const dbPromise = openDb(dbName, dbVersion, upgradeDB => {
+        const dbPromise = openDB(dbName, dbVersion, upgradeDB => {
             if (upgradeDB.oldVersion < 1) {
                 upgradeDB.createObjectStore(gamestateStoreName);
                 upgradeDB.createObjectStore(turnHistoryStoreName);
