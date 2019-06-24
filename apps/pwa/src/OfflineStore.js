@@ -1,62 +1,18 @@
 import { openDB } from 'idb';
 
-const dbVersion = 3;
-const dbName = 'battclechoc';
+const dbVersion = 4;
+const dbName = 'battlechoc';
 const gamestateStoreName = 'gamestate';
 const turnHistoryStoreName = 'turn-history';
 const settingsStoreName = 'settings';
 
 class OfflineStore {
-    static wrapObjectStore(storeName, dbPromise) {
-        return {
-            async get(key) {
-                const db = await dbPromise;
-                return db.transaction(storeName).objectStore(storeName).get(key);
-            },
-            async set(key, val) {
-                const db = await dbPromise;
-                const tx = db.transaction(storeName, 'readwrite');
-                tx.objectStore(storeName).put(val, key);
-                return tx.complete;
-            },
-            async delete(key) {
-                const db = await dbPromise;
-                const tx = db.transaction(storeName, 'readwrite');
-                tx.objectStore(storeName).delete(key);
-                return tx.complete;
-            },
-            async clear() {
-                const db = await dbPromise;
-                const tx = db.transaction(storeName, 'readwrite');
-                tx.objectStore(storeName).clear();
-                return tx.complete;
-            },
-            async keys() {
-                const db = await dbPromise;
-                return db.transaction(storeName).objectStore(storeName).getAllKeys();
-            }
-        };
-    }
-
     constructor() {
-        this.setup();
-    }
-
-    setup() {
-        const dbPromise = openDB(dbName, dbVersion, upgradeDB => {
-            if (upgradeDB.oldVersion < 1) {
-                upgradeDB.createObjectStore(gamestateStoreName);
-                upgradeDB.createObjectStore(turnHistoryStoreName);
-                upgradeDB.createObjectStore(settingsStoreName);
-            } else {
-                upgradeDB.deleteObjectStore(gamestateStoreName);
-                upgradeDB.createObjectStore(gamestateStoreName);
-
-                upgradeDB.deleteObjectStore(turnHistoryStoreName);
-                upgradeDB.createObjectStore(turnHistoryStoreName);
-
-                upgradeDB.deleteObjectStore(settingsStoreName);
-                upgradeDB.createObjectStore(settingsStoreName);
+        const dbPromise = openDB(dbName, dbVersion, {
+            upgrade(db) {
+                db.createObjectStore(gamestateStoreName);
+                db.createObjectStore(turnHistoryStoreName);
+                db.createObjectStore(settingsStoreName);
             }
         });
 
@@ -65,31 +21,38 @@ class OfflineStore {
         this.settingsStore = OfflineStore.wrapObjectStore(settingsStoreName, dbPromise);
     }
 
+    static wrapObjectStore(storeName, dbPromise) {
+        return {
+            async get(key) {
+                return (await dbPromise).get(storeName, key);
+            },
+            async set(key, val) {
+                return (await dbPromise).put(storeName, val, key);
+            },
+            async delete(key) {
+                return (await dbPromise).delete(storeName, key);
+            },
+            async clear() {
+                return (await dbPromise).clear(storeName);
+            },
+            async keys() {
+                return (await dbPromise).getAllKeys(storeName);
+            }
+        };
+    }
+
     async hasGameToResume() {
-        let result = false;
-        if (typeof this.gamestateStore !== 'undefined') {
-            let prom = this.gamestateStore.keys();
-            prom.then(keys => {
-                result = keys.includes('gamestate');
-            });
-            await prom;
-        }
-        return result;
+        return (await this.gamestateStore.keys()).includes('gamestate');
     }
 
     async getResumeableGame() {
-        if (typeof this.gamestateStore !== 'undefined') {
-            return this.gamestateStore.get('gamestate');
-        } else {
-            return undefined;
-        }
+        return await this.gamestateStore.get('gamestate');
     }
 
-    saveCurrentGame(gamestate) {
-        return this.gamestateStore.set("gamestate", gamestate);
+    async saveCurrentGame(gamestate) {
+        return await this.gamestateStore.set('gamestate', gamestate);
     }
 }
 
 const offlineStore = new OfflineStore();
-
 export default offlineStore;
