@@ -25,6 +25,8 @@ class Scene extends Component {
             scene.clearColor = new Color4(0, 0, 0, 0);
             this.camera = new FlyCamera("camera", new Vector3(30, 30, 30), scene);
             this.camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
+            this.camera.minZ = 0;
+            this.camera.maxZ = 100;
             this.estimateOrthographicSize();
             this.camera.setTarget(Vector3.Zero());
             this.lookAtOpponent = true;
