@@ -164,7 +164,10 @@ class App extends Component {
                 (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (multiplayer.isLocalPlayer(nextProps.game.currentPlayerIndex) === true)) {
 
                 if (!this.state.tutorial) {
-                    OfflineStore.saveCurrentGame(nextProps.game).then(() => {
+                    let resumeableGame = {};
+                    resumeableGame.gameplay = nextProps.game;
+                    resumeableGame.ui = nextProps.ui;
+                    OfflineStore.saveCurrentGame(resumeableGame).then(() => {
                         this.props.gameResumeable(true).catch(this.handleError);
                     });
                 }
@@ -255,13 +258,15 @@ class App extends Component {
         let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
         let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
         if (!isFullscreen && !isiOS) {
-            document.documentElement.requestFullscreen().then(() =>  {
-                if (isAndroid) {
-                    window.screen.orientation.lock('landscape');
-                }
-            }).catch(error => {
-                console.log(error.name + ': ' + error.message);
-            });
+            if (typeof document.documentElement.requestFullscreen === 'function') {
+                document.documentElement.requestFullscreen().then(() =>  {
+                    if (isAndroid) {
+                        window.screen.orientation.lock('landscape');
+                    }
+                }).catch(error => {
+                    console.log(error.name + ': ' + error.message);
+                });
+            }
         }
 
         if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
@@ -279,10 +284,14 @@ class App extends Component {
                     finishBuildPhase: this.props.finishBuildPhase
                 });
                 if (typeof resumeableGame !== 'undefined' && resumeGame) {
-                    this.props.resumeGame(resumeableGame).then(() => {
-                        this.opponent.player = resumeableGame.players[1];
+                    this.props.resumeGame(resumeableGame.gameplay).then(() => {
+                        this.opponent.player = resumeableGame.gameplay.players[1];
                         this.opponent.connectGamestate(() => this.props.game);
-                        this.scene.startGame(this.props.game, false);
+                        this.props.loadUiState(resumeableGame.ui).then(() => {
+                            if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
+                                this.scene.startGame(this.props.game, false);
+                            }
+                        });
                     });
                 } else {
                     let players = [

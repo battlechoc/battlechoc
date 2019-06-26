@@ -11,14 +11,14 @@ import { BattlechocError } from '../gameplay/Errors';
 import { Jukebox } from '../ui/misc';
 import { playerHasAttacks } from '../gameplay/Player';
 import { InfoType, spawnInfo } from '../ui/misc/FlyingInfo';
-import { Scene as BabylonScene, Engine, HighlightLayer, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation, Matrix, MeshBuilder } from 'babylonjs';
+import { Scene as BabylonScene, DirectionalLight, Engine, HighlightLayer, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation, Matrix, MeshBuilder } from 'babylonjs';
 import 'babylonjs-loaders';
 
 class Scene extends Component {
 
     componentDidMount() {
         this.props.onRef(this);
-        this.engine = new Engine(this.container, false, { preserveDrawingBuffer: true, stencil: true, useHighPrecisionFloats: false }, true);
+        this.engine = new Engine(this.container, true, { preserveDrawingBuffer: true, stencil: true, useHighPrecisionFloats: false }, true);
 
         let createScene = () => {
             let scene = new BabylonScene(this.engine);
@@ -27,10 +27,13 @@ class Scene extends Component {
             this.camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
             this.estimateOrthographicSize();
             this.camera.setTarget(Vector3.Zero());
-            this.light = new HemisphericLight('light', new Vector3(40, 44, 1), scene);
-            this.light.intensity = 0.95;
-            this.light.diffuse = new Color3(1.0, 0.97, 0.93);
-
+            this.lookAtOpponent = true;
+            let light = new HemisphericLight('light', new Vector3(40, 44, 1), scene);
+            light.intensity = 0.1;
+            light.diffuse = new Color3(1.0, 0.97, 0.93);
+            let spot = new DirectionalLight('spot', new Vector3(0, -1, -1), scene);
+            spot.intensity = 1;
+            spot.position = new Vector3(35, 35, 35)
             this.props.loadAssets(scene);
             return scene;
         }
@@ -40,7 +43,6 @@ class Scene extends Component {
         this.animate = () => this.scene.render();
         window.addEventListener('resize', () => this.resize());
         this.animations = [];
-        this.lookAtOpponent = true;
         this.playerGameField = null;
         this.opponentGameField = null;
         this.renderLoopRepetitions = 0;
@@ -53,11 +55,13 @@ class Scene extends Component {
 
     componentDidUpdate() {
         if (typeof this.props.game !== 'undefined') {
-            if (this.lookAtOpponent !== ((multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === false &&
-                this.props.game.state !== GameStateTypes.ATTACK_PHASE) ||
-                (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true &&
-                    this.props.game.state === GameStateTypes.ATTACK_PHASE))) {
-                this.lookAtOpponent = !this.lookAtOpponent;
+            if (!this.lookAtOpponent && ((!multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state !== GameStateTypes.ATTACK_PHASE) ||
+                ( multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state === GameStateTypes.ATTACK_PHASE))) {
+                this.lookAtOpponent = true;
+                this.performCameraFlight();
+            } else if (this.lookAtOpponent && ((!multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state === GameStateTypes.ATTACK_PHASE) ||
+                ( multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state !== GameStateTypes.ATTACK_PHASE))) {
+                this.lookAtOpponent = false;
                 this.performCameraFlight();
             }
         
@@ -294,15 +298,7 @@ class Scene extends Component {
     startGame = (game, overrideUiState=false) => {
         const playerFieldIndex = game.players[multiplayer.localPlayerIndex].fieldIndex;
         const opponentFieldIndex = game.players[1 - multiplayer.localPlayerIndex].fieldIndex;
-
-        if (this.lookAtOpponent !== ((multiplayer.isLocalPlayer(game.currentPlayerIndex) === false &&
-            game.state !== GameStateTypes.ATTACK_PHASE) ||
-            (multiplayer.isLocalPlayer(game.currentPlayerIndex) === true &&
-            game.state === GameStateTypes.ATTACK_PHASE))) {
-            this.lookAtOpponent = !this.lookAtOpponent;
-            this.performCameraFlight();
-        } 
-
+        
         this.playerGameField = new Gamefield(true, new Vector3(0, 5, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.playerFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
         this.opponentGameField = new Gamefield(false, new Vector3(-this.opponentGameFieldDistance, 5, this.opponentGameFieldDistance), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.opponentFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
 

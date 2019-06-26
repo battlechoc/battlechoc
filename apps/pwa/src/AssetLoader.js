@@ -3,7 +3,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { connect } from 'react-redux';
 import { assetsReady } from './ui/UiActions';
 import { EntityType, BoardCellTypes } from './gameplay/GameEntities';
-import { SceneLoader, StandardMaterial, Color3, Engine } from 'babylonjs';
+import { SceneLoader, StandardMaterial, Color3 } from 'babylonjs';
 import 'babylonjs-loaders';
 
 class AssetLoader {
@@ -77,12 +77,10 @@ class AssetLoadingView extends Component {
                     if (key === EntityType.CHOCOLATE_FOUNTAIN && mesh.material !== null) {
                         if (mesh.material.name === 'Shield') {
                             let shieldMaterial = new StandardMaterial(key + '.Shield.material', scene);
-                            shieldMaterial.alpha = 0.999;
-                            shieldMaterial.diffuseColor﻿ = Color3.FromHexString("#3E211B");
+                            shieldMaterial.diffuseColor﻿ = Color3.FromHexString("#824529");
                             shieldMaterial.ambientColor = Color3.FromHexString("#F8DBAF");
-                            shieldMaterial.alphaMode = Engine.ALPHA_ADD;
                             mesh.material = shieldMaterial;
-                            mesh.visibility = 0.8;
+                            mesh.visibility = 0.5;
                         }
                     }
                 });
