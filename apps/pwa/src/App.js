@@ -99,6 +99,8 @@ class App extends Component {
         }
 
         if (typeof this.props.game !== 'undefined') {
+            this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
+            this.scene.clear();
             await this.props.finishGame();
             await this.props.resetUi();
         }
@@ -337,6 +339,7 @@ class App extends Component {
         if (typeof this.props.game !== 'undefined') {
             this.props.finishGame();
             this.props.resetUi();
+            this.scene.clear();
         }
     }
 

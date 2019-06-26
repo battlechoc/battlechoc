@@ -29,7 +29,6 @@ class Scene extends Component {
             this.camera.maxZ = 100;
             this.estimateOrthographicSize();
             this.camera.setTarget(Vector3.Zero());
-            this.lookAtOpponent = true;
             let light = new HemisphericLight('light', new Vector3(40, 44, 1), scene);
             light.intensity = 0.1;
             light.diffuse = new Color3(1.0, 0.97, 0.93);
@@ -56,7 +55,7 @@ class Scene extends Component {
     }
 
     componentDidUpdate() {
-        if (typeof this.props.game !== 'undefined') {
+        if (typeof this.props.game !== 'undefined' && typeof this.lookAtOpponent !== 'undefined') {
             if (!this.lookAtOpponent && ((!multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state !== GameStateTypes.ATTACK_PHASE) ||
                 ( multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state === GameStateTypes.ATTACK_PHASE))) {
                 this.lookAtOpponent = true;
@@ -117,6 +116,7 @@ class Scene extends Component {
         this.playerGameField = null;
         this.opponentGameField = null;
         this.scene.render();
+        this.lookAtOpponent = undefined;
     }
 
     highlightCannons = (highlight=true) => {
@@ -226,7 +226,7 @@ class Scene extends Component {
     }
 
     opponentFieldClick(row, col, eventX, eventY) {
-        if (this.lookAtOpponent && this.props.game.state === GameStateTypes.ATTACK_PHASE && typeof this.props.selectedAttack !== 'undefined') {
+        if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
             this.props.attack({
                 issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
                 attackType: this.props.selectedAttack,
@@ -267,7 +267,7 @@ class Scene extends Component {
                 } else {
                     throw error;
                 }
-            });
+            }); 
         }
     }
 
@@ -300,6 +300,7 @@ class Scene extends Component {
     startGame = (game, overrideUiState=false) => {
         const playerFieldIndex = game.players[multiplayer.localPlayerIndex].fieldIndex;
         const opponentFieldIndex = game.players[1 - multiplayer.localPlayerIndex].fieldIndex;
+        this.lookAtOpponent = false;
         
         this.playerGameField = new Gamefield(true, new Vector3(0, 5, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.playerFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
         this.opponentGameField = new Gamefield(false, new Vector3(-this.opponentGameFieldDistance, 5, this.opponentGameFieldDistance), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.opponentFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
