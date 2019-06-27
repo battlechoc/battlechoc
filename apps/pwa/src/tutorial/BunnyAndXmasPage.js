@@ -8,6 +8,7 @@ import { GameStateTypes } from '../gameplay/GameplayReducer';
 class BunnyAndXmasPage extends Component {
     constructor(props) {
         super(props);
+        this.gameRunning = true;
         this.state = {
             breakpoint: 0,
             messages: [
@@ -19,7 +20,7 @@ class BunnyAndXmasPage extends Component {
     }
 
     componentWillReceiveProps(nextProps) {
-        if (typeof this.props.game !== 'undefined') {
+        if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined') {
             if (!nextProps.game.board.fields[1].grid[4].occupiedBy.map(entity => entity.type).includes(EntityType.CREAM) && this.state.breakpoint === 0) {
                 this.setState({
                     breakpoint: 1,
@@ -41,8 +42,9 @@ class BunnyAndXmasPage extends Component {
                                { src: '../animations/loading.gif', type: 'image', delay: 500, alt: 'opponent turn animation' },
                                { text: 'TUTORIAL_BUNNY_MESSAGE_9', type: 'text', delay: 1000}]
                 });           
-            } else if (!nextProps.game.players[1].hasFactory) {
-                setTimeout(() => this.props.fulfilled(), 500);
+            } else if (!nextProps.game.players[1].hasFactory && this.gameRunning) {
+                this.gameRunning = false;
+                setTimeout(() => this.props.fulfilled(), 3000);
             }
         }
     }

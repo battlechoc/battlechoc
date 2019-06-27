@@ -7,6 +7,7 @@ import { AttackType } from '../gameplay/GameEntities';
 class TreesAndCannonsPage extends Component {
     constructor(props) {
         super(props);
+        this.gameRunning = true;
         this.state = {
             breakpoint: 0,
             messages: [
@@ -42,8 +43,9 @@ class TreesAndCannonsPage extends Component {
                     breakpoint: 3,
                     messages: [...this.state.messages, { text: 'TUTORIAL_TREES_MESSAGE_10', type: 'text', delay: 2500 }]
                 });            
-            } else if (!nextProps.game.players[1].hasFactory) {
-                setTimeout(() => this.props.fulfilled(), 500);
+            } else if (!nextProps.game.players[1].hasFactory && this.gameRunning) {
+                this.gameRunning = false;
+                setTimeout(() => this.props.fulfilled(), 3000);
             }
         }
     }

@@ -7,6 +7,7 @@ import { GameStateTypes } from '../gameplay/GameplayReducer';
 class FountainAndFruitCannonPage extends Component {
     constructor(props) {
         super(props);
+        this.gameRunning = true;
         this.state = {
             breakpoint: 0,
             messages: [
@@ -36,8 +37,9 @@ class FountainAndFruitCannonPage extends Component {
                                { text: 'TUTORIAL_FOUNTAIN_MESSAGE_7', type: 'text', delay: 1000},
                                { text: 'TUTORIAL_FOUNTAIN_MESSAGE_8', type: 'text', delay: 1000}]
                 });           
-            } else if (!nextProps.game.players[1].hasFactory) {
-                setTimeout(() => this.props.fulfilled(), 500);
+            } else if (!nextProps.game.players[1].hasFactory && this.gameRunning) {
+                this.gameRunning = false;
+                setTimeout(() => this.props.fulfilled(), 3000);
             }
         }
     }
