@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { multiplayer } from '../Multiplayer';
 import { deselectBuildings, selectAttack, deselectAttack, selectBuilding } from '../ui/UiActions';
@@ -12,6 +11,7 @@ import { Jukebox } from '../ui/misc';
 import { playerHasAttacks } from '../gameplay/Player';
 import { InfoType, spawnInfo } from '../ui/misc/FlyingInfo';
 import { Scene as BabylonScene, DirectionalLight, Engine, HighlightLayer, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation, Matrix, MeshBuilder } from 'babylonjs';
+import { AssetLoadingViewContainer as AssetLoadingView } from '../AssetLoader';
 import 'babylonjs-loaders';
 
 class Scene extends Component {
@@ -35,7 +35,7 @@ class Scene extends Component {
             let spot = new DirectionalLight('spot', new Vector3(0, -1, -1), scene);
             spot.intensity = 1;
             spot.position = new Vector3(35, 35, 35)
-            this.props.loadAssets(scene);
+            this.loadingView.loadAssets(scene)
             return scene;
         }
 
@@ -319,18 +319,20 @@ class Scene extends Component {
     }
 
     render() {
-        return <canvas className="gameCanvas" ref={container => { this.container = container }} />
+        return (
+            <div>
+                { this.props.assetsReady ? null : <AssetLoadingView onRef={loadingView => this.loadingView = loadingView} /> }
+                <canvas className="gameCanvas" ref={container => { this.container = container }} />
+            </div>
+        );
     }
-}
-
-Scene.propTypes = {
-    loadAssets: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
     selectedBuilding: state.ui.selectedBuilding,
-    selectedAttack: state.ui.selectedAttack
+    selectedAttack: state.ui.selectedAttack,
+    assetsReady: state.ui.assetsReady
 });
 
 const mapDispatchToProps = {

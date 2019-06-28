@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 import { connect } from 'react-redux';
 import './App.css';
 import { Jukebox, Translation as t } from './ui/misc';
@@ -17,10 +17,10 @@ import { createPlayer, PlayerType } from './gameplay/Player';
 import { gameplayLog } from './gameplay/GamePlayLogger';
 import BuildFactoryTestSituation from './situations/tests/BuildFactoryTest';
 import FactoryExtensionTest from './situations/tests/FactoryExtensionTest';
-import Scene from './3d/Scene';
 import Hud from './ui/Hud';
 import Tutorial from './tutorial/Tutorial';
-import { AssetLoadingViewContainer as AssetLoadingView } from './AssetLoader';
+
+const Scene = React.lazy(() => import('./3d/Scene'));
 
 class App extends Component {
     constructor(props) {
@@ -352,8 +352,10 @@ class App extends Component {
     render() {
         return (
             <div className="app">
-                {this.props.assetsReady ? <div id="clouds"></div> : <AssetLoadingView onRef={loadingView => this.loadingView = loadingView} />}
-                <Scene onRef={scene => this.scene = scene} loadAssets={scene => this.loadingView.loadAssets(scene)} />
+                <div id="clouds"></div>
+                <Suspense fallback={null}>
+                    <Scene onRef={scene => this.scene = scene} />
+                </Suspense> 
                 <Hud prepareNewGameCallback={this.prepareNewGame}
                      multiplayerLandingPage={typeof this.state.params.sessionid !== 'undefined'}
                      joinMultiplayerGame={this.joinMultiplayerGame}
@@ -370,7 +372,6 @@ class App extends Component {
 const mapStateToProps = state => ({
     game: state.gameplay.game,
     language: state.ui.language,
-    assetsReady: state.ui.assetsReady,
     selectedBuilding: state.ui.selectedBuilding,
     ui: state.ui
 });
