@@ -373,7 +373,8 @@ const mapStateToProps = state => ({
     game: state.gameplay.game,
     language: state.ui.language,
     selectedBuilding: state.ui.selectedBuilding,
-    ui: state.ui
+    ui: state.ui,
+    assetsReady: state.ui.assetsReady
 });
 
 const mapDispatchToProps = {
