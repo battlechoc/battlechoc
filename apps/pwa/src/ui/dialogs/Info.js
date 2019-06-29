@@ -12,12 +12,29 @@ import withMobileDialog from '@material-ui/core/withMobileDialog';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import { Jukebox, Translation as t } from '../misc';
+import TimeAgo from 'javascript-time-ago';
+import en from 'javascript-time-ago/locale/en';
+import de from 'javascript-time-ago/locale/de';
 
 class Info extends Component {
     constructor(props) {
         super(props);
         this.state = {
             open : false
+        }
+        // GitLab CI is going to override these variables
+        this.date = 'LOCAL_DATETIME';
+        this.version = 'LOCAL_VERSION';
+
+        if (this.date.startsWith('LOCAL')) {
+            this.date = new Date().getTime();
+        }
+
+        TimeAgo.addLocale(en);
+        TimeAgo.addLocale(de);
+
+        if (this.version.startsWith('LOCAL')) {
+            this.version = 'latest-dev'
         }
     }
 
@@ -26,6 +43,16 @@ class Info extends Component {
     }
 
     render() {
+        let timeAgo = new TimeAgo('en-US');
+        let timeSinceUpdate = timeAgo.format(this.date);
+        timeSinceUpdate = 'last update ' + timeSinceUpdate 
+
+        if (this.props.language === 'de') {
+            timeAgo = new TimeAgo('de-DE');
+            timeSinceUpdate = timeAgo.format(this.date);
+            timeSinceUpdate = 'Letztes Update ' + timeSinceUpdate;
+        }
+
         return (
             <div className="info-dialog">
                 <Fab
@@ -45,7 +72,7 @@ class Info extends Component {
                   onClose={this.handleClose}
                   aria-labelledby="info-dialog-title"
                 >
-                    <DialogTitle id="info-dialog-title">battlechoc - version 0.9-alpha</DialogTitle>
+                    <DialogTitle id="info-dialog-title">battlechoc - { this.version } - { timeSinceUpdate }</DialogTitle>
                     <DialogContent className="info-dialog-content">
                         <Typography variant="h5">{t[this.props.language].INFO_IMPRESS}</Typography>
                         <Typography>
