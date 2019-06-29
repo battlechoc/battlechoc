@@ -315,7 +315,7 @@ class Scene extends Component {
         if (overrideUiState) {
             this.props.deselectBuildings();
         }
-        this.scene.render();
+        this.resize();
     }
 
     render() {
