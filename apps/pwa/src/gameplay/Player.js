@@ -61,10 +61,14 @@ class NonPlayerCharacter {
     }
 
     simulateThinking(timeToThink) {
-        return new Promise(resolve => setTimeout(resolve, timeToThink));
+        return new Promise(resolve => {
+            let timeoutId = setTimeout(resolve, timeToThink);
+            this.registerTimeout(timeoutId);
+        });
     }
 
-    connectGamestate(callback) {
+    connectGamestate(callback, registerTimeout) {
+        this.registerTimeout = timeout => registerTimeout(timeout);
         this.refreshGameState = () => {
             let game = callback();
             if (typeof game !== 'undefined') { 

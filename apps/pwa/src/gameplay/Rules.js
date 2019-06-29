@@ -7,7 +7,11 @@ import { playerHasHarmfulAttacksPerTurn } from './Player';
 
 class Rules {
     static currentPlayer(gameState) {
-        return gameState.players[gameState.currentPlayerIndex];
+        try {
+            return gameState.players[gameState.currentPlayerIndex];
+        } catch (error) {
+            throw new Errors.GameNotRunningError();
+        }
     }
 
     static isIssuerRelevant(action) {
@@ -147,7 +151,6 @@ class Rules {
         }
 
         let currentState = typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state;
-
         if (Rules.issuerIsInvalid(action, state.gameplay.game)) {
             let issuerId;
             if (typeof action.payload !== 'undefined') {

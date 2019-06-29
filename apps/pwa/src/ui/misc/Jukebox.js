@@ -105,7 +105,11 @@ class Audio {
         if (typeof this.buffer !== 'undefined') {
             if (this.loop) {
                 if (typeof this.source !== 'undefined') {
-                    this.source.stop();
+                    try {
+                        this.source.stop();
+                    } catch (error) {
+                        console.log(error);
+                    }
                 }
                 this.source = this.context.createBufferSource();
                 this.source.buffer = this.buffer;
@@ -122,12 +126,18 @@ class Audio {
         }
     }  
 
-    stop() {
+    stop(reset=false) {
         if (typeof this.source !== 'undefined') {
-            if (this.loop) {
+            if (this.loop && !reset) {
                 this.offset = this.context.currentTime;
+            } else if (this.loop && reset) {
+                this.offset = 0;
             }
-            this.source.stop();
+            try {
+                this.source.stop();
+            } catch (error) {
+                console.log(error);
+            }
         }
     }
 }

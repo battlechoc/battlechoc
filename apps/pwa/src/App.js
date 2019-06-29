@@ -107,7 +107,7 @@ class App extends Component {
 
         this.props.resumeGame(situation.gameplay).then(() => {
             this.opponent.player = this.props.game.players[1];
-            this.opponent.connectGamestate(() => this.props.game);
+            this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
             this.props.loadUiState(situation.ui).then(() => {
                 this.setState({ params: { ...this.state.params, situation: undefined }}, () => {
                     if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
@@ -288,7 +288,7 @@ class App extends Component {
                 if (typeof resumeableGame !== 'undefined' && resumeGame) {
                     this.props.resumeGame(resumeableGame.gameplay).then(() => {
                         this.opponent.player = resumeableGame.gameplay.players[1];
-                        this.opponent.connectGamestate(() => this.props.game);
+                        this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
                         this.props.loadUiState(resumeableGame.ui).then(() => {
                             if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
                                 this.scene.startGame(this.props.game, false);
@@ -303,7 +303,7 @@ class App extends Component {
 
                     this.props.startGame(players).then(() => {
                         this.opponent.type = Augustus.randomizeType();
-                        this.opponent.connectGamestate(() => this.props.game);                        
+                        this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));                        
                         this.props.createBoard({
                             boardSize: { rows: 10, cols: 10 },
                             boardSeed: 42
@@ -319,7 +319,7 @@ class App extends Component {
             this.closeTutorial();
         } else {
             setTimeout(() => {
-                Jukebox.stopMusic();
+                Jukebox.stopMusic(true);
                 this.setState({ params: { ...this.state.params, sessionid: undefined }});
                 this.props.finishGame();
                 this.props.resetUi();
@@ -334,7 +334,7 @@ class App extends Component {
     closeTutorial = () => {
         this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
 
-        Jukebox.stopMusic();
+        Jukebox.stopMusic(true);
         this.setState({ tutorial: false })
         if (typeof this.props.game !== 'undefined') {
             this.props.finishGame();

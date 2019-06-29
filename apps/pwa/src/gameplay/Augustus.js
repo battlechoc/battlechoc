@@ -74,23 +74,17 @@ export default class Augustus extends NonPlayerCharacter {
         if (this.gameIsRunning) {
             const creamedCells = this.board.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM));
             const building = createEntity(EntityType.FACTORY);
-            this.setBuildingAtBestPosition(creamedCells, building).then(() => {
-                setTimeout(() => {
-                    this.actions.finishTurn({ issuer: this.player.id }).catch(error => {
-                        if (error instanceof BattlechocError) {
-                            console.warn(error);
-                        } else {
-                            throw error;
-                        }
-                    });
-                }, 3000);
-            }).catch(error => {
+            try {
+                await this.setBuildingAtBestPosition(creamedCells, building);
+                await this.simulateThinking(3000);
+                await this.actions.finishTurn({ issuer: this.player.id });
+            } catch (error) {
                 if (error instanceof BattlechocError) {
-                    console.warn(error);
+                    this.devhint(error);
                 } else {
                     throw error;
                 }
-            });
+            }
         }
     }
 
@@ -170,7 +164,7 @@ export default class Augustus extends NonPlayerCharacter {
 
     handleAttackError(error) {
         if (error instanceof BattlechocError) {
-            console.warn(error.message);
+            this.devhint(error.message);
             this.actions.finishTurn({ issuer: this.player.id });
         } else {
             throw error;
@@ -232,7 +226,7 @@ export default class Augustus extends NonPlayerCharacter {
             } else {
                 this.actions.finishTurn({ issuer: this.player.id }).catch(error => {
                     if (error instanceof BattlechocError) {
-                        console.warn(error);
+                        this.devhint(error);
                     } else {
                         throw error;
                     }
@@ -304,7 +298,7 @@ export default class Augustus extends NonPlayerCharacter {
 
     handleBuildError(error) {
         if (error instanceof BattlechocError) {
-            console.warn(error);
+            this.devhint(error);
         } else {
             throw error;
         }
