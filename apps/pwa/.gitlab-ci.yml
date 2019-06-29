@@ -19,8 +19,8 @@ build:
     - yarn config set cache-folder .yarn
     - yarn install 
   script:
-    - sed -i 's/LOCAL_VERSION/$CI_COMMIT_SHORT_SHA/g' src/ui/dialogs/Info.js
-    - sed -i 's/LOCAL_DATETIME/$CI_JOB_TIMESTAMP/g' src/ui/dialogs/Info.js
+    - sed -i 's/LOCAL_VERSION/${CI_COMMIT_SHORT_SHA}/g' src/ui/dialogs/Info.js
+    - sed -i 's/LOCAL_DATETIME/${CI_JOB_TIMESTAMP}/g' src/ui/dialogs/Info.js
     - yarn build
   artifacts:
     expire_in: 20 mins
