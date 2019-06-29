@@ -28,6 +28,8 @@ class Info extends Component {
 
         if (this.date.startsWith('LOCAL')) {
             this.date = new Date().getTime();
+        } else {
+            this.date = new Date(this.date).getTime();
         }
 
         TimeAgo.addLocale(en);
