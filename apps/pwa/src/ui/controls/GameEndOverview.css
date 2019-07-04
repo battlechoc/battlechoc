@@ -1,0 +1,67 @@
+.overview {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  z-index: 100;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 1em;
+  text-shadow: 1px 1px 1px black;
+}
+
+.overview .statistics {
+  width: 80vw;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.statistics .actions {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+}
+
+.overview h1 {
+  text-transform: uppercase;
+} 
+
+.overview table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.overview tr:nth-child(odd) {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.overview td {
+  padding: 0 10px;
+  border: none;
+}
+
+.overview td:first-child {
+  text-transform: uppercase;
+}
+
+.overview td:last-child {
+  background-color: rgba(112,191,49, 0.5);
+}
+
+@media screen and (orientation: portrait) {
+  .overview .statistics {
+    width: 100vw;
+  }
+}
+
+@media screen and (min-width: 901px) and (orientation: landscape) {
+  .overview {
+    font-size: 1.5em;
+  }
+}

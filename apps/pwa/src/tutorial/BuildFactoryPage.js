@@ -6,9 +6,11 @@ import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 class BuildFactoryPage extends Component {
     componentWillReceiveProps(nextProps) {
+        this.gameRunning = true;
         if (typeof nextProps.game !== 'undefined') {
-            if (nextProps.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) {
-                this.props.fulfilled();
+            if (nextProps.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && this.gameRunning) {
+                this.gameRunning = false;
+                setTimeout(() => this.props.fulfilled(), 3000);
             }
         }
     }

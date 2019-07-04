@@ -1,9 +1,4 @@
-class BattlechocError extends Error {
-    constructor(...args) {
-        super(...args);
-        Error.captureStackTrace(this, BattlechocError);
-    }
-}
+class BattlechocError extends Error {};
 
 class ActionValidationError extends BattlechocError {
     constructor(action, ...args) {
@@ -69,4 +64,11 @@ class GameAlreadyEndedError extends BattlechocError {
     }
 }
 
-export { BattlechocError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, TargetEmptyError, NoAttacksLeftError, UnexpectedStateError, InvalidActionIssuerError, GameAlreadyEndedError };
+class GameNotRunningError extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'There is currently no running game to access its gamestate!';
+    }
+}
+
+export { BattlechocError, GameNotRunningError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, TargetEmptyError, NoAttacksLeftError, UnexpectedStateError, InvalidActionIssuerError, GameAlreadyEndedError };

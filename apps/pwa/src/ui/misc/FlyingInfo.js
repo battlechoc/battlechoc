@@ -8,20 +8,6 @@ const InfoType = Object.freeze({
     BUNNY_CAUGHT: 'InfoType.BUNNY_CAUGHT'
 });
 
-function spawnInfoAtBuilding(message) {
-    if (message.type === InfoType.CACAO_HARVESTED) {
-        message.position.project(message.camera);
-        if (typeof message.rect === 'undefined') {
-            message.x = (message.position.x + 1) / 2 * window.innerWidth;
-            message.y = - (message.position.y - 1) / 2 * window.innerHeight;
-        } else {
-            message.x = ((message.position.x + 1) / 2 * message.rect.width) + message.rect.left;
-            message.y = (- (message.position.y - 1) / 2 * message.rect.height) + message.rect.top;     
-        }
-        spawnInfo(message);
-    }
-}
-
 function spawnInfo(message) {
     let info = document.createElement("div");
 
@@ -47,9 +33,11 @@ function spawnInfo(message) {
         info.innerHTML = '<img src="/images/bunnyCaught.png" />';
         info.classList.add('flyingCaughtBunny');
     }
+
+    let container = document.getElementsByClassName('app')[0];
     
-    const width = message.container.clientWidth;
-    const height = message.container.clientHeight;
+    const width = container.clientWidth;
+    const height = container.clientHeight;
     let ratio = width / height;
 
     if (ratio < 1.1) {
@@ -80,10 +68,10 @@ function spawnInfo(message) {
     }
 
     info.addEventListener(supportedAnimation, () => {
-        message.container.removeChild(info);
+        container.removeChild(info);
     });
 
-    message.container.appendChild(info);
+    container.appendChild(info);
 }
 
-export {InfoType, spawnInfoAtBuilding, spawnInfo};
+export {InfoType, spawnInfo};

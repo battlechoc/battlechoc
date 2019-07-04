@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, Suspense } from 'react';
 import { connect } from 'react-redux';
 import './App.css';
 import { Jukebox, Translation as t } from './ui/misc';
@@ -17,9 +17,10 @@ import { createPlayer, PlayerType } from './gameplay/Player';
 import { gameplayLog } from './gameplay/GamePlayLogger';
 import BuildFactoryTestSituation from './situations/tests/BuildFactoryTest';
 import FactoryExtensionTest from './situations/tests/FactoryExtensionTest';
-import Scene from './3d/Scene';
 import Hud from './ui/Hud';
 import Tutorial from './tutorial/Tutorial';
+
+const Scene = React.lazy(() => import('./3d/Scene'));
 
 class App extends Component {
     constructor(props) {
@@ -98,13 +99,15 @@ class App extends Component {
         }
 
         if (typeof this.props.game !== 'undefined') {
+            this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
+            this.scene.clear();
             await this.props.finishGame();
             await this.props.resetUi();
         }
 
         this.props.resumeGame(situation.gameplay).then(() => {
             this.opponent.player = this.props.game.players[1];
-            this.opponent.connectGamestate(() => this.props.game);
+            this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
             this.props.loadUiState(situation.ui).then(() => {
                 this.setState({ params: { ...this.state.params, situation: undefined }}, () => {
                     if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
@@ -148,22 +151,12 @@ class App extends Component {
             }
         }
 
-        if (gameTransition === GameTransitions.GAME_FINISHED) {
-            this.scene.clear();
-            if (!this.state.tutorial) {
-                this.props.gameResumeable(false);
-                OfflineStore.gamestateStore.clear();
-            }
-        }
-
         if (typeof this.scene !== 'undefined') {
             if (typeof this.scene.playerGameField !== 'undefined') {
                 if (nextProps.selectedBuilding === EntityType.FRUIT_CANNON && this.props.selectedBuilding !== EntityType.FRUIT_CANNON) {
-                    this.scene.dimLight();
-                    this.scene.playerGameField.highlightCannons();
+                    this.scene.highlightCannons();
                 } else if (nextProps.selectedBuilding !== EntityType.FRUIT_CANNON && this.props.selectedBuilding === EntityType.FRUIT_CANNON) {
-                    this.scene.resetLight();
-                    this.scene.playerGameField.highlightCannons(true);
+                    this.scene.highlightCannons(false);
                 }
             }
         }
@@ -173,7 +166,10 @@ class App extends Component {
                 (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (multiplayer.isLocalPlayer(nextProps.game.currentPlayerIndex) === true)) {
 
                 if (!this.state.tutorial) {
-                    OfflineStore.saveCurrentGame(nextProps.game).then(() => {
+                    let resumeableGame = {};
+                    resumeableGame.gameplay = nextProps.game;
+                    resumeableGame.ui = nextProps.ui;
+                    OfflineStore.saveCurrentGame(resumeableGame).then(() => {
                         this.props.gameResumeable(true).catch(this.handleError);
                     });
                 }
@@ -187,8 +183,7 @@ class App extends Component {
 
             if (this.props.selectedBuilding === EntityType.FRUIT_CANNON && typeof this.scene !== 'undefined' && typeof this.scene.playerGameField !== 'undefined' && typeof nextProps.game !== 'undefined' && (nextProps.game.state !== GameStateTypes.BUILD_PHASE || multiplayer.isLocalPlayer(nextProps.game.currentPlayerIndex) === false ||
                 nextProps.game.players[multiplayer.localPlayerIndex].buildings === 0 || nextProps.selectedBuilding !== EntityType.FRUIT_CANNON)) {
-                this.scene.resetLight();
-                this.scene.playerGameField.highlightCannons(true);
+                this.scene.highlightCannons(false);
             }
 
             if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
@@ -265,13 +260,15 @@ class App extends Component {
         let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
         let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
         if (!isFullscreen && !isiOS) {
-            document.documentElement.requestFullscreen().then(() =>  {
-                if (isAndroid) {
-                    window.screen.orientation.lock('landscape');
-                }
-            }).catch(error => {
-                console.log(error.name + ': ' + error.message);
-            });
+            if (typeof document.documentElement.requestFullscreen === 'function') {
+                document.documentElement.requestFullscreen().then(() =>  {
+                    if (isAndroid) {
+                        window.screen.orientation.lock('landscape');
+                    }
+                }).catch(error => {
+                    console.log(error.name + ': ' + error.message);
+                });
+            }
         }
 
         if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
@@ -289,10 +286,14 @@ class App extends Component {
                     finishBuildPhase: this.props.finishBuildPhase
                 });
                 if (typeof resumeableGame !== 'undefined' && resumeGame) {
-                    this.props.resumeGame(resumeableGame).then(() => {
-                        this.opponent.player = resumeableGame.players[1];
-                        this.opponent.connectGamestate(() => this.props.game);
-                        this.scene.startGame(this.props.game, false);
+                    this.props.resumeGame(resumeableGame.gameplay).then(() => {
+                        this.opponent.player = resumeableGame.gameplay.players[1];
+                        this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
+                        this.props.loadUiState(resumeableGame.ui).then(() => {
+                            if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
+                                this.scene.startGame(this.props.game, false);
+                            }
+                        });
                     });
                 } else {
                     let players = [
@@ -302,14 +303,11 @@ class App extends Component {
 
                     this.props.startGame(players).then(() => {
                         this.opponent.type = Augustus.randomizeType();
-                        this.opponent.connectGamestate(() => this.props.game);
-
-                        setTimeout(() => {
-                            this.props.createBoard({
-                                boardSize: { rows: 8, cols: 8 },
-                                boardSeed: 42
-                            });
-                        }, 1000);
+                        this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));                        
+                        this.props.createBoard({
+                            boardSize: { rows: 10, cols: 10 },
+                            boardSeed: 42
+                        });
                     });
                 }
             });
@@ -321,11 +319,14 @@ class App extends Component {
             this.closeTutorial();
         } else {
             setTimeout(() => {
-                Jukebox.stopMusic();
+                Jukebox.stopMusic(true);
                 this.setState({ params: { ...this.state.params, sessionid: undefined }});
                 this.props.finishGame();
                 this.props.resetUi();
                 multiplayer.reset();
+                this.scene.clear();
+                this.props.gameResumeable(false);
+                OfflineStore.gamestateStore.clear();
             }, 1000);
         }
     }
@@ -333,11 +334,12 @@ class App extends Component {
     closeTutorial = () => {
         this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
 
-        Jukebox.stopMusic();
+        Jukebox.stopMusic(true);
         this.setState({ tutorial: false })
         if (typeof this.props.game !== 'undefined') {
             this.props.finishGame();
             this.props.resetUi();
+            this.scene.clear();
         }
     }
 
@@ -350,8 +352,10 @@ class App extends Component {
     render() {
         return (
             <div className="app">
-                {this.props.assetsReady ? <div id="clouds"></div> : null}
-                {typeof this.props.game !== 'undefined' ? <Scene onRef={scene => this.scene = scene} /> : null}
+                <div id="clouds"></div>
+                <Suspense fallback={null}>
+                    <Scene onRef={scene => this.scene = scene} />
+                </Suspense> 
                 <Hud prepareNewGameCallback={this.prepareNewGame}
                      multiplayerLandingPage={typeof this.state.params.sessionid !== 'undefined'}
                      joinMultiplayerGame={this.joinMultiplayerGame}
@@ -368,9 +372,9 @@ class App extends Component {
 const mapStateToProps = state => ({
     game: state.gameplay.game,
     language: state.ui.language,
-    assetsReady: state.ui.assetsReady,
     selectedBuilding: state.ui.selectedBuilding,
-    ui: state.ui
+    ui: state.ui,
+    assetsReady: state.ui.assetsReady
 });
 
 const mapDispatchToProps = {

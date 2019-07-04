@@ -1,7 +1,7 @@
-import firebase from 'firebase/app';
-import 'firebase/auth';
-import 'firebase/database';
-import 'firebase/firestore';
+import firebase from '@firebase/app';
+import '@firebase/auth';
+import '@firebase/database';
+import '@firebase/firestore';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import { GameActionTypes } from './gameplay/GameActions';
 import { AttackType } from './gameplay/GameEntities';
