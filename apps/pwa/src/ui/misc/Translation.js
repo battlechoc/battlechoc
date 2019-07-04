@@ -4,6 +4,7 @@ const languages = {
     en: {
         NEW_GAME: 'New Game',
         RESUME_GAME: 'Resume Game',
+        SIGNINORUP: 'Sign in',
         SETTINGS: 'Settings',
         SETTINGS_ATTENTION_TEXT: 'Attention, if you press the button above again, you give up the current game and your opponent wins',
         SETTINGS_QUIT: 'Quit Game',
@@ -173,6 +174,7 @@ const languages = {
     de: {
         NEW_GAME: 'Neues Spiel',
         RESUME_GAME: 'Weiterspielen',
+        SIGNINORUP: 'Anmelden',
         SETTINGS: 'Einstellungen',
         SETTINGS_ATTENTION_TEXT: 'Achtung, wenn du den Button erneut betätigst, gibst du das aktuelle Spiel auf und der Gegner gewinnt',
         SETTINGS_QUIT: 'Spiel beenden',

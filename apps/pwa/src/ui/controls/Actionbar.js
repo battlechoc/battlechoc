@@ -10,7 +10,7 @@ import { deselectBuildings, deselectAttack, joinedMultiplayer, waitForMultiplaye
 import { GameStateTypes } from '../../gameplay/GameplayReducer';
 import { multiplayer } from '../../Multiplayer';
 import Fab from '@material-ui/core/Fab';
-import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, Share } from '@material-ui/icons';
+import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, Share, PermIdentity } from '@material-ui/icons';
 import { Jukebox, Translation as t } from '../misc';
 
 class Actionbar extends Component {
@@ -89,6 +89,15 @@ class Actionbar extends Component {
                 className="icon"
                 onClick={() => this.props.showSettings()}>
                 <Settings />
+            </Fab>,
+            <Fab
+                size="small"
+                key="1"
+                color="primary"
+                aria-label="signinorup"
+                className="icon"
+                onClick={() => this.props.showSignInOrUp()}>
+                <PermIdentity />
             </Fab>
         ];
 
@@ -96,7 +105,7 @@ class Actionbar extends Component {
             buttons.push(
                 <Fab
                     size="small"
-                    key="1"
+                    key="2"
                     color="primary"
                     aria-label="volume up"
                     className="icon"
@@ -108,7 +117,7 @@ class Actionbar extends Component {
             buttons.push(
                 <Fab
                     size="small"
-                    key="1"
+                    key="2"
                     color="primary"
                     aria-label="volume off"
                     className="icon"
@@ -122,7 +131,7 @@ class Actionbar extends Component {
             buttons.push(
                 <Fab
                     size="small"
-                    key="2"
+                    key="3"
                     color="primary"
                     aria-label="toggle fullscreen"
                     className="icon"
@@ -136,7 +145,7 @@ class Actionbar extends Component {
             buttons.push(
                 <Fab
                     size="small"
-                    key="3"
+                    key="4"
                     color="primary"
                     aria-label="share game"
                     className="icon"
@@ -154,7 +163,7 @@ class Actionbar extends Component {
                             buttons.push([
                                 <Fab
                                     size="small"
-                                    key="4"
+                                    key="5"
                                     color="primary"
                                     aria-label="skip build phase"
                                     className="icon"
@@ -180,7 +189,7 @@ class Actionbar extends Component {
                             buttons.push([
                                 <Fab
                                     size="small"
-                                    key="5"
+                                    key="6"
                                     color="primary"
                                     aria-label="finish turn"
                                     className={(this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) ? "icon blinking" : "icon"}
@@ -207,7 +216,7 @@ class Actionbar extends Component {
                         buttons.push(
                             <Fab
                                 size="small"
-                                key="5"
+                                key="7"
                                 color="primary"
                                 aria-label="finish turn"
                                 className={(playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true) ? "icon" : "icon blinking"}
@@ -231,12 +240,14 @@ class Actionbar extends Component {
                 }
             }
         }
+
         return <div className="actionbar"> {buttons} </div>;
     }
 }
 
 Actionbar.propTypes = {
-    showSettings: PropTypes.func.isRequired
+    showSettings: PropTypes.func.isRequired,
+    showSignInOrUp: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({
