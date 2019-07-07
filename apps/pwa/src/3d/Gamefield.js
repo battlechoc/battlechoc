@@ -107,35 +107,54 @@ class Gamefield {
             }
         });
 
+        let explodeCream = position => {
+            let phenotype = !this.isPlayerGameField ? EntityType.CREAM : EntityType.CREAM + '.AROUND.BUILDING';
+            let mesh = this.scene.getMeshByName(this.fieldIdx + '.' + phenotype + '.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
+            this.explode(mesh);
+        };
+
         let changes = playerField.grid.map((cell, i) => JSON.stringify(cell.occupiedBy) === JSON.stringify(this.playerField.grid[i].occupiedBy) ? null : i);
         changes.filter(position => position !== null).forEach(position => {
             if (playerField.grid[position].occupiedBy.length < this.playerField.grid[position].occupiedBy.length) {                
                 if (playerField.grid[position].occupiedBy.length === 0) {
-                    this.playerField.grid[position].occupiedBy.forEach(entity => {
-                        if (entity.type !== EntityType.CREAM && this.playerField.grid[position].occupiedBy.filter(building => building.type === EntityType.CREAM).length > 0) {
+                    if (this.playerField.grid[position].occupiedBy.length > 1 && this.playerField.grid[position].occupiedBy.map(building => building.type).includes(EntityType.CREAM)) {
+                        this.playerField.grid[position].occupiedBy.filter(building => building.type !== EntityType.CREAM).forEach(entity => {
                             if (!this.isPlayerGameField) {
                                 this.createMeshInstance(entity.type, this.playerField.grid[position]);
                             }
-                            let meshes = this.scene.getMeshesByID(this.fieldIdx + '.' + entity.type + '.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
-                            meshes.forEach(mesh => {
-                                this.explode(mesh, 800);
-                                if (!this.isPlayerGameField) {
-                                    mesh.dispose();
-                                }
-                            });
-                        } else if (entity.type === EntityType.CREAM && this.playerField.grid[position].occupiedBy.filter(building => building.type !== EntityType.CREAM).length > 0 && this.isPlayerGameField) {
-                            let mesh = this.scene.getMeshByName(this.fieldIdx + '.' + EntityType.CREAM + '.AROUND.BUILDING.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
-                            this.explode(mesh);
-                        } else {
-                            let meshes = this.scene.getMeshesByID(this.fieldIdx + '.' + entity.type + '.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
-                            meshes.forEach(mesh => this.explode(mesh));
-                        }
-                    });
+                            setTimeout(() => {
+                                let meshes = this.scene.getMeshesByID(this.fieldIdx + '.' + entity.type + '.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
+                                meshes.forEach(mesh => {
+                                    this.explode(mesh);
+                                });
+                            }, 1000);
+                        });
+                        explodeCream(position);    
+                    } else {
+                        this.playerField.grid[position].occupiedBy.forEach(entity => {
+                            if (entity.type === EntityType.CREAM) {
+                                let mesh = this.scene.getMeshByName(this.fieldIdx + '.' + EntityType.CREAM + '.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
+                                this.explode(mesh);
+                            } else {
+                                let meshes = this.scene.getMeshesByID(this.fieldIdx + '.' + entity.type + '.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
+                                meshes.forEach(mesh => this.explode(mesh));
+                            }
+                        });                         
+                    }
+                } else {
+                    explodeCream(position);
+                    if (!this.isPlayerGameField) {
+                        this.playerField.grid[position].occupiedBy.filter(building => building.type !== EntityType.CREAM).forEach(entity => {
+                            this.createMeshInstance(entity.type, this.playerField.grid[position]);
+                        });
+                    }
                 }
+                this.playerField.grid[position] = JSON.parse(JSON.stringify(playerField.grid[position]));
+            } else {
+                this.renderEntities(this.playerField.grid[position], true);
+                this.playerField.grid[position] = JSON.parse(JSON.stringify(playerField.grid[position]));
+                this.renderEntities(this.playerField.grid[position]);
             }
-            this.renderEntities(this.playerField.grid[position], true);
-            this.playerField.grid[position] = JSON.parse(JSON.stringify(playerField.grid[position]));
-            this.renderEntities(this.playerField.grid[position]);
         });
     }
 
@@ -196,10 +215,11 @@ class Gamefield {
         }, 3000);      
     }
 
-    explode(mesh, offset=100) {
-        let gravity = -0.04;
+    explode(mesh) {
+        mesh.dispose();
+        let gravity = -0.02;
         let solidParticleSystem = new SolidParticleSystem("solidParticleSystem", this.scene);
-        solidParticleSystem.digest(mesh, {number: 48});
+        solidParticleSystem.digest(mesh, {number: 32});
         let particleMesh = solidParticleSystem.buildMesh();
         particleMesh.material = mesh.material;
         particleMesh.material.freeze();
@@ -207,7 +227,7 @@ class Gamefield {
 
         solidParticleSystem.updateParticle = particle => {
             if (particle.position.y < -20) {
-                particle.alive = false;
+                particle.isVisible = false;
             } else {
                 particle.velocity.y += gravity;
                 particle.velocity.x -= 0.01;
@@ -232,23 +252,22 @@ class Gamefield {
 
         let setParticles = () => solidParticleSystem.setParticles();
 
-        setTimeout(() => {
-            this.setRenderLoop()
-            let speed = 1.2;
-            for (let particle = 0; particle < solidParticleSystem.nbParticles; particle++) {
-                solidParticleSystem.particles[particle].velocity.x = Math.random() * speed;
-                solidParticleSystem.particles[particle].velocity.y = Math.random() * speed;
-                solidParticleSystem.particles[particle].velocity.z = Math.random() * speed;
-            }
-            this.scene.registerBeforeRender(setParticles);
-        }, offset);
+        this.setRenderLoop()
+        let speed = 0.7;
+        for (let particle = 0; particle < solidParticleSystem.nbParticles; particle++) {
+            solidParticleSystem.particles[particle].velocity.x = Math.random() * speed;
+            solidParticleSystem.particles[particle].velocity.y = Math.random() * speed;
+            solidParticleSystem.particles[particle].velocity.z = Math.random() * speed;
+        }
+        this.scene.registerBeforeRender(setParticles);
+
 
         setTimeout(() => {
             this.scene.unregisterBeforeRender(setParticles);
             solidParticleSystem.dispose();
             solidParticleSystem = null;
             this.setRenderLoop(false);
-        }, offset + 2000);
+        }, 3000);
     }
 }
 
