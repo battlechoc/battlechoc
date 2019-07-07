@@ -82,10 +82,10 @@ class Hud extends Component {
                         }
                         return (
                             <div id="mainMenu">
-                                <div id="coins">
+                                {this.props.coins ? <div id="coins">
                                     <span>{ this.props.coins }</span>
                                     <img src="images/coins.png" alt="choco coins" />
-                                </div>
+                                </div> : null}
                                 <SocialIcons />
                                 <div className="logo">
                                     <img alt="logo" src="images/logo.png?v=1.0" />
@@ -132,7 +132,7 @@ Hud.propTypes = {
     endGame: PropTypes.func.isRequired,
     multiplayerLandingPage: PropTypes.bool.isRequired,
     className: PropTypes.string.isRequired,
-    coins: PropTypes.number.isRequired
+    coins: PropTypes.number
 }
 
 const mapStateToProps = state => ({

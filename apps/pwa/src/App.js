@@ -38,7 +38,7 @@ class App extends Component {
         this.state = { 
             params: params,
             tutorial: false,
-            coins: 0
+            coins: null
         };
     }
 
@@ -260,7 +260,7 @@ class App extends Component {
             if (typeof document.documentElement.requestFullscreen === 'function') {
                 document.documentElement.requestFullscreen().then(() =>  {
                     if (isAndroid) {
-                        window.screen.orientation.lock('landscape');
+                        window.screen.orientation.lock('landscape').catch(error => console.log('Unable to lock orientation to landscape'));
                     }
                 }).catch(error => {
                     console.log(error.name + ': ' + error.message);

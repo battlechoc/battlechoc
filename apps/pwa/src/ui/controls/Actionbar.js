@@ -41,16 +41,19 @@ class Actionbar extends Component {
     }
 
     fullscreenchange = () => {
+        let userAgent = navigator.userAgent || navigator.vendor || window.opera;
         let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+        let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
+        let isPWA = window.matchMedia('(display-mode: fullscreen)').matches && /iPad|iPhone|iPod|android/.test(userAgent);
         this.setState({
-            activeFullscreenButton: !isFullscreen
+            activeFullscreenButton: !isFullscreen && !isiOS && !isPWA
         });
     }
 
     toggleFullscreen() {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         document.documentElement.requestFullscreen().then(() => {
-            window.screen.orientation.lock('landscape').catch(error => console.log(error));
+            window.screen.orientation.lock('landscape').catch(error => console.log('Unable to lock orientation to landscape'));
         });
     }
 
