@@ -7,7 +7,7 @@ import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState } from './ui/UiActions';
+import { showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -37,7 +37,8 @@ class App extends Component {
         this.timeouts = [];
         this.state = { 
             params: params,
-            tutorial: false
+            tutorial: false,
+            coins: 0
         };
     }
 
@@ -54,6 +55,14 @@ class App extends Component {
                 this.props.changeLanguage(language);
             } else {
                 this.props.changeLanguage(browserLanguage);
+            }
+        });
+
+        OfflineStore.playerStore.get('coins').then(coins => {
+            if (typeof coins === 'undefined') {
+                OfflineStore.playerStore.set('coins', 0);
+            } else {
+                this.setState({ coins: coins });
             }
         });
     }
@@ -134,20 +143,8 @@ class App extends Component {
         if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined') {
             if (this.props.game.isRunning === true && nextProps.game.isRunning === false) {
                 gameStopped = true;
-                let timeoutId = setTimeout(() => {
-                    if (nextProps.game.winners.length === 1) {
-                        if (multiplayer.isLocalPlayer(nextProps.game.winners[0].idx)) {
-                            this.hud.showTurnMessage(t[this.props.language].MESSAGE_WIN_GAME);
-                        } else {
-                            this.hud.showTurnMessage(t[this.props.language].MESSAGE_LOST_GAME);
-                        }
-                    } else if (nextProps.game.winners.length === 2) {
-                        this.hud.showTurnMessage(t[this.props.language].MESSAGE_DRAW_GAME);
-                    }
-                    timeoutId = setTimeout(() => this.endGame(), 2000);
-                    this.timeouts.push(timeoutId);
-                }, 2000);
-                this.timeouts.push(timeoutId)
+                let timeoutId = setTimeout(() => this.showOverview(), 2000);
+                this.timeouts.push(timeoutId);
             }
         }
 
@@ -319,16 +316,42 @@ class App extends Component {
             this.closeTutorial();
         } else {
             setTimeout(() => {
-                Jukebox.stopMusic(true);
-                this.setState({ params: { ...this.state.params, sessionid: undefined }});
                 this.props.finishGame();
                 this.props.resetUi();
                 multiplayer.reset();
                 this.scene.clear();
-                this.props.gameResumeable(false);
-                OfflineStore.gamestateStore.clear();
             }, 1000);
         }
+    }
+
+    showOverview() {
+        this.setState({ params: { ...this.state.params, sessionid: undefined }});
+        Jukebox.stopMusic(true);
+        this.props.showOverview();
+        this.props.gameResumeable(false);
+        OfflineStore.gamestateStore.clear();
+
+        const winners = Rules.determineWinner(this.props.game);
+        let statistics = this.props.game.players[multiplayer.localPlayerIndex].statistics;
+        let awards = statistics.attacks + statistics.builtEntities * 2 + statistics.espionages * 10 + statistics.moltenFields * 50;
+        
+        if (winners.length === 1) {
+            if (!multiplayer.isLocalPlayer(winners[0].idx)) {
+                awards = 0;
+            }
+        } else if (winners.length === 2) {
+            awards = Math.floor(awards / 2);
+        }
+
+        OfflineStore.playerStore.get('coins').then(coins => {
+            if (typeof coins === 'undefined') {
+                OfflineStore.playerStore.set('coins', awards);
+                this.setState({ coins: awards });
+            } else {
+                OfflineStore.playerStore.set('coins', coins + awards);
+                this.setState({ coins: coins + awards });
+            }
+        });
     }
 
     closeTutorial = () => {
@@ -362,6 +385,7 @@ class App extends Component {
                      startTutorial={() => this.startTutorial()}
                      className={this.state.tutorial ? 'tutorial hud' : 'hud'}
                      endGame={() => this.endGame()}
+                     coins={this.state.coins}
                      onRef={hud => this.hud = hud} />
                 {this.state.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
             </div>
@@ -394,7 +418,8 @@ const mapDispatchToProps = {
     selectAttack,
     gameResumeable,
     loadUiState,
-    resetUi
+    resetUi,
+    showOverview
 };
 
 const AppContainer = connect(

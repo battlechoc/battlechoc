@@ -18,7 +18,13 @@ function createPlayer(name, type, activePlayer) {
         buildingsPerTurn: 0,
         attacks: {},
         attacksPerTurn: {},
-        hasFactory: false
+        hasFactory: false,
+        statistics: {
+            attacks: 0,
+            builtEntities: 0,
+            espionages: 0,
+            moltenFields: 0
+        }
     };
     player.attacks[AttackType.TRUFFLE] = 0;
     player.attacks[AttackType.HOT_CHOCOLATE] = 0;

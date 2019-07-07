@@ -160,7 +160,7 @@ class Rules {
         }
 
         if (typeof currentState !== 'undefined') {
-            if (!state.gameplay.game.isRunning && (action.type !== GameActionTypes.finishGame && action.type !== UiActionTypes.gameResumeable)) {
+            if (!state.gameplay.game.isRunning && (action.type !== GameActionTypes.finishGame && action.type !== UiActionTypes.gameResumeable && action.type !== UiActionTypes.showOverview)) {
                 return new Errors.GameAlreadyEndedError(action);
             }
         }
@@ -203,7 +203,7 @@ class Rules {
             } else {
                 return true;
             }
-        } else if ([UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.joinedMultiplayer, UiActionTypes.waitForMultiplayer, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable].includes(action.type)) {
+        } else if ([UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.joinedMultiplayer, UiActionTypes.waitForMultiplayer, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable].includes(action.type)) {
             return true;
         } else {
             return new Errors.ActionValidationError(action);

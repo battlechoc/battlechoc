@@ -8,6 +8,7 @@ const uiReducer = createReducer({
         tappedBuilding: EntityType.FACTORY,
         statistics: false,
         assetsReady: false,
+        overviewVisible: false,
         language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
     }, {
         [UiActions.resetUi]: (state, action) => {
@@ -17,6 +18,7 @@ const uiReducer = createReducer({
             state.selectedBuilding = EntityType.FACTORY;
             state.multiplayerWaiting = undefined;
             state.selectedAttack = undefined;
+            state.overviewVisible = false;
         },
         [UiActions.selectBuilding]: (state, action) => {
             state.selectedBuilding = action.payload;
@@ -57,7 +59,10 @@ const uiReducer = createReducer({
             for (let property in action.payload) {
                 state[property] = action.payload[property];
             }
-        } 
+        },
+        [UiActions.showOverview]: (state, action) => {
+            state.overviewVisible = true;
+        }
 });
 
 export default uiReducer

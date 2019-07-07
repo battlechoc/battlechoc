@@ -149,6 +149,7 @@ const gameplayReducer = createReducer({}, {
     [GameActions.build]: (state, action) => {
         currentPlayerBoardCell(state.game, action.payload.building.position.row, action.payload.building.position.col).occupiedBy.push(action.payload.building);
         const cellColor = currentPlayerBoardCell(state.game, action.payload.building.position.row, action.payload.building.position.col).type;
+        currentPlayer(state.game).statistics.builtEntities += 1;
         if (action.payload.building.type === GameEntities.EntityType.FACTORY) {
             currentPlayer(state.game).buildingsPerTurn = calculateBuildingsPerTurn(action.payload.building, cellColor);
             currentPlayer(state.game).hasFactory = true;
@@ -232,6 +233,11 @@ const gameplayReducer = createReducer({}, {
                 }
                 attackedCell.occupiedBy = [];
                 attackedCell.molten = action.payload.attackType === GameEntities.AttackType.HOT_CHOCOLATE;
+                if (attackedCell.molten) {
+                    currentPlayer(state.game).statistics.moltenFields += 1;
+                } else {
+                    currentPlayer(state.game).statistics.attacks += 1;
+                }
             }
         } else if (action.payload.attackType === GameEntities.AttackType.FRUIT) {
             if (attackedCell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.CREAM)) {
@@ -249,11 +255,13 @@ const gameplayReducer = createReducer({}, {
                 });
                 console.log('CHOCOLATE FOUNTAIN DESTROYED');
             }
+            currentPlayer(state.game).statistics.attacks += 1;
         } else if (action.payload.attackType === GameEntities.AttackType.BUNNY) {
             const patch = getCellPatch3x3({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
             const xmasFactoryFiltered = patch.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.XMAS_FACTORY));
             if (xmasFactoryFiltered.length === 0) {
                 console.log("Bunny reveals some secrets.");
+                currentPlayer(state.game).statistics.espionages += 1;
                 patch.forEach((cell) => {
                     if (cell.occupiedBy.map(entity => entity.type).indexOf(GameEntities.EntityType.CREAM) > -1) {
                         cell.occupiedBy = cell.occupiedBy.filter(entity => entity.type !== GameEntities.EntityType.CREAM);

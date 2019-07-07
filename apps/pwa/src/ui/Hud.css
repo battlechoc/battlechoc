@@ -22,6 +22,25 @@
   top: 55%;
 }
 
+#mainMenu #coins {
+  position: absolute;
+  top: 10px;
+  right: 121px;
+  display: flex;
+}
+
+#mainMenu #coins span {
+  font-size: 2rem;
+  color: #1DA6B5;
+  text-shadow: 1px 3px 1px #105B63;
+  font-weight: bold;
+}
+
+#mainMenu #coins img {
+  width: 64px;
+  height: 42px;
+}
+
 .foregroundEntity {
   position: absolute;
   height: 15vw;
@@ -433,6 +452,30 @@ img.without.cream {
     font-size: 6rem;
   }
 }
+
+@media screen and (max-width: 959px) {
+  #mainMenu #coins {
+    right: 105px;
+  }
+
+  #mainMenu #coins span {
+    font-size: 1.6rem;
+  }
+
+  #mainMenu #coins img {
+    width: 48px;
+    height: 32px;
+  }  
+}
+
+@media screen and (max-width: 359px) {
+  #mainMenu #coins {
+    top: unset;
+    bottom: 5px;
+    right: 105px;
+  }  
+}
+
 
 @media screen and (max-width: 900px) and (orientation: landscape) {
   .logo { top: 5px; }

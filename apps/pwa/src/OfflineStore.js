@@ -1,24 +1,31 @@
 import { openDB } from 'idb';
 
-const dbVersion = 4;
+const dbVersion = 6;
 const dbName = 'battlechoc';
 const gamestateStoreName = 'gamestate';
 const turnHistoryStoreName = 'turn-history';
 const settingsStoreName = 'settings';
+const playerStoreName = 'player';
 
 class OfflineStore {
     constructor() {
         const dbPromise = openDB(dbName, dbVersion, {
-            upgrade(db) {
-                db.createObjectStore(gamestateStoreName);
-                db.createObjectStore(turnHistoryStoreName);
-                db.createObjectStore(settingsStoreName);
+            upgrade(db, oldVersion) {
+                if (oldVersion < 1) {
+                    db.createObjectStore(gamestateStoreName);
+                    db.createObjectStore(turnHistoryStoreName);
+                    db.createObjectStore(settingsStoreName);
+                }
+                if (oldVersion < 6) {
+                    db.createObjectStore(playerStoreName);
+                }
             }
         });
 
         this.gamestateStore = OfflineStore.wrapObjectStore(gamestateStoreName, dbPromise);
         this.turnHistoryStore = OfflineStore.wrapObjectStore(turnHistoryStoreName, dbPromise);
         this.settingsStore = OfflineStore.wrapObjectStore(settingsStoreName, dbPromise);
+        this.playerStore = OfflineStore.wrapObjectStore(playerStoreName, dbPromise);
     }
 
     static wrapObjectStore(storeName, dbPromise) {

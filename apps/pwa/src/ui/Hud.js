@@ -12,8 +12,7 @@ class Hud extends Component {
     constructor(props) {
         super(props);
         this.state = { 
-            clickable: true,
-            statistics: false 
+            clickable: true
         }
     }
 
@@ -27,32 +26,6 @@ class Hud extends Component {
 
     lockUi() {
         this.setState({ clickable: false });
-    }
-
-    showTurnMessage(message) {
-        this.setState({ message: message });
-        let pivot = document.createElement("fakeelement");
-        let animations = {
-            "animation": "animationend",
-            "OAnimation": "oAnimationEnd",
-            "MozAnimation": "animationend",
-            "WebkitAnimation": "webkitAnimationEnd"
-        }
-        let supportedAnimation = 'animation';
-
-        for (let animation in animations) {
-            if (typeof pivot.style[animation] !== 'undefined') {
-                supportedAnimation = animations[animation];
-            }
-        }
-
-        let textAnimation = document.getElementById('textAnimation');
-        textAnimation.addEventListener(supportedAnimation, () => {
-            this.setState({ message: undefined });
-        });
-        textAnimation.addEventListener('click', () => {
-            this.setState({ message: undefined });
-        });
     }
 
     estimateStage() {
@@ -98,6 +71,10 @@ class Hud extends Component {
                         }
                         return (
                             <div id="mainMenu">
+                                <div id="coins">
+                                    <span>{ this.props.coins }</span>
+                                    <img src="images/coins.png" alt="choco coins" />
+                                </div>
                                 <SocialIcons />
                                 <div className="logo">
                                     <img alt="logo" src="images/logo.png?v=1.0" />
@@ -127,7 +104,7 @@ class Hud extends Component {
                                 <AttackPalette />
                                 <BuildingPalette />
                                 <InfoPanel />
-                                { this.state.statistics ? <GameEndOverview finishGame={() => console.log('end')}/> : null }
+                                { this.props.overviewVisible ? <GameEndOverview finishGame={() => this.props.endGame()}/> : null }
                             </div>
                         )
                     }
@@ -143,13 +120,15 @@ Hud.propTypes = {
     joinMultiplayerGame: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired,
     multiplayerLandingPage: PropTypes.bool.isRequired,
-    className: PropTypes.string.isRequired
+    className: PropTypes.string.isRequired,
+    coins: PropTypes.number.isRequired
 }
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
     state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
     language: state.ui.language,
+    overviewVisible: state.ui.overviewVisible,
     resumeGamePossible: state.ui.resumeGamePossible,
     assetsReady: state.ui.assetsReady,
     multiplayerWaiting: state.ui.multiplayerWaiting
