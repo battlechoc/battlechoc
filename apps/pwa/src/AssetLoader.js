@@ -44,7 +44,7 @@ const assetLoader = new AssetLoader();
 class AssetLoadingView extends Component {
     constructor(props) {
         super(props);
-        this.assetVersion = '5.0';
+        this.assetVersion = '6.0';
         this.state = { loadingProgress: 0 }
     }
 
