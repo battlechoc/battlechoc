@@ -97,7 +97,8 @@ const EntityDescriptors = Object.freeze(new Map([
     [EntityType.FACTORY, {
         costs: 0,
         cells: 1,
-        buildingsPerTurn: 2
+        buildingsPerTurn: 2,
+        cacaoPerTurn: 20
     }],
     [EntityType.FACTORY_EXTENSION, {
         costs: 120,

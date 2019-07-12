@@ -152,6 +152,7 @@ const gameplayReducer = createReducer({}, {
         currentPlayer(state.game).statistics.builtEntities += 1;
         if (action.payload.building.type === GameEntities.EntityType.FACTORY) {
             currentPlayer(state.game).buildingsPerTurn = calculateBuildingsPerTurn(action.payload.building, cellColor);
+            currentPlayer(state.game).cacaoPerTurn += calculateCacaoPerTurn(action.payload.building, cellColor);
             currentPlayer(state.game).hasFactory = true;
         } else {
             if (action.payload.building.type === GameEntities.EntityType.CACAOTREE) {
@@ -194,6 +195,7 @@ const gameplayReducer = createReducer({}, {
                 if (attackedCell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.FACTORY)) {
                     opponent.hasFactory = false;
                     opponent.buildingsPerTurn -= calculateBuildingsPerTurn(GameEntities.getEntityDescriptor(GameEntities.EntityType.FACTORY), cellColor);
+                    opponent.cacaoPerTurn -= calculateCacaoPerTurn(GameEntities.getEntityDescriptor(GameEntities.EntityType.FACTORY), cellColor);
                     console.log('FACTORY DESTROYED');
                 } else if (attackedCell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.FACTORY_EXTENSION)) {
                     opponent.buildingsPerTurn -= calculateBuildingsPerTurn(GameEntities.getEntityDescriptor(GameEntities.EntityType.FACTORY_EXTENSION), cellColor);
