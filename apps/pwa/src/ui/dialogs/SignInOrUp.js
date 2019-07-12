@@ -7,9 +7,11 @@ import firebase from 'firebase/app';
 import 'firebase/auth';
 import withMobileDialog from '@material-ui/core/withMobileDialog';
 import Dialog from '@material-ui/core/Dialog';
-import { Translation as t } from '../misc';
+import { Jukebox, Translation as t } from '../misc';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import DialogActions from '@material-ui/core/DialogActions';
+import Button from '@material-ui/core/Button';
 
 const uiConfig = {
     signInFlow: 'popup',
@@ -50,11 +52,19 @@ class SignInOrUp extends React.Component {
                 fullScreen={this.props.fullScreen}
                 open={this.state.open}
                 onClose={() => this.setState({ open: false, attentionTextVisible: false })}
-                aria-labelledby="settingsDialogTitle">
-                <DialogTitle id="settingsDialogTitle">{t[this.props.language].SIGNINORUP}</DialogTitle>
+                aria-labelledby="signInOrUpDialogTitle">
+                <DialogTitle id="signInOrUpDialogTitle">{t[this.props.language].SIGNINORUP}</DialogTitle>
                 <DialogContent>
                     <StyledFirebaseAuth uiConfig={uiConfig} firebaseAuth={firebase.auth()} />
                 </DialogContent>
+                <DialogActions>
+                  <Button onClick={() => {
+                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                    this.setState({ open: false, attentionTextVisible: false })
+                  }} color="primary">
+                    {t[this.props.language].BUTTON_BACK}
+                  </Button>
+                </DialogActions>
             </Dialog>
         );
     }
