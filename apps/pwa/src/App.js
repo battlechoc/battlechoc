@@ -182,7 +182,6 @@ class App extends Component {
                 nextProps.game.players[multiplayer.localPlayerIndex].buildings === 0 || nextProps.selectedBuilding !== EntityType.FRUIT_CANNON)) {
                 this.scene.highlightCannons(false);
             }
-
             if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
                 this.hud.unlockUi();
                 this.colorStartButton = 1;

@@ -79,7 +79,6 @@ class Multiplayer {
     }
 
     isSignedIn() {
-        console.log(firebase.auth().currentUser);
         return firebase.auth().currentUser !== null;
     }
 
