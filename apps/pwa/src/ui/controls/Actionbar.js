@@ -18,7 +18,7 @@ class Actionbar extends Component {
         super(props);
         let userAgent = navigator.userAgent || navigator.vendor || window.opera;
         let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-        let isPWA = window.matchMedia('(display-mode: fullscreen)').matches && /iPad|iPhone|iPod|android/.test(userAgent);
+        let isPWA = window.matchMedia('(display-mode: fullscreen)').matches && /iPad|iPhone|iPod|Android/.test(userAgent);
         let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
         this.state = {
             activeMusicButton: true,
@@ -44,7 +44,7 @@ class Actionbar extends Component {
         let userAgent = navigator.userAgent || navigator.vendor || window.opera;
         let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
         let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-        let isPWA = window.matchMedia('(display-mode: fullscreen)').matches && /iPad|iPhone|iPod|android/.test(userAgent);
+        let isPWA = window.matchMedia('(display-mode: fullscreen)').matches && /iPad|iPhone|iPod|Android/.test(userAgent);
         this.setState({
             activeFullscreenButton: !isFullscreen && !isiOS && !isPWA
         });
