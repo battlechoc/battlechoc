@@ -228,7 +228,6 @@ class Gamefield {
     }
 
     explode(mesh) {
-        mesh.dispose();
         let gravity = -0.02;
         let solidParticleSystem = new SolidParticleSystem("solidParticleSystem", this.scene);
         solidParticleSystem.digest(mesh, {number: 32});
@@ -280,6 +279,7 @@ class Gamefield {
             solidParticleSystem = null;
             this.setRenderLoop(false);
         }, 3000);
+        mesh.dispose();
     }
 }
 

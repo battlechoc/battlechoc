@@ -149,16 +149,16 @@ class Scene extends Component {
     }
 
     detonateAtShield(row, col, playerField=false) {
+        console.log('detonateAtShield', row, col, playerField);
         let truffle = MeshBuilder.CreateTorus('knot', {diameter: 0.1}, this.scene);
         truffle.material = this.scene.getMaterialByName(BoardCellTypes.BROWN + '.material');
         if (playerField) {
-            truffle.position = new Vector3(row, 4, col);
+            truffle.position = new Vector3(row, 5, col);
             this.playerGameField.explode(truffle);
         } else {
-            truffle.position = new Vector3(row - this.opponentGameFieldDistance, 4, col + this.opponentGameFieldDistance);
+            truffle.position = new Vector3(row - this.opponentGameFieldDistance, 5, col + this.opponentGameFieldDistance);
             this.opponentGameField.explode(truffle);
         }
-        truffle.dispose();
     }
 
     playerFieldClick(row, col, eventX, eventY) {
