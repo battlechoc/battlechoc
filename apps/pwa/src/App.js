@@ -143,8 +143,13 @@ class App extends Component {
         if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined') {
             if (this.props.game.isRunning === true && nextProps.game.isRunning === false) {
                 gameStopped = true;
-                let timeoutId = setTimeout(() => this.showOverview(), 2000);
-                this.timeouts.push(timeoutId);
+                if (!this.state.tutorial) {
+                    let timeoutId = setTimeout(() => this.showOverview(), 2000);
+                    this.timeouts.push(timeoutId);
+                } else {
+                    let timeoutId = setTimeout(() => this.endGame(), 2000);
+                    this.timeouts.push(timeoutId);                    
+                }
             }
         }
 
