@@ -75,7 +75,8 @@ class Scene extends Component {
     }
 
     triggerCacaoInfo() {
-        let trees = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE));
+        let cells = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid;
+        let trees = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE));
         let description = getEntityDescriptor(EntityType.CACAOTREE);
         trees.forEach(cell => {
             let point = Vector3.Project(new Vector3(cell.row, 3, cell.col), 
@@ -86,6 +87,20 @@ class Scene extends Component {
                 x: point.x,
                 y: point.y,
                 cacao: cell.type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn,
+                type: InfoType.CACAO_HARVESTED
+            });
+        });
+        let factory = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.FACTORY));
+        description = getEntityDescriptor(EntityType.FACTORY);
+        factory.forEach(cell => {
+            let point = Vector3.Project(new Vector3(cell.row, 3, cell.col), 
+                Matrix.Identity(), 
+                this.scene.getTransformMatrix(), 
+                this.camera.viewport.toGlobal(this.engine.getRenderWidth(), this.engine.getRenderHeight()));
+            spawnInfo({
+                x: point.x,
+                y: point.y,
+                cacao: description.cacaoPerTurn,
                 type: InfoType.CACAO_HARVESTED
             });
         });
@@ -134,16 +149,16 @@ class Scene extends Component {
     }
 
     detonateAtShield(row, col, playerField=false) {
+        console.log('detonateAtShield', row, col, playerField);
         let truffle = MeshBuilder.CreateTorus('knot', {diameter: 0.1}, this.scene);
         truffle.material = this.scene.getMaterialByName(BoardCellTypes.BROWN + '.material');
         if (playerField) {
-            truffle.position = new Vector3(row, 4, col);
+            truffle.position = new Vector3(row, 5, col);
             this.playerGameField.explode(truffle);
         } else {
-            truffle.position = new Vector3(row - this.opponentGameFieldDistance, 4, col + this.opponentGameFieldDistance);
+            truffle.position = new Vector3(row - this.opponentGameFieldDistance, 5, col + this.opponentGameFieldDistance);
             this.opponentGameField.explode(truffle);
         }
-        truffle.dispose();
     }
 
     playerFieldClick(row, col, eventX, eventY) {
@@ -166,6 +181,10 @@ class Scene extends Component {
                     this.props.deselectBuildings();
                     this.props.deselectAttack();
                     let playerId = this.props.game.players[multiplayer.localPlayerIndex].id;
+                    setTimeout(() => {
+                        let description = getEntityDescriptor(EntityType.FACTORY);
+                        spawnInfo({ type: InfoType.INCREASE_CACAO_PER_TURN, cacao: description.cacaoPerTurn, x: eventX, y: eventY});
+                    }, 1000);
                     setTimeout(() => {
                         if (playerId === this.props.game.players[multiplayer.localPlayerIndex].id) {
                             this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });

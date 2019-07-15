@@ -141,6 +141,18 @@ class Gamefield {
                             }
                         });                         
                     }
+                } else if (this.playerField.grid[position].occupiedBy.map(building => building.type).includes(EntityType.SPYING_EASTER_BUNNY) && !playerField.grid[position].occupiedBy.map(building => building.type).includes(EntityType.SPYING_EASTER_BUNNY)) {
+                    let meshes = this.scene.getMeshesByID(this.fieldIdx + '.' + EntityType.SPYING_EASTER_BUNNY + '.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
+                    meshes.forEach(mesh => this.explode(mesh));
+                    if (this.playerField.grid[position].occupiedBy.map(building => building.type).includes(EntityType.CREAM)) {
+                        let phenotype = EntityType.CREAM;
+                        if (this.isPlayerGameField) {
+                            phenotype = EntityType.CREAM + '.AROUND.BUILDING';
+                        }
+                        meshes = this.scene.getMeshesByID(this.fieldIdx + '.' + phenotype + '.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
+                        meshes.forEach(mesh => mesh.dispose());
+                        this.renderEntities(playerField.grid[position]);
+                    }
                 } else {
                     explodeCream(position);
                     if (!this.isPlayerGameField) {
@@ -216,7 +228,6 @@ class Gamefield {
     }
 
     explode(mesh) {
-        mesh.dispose();
         let gravity = -0.02;
         let solidParticleSystem = new SolidParticleSystem("solidParticleSystem", this.scene);
         solidParticleSystem.digest(mesh, {number: 32});
@@ -268,6 +279,7 @@ class Gamefield {
             solidParticleSystem = null;
             this.setRenderLoop(false);
         }, 3000);
+        mesh.dispose();
     }
 }
 

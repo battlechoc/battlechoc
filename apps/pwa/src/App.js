@@ -144,8 +144,13 @@ class App extends Component {
         if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined') {
             if (this.props.game.isRunning === true && nextProps.game.isRunning === false) {
                 gameStopped = true;
-                let timeoutId = setTimeout(() => this.showOverview(), 2000);
-                this.timeouts.push(timeoutId);
+                if (!this.state.tutorial) {
+                    let timeoutId = setTimeout(() => this.showOverview(), 2000);
+                    this.timeouts.push(timeoutId);
+                } else {
+                    let timeoutId = setTimeout(() => this.endGame(), 2000);
+                    this.timeouts.push(timeoutId);                    
+                }
             }
         }
 
@@ -191,7 +196,6 @@ class App extends Component {
                 nextProps.game.players[multiplayer.localPlayerIndex].buildings === 0 || nextProps.selectedBuilding !== EntityType.FRUIT_CANNON)) {
                 this.scene.highlightCannons(false);
             }
-
             if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
                 this.hud.unlockUi();
                 this.colorStartButton = 1;

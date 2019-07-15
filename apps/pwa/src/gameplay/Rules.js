@@ -104,7 +104,7 @@ class Rules {
         for (var playerIdx = 0; playerIdx < 2; ++playerIdx) {
             const player = gameState.players[playerIdx];
             const playerCanAttack = playerHasHarmfulAttacksPerTurn(player, gameState.board.fields[gameState.players[1 - playerIdx].fieldIndex].grid);
-            if ((player.buildingsPerTurn === 0 && playerCanAttack === false) ||
+            if ((player.buildingsPerTurn === 0 && !playerCanAttack) ||
                 (!playerCanAttack && player.cacaoPerTurn === 0 && player.cacao < GameEntities.getEntityDescriptor(GameEntities.EntityType.CACAOTREE).costs)) {
                 let winner = Object.assign({ idx: 1 - playerIdx }, gameState.players[1 - playerIdx]);
                 potentialWinners.push(winner);
