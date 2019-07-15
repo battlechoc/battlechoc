@@ -12,7 +12,7 @@ class GameEndOverview extends Component {
         super(props);
         this.state = { 
             outcome: 'win',
-            coins: 0 
+            awards: 0
         }
     }
 
@@ -95,19 +95,19 @@ class GameEndOverview extends Component {
                 awards = 0;
                 this.setState({ 
                     outcome: 'lost',
-                    coins: awards 
+                    awards: awards 
                 });
             } else {
                 this.setState({ 
                     outcome: 'win',
-                    coins: awards 
+                    awards: awards 
                 });                
             }
         } else if (this.props.game.winners.length === 2) {
             awards = Math.floor(awards / 2);
             this.setState({ 
                 outcome: 'draw',
-                coins: awards 
+                awards: awards 
             });
         }
     }
@@ -138,7 +138,7 @@ class GameEndOverview extends Component {
                     </ul>
                     <div id="pie">
                         <div id="coins">
-                            <span className={ this.state.outcome }>{ this.state.coins }</span>
+                            <span className={ this.state.outcome }>{ this.state.awards }</span>
                             <img src="images/coins.png" alt="choco coins" />
                         </div>
                     </div>
@@ -165,7 +165,8 @@ GameEndOverview.propTypes = {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
-    language: state.ui.language
+    language: state.ui.language,
+    playerInfos: state.ui.playerInfos
 });
 
 const GameEndOverviewContainer = connect(mapStateToProps)(GameEndOverview);

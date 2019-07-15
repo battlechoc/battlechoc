@@ -4,13 +4,14 @@ import { EntityType } from '../gameplay/GameEntities';
 import OfflineStore from '../OfflineStore';
 
 const uiReducer = createReducer({
-        selectedBuilding: EntityType.FACTORY,
-        tappedBuilding: EntityType.FACTORY,
-        statistics: false,
-        assetsReady: false,
-        overviewVisible: false,
-        language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
-    }, {
+    selectedBuilding: EntityType.FACTORY,
+    tappedBuilding: EntityType.FACTORY,
+    statistics: false,
+    assetsReady: false,
+    overviewVisible: false,
+    playerInfos: { coins: 0, isSignedIn: false },
+    language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
+}, {
         [UiActions.resetUi]: (state, action) => {
             state.whitelistBuildings = undefined;
             state.whitelistAttacks = undefined;
@@ -62,7 +63,26 @@ const uiReducer = createReducer({
         },
         [UiActions.showOverview]: (state, action) => {
             state.overviewVisible = true;
+        },
+        [UiActions.notifyPlayerSignedIn]: (state, action) => {
+            state.playerInfos.playerIsSignedIn = true;
+            state.playerInfos.email = action.payload.email;
+            state.playerInfos.uid = action.payload.uid;
+            state.playerInfos.name = action.payload.name;
+            if (typeof action.payload.coins !== 'undefined' && action.payload.coins > state.playerInfos.coins) {
+                state.playerInfos.coins = action.payload.playerInfos.coins;
+            }
+        },
+        [UiActions.notifyPlayerSignedOut]: (state, action) => {
+            state.playerInfos.playerIsSignedIn = false;
+            state.playerInfos.email = undefined;
+            state.playerInfos.name = undefined;
+            state.playerInfos.uid = undefined;
+        },
+        [UiActions.updateCoins]: (state, action) => {
+            state.playerInfos.coins = action.payload;
         }
-});
+    }
+);
 
 export default uiReducer

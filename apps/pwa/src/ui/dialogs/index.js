@@ -3,4 +3,3 @@ export {default as Info} from './Info';
 export {default as Settings} from './Settings';
 export {default as Tooltip} from './Tooltip';
 export {default as SignInOrUp} from './SignInOrUp';
-export {default as AccountInfos} from './AccountInfos';

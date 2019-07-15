@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
-import { Info, Tooltip, Settings, AppleHint, SignInOrUp, AccountInfos } from './dialogs';
+import { Info, Tooltip, Settings, AppleHint, SignInOrUp} from './dialogs';
 import { CircularProgress, Button } from '@material-ui/core';
 
 class Hud extends Component {
@@ -51,11 +51,6 @@ class Hud extends Component {
         this.signInOrUp.open();
     }
 
-    openAccountInfos = () => {
-        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.accountInfos.open();
-    }
-
     closeTutorial = () => {
         Jukebox.stopMusic();
         this.setState({ tutorial: false })
@@ -69,8 +64,7 @@ class Hud extends Component {
                 <Tooltip />
                 <Settings endGame={this.props.endGame} onRef={settings => (this.settings = settings)} />
                 <SignInOrUp onRef={signInOrUp => (this.signInOrUp = signInOrUp)} />
-                <AccountInfos onRef={accountInfos => (this.accountInfos = accountInfos)} />
-                <Actionbar showSettings={this.openSettings} showSignInOrUp={this.openSignInOrUp} showAccountInfos={this.openAccountInfos} />
+                <Actionbar showSettings={this.openSettings} showSignInOrUp={this.openSignInOrUp} />
                 { textAnimation }
                 <AppleHint message={t[this.props.language].IOS_MESSAGE} />
                 
@@ -88,8 +82,8 @@ class Hud extends Component {
                         }
                         return (
                             <div id="mainMenu">
-                                {this.props.coins ? <div id="coins">
-                                    <span>{ this.props.coins }</span>
+                                {typeof this.props.playerInfos.coins !== 'undefined' ? <div id="coins">
+                                    <span>{ this.props.playerInfos.coins }</span>
                                     <img src="images/coins.png" alt="choco coins" />
                                 </div> : null}
                                 <SocialIcons />
@@ -137,8 +131,7 @@ Hud.propTypes = {
     joinMultiplayerGame: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired,
     multiplayerLandingPage: PropTypes.bool.isRequired,
-    className: PropTypes.string.isRequired,
-    coins: PropTypes.number
+    className: PropTypes.string.isRequired
 }
 
 const mapStateToProps = state => ({
@@ -148,7 +141,8 @@ const mapStateToProps = state => ({
     overviewVisible: state.ui.overviewVisible,
     resumeGamePossible: state.ui.resumeGamePossible,
     assetsReady: state.ui.assetsReady,
-    multiplayerWaiting: state.ui.multiplayerWaiting
+    multiplayerWaiting: state.ui.multiplayerWaiting,
+    playerInfos: state.ui.playerInfos
 });
 
 const HudContainer = connect(mapStateToProps)(Hud);

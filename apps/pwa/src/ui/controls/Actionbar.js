@@ -92,33 +92,17 @@ class Actionbar extends Component {
                 className="icon"
                 onClick={() => this.props.showSettings()}>
                 <Settings />
+            </Fab>,
+            <Fab
+                size="small"
+                key="1"
+                color="primary"
+                aria-label="signinorup"
+                className="icon"
+                onClick={() => this.props.showSignInOrUp()}>
+                <PermIdentity />
             </Fab>
         ];
-        if (multiplayer.isSignedIn()) {
-            buttons.push(
-                <Fab
-                    size="small"
-                    key="1"
-                    color="primary"
-                    aria-label="signout"
-                    className="icon"
-                    onClick={() => this.props.showAccountInfos()}>
-                    <PermIdentity />
-                </Fab>
-            );
-        } else {
-            buttons.push(
-                <Fab
-                    size="small"
-                    key="1"
-                    color="primary"
-                    aria-label="signinorup"
-                    className="icon"
-                    onClick={() => this.props.showSignInOrUp()}>
-                    <PermIdentity />
-                </Fab>
-            );
-        }
 
         if (this.state.activeMusicButton) {
             buttons.push(
@@ -266,8 +250,7 @@ class Actionbar extends Component {
 
 Actionbar.propTypes = {
     showSettings: PropTypes.func.isRequired,
-    showSignInOrUp: PropTypes.func.isRequired,
-    showAccountInfos: PropTypes.func.isRequired
+    showSignInOrUp: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({

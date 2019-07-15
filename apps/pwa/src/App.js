@@ -7,7 +7,7 @@ import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState } from './ui/UiActions';
+import { showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updateCoins } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -30,19 +30,20 @@ class App extends Component {
             window.location.search.substr(1).split('&').forEach(param => {
                 params[param.split('=')[0]] = param.split('=')[1];
             });
-            if(typeof window.history !== 'undefined' && typeof window.history.pushState !== 'undefined') {
+            if (typeof window.history !== 'undefined' && typeof window.history.pushState !== 'undefined') {
                 window.history.pushState({}, document.title, window.location.pathname);
             }
         }
         this.timeouts = [];
-        this.state = { 
+        this.state = {
             params: params,
-            tutorial: false,
-            coins: null
+            tutorial: false
         };
     }
 
     componentWillMount() {
+        multiplayer.registerUpdateCoinsAction(this.props.updateCoins);
+
         let browserLanguage = 'en';
         if (navigator.userLanguage) {
             browserLanguage = navigator.userLanguage.substr(0, 2);
@@ -60,9 +61,9 @@ class App extends Component {
 
         OfflineStore.playerStore.get('coins').then(coins => {
             if (typeof coins === 'undefined') {
-                OfflineStore.playerStore.set('coins', 0);
+                OfflineStore.playerStore.set('coins', this.props.playerInfos.coins);
             } else {
-                this.setState({ coins: coins });
+                multiplayer.updateCoins(coins, this.props.updateCoins);
             }
         });
     }
@@ -91,10 +92,10 @@ class App extends Component {
 
     async loadSituation(situation) {
         if (this.state.tutorial) {
-            this.opponent = new Violet({ 
-                finishTurn: this.props.finishTurn, 
+            this.opponent = new Violet({
+                finishTurn: this.props.finishTurn,
                 finishBuildPhase: this.props.finishBuildPhase,
-                attack: this.props.attack 
+                attack: this.props.attack
             });
         } else {
             this.opponent = new Augustus({
@@ -118,13 +119,13 @@ class App extends Component {
             this.opponent.player = this.props.game.players[1];
             this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
             this.props.loadUiState(situation.ui).then(() => {
-                this.setState({ params: { ...this.state.params, situation: undefined }}, () => {
+                this.setState({ params: { ...this.state.params, situation: undefined } }, () => {
                     if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
                         this.scene.startGame(this.props.game, false);
                     }
                 });
             });
-        });        
+        });
     }
 
     componentWillReceiveProps(nextProps) {
@@ -146,6 +147,14 @@ class App extends Component {
                 let timeoutId = setTimeout(() => this.showOverview(), 2000);
                 this.timeouts.push(timeoutId);
             }
+        }
+
+        if (nextProps.playerInfos.coins !== this.props.playerInfos.coins) {
+            multiplayer.updateCoins(nextProps.playerInfos.coins, this.props.updateCoins);
+        }
+
+        if (nextProps.playerInfos.isSignedIn === true && nextProps.playerInfos.isSignedIn === false) {
+            multiplayer.updateCoins(nextProps.playerInfos.coins);
         }
 
         if (typeof this.scene !== 'undefined') {
@@ -229,7 +238,7 @@ class App extends Component {
                     this.opponent.simulateAttackPhase((row, col) => this.scene.detonateAtShield(row, col, true));
                 }
             } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
-                let timeoutId =  setTimeout(() => this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
+                let timeoutId = setTimeout(() => this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
                 this.timeouts.push(timeoutId);
             } else if (gameTransition === GameTransitions.PLAYER_JOINED) {
                 this.opponent.player = {
@@ -241,10 +250,10 @@ class App extends Component {
 
     joinMultiplayerGame = () => {
         multiplayer.joinGameSession(this.state.params.sessionid, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField })
-        .then(session => {    
-            console.dir(session);
-            this.prepareNewGame(true, true, session.game);
-        });
+            .then(session => {
+                console.dir(session);
+                this.prepareNewGame(true, true, session.game);
+            });
         this.hud.lockUi();
     }
 
@@ -258,7 +267,7 @@ class App extends Component {
         let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
         if (!isFullscreen && !isiOS) {
             if (typeof document.documentElement.requestFullscreen === 'function') {
-                document.documentElement.requestFullscreen().then(() =>  {
+                document.documentElement.requestFullscreen().then(() => {
                     if (isAndroid) {
                         window.screen.orientation.lock('landscape').catch(error => console.log('Unable to lock orientation to landscape'));
                     }
@@ -300,7 +309,7 @@ class App extends Component {
 
                     this.props.startGame(players).then(() => {
                         this.opponent.type = Augustus.randomizeType();
-                        this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));                        
+                        this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
                         this.props.createBoard({
                             boardSize: { rows: 10, cols: 10 },
                             boardSeed: 42
@@ -325,7 +334,7 @@ class App extends Component {
     }
 
     showOverview() {
-        this.setState({ params: { ...this.state.params, sessionid: undefined }});
+        this.setState({ params: { ...this.state.params, sessionid: undefined } });
         Jukebox.stopMusic(true);
         this.props.showOverview();
         this.props.gameResumeable(false);
@@ -334,7 +343,7 @@ class App extends Component {
         const winners = Rules.determineWinner(this.props.game);
         let statistics = this.props.game.players[multiplayer.localPlayerIndex].statistics;
         let awards = statistics.attacks + statistics.builtEntities * 2 + statistics.espionages * 10 + statistics.moltenFields * 50;
-        
+
         if (winners.length === 1) {
             if (!multiplayer.isLocalPlayer(winners[0].idx)) {
                 awards = 0;
@@ -343,15 +352,7 @@ class App extends Component {
             awards = Math.floor(awards / 2);
         }
 
-        OfflineStore.playerStore.get('coins').then(coins => {
-            if (typeof coins === 'undefined') {
-                OfflineStore.playerStore.set('coins', awards);
-                this.setState({ coins: awards });
-            } else {
-                OfflineStore.playerStore.set('coins', coins + awards);
-                this.setState({ coins: coins + awards });
-            }
-        });
+        multiplayer.awardsReceived(this.props.playerInfos.coins, awards, this.props.updateCoins);
     }
 
     closeTutorial = () => {
@@ -378,15 +379,14 @@ class App extends Component {
                 <div id="clouds"></div>
                 <Suspense fallback={null}>
                     <Scene onRef={scene => this.scene = scene} />
-                </Suspense> 
+                </Suspense>
                 <Hud prepareNewGameCallback={this.prepareNewGame}
-                     multiplayerLandingPage={typeof this.state.params.sessionid !== 'undefined'}
-                     joinMultiplayerGame={this.joinMultiplayerGame}
-                     startTutorial={() => this.startTutorial()}
-                     className={this.state.tutorial ? 'tutorial hud' : 'hud'}
-                     endGame={() => this.endGame()}
-                     coins={this.state.coins}
-                     onRef={hud => this.hud = hud} />
+                    multiplayerLandingPage={typeof this.state.params.sessionid !== 'undefined'}
+                    joinMultiplayerGame={this.joinMultiplayerGame}
+                    startTutorial={() => this.startTutorial()}
+                    className={this.state.tutorial ? 'tutorial hud' : 'hud'}
+                    endGame={() => this.endGame()}
+                    onRef={hud => this.hud = hud} />
                 {this.state.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
             </div>
         );
@@ -398,7 +398,8 @@ const mapStateToProps = state => ({
     language: state.ui.language,
     selectedBuilding: state.ui.selectedBuilding,
     ui: state.ui,
-    assetsReady: state.ui.assetsReady
+    assetsReady: state.ui.assetsReady,
+    playerInfos: state.ui.playerInfos
 });
 
 const mapDispatchToProps = {
@@ -419,7 +420,8 @@ const mapDispatchToProps = {
     gameResumeable,
     loadUiState,
     resetUi,
-    showOverview
+    showOverview,
+    updateCoins
 };
 
 const AppContainer = connect(

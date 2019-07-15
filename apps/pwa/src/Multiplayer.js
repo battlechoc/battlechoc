@@ -2,6 +2,7 @@ import firebase from '@firebase/app';
 import '@firebase/auth';
 import '@firebase/database';
 import '@firebase/firestore';
+import OfflineStore from './OfflineStore';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import { GameActionTypes } from './gameplay/GameActions';
 import { AttackType } from './gameplay/GameEntities';
@@ -28,12 +29,24 @@ class Multiplayer {
         this.localPlayerIndex = 0;
 
         try {
-            // initialize firebase
             firebase.initializeApp(firebaseConfig);
-
-            // setup presence system callbacks
             firebase.auth().onAuthStateChanged((user) => {
                 if (user) {
+                    console.log("you signed in!");
+                    console.dir(user);
+                    if (typeof this.notifyPlayerSignedInAction !== 'undefined') {
+                        console.log("emitting notifyplayersignedin " + user.email);
+                        this.notifyPlayerSignedInAction({ email: user.email, uid: user.uid, name: user.displayName });
+                    }
+
+                    // create the player stats document if it does not yet exist
+                    firebase.firestore().collection('players').doc(user.uid).set({ last_changed: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).then(() => {
+                        console.log("player entry set");
+                        this.updateCoins(undefined, this.updateCoinsAction);
+                    }).catch(err => {
+                        console.log("could not create player entry.", err);
+                    });
+
                     this.localPlayer = user;
                     const userStatusDatabaseRef = firebase.database().ref('/status/' + this.localPlayer.uid);
                     const userStatusFirestoreRef = firebase.firestore().doc('/status/' + this.localPlayer.uid);
@@ -78,13 +91,80 @@ class Multiplayer {
         }
     }
 
-    isSignedIn() {
-        console.log(firebase.auth().currentUser);
-        return firebase.auth().currentUser !== null;
+    registerNotifyPlayerSignedInAction(notifyPlayerSignedInAction) {
+        this.notifyPlayerSignedInAction = notifyPlayerSignedInAction;
+    }
+
+    registerUpdateCoinsAction(updateCoinsAction) {
+        this.updateCoinsAction = updateCoinsAction;
     }
 
     isLocalPlayer(playerIdx) {
         return playerIdx === this.localPlayerIndex;
+    }
+
+    updateCoins(coins, updateCoinsAction) {
+        console.log("updating coins " + coins);
+        if (typeof coins === 'undefined') {
+            OfflineStore.playerStore.get('coins').then(coins => {
+                const storeCoins = (typeof coins === 'undefined') ? 0 : coins;
+                if (firebase.auth().currentUser !== null) {
+                    firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).get().then(doc => {
+                        if (!doc.exists) {
+                            console.warn('No such document!');
+                        } else {
+                            const playerInfos = doc.data();
+                            if (typeof playerInfos !== 'undefined') {
+                                if (typeof playerInfos.coins === 'undefined' || storeCoins > playerInfos.coins) {
+                                    firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).set({ coins: storeCoins, last_changed: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+                                        .then(() => {
+                                            console.log("coins stored");
+                                        }).catch(err => {
+                                            console.log('Could not store coins for player', err);
+                                        });
+                                }
+                            }
+                        }
+                    }).catch(err => {
+                        console.log('Error getting player infos', err);
+                    });
+                }
+
+            });
+        } else {
+            console.log(firebase.auth().currentUser);
+            if (firebase.auth().currentUser) {
+                firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).set({ coins: coins, last_changed: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+                    .then(doc => {
+                        console.log("coins stored");
+                        console.log(doc);
+                    })
+                    .catch(err => {
+                        console.log('Could not store coins for player', err);
+                    });
+            }
+
+            OfflineStore.playerStore.set('coins', coins);
+            updateCoinsAction(coins);
+        }
+    }
+
+    awardsReceived(currentCoins, awards, updateCoinsAction) {
+        this.updateCoins(currentCoins + awards, updateCoinsAction);
+    }
+
+    signOut(notifyPlayerSignedOut, signOutErrorHandler) {
+        firebase.auth().signOut().then(function () {
+            console.log("signed out");
+            if (typeof notifyPlayerSignedOut !== 'undefined') {
+                notifyPlayerSignedOut();
+            }
+        }).catch(function (error) {
+            console.log("could not sign out because some error happened.", error);
+            if (typeof signOutErrorHandler !== 'undefined') {
+                signOutErrorHandler(error);
+            }
+        });
     }
 
     signIn() {

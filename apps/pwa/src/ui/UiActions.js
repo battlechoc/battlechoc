@@ -14,7 +14,10 @@ const UiActionTypes = Object.freeze({
     waitForMultiplayer: 'battlechoc/ui/waitForMultiplayer',
     joinedMultiplayer: 'battlechoc/ui/joinedMultiplayer',
     loadUiState: 'battlechoc/ui/loadUiState',
-    resetUi: 'battlechoc/ui/resetUi'
+    resetUi: 'battlechoc/ui/resetUi',
+    notifyPlayerSignedOut: 'battlechoc/ui/notifyPlayerSignedOut',
+    notifyPlayerSignedIn: 'battlechoc/ui/notifyPlayerSignedIn',
+    updateCoins:'battlechoc/ui/updateCoins'
 });
 
 const selectBuilding = createAction(UiActionTypes.selectBuilding);
@@ -31,5 +34,8 @@ const joinedMultiplayer = createAction(UiActionTypes.joinedMultiplayer);
 const loadUiState = createAction(UiActionTypes.loadUiState);
 const resetUi = createAction(UiActionTypes.resetUi);
 const showOverview = createAction(UiActionTypes.showOverview);
+const notifyPlayerSignedOut = createAction(UiActionTypes.notifyPlayerSignedOut);
+const notifyPlayerSignedIn = createAction(UiActionTypes.notifyPlayerSignedIn);
+const updateCoins = createAction(UiActionTypes.updateCoins);
 
-export { showOverview, resetUi, loadUiState, joinedMultiplayer, waitForMultiplayer, UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, showStatistics, assetsReady };
+export { showOverview, resetUi, loadUiState, joinedMultiplayer, waitForMultiplayer, UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, showStatistics, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updateCoins };

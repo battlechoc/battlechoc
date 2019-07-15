@@ -1,8 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { changeLanguage } from '../UiActions';
+import { notifyPlayerSignedIn } from '../UiActions';
 import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
+import { multiplayer } from '../../Multiplayer';
 import firebase from 'firebase/app';
 import 'firebase/auth';
 import withMobileDialog from '@material-ui/core/withMobileDialog';
@@ -31,6 +32,7 @@ class SignInOrUp extends React.Component {
         this.state = {
             open: false
         }
+        multiplayer.registerNotifyPlayerSignedInAction(this.props.notifyPlayerSignedIn);
     }
 
     componentDidMount() {
@@ -46,27 +48,53 @@ class SignInOrUp extends React.Component {
     }
 
     render() {
-        return (
-            <Dialog
-                fullWidth={true}
-                fullScreen={this.props.fullScreen}
-                open={this.state.open}
-                onClose={() => this.setState({ open: false, attentionTextVisible: false })}
-                aria-labelledby="signInOrUpDialogTitle">
-                <DialogTitle id="signInOrUpDialogTitle">{t[this.props.language].SIGNINORUP}</DialogTitle>
-                <DialogContent>
-                    <StyledFirebaseAuth uiConfig={uiConfig} firebaseAuth={firebase.auth()} />
-                </DialogContent>
-                <DialogActions>
-                  <Button onClick={() => {
-                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                    this.setState({ open: false, attentionTextVisible: false })
-                  }} color="primary">
-                    {t[this.props.language].BUTTON_BACK}
-                  </Button>
-                </DialogActions>
-            </Dialog>
-        );
+        if (this.props.playerInfos.playerIsSignedIn) {
+            return (
+                <Dialog
+                    fullWidth={true}
+                    fullScreen={this.props.fullScreen}
+                    open={this.state.open}
+                    onClose={() => this.setState({ open: false, attentionTextVisible: false })}
+                    aria-labelledby="signInOrUpDialogTitle">
+                    <DialogTitle id="signInOrUpDialogTitle">{t[this.props.language].ACCOUNTINFOS}</DialogTitle>
+                    <DialogContent>
+                        Welcome: {this.props.playerInfos.name}<br/>
+                        E-Mail: {this.props.playerInfos.email}<br/>
+                        Coins: {this.props.playerInfos.coins}
+                    </DialogContent>
+                    <DialogActions>
+                      <Button onClick={() => {
+                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                        this.setState({ open: false, attentionTextVisible: false })
+                      }} color="primary">
+                        {t[this.props.language].BUTTON_BACK}
+                      </Button>
+                    </DialogActions>
+                </Dialog>
+            );
+        } else {
+            return (
+                <Dialog
+                    fullWidth={true}
+                    fullScreen={this.props.fullScreen}
+                    open={this.state.open}
+                    onClose={() => this.setState({ open: false, attentionTextVisible: false })}
+                    aria-labelledby="signInOrUpDialogTitle">
+                    <DialogTitle id="signInOrUpDialogTitle">{t[this.props.language].SIGNINORUP}</DialogTitle>
+                    <DialogContent>
+                        <StyledFirebaseAuth uiConfig={uiConfig} firebaseAuth={firebase.auth()} />
+                    </DialogContent>
+                    <DialogActions>
+                      <Button onClick={() => {
+                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                        this.setState({ open: false, attentionTextVisible: false })
+                      }} color="primary">
+                        {t[this.props.language].BUTTON_BACK}
+                      </Button>
+                    </DialogActions>
+                </Dialog>
+            );
+        }
     }
 }
 
@@ -75,11 +103,12 @@ SignInOrUp.propTypes = {
 }
 
 const mapStateToProps = state => ({
-    language: state.ui.language
+    language: state.ui.language,
+    playerInfos: state.ui.playerInfos
 });
 
-const mapDispatchToProps = {
-  changeLanguage
+const mapDispatchToProps = { 
+  notifyPlayerSignedIn
 };
 
 const SignInOrUpContainer = connect(

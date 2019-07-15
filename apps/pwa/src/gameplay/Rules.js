@@ -106,7 +106,7 @@ class Rules {
             const playerCanAttack = playerHasHarmfulAttacksPerTurn(player, gameState.board.fields[gameState.players[1 - playerIdx].fieldIndex].grid);
             if ((player.buildingsPerTurn === 0 && playerCanAttack === false) ||
                 (!playerCanAttack && player.cacaoPerTurn === 0 && player.cacao < GameEntities.getEntityDescriptor(GameEntities.EntityType.CACAOTREE).costs)) {
-                let winner = Object.assign({idx: 1 - playerIdx}, gameState.players[1 - playerIdx]);
+                let winner = Object.assign({ idx: 1 - playerIdx }, gameState.players[1 - playerIdx]);
                 potentialWinners.push(winner);
             }
         }
@@ -160,7 +160,7 @@ class Rules {
         }
 
         if (typeof currentState !== 'undefined') {
-            if (!state.gameplay.game.isRunning && (action.type !== GameActionTypes.finishGame && action.type !== UiActionTypes.gameResumeable && action.type !== UiActionTypes.showOverview)) {
+            if (!state.gameplay.game.isRunning && (action.type !== GameActionTypes.finishGame && action.type !== UiActionTypes.gameResumeable && action.type !== UiActionTypes.showOverview && action.type !== UiActionTypes.updateCoins)) {
                 return new Errors.GameAlreadyEndedError(action);
             }
         }
@@ -203,7 +203,7 @@ class Rules {
             } else {
                 return true;
             }
-        } else if ([UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.joinedMultiplayer, UiActionTypes.waitForMultiplayer, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable].includes(action.type)) {
+        } else if ([UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.joinedMultiplayer, UiActionTypes.waitForMultiplayer, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable, UiActionTypes.notifyPlayerSignedIn, UiActionTypes.notifyPlayerSignedOut, UiActionTypes.updateCoins].includes(action.type)) {
             return true;
         } else {
             return new Errors.ActionValidationError(action);
