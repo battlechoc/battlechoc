@@ -260,66 +260,71 @@ class App extends Component {
     }
 
     prepareNewGame = (resumeGame, joinMultiplayer, multiplayerGameState) => {
-        Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
-        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        gameplayLog.clear();
+        multiplayer.signInAnonymouslyIfNotAlreadySignedIn().then(user => {
+            console.log("signed in");
+            console.log(user);
 
-        let isAndroid = /Android/i.test(navigator.userAgent);
-        let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-        let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-        if (!isFullscreen && !isiOS) {
-            if (typeof document.documentElement.requestFullscreen === 'function') {
-                document.documentElement.requestFullscreen().then(() => {
-                    if (isAndroid) {
-                        window.screen.orientation.lock('landscape').catch(error => console.log('Unable to lock orientation to landscape'));
-                    }
-                }).catch(error => {
-                    console.log(error.name + ': ' + error.message);
-                });
-            }
-        }
+            Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
+            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+            gameplayLog.clear();
 
-        if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
-            this.props.joinGame(multiplayerGameState).then(() => {
-                this.opponent = { player: this.props.game.players[0] };
-            });
-        } else {
-            OfflineStore.getResumeableGame().then((resumeableGame) => {
-                this.opponent = new Augustus({
-                    chooseStart: this.props.chooseStart,
-                    chooseField: this.props.chooseField,
-                    build: this.props.build,
-                    attack: this.props.attack,
-                    finishTurn: this.props.finishTurn,
-                    finishBuildPhase: this.props.finishBuildPhase
-                });
-                if (typeof resumeableGame !== 'undefined' && resumeGame) {
-                    this.props.resumeGame(resumeableGame.gameplay).then(() => {
-                        this.opponent.player = resumeableGame.gameplay.players[1];
-                        this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
-                        this.props.loadUiState(resumeableGame.ui).then(() => {
-                            if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
-                                this.scene.startGame(this.props.game, false);
-                            }
-                        });
-                    });
-                } else {
-                    let players = [
-                        createPlayer("Charlie Bucket", PlayerType.HUMAN),
-                        createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
-                    ];
-
-                    this.props.startGame(players).then(() => {
-                        this.opponent.type = Augustus.randomizeType();
-                        this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
-                        this.props.createBoard({
-                            boardSize: { rows: 10, cols: 10 },
-                            boardSeed: 42
-                        });
+            let isAndroid = /Android/i.test(navigator.userAgent);
+            let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
+            let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+            if (!isFullscreen && !isiOS) {
+                if (typeof document.documentElement.requestFullscreen === 'function') {
+                    document.documentElement.requestFullscreen().then(() => {
+                        if (isAndroid) {
+                            window.screen.orientation.lock('landscape').catch(error => console.log('Unable to lock orientation to landscape'));
+                        }
+                    }).catch(error => {
+                        console.log(error.name + ': ' + error.message);
                     });
                 }
-            });
-        }
+            }
+
+            if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
+                this.props.joinGame(multiplayerGameState).then(() => {
+                    this.opponent = { player: this.props.game.players[0] };
+                });
+            } else {
+                OfflineStore.getResumeableGame().then((resumeableGame) => {
+                    this.opponent = new Augustus({
+                        chooseStart: this.props.chooseStart,
+                        chooseField: this.props.chooseField,
+                        build: this.props.build,
+                        attack: this.props.attack,
+                        finishTurn: this.props.finishTurn,
+                        finishBuildPhase: this.props.finishBuildPhase
+                    });
+                    if (typeof resumeableGame !== 'undefined' && resumeGame) {
+                        this.props.resumeGame(resumeableGame.gameplay).then(() => {
+                            this.opponent.player = resumeableGame.gameplay.players[1];
+                            this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
+                            this.props.loadUiState(resumeableGame.ui).then(() => {
+                                if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
+                                    this.scene.startGame(this.props.game, false);
+                                }
+                            });
+                        });
+                    } else {
+                        let players = [
+                            createPlayer("Charlie Bucket", PlayerType.HUMAN),
+                            createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
+                        ];
+
+                        this.props.startGame(players).then(() => {
+                            this.opponent.type = Augustus.randomizeType();
+                            this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
+                            this.props.createBoard({
+                                boardSize: { rows: 10, cols: 10 },
+                                boardSeed: 42
+                            });
+                        });
+                    }
+                });
+            }
+        });
     }
 
     endGame() {

@@ -225,7 +225,7 @@ class Settings extends Component {
                 {t[this.props.language].REPORT_PROBLEM}
               </Button>
               {(() => {
-                if (this.props.playerInfos.playerIsSignedIn === true) {
+                if (this.props.playerInfos.isAnonymous === false) {
                   return (<Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     multiplayer.signOut(this.props.notifyPlayerSignedOut);

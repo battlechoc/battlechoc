@@ -65,7 +65,8 @@ const uiReducer = createReducer({
             state.overviewVisible = true;
         },
         [UiActions.notifyPlayerSignedIn]: (state, action) => {
-            state.playerInfos.playerIsSignedIn = true;
+            state.playerInfos.isSignedIn = true;
+            state.playerInfos.isAnonymous = action.payload.isAnonymous;
             state.playerInfos.email = action.payload.email;
             state.playerInfos.uid = action.payload.uid;
             state.playerInfos.name = action.payload.name;
@@ -74,7 +75,8 @@ const uiReducer = createReducer({
             }
         },
         [UiActions.notifyPlayerSignedOut]: (state, action) => {
-            state.playerInfos.playerIsSignedIn = false;
+            state.playerInfos.isSignedIn = false;
+            state.playerInfos.isAnonymous = true;
             state.playerInfos.email = undefined;
             state.playerInfos.name = undefined;
             state.playerInfos.uid = undefined;

@@ -48,7 +48,8 @@ class SignInOrUp extends React.Component {
     }
 
     render() {
-        if (this.props.playerInfos.playerIsSignedIn) {
+        console.log(this.props.playerInfos);
+        if (this.props.playerInfos.isAnonymous === false) {
             return (
                 <Dialog
                     fullWidth={true}

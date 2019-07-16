@@ -33,7 +33,7 @@ class Multiplayer {
             firebase.auth().onAuthStateChanged((user) => {
                 if (user) {
                     if (typeof this.notifyPlayerSignedInAction !== 'undefined') {
-                        this.notifyPlayerSignedInAction({ email: user.email, uid: user.uid, name: user.displayName });
+                        this.notifyPlayerSignedInAction({ email: user.email, uid: user.uid, name: user.displayName, isAnonymous: user.isAnonymous });
                     }
 
                     firebase.firestore().collection('players').doc(user.uid).set({ last_changed: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).then(() => {
@@ -160,6 +160,28 @@ class Multiplayer {
             console.log("could not sign out because some error happened.", error);
             if (typeof signOutErrorHandler !== 'undefined') {
                 signOutErrorHandler(error);
+            }
+        });
+    }
+
+    signInAnonymouslyIfNotAlreadySignedIn() {
+        return new Promise((resolve, reject) => {
+            if (firebase.auth().currentUser) {
+                console.log("already signed in. will not sign in again as anonymous");
+                resolve(firebase.auth().currentUser);
+            } else {
+                console.log("not signed in. trying to sign in anonymously");
+                firebase.auth().signInAnonymously().then(signInResult => {
+                    console.log("done signing in. logged in anonymously.");
+                    console.log(signInResult);
+                    this.notifyPlayerSignedInAction({
+                        uid: signInResult.uid,
+                        isAnonymous: signInResult.isAnonymous
+                    });
+                    resolve(signInResult.user);
+                }).catch(error => {
+                    reject(error);
+                });
             }
         });
     }
