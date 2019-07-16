@@ -40,11 +40,17 @@ class AttackPalette extends Component {
     }
 
     selectAttack(attackType) {
-        this.props.selectAttack(attackType);       
+        this.props.selectAttack(attackType).catch(error => {
+            if (error instanceof BattlechocError) {
+                console.warn(error);
+            } else {
+                throw error;
+            }
+        });
     }
 
     isAttackSelected(attackType) {
-        return this.props.selectedAttack === attackType;       
+        return this.props.selectedAttack === attackType;
     }
 
     render() {
@@ -63,14 +69,14 @@ class AttackPalette extends Component {
                             let className = canAttack ? (this.isAttackSelected(attack.type) ? 'selected previewContainer' : 'canbuild previewContainer') : 'previewContainer';
                             return <div key={i}>
                                 <div className={className} onClick={() => {
-                                        if (canAttack) {
-                                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                            this.selectAttack(attack.type);
-                                        }
-                                    }}>
+                                    if (canAttack) {
+                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                        this.selectAttack(attack.type);
+                                    }
+                                }}>
                                     <div className="attackCount">{this.attacks(attack.type)}</div>
-                                    <div style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }} 
-                                         className={attack.className + (canAttack ? ' enabled preview' : ' disabled preview')} />
+                                    <div style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }}
+                                        className={attack.className + (canAttack ? ' enabled preview' : ' disabled preview')} />
                                 </div>
                             </div>
                         });
