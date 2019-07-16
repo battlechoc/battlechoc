@@ -5,6 +5,7 @@ import { selectAttack } from '../UiActions';
 import { AttackType } from '../../gameplay/GameEntities';
 import { GameStateTypes } from '../../gameplay/GameplayReducer';
 import { Jukebox } from '../misc';
+import { BattlechocError } from '../../gameplay/Errors';
 
 class AttackPalette extends Component {
     componentWillMount() {
