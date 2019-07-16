@@ -16,13 +16,24 @@ import Button from '@material-ui/core/Button';
 
 const uiConfig = {
     signInFlow: 'popup',
+    autoUpgradeAnonymousUsers: true,
     callbacks: {
-        signInSuccessWithAuthResult: () => false
+        signInSuccessWithAuthResult: () => false,
+        signInFailure: (err) => {
+            if (err.code === "firebaseui/anonymous-upgrade-merge-conflict") {
+                firebase.auth().signInWithCredential(err.credential).catch(signInErr => {
+                    console.log("could not sign in with credentials after merge conflict during anonymous account upgrade. ", signInErr);
+                })
+            }
+        }
     },
     signInOptions: [
         firebase.auth.GoogleAuthProvider.PROVIDER_ID,
         firebase.auth.FacebookAuthProvider.PROVIDER_ID,
-        firebase.auth.EmailAuthProvider.PROVIDER_ID
+        {
+            provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
+            requireDisplayName: false
+        }
     ]
 };
 
@@ -59,17 +70,17 @@ class SignInOrUp extends React.Component {
                     aria-labelledby="signInOrUpDialogTitle">
                     <DialogTitle id="signInOrUpDialogTitle">{t[this.props.language].ACCOUNTINFOS}</DialogTitle>
                     <DialogContent>
-                        Welcome: {this.props.playerInfos.name}<br/>
-                        E-Mail: {this.props.playerInfos.email}<br/>
+                        Welcome: {this.props.playerInfos.name}<br />
+                        E-Mail: {this.props.playerInfos.email}<br />
                         Coins: {this.props.playerInfos.coins}
                     </DialogContent>
                     <DialogActions>
-                      <Button onClick={() => {
-                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                        this.setState({ open: false, attentionTextVisible: false })
-                      }} color="primary">
-                        {t[this.props.language].BUTTON_BACK}
-                      </Button>
+                        <Button onClick={() => {
+                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                            this.setState({ open: false, attentionTextVisible: false })
+                        }} color="primary">
+                            {t[this.props.language].BUTTON_BACK}
+                        </Button>
                     </DialogActions>
                 </Dialog>
             );
@@ -86,12 +97,12 @@ class SignInOrUp extends React.Component {
                         <StyledFirebaseAuth uiConfig={uiConfig} firebaseAuth={firebase.auth()} />
                     </DialogContent>
                     <DialogActions>
-                      <Button onClick={() => {
-                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                        this.setState({ open: false, attentionTextVisible: false })
-                      }} color="primary">
-                        {t[this.props.language].BUTTON_BACK}
-                      </Button>
+                        <Button onClick={() => {
+                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                            this.setState({ open: false, attentionTextVisible: false })
+                        }} color="primary">
+                            {t[this.props.language].BUTTON_BACK}
+                        </Button>
                     </DialogActions>
                 </Dialog>
             );
@@ -108,8 +119,8 @@ const mapStateToProps = state => ({
     playerInfos: state.ui.playerInfos
 });
 
-const mapDispatchToProps = { 
-  notifyPlayerSignedIn
+const mapDispatchToProps = {
+    notifyPlayerSignedIn
 };
 
 const SignInOrUpContainer = connect(
