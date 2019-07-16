@@ -78,6 +78,7 @@ const uiReducer = createReducer({
             state.playerInfos.email = undefined;
             state.playerInfos.name = undefined;
             state.playerInfos.uid = undefined;
+            state.playerInfos.coins = 0;
         },
         [UiActions.updateCoins]: (state, action) => {
             state.playerInfos.coins = action.payload;

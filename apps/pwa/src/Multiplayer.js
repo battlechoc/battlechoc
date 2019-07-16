@@ -32,16 +32,11 @@ class Multiplayer {
             firebase.initializeApp(firebaseConfig);
             firebase.auth().onAuthStateChanged((user) => {
                 if (user) {
-                    console.log("you signed in!");
-                    console.dir(user);
                     if (typeof this.notifyPlayerSignedInAction !== 'undefined') {
-                        console.log("emitting notifyplayersignedin " + user.email);
                         this.notifyPlayerSignedInAction({ email: user.email, uid: user.uid, name: user.displayName });
                     }
 
-                    // create the player stats document if it does not yet exist
                     firebase.firestore().collection('players').doc(user.uid).set({ last_changed: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).then(() => {
-                        console.log("player entry set");
                         this.updateCoins(undefined, this.updateCoinsAction);
                     }).catch(err => {
                         console.log("could not create player entry.", err);
@@ -114,14 +109,18 @@ class Multiplayer {
                             console.warn('No such document!');
                         } else {
                             const playerInfos = doc.data();
+                            console.log(doc.data());
                             if (typeof playerInfos !== 'undefined') {
-                                if (typeof playerInfos.coins === 'undefined' || storeCoins > playerInfos.coins) {
+                                if (typeof playerInfos.coins === 'undefined') {
                                     firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).set({ coins: storeCoins, last_changed: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
                                         .then(() => {
                                             console.log("coins stored");
                                         }).catch(err => {
                                             console.log('Could not store coins for player', err);
                                         });
+                                } else {
+                                    console.log("updating coins");
+                                    updateCoinsAction(playerInfos.coins);
                                 }
                             }
                         }
@@ -135,11 +134,9 @@ class Multiplayer {
             console.log(firebase.auth().currentUser);
             if (firebase.auth().currentUser) {
                 firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).set({ coins: coins, last_changed: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
-                    .then(doc => {
+                    .then(() => {
                         console.log("coins stored");
-                        console.log(doc);
-                    })
-                    .catch(err => {
+                    }).catch(err => {
                         console.log('Could not store coins for player', err);
                     });
             }

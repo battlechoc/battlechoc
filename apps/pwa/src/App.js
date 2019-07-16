@@ -60,9 +60,7 @@ class App extends Component {
         });
 
         OfflineStore.playerStore.get('coins').then(coins => {
-            if (typeof coins === 'undefined') {
-                OfflineStore.playerStore.set('coins', this.props.playerInfos.coins);
-            } else {
+            if (typeof coins !== 'undefined') {
                 multiplayer.updateCoins(coins, this.props.updateCoins);
             }
         });
@@ -149,7 +147,7 @@ class App extends Component {
                     this.timeouts.push(timeoutId);
                 } else {
                     let timeoutId = setTimeout(() => this.endGame(), 2000);
-                    this.timeouts.push(timeoutId);                    
+                    this.timeouts.push(timeoutId);
                 }
             }
         }
