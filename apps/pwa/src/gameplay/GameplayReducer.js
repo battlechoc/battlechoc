@@ -2,6 +2,7 @@ import { createReducer } from 'redux-starter-kit';
 import * as GameActions from './GameActions';
 import * as GameEntities from './GameEntities';
 import { PlayerType } from './Player';
+import { multiplayer } from '../Multiplayer';
 
 const GameStateTypes = Object.freeze({
     START: 'GameStateTypes.START',
@@ -288,6 +289,19 @@ const gameplayReducer = createReducer({}, {
     [GameActions.endGame]: (state, action) => {
         state.game.isRunning = false;
         state.game.winners = action.payload;
+
+        if (action.payload.length === 1) {
+            if (!multiplayer.isLocalPlayer(action.payload[0].idx)) {
+                currentPlayer(state.game).statistics.lost = true;
+                currentPlayer(state.game).statistics.won = false;
+            } else {
+                currentPlayer(state.game).statistics.lost = false;
+                currentPlayer(state.game).statistics.won = true;
+            }
+        } else if (action.payload.length === 2) {
+            currentPlayer(state.game).statistics.lost = false;
+            currentPlayer(state.game).statistics.won = false;
+        }
     },
     [GameActions.finishGame]: (state, action) => {
         state.game = undefined;

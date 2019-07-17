@@ -30,6 +30,10 @@ class Multiplayer {
 
         try {
             firebase.initializeApp(firebaseConfig);
+            firebase.firestore().enablePersistence()
+                .catch(function (err) {
+                    console.log("could not enable offline persistence of firestore.", err);
+                });
             firebase.auth().onAuthStateChanged((user) => {
                 if (user) {
                     if (typeof this.notifyPlayerSignedInAction !== 'undefined') {
@@ -38,6 +42,10 @@ class Multiplayer {
 
                     firebase.firestore().collection('players').doc(user.uid).set({ last_changed: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }).then(() => {
                         this.updateCoins(undefined, this.updateCoinsAction);
+                        firebase.firestore().collection('players').doc(user.uid).get().then(playerInfosDoc => {
+                            let playerInfos = playerInfosDoc.data();
+                            this.updateTrackRecordAction(playerInfos.trackRecord);
+                        }).catch(err => console.warn("could not retrieve player infos.", err));
                     }).catch(err => {
                         console.log("could not create player entry.", err);
                     });
@@ -94,8 +102,42 @@ class Multiplayer {
         this.updateCoinsAction = updateCoinsAction;
     }
 
+    registerUpdateTrackRecordAction(updateTrackRecordAction) {
+        this.updateTrackRecordAction = updateTrackRecordAction;
+    }
+
     isLocalPlayer(playerIdx) {
         return playerIdx === this.localPlayerIndex;
+    }
+
+    persistGameStats(gameStats) {
+        if (firebase.auth().currentUser && firebase.auth().currentUser.isAnonymous === false) {
+            const playerInfosRef = firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid);
+            playerInfosRef.get().then(doc => {
+                if (!doc.exists) {
+                    console.warn('No such document!');
+                } else {
+                    let playerInfos = doc.data();
+                    if (typeof playerInfos.trackRecord === 'undefined') {
+                        playerInfos.trackRecord = [];
+                    }
+                    playerInfos.trackRecord.push(gameStats);
+                    this.updateTrackRecordAction(playerInfos.trackRecord);
+                    playerInfosRef.update(playerInfos).catch(err => console.warn("could not update player track record.", err));
+                }
+            }).catch(err => console.warn("could not retrieve player track record.", err));
+        } else {
+            OfflineStore.playerStore.get('trackRecord').then(trackRecord => {
+                let newTrackRecord = trackRecord;
+                if (typeof newTrackRecord === 'undefined') {
+                    newTrackRecord = [];
+                }
+                newTrackRecord.push(gameStats);
+                this.updateTrackRecordAction(newTrackRecord);
+                OfflineStore.playerStore.set('trackRecord', newTrackRecord)
+                    .catch(err => console.warn("could not set new player track record.", err));
+            }).catch(err => console.warn("could not retrieve offline player track record.", err));
+        }
     }
 
     updateCoins(coins, updateCoinsAction) {
@@ -109,7 +151,6 @@ class Multiplayer {
                             console.warn('No such document!');
                         } else {
                             const playerInfos = doc.data();
-                            console.log(doc.data());
                             if (typeof playerInfos !== 'undefined') {
                                 if (typeof playerInfos.coins === 'undefined') {
                                     firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).set({ coins: storeCoins, last_changed: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })

@@ -160,7 +160,7 @@ class Rules {
         }
 
         if (typeof currentState !== 'undefined') {
-            if (!state.gameplay.game.isRunning && (action.type !== GameActionTypes.finishGame && action.type !== UiActionTypes.gameResumeable && action.type !== UiActionTypes.showOverview && action.type !== UiActionTypes.updateCoins)) {
+            if (!state.gameplay.game.isRunning && (action.type !== GameActionTypes.finishGame && action.type !== UiActionTypes.gameResumeable && action.type !== UiActionTypes.showOverview && action.type !== UiActionTypes.updateCoins && action.type !== UiActionTypes.updateTrackRecord)) {
                 return new Errors.GameAlreadyEndedError(action);
             }
         }
@@ -203,7 +203,7 @@ class Rules {
             } else {
                 return true;
             }
-        } else if ([UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.joinedMultiplayer, UiActionTypes.waitForMultiplayer, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable, UiActionTypes.notifyPlayerSignedIn, UiActionTypes.notifyPlayerSignedOut, UiActionTypes.updateCoins].includes(action.type)) {
+        } else if ([UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.joinedMultiplayer, UiActionTypes.waitForMultiplayer, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable, UiActionTypes.notifyPlayerSignedIn, UiActionTypes.notifyPlayerSignedOut, UiActionTypes.updateCoins, UiActionTypes.updateTrackRecord].includes(action.type)) {
             return true;
         } else {
             return new Errors.ActionValidationError(action);

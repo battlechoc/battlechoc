@@ -84,6 +84,9 @@ const uiReducer = createReducer({
         },
         [UiActions.updateCoins]: (state, action) => {
             state.playerInfos.coins = action.payload;
+        },
+        [UiActions.updateTrackRecord]: (state, action) => {
+            state.playerInfos.trackRecord = action.payload;
         }
     }
 );

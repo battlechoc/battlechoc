@@ -63,7 +63,6 @@ class SignInOrUp extends React.Component {
     }
 
     render() {
-        console.log(this.props.playerInfos);
         if (this.props.playerInfos.isAnonymous === false) {
             return (
                 <Dialog

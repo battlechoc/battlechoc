@@ -7,7 +7,7 @@ import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updateCoins } from './ui/UiActions';
+import { showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updateCoins, updateTrackRecord } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -43,6 +43,7 @@ class App extends Component {
 
     componentWillMount() {
         multiplayer.registerUpdateCoinsAction(this.props.updateCoins);
+        multiplayer.registerUpdateTrackRecordAction(this.props.updateTrackRecord);
 
         let browserLanguage = 'en';
         if (navigator.userLanguage) {
@@ -143,6 +144,7 @@ class App extends Component {
             if (this.props.game.isRunning === true && nextProps.game.isRunning === false) {
                 gameStopped = true;
                 if (!this.state.tutorial) {
+                    multiplayer.persistGameStats(nextProps.game.players[multiplayer.localPlayerIndex].statistics, this.props.updateTrackRecord);
                     let timeoutId = setTimeout(() => this.showOverview(), 2000);
                     this.timeouts.push(timeoutId);
                 } else {
@@ -424,7 +426,8 @@ const mapDispatchToProps = {
     loadUiState,
     resetUi,
     showOverview,
-    updateCoins
+    updateCoins,
+    updateTrackRecord
 };
 
 const AppContainer = connect(
