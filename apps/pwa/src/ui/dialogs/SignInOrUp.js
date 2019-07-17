@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { notifyPlayerSignedIn } from '../UiActions';
 import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
+import * as firebaseui from 'firebaseui';
 import { multiplayer } from '../../Multiplayer';
 import firebase from 'firebase/app';
 import 'firebase/auth';
@@ -17,11 +18,14 @@ import Button from '@material-ui/core/Button';
 const uiConfig = {
     signInFlow: 'popup',
     autoUpgradeAnonymousUsers: true,
+    credentialHelper: firebaseui.auth.CredentialHelper.NONE,
     callbacks: {
         signInSuccessWithAuthResult: () => false,
         signInFailure: (err) => {
             if (err.code === "firebaseui/anonymous-upgrade-merge-conflict") {
-                firebase.auth().signInWithCredential(err.credential).catch(signInErr => {
+                firebase.auth().signInWithCredential(err.credential).then(() => {
+                    // TODO merge account data (coins, awards etc.)
+                }).catch(signInErr => {
                     console.log("could not sign in with credentials after merge conflict during anonymous account upgrade. ", signInErr);
                 })
             }
