@@ -68,7 +68,7 @@ class Gamefield {
             if (pivot.material.name !==  phenotype + '.Shield.material') {
                 mesh.actionManager = new ActionManager(this.scene);
                 mesh.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnPickDownTrigger, event => {
-                    this.action(cell.row, cell.col, event.pointerX, event.pointerY)
+                    this.action(cell.row, cell.col, mesh.position);
                 }));
             } else {
                 mesh.isPickable = false;

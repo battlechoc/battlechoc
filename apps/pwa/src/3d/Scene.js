@@ -9,8 +9,7 @@ import { EntityType, AttackType, BoardCellTypes, createEntity, getEntityDescript
 import { BattlechocError } from '../gameplay/Errors';
 import { Jukebox } from '../ui/misc';
 import { playerHasAttacks } from '../gameplay/Player';
-import { InfoType, spawnInfo } from '../ui/misc/FlyingInfo';
-import { Scene as BabylonScene, DirectionalLight, Engine, HighlightLayer, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation, Matrix, MeshBuilder } from 'babylonjs';
+import { Scene as BabylonScene, DynamicTexture, Mesh, StandardMaterial, DirectionalLight, Engine, HighlightLayer, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation, MeshBuilder } from 'babylonjs';
 import { AssetLoadingViewContainer as AssetLoadingView } from '../AssetLoader';
 import 'babylonjs-loaders';
 
@@ -48,6 +47,16 @@ class Scene extends Component {
         this.opponentGameField = null;
         this.renderLoopRepetitions = 0;
         this.opponentGameFieldDistance = 12;
+
+        this.InfoType = Object.freeze({
+            CACAO_HARVESTED: 'InfoType.CACAO_HARVESTED',
+            CACAO_CONSUMED: 'InfoType.CACAO_CONSUMED',
+            INCREASE_BUILDINGS_PER_TURN: 'InfoType.INCREASE_BUILDINGS_PER_TURN',
+            INCREASE_CACAO_PER_TURN: 'InfoType.INCREASE_CACAO_PER_TURN',
+            INCREASE_ATTACKS_PER_TURN: 'InfoType.INCREASE_ATTACKS_PER_TURN',
+            INCREASE_SPY_ATTACKS_PER_TURN: 'InfoType.INCREASE_SPY_ATTACKS_PER_TURN',
+            BUNNY_CAUGHT: 'InfoType.BUNNY_CAUGHT'
+        });
     }
 
     componentWillUnmount() {
@@ -74,35 +83,86 @@ class Scene extends Component {
         }
     }
 
+    spawnInfo(messageType, position, amount) {
+        console.log(messageType, position, amount);
+        let id = Date.now();
+        let info = MeshBuilder.CreatePlane('info_' + id, { width: 1.65, height: 1.65 }, this.scene);
+        info.position = position;
+        info.position.y = 6;
+        info.billboardMode = Mesh.BILLBOARDMODE_ALL;
+
+        let texture = new DynamicTexture('info_texture_' + id, 208, this.scene);
+        let context = texture.getContext();
+
+        let material = new StandardMaterial('info_material_' + id, this.scene);
+        material.emissiveTexture = texture;
+        material.ambientTexture = texture;
+        material.opacityTexture = texture;
+
+        info.material = material;
+        
+        let drawInfo = (filename, color, text) => {
+            let image = new Image();
+            image.src = filename;
+            image.onload = () => {
+                this.setRenderLoop();
+                context.drawImage(image, 0, 0);
+                texture.update(); 
+
+                if (typeof text !== 'undefined') {
+                    let shadowColor = '#7b0000';
+                    if (color === '#70bf31') {
+                        shadowColor = '#44741e';
+                    }
+
+                    texture.drawText(text, 48, 102, 'bold 48px Roboto', shadowColor, null, true, true);
+                    texture.drawText(text, 46, 100, 'bold 48px Roboto', color, null, true, true);
+                }
+                
+                let flyaway = new Animation('flyaway_' + id, "position.y", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+                let keyframes = [{ frame: 0, value: info.position.y }, { frame: 120, value: info.position.y + 3 }];
+                flyaway.setKeys(keyframes);
+                info.animations = [flyaway];
+                this.scene.beginAnimation(info, 0, 120, false, 1, () => this.setRenderLoop(false));
+
+                setTimeout(() => {
+                    info.dispose();
+                    texture.dispose();
+                    material.dispose();
+
+                    this.scene.render();
+                }, 1000);
+            }
+        }
+
+        if (messageType === this.InfoType.CACAO_HARVESTED) {
+            drawInfo('images/cacao_no_background.png','#70bf31', '+' + amount);
+        } else if (messageType === this.InfoType.CACAO_CONSUMED) {
+            drawInfo('images/cacao_no_background.png','#c70000', '-' + amount);
+        } else if (messageType === this.InfoType.INCREASE_CACAO_PER_TURN) {
+            drawInfo('images/cacaoPerTurn.png','#70bf31', '+' + amount);
+        } else if (messageType === this.InfoType.INCREASE_BUILDINGS_PER_TURN) {
+            drawInfo('images/buildingsPerTurn.png','#70bf31', '+' + amount);
+        } else if (messageType === this.InfoType.INCREASE_ATTACKS_PER_TURN) {
+            drawInfo('images/attacksPerTurn.png','#70bf31', '+' + amount);
+        } else if (messageType === this.InfoType.INCREASE_SPY_ATTACKS_PER_TURN) {
+            drawInfo('images/spyAttacksPerTurn.png','#70bf31', '+' + amount);
+        } else if (messageType === this.InfoType.BUNNY_CAUGHT) {
+            drawInfo('images/bunnyCaught.png');
+        }
+    }
+
     triggerCacaoInfo() {
         let cells = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid;
         let trees = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE));
         let description = getEntityDescriptor(EntityType.CACAOTREE);
         trees.forEach(cell => {
-            let point = Vector3.Project(new Vector3(cell.row, 3, cell.col), 
-                Matrix.Identity(), 
-                this.scene.getTransformMatrix(), 
-                this.camera.viewport.toGlobal(this.engine.getRenderWidth(), this.engine.getRenderHeight()));
-            spawnInfo({
-                x: point.x,
-                y: point.y,
-                cacao: cell.type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn,
-                type: InfoType.CACAO_HARVESTED
-            });
+            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), cell.type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn);
         });
         let factory = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.FACTORY));
         description = getEntityDescriptor(EntityType.FACTORY);
         factory.forEach(cell => {
-            let point = Vector3.Project(new Vector3(cell.row, 3, cell.col), 
-                Matrix.Identity(), 
-                this.scene.getTransformMatrix(), 
-                this.camera.viewport.toGlobal(this.engine.getRenderWidth(), this.engine.getRenderHeight()));
-            spawnInfo({
-                x: point.x,
-                y: point.y,
-                cacao: description.cacaoPerTurn,
-                type: InfoType.CACAO_HARVESTED
-            });
+            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), description.cacaoPerTurn);
         });
     }
 
@@ -161,7 +221,7 @@ class Scene extends Component {
         }
     }
 
-    playerFieldClick(row, col, eventX, eventY) {
+    playerFieldClick(row, col, position) {
         let buildingSelected = this.props.selectedBuilding;
         let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
         if (buildingSelected || (initialPlacement && this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn === 0)) {
@@ -177,13 +237,13 @@ class Scene extends Component {
             this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
                 if (initialPlacement) {
-                    spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn, x: eventX, y: eventY});
+                    this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn);
                     this.props.deselectBuildings();
                     this.props.deselectAttack();
                     let playerId = this.props.game.players[multiplayer.localPlayerIndex].id;
                     setTimeout(() => {
                         let description = getEntityDescriptor(EntityType.FACTORY);
-                        spawnInfo({ type: InfoType.INCREASE_CACAO_PER_TURN, cacao: description.cacaoPerTurn, x: eventX, y: eventY});
+                        this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), description.cacaoPerTurn);
                     }, 1000);
                     setTimeout(() => {
                         if (playerId === this.props.game.players[multiplayer.localPlayerIndex].id) {
@@ -194,18 +254,18 @@ class Scene extends Component {
                     }, 3000);
                 } else {
                     let description = getEntityDescriptor(this.props.selectedBuilding)
-                    spawnInfo({ type: InfoType.CACAO_CONSUMED, cacao: description.costs, x: eventX, y: eventY});
+                    this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs);
                     let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;
                     setTimeout(() => {
                         if (building.type === EntityType.CACAOTREE) {
-                            spawnInfo({ type: InfoType.INCREASE_CACAO_PER_TURN, cacao: cacaoDelta, x: eventX, y: eventY});
+                            this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), cacaoDelta);
                         } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
-                            spawnInfo({ type: InfoType.INCREASE_ATTACKS_PER_TURN, attacks: 1, x: eventX, y: eventY});
+                            this.spawnInfo(this.InfoType.INCREASE_ATTACKS_PER_TURN, position.clone(), 1);
                         } else if (building.type === EntityType.FACTORY_EXTENSION) {
-                            spawnInfo({ type: InfoType.INCREASE_BUILDINGS_PER_TURN, buildings: buildingsDelta, x: eventX, y: eventY});
+                            this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), buildingsDelta);
                         } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
-                            spawnInfo({ type: InfoType.INCREASE_SPY_ATTACKS_PER_TURN, attacks: 1, x: eventX, y: eventY});
+                            this.spawnInfo(this.InfoType.INCREASE_SPY_ATTACKS_PER_TURN, position.clone(), 1);
                         }
                         setTimeout(() => {
                             if (this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) {
@@ -245,7 +305,7 @@ class Scene extends Component {
         }
     }
 
-    opponentFieldClick(row, col, eventX, eventY) {
+    opponentFieldClick(row, col, position) {
         if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
             this.props.attack({
                 issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
@@ -258,7 +318,7 @@ class Scene extends Component {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
                     } else {
                         Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
-                        spawnInfo({ type: InfoType.BUNNY_CAUGHT, x: eventX, y: eventY});
+                        this.spawnInfo(this.InfoType.BUNNY_CAUGHT, position.clone());
                     }
                 } else if (typeof this.props.selectedAttack !== 'undefined') {
                     Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
