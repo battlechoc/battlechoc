@@ -120,18 +120,17 @@ class Scene extends Component {
                 }
                 
                 let flyaway = new Animation('flyaway_' + id, "position.y", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
-                let keyframes = [{ frame: 0, value: info.position.y }, { frame: 120, value: info.position.y + 3 }];
+                let fade = new Animation("fade", "visibility", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+                fade.setKeys([{ frame: 0, value: 1.0 }, { frame: 100, value: .8 }, { frame: 120, value: 0.0 }]);
+                let keyframes = [{ frame: 0, value: info.position.y }, { frame: 120, value: info.position.y + 2.5 }];
                 flyaway.setKeys(keyframes);
-                info.animations = [flyaway];
-                this.scene.beginAnimation(info, 0, 120, false, 1, () => this.setRenderLoop(false));
-
-                setTimeout(() => {
+                info.animations = [flyaway, fade];
+                this.scene.beginAnimation(info, 0, 180, false, 1, () => {
                     info.dispose();
                     texture.dispose();
                     material.dispose();
-
-                    this.scene.render();
-                }, 1000);
+                    this.setRenderLoop(false);
+                });
             }
         }
 
