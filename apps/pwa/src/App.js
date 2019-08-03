@@ -7,7 +7,7 @@ import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updateCoins, updateTrackRecord } from './ui/UiActions';
+import { showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -42,8 +42,7 @@ class App extends Component {
     }
 
     componentWillMount() {
-        multiplayer.registerUpdateCoinsAction(this.props.updateCoins);
-        multiplayer.registerUpdateTrackRecordAction(this.props.updateTrackRecord);
+        multiplayer.registerCallbacks({ updatePlayerStats: this.props.updatePlayerStats });
 
         let browserLanguage = 'en';
         if (navigator.userLanguage) {
@@ -57,12 +56,6 @@ class App extends Component {
                 this.props.changeLanguage(language);
             } else {
                 this.props.changeLanguage(browserLanguage);
-            }
-        });
-
-        OfflineStore.playerStore.get('coins').then(coins => {
-            if (typeof coins !== 'undefined') {
-                multiplayer.updateCoins(coins, this.props.updateCoins);
             }
         });
     }
@@ -79,6 +72,8 @@ class App extends Component {
 
         window.onfocus = () => Jukebox.playMusic();
         window.onblur = () => Jukebox.pauseMusic();
+
+        multiplayer.fetchPlayerStats(this.props.updatePlayerStats);
     }
 
     handleError = error => {
@@ -144,7 +139,6 @@ class App extends Component {
             if (this.props.game.isRunning === true && nextProps.game.isRunning === false) {
                 gameStopped = true;
                 if (!this.state.tutorial) {
-                    multiplayer.persistGameStats(nextProps.game.players[multiplayer.localPlayerIndex].statistics, this.props.updateTrackRecord);
                     let timeoutId = setTimeout(() => this.showOverview(), 2000);
                     this.timeouts.push(timeoutId);
                 } else {
@@ -152,14 +146,6 @@ class App extends Component {
                     this.timeouts.push(timeoutId);
                 }
             }
-        }
-
-        if (nextProps.playerInfos.coins !== this.props.playerInfos.coins) {
-            multiplayer.updateCoins(nextProps.playerInfos.coins, this.props.updateCoins);
-        }
-
-        if (nextProps.playerInfos.isSignedIn === true && nextProps.playerInfos.isSignedIn === false) {
-            multiplayer.updateCoins(nextProps.playerInfos.coins);
         }
 
         if (typeof this.scene !== 'undefined') {
@@ -345,19 +331,8 @@ class App extends Component {
         this.props.gameResumeable(false);
         OfflineStore.gamestateStore.clear();
 
-        const winners = Rules.determineWinner(this.props.game);
-        let statistics = this.props.game.players[multiplayer.localPlayerIndex].statistics;
-        let awards = statistics.attacks + statistics.builtEntities * 2 + statistics.espionages * 10 + statistics.moltenFields * 50;
-
-        if (winners.length === 1) {
-            if (!multiplayer.isLocalPlayer(winners[0].idx)) {
-                awards = 0;
-            }
-        } else if (winners.length === 2) {
-            awards = Math.floor(awards / 2);
-        }
-
-        multiplayer.awardsReceived(this.props.playerInfos.coins, awards, this.props.updateCoins);
+        let stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: Rules.determineWinner(this.props.game) };
+        multiplayer.pushGameStats([stats]);
     }
 
     closeTutorial = () => {
@@ -426,8 +401,7 @@ const mapDispatchToProps = {
     loadUiState,
     resetUi,
     showOverview,
-    updateCoins,
-    updateTrackRecord
+    updatePlayerStats
 };
 
 const AppContainer = connect(

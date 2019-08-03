@@ -2,6 +2,7 @@ import { createReducer } from 'redux-starter-kit';
 import * as UiActions from './UiActions';
 import { EntityType } from '../gameplay/GameEntities';
 import OfflineStore from '../OfflineStore';
+import { EmptyPlayerStats } from '../Multiplayer';
 
 const uiReducer = createReducer({
     selectedBuilding: EntityType.FACTORY,
@@ -9,7 +10,7 @@ const uiReducer = createReducer({
     statistics: false,
     assetsReady: false,
     overviewVisible: false,
-    playerInfos: { coins: 0, isSignedIn: false },
+    playerInfos: { stats: EmptyPlayerStats, isSignedIn: false },
     language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
 }, {
         [UiActions.resetUi]: (state, action) => {
@@ -70,9 +71,6 @@ const uiReducer = createReducer({
             state.playerInfos.email = action.payload.email;
             state.playerInfos.uid = action.payload.uid;
             state.playerInfos.name = action.payload.name;
-            if (typeof action.payload.coins !== 'undefined' && action.payload.coins > state.playerInfos.coins) {
-                state.playerInfos.coins = action.payload.playerInfos.coins;
-            }
         },
         [UiActions.notifyPlayerSignedOut]: (state, action) => {
             state.playerInfos.isSignedIn = false;
@@ -80,13 +78,10 @@ const uiReducer = createReducer({
             state.playerInfos.email = undefined;
             state.playerInfos.name = undefined;
             state.playerInfos.uid = undefined;
-            state.playerInfos.coins = 0;
+            state.playerInfos.stats = EmptyPlayerStats;
         },
-        [UiActions.updateCoins]: (state, action) => {
-            state.playerInfos.coins = action.payload;
-        },
-        [UiActions.updateTrackRecord]: (state, action) => {
-            state.playerInfos.trackRecord = action.payload;
+        [UiActions.updatePlayerStats]: (state, action) => {
+            state.playerInfos.stats = action.payload;
         }
     }
 );

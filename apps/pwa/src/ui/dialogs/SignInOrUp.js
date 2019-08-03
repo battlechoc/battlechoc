@@ -24,7 +24,7 @@ const uiConfig = {
         signInFailure: (err) => {
             if (err.code === "firebaseui/anonymous-upgrade-merge-conflict") {
                 firebase.auth().signInWithCredential(err.credential).then(() => {
-                    // TODO merge account data (coins, awards etc.)
+                    multiplayer.mergeAccounts();
                 }).catch(signInErr => {
                     console.log("could not sign in with credentials after merge conflict during anonymous account upgrade. ", signInErr);
                 })
@@ -47,7 +47,7 @@ class SignInOrUp extends React.Component {
         this.state = {
             open: false
         }
-        multiplayer.registerNotifyPlayerSignedInAction(this.props.notifyPlayerSignedIn);
+        multiplayer.registerCallbacks({ notifyPlayerSignedIn: this.props.notifyPlayerSignedIn });
     }
 
     componentDidMount() {
@@ -75,7 +75,7 @@ class SignInOrUp extends React.Component {
                     <DialogContent>
                         Welcome: {this.props.playerInfos.name}<br />
                         E-Mail: {this.props.playerInfos.email}<br />
-                        Coins: {this.props.playerInfos.coins}
+                        Coins: {this.props.playerInfos.stats.coins}
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => {
