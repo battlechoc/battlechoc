@@ -48,7 +48,6 @@ class Multiplayer {
                         if (firebase.auth().currentUser.isAnonymous === false) {
                             this.mergePlayerStats();
                         }
-
                     }).catch(err => {
                         console.log("could not create player entry.", err);
                     });
@@ -157,10 +156,13 @@ class Multiplayer {
                                 .catch(err => { console.log('Could not store stats for player', err); });
                         } else {
                             let newStats = doc.data();
-                            console.log(newStats);
                             if (typeof newStats.trackRecord === 'undefined') {
-                                newStats = EmptyPlayerStats;
+                                newStats.trackRecord = [];
                             }
+                            if (typeof newStats.coins === 'undefined') {
+                                newStats.coins = 0;
+                            }
+                            console.log(newStats);
                             if (playerStats.trackRecord.length > 0) {
                                 const recalculatedCoins = this.calculateCoinsFromTrackRecord(playerStats.trackRecord);
                                 console.log("recalculated coins: " + recalculatedCoins + " local coins: " + playerStats.coins);
@@ -195,7 +197,7 @@ class Multiplayer {
             playerInfosRef.get().then(doc => {
                 if (!doc.exists) {
                     console.log("player stats not yet existing...creating new object");
-                    playerInfosRef.set({ coins: 0, awards: {}, skills: {}, trackRecord: [] })
+                    playerInfosRef.set(EmptyPlayerStats)
                         .then(() => { this.callbacks.updatePlayerStats(EmptyPlayerStats); })
                         .catch(err => { console.log('Could not store coins for player', err); });
                 } else {

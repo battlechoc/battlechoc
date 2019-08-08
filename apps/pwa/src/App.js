@@ -330,8 +330,9 @@ class App extends Component {
         this.props.showOverview();
         this.props.gameResumeable(false);
         OfflineStore.gamestateStore.clear();
-
-        let stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: Rules.determineWinner(this.props.game) };
+        const winners = Rules.determineWinner(this.props.game);
+        
+        let stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: winners };
         multiplayer.pushGameStats([stats]);
     }
 
