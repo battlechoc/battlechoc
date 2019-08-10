@@ -80,8 +80,8 @@ class Hud extends Component {
                         }
                         return (
                             <div id="mainMenu">
-                                {typeof this.props.playerInfos.coins !== 'undefined' ? <div id="coins">
-                                    <span>{ this.props.playerInfos.coins }</span>
+                                {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
+                                    <span>{ this.props.playerInfos.stats.coins }</span>
                                     <img src="images/coins.png" alt="choco coins" />
                                 </div> : null}
                                 <SocialIcons />
