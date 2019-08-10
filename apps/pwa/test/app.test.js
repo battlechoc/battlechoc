@@ -29,6 +29,7 @@ describe('browser', () => {
       await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
       await expect(page).toMatchElement('.titleMenu', { text: 'New Game' });
       await page.click('.titleMenu .menuButton:first-child');
+      await expect(page).toMatchElement('h6', { text: 'Interactive battlechoc Tutorial' });
       // start skipping tutorial
       await page.click('.MuiToolbar-root button');
       await page.waitFor(500);
@@ -45,7 +46,6 @@ describe('browser', () => {
       await page.click('.MuiDialogActions-root .MuiButtonBase-root:last-child span');
       await page.waitFor(1000);
       // end skipping tutorial
-      await page.click('.titleMenu .menuButton:first-child');
       await page.waitForSelector('.active.button .stackedIcon');
       await page.click('.active.button .stackedIcon');
       await page.waitForSelector('.factory.enabled.preview');
