@@ -87,6 +87,7 @@ class Scene extends Component {
         console.log(messageType, position, amount);
         let id = Date.now();
         let info = MeshBuilder.CreatePlane('info_' + id, { width: 1.65, height: 1.65 }, this.scene);
+        info.isPickable = false;
         info.position = position;
         info.position.y = 6;
         info.billboardMode = Mesh.BILLBOARDMODE_ALL;
@@ -170,6 +171,11 @@ class Scene extends Component {
         const height = this.container.clientHeight;
         let ratio = width / height;
         let distance = Math.max(7.5 / ratio, 5);
+
+        if (this.props.tutorial) {
+            distance = Math.max(3 / ratio, 5);
+        }
+
         this.camera.orthoTop = distance;
         this.camera.orthoBottom = - distance;
         this.camera.orthoLeft = - distance * ratio;
@@ -387,8 +393,13 @@ class Scene extends Component {
             this.performCameraFlight();
         }
 
-        this.playerGameField = new Gamefield(true, new Vector3(0, 5, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.playerFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
-        this.opponentGameField = new Gamefield(false, new Vector3(-this.opponentGameFieldDistance, 5, this.opponentGameFieldDistance), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.opponentFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
+        let gamefieldHeight = 5;
+        if (this.props.tutorial) {
+            gamefieldHeight = 3.5;
+        }
+
+        this.playerGameField = new Gamefield(true, new Vector3(0, gamefieldHeight, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.playerFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
+        this.opponentGameField = new Gamefield(false, new Vector3(-this.opponentGameFieldDistance, gamefieldHeight, this.opponentGameFieldDistance), () => this.props.game.board.fields[opponentFieldIndex], opponentFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.opponentFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
 
         if (overrideUiState) {
             this.props.deselectBuildings();
@@ -410,7 +421,8 @@ const mapStateToProps = state => ({
     game: state.gameplay.game,
     selectedBuilding: state.ui.selectedBuilding,
     selectedAttack: state.ui.selectedAttack,
-    assetsReady: state.ui.assetsReady
+    assetsReady: state.ui.assetsReady,
+    tutorial: state.ui.tutorial
 });
 
 const mapDispatchToProps = {

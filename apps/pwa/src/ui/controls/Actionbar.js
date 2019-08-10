@@ -92,17 +92,22 @@ class Actionbar extends Component {
                 className="icon"
                 onClick={() => this.props.showSettings()}>
                 <Settings />
-            </Fab>,
-            <Fab
-                size="small"
-                key="1"
-                color="primary"
-                aria-label="signinorup"
-                className="icon"
-                onClick={() => this.props.showSignInOrUp()}>
-                <PermIdentity />
             </Fab>
         ];
+
+        if (typeof this.props.game === 'undefined') {
+            buttons.push(
+                <Fab
+                    size="small"
+                    key="1"
+                    color="primary"
+                    aria-label="signinorup"
+                    className="icon"
+                    onClick={() => this.props.showSignInOrUp()}>
+                    <PermIdentity />
+                </Fab>
+            );
+        }
 
         if (this.state.activeMusicButton) {
             buttons.push(
@@ -144,7 +149,7 @@ class Actionbar extends Component {
             );
         }
 
-        if (typeof this.props.game !== 'undefined' && this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START && typeof multiplayer.currentGameSession === 'undefined') {
+        if (typeof this.props.game !== 'undefined' && this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START && typeof multiplayer.currentGameSession === 'undefined' && !this.props.tutorial) {
             buttons.push(
                 <Fab
                     size="small"
@@ -256,7 +261,8 @@ Actionbar.propTypes = {
 const mapStateToProps = state => ({
     game: state.gameplay.game,
     players: state.players,
-    language: state.ui.language
+    language: state.ui.language,
+    tutorial: state.ui.tutorial,
 });
 
 const mapDispatchToProps = {

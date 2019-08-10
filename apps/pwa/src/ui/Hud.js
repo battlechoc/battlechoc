@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import './Hud.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
+import OfflineStore from '../OfflineStore';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
@@ -42,18 +43,15 @@ class Hud extends Component {
     }
 
     openSettings = () => {
-        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.settings.open();
+        OfflineStore.settingsStore.get('tutorialAlreadySeen').then(tutorialAlreadySeen => {
+            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+            this.settings.open(tutorialAlreadySeen);
+        });
     }
 
     openSignInOrUp = () => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         this.signInOrUp.open();
-    }
-
-    closeTutorial = () => {
-        Jukebox.stopMusic();
-        this.setState({ tutorial: false })
     }
 
     render() {
@@ -62,7 +60,7 @@ class Hud extends Component {
         return (
             <div className={this.props.className}>
                 <Tooltip />
-                <Settings endGame={this.props.endGame} onRef={settings => (this.settings = settings)} />
+                <Settings startTutorial={this.props.startTutorial} endGame={this.props.endGame} onRef={settings => (this.settings = settings)} />
                 <SignInOrUp onRef={signInOrUp => (this.signInOrUp = signInOrUp)} />
                 <Actionbar showSettings={this.openSettings} showSignInOrUp={this.openSignInOrUp} />
                 { textAnimation }
@@ -76,7 +74,7 @@ class Hud extends Component {
                             if (this.props.resumeGamePossible === true) {
                                 controls.push(<Button key="1" color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(true)}>{t[this.props.language].RESUME_GAME}</Button>);
                             }
-                            controls.push(<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.props.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>);
+                            //controls.push(<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.props.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>);
                         } else {
                             controls.push(<Button key="3" color="primary" aria-label="join multiplayer" className="menuButton" variant="contained" onClick={this.props.joinMultiplayerGame}>{t[this.props.language].JOIN_MULTIPLAYER}</Button>);
                         }

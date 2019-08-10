@@ -3,6 +3,11 @@
   width: 100%;
 }
 
+.hint {
+  font-size: 0.8rem !important;
+  margin-top: 15px !important;
+}
+
 .tutorial-headline {
   flex-grow: 1;
   text-transform: uppercase;

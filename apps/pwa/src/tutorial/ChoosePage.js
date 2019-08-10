@@ -16,7 +16,9 @@ class ChoosePage extends Component {
     render() {
         let messages = [
             { text: 'TUTORIAL_CHOOSE_MESSAGE_1', type:'text', delay: 2000 },
-            { text: 'TUTORIAL_CHOOSE_MESSAGE_2', type:'text'}
+            { text: 'TUTORIAL_CHOOSE_MESSAGE_2', type:'text', delay: 500},
+            { src: 'skip', type: 'image', alt: 'skip icon', delay: 2000 },
+            { text: 'TUTORIAL_CHOOSE_MESSAGE_3', type:'text', delay: 2000},
         ]
         return <ChatLikeInstructions messages={messages} appbar={this.props.appbar}/>;
     }

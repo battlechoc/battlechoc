@@ -3,7 +3,13 @@ import PropTypes from 'prop-types';
 import './Tutorial.css';
 import { connect } from 'react-redux';
 import { AppBar, Toolbar, Typography, IconButton } from '@material-ui/core';
-import { ArrowBackIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Close as CloseIcon } from '@material-ui/icons';
+import { ArrowBackIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Done } from '@material-ui/icons';
+import withMobileDialog from '@material-ui/core/withMobileDialog';
+import Button from '@material-ui/core/Button';
+import Dialog from '@material-ui/core/Dialog';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
 import ChoosePage from './ChoosePage';
 import BuildFactoryPage from './BuildFactoryPage';
 import TreesAndCannonsPage from './TreesAndCannonsPage';
@@ -22,6 +28,7 @@ class Tutorial extends Component {
         super(props);
         this.state = {
             page: 0,
+            open: false,
             maxPages: 5
         }
     }
@@ -32,7 +39,7 @@ class Tutorial extends Component {
 
     fulfilled = () => {
         if ((this.state.page + 1) === this.state.maxPages) {
-            this.props.closeTutorial();
+            this.finishedTutorial();
         } else {
             this.next();
         }
@@ -69,15 +76,25 @@ class Tutorial extends Component {
         }
     }
 
+    finishedTutorial = () => {
+        this.setState({ open: true });
+    }
+
+    closeTutorial = startGame => {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        this.setState({ open: false });
+        this.props.closeTutorial(startGame);   
+    }
+
     render() {
         let backIcon = <IconButton color="inherit" aria-label="back" onClick={this.back}><ArrowBackIcon /></IconButton>
         let nextIcon = <IconButton color="inherit" aria-label="next" onClick={this.next}><ArrowForwardIcon /></IconButton>
         if (this.state.page === 0) {
-            backIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={this.props.closeTutorial}><CloseIcon /></IconButton>
+            backIcon = null;
         }
 
         if (this.state.page >= this.state.maxPages - 1) {
-            nextIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={this.props.closeTutorial}><CloseIcon /></IconButton>
+            nextIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={this.finishedTutorial}><Done /></IconButton>
         }
 
         let title = t[this.props.language].TUTORIAL_TITLE_1;
@@ -112,6 +129,29 @@ class Tutorial extends Component {
         return (
             <div id="tutorial">
                 {pages[this.state.page]}
+
+                <Dialog
+                  fullWidth={true}
+                  fullScreen={this.props.fullScreen}
+                  open={this.state.open}
+                  onClose={this.closeTutorial}
+                  aria-labelledby="report-form-dialog-title"
+                >
+                  <DialogTitle id="report-form-dialog-title">{t[this.props.language].TUTORIAL_DIALOG_TITLE}</DialogTitle>
+                  <DialogContent>
+                    <Typography>{t[this.props.language].TUTORIAL_DIALOG_MESSAGE}</Typography>
+                    <Typography color="primary" className="hint">{"\u27AA " + t[this.props.language].TUTORIAL_DIALOG_HINT}</Typography>
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={() => this.closeTutorial(false)} color="primary">
+                      {t[this.props.language].TUTORIAL_DIALOG_BACK}
+                    </Button>
+                    <Button onClick={() => this.closeTutorial(true)} color="primary">
+                      {t[this.props.language].TUTORIAL_DIALOG_PLAY_GAME}
+                    </Button>
+                  </DialogActions>
+                </Dialog>
+
             </div>
         );
     }
@@ -125,4 +165,4 @@ Tutorial.propTypes = {
 const mapStateToProps = state => ({ language: state.ui.language });
 const TutorialContainer = connect(mapStateToProps)(Tutorial);
 
-export default TutorialContainer;
+export default withMobileDialog({ breakpoint: 'sm' })(TutorialContainer);

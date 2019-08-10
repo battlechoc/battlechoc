@@ -116,6 +116,7 @@ const languages = {
         REPORT_CUSTOM_MESSAGE_PLACEHOLDER: 'The problem occurs when you ...',
         REPORT_DEVICE_INFO: 'Add device information',
         REPORT_PROBLEM: 'Report Problem',
+        RESTART_TUTORIAL: 'Restart Tutorial',
         SNACKBAR_ERROR: 'Error sending the problem report. Check your Internet connection',
         SNACKBAR_SEND: 'The problem report was sent successfully!',
         REPORT_INFORMATION: 'The report will automatically include your turn history so we can reproduce your game and the problem. Further observations in the form of an additional message, or your device information (operating system, etc.) will help enormously. We delete this information immediately after the bug has been fixed, or the problem could not be recreated. Thanks for your help!',
@@ -135,8 +136,9 @@ const languages = {
         TUTORIAL: 'Tutorial',
         IOS_MESSAGE: 'To play battlechoc in fullscreen mode on iOS you need to rotate your iPhone [0] or use the share icon [1] and select [2] "Add to Home Screen"',
         JOIN_MULTIPLAYER: 'Join Multiplayer Game',
-        TUTORIAL_CHOOSE_MESSAGE_1: 'Welcome to our interactive battlechoc tutorial!',
-        TUTORIAL_CHOOSE_MESSAGE_2: 'Choose between first turn or one of the game fields to continue with the tutorial',
+        TUTORIAL_CHOOSE_MESSAGE_1: 'Welcome to battlechoc! It seems that you are playing for the first time',
+        TUTORIAL_CHOOSE_MESSAGE_2: 'You can skip a tutorial page by clicking this icon above',
+        TUTORIAL_CHOOSE_MESSAGE_3: 'To continue with this tutorial choose between first turn or one of the game fields',
         TUTORIAL_FACTORY_MESSAGE_1: 'To build e.g. cacao trees or rum truffle cannons, you need to build a chocolate factory',
         TUTORIAL_FACTORY_MESSAGE_2: 'The factory allows you to build 2 buildings per turn',
         TUTORIAL_FACTORY_MESSAGE_3: 'Hint: If you build a factory on black chocolate, it works better and is able to produce up to 3 buildings per turn',
@@ -172,7 +174,12 @@ const languages = {
         TUTORIAL_TITLE_2: 'The chocolate factory',
         TUTORIAL_TITLE_3: 'About trees and cannons',
         TUTORIAL_TITLE_4: 'X-mas and bunnies',
-        TUTORIAL_TITLE_5: 'About fruits and chocolate fountains'
+        TUTORIAL_TITLE_5: 'About fruits and chocolate fountains',
+        TUTORIAL_DIALOG_TITLE: 'You did it!',
+        TUTORIAL_DIALOG_MESSAGE: 'Now you are ready to play a real battlechoc match. Do you want to start right now?',
+        TUTORIAL_DIALOG_HINT: 'You are now able to restart the tutorial in the settings menu',
+        TUTORIAL_DIALOG_BACK: 'Back to menu',
+        TUTORIAL_DIALOG_PLAY_GAME: 'Start a match'
     },
     de: {
         NEW_GAME: 'Neues Spiel',
@@ -288,6 +295,7 @@ const languages = {
         REPORT_CUSTOM_MESSAGE: 'Zusätzliche Nachricht',
         REPORT_CUSTOM_MESSAGE_PLACEHOLDER: 'Das Problem tritt auf, wenn du ...',
         REPORT_PROBLEM: 'Problembericht senden',
+        RESTART_TUTORIAL: 'Tutorial wiederholen',
         REPORT_DEVICE_INFO: 'Geräteinformationen anhängen',
         SNACKBAR_ERROR: 'Fehler beim Senden des Problemberichts. Prüfe deine Internetverbindung',
         SNACKBAR_SEND: 'Der Problembericht wurde erfolgreich gesendet!',
@@ -308,8 +316,9 @@ const languages = {
         TUTORIAL: 'Tutorial',
         IOS_MESSAGE: 'Drehe dein iPhone, um battlechoc im Vollbildmodus spielen zu können [0] oder verwende die Share-Funktion [1] und klicke auf [2] "Zum Home-Bildschirm"',
         JOIN_MULTIPLAYER: 'Multiplayer Spiel beitreten',
-        TUTORIAL_CHOOSE_MESSAGE_1: 'Willkommen zum interaktivem battlechoc tutorial!',
-        TUTORIAL_CHOOSE_MESSAGE_2: 'Wähle zwischen dem ersten Zug, oder einem der beiden Felder, um mit dem Tutorial fortzufahren',
+        TUTORIAL_CHOOSE_MESSAGE_1: 'Willkommen bei battlechoc! Es scheint das erste mal zu sein, dass du eine Runde spielst',
+        TUTORIAL_CHOOSE_MESSAGE_2: 'Du kannst die Tutorial Kapitel durch einen Klick auf dieses Icon überspringen',
+        TUTORIAL_CHOOSE_MESSAGE_3: 'Um mit dem Tutorial fortzufahren wähle zwischen dem ersten Zug, oder einem der beiden Spielfelder',
         TUTORIAL_FACTORY_MESSAGE_1: 'Du benötigst eine Schokoladenfabrik, um z.B. Kakaobäume oder Rumtrüffelkanonen bauen zu können',
         TUTORIAL_FACTORY_MESSAGE_2: 'Die Fabrik erlaubt dir 2 Gebäude pro Runde zu setzen',
         TUTORIAL_FACTORY_MESSAGE_3: 'Tipp: Wenn du eine Fabrik auf schwarze Schokolade baust, arbeitet sie besser und kann bis zu 3 Gebäude pro Runde herstellen',
@@ -345,7 +354,12 @@ const languages = {
         TUTORIAL_TITLE_2: 'Die Schokoladenfabrik',
         TUTORIAL_TITLE_3: 'Kakaobäume und Rumtrüffelkanonen',
         TUTORIAL_TITLE_4: 'Die Wahrheit über Weihnachten und Ostern',
-        TUTORIAL_TITLE_5: 'Schokobrunnen und Früchte'
+        TUTORIAL_TITLE_5: 'Schokobrunnen und Früchte',
+        TUTORIAL_DIALOG_TITLE: 'Du hast es geschafft!',
+        TUTORIAL_DIALOG_MESSAGE: 'Nun bist du bereit um eine richtige Runde battlechoc zu spielen. Willst du direkt starten?',
+        TUTORIAL_DIALOG_HINT: 'Es ist dir nun möglich aus dem Einstellungsmenü das Tutorial neu zu starten',
+        TUTORIAL_DIALOG_BACK: 'Zum Menü',
+        TUTORIAL_DIALOG_PLAY_GAME: 'Jetzt Spielen'
     }
 };
 

@@ -32,6 +32,7 @@ class Settings extends Component {
       showErrorReport: false,
       includeDeviceInformation: false,
       additionalReportMessage: '',
+      tutorialAlreadySeen: false,
       snackbar: {
         visible: false,
         text: 'The problem report was sent successfully!'
@@ -43,8 +44,8 @@ class Settings extends Component {
     this.props.onRef(this);
   }
 
-  open = () => {
-    this.setState({ open: true });
+  open = (tutorialAlreadySeen) => {
+    this.setState({ open: true, tutorialAlreadySeen: tutorialAlreadySeen });
   }
 
   handleClose = () => {
@@ -224,6 +225,21 @@ class Settings extends Component {
               }}>
                 {t[this.props.language].REPORT_PROBLEM}
               </Button>
+
+              {(() => {  
+                if (this.state.tutorialAlreadySeen && typeof this.props.game === 'undefined') {
+                  return (
+                    <Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {
+                      Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                      this.props.startTutorial();
+                      this.setState({ open: false, attentionTextVisible: false });
+                    }}>
+                    {t[this.props.language].RESTART_TUTORIAL}
+                    </Button>
+                  )
+                }
+              })()}
+
               {(() => {
                 if (this.props.playerInfos.isAnonymous === false) {
                   return (<Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {

@@ -8,7 +8,9 @@ const uiReducer = createReducer({
     tappedBuilding: EntityType.FACTORY,
     statistics: false,
     assetsReady: false,
+    tutorialAlreadySeen: false,
     overviewVisible: false,
+    tutorial: false,
     playerInfos: { coins: 0, isSignedIn: false },
     language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
 }, {
@@ -87,6 +89,13 @@ const uiReducer = createReducer({
         },
         [UiActions.updateTrackRecord]: (state, action) => {
             state.playerInfos.trackRecord = action.payload;
+        },
+        [UiActions.stopTutorial]: (state, action) => {
+            state.tutorial = false;
+            OfflineStore.settingsStore.set("tutorialAlreadySeen", true);
+        },
+        [UiActions.startTutorial]: (state, action) => {
+            state.tutorial = true;
         }
     }
 );

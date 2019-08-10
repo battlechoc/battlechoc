@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { Translation as t } from '../ui/misc';
+import { IconButton } from '@material-ui/core';
+import { ArrowForwardIos as ArrowForwardIcon} from '@material-ui/icons';
 
 class ChatLikeInstructions extends Component {
     constructor(props) {
@@ -79,6 +81,8 @@ class ChatLikeInstructions extends Component {
             } else if (message.type === 'image') {
                 if (['factory', 'cacaotree', 'cannon', 'fruitCannon'].includes(message.src)) {
                     return <div key={i} className="media"><div className="speechBubble"><div className={message.src + ' preview'} style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }}></div></div></div>;
+                } else if (message.src === 'skip') {
+                    return <div key={i} className="media"><div className="speechBubble"><IconButton color="inherit" aria-label="next"><ArrowForwardIcon /></IconButton></div></div>;
                 } else {
                     return <div key={i} className="media"><div className="speechBubble"><img alt={message.alt} src={message.src} /></div></div>;
                 }

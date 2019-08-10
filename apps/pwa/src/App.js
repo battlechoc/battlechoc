@@ -7,7 +7,7 @@ import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updateCoins, updateTrackRecord } from './ui/UiActions';
+import { startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updateCoins, updateTrackRecord } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -35,10 +35,7 @@ class App extends Component {
             }
         }
         this.timeouts = [];
-        this.state = {
-            params: params,
-            tutorial: false
-        };
+        this.state = { params: params };
     }
 
     componentWillMount() {
@@ -90,7 +87,7 @@ class App extends Component {
     }
 
     async loadSituation(situation) {
-        if (this.state.tutorial) {
+        if (this.props.tutorial) {
             this.opponent = new Violet({
                 finishTurn: this.props.finishTurn,
                 finishBuildPhase: this.props.finishBuildPhase,
@@ -143,7 +140,7 @@ class App extends Component {
         if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined') {
             if (this.props.game.isRunning === true && nextProps.game.isRunning === false) {
                 gameStopped = true;
-                if (!this.state.tutorial) {
+                if (!this.props.tutorial) {
                     multiplayer.persistGameStats(nextProps.game.players[multiplayer.localPlayerIndex].statistics, this.props.updateTrackRecord);
                     let timeoutId = setTimeout(() => this.showOverview(), 2000);
                     this.timeouts.push(timeoutId);
@@ -176,7 +173,7 @@ class App extends Component {
             if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined' && typeof OfflineStore.gamestateStore !== 'undefined' &&
                 (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (multiplayer.isLocalPlayer(nextProps.game.currentPlayerIndex) === true)) {
 
-                if (!this.state.tutorial) {
+                if (!this.props.tutorial) {
                     let resumeableGame = {};
                     resumeableGame.gameplay = nextProps.game;
                     resumeableGame.ui = nextProps.ui;
@@ -262,72 +259,78 @@ class App extends Component {
     }
 
     prepareNewGame = (resumeGame, joinMultiplayer, multiplayerGameState) => {
-        multiplayer.signInAnonymouslyIfNotAlreadySignedIn();
-        Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
-        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        gameplayLog.clear();
+        OfflineStore.settingsStore.get('tutorialAlreadySeen').then(tutorialAlreadySeen => {
+            if (tutorialAlreadySeen || this.props.playerInfos.coins > 0) {
+                multiplayer.signInAnonymouslyIfNotAlreadySignedIn();
+                Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
+                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                gameplayLog.clear();
 
-        let isAndroid = /Android/i.test(navigator.userAgent);
-        let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-        let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-        if (!isFullscreen && !isiOS) {
-            if (typeof document.documentElement.requestFullscreen === 'function') {
-                document.documentElement.requestFullscreen().then(() => {
-                    if (isAndroid) {
-                        window.screen.orientation.lock('landscape').catch(error => console.log('Unable to lock orientation to landscape'));
-                    }
-                }).catch(error => {
-                    console.log(error.name + ': ' + error.message);
-                });
-            }
-        }
-
-        if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
-            this.props.joinGame(multiplayerGameState).then(() => {
-                this.opponent = { player: this.props.game.players[0] };
-            });
-        } else {
-            OfflineStore.getResumeableGame().then((resumeableGame) => {
-                this.opponent = new Augustus({
-                    chooseStart: this.props.chooseStart,
-                    chooseField: this.props.chooseField,
-                    build: this.props.build,
-                    attack: this.props.attack,
-                    finishTurn: this.props.finishTurn,
-                    finishBuildPhase: this.props.finishBuildPhase
-                });
-                if (typeof resumeableGame !== 'undefined' && resumeGame) {
-                    this.props.resumeGame(resumeableGame.gameplay).then(() => {
-                        this.opponent.player = resumeableGame.gameplay.players[1];
-                        this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
-                        this.props.loadUiState(resumeableGame.ui).then(() => {
-                            if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
-                                this.scene.startGame(this.props.game, false);
+                let isAndroid = /Android/i.test(navigator.userAgent);
+                let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
+                let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+                if (!isFullscreen && !isiOS) {
+                    if (typeof document.documentElement.requestFullscreen === 'function') {
+                        document.documentElement.requestFullscreen().then(() => {
+                            if (isAndroid) {
+                                window.screen.orientation.lock('landscape').catch(error => console.log('Unable to lock orientation to landscape'));
                             }
+                        }).catch(error => {
+                            console.log(error.name + ': ' + error.message);
                         });
+                    }
+                }
+
+                if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
+                    this.props.joinGame(multiplayerGameState).then(() => {
+                        this.opponent = { player: this.props.game.players[0] };
                     });
                 } else {
-                    let players = [
-                        createPlayer("Charlie Bucket", PlayerType.HUMAN),
-                        createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
-                    ];
-
-                    this.props.startGame(players).then(() => {
-                        this.opponent.type = Augustus.randomizeType();
-                        this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
-                        this.props.createBoard({
-                            boardSize: { rows: 10, cols: 10 },
-                            boardSeed: 42
+                    OfflineStore.getResumeableGame().then((resumeableGame) => {
+                        this.opponent = new Augustus({
+                            chooseStart: this.props.chooseStart,
+                            chooseField: this.props.chooseField,
+                            build: this.props.build,
+                            attack: this.props.attack,
+                            finishTurn: this.props.finishTurn,
+                            finishBuildPhase: this.props.finishBuildPhase
                         });
+                        if (typeof resumeableGame !== 'undefined' && resumeGame) {
+                            this.props.resumeGame(resumeableGame.gameplay).then(() => {
+                                this.opponent.player = resumeableGame.gameplay.players[1];
+                                this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
+                                this.props.loadUiState(resumeableGame.ui).then(() => {
+                                    if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
+                                        this.scene.startGame(this.props.game, false);
+                                    }
+                                });
+                            });
+                        } else {
+                            let players = [
+                                createPlayer("Charlie Bucket", PlayerType.HUMAN),
+                                createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
+                            ];
+
+                            this.props.startGame(players).then(() => {
+                                this.opponent.type = Augustus.randomizeType();
+                                this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
+                                this.props.createBoard({
+                                    boardSize: { rows: 10, cols: 10 },
+                                    boardSeed: 42
+                                });
+                            });
+                        }
                     });
                 }
-            });
-        }
+            } else {
+                this.startTutorial();
+            }
+        });
     }
 
     endGame() {
-        if (this.state.tutorial) {
-            this.closeTutorial();
+        if (this.props.tutorial) {
+            this.closeTutorial(false);
         } else {
             setTimeout(() => {
                 this.props.finishGame();
@@ -360,22 +363,26 @@ class App extends Component {
         multiplayer.awardsReceived(this.props.playerInfos.coins, awards, this.props.updateCoins);
     }
 
-    closeTutorial = () => {
+    closeTutorial = (startGame) => {
         this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
 
         Jukebox.stopMusic(true);
-        this.setState({ tutorial: false })
+        this.props.stopTutorial();
         if (typeof this.props.game !== 'undefined') {
             this.props.finishGame();
             this.props.resetUi();
             this.scene.clear();
+        }
+
+        if (startGame) {
+            this.prepareNewGame(false);
         }
     }
 
     startTutorial() {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
-        this.setState({ tutorial: true });
+        this.props.startTutorial();
     }
 
     render() {
@@ -389,10 +396,10 @@ class App extends Component {
                     multiplayerLandingPage={typeof this.state.params.sessionid !== 'undefined'}
                     joinMultiplayerGame={this.joinMultiplayerGame}
                     startTutorial={() => this.startTutorial()}
-                    className={this.state.tutorial ? 'tutorial hud' : 'hud'}
+                    className={this.props.tutorial ? 'tutorial hud' : 'hud'}
                     endGame={() => this.endGame()}
                     onRef={hud => this.hud = hud} />
-                {this.state.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
+                {this.props.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
             </div>
         );
     }
@@ -403,6 +410,7 @@ const mapStateToProps = state => ({
     language: state.ui.language,
     selectedBuilding: state.ui.selectedBuilding,
     ui: state.ui,
+    tutorial: state.ui.tutorial,
     assetsReady: state.ui.assetsReady,
     playerInfos: state.ui.playerInfos
 });
@@ -427,7 +435,9 @@ const mapDispatchToProps = {
     resetUi,
     showOverview,
     updateCoins,
-    updateTrackRecord
+    updateTrackRecord,
+    startTutorial,
+    stopTutorial
 };
 
 const AppContainer = connect(
