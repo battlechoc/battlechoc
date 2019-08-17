@@ -32,7 +32,7 @@
 #mainMenu #coins span {
   font-size: 2rem;
   color: #1DA6B5;
-  text-shadow: 1px 3px 1px #105B63;
+  text-shadow: 1px 1px 1px #000;
   font-weight: bold;
 }
 
@@ -205,7 +205,7 @@ img.without.cream {
 }
 
 .menuButton:first-child {
-  margin-top: 20px !important;
+  margin-top: 20px;
 }
 
 .menuButton {
@@ -280,16 +280,7 @@ img.without.cream {
   }
 }
 
-@media screen and (min-width: 601px) and (orientation: portrait) {
-  .logo { top: 10vh; }
-  .logo img { width: 60vw; }
-  .titleMenu { top: 58%; }
-  .button {
-    width: 40vw;
-  }
-}
-
-@media screen and (max-width: 600px) and (orientation: portrait) {
+@media screen and (max-width: 319px) and (orientation: portrait) {
   .logo { top: 12vh; }
   .logo img { width: 75vw; }
   .titleMenu { top: 56%; }
@@ -297,12 +288,41 @@ img.without.cream {
     width: 25vw;
     height: 25vw;
   }
+  .menuButton {
+    width: 60vw;
+  }
+  .menuButton:first-child {
+    margin-top: 0px;
+  }
 }
 
-@media screen and (max-width: 400px) and (orientation: portrait) {
+@media screen and (max-width: 479px) and (orientation: portrait) {
   .logo { top: 11vh; }
   .logo img { width: 70vw; }
   .titleMenu { top: 50%; }
+  .menuButton {
+    width: 55vw;
+    font-size: 1.4rem;
+  }
+  .menuButton:first-child {
+    margin-top: 0px;
+  }
+}
+
+@media screen and (min-width: 480px) and (orientation: portrait) {
+  .logo { top: 7vh; }
+  .logo img { width: 60vw; }
+  .titleMenu { top: 58%; }
+  .button {
+    width: 40vw;
+  }
+  .menuButton {
+    width: 40vw;
+    font-size: 1.8rem;
+  }
+  .menuButton:first-child {
+    margin-top: 0px;
+  }
 }
 
 @media screen and (max-width: 400px) and (max-height: 480px) and (orientation: portrait) {
@@ -313,16 +333,6 @@ img.without.cream {
 
 @media screen and (orientation:landscape) {
   .iosMessage { display: none !important; }
-}
-
-@media screen and (min-width: 901px) and (orientation: landscape) {
-  .logo { top: 5vh; }
-  .logo img { width: 52vh; }
-  .titleMenu { top: 50%; }
-
-  .stackedIcon > .firstIcon {
-    font-size: 6rem;
-  }
 }
 
 @media screen and (max-width: 959px) {
@@ -348,20 +358,56 @@ img.without.cream {
   }  
 }
 
+@media screen and (min-width: 861px) and (orientation: landscape) {
+  .logo { top: 5vh; }
+  .logo img { width: 52vh; }
+  .titleMenu { top: 50%; }
 
-@media screen and (max-width: 900px) and (orientation: landscape) {
+  .stackedIcon > .firstIcon {
+    font-size: 6rem;
+  }
+
+  .menuButton {
+    width: 35vw;
+    font-size: 1.6rem;
+  }
+}
+
+@media screen and (min-width: 1000px) and (orientation: landscape) {
+  .menuButton {
+    width: 28vw;
+  }
+}
+
+@media screen and (max-width: 860px) and (orientation: landscape) {
   .logo { top: 5px; }
   .logo img { width: 60vh; }
   .titleMenu { top: 50vh; }
+  .menuButton {
+    width: 30vw;
+    font-size: 1rem;
+    margin-top: 10px;
+  }
+  .menuButton:first-child {
+    margin-top: 8px;
+  }
 }
 
 @media screen and (max-width: 680px) and (orientation: landscape) {
   .logo { top: 5px; }
   .logo img { width: 60vh; }
   .titleMenu { top: 50vh; }
+  .menuButton {
+    width: 30vw;
+    font-size: 0.7rem;
+    margin-top: 8px;
+  }
+  .menuButton:first-child {
+    margin-top: 4px;
+  }
 }
 
 @media screen and (max-width: 500px) and (orientation: landscape) {
   .logo { top: 5vh; }
-  .logo img { width: 52vh; } 
+  .logo img { width: 52vh; }
 }
