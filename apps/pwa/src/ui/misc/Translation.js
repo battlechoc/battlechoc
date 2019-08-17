@@ -2,8 +2,6 @@ import { EntityType, AttackType } from '../../gameplay/GameEntities';
 
 const languages = {
     en: {
-        NEW_GAME: 'New Game',
-        RESUME_GAME: 'Resume Game',
         SIGNINORUP: 'Sign in',
         SIGN_OUT: 'Sign out',
         ACCOUNTINFOS: 'Account infos',
@@ -182,8 +180,6 @@ const languages = {
         TUTORIAL_DIALOG_PLAY_GAME: 'Start a match'
     },
     de: {
-        NEW_GAME: 'Neues Spiel',
-        RESUME_GAME: 'Weiterspielen',
         SIGNINORUP: 'Anmelden',
         SIGN_OUT: 'Abmelden',
         ACCOUNTINFOS: 'Account Informationen',

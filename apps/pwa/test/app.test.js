@@ -27,7 +27,7 @@ describe('browser', () => {
 
     test('should start the tutorial', async () => {
       await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
-      await expect(page).toMatchElement('.titleMenu', { text: 'New Game' });
+      await expect(page).toMatchElement('.titleMenu', { text: 'Singleplayer' });
       await page.click('.titleMenu .menuButton:first-child');
       await expect(page).toMatchElement('h6', { text: 'Interactive battlechoc Tutorial' });
       await page.click('.active.button .stackedIcon');
@@ -37,7 +37,7 @@ describe('browser', () => {
 
     test('should start the game without error', async () => {
       await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
-      await expect(page).toMatchElement('.titleMenu', { text: 'New Game' });
+      await expect(page).toMatchElement('.titleMenu', { text: 'Singleplayer' });
       await page.click('.titleMenu .menuButton:first-child');
       await expect(page).toMatchElement('h6', { text: 'Interactive battlechoc Tutorial' });
       // start skipping tutorial
