@@ -8,12 +8,18 @@ import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelectio
 import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AppleHint, SignInOrUp} from './dialogs';
 import { CircularProgress, Button } from '@material-ui/core';
+import Dialog from '@material-ui/core/Dialog';
+import Typography from '@material-ui/core/Typography';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogTitle from '@material-ui/core/DialogTitle';
 
 class Hud extends Component {
     constructor(props) {
         super(props);
         this.state = { 
-            clickable: true
+            clickable: true,
+            open: false
         }
     }
 
@@ -54,6 +60,14 @@ class Hud extends Component {
         this.signInOrUp.open();
     }
 
+    resumeOrStartGame = () => {
+        if (this.props.resumeGamePossible) {
+            this.setState({ open: true })
+        } else {
+            this.props.prepareNewGameCallback(false);
+        }
+    }
+
     render() {
         const stage = this.estimateStage();
         let textAnimation = typeof this.state.message === 'undefined' ? undefined : <div id="textAnimation" className="zoom">{this.state.message}</div>
@@ -70,12 +84,9 @@ class Hud extends Component {
                     if (stage === 'TITLE_SCREEN') {
                         let controls = []
                         if (!this.props.multiplayerLandingPage) {
-                            controls.push(<div key="0" className="menuButton" onClick={() => this.props.prepareNewGameCallback(false)}>Singleplayer</div>);
+                            controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>Singleplayer</div>);
                             controls.push(<div key="1" className="disabled menuButton">Multiplayer</div>);
                             controls.push(<div key="2" className="disabled menuButton">Choclab</div>);
-                            /*if (this.props.resumeGamePossible === true) {
-                                controls.push(<Button key="1" color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(true)}>{t[this.props.language].RESUME_GAME}</Button>);
-                            }*/
                         } else {
                             controls.push(<Button key="3" color="primary" aria-label="join multiplayer" className="menuButton" variant="contained" onClick={this.props.joinMultiplayerGame}>{t[this.props.language].JOIN_MULTIPLAYER}</Button>);
                         }
@@ -91,6 +102,28 @@ class Hud extends Component {
                                 </div>
                                 <div className="titleMenu">
                                     {this.props.assetsReady ? controls : null}
+                                    <Dialog
+                                        fullWidth={true}
+                                        open={this.state.open}
+                                        onClose={() => this.setState({ open: false })}
+                                        aria-labelledby="resumeOrStartGame">
+                                        <DialogTitle>Resume Game</DialogTitle>
+                                        <DialogContent>
+                                            <Typography>Do you want to start a new game or resume your last one?</Typography>
+                                        </DialogContent>
+                                        <DialogActions>
+                                            <Button onClick={() => {
+                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                                this.setState({ open: false });
+                                                this.props.prepareNewGameCallback(false);
+                                            }} color="primary">New Game</Button>
+                                            <Button onClick={() => {
+                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                                this.setState({ open: false });
+                                                this.props.prepareNewGameCallback(true);
+                                            }} color="primary">Resume</Button>
+                                        </DialogActions>
+                                    </Dialog>
                                 </div>
                                 <Info />
                             </div>
