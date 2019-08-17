@@ -28,52 +28,11 @@ html, body, #root {
   width: 100%;
 }
 
-@keyframes fog {
-	0% { 
-		transform: translate3d(0vw, 0, 0);
-		opacity: 0; 
-	}
-	50% { 
-		transform: translate3d(-100vw, 0, 0); 
-		opacity: 1;
-	}
-	75% { 
-		transform: translate3d(-150vw, 0, 0); 
-		opacity: 1;
-	}
-	100% { 
-		transform: translate3d(-200vw, 0, 0); 
-		opacity: 0;
-	}
-}
-
-#clouds {
+#background {
   position: absolute;
-  top: 0; 
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-#clouds:before, #clouds:after {
-  content: "";
-  position: absolute;
-  top: 0; left: 0;
-  height: 100vh;
-  width: 400vw;
-  background-size: contain;
-  background-position: center;
-  background-repeat: repeat-x;
-}
-
-#clouds:before {
-  background-image: url('/images/fog_foreground.png');
-  animation: fog 10s linear 0s infinite;
-}
-
-#clouds:after {
-  background-image: url('/images/fog_background.png');
-  animation: fog 30s linear 0s infinite;
+  width: 100%;
+  height: 100%;
+  background: url(/images/background.png) no-repeat center center fixed; 
+  background-size: cover;
+  filter: blur(5px) opacity(0.4);
 }

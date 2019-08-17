@@ -24,6 +24,7 @@ const defaultTheme = createMuiTheme({
   	},
   	typography: {
     	useNextVariants: true,
+        fontFamily: "'PT Serif', serif"
     }
 });
 

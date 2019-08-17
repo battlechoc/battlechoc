@@ -70,11 +70,12 @@ class Hud extends Component {
                     if (stage === 'TITLE_SCREEN') {
                         let controls = []
                         if (!this.props.multiplayerLandingPage) {
-                            controls.push(<Button key="0" color="primary" aria-label="new game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(false)}>{t[this.props.language].NEW_GAME}</Button>);
-                            if (this.props.resumeGamePossible === true) {
+                            controls.push(<div key="0" className="menuButton" onClick={() => this.props.prepareNewGameCallback(false)}>Singleplayer</div>);
+                            controls.push(<div key="1" className="disabled menuButton">Multiplayer</div>);
+                            controls.push(<div key="2" className="disabled menuButton">Choclab</div>);
+                            /*if (this.props.resumeGamePossible === true) {
                                 controls.push(<Button key="1" color="primary" aria-label="resume game" className="menuButton" variant="contained" onClick={() => this.props.prepareNewGameCallback(true)}>{t[this.props.language].RESUME_GAME}</Button>);
-                            }
-                            //controls.push(<Button key="2" color="primary" aria-label="start tutorial" className="menuButton" variant="contained" onClick={() => this.props.startTutorial()}>{t[this.props.language].TUTORIAL}</Button>);
+                            }*/
                         } else {
                             controls.push(<Button key="3" color="primary" aria-label="join multiplayer" className="menuButton" variant="contained" onClick={this.props.joinMultiplayerGame}>{t[this.props.language].JOIN_MULTIPLAYER}</Button>);
                         }
@@ -88,8 +89,6 @@ class Hud extends Component {
                                 <div className="logo">
                                     <img alt="logo" src="images/logo.png?v=1.0" />
                                 </div>
-                                <img id="cannonTitlePage" className="foregroundEntity" alt="cannon field" src="images/cannonAtField.png" />
-                                <img id="creamTitlePageBottom" className="foregroundEntity" alt="creamy field bottom" src="images/creamAtField.png" />
                                 <div className="titleMenu">
                                     {this.props.assetsReady ? controls : null}
                                 </div>

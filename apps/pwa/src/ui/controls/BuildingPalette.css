@@ -26,7 +26,6 @@
   position: absolute;
   width: 100%;
   user-select: none;
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
   font-size: 2em;
   color: white;
   font-weight: bold;
@@ -36,9 +35,7 @@
   z-index: 10;
   display: -webkit-flex;
   display: flex;
-  -webkit-align-items: flex-end;
   align-items: flex-end;
-  -webkit-justify-content: flex-end;
   justify-content: flex-end;
 }
 
