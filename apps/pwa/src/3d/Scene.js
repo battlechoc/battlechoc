@@ -116,8 +116,8 @@ class Scene extends Component {
                         shadowColor = '#44741e';
                     }
 
-                    texture.drawText(text, 48, 102, 'bold 48px Roboto', shadowColor, null, true, true);
-                    texture.drawText(text, 46, 100, 'bold 48px Roboto', color, null, true, true);
+                    texture.drawText(text, 48, 102, 'bold 48px PT Serif', shadowColor, null, true, true);
+                    texture.drawText(text, 46, 100, 'bold 48px PT Serif', color, null, true, true);
                 }
                 
                 let flyaway = new Animation('flyaway_' + id, "position.y", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);

@@ -32,48 +32,13 @@
 #mainMenu #coins span {
   font-size: 2rem;
   color: #1DA6B5;
-  text-shadow: 1px 3px 1px #105B63;
+  text-shadow: 1px 1px 1px #000;
   font-weight: bold;
 }
 
 #mainMenu #coins img {
   width: 64px;
   height: 42px;
-}
-
-.foregroundEntity {
-  position: absolute;
-  height: 15vw;
-  z-index: -1;
-  animation: moving 3s ease-in-out infinite;
-}
-
-#cannonTitlePage {
-  bottom: 8%;
-  left: 8%;
-}
-
-#creamTitlePageBottom {
-  bottom: 40%;
-  right: 8%;
-}
-
-@keyframes moving {
-  0% { transform: translateY(0vh); }
-  50% { height: 20vw; transform: translateY(1vh); }
-  100% { transform: translateY(0vh); }
-}
-
-@keyframes moveup {
-    to {
-        transform: translateY(-2vh);
-    }
-}
-
-@keyframes movedown {
-    to {
-        transform: translateY(2vh);
-    }
 }
 
 .iosMessage > div {
@@ -103,7 +68,6 @@
 .multiplayerNotification p {
   font-size: 1.2rem;
   color: white;
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
 }
 
 .choose {
@@ -191,7 +155,6 @@
   align-items: center;
   justify-content: center;
   color: #140e09;
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
   text-shadow: 1px 1px 2px #888; 
   margin-top: 3%;
   margin-left: -3%;
@@ -231,37 +194,6 @@ img.without.cream {
   opacity: 0;
 }
 
-/* flying text animation */
-
-@keyframes zoom {
-    0% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0;
-        font-size: 15vw;
-    }
-}
-
-#textAnimation {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  width: 100%;
-  z-index: 1;
-  font-size: 3vw;
-  color: white;
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
-  text-shadow: 2px 2px 8px #222;
-  animation-name: zoom;
-  animation-duration: 2s;
-  animation-delay: 1s;
-  animation-timing-function: ease-in;
-  white-space: nowrap;
-}
-
 #mainMenu {
   position: relative;
   display: flex;
@@ -273,18 +205,66 @@ img.without.cream {
 }
 
 .menuButton:first-child {
-  margin-top: 20px !important;
+  margin-top: 20px;
 }
 
 .menuButton {
   cursor: pointer;
-  padding: 5px;
+  padding: 12px;
   width: 30vw;
-  min-width: 120px !important;
-  border-radius: 0 !important;
+  background-color: #5b2f19;
+  box-shadow: 1px 1px 6px #000;
+  min-width: 120px;
+  font-size: 1.8rem;
   text-align: center;
-  color: white !important;
-  margin-top: 10px !important;
+  color: #f3f7df;
+  user-select: none;
+  margin-top: 15px;
+  text-shadow: 1px 1px 3px #000;
+  text-transform: uppercase;
+}
+
+.disabled.menuButton {
+  cursor: initial;
+  filter: brightness(0.5);
+}
+
+.upcomming {
+  position: relative;
+  overflow: hidden;
+  margin-top: 15px;
+}
+
+.upcomming .disabled.menuButton {
+  margin-top: 0px !important;
+}
+
+.upcomming .ribbon {
+  top: 10%;
+  left: -35%;
+  font-size: 0.8rem;
+  background-color: #e43e42;
+  color: white;
+  transform: rotate(-45deg);
+  width: 80%;
+  padding: 8px;
+  position: absolute;
+  text-align: center;
+  color: #f0f0f0;
+  position: absolute;
+  text-transform: uppercase;
+  text-shadow: 1px 1px 1px #000;
+  box-shadow: 1px 1px 3px #000;
+}
+
+.disabled.menuButton:hover {
+  background-color: #5b2f19;
+  color: #f3f7df;
+}
+
+.menuButton:hover {
+  background-color: #512917;
+  color: #f8faef;
 }
 
 .active:hover {
@@ -294,10 +274,6 @@ img.without.cream {
 .inactive {
   filter: grayscale(0.8);
   cursor: unset;
-}
-
-.menuButton:hover {
-  background-color: #324D5C !important;
 }
 
 #socialIcons {
@@ -332,93 +308,48 @@ img.without.cream {
   }
 }
 
-@media screen and (min-width: 601px) and (orientation: portrait) {
-  .logo { top: 10vh; }
+@media screen and (max-width: 319px) and (orientation: portrait) {
+  .logo { top: 12vh; }
+  .logo img { width: 75vw; }
+  .titleMenu { top: 56%; }
+  .fields {
+    width: 25vw;
+    height: 25vw;
+  }
+  .menuButton {
+    width: 60vw;
+  }
+  .menuButton:first-child {
+    margin-top: 0px;
+  }
+}
+
+@media screen and (max-width: 479px) and (orientation: portrait) {
+  .logo { top: 11vh; }
+  .logo img { width: 70vw; }
+  .titleMenu { top: 50%; }
+  .menuButton {
+    width: 55vw;
+    font-size: 1.4rem;
+  }
+  .menuButton:first-child {
+    margin-top: 0px;
+  }
+}
+
+@media screen and (min-width: 480px) and (orientation: portrait) {
+  .logo { top: 7vh; }
   .logo img { width: 60vw; }
   .titleMenu { top: 58%; }
   .button {
     width: 40vw;
   }
   .menuButton {
-    width: 54vw;
-    font-size: 1.2rem !important;
+    width: 40vw;
+    font-size: 1.8rem;
   }
-  .foregroundEntity {
-    height: 13vh;
-  }
-  #cannonTitlePage {
-    left: 6%;
-    bottom: 5%;
-  }
-  #creamTitlePageBottom {
-    right: 3%;
-    top: 40%;
-  }
-}
-
-@media screen and (max-width: 600px) and (orientation: portrait) {
-  .logo { top: 12vh; }
-  .logo img { width: 75vw; }
-  .titleMenu { top: 56%; }
-  .menuButton {
-    width: 54vw;
-    font-size: 1.2rem !important;
-  }
-  .foregroundEntity {
-    height: 13vh;
-  }
-  #cannonTitlePage {
-    left: 6%;
-    bottom: 5%;
-  }
-  #creamTitlePageBottom {
-    right: 3%;
-    top: 40%;
-  }
-  .fields {
-    width: 25vw;
-    height: 25vw;
-  }
-}
-
-@media screen and (max-width: 400px) and (orientation: portrait) {
-  .logo { top: 11vh; }
-  .logo img { width: 70vw; }
-  .titleMenu { top: 50%; }
-  .menuButton {
-    width: 48vw;
-    font-size: 1rem !important;
-  }
-  .foregroundEntity {
-    height: 24vw;
-  }
-  #creamTitlePageBottom {
-    right: 3%;
-    top: 40%;
-  }
-  #cannonTitlePage {
-    left: 6%;
-    bottom: 5%;
-  }
-}
-
-@media screen and (max-width: 400px) and (min-height: 800px) and (orientation: portrait) {
-  .menuButton {
-    width: 60vw;
-    font-size: 1.2rem !important;
-  }
-  #cannonTitlePage {
-    bottom: 10%;
-  }
-  #creamTitlePageBottom {
-    top: 35%;
-  }
-}
-
-@media screen and (max-width: 400px) and (max-height: 568px) and (orientation: portrait) {
-  .menuButton {
-    width: 48vw;
-    font-size: 0.9rem !important;
+  .menuButton:first-child {
+    margin-top: 0px;
   }
 }
 
@@ -426,31 +357,10 @@ img.without.cream {
   .logo { top: 11vh; }
   .logo img { width: 70vw; }
   .titleMenu { top: 50%; }
-  .menuButton {
-    width: 47vw;
-    font-size: 0.8rem !important;
-  }
-  .foregroundEntity {
-    height: 22vw;
-  }
 }
 
 @media screen and (orientation:landscape) {
   .iosMessage { display: none !important; }
-}
-
-@media screen and (min-width: 901px) and (orientation: landscape) {
-  .logo { top: 5vh; }
-  .logo img { width: 52vh; }
-  .titleMenu { top: 50%; }
-  .menuButton {
-    width: 35vw;
-    font-size: 1.2rem !important;
-  }
-
-  .stackedIcon > .firstIcon {
-    font-size: 6rem;
-  }
 }
 
 @media screen and (max-width: 959px) {
@@ -476,14 +386,38 @@ img.without.cream {
   }  
 }
 
+@media screen and (min-width: 861px) and (orientation: landscape) {
+  .logo { top: 5vh; }
+  .logo img { width: 52vh; }
+  .titleMenu { top: 50%; }
 
-@media screen and (max-width: 900px) and (orientation: landscape) {
+  .stackedIcon > .firstIcon {
+    font-size: 6rem;
+  }
+
+  .menuButton {
+    width: 35vw;
+    font-size: 1.6rem;
+  }
+}
+
+@media screen and (min-width: 1000px) and (orientation: landscape) {
+  .menuButton {
+    width: 28vw;
+  }
+}
+
+@media screen and (max-width: 860px) and (orientation: landscape) {
   .logo { top: 5px; }
   .logo img { width: 60vh; }
   .titleMenu { top: 50vh; }
   .menuButton {
-    width: 45vw;
-    font-size: 1.2rem !important;
+    width: 30vw;
+    font-size: 1rem;
+    margin-top: 10px;
+  }
+  .menuButton:first-child {
+    margin-top: 8px;
   }
 }
 
@@ -492,16 +426,16 @@ img.without.cream {
   .logo img { width: 60vh; }
   .titleMenu { top: 50vh; }
   .menuButton {
-    width: 45vw;
-    font-size: 1rem !important;
+    width: 30vw;
+    font-size: 0.7rem;
+    margin-top: 8px;
+  }
+  .menuButton:first-child {
+    margin-top: 4px;
   }
 }
 
 @media screen and (max-width: 500px) and (orientation: landscape) {
   .logo { top: 5vh; }
-  .logo img { width: 52vh; } 
-  .menuButton {
-    width: 42vw;
-    font-size: 0.9rem !important;
-  }
+  .logo img { width: 52vh; }
 }

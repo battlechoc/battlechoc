@@ -292,6 +292,8 @@ class App extends Component {
                                 });
                             });
                         } else {
+                            this.props.gameResumeable(false);
+                            OfflineStore.gamestateStore.clear();
                             let players = [
                                 createPlayer("Charlie Bucket", PlayerType.HUMAN),
                                 createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
@@ -364,7 +366,7 @@ class App extends Component {
     render() {
         return (
             <div className="app">
-                <div id="clouds"></div>
+                { typeof this.props.game === 'undefined' ? <div id="background"></div> : null }
                 <Suspense fallback={null}>
                     <Scene onRef={scene => this.scene = scene} />
                 </Suspense>

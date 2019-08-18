@@ -4,7 +4,6 @@
   position: absolute;
   z-index: 100;
   background-color: rgba(0, 0, 0, 0.8);
-  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
   display: flex;
   flex-direction: column;
   align-items: center;
