@@ -296,6 +296,55 @@ img.without.cream {
   color: white;
 }
 
+#multiplayer {
+  display: flex;
+  height: 100%;
+  width: 75%;
+  left: 12.5%;
+  align-items: center;
+  z-index: 2;
+  position: absolute;
+  flex-direction: column;
+}
+
+#multiplayer .controls {
+  display: flex;
+  margin-top: 92px;
+  align-items: center;
+}
+
+#multiplayer .controls .menuButton {
+  width: 25vw;
+  font-size: 1rem;
+  margin: 0 5px;
+}
+
+#multiplayer .controls .menuButton {
+  margin-top: 0 !important;
+}
+
+#multiplayer .openGames {
+  display: flex;
+  flex-grow: 2;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: calc(75vw + 102px - 6px);
+}
+
+#multiplayer .gameList {
+  margin-top: 5vh;
+  background-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+}
+
+#multiplayer .actions {
+  margin: 0;
+}
+
+#multiplayer .actions svg {
+  margin-left: 5px;
+}
+
 @media screen and (orientation:portrait) {
   .button {
     width: 48vw;
