@@ -416,6 +416,7 @@ img.without.cream {
     font-size: 1rem;
     margin-top: 10px;
   }
+  .upcomming { margin-top: 10px }
   .menuButton:first-child {
     margin-top: 8px;
   }
@@ -430,6 +431,7 @@ img.without.cream {
     font-size: 0.7rem;
     margin-top: 8px;
   }
+  .upcomming { margin-top: 8px }
   .menuButton:first-child {
     margin-top: 4px;
   }
