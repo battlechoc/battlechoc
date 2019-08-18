@@ -226,7 +226,35 @@ img.without.cream {
 
 .disabled.menuButton {
   cursor: initial;
-  filter: brightness(0.3);
+  filter: brightness(0.5);
+}
+
+.upcomming {
+  position: relative;
+  overflow: hidden;
+  margin-top: 15px;
+}
+
+.upcomming .disabled.menuButton {
+  margin-top: 0px !important;
+}
+
+.upcomming .ribbon {
+  top: 10%;
+  left: -35%;
+  font-size: 0.8rem;
+  background-color: #e43e42;
+  color: white;
+  transform: rotate(-45deg);
+  width: 80%;
+  padding: 8px;
+  position: absolute;
+  text-align: center;
+  color: #f0f0f0;
+  position: absolute;
+  text-transform: uppercase;
+  text-shadow: 1px 1px 1px #000;
+  box-shadow: 1px 1px 3px #000;
 }
 
 .disabled.menuButton:hover {

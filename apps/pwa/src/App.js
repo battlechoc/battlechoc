@@ -292,6 +292,8 @@ class App extends Component {
                                 });
                             });
                         } else {
+                            this.props.gameResumeable(false);
+                            OfflineStore.gamestateStore.clear();
                             let players = [
                                 createPlayer("Charlie Bucket", PlayerType.HUMAN),
                                 createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)

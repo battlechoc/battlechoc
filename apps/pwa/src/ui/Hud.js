@@ -85,8 +85,8 @@ class Hud extends Component {
                         let controls = []
                         if (!this.props.multiplayerLandingPage) {
                             controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>Singleplayer</div>);
-                            controls.push(<div key="1" className="disabled menuButton">Multiplayer</div>);
-                            controls.push(<div key="2" className="disabled menuButton">Choclab</div>);
+                            controls.push(<div key="1" className="upcomming"><div className="disabled menuButton">Multiplayer</div><div className="ribbon">soon</div></div>);
+                            controls.push(<div key="2" className="upcomming"><div className="disabled menuButton">Choclab</div><div className="ribbon">soon</div></div>);
                         } else {
                             controls.push(<Button key="3" color="primary" aria-label="join multiplayer" className="menuButton" variant="contained" onClick={this.props.joinMultiplayerGame}>{t[this.props.language].JOIN_MULTIPLAYER}</Button>);
                         }
