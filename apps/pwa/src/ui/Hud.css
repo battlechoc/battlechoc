@@ -345,6 +345,29 @@ img.without.cream {
   margin-left: 5px;
 }
 
+@media screen and (max-width: 699px) {
+  #multiplayer .controls {
+    flex-direction: column;
+    margin-top: 64px;
+    width: 100%;
+  }
+
+  #multiplayer .controls .menuButton {
+    width: 100%;
+    font-size: 1rem;
+    margin: 0;
+  }
+
+  #multiplayer .openGames {
+    width: 100%;
+  }
+
+  #multiplayer {
+    width: 100%;
+    left: 0;
+  }
+}
+
 @media screen and (orientation:portrait) {
   .button {
     width: 48vw;

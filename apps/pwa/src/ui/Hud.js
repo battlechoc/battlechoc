@@ -209,7 +209,7 @@ class Hud extends Component {
                                     <div className="menuButton">Friends</div>
                                 </div>
                                 <div className="openGames">
-                                    <Table className="gameList">
+                                    <Table size="small" className="gameList">
                                         <TableHead>
                                             <TableRow>
                                                 <TableCell>actions</TableCell>
