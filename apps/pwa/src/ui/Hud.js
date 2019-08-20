@@ -16,7 +16,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';
-import { PlayArrow, Cancel, HourglassEmpty } from '@material-ui/icons';
+import { PlayArrow, Cancel } from '@material-ui/icons';
 
 class Hud extends Component {
     constructor(props) {
