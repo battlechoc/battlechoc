@@ -13,18 +13,10 @@ import Typography from '@material-ui/core/Typography';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableHead from '@material-ui/core/TableHead';
-import TablePagination from '@material-ui/core/TablePagination';
-import TableRow from '@material-ui/core/TableRow';
-import TableSortLabel from '@material-ui/core/TableSortLabel';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';
 import { PlayArrow, Cancel, HourglassEmpty } from '@material-ui/icons';
-import Icon from '@material-ui/core/Icon';
 
 class Hud extends Component {
     constructor(props) {
@@ -204,37 +196,32 @@ class Hud extends Component {
                         return (
                             <div id="multiplayer">
                                 <div className="controls">
+                                    <div className="menuButton" onClick={() => this.setState({multiplayerScreen: false})}>Main Menu</div>
                                     <div className="menuButton">Random opponent</div>
                                     <div className="menuButton">Share your Link</div>
                                     <div className="menuButton">Friends</div>
                                 </div>
                                 <div className="openGames">
-                                    <Table size="small" className="gameList">
-                                        <TableHead>
-                                            <TableRow>
-                                                <TableCell>actions</TableCell>
-                                                <TableCell>player</TableCell>
-                                                <TableCell>turns</TableCell>
-                                                <TableCell>match time</TableCell>
-                                                <TableCell>last action</TableCell>
-                                                <TableCell>potential coins</TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {this.state.openGames.map(row => (
-                                              <TableRow key={row.playerName}>
-                                                    <TableCell><div className="actions"><PlayArrow /><Cancel /></div></TableCell>
-                                                    <TableCell component="th" scope="row">
-                                                    {row.playerName} ({row.playerId})
-                                                    </TableCell>
-                                                    <TableCell align="center">{row.turns}</TableCell>
-                                                    <TableCell align="center">{this.timeToString(row.matchTime)}</TableCell>
-                                                    <TableCell align="center">{this.timeAgo(row.lastAction)}</TableCell>
-                                                    <TableCell align="center">{row.potentialCoins}</TableCell>
-                                              </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                    <div className="gamestable">
+                                        <div className="tableHead">actions</div>
+                                        <div className="tableHead">player</div>
+                                        <div className="tableHead">turns</div>
+                                        <div className="tableHead">match time</div>
+                                        <div className="tableHead">last action</div>
+                                        <div className="tableHead">potential coins</div>
+
+                                        {this.state.openGames.map((row, i) => (
+                                            [
+                                                <div key={i} className="gameActions"><PlayArrow /><Cancel /></div>,
+                                                <div key={i+1}><span className="gamelabel">player</span><span>{row.playerName} ({row.playerId})</span></div>,
+                                                <div key={i+2}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
+                                                <div key={i+3}><span className="gamelabel">match</span><span>{this.timeToString(row.matchTime)}</span></div>,
+                                                <div key={i+4}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.lastAction)}</span></div>,
+                                                <div className="tablefoot" key={i+5}><span className="gamelabel">potential coins</span><span>{row.potentialCoins}</span></div>
+                                            ]
+                                        ))}                                        
+                                        
+                                    </div>
                                 </div>
                             </div>
                             );
