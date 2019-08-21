@@ -296,6 +296,20 @@ img.without.cream {
   color: white;
 }
 
+#choclab {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  z-index: 2;  
+}
+
+#choclab .controls {
+  display: flex;
+  margin-top: 92px;
+  align-items: center;
+}
+
 #multiplayer {
   display: flex;
   height: 100%;
@@ -426,6 +440,7 @@ img.without.cream {
   #multiplayer .controls .menuButton {
     width: 100vw;
     margin-bottom: 8px;
+    font-size: 0.9rem;
   }
 
   #multiplayer .controls {
@@ -465,6 +480,12 @@ img.without.cream {
 
   #multiplayer .gamestable div:nth-child(even) {
     background-color: rgba(255, 255, 255, 0.7);
+  }
+}
+
+@media screen and (max-width: 330px) {
+  #multiplayer .controls .menuButton {
+    max-width: unset;
   }
 }
 
