@@ -25,10 +25,10 @@ class Hud extends Component {
             clickable: true,
             open: false,
             multiplayerScreen: false,
+            choclabScreen: false,
             openGames: [
                 {
                     'playerName': 'Sebastian',
-                    'playerId': 'W829ALK2',
                     'turns': 12,
                     'matchTime': 201000,
                     'lastAction': 1566153558102,
@@ -36,7 +36,6 @@ class Hud extends Component {
                 },
                 {
                     'playerName': 'Caro',
-                    'playerId': 'GH73ZEE9',
                     'turns': 5,
                     'matchTime': 91800,
                     'lastAction': 1566153373262,
@@ -62,7 +61,7 @@ class Hud extends Component {
 
     estimateStage() {
         const state = this.props.state;
-        if (typeof state === 'undefined' && !this.state.multiplayerScreen) {
+        if (typeof state === 'undefined' && !this.state.multiplayerScreen && !this.state.choclabScreen) {
             return 'TITLE_SCREEN'
         } else if (state === GameStateTypes.START ||
             state === GameStateTypes.CHOOSE_FIELD_OR_START ||
@@ -70,6 +69,8 @@ class Hud extends Component {
             return 'CHOOSE_MENU';
         } else if (this.state.multiplayerScreen) {
             return 'MULTIPLAYER_SCREEN';
+        } else if (this.state.choclabScreen) {
+            return 'CHOCLAB_SCREEN';
         } else {
             return 'INGAME';
         }
@@ -139,7 +140,7 @@ class Hud extends Component {
                         if (!this.props.multiplayerLandingPage) {
                             controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>Singleplayer</div>);
                             controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
-                            controls.push(<div key="2" className="upcomming"><div className="disabled menuButton">Choclab</div><div className="ribbon">soon</div></div>);
+                            controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
                         } else {
                             controls.push(<Button key="3" color="primary" aria-label="join multiplayer" className="menuButton" variant="contained" onClick={this.props.joinMultiplayerGame}>{t[this.props.language].JOIN_MULTIPLAYER}</Button>);
                         }
@@ -213,7 +214,7 @@ class Hud extends Component {
                                         {this.state.openGames.map((row, i) => (
                                             [
                                                 <div key={i} className="gameActions"><PlayArrow /><Cancel /></div>,
-                                                <div key={i+1}><span className="gamelabel">player</span><span>{row.playerName} ({row.playerId})</span></div>,
+                                                <div key={i+1}><span className="gamelabel">player</span><span>{row.playerName}</span></div>,
                                                 <div key={i+2}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
                                                 <div key={i+3}><span className="gamelabel">match</span><span>{this.timeToString(row.matchTime)}</span></div>,
                                                 <div key={i+4}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.lastAction)}</span></div>,
@@ -225,6 +226,14 @@ class Hud extends Component {
                                 </div>
                             </div>
                             );
+                    } else if (stage === 'CHOCLAB_SCREEN') {
+                        return (
+                            <div id="choclab">
+                                <div className="controls">
+                                    <div className="menuButton" onClick={() => this.setState({choclabScreen: false})}>Main Menu</div>
+                                </div>                            
+                            </div>
+                        );
                     } else {
                         return (
                             <div>
