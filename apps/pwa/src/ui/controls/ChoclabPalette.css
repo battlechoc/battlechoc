@@ -1,0 +1,13 @@
+#entitySelection {
+	width: 100vw;
+	display: flex;
+	position: absolute;
+	bottom: 0;
+	left: 0;
+}
+
+#entitySelection .preview {
+	width: calc(10vw - 5px);
+    height: calc(10vw - 5px);
+    background-size: calc(4 * (10vw - 5px)) calc(3 * (10vw - 5px));
+}
