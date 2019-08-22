@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import OfflineStore from '../OfflineStore';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
-import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
+import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview, ChoclabPalette } from './controls';
 import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AppleHint, SignInOrUp} from './dialogs';
 import { CircularProgress, Button } from '@material-ui/core';
@@ -17,6 +17,9 @@ import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';
 import { PlayArrow, Cancel } from '@material-ui/icons';
+import MeshPreview from '../3d/MeshPreview';
+import Fab from '@material-ui/core/Fab';
+import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 
 class Hud extends Component {
     constructor(props) {
@@ -130,7 +133,36 @@ class Hud extends Component {
                 <Tooltip />
                 <Settings startTutorial={this.props.startTutorial} endGame={this.props.endGame} onRef={settings => (this.settings = settings)} />
                 <SignInOrUp onRef={signInOrUp => (this.signInOrUp = signInOrUp)} />
-                <Actionbar showSettings={this.openSettings} showSignInOrUp={this.openSignInOrUp} />
+                { (() => {
+                    if (stage === 'CHOCLAB_SCREEN') {
+                        return  <div className="actionbar">
+                                    <Fab
+                                        size="small"
+                                        key="4"
+                                        color="primary"
+                                        aria-label="back"
+                                        className="icon"
+                                        onClick={() => this.setState({choclabScreen: false})}>
+                                        <ArrowBackIcon />
+                                    </Fab>
+                                </div>
+                    } else if (stage === 'MULTIPLAYER_SCREEN') {
+                        return  <div className="actionbar">
+                                    <Fab
+                                        size="small"
+                                        key="4"
+                                        color="primary"
+                                        aria-label="back"
+                                        className="icon"
+                                        onClick={() => this.setState({multiplayerScreen: false})}>
+                                        <ArrowBackIcon />
+                                    </Fab>
+                                </div>
+                    } else {
+                        return <Actionbar showSettings={this.openSettings} showSignInOrUp={this.openSignInOrUp} />
+                    }
+                })() }
+
                 { textAnimation }
                 <AppleHint message={t[this.props.language].IOS_MESSAGE} />
                 
@@ -197,7 +229,6 @@ class Hud extends Component {
                         return (
                             <div id="multiplayer">
                                 <div className="controls">
-                                    <div className="menuButton" onClick={() => this.setState({multiplayerScreen: false})}>Main Menu</div>
                                     <div className="menuButton">Random opponent</div>
                                     <div className="menuButton">Share your Link</div>
                                     <div className="menuButton">Friends</div>
@@ -220,8 +251,7 @@ class Hud extends Component {
                                                 <div key={i+4}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.lastAction)}</span></div>,
                                                 <div className="tablefoot" key={i+5}><span className="gamelabel">potential coins</span><span>{row.potentialCoins}</span></div>
                                             ]
-                                        ))}                                        
-                                        
+                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -229,9 +259,12 @@ class Hud extends Component {
                     } else if (stage === 'CHOCLAB_SCREEN') {
                         return (
                             <div id="choclab">
-                                <div className="controls">
-                                    <div className="menuButton" onClick={() => this.setState({choclabScreen: false})}>Main Menu</div>
-                                </div>                            
+                                {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
+                                    <span>{ this.props.playerInfos.stats.coins }</span>
+                                    <img src="images/coins.png" alt="choco coins" />
+                                </div> : null}
+                                <MeshPreview onRef={meshPreview => this.meshPreview = meshPreview}/>
+                                <ChoclabPalette selectEntity={entity => this.meshPreview.loadMesh(entity)} />
                             </div>
                         );
                     } else {

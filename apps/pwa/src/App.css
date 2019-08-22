@@ -28,6 +28,13 @@ html, body, #root {
   width: 100%;
 }
 
+.previewCanvas {
+  position: absolute;
+  z-index: 1;
+  height: 80vh;
+  width: 100%;
+}
+
 #background {
   position: absolute;
   width: 100%;
