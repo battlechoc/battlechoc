@@ -29,10 +29,7 @@ html, body, #root {
 }
 
 .previewCanvas {
-  position: absolute;
-  z-index: 1;
-  height: 80vh;
-  width: 100%;
+  flex-grow: 1;
 }
 
 #background {
