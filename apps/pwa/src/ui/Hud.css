@@ -48,6 +48,69 @@
   height: 42px;
 }
 
+#choclab .entityStats .progress > div:first-child {
+  padding-top: 12px;
+}
+
+#choclab .entityStats .progress > div:last-child {
+  height: 28px;
+  border-radius: 3px;
+  background: rgba(0,0,0, 0.1);
+  position: relative;
+}
+
+#choclab .entityStats {
+  position: absolute;
+  width: 25vw;
+  right: 2vw;
+  top: 10vh;
+}
+
+#choclab .entityStats .label {
+  display: flex;
+  align-items: flex-end;
+  color: rgba(0,0,0,0.87);
+}
+
+#choclab .entityStats .label span:first-child {
+  flex-grow: 1;
+}
+
+#choclab .entityStats .progress div div {
+  position: absolute;
+  height: 100%;
+}
+
+#choclab .entityStats .progress div svg {
+  position: absolute;
+  right: 0;
+  cursor: pointer;
+}
+
+#choclab .green + svg {
+  color: #78BB0C;
+}
+
+#choclab .blue + svg {
+  color: #0B6BBF;
+}
+
+#choclab .red + svg {
+  color: #BF1B28;
+}
+
+#choclab .entityStats .progress .green {
+  background-color: #78BB0C;
+}
+
+#choclab .entityStats .progress .blue {
+  background-color: #0B6BBF;
+}
+
+#choclab .entityStats .progress .red {
+  background-color: #BF1B28;
+}
+
 .iosMessage > div {
   flex-direction: column-reverse;
 }

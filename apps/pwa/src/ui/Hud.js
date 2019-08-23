@@ -19,7 +19,7 @@ import de from 'javascript-time-ago/locale/de';
 import { PlayArrow, Cancel } from '@material-ui/icons';
 import MeshPreview from '../3d/MeshPreview';
 import Fab from '@material-ui/core/Fab';
-import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
+import { KeyboardArrowLeft as ArrowBackIcon, AddBox } from '@material-ui/icons';
 
 class Hud extends Component {
     constructor(props) {
@@ -264,6 +264,24 @@ class Hud extends Component {
                                     <img src="images/coins.png" alt="choco coins" />
                                 </div> : null}
                                 <MeshPreview onRef={meshPreview => this.meshPreview = meshPreview}/>
+                                <div className="entityStats">
+                                    <div className="progress">
+                                        <div className="label"><span>HP</span><span>48</span></div>
+                                        <div><div className="green" style={{ width: '20%'}}></div><AddBox /></div>
+                                    </div>
+                                    <div className="progress">
+                                        <div className="label"><span>ATTACK</span><span>65</span></div>
+                                        <div><div className="red" style={{ width:'10%' }}></div><AddBox /></div>
+                                    </div>
+                                    <div className="progress">
+                                        <div className="label"><span>DEFENSE</span><span>12</span></div>
+                                        <div><div className="blue" style={{ width: '15%' }}></div><AddBox /></div>
+                                    </div>
+                                    <div className="progress">
+                                        <div className="label"><span>AREA EFFECT</span><span>1</span></div>
+                                        <div><div className="blue" style={{ width: '50%'}}></div><AddBox /></div>
+                                    </div>
+                                </div>
                                 <ChoclabPalette selectEntity={entity => this.meshPreview.loadMesh(entity)} />
                             </div>
                         );

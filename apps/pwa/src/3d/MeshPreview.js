@@ -12,7 +12,7 @@ class MeshPreview extends Component {
 
         let createScene = () => {
             let scene = new BabylonScene(this.engine);
-            var light = new HemisphericLight('light', new Vector3(0,1,0), scene);
+            new HemisphericLight('light', new Vector3(0,1,0), scene);
             scene.clearColor = new Color4(0, 0, 0, 0);
             this.camera = new FlyCamera("camera", new Vector3(30, 30, 30), scene);
             this.camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
