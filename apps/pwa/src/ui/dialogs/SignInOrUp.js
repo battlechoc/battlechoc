@@ -20,7 +20,10 @@ const uiConfig = {
     autoUpgradeAnonymousUsers: true,
     credentialHelper: firebaseui.auth.CredentialHelper.NONE,
     callbacks: {
-        signInSuccessWithAuthResult: () => false,
+        signInSuccessWithAuthResult: (authResult) => { 
+            multiplayer.authStateChanged(authResult.user);
+            return false;
+        },
         signInFailure: (err) => {
             if (err.code === "firebaseui/anonymous-upgrade-merge-conflict") {
                 firebase.auth().signInWithCredential(err.credential).then(() => {
