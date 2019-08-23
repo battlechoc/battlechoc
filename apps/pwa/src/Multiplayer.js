@@ -53,6 +53,7 @@ class Multiplayer {
             }
 
             console.log(user);
+            console.log(this.createChallengeMeLink());
 
             firebase.firestore().collection('players').doc(user.uid).set({}, { merge: true }).then(() => {
                 if (firebase.auth().currentUser.isAnonymous === false) {
@@ -258,6 +259,12 @@ class Multiplayer {
                 signOutErrorHandler(error);
             }
         });
+    }
+
+    createChallengeMeLink() {
+        if (firebase.auth().currentUser && typeof firebase.auth().currentUser !== 'undefined') {
+            return 'https://battlechoc.com?profile=' + encodeURIComponent(firebase.auth().currentUser.uid);
+        }
     }
 
     signInAnonymouslyIfNotAlreadySignedIn() {
