@@ -4,9 +4,10 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import OfflineStore from '../OfflineStore';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
+import { multiplayer } from '../Multiplayer';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview, ChoclabPalette } from './controls';
 import { Jukebox, Translation as t } from './misc';
-import { Info, Tooltip, Settings, AppleHint, SignInOrUp} from './dialogs';
+import { Info, Tooltip, Settings, AppleHint, SignInOrUp } from './dialogs';
 import { CircularProgress, Button } from '@material-ui/core';
 import Dialog from '@material-ui/core/Dialog';
 import Typography from '@material-ui/core/Typography';
@@ -19,12 +20,12 @@ import de from 'javascript-time-ago/locale/de';
 import { PlayArrow, Cancel } from '@material-ui/icons';
 import MeshPreview from '../3d/MeshPreview';
 import Fab from '@material-ui/core/Fab';
-import { KeyboardArrowLeft as ArrowBackIcon, AddBox } from '@material-ui/icons';
+import { KeyboardArrowLeft as ArrowBackIcon, AddBox } from '@material-ui/icons';
 
 class Hud extends Component {
     constructor(props) {
         super(props);
-        this.state = { 
+        this.state = {
             clickable: true,
             open: false,
             multiplayerScreen: false,
@@ -99,6 +100,22 @@ class Hud extends Component {
         }
     }
 
+    shareYourLink() {
+        const link = multiplayer.createChallengeMeLink();
+        if (typeof link !== 'undefined') {
+            if (navigator.share) {
+                navigator.share({
+                    title: window.document.title,
+                    text: t[this.props.language].INVITATION,
+                    url: link
+                }).catch((error) => console.log('error sharing challenge me link', error));
+            } else {
+                let whatsappWindowRef = window.open();
+                whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + link);
+            }
+        }
+    }
+
     timeToString(millis) {
         let seconds = Math.floor(millis / 1000);
         let hours = Math.floor(seconds / 3600);
@@ -122,7 +139,7 @@ class Hud extends Component {
     timeAgo(millis) {
         let timeAgo = new TimeAgo('en-US');
         let timeSinceUpdate = timeAgo.format(millis);
-        return timeSinceUpdate; 
+        return timeSinceUpdate;
     }
 
     render() {
@@ -133,39 +150,39 @@ class Hud extends Component {
                 <Tooltip />
                 <Settings startTutorial={this.props.startTutorial} endGame={this.props.endGame} onRef={settings => (this.settings = settings)} />
                 <SignInOrUp onRef={signInOrUp => (this.signInOrUp = signInOrUp)} />
-                { (() => {
+                {(() => {
                     if (stage === 'CHOCLAB_SCREEN') {
-                        return  <div className="actionbar">
-                                    <Fab
-                                        size="small"
-                                        key="4"
-                                        color="primary"
-                                        aria-label="back"
-                                        className="icon"
-                                        onClick={() => this.setState({choclabScreen: false})}>
-                                        <ArrowBackIcon />
-                                    </Fab>
-                                </div>
+                        return <div className="actionbar">
+                            <Fab
+                                size="small"
+                                key="4"
+                                color="primary"
+                                aria-label="back"
+                                className="icon"
+                                onClick={() => this.setState({ choclabScreen: false })}>
+                                <ArrowBackIcon />
+                            </Fab>
+                        </div>
                     } else if (stage === 'MULTIPLAYER_SCREEN') {
-                        return  <div className="actionbar">
-                                    <Fab
-                                        size="small"
-                                        key="4"
-                                        color="primary"
-                                        aria-label="back"
-                                        className="icon"
-                                        onClick={() => this.setState({multiplayerScreen: false})}>
-                                        <ArrowBackIcon />
-                                    </Fab>
-                                </div>
+                        return <div className="actionbar">
+                            <Fab
+                                size="small"
+                                key="4"
+                                color="primary"
+                                aria-label="back"
+                                className="icon"
+                                onClick={() => this.setState({ multiplayerScreen: false })}>
+                                <ArrowBackIcon />
+                            </Fab>
+                        </div>
                     } else {
                         return <Actionbar showSettings={this.openSettings} showSignInOrUp={this.openSignInOrUp} />
                     }
-                })() }
+                })()}
 
-                { textAnimation }
+                {textAnimation}
                 <AppleHint message={t[this.props.language].IOS_MESSAGE} />
-                
+
                 {(() => {
                     if (stage === 'TITLE_SCREEN') {
                         let controls = []
@@ -179,7 +196,7 @@ class Hud extends Component {
                         return (
                             <div id="mainMenu">
                                 {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
-                                    <span>{ this.props.playerInfos.stats.coins }</span>
+                                    <span>{this.props.playerInfos.stats.coins}</span>
                                     <img src="images/coins.png" alt="choco coins" />
                                 </div> : null}
                                 <SocialIcons />
@@ -221,7 +238,7 @@ class Hud extends Component {
                         }
                         return (
                             <div className="chooseStage">
-                                { waitingNotification }
+                                {waitingNotification}
                                 <GameStartSelection clickable={this.state.clickable} />
                             </div>
                         );
@@ -230,7 +247,7 @@ class Hud extends Component {
                             <div id="multiplayer">
                                 <div className="controls">
                                     <div className="menuButton">Random opponent</div>
-                                    <div className="menuButton">Share your Link</div>
+                                    <div className="menuButton" onClick={() => this.shareYourLink()}>Share your Link</div>
                                     <div className="menuButton">Friends</div>
                                 </div>
                                 <div className="openGames">
@@ -245,41 +262,41 @@ class Hud extends Component {
                                         {this.state.openGames.map((row, i) => (
                                             [
                                                 <div key={i} className="gameActions"><PlayArrow /><Cancel /></div>,
-                                                <div key={i+1}><span className="gamelabel">player</span><span>{row.playerName}</span></div>,
-                                                <div key={i+2}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
-                                                <div key={i+3}><span className="gamelabel">match</span><span>{this.timeToString(row.matchTime)}</span></div>,
-                                                <div key={i+4}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.lastAction)}</span></div>,
-                                                <div className="tablefoot" key={i+5}><span className="gamelabel">potential coins</span><span>{row.potentialCoins}</span></div>
+                                                <div key={i + 1}><span className="gamelabel">player</span><span>{row.playerName}</span></div>,
+                                                <div key={i + 2}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
+                                                <div key={i + 3}><span className="gamelabel">match</span><span>{this.timeToString(row.matchTime)}</span></div>,
+                                                <div key={i + 4}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.lastAction)}</span></div>,
+                                                <div className="tablefoot" key={i + 5}><span className="gamelabel">potential coins</span><span>{row.potentialCoins}</span></div>
                                             ]
                                         ))}
                                     </div>
                                 </div>
                             </div>
-                            );
+                        );
                     } else if (stage === 'CHOCLAB_SCREEN') {
                         return (
                             <div id="choclab">
                                 {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
-                                    <span>{ this.props.playerInfos.stats.coins }</span>
+                                    <span>{this.props.playerInfos.stats.coins}</span>
                                     <img src="images/coins.png" alt="choco coins" />
                                 </div> : null}
-                                <MeshPreview onRef={meshPreview => this.meshPreview = meshPreview}/>
+                                <MeshPreview onRef={meshPreview => this.meshPreview = meshPreview} />
                                 <div className="entityStats">
                                     <div className="progress">
                                         <div className="label"><span>HP</span><span>48</span></div>
-                                        <div><div className="green" style={{ width: '20%'}}></div><AddBox /></div>
+                                        <div><div className="green" style={{ width: '20%' }}></div><AddBox /></div>
                                     </div>
                                     <div className="progress">
                                         <div className="label"><span>ATTACK</span><span>65</span></div>
-                                        <div><div className="red" style={{ width:'10%' }}></div><AddBox /></div>
+                                        <div><div className="red" style={{ width: '10%' }}></div><AddBox /></div>
                                     </div>
                                     <div className="progress">
                                         <div className="label"><span>DEFENSE</span><span>12</span></div>
-                                        <div><div className="blue" style={{ width: '15%' }}></div><AddBox /></div>
+                                        <div><div className="blue" style={{ width: '15%' }}></div><AddBox /></div>
                                     </div>
                                     <div className="progress">
                                         <div className="label"><span>AREA EFFECT</span><span>1</span></div>
-                                        <div><div className="blue" style={{ width: '50%'}}></div><AddBox /></div>
+                                        <div><div className="blue" style={{ width: '50%' }}></div><AddBox /></div>
                                     </div>
                                 </div>
                                 <ChoclabPalette selectEntity={entity => this.meshPreview.loadMesh(entity)} />
@@ -291,7 +308,7 @@ class Hud extends Component {
                                 <AttackPalette />
                                 <BuildingPalette />
                                 <InfoPanel />
-                                { this.props.overviewVisible ? <GameEndOverview finishGame={() => this.props.endGame()}/> : null }
+                                {this.props.overviewVisible ? <GameEndOverview finishGame={() => this.props.endGame()} /> : null}
                             </div>
                         )
                     }

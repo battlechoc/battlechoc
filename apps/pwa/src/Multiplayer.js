@@ -265,6 +265,7 @@ class Multiplayer {
         if (firebase.auth().currentUser && typeof firebase.auth().currentUser !== 'undefined') {
             return 'https://battlechoc.com?profile=' + encodeURIComponent(firebase.auth().currentUser.uid);
         }
+        return undefined;
     }
 
     signInAnonymouslyIfNotAlreadySignedIn() {
