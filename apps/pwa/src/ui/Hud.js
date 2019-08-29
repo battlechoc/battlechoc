@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import OfflineStore from '../OfflineStore';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
+import { getEntityDescriptor } from '../gameplay/GameEntities';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview, ChoclabPalette } from './controls';
 import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AppleHint, SignInOrUp} from './dialogs';
@@ -29,6 +30,7 @@ class Hud extends Component {
             open: false,
             multiplayerScreen: false,
             choclabScreen: false,
+            selectedEntity: null,
             openGames: [
                 {
                     'playerName': 'Sebastian',
@@ -44,7 +46,19 @@ class Hud extends Component {
                     'lastAction': 1566153373262,
                     'potentialCoins': 49
                 }
-            ]
+            ],
+            level: {
+                'EntityType.CREAM': { hp: 0, area: 0},
+                'EntityType.FACTORY': { hp: 0, buildingsPerTurn: 0, cacaoPerTurn: 0 },
+                'EntityType.FACTORY_EXTENSION': { hp: 0, buildingsPerTurn: 0 },
+                'EntityType.CACAOTREE': { hp: 0, cacaoPerTurn: 0 },
+                'EntityType.RUM_TRUFFLE_CANNON': { hp: 0, attack: 0, area: 0 },
+                'EntityType.FRUIT_CANNON': { hp: 0, attack: 0, area: 0 },
+                'EntityType.SPYING_EASTER_BUNNY': { hp: 0, area: 0, fortune: 0 },
+                'EntityType.XMAS_FACTORY': {  hp: 0, area: 0 },
+                'EntityType.HOT_CHOCOLATE_BALLISTA': { hp: 0, area: 0, fortune: 0 },
+                'EntityType.CHOCOLATE_FOUNTAIN': { hp: 0 }
+            }
         }
     }
 
@@ -265,24 +279,31 @@ class Hud extends Component {
                                 </div> : null}
                                 <MeshPreview onRef={meshPreview => this.meshPreview = meshPreview}/>
                                 <div className="entityStats">
-                                    <div className="progress">
-                                        <div className="label"><span>HP</span><span>48</span></div>
-                                        <div><div className="green" style={{ width: '20%'}}></div><AddBox /></div>
-                                    </div>
-                                    <div className="progress">
-                                        <div className="label"><span>ATTACK</span><span>65</span></div>
-                                        <div><div className="red" style={{ width:'10%' }}></div><AddBox /></div>
-                                    </div>
-                                    <div className="progress">
-                                        <div className="label"><span>DEFENSE</span><span>12</span></div>
-                                        <div><div className="blue" style={{ width: '15%' }}></div><AddBox /></div>
-                                    </div>
-                                    <div className="progress">
-                                        <div className="label"><span>AREA EFFECT</span><span>1</span></div>
-                                        <div><div className="blue" style={{ width: '50%'}}></div><AddBox /></div>
-                                    </div>
+                                    { this.state.selectedEntity ? this.state.selectedEntity.style.map(attribute => {
+                                        let values = this.state.selectedEntity[attribute.name]();
+                                        let percentage = (values[0] / values[1]) * 100;
+                                        return (
+                                            <div className="progress" key={attribute.name}>
+                                                <div className="label"><span>{ attribute.displayName }</span><span>{ Math.round(values[0]) }</span></div>
+                                                <div>
+                                                    <div className={attribute.color} style={{ width: percentage + '%'}}></div>
+                                                    <AddBox onClick={() => {
+                                                        let level = JSON.parse(JSON.stringify(this.state.level));
+                                                        level[this.state.selectedEntityType][attribute.name] += 1;
+                                                        this.setState({"level": level}, () => {
+                                                            this.setState({ "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.state.level) });
+                                                        });
+                                                    }} />
+                                                </div>
+                                            </div>
+                                        )
+                                    })  : null }
                                 </div>
-                                <ChoclabPalette selectEntity={entity => this.meshPreview.loadMesh(entity)} />
+                                <ChoclabPalette selectEntity={entity => {
+                                    this.setState({ selectedEntity: getEntityDescriptor(entity, this.state.level) });
+                                    this.setState({ selectedEntityType: entity });
+                                    this.meshPreview.loadMesh(entity);
+                                }} />
                             </div>
                         );
                     } else {

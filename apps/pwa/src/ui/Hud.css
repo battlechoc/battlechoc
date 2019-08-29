@@ -70,6 +70,7 @@
   display: flex;
   align-items: flex-end;
   color: rgba(0,0,0,0.87);
+  text-transform: uppercase;
 }
 
 #choclab .entityStats .label span:first-child {
