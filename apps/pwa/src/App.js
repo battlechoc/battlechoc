@@ -71,6 +71,8 @@ class App extends Component {
         window.onblur = () => Jukebox.pauseMusic();
 
         multiplayer.fetchPlayerStats(this.props.updatePlayerStats);
+
+        multiplayer.signInAnonymouslyIfNotAlreadySignedIn();
     }
 
     handleError = error => {
@@ -247,7 +249,6 @@ class App extends Component {
     prepareNewGame = (resumeGame, joinMultiplayer, multiplayerGameState) => {
         OfflineStore.settingsStore.get('tutorialAlreadySeen').then(tutorialAlreadySeen => {
             if (tutorialAlreadySeen || this.props.playerInfos.coins > 0) {
-                multiplayer.signInAnonymouslyIfNotAlreadySignedIn();
                 Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                 gameplayLog.clear();

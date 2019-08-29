@@ -39,60 +39,68 @@ class Multiplayer {
             firebase.firestore().enablePersistence()
                 .catch(err => console.log("could not enable offline persistence of firestore.", err));
             firebase.auth().onAuthStateChanged((user) => {
-                if (user) {
-                    if (typeof this.callbacks.notifyPlayerSignedIn !== 'undefined') {
-                        this.callbacks.notifyPlayerSignedIn({ email: user.email, uid: user.uid, name: user.displayName, isAnonymous: user.isAnonymous });
-                    }
-
-                    firebase.firestore().collection('players').doc(user.uid).set({}, { merge: true }).then(() => {
-                        if (firebase.auth().currentUser.isAnonymous === false) {
-                            this.mergePlayerStats();
-                        }
-                    }).catch(err => {
-                        console.log("could not create player entry.", err);
-                    });
-
-                    this.localPlayer = user;
-                    const userStatusDatabaseRef = firebase.database().ref('/status/' + this.localPlayer.uid);
-                    const userStatusFirestoreRef = firebase.firestore().doc('/status/' + this.localPlayer.uid);
-
-                    let isOfflineForDatabase = {
-                        state: 'offlinedb',
-                        last_changed: firebase.database.ServerValue.TIMESTAMP,
-                    };
-
-                    let isOnlineForDatabase = {
-                        state: 'onlinedb',
-                        last_changed: firebase.database.ServerValue.TIMESTAMP,
-                    };
-
-                    let isOfflineForFirestore = {
-                        state: 'offlinest',
-                        last_changed: firebase.firestore.FieldValue.serverTimestamp(),
-                    };
-
-                    let isOnlineForFirestore = {
-                        state: 'onlinest',
-                        last_changed: firebase.firestore.FieldValue.serverTimestamp(),
-                    };
-
-                    firebase.database().ref('.info/connected').on('value', function (snapshot) {
-                        if (snapshot.val() === false) {
-                            userStatusFirestoreRef.set(isOfflineForFirestore);
-                            return;
-                        };
-
-                        userStatusDatabaseRef.onDisconnect().set(isOfflineForDatabase).then(function () {
-                            userStatusDatabaseRef.set(isOnlineForDatabase);
-                            userStatusFirestoreRef.set(isOnlineForFirestore);
-                        });
-                    });
-                } else {
-                    this.localPlayer = undefined;
-                }
+                this.authStateChanged(user);
             });
         } catch (error) {
             console.log(error);
+        }
+    }
+
+    authStateChanged(user) {
+        if (user) {
+            if (typeof this.callbacks.notifyPlayerSignedIn !== 'undefined') {
+                this.callbacks.notifyPlayerSignedIn({ email: user.email, uid: user.uid, name: user.displayName, isAnonymous: user.isAnonymous });
+            }
+
+            console.log(user);
+            console.log(this.createChallengeMeLink());
+
+            firebase.firestore().collection('players').doc(user.uid).set({}, { merge: true }).then(() => {
+                if (firebase.auth().currentUser.isAnonymous === false) {
+                    this.mergePlayerStats();
+                }
+            }).catch(err => {
+                console.log("could not create player entry.", err);
+            });
+
+            this.localPlayer = user;
+            const userStatusDatabaseRef = firebase.database().ref('/status/' + this.localPlayer.uid);
+            const userStatusFirestoreRef = firebase.firestore().doc('/status/' + this.localPlayer.uid);
+
+            let isOfflineForDatabase = {
+                state: 'offlinedb',
+                last_changed: firebase.database.ServerValue.TIMESTAMP,
+            };
+
+            let isOnlineForDatabase = {
+                state: 'onlinedb',
+                last_changed: firebase.database.ServerValue.TIMESTAMP,
+            };
+
+            let isOfflineForFirestore = {
+                state: 'offlinest',
+                last_changed: firebase.firestore.FieldValue.serverTimestamp(),
+            };
+
+            let isOnlineForFirestore = {
+                state: 'onlinest',
+                last_changed: firebase.firestore.FieldValue.serverTimestamp(),
+            };
+
+            firebase.database().ref('.info/connected').on('value', function (snapshot) {
+                if (snapshot.val() === false) {
+                    userStatusFirestoreRef.set(isOfflineForFirestore);
+                    return;
+                };
+
+                userStatusDatabaseRef.onDisconnect().set(isOfflineForDatabase).then(function () {
+                    userStatusDatabaseRef.set(isOnlineForDatabase);
+                    userStatusFirestoreRef.set(isOnlineForFirestore);
+                });
+            });
+        } else {
+            this.localPlayer = undefined;
+            this.signInAnonymouslyIfNotAlreadySignedIn();
         }
     }
 
@@ -242,7 +250,6 @@ class Multiplayer {
 
     signOut(notifyPlayerSignedOut, signOutErrorHandler) {
         firebase.auth().signOut().then(function () {
-            console.log("signed out");
             if (typeof notifyPlayerSignedOut !== 'undefined') {
                 notifyPlayerSignedOut();
             }
@@ -252,6 +259,12 @@ class Multiplayer {
                 signOutErrorHandler(error);
             }
         });
+    }
+
+    createChallengeMeLink() {
+        if (firebase.auth().currentUser && typeof firebase.auth().currentUser !== 'undefined') {
+            return 'https://battlechoc.com?profile=' + encodeURIComponent(firebase.auth().currentUser.uid);
+        }
     }
 
     signInAnonymouslyIfNotAlreadySignedIn() {
