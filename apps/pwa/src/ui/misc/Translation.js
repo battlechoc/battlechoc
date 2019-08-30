@@ -35,47 +35,47 @@ const languages = {
                 case EntityType.CREAM:
                     return {
                         info: 'Buildings built in cream will be hidden from the enemy. The building order of cream and buildings does not matter',
-                        costs: 'Cacao costs: ' + building.costs
+                        costs: 'Cacao costs: ' + building.costs()
                     }
                 case EntityType.FACTORY_EXTENSION:
                     return {
                         info: 'A factory extension can only be placed directly next to your factory',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Cacao costs: ' + building.costs(),
                         advantages: 'Buildings per turn +2'
                     }
                 case EntityType.CACAOTREE:
                     return {
                         info: 'The cacao tree offers you all the resources you need',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Cacao costs: ' + building.costs(),
                         advantages: 'Cacao per turn +30'
                     }
                 case EntityType.RUM_TRUFFLE_CANNON:
                     return {
                         info: 'The rum truffle cannon leads you to victory',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Cacao costs: ' + building.costs(),
                         advantages: 'Attacks per turn +1'
                     }
                 case EntityType.XMAS_FACTORY:
                     return {
                         info: 'The rumor that Easter bunnies are melted down to Santa Clauses is true! If an Easter bunny comes near the Christmas factory, a present is waiting for you',
-                        costs: 'Cacao costs: ' + building.costs
+                        costs: 'Cacao costs: ' + building.costs()
                     }
                 case EntityType.SPYING_EASTER_BUNNY:
                     return {
                         info: 'The spying easter bunny can look under the cream of the opponent, but watch out for Christmas factories',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Cacao costs: ' + building.costs(),
                         advantages: 'Spying per turn +1'
                     }
                 case EntityType.CHOCOLATE_FOUNTAIN:
                     return {
                         info: 'The chocolate fountain safes all surrounding buildings from rum truffle cannon attacks.',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Cacao costs: ' + building.costs(),
                         advantages: 'Secures an area of 3x3 cells around the fountain.'
                     }
                 case EntityType.FRUIT_CANNON:
                     return {
                         info: 'The fruit cannon destroys creams and chocolate fountains of your enemy.',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Cacao costs: ' + building.costs(),
                         advantages: 'Fruit attacks per turn +1'
                     }
                 default: return { info: 'Unkown building' }
@@ -213,47 +213,47 @@ const languages = {
                 case EntityType.CREAM:
                     return {
                         info: 'Gebäude die in Sahne gebaut sind bleiben dem Gegner verborgen. Die Baureihenfolge von Sahne und Gebäude sind dabei egal',
-                        costs: 'Kakaokosten: ' + building.costs
+                        costs: 'Kakaokosten: ' + building.costs()
                     }
                 case EntityType.FACTORY_EXTENSION:
                     return {
                         info: 'Eine Fabrikerweiterung kann nur direkt neben deiner Fabrik platziert werden',
-                        costs: 'Kakaokosten: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs(),
                         advantages: 'Gebäude pro Runde +2'
                     }
                 case EntityType.CACAOTREE:
                     return {
                         info: 'Der Kakaobaum gibt dir alles was du an Rohstoffen brauchst',
-                        costs: 'Kakaokosten: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs(),
                         advantages: 'Kakao pro Runde +30'
                     }
                 case EntityType.RUM_TRUFFLE_CANNON:
                     return {
                         info: 'Die Rumtrüffelkanone führt dich zum Sieg',
-                        costs: 'Kakaokosten: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs(),
                         advantages: 'Angriffe pro Runde +1'
                     }
                 case EntityType.XMAS_FACTORY:
                     return {
                         info: 'Das Gerücht, dass Osterhasen zu Weihnachtsmännern eingeschmolzen werden stimmt! Kommt ein Osterhase in die Nähe der Weihnachtsfabrik wartet ein Geschenk auf dich',
-                        costs: 'Kakaokosten: ' + building.costs
+                        costs: 'Kakaokosten: ' + building.costs()
                     }
                 case EntityType.SPYING_EASTER_BUNNY:
                     return {
                         info: 'Der Spionage-Osterhase kann unter die Sahne des Gegners schauen, aber achte auf mögliche Weihnachtsfabriken',
-                        costs: 'Kakaokosten: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs(),
                         advantages: 'Spionage pro Runde +1'
                     }
                 case EntityType.CHOCOLATE_FOUNTAIN:
                     return {
                         info: 'Der Schololadenbrunnen schützt in einem Bereich von 3x3 Feldern um ihn herum alle anderen Gebäude gegen gegnerischen Beschuss und kann nur durch die Hot Chocolate Ballista oder eine Fruchtkanone zerstört werden.',
-                        costs: 'Kakaokosten: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs(),
                         advantages: 'Schützt einen 3x3 großen Bereich'
                     }
                 case EntityType.FRUIT_CANNON:
                     return {
                         info: 'Die Fruchtkanone zerstört nur Sahnehäubchen oder gegnerische Schokoladenbrunnen.',
-                        costs: 'Kakaokosten: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs(),
                         advantages: 'Fruchtangriffe pro Runde +1'
                     }
                 default: return { info: 'Unbekanntes Gebäude' }

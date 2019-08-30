@@ -5,6 +5,7 @@ import { connect } from 'react-redux';
 import OfflineStore from '../OfflineStore';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { getEntityDescriptor } from '../gameplay/GameEntities';
+import { increaseLevel } from '../gameplay/GameActions';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview, ChoclabPalette } from './controls';
 import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AppleHint, SignInOrUp} from './dialogs';
@@ -46,19 +47,7 @@ class Hud extends Component {
                     'lastAction': 1566153373262,
                     'potentialCoins': 49
                 }
-            ],
-            level: {
-                'EntityType.CREAM': { hp: 0, area: 0},
-                'EntityType.FACTORY': { hp: 0, buildingsPerTurn: 0, cacaoPerTurn: 0 },
-                'EntityType.FACTORY_EXTENSION': { hp: 0, buildingsPerTurn: 0 },
-                'EntityType.CACAOTREE': { hp: 0, cacaoPerTurn: 0 },
-                'EntityType.RUM_TRUFFLE_CANNON': { hp: 0, attack: 0, area: 0 },
-                'EntityType.FRUIT_CANNON': { hp: 0, attack: 0, area: 0 },
-                'EntityType.SPYING_EASTER_BUNNY': { hp: 0, area: 0, fortune: 0 },
-                'EntityType.XMAS_FACTORY': {  hp: 0, area: 0 },
-                'EntityType.HOT_CHOCOLATE_BALLISTA': { hp: 0, area: 0, fortune: 0 },
-                'EntityType.CHOCOLATE_FOUNTAIN': { hp: 0 }
-            }
+            ]
         }
     }
 
@@ -288,11 +277,10 @@ class Hud extends Component {
                                                 <div>
                                                     <div className={attribute.color} style={{ width: percentage + '%'}}></div>
                                                     <AddBox onClick={() => {
-                                                        let level = JSON.parse(JSON.stringify(this.state.level));
-                                                        level[this.state.selectedEntityType][attribute.name] += 1;
-                                                        this.setState({"level": level}, () => {
-                                                            this.setState({ "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.state.level) });
-                                                        });
+                                                        this.props.increaseLevel({
+                                                            'entity': this.state.selectedEntityType,
+                                                            'attribute': attribute.name
+                                                        }).then(() => this.setState({ "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level) }));
                                                     }} />
                                                 </div>
                                             </div>
@@ -300,7 +288,7 @@ class Hud extends Component {
                                     })  : null }
                                 </div>
                                 <ChoclabPalette selectEntity={entity => {
-                                    this.setState({ selectedEntity: getEntityDescriptor(entity, this.state.level) });
+                                    this.setState({ selectedEntity: getEntityDescriptor(entity, this.props.level) });
                                     this.setState({ selectedEntityType: entity });
                                     this.meshPreview.loadMesh(entity);
                                 }} />
@@ -333,6 +321,7 @@ Hud.propTypes = {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
+    level: state.gameplay.level,
     state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
     language: state.ui.language,
     overviewVisible: state.ui.overviewVisible,
@@ -342,6 +331,13 @@ const mapStateToProps = state => ({
     playerInfos: state.ui.playerInfos
 });
 
-const HudContainer = connect(mapStateToProps)(Hud);
+const mapDispatchToProps = {
+    increaseLevel
+};
+
+const HudContainer = connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(Hud);
 
 export default HudContainer;

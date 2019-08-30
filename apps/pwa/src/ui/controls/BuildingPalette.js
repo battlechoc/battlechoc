@@ -13,47 +13,47 @@ class BuildingPalette extends Component {
             type: EntityType.FACTORY,
             className: 'factory',
             alt: 'factory preview',
-            costs: getEntityDescriptor(EntityType.FACTORY).costs
+            costs: getEntityDescriptor(EntityType.FACTORY, this.props.level).costs()
         }, {
             type: EntityType.CACAOTREE,
             className: 'cacaotree',
             alt: 'cacao tree preview',
-            costs: getEntityDescriptor(EntityType.CACAOTREE).costs
+            costs: getEntityDescriptor(EntityType.CACAOTREE, this.props.level).costs()
         }, {
             type: EntityType.RUM_TRUFFLE_CANNON,
             className: 'cannon',
             alt: 'cannon preview',
-            costs: getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON).costs
+            costs: getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, this.props.level).costs()
         }, {
             type: EntityType.FACTORY_EXTENSION,
             className: 'factoryExtension',
             alt: 'factory extension preview',
-            costs: getEntityDescriptor(EntityType.FACTORY_EXTENSION).costs
+            costs: getEntityDescriptor(EntityType.FACTORY_EXTENSION, this.props.level).costs()
         }, {
             type: EntityType.CREAM,
             className: 'cream',
             alt: 'cream preview',
-            costs: getEntityDescriptor(EntityType.CREAM).costs
+            costs: getEntityDescriptor(EntityType.CREAM, this.props.level).costs()
         }, {
             type: EntityType.SPYING_EASTER_BUNNY,
             className: 'bunny',
             alt: 'easter factory',
-            costs: getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY).costs
+            costs: getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY, this.props.level).costs()
         }, {
             type: EntityType.XMAS_FACTORY,
             className: 'xmasFactory',
             alt: 'xmas factory',
-            costs: getEntityDescriptor(EntityType.XMAS_FACTORY).costs
+            costs: getEntityDescriptor(EntityType.XMAS_FACTORY, this.props.level).costs()
         }, {
             type: EntityType.CHOCOLATE_FOUNTAIN,
             className: 'fountain',
             alt: 'chocolate fountain',
-            costs: getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN).costs
+            costs: getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN, this.props.level).costs()
         }, {
             type: EntityType.FRUIT_CANNON,
             className: 'fruitCannon',
             alt: 'fruit cannon',
-            costs: getEntityDescriptor(EntityType.FRUIT_CANNON).costs
+            costs: getEntityDescriptor(EntityType.FRUIT_CANNON, this.props.level).costs()
         }];
     }
 
@@ -138,7 +138,8 @@ class BuildingPalette extends Component {
 const mapStateToProps = state => ({
     game: state.gameplay.game,
     selectedBuilding: state.ui.selectedBuilding,
-    whitelist: state.ui.whitelistBuildings
+    whitelist: state.ui.whitelistBuildings,
+    level: state.gameplay.level
 });
 
 const mapDispatchToProps = {

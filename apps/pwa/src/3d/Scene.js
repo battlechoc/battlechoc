@@ -155,14 +155,14 @@ class Scene extends Component {
     triggerCacaoInfo() {
         let cells = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid;
         let trees = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE));
-        let description = getEntityDescriptor(EntityType.CACAOTREE);
+        let description = getEntityDescriptor(EntityType.CACAOTREE, this.props.level);
         trees.forEach(cell => {
-            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), cell.type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn);
+            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), cell.type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn() * 1.5) : description.cacaoPerTurn());
         });
         let factory = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.FACTORY));
-        description = getEntityDescriptor(EntityType.FACTORY);
+        description = getEntityDescriptor(EntityType.FACTORY, this.props.level);
         factory.forEach(cell => {
-            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), description.cacaoPerTurn);
+            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), description.cacaoPerTurn());
         });
     }
 
@@ -247,8 +247,8 @@ class Scene extends Component {
                     this.props.deselectAttack();
                     let playerId = this.props.game.players[multiplayer.localPlayerIndex].id;
                     setTimeout(() => {
-                        let description = getEntityDescriptor(EntityType.FACTORY);
-                        this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), description.cacaoPerTurn);
+                        let description = getEntityDescriptor(EntityType.FACTORY, this.props.level);
+                        this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), description.cacaoPerTurn());
                     }, 1000);
                     setTimeout(() => {
                         if (playerId === this.props.game.players[multiplayer.localPlayerIndex].id) {
@@ -258,8 +258,8 @@ class Scene extends Component {
                         }
                     }, 3000);
                 } else {
-                    let description = getEntityDescriptor(this.props.selectedBuilding)
-                    this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs);
+                    let description = getEntityDescriptor(this.props.selectedBuilding, this.props.level)
+                    this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs());
                     let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;
                     setTimeout(() => {
@@ -419,6 +419,7 @@ class Scene extends Component {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
+    level: state.gameplay.level
     selectedBuilding: state.ui.selectedBuilding,
     selectedAttack: state.ui.selectedAttack,
     assetsReady: state.ui.assetsReady,

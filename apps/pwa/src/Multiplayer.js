@@ -15,7 +15,18 @@ const MultiplayerGameSessionState = Object.freeze({
     FINISHED: 'MultiplayerGameSessionState.Finished'
 });
 
-const EmptyPlayerStats = Object.freeze({ coins: 0, awards: {}, skills: {}, trackRecord: [] });
+const EmptyPlayerStats = Object.freeze({ coins: 0, level: {
+                'EntityType.CREAM': { hp: 0, area: 0},
+                'EntityType.FACTORY': { hp: 0, buildingsPerTurn: 0, cacaoPerTurn: 0 },
+                'EntityType.FACTORY_EXTENSION': { hp: 0, buildingsPerTurn: 0 },
+                'EntityType.CACAOTREE': { hp: 0, cacaoPerTurn: 0 },
+                'EntityType.RUM_TRUFFLE_CANNON': { hp: 0, attack: 0, area: 0 },
+                'EntityType.FRUIT_CANNON': { hp: 0, attack: 0, area: 0 },
+                'EntityType.SPYING_EASTER_BUNNY': { hp: 0, area: 0, fortune: 0 },
+                'EntityType.XMAS_FACTORY': {  hp: 0, area: 0 },
+                'EntityType.HOT_CHOCOLATE_BALLISTA': { hp: 0, area: 0, fortune: 0 },
+                'EntityType.CHOCOLATE_FOUNTAIN': { hp: 0 }
+            }, skills: {}, trackRecord: [] });
 
 class Multiplayer {
     constructor() {

@@ -79,7 +79,7 @@ class Tooltip extends Component {
                 if (typeof this.props.tappedBuilding === 'undefined') {
                     message = t[this.props.language].TOOLTIP_BUILD_PHASE_MESSAGE;
                 } else {
-                    const building = getEntityDescriptor(this.props.tappedBuilding);
+                    const building = getEntityDescriptor(this.props.tappedBuilding, this.props.level);
                     const { info, costs, advantages } = t[this.props.language].TOOLTIP_BUILDING_INFO(this.props.tappedBuilding, building);
                     title = t[this.props.language].TOOLTIP_BUILDING_TITLE(this.props.tappedBuilding);
                     message = <span className="tooltipBuildingInfo">
@@ -137,6 +137,7 @@ class Tooltip extends Component {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
+    level: state.gameplay.level,
     language: state.ui.language,
     tappedBuilding: state.ui.tappedBuilding,
     selectedAttack: state.ui.selectedAttack

@@ -203,6 +203,8 @@ class Rules {
             } else {
                 return true;
             }
+        } else if (action.type === GameActionTypes.increaseLevel) {
+            return true;
         } else if ([UiActionTypes.startTutorial, UiActionTypes.stopTutorial, UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.joinedMultiplayer, UiActionTypes.waitForMultiplayer, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable, UiActionTypes.notifyPlayerSignedIn, UiActionTypes.notifyPlayerSignedOut, UiActionTypes.updatePlayerStats].includes(action.type)) {
             return true;
         } else {

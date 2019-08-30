@@ -2,7 +2,7 @@ import { createReducer } from 'redux-starter-kit';
 import * as GameActions from './GameActions';
 import * as GameEntities from './GameEntities';
 import { PlayerType } from './Player';
-import { multiplayer } from '../Multiplayer';
+import { multiplayer, EmptyPlayerStats } from '../Multiplayer';
 
 const GameStateTypes = Object.freeze({
     START: 'GameStateTypes.START',
@@ -90,7 +90,7 @@ function calculateBuildingsPerTurn(building, cellColor) {
     return buildingsPerTurn;
 }
 
-const gameplayReducer = createReducer({}, {
+const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
     [GameActions.startGame]: (state, action) => {
         let coinToss = Math.round(Math.random());
         if (action.payload[1].type === PlayerType.AUGUSTUS_GLOOP) {
@@ -305,6 +305,9 @@ const gameplayReducer = createReducer({}, {
     },
     [GameActions.finishGame]: (state, action) => {
         state.game = undefined;
+    },
+    [GameActions.increaseLevel]: (state, action) => {
+        state.level[action.payload.entity][action.payload.attribute] += 1;
     }
 });
 
