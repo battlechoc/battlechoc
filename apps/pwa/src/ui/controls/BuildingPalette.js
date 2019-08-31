@@ -65,6 +65,7 @@ class BuildingPalette extends Component {
     }
 
     playerCanBuild(building) {
+        console.log(building)
         const canBuild = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn > 0 &&
             this.props.game.players[multiplayer.localPlayerIndex].cacao >= building.costs &&
             this.props.game.players[multiplayer.localPlayerIndex].buildings > 0;

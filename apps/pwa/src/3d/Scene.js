@@ -157,12 +157,12 @@ class Scene extends Component {
         let trees = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE));
         let description = getEntityDescriptor(EntityType.CACAOTREE, this.props.level);
         trees.forEach(cell => {
-            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), cell.type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn() * 1.5) : description.cacaoPerTurn());
+            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), cell.type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn()[0] * 1.5) : description.cacaoPerTurn()[0]);
         });
         let factory = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.FACTORY));
         description = getEntityDescriptor(EntityType.FACTORY, this.props.level);
         factory.forEach(cell => {
-            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), description.cacaoPerTurn());
+            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), description.cacaoPerTurn()[0]);
         });
     }
 
@@ -232,11 +232,12 @@ class Scene extends Component {
         if (buildingSelected || (initialPlacement && this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn === 0)) {
             let building;
             if (initialPlacement) {
-                building = createEntity(EntityType.FACTORY);
+                building = createEntity(EntityType.FACTORY, this.props.level);
             } else {
-                building = createEntity(this.props.selectedBuilding);
+                building = createEntity(this.props.selectedBuilding, this.props.level);
             }
-            building.position = { row: row, col: col }
+            console.log(building)
+            building.position = { row: row, col: col };
             let playerCacaoPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn;
             let buildingsPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn;
             this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
@@ -248,7 +249,7 @@ class Scene extends Component {
                     let playerId = this.props.game.players[multiplayer.localPlayerIndex].id;
                     setTimeout(() => {
                         let description = getEntityDescriptor(EntityType.FACTORY, this.props.level);
-                        this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), description.cacaoPerTurn());
+                        this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), description.cacaoPerTurn()[0]);
                     }, 1000);
                     setTimeout(() => {
                         if (playerId === this.props.game.players[multiplayer.localPlayerIndex].id) {
@@ -258,7 +259,7 @@ class Scene extends Component {
                         }
                     }, 3000);
                 } else {
-                    let description = getEntityDescriptor(this.props.selectedBuilding, this.props.level)
+                    let description = getEntityDescriptor(this.props.selectedBuilding, this.props.level);
                     this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs());
                     let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;

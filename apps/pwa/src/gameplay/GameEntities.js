@@ -1,4 +1,5 @@
 import uuidv4 from 'uuid/v4';
+import { EmptyPlayerStats } from '../Multiplayer';
 
 const BoardCellTypes = Object.freeze({
     WHITE: 'BoardCellTypes.WHITE',
@@ -90,7 +91,7 @@ class Board {
 }
 
 const calculateDivisor = (finalLevel, start, end) => (finalLevel * Math.log2(2))/Math.log2((end - finalLevel)/start);
-const growFunction = (level, finalLevel, start, end) => level + start * Math.pow(2, level/calculateDivisor(finalLevel,start,end));
+const growFunction = (level, finalLevel, start, end) => Math.round(level + start * Math.pow(2, level/calculateDivisor(finalLevel,start,end)));
 
 const generateEntityDescription = (entityType, attributes) => {
     return level => {
@@ -159,6 +160,10 @@ const generateEntityDescription = (entityType, attributes) => {
                 description[attribute.name] = attribute.custom;
             } else if (attribute.hasOwnProperty('grow') && attribute.hasOwnProperty('level')) {
                 description[attribute.name] = function() { 
+                    
+                    console.log(this.level.current[attribute.name],this.level.max[attribute.name],
+                        this.basic[attribute.name], attribute.grow)
+
                     return [
                         growFunction(
                             this.level.current[attribute.name], 
@@ -191,7 +196,7 @@ const EntityDescriptors = Object.freeze(new Map([
         }, {
             name: 'costs',
             basic: 10,
-            custom: function() { return Math.pow(this.area(), 2) }
+            custom: function() { return Math.pow(this.area()[0], 2) * this.basic.costs }
         }, {
             name: 'coins',
             custom: function() { 
@@ -224,17 +229,9 @@ const EntityDescriptors = Object.freeze(new Map([
             grow: 1020
         }, {
             name: 'costs',
-            basic: 120,
+            basic: 0,
             custom: function() { 
-                let level = this.level.current.buildingsPerTurn +
-                            this.level.current.hp;
-
-                let maxLevel = this.level.max.buildingsPerTurn +
-                               this.level.max.hp;                               
-                return growFunction(
-                    level, 
-                    maxLevel, 
-                    this.basic.costs, 11302)                 
+                return 0;               
             }
         }, {
             name: 'coins',
@@ -242,8 +239,7 @@ const EntityDescriptors = Object.freeze(new Map([
                 return (
                     this.hp()[0] +
                     this.cacaoPerTurn()[0] + 
-                    (this.level.current.buildingsPerTurn * 4096) + 
-                    this.costs()
+                    (this.level.current.buildingsPerTurn * 4096)
                 );
             }
         }
@@ -265,6 +261,7 @@ const EntityDescriptors = Object.freeze(new Map([
             }
         }, {
             name: 'costs',
+            basic: 120,
             custom: function() { 
                 let level = this.level.current.buildingsPerTurn +
                             this.level.current.hp;
@@ -308,6 +305,7 @@ const EntityDescriptors = Object.freeze(new Map([
             },
         }, {
             name: 'costs',
+            basic: 20,
             custom: function() { 
                 let level = this.level.current.cacaoPerTurn +
                             this.level.current.hp;
@@ -351,6 +349,7 @@ const EntityDescriptors = Object.freeze(new Map([
             }
         }, {
             name: 'costs',
+            basic: 40,
             custom: function() { 
                 let level = this.level.current.attack +
                             this.level.current.area * 20 +
@@ -396,6 +395,7 @@ const EntityDescriptors = Object.freeze(new Map([
             }
         }, {
             name: 'costs',
+            basic: 40,
             custom: function() { 
                 let level = this.level.current.attack +
                             this.level.current.area * 20 +
@@ -484,7 +484,7 @@ const EntityDescriptors = Object.freeze(new Map([
             },
         }, {
             name: 'costs',
-            basic: 120,
+            basic: 80,
             custom: function() { 
                 let level = this.level.current.area * 20 +
                             this.level.current.hp;
@@ -560,7 +560,11 @@ const EntityDescriptors = Object.freeze(new Map([
     ])]
 ]));
 
-function createEntity(entityType) {
+function createEntity(entityType, level) {
+    if (typeof level === 'undefined') {
+        level = EmptyPlayerStats.level;
+    }
+
     if (!EntityDescriptors.has(entityType)) {
         throw new Error("Invalid entity type given: " + entityType);
     } else {
@@ -568,15 +572,26 @@ function createEntity(entityType) {
             id: uuidv4(),
             type: entityType
         };
-        const descriptor = EntityDescriptors.get(entityType);
+        const descriptor = EntityDescriptors.get(entityType)(level);
         for (let field in descriptor) {
-            entity[field] = descriptor[field]
+            if (['hp','area','buildingsPerTurn','cacaoPerTurn','attack','fortune','costs','coins'].includes(field)) {
+                let values = descriptor[field]();
+                if (Array.isArray(values)) {
+                    entity[field] = values[0];
+                } else {
+                    entity[field] = values;
+                }
+            }
         };
         return entity;
     }
 }
 
 function getEntityDescriptor(entityType, level) {
+    if (typeof level === 'undefined') {
+        level = EmptyPlayerStats.level;
+    }
+
     if (!EntityDescriptors.has(entityType)) {
         throw new Error("Invalid entity type given: " + entityType);
     } else {
