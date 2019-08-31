@@ -84,7 +84,6 @@ class Scene extends Component {
     }
 
     spawnInfo(messageType, position, amount) {
-        console.log(messageType, position, amount);
         let id = Date.now();
         let info = MeshBuilder.CreatePlane('info_' + id, { width: 1.65, height: 1.65 }, this.scene);
         info.isPickable = false;
@@ -214,7 +213,6 @@ class Scene extends Component {
     }
 
     detonateAtShield(row, col, playerField=false) {
-        console.log('detonateAtShield', row, col, playerField);
         let truffle = MeshBuilder.CreateTorus('knot', {diameter: 0.1}, this.scene);
         truffle.material = this.scene.getMaterialByName(BoardCellTypes.BROWN + '.material');
         if (playerField) {
@@ -236,7 +234,6 @@ class Scene extends Component {
             } else {
                 building = createEntity(this.props.selectedBuilding, this.props.level);
             }
-            console.log(building)
             building.position = { row: row, col: col };
             let playerCacaoPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn;
             let buildingsPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn;
@@ -274,7 +271,7 @@ class Scene extends Component {
                             this.spawnInfo(this.InfoType.INCREASE_SPY_ATTACKS_PER_TURN, position.clone(), 1);
                         }
                         setTimeout(() => {
-                            if (this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) {
+                            if (this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs()) {
                                 if (playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true) {
                                     this.props.finishBuildPhase({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
                                         this.props.deselectBuildings();

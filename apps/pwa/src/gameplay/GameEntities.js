@@ -159,11 +159,7 @@ const generateEntityDescription = (entityType, attributes) => {
             if (attribute.hasOwnProperty('custom')) {
                 description[attribute.name] = attribute.custom;
             } else if (attribute.hasOwnProperty('grow') && attribute.hasOwnProperty('level')) {
-                description[attribute.name] = function() { 
-                    
-                    console.log(this.level.current[attribute.name],this.level.max[attribute.name],
-                        this.basic[attribute.name], attribute.grow)
-
+                description[attribute.name] = function() {
                     return [
                         growFunction(
                             this.level.current[attribute.name], 
@@ -613,8 +609,12 @@ function getEntityDescriptor(entityType, level) {
     }
 }
 
-function getCheapest() {
-    return getEntityDescriptor(EntityType.CREAM);
+function getCheapest(level) {
+    if (typeof level === 'undefined') {
+        level = EmptyPlayerStats.level;
+    }
+
+    return getEntityDescriptor(EntityType.CREAM, level);
 }
 
 export { BoardCellTypes, Board, EntityType, AttackType, EntityDescriptors, createEntity, getEntityDescriptor, getCheapest };

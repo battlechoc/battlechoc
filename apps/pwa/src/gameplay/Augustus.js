@@ -2,6 +2,7 @@ import { EntityType, AttackType, BoardCellTypes, createEntity, getEntityDescript
 import { BattlechocError } from './Errors';
 import { NonPlayerCharacter } from './Player';
 import { Jukebox } from '../ui/misc';
+import { EmptyPlayerStats } from '../Multiplayer';
 
 const AugustusType = Object.freeze({
     DEFENSIVE: 'AugustusType.DEFENSIVE',
@@ -292,6 +293,8 @@ export default class Augustus extends NonPlayerCharacter {
                 col: targetCell.col
             }
 
+            console.log(building);
+
             this.actions.build({ issuer: this.player.id, building: building }).then(() => resolve()).catch(error => reject(error));
         });
     }
@@ -305,7 +308,7 @@ export default class Augustus extends NonPlayerCharacter {
         this.actions.finishBuildPhase({ issuer: this.player.id });
     }
 
-    simulateBuildPhaseDefensive() {
+    simulateBuildPhaseDefensive(level) {
         const cacao = this.player.cacao;
 
         let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
@@ -320,13 +323,13 @@ export default class Augustus extends NonPlayerCharacter {
         const fountainCount = this.board.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CHOCOLATE_FOUNTAIN)).length;
         const factoryCell = this.board.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.FACTORY));
 
-        const cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
-        const fruitCannon = getEntityDescriptor(EntityType.FRUIT_CANNON);
-        const tree = getEntityDescriptor(EntityType.CACAOTREE);
-        const xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
-        const easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
-        const cream = getEntityDescriptor(EntityType.CREAM);
-        const fountain = getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN);
+        const cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, level);
+        const fruitCannon = getEntityDescriptor(EntityType.FRUIT_CANNON, level);
+        const tree = getEntityDescriptor(EntityType.CACAOTREE, level);
+        const xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY, level);
+        const easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY, level);
+        const cream = getEntityDescriptor(EntityType.CREAM, level);
+        const fountain = getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN, level);
 
         if (uncoveredBuildings.length > 0 && cacao > cream.costs) {
             this.setBuildingAtBestPosition(uncoveredBuildings, createEntity(EntityType.CREAM)).then(() => {
@@ -390,7 +393,7 @@ export default class Augustus extends NonPlayerCharacter {
         }
     }
 
-    simulateBuildPhaseAggressive() {
+    simulateBuildPhaseAggressive(level) {
         const cacao = this.player.cacao;
 
         let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
@@ -403,12 +406,12 @@ export default class Augustus extends NonPlayerCharacter {
         const fruitCannonCount = this.board.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.FRUIT_CANNON)).length;
         const xmasFactoryCount = this.board.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.XMAS_FACTORY)).length;
 
-        const cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
-        const fruitCannon = getEntityDescriptor(EntityType.FRUIT_CANNON);
-        const tree = getEntityDescriptor(EntityType.CACAOTREE);
-        const xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
-        const easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
-        const cream = getEntityDescriptor(EntityType.CREAM);
+        const cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, level);
+        const fruitCannon = getEntityDescriptor(EntityType.FRUIT_CANNON, level);
+        const tree = getEntityDescriptor(EntityType.CACAOTREE, level);
+        const xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY, level);
+        const easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY, level);
+        const cream = getEntityDescriptor(EntityType.CREAM, level);
 
         if (creamedCells.length > 0 && cacao >= easterBunny.costs && bunnyCount === 0 && cannonCount >= 1) {
             const building = createEntity(EntityType.SPYING_EASTER_BUNNY);
@@ -456,7 +459,7 @@ export default class Augustus extends NonPlayerCharacter {
         }
     }
 
-    simulateBuildPhaseBalanced() {
+    simulateBuildPhaseBalanced(level) {
         const cacao = this.player.cacao;
 
         let creamedCells = this.board.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM) && cell.occupiedBy.length === 1);
@@ -471,13 +474,13 @@ export default class Augustus extends NonPlayerCharacter {
         const fountainCount = this.board.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CHOCOLATE_FOUNTAIN)).length;
         const factoryCell = this.board.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.FACTORY)).length;
 
-        const cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON);
-        const fruitCannon = getEntityDescriptor(EntityType.FRUIT_CANNON);
-        const tree = getEntityDescriptor(EntityType.CACAOTREE);
-        const xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY);
-        const easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY);
-        const cream = getEntityDescriptor(EntityType.CREAM);
-        const fountain = getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN);
+        const cannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, level);
+        const fruitCannon = getEntityDescriptor(EntityType.FRUIT_CANNON, level);
+        const tree = getEntityDescriptor(EntityType.CACAOTREE, level);
+        const xmasFactory = getEntityDescriptor(EntityType.XMAS_FACTORY, level);
+        const easterBunny = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY, level);
+        const cream = getEntityDescriptor(EntityType.CREAM, level);
+        const fountain = getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN, level);
 
         if (uncoveredBuildings.length > 0 && cacao > cream.costs) {
             this.setBuildingAtBestPosition(uncoveredBuildings, createEntity(EntityType.CREAM)).then(() => {
@@ -540,7 +543,11 @@ export default class Augustus extends NonPlayerCharacter {
         }
     }
 
-    async simulateBuildPhase() {
+    async simulateBuildPhase(level) {
+        if (typeof level === 'undefined') {
+            level = EmptyPlayerStats.level;
+        }
+        console.log('build', this.player)
         await this.simulateThinking(1000);
         this.refreshGameState();
         if (this.gameIsRunning) {
@@ -548,11 +555,11 @@ export default class Augustus extends NonPlayerCharacter {
                 this.actions.finishBuildPhase({ issuer: this.player.id });
             } else {
                 if (this.type === AugustusType.BALANCED) {
-                    this.simulateBuildPhaseBalanced();
+                    this.simulateBuildPhaseBalanced(level);
                 } else if (this.type === AugustusType.AGGRESSIVE) {
-                    this.simulateBuildPhaseAggressive();
+                    this.simulateBuildPhaseAggressive(level);
                 } else if (this.type === AugustusType.DEFENSIVE) {
-                    this.simulateBuildPhaseDefensive();
+                    this.simulateBuildPhaseDefensive(level);
                 }
             }
         }
