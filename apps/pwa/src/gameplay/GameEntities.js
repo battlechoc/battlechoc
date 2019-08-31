@@ -176,6 +176,20 @@ const generateEntityDescription = (entityType, attributes) => {
                     ]
                 }
             }
+
+            if (entityType === EntityType.RUM_TRUFFLE_CANNON) {
+                description.attackType = () => AttackType.TRUFFLE;
+                description.attacksPerTurn = () => 1;
+            } else if (entityType === EntityType.HOT_CHOCOLATE_BALLISTA) {
+                description.attackType = () => AttackType.HOT_CHOCOLATE;
+                description.attacksPerTurn = () => 1;                
+            } else if (entityType === EntityType.FRUIT_CANNON) {
+                description.attackType = () => AttackType.FRUIT;
+                description.attacksPerTurn = () => 1;                
+            } else if (entityType === EntityType.SPYING_EASTER_BUNNY) {
+                description.attackType = () => AttackType.BUNNY;
+                description.attacksPerTurn = () => 1;                     
+            }
         });
         return description;
     }
@@ -574,7 +588,7 @@ function createEntity(entityType, level) {
         };
         const descriptor = EntityDescriptors.get(entityType)(level);
         for (let field in descriptor) {
-            if (['hp','area','buildingsPerTurn','cacaoPerTurn','attack','fortune','costs','coins'].includes(field)) {
+            if (['hp','area','buildingsPerTurn','cacaoPerTurn','attack','fortune','costs','coins','attacksPerTurn','attackType'].includes(field)) {
                 let values = descriptor[field]();
                 if (Array.isArray(values)) {
                     entity[field] = values[0];

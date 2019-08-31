@@ -148,6 +148,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
         state.game.state = GameStateTypes.ATTACK_PHASE;
     },
     [GameActions.build]: (state, action) => {
+        console.log(action.payload.building)
         currentPlayerBoardCell(state.game, action.payload.building.position.row, action.payload.building.position.col).occupiedBy.push(action.payload.building);
         const cellColor = currentPlayerBoardCell(state.game, action.payload.building.position.row, action.payload.building.position.col).type;
         currentPlayer(state.game).statistics.builtEntities += 1;
