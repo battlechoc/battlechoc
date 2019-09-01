@@ -37,11 +37,11 @@ class MeshPreview extends Component {
             group[1].material = material;
             group[1].scaling = new Vector3(1.5, 1, 1.5);
 		});
-		window.addEventListener('resize', () => this.resize());
+		window.addEventListener('resize', this.resize);
     }
 
     componentWillUnmount() {
-        window.removeEventListener('resize', () => this.resize());
+        window.removeEventListener('resize', this.resize);
     }
 
     estimateOrthographicSize() {

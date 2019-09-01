@@ -41,7 +41,7 @@ class Scene extends Component {
         this.scene = createScene();
         this.highlightLayer = new HighlightLayer('highlightLayer', this.scene);
         this.animate = () => this.scene.render();
-        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('resize', this.resize);
         this.animations = [];
         this.playerGameField = null;
         this.opponentGameField = null;
@@ -59,8 +59,37 @@ class Scene extends Component {
         });
     }
 
+    showEnergyBar = (energy, position) => {
+        console.log(`show bar with energy ${energy} at position ${position}`)
+        let bar = MeshBuilder.CreatePlane('energy.bar', { width: energy, height: 0.15 }, this.scene);
+        let material = new StandardMaterial('energy.bar.material', this.scene);
+        if (energy < 0.3) {
+            material.diffuseColor﻿ = Color3.FromHexString("#D05531");
+        } else if (energy < 0.6) {
+            material.diffuseColor﻿ = Color3.FromHexString("#DFBF31");
+        } else {
+            material.diffuseColor﻿ = Color3.FromHexString("#70bf31");
+        }
+        bar.material = material;
+        bar.billboardMode = Mesh.BILLBOARDMODE_ALL;
+        bar.position = position;
+        bar.position.y = 6.5;
+        bar.position.x += (1 - energy) * 0.666;
+
+        let fade = new Animation("fade", "visibility", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+        fade.setKeys([{ frame: 0, value: 1.0 }, { frame: 100, value: .8 }, { frame: 120, value: 0.0 }]);
+
+        this.setRenderLoop();
+        bar.animations = [fade];
+        this.scene.beginAnimation(bar, 0, 180, false, 1, () => {
+            material.dispose();
+            bar.dispose();
+            this.setRenderLoop(false);
+        });
+    }
+
     componentWillUnmount() {
-        window.removeEventListener('resize', () => this.resize());
+        window.removeEventListener('resize', this.resize);
     }
 
     componentDidUpdate() {
@@ -240,6 +269,7 @@ class Scene extends Component {
             this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
                 if (initialPlacement) {
+                    this.showEnergyBar(1, position.clone());
                     this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn);
                     this.props.deselectBuildings();
                     this.props.deselectAttack();
@@ -257,6 +287,7 @@ class Scene extends Component {
                     }, 3000);
                 } else {
                     let description = getEntityDescriptor(this.props.selectedBuilding, this.props.level);
+                    this.showEnergyBar(1, position.clone());
                     this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs());
                     let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;
