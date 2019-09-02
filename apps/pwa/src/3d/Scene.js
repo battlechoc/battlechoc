@@ -59,7 +59,9 @@ class Scene extends Component {
         });
     }
 
-    showEnergyBar = (energy, position) => {
+    showEnergyBar = entity => {
+        let energy = entity.hp / entity.max.hp;
+        let position = new Vector3(entity.position.row, 6.5, entity.position.col);
         console.log(`show bar with energy ${energy} at position ${position}`)
         let bar = MeshBuilder.CreatePlane('energy.bar', { width: energy, height: 0.15 }, this.scene);
         let material = new StandardMaterial('energy.bar.material', this.scene);
@@ -73,7 +75,6 @@ class Scene extends Component {
         bar.material = material;
         bar.billboardMode = Mesh.BILLBOARDMODE_ALL;
         bar.position = position;
-        bar.position.y = 6.5;
         bar.position.x += (1 - energy) * 0.666;
 
         let fade = new Animation("fade", "visibility", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
@@ -182,6 +183,10 @@ class Scene extends Component {
 
     triggerCacaoInfo() {
         let cells = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid;
+
+        let entities = cells.filter(cell => cell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0)
+        entities.forEach(cell => this.showEnergyBar(cell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0]))
+
         let trees = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE));
         let description = getEntityDescriptor(EntityType.CACAOTREE, this.props.level);
         trees.forEach(cell => {
@@ -268,8 +273,8 @@ class Scene extends Component {
             let buildingsPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn;
             this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
+                this.showEnergyBar(building);
                 if (initialPlacement) {
-                    this.showEnergyBar(1, position.clone());
                     this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn);
                     this.props.deselectBuildings();
                     this.props.deselectAttack();
@@ -287,7 +292,6 @@ class Scene extends Component {
                     }, 3000);
                 } else {
                     let description = getEntityDescriptor(this.props.selectedBuilding, this.props.level);
-                    this.showEnergyBar(1, position.clone());
                     this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs());
                     let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;
@@ -341,9 +345,16 @@ class Scene extends Component {
 
     opponentFieldClick(row, col, position) {
         if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
+            let attack = 0;
+            if (this.props.selectedAttack === AttackType.TRUFFLE) {
+                let description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, this.props.level);
+                attack = description.attack()[0];
+            }
+
             this.props.attack({
                 issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
                 attackType: this.props.selectedAttack,
+                attack: attack,
                 row: row,
                 col: col
             }).then(() => {
@@ -357,8 +368,10 @@ class Scene extends Component {
                 } else if (typeof this.props.selectedAttack !== 'undefined') {
                     Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
                     let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
-                    if (cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col).shielded) {
-                        this.detonateAtShield(row, col);
+                    let selectedCell = cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col);
+                    this.detonateAtShield(row, col);
+                    if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0) {
+                        this.showEnergyBar(selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0]);
                     }
                 }
 

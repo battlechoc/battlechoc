@@ -591,6 +591,10 @@ function createEntity(entityType, level) {
                 } else {
                     entity[field] = values;
                 }
+
+                if (field === 'hp') {
+                    entity['max'] = {'hp': values[0]}
+                }
             }
         };
         return entity;
