@@ -39,6 +39,7 @@ class Scene extends Component {
         }
 
         this.scene = createScene();
+        this.energyBars = [];
         this.highlightLayer = new HighlightLayer('highlightLayer', this.scene);
         this.animate = () => this.scene.render();
         window.addEventListener('resize', this.resize);
@@ -65,9 +66,17 @@ class Scene extends Component {
         } else {
             position.y = 6.5;
         }
+
+        let name = position.x + '-6.5-' + position.z;
+        if (this.energyBars.includes(name)) {
+            this.scene.stopAnimation(this.scene.getMeshByName('energy.bar.' + name));
+        }
+
+        this.energyBars.push(name);
+
         let energy = entity.hp / entity.max.hp;
-        let bar = MeshBuilder.CreatePlane('energy.bar', { width: energy, height: 0.15 }, this.scene);
-        let material = new StandardMaterial('energy.bar.material', this.scene);
+        let bar = MeshBuilder.CreatePlane('energy.bar.' + name, { width: energy, height: 0.15 }, this.scene);
+        let material = new StandardMaterial('energy.bar.material.' + name, this.scene);
         if (energy < 0.3) {
             material.diffuseColor﻿ = Color3.FromHexString("#D05531");
         } else if (energy < 0.6) {
@@ -75,19 +84,22 @@ class Scene extends Component {
         } else {
             material.diffuseColor﻿ = Color3.FromHexString("#70bf31");
         }
+
         bar.material = material;
         bar.billboardMode = Mesh.BILLBOARDMODE_ALL;
-        bar.position = position;
-        bar.position.x += (1 - energy) * 0.666;
+        bar.position = position.clone();
+        bar.position.x = bar.position.x + (1 - energy) * 0.35;
+        bar.position.z = bar.position.z - (1 - energy) * 0.35;
 
         let fade = new Animation("fade", "visibility", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
-        fade.setKeys([{ frame: 0, value: 1.0 }, { frame: 100, value: .8 }, { frame: 120, value: 0.0 }]);
+        fade.setKeys([{ frame: 0, value: 1.0 }, { frame: 180, value: 0.9 }, { frame: 240, value: 0.0 }]);
 
         this.setRenderLoop();
         bar.animations = [fade];
-        this.scene.beginAnimation(bar, 0, 180, false, 1, () => {
+        this.scene.beginAnimation(bar, 0, 240, false, 1, () => {
             material.dispose();
             bar.dispose();
+            this.energyBars = this.energyBars.filter(bar => bar !== name);
             this.setRenderLoop(false);
         });
     }
