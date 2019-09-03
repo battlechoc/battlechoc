@@ -549,7 +549,7 @@ const EntityDescriptors = Object.freeze(new Map([
     ])],
     [EntityType.CHOCOLATE_FOUNTAIN, generateEntityDescription(EntityType.CHOCOLATE_FOUNTAIN, [{
             name: 'hp',
-            basic: 560,
+            basic: 198,
             level: { max: 15 },
             grow: 32012
         }, {

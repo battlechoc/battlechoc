@@ -66,7 +66,6 @@ class Scene extends Component {
             position.y = 6.5;
         }
         let energy = entity.hp / entity.max.hp;
-        console.log(`show bar with energy ${energy} at position ${position}`)
         let bar = MeshBuilder.CreatePlane('energy.bar', { width: energy, height: 0.15 }, this.scene);
         let material = new StandardMaterial('energy.bar.material', this.scene);
         if (energy < 0.3) {
@@ -189,7 +188,7 @@ class Scene extends Component {
         let cells = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid;
 
         let entities = cells.filter(cell => cell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0)
-        entities.forEach(cell => this.showEnergyBar(cell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0]))
+        entities.forEach(cell => this.showEnergyBar(cell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0], new Vector3(cell.row, 0, cell.col)))
 
         let trees = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE));
         let description = getEntityDescriptor(EntityType.CACAOTREE, this.props.level);
