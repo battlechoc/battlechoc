@@ -336,9 +336,9 @@ const EntityDescriptors = Object.freeze(new Map([
             grow: 13040
         }, {
             name: 'attack',
-            basic: 56,
+            basic: 27,
             level: { max: 20 },
-            grow: 7606
+            grow: 6606
         }, {
             name: 'area',
             basic: 1,

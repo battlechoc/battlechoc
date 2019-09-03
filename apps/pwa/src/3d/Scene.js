@@ -59,9 +59,13 @@ class Scene extends Component {
         });
     }
 
-    showEnergyBar = entity => {
+    showEnergyBar = (entity, position) => {
+        if (typeof position === 'undefined') {
+            position = new Vector3(entity.position.row, 6.5, entity.position.col);
+        } else {
+            position.y = 6.5;
+        }
         let energy = entity.hp / entity.max.hp;
-        let position = new Vector3(entity.position.row, 6.5, entity.position.col);
         console.log(`show bar with energy ${energy} at position ${position}`)
         let bar = MeshBuilder.CreatePlane('energy.bar', { width: energy, height: 0.15 }, this.scene);
         let material = new StandardMaterial('energy.bar.material', this.scene);
@@ -349,7 +353,10 @@ class Scene extends Component {
             if (this.props.selectedAttack === AttackType.TRUFFLE) {
                 let description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, this.props.level);
                 attack = description.attack()[0];
-            }
+            } else if (this.props.selectedAttack === AttackType.FRUIT) {
+                let description = getEntityDescriptor(EntityType.FRUIT_CANNON, this.props.level);
+                attack = description.attack()[0];
+            } 
 
             this.props.attack({
                 issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
@@ -371,7 +378,7 @@ class Scene extends Component {
                     let selectedCell = cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col);
                     this.detonateAtShield(row, col);
                     if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0) {
-                        this.showEnergyBar(selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0]);
+                        this.showEnergyBar(selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0], position.clone());
                     }
                 }
 

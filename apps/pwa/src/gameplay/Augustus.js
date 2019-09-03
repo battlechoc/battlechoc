@@ -173,9 +173,18 @@ export default class Augustus extends NonPlayerCharacter {
     }
 
     simulateAttack(target, attackType, detonateAtShield) {
+        let attack = 0;
+        if (attackType === AttackType.TRUFFLE) {
+            let description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, EmptyPlayerStats.level);
+            attack = description.attack()[0];
+        } else if (attackType === AttackType.FRUIT) {
+            let description = getEntityDescriptor(EntityType.FRUIT_CANNON, EmptyPlayerStats.level);
+            attack = description.attack()[0];
+        } 
         this.actions.attack({
             issuer: this.player.id,
             attackType: attackType,
+            attack: attack,
             row: target.row,
             col: target.col
         }).then(() => {

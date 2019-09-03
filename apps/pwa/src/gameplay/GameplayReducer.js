@@ -203,15 +203,19 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                     if (action.payload.attackType === GameEntities.AttackType.HOT_CHOCOLATE) {
                         entity.hp = 0;
                     } else {
-                        console.log(entity.hp)
-                        console.log(action.payload.attack)
-                        entity.hp = Math.round(entity.hp - (Math.random() * action.payload.attack + (action.payload.attack * 0.1)));
+                        console.log('hp before', entity.hp)
+                        console.log('base attack', action.payload.attack)
+                        let damage = (1 + ((Math.random() * 0.4) - 0.2)) * action.payload.attack;
+                        console.log('damage', damage);
+                        entity.hp = Math.round(entity.hp - damage);
                     }
-                    console.log(entity.hp)
+                    console.log('hp after', entity.hp)
                     if (entity.hp < 1) {
                         if (entity.type === GameEntities.EntityType.FACTORY) {
                             opponent.hasFactory = false;
+                            console.log(opponent.buildingsPerTurn)
                             opponent.buildingsPerTurn -= calculateBuildingsPerTurn(GameEntities.getEntityDescriptor(GameEntities.EntityType.FACTORY), cellColor);
+                            console.log(opponent.buildingsPerTurn)
                             opponent.cacaoPerTurn -= calculateCacaoPerTurn(GameEntities.getEntityDescriptor(GameEntities.EntityType.FACTORY), cellColor);
                             console.log('FACTORY DESTROYED');
                         } else if (entity.type === GameEntities.EntityType.FACTORY_EXTENSION) {
@@ -250,7 +254,8 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                             });
                             console.log('CHOCOLATE FOUNTAIN DESTROYED');
                         }
-                        attackedCell.occupiedBy = [];
+                        console.log('clear field')
+                        attackedCell.occupiedBy = attackedCell.occupiedBy.filter(fieldEntity => fieldEntity.id !== entity.id);
                         attackedCell.molten = action.payload.attackType === GameEntities.AttackType.HOT_CHOCOLATE;
                         if (attackedCell.molten) {
                             currentPlayer(state.game).statistics.moltenFields += 1;
