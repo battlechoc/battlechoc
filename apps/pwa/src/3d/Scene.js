@@ -60,22 +60,29 @@ class Scene extends Component {
         });
     }
 
+    hideEnergyBar = (position, field) => {
+        if (position === null) {
+            position = new Vector3(field.row, 6.5, field.col);
+        }
+        let name = position.x + '-6.5-' + position.z;
+        if (this.energyBars.includes(name)) {
+            this.scene.stopAnimation(this.scene.getMeshByName('energy.bar.' + name));
+        }        
+    }
+
     showEnergyBar = (entity, position) => {
         if (typeof position === 'undefined') {
             position = new Vector3(entity.position.row, 6.5, entity.position.col);
         } else {
             position.y = 6.5;
         }
-
         let name = position.x + '-6.5-' + position.z;
-        if (this.energyBars.includes(name)) {
-            this.scene.stopAnimation(this.scene.getMeshByName('energy.bar.' + name));
-        }
-
+        this.hideEnergyBar(position);
         this.energyBars.push(name);
 
         let energy = entity.hp / entity.max.hp;
         let bar = MeshBuilder.CreatePlane('energy.bar.' + name, { width: energy, height: 0.15 }, this.scene);
+        bar.isPickable = false;
         let material = new StandardMaterial('energy.bar.material.' + name, this.scene);
         if (energy < 0.3) {
             material.diffuseColor﻿ = Color3.FromHexString("#D05531");
@@ -288,7 +295,9 @@ class Scene extends Component {
             let buildingsPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn;
             this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
-                this.showEnergyBar(building);
+                if (building.type !== EntityType.CREAM) {
+                    this.showEnergyBar(building);
+                }
                 if (initialPlacement) {
                     this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn);
                     this.props.deselectBuildings();
@@ -390,6 +399,8 @@ class Scene extends Component {
                     this.detonateAtShield(row, col);
                     if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0) {
                         this.showEnergyBar(selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0], position.clone());
+                    } else {
+                        this.hideEnergyBar(position.clone());
                     }
                 }
 

@@ -172,7 +172,7 @@ export default class Augustus extends NonPlayerCharacter {
         }
     }
 
-    simulateAttack(target, attackType, detonateAtShield) {
+    simulateAttack(target, attackType, detonateAtShield, showEnergyBar, hideEnergyBar) {
         let attack = 0;
         if (attackType === AttackType.TRUFFLE) {
             let description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, EmptyPlayerStats.level);
@@ -197,15 +197,20 @@ export default class Augustus extends NonPlayerCharacter {
                 }
             } else {
                 Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
-                if (this.opponentBoard.grid[target.row * this.boardSize.cols + target.col].shielded) {
-                    detonateAtShield(target.row, target.col);
+                let selectedCell = this.opponentBoard.grid[target.row * this.boardSize.cols + target.col];
+                detonateAtShield(target.row, target.col); 
+                if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0) {
+                    let entity = selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0];
+                    showEnergyBar(entity);
+                } else {
+                    hideEnergyBar({row: target.row, col: target.col});
                 }
             }
-            this.simulateAttackPhase(detonateAtShield);
+            this.simulateAttackPhase(detonateAtShield, showEnergyBar, hideEnergyBar);
         }).catch(error => this.handleAttackError(error));
     }
 
-    async simulateAttackPhase(detonateAtShield) {
+    async simulateAttackPhase(detonateAtShield, showEnergyBar, hideEnergyBar) {
         await this.simulateThinking(1500);
         this.refreshGameState();
         if (this.gameIsRunning) {
@@ -214,7 +219,7 @@ export default class Augustus extends NonPlayerCharacter {
             if (this.player.attacks[AttackType.BUNNY] > 0 && creamyFields.length) {
                 let target = creamyFields[Math.floor(Math.random() * creamyFields.length)];
                 this.devhint('OPPONENT BUNNY IS GOING TO SPY : ' + target);
-                this.simulateAttack(target, AttackType.BUNNY, detonateAtShield);
+                this.simulateAttack(target, AttackType.BUNNY, detonateAtShield, showEnergyBar, hideEnergyBar);
             } else if (this.player.attacks[AttackType.HOT_CHOCOLATE] > 0) {
                 let target;
                 if (this.discoveredShieldedCells.length > 0) {
@@ -223,16 +228,16 @@ export default class Augustus extends NonPlayerCharacter {
                 } else {
                     target = this.estimateAttackTarget(AttackType.HOT_CHOCOLATE);
                 }
-                this.simulateAttack(target, AttackType.HOT_CHOCOLATE, detonateAtShield);
+                this.simulateAttack(target, AttackType.HOT_CHOCOLATE, detonateAtShield, showEnergyBar, hideEnergyBar);
             } else if (this.player.attacks[AttackType.FRUIT] > 0) {
                 let target = this.estimateFruitAttackTarget();
-                this.simulateAttack(target, AttackType.FRUIT, detonateAtShield);
+                this.simulateAttack(target, AttackType.FRUIT, detonateAtShield, showEnergyBar, hideEnergyBar);
             } else if (this.player.attacks[AttackType.TRUFFLE] > 0) {
                 let target = this.estimateAttackTarget(AttackType.TRUFFLE);
                 if (target.shielded === true) {
                     this.discoveredShieldedCells.push(target);
                 }
-                this.simulateAttack(target, AttackType.TRUFFLE, detonateAtShield);
+                this.simulateAttack(target, AttackType.TRUFFLE, detonateAtShield, showEnergyBar, hideEnergyBar);
             } else {
                 this.actions.finishTurn({ issuer: this.player.id }).catch(error => {
                     if (error instanceof BattlechocError) {
