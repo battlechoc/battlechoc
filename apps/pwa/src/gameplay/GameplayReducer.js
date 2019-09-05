@@ -332,6 +332,9 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
     },
     [GameActions.increaseLevel]: (state, action) => {
         state.level[action.payload.entity][action.payload.attribute] += 1;
+    },
+    [GameActions.decreaseLevel]: (state, action) => {
+        state.level[action.payload.entity][action.payload.attribute] -= 1;
     }
 });
 

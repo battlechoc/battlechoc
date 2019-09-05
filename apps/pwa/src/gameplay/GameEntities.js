@@ -209,11 +209,11 @@ const EntityDescriptors = Object.freeze(new Map([
             custom: function() { return Math.pow(this.area()[0], 2) * this.basic.costs }
         }, {
             name: 'coins',
-            custom: function() { 
+            custom: function() {
                 return growFunction(
-                    this.level.current, 
-                    this.level.max, 
-                    240, 25120) 
+                    this.level.current.area, 
+                    this.level.max.area, 
+                    240, 25120)
             }
         }
     ])],
@@ -353,7 +353,7 @@ const EntityDescriptors = Object.freeze(new Map([
                 return (
                     this.hp()[0] +
                     this.attack()[0] +
-                    this.area()[0] * 5680 +
+                    this.level.current.area * 5680 +
                     this.costs()
                 );
             }
@@ -399,7 +399,7 @@ const EntityDescriptors = Object.freeze(new Map([
                 return (
                     this.hp()[0] +
                     this.attack()[0] +
-                    this.area()[0] * 5680 +
+                    this.level.current.area * 5680 +
                     this.costs()
                 );
             }
@@ -447,8 +447,8 @@ const EntityDescriptors = Object.freeze(new Map([
             custom: function() { 
                 return (
                     this.hp()[0] +
-                    this.fortune()[0] * 5680 +
-                    this.area()[0] * 5680 +
+                    this.level.current.fortune * 5680 +
+                    this.level.current.area * 5680 +
                     this.costs()
                 );
             }
@@ -488,7 +488,7 @@ const EntityDescriptors = Object.freeze(new Map([
             custom: function() { 
                 return (
                     this.hp()[0] +
-                    this.area()[0] * 5680 +
+                    this.level.current.area * 5680 +
                     this.costs()
                 );
             },
@@ -534,9 +534,8 @@ const EntityDescriptors = Object.freeze(new Map([
             custom: function() { 
                 return (
                     this.hp()[0] +
-                    this.area()[0] * 13480 +
-                    this.fortune()[0] * 17630 +
-                    this.costs()
+                    this.level.current.area * 13480 +
+                    this.level.current.fortune * 17630
                 );
             }
         }, {
@@ -555,7 +554,7 @@ const EntityDescriptors = Object.freeze(new Map([
         }, {
             name: 'coins',
             custom: function() { 
-                return this.hp()[0] * 1.3; 
+                return Math.round(this.hp()[0] * 1.3); 
             }
         }, {
             name: 'costs',

@@ -5,12 +5,14 @@ import { connect } from 'react-redux';
 import OfflineStore from '../OfflineStore';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { getEntityDescriptor, EntityType } from '../gameplay/GameEntities';
-import { increaseLevel } from '../gameplay/GameActions';
+import { increaseLevel, decreaseLevel } from '../gameplay/GameActions';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview, ChoclabPalette } from './controls';
 import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AppleHint, SignInOrUp} from './dialogs';
 import { CircularProgress, Button } from '@material-ui/core';
 import Dialog from '@material-ui/core/Dialog';
+import IconButton from '@material-ui/core/IconButton';
+import Snackbar from '@material-ui/core/Snackbar';
 import Typography from '@material-ui/core/Typography';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -21,7 +23,7 @@ import de from 'javascript-time-ago/locale/de';
 import { PlayArrow, Cancel } from '@material-ui/icons';
 import MeshPreview from '../3d/MeshPreview';
 import Fab from '@material-ui/core/Fab';
-import { KeyboardArrowLeft as ArrowBackIcon, AddBox } from '@material-ui/icons';
+import { KeyboardArrowLeft as ArrowBackIcon, AddBox, Undo } from '@material-ui/icons';
 
 class Hud extends Component {
     constructor(props) {
@@ -29,6 +31,7 @@ class Hud extends Component {
         this.state = { 
             clickable: true,
             open: false,
+            upgradeMessageOpen: false,
             multiplayerScreen: false,
             choclabScreen: false,
             selectedEntity: null,
@@ -267,6 +270,33 @@ class Hud extends Component {
                                     <img src="images/coins.png" alt="choco coins" />
                                 </div> : null}
                                 <MeshPreview onRef={meshPreview => this.meshPreview = meshPreview}/>
+
+                                <Snackbar
+                                    anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                                    open={this.state.upgradeMessageOpen}
+                                    onClose={() => this.setState({upgradeMessageOpen: false})}
+                                    ContentProps={{'aria-describedby': 'message-id'}}
+                                    message={typeof this.state.upgrade !== 'undefined' ? <span id="message-id">{`${this.state.upgrade.attribute} increased by ${this.state.upgrade.value}!`}</span> : null}
+                                    action={
+                                      <IconButton
+                                        aria-label="close"
+                                        color="inherit"
+                                        onClick={() => {
+                                            this.props.decreaseLevel({
+                                                'entity': this.state.selectedEntityType,
+                                                'attribute': this.state.upgrade.attributeName,
+                                            }).then(() => this.setState({ 
+                                                "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level),
+                                                "upgradeMessageOpen": false,
+                                                "upgrade": undefined
+                                            }))
+                                        }}
+                                      >
+                                        <Undo />
+                                      </IconButton>
+                                    }
+                                />
+
                                 <div className="entityStats">
                                     { this.state.selectedEntity ? this.state.selectedEntity.style.map(attribute => {
                                         let values = this.state.selectedEntity[attribute.name]();
@@ -282,17 +312,32 @@ class Hud extends Component {
                                                 <div className="label"><span>{ attribute.displayName }</span><span>{ Math.round(values[0]) }</span></div>
                                                 <div>
                                                     <div className={attribute.color} style={{ width: percentage + '%'}}></div>
-                                                    { classNames === 'progress' ?
+                                                    { classNames === 'progress' && values[0] < values[1] && this.props.playerInfos.stats.coins >= this.state.selectedEntity.coins() ?
                                                     <AddBox onClick={() => {
                                                         this.props.increaseLevel({
                                                             'entity': this.state.selectedEntityType,
                                                             'attribute': attribute.name
-                                                        }).then(() => this.setState({ "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level) }));
+                                                        }).then(() => this.setState({ 
+                                                            "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level),
+                                                            "upgradeMessageOpen": true,
+                                                            "upgrade": {
+                                                                "attribute": attribute.displayName,
+                                                                "attributeName": attribute.name,
+                                                                "value": values[0],
+                                                                "costs": this.state.selectedEntity.coins(),
+                                                                "entity": this.state.selectedEntityType
+                                                            }
+                                                        }));
                                                     }} /> : null }
                                                 </div>
                                             </div>
                                         )
                                     })  : null }
+                                    { this.state.selectedEntity ? (
+                                        <div className="coin costs">
+                                            <span>{ this.state.selectedEntity.coins() }</span>
+                                            <img src="images/coins.png" alt="choco coins" />
+                                        </div>) : null }
                                 </div>
                                 <ChoclabPalette selectEntity={entity => {
                                     this.setState({ selectedEntity: getEntityDescriptor(entity, this.props.level) });
@@ -339,7 +384,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = {
-    increaseLevel
+    increaseLevel,
+    decreaseLevel
 };
 
 const HudContainer = connect(

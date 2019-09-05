@@ -48,6 +48,24 @@
   height: 42px;
 }
 
+#choclab .coin.costs img {
+  width: 48px;
+  height: 32px;  
+}
+
+#choclab .coin.costs {
+  padding-top: 12px;
+  justify-content: flex-end;
+  display: flex;
+}
+
+#choclab .coin.costs span {
+  font-size: 1.5rem;
+  color: #1DA6B5;
+  text-shadow: 1px 1px 1px #000;
+  font-weight: bold;
+}
+
 #choclab .entityStats .progress > div:first-child {
   padding-top: 12px;
 }
