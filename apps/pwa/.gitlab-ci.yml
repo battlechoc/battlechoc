@@ -27,6 +27,10 @@ build:
     paths:
      - build/
      - node_modules/
+  only:
+    - master
+    - develop
+
 
 test:
   stage: test
@@ -44,6 +48,9 @@ test:
     when: always
     paths:
      - test/output/
+  only:
+    - master
+    - develop
 
 deploy:
   stage: deploy
