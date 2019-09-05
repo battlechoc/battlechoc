@@ -53,6 +53,11 @@ class ChoclabPalette extends Component {
         }];
     }
 
+    componentDidMount() {
+        this.setState({ selectedEntity: EntityType.FACTORY });
+        this.props.selectEntity(EntityType.FACTORY);           
+    }
+
     selectEntity(buildingType) {
     	this.setState({ selectedEntity: buildingType });
         this.props.selectEntity(buildingType);      

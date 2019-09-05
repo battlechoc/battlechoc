@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import OfflineStore from '../OfflineStore';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
-import { getEntityDescriptor } from '../gameplay/GameEntities';
+import { getEntityDescriptor, EntityType } from '../gameplay/GameEntities';
 import { increaseLevel } from '../gameplay/GameActions';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview, ChoclabPalette } from './controls';
 import { Jukebox, Translation as t } from './misc';
@@ -271,17 +271,24 @@ class Hud extends Component {
                                     { this.state.selectedEntity ? this.state.selectedEntity.style.map(attribute => {
                                         let values = this.state.selectedEntity[attribute.name]();
                                         let percentage = (values[0] / values[1]) * 100;
+                                        let classNames = 'progress';
+                                        if (['fortune', 'area'].includes(attribute.name) && 
+                                            [EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY, 
+                                             EntityType.XMAS_FACTORY, EntityType.FRUIT_CANNON, EntityType.HOT_CHOCOLATE_BALLISTA].includes(this.state.selectedEntityType)) {
+                                            classNames += ' locked';
+                                        }
                                         return (
-                                            <div className="progress" key={attribute.name}>
+                                            <div className={classNames} key={attribute.name}>
                                                 <div className="label"><span>{ attribute.displayName }</span><span>{ Math.round(values[0]) }</span></div>
                                                 <div>
                                                     <div className={attribute.color} style={{ width: percentage + '%'}}></div>
+                                                    { classNames === 'progress' ?
                                                     <AddBox onClick={() => {
                                                         this.props.increaseLevel({
                                                             'entity': this.state.selectedEntityType,
                                                             'attribute': attribute.name
                                                         }).then(() => this.setState({ "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level) }));
-                                                    }} />
+                                                    }} /> : null }
                                                 </div>
                                             </div>
                                         )

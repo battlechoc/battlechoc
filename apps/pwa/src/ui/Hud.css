@@ -88,6 +88,14 @@
   cursor: pointer;
 }
 
+#choclab .entityStats .locked.progress div svg {
+  cursor: unset;
+}
+
+#choclab .locked div:nth-child(2) {
+  filter: grayscale(1);
+}
+
 #choclab .green + svg {
   color: #78BB0C;
 }
