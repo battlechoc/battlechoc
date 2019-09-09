@@ -454,6 +454,11 @@ img.without.cream {
   padding: 0;
 }
 
+.selected {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  cursor: pointer;
+}
+
 #multiplayer .gamestable div {
   padding: 8px 0;
   width: 16.666%;
@@ -567,6 +572,16 @@ img.without.cream {
     background-color: rgba(112,191,49, 0.8);
   }
 
+  #multiplayer .gameActions svg:last-child {
+    display: flex;
+    flex-grow: 1;
+    background-color: rgba(230, 199, 68, 0.8)
+  }
+
+  .entityLevel {
+    position: relative;
+  }
+
   #multiplayer .gamelabel {
     display: inline;
   }
@@ -577,7 +592,11 @@ img.without.cream {
   }
 
   #multiplayer .gamestable div:nth-child(even) {
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  #multiplayer .gamestable div:nth-child(odd) {
+    background-color: rgba(255, 255, 255, 0.6) !important;
   }
 }
 

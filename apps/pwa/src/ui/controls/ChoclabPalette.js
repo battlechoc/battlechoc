@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import './ChoclabPalette.css';
 import { EntityType } from '../../gameplay/GameEntities';
 import { Jukebox } from '../misc';
@@ -6,7 +7,7 @@ import { Jukebox } from '../misc';
 class ChoclabPalette extends Component {
 	constructor(props) {
 		super(props);
-		this.state = { selectedEntity: EntityType.FACTORY };
+		this.state = { selectedEntity: null };
 	}
 
     componentWillMount() {
@@ -54,21 +55,26 @@ class ChoclabPalette extends Component {
     }
 
     componentDidMount() {
-        this.setState({ selectedEntity: EntityType.FACTORY });
-        this.props.selectEntity(EntityType.FACTORY);           
+        if (this.props.selectEntity) {
+            this.setState({ selectedEntity: EntityType.FACTORY });
+            this.props.selectEntity(EntityType.FACTORY);
+        }      
     }
 
     selectEntity(buildingType) {
-    	this.setState({ selectedEntity: buildingType });
-        this.props.selectEntity(buildingType);      
+        if (this.props.selectEntity) {
+            this.setState({ selectedEntity: buildingType });
+            this.props.selectEntity(buildingType);
+        } 
     }
 
     render() {
         return (
-            <div id="entitySelection">
+            <div id={this.props.level ? 'entityLevels' : 'entitySelection'}>
                 {(() => this.buildingsForSeclection.map((building, i) => {
                         let className = this.state.selectedEntity === building.type ? 'selected previewContainer' : 'canbuild previewContainer';
                         return <div className={className} key={i}>
+                            { this.props.level ? <div className="attackCount">{Object.values(this.props.level[building.type]).reduce((level, prevLevel) => level + prevLevel)}</div> : null }
                             <div className={building.className + ' enabled preview'} 
                                  style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }} onClick={() => {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -81,5 +87,15 @@ class ChoclabPalette extends Component {
         );
     }
 }
+
+ChoclabPalette.propTypes = {
+    selectEntity: PropTypes.func,
+    level: PropTypes.bool
+}
+
+ChoclabPalette.defaultProps = {
+    selectEntity: null,
+    level: null
+};
 
 export default ChoclabPalette;

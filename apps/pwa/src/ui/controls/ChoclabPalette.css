@@ -11,3 +11,16 @@
     height: calc(10vw - 5px);
     background-size: calc(4 * (10vw - 5px)) calc(3 * (10vw - 5px));
 }
+
+#entityLevels {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-wrap: wrap;
+}
+
+#entityLevels .preview {
+	width: 64px;
+    height: 64px;
+    background-size: 256px 192px;
+}

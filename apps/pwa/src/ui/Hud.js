@@ -23,7 +23,7 @@ import de from 'javascript-time-ago/locale/de';
 import { PlayArrow, Cancel } from '@material-ui/icons';
 import MeshPreview from '../3d/MeshPreview';
 import Fab from '@material-ui/core/Fab';
-import { KeyboardArrowLeft as ArrowBackIcon, AddBox, Undo } from '@material-ui/icons';
+import { KeyboardArrowLeft as ArrowBackIcon, AddBox, Undo, AccountCircle } from '@material-ui/icons';
 
 class Hud extends Component {
     constructor(props) {
@@ -35,6 +35,7 @@ class Hud extends Component {
             multiplayerScreen: false,
             choclabScreen: false,
             selectedEntity: null,
+            playerProfileOpen: false,
             openGames: [
                 {
                     'playerName': 'Sebastian',
@@ -129,6 +130,17 @@ class Hud extends Component {
         let timeAgo = new TimeAgo('en-US');
         let timeSinceUpdate = timeAgo.format(millis);
         return timeSinceUpdate; 
+    }
+
+    toggleClassList = id => {
+        Array.from(document.getElementsByClassName(`row.${id}`)).forEach(div => div.classList.toggle('selected'));
+    }
+
+    showPlayerProfile = profile => {
+        this.setState({ 
+            playerProfileOpen: true,
+            player: profile
+        });
     }
 
     render() {
@@ -234,6 +246,26 @@ class Hud extends Component {
                     } else if (stage === 'MULTIPLAYER_SCREEN') {
                         return (
                             <div id="multiplayer">
+                                <Dialog
+                                    fullWidth={true}
+                                    open={this.state.playerProfileOpen}
+                                    onClose={() => this.setState({ playerProfileOpen: false })}
+                                    aria-labelledby="resumeOrStartGame">
+                                    <DialogTitle>{typeof this.state.player !== 'undefined' ? this.state.player.playerName : null}</DialogTitle>
+                                    <DialogContent>
+                                        <Typography>Player profile - here it comes!</Typography>
+                                        <div className="entityLevel">
+                                            <ChoclabPalette level={this.props.level} />
+                                        </div>
+                                    </DialogContent>
+                                    <DialogActions>
+                                        <Button onClick={() => {
+                                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                            this.setState({ playerProfileOpen: false });
+                                        }} color="primary">Back</Button>
+                                    </DialogActions>
+                                </Dialog>
+
                                 <div className="controls">
                                     <div className="menuButton">Random opponent</div>
                                     <div className="menuButton">Share your Link</div>
@@ -250,12 +282,12 @@ class Hud extends Component {
 
                                         {this.state.openGames.map((row, i) => (
                                             [
-                                                <div key={i} className="gameActions"><PlayArrow /><Cancel /></div>,
-                                                <div key={i+1}><span className="gamelabel">player</span><span>{row.playerName}</span></div>,
-                                                <div key={i+2}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
-                                                <div key={i+3}><span className="gamelabel">match</span><span>{this.timeToString(row.matchTime)}</span></div>,
-                                                <div key={i+4}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.lastAction)}</span></div>,
-                                                <div className="tablefoot" key={i+5}><span className="gamelabel">potential coins</span><span>{row.potentialCoins}</span></div>
+                                                <div key={i} onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} gameActions`}><PlayArrow /><Cancel /><AccountCircle /></div>,
+                                                <div key={i+1} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">player</span><span>{row.playerName}</span></div>,
+                                                <div key={i+2} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
+                                                <div key={i+3} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">match</span><span>{this.timeToString(row.matchTime)}</span></div>,
+                                                <div key={i+4} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.lastAction)}</span></div>,
+                                                <div onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} tablefoot`} key={i+5}><span className="gamelabel">potential coins</span><span>{row.potentialCoins}</span></div>
                                             ]
                                         ))}
                                     </div>
