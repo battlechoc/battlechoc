@@ -419,6 +419,22 @@ img.without.cream {
   flex-direction: column;
 }
 
+.statistics {
+  display: flex;
+}
+
+.statistics p {
+  display: flex;
+  flex-direction: column-reverse;
+  font-size: 2rem;
+  align-items: center;
+  margin: 0 20px;
+}
+
+.statistics svg {
+  font-size: 4rem;
+}
+
 #multiplayer .controls {
   display: flex;
   margin-top: 92px;
@@ -452,6 +468,11 @@ img.without.cream {
   display: flex;
   flex-wrap: wrap;
   padding: 0;
+}
+
+.selected {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+  cursor: pointer;
 }
 
 #multiplayer .gamestable div {
@@ -567,6 +588,12 @@ img.without.cream {
     background-color: rgba(112,191,49, 0.8);
   }
 
+  #multiplayer .gameActions svg:last-child {
+    display: flex;
+    flex-grow: 1;
+    background-color: rgba(230, 199, 68, 0.8)
+  }
+
   #multiplayer .gamelabel {
     display: inline;
   }
@@ -577,7 +604,11 @@ img.without.cream {
   }
 
   #multiplayer .gamestable div:nth-child(even) {
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  #multiplayer .gamestable div:nth-child(odd) {
+    background-color: rgba(255, 255, 255, 0.6) !important;
   }
 }
 

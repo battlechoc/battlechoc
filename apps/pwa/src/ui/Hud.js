@@ -23,7 +23,7 @@ import de from 'javascript-time-ago/locale/de';
 import { PlayArrow, Cancel } from '@material-ui/icons';
 import MeshPreview from '../3d/MeshPreview';
 import Fab from '@material-ui/core/Fab';
-import { KeyboardArrowLeft as ArrowBackIcon, AddBox, Undo } from '@material-ui/icons';
+import { KeyboardArrowLeft as ArrowBackIcon, AddBox, Undo, AccountCircle, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne } from '@material-ui/icons';
 
 class Hud extends Component {
     constructor(props) {
@@ -35,21 +35,32 @@ class Hud extends Component {
             multiplayerScreen: false,
             choclabScreen: false,
             selectedEntity: null,
+            playerProfileOpen: false,
             openGames: [
                 {
                     'playerName': 'Sebastian',
                     'turns': 12,
                     'matchTime': 201000,
                     'lastAction': 1566153558102,
-                    'potentialCoins': 246
+                    'potentialCoins': 246,
+                    'level': 15,
+                    'ranking': 129,
+                    'winnings': 17,
+                    'drawn': 0,
+                    'losses': 8
                 },
                 {
                     'playerName': 'Caro',
                     'turns': 5,
                     'matchTime': 91800,
                     'lastAction': 1566153373262,
-                    'potentialCoins': 49
-                }
+                    'potentialCoins': 49,
+                    'level': 12,
+                    'ranking': 231,
+                    'winnings': 13,
+                    'drawn': 1,
+                    'losses': 9
+                },
             ]
         }
     }
@@ -58,6 +69,29 @@ class Hud extends Component {
         this.props.onRef(this);
         TimeAgo.addLocale(en);
         TimeAgo.addLocale(de);
+
+
+        let player = null;
+        if (this.props.multiplayerLandingPage) {
+            player = {
+                    'playerName': 'Fabian',
+                    'turns': 0,
+                    'matchTime': 0,
+                    'lastAction': 0,
+                    'potentialCoins': 0,
+                    'level': 34,
+                    'ranking': 12,
+                    'winnings': 57,
+                    'drawn': 2,
+                    'losses': 11
+                };
+        }
+
+        this.setState({
+            multiplayerScreen: this.props.multiplayerLandingPage,
+            playerProfileOpen: this.props.multiplayerLandingPage,
+            player: player
+        });
     }
 
     unlockUi() {
@@ -131,6 +165,17 @@ class Hud extends Component {
         return timeSinceUpdate; 
     }
 
+    toggleClassList = id => {
+        Array.from(document.getElementsByClassName(`row.${id}`)).forEach(div => div.classList.toggle('selected'));
+    }
+
+    showPlayerProfile = profile => {
+        this.setState({ 
+            playerProfileOpen: true,
+            player: profile
+        });
+    }
+
     render() {
         const stage = this.estimateStage();
         let textAnimation = typeof this.state.message === 'undefined' ? undefined : <div id="textAnimation" className="zoom">{this.state.message}</div>
@@ -175,13 +220,10 @@ class Hud extends Component {
                 {(() => {
                     if (stage === 'TITLE_SCREEN') {
                         let controls = []
-                        if (!this.props.multiplayerLandingPage) {
-                            controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>Singleplayer</div>);
-                            controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
-                            controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
-                        } else {
-                            controls.push(<Button key="3" color="primary" aria-label="join multiplayer" className="menuButton" variant="contained" onClick={this.props.joinMultiplayerGame}>{t[this.props.language].JOIN_MULTIPLAYER}</Button>);
-                        }
+                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>Singleplayer</div>);
+                        controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
+                        controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
+                        
                         return (
                             <div id="mainMenu">
                                 {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
@@ -234,6 +276,34 @@ class Hud extends Component {
                     } else if (stage === 'MULTIPLAYER_SCREEN') {
                         return (
                             <div id="multiplayer">
+                                <Dialog
+                                    fullWidth={true}
+                                    open={this.state.playerProfileOpen}
+                                    onClose={() => this.setState({ playerProfileOpen: false })}
+                                    aria-labelledby="resumeOrStartGame">
+                                    <DialogTitle>{this.state.player ? this.state.player.playerName : null}</DialogTitle>
+                                    <DialogContent>
+                                        {this.state.player ? <div className="statistics">
+                                            <p><span>{this.state.player.level}</span><PlusOne /></p>
+                                            <p><span>{this.state.player.ranking}</span><EmojiEvents /></p>
+                                            <p><span>{this.state.player.winnings}</span><ThumbUp /></p>
+                                            <p><span>{this.state.player.drawn}</span><ThumbsUpDown /></p>
+                                            <p><span>{this.state.player.losses}</span><ThumbDown /></p>
+                                        </div> : null}
+                                    </DialogContent>
+                                    <DialogActions>
+                                        { this.state.player && !this.state.openGames.map(game => game.playerName).includes(this.state.player.playerName) ? <Button onClick={() => {
+                                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                            this.setState({ playerProfileOpen: false });
+                                        }} color="primary">Start Game</Button> : null }
+
+                                        <Button onClick={() => {
+                                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                            this.setState({ playerProfileOpen: false });
+                                        }} color="primary">Back</Button>
+                                    </DialogActions>
+                                </Dialog>
+
                                 <div className="controls">
                                     <div className="menuButton">Random opponent</div>
                                     <div className="menuButton">Share your Link</div>
@@ -250,12 +320,12 @@ class Hud extends Component {
 
                                         {this.state.openGames.map((row, i) => (
                                             [
-                                                <div key={i} className="gameActions"><PlayArrow /><Cancel /></div>,
-                                                <div key={i+1}><span className="gamelabel">player</span><span>{row.playerName}</span></div>,
-                                                <div key={i+2}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
-                                                <div key={i+3}><span className="gamelabel">match</span><span>{this.timeToString(row.matchTime)}</span></div>,
-                                                <div key={i+4}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.lastAction)}</span></div>,
-                                                <div className="tablefoot" key={i+5}><span className="gamelabel">potential coins</span><span>{row.potentialCoins}</span></div>
+                                                <div key={i} onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} gameActions`}><PlayArrow /><Cancel /><AccountCircle /></div>,
+                                                <div key={i+1} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">player</span><span>{row.playerName}</span></div>,
+                                                <div key={i+2} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
+                                                <div key={i+3} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">match</span><span>{this.timeToString(row.matchTime)}</span></div>,
+                                                <div key={i+4} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.lastAction)}</span></div>,
+                                                <div onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} tablefoot`} key={i+5}><span className="gamelabel">potential coins</span><span>{row.potentialCoins}</span></div>
                                             ]
                                         ))}
                                     </div>
