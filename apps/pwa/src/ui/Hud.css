@@ -419,6 +419,22 @@ img.without.cream {
   flex-direction: column;
 }
 
+.statistics {
+  display: flex;
+}
+
+.statistics p {
+  display: flex;
+  flex-direction: column-reverse;
+  font-size: 2rem;
+  align-items: center;
+  margin: 0 20px;
+}
+
+.statistics svg {
+  font-size: 4rem;
+}
+
 #multiplayer .controls {
   display: flex;
   margin-top: 92px;
@@ -576,10 +592,6 @@ img.without.cream {
     display: flex;
     flex-grow: 1;
     background-color: rgba(230, 199, 68, 0.8)
-  }
-
-  .entityLevel {
-    position: relative;
   }
 
   #multiplayer .gamelabel {

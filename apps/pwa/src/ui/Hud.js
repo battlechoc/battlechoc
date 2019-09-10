@@ -23,7 +23,7 @@ import de from 'javascript-time-ago/locale/de';
 import { PlayArrow, Cancel } from '@material-ui/icons';
 import MeshPreview from '../3d/MeshPreview';
 import Fab from '@material-ui/core/Fab';
-import { KeyboardArrowLeft as ArrowBackIcon, AddBox, Undo, AccountCircle } from '@material-ui/icons';
+import { KeyboardArrowLeft as ArrowBackIcon, AddBox, Undo, AccountCircle, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne } from '@material-ui/icons';
 
 class Hud extends Component {
     constructor(props) {
@@ -253,12 +253,20 @@ class Hud extends Component {
                                     aria-labelledby="resumeOrStartGame">
                                     <DialogTitle>{typeof this.state.player !== 'undefined' ? this.state.player.playerName : null}</DialogTitle>
                                     <DialogContent>
-                                        <Typography>Player profile - here it comes!</Typography>
-                                        <div className="entityLevel">
-                                            <ChoclabPalette level={this.props.level} />
+                                        <div className="statistics">
+                                            <p><span>15</span><PlusOne /></p>
+                                            <p><span>129</span><EmojiEvents /></p>
+                                            <p><span>17</span><ThumbUp /></p>
+                                            <p><span>0</span><ThumbsUpDown /></p>
+                                            <p><span>8</span><ThumbDown /></p>
                                         </div>
                                     </DialogContent>
                                     <DialogActions>
+                                        { typeof this.state.player !== 'undefined' && !this.state.openGames.map(game => game.playerName).includes(this.state.player.playerName) ? <Button onClick={() => {
+                                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                            this.setState({ playerProfileOpen: false });
+                                        }} color="primary">Back</Button> : null }
+
                                         <Button onClick={() => {
                                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                             this.setState({ playerProfileOpen: false });
