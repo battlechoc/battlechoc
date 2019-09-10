@@ -42,15 +42,25 @@ class Hud extends Component {
                     'turns': 12,
                     'matchTime': 201000,
                     'lastAction': 1566153558102,
-                    'potentialCoins': 246
+                    'potentialCoins': 246,
+                    'level': 15,
+                    'ranking': 129,
+                    'winnings': 17,
+                    'drawn': 0,
+                    'losses': 8
                 },
                 {
                     'playerName': 'Caro',
                     'turns': 5,
                     'matchTime': 91800,
                     'lastAction': 1566153373262,
-                    'potentialCoins': 49
-                }
+                    'potentialCoins': 49,
+                    'level': 12,
+                    'ranking': 231,
+                    'winnings': 13,
+                    'drawn': 1,
+                    'losses': 9
+                },
             ]
         }
     }
@@ -59,6 +69,29 @@ class Hud extends Component {
         this.props.onRef(this);
         TimeAgo.addLocale(en);
         TimeAgo.addLocale(de);
+
+
+        let player = null;
+        if (this.props.multiplayerLandingPage) {
+            player = {
+                    'playerName': 'Fabian',
+                    'turns': 0,
+                    'matchTime': 0,
+                    'lastAction': 0,
+                    'potentialCoins': 0,
+                    'level': 34,
+                    'ranking': 12,
+                    'winnings': 57,
+                    'drawn': 2,
+                    'losses': 11
+                };
+        }
+
+        this.setState({
+            multiplayerScreen: this.props.multiplayerLandingPage,
+            playerProfileOpen: this.props.multiplayerLandingPage,
+            player: player
+        });
     }
 
     unlockUi() {
@@ -187,13 +220,10 @@ class Hud extends Component {
                 {(() => {
                     if (stage === 'TITLE_SCREEN') {
                         let controls = []
-                        if (!this.props.multiplayerLandingPage) {
-                            controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>Singleplayer</div>);
-                            controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
-                            controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
-                        } else {
-                            controls.push(<Button key="3" color="primary" aria-label="join multiplayer" className="menuButton" variant="contained" onClick={this.props.joinMultiplayerGame}>{t[this.props.language].JOIN_MULTIPLAYER}</Button>);
-                        }
+                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>Singleplayer</div>);
+                        controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
+                        controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
+                        
                         return (
                             <div id="mainMenu">
                                 {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
@@ -251,21 +281,21 @@ class Hud extends Component {
                                     open={this.state.playerProfileOpen}
                                     onClose={() => this.setState({ playerProfileOpen: false })}
                                     aria-labelledby="resumeOrStartGame">
-                                    <DialogTitle>{typeof this.state.player !== 'undefined' ? this.state.player.playerName : null}</DialogTitle>
+                                    <DialogTitle>{this.state.player ? this.state.player.playerName : null}</DialogTitle>
                                     <DialogContent>
-                                        <div className="statistics">
-                                            <p><span>15</span><PlusOne /></p>
-                                            <p><span>129</span><EmojiEvents /></p>
-                                            <p><span>17</span><ThumbUp /></p>
-                                            <p><span>0</span><ThumbsUpDown /></p>
-                                            <p><span>8</span><ThumbDown /></p>
-                                        </div>
+                                        {this.state.player ? <div className="statistics">
+                                            <p><span>{this.state.player.level}</span><PlusOne /></p>
+                                            <p><span>{this.state.player.ranking}</span><EmojiEvents /></p>
+                                            <p><span>{this.state.player.winnings}</span><ThumbUp /></p>
+                                            <p><span>{this.state.player.drawn}</span><ThumbsUpDown /></p>
+                                            <p><span>{this.state.player.losses}</span><ThumbDown /></p>
+                                        </div> : null}
                                     </DialogContent>
                                     <DialogActions>
-                                        { typeof this.state.player !== 'undefined' && !this.state.openGames.map(game => game.playerName).includes(this.state.player.playerName) ? <Button onClick={() => {
+                                        { this.state.player && !this.state.openGames.map(game => game.playerName).includes(this.state.player.playerName) ? <Button onClick={() => {
                                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                             this.setState({ playerProfileOpen: false });
-                                        }} color="primary">Back</Button> : null }
+                                        }} color="primary">Start Game</Button> : null }
 
                                         <Button onClick={() => {
                                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
