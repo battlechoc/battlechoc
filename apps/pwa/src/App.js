@@ -71,7 +71,6 @@ class App extends Component {
         window.onblur = () => Jukebox.pauseMusic();
 
         multiplayer.fetchPlayerStats(this.props.updatePlayerStats);
-
         multiplayer.signInAnonymouslyIfNotAlreadySignedIn();
     }
 

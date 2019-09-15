@@ -108,38 +108,32 @@ const generateEntityDescription = (entityType, attributes) => {
             if (attribute.name === 'hp') {
                 description.style.push({
                     name: 'hp',
-                    color: 'green',
-                    displayName: 'Hp'
+                    color: 'green'
                 });
             } else if (attribute.name === 'area') {
                 description.style.push({
                     name: 'area',
-                    color: 'blue',
-                    displayName: 'Area Effect'
+                    color: 'blue'
                 });            
             } else if (attribute.name === 'buildingsPerTurn') {
                 description.style.push({
                     name: 'buildingsPerTurn',
-                    color: 'blue',
-                    displayName: 'Buildings per turn'
+                    color: 'blue'
                 });            
             } else if (attribute.name === 'cacaoPerTurn') {
                 description.style.push({   
                     name: 'cacaoPerTurn',
-                    color: 'blue',
-                    displayName: 'Cacao per turn'
+                    color: 'blue'
                 });          
             } else if (attribute.name === 'attack') {
                 description.style.push({
                     name: 'attack',
-                    color: 'red',
-                    displayName: 'Attack'
+                    color: 'red'
                 });
             } else if (attribute.name === 'fortune') {
                 description.style.push({   
                     name: 'fortune',
-                    color: 'red',
-                    displayName: 'Fortune'
+                    color: 'red'
                 });
             }
 

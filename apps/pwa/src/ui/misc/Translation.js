@@ -177,7 +177,28 @@ const languages = {
         TUTORIAL_DIALOG_MESSAGE: 'Now you are ready to play a real battlechoc match. Do you want to start right now?',
         TUTORIAL_DIALOG_HINT: 'You are now able to restart the tutorial in the settings menu',
         TUTORIAL_DIALOG_BACK: 'Back to menu',
-        TUTORIAL_DIALOG_PLAY_GAME: 'Start a match'
+        TUTORIAL_DIALOG_PLAY_GAME: 'Start a match',
+        ACTIONS: 'Actions',
+        PLAYER: 'Player',
+        TURNS: 'Turns',
+        MATCH_TIME: 'Match Time',
+        LAST_ACTION: 'Last Action',
+        POTENTIAL_COINS: 'Potential Coins',
+        RANDOM_OPPONENT: 'Random Opponent',
+        SHARE_LINK: 'Share your Link',
+        FRIENDS: 'Friends',
+        START_GAME: 'Start Game',
+        ATTRIBUTE_NAME: attribute => {
+            switch (attribute) {
+                case 'hp': return 'Hp';
+                case 'area': return 'Area Effect';
+                case 'buildingsPerTurn': return 'Buildings per turn';
+                case 'cacaoPerTurn': return 'Cacao per turn';
+                case 'attack': return 'Attack';
+                case 'fortune': return 'Fortune';
+                default: return 'Unknown';
+            }
+        }
     },
     de: {
         SIGNINORUP: 'Anmelden',
@@ -355,7 +376,28 @@ const languages = {
         TUTORIAL_DIALOG_MESSAGE: 'Nun bist du bereit um eine richtige Runde battlechoc zu spielen. Willst du direkt starten?',
         TUTORIAL_DIALOG_HINT: 'Es ist dir nun möglich aus dem Einstellungsmenü das Tutorial neu zu starten',
         TUTORIAL_DIALOG_BACK: 'Zum Menü',
-        TUTORIAL_DIALOG_PLAY_GAME: 'Jetzt Spielen'
+        TUTORIAL_DIALOG_PLAY_GAME: 'Jetzt Spielen',
+        ACTIONS: 'Aktionen',
+        PLAYER: 'Spieler',
+        TURNS: 'Züge',
+        MATCH_TIME: 'Spielzeit',
+        LAST_ACTION: 'Letzte Aktion',
+        POTENTIAL_COINS: 'Mögliche Coins',
+        RANDOM_OPPONENT: 'Zufälliger Gegner',
+        SHARE_LINK: 'Profil-Link teilen',
+        FRIENDS: 'Freunde',
+        START_GAME: 'Spiel starten',
+        ATTRIBUTE_NAME: attribute => {
+            switch (attribute) {
+                case 'hp': return 'Hp';
+                case 'area': return 'Reichweite';
+                case 'buildingsPerTurn': return 'Gebäude pro Runde';
+                case 'cacaoPerTurn': return 'Kakao pro Runde';
+                case 'attack': return 'Angriff';
+                case 'fortune': return 'Glück';
+                default: return 'Unknown';
+            }
+        }
     }
 };
 

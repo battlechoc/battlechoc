@@ -1,0 +1,14 @@
+#choclab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  z-index: 2;  
+}
+
+#choclab .controls {
+  display: flex;
+  margin-top: 92px;
+  align-items: center;
+}

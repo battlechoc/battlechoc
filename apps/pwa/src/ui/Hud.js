@@ -4,26 +4,19 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import OfflineStore from '../OfflineStore';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
-import { getEntityDescriptor, EntityType } from '../gameplay/GameEntities';
-import { increaseLevel, decreaseLevel } from '../gameplay/GameActions';
-import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview, ChoclabPalette } from './controls';
+import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AppleHint, SignInOrUp} from './dialogs';
 import { CircularProgress, Button } from '@material-ui/core';
 import Dialog from '@material-ui/core/Dialog';
-import IconButton from '@material-ui/core/IconButton';
-import Snackbar from '@material-ui/core/Snackbar';
 import Typography from '@material-ui/core/Typography';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
-import TimeAgo from 'javascript-time-ago';
-import en from 'javascript-time-ago/locale/en';
-import de from 'javascript-time-ago/locale/de';
-import { PlayArrow, Cancel } from '@material-ui/icons';
-import MeshPreview from '../3d/MeshPreview';
 import Fab from '@material-ui/core/Fab';
-import { KeyboardArrowLeft as ArrowBackIcon, AddBox, Undo, AccountCircle, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne } from '@material-ui/icons';
+import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
+import MultiplayerScreen from './pages/MultiplayerScreen';
+import Choclab from './pages/Choclab';
 
 class Hud extends Component {
     constructor(props) {
@@ -33,43 +26,12 @@ class Hud extends Component {
             open: false,
             upgradeMessageOpen: false,
             multiplayerScreen: false,
-            choclabScreen: false,
-            selectedEntity: null,
-            playerProfileOpen: false,
-            openGames: [
-                {
-                    'playerName': 'Sebastian',
-                    'turns': 12,
-                    'matchTime': 201000,
-                    'lastAction': 1566153558102,
-                    'potentialCoins': 246,
-                    'level': 15,
-                    'ranking': 129,
-                    'winnings': 17,
-                    'drawn': 0,
-                    'losses': 8
-                },
-                {
-                    'playerName': 'Caro',
-                    'turns': 5,
-                    'matchTime': 91800,
-                    'lastAction': 1566153373262,
-                    'potentialCoins': 49,
-                    'level': 12,
-                    'ranking': 231,
-                    'winnings': 13,
-                    'drawn': 1,
-                    'losses': 9
-                },
-            ]
+            choclabScreen: false
         }
     }
 
     componentDidMount() {
         this.props.onRef(this);
-        TimeAgo.addLocale(en);
-        TimeAgo.addLocale(de);
-
 
         let player = null;
         if (this.props.multiplayerLandingPage) {
@@ -85,13 +47,11 @@ class Hud extends Component {
                     'drawn': 2,
                     'losses': 11
                 };
+        
+            this.setState({ multiplayerScreen: this.props.multiplayerLandingPage }, () => {
+                this.multiplayerScreen.showPlayerProfile(player);
+            });
         }
-
-        this.setState({
-            multiplayerScreen: this.props.multiplayerLandingPage,
-            playerProfileOpen: this.props.multiplayerLandingPage,
-            player: player
-        });
     }
 
     unlockUi() {
@@ -137,43 +97,6 @@ class Hud extends Component {
         } else {
             this.props.prepareNewGameCallback(false);
         }
-    }
-
-    timeToString(millis) {
-        let seconds = Math.floor(millis / 1000);
-        let hours = Math.floor(seconds / 3600);
-        seconds -= hours * 3600;
-        let min = Math.floor(seconds / 60);
-        seconds -= min * 60;
-
-        seconds = '' + seconds;
-        seconds = ('00' + seconds).substring(seconds.length);
-
-        if (hours > 0) {
-            min = '' + min;
-            min = ('00' + min).substring(min.length);
-            return hours + ":" + min + ":" + seconds;
-        }
-        else {
-            return min + ":" + seconds;
-        }
-    }
-
-    timeAgo(millis) {
-        let timeAgo = new TimeAgo('en-US');
-        let timeSinceUpdate = timeAgo.format(millis);
-        return timeSinceUpdate; 
-    }
-
-    toggleClassList = id => {
-        Array.from(document.getElementsByClassName(`row.${id}`)).forEach(div => div.classList.toggle('selected'));
-    }
-
-    showPlayerProfile = profile => {
-        this.setState({ 
-            playerProfileOpen: true,
-            player: profile
-        });
     }
 
     render() {
@@ -274,148 +197,9 @@ class Hud extends Component {
                             </div>
                         );
                     } else if (stage === 'MULTIPLAYER_SCREEN') {
-                        return (
-                            <div id="multiplayer">
-                                <Dialog
-                                    fullWidth={true}
-                                    open={this.state.playerProfileOpen}
-                                    onClose={() => this.setState({ playerProfileOpen: false })}
-                                    aria-labelledby="resumeOrStartGame">
-                                    <DialogTitle>{this.state.player ? this.state.player.playerName : null}</DialogTitle>
-                                    <DialogContent>
-                                        {this.state.player ? <div className="statistics">
-                                            <p><span>{this.state.player.level}</span><PlusOne /></p>
-                                            <p><span>{this.state.player.ranking}</span><EmojiEvents /></p>
-                                            <p><span>{this.state.player.winnings}</span><ThumbUp /></p>
-                                            <p><span>{this.state.player.drawn}</span><ThumbsUpDown /></p>
-                                            <p><span>{this.state.player.losses}</span><ThumbDown /></p>
-                                        </div> : null}
-                                    </DialogContent>
-                                    <DialogActions>
-                                        { this.state.player && !this.state.openGames.map(game => game.playerName).includes(this.state.player.playerName) ? <Button onClick={() => {
-                                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                            this.setState({ playerProfileOpen: false });
-                                        }} color="primary">Start Game</Button> : null }
-
-                                        <Button onClick={() => {
-                                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                            this.setState({ playerProfileOpen: false });
-                                        }} color="primary">Back</Button>
-                                    </DialogActions>
-                                </Dialog>
-
-                                <div className="controls">
-                                    <div className="menuButton">Random opponent</div>
-                                    <div className="menuButton">Share your Link</div>
-                                    <div className="menuButton">Friends</div>
-                                </div>
-                                <div className="openGames">
-                                    <div className="gamestable">
-                                        <div className="tableHead">actions</div>
-                                        <div className="tableHead">player</div>
-                                        <div className="tableHead">turns</div>
-                                        <div className="tableHead">match time</div>
-                                        <div className="tableHead">last action</div>
-                                        <div className="tableHead">potential coins</div>
-
-                                        {this.state.openGames.map((row, i) => (
-                                            [
-                                                <div key={i} onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} gameActions`}><PlayArrow /><Cancel /><AccountCircle /></div>,
-                                                <div key={i+1} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">player</span><span>{row.playerName}</span></div>,
-                                                <div key={i+2} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
-                                                <div key={i+3} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">match</span><span>{this.timeToString(row.matchTime)}</span></div>,
-                                                <div key={i+4} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.lastAction)}</span></div>,
-                                                <div onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} tablefoot`} key={i+5}><span className="gamelabel">potential coins</span><span>{row.potentialCoins}</span></div>
-                                            ]
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                            );
+                        return <MultiplayerScreen onRef={multiplayerScreen => this.multiplayerScreen = multiplayerScreen}/>
                     } else if (stage === 'CHOCLAB_SCREEN') {
-                        return (
-                            <div id="choclab">
-                                {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
-                                    <span>{ this.props.playerInfos.stats.coins }</span>
-                                    <img src="images/coins.png" alt="choco coins" />
-                                </div> : null}
-                                <MeshPreview onRef={meshPreview => this.meshPreview = meshPreview}/>
-
-                                <Snackbar
-                                    anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-                                    open={this.state.upgradeMessageOpen}
-                                    onClose={() => this.setState({upgradeMessageOpen: false})}
-                                    ContentProps={{'aria-describedby': 'message-id'}}
-                                    message={typeof this.state.upgrade !== 'undefined' ? <span id="message-id">{`${this.state.upgrade.attribute} increased by ${this.state.upgrade.value}!`}</span> : null}
-                                    action={
-                                      <IconButton
-                                        aria-label="close"
-                                        color="inherit"
-                                        onClick={() => {
-                                            this.props.decreaseLevel({
-                                                'entity': this.state.selectedEntityType,
-                                                'attribute': this.state.upgrade.attributeName,
-                                            }).then(() => this.setState({ 
-                                                "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level),
-                                                "upgradeMessageOpen": false,
-                                                "upgrade": undefined
-                                            }))
-                                        }}
-                                      >
-                                        <Undo />
-                                      </IconButton>
-                                    }
-                                />
-
-                                <div className="entityStats">
-                                    { this.state.selectedEntity ? this.state.selectedEntity.style.map(attribute => {
-                                        let values = this.state.selectedEntity[attribute.name]();
-                                        let percentage = (values[0] / values[1]) * 100;
-                                        let classNames = 'progress';
-                                        if (['fortune', 'area'].includes(attribute.name) && 
-                                            [EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY, 
-                                             EntityType.XMAS_FACTORY, EntityType.FRUIT_CANNON, EntityType.HOT_CHOCOLATE_BALLISTA].includes(this.state.selectedEntityType)) {
-                                            classNames += ' locked';
-                                        }
-                                        return (
-                                            <div className={classNames} key={attribute.name}>
-                                                <div className="label"><span>{ attribute.displayName }</span><span>{ Math.round(values[0]) }</span></div>
-                                                <div>
-                                                    <div className={attribute.color} style={{ width: percentage + '%'}}></div>
-                                                    { classNames === 'progress' && values[0] < values[1] && this.props.playerInfos.stats.coins >= this.state.selectedEntity.coins() ?
-                                                    <AddBox onClick={() => {
-                                                        this.props.increaseLevel({
-                                                            'entity': this.state.selectedEntityType,
-                                                            'attribute': attribute.name
-                                                        }).then(() => this.setState({ 
-                                                            "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level),
-                                                            "upgradeMessageOpen": true,
-                                                            "upgrade": {
-                                                                "attribute": attribute.displayName,
-                                                                "attributeName": attribute.name,
-                                                                "value": values[0],
-                                                                "costs": this.state.selectedEntity.coins(),
-                                                                "entity": this.state.selectedEntityType
-                                                            }
-                                                        }));
-                                                    }} /> : null }
-                                                </div>
-                                            </div>
-                                        )
-                                    })  : null }
-                                    { this.state.selectedEntity ? (
-                                        <div className="coin costs">
-                                            <span>{ this.state.selectedEntity.coins() }</span>
-                                            <img src="images/coins.png" alt="choco coins" />
-                                        </div>) : null }
-                                </div>
-                                <ChoclabPalette selectEntity={entity => {
-                                    this.setState({ selectedEntity: getEntityDescriptor(entity, this.props.level) });
-                                    this.setState({ selectedEntityType: entity });
-                                    this.meshPreview.loadMesh(entity);
-                                }} />
-                            </div>
-                        );
+                        return <Choclab />
                     } else {
                         return (
                             <div>
@@ -443,7 +227,6 @@ Hud.propTypes = {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
-    level: state.gameplay.level,
     state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
     language: state.ui.language,
     overviewVisible: state.ui.overviewVisible,
@@ -453,14 +236,8 @@ const mapStateToProps = state => ({
     playerInfos: state.ui.playerInfos
 });
 
-const mapDispatchToProps = {
-    increaseLevel,
-    decreaseLevel
-};
-
 const HudContainer = connect(
-    mapStateToProps,
-    mapDispatchToProps
+    mapStateToProps
 )(Hud);
 
 export default HudContainer;
