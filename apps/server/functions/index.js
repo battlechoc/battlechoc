@@ -66,8 +66,11 @@ app.post('/creategame', async (req, res) => {
         state: null,
         result: null
     };
+    console.log(session);
     const playerValidityCheckResult = await checkPlayerValidity(session.players.player1, session.players.player2);
+    console.log(playerValidityCheckResult);
     if (playerValidityCheckResult === true) {
+        console.log("creating a game");
         return admin.firestore().collection('sessions').add({"session": session})
         .then(rows => res.json({result: 'game created with id ' + rows.id}))
         .catch(error => res.json({result: error}));
