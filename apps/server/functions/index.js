@@ -48,14 +48,14 @@ app.use(basicAuth({
 }));
 
 app.get('/debugging/gamestate', (req, res) => {
-    res.json({gamestate: 'NOT IMPLEMENTED YET!'});  
+    res.json({ gamestate: 'NOT IMPLEMENTED YET!' });
 });
 
 app.post('/debugging/gamestate', (req, res) => {
     let report = req.body.report;
-    return admin.firestore().collection('reports').add({"report": report})
-           .then(rows => res.json({result: 'Bugreport with ID: ' + rows.id + ' added.'}))
-           .catch(error => res.json({result: error}));
+    return admin.firestore().collection('reports').add({ "report": report })
+        .then(rows => res.json({ result: 'Bugreport with ID: ' + rows.id + ' added.' }))
+        .catch(error => res.json({ result: error }));
 });
 
 app.post('/creategame', async (req, res) => {
@@ -66,16 +66,17 @@ app.post('/creategame', async (req, res) => {
         state: null,
         result: null
     };
-    console.log(session);
     const playerValidityCheckResult = await checkPlayerValidity(session.players.player1, session.players.player2);
-    console.log(playerValidityCheckResult);
-    if (playerValidityCheckResult === true) {
-        console.log("creating a game");
-        return admin.firestore().collection('sessions').add({"session": session})
-        .then(rows => res.json({result: 'game created with id ' + rows.id}))
-        .catch(error => res.json({result: error}));
+    if (session.players.player1 === session.players.player2) {
+        res.json({ result: 'cannot create a game challenging yourself' });
     } else {
-        res.json({result: 'trying to create a game for invalid players. request rejected'});
+        if (playerValidityCheckResult === true) {
+            return admin.firestore().collection('sessions').add({ "session": session })
+                .then(rows => res.json({ result: 'game created with id ' + rows.id }))
+                .catch(error => res.json({ result: error }));
+        } else {
+            res.json({ result: 'trying to create a game for invalid players. request rejected' });
+        }
     }
 });
 
@@ -83,9 +84,9 @@ app.post('/buyathing', async (req, res) => {
     let transaction = req.body.transaction;
     // validate that transaction.player has enough coins to buy transaction.object and upgrade is valid/fits the players upgrade state
     // persist tranaction operation (--> do the upgrade and persist in player state, remove coins)
-    return admin.firestore().collection('sessions').add({"session": session})
-           .then(rows => res.json({result: 'game created with id ' + rows.id}))
-           .catch(error => res.json({result: error}));
+    return admin.firestore().collection('sessions').add({ "session": session })
+        .then(rows => res.json({ result: 'game created with id ' + rows.id }))
+        .catch(error => res.json({ result: error }));
 });
 
 exports.api = functions.https.onRequest(app);
