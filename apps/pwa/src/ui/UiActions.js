@@ -41,4 +41,5 @@ const notifyPlayerSignedIn = createAction(UiActionTypes.notifyPlayerSignedIn);
 const startTutorial = createAction(UiActionTypes.startTutorial);
 const stopTutorial = createAction(UiActionTypes.stopTutorial);
 const updatePlayerStats = createAction(UiActionTypes.updatePlayerStats);
+
 export { startTutorial, stopTutorial, showOverview, resetUi, loadUiState, joinedMultiplayer, waitForMultiplayer, UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, showStatistics, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };

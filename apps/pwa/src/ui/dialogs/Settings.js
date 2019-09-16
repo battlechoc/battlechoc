@@ -21,7 +21,7 @@ import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
 import Checkbox from '@material-ui/core/Checkbox';
 import TextField from '@material-ui/core/TextField';
-import { multiplayer } from '../../Multiplayer';
+import { multiplayer, ServerConfig } from '../../Multiplayer';
 
 class Settings extends Component {
   constructor(props) {
@@ -150,14 +150,10 @@ class Settings extends Component {
                   message: this.state.additionalReportMessage
                 };
 
-                let user = 'battlechoc-pwa';
-                let password = '***REMOVED***';
-                let auth = btoa(user + ':' + password);
-
-                fetch('https://us-central1-battlechoc.cloudfunctions.net/api/debugging/gamestate', {
+                fetch(ServerConfig.baseUrl + '/debugging/gamestate', {
                   method: 'post',
                   headers: new Headers({
-                    'Authorization': 'Basic ' + auth,
+                    'Authorization': 'Basic ' + ServerConfig.auth,
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                   }),
@@ -226,7 +222,7 @@ class Settings extends Component {
                 {t[this.props.language].REPORT_PROBLEM}
               </Button>
 
-              {(() => {  
+              {(() => {
                 if (this.state.tutorialAlreadySeen && typeof this.props.game === 'undefined') {
                   return (
                     <Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {
@@ -234,7 +230,7 @@ class Settings extends Component {
                       this.props.startTutorial();
                       this.setState({ open: false, attentionTextVisible: false });
                     }}>
-                    {t[this.props.language].RESTART_TUTORIAL}
+                      {t[this.props.language].RESTART_TUTORIAL}
                     </Button>
                   )
                 }

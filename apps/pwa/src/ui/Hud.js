@@ -53,6 +53,14 @@ class Hud extends Component {
         this.props.onRef(this);
         TimeAgo.addLocale(en);
         TimeAgo.addLocale(de);
+
+        if (typeof this.props.challengedProfileParam !== 'undefined') {
+            multiplayer.fetchPlayerProfileData(this.props.challengedProfileParam).then((profile) => {
+                this.setState({challengedProfile: profile});
+                console.log(profile);
+                multiplayer.challengePlayer(profile.playerId);
+            }).catch(err => console.log(err));
+        }
     }
 
     unlockUi() {
@@ -65,7 +73,7 @@ class Hud extends Component {
 
     estimateStage() {
         const state = this.props.state;
-        if (typeof state === 'undefined' && !this.state.multiplayerScreen && !this.state.choclabScreen) {
+        if (typeof state === 'undefined' && !this.state.multiplayerScreen && !this.state.choclabScreen && !this.state.challengedProfile) {
             return 'TITLE_SCREEN'
         } else if (state === GameStateTypes.START ||
             state === GameStateTypes.CHOOSE_FIELD_OR_START ||
@@ -75,6 +83,8 @@ class Hud extends Component {
             return 'MULTIPLAYER_SCREEN';
         } else if (this.state.choclabScreen) {
             return 'CHOCLAB_SCREEN';
+        } else if (this.state.challengedProfile) {
+            return 'CHALLENGE_SCREEN';
         } else {
             return 'INGAME';
         }
@@ -144,6 +154,7 @@ class Hud extends Component {
 
     render() {
         const stage = this.estimateStage();
+        console.log(stage);
         let textAnimation = typeof this.state.message === 'undefined' ? undefined : <div id="textAnimation" className="zoom">{this.state.message}</div>
         return (
             <div className={this.props.className}>
@@ -175,6 +186,18 @@ class Hud extends Component {
                                 <ArrowBackIcon />
                             </Fab>
                         </div>
+                    } else if (stage === 'CHALLENGE_SCREEN') {
+                        return <div className="actionbar">
+                            <Fab
+                                size="small"
+                                key="4"
+                                color="primary"
+                                aria-label="back"
+                                className="icon"
+                                onClick={() => this.setState({ challengedProfile: undefined })}>
+                                <ArrowBackIcon />
+                            </Fab>
+                        </div>
                     } else {
                         return <Actionbar showSettings={this.openSettings} showSignInOrUp={this.openSignInOrUp} />
                     }
@@ -188,7 +211,7 @@ class Hud extends Component {
                         let controls = []
                         if (!this.props.multiplayerLandingPage) {
                             controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>Singleplayer</div>);
-                            controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
+                            controls.push(<div key="1" className="menuButton" onClick={() => { multiplayer.signInAnonymouslyIfNotAlreadySignedIn(); this.setState({ multiplayerScreen: true }); }}>Multiplayer</div>);
                             controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
                         } else {
                             controls.push(<Button key="3" color="primary" aria-label="join multiplayer" className="menuButton" variant="contained" onClick={this.props.joinMultiplayerGame}>{t[this.props.language].JOIN_MULTIPLAYER}</Button>);
@@ -302,6 +325,11 @@ class Hud extends Component {
                                 <ChoclabPalette selectEntity={entity => this.meshPreview.loadMesh(entity)} />
                             </div>
                         );
+                    } else if (stage === 'CHALLENGE_SCREEN') {
+                        console.log("displaying challenge screen for profile ");
+
+                        // is this yourself --> display account infos
+                        // if this is another player --> display account infos and a button to start a game against 
                     } else {
                         return (
                             <div>
