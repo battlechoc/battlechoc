@@ -222,7 +222,7 @@ class App extends Component {
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
                 if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP || this.opponent.player.type === PlayerType.VIOLET_BEAUREGARDE) {
-                    this.opponent.simulateAttackPhase((row, col) => this.scene.detonateAtShield(row, col, true));
+                    this.opponent.simulateAttackPhase((row, col) => this.scene.detonateAtShield(row, col, true), entity => this.scene.showEnergyBar(entity), position => this.scene.hideEnergyBar(null, position));
                 }
             } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
                 let timeoutId = setTimeout(() => this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);

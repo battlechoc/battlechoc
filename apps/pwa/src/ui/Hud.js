@@ -4,8 +4,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import OfflineStore from '../OfflineStore';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
-import { multiplayer } from '../Multiplayer';
-import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview, ChoclabPalette } from './controls';
+import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AppleHint, SignInOrUp } from './dialogs';
 import { CircularProgress, Button } from '@material-ui/core';
@@ -14,13 +13,10 @@ import Typography from '@material-ui/core/Typography';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
-import TimeAgo from 'javascript-time-ago';
-import en from 'javascript-time-ago/locale/en';
-import de from 'javascript-time-ago/locale/de';
-import { PlayArrow, Cancel } from '@material-ui/icons';
-import MeshPreview from '../3d/MeshPreview';
 import Fab from '@material-ui/core/Fab';
-import { KeyboardArrowLeft as ArrowBackIcon, AddBox } from '@material-ui/icons';
+import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
+import MultiplayerScreen from './pages/MultiplayerScreen';
+import Choclab from './pages/Choclab';
 
 class Hud extends Component {
     constructor(props) {
@@ -28,38 +24,41 @@ class Hud extends Component {
         this.state = {
             clickable: true,
             open: false,
+            upgradeMessageOpen: false,
             multiplayerScreen: false,
-            choclabScreen: false,
-            openGames: [
-                {
-                    'playerName': 'Sebastian',
-                    'turns': 12,
-                    'matchTime': 201000,
-                    'lastAction': 1566153558102,
-                    'potentialCoins': 246
-                },
-                {
-                    'playerName': 'Caro',
-                    'turns': 5,
-                    'matchTime': 91800,
-                    'lastAction': 1566153373262,
-                    'potentialCoins': 49
-                }
-            ]
+            choclabScreen: false
         }
     }
 
     componentDidMount() {
         this.props.onRef(this);
-        TimeAgo.addLocale(en);
-        TimeAgo.addLocale(de);
 
-        if (typeof this.props.challengedProfileParam !== 'undefined') {
-            multiplayer.fetchPlayerProfileData(this.props.challengedProfileParam).then((profile) => {
+        let player = null;
+        if (this.props.multiplayerLandingPage) {
+            player = {
+                    'playerName': 'Fabian',
+                    'turns': 0,
+                    'matchTime': 0,
+                    'lastAction': 0,
+                    'potentialCoins': 0,
+                    'level': 34,
+                    'ranking': 12,
+                    'winnings': 57,
+                    'drawn': 2,
+                    'losses': 11
+                };
+
+            /*multiplayer.fetchPlayerProfileData(this.props.challengedProfileParam).then((profile) => {
                 this.setState({challengedProfile: profile});
                 console.log(profile);
                 multiplayer.challengePlayer(profile.playerId);
-            }).catch(err => console.log(err));
+            }).catch(err => console.log(err));*/
+
+        
+            this.setState({ multiplayerScreen: this.props.multiplayerLandingPage }, () => {
+                this.multiplayerScreen.showPlayerProfile(player);
+            });
+
         }
     }
 
@@ -209,13 +208,11 @@ class Hud extends Component {
                 {(() => {
                     if (stage === 'TITLE_SCREEN') {
                         let controls = []
-                        if (!this.props.multiplayerLandingPage) {
-                            controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>Singleplayer</div>);
-                            controls.push(<div key="1" className="menuButton" onClick={() => { multiplayer.signInAnonymouslyIfNotAlreadySignedIn(); this.setState({ multiplayerScreen: true }); }}>Multiplayer</div>);
-                            controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
-                        } else {
-                            controls.push(<Button key="3" color="primary" aria-label="join multiplayer" className="menuButton" variant="contained" onClick={this.props.joinMultiplayerGame}>{t[this.props.language].JOIN_MULTIPLAYER}</Button>);
-                        }
+
+                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>Singleplayer</div>);
+                        controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
+                        controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
+                        
                         return (
                             <div id="mainMenu">
                                 {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
@@ -266,70 +263,9 @@ class Hud extends Component {
                             </div>
                         );
                     } else if (stage === 'MULTIPLAYER_SCREEN') {
-                        return (
-                            <div id="multiplayer">
-                                <div className="controls">
-                                    <div className="menuButton">Random opponent</div>
-                                    <div className="menuButton" onClick={() => this.shareYourLink()}>Share your Link</div>
-                                    <div className="menuButton">Friends</div>
-                                </div>
-                                <div className="openGames">
-                                    <div className="gamestable">
-                                        <div className="tableHead">actions</div>
-                                        <div className="tableHead">player</div>
-                                        <div className="tableHead">turns</div>
-                                        <div className="tableHead">match time</div>
-                                        <div className="tableHead">last action</div>
-                                        <div className="tableHead">potential coins</div>
-
-                                        {this.state.openGames.map((row, i) => (
-                                            [
-                                                <div key={i} className="gameActions"><PlayArrow /><Cancel /></div>,
-                                                <div key={i + 1}><span className="gamelabel">player</span><span>{row.playerName}</span></div>,
-                                                <div key={i + 2}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
-                                                <div key={i + 3}><span className="gamelabel">match</span><span>{this.timeToString(row.matchTime)}</span></div>,
-                                                <div key={i + 4}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.lastAction)}</span></div>,
-                                                <div className="tablefoot" key={i + 5}><span className="gamelabel">potential coins</span><span>{row.potentialCoins}</span></div>
-                                            ]
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        );
+                        return <MultiplayerScreen onRef={multiplayerScreen => this.multiplayerScreen = multiplayerScreen}/>
                     } else if (stage === 'CHOCLAB_SCREEN') {
-                        return (
-                            <div id="choclab">
-                                {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
-                                    <span>{this.props.playerInfos.stats.coins}</span>
-                                    <img src="images/coins.png" alt="choco coins" />
-                                </div> : null}
-                                <MeshPreview onRef={meshPreview => this.meshPreview = meshPreview} />
-                                <div className="entityStats">
-                                    <div className="progress">
-                                        <div className="label"><span>HP</span><span>48</span></div>
-                                        <div><div className="green" style={{ width: '20%' }}></div><AddBox /></div>
-                                    </div>
-                                    <div className="progress">
-                                        <div className="label"><span>ATTACK</span><span>65</span></div>
-                                        <div><div className="red" style={{ width: '10%' }}></div><AddBox /></div>
-                                    </div>
-                                    <div className="progress">
-                                        <div className="label"><span>DEFENSE</span><span>12</span></div>
-                                        <div><div className="blue" style={{ width: '15%' }}></div><AddBox /></div>
-                                    </div>
-                                    <div className="progress">
-                                        <div className="label"><span>AREA EFFECT</span><span>1</span></div>
-                                        <div><div className="blue" style={{ width: '50%' }}></div><AddBox /></div>
-                                    </div>
-                                </div>
-                                <ChoclabPalette selectEntity={entity => this.meshPreview.loadMesh(entity)} />
-                            </div>
-                        );
-                    } else if (stage === 'CHALLENGE_SCREEN') {
-                        console.log("displaying challenge screen for profile ");
-
-                        // is this yourself --> display account infos
-                        // if this is another player --> display account infos and a button to start a game against 
+                        return <Choclab />
                     } else {
                         return (
                             <div>
@@ -366,6 +302,8 @@ const mapStateToProps = state => ({
     playerInfos: state.ui.playerInfos
 });
 
-const HudContainer = connect(mapStateToProps)(Hud);
+const HudContainer = connect(
+    mapStateToProps
+)(Hud);
 
 export default HudContainer;

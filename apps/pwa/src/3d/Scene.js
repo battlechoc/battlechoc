@@ -39,9 +39,10 @@ class Scene extends Component {
         }
 
         this.scene = createScene();
+        this.energyBars = [];
         this.highlightLayer = new HighlightLayer('highlightLayer', this.scene);
         this.animate = () => this.scene.render();
-        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('resize', this.resize);
         this.animations = [];
         this.playerGameField = null;
         this.opponentGameField = null;
@@ -59,8 +60,59 @@ class Scene extends Component {
         });
     }
 
+    hideEnergyBar = (position, field) => {
+        if (position === null) {
+            position = new Vector3(field.row, 6.5, field.col);
+        }
+        let name = position.x + '-6.5-' + position.z;
+        if (this.energyBars.includes(name)) {
+            this.scene.stopAnimation(this.scene.getMeshByName('energy.bar.' + name));
+        }        
+    }
+
+    showEnergyBar = (entity, position) => {
+        if (typeof position === 'undefined') {
+            position = new Vector3(entity.position.row, 6.5, entity.position.col);
+        } else {
+            position.y = 6.5;
+        }
+        let name = position.x + '-6.5-' + position.z;
+        this.hideEnergyBar(position);
+        this.energyBars.push(name);
+
+        let energy = entity.hp / entity.max.hp;
+        let bar = MeshBuilder.CreatePlane('energy.bar.' + name, { width: energy, height: 0.15 }, this.scene);
+        bar.isPickable = false;
+        let material = new StandardMaterial('energy.bar.material.' + name, this.scene);
+        if (energy < 0.3) {
+            material.diffuseColor﻿ = Color3.FromHexString("#D05531");
+        } else if (energy < 0.6) {
+            material.diffuseColor﻿ = Color3.FromHexString("#DFBF31");
+        } else {
+            material.diffuseColor﻿ = Color3.FromHexString("#70bf31");
+        }
+
+        bar.material = material;
+        bar.billboardMode = Mesh.BILLBOARDMODE_ALL;
+        bar.position = position.clone();
+        bar.position.x = bar.position.x + (1 - energy) * 0.35;
+        bar.position.z = bar.position.z - (1 - energy) * 0.35;
+
+        let fade = new Animation("fade", "visibility", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+        fade.setKeys([{ frame: 0, value: 1.0 }, { frame: 180, value: 0.9 }, { frame: 240, value: 0.0 }]);
+
+        this.setRenderLoop();
+        bar.animations = [fade];
+        this.scene.beginAnimation(bar, 0, 240, false, 1, () => {
+            material.dispose();
+            bar.dispose();
+            this.energyBars = this.energyBars.filter(bar => bar !== name);
+            this.setRenderLoop(false);
+        });
+    }
+
     componentWillUnmount() {
-        window.removeEventListener('resize', () => this.resize());
+        window.removeEventListener('resize', this.resize);
     }
 
     componentDidUpdate() {
@@ -84,7 +136,6 @@ class Scene extends Component {
     }
 
     spawnInfo(messageType, position, amount) {
-        console.log(messageType, position, amount);
         let id = Date.now();
         let info = MeshBuilder.CreatePlane('info_' + id, { width: 1.65, height: 1.65 }, this.scene);
         info.isPickable = false;
@@ -154,15 +205,19 @@ class Scene extends Component {
 
     triggerCacaoInfo() {
         let cells = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex].grid;
+
+        let entities = cells.filter(cell => cell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0)
+        entities.forEach(cell => this.showEnergyBar(cell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0], new Vector3(cell.row, 0, cell.col)))
+
         let trees = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE));
-        let description = getEntityDescriptor(EntityType.CACAOTREE);
+        let description = getEntityDescriptor(EntityType.CACAOTREE, this.props.level);
         trees.forEach(cell => {
-            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), cell.type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn);
+            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), cell.type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn()[0] * 1.5) : description.cacaoPerTurn()[0]);
         });
         let factory = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.FACTORY));
-        description = getEntityDescriptor(EntityType.FACTORY);
+        description = getEntityDescriptor(EntityType.FACTORY, this.props.level);
         factory.forEach(cell => {
-            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), description.cacaoPerTurn);
+            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), description.cacaoPerTurn()[0]);
         });
     }
 
@@ -214,7 +269,6 @@ class Scene extends Component {
     }
 
     detonateAtShield(row, col, playerField=false) {
-        console.log('detonateAtShield', row, col, playerField);
         let truffle = MeshBuilder.CreateTorus('knot', {diameter: 0.1}, this.scene);
         truffle.material = this.scene.getMaterialByName(BoardCellTypes.BROWN + '.material');
         if (playerField) {
@@ -232,23 +286,26 @@ class Scene extends Component {
         if (buildingSelected || (initialPlacement && this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn === 0)) {
             let building;
             if (initialPlacement) {
-                building = createEntity(EntityType.FACTORY);
+                building = createEntity(EntityType.FACTORY, this.props.level);
             } else {
-                building = createEntity(this.props.selectedBuilding);
+                building = createEntity(this.props.selectedBuilding, this.props.level);
             }
-            building.position = { row: row, col: col }
+            building.position = { row: row, col: col };
             let playerCacaoPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn;
             let buildingsPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn;
             this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
+                if (building.type !== EntityType.CREAM) {
+                    this.showEnergyBar(building);
+                }
                 if (initialPlacement) {
                     this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn);
                     this.props.deselectBuildings();
                     this.props.deselectAttack();
                     let playerId = this.props.game.players[multiplayer.localPlayerIndex].id;
                     setTimeout(() => {
-                        let description = getEntityDescriptor(EntityType.FACTORY);
-                        this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), description.cacaoPerTurn);
+                        let description = getEntityDescriptor(EntityType.FACTORY, this.props.level);
+                        this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), description.cacaoPerTurn()[0]);
                     }, 1000);
                     setTimeout(() => {
                         if (playerId === this.props.game.players[multiplayer.localPlayerIndex].id) {
@@ -258,8 +315,8 @@ class Scene extends Component {
                         }
                     }, 3000);
                 } else {
-                    let description = getEntityDescriptor(this.props.selectedBuilding)
-                    this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs);
+                    let description = getEntityDescriptor(this.props.selectedBuilding, this.props.level);
+                    this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs());
                     let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;
                     setTimeout(() => {
@@ -273,7 +330,7 @@ class Scene extends Component {
                             this.spawnInfo(this.InfoType.INCREASE_SPY_ATTACKS_PER_TURN, position.clone(), 1);
                         }
                         setTimeout(() => {
-                            if (this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) {
+                            if (this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs()) {
                                 if (playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true) {
                                     this.props.finishBuildPhase({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
                                         this.props.deselectBuildings();
@@ -312,9 +369,19 @@ class Scene extends Component {
 
     opponentFieldClick(row, col, position) {
         if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
+            let attack = 0;
+            if (this.props.selectedAttack === AttackType.TRUFFLE) {
+                let description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, this.props.level);
+                attack = description.attack()[0];
+            } else if (this.props.selectedAttack === AttackType.FRUIT) {
+                let description = getEntityDescriptor(EntityType.FRUIT_CANNON, this.props.level);
+                attack = description.attack()[0];
+            } 
+
             this.props.attack({
                 issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
                 attackType: this.props.selectedAttack,
+                attack: attack,
                 row: row,
                 col: col
             }).then(() => {
@@ -328,8 +395,12 @@ class Scene extends Component {
                 } else if (typeof this.props.selectedAttack !== 'undefined') {
                     Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
                     let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
-                    if (cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col).shielded) {
-                        this.detonateAtShield(row, col);
+                    let selectedCell = cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col);
+                    this.detonateAtShield(row, col);
+                    if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0) {
+                        this.showEnergyBar(selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0], position.clone());
+                    } else {
+                        this.hideEnergyBar(position.clone());
                     }
                 }
 
@@ -419,6 +490,7 @@ class Scene extends Component {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
+    level: state.gameplay.level,
     selectedBuilding: state.ui.selectedBuilding,
     selectedAttack: state.ui.selectedAttack,
     assetsReady: state.ui.assetsReady,
