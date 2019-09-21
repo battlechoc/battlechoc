@@ -17,6 +17,7 @@ import Fab from '@material-ui/core/Fab';
 import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
+import { multiplayer } from '../Multiplayer';
 
 class Hud extends Component {
     constructor(props) {
@@ -33,32 +34,38 @@ class Hud extends Component {
     componentDidMount() {
         this.props.onRef(this);
 
-        let player = null;
-        if (this.props.multiplayerLandingPage) {
-            player = {
-                    'playerName': 'Fabian',
-                    'turns': 0,
-                    'matchTime': 0,
-                    'lastAction': 0,
-                    'potentialCoins': 0,
-                    'level': 34,
-                    'ranking': 12,
-                    'winnings': 57,
-                    'drawn': 2,
-                    'losses': 11
-                };
-
-            /*multiplayer.fetchPlayerProfileData(this.props.challengedProfileParam).then((profile) => {
-                this.setState({challengedProfile: profile});
+        if (typeof this.props.challengedProfileId !== 'undefined') {
+            multiplayer.fetchPlayerProfileData(this.props.challengedProfileId).then(profile => {
                 console.log(profile);
-                multiplayer.challengePlayer(profile.playerId);
-            }).catch(err => console.log(err));*/
+                let level = 0;
+                let losses = 0;
+                let winnings = 0;
+                let drawn = 0;
+                if (typeof profile.level !== 'undefined') {
+                    // sum up all level of all attributes
+                    level = Object.values(profile.level).map(attribute => Object.values(attribute).reduce((a, b) => a + b, 0)).reduce((a, b) => a + b, 0);
+                }
 
-        
-            this.setState({ multiplayerScreen: this.props.multiplayerLandingPage }, () => {
-                this.multiplayerScreen.showPlayerProfile(player);
-            });
+                if (typeof profile.trackRecord !== 'undefined') {
+                    losses = profile.trackRecord.filter(record => record.lost === true).length;
+                    winnings = profile.trackRecord.filter(record => record.won === true).length;
+                    drawn = profile.trackRecord.filter(record => record.winners.length > 1).length;
+                }            
 
+                let player = {
+                    id: profile.playerId,
+                    level: level,
+                    winnings: winnings,
+                    drawn: drawn,
+                    losses: losses,
+                    ranking: -1, // TODO: implement ranking and player name
+                    playerName: 'Antonio'
+                }
+
+                this.setState({ multiplayerScreen: true }, () => {
+                    this.multiplayerScreen.showPlayerProfile(player);
+                });
+            }).catch(err => console.log(err));
         }
     }
 
@@ -107,48 +114,6 @@ class Hud extends Component {
         } else {
             this.props.prepareNewGameCallback(false);
         }
-    }
-
-    shareYourLink() {
-        const link = multiplayer.createChallengeMeLink();
-        if (typeof link !== 'undefined') {
-            if (navigator.share) {
-                navigator.share({
-                    title: window.document.title,
-                    text: t[this.props.language].INVITATION,
-                    url: link
-                }).catch((error) => console.log('error sharing challenge me link', error));
-            } else {
-                let whatsappWindowRef = window.open();
-                whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + link);
-            }
-        }
-    }
-
-    timeToString(millis) {
-        let seconds = Math.floor(millis / 1000);
-        let hours = Math.floor(seconds / 3600);
-        seconds -= hours * 3600;
-        let min = Math.floor(seconds / 60);
-        seconds -= min * 60;
-
-        seconds = '' + seconds;
-        seconds = ('00' + seconds).substring(seconds.length);
-
-        if (hours > 0) {
-            min = '' + min;
-            min = ('00' + min).substring(min.length);
-            return hours + ":" + min + ":" + seconds;
-        }
-        else {
-            return min + ":" + seconds;
-        }
-    }
-
-    timeAgo(millis) {
-        let timeAgo = new TimeAgo('en-US');
-        let timeSinceUpdate = timeAgo.format(millis);
-        return timeSinceUpdate;
     }
 
     render() {
@@ -287,7 +252,7 @@ Hud.propTypes = {
     startTutorial: PropTypes.func.isRequired,
     joinMultiplayerGame: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired,
-    multiplayerLandingPage: PropTypes.bool.isRequired,
+    challengedProfileId: PropTypes.string,
     className: PropTypes.string.isRequired
 }
 

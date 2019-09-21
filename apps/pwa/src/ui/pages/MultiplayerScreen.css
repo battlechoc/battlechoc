@@ -9,11 +9,11 @@
   flex-direction: column;
 }
 
-#multiplayer .statistics {
+.multiplayer-statistics {
   display: flex;
 }
 
-#multiplayer .statistics p {
+.multiplayer-statistics p {
   display: flex;
   flex-direction: column-reverse;
   font-size: 2rem;
@@ -21,7 +21,7 @@
   margin: 0 20px;
 }
 
-#multiplayer .statistics svg {
+.multiplayer-statistics svg {
   font-size: 4rem;
 }
 

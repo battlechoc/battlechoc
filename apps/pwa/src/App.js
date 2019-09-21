@@ -370,13 +370,12 @@ class App extends Component {
                     <Scene onRef={scene => this.scene = scene} />
                 </Suspense>
                 <Hud prepareNewGameCallback={this.prepareNewGame}
-                    multiplayerLandingPage={typeof this.state.params.sessionid !== 'undefined'}
                     joinMultiplayerGame={this.joinMultiplayerGame}
                     startTutorial={() => this.startTutorial()}
                     className={this.props.tutorial ? 'tutorial hud' : 'hud'}
                     endGame={() => this.endGame()}
                     onRef={hud => this.hud = hud}
-                    challengedProfileParam={this.state.params.profile} />
+                    challengedProfileId={this.state.params.profile} />
                 {this.props.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
             </div>
         );

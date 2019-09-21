@@ -11,6 +11,7 @@ import { connect } from 'react-redux';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';
+import { multiplayer } from '../../Multiplayer';
 
 class MultiplayerScreen extends Component {
     constructor(props) {
@@ -104,7 +105,7 @@ class MultiplayerScreen extends Component {
                     aria-labelledby="playerProfile">
                     <DialogTitle>{this.state.player ? this.state.player.playerName : null}</DialogTitle>
                     <DialogContent>
-                        {this.state.player ? <div className="statistics">
+                        {this.state.player ? <div className="multiplayer-statistics">
                             <p><span>{this.state.player.level}</span><PlusOne /></p>
                             <p><span>{this.state.player.ranking}</span><EmojiEvents /></p>
                             <p><span>{this.state.player.winnings}</span><ThumbUp /></p>
@@ -115,6 +116,7 @@ class MultiplayerScreen extends Component {
                     <DialogActions>
                         { this.state.player && !this.state.openGames.map(game => game.playerName).includes(this.state.player.playerName) ? <Button onClick={() => {
                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                            multiplayer.challengePlayer(this.state.player.id);
                             this.setState({ showPlayerProfile: false });
                         }} color="primary">{t[this.props.language].START_GAME}</Button> : null }
 
