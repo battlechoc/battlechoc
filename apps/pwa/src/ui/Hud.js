@@ -6,7 +6,7 @@ import OfflineStore from '../OfflineStore';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
-import { Info, Tooltip, Settings, AppleHint, SignInOrUp} from './dialogs';
+import { Info, Tooltip, Settings, AppleHint, SignInOrUp } from './dialogs';
 import { CircularProgress, Button } from '@material-ui/core';
 import Dialog from '@material-ui/core/Dialog';
 import Typography from '@material-ui/core/Typography';
@@ -21,7 +21,7 @@ import Choclab from './pages/Choclab';
 class Hud extends Component {
     constructor(props) {
         super(props);
-        this.state = { 
+        this.state = {
             clickable: true,
             open: false,
             upgradeMessageOpen: false,
@@ -47,10 +47,18 @@ class Hud extends Component {
                     'drawn': 2,
                     'losses': 11
                 };
+
+            /*multiplayer.fetchPlayerProfileData(this.props.challengedProfileParam).then((profile) => {
+                this.setState({challengedProfile: profile});
+                console.log(profile);
+                multiplayer.challengePlayer(profile.playerId);
+            }).catch(err => console.log(err));*/
+
         
             this.setState({ multiplayerScreen: this.props.multiplayerLandingPage }, () => {
                 this.multiplayerScreen.showPlayerProfile(player);
             });
+
         }
     }
 
@@ -64,7 +72,7 @@ class Hud extends Component {
 
     estimateStage() {
         const state = this.props.state;
-        if (typeof state === 'undefined' && !this.state.multiplayerScreen && !this.state.choclabScreen) {
+        if (typeof state === 'undefined' && !this.state.multiplayerScreen && !this.state.choclabScreen && !this.state.challengedProfile) {
             return 'TITLE_SCREEN'
         } else if (state === GameStateTypes.START ||
             state === GameStateTypes.CHOOSE_FIELD_OR_START ||
@@ -74,6 +82,8 @@ class Hud extends Component {
             return 'MULTIPLAYER_SCREEN';
         } else if (this.state.choclabScreen) {
             return 'CHOCLAB_SCREEN';
+        } else if (this.state.challengedProfile) {
+            return 'CHALLENGE_SCREEN';
         } else {
             return 'INGAME';
         }
@@ -99,50 +109,106 @@ class Hud extends Component {
         }
     }
 
+    shareYourLink() {
+        const link = multiplayer.createChallengeMeLink();
+        if (typeof link !== 'undefined') {
+            if (navigator.share) {
+                navigator.share({
+                    title: window.document.title,
+                    text: t[this.props.language].INVITATION,
+                    url: link
+                }).catch((error) => console.log('error sharing challenge me link', error));
+            } else {
+                let whatsappWindowRef = window.open();
+                whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + link);
+            }
+        }
+    }
+
+    timeToString(millis) {
+        let seconds = Math.floor(millis / 1000);
+        let hours = Math.floor(seconds / 3600);
+        seconds -= hours * 3600;
+        let min = Math.floor(seconds / 60);
+        seconds -= min * 60;
+
+        seconds = '' + seconds;
+        seconds = ('00' + seconds).substring(seconds.length);
+
+        if (hours > 0) {
+            min = '' + min;
+            min = ('00' + min).substring(min.length);
+            return hours + ":" + min + ":" + seconds;
+        }
+        else {
+            return min + ":" + seconds;
+        }
+    }
+
+    timeAgo(millis) {
+        let timeAgo = new TimeAgo('en-US');
+        let timeSinceUpdate = timeAgo.format(millis);
+        return timeSinceUpdate;
+    }
+
     render() {
         const stage = this.estimateStage();
+        console.log(stage);
         let textAnimation = typeof this.state.message === 'undefined' ? undefined : <div id="textAnimation" className="zoom">{this.state.message}</div>
         return (
             <div className={this.props.className}>
                 <Tooltip />
                 <Settings startTutorial={this.props.startTutorial} endGame={this.props.endGame} onRef={settings => (this.settings = settings)} />
                 <SignInOrUp onRef={signInOrUp => (this.signInOrUp = signInOrUp)} />
-                { (() => {
+                {(() => {
                     if (stage === 'CHOCLAB_SCREEN') {
-                        return  <div className="actionbar">
-                                    <Fab
-                                        size="small"
-                                        key="4"
-                                        color="primary"
-                                        aria-label="back"
-                                        className="icon"
-                                        onClick={() => this.setState({choclabScreen: false})}>
-                                        <ArrowBackIcon />
-                                    </Fab>
-                                </div>
+                        return <div className="actionbar">
+                            <Fab
+                                size="small"
+                                key="4"
+                                color="primary"
+                                aria-label="back"
+                                className="icon"
+                                onClick={() => this.setState({ choclabScreen: false })}>
+                                <ArrowBackIcon />
+                            </Fab>
+                        </div>
                     } else if (stage === 'MULTIPLAYER_SCREEN') {
-                        return  <div className="actionbar">
-                                    <Fab
-                                        size="small"
-                                        key="4"
-                                        color="primary"
-                                        aria-label="back"
-                                        className="icon"
-                                        onClick={() => this.setState({multiplayerScreen: false})}>
-                                        <ArrowBackIcon />
-                                    </Fab>
-                                </div>
+                        return <div className="actionbar">
+                            <Fab
+                                size="small"
+                                key="4"
+                                color="primary"
+                                aria-label="back"
+                                className="icon"
+                                onClick={() => this.setState({ multiplayerScreen: false })}>
+                                <ArrowBackIcon />
+                            </Fab>
+                        </div>
+                    } else if (stage === 'CHALLENGE_SCREEN') {
+                        return <div className="actionbar">
+                            <Fab
+                                size="small"
+                                key="4"
+                                color="primary"
+                                aria-label="back"
+                                className="icon"
+                                onClick={() => this.setState({ challengedProfile: undefined })}>
+                                <ArrowBackIcon />
+                            </Fab>
+                        </div>
                     } else {
                         return <Actionbar showSettings={this.openSettings} showSignInOrUp={this.openSignInOrUp} />
                     }
-                })() }
+                })()}
 
-                { textAnimation }
+                {textAnimation}
                 <AppleHint message={t[this.props.language].IOS_MESSAGE} />
-                
+
                 {(() => {
                     if (stage === 'TITLE_SCREEN') {
                         let controls = []
+
                         controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>Singleplayer</div>);
                         controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
                         controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
@@ -150,7 +216,7 @@ class Hud extends Component {
                         return (
                             <div id="mainMenu">
                                 {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
-                                    <span>{ this.props.playerInfos.stats.coins }</span>
+                                    <span>{this.props.playerInfos.stats.coins}</span>
                                     <img src="images/coins.png" alt="choco coins" />
                                 </div> : null}
                                 <SocialIcons />
@@ -192,7 +258,7 @@ class Hud extends Component {
                         }
                         return (
                             <div className="chooseStage">
-                                { waitingNotification }
+                                {waitingNotification}
                                 <GameStartSelection clickable={this.state.clickable} />
                             </div>
                         );
@@ -206,7 +272,7 @@ class Hud extends Component {
                                 <AttackPalette />
                                 <BuildingPalette />
                                 <InfoPanel />
-                                { this.props.overviewVisible ? <GameEndOverview finishGame={() => this.props.endGame()}/> : null }
+                                {this.props.overviewVisible ? <GameEndOverview finishGame={() => this.props.endGame()} /> : null}
                             </div>
                         )
                     }

@@ -71,7 +71,6 @@ class App extends Component {
         window.onblur = () => Jukebox.pauseMusic();
 
         multiplayer.fetchPlayerStats(this.props.updatePlayerStats);
-        multiplayer.signInAnonymouslyIfNotAlreadySignedIn();
     }
 
     handleError = error => {
@@ -376,7 +375,8 @@ class App extends Component {
                     startTutorial={() => this.startTutorial()}
                     className={this.props.tutorial ? 'tutorial hud' : 'hud'}
                     endGame={() => this.endGame()}
-                    onRef={hud => this.hud = hud} />
+                    onRef={hud => this.hud = hud}
+                    challengedProfileParam={this.state.params.profile} />
                 {this.props.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
             </div>
         );

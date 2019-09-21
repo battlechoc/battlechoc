@@ -15,6 +15,11 @@ const MultiplayerGameSessionState = Object.freeze({
     FINISHED: 'MultiplayerGameSessionState.Finished'
 });
 
+const ServerConfig = {
+    auth: btoa('battlechoc-pwa:***REMOVED***'),
+    baseUrl: 'https://us-central1-battlechoc.cloudfunctions.net/api'
+};
+
 const EmptyPlayerStats = Object.freeze({ coins: 0, level: {
                 'EntityType.CREAM': { hp: 0, area: 0},
                 'EntityType.FACTORY': { hp: 0, buildingsPerTurn: 0, cacaoPerTurn: 0 },
@@ -26,7 +31,7 @@ const EmptyPlayerStats = Object.freeze({ coins: 0, level: {
                 'EntityType.XMAS_FACTORY': {  hp: 0, area: 0 },
                 'EntityType.HOT_CHOCOLATE_BALLISTA': { hp: 0, area: 0, fortune: 0 },
                 'EntityType.CHOCOLATE_FOUNTAIN': { hp: 0 }
-            }, skills: {}, trackRecord: [] });
+            }, awards: {}, trackRecord: [] });
 
 class Multiplayer {
     constructor() {
@@ -276,6 +281,38 @@ class Multiplayer {
         if (firebase.auth().currentUser && typeof firebase.auth().currentUser !== 'undefined') {
             return 'https://battlechoc.com?profile=' + encodeURIComponent(firebase.auth().currentUser.uid);
         }
+        return undefined;
+    }
+
+    challengePlayer(playerId) {
+        console.log("challengePlayer");
+        console.log(playerId);
+        if (typeof playerId !== 'undefined' && firebase.auth().currentUser !== 'undefined') {
+            console.log("calling func on server side");
+            fetch(ServerConfig.baseUrl + '/creategame', {
+                method: 'post',
+                headers: new Headers({
+                    'Authorization': 'Basic ' + ServerConfig.auth,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }),
+                body: JSON.stringify({ players: { player1: playerId, player2: firebase.auth().currentUser.uid } })
+            }).then(response => response.json())
+                .then(data => console.log(data));
+        }
+    }
+
+    fetchPlayerProfileData(playerId) {
+        return new Promise((resolve, reject) => {
+            const playerInfosRef = firebase.firestore().collection('players').doc(playerId);
+            playerInfosRef.get().then(doc => {
+                if (doc.exists) {
+                    resolve({ playerId: playerId, profileData: doc.data(), isYourself: playerId === firebase.auth().currentUser.uid });
+                } else {
+                    reject("could not find player with given id " + playerId);
+                }
+            }).catch(err => reject(err));
+        });
     }
 
     signInAnonymouslyIfNotAlreadySignedIn() {
@@ -480,4 +517,4 @@ class Multiplayer {
 
 const multiplayer = new Multiplayer();
 
-export { multiplayer, MultiplayerGameSessionState, EmptyPlayerStats };
+export { multiplayer, MultiplayerGameSessionState, EmptyPlayerStats, ServerConfig };
