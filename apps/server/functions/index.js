@@ -121,7 +121,7 @@ app.post('/upgrade/entity', (req, res) => {
                         level: level,
                         last_upgrade_action: upgradeAction
                     }).then(() => {
-                        res.json({ coins: player.coins - costs, level: level, last_upgrade_action: upgradeAction });
+                        res.json({ coins: player.coins - costs, level: level, last_upgrade_action: upgradeAction.id });
                     });
                 }
             } else {
