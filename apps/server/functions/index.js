@@ -93,25 +93,31 @@ const basicLevel = {
     'EntityType.CHOCOLATE_FOUNTAIN': { hp: 0 }
 }
 
-app.post('/upgrade/entity', async (req, res) => {
+app.post('/upgrade/entity', (req, res) => {
     let transaction = req.body.transaction;
-
-    admin.firestore().collection('players').doc(transaction.player).get().then(doc => {
+    let players = admin.firestore().collection('players');
+    players.doc(transaction.player).get().then(doc => {
         if (doc.exists) {
             let player = doc.data();
 
-            let level = basicLevel;
-            if (typeof player.level !== 'undefined') {
-                level = player.level;
-            }
-
-            let costs = entities.calculateCosts(transaction.entity, level);
-            
-            // TODO: store new level in doc
-            // level[transaction.entity][transaction.attribute] = transaction.level;
-
             if (typeof player.coins !== 'undefined') {
-                res.json({ coins: player.coins, costs: costs, updated_coins: player.coins - costs });
+                let level = basicLevel;
+                if (typeof player.level !== 'undefined') {
+                    level = player.level;
+                }
+
+                let costs = entities.calculateCosts(transaction.entity, level);
+                if ( costs >= player.coins ) {
+                    level[transaction.entity][transaction.attribute] = transaction.level;
+                    players.doc(transaction.player).update({
+                        coins: player.coins - costs,
+                        level: level
+                    }).then(() => {
+                        res.json({ coins: player.coins, costs: costs, updated_coins: player.coins - costs, level: level });
+                    });
+                } else {
+                    res.json({ error: 'NOT ENOUGH COINS'});
+                }
             } else {
                 res.json({ coins: 0 });
             }
@@ -119,8 +125,6 @@ app.post('/upgrade/entity', async (req, res) => {
             res.json('player does not exist');
         }
     }).catch(error => res.json({ result: error }));
-    // validate that transaction.player has enough coins to buy transaction.object and upgrade is valid/fits the players upgrade state
-    // persist tranaction operation (--> do the upgrade and persist in player state, remove coins)
 });
 
 exports.api = functions.https.onRequest(app);
