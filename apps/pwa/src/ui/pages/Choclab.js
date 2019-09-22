@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import './Choclab.css';
-import { increaseLevel, decreaseLevel } from '../../gameplay/GameActions';
+import firebase from '@firebase/app';
+import { updateLevel } from '../../gameplay/GameActions';
 import { Translation as t } from '../misc';
 import { connect } from 'react-redux';
 import { getEntityDescriptor, EntityType } from '../../gameplay/GameEntities';
@@ -9,6 +10,11 @@ import { ChoclabPalette } from '../controls';
 import MeshPreview from '../../3d/MeshPreview';
 import IconButton from '@material-ui/core/IconButton';
 import Snackbar from '@material-ui/core/Snackbar';
+
+const ServerConfig = {
+    auth: btoa('battlechoc-pwa:***REMOVED***'),
+    baseUrl: 'https://us-central1-battlechoc.cloudfunctions.net/api'
+};
 
 class Choclab extends Component {
     constructor(props) {
@@ -31,6 +37,7 @@ class Choclab extends Component {
                     anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
                     open={this.state.upgradeMessageOpen}
                     onClose={() => this.setState({upgradeMessageOpen: false})}
+                    autoHideDuration={10000}
                     ContentProps={{'aria-describedby': 'message-id'}}
                     message={typeof this.state.upgrade !== 'undefined' ? <span id="message-id">{`${t[this.props.language].ATTRIBUTE_NAME(this.state.upgrade.attribute)} increased by ${this.state.upgrade.value}!`}</span> : null}
                     action={
@@ -38,14 +45,28 @@ class Choclab extends Component {
                         aria-label="close"
                         color="inherit"
                         onClick={() => {
-                            this.props.decreaseLevel({
-                                'entity': this.state.selectedEntityType,
-                                'attribute': this.state.upgrade.attribute,
-                            }).then(() => this.setState({ 
-                                "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level),
-                                "upgradeMessageOpen": false,
-                                "upgrade": undefined
-                            }))
+                            fetch(ServerConfig.baseUrl + '/upgrade/entity', {
+                                method: 'post',
+                                headers: new Headers({
+                                    'Authorization': 'Basic ' + ServerConfig.auth,
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json'
+                                }),
+                                body: JSON.stringify({ 
+                                    player: firebase.auth().currentUser.uid,
+                                    entity: this.state.selectedEntityType,
+                                    attribute: this.state.upgrade.attribute,
+                                    actionId: this.state.upgradeAction
+                                })
+                            }).then(response => response.json())
+                            .then(data => {
+                                this.props.updateLevel(data.level).then(() => this.setState({ 
+                                    "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level),
+                                    "upgradeMessageOpen": false,
+                                    "upgrade": undefined,
+                                    "upgradeAction": undefined
+                                }));
+                            });
                         }}
                       >
                         <Undo />
@@ -70,19 +91,34 @@ class Choclab extends Component {
                                     <div className={attribute.color} style={{ width: percentage + '%'}}></div>
                                     { classNames === 'progress' && values[0] < values[1] && this.props.playerInfos.stats.coins >= this.state.selectedEntity.coins() ?
                                     <AddBox onClick={() => {
-                                        this.props.increaseLevel({
-                                            'entity': this.state.selectedEntityType,
-                                            'attribute': attribute.name
-                                        }).then(() => this.setState({ 
-                                            "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level),
-                                            "upgradeMessageOpen": true,
-                                            "upgrade": {
-                                                "attribute": attribute.name,
-                                                "value": values[0],
-                                                "costs": this.state.selectedEntity.coins(),
-                                                "entity": this.state.selectedEntityType
-                                            }
-                                        }));
+
+                                        fetch(ServerConfig.baseUrl + '/upgrade/entity', {
+                                            method: 'post',
+                                            headers: new Headers({
+                                                'Authorization': 'Basic ' + ServerConfig.auth,
+                                                'Accept': 'application/json',
+                                                'Content-Type': 'application/json'
+                                            }),
+                                            body: JSON.stringify({ 
+                                                player: firebase.auth().currentUser.uid,
+                                                entity: this.state.selectedEntityType,
+                                                attribute: attribute.name 
+                                            })
+                                        }).then(response => response.json())
+                                        .then(data => {
+                                            this.props.updateLevel(data.level).then(() => this.setState({ 
+                                                "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level),
+                                                "upgradeMessageOpen": true,
+                                                "upgradeAction": data.last_upgrade_action,
+                                                "upgrade": {
+                                                    "attribute": attribute.name,
+                                                    "value": values[0],
+                                                    "costs": this.state.selectedEntity.coins(),
+                                                    "entity": this.state.selectedEntityType
+                                                }
+                                            }));
+                                        })
+                                        .catch(error => console.log(error));
                                     }} /> : null }
                                 </div>
                             </div>
@@ -112,8 +148,7 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = {
-    increaseLevel,
-    decreaseLevel
+    updateLevel
 };
 
 const ChoclabContainer = connect(
