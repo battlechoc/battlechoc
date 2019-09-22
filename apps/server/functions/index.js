@@ -6,6 +6,8 @@ const basicAuth = require('express-basic-auth')
 const bodyParser = require('body-parser');
 const entities = require('./entities.js');
 const admin = require('firebase-admin');
+const uuidv4 = require('uuid/v4');
+
 admin.initializeApp();
 
 function checkPlayerValidity(player1, player2) {
@@ -94,9 +96,8 @@ const basicLevel = {
 }
 
 app.post('/upgrade/entity', (req, res) => {
-    let transaction = req.body.transaction;
     let players = admin.firestore().collection('players');
-    players.doc(transaction.player).get().then(doc => {
+    players.doc(req.body.player).get().then(doc => {
         if (doc.exists) {
             let player = doc.data();
 
@@ -106,28 +107,60 @@ app.post('/upgrade/entity', (req, res) => {
                     level = player.level;
                 }
 
-                let limit = entities.getMaximumLevel(transaction.entity, level, transaction.attribute);
-                let costs = entities.calculateCosts(transaction.entity, level);
+                let limit = entities.getMaximumLevel(req.body.entity, level, req.body.attribute);
+                let costs = entities.calculateCosts(req.body.entity, level);
                 if ( player.coins < costs ) {
-                    res.json({ error: 'NOT ENOUGH COINS'});
-                } else if ( transaction.level > limit ) {
-                    res.json({ error: transaction.level + ' IS MORE THAN THE LIMIT OF ' + limit });
+                    res.status(400).json({ error: 'NOT ENOUGH COINS'});
+                } else if ( (level[req.body.entity][req.body.attribute] + 1) > limit ) {
+                    res.status(400).json({ error: 'LEVEL LIMIT OF ' + req.body.attribute + ' REACHED' });
                 } else {                
-                    level[transaction.entity][transaction.attribute] = transaction.level;
-                    players.doc(transaction.player).update({
+                    level[req.body.entity][req.body.attribute] = level[req.body.entity][req.body.attribute] + 1;
+                    let upgradeAction = { id: uuidv4(), timestamp: new Date().getTime() };
+                    players.doc(req.body.player).update({
                         coins: player.coins - costs,
-                        level: level
+                        level: level,
+                        last_upgrade_action: upgradeAction
                     }).then(() => {
-                        res.json({ coins: player.coins, costs: costs, updated_coins: player.coins - costs, level: level });
+                        res.json({ coins: player.coins - costs, level: level, last_upgrade_action: upgradeAction });
                     });
                 }
             } else {
-                res.json({ coins: 0 });
+                res.status(400).json({ error: 'PLAYER HAS NO COINS' });
             }
         } else {
-            res.json('player does not exist');
+            res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
         }
-    }).catch(error => res.json({ result: error }));
+    }).catch(error => res.status(500).json({ error: error }));
+});
+
+app.post('/undo/upgrade', (req, res) => {
+    let players = admin.firestore().collection('players');
+    players.doc(req.body.player).get().then(doc => {
+        if (doc.exists) {
+            let player = doc.data();
+            if (typeof player.last_upgrade_action === 'undefined') {
+                res.status(400).json({ error: 'NO UPGRADE ACTION REGISTERED' });
+            } else if ((new Date().getTime() - 60000) > player.last_upgrade_action.timestamp) {
+                res.status(400).json({ error: 'LAST UPGRADE ACTION OUTDATED' });
+            } else if (player.last_upgrade_action.id !== req.body.actionId) {
+                res.status(400).json({ error: 'ACTION ID IS NOT VALID' });
+            } else {
+                let level = player.level;
+                level[req.body.entity][req.body.attribute] = level[req.body.entity][req.body.attribute] - 1;
+                let costs = entities.calculateCosts(req.body.entity, level);
+
+                players.doc(req.body.player).update({
+                    coins: player.coins + costs,
+                    level: level,
+                    last_upgrade_action: undefined
+                }).then(() => {
+                    res.json({ coins: player.coins + costs, level: level });
+                });
+            }
+        } else {
+            res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
+        }
+    }).catch(error => res.status(500).json({ error: error }));
 });
 
 exports.api = functions.https.onRequest(app);
