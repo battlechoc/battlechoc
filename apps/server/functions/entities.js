@@ -524,5 +524,12 @@ module.exports = {
         } else {
             return EntityDescriptors.get(entity)(level).coins();
         }
+    },
+    getMaximumLevel: (entity, level, attribute) => {
+        if (!EntityDescriptors.has(entity)) {
+            throw new Error("Invalid entity type given: " + entity);
+        } else {
+            return EntityDescriptors.get(entity)(level).level.max[attribute];
+        }
     }
 }

@@ -106,8 +106,13 @@ app.post('/upgrade/entity', (req, res) => {
                     level = player.level;
                 }
 
+                let limit = entities.getMaximumLevel(transaction.entity, level, transaction.attribute);
                 let costs = entities.calculateCosts(transaction.entity, level);
-                if ( costs >= player.coins ) {
+                if ( player.coins < costs ) {
+                    res.json({ error: 'NOT ENOUGH COINS'});
+                } else if ( transaction.level > limit ) {
+                    res.json({ error: transaction.level + ' IS MORE THAN THE LIMIT OF ' + limit });
+                } else {                
                     level[transaction.entity][transaction.attribute] = transaction.level;
                     players.doc(transaction.player).update({
                         coins: player.coins - costs,
@@ -115,8 +120,6 @@ app.post('/upgrade/entity', (req, res) => {
                     }).then(() => {
                         res.json({ coins: player.coins, costs: costs, updated_coins: player.coins - costs, level: level });
                     });
-                } else {
-                    res.json({ error: 'NOT ENOUGH COINS'});
                 }
             } else {
                 res.json({ coins: 0 });
