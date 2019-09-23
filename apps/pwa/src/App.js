@@ -6,7 +6,7 @@ import OfflineStore from './OfflineStore';
 import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
-import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
+import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame, updateLevel } from './gameplay/GameActions';
 import { startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
@@ -39,7 +39,10 @@ class App extends Component {
     }
 
     componentWillMount() {
-        multiplayer.registerCallbacks({ updatePlayerStats: this.props.updatePlayerStats });
+        multiplayer.registerCallbacks({ 
+            updatePlayerStats: this.props.updatePlayerStats,
+            updateLevel: this.props.updateLevel
+        });
 
         let browserLanguage = 'en';
         if (navigator.userLanguage) {
@@ -413,7 +416,8 @@ const mapDispatchToProps = {
     showOverview,
     startTutorial,
     stopTutorial,
-    updatePlayerStats
+    updatePlayerStats,
+    updateLevel
 };
 
 const AppContainer = connect(

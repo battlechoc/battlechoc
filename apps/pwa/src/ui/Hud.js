@@ -118,7 +118,6 @@ class Hud extends Component {
 
     render() {
         const stage = this.estimateStage();
-        console.log(stage);
         let textAnimation = typeof this.state.message === 'undefined' ? undefined : <div id="textAnimation" className="zoom">{this.state.message}</div>
         return (
             <div className={this.props.className}>

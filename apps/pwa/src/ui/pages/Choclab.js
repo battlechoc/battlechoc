@@ -1,7 +1,9 @@
 import React, { Component } from 'react';
 import './Choclab.css';
 import firebase from '@firebase/app';
+import OfflineStore from '../../OfflineStore';
 import { updateLevel } from '../../gameplay/GameActions';
+import { updatePlayerStats } from '../UiActions';
 import { Translation as t } from '../misc';
 import { connect } from 'react-redux';
 import { getEntityDescriptor, EntityType } from '../../gameplay/GameEntities';
@@ -24,7 +26,16 @@ class Choclab extends Component {
         }
     }
 
+    handleFetchError(response) {
+        if (!response.ok) {
+            throw Error(response.statusText);
+        }
+        return response.json();
+    }
+
     render() {
+        let user = firebase.auth().currentUser;
+
         return (
             <div id="choclab">
                 {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
@@ -45,7 +56,7 @@ class Choclab extends Component {
                         aria-label="close"
                         color="inherit"
                         onClick={() => {
-                            fetch(ServerConfig.baseUrl + '/upgrade/entity', {
+                            fetch(ServerConfig.baseUrl + '/undo/upgrade', {
                                 method: 'post',
                                 headers: new Headers({
                                     'Authorization': 'Basic ' + ServerConfig.auth,
@@ -53,20 +64,27 @@ class Choclab extends Component {
                                     'Content-Type': 'application/json'
                                 }),
                                 body: JSON.stringify({ 
-                                    player: firebase.auth().currentUser.uid,
+                                    player: user.uid,
                                     entity: this.state.selectedEntityType,
                                     attribute: this.state.upgrade.attribute,
                                     actionId: this.state.upgradeAction
                                 })
-                            }).then(response => response.json())
+                            }).then(response => this.handleFetchError(response))
                             .then(data => {
-                                this.props.updateLevel(data.level).then(() => this.setState({ 
-                                    "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level),
-                                    "upgradeMessageOpen": false,
-                                    "upgrade": undefined,
-                                    "upgradeAction": undefined
-                                }));
-                            });
+                                this.props.updateLevel(data.level).then(() => {
+                                    this.props.updatePlayerStats({ 'coins': data.coins });
+                                    OfflineStore.playerStore.get('stats').then(playerStats => {
+                                        playerStats.coins = data.coins;
+                                        OfflineStore.playerStore.set('stats', playerStats);
+                                    });
+                                    this.setState({ 
+                                        "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level),
+                                        "upgradeMessageOpen": false,
+                                        "upgrade": undefined,
+                                        "upgradeAction": undefined
+                                    })
+                                })
+                            }).catch(error => console.error(error));
                         }}
                       >
                         <Undo />
@@ -89,9 +107,8 @@ class Choclab extends Component {
                                 <div className="label"><span>{ t[this.props.language].ATTRIBUTE_NAME(attribute.name) }</span><span>{ Math.round(values[0]) }</span></div>
                                 <div>
                                     <div className={attribute.color} style={{ width: percentage + '%'}}></div>
-                                    { classNames === 'progress' && values[0] < values[1] && this.props.playerInfos.stats.coins >= this.state.selectedEntity.coins() ?
+                                    { classNames === 'progress' && values[0] < values[1] && this.props.playerInfos.stats.coins >= this.state.selectedEntity.coins() && !this.props.playerInfos.isAnonymous ?
                                     <AddBox onClick={() => {
-
                                         fetch(ServerConfig.baseUrl + '/upgrade/entity', {
                                             method: 'post',
                                             headers: new Headers({
@@ -100,25 +117,31 @@ class Choclab extends Component {
                                                 'Content-Type': 'application/json'
                                             }),
                                             body: JSON.stringify({ 
-                                                player: firebase.auth().currentUser.uid,
+                                                player: user.uid,
                                                 entity: this.state.selectedEntityType,
                                                 attribute: attribute.name 
                                             })
-                                        }).then(response => response.json())
+                                        }).then(response => this.handleFetchError(response))
                                         .then(data => {
-                                            this.props.updateLevel(data.level).then(() => this.setState({ 
-                                                "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level),
-                                                "upgradeMessageOpen": true,
-                                                "upgradeAction": data.last_upgrade_action,
-                                                "upgrade": {
-                                                    "attribute": attribute.name,
-                                                    "value": values[0],
-                                                    "costs": this.state.selectedEntity.coins(),
-                                                    "entity": this.state.selectedEntityType
-                                                }
-                                            }));
-                                        })
-                                        .catch(error => console.log(error));
+                                            this.props.updateLevel(data.level).then(() => {
+                                                this.props.updatePlayerStats({ 'coins': data.coins });
+                                                OfflineStore.playerStore.get('stats').then(playerStats => {
+                                                    playerStats.coins = data.coins;
+                                                    OfflineStore.playerStore.set('stats', playerStats);
+                                                });
+                                                this.setState({ 
+                                                    "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level),
+                                                    "upgradeMessageOpen": true,
+                                                    "upgradeAction": data.last_upgrade_action,
+                                                    "upgrade": {
+                                                        "attribute": attribute.name,
+                                                        "value": values[0],
+                                                        "costs": this.state.selectedEntity.coins(),
+                                                        "entity": this.state.selectedEntityType
+                                                    }
+                                                })
+                                            });
+                                        }).catch(error => console.error(error));
                                     }} /> : null }
                                 </div>
                             </div>
@@ -148,7 +171,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = {
-    updateLevel
+    updateLevel,
+    updatePlayerStats
 };
 
 const ChoclabContainer = connect(

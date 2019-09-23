@@ -90,7 +90,7 @@ const uiReducer = createReducer({
             state.tutorial = true;
         },
         [UiActions.updatePlayerStats]: (state, action) => {
-            state.playerInfos.stats = action.payload;
+            Object.assign(state.playerInfos.stats, action.payload);
         }
     }
 );

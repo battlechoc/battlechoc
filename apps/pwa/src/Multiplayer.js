@@ -47,7 +47,8 @@ class Multiplayer {
         this.localPlayerIndex = 0;
         this.callbacks = {
             updatePlayerStats: () => { console.warn("calling updatePlayerStats without beeing initialized"); },
-            notifyPlayerSignedIn: () => { console.warn("calling notifyPlayerSignedIn without beeing initialized"); }
+            notifyPlayerSignedIn: () => { console.warn("calling notifyPlayerSignedIn without beeing initialized"); },
+            updateLevel: () => { console.warn("calling updateLevel without beeing initialized"); }
         };
 
         try {
@@ -197,6 +198,9 @@ class Multiplayer {
                             }
                             playerInfosRef.update(newStats).catch(err => console.warn("could not update player track record.", err));
                             this.callbacks.updatePlayerStats(newStats);
+                            if (typeof newStats.level !== 'undefined') {
+                                this.callbacks.updateLevel(newStats.level);
+                            }
                         }
                     }).catch(err => console.warn("could not retrieve player track record.", err));
 
