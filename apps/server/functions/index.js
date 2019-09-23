@@ -138,7 +138,7 @@ app.post('/undo/upgrade', (req, res) => {
     players.doc(req.body.player).get().then(doc => {
         if (doc.exists) {
             let player = doc.data();
-            if (typeof player.last_upgrade_action === 'undefined') {
+            if (typeof player.last_upgrade_action === 'undefined' || player.last_upgrade_action === null) {
                 res.status(400).json({ error: 'NO UPGRADE ACTION REGISTERED' });
             } else if ((new Date().getTime() - 60000) > player.last_upgrade_action.timestamp) {
                 res.status(400).json({ error: 'LAST UPGRADE ACTION OUTDATED' });
@@ -148,19 +148,18 @@ app.post('/undo/upgrade', (req, res) => {
                 let level = player.level;
                 level[req.body.entity][req.body.attribute] = level[req.body.entity][req.body.attribute] - 1;
                 let costs = entities.calculateCosts(req.body.entity, level);
-
                 players.doc(req.body.player).update({
                     coins: player.coins + costs,
                     level: level,
-                    last_upgrade_action: undefined
+                    last_upgrade_action: null
                 }).then(() => {
                     res.json({ coins: player.coins + costs, level: level });
-                });
+                }).catch(error => res.status(500).json({ error: error }));
             }
         } else {
             res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
         }
-    }).catch(error => res.status(500).json({ error: error }));
+    }).catch(error => res.status(500).json({ error: error.toString() }));
 });
 
 exports.api = functions.https.onRequest(app);
