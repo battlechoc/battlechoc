@@ -31,7 +31,7 @@ function checkPlayerValidity(player1, player2) {
 const whitelist = ['https://battlechoc.com', 'http://localhost:3000', 'https://localhost:3000', 'chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop'];
 const corsOptions = {
     origin: function (origin, callback) {
-        if (whitelist.indexOf(origin) !== -1) {
+        if (!origin || whitelist.indexOf(origin) !== -1) {
             callback(null, true)
         } else {
             let error = new Error('Not allowed by CORS');
@@ -159,6 +159,16 @@ app.post('/undo/upgrade', (req, res) => {
         } else {
             res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
         }
+    }).catch(error => res.status(500).json({ error: error.toString() }));
+});
+
+app.get('/rank/:player/', (req, res) => {
+    let players = admin.firestore().collection('players');
+    players.doc(req.params.player).get().then(doc => {
+        let player = doc.data();
+        players.where('score', '>=', player.score).get()
+            .then(scores => res.json({ ranking: scores.size }))
+            .catch(error => res.status(500).json({ error: error.toString() }));
     }).catch(error => res.status(500).json({ error: error.toString() }));
 });
 
