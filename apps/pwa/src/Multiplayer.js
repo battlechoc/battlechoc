@@ -20,18 +20,18 @@ const ServerConfig = {
     baseUrl: 'https://us-central1-battlechoc.cloudfunctions.net/api'
 };
 
-const EmptyPlayerStats = Object.freeze({ coins: 0, level: {
-                'EntityType.CREAM': { hp: 0, area: 0},
-                'EntityType.FACTORY': { hp: 0, buildingsPerTurn: 0, cacaoPerTurn: 0 },
-                'EntityType.FACTORY_EXTENSION': { hp: 0, buildingsPerTurn: 0 },
-                'EntityType.CACAOTREE': { hp: 0, cacaoPerTurn: 0 },
-                'EntityType.RUM_TRUFFLE_CANNON': { hp: 0, attack: 0, area: 0 },
-                'EntityType.FRUIT_CANNON': { hp: 0, attack: 0, area: 0 },
-                'EntityType.SPYING_EASTER_BUNNY': { hp: 0, area: 0, fortune: 0 },
-                'EntityType.XMAS_FACTORY': {  hp: 0, area: 0 },
-                'EntityType.HOT_CHOCOLATE_BALLISTA': { hp: 0, area: 0, fortune: 0 },
-                'EntityType.CHOCOLATE_FOUNTAIN': { hp: 0 }
-            }, awards: {}, trackRecord: [] });
+const EmptyPlayerStats = Object.freeze({ coins: 0, score: 0, level: {
+        'EntityType.CREAM': { hp: 0, area: 0},
+        'EntityType.FACTORY': { hp: 0, buildingsPerTurn: 0, cacaoPerTurn: 0 },
+        'EntityType.FACTORY_EXTENSION': { hp: 0, buildingsPerTurn: 0 },
+        'EntityType.CACAOTREE': { hp: 0, cacaoPerTurn: 0 },
+        'EntityType.RUM_TRUFFLE_CANNON': { hp: 0, attack: 0, area: 0 },
+        'EntityType.FRUIT_CANNON': { hp: 0, attack: 0, area: 0 },
+        'EntityType.SPYING_EASTER_BUNNY': { hp: 0, area: 0, fortune: 0 },
+        'EntityType.XMAS_FACTORY': {  hp: 0, area: 0 },
+        'EntityType.HOT_CHOCOLATE_BALLISTA': { hp: 0, area: 0, fortune: 0 },
+        'EntityType.CHOCOLATE_FOUNTAIN': { hp: 0 }
+    }, awards: {}, trackRecord: [] });
 
 class Multiplayer {
     constructor() {
@@ -147,7 +147,7 @@ class Multiplayer {
                     }
                     playerStats.trackRecord.push(...gameStats);
                     playerStats.coins = playerStats.coins + this.calculateCoinsFromTrackRecord(gameStats);
-                    console.log(playerStats.coins);
+                    playerStats.score = playerStats.score + this.calculateCoinsFromTrackRecord(gameStats);
                     playerInfosRef.update(playerStats).catch(err => console.warn("could not update player track record.", err));
                     this.callbacks.updatePlayerStats(playerStats);
                 }

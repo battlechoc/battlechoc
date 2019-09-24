@@ -15,6 +15,11 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogActions from '@material-ui/core/DialogActions';
 import Button from '@material-ui/core/Button';
 
+const ServerConfig = {
+    auth: btoa('battlechoc-pwa:***REMOVED***'),
+    baseUrl: 'https://us-central1-battlechoc.cloudfunctions.net/api'
+};
+
 const uiConfig = {
     signInFlow: 'popup',
     autoUpgradeAnonymousUsers: true,
@@ -57,8 +62,29 @@ class SignInOrUp extends React.Component {
         this.props.onRef(this);
     }
 
+    handleFetchError(response) {
+        if (!response.ok) {
+            throw Error(response.statusText);
+        }
+        return response.json();
+    }
+
     open = () => {
         this.setState({ open: true });
+
+        const user = firebase.auth().currentUser;
+        if (user) {
+            fetch(ServerConfig.baseUrl + '/rank/' + user.uid, {            
+                headers: new Headers({
+                    'Authorization': 'Basic ' + ServerConfig.auth,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                })
+            }).then(response => this.handleFetchError(response))
+            .then(data => {
+                this.setState({ ranking: data.ranking });
+            }).catch(error => this.setState({ ranking: 'Offline'}));
+        }
     }
 
     handleClose = () => {
@@ -78,7 +104,8 @@ class SignInOrUp extends React.Component {
                     <DialogContent>
                         Welcome: {this.props.playerInfos.name}<br />
                         E-Mail: {this.props.playerInfos.email}<br />
-                        Coins: {this.props.playerInfos.stats.coins}
+                        Coins: {this.props.playerInfos.stats.coins}<br />
+                        Rank: {this.state.ranking}
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => {
