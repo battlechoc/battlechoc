@@ -19,6 +19,11 @@ import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
 import { multiplayer } from '../Multiplayer';
 
+const ServerConfig = {
+    auth: btoa('battlechoc-pwa:***REMOVED***'),
+    baseUrl: 'https://us-central1-battlechoc.cloudfunctions.net/api'
+};
+
 class Hud extends Component {
     constructor(props) {
         super(props);
@@ -31,10 +36,18 @@ class Hud extends Component {
         }
     }
 
+    handleFetchError(response) {
+        if (!response.ok) {
+            throw Error(response.statusText);
+        }
+        return response.json();
+    }
+
     componentDidMount() {
         this.props.onRef(this);
 
         if (typeof this.props.challengedProfileId !== 'undefined') {
+            this.setState({ multiplayerScreen: true });
             multiplayer.fetchPlayerProfileData(this.props.challengedProfileId).then(profile => {
                 console.log(profile);
                 let level = 0;
@@ -46,25 +59,34 @@ class Hud extends Component {
                     level = Object.values(profile.level).map(attribute => Object.values(attribute).reduce((a, b) => a + b, 0)).reduce((a, b) => a + b, 0);
                 }
 
-                if (typeof profile.trackRecord !== 'undefined') {
-                    losses = profile.trackRecord.filter(record => record.lost === true).length;
-                    winnings = profile.trackRecord.filter(record => record.won === true).length;
-                    drawn = profile.trackRecord.filter(record => record.winners.length > 1).length;
-                }            
+                if (typeof profile.profileData.trackRecord !== 'undefined') {
+                    losses = profile.profileData.trackRecord.filter(record => record.lost).length;
+                    winnings = profile.profileData.trackRecord.filter(record => record.won).length;
+                    drawn = profile.profileData.trackRecord.filter(record => record.winners.length > 1).length;
+                }       
 
-                let player = {
-                    id: profile.playerId,
-                    level: level,
-                    winnings: winnings,
-                    drawn: drawn,
-                    losses: losses,
-                    ranking: -1, // TODO: implement ranking and player name
-                    playerName: 'Antonio'
-                }
+                fetch(ServerConfig.baseUrl + '/rank/' + profile.playerId, {            
+                    headers: new Headers({
+                        'Authorization': 'Basic ' + ServerConfig.auth,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    })
+                }).then(response => this.handleFetchError(response))
+                .then(data => {
+                    let player = {
+                        id: profile.playerId,
+                        level: level,
+                        winnings: winnings,
+                        drawn: drawn,
+                        losses: losses,
+                        ranking: data.ranking, 
+                        playerName: 'Chocnonymous' // Todo: implement changeable names
+                    }
 
-                this.setState({ multiplayerScreen: true }, () => {
+                    console.log(player);
+
                     this.multiplayerScreen.showPlayerProfile(player);
-                });
+                }).catch(error => this.setState({ ranking: 'Offline'}));
             }).catch(err => console.log(err));
         }
     }
