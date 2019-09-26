@@ -162,7 +162,7 @@ app.post('/undo/upgrade', (req, res) => {
     }).catch(error => res.status(500).json({ error: error.toString() }));
 });
 
-app.get('/rank/:player/', (req, res) => {
+app.get('/rank/:player', (req, res) => {
     let players = admin.firestore().collection('players');
     players.doc(req.params.player).get().then(doc => {
         let player = doc.data();
@@ -171,5 +171,33 @@ app.get('/rank/:player/', (req, res) => {
             .catch(error => res.status(500).json({ error: error.toString() }));
     }).catch(error => res.status(500).json({ error: error.toString() }));
 });
+
+app.get('/check/available/:username', (req, res) => {
+    let players = admin.firestore().collection('players');
+    players.where('username', '==', req.params.username).get()
+    .then(player => res.json({ available: player.size === 0 }))
+    .catch(error => res.status(500).json({ error: error.toString() }));
+});
+
+app.post('/user/username', (req, res) => {
+    let players = admin.firestore().collection('players');
+    players.doc(req.body.player).get().then(doc => {
+        let regex = /^([a-zA-Z][a-zA-Z0-9_]{3,15})$/
+        if (regex.test(req.body.username)) {
+            if (doc.exists) {
+                players.doc(req.body.player).update({
+                    username: req.body.username
+                }).then(() => {
+                    res.end();
+                }).catch(error => res.status(500).json({ error: error }));
+            } else {
+                res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
+            }
+        } else {
+            res.status(400).json({ error: 'USERNAME NOT VALID'});
+        }
+    }).catch(error => res.status(500).json({ error: error.toString() }));
+});
+
 
 exports.api = functions.https.onRequest(app);
