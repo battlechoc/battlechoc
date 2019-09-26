@@ -175,7 +175,7 @@ app.get('/rank/:player', (req, res) => {
 app.get('/check/available/:username', (req, res) => {
     let players = admin.firestore().collection('players');
     players.where('username', '==', req.params.username).get()
-    .then(player => res.json({ available: player.size === 0 }))
+    .then(player => res.json({ available: player.size === 0 && req.params.username.toUpperCase() !== 'CHOCNONYMOUS' }))
     .catch(error => res.status(500).json({ error: error.toString() }));
 });
 
@@ -183,7 +183,7 @@ app.post('/user/username', (req, res) => {
     let players = admin.firestore().collection('players');
     players.doc(req.body.player).get().then(doc => {
         let regex = /^([a-zA-Z][a-zA-Z0-9_]{3,15})$/
-        if (regex.test(req.body.username)) {
+        if (regex.test(req.body.username) && req.body.username.toUpperCase() !== 'CHOCNONYMOUS') {
             if (doc.exists) {
                 players.doc(req.body.player).update({
                     username: req.body.username
