@@ -173,10 +173,15 @@ app.get('/rank/:player', (req, res) => {
 });
 
 app.get('/check/available/:username', (req, res) => {
-    let players = admin.firestore().collection('players');
-    players.where('username', '==', req.params.username).get()
-    .then(player => res.json({ available: player.size === 0 && req.params.username.toUpperCase() !== 'CHOCNONYMOUS' }))
-    .catch(error => res.status(500).json({ error: error.toString() }));
+    if (typeof req.params.username === 'undefined' ||
+        req.params.username === '') {
+        res.status(400).json({ error: 'USERNAME EMPTY'});
+    } else {
+        let players = admin.firestore().collection('players');
+        players.where('username', '==', req.params.username).get()
+        .then(player => res.json({ available: player.size === 0 && req.params.username.toUpperCase() !== 'CHOCNONYMOUS' }))
+        .catch(error => res.status(500).json({ error: error.toString() }));
+    }
 });
 
 app.post('/user/username', (req, res) => {
