@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import './Settings.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { changeLanguage, showStatistics, notifyPlayerSignedOut, notifyPlayerSignedIn } from '../UiActions';
+import { changeLanguage, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats } from '../UiActions';
 import { Jukebox, Translation as t } from '../misc';
 import OfflineStore from '../../OfflineStore';
 import withMobileDialog from '@material-ui/core/withMobileDialog';
@@ -23,6 +23,8 @@ import Checkbox from '@material-ui/core/Checkbox';
 import TextField from '@material-ui/core/TextField';
 import { multiplayer } from '../../Multiplayer';
 import { ServerConfig } from '../../helper/settings';
+import PlayerNameInput from '../controls/PlayerNameInput';
+import firebase from '@firebase/app';
 
 class Settings extends Component {
   constructor(props) {
@@ -51,6 +53,28 @@ class Settings extends Component {
 
   handleClose = () => {
     this.setState({ open: false })
+  }
+
+  setPlayerName = playerName => {
+    fetch(ServerConfig.baseUrl + '/user/username', {
+      method: 'post',
+      headers: new Headers({
+        'Authorization': 'Basic ' + ServerConfig.auth,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }),
+      body: JSON.stringify({ 
+        player: firebase.auth().currentUser.uid,
+        username: playerName
+      })
+    }).then(response => {        
+      this.props.updatePlayerStats({ username: playerName });
+      OfflineStore.playerStore.get('stats').then(playerStats => {
+        playerStats.username = playerName;
+        OfflineStore.playerStore.set('stats', playerStats);
+        this.setState({ open: false });
+      });
+    }).catch(error => console.error(error));
   }
 
   render() {
@@ -226,13 +250,17 @@ class Settings extends Component {
               {(() => {
                 if (this.state.tutorialAlreadySeen && typeof this.props.game === 'undefined') {
                   return (
-                    <Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {
-                      Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                      this.props.startTutorial();
-                      this.setState({ open: false, attentionTextVisible: false });
-                    }}>
-                      {t[this.props.language].RESTART_TUTORIAL}
-                    </Button>
+                    <div>
+                      <Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {
+                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                        this.props.startTutorial();
+                        this.setState({ open: false, attentionTextVisible: false });
+                      }}>
+                        {t[this.props.language].RESTART_TUTORIAL}
+                      </Button>
+                      <p className="player-name-label">Change Playername</p>
+                      <PlayerNameInput setPlayerName={this.setPlayerName} current={this.props.playerInfos.stats.username} />
+                    </div>
                   )
                 }
               })()}
@@ -247,26 +275,8 @@ class Settings extends Component {
                   </Button>);
                 }
               })()}
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={this.props.statistics}
-                    onChange={event => {
-                      Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                      if (event.target.checked) {
-                        document.getElementsByClassName('rs-base')[0].style.display = 'block';
-                        this.props.showStatistics(true);
-                      } else {
-                        document.getElementsByClassName('rs-base')[0].style.display = 'none';
-                        this.props.showStatistics(false);
-                      }
-                    }}
-                  />
-                }
-                label="Development Statistics"
-              />
-              {
-                typeof this.props.game !== 'undefined' ?
+
+              { typeof this.props.game !== 'undefined' ?
                   <Button variant="outlined" className="dialogButton" onClick={() => {
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     if (this.state.attentionTextVisible) {
@@ -309,15 +319,14 @@ Settings.propTypes = {
 const mapStateToProps = state => ({
   game: state.gameplay.game,
   language: state.ui.language,
-  statistics: state.ui.statistics,
   playerInfos: state.ui.playerInfos
 });
 
 const mapDispatchToProps = {
   changeLanguage,
-  showStatistics,
   notifyPlayerSignedIn,
-  notifyPlayerSignedOut
+  notifyPlayerSignedOut,
+  updatePlayerStats
 };
 
 const SettingsContainer = connect(

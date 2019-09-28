@@ -98,7 +98,7 @@ class SignInOrUp extends React.Component {
                     aria-labelledby="signInOrUpDialogTitle">
                     <DialogTitle id="signInOrUpDialogTitle">{t[this.props.language].ACCOUNTINFOS}</DialogTitle>
                     <DialogContent>
-                        Welcome: {this.props.playerInfos.name}<br />
+                        Player Name: {this.props.playerInfos.stats.username}<br />
                         E-Mail: {this.props.playerInfos.email}<br />
                         Coins: {this.props.playerInfos.stats.coins}<br />
                         Rank: {this.state.ranking}

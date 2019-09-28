@@ -226,6 +226,7 @@ class Multiplayer {
                         .catch(err => { console.log('Could not store coins for player', err); });
                 } else {
                     this.callbacks.updatePlayerStats(doc.data());
+                    console.log(doc.data());
                 }
             }).catch(err => console.warn("could not retrieve player track record.", err));
         } else {
