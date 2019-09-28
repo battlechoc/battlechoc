@@ -303,14 +303,16 @@ class Multiplayer {
         }
     }
 
-    fetchPlayerProfileData(playerId) {
+    fetchPlayerProfileData(playerName) {
+        // Todo: use server side function to do this
         return new Promise((resolve, reject) => {
-            const playerInfosRef = firebase.firestore().collection('players').doc(playerId);
+            const playerInfosRef = firebase.firestore().collection('players').where('username', '==', playerName);
             playerInfosRef.get().then(doc => {
-                if (doc.exists) {
-                    resolve({ playerId: playerId, profileData: doc.data(), isYourself: playerId === firebase.auth().currentUser.uid });
+                if (doc.size > 0) {
+                    let player = doc.docs[0].data();
+                    resolve({ playerId: doc.docs[0].id, playerName: playerName, profileData: player, isYourself: doc.docs[0].id === firebase.auth().currentUser.uid });
                 } else {
-                    reject("could not find player with given id " + playerId);
+                    reject("could not find player with given name " + playerName);
                 }
             }).catch(err => reject(err));
         });

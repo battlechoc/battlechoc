@@ -378,7 +378,7 @@ class App extends Component {
                     className={this.props.tutorial ? 'tutorial hud' : 'hud'}
                     endGame={() => this.endGame()}
                     onRef={hud => this.hud = hud}
-                    challengedProfileId={this.state.params.profile} />
+                    challengedPlayer={this.state.params.challenge} />
                 {this.props.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
             </div>
         );

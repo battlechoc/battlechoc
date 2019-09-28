@@ -42,9 +42,10 @@ class Hud extends Component {
     componentDidMount() {
         this.props.onRef(this);
 
-        if (typeof this.props.challengedProfileId !== 'undefined') {
+        if (typeof this.props.challengedPlayer !== 'undefined') {
             this.setState({ multiplayerScreen: true });
-            multiplayer.fetchPlayerProfileData(this.props.challengedProfileId).then(profile => {
+            multiplayer.fetchPlayerProfileData(this.props.challengedPlayer).then(profile => {
+                console.log(profile);
                 let level = 0;
                 let losses = 0;
                 let winnings = 0;
@@ -75,7 +76,7 @@ class Hud extends Component {
                         drawn: drawn,
                         losses: losses,
                         ranking: data.ranking, 
-                        playerName: 'Chocnonymous' // Todo: implement changeable names
+                        playerName: profile.playerName
                     }
                     this.multiplayerScreen.showPlayerProfile(player);
                 }).catch(error => this.setState({ ranking: 'Offline'}));
@@ -265,7 +266,7 @@ Hud.propTypes = {
     startTutorial: PropTypes.func.isRequired,
     joinMultiplayerGame: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired,
-    challengedProfileId: PropTypes.string,
+    challengedPlayer: PropTypes.string,
     className: PropTypes.string.isRequired
 }
 
