@@ -14,13 +14,9 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogActions from '@material-ui/core/DialogActions';
 import Button from '@material-ui/core/Button';
+import { ServerConfig } from '../../helper/settings';
 
-const ServerConfig = {
-    auth: btoa('battlechoc-pwa:***REMOVED***'),
-    baseUrl: 'https://us-central1-battlechoc.cloudfunctions.net/api'
-};
-
-const uiConfig = {
+const FirebaseSigninUiConfig = {
     signInFlow: 'popup',
     autoUpgradeAnonymousUsers: true,
     credentialHelper: firebaseui.auth.CredentialHelper.NONE,
@@ -127,7 +123,7 @@ class SignInOrUp extends React.Component {
                     aria-labelledby="signInOrUpDialogTitle">
                     <DialogTitle id="signInOrUpDialogTitle">{t[this.props.language].SIGNINORUP}</DialogTitle>
                     <DialogContent>
-                        <StyledFirebaseAuth uiConfig={uiConfig} firebaseAuth={firebase.auth()} />
+                        <StyledFirebaseAuth uiConfig={FirebaseSigninUiConfig} firebaseAuth={firebase.auth()} />
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => {

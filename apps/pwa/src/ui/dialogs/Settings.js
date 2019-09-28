@@ -21,7 +21,8 @@ import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
 import Checkbox from '@material-ui/core/Checkbox';
 import TextField from '@material-ui/core/TextField';
-import { multiplayer, ServerConfig } from '../../Multiplayer';
+import { multiplayer } from '../../Multiplayer';
+import { ServerConfig } from '../../helper/settings';
 
 class Settings extends Component {
   constructor(props) {

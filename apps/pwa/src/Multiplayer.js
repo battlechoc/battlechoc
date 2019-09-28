@@ -7,6 +7,7 @@ import { createPlayer, PlayerType } from './gameplay/Player';
 import { GameActionTypes } from './gameplay/GameActions';
 import { AttackType } from './gameplay/GameEntities';
 import { Jukebox } from './ui/misc';
+import { ServerConfig } from './helper/settings';
 
 const MultiplayerGameSessionState = Object.freeze({
     UNINITIALIZED: 'MultiplayerGameSessionState.Uninitialized',
@@ -15,12 +16,7 @@ const MultiplayerGameSessionState = Object.freeze({
     FINISHED: 'MultiplayerGameSessionState.Finished'
 });
 
-const ServerConfig = {
-    auth: btoa('battlechoc-pwa:***REMOVED***'),
-    baseUrl: 'https://us-central1-battlechoc.cloudfunctions.net/api'
-};
-
-const EmptyPlayerStats = Object.freeze({ coins: 0, score: 0, level: {
+const EmptyPlayerStats = Object.freeze({ username: 'Chocnonymous', coins: 0, score: 0, level: {
         'EntityType.CREAM': { hp: 0, area: 0},
         'EntityType.FACTORY': { hp: 0, buildingsPerTurn: 0, cacaoPerTurn: 0 },
         'EntityType.FACTORY_EXTENSION': { hp: 0, buildingsPerTurn: 0 },
@@ -521,4 +517,4 @@ class Multiplayer {
 
 const multiplayer = new Multiplayer();
 
-export { multiplayer, MultiplayerGameSessionState, EmptyPlayerStats, ServerConfig };
+export { multiplayer, MultiplayerGameSessionState, EmptyPlayerStats };

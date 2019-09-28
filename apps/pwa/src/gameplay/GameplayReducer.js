@@ -218,9 +218,8 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                 ballista.position = xmasFactoryFiltered[0].occupiedBy.filter(entity => entity.type === EntityType.XMAS_FACTORY)[0].position;
                 xmasFactoryFiltered[0].occupiedBy = xmasFactoryFiltered[0].occupiedBy.filter(entity => entity.type !== EntityType.XMAS_FACTORY);
                 xmasFactoryFiltered[0].occupiedBy.push(ballista);
-                const balistaDescriptor = getEntityDescriptor(EntityType.HOT_CHOCOLATE_BALLISTA);
-                otherPlayer(state.game).attacksPerTurn[balistaDescriptor.attackType] += balistaDescriptor.attacksPerTurn;
-                otherPlayer(state.game).attacks[balistaDescriptor.attackType] = otherPlayer(state.game).attacksPerTurn[balistaDescriptor.attackType];
+                otherPlayer(state.game).attacksPerTurn[AttackType.HOT_CHOCOLATE] += 1;
+                otherPlayer(state.game).attacks[AttackType.HOT_CHOCOLATE] = otherPlayer(state.game).attacksPerTurn[AttackType.HOT_CHOCOLATE];
             }
         } else if (attackedCell.shielded === true && attackType !== AttackType.HOT_CHOCOLATE) {
             let damage = (1 + ((Math.random() * 0.4) - 0.2)) * action.payload.attack;

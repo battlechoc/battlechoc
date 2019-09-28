@@ -31,7 +31,10 @@ export default class Situation {
 	}
 
 	modifyBoard({row, col, playerIndex = 0, cellType = BoardCellTypes.BROWN, buildings = [createEntity(EntityType.CREAM)]}) {
-		this.game.gameplay.game.board.fields[playerIndex].grid[row * this.boardSize + col].occupiedBy = buildings;
+		this.game.gameplay.game.board.fields[playerIndex].grid[row * this.boardSize + col].occupiedBy = buildings;	
+		this.game.gameplay.game.board.fields[playerIndex].grid[row * this.boardSize + col].occupiedBy.forEach(entity => {
+			entity.position = { row: row, col: col };
+		});
 		this.game.gameplay.game.board.fields[playerIndex].grid[row * this.boardSize + col].type = cellType;
 	}
 }

@@ -12,11 +12,7 @@ import { ChoclabPalette } from '../controls';
 import MeshPreview from '../../3d/MeshPreview';
 import IconButton from '@material-ui/core/IconButton';
 import Snackbar from '@material-ui/core/Snackbar';
-
-const ServerConfig = {
-    auth: btoa('battlechoc-pwa:***REMOVED***'),
-    baseUrl: 'https://us-central1-battlechoc.cloudfunctions.net/api'
-};
+import { ServerConfig } from '../../helper/settings';
 
 class Choclab extends Component {
     constructor(props) {

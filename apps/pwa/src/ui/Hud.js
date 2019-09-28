@@ -18,11 +18,7 @@ import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
 import { multiplayer } from '../Multiplayer';
-
-const ServerConfig = {
-    auth: btoa('battlechoc-pwa:***REMOVED***'),
-    baseUrl: 'https://us-central1-battlechoc.cloudfunctions.net/api'
-};
+import { ServerConfig } from '../helper/settings';
 
 class Hud extends Component {
     constructor(props) {
@@ -49,7 +45,6 @@ class Hud extends Component {
         if (typeof this.props.challengedProfileId !== 'undefined') {
             this.setState({ multiplayerScreen: true });
             multiplayer.fetchPlayerProfileData(this.props.challengedProfileId).then(profile => {
-                console.log(profile);
                 let level = 0;
                 let losses = 0;
                 let winnings = 0;
@@ -82,9 +77,6 @@ class Hud extends Component {
                         ranking: data.ranking, 
                         playerName: 'Chocnonymous' // Todo: implement changeable names
                     }
-
-                    console.log(player);
-
                     this.multiplayerScreen.showPlayerProfile(player);
                 }).catch(error => this.setState({ ranking: 'Offline'}));
             }).catch(err => console.log(err));
