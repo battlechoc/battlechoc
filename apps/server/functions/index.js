@@ -45,11 +45,11 @@ app.post('/debugging/gamestate', (req, res) => {
 app.post('/user/challange', async (req, res) => {
     const permissions = admin.firestore().collection('permissions');
     const players = admin.firestore().collection('players');
-    let doc = await players.where('username', '==', req.body.opponent).get();
-    if (doc.size < 1) {
+    let docs = await players.where('username', '==', req.body.opponent).get();
+    if (docs.size < 1) {
         res.status(404).json({ error: 'OPPONENT "' + req.body.opponent + '" DOES NOT EXIST'});
     } else {
-        let opponentId = doc.docs[0].id;
+        let opponentId = docs.docs[0].id;
         if (opponentId === req.body.playerId) {
             res.status(400).json({ error: 'CANNOT CREATE A GAME CHALLENGING YOURSELF' });
         } else {
@@ -60,13 +60,10 @@ app.post('/user/challange', async (req, res) => {
                 let player = doc.data();
 
                 let session = {
-                    players: [{
-                        id: opponentId,
-                        name: doc.docs[0].username
-                    },{ 
-                        id: req.body.playerId,
-                        name: req.body.opponent
-                    }],
+                    players: [
+                        opponentId,
+                        req.body.playerId
+                    ],
                     created: new Date(),
                     last_changed: new Date(),
                     status: 'MultiplayerGameSessionState.Pending',
@@ -75,7 +72,7 @@ app.post('/user/challange', async (req, res) => {
                 };
 
                 try {
-                    let databaseSession = await admin.firestore().collection('sessions').add({ "session": session });
+                    let databaseSession = await admin.firestore().collection('multiplayerGameSessions').add(session);
                     permissions.doc(req.body.playerId).get().then(doc => {
                         if (doc.exists) {
                             permission = doc.data();
@@ -108,6 +105,60 @@ app.post('/user/challange', async (req, res) => {
         }
     }
 });
+
+app.get('/multiplayer/sessions/:userId', async (req, res) => {
+    let docs = null;
+    try {
+        docs = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.params.userId).get();
+    } catch (error) {
+        return res.status(500).json({error: error});
+    }
+    const games = [];
+    if (docs.size > 0) {
+        docs.forEach(doc => {
+            let game = doc.data();
+            games.push({
+                'players': game.players, 
+                'status': game.state, 
+                'last_changed': game.last_changed,
+                'created': game.created
+            });
+        })
+
+        for (let i = 0; i < games.length; i++) {
+            let game = games[i];
+            let opponentId = game.players.filter(playerId => playerId != req.params.userId)[0];
+            const players = admin.firestore().collection('players');
+            let doc = await players.doc(opponentId).get();
+            if (doc.exists) {
+                let opponent = doc.data();
+                let winnings = opponent.trackRecord.filter(record => record.won).length;
+                let losses = opponent.trackRecord.filter(record => record.lost).length;
+                let drawn = opponent.trackRecord.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+                let level = Object.values(opponent.level)
+                            .map(attributes => Object.values(attributes).reduce((level, prev) => Number(level) + Number(prev)))
+                            .reduce((value, prev) => value + prev);
+                
+                let ranking = (await players.where('score', '>=', opponent.score).get()).size
+
+                games[i].opponent = {
+                    name: opponent.username,
+                    ranking: ranking,
+                    level: level,
+                    drawn: drawn,
+                    losses: losses,
+                    winnings: winnings
+                }
+            } else {
+                return res.status(404).json({ error: 'OPPONENT NOT FOUND'});
+            }
+        }
+
+        res.json({ sessions: games })
+    } else {
+        res.json({ sessions: [] })
+    }
+})
 
 const basicLevel = {
     'EntityType.CREAM': { hp: 0, area: 0},
