@@ -38,7 +38,7 @@ class App extends Component {
         this.state = { params: params };
     }
 
-    componentWillMount() {
+    componentDidMount() {
         multiplayer.registerCallbacks({ 
             updatePlayerStats: this.props.updatePlayerStats,
             updateLevel: this.props.updateLevel
@@ -58,9 +58,7 @@ class App extends Component {
                 this.props.changeLanguage(browserLanguage);
             }
         });
-    }
 
-    componentDidMount() {
         OfflineStore.hasGameToResume().then((resumeable) => {
             this.props.gameResumeable(resumeable);
         });
@@ -122,7 +120,7 @@ class App extends Component {
         });
     }
 
-    componentWillReceiveProps(nextProps) {
+    UNSAFE_componentWillReceiveProps(nextProps) {
         if (!this.props.assetsReady && nextProps.assetsReady) {
             if (this.state.params.situation === 'd41d8cd98f00b204e9800998ecf8427e') {
                 this.loadSituation(BuildFactoryTestSituation);
@@ -240,10 +238,10 @@ class App extends Component {
 
     joinMultiplayerGame = () => {
         multiplayer.joinGameSession(this.state.params.sessionid, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField })
-            .then(session => {
-                console.dir(session);
-                this.prepareNewGame(true, true, session.game);
-            });
+        .then(session => {
+            console.dir(session);
+            this.prepareNewGame(true, true, session.game);
+        });
         this.hud.lockUi();
     }
 

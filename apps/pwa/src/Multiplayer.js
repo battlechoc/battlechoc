@@ -2,6 +2,7 @@ import firebase from '@firebase/app';
 import '@firebase/auth';
 import '@firebase/database';
 import '@firebase/firestore';
+import 'firebase/messaging';
 import OfflineStore from './OfflineStore';
 import { createPlayer, PlayerType } from './gameplay/Player';
 import { GameActionTypes } from './gameplay/GameActions';
@@ -11,6 +12,7 @@ import { ServerConfig } from './helper/settings';
 
 const MultiplayerGameSessionState = Object.freeze({
     UNINITIALIZED: 'MultiplayerGameSessionState.Uninitialized',
+    PENDING: 'MultiplayerGameSessionState.Pending',
     CREATED: 'MultiplayerGameSessionState.Created',
     RUNNING: 'MultiplayerGameSessionState.Running',
     FINISHED: 'MultiplayerGameSessionState.Finished'
@@ -59,6 +61,45 @@ class Multiplayer {
         }
     }
 
+    askForNotification(user) {
+        const messaging = firebase.messaging();
+        messaging.usePublicVapidKey("BJ6zc8pE57SS98ocjLmtHBuaGgDjIirTpAALyYIR_zywwBJbmssDWhbn78WPhoJfjN28htOBI4bwlVzjwHMCqak");
+
+        Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+                messaging.getToken().then((currentToken) => {
+                    if (currentToken) {
+                        console.log(currentToken);
+
+                        firebase.firestore().collection('permissions').doc(user.uid).set({'messaging': currentToken}).then(() => {
+                            console.log('token stored')
+                        }).catch(error => {
+                            console.log("could not store permission", error);
+                        });
+                    } else {
+                        console.log('No Instance ID token available. Request permission to generate one.');
+                    }
+                }).catch((error) => {
+                    console.log('An error occurred while retrieving token. ', error);
+                });
+            } else {
+                console.log('Unable to get permission to notify.');
+            }
+        });
+
+        messaging.onTokenRefresh(() => {
+            messaging.getToken().then((refreshedToken) => {
+                firebase.firestore().collection('permissions').doc(user.uid).set({'messaging': refreshedToken}).then(() => {
+                    console.log('refreshed token stored');
+                }).catch(err => {
+                    console.log("could not create player entry.", err);
+                });
+            }).catch((err) => {
+                console.log('Unable to retrieve refreshed token ', err);
+            });
+        });
+    }
+
     authStateChanged(user) {
         if (user) {
             if (typeof this.callbacks.notifyPlayerSignedIn !== 'undefined') {
@@ -66,10 +107,11 @@ class Multiplayer {
             }
 
             console.log(user);
-            console.log(this.createChallengeMeLink());
+            this.createChallengeMeLink().then(link => console.log(link));
+            this.getMultiplayerSessions().then(games => console.log(games));
 
             firebase.firestore().collection('players').doc(user.uid).set({}, { merge: true }).then(() => {
-                if (firebase.auth().currentUser.isAnonymous === false) {
+                if (!firebase.auth().currentUser.isAnonymous) {
                     this.mergePlayerStats();
                 }
             }).catch(err => {
@@ -111,6 +153,8 @@ class Multiplayer {
                     userStatusFirestoreRef.set(isOnlineForFirestore);
                 });
             });
+
+            this.askForNotification(user);
         } else {
             this.localPlayer = undefined;
             this.signInAnonymouslyIfNotAlreadySignedIn();
@@ -278,29 +322,48 @@ class Multiplayer {
         });
     }
 
-    createChallengeMeLink() {
-        if (firebase.auth().currentUser && typeof firebase.auth().currentUser !== 'undefined') {
-            return 'https://battlechoc.com?profile=' + encodeURIComponent(firebase.auth().currentUser.uid);
+    async createChallengeMeLink() {
+        if (firebase.auth().currentUser) {
+            let doc = await firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).get();
+            if (doc.exists) {
+                let player = doc.data();
+                console.log(player);
+                if (typeof player.username !== 'undefined') {
+                    return 'https://battlechoc.com?challenge=' + player.username;
+                }
+            }
         }
-        return undefined;
     }
 
-    challengePlayer(playerId) {
-        console.log("challengePlayer");
-        console.log(playerId);
-        if (typeof playerId !== 'undefined' && firebase.auth().currentUser !== 'undefined') {
-            console.log("calling func on server side");
-            fetch(ServerConfig.baseUrl + '/creategame', {
+    challengePlayer(playerName) {
+        console.log('challenge ' + playerName);
+        if (typeof playerName !== 'undefined' && firebase.auth().currentUser !== 'undefined') {
+            fetch(ServerConfig.baseUrl + '/user/challenge', {
                 method: 'post',
                 headers: new Headers({
                     'Authorization': 'Basic ' + ServerConfig.auth,
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
                 }),
-                body: JSON.stringify({ players: { player1: playerId, player2: firebase.auth().currentUser.uid } })
-            }).then(response => response.json())
-                .then(data => console.log(data));
+                body: JSON.stringify({ opponent: playerName, playerId: firebase.auth().currentUser.uid })
+            }).then(response => response.json()).then(data => console.log(data));
         }
+    }
+
+    async getMultiplayerSessions() {
+        let docs = await firebase.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', firebase.auth().currentUser.uid).get();
+        let games = [];
+        if (docs.size > 0) {
+            docs.forEach(doc => {
+                let game = doc.data();
+                games.push({
+                    'players': game.players, 
+                    'state': game.state, 
+                    'last_changed': game.last_changed
+                });
+            });
+        }
+        return games;
     }
 
     fetchPlayerProfileData(playerName) {

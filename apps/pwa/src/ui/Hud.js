@@ -264,7 +264,6 @@ class Hud extends Component {
 Hud.propTypes = {
     prepareNewGameCallback: PropTypes.func.isRequired,
     startTutorial: PropTypes.func.isRequired,
-    joinMultiplayerGame: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired,
     challengedPlayer: PropTypes.string,
     className: PropTypes.string.isRequired
