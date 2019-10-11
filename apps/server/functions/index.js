@@ -10,24 +10,6 @@ const uuidv4 = require('uuid/v4');
 
 admin.initializeApp();
 
-function checkPlayerValidity(player1, player2) {
-    return new Promise(resolve => {
-        admin.firestore().collection('players').doc(player1).get().then(doc => {
-            if (doc.exists) {
-                admin.firestore().collection('players').doc(player2).get().then(doc2 => {
-                    if (doc2.exists) {
-                        resolve(true);
-                    } else {
-                        resolve(false);
-                    }
-                })
-            } else {
-                resolve(false);
-            }
-        });
-    });
-}
-
 const whitelist = ['https://battlechoc.com', 'http://localhost:3000', 'https://localhost:3000', 'chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop'];
 const corsOptions = {
     origin: function (origin, callback) {
@@ -60,24 +42,69 @@ app.post('/debugging/gamestate', (req, res) => {
         .catch(error => res.json({ result: error }));
 });
 
-app.post('/creategame', async (req, res) => {
-    let session = {
-        players: req.body.players,
-        created: new Date(),
-        status: 'pending',
-        state: null,
-        result: null
-    };
-    const playerValidityCheckResult = await checkPlayerValidity(session.players.player1, session.players.player2);
-    if (session.players.player1 === session.players.player2) {
-        res.json({ result: 'cannot create a game challenging yourself' });
+app.post('/user/challange', async (req, res) => {
+    const permissions = admin.firestore().collection('permissions');
+    const players = admin.firestore().collection('players');
+    let doc = await players.where('username', '==', req.body.opponent).get();
+    if (doc.size < 1) {
+        res.status(404).json({ error: 'OPPONENT "' + req.body.opponent + '" DOES NOT EXIST'});
     } else {
-        if (playerValidityCheckResult === true) {
-            return admin.firestore().collection('sessions').add({ "session": session })
-                .then(rows => res.json({ result: 'game created with id ' + rows.id }))
-                .catch(error => res.json({ result: error }));
+        let opponentId = doc.docs[0].id;
+        if (opponentId === req.body.playerId) {
+            res.status(400).json({ error: 'CANNOT CREATE A GAME CHALLENGING YOURSELF' });
         } else {
-            res.json({ result: 'trying to create a game for invalid players. request rejected' });
+            let doc = await players.doc(req.body.playerId).get();
+            if (!doc.exists) {
+                res.status(404).json({ error: 'PLAYER NOT FOUND'});
+            } else {
+                let player = doc.data();
+
+                let session = {
+                    players: [{
+                        id: opponentId,
+                        name: doc.docs[0].username
+                    },{ 
+                        id: req.body.playerId,
+                        name: req.body.opponent
+                    }],
+                    created: new Date(),
+                    last_changed: new Date(),
+                    status: 'MultiplayerGameSessionState.Pending',
+                    state: null,
+                    result: null
+                };
+
+                try {
+                    let databaseSession = await admin.firestore().collection('sessions').add({ "session": session });
+                    permissions.doc(req.body.playerId).get().then(doc => {
+                        if (doc.exists) {
+                            permission = doc.data();
+                            if (typeof permission.messaging !== 'undefined') {
+                                const payload = {
+                                  'notification': {
+                                    'title':  player.username + ' challenges you @battlechoc',
+                                    'body': 'This could be a great fight!',
+                                    'click_action': 'https://battlechoc.dev?sessionid=' + databaseSession.id
+                                  },
+                                  'to': permission.messaging
+                                }
+
+                                fetch('https://fcm.googleapis.com/fcm/send', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(payload)
+                                })
+                                .catch(error => console.warn('PLAYER NOTIFICATION FAILED' + error.toString()));
+                            }
+                        }
+                    }).catch(error => console.warn('ERROR WHILE PLAYER NOTIFICATION ' + error.toString()));
+
+                    res.json({ sessionId: databaseSession.id });
+                }
+                catch(error) {
+                    res.status(500).json({ error: error });
+                }
+            }
         }
     }
 });
@@ -203,6 +230,5 @@ app.post('/user/username', (req, res) => {
         }
     }).catch(error => res.status(500).json({ error: error.toString() }));
 });
-
 
 exports.api = functions.https.onRequest(app);
