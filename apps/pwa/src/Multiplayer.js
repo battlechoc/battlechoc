@@ -292,10 +292,14 @@ class Multiplayer {
         }
     }
 
-    calculateCoinsFromTrackRecord(trackRecord) {
+    calculateCoinsFromTrackRecord(trackRecord, runningGame=false) {
         if (typeof trackRecord !== 'undefined' && trackRecord.length > 0) {
             return trackRecord.reduce((currentCoins, gameStats) => {
                 let coins = gameStats.attacks + gameStats.builtEntities * 2 + gameStats.espionages * 10 + gameStats.moltenFields * 50;
+                if (runningGame) {
+                    return coins;
+                }
+
                 if (gameStats.winners.length === 1) {
                     if (!this.isLocalPlayer(gameStats.winners[0].idx)) {
                         coins = 0;
@@ -329,6 +333,7 @@ class Multiplayer {
                 let player = doc.data();
                 console.log(player);
                 if (typeof player.username !== 'undefined') {
+                    console.log('https://battlechoc.com?challenge=' + player.username);
                     return 'https://battlechoc.com?challenge=' + player.username;
                 }
             }
@@ -541,6 +546,35 @@ class Multiplayer {
                 reject(error);
             });
         });
+    }
+
+    async enterGameSession(sessionId, gameActions) {
+        let reference = firebase.firestore().collection('multiplayerGameSessions').doc(sessionId);
+        try {
+            var doc = await reference.get();
+        } catch (error) {
+            console.error('error while fetching the session reference', error.toString());
+            return;
+        }
+
+        if (!doc.exists) {
+            return;
+        } else {
+            this.gameActions = gameActions;
+            let session = doc.data();
+            this.localPlayerIndex = session.game.players.findIndex(player => player.id === firebase.auth().currentUser.uid);
+            reference.onSnapshot(doc => {
+                let session = doc.data();
+                this.sessionData = session;
+                this.processEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
+            }, error => {
+                console.error('encountered error while trying to establish observer of multiplayer session', error.toString());
+            });
+
+            this.currentGameSession = doc.id;
+            this.localPlayerId = firebase.auth().currentUser.uid;
+            return session;
+        }
     }
 
     createGameSession(gameState, playerJoinedAction, joinedMultiplayer, gameActions) {

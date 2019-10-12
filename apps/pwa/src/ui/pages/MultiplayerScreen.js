@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import './MultiplayerScreen.css';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -27,7 +28,7 @@ class MultiplayerScreen extends Component {
     componentDidMount() {
         this.props.onRef(this);
         multiplayer.getMultiplayerSessions().then(games => {
-            console.log(games.sessions);
+            console.log('multiplayer games', games);
             this.setState({ openGames:  games.sessions});
         });
     }
@@ -108,7 +109,21 @@ class MultiplayerScreen extends Component {
 
                 <div className="controls">
                     <div className="menuButton">{t[this.props.language].RANDOM_OPPONENT}</div>
-                    <div className="menuButton">{t[this.props.language].SHARE_LINK}</div>
+                    <div className="menuButton" onClick={() => {
+                        multiplayer.createChallengeMeLink().then(link => {
+                            console.log(link);
+                            if (navigator.share) {
+                                navigator.share({
+                                    title: window.document.title,
+                                    text: t[this.props.language].INVITATION,
+                                    url: link,
+                                }).catch((error) => console.log('error sharing multiplayer session', error));
+                            } else {
+                                let whatsappWindowRef = window.open();
+                                whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + link);
+                            }
+                        });
+                    }}>{t[this.props.language].SHARE_LINK}</div>
                     <div className="menuButton">{t[this.props.language].FRIENDS}</div>
                 </div>
                 <div className="openGames">
@@ -119,20 +134,24 @@ class MultiplayerScreen extends Component {
                         <div className="tableHead">{t[this.props.language].LAST_ACTION}</div>
                         <div className="tableHead">{t[this.props.language].POTENTIAL_COINS}</div>
 
-                        {this.state.openGames.map((row, i) => (
+                        {typeof this.state.openGames !== 'undefined' ? this.state.openGames.map((row, i) => (
                             [
-                                <div key={i} onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} gameActions`}><PlayArrow /><Cancel /><AccountCircle /></div>,
+                                <div key={i} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} gameActions`}><PlayArrow onClick={() => this.props.enterMultiplayerGame(row.id)} /><Cancel /><AccountCircle onClick={() => this.showPlayerProfile(row)} /></div>,
                                 <div key={i+1} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">player</span><span>{row.opponent.name}</span></div>,
-                                <div key={i+2} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">turns</span><span>{row.turns || '-'}</span></div>,
+                                <div key={i+2} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
                                 <div key={i+3} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.last_changed)}</span></div>,
-                                <div onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} tablefoot`} key={i+4}><span className="gamelabel">potential coins</span><span>{multiplayer.calculateCoinsFromTrackRecord(row.events_from_0)}</span></div>
+                                <div onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} tablefoot`} key={i+4}><span className="gamelabel">potential coins</span><span>{multiplayer.calculateCoinsFromTrackRecord([row.statistics], true)}</span></div>
                             ]
-                        ))}
+                        )) : null}
                     </div>
                 </div>
             </div>
         );
     }
+}
+
+MultiplayerScreen.propTypes = {
+    enterMultiplayerGame: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({

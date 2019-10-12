@@ -7,7 +7,7 @@ const PlayerType = Object.freeze({
     VIOLET_BEAUREGARDE: 'PlayerType.VIOLET_BEAUREGARDE'
 });
 
-function createPlayer(name, type, activePlayer) {
+function createPlayer(name, type) {
     let player = {
         name: name,
         type: type,

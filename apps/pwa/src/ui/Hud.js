@@ -242,7 +242,11 @@ class Hud extends Component {
                             </div>
                         );
                     } else if (stage === 'MULTIPLAYER_SCREEN') {
-                        return <MultiplayerScreen onRef={multiplayerScreen => this.multiplayerScreen = multiplayerScreen}/>
+                        return <MultiplayerScreen enterMultiplayerGame={sessionId => {
+                                this.setState({ multiplayerScreen: false, choclabScreen: false });
+                                this.props.enterMultiplayerGame(sessionId);
+                            }
+                        } onRef={multiplayerScreen => this.multiplayerScreen = multiplayerScreen}/>
                     } else if (stage === 'CHOCLAB_SCREEN') {
                         return <Choclab />
                     } else {
@@ -263,6 +267,7 @@ class Hud extends Component {
 
 Hud.propTypes = {
     prepareNewGameCallback: PropTypes.func.isRequired,
+    enterMultiplayerGame: PropTypes.func.isRequired,
     startTutorial: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired,
     challengedPlayer: PropTypes.string,

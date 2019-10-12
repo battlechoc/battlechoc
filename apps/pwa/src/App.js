@@ -245,6 +245,13 @@ class App extends Component {
         this.hud.lockUi();
     }
 
+    enterMultiplayerGame = sessionId => {
+        multiplayer.enterGameSession(sessionId, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField })
+        .then(session => {
+            this.prepareNewGame(true, true, session.game);
+        });
+    }
+
     prepareNewGame = (resumeGame, joinMultiplayer, multiplayerGameState) => {
         OfflineStore.settingsStore.get('tutorialAlreadySeen').then(tutorialAlreadySeen => {
             if (tutorialAlreadySeen || this.props.playerInfos.coins > 0) {
@@ -270,6 +277,9 @@ class App extends Component {
                 if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
                     this.props.joinGame(multiplayerGameState).then(() => {
                         this.opponent = { player: this.props.game.players[0] };
+                        if (this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START && !multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
+                            this.hud.lockUi();
+                        }
                     });
                 } else {
                     OfflineStore.getResumeableGame().then((resumeableGame) => {
@@ -371,7 +381,7 @@ class App extends Component {
                     <Scene onRef={scene => this.scene = scene} />
                 </Suspense>
                 <Hud prepareNewGameCallback={this.prepareNewGame}
-                    joinMultiplayerGame={this.joinMultiplayerGame}
+                    enterMultiplayerGame={this.enterMultiplayerGame}
                     startTutorial={() => this.startTutorial()}
                     className={this.props.tutorial ? 'tutorial hud' : 'hud'}
                     endGame={() => this.endGame()}
