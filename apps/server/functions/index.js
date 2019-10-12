@@ -120,8 +120,8 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
             games.push({
                 'players': game.players, 
                 'status': game.state, 
-                'last_changed': game.last_changed,
-                'created': game.created
+                'last_changed': game.last_changed.toMillis(),
+                'created': game.created.toMillis()
             });
         })
 
