@@ -655,5 +655,6 @@ module.exports = {
         }
     },
     Board: Board,
-    createPlayer: createPlayer
+    createPlayer: createPlayer,
+    EmptyPlayerStats: EmptyPlayerStats
 }

@@ -152,6 +152,11 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
                 let winnings = opponent.trackRecord.filter(record => record.won).length;
                 let losses = opponent.trackRecord.filter(record => record.lost).length;
                 let drawn = opponent.trackRecord.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+                
+                if (typeof opponent.level === 'undefined') {
+                    opponent.level = entities.EmptyPlayerStats.level;
+                }
+
                 let level = Object.values(opponent.level)
                             .map(attributes => Object.values(attributes).reduce((level, prev) => Number(level) + Number(prev)))
                             .reduce((value, prev) => value + prev);
