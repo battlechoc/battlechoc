@@ -129,11 +129,15 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
     if (docs.size > 0) {
         docs.forEach(doc => {
             let game = doc.data();
+            let playerIndex = game.game.players.findIndex(player => player.id === req.params.userId);
             games.push({
                 'players': game.players, 
-                'status': game.state, 
+                'status': game.status, 
                 'last_changed': game.last_changed.toMillis(),
-                'created': game.created.toMillis()
+                'created': game.created.toMillis(),
+                'myTurn': game.currentPlayerIndex === playerIndex,
+                'turns': game['events_from_' + playerIndex].filter(event => event.payload.type === 'battlechoc/gameplay/finishTurn').length,
+                'statistics': game.game.players[playerIndex].statistics
             });
         })
 
