@@ -1,23 +1,6 @@
 const calculateDivisor = (finalLevel, start, end) => (finalLevel * Math.log2(2))/Math.log2((end - finalLevel)/start);
 const growFunction = (level, finalLevel, start, end) => Math.round(level + start * Math.pow(2, level/calculateDivisor(finalLevel,start,end)));
-
-const AttackType = Object.freeze({
-    TRUFFLE: 'AttackType.TRUFFLE',
-    FRUIT: 'AttackType.FRUIT',
-    HOT_CHOCOLATE: 'AttackType.HOT_CHOCOLATE',
-    BUNNY: 'AttackType.BUNNY',
-    isInstanceOf: function (attackType) {
-        if (attackType === AttackType.TRUFFLE ||
-            attackType === AttackType.FRUIT ||
-            attackType === AttackType.HOT_CHOCOLATE ||
-            attackType === AttackType.BUNNY) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-});
+const uuidv4 = require('uuid/v4');
 
 const EntityType = Object.freeze({
     CREAM: 'EntityType.CREAM',
@@ -46,6 +29,101 @@ const EntityType = Object.freeze({
             return false;
     }
 });
+
+const AttackType = Object.freeze({
+    TRUFFLE: 'AttackType.TRUFFLE',
+    FRUIT: 'AttackType.FRUIT',
+    HOT_CHOCOLATE: 'AttackType.HOT_CHOCOLATE',
+    BUNNY: 'AttackType.BUNNY',
+    isInstanceOf: function (attackType) {
+        if (attackType === AttackType.TRUFFLE ||
+            attackType === AttackType.FRUIT ||
+            attackType === AttackType.HOT_CHOCOLATE ||
+            attackType === AttackType.BUNNY) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+});
+
+class Board {
+    static generate(size, seed) {
+        const seedableRandom = function(s) {
+            return function() { s = Math.sin(s) * 10000; return s - Math.floor(s); };
+        };
+
+        let random = seedableRandom(seed);
+
+        let playerFields = [];
+        for (let player = 0; player < 2; player++) {
+            let field = { grid: [] };
+            for (let row = 0; row < size.rows; row++) {
+                for (let col = 0; col < size.cols; col++) {
+                    let fieldtype = Math.floor(random() * 6);
+                    let creamed = random() < 0.7
+                    let cellType = 'BoardCellTypes.BROWN';
+                    let previewStyle = 'brown';
+
+                    if (fieldtype === 0) {
+                        cellType = 'BoardCellTypes.WHITE';
+                        previewStyle = 'white';
+                    } else if (fieldtype === 1) {
+                        cellType = 'BoardCellTypes.BLACK';
+                        previewStyle = 'black';
+                    }
+
+                    field.grid.push({
+                        type: cellType,
+                        previewStyle: previewStyle,
+                        row: row,
+                        col: col,
+                        occupiedBy: creamed ? [createEntity(EntityType.CREAM)] : [],
+                        molten: false,
+                        shielded: false
+                    });
+                }
+            }
+            playerFields.push(field);
+        }
+        return { fields: playerFields, size: size, seed: seed };
+    }
+}
+
+function createPlayer(name, id, type) {
+    if (typeof id === 'undefined') {
+        var id = uuidv4();
+    }
+
+    let player = {
+        name: name,
+        type: type,
+        id: id,
+        cacao: 100,
+        cacaoPerTurn: 0,
+        buildings: 0,
+        buildingsPerTurn: 0,
+        attacks: {},
+        attacksPerTurn: {},
+        hasFactory: false,
+        statistics: {
+            attacks: 0,
+            builtEntities: 0,
+            espionages: 0,
+            moltenFields: 0
+        }
+    };
+    player.attacks[AttackType.TRUFFLE] = 0;
+    player.attacks[AttackType.HOT_CHOCOLATE] = 0;
+    player.attacks[AttackType.FRUIT] = 0;
+    player.attacks[AttackType.BUNNY] = 0;
+    player.attacksPerTurn[AttackType.TRUFFLE] = 0;
+    player.attacksPerTurn[AttackType.HOT_CHOCOLATE] = 0;
+    player.attacksPerTurn[AttackType.FRUIT] = 0;
+    player.attacksPerTurn[AttackType.BUNNY] = 0;
+    return player;
+}
 
 const generateEntityDescription = (entityType, attributes) => {
     return level => {
@@ -517,6 +595,50 @@ const EntityDescriptors = Object.freeze(new Map([
     ])]
 ]));
 
+const EmptyPlayerStats = Object.freeze({ username: 'Chocnonymous', coins: 0, score: 0, level: {
+        'EntityType.CREAM': { hp: 0, area: 0},
+        'EntityType.FACTORY': { hp: 0, buildingsPerTurn: 0, cacaoPerTurn: 0 },
+        'EntityType.FACTORY_EXTENSION': { hp: 0, buildingsPerTurn: 0 },
+        'EntityType.CACAOTREE': { hp: 0, cacaoPerTurn: 0 },
+        'EntityType.RUM_TRUFFLE_CANNON': { hp: 0, attack: 0, area: 0 },
+        'EntityType.FRUIT_CANNON': { hp: 0, attack: 0, area: 0 },
+        'EntityType.SPYING_EASTER_BUNNY': { hp: 0, area: 0, fortune: 0 },
+        'EntityType.XMAS_FACTORY': {  hp: 0, area: 0 },
+        'EntityType.HOT_CHOCOLATE_BALLISTA': { hp: 0, area: 0, fortune: 0 },
+        'EntityType.CHOCOLATE_FOUNTAIN': { hp: 0 }
+    }, awards: {}, trackRecord: [] });
+
+const createEntity = (entityType, level) => {
+    if (typeof level === 'undefined') {
+        level = EmptyPlayerStats.level;
+    }
+
+    if (!EntityDescriptors.has(entityType)) {
+        throw new Error("Invalid entity type given: " + entityType);
+    } else {
+        let entity = {
+            id: uuidv4(),
+            type: entityType
+        };
+        const descriptor = EntityDescriptors.get(entityType)(level);
+        for (let field in descriptor) {
+            if (['hp','area','buildingsPerTurn','cacaoPerTurn','attack','fortune','costs','coins','attacksPerTurn','attackType'].includes(field)) {
+                let values = descriptor[field]();
+                if (Array.isArray(values)) {
+                    entity[field] = values[0];
+                } else {
+                    entity[field] = values;
+                }
+
+                if (field === 'hp') {
+                    entity['max'] = {'hp': values[0]}
+                }
+            }
+        };
+        return entity;
+    }
+}
+
 module.exports = {
     calculateCosts: (entity, level) => {
         if (!EntityDescriptors.has(entity)) {
@@ -531,5 +653,7 @@ module.exports = {
         } else {
             return EntityDescriptors.get(entity)(level).level.max[attribute];
         }
-    }
+    },
+    Board: Board,
+    createPlayer: createPlayer
 }

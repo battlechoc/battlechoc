@@ -50,6 +50,7 @@ app.post('/user/challange', async (req, res) => {
         res.status(404).json({ error: 'OPPONENT "' + req.body.opponent + '" DOES NOT EXIST'});
     } else {
         let opponentId = docs.docs[0].id;
+        let opponent = docs.docs[0].data();
         if (opponentId === req.body.playerId) {
             res.status(400).json({ error: 'CANNOT CREATE A GAME CHALLENGING YOURSELF' });
         } else {
@@ -58,6 +59,7 @@ app.post('/user/challange', async (req, res) => {
                 res.status(404).json({ error: 'PLAYER NOT FOUND'});
             } else {
                 let player = doc.data();
+                let coinToss = Math.round(Math.random());
 
                 let session = {
                     players: [
@@ -66,9 +68,19 @@ app.post('/user/challange', async (req, res) => {
                     ],
                     created: new Date(),
                     last_changed: new Date(),
-                    status: 'MultiplayerGameSessionState.Pending',
+                    status: 'MultiplayerGameSessionState.Running',
                     state: null,
-                    result: null
+                    result: null,
+                    events_from_0: [],
+                    events_from_1: [],
+                    game: {
+                        players: [entities.createPlayer(req.body.opponent, opponentId, 'PlayerType.HUMAN'), entities.createPlayer(player.username, req.body.playerId, 'PlayerType.HUMAN')],
+                        currentPlayerIndex: coinToss,
+                        state: 'GameStateTypes.CHOOSE_FIELD_OR_START',
+                        isRunning: true,
+                        winners: [],
+                        board: entities.Board.generate({rows: 10, cols: 10}, Math.round(Math.random() * Math.pow(10, 8)))
+                    }
                 };
 
                 try {
