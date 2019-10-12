@@ -351,19 +351,24 @@ class Multiplayer {
     }
 
     async getMultiplayerSessions() {
-        let docs = await firebase.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', firebase.auth().currentUser.uid).get();
-        let games = [];
-        if (docs.size > 0) {
-            docs.forEach(doc => {
-                let game = doc.data();
-                games.push({
-                    'players': game.players, 
-                    'state': game.state, 
-                    'last_changed': game.last_changed
-                });
-            });
-        }
-        return games;
+        let headers = new Headers({
+            'Authorization': 'Basic ' + ServerConfig.auth,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        });
+
+        try {
+            let response = await fetch(ServerConfig.baseUrl + '/multiplayer/sessions/' + firebase.auth().currentUser.uid, { headers: headers });
+            if (!response.ok) {
+                console.log('error while fetching player sessions ' + response.statusText);
+                return [];
+            } else {
+                return response.json();
+            }
+        } catch (error) {
+            console.log('error while fetching player sessions ' + error.toString());
+            return [];
+        }     
     }
 
     fetchPlayerProfileData(playerName) {

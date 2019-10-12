@@ -20,37 +20,16 @@ class MultiplayerScreen extends Component {
         TimeAgo.addLocale(de);
         this.state = {
             showPlayerProfile: false,
-            openGames: [
-                {
-                    'playerName': 'Sebastian',
-                    'turns': 12,
-                    'matchTime': 201000,
-                    'lastAction': 1566153558102,
-                    'potentialCoins': 246,
-                    'level': 15,
-                    'ranking': 129,
-                    'winnings': 17,
-                    'drawn': 0,
-                    'losses': 8
-                },
-                {
-                    'playerName': 'Caro',
-                    'turns': 5,
-                    'matchTime': 91800,
-                    'lastAction': 1566153373262,
-                    'potentialCoins': 49,
-                    'level': 12,
-                    'ranking': 231,
-                    'winnings': 13,
-                    'drawn': 1,
-                    'losses': 9
-                },
-            ]
+            openGames: []
         }
     }
 
     componentDidMount() {
         this.props.onRef(this);
+        multiplayer.getMultiplayerSessions().then(games => {
+            console.log(games.sessions);
+            this.setState({ openGames:  games.sessions});
+        });
     }
 
     timeToString(millis) {
@@ -91,7 +70,7 @@ class MultiplayerScreen extends Component {
     showPlayerProfile = profile => {
         this.setState({ 
             showPlayerProfile: true,
-            player: profile
+            player: profile.opponent
         });
     }
 
@@ -103,7 +82,7 @@ class MultiplayerScreen extends Component {
                     open={this.state.showPlayerProfile}
                     onClose={() => this.setState({ showPlayerProfile: false })}
                     aria-labelledby="playerProfile">
-                    <DialogTitle>{this.state.player ? this.state.player.playerName : null}</DialogTitle>
+                    <DialogTitle>{this.state.player ? this.state.player.name : null}</DialogTitle>
                     <DialogContent>
                         {this.state.player ? <div className="multiplayer-statistics">
                             <p><span>{this.state.player.level}</span><PlusOne /></p>
@@ -135,20 +114,18 @@ class MultiplayerScreen extends Component {
                 <div className="openGames">
                     <div className="gamestable">
                         <div className="tableHead">{t[this.props.language].ACTIONS}</div>
-                        <div className="tableHead">{t[this.props.language].PLAYER}</div>
+                        <div className="tableHead">{t[this.props.language].OPPONENT}</div>
                         <div className="tableHead">{t[this.props.language].TURNS}</div>
-                        <div className="tableHead">{t[this.props.language].MATCH_TIME}</div>
                         <div className="tableHead">{t[this.props.language].LAST_ACTION}</div>
                         <div className="tableHead">{t[this.props.language].POTENTIAL_COINS}</div>
 
                         {this.state.openGames.map((row, i) => (
                             [
                                 <div key={i} onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} gameActions`}><PlayArrow /><Cancel /><AccountCircle /></div>,
-                                <div key={i+1} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">player</span><span>{row.playerName}</span></div>,
-                                <div key={i+2} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
-                                <div key={i+3} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">match</span><span>{this.timeToString(row.matchTime)}</span></div>,
-                                <div key={i+4} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.lastAction)}</span></div>,
-                                <div onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} tablefoot`} key={i+5}><span className="gamelabel">potential coins</span><span>{row.potentialCoins}</span></div>
+                                <div key={i+1} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">player</span><span>{row.opponent.name}</span></div>,
+                                <div key={i+2} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">turns</span><span>{row.turns || '-'}</span></div>,
+                                <div key={i+3} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.last_changed)}</span></div>,
+                                <div onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} tablefoot`} key={i+4}><span className="gamelabel">potential coins</span><span>{multiplayer.calculateCoinsFromTrackRecord(row.events_from_0)}</span></div>
                             ]
                         ))}
                     </div>
