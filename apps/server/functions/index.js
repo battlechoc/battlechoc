@@ -131,6 +131,7 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
             let game = doc.data();
             let playerIndex = game.game.players.findIndex(player => player.id === req.params.userId);
             games.push({
+                'id': doc.id,
                 'players': game.players, 
                 'status': game.status, 
                 'last_changed': game.last_changed.toMillis(),
