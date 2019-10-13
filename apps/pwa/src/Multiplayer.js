@@ -471,6 +471,7 @@ class Multiplayer {
 
     processEvents(events) {
         if (events.length > this.currentEventIndex) {
+            console.log('process events ', events);
             const newEventIndex = events.length;
             events.splice(0, this.currentEventIndex);
             events.forEach(action => {
@@ -566,13 +567,18 @@ class Multiplayer {
             reference.onSnapshot(doc => {
                 let session = doc.data();
                 this.sessionData = session;
+                console.log(session);
+                console.log(this.localPlayerIndex + ': start processing the events from opponent ' + (1 - this.localPlayerIndex))
+                console.log(session['events_from_' + (1 - this.localPlayerIndex)]);
                 this.processEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
             }, error => {
                 console.error('encountered error while trying to establish observer of multiplayer session', error.toString());
             });
 
+            this.currentEventIndex = 0;
             this.currentGameSession = doc.id;
             this.localPlayerId = firebase.auth().currentUser.uid;
+            this.processEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
             return session;
         }
     }
