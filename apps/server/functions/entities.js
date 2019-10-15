@@ -639,6 +639,18 @@ const createEntity = (entityType, level) => {
     }
 }
 
+function getEntityDescriptor(entityType, level) {
+    if (typeof level === 'undefined') {
+        level = EmptyPlayerStats.level;
+    }
+
+    if (!EntityDescriptors.has(entityType)) {
+        throw new Error("Invalid entity type given: " + entityType);
+    } else {
+        return EntityDescriptors.get(entityType)(level);
+    }
+}
+
 module.exports = {
     calculateCosts: (entity, level) => {
         if (!EntityDescriptors.has(entity)) {
@@ -656,5 +668,8 @@ module.exports = {
     },
     Board: Board,
     createPlayer: createPlayer,
-    EmptyPlayerStats: EmptyPlayerStats
+    EmptyPlayerStats: EmptyPlayerStats,
+    EntityType: EntityType,
+    AttackType: AttackType,
+    getEntityDescriptor: getEntityDescriptor
 }

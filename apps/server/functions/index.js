@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const entities = require('./entities.js');
 const admin = require('firebase-admin');
 const uuidv4 = require('uuid/v4');
+const gamestate = require('./gamestate.js');
 
 admin.initializeApp();
 
@@ -73,6 +74,7 @@ app.post('/user/challange', async (req, res) => {
                     result: null,
                     events_from_0: [],
                     events_from_1: [],
+                    lastProcessedEvent: [0, 0],
                     game: {
                         players: [entities.createPlayer(req.body.opponent, opponentId, 'PlayerType.HUMAN'), entities.createPlayer(player.username, req.body.playerId, 'PlayerType.HUMAN')],
                         currentPlayerIndex: coinToss,
@@ -114,6 +116,110 @@ app.post('/user/challange', async (req, res) => {
                     res.status(500).json({ error: error });
                 }
             }
+        }
+    }
+});
+
+const processEvents = (session, events) => {
+    let unprocessedEvents = 0;
+    let processedEvents = 0;
+    let faildValidityChecks = 0;
+
+    if (events.length > (session.lastProcessedEvent[0] + session.lastProcessedEvent[1])) {
+        events.forEach(event => {
+            if (event.issuer === session.game.players[0].id) {
+                if (session.game.currentPlayerIndex === 0) {
+                    if (session.lastProcessedEvent[0] < event.index) {
+                        unprocessedEvents += 1;
+                    } else if (session.lastProcessedEvent[0] === event.index) {
+                        if (gamestate.Rules.isActionValid(session.game, event)) {
+                            gamestate.Reducer.updateState(session.game, event);
+                            session.lastProcessedEvent[0] += 1;
+                            processedEvents += 1;
+                        } else {
+                            console.warn('Validity check failed for ' + JSON.stringify(event))
+                            faildValidityChecks += 1;
+                        }                  
+                    }
+                } else {
+                    unprocessedEvents += 1;
+                }
+            } else {
+                if (session.game.currentPlayerIndex === 1) {
+                    if (session.lastProcessedEvent[1] < event.index) {
+                        unprocessedEvents += 1;
+                    } else if (session.lastProcessedEvent[1] === event.index) {
+                        if (gamestate.Rules.isActionValid(session.game, event)) {
+                            gamestate.Reducer.updateState(session.game, event);
+                            session.lastProcessedEvent[1] += 1;
+                            processedEvents += 1;
+                        } else {
+                            console.warn('Validity check failed for ' + JSON.stringify(event))
+                            faildValidityChecks += 1;
+                        }
+                    }
+                } else {
+                    unprocessedEvents += 1;
+                }
+            }
+        });
+    }
+
+    return {
+        'unprocessedEvents': unprocessedEvents, 
+        'processedEvents': processedEvents,
+        'faildValidityChecks': faildValidityChecks
+    }
+}
+
+const processEventsInOrder = session => {
+    let events = session.events_from_1
+    events.concat(session.events_from_0);
+    events.sort((a, b) => (a.emitted.toMillis() > b.emitted.toMillis()) ? 1 : -1)
+    
+    const timeout = new Date().getTime() + 10000;
+
+    var unprocessedEvents, processedEvents, faildValidityChecks = processEvents(session, events);
+    
+    if (faildValidityChecks > 0) {
+        return { error: 'SOME EVENTS DID NOT PASS THE VALIDITY CHECK'}
+    }
+
+    while (unprocessedEvents > 0 && processedEvents > 0 && (new Date().getTime()) < timeout) {
+        unprocessedEvents, processedEvents, faildValidityChecks = processEvents(session, events);
+        if (faildValidityChecks > 0) {
+            return { error: 'SOME EVENTS DID NOT PASS THE VALIDITY CHECK'}
+        }
+    }
+
+    if (new Date().getTime() < timeout) {
+        console.warn('Event loop hang up ' + JSON.stringify(session));
+        return { error: 'INCORRECT EVENTS LOOP HANG UP'}
+    } else {
+        return { done: 'PROCESSED EVENTS'}
+    }
+}
+
+app.post('/multiplayer/relay/action', async (req, res) => {
+    let doc = await admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId).get();
+    if (!doc.exists) {
+        res.status(404).json({error: 'SESSION NOT FOUND'});
+    } else {
+        let session = doc.data();
+        if (event.issuer === session.game.players[0].id) {
+            session.events_from_0.push(req.body.event);
+        } else if (event.issuer === session.game.players[1].id) {
+            session.events_from_1.push(req.body.event);
+        } else {
+            req.status(400).json({error: 'UNKNOWN ISSUER'});
+        }
+
+        await admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId).set(session)
+        let result = processEventsInOrder(session);
+        if (result.hasOwnProperty('error')) {
+            req.status(400).json(result);
+        } else {
+            req.status(200).end();
         }
     }
 });
