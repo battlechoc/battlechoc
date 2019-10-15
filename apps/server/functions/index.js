@@ -213,13 +213,24 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         } else {
             req.status(400).json({error: 'UNKNOWN ISSUER'});
         }
+        
+        try {
+            await admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId).set(session);
+        } catch (error) {
+            return req.status(500).json({ 'error': error });
+        }
 
-        await admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId).set(session)
         let result = processEventsInOrder(session);
+
         if (result.hasOwnProperty('error')) {
             req.status(400).json(result);
         } else {
-            req.status(200).end();
+            try {
+                await admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId).set(session);
+                req.status(200).end();
+            } catch (error) {
+                req.status(500).json({ 'error': error });
+            }
         }
     }
 });
