@@ -3,7 +3,7 @@ import Rules from './Rules';
 
 function multiplayerActionRelayMiddleware() {
     return () => next => action => {
-        if (Rules.isIssuerRelevant(action) === true) {
+        if (Rules.isIssuerRelevant(action)) {
             multiplayer.relayAction(action);
         }
         next(action);

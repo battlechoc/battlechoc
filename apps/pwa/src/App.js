@@ -236,15 +236,6 @@ class App extends Component {
         }
     }
 
-    joinMultiplayerGame = () => {
-        multiplayer.joinGameSession(this.state.params.sessionid, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField })
-        .then(session => {
-            console.dir(session);
-            this.prepareNewGame(true, true, session.game);
-        });
-        this.hud.lockUi();
-    }
-
     enterMultiplayerGame = sessionId => {
         multiplayer.enterGameSession(sessionId, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField })
         .then(session => {
