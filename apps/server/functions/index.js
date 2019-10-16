@@ -43,7 +43,7 @@ app.post('/debugging/gamestate', (req, res) => {
         .catch(error => res.json({ result: error }));
 });
 
-app.post('/user/challange', async (req, res) => {
+app.post('/user/challenge', async (req, res) => {
     const permissions = admin.firestore().collection('permissions');
     const players = admin.firestore().collection('players');
     let docs = await players.where('username', '==', req.body.opponent).get();
