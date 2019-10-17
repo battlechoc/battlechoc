@@ -302,7 +302,7 @@ class Reducer {
 		    	break;
 		    case GameActionTypes.build:
 				currentPlayerBoardCell(game, action.payload.building.position.row, action.payload.building.position.col).occupiedBy.push(action.payload.building);
-		        let cellColor = currentPlayerBoardCell(game, action.payload.building.position.row, action.payload.building.position.col).type;
+		        var cellColor = currentPlayerBoardCell(game, action.payload.building.position.row, action.payload.building.position.col).type;
 		        currentPlayer(game).statistics.builtEntities += 1;
 		        if (action.payload.building.type === entities.EntityType.FACTORY) {
 		            currentPlayer(game).buildingsPerTurn = calculateBuildingsPerTurn(action.payload.building, cellColor);
@@ -341,7 +341,7 @@ class Reducer {
 		        let attackType = action.payload.attackType;
 		        currentPlayer(game).attacks[attackType] -= 1;
 		        let attackedCell = otherPlayerBoardCell(game, action.payload);
-		        cellColor = attackedCell.type;
+		        var cellColor = attackedCell.type;
 		        let opponent = otherPlayer(game);
 		        
 		        if (attackType === entities.AttackType.BUNNY) {
