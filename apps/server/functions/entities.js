@@ -2,6 +2,12 @@ const calculateDivisor = (finalLevel, start, end) => (finalLevel * Math.log2(2))
 const growFunction = (level, finalLevel, start, end) => Math.round(level + start * Math.pow(2, level/calculateDivisor(finalLevel,start,end)));
 const uuidv4 = require('uuid/v4');
 
+const BoardCellTypes = Object.freeze({
+    WHITE: 'BoardCellTypes.WHITE',
+    BROWN: 'BoardCellTypes.BROWN',
+    BLACK: 'BoardCellTypes.BLACK'
+});
+
 const EntityType = Object.freeze({
     CREAM: 'EntityType.CREAM',
     FACTORY: 'EntityType.FACTORY',
@@ -63,14 +69,14 @@ class Board {
                 for (let col = 0; col < size.cols; col++) {
                     let fieldtype = Math.floor(random() * 6);
                     let creamed = random() < 0.7
-                    let cellType = 'BoardCellTypes.BROWN';
+                    let cellType = BoardCellTypes.BROWN;
                     let previewStyle = 'brown';
 
                     if (fieldtype === 0) {
-                        cellType = 'BoardCellTypes.WHITE';
+                        cellType = BoardCellTypes.WHITE;
                         previewStyle = 'white';
                     } else if (fieldtype === 1) {
-                        cellType = 'BoardCellTypes.BLACK';
+                        cellType = BoardCellTypes.BLACK;
                         previewStyle = 'black';
                     }
 
@@ -671,5 +677,6 @@ module.exports = {
     EmptyPlayerStats: EmptyPlayerStats,
     EntityType: EntityType,
     AttackType: AttackType,
-    getEntityDescriptor: getEntityDescriptor
+    getEntityDescriptor: getEntityDescriptor,
+    BoardCellTypes: BoardCellTypes
 }
