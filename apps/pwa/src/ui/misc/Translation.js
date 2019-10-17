@@ -188,6 +188,7 @@ const languages = {
         SHARE_LINK: 'Share your Link',
         FRIENDS: 'Friends',
         START_GAME: 'Start Game',
+        JOIN_GAME: 'Join Game',
         ATTRIBUTE_NAME: attribute => {
             switch (attribute) {
                 case 'hp': return 'Hp';
@@ -387,6 +388,7 @@ const languages = {
         SHARE_LINK: 'Profil-Link teilen',
         FRIENDS: 'Freunde',
         START_GAME: 'Spiel starten',
+        JOIN_GAME: 'Spiel beitreten',
         ATTRIBUTE_NAME: attribute => {
             switch (attribute) {
                 case 'hp': return 'Hp';

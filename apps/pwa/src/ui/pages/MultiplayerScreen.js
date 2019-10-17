@@ -29,7 +29,7 @@ class MultiplayerScreen extends Component {
         this.props.onRef(this);
         multiplayer.getMultiplayerSessions().then(games => {
             console.log('multiplayer games', games);
-            this.setState({ openGames:  games.sessions});
+            this.setState({ openGames:  games});
         });
     }
 
@@ -71,7 +71,8 @@ class MultiplayerScreen extends Component {
     showPlayerProfile = profile => {
         this.setState({ 
             showPlayerProfile: true,
-            player: profile.opponent
+            player: profile.opponent,
+            profile: profile
         });
     }
 
@@ -83,7 +84,7 @@ class MultiplayerScreen extends Component {
                     open={this.state.showPlayerProfile}
                     onClose={() => this.setState({ showPlayerProfile: false })}
                     aria-labelledby="playerProfile">
-                    <DialogTitle>{this.state.player ? this.state.player.name : null}</DialogTitle>
+                    <DialogTitle>{this.state.player ? this.state.player.name : 'Chocnonymous'}</DialogTitle>
                     <DialogContent>
                         {this.state.player ? <div className="multiplayer-statistics">
                             <p><span>{this.state.player.level}</span><PlusOne /></p>
@@ -94,11 +95,26 @@ class MultiplayerScreen extends Component {
                         </div> : null}
                     </DialogContent>
                     <DialogActions>
-                        { this.state.player && !this.state.openGames.map(game => game.playerName).includes(this.state.player.playerName) ? <Button onClick={() => {
-                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                            multiplayer.challengePlayer(this.state.player.id);
-                            this.setState({ showPlayerProfile: false });
-                        }} color="primary">{t[this.props.language].START_GAME}</Button> : null }
+                        {(() => {
+                            if (typeof this.state.openGames !== 'undefined' && this.state.player) {
+                                if (!this.state.openGames.map(game => game.opponent.name).includes(this.state.player.name)) {
+                                    return <Button onClick={() => {
+                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                                multiplayer.challengePlayer(this.state.player.name);
+                                                this.setState({ showPlayerProfile: false });
+                                            }} color="primary">{t[this.props.language].START_GAME}</Button>
+                                } else {
+                                    return <Button onClick={() => {
+                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                                this.props.enterMultiplayerGame(this.state.profile.id);
+                                                this.setState({ showPlayerProfile: false });
+                                            }} color="primary">{t[this.props.language].JOIN_GAME}</Button>
+                                }
+                            } else {
+                                console.log(this.state.openGames)
+                                return null;
+                            }
+                        })()}
 
                         <Button onClick={() => {
                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);

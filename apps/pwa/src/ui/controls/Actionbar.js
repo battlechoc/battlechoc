@@ -11,7 +11,7 @@ import { GameStateTypes } from '../../gameplay/GameplayReducer';
 import { multiplayer } from '../../Multiplayer';
 import Fab from '@material-ui/core/Fab';
 import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, PermIdentity } from '@material-ui/icons';
-import { Jukebox, Translation as t } from '../misc';
+import { Jukebox } from '../misc';
 
 class Actionbar extends Component {
     constructor(props) {

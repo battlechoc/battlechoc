@@ -45,21 +45,20 @@ class Hud extends Component {
         if (typeof this.props.challengedPlayer !== 'undefined') {
             this.setState({ multiplayerScreen: true });
             multiplayer.fetchPlayerProfileData(this.props.challengedPlayer).then(profile => {
-                console.log(profile);
                 let level = 0;
                 let losses = 0;
                 let winnings = 0;
                 let drawn = 0;
-                if (typeof profile.level !== 'undefined') {
+                if (typeof profile.profileData.level !== 'undefined') {
                     // sum up all level of all attributes
-                    level = Object.values(profile.level).map(attribute => Object.values(attribute).reduce((a, b) => a + b, 0)).reduce((a, b) => a + b, 0);
+                    level = Object.values(profile.profileData.level).map(attribute => Object.values(attribute).reduce((a, b) => a + b, 0)).reduce((a, b) => a + b, 0);
                 }
 
                 if (typeof profile.profileData.trackRecord !== 'undefined') {
                     losses = profile.profileData.trackRecord.filter(record => record.lost).length;
                     winnings = profile.profileData.trackRecord.filter(record => record.won).length;
-                    drawn = profile.profileData.trackRecord.filter(record => record.winners.length > 1).length;
-                }       
+                    drawn = profile.profileData.trackRecord.filter(record => typeof record.winners !== 'undefined').filter(record => record.winners.length > 1).length;
+                }
 
                 fetch(ServerConfig.baseUrl + '/rank/' + profile.playerId, {            
                     headers: new Headers({
@@ -76,11 +75,12 @@ class Hud extends Component {
                         drawn: drawn,
                         losses: losses,
                         ranking: data.ranking, 
-                        playerName: profile.playerName
+                        name: profile.playerName
                     }
-                    this.multiplayerScreen.showPlayerProfile(player);
-                }).catch(error => this.setState({ ranking: 'Offline'}));
-            }).catch(err => console.log(err));
+                    console.log('final player data', player);
+                    this.multiplayerScreen.showPlayerProfile({ opponent: player });
+                }).catch(error => console.warn(error));
+            }).catch(error => console.warn(error));
         }
     }
 

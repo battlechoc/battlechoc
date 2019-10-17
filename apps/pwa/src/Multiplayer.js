@@ -4,7 +4,6 @@ import '@firebase/database';
 import '@firebase/firestore';
 import 'firebase/messaging';
 import OfflineStore from './OfflineStore';
-import { createPlayer, PlayerType } from './gameplay/Player';
 import { GameActionTypes } from './gameplay/GameActions';
 import { AttackType } from './gameplay/GameEntities';
 import { Jukebox } from './ui/misc';
@@ -105,10 +104,6 @@ class Multiplayer {
             if (typeof this.callbacks.notifyPlayerSignedIn !== 'undefined') {
                 this.callbacks.notifyPlayerSignedIn({ email: user.email, uid: user.uid, name: user.displayName, isAnonymous: user.isAnonymous });
             }
-
-            console.log(user);
-            this.createChallengeMeLink().then(link => console.log(link));
-            this.getMultiplayerSessions().then(games => console.log(games));
 
             firebase.firestore().collection('players').doc(user.uid).set({}, { merge: true }).then(() => {
                 if (!firebase.auth().currentUser.isAnonymous) {
@@ -356,39 +351,57 @@ class Multiplayer {
     }
 
     async getMultiplayerSessions() {
-        let headers = new Headers({
-            'Authorization': 'Basic ' + ServerConfig.auth,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        });
+        if (firebase.auth().currentUser) {
+            let headers = new Headers({
+                'Authorization': 'Basic ' + ServerConfig.auth,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            });
 
-        try {
-            let response = await fetch(ServerConfig.baseUrl + '/multiplayer/sessions/' + firebase.auth().currentUser.uid, { headers: headers });
-            if (!response.ok) {
-                console.log('error while fetching player sessions ' + response.statusText);
+            try {
+                let response = await fetch(ServerConfig.baseUrl + '/multiplayer/sessions/' + firebase.auth().currentUser.uid, { headers: headers });
+                if (!response.ok) {
+                    console.log('error while fetching player sessions ' + response.statusText);
+                    return [];
+                } else {
+                    let games = await response.json();
+                    return games.sessions;
+                }
+            } catch (error) {
+                console.log('error while fetching player sessions ' + error.toString());
                 return [];
-            } else {
-                return response.json();
             }
-        } catch (error) {
-            console.log('error while fetching player sessions ' + error.toString());
+        } else {
             return [];
-        }     
+        }
     }
 
-    fetchPlayerProfileData(playerName) {
-        // Todo: use server side function to do this
-        return new Promise((resolve, reject) => {
-            const playerInfosRef = firebase.firestore().collection('players').where('username', '==', playerName);
-            playerInfosRef.get().then(doc => {
-                if (doc.size > 0) {
-                    let player = doc.docs[0].data();
-                    resolve({ playerId: doc.docs[0].id, playerName: playerName, profileData: player, isYourself: doc.docs[0].id === firebase.auth().currentUser.uid });
-                } else {
-                    reject("could not find player with given name " + playerName);
-                }
-            }).catch(err => reject(err));
-        });
+    sleep (time) {
+      return new Promise((resolve) => { setTimeout(() => resolve(), time) });
+    }    
+
+    async fetchPlayerProfileData(playerName) {
+        let timeout = new Date().getTime() + 5000;
+        while (!firebase.auth().currentUser) {
+            console.log('try to identify user', new Date().getTime())
+            await this.sleep(500);
+            if (new Date().getTime() > timeout) {
+                throw Error('Timeout while fetching player data');
+            }
+        }
+
+        try {
+            var doc = await firebase.firestore().collection('players').where('username', '==', playerName).get();
+        } catch (error) {
+            throw Error(error);
+        }
+
+        if (doc.size > 0) {
+            let player = doc.docs[0].data();
+            return { playerId: doc.docs[0].id, playerName: playerName, profileData: player, isYourself: doc.docs[0].id === firebase.auth().currentUser.uid };
+        } else {
+            throw Error('Could not find player with given name ' + playerName);
+        } 
     }
 
     signInAnonymouslyIfNotAlreadySignedIn() {
@@ -482,6 +495,8 @@ class Multiplayer {
     }
 
     relayAction(action) {
+        action.index = this.sessionData['events_from_' + this.localPlayerIndex].length;
+        action.emitted = firebase.firestore.Timestamp.fromDate(new Date());
         if (typeof this.currentGameSession !== 'undefined' && action.payload.issuer === this.localPlayerId) {
             fetch(ServerConfig.baseUrl + '/multiplayer/relay/action', {
                 method: 'post',
