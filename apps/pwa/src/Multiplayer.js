@@ -507,9 +507,11 @@ class Multiplayer {
                 }),
                 body: JSON.stringify({ event: action, sessionId: this.currentGameSession })
             })
-            .then(response => handleFetchError(response))
-            .then(data => console.log(data))
-            .catch(error => console.log(error));
+            .then(response => {
+                if (!response.ok) {
+                    console.error(response.statusText);
+                }
+            }).catch(error => console.log(error));
         }
     }
 
@@ -542,10 +544,9 @@ class Multiplayer {
                 console.error('encountered error while trying to establish observer of multiplayer session', error.toString());
             });
 
-            this.currentEventIndex = 0;
+            this.currentEventIndex = session['events_from_' + (1 - this.localPlayerIndex)].length;
             this.currentGameSession = doc.id;
             this.localPlayerId = firebase.auth().currentUser.uid;
-            this.processEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
             return session;
         }
     }

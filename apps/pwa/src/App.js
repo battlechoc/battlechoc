@@ -271,6 +271,8 @@ class App extends Component {
                         this.opponent = { player: this.props.game.players[0] };
                         if (this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START && !multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
                             this.hud.lockUi();
+                        } else if (this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START && this.props.game.state !== GameStateTypes.CHOOSE_FIELD) {
+                            this.scene.startGame(this.props.game, false);
                         }
                     });
                 } else {
