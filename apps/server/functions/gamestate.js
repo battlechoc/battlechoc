@@ -283,11 +283,11 @@ class Reducer {
 		        game.currentPlayerIndex = 1 - game.currentPlayerIndex;
 		        game.state = GameStateTypes.PLAYER_1_INITIAL_PLACEMENT;
 		        break;
-		    case GameActions.chooseStart:
+		    case GameActionTypes.chooseStart:
 				game.state = GameStateTypes.CHOOSE_FIELD;
         		game.currentPlayerIndex = 1 - game.currentPlayerIndex;
         		break;
-        	case GameActions.finishTurn:
+        	case GameActionTypes.finishTurn:
 				if (game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT) {
 		            game.currentPlayerIndex = 1 - game.currentPlayerIndex;
 		            game.state = GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
@@ -297,12 +297,12 @@ class Reducer {
 		            prepareBuildPhase(game);
 		        }
 		        break;
-		    case GameActions.finishBuildPhase:
+		    case GameActionTypes.finishBuildPhase:
 		    	game.state = GameStateTypes.ATTACK_PHASE;
 		    	break;
-		    case GameActions.build:
+		    case GameActionTypes.build:
 				currentPlayerBoardCell(game, action.payload.building.position.row, action.payload.building.position.col).occupiedBy.push(action.payload.building);
-		        const cellColor = currentPlayerBoardCell(game, action.payload.building.position.row, action.payload.building.position.col).type;
+		        let cellColor = currentPlayerBoardCell(game, action.payload.building.position.row, action.payload.building.position.col).type;
 		        currentPlayer(game).statistics.builtEntities += 1;
 		        if (action.payload.building.type === EntityType.FACTORY) {
 		            currentPlayer(game).buildingsPerTurn = calculateBuildingsPerTurn(action.payload.building, cellColor);
@@ -337,11 +337,11 @@ class Reducer {
 		            currentPlayer(game).cacao -= action.payload.building.costs;
 		        }
 		        break;
-		    case GameActions.attack:
+		    case GameActionTypes.attack:
 		        let attackType = action.payload.attackType;
 		        currentPlayer(game).attacks[attackType] -= 1;
 		        let attackedCell = otherPlayerBoardCell(game, action.payload);
-		        const cellColor = attackedCell.type;
+		        cellColor = attackedCell.type;
 		        let opponent = otherPlayer(game);
 		        
 		        if (attackType === AttackType.BUNNY) {
@@ -463,5 +463,6 @@ class Reducer {
 }
 
 module.exports = {
-	Rules: Rules
+	Rules: Rules,
+	Reducer: Reducer
 }

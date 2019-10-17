@@ -125,26 +125,40 @@ const processEvents = (session, events) => {
     let processedEvents = 0;
     let faildValidityChecks = 0;
 
+    console.log('start process events');
+    console.log(events.length);
+    console.log((session.lastProcessedEvent[0] + session.lastProcessedEvent[1]))
+
+
     if (events.length > (session.lastProcessedEvent[0] + session.lastProcessedEvent[1])) {
         events.forEach(event => {
-            if (event.issuer === session.game.players[0].id) {
+            console.log('now process event ' + JSON.stringify(event));
+            if (event.payload.issuer === session.game.players[0].id) {
+                console.log('issuer is player 0')
                 if (session.game.currentPlayerIndex === 0) {
+                    console.log('its issuers turn')
                     if (session.lastProcessedEvent[0] < event.index) {
+                        console.log('event index behind')
                         unprocessedEvents += 1;
                     } else if (session.lastProcessedEvent[0] === event.index) {
                         if (gamestate.Rules.isActionValid(session.game, event)) {
                             gamestate.Reducer.updateState(session.game, event);
+                            console.log('event proceeded')
                             session.lastProcessedEvent[0] += 1;
                             processedEvents += 1;
                         } else {
                             console.warn('Validity check failed for ' + JSON.stringify(event))
                             faildValidityChecks += 1;
                         }                  
+                    } else {
+                        console.log(session.lastProcessedEvent[0], event.index)
+                        unprocessedEvents += 1;
                     }
                 } else {
                     unprocessedEvents += 1;
                 }
             } else {
+                console.log('issuer is player 1')
                 if (session.game.currentPlayerIndex === 1) {
                     if (session.lastProcessedEvent[1] < event.index) {
                         unprocessedEvents += 1;
@@ -157,6 +171,8 @@ const processEvents = (session, events) => {
                             console.warn('Validity check failed for ' + JSON.stringify(event))
                             faildValidityChecks += 1;
                         }
+                    } else {
+                        unprocessedEvents += 1;
                     }
                 } else {
                     unprocessedEvents += 1;
@@ -173,26 +189,28 @@ const processEvents = (session, events) => {
 }
 
 const processEventsInOrder = session => {
-    let events = session.events_from_1
-    events.concat(session.events_from_0);
-    events.sort((a, b) => (a.emitted.toMillis() > b.emitted.toMillis()) ? 1 : -1)
+    let events = session.events_from_0;
+    events = events.concat(session.events_from_1);
+    console.log('events', events);
+    events.sort((a, b) => (a.emitted.nanoseconds > b.emitted.nanoseconds) ? 1 : -1)
     
     const timeout = new Date().getTime() + 10000;
 
     var unprocessedEvents, processedEvents, faildValidityChecks = processEvents(session, events);
-    
+    console.log(unprocessedEvents, processedEvents, faildValidityChecks)
     if (faildValidityChecks > 0) {
         return { error: 'SOME EVENTS DID NOT PASS THE VALIDITY CHECK'}
     }
 
-    while (unprocessedEvents > 0 && processedEvents > 0 && (new Date().getTime()) < timeout) {
+    while (unprocessedEvents > 0 && processedEvents > 0 && (new Date().getTime()) > timeout) {
         unprocessedEvents, processedEvents, faildValidityChecks = processEvents(session, events);
+        console.log(unprocessedEvents, processedEvents, faildValidityChecks)
         if (faildValidityChecks > 0) {
             return { error: 'SOME EVENTS DID NOT PASS THE VALIDITY CHECK'}
         }
     }
 
-    if (new Date().getTime() < timeout) {
+    if (new Date().getTime() > timeout) {
         console.warn('Event loop hang up ' + JSON.stringify(session));
         return { error: 'INCORRECT EVENTS LOOP HANG UP'}
     } else {
@@ -206,30 +224,32 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         res.status(404).json({error: 'SESSION NOT FOUND'});
     } else {
         let session = doc.data();
-        if (event.issuer === session.game.players[0].id) {
+        let issuer = req.body.event.payload.issuer;
+
+        if (issuer === session.game.players[0].id) {
             session.events_from_0.push(req.body.event);
-        } else if (event.issuer === session.game.players[1].id) {
+        } else if (issuer === session.game.players[1].id) {
             session.events_from_1.push(req.body.event);
         } else {
-            req.status(400).json({error: 'UNKNOWN ISSUER'});
+            res.status(400).json({error: 'UNKNOWN ISSUER'});
         }
         
         try {
             await admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId).set(session);
         } catch (error) {
-            return req.status(500).json({ 'error': error });
+            return res.status(500).json({ 'error': error });
         }
 
         let result = processEventsInOrder(session);
 
         if (result.hasOwnProperty('error')) {
-            req.status(400).json(result);
+            res.status(400).json(result);
         } else {
             try {
                 await admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId).set(session);
-                req.status(200).end();
+                res.status(200).end();
             } catch (error) {
-                req.status(500).json({ 'error': error });
+                res.status(500).json({ 'error': error });
             }
         }
     }
