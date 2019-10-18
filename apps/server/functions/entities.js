@@ -674,6 +674,7 @@ module.exports = {
     },
     Board: Board,
     createPlayer: createPlayer,
+    createEntity: createEntity,
     EmptyPlayerStats: EmptyPlayerStats,
     EntityType: EntityType,
     AttackType: AttackType,

@@ -361,7 +361,7 @@ class Reducer {
 		                const spyingEasterBunnyCell = currentPlayerField(game).grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(entities.EntityType.SPYING_EASTER_BUNNY))[0];                
 		                spyingEasterBunnyCell.occupiedBy = spyingEasterBunnyCell.occupiedBy.filter(entity => entity.type !== entities.EntityType.SPYING_EASTER_BUNNY);
 		                
-		                let ballista = createEntity(entities.EntityType.HOT_CHOCOLATE_BALLISTA);
+		                let ballista = entities.createEntity(entities.EntityType.HOT_CHOCOLATE_BALLISTA);
 		                ballista.position = xmasFactoryFiltered[0].occupiedBy.filter(entity => entity.type === entities.EntityType.XMAS_FACTORY)[0].position;
 		                xmasFactoryFiltered[0].occupiedBy = xmasFactoryFiltered[0].occupiedBy.filter(entity => entity.type !== entities.EntityType.XMAS_FACTORY);
 		                xmasFactoryFiltered[0].occupiedBy.push(ballista);
