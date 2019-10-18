@@ -483,20 +483,22 @@ class Multiplayer {
     }
 
     processEvents(events) {
-        if (events.length > this.currentEventIndex) {
+        if (events.length > this.opponentEventIndex) {
             console.log('process events ', events);
             const newEventIndex = events.length;
-            events.splice(0, this.currentEventIndex);
+            events.splice(0, this.opponentEventIndex);
             events.forEach(action => {
                 this.emitAction(action);
             });
-            this.currentEventIndex = newEventIndex;
+            this.opponentEventIndex = newEventIndex;
         }
     }
 
     relayAction(action) {
-        action.index = this.sessionData['events_from_' + this.localPlayerIndex].length;
+        action.index = this.playerEventIndex;
+        this.playerEventIndex += 1;
         action.emitted = firebase.firestore.Timestamp.fromDate(new Date());
+
         if (typeof this.currentGameSession !== 'undefined' && action.payload.issuer === this.localPlayerId) {
             fetch(ServerConfig.baseUrl + '/multiplayer/relay/action', {
                 method: 'post',
@@ -517,7 +519,8 @@ class Multiplayer {
 
     reset() {
         this.localPlayerIndex = 0;
-        this.currentEventIndex = 0;
+        this.opponentEventIndex = 0;
+        this.playerEventIndex = 0;
         this.currentGameSession = undefined;
     }
 
@@ -544,7 +547,8 @@ class Multiplayer {
                 console.error('encountered error while trying to establish observer of multiplayer session', error.toString());
             });
 
-            this.currentEventIndex = session['events_from_' + (1 - this.localPlayerIndex)].length;
+            this.opponentEventIndex = session['events_from_' + (1 - this.localPlayerIndex)].length;
+            this.playerEventIndex = session['events_from_' + this.localPlayerIndex].length;
             this.currentGameSession = doc.id;
             this.localPlayerId = firebase.auth().currentUser.uid;
             return session;
