@@ -76,7 +76,7 @@ app.post('/user/challenge', async (req, res) => {
                     events_from_1: [],
                     lastProcessedEvent: [0, 0],
                     game: {
-                        players: [entities.createPlayer(req.body.opponent, opponentId, 'PlayerType.HUMAN'), entities.createPlayer(player.username, req.body.playerId, 'PlayerType.HUMAN')],
+                        players: [entities.createPlayer(req.body.opponent, opponentId, 'PlayerType.HUMAN', opponent.level), entities.createPlayer(player.username, req.body.playerId, 'PlayerType.HUMAN', player.level)],
                         currentPlayerIndex: coinToss,
                         state: 'GameStateTypes.CHOOSE_FIELD_OR_START',
                         isRunning: true,

@@ -97,13 +97,14 @@ class Board {
     }
 }
 
-function createPlayer(name, id, type) {
+function createPlayer(name, id, type, level) {
     if (typeof id === 'undefined') {
         var id = uuidv4();
     }
 
     let player = {
         name: name,
+        level: level,
         type: type,
         id: id,
         cacao: 100,
