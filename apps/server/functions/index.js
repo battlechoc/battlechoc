@@ -217,7 +217,8 @@ const processEventsInOrder = session => {
 }
 
 app.post('/multiplayer/relay/action', async (req, res) => {
-    let doc = await admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId).get();
+    let ref = admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId);
+    let doc = await ref.get();
     if (!doc.exists) {
         res.status(404).json({error: 'SESSION NOT FOUND'});
     } else {
@@ -225,26 +226,37 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         let issuer = req.body.event.payload.issuer;
 
         if (issuer === session.game.players[0].id) {
-            session.events_from_0.push(req.body.event);
+            console.log('push event to player 0 event array', req.body.event)
+            try {
+                await ref.update({ events_from_0: admin.firestore.FieldValue.arrayUnion(req.body.event) });
+            } catch (error) {
+                return res.status(500).json({ 'error': error });
+            }
         } else if (issuer === session.game.players[1].id) {
-            session.events_from_1.push(req.body.event);
+            console.log('push event to player 1 event array', req.body.event)
+            try {
+                await ref.update({ events_from_1: admin.firestore.FieldValue.arrayUnion(req.body.event) });
+            } catch (error) {
+                return res.status(500).json({ 'error': error });
+            }
         } else {
             res.status(400).json({error: 'UNKNOWN ISSUER'});
         }
-        
+
         try {
-            await admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId).set(session);
+            doc = await ref.get();
         } catch (error) {
             return res.status(500).json({ 'error': error });
         }
 
+        session = doc.data();
         let result = processEventsInOrder(session);
 
         if (result.hasOwnProperty('error')) {
             res.status(400).json(result);
         } else {
             try {
-                await admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId).set(session);
+                await ref.set(session, {merge: true});
                 res.status(200).end();
             } catch (error) {
                 res.status(500).json({ 'error': error });
