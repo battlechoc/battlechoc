@@ -20,3 +20,7 @@
 #settingsFormControl {
 	width: 100%;
 }
+
+.player-name-label {
+  margin-bottom: 0;
+}

@@ -45,6 +45,11 @@
   max-width: 18vh;
 }
 
+.user-name-input {
+  display: flex;
+  align-items: flex-end;
+}
+
 .speechBubbles {
   height: calc(40vh - 64px);
   overflow-y: scroll;

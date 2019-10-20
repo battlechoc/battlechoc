@@ -17,6 +17,8 @@ import Fab from '@material-ui/core/Fab';
 import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
+import { multiplayer } from '../Multiplayer';
+import { ServerConfig } from '../helper/settings';
 
 class Hud extends Component {
     constructor(props) {
@@ -30,35 +32,55 @@ class Hud extends Component {
         }
     }
 
+    handleFetchError(response) {
+        if (!response.ok) {
+            throw Error(response.statusText);
+        }
+        return response.json();
+    }
+
     componentDidMount() {
         this.props.onRef(this);
 
-        let player = null;
-        if (this.props.multiplayerLandingPage) {
-            player = {
-                    'playerName': 'Fabian',
-                    'turns': 0,
-                    'matchTime': 0,
-                    'lastAction': 0,
-                    'potentialCoins': 0,
-                    'level': 34,
-                    'ranking': 12,
-                    'winnings': 57,
-                    'drawn': 2,
-                    'losses': 11
-                };
+        if (typeof this.props.challengedPlayer !== 'undefined') {
+            this.setState({ multiplayerScreen: true });
+            multiplayer.fetchPlayerProfileData(this.props.challengedPlayer).then(profile => {
+                let level = 0;
+                let losses = 0;
+                let winnings = 0;
+                let drawn = 0;
+                if (typeof profile.profileData.level !== 'undefined') {
+                    // sum up all level of all attributes
+                    level = Object.values(profile.profileData.level).map(attribute => Object.values(attribute).reduce((a, b) => a + b, 0)).reduce((a, b) => a + b, 0);
+                }
 
-            /*multiplayer.fetchPlayerProfileData(this.props.challengedProfileParam).then((profile) => {
-                this.setState({challengedProfile: profile});
-                console.log(profile);
-                multiplayer.challengePlayer(profile.playerId);
-            }).catch(err => console.log(err));*/
+                if (typeof profile.profileData.trackRecord !== 'undefined') {
+                    losses = profile.profileData.trackRecord.filter(record => record.lost).length;
+                    winnings = profile.profileData.trackRecord.filter(record => record.won).length;
+                    drawn = profile.profileData.trackRecord.filter(record => typeof record.winners !== 'undefined').filter(record => record.winners.length > 1).length;
+                }
 
-        
-            this.setState({ multiplayerScreen: this.props.multiplayerLandingPage }, () => {
-                this.multiplayerScreen.showPlayerProfile(player);
-            });
-
+                fetch(ServerConfig.baseUrl + '/rank/' + profile.playerId, {            
+                    headers: new Headers({
+                        'Authorization': 'Basic ' + ServerConfig.auth,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    })
+                }).then(response => this.handleFetchError(response))
+                .then(data => {
+                    let player = {
+                        id: profile.playerId,
+                        level: level,
+                        winnings: winnings,
+                        drawn: drawn,
+                        losses: losses,
+                        ranking: data.ranking, 
+                        name: profile.playerName
+                    }
+                    console.log('final player data', player);
+                    this.multiplayerScreen.showPlayerProfile({ opponent: player });
+                }).catch(error => console.warn(error));
+            }).catch(error => console.warn(error));
         }
     }
 
@@ -109,51 +131,8 @@ class Hud extends Component {
         }
     }
 
-    shareYourLink() {
-        const link = multiplayer.createChallengeMeLink();
-        if (typeof link !== 'undefined') {
-            if (navigator.share) {
-                navigator.share({
-                    title: window.document.title,
-                    text: t[this.props.language].INVITATION,
-                    url: link
-                }).catch((error) => console.log('error sharing challenge me link', error));
-            } else {
-                let whatsappWindowRef = window.open();
-                whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + link);
-            }
-        }
-    }
-
-    timeToString(millis) {
-        let seconds = Math.floor(millis / 1000);
-        let hours = Math.floor(seconds / 3600);
-        seconds -= hours * 3600;
-        let min = Math.floor(seconds / 60);
-        seconds -= min * 60;
-
-        seconds = '' + seconds;
-        seconds = ('00' + seconds).substring(seconds.length);
-
-        if (hours > 0) {
-            min = '' + min;
-            min = ('00' + min).substring(min.length);
-            return hours + ":" + min + ":" + seconds;
-        }
-        else {
-            return min + ":" + seconds;
-        }
-    }
-
-    timeAgo(millis) {
-        let timeAgo = new TimeAgo('en-US');
-        let timeSinceUpdate = timeAgo.format(millis);
-        return timeSinceUpdate;
-    }
-
     render() {
         const stage = this.estimateStage();
-        console.log(stage);
         let textAnimation = typeof this.state.message === 'undefined' ? undefined : <div id="textAnimation" className="zoom">{this.state.message}</div>
         return (
             <div className={this.props.className}>
@@ -263,7 +242,11 @@ class Hud extends Component {
                             </div>
                         );
                     } else if (stage === 'MULTIPLAYER_SCREEN') {
-                        return <MultiplayerScreen onRef={multiplayerScreen => this.multiplayerScreen = multiplayerScreen}/>
+                        return <MultiplayerScreen enterMultiplayerGame={sessionId => {
+                                this.setState({ multiplayerScreen: false, choclabScreen: false });
+                                this.props.enterMultiplayerGame(sessionId);
+                            }
+                        } onRef={multiplayerScreen => this.multiplayerScreen = multiplayerScreen}/>
                     } else if (stage === 'CHOCLAB_SCREEN') {
                         return <Choclab />
                     } else {
@@ -284,10 +267,10 @@ class Hud extends Component {
 
 Hud.propTypes = {
     prepareNewGameCallback: PropTypes.func.isRequired,
+    enterMultiplayerGame: PropTypes.func.isRequired,
     startTutorial: PropTypes.func.isRequired,
-    joinMultiplayerGame: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired,
-    multiplayerLandingPage: PropTypes.bool.isRequired,
+    challengedPlayer: PropTypes.string,
     className: PropTypes.string.isRequired
 }
 

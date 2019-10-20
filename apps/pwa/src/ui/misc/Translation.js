@@ -179,7 +179,7 @@ const languages = {
         TUTORIAL_DIALOG_BACK: 'Back to menu',
         TUTORIAL_DIALOG_PLAY_GAME: 'Start a match',
         ACTIONS: 'Actions',
-        PLAYER: 'Player',
+        OPPONENT: 'Opponent',
         TURNS: 'Turns',
         MATCH_TIME: 'Match Time',
         LAST_ACTION: 'Last Action',
@@ -188,6 +188,7 @@ const languages = {
         SHARE_LINK: 'Share your Link',
         FRIENDS: 'Friends',
         START_GAME: 'Start Game',
+        JOIN_GAME: 'Join Game',
         ATTRIBUTE_NAME: attribute => {
             switch (attribute) {
                 case 'hp': return 'Hp';
@@ -378,7 +379,7 @@ const languages = {
         TUTORIAL_DIALOG_BACK: 'Zum Menü',
         TUTORIAL_DIALOG_PLAY_GAME: 'Jetzt Spielen',
         ACTIONS: 'Aktionen',
-        PLAYER: 'Spieler',
+        OPPONENT: 'Gegenspieler',
         TURNS: 'Züge',
         MATCH_TIME: 'Spielzeit',
         LAST_ACTION: 'Letzte Aktion',
@@ -387,6 +388,7 @@ const languages = {
         SHARE_LINK: 'Profil-Link teilen',
         FRIENDS: 'Freunde',
         START_GAME: 'Spiel starten',
+        JOIN_GAME: 'Spiel beitreten',
         ATTRIBUTE_NAME: attribute => {
             switch (attribute) {
                 case 'hp': return 'Hp';

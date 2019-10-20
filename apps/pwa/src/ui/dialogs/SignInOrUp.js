@@ -14,8 +14,9 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogActions from '@material-ui/core/DialogActions';
 import Button from '@material-ui/core/Button';
+import { ServerConfig } from '../../helper/settings';
 
-const uiConfig = {
+const FirebaseSigninUiConfig = {
     signInFlow: 'popup',
     autoUpgradeAnonymousUsers: true,
     credentialHelper: firebaseui.auth.CredentialHelper.NONE,
@@ -57,8 +58,29 @@ class SignInOrUp extends React.Component {
         this.props.onRef(this);
     }
 
+    handleFetchError(response) {
+        if (!response.ok) {
+            throw Error(response.statusText);
+        }
+        return response.json();
+    }
+
     open = () => {
         this.setState({ open: true });
+
+        const user = firebase.auth().currentUser;
+        if (user) {
+            fetch(ServerConfig.baseUrl + '/rank/' + user.uid, {            
+                headers: new Headers({
+                    'Authorization': 'Basic ' + ServerConfig.auth,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                })
+            }).then(response => this.handleFetchError(response))
+            .then(data => {
+                this.setState({ ranking: data.ranking });
+            }).catch(error => this.setState({ ranking: 'Offline'}));
+        }
     }
 
     handleClose = () => {
@@ -66,7 +88,7 @@ class SignInOrUp extends React.Component {
     }
 
     render() {
-        if (this.props.playerInfos.isAnonymous === false) {
+        if (!this.props.playerInfos.isAnonymous) {
             return (
                 <Dialog
                     fullWidth={true}
@@ -76,9 +98,10 @@ class SignInOrUp extends React.Component {
                     aria-labelledby="signInOrUpDialogTitle">
                     <DialogTitle id="signInOrUpDialogTitle">{t[this.props.language].ACCOUNTINFOS}</DialogTitle>
                     <DialogContent>
-                        Welcome: {this.props.playerInfos.name}<br />
+                        Player Name: {this.props.playerInfos.stats.username}<br />
                         E-Mail: {this.props.playerInfos.email}<br />
-                        Coins: {this.props.playerInfos.stats.coins}
+                        Coins: {this.props.playerInfos.stats.coins}<br />
+                        Rank: {this.state.ranking}
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => {
@@ -100,7 +123,7 @@ class SignInOrUp extends React.Component {
                     aria-labelledby="signInOrUpDialogTitle">
                     <DialogTitle id="signInOrUpDialogTitle">{t[this.props.language].SIGNINORUP}</DialogTitle>
                     <DialogContent>
-                        <StyledFirebaseAuth uiConfig={uiConfig} firebaseAuth={firebase.auth()} />
+                        <StyledFirebaseAuth uiConfig={FirebaseSigninUiConfig} firebaseAuth={firebase.auth()} />
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => {

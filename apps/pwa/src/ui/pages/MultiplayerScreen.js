@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 import './MultiplayerScreen.css';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -11,6 +12,7 @@ import { connect } from 'react-redux';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';
+import { multiplayer } from '../../Multiplayer';
 
 class MultiplayerScreen extends Component {
     constructor(props) {
@@ -19,37 +21,15 @@ class MultiplayerScreen extends Component {
         TimeAgo.addLocale(de);
         this.state = {
             showPlayerProfile: false,
-            openGames: [
-                {
-                    'playerName': 'Sebastian',
-                    'turns': 12,
-                    'matchTime': 201000,
-                    'lastAction': 1566153558102,
-                    'potentialCoins': 246,
-                    'level': 15,
-                    'ranking': 129,
-                    'winnings': 17,
-                    'drawn': 0,
-                    'losses': 8
-                },
-                {
-                    'playerName': 'Caro',
-                    'turns': 5,
-                    'matchTime': 91800,
-                    'lastAction': 1566153373262,
-                    'potentialCoins': 49,
-                    'level': 12,
-                    'ranking': 231,
-                    'winnings': 13,
-                    'drawn': 1,
-                    'losses': 9
-                },
-            ]
+            openGames: []
         }
     }
 
     componentDidMount() {
         this.props.onRef(this);
+        multiplayer.getMultiplayerSessions().then(games => {
+            this.setState({ openGames:  games});
+        });
     }
 
     timeToString(millis) {
@@ -90,7 +70,8 @@ class MultiplayerScreen extends Component {
     showPlayerProfile = profile => {
         this.setState({ 
             showPlayerProfile: true,
-            player: profile
+            player: profile.opponent,
+            profile: profile
         });
     }
 
@@ -102,9 +83,9 @@ class MultiplayerScreen extends Component {
                     open={this.state.showPlayerProfile}
                     onClose={() => this.setState({ showPlayerProfile: false })}
                     aria-labelledby="playerProfile">
-                    <DialogTitle>{this.state.player ? this.state.player.playerName : null}</DialogTitle>
+                    <DialogTitle>{this.state.player ? this.state.player.name : 'Chocnonymous'}</DialogTitle>
                     <DialogContent>
-                        {this.state.player ? <div className="statistics">
+                        {this.state.player ? <div className="multiplayer-statistics">
                             <p><span>{this.state.player.level}</span><PlusOne /></p>
                             <p><span>{this.state.player.ranking}</span><EmojiEvents /></p>
                             <p><span>{this.state.player.winnings}</span><ThumbUp /></p>
@@ -113,10 +94,29 @@ class MultiplayerScreen extends Component {
                         </div> : null}
                     </DialogContent>
                     <DialogActions>
-                        { this.state.player && !this.state.openGames.map(game => game.playerName).includes(this.state.player.playerName) ? <Button onClick={() => {
-                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                            this.setState({ showPlayerProfile: false });
-                        }} color="primary">{t[this.props.language].START_GAME}</Button> : null }
+                        {(() => {
+                            if (typeof this.state.openGames !== 'undefined' && this.state.player) {
+                                if (!this.state.openGames.map(game => game.opponent.name).includes(this.state.player.name)) {
+                                    return <Button onClick={() => {
+                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                                multiplayer.challengePlayer(this.state.player.name);
+                                                this.setState({ showPlayerProfile: false });
+                                                multiplayer.getMultiplayerSessions().then(games => {
+                                                    this.setState({ openGames:  games});
+                                                });
+                                            }} color="primary">{t[this.props.language].START_GAME}</Button>
+                                } else {
+                                    return <Button onClick={() => {
+                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                                this.props.enterMultiplayerGame(this.state.profile.id);
+                                                this.setState({ showPlayerProfile: false });
+                                            }} color="primary">{t[this.props.language].JOIN_GAME}</Button>
+                                }
+                            } else {
+                                console.log(this.state.openGames)
+                                return null;
+                            }
+                        })()}
 
                         <Button onClick={() => {
                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -127,33 +127,49 @@ class MultiplayerScreen extends Component {
 
                 <div className="controls">
                     <div className="menuButton">{t[this.props.language].RANDOM_OPPONENT}</div>
-                    <div className="menuButton">{t[this.props.language].SHARE_LINK}</div>
+                    <div className="menuButton" onClick={() => {
+                        multiplayer.createChallengeMeLink().then(link => {
+                            console.log(link);
+                            if (navigator.share) {
+                                navigator.share({
+                                    title: window.document.title,
+                                    text: t[this.props.language].INVITATION,
+                                    url: link,
+                                }).catch((error) => console.log('error sharing multiplayer session', error));
+                            } else {
+                                let whatsappWindowRef = window.open();
+                                whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + link);
+                            }
+                        });
+                    }}>{t[this.props.language].SHARE_LINK}</div>
                     <div className="menuButton">{t[this.props.language].FRIENDS}</div>
                 </div>
                 <div className="openGames">
                     <div className="gamestable">
                         <div className="tableHead">{t[this.props.language].ACTIONS}</div>
-                        <div className="tableHead">{t[this.props.language].PLAYER}</div>
+                        <div className="tableHead">{t[this.props.language].OPPONENT}</div>
                         <div className="tableHead">{t[this.props.language].TURNS}</div>
-                        <div className="tableHead">{t[this.props.language].MATCH_TIME}</div>
                         <div className="tableHead">{t[this.props.language].LAST_ACTION}</div>
                         <div className="tableHead">{t[this.props.language].POTENTIAL_COINS}</div>
 
-                        {this.state.openGames.map((row, i) => (
+                        {typeof this.state.openGames !== 'undefined' ? this.state.openGames.map((row, i) => (
                             [
-                                <div key={i} onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} gameActions`}><PlayArrow /><Cancel /><AccountCircle /></div>,
-                                <div key={i+1} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">player</span><span>{row.playerName}</span></div>,
+                                <div key={i} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} gameActions`}><PlayArrow onClick={() => this.props.enterMultiplayerGame(row.id)} /><Cancel /><AccountCircle onClick={() => this.showPlayerProfile(row)} /></div>,
+                                <div key={i+1} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">player</span><span>{row.opponent.name}</span></div>,
                                 <div key={i+2} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
-                                <div key={i+3} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">match</span><span>{this.timeToString(row.matchTime)}</span></div>,
-                                <div key={i+4} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.lastAction)}</span></div>,
-                                <div onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} tablefoot`} key={i+5}><span className="gamelabel">potential coins</span><span>{row.potentialCoins}</span></div>
+                                <div key={i+3} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.last_changed)}</span></div>,
+                                <div onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} tablefoot`} key={i+4}><span className="gamelabel">potential coins</span><span>{multiplayer.calculateCoinsFromTrackRecord([row.statistics], true)}</span></div>
                             ]
-                        ))}
+                        )) : null}
                     </div>
                 </div>
             </div>
         );
     }
+}
+
+MultiplayerScreen.propTypes = {
+    enterMultiplayerGame: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({

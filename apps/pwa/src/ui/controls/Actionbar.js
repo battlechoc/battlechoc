@@ -6,12 +6,12 @@ import { build, attack, chooseStart, chooseField, finishTurn, finishBuildPhase, 
 import { BattlechocError } from '../../gameplay/Errors';
 import { playerHasAttacks, playerHasAttacksPerTurn } from '../../gameplay/Player';
 import { getCheapest } from '../../gameplay/GameEntities';
-import { deselectBuildings, deselectAttack, joinedMultiplayer, waitForMultiplayer } from '../UiActions';
+import { deselectBuildings, deselectAttack } from '../UiActions';
 import { GameStateTypes } from '../../gameplay/GameplayReducer';
 import { multiplayer } from '../../Multiplayer';
 import Fab from '@material-ui/core/Fab';
-import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, Share, PermIdentity } from '@material-ui/icons';
-import { Jukebox, Translation as t } from '../misc';
+import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, PermIdentity } from '@material-ui/icons';
+import { Jukebox } from '../misc';
 
 class Actionbar extends Component {
     constructor(props) {
@@ -54,31 +54,6 @@ class Actionbar extends Component {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         document.documentElement.requestFullscreen().then(() => {
             window.screen.orientation.lock('landscape').catch(error => console.log('Unable to lock orientation to landscape'));
-        });
-    }
-
-    shareMultiplayerGame() {
-        let whatsappWindowRef = undefined;
-        if (typeof navigator.share === 'undefined') {
-            whatsappWindowRef = window.open();
-        }
-        multiplayer.createGameSession(this.props.game, this.props.playerJoined, this.props.joinedMultiplayer, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField }).then((session) => {
-            this.props.waitForMultiplayer();
-            if (typeof session !== 'undefined') {
-                console.dir(session);
-                if (navigator.share) {
-                    navigator.share({
-                        title: window.document.title,
-                        text: t[this.props.language].INVITATION,
-                        url: session.url,
-                    }).then(() => console.log('successfully shared'))
-                        .catch((error) => console.log('error sharing multiplayer session', error));
-                } else {
-                    whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + session.url);
-                }
-            }
-        }).catch((error) => {
-            console.error('could not create a multiplayer game session.', error);
         });
     }
 
@@ -149,24 +124,10 @@ class Actionbar extends Component {
             );
         }
 
-        if (typeof this.props.game !== 'undefined' && this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START && typeof multiplayer.currentGameSession === 'undefined' && !this.props.tutorial) {
-            buttons.push(
-                <Fab
-                    size="small"
-                    key="4"
-                    color="primary"
-                    aria-label="share game"
-                    className="icon"
-                    onClick={() => this.shareMultiplayerGame()}>
-                    <Share />
-                </Fab>
-            );
-        }
-
         if (typeof this.props.game !== 'undefined') {
-            if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true) {
+            if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
                 if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
-                    if (playerHasAttacksPerTurn(this.props.game.players[multiplayer.localPlayerIndex]) === true) {
+                    if (playerHasAttacksPerTurn(this.props.game.players[multiplayer.localPlayerIndex])) {
                         if ((this.props.game.players[multiplayer.localPlayerIndex].buildings > 0 && this.props.game.players[multiplayer.localPlayerIndex].cacao >= getCheapest().costs)) {
                             buttons.push([
                                 <Fab
@@ -274,9 +235,7 @@ const mapDispatchToProps = {
     build,
     attack,
     chooseStart,
-    chooseField,
-    joinedMultiplayer,
-    waitForMultiplayer
+    chooseField
 };
 
 const ActionbarContainer = connect(
