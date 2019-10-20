@@ -7,7 +7,7 @@ import OfflineStore from './OfflineStore';
 import { GameActionTypes } from './gameplay/GameActions';
 import { AttackType } from './gameplay/GameEntities';
 import { Jukebox } from './ui/misc';
-import { ServerConfig, handleFetchError } from './helper/settings';
+import { ServerConfig } from './helper/settings';
 
 const MultiplayerGameSessionState = Object.freeze({
     UNINITIALIZED: 'MultiplayerGameSessionState.Uninitialized',
@@ -495,11 +495,12 @@ class Multiplayer {
     }
 
     relayAction(action) {
-        action.index = this.playerEventIndex;
-        this.playerEventIndex += 1;
-        action.emitted = firebase.firestore.Timestamp.fromDate(new Date());
-
         if (typeof this.currentGameSession !== 'undefined' && action.payload.issuer === this.localPlayerId) {
+            action.index = this.playerEventIndex;
+            this.playerEventIndex += 1;
+            console.log('RELAY ACTION ' + this.playerEventIndex);
+            action.emitted = firebase.firestore.Timestamp.fromDate(new Date());
+
             fetch(ServerConfig.baseUrl + '/multiplayer/relay/action', {
                 method: 'post',
                 headers: new Headers({

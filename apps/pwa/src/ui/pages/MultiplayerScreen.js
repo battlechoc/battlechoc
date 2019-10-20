@@ -28,7 +28,6 @@ class MultiplayerScreen extends Component {
     componentDidMount() {
         this.props.onRef(this);
         multiplayer.getMultiplayerSessions().then(games => {
-            console.log('multiplayer games', games);
             this.setState({ openGames:  games});
         });
     }
@@ -102,6 +101,9 @@ class MultiplayerScreen extends Component {
                                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                                 multiplayer.challengePlayer(this.state.player.name);
                                                 this.setState({ showPlayerProfile: false });
+                                                multiplayer.getMultiplayerSessions().then(games => {
+                                                    this.setState({ openGames:  games});
+                                                });
                                             }} color="primary">{t[this.props.language].START_GAME}</Button>
                                 } else {
                                     return <Button onClick={() => {
