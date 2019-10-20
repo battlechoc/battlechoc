@@ -240,35 +240,59 @@ class Rules {
         }
 
         if (action.type === GameActionTypes.chooseStart) {
-            return currentState === GameStateTypes.CHOOSE_FIELD_OR_START;
+            if (currentState === GameStateTypes.CHOOSE_FIELD_OR_START) {
+            	return true;
+            } else {
+            	console.warn('CANNOT COOSE START OUTSIDE OF GAMESTATE ' + GameStateTypes.CHOOSE_FIELD_OR_START);
+            	return false;
+            }
         } else if (action.type === GameActionTypes.chooseField) {
-            return currentState === GameStateTypes.CHOOSE_FIELD_OR_START || currentState === GameStateTypes.CHOOSE_FIELD;
+            if (currentState === GameStateTypes.CHOOSE_FIELD_OR_START || currentState === GameStateTypes.CHOOSE_FIELD) {
+            	return true;
+            } else {
+            	console.warn(GameActionTypes.chooseField + ' IS NOT A VALID ACTION IN GAMESTATE ' + currentState);
+            	return false;
+            }
         } else if (action.type === GameActionTypes.finishTurn) {
             return true;
         } else if (action.type === GameActionTypes.finishBuildPhase) {
-            return currentState === GameStateTypes.BUILD_PHASE;
+            if (currentState === GameStateTypes.BUILD_PHASE) {
+            	return true;
+            } else {
+            	console.warn(GameActionTypes.finishBuildPhase + ' IS NOT A VALID ACTION IN GAMESTATE ' + currentState);
+            	return false;
+            }
         } else if (action.type === GameActionTypes.build) {
             if (currentState !== GameStateTypes.BUILD_PHASE && currentState !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && currentState !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
                 console.warn('PLAYER IS IN UNEXPECTED STATE ' + JSON.stringify(game, action));
                 return false;
-            } else if ((currentPlayer(game).buildings === 0 || (currentPlayer(game).buildingsPerTurn === 0 && action.payload.building.type === entities.EntityType.FACTORY_EXTENSION)) &&
-                action.payload.building.type !== entities.EntityType.FACTORY) {
+            } else if (currentPlayer(game).buildings === 0 && action.payload.building.type !== entities.EntityType.FACTORY) {
+                console.warn('NO BUILDINGS LEFT')
                 return false;
             } else if (currentPlayer(game).cacao < action.payload.building.costs) {
+            	console.warn('NO CACAO LEFT')
                 return false;
             } else {
-                return this.canBuildOnCell(action.payload.building.position, action.payload.building.type, game);
+                if (this.canBuildOnCell(action.payload.building.position, action.payload.building.type, game)) {
+                	return true;
+                } else {
+                	console.warn('CANNOT BUILD ON CELL', action.payload.building.position);
+                	return false;
+                }
             }
         } else if (action.type === GameActionTypes.attack) {
             if (currentPlayer(game).attacks[action.payload.attackType] === 0) {
+            	console.warn('NO ATTACKS WITH TYPE OF ' + action.payload.attackType + ' LEFT');
                 return false;
             } else if (this.otherPlayerBoardCell(game, action.payload).occupiedBy.length === 0 &&
                 action.payload.attackType !== entities.AttackType.BUNNY && action.payload.attackType !== entities.AttackType.HOT_CHOCOLATE) {
+                console.warn('FIELD IS EMPTY');
                 return false;
             } else {
                 return true;
             }
         } else {
+        	console.warn('NOT A VALID GAME STATE')
             return false;
         }
     }
@@ -406,32 +430,32 @@ class Reducer {
 		                    if (entity.type === entities.EntityType.FACTORY) {
 		                        opponent.hasFactory = false;
 		                        console.log(opponent.buildingsPerTurn)
-		                        opponent.buildingsPerTurn -= calculateBuildingsPerTurn(getEntityDescriptor(entities.EntityType.FACTORY), cellColor);
+		                        opponent.buildingsPerTurn -= calculateBuildingsPerTurn(entities.getEntityDescriptor(entities.EntityType.FACTORY), cellColor);
 		                        console.log(opponent.buildingsPerTurn)
-		                        opponent.cacaoPerTurn -= calculateCacaoPerTurn(getEntityDescriptor(entities.EntityType.FACTORY), cellColor);
+		                        opponent.cacaoPerTurn -= calculateCacaoPerTurn(entities.getEntityDescriptor(entities.EntityType.FACTORY), cellColor);
 		                        console.log('FACTORY DESTROYED');
 		                    } else if (entity.type === entities.EntityType.FACTORY_EXTENSION) {
-		                        opponent.buildingsPerTurn -= calculateBuildingsPerTurn(getEntityDescriptor(entities.EntityType.FACTORY_EXTENSION), cellColor);
+		                        opponent.buildingsPerTurn -= calculateBuildingsPerTurn(entities.getEntityDescriptor(entities.EntityType.FACTORY_EXTENSION), cellColor);
 		                        console.log('FACTORY EXTENSION DESTROYED');
 		                    } else if (entity.type === entities.EntityType.CACAOTREE) {
-		                        opponent.cacaoPerTurn -= calculateCacaoPerTurn(getEntityDescriptor(entities.EntityType.CACAOTREE), cellColor);
+		                        opponent.cacaoPerTurn -= calculateCacaoPerTurn(entities.getEntityDescriptor(entities.EntityType.CACAOTREE), cellColor);
 		                        console.log('CACAOTREE DESTROYED');
 		                    } else if (entity.type === entities.EntityType.RUM_TRUFFLE_CANNON) {
-		                        const destroyedBuildingDescriptor = getEntityDescriptor(entities.EntityType.RUM_TRUFFLE_CANNON);
+		                        const destroyedBuildingDescriptor = entities.getEntityDescriptor(entities.EntityType.RUM_TRUFFLE_CANNON);
 		                        opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType()] -= destroyedBuildingDescriptor.attacksPerTurn();
 		                        console.log('CANNON DESTROYED');
 		                    } else if (entity.type === entities.EntityType.HOT_CHOCOLATE_BALLISTA) {
-		                        const destroyedBuildingDescriptor = getEntityDescriptor(entities.EntityType.HOT_CHOCOLATE_BALLISTA);
+		                        const destroyedBuildingDescriptor = entities.getEntityDescriptor(entities.EntityType.HOT_CHOCOLATE_BALLISTA);
 		                        opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType()] -= destroyedBuildingDescriptor.attacksPerTurn();
 		                        console.log('BALISTA DESTROYED');
 		                    } else if (entity.type === entities.EntityType.FRUIT_CANNON) {
-		                        const destroyedBuildingDescriptor = getEntityDescriptor(entities.EntityType.FRUIT_CANNON);
+		                        const destroyedBuildingDescriptor = entities.getEntityDescriptor(entities.EntityType.FRUIT_CANNON);
 		                        opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType()] -= destroyedBuildingDescriptor.attacksPerTurn();
-		                        const rumTruffleCannon = getEntityDescriptor(entities.EntityType.RUM_TRUFFLE_CANNON);
+		                        const rumTruffleCannon = entities.getEntityDescriptor(entities.EntityType.RUM_TRUFFLE_CANNON);
 		                        opponent.attacksPerTurn[rumTruffleCannon.attackType()] -= rumTruffleCannon.attacksPerTurn();
 		                        console.log('FRUIT CANNON DESTROYED');
 		                    } else if (entity.type === entities.EntityType.SPYING_EASTER_BUNNY) {
-		                        const destroyedBuildingDescriptor = getEntityDescriptor(entities.EntityType.SPYING_EASTER_BUNNY);
+		                        const destroyedBuildingDescriptor = entities.getEntityDescriptor(entities.EntityType.SPYING_EASTER_BUNNY);
 		                        opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType()] -= destroyedBuildingDescriptor.attacksPerTurn();
 		                        console.log('SPYING EASTER BUNNY DESTROYED');
 		                    } else if (attackType === entities.AttackType.HOT_CHOCOLATE && entity.type === entities.EntityType.CHOCOLATE_FOUNTAIN) {

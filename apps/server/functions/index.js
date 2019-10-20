@@ -125,40 +125,34 @@ const processEvents = (session, events) => {
     let processedEvents = 0;
     let faildValidityChecks = 0;
 
-    console.log('start process events');
-    console.log(events.length);
-    console.log((session.lastProcessedEvent[0] + session.lastProcessedEvent[1]))
-
-
     if (events.length > (session.lastProcessedEvent[0] + session.lastProcessedEvent[1])) {
-        events.forEach(event => {
+        events.filter(event => !event.hasOwnProperty('processed')).forEach(event => {
             console.log('now process event ' + JSON.stringify(event));
             if (event.payload.issuer === session.game.players[0].id) {
-                console.log('issuer is player 0')
                 if (session.game.currentPlayerIndex === 0) {
-                    console.log('its issuers turn')
                     if (session.lastProcessedEvent[0] < event.index) {
-                        console.log('event index behind')
                         unprocessedEvents += 1;
                     } else if (session.lastProcessedEvent[0] === event.index) {
                         if (gamestate.Rules.isActionValid(session.game, event)) {
                             gamestate.Reducer.updateState(session.game, event);
-                            console.log('event proceeded')
                             session.lastProcessedEvent[0] += 1;
                             processedEvents += 1;
+                            event.processed = true;
                         } else {
                             console.warn('Validity check failed for ' + JSON.stringify(event))
+                            if (!event.hasOwnProperty('invalid')) {
+                                session.lastProcessedEvent[0] += 1;
+                                event.invalid = true;
+                            }
                             faildValidityChecks += 1;
                         }                  
                     } else {
-                        console.log(session.lastProcessedEvent[0], event.index)
                         unprocessedEvents += 1;
                     }
                 } else {
                     unprocessedEvents += 1;
                 }
             } else {
-                console.log('issuer is player 1')
                 if (session.game.currentPlayerIndex === 1) {
                     if (session.lastProcessedEvent[1] < event.index) {
                         unprocessedEvents += 1;
@@ -167,8 +161,13 @@ const processEvents = (session, events) => {
                             gamestate.Reducer.updateState(session.game, event);
                             session.lastProcessedEvent[1] += 1;
                             processedEvents += 1;
+                            event.processed = true;
                         } else {
                             console.warn('Validity check failed for ' + JSON.stringify(event))
+                            if (!event.hasOwnProperty('invalid')) {
+                                session.lastProcessedEvent[1] += 1;
+                                event.invalid = true;
+                            }
                             faildValidityChecks += 1;
                         }
                     } else {
@@ -191,7 +190,6 @@ const processEvents = (session, events) => {
 const processEventsInOrder = session => {
     let events = session.events_from_0;
     events = events.concat(session.events_from_1);
-    console.log('events', events);
     events.sort((a, b) => (a.emitted.nanoseconds > b.emitted.nanoseconds) ? 1 : -1)
     
     const timeout = new Date().getTime() + 10000;
