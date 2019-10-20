@@ -210,12 +210,12 @@ class Scene extends Component {
         entities.forEach(cell => this.showEnergyBar(cell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0], new Vector3(cell.row, 0, cell.col)))
 
         let trees = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE));
-        let description = getEntityDescriptor(EntityType.CACAOTREE, this.props.level);
+        let description = getEntityDescriptor(EntityType.CACAOTREE, this.props.game.players[multiplayer.localPlayerIndex].level);
         trees.forEach(cell => {
             this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), cell.type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn()[0] * 1.5) : description.cacaoPerTurn()[0]);
         });
         let factory = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.FACTORY));
-        description = getEntityDescriptor(EntityType.FACTORY, this.props.level);
+        description = getEntityDescriptor(EntityType.FACTORY, this.props.game.players[multiplayer.localPlayerIndex].level);
         factory.forEach(cell => {
             this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), description.cacaoPerTurn()[0]);
         });
@@ -286,9 +286,9 @@ class Scene extends Component {
         if (buildingSelected || (initialPlacement && this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn === 0)) {
             let building;
             if (initialPlacement) {
-                building = createEntity(EntityType.FACTORY, this.props.level);
+                building = createEntity(EntityType.FACTORY, this.props.game.players[multiplayer.localPlayerIndex].level);
             } else {
-                building = createEntity(this.props.selectedBuilding, this.props.level);
+                building = createEntity(this.props.selectedBuilding, this.props.game.players[multiplayer.localPlayerIndex].level);
             }
             building.position = { row: row, col: col };
             let playerCacaoPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn;
@@ -304,7 +304,7 @@ class Scene extends Component {
                     this.props.deselectAttack();
                     let playerId = this.props.game.players[multiplayer.localPlayerIndex].id;
                     setTimeout(() => {
-                        let description = getEntityDescriptor(EntityType.FACTORY, this.props.level);
+                        let description = getEntityDescriptor(EntityType.FACTORY, this.props.game.players[multiplayer.localPlayerIndex].level);
                         this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), description.cacaoPerTurn()[0]);
                     }, 1000);
                     setTimeout(() => {
@@ -315,7 +315,7 @@ class Scene extends Component {
                         }
                     }, 3000);
                 } else {
-                    let description = getEntityDescriptor(this.props.selectedBuilding, this.props.level);
+                    let description = getEntityDescriptor(this.props.selectedBuilding, this.props.game.players[multiplayer.localPlayerIndex].level);
                     this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs());
                     let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;
@@ -371,17 +371,19 @@ class Scene extends Component {
         if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
             let attack = 0;
             if (this.props.selectedAttack === AttackType.TRUFFLE) {
-                let description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, this.props.level);
+                let description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, this.props.game.players[multiplayer.localPlayerIndex].level);
                 attack = description.attack()[0];
             } else if (this.props.selectedAttack === AttackType.FRUIT) {
-                let description = getEntityDescriptor(EntityType.FRUIT_CANNON, this.props.level);
+                let description = getEntityDescriptor(EntityType.FRUIT_CANNON, this.props.game.players[multiplayer.localPlayerIndex].level);
                 attack = description.attack()[0];
             } 
+
+            let damage = (1 + ((Math.random() * 0.4) - 0.2)) * attack;
 
             this.props.attack({
                 issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
                 attackType: this.props.selectedAttack,
-                attack: attack,
+                damage: damage,
                 row: row,
                 col: col
             }).then(() => {

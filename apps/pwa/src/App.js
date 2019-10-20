@@ -299,8 +299,8 @@ class App extends Component {
                             this.props.gameResumeable(false);
                             OfflineStore.gamestateStore.clear();
                             let players = [
-                                createPlayer("Charlie Bucket", PlayerType.HUMAN),
-                                createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
+                                createPlayer("Charlie Bucket", PlayerType.HUMAN, this.props.playerInfos.stats.level),
+                                createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP, this.props.playerInfos.stats.level)
                             ];
 
                             this.props.startGame(players).then(() => {
