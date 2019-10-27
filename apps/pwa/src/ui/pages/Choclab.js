@@ -6,7 +6,7 @@ import { updateLevel } from '../../gameplay/GameActions';
 import { updatePlayerStats } from '../UiActions';
 import { Translation as t } from '../misc';
 import { connect } from 'react-redux';
-import { getEntityDescriptor, EntityType } from '../../gameplay/GameEntities';
+import { getEntityDescriptor } from '../../gameplay/GameEntities';
 import { AddBox, Undo } from '@material-ui/icons';
 import { ChoclabPalette } from '../controls';
 import MeshPreview from '../../3d/MeshPreview';
