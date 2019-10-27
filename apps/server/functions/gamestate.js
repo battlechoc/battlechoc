@@ -418,7 +418,7 @@ class Reducer {
                         console.log('CHOCOLATE FOUNTAIN DESTROYED');
                     }
                 } else {
-                    if (attackType === AttackType.HOT_CHOCOLATE && attackedCell.occupiedBy.length === 0) {
+                    if (attackType === entities.AttackType.HOT_CHOCOLATE && attackedCell.occupiedBy.length === 0) {
                         attackedCell.molten = true;
                         currentPlayer(state.game).statistics.moltenFields += 1;
                     } else {
