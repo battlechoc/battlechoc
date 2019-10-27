@@ -172,7 +172,10 @@ class App extends Component {
             if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
                 const winners = Rules.determineWinner(nextProps.game);
                 if (typeof winners !== 'undefined') {
-                    this.props.endGame(winners)
+                    this.props.endGame({
+                        winners: winners,
+                        issuer: nextProps.game.players[multiplayer.localPlayerIndex].id
+                    });
                 }
             }
 
@@ -320,7 +323,23 @@ class App extends Component {
         });
     }
 
-    endGame() {
+    endGame(surrender=false) {
+        Jukebox.stopMusic(true);
+
+        if (surrender) {
+            this.props.showOverview();
+            this.props.gameResumeable(false);
+            OfflineStore.gamestateStore.clear();
+            let winners = []
+            winners.push(Object.assign({ idx: 1 - multiplayer.localPlayerIndex }, this.props.game.players[1 - multiplayer.localPlayerIndex]));
+            this.props.endGame({
+                winners: winners,
+                issuer: this.props.game.players[multiplayer.localPlayerIndex].id
+            });
+            let stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: winners };
+            multiplayer.pushGameStats([stats]);
+        }
+
         if (this.props.tutorial) {
             this.closeTutorial(false);
         } else {
@@ -340,7 +359,7 @@ class App extends Component {
         this.props.gameResumeable(false);
         OfflineStore.gamestateStore.clear();
         const winners = Rules.determineWinner(this.props.game);
-        
+        console.log(winners);
         let stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: winners };
         multiplayer.pushGameStats([stats]);
     }
@@ -378,7 +397,7 @@ class App extends Component {
                     enterMultiplayerGame={this.enterMultiplayerGame}
                     startTutorial={() => this.startTutorial()}
                     className={this.props.tutorial ? 'tutorial hud' : 'hud'}
-                    endGame={() => this.endGame()}
+                    endGame={surrender => this.endGame(surrender)}
                     onRef={hud => this.hud = hud}
                     challengedPlayer={this.state.params.challenge} />
                 {this.props.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
