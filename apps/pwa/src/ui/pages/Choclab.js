@@ -93,9 +93,7 @@ class Choclab extends Component {
                         let values = this.state.selectedEntity[attribute.name]();
                         let percentage = (values[0] / values[1]) * 100;
                         let classNames = 'progress';
-                        if (['fortune', 'area'].includes(attribute.name) && 
-                            [EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY, 
-                             EntityType.XMAS_FACTORY, EntityType.FRUIT_CANNON, EntityType.HOT_CHOCOLATE_BALLISTA].includes(this.state.selectedEntityType)) {
+                        if (['fortune', 'area', 'buildingsPerTurn'].includes(attribute.name)) {
                             classNames += ' locked';
                         }
                         return (

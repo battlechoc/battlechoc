@@ -1,6 +1,6 @@
 const ServerConfig = {
     auth: btoa('battlechoc-pwa:***REMOVED***'),
-    baseUrl: 'https://us-central1-battlechoc.cloudfunctions.net/api'
+    baseUrl: 'https://europe-west1-battlechoc.cloudfunctions.net/api'
 };
 
 const handleFetchError = response => {
