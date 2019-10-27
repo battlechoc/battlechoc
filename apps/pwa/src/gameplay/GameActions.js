@@ -23,7 +23,8 @@ const IssuerRelevantActions = [
     GameActionTypes.finishTurn,
     GameActionTypes.finishBuildPhase,
     GameActionTypes.build,
-    GameActionTypes.attack
+    GameActionTypes.attack,
+    GameActionTypes.endGame
 ];
 
 const startGame = createAction(GameActionTypes.startGame);

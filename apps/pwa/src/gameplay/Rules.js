@@ -151,7 +151,7 @@ class Rules {
         }
 
         let currentState = typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state;
-        if (Rules.issuerIsInvalid(action, state.gameplay.game)) {
+        if (Rules.issuerIsInvalid(action, state.gameplay.game) && action.type !== GameActionTypes.endGame) {
             let issuerId;
             if (typeof action.payload !== 'undefined') {
                 issuerId = action.payload.issuer;
