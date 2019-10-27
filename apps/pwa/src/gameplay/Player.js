@@ -1,5 +1,6 @@
 import uuidv4 from 'uuid/v4';
 import { AttackType } from './GameEntities';
+import { EmptyPlayerStats } from '../Multiplayer';
 
 const PlayerType = Object.freeze({
     HUMAN: 'PlayerType.HUMAN',
@@ -7,9 +8,14 @@ const PlayerType = Object.freeze({
     VIOLET_BEAUREGARDE: 'PlayerType.VIOLET_BEAUREGARDE'
 });
 
-function createPlayer(name, type, activePlayer) {
+function createPlayer(name, type, level) {
+    if (typeof level === 'undefined') {
+        level = EmptyPlayerStats.level;
+    }
+
     let player = {
         name: name,
+        level: level,
         type: type,
         id: uuidv4(),
         cacao: 100,

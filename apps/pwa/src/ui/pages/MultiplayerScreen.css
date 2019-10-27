@@ -1,0 +1,204 @@
+#multiplayer {
+  display: flex;
+  height: 100%;
+  width: 75%;
+  left: 12.5%;
+  align-items: center;
+  z-index: 2;
+  position: absolute;
+  flex-direction: column;
+}
+
+.multiplayer-statistics {
+  display: flex;
+}
+
+.multiplayer-statistics p {
+  display: flex;
+  flex-direction: column-reverse;
+  font-size: 2rem;
+  align-items: center;
+  margin: 0 20px;
+}
+
+.multiplayer-statistics svg {
+  font-size: 4rem;
+}
+
+#multiplayer .controls {
+  display: flex;
+  margin-top: 92px;
+  align-items: center;
+}
+
+#multiplayer .controls .menuButton {
+  width: calc(22.5vw - 24px);
+  font-size: 1rem;
+  margin: 0 1.25vw;
+  min-width: unset;
+  max-width: 250px;
+}
+
+#multiplayer .controls .menuButton {
+  margin-top: 0 !important;
+}
+
+#multiplayer .openGames {
+  display: flex;
+  flex-grow: 2;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: calc(75vw + 102px - 6px);
+}
+
+#multiplayer .gamestable {
+  margin-top: 5vh;
+  background-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0;
+}
+
+#multiplayer .gamestable div {
+  padding: 8px 0;
+  width: 20%;
+  flex-wrap: wrap;
+  border-bottom: 1px solid rgba(224, 224, 224, 1);
+  color: rgba(0, 0, 0, 0.87);
+  font-weight: 400;
+  font-size: 0.875rem;
+  line-height: 1.43;
+  display: flex;
+  justify-content: center;
+}
+
+#multiplayer .gamestable .tableHead {
+  color: rgba(0,0,0,0.87);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.3125rem;
+}
+
+#multiplayer .gameActions {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  justify-content: space-evenly;
+}
+
+#multiplayer .gameActions svg {
+  margin-left: 5px;
+  cursor: pointer;
+}
+
+#multiplayer .gamelabel {
+  display: none;
+}
+
+@media screen and (max-width: 850px) {
+  #multiplayer .controls .menuButton {
+    font-size: 0.85rem;
+  }
+}
+
+@media screen and (max-width: 710px) {
+  #multiplayer {
+    width: 100%;
+    left: unset;
+  }
+
+  #multiplayer .openGames {
+    width: 100%;
+  }
+
+  #multiplayer .controls .menuButton {
+    font-size: 0.6rem;
+    width: calc(22.5vw - 12px);
+    padding: 12px 6px;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  #multiplayer .gamestable {
+    display: block;
+    background-color: unset;
+    box-shadow: unset;
+  }
+
+  #multiplayer .gamestable div {
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-bottom: none;
+  }
+
+  #multiplayer .gamestable .tableHead {
+    display: none;
+  }
+
+  #multiplayer .tablefoot {
+    margin-bottom: 1em;
+    box-shadow: 2px 6px 4px rgba(0,0,0,0.3);
+  }
+
+  #multiplayer .controls .menuButton {
+    width: 100vw;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+  }
+
+  #multiplayer .controls {
+    display: block;
+    margin-top: 64px;
+  }
+
+  #multiplayer .gameActions {
+    display: flex;
+    border-bottom: 1px solid rgba(224, 224, 224, 1) !important;
+    padding: 0 !important;
+  }
+
+  #multiplayer .gameActions svg {
+    display: flex;
+    flex-grow: 1;
+    padding: 8px 0;
+    margin: 0;
+    color: white;
+    background-color: rgba(199,0,0, 0.8);
+  }
+
+  #multiplayer .gameActions svg:first-child {
+    display: flex;
+    flex-grow: 1;
+    background-color: rgba(112,191,49, 0.8);
+  }
+
+  #multiplayer .gameActions svg:last-child {
+    display: flex;
+    flex-grow: 1;
+    background-color: rgba(230, 199, 68, 0.8)
+  }
+
+  #multiplayer .gamelabel {
+    display: inline;
+  }
+
+  #multiplayer .gamestable div span {
+    width: 40%;
+    margin-left: 10%;
+  }
+
+  #multiplayer .gamestable div:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  #multiplayer .gamestable div:nth-child(odd) {
+    background-color: rgba(255, 255, 255, 0.6) !important;
+  }
+}
+
+@media screen and (max-width: 330px) {
+  #multiplayer .controls .menuButton {
+    max-width: unset;
+  }
+}

@@ -1,6 +1,7 @@
 {
   "short_name": "battlechoc",
   "name": "battlechoc",
+  "gcm_sender_id": "618424349380",
   "icons": [
     {
       "src": "icon-144x144.png",

@@ -7,7 +7,6 @@ import { EmptyPlayerStats } from '../Multiplayer';
 const uiReducer = createReducer({
     selectedBuilding: EntityType.FACTORY,
     tappedBuilding: EntityType.FACTORY,
-    statistics: false,
     assetsReady: false,
     tutorialAlreadySeen: false,
     overviewVisible: false,
@@ -46,9 +45,6 @@ const uiReducer = createReducer({
         },
         [UiActions.gameResumeable]: (state, action) => {
             state.resumeGamePossible = action.payload;
-        },
-        [UiActions.showStatistics]: (state, action) => {
-            state.statistics = action.payload;
         },
         [UiActions.assetsReady]: (state, action) => {
             state.assetsReady = true;
@@ -90,7 +86,7 @@ const uiReducer = createReducer({
             state.tutorial = true;
         },
         [UiActions.updatePlayerStats]: (state, action) => {
-            state.playerInfos.stats = action.payload;
+            Object.assign(state.playerInfos.stats, action.payload);
         }
     }
 );

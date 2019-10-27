@@ -68,6 +68,11 @@ const theme = createMuiTheme({
                 }
             }
         },
+        MuiTableCell: {
+            head: {
+                color: 'rgba(0,0,0,0.87)'
+            }
+        },
         MuiFab: {
             sizeSmall: {
                 width: 36,

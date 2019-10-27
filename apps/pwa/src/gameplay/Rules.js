@@ -105,7 +105,7 @@ class Rules {
             const player = gameState.players[playerIdx];
             const playerCanAttack = playerHasHarmfulAttacksPerTurn(player, gameState.board.fields[gameState.players[1 - playerIdx].fieldIndex].grid);
             if ((player.buildingsPerTurn === 0 && !playerCanAttack) ||
-                (!playerCanAttack && player.cacaoPerTurn === 0 && player.cacao < GameEntities.getEntityDescriptor(GameEntities.EntityType.CACAOTREE).costs)) {
+                (!playerCanAttack && player.cacaoPerTurn === 0 && player.cacao < GameEntities.getEntityDescriptor(GameEntities.EntityType.CACAOTREE, player.level).costs)) {
                 let winner = Object.assign({ idx: 1 - playerIdx }, gameState.players[1 - playerIdx]);
                 potentialWinners.push(winner);
             }
@@ -203,6 +203,8 @@ class Rules {
             } else {
                 return true;
             }
+        } else if (action.type === GameActionTypes.updateLevel) {
+            return true;
         } else if ([UiActionTypes.startTutorial, UiActionTypes.stopTutorial, UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.joinedMultiplayer, UiActionTypes.waitForMultiplayer, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable, UiActionTypes.notifyPlayerSignedIn, UiActionTypes.notifyPlayerSignedOut, UiActionTypes.updatePlayerStats].includes(action.type)) {
             return true;
         } else {

@@ -6,7 +6,7 @@ import OfflineStore from './OfflineStore';
 import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
-import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
+import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame, updateLevel } from './gameplay/GameActions';
 import { startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
@@ -38,8 +38,11 @@ class App extends Component {
         this.state = { params: params };
     }
 
-    componentWillMount() {
-        multiplayer.registerCallbacks({ updatePlayerStats: this.props.updatePlayerStats });
+    componentDidMount() {
+        multiplayer.registerCallbacks({ 
+            updatePlayerStats: this.props.updatePlayerStats,
+            updateLevel: this.props.updateLevel
+        });
 
         let browserLanguage = 'en';
         if (navigator.userLanguage) {
@@ -55,9 +58,7 @@ class App extends Component {
                 this.props.changeLanguage(browserLanguage);
             }
         });
-    }
 
-    componentDidMount() {
         OfflineStore.hasGameToResume().then((resumeable) => {
             this.props.gameResumeable(resumeable);
         });
@@ -71,8 +72,6 @@ class App extends Component {
         window.onblur = () => Jukebox.pauseMusic();
 
         multiplayer.fetchPlayerStats(this.props.updatePlayerStats);
-
-        multiplayer.signInAnonymouslyIfNotAlreadySignedIn();
     }
 
     handleError = error => {
@@ -121,7 +120,7 @@ class App extends Component {
         });
     }
 
-    componentWillReceiveProps(nextProps) {
+    UNSAFE_componentWillReceiveProps(nextProps) {
         if (!this.props.assetsReady && nextProps.assetsReady) {
             if (this.state.params.situation === 'd41d8cd98f00b204e9800998ecf8427e') {
                 this.loadSituation(BuildFactoryTestSituation);
@@ -224,7 +223,7 @@ class App extends Component {
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
                 if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP || this.opponent.player.type === PlayerType.VIOLET_BEAUREGARDE) {
-                    this.opponent.simulateAttackPhase((row, col) => this.scene.detonateAtShield(row, col, true));
+                    this.opponent.simulateAttackPhase((row, col) => this.scene.detonateAtShield(row, col, true), entity => this.scene.showEnergyBar(entity), position => this.scene.hideEnergyBar(null, position));
                 }
             } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
                 let timeoutId = setTimeout(() => this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
@@ -237,18 +236,17 @@ class App extends Component {
         }
     }
 
-    joinMultiplayerGame = () => {
-        multiplayer.joinGameSession(this.state.params.sessionid, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField })
-            .then(session => {
-                console.dir(session);
-                this.prepareNewGame(true, true, session.game);
-            });
-        this.hud.lockUi();
+    enterMultiplayerGame = sessionId => {
+        multiplayer.enterGameSession(sessionId, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField })
+        .then(session => {
+            this.prepareNewGame(true, true, session.game);
+        });
     }
 
     prepareNewGame = (resumeGame, joinMultiplayer, multiplayerGameState) => {
+        console.log(this.props.playerInfos)
         OfflineStore.settingsStore.get('tutorialAlreadySeen').then(tutorialAlreadySeen => {
-            if (tutorialAlreadySeen || this.props.playerInfos.coins > 0) {
+            if (tutorialAlreadySeen || this.props.playerInfos.stats.score > 0) {
                 Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                 gameplayLog.clear();
@@ -271,6 +269,11 @@ class App extends Component {
                 if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
                     this.props.joinGame(multiplayerGameState).then(() => {
                         this.opponent = { player: this.props.game.players[0] };
+                        if (this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START && !multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
+                            this.hud.lockUi();
+                        } else if (this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START && this.props.game.state !== GameStateTypes.CHOOSE_FIELD) {
+                            this.scene.startGame(this.props.game, false);
+                        }
                     });
                 } else {
                     OfflineStore.getResumeableGame().then((resumeableGame) => {
@@ -296,8 +299,8 @@ class App extends Component {
                             this.props.gameResumeable(false);
                             OfflineStore.gamestateStore.clear();
                             let players = [
-                                createPlayer("Charlie Bucket", PlayerType.HUMAN),
-                                createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP)
+                                createPlayer("Charlie Bucket", PlayerType.HUMAN, this.props.playerInfos.stats.level),
+                                createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP, this.props.playerInfos.stats.level)
                             ];
 
                             this.props.startGame(players).then(() => {
@@ -372,12 +375,12 @@ class App extends Component {
                     <Scene onRef={scene => this.scene = scene} />
                 </Suspense>
                 <Hud prepareNewGameCallback={this.prepareNewGame}
-                    multiplayerLandingPage={typeof this.state.params.sessionid !== 'undefined'}
-                    joinMultiplayerGame={this.joinMultiplayerGame}
+                    enterMultiplayerGame={this.enterMultiplayerGame}
                     startTutorial={() => this.startTutorial()}
                     className={this.props.tutorial ? 'tutorial hud' : 'hud'}
                     endGame={() => this.endGame()}
-                    onRef={hud => this.hud = hud} />
+                    onRef={hud => this.hud = hud}
+                    challengedPlayer={this.state.params.challenge} />
                 {this.props.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
             </div>
         );
@@ -415,7 +418,8 @@ const mapDispatchToProps = {
     showOverview,
     startTutorial,
     stopTutorial,
-    updatePlayerStats
+    updatePlayerStats,
+    updateLevel
 };
 
 const AppContainer = connect(

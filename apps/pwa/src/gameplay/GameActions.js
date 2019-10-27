@@ -14,6 +14,7 @@ const GameActionTypes = Object.freeze({
     endGame: 'battlechoc/gameplay/endGame',
     joinGame: 'battlechoc/gameplay/joinGame',
     playerJoined: 'battlechoc/gameplay/playerJoined',
+    updateLevel: 'battlechoc/gameplay/updateLevel'
 });
 
 const IssuerRelevantActions = [
@@ -38,7 +39,8 @@ const attack = createAction(GameActionTypes.attack);
 const endGame = createAction(GameActionTypes.endGame);
 const joinGame = createAction(GameActionTypes.joinGame);
 const playerJoined = createAction(GameActionTypes.playerJoined);
+const updateLevel = createAction(GameActionTypes.updateLevel);
 
 export {
-    GameActionTypes, IssuerRelevantActions, startGame, resumeGame, finishGame, chooseField, chooseStart, createBoard, finishTurn, finishBuildPhase, build, attack, endGame, joinGame, playerJoined
+    GameActionTypes, IssuerRelevantActions, updateLevel, startGame, resumeGame, finishGame, chooseField, chooseStart, createBoard, finishTurn, finishBuildPhase, build, attack, endGame, joinGame, playerJoined
 };

@@ -35,47 +35,47 @@ const languages = {
                 case EntityType.CREAM:
                     return {
                         info: 'Buildings built in cream will be hidden from the enemy. The building order of cream and buildings does not matter',
-                        costs: 'Cacao costs: ' + building.costs
+                        costs: 'Cacao costs: ' + building.costs()
                     }
                 case EntityType.FACTORY_EXTENSION:
                     return {
                         info: 'A factory extension can only be placed directly next to your factory',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Cacao costs: ' + building.costs(),
                         advantages: 'Buildings per turn +2'
                     }
                 case EntityType.CACAOTREE:
                     return {
                         info: 'The cacao tree offers you all the resources you need',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Cacao costs: ' + building.costs(),
                         advantages: 'Cacao per turn +30'
                     }
                 case EntityType.RUM_TRUFFLE_CANNON:
                     return {
                         info: 'The rum truffle cannon leads you to victory',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Cacao costs: ' + building.costs(),
                         advantages: 'Attacks per turn +1'
                     }
                 case EntityType.XMAS_FACTORY:
                     return {
                         info: 'The rumor that Easter bunnies are melted down to Santa Clauses is true! If an Easter bunny comes near the Christmas factory, a present is waiting for you',
-                        costs: 'Cacao costs: ' + building.costs
+                        costs: 'Cacao costs: ' + building.costs()
                     }
                 case EntityType.SPYING_EASTER_BUNNY:
                     return {
                         info: 'The spying easter bunny can look under the cream of the opponent, but watch out for Christmas factories',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Cacao costs: ' + building.costs(),
                         advantages: 'Spying per turn +1'
                     }
                 case EntityType.CHOCOLATE_FOUNTAIN:
                     return {
                         info: 'The chocolate fountain safes all surrounding buildings from rum truffle cannon attacks.',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Cacao costs: ' + building.costs(),
                         advantages: 'Secures an area of 3x3 cells around the fountain.'
                     }
                 case EntityType.FRUIT_CANNON:
                     return {
                         info: 'The fruit cannon destroys creams and chocolate fountains of your enemy.',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Cacao costs: ' + building.costs(),
                         advantages: 'Fruit attacks per turn +1'
                     }
                 default: return { info: 'Unkown building' }
@@ -177,7 +177,29 @@ const languages = {
         TUTORIAL_DIALOG_MESSAGE: 'Now you are ready to play a real battlechoc match. Do you want to start right now?',
         TUTORIAL_DIALOG_HINT: 'You are now able to restart the tutorial in the settings menu',
         TUTORIAL_DIALOG_BACK: 'Back to menu',
-        TUTORIAL_DIALOG_PLAY_GAME: 'Start a match'
+        TUTORIAL_DIALOG_PLAY_GAME: 'Start a match',
+        ACTIONS: 'Actions',
+        OPPONENT: 'Opponent',
+        TURNS: 'Turns',
+        MATCH_TIME: 'Match Time',
+        LAST_ACTION: 'Last Action',
+        POTENTIAL_COINS: 'Potential Coins',
+        RANDOM_OPPONENT: 'Random Opponent',
+        SHARE_LINK: 'Share your Link',
+        FRIENDS: 'Friends',
+        START_GAME: 'Start Game',
+        JOIN_GAME: 'Join Game',
+        ATTRIBUTE_NAME: attribute => {
+            switch (attribute) {
+                case 'hp': return 'Hp';
+                case 'area': return 'Area Effect';
+                case 'buildingsPerTurn': return 'Buildings per turn';
+                case 'cacaoPerTurn': return 'Cacao per turn';
+                case 'attack': return 'Attack';
+                case 'fortune': return 'Fortune';
+                default: return 'Unknown';
+            }
+        }
     },
     de: {
         SIGNINORUP: 'Anmelden',
@@ -213,47 +235,47 @@ const languages = {
                 case EntityType.CREAM:
                     return {
                         info: 'Gebäude die in Sahne gebaut sind bleiben dem Gegner verborgen. Die Baureihenfolge von Sahne und Gebäude sind dabei egal',
-                        costs: 'Kakaokosten: ' + building.costs
+                        costs: 'Kakaokosten: ' + building.costs()
                     }
                 case EntityType.FACTORY_EXTENSION:
                     return {
                         info: 'Eine Fabrikerweiterung kann nur direkt neben deiner Fabrik platziert werden',
-                        costs: 'Kakaokosten: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs(),
                         advantages: 'Gebäude pro Runde +2'
                     }
                 case EntityType.CACAOTREE:
                     return {
                         info: 'Der Kakaobaum gibt dir alles was du an Rohstoffen brauchst',
-                        costs: 'Kakaokosten: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs(),
                         advantages: 'Kakao pro Runde +30'
                     }
                 case EntityType.RUM_TRUFFLE_CANNON:
                     return {
                         info: 'Die Rumtrüffelkanone führt dich zum Sieg',
-                        costs: 'Kakaokosten: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs(),
                         advantages: 'Angriffe pro Runde +1'
                     }
                 case EntityType.XMAS_FACTORY:
                     return {
                         info: 'Das Gerücht, dass Osterhasen zu Weihnachtsmännern eingeschmolzen werden stimmt! Kommt ein Osterhase in die Nähe der Weihnachtsfabrik wartet ein Geschenk auf dich',
-                        costs: 'Kakaokosten: ' + building.costs
+                        costs: 'Kakaokosten: ' + building.costs()
                     }
                 case EntityType.SPYING_EASTER_BUNNY:
                     return {
                         info: 'Der Spionage-Osterhase kann unter die Sahne des Gegners schauen, aber achte auf mögliche Weihnachtsfabriken',
-                        costs: 'Kakaokosten: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs(),
                         advantages: 'Spionage pro Runde +1'
                     }
                 case EntityType.CHOCOLATE_FOUNTAIN:
                     return {
                         info: 'Der Schololadenbrunnen schützt in einem Bereich von 3x3 Feldern um ihn herum alle anderen Gebäude gegen gegnerischen Beschuss und kann nur durch die Hot Chocolate Ballista oder eine Fruchtkanone zerstört werden.',
-                        costs: 'Kakaokosten: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs(),
                         advantages: 'Schützt einen 3x3 großen Bereich'
                     }
                 case EntityType.FRUIT_CANNON:
                     return {
                         info: 'Die Fruchtkanone zerstört nur Sahnehäubchen oder gegnerische Schokoladenbrunnen.',
-                        costs: 'Kakaokosten: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs(),
                         advantages: 'Fruchtangriffe pro Runde +1'
                     }
                 default: return { info: 'Unbekanntes Gebäude' }
@@ -355,7 +377,29 @@ const languages = {
         TUTORIAL_DIALOG_MESSAGE: 'Nun bist du bereit um eine richtige Runde battlechoc zu spielen. Willst du direkt starten?',
         TUTORIAL_DIALOG_HINT: 'Es ist dir nun möglich aus dem Einstellungsmenü das Tutorial neu zu starten',
         TUTORIAL_DIALOG_BACK: 'Zum Menü',
-        TUTORIAL_DIALOG_PLAY_GAME: 'Jetzt Spielen'
+        TUTORIAL_DIALOG_PLAY_GAME: 'Jetzt Spielen',
+        ACTIONS: 'Aktionen',
+        OPPONENT: 'Gegenspieler',
+        TURNS: 'Züge',
+        MATCH_TIME: 'Spielzeit',
+        LAST_ACTION: 'Letzte Aktion',
+        POTENTIAL_COINS: 'Mögliche Coins',
+        RANDOM_OPPONENT: 'Zufälliger Gegner',
+        SHARE_LINK: 'Profil-Link teilen',
+        FRIENDS: 'Freunde',
+        START_GAME: 'Spiel starten',
+        JOIN_GAME: 'Spiel beitreten',
+        ATTRIBUTE_NAME: attribute => {
+            switch (attribute) {
+                case 'hp': return 'Hp';
+                case 'area': return 'Reichweite';
+                case 'buildingsPerTurn': return 'Gebäude pro Runde';
+                case 'cacaoPerTurn': return 'Kakao pro Runde';
+                case 'attack': return 'Angriff';
+                case 'fortune': return 'Glück';
+                default: return 'Unknown';
+            }
+        }
     }
 };
 

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import './Tutorial.css';
 import { connect } from 'react-redux';
 import { AppBar, Toolbar, Typography, IconButton } from '@material-ui/core';
-import { ArrowBackIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Done } from '@material-ui/icons';
+import { ArrowBackIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Done } from '@material-ui/icons';
 import withMobileDialog from '@material-ui/core/withMobileDialog';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
@@ -22,14 +22,27 @@ import TreeAndCannonTutorial from '../situations/tutorial/TreeAndCannonTutorial'
 import BunnyAndXmasTutorial from '../situations/tutorial/BunnyAndXmasTutorial';
 import FountainAndFruitCannonTutorial from '../situations/tutorial/FountainAndFruitCannonTutorial';
 import { Translation as t } from '../ui/misc';
+import { ServerConfig } from '../helper/settings';
+import firebase from '@firebase/app';
+import OfflineStore from '../OfflineStore';
+import { updatePlayerStats } from '../ui/UiActions';
+import PlayerNameInput from '../ui/controls/PlayerNameInput';
 
 class Tutorial extends Component {
     constructor(props) {
         super(props);
+        let username = 'Chocnonymous';
+        console.log(this.props.playerInfos.stats)
+        if (typeof this.props.playerInfos.stats !== 'undefined') {
+            if (typeof this.props.playerInfos.stats.username !== 'undefined') {
+                username = this.props.playerInfos.stats.username;
+            }
+        }
         this.state = {
             page: 0,
             open: false,
-            maxPages: 5
+            maxPages: 5,
+            playerHasName: username !== 'Chocnonymous',
         }
     }
 
@@ -81,9 +94,33 @@ class Tutorial extends Component {
     }
 
     closeTutorial = startGame => {
-        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.setState({ open: false });
-        this.props.closeTutorial(startGame);   
+        if (this.state.playerHasName) {
+            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+            this.setState({ open: false });
+            this.props.closeTutorial(startGame);
+        }
+    }
+
+    setPlayerName = playerName => {
+        fetch(ServerConfig.baseUrl + '/user/username', {
+            method: 'post',
+            headers: new Headers({
+                'Authorization': 'Basic ' + ServerConfig.auth,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }),
+            body: JSON.stringify({ 
+                player: firebase.auth().currentUser.uid,
+                username: playerName
+            })
+        }).then(response => {        
+            this.props.updatePlayerStats({ username: playerName });
+            OfflineStore.playerStore.get('stats').then(playerStats => {
+                playerStats.username = playerName;
+                OfflineStore.playerStore.set('stats', playerStats);
+            });
+            this.setState({ playerHasName: true });
+        }).catch(error => console.error(error));
     }
 
     render() {
@@ -126,6 +163,29 @@ class Tutorial extends Component {
             <FountainAndFruitCannonPage fulfilled={this.fulfilled} appbar={appbar}/>
         ];
 
+        let dialogTitle = "Du hast es fast geschafft"
+        let dialogContent = [
+            <Typography key="0" >Bevor wir starten solltest du dir unbedingt einen coolen Namen überlegen! Freunde können dich anhand deines Names wiederkennen und deine Gegner bringt er vielleicht zum Zittern.</Typography>,
+            <PlayerNameInput key="1" setPlayerName={this.setPlayerName}/>
+        ];
+        let dialogActions = []
+
+        if (this.state.playerHasName) {
+            dialogTitle = t[this.props.language].TUTORIAL_DIALOG_TITLE;
+            dialogContent = [
+                <Typography key="0" >{t[this.props.language].TUTORIAL_DIALOG_MESSAGE}</Typography>,
+                <Typography key="1" color="primary" className="hint">{"\u27AA " + t[this.props.language].TUTORIAL_DIALOG_HINT}</Typography>
+            ];
+            dialogActions = [
+                <Button key="2" onClick={() => this.closeTutorial(false)} color="primary">
+                    {t[this.props.language].TUTORIAL_DIALOG_BACK}
+                </Button>,
+                <Button key="3" onClick={() => this.closeTutorial(true)} color="primary">
+                  {t[this.props.language].TUTORIAL_DIALOG_PLAY_GAME}
+                </Button>
+            ];
+        }
+
         return (
             <div id="tutorial">
                 {pages[this.state.page]}
@@ -135,21 +195,10 @@ class Tutorial extends Component {
                   fullScreen={this.props.fullScreen}
                   open={this.state.open}
                   onClose={this.closeTutorial}
-                  aria-labelledby="report-form-dialog-title"
-                >
-                  <DialogTitle id="report-form-dialog-title">{t[this.props.language].TUTORIAL_DIALOG_TITLE}</DialogTitle>
-                  <DialogContent>
-                    <Typography>{t[this.props.language].TUTORIAL_DIALOG_MESSAGE}</Typography>
-                    <Typography color="primary" className="hint">{"\u27AA " + t[this.props.language].TUTORIAL_DIALOG_HINT}</Typography>
-                  </DialogContent>
-                  <DialogActions>
-                    <Button onClick={() => this.closeTutorial(false)} color="primary">
-                      {t[this.props.language].TUTORIAL_DIALOG_BACK}
-                    </Button>
-                    <Button onClick={() => this.closeTutorial(true)} color="primary">
-                      {t[this.props.language].TUTORIAL_DIALOG_PLAY_GAME}
-                    </Button>
-                  </DialogActions>
+                  aria-labelledby="report-form-dialog-title">
+                    <DialogTitle>{ dialogTitle }</DialogTitle>
+                    <DialogContent>{ dialogContent }</DialogContent>
+                    <DialogActions>{ dialogActions }</DialogActions>
                 </Dialog>
 
             </div>
@@ -162,7 +211,12 @@ Tutorial.propTypes = {
     loadSituation: PropTypes.func.isRequired
 }
 
-const mapStateToProps = state => ({ language: state.ui.language });
-const TutorialContainer = connect(mapStateToProps)(Tutorial);
+const mapStateToProps = state => ({ language: state.ui.language, playerInfos: state.ui.playerInfos });
+const mapDispatchToProps = { updatePlayerStats };
+
+const TutorialContainer = connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Tutorial);
 
 export default withMobileDialog({ breakpoint: 'sm' })(TutorialContainer);
