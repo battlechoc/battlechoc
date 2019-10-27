@@ -111,9 +111,8 @@ app.post('/user/challenge', async (req, res) => {
                     }).catch(error => console.warn('ERROR WHILE PLAYER NOTIFICATION ' + error.toString()));
 
                     res.json({ sessionId: databaseSession.id });
-                }
-                catch(error) {
-                    res.status(500).json({ error: error });
+                } catch(error) {
+                    res.status(500).json({ error: error.toString() });
                 }
             }
         }
@@ -451,4 +450,4 @@ app.post('/user/username', (req, res) => {
     }).catch(error => res.status(500).json({ error: error.toString() }));
 });
 
-exports.api = functions.https.onRequest(app);
+exports.api = functions.region('europe-west1').https.onRequest(app);
