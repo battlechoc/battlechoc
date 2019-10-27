@@ -128,7 +128,7 @@ class Actionbar extends Component {
             if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
                 if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
                     if (playerHasAttacksPerTurn(this.props.game.players[multiplayer.localPlayerIndex])) {
-                        if ((this.props.game.players[multiplayer.localPlayerIndex].buildings > 0 && this.props.game.players[multiplayer.localPlayerIndex].cacao >= getCheapest().costs)) {
+                        if ((this.props.game.players[multiplayer.localPlayerIndex].buildings > 0 && this.props.game.players[multiplayer.localPlayerIndex].cacao >= getCheapest().costs())) {
                             buttons.push([
                                 <Fab
                                     size="small"
@@ -154,14 +154,14 @@ class Actionbar extends Component {
                             ]);
                         }
                     } else {
-                        if ((this.props.game.players[multiplayer.localPlayerIndex].buildings > 0 && this.props.game.players[multiplayer.localPlayerIndex].cacao >= getCheapest().costs)) {
+                        if ((this.props.game.players[multiplayer.localPlayerIndex].buildings > 0 && this.props.game.players[multiplayer.localPlayerIndex].cacao >= getCheapest().costs())) {
                             buttons.push([
                                 <Fab
                                     size="small"
                                     key="6"
                                     color="primary"
                                     aria-label="finish turn"
-                                    className={(this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) ? "icon blinking" : "icon"}
+                                    className={(this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs()) ? "icon blinking" : "icon"}
                                     onClick={() => {
                                         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                         this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
