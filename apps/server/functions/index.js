@@ -71,7 +71,7 @@ app.post('/user/challenge', async (req, res) => {
                 if (typeof playerLevel === 'undefined') {
                     playerLevel = entities.EmptyPlayerStats.level;
                 }
-                
+
 
                 let session = {
                     players: [
@@ -287,16 +287,18 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
         docs.forEach(doc => {
             let game = doc.data();
             let playerIndex = game.game.players.findIndex(player => player.id === req.params.userId);
-            games.push({
-                'id': doc.id,
-                'players': game.players, 
-                'status': game.status, 
-                'last_changed': game.last_changed.toMillis(),
-                'created': game.created.toMillis(),
-                'myTurn': game.currentPlayerIndex === playerIndex,
-                'turns': game['events_from_' + playerIndex].filter(event => event.payload.type === 'battlechoc/gameplay/finishTurn').length,
-                'statistics': game.game.players[playerIndex].statistics
-            });
+            if (game.game.isRunning) {
+                games.push({
+                    'id': doc.id,
+                    'players': game.players, 
+                    'status': game.status, 
+                    'last_changed': game.last_changed.toMillis(),
+                    'created': game.created.toMillis(),
+                    'myTurn': game.currentPlayerIndex === playerIndex,
+                    'turns': game['events_from_' + playerIndex].filter(event => event.payload.type === 'battlechoc/gameplay/finishTurn').length,
+                    'statistics': game.game.players[playerIndex].statistics
+                });
+            }
         })
 
         for (let i = 0; i < games.length; i++) {
