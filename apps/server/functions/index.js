@@ -62,6 +62,17 @@ app.post('/user/challenge', async (req, res) => {
                 let player = doc.data();
                 let coinToss = Math.round(Math.random());
 
+                let opponentLevel = opponent.level;
+                if (typeof opponentLevel === 'undefined') {
+                    opponentLevel = entities.EmptyPlayerStats.level;
+                }
+
+                let playerLevel = player.level;
+                if (typeof playerLevel === 'undefined') {
+                    playerLevel = entities.EmptyPlayerStats.level;
+                }
+                
+
                 let session = {
                     players: [
                         opponentId,
@@ -76,7 +87,7 @@ app.post('/user/challenge', async (req, res) => {
                     events_from_1: [],
                     lastProcessedEvent: [0, 0],
                     game: {
-                        players: [entities.createPlayer(req.body.opponent, opponentId, 'PlayerType.HUMAN', opponent.level), entities.createPlayer(player.username, req.body.playerId, 'PlayerType.HUMAN', player.level)],
+                        players: [entities.createPlayer(req.body.opponent, opponentId, 'PlayerType.HUMAN', opponentLevel), entities.createPlayer(player.username, req.body.playerId, 'PlayerType.HUMAN', playerLevel)],
                         currentPlayerIndex: coinToss,
                         state: 'GameStateTypes.CHOOSE_FIELD_OR_START',
                         isRunning: true,
