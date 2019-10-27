@@ -292,7 +292,9 @@ class Rules {
             } else {
                 return true;
             }
-        } else {
+        } else if (action.type === GameActionTypes.endGame) {
+            return true;
+        }  else {
             console.warn('NOT A VALID GAME STATE')
             return false;
         }
