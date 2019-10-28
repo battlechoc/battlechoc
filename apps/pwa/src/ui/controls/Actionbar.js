@@ -10,7 +10,7 @@ import { deselectBuildings, deselectAttack } from '../UiActions';
 import { GameStateTypes } from '../../gameplay/GameplayReducer';
 import { multiplayer } from '../../Multiplayer';
 import Fab from '@material-ui/core/Fab';
-import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, PermIdentity } from '@material-ui/icons';
+import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, PermIdentity, KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import { Jukebox } from '../misc';
 
 class Actionbar extends Component {
@@ -58,7 +58,24 @@ class Actionbar extends Component {
     }
 
     render() {
-        let buttons = [
+        let buttons = []
+
+        if (typeof this.props.game !== 'undefined' && !this.props.tutorial) {
+            buttons.push(
+                <Fab
+                    size="small"
+                    key="-1"
+                    color="primary"
+                    aria-label="back"
+                    className="icon"
+                    onClick={() => this.props.endGame()}>
+                    <ArrowBackIcon />
+                </Fab>
+            );
+        }
+
+
+        buttons.push(
             <Fab
                 size="small"
                 key="0"
@@ -68,7 +85,7 @@ class Actionbar extends Component {
                 onClick={() => this.props.showSettings()}>
                 <Settings />
             </Fab>
-        ];
+        );
 
         if (typeof this.props.game === 'undefined') {
             buttons.push(

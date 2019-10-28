@@ -280,7 +280,7 @@ class Settings extends Component {
                   <Button variant="outlined" className="dialogButton" onClick={() => {
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     if (this.state.attentionTextVisible) {
-                      this.props.endGame();
+                      this.props.surrender();
                       this.setState({ open: false, attentionTextVisible: false });
                     } else {
                       this.setState({ attentionTextVisible: true });
@@ -313,7 +313,7 @@ class Settings extends Component {
 
 Settings.propTypes = {
   fullScreen: PropTypes.bool.isRequired,
-  endGame: PropTypes.func.isRequired
+  surrender: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({
