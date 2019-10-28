@@ -248,8 +248,11 @@ class App extends Component {
 
     prepareNewGame = (resumeGame, joinMultiplayer, multiplayerGameState) => {
         console.log(this.props.playerInfos)
+        console.log(this.props.playerInfos.stats.username);
         OfflineStore.settingsStore.get('tutorialAlreadySeen').then(tutorialAlreadySeen => {
-            if (tutorialAlreadySeen || this.props.playerInfos.stats.score > 0) {
+            tutorialAlreadySeen = typeof tutorialAlreadySeen === 'undefined' ? false : tutorialAlreadySeen;
+            console.log('tutorial already seen ', tutorialAlreadySeen);
+            if (tutorialAlreadySeen || this.props.playerInfos.stats.username !== 'Chocnonymous') {
                 Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                 gameplayLog.clear();
