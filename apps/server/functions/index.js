@@ -8,6 +8,7 @@ const entities = require('./entities.js');
 const admin = require('firebase-admin');
 const uuidv4 = require('uuid/v4');
 const gamestate = require('./gamestate.js');
+const axios = require('axios');
 
 admin.initializeApp();
 
@@ -106,16 +107,12 @@ app.post('/user/challenge', async (req, res) => {
                                   'notification': {
                                     'title':  player.username + ' challenges you @battlechoc',
                                     'body': 'This could be a great fight!',
-                                    'click_action': 'https://battlechoc.dev?sessionid=' + databaseSession.id
+                                    'click_action': 'https://battlechoc.com' //?sessionid=' + databaseSession.id
                                   },
                                   'to': permission.messaging
                                 }
 
-                                fetch('https://fcm.googleapis.com/fcm/send', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify(payload)
-                                })
+                                axios.post('https://fcm.googleapis.com/fcm/send', payload)
                                 .catch(error => console.warn('PLAYER NOTIFICATION FAILED' + error.toString()));
                             }
                         }
@@ -137,7 +134,6 @@ const processEvents = (session, events) => {
 
     if (events.length > (session.lastProcessedEvent[0] + session.lastProcessedEvent[1])) {
         events.filter(event => !event.hasOwnProperty('processed')).forEach(event => {
-            console.log('now process event ' + JSON.stringify(event));
             if (event.payload.issuer === session.game.players[0].id) {
                 if (session.game.currentPlayerIndex === 0) {
                     if (session.lastProcessedEvent[0] < event.index) {
@@ -260,7 +256,32 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         }
 
         session = doc.data();
+        let playerId = session.game.currentPlayerIndex;
         let result = processEventsInOrder(session);
+        let updatedPlayerId = session.game.currentPlayerIndex;
+
+        if (playerId !== updatedPlayerId) {
+            const permissions = admin.firestore().collection('permissions');
+            const opponent = session.game.players[playerId].name;
+            permissions.doc(session.game.players[updatedPlayerId].id).get().then(doc => {
+                if (doc.exists) {
+                    permission = doc.data();
+                    if (typeof permission.messaging !== 'undefined') {
+                        const payload = {
+                          'notification': {
+                            'title':  opponent + ' finished the turn @battlechoc',
+                            'body': 'Let\'s go. It\'s your move!',
+                            'click_action': 'https://battlechoc.com'
+                          },
+                          'to': permission.messaging
+                        }
+
+                        axios.post('https://fcm.googleapis.com/fcm/send', payload)
+                        .catch(error => console.warn('PLAYER NOTIFICATION FAILED' + error.toString()));
+                    }
+                }
+            }).catch(error => console.warn('ERROR WHILE PLAYER NOTIFICATION ' + error.toString()));
+        }
 
         if (result.hasOwnProperty('error')) {
             res.status(400).json(result);
