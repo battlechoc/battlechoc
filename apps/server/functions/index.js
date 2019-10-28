@@ -446,7 +446,7 @@ app.get('/check/available/:username', (req, res) => {
 app.post('/user/username', (req, res) => {
     let players = admin.firestore().collection('players');
     players.doc(req.body.player).get().then(doc => {
-        let regex = /^([a-zA-Z][a-zA-Z0-9_]{3,15})$/
+        let regex = /^([a-zA-ZäöüÄöü][a-zA-Z0-9_äöüÄÖÜ]{3,15})$/;
         if (regex.test(req.body.username) && req.body.username.toUpperCase() !== 'CHOCNONYMOUS') {
             if (doc.exists) {
                 players.doc(req.body.player).update({
