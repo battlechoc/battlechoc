@@ -248,7 +248,7 @@ class Settings extends Component {
               </Button>
 
               {(() => {
-                if (this.state.tutorialAlreadySeen && typeof this.props.game === 'undefined') {
+                if ((this.state.tutorialAlreadySeen || this.props.playerInfos.stats.username !== 'Chocnonymous') && typeof this.props.game === 'undefined') {
                   return (
                     <div>
                       <Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {
