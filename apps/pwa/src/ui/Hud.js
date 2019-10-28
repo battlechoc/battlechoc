@@ -137,7 +137,7 @@ class Hud extends Component {
         return (
             <div className={this.props.className}>
                 <Tooltip />
-                <Settings startTutorial={this.props.startTutorial} endGame={this.props.endGame} onRef={settings => (this.settings = settings)} />
+                <Settings startTutorial={this.props.startTutorial} surrender={this.props.surrender} onRef={settings => (this.settings = settings)} />
                 <SignInOrUp onRef={signInOrUp => (this.signInOrUp = signInOrUp)} />
                 {(() => {
                     if (stage === 'CHOCLAB_SCREEN') {
@@ -177,7 +177,7 @@ class Hud extends Component {
                             </Fab>
                         </div>
                     } else {
-                        return <Actionbar showSettings={this.openSettings} showSignInOrUp={this.openSignInOrUp} />
+                        return <Actionbar endGame={this.props.endGame} showSettings={this.openSettings} showSignInOrUp={this.openSignInOrUp} />
                     }
                 })()}
 
@@ -270,6 +270,7 @@ Hud.propTypes = {
     enterMultiplayerGame: PropTypes.func.isRequired,
     startTutorial: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired,
+    surrender: PropTypes.func.isRequired,
     challengedPlayer: PropTypes.string,
     className: PropTypes.string.isRequired
 }

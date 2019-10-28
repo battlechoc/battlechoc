@@ -523,6 +523,10 @@ class Multiplayer {
         this.opponentEventIndex = 0;
         this.playerEventIndex = 0;
         this.currentGameSession = undefined;
+        if (typeof this.unsubscribeGameSession !== 'undefined') {
+            this.unsubscribeGameSession();
+            this.unsubscribeGameSession = undefined;
+        }
     }
 
     async enterGameSession(sessionId, gameActions) {
@@ -540,7 +544,7 @@ class Multiplayer {
             this.gameActions = gameActions;
             let session = doc.data();
             this.localPlayerIndex = session.game.players.findIndex(player => player.id === firebase.auth().currentUser.uid);
-            reference.onSnapshot(doc => {
+            this.unsubscribeGameSession = reference.onSnapshot(doc => {
                 let session = doc.data();
                 this.sessionData = session;
                 this.processEvents(session['events_from_' + (1 - this.localPlayerIndex)]);

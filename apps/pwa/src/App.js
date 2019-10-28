@@ -323,22 +323,8 @@ class App extends Component {
         });
     }
 
-    endGame(surrender=false) {
+    endGame() {
         Jukebox.stopMusic(true);
-
-        if (surrender) {
-            this.props.showOverview();
-            this.props.gameResumeable(false);
-            OfflineStore.gamestateStore.clear();
-            let winners = []
-            winners.push(Object.assign({ idx: 1 - multiplayer.localPlayerIndex }, this.props.game.players[1 - multiplayer.localPlayerIndex]));
-            this.props.endGame({
-                winners: winners,
-                issuer: this.props.game.players[multiplayer.localPlayerIndex].id
-            });
-            let stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: winners };
-            multiplayer.pushGameStats([stats]);
-        }
 
         if (this.props.tutorial) {
             this.closeTutorial(false);
@@ -352,14 +338,22 @@ class App extends Component {
         }
     }
 
+    surrender() {
+        let winners = []
+        winners.push(Object.assign({ idx: 1 - multiplayer.localPlayerIndex }, this.props.game.players[1 - multiplayer.localPlayerIndex]));
+        this.props.endGame({
+            winners: winners,
+            issuer: this.props.game.players[multiplayer.localPlayerIndex].id
+        });
+    }
+
     showOverview() {
         this.setState({ params: { ...this.state.params, sessionid: undefined } });
         Jukebox.stopMusic(true);
         this.props.showOverview();
         this.props.gameResumeable(false);
         OfflineStore.gamestateStore.clear();
-        const winners = Rules.determineWinner(this.props.game);
-        console.log(winners);
+        let winners = Rules.determineWinner(this.props.game);
         let stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: winners };
         multiplayer.pushGameStats([stats]);
     }
@@ -397,7 +391,8 @@ class App extends Component {
                     enterMultiplayerGame={this.enterMultiplayerGame}
                     startTutorial={() => this.startTutorial()}
                     className={this.props.tutorial ? 'tutorial hud' : 'hud'}
-                    endGame={surrender => this.endGame(surrender)}
+                    endGame={() => this.endGame()}
+                    surrender={() => this.surrender()}
                     onRef={hud => this.hud = hud}
                     challengedPlayer={this.state.params.challenge} />
                 {this.props.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
