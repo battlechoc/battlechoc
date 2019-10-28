@@ -64,7 +64,7 @@ export default withWidth()(props => {
     }
 
     const validate = name => {
-        let regex = /^([a-zA-Z][a-zA-Z0-9_]{3,15})$/;
+        let regex = /^([a-zA-ZäöüÄöü][a-zA-Z0-9_äöüÄÖÜ]{3,15})$/;
         return regex.test(name) && name.toUpperCase() !== 'CHOCNONYMOUS';
     }
 
