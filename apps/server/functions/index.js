@@ -446,9 +446,15 @@ app.get('/rank/:player', (req, res) => {
     let players = admin.firestore().collection('players');
     players.doc(req.params.player).get().then(doc => {
         let player = doc.data();
-        players.where('score', '>=', player.score).get()
+        if (typeof player.score === 'undefined') {
+            players.get()
+            .then(scores => res.json({ ranking: scores.size}))
+            .catch(error => res.status(500).json({ error: error.toString() }));
+        } else {
+            players.where('score', '>=', player.score).get()
             .then(scores => res.json({ ranking: scores.size }))
             .catch(error => res.status(500).json({ error: error.toString() }));
+        }
     }).catch(error => res.status(500).json({ error: error.toString() }));
 });
 
