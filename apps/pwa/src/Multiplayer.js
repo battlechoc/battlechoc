@@ -51,7 +51,9 @@ class Multiplayer {
         try {
             firebase.initializeApp(firebaseConfig);
             firebase.firestore().enablePersistence()
-                .catch(err => console.log("could not enable offline persistence of firestore.", err));
+            .catch(err => console.log("could not enable offline persistence of firestore.", err));
+            this.messaging = firebase.messaging();
+            this.messaging.usePublicVapidKey("BJ6zc8pE57SS98ocjLmtHBuaGgDjIirTpAALyYIR_zywwBJbmssDWhbn78WPhoJfjN28htOBI4bwlVzjwHMCqak");
             firebase.auth().onAuthStateChanged((user) => {
                 this.authStateChanged(user);
             });
@@ -61,41 +63,30 @@ class Multiplayer {
     }
 
     askForNotification(user) {
-        const messaging = firebase.messaging();
-        messaging.usePublicVapidKey("BJ6zc8pE57SS98ocjLmtHBuaGgDjIirTpAALyYIR_zywwBJbmssDWhbn78WPhoJfjN28htOBI4bwlVzjwHMCqak");
-
         Notification.requestPermission().then((permission) => {
             if (permission === 'granted') {
-                messaging.getToken().then((currentToken) => {
+                this.messaging.getToken().then((currentToken) => {
                     if (currentToken) {
-                        console.log(currentToken);
-
-                        firebase.firestore().collection('permissions').doc(user.uid).set({'messaging': currentToken}).then(() => {
-                            console.log('token stored')
-                        }).catch(error => {
-                            console.log("could not store permission", error);
-                        });
+                        let ref = firebase.firestore().collection('permissions').doc(user.uid);
+                        ref.set({ messaging: firebase.firestore.FieldValue.arrayUnion(currentToken) }, {merge: true} );
                     } else {
                         console.log('No Instance ID token available. Request permission to generate one.');
                     }
                 }).catch((error) => {
                     console.log('An error occurred while retrieving token. ', error);
                 });
+            
+                this.messaging.onTokenRefresh(() => {
+                    this.messaging.getToken().then((refreshedToken) => {
+                        let ref = firebase.firestore().collection('permissions').doc(user.uid);
+                        ref.set({ messaging: firebase.firestore.FieldValue.arrayUnion(refreshedToken) }, {merge: true} );
+                    }).catch((err) => {
+                        console.log('Unable to retrieve refreshed token ', err);
+                    });
+                });
             } else {
                 console.log('Unable to get permission to notify.');
             }
-        });
-
-        messaging.onTokenRefresh(() => {
-            messaging.getToken().then((refreshedToken) => {
-                firebase.firestore().collection('permissions').doc(user.uid).set({'messaging': refreshedToken}).then(() => {
-                    console.log('refreshed token stored');
-                }).catch(err => {
-                    console.log("could not create player entry.", err);
-                });
-            }).catch((err) => {
-                console.log('Unable to retrieve refreshed token ', err);
-            });
         });
     }
 
