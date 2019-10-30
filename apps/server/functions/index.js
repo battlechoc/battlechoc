@@ -476,6 +476,55 @@ app.get('/check/available/:username', (req, res) => {
     }
 });
 
+app.get('/user/:name', async (req, res) => {
+    let players = admin.firestore().collection('players');
+    try {
+        var snapshot = await players.where('username', '==', req.params.name).get();
+    } catch (error) {
+        return res.status(500).json({ error: error.toString() });
+    }
+
+    if (snapshot.empty) {
+        res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
+    } else {
+        let player = snapshot.docs[0].data();
+
+        if (typeof player.level !== 'undefined') {
+            player.level = Object.values(player.level).map(attribute => Object.values(attribute).reduce((a, b) => a + b, 0)).reduce((a, b) => a + b, 0);
+        } else {
+            player.level = 0;
+        }
+
+        if (typeof player.trackRecord !== 'undefined') {
+            player.losses = player.trackRecord.filter(record => record.lost).length;
+            player.winnings = player.trackRecord.filter(record => record.won).length;
+            player.drawn = player.trackRecord.filter(record => typeof record.winners !== 'undefined').filter(record => record.winners.length > 1).length;
+        } else {
+            player.losses = 0;
+            player.winnings = 0;
+            player.drawn = 0;
+        }
+        player.name = player.username;
+        // hide player specific fields
+        player.trackRecord = undefined;
+        player.last_upgrade_action = undefined;
+        player.coins = undefined;
+        let score = player.score;
+        player.score = undefined;
+        player.username = undefined;
+
+        if (typeof score === 'undefined') {
+            players.get()
+            .then(scores => res.json(Object.assign(player, {ranking: scores.size})))
+            .catch(error => res.status(500).json({ error: error.toString() }));
+        } else {
+            players.where('score', '>=', score).get()
+            .then(scores => res.json(Object.assign(player, {ranking: scores.size})))
+            .catch(error => res.status(500).json({ error: error.toString() }));
+        }
+    }
+});
+
 app.post('/user/username', (req, res) => {
     let players = admin.firestore().collection('players');
     players.doc(req.body.player).get().then(doc => {
