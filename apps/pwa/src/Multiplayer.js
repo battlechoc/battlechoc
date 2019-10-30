@@ -130,14 +130,22 @@ class Multiplayer {
 
             firebase.database().ref('.info/connected').on('value', function (snapshot) {
                 if (snapshot.val() === false) {
-                    userStatusFirestoreRef.set(isOfflineForFirestore);
+                    try {
+                        userStatusFirestoreRef.set(isOfflineForFirestore);
+                    } catch (error) {
+                        console.warn(error);
+                    }
                     return;
                 };
 
                 userStatusDatabaseRef.onDisconnect().set(isOfflineForDatabase).then(function () {
-                    userStatusDatabaseRef.set(isOnlineForDatabase);
-                    userStatusFirestoreRef.set(isOnlineForFirestore);
-                });
+                    try {
+                        userStatusDatabaseRef.set(isOnlineForDatabase);
+                        userStatusFirestoreRef.set(isOnlineForFirestore);
+                    } catch (error) {
+                        console.warn(error);
+                    }
+                }).catch(error => console.warn(error));
             });
 
             this.askForNotification(user);
@@ -365,34 +373,6 @@ class Multiplayer {
         } else {
             return [];
         }
-    }
-
-    sleep (time) {
-      return new Promise((resolve) => { setTimeout(() => resolve(), time) });
-    }    
-
-    async fetchPlayerProfileData(playerName) {
-        let timeout = new Date().getTime() + 5000;
-        while (!firebase.auth().currentUser) {
-            console.log('try to identify user', new Date().getTime())
-            await this.sleep(500);
-            if (new Date().getTime() > timeout) {
-                throw Error('Timeout while fetching player data');
-            }
-        }
-
-        try {
-            var doc = await firebase.firestore().collection('players').where('username', '==', playerName).get();
-        } catch (error) {
-            throw Error(error);
-        }
-
-        if (doc.size > 0) {
-            let player = doc.docs[0].data();
-            return { playerId: doc.docs[0].id, playerName: playerName, profileData: player, isYourself: doc.docs[0].id === firebase.auth().currentUser.uid };
-        } else {
-            throw Error('Could not find player with given name ' + playerName);
-        } 
     }
 
     signInAnonymouslyIfNotAlreadySignedIn() {
