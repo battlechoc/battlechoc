@@ -14,6 +14,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogActions from '@material-ui/core/DialogActions';
 import Button from '@material-ui/core/Button';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import { ServerConfig } from '../../helper/settings';
 
 const FirebaseSigninUiConfig = {
@@ -66,10 +67,10 @@ class SignInOrUp extends React.Component {
     }
 
     open = () => {
-        this.setState({ open: true });
+        this.setState({ open: true, ranking: undefined });
 
         const user = firebase.auth().currentUser;
-        if (user) {
+        if (user && !user.isAnonymous) {
             fetch(ServerConfig.baseUrl + '/rank/' + user.uid, {            
                 headers: new Headers({
                     'Authorization': 'Basic ' + ServerConfig.auth,
@@ -101,7 +102,7 @@ class SignInOrUp extends React.Component {
                         Player Name: {this.props.playerInfos.stats.username}<br />
                         E-Mail: {this.props.playerInfos.email}<br />
                         Coins: {this.props.playerInfos.stats.coins}<br />
-                        Rank: {this.state.ranking}
+                        Rank: {typeof this.state.ranking !== 'undefined' ? this.state.ranking : <CircularProgress size='1rem'/>}
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => {
