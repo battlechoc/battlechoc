@@ -393,11 +393,6 @@ img.without.cream {
   color: white;
 }
 
-.selected {
-  background-color: rgba(0, 0, 0, 0.05) !important;
-  cursor: pointer;
-}
-
 @media screen and (orientation:portrait) {
   .button {
     width: 48vw;
