@@ -103,17 +103,20 @@ app.post('/user/challenge', async (req, res) => {
                         if (doc.exists) {
                             permission = doc.data();
                             if (typeof permission.messaging !== 'undefined') {
-                                const payload = {
-                                  'notification': {
-                                    'title':  player.username + ' challenges you @battlechoc',
-                                    'body': 'This could be a great fight!',
-                                    'click_action': 'https://battlechoc.com' //?sessionid=' + databaseSession.id
-                                  },
-                                  'to': permission.messaging
-                                }
+                                permission.messaging.forEach(token => {
+                                    const payload = {
+                                      'notification': {
+                                        'title':  player.username + ' challenges you @battlechoc',
+                                        'body': 'This could be a great fight!',
+                                        'click_action': 'https://battlechoc.com' //?sessionid=' + databaseSession.id
+                                      },
+                                      'to': token
+                                    }
 
-                                axios.post('https://fcm.googleapis.com/fcm/send', payload)
-                                .catch(error => console.warn('PLAYER NOTIFICATION FAILED' + error.toString()));
+                                    axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: {'Authorization' : 'key=***REMOVED***'}})
+                                    .then(() => console.log('Successfully send notification'))
+                                    .catch(error => console.warn('PLAYER NOTIFICATION FAILED' + error.toString()));
+                                });
                             }
                         }
                     }).catch(error => console.warn('ERROR WHILE PLAYER NOTIFICATION ' + error.toString()));
@@ -267,17 +270,20 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                 if (doc.exists) {
                     permission = doc.data();
                     if (typeof permission.messaging !== 'undefined') {
-                        const payload = {
-                          'notification': {
-                            'title':  opponent + ' finished the turn @battlechoc',
-                            'body': 'Let\'s go. It\'s your move!',
-                            'click_action': 'https://battlechoc.com'
-                          },
-                          'to': permission.messaging
-                        }
+                        permission.messaging.forEach(token => {
+                            const payload = {
+                              'notification': {
+                                'title':  opponent + ' finished the turn @battlechoc',
+                                'body': 'Let\'s go. It\'s your move!',
+                                'click_action': 'https://battlechoc.com'
+                              },
+                              'to': token
+                            }
 
-                        axios.post('https://fcm.googleapis.com/fcm/send', payload)
-                        .catch(error => console.warn('PLAYER NOTIFICATION FAILED' + error.toString()));
+                            axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: {'Authorization' : 'key=***REMOVED***'}})
+                            .then(() => console.log('Successfully send notification'))
+                            .catch(error => console.warn('PLAYER NOTIFICATION FAILED' + error.toString()));
+                        });
                     }
                 }
             }).catch(error => console.warn('ERROR WHILE PLAYER NOTIFICATION ' + error.toString()));
