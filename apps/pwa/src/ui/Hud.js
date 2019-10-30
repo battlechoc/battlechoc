@@ -17,7 +17,6 @@ import Fab from '@material-ui/core/Fab';
 import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
-import { multiplayer } from '../Multiplayer';
 import { ServerConfig } from '../helper/settings';
 
 class Hud extends Component {
@@ -44,42 +43,16 @@ class Hud extends Component {
 
         if (typeof this.props.challengedPlayer !== 'undefined') {
             this.setState({ multiplayerScreen: true });
-            multiplayer.fetchPlayerProfileData(this.props.challengedPlayer).then(profile => {
-                let level = 0;
-                let losses = 0;
-                let winnings = 0;
-                let drawn = 0;
-                if (typeof profile.profileData.level !== 'undefined') {
-                    // sum up all level of all attributes
-                    level = Object.values(profile.profileData.level).map(attribute => Object.values(attribute).reduce((a, b) => a + b, 0)).reduce((a, b) => a + b, 0);
-                }
-
-                if (typeof profile.profileData.trackRecord !== 'undefined') {
-                    losses = profile.profileData.trackRecord.filter(record => record.lost).length;
-                    winnings = profile.profileData.trackRecord.filter(record => record.won).length;
-                    drawn = profile.profileData.trackRecord.filter(record => typeof record.winners !== 'undefined').filter(record => record.winners.length > 1).length;
-                }
-
-                fetch(ServerConfig.baseUrl + '/rank/' + profile.playerId, {            
-                    headers: new Headers({
-                        'Authorization': 'Basic ' + ServerConfig.auth,
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json'
-                    })
-                }).then(response => this.handleFetchError(response))
-                .then(data => {
-                    let player = {
-                        id: profile.playerId,
-                        level: level,
-                        winnings: winnings,
-                        drawn: drawn,
-                        losses: losses,
-                        ranking: data.ranking, 
-                        name: profile.playerName
-                    }
-                    console.log('final player data', player);
-                    this.multiplayerScreen.showPlayerProfile({ opponent: player });
-                }).catch(error => console.warn(error));
+            fetch(ServerConfig.baseUrl + '/user/' + this.props.challengedPlayer, {            
+                headers: new Headers({
+                    'Authorization': 'Basic ' + ServerConfig.auth,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                })
+            }).then(response => this.handleFetchError(response))
+            .then(player => {
+                console.log('final player data', player);
+                this.multiplayerScreen.showPlayerProfile({ opponent: player });
             }).catch(error => console.warn(error));
         }
     }

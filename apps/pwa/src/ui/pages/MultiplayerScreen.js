@@ -113,7 +113,6 @@ class MultiplayerScreen extends Component {
                                             }} color="primary">{t[this.props.language].JOIN_GAME}</Button>
                                 }
                             } else {
-                                console.log(this.state.openGames)
                                 return null;
                             }
                         })()}
