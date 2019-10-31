@@ -22,7 +22,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import Checkbox from '@material-ui/core/Checkbox';
 import TextField from '@material-ui/core/TextField';
 import { multiplayer } from '../../Multiplayer';
-import { ServerConfig } from '../../helper/settings';
+import { axios } from '../../helper/settings';
 import PlayerNameInput from '../controls/PlayerNameInput';
 import firebase from '@firebase/app';
 
@@ -56,25 +56,16 @@ class Settings extends Component {
   }
 
   setPlayerName = playerName => {
-    fetch(ServerConfig.baseUrl + '/user/username', {
-      method: 'post',
-      headers: new Headers({
-        'Authorization': 'Basic ' + ServerConfig.auth,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }),
-      body: JSON.stringify({ 
-        player: firebase.auth().currentUser.uid,
-        username: playerName
-      })
-    }).then(response => {        
+    axios.post('/user/username', { player: firebase.auth().currentUser.uid, username: playerName })
+    .then(response => {        
       this.props.updatePlayerStats({ username: playerName });
       OfflineStore.playerStore.get('stats').then(playerStats => {
         playerStats.username = playerName;
         OfflineStore.playerStore.set('stats', playerStats);
         this.setState({ open: false });
-      });
-    }).catch(error => console.error(error));
+      })
+    })
+    .catch(error => console.warn(error));
   }
 
   render() {
@@ -175,22 +166,14 @@ class Settings extends Component {
                   message: this.state.additionalReportMessage
                 };
 
-                fetch(ServerConfig.baseUrl + '/debugging/gamestate', {
-                  method: 'post',
-                  headers: new Headers({
-                    'Authorization': 'Basic ' + ServerConfig.auth,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                  }),
-                  body: JSON.stringify({ report: report })
-                })
-                  .then(response => response.json())
-                  .then(data => this.setState({
-                    snackbar: {
-                      text: t[this.props.language].SNACKBAR_SEND,
-                      visible: true
-                    }
-                  }));
+                axios.post('/debugging/gamestate', { report: report })
+                .then(response => this.setState({
+                  snackbar: {
+                    text: t[this.props.language].SNACKBAR_SEND,
+                    visible: true
+                  }
+                }))
+                .catch(error => console.warn(error));
                 this.setState({ additionalReportMessage: '', includeDeviceInformation: false, showErrorReport: false });
               }).catch(error => {
                 console.warn(error);

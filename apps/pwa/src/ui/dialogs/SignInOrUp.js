@@ -15,7 +15,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import DialogActions from '@material-ui/core/DialogActions';
 import Button from '@material-ui/core/Button';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { ServerConfig } from '../../helper/settings';
+import { axios } from '../../helper/settings';
 
 const FirebaseSigninUiConfig = {
     signInFlow: 'popup',
@@ -71,16 +71,11 @@ class SignInOrUp extends React.Component {
 
         const user = firebase.auth().currentUser;
         if (user && !user.isAnonymous) {
-            fetch(ServerConfig.baseUrl + '/rank/' + user.uid, {            
-                headers: new Headers({
-                    'Authorization': 'Basic ' + ServerConfig.auth,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                })
-            }).then(response => this.handleFetchError(response))
-            .then(data => {
-                this.setState({ ranking: data.ranking });
-            }).catch(error => this.setState({ ranking: 'Offline'}));
+            axios.get('/rank/' + user.uid)
+            .then(response => {
+                this.setState({ ranking: response.data.ranking });
+            })
+            .catch(error => this.setState({ ranking: 'Offline'}));
         }
     }
 

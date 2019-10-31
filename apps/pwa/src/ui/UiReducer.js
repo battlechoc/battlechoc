@@ -11,6 +11,7 @@ const uiReducer = createReducer({
     tutorialAlreadySeen: false,
     overviewVisible: false,
     tutorial: false,
+    multiplayerSessions: [],
     playerInfos: { stats: EmptyPlayerStats, isSignedIn: false },
     language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
 }, {
@@ -49,12 +50,6 @@ const uiReducer = createReducer({
         [UiActions.assetsReady]: (state, action) => {
             state.assetsReady = true;
         },
-        [UiActions.waitForMultiplayer]: (state, action) => {
-            state.multiplayerWaiting = true;
-        },
-        [UiActions.joinedMultiplayer]: (state, action) => {
-            state.multiplayerWaiting = undefined;
-        },
         [UiActions.loadUiState]: (state, action) => {
             for (let property in action.payload) {
                 state[property] = action.payload[property];
@@ -87,6 +82,9 @@ const uiReducer = createReducer({
         },
         [UiActions.updatePlayerStats]: (state, action) => {
             Object.assign(state.playerInfos.stats, action.payload);
+        },
+        [UiActions.updateMultiplayerSessions]: (state, action) => {
+            state.multiplayerSessions = action.payload;
         }
     }
 );

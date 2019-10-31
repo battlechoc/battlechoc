@@ -22,7 +22,7 @@ import TreeAndCannonTutorial from '../situations/tutorial/TreeAndCannonTutorial'
 import BunnyAndXmasTutorial from '../situations/tutorial/BunnyAndXmasTutorial';
 import FountainAndFruitCannonTutorial from '../situations/tutorial/FountainAndFruitCannonTutorial';
 import { Translation as t } from '../ui/misc';
-import { ServerConfig } from '../helper/settings';
+import { axios } from '../helper/settings';
 import firebase from '@firebase/app';
 import OfflineStore from '../OfflineStore';
 import { updatePlayerStats } from '../ui/UiActions';
@@ -102,25 +102,16 @@ class Tutorial extends Component {
     }
 
     setPlayerName = playerName => {
-        fetch(ServerConfig.baseUrl + '/user/username', {
-            method: 'post',
-            headers: new Headers({
-                'Authorization': 'Basic ' + ServerConfig.auth,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            }),
-            body: JSON.stringify({ 
-                player: firebase.auth().currentUser.uid,
-                username: playerName
-            })
-        }).then(response => {        
+        axios.post('/user/username', { player: firebase.auth().currentUser.uid, username: playerName })
+        .then(response => {        
             this.props.updatePlayerStats({ username: playerName });
             OfflineStore.playerStore.get('stats').then(playerStats => {
                 playerStats.username = playerName;
                 OfflineStore.playerStore.set('stats', playerStats);
             });
             this.setState({ playerHasName: true });
-        }).catch(error => console.error(error));
+        })
+        .catch(error => console.warn(error));
     }
 
     render() {

@@ -1,5 +1,6 @@
 import React from 'react';
-import { ServerConfig } from '../../helper/settings';
+import { axios } from '../../helper/settings';
+import Axios from 'axios';
 import { makeStyles } from '@material-ui/core/styles';
 import { green } from '@material-ui/core/colors';
 import withWidth, { isWidthUp } from '@material-ui/core/withWidth';
@@ -39,28 +40,29 @@ export default withWidth()(props => {
 
     const buttonClassname = playerNameAvailable ? classes.buttonSuccess : null;
 
-    const xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4) {
-            let data = JSON.parse(xhr.responseText);
-            if (xhr.status === 200) {
-                setPlayerNameAvailable(data.available);
-            } else {
-                setPlayerNameAvailable(false);
-            }
-            setLoading(false);
-        }
-    };
+    const CancelToken = Axios.CancelToken;
+    const source = CancelToken.source();
 
     const checkAvailable = name => {
-        if (xhr.readyState < 4) {
-            xhr.abort();
+        if (name !== '') {
+            if (loading) {
+                source.cancel();
+            }
+
+            setLoading(true);
+            axios.get('/check/available/' + name, {cancelToken: source.token})
+            .then(response => {
+                setPlayerNameAvailable(response.data.available);
+                setLoading(false);
+            })
+            .catch(error => {
+                if (!Axios.isCancel(error)) {
+                    console.warn(error);
+                    setPlayerNameAvailable(false);
+                }
+                setLoading(false);
+            });
         }
-        xhr.open("GET", ServerConfig.baseUrl + '/check/available/' + name, true);
-        xhr.setRequestHeader('Authorization', 'Basic ' + ServerConfig.auth);
-        xhr.setRequestHeader('Accept', 'application/json');
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send();
     }
 
     const validate = name => {
@@ -98,7 +100,6 @@ export default withWidth()(props => {
                     setPlayerName(event.target.value);
                     setPlayerNameAvailable(false);
                     setPlayerNameValid(false);
-                    setLoading(true);
                     checkAvailable(event.target.value);
                     setPlayerNameValid(validate(event.target.value));
                 }}

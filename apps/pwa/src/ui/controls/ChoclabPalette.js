@@ -7,9 +7,6 @@ class ChoclabPalette extends Component {
 	constructor(props) {
 		super(props);
 		this.state = { selectedEntity: EntityType.FACTORY };
-	}
-
-    componentWillMount() {
         this.buildingsForSeclection = [{
             type: EntityType.FACTORY,
             className: 'factory',

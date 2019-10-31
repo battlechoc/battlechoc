@@ -8,7 +8,8 @@ import { Jukebox } from '../misc';
 import { BattlechocError } from '../../gameplay/Errors';
 
 class AttackPalette extends Component {
-    componentWillMount() {
+    constructor(props) {
+        super(props);
         this.attacksForSeclection = [{
             type: AttackType.TRUFFLE,
             className: 'cannon',
