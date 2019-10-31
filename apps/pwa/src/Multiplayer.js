@@ -43,9 +43,10 @@ class Multiplayer {
 
         this.localPlayerIndex = 0;
         this.callbacks = {
-            updatePlayerStats: () => { console.warn("calling updatePlayerStats without beeing initialized"); },
-            notifyPlayerSignedIn: () => { console.warn("calling notifyPlayerSignedIn without beeing initialized"); },
-            updateLevel: () => { console.warn("calling updateLevel without beeing initialized"); }
+            updatePlayerStats: () => console.warn("calling updatePlayerStats without beeing initialized"),
+            notifyPlayerSignedIn: () => console.warn("calling notifyPlayerSignedIn without beeing initialized"),
+            updateLevel: () => console.warn("calling updateLevel without beeing initialized"),
+            updateMultiplayerSessions: () => console.warn("calling updateMultiplayerSessions without beeing initialized")
         };
 
         try {
@@ -60,10 +61,6 @@ class Multiplayer {
         } catch (error) {
             console.log(error);
         }
-    }
-
-    async updatePlayerData() {
-
     }
 
     askForNotification(user) {
@@ -153,6 +150,7 @@ class Multiplayer {
             });
 
             this.askForNotification(user);
+            this.getMultiplayerSessions();
         } else {
             this.localPlayer = undefined;
             this.signInAnonymouslyIfNotAlreadySignedIn();
@@ -350,13 +348,12 @@ class Multiplayer {
         if (firebase.auth().currentUser) {
             try {
                 let response = await axios.get('/multiplayer/sessions/' + firebase.auth().currentUser.uid);
-                return response.data.sessions;
+                this.callbacks.updateMultiplayerSessions(response.data.sessions);
             } catch (error) {
-                console.log('error while fetching player sessions ' + error);
-                return [];
+                console.warn('error while fetching player sessions ' + error);
             }
         } else {
-            return [];
+            console.warn('user not logged in');
         }
     }
 

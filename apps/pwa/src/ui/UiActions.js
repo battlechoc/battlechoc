@@ -10,15 +10,14 @@ const UiActionTypes = Object.freeze({
     gameResumeable: 'battlechoc/ui/gameResumeable',
     showOverview: 'battlechoc/ui/showOverview',
     assetsReady: 'battlechoc/ui/assetsReady',
-    waitForMultiplayer: 'battlechoc/ui/waitForMultiplayer',
-    joinedMultiplayer: 'battlechoc/ui/joinedMultiplayer',
     loadUiState: 'battlechoc/ui/loadUiState',
     resetUi: 'battlechoc/ui/resetUi',
     notifyPlayerSignedOut: 'battlechoc/ui/notifyPlayerSignedOut',
     notifyPlayerSignedIn: 'battlechoc/ui/notifyPlayerSignedIn',
     startTutorial: 'battlechoc/ui/startTutorial',
     stopTutorial: 'battlechoc/ui/stopTutorial',
-    updatePlayerStats: 'battlechoc/ui/updatePlayerStats'
+    updatePlayerStats: 'battlechoc/ui/updatePlayerStats',
+    updateMultiplayerSessions: 'battlechoc/ui/updateMultiplayerSessions'
 });
 
 const selectBuilding = createAction(UiActionTypes.selectBuilding);
@@ -29,8 +28,6 @@ const deselectBuildings = createAction(UiActionTypes.deselectBuildings);
 const changeLanguage = createAction(UiActionTypes.changeLanguage);
 const gameResumeable = createAction(UiActionTypes.gameResumeable);
 const assetsReady = createAction(UiActionTypes.assetsReady);
-const waitForMultiplayer = createAction(UiActionTypes.waitForMultiplayer);
-const joinedMultiplayer = createAction(UiActionTypes.joinedMultiplayer);
 const loadUiState = createAction(UiActionTypes.loadUiState);
 const resetUi = createAction(UiActionTypes.resetUi);
 const showOverview = createAction(UiActionTypes.showOverview);
@@ -39,5 +36,6 @@ const notifyPlayerSignedIn = createAction(UiActionTypes.notifyPlayerSignedIn);
 const startTutorial = createAction(UiActionTypes.startTutorial);
 const stopTutorial = createAction(UiActionTypes.stopTutorial);
 const updatePlayerStats = createAction(UiActionTypes.updatePlayerStats);
+const updateMultiplayerSessions = createAction(UiActionTypes.updateMultiplayerSessions);
 
-export { startTutorial, stopTutorial, showOverview, resetUi, loadUiState, joinedMultiplayer, waitForMultiplayer, UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };
+export { updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };
