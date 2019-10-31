@@ -72,6 +72,10 @@ class MultiplayerScreen extends Component {
         });
     }
 
+    joinGame = sessionId => {
+        this.props.enterMultiplayerGame(sessionId);
+    }
+
     render() {
         return (
             <div id="multiplayer">

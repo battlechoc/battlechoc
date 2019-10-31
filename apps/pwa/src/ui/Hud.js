@@ -49,6 +49,10 @@ class Hud extends Component {
                 this.multiplayerScreen.showPlayerProfile({ opponent: response.data });
             }).catch(error => console.warn(error));
         }
+
+        if (typeof this.props.sessionId !== 'undefined') {
+            this.setState({ multiplayerScreen: true }, () => this.multiplayerScreen.joinGame(this.props.sessionId));
+        }
     }
 
     unlockUi() {
@@ -239,7 +243,8 @@ Hud.propTypes = {
     endGame: PropTypes.func.isRequired,
     surrender: PropTypes.func.isRequired,
     challengedPlayer: PropTypes.string,
-    className: PropTypes.string.isRequired
+    className: PropTypes.string.isRequired,
+    sessionId: PropTypes.string
 }
 
 const mapStateToProps = state => ({
