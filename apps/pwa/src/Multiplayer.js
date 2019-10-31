@@ -7,7 +7,7 @@ import OfflineStore from './OfflineStore';
 import { GameActionTypes } from './gameplay/GameActions';
 import { AttackType } from './gameplay/GameEntities';
 import { Jukebox } from './ui/misc';
-import { ServerConfig } from './helper/settings';
+import { axios } from './helper/settings';
 
 const MultiplayerGameSessionState = Object.freeze({
     UNINITIALIZED: 'MultiplayerGameSessionState.Uninitialized',
@@ -60,6 +60,10 @@ class Multiplayer {
         } catch (error) {
             console.log(error);
         }
+    }
+
+    async updatePlayerData() {
+
     }
 
     askForNotification(user) {
@@ -337,37 +341,18 @@ class Multiplayer {
     challengePlayer(playerName) {
         console.log('challenge ' + playerName);
         if (typeof playerName !== 'undefined' && firebase.auth().currentUser !== 'undefined') {
-            fetch(ServerConfig.baseUrl + '/user/challenge', {
-                method: 'post',
-                headers: new Headers({
-                    'Authorization': 'Basic ' + ServerConfig.auth,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }),
-                body: JSON.stringify({ opponent: playerName, playerId: firebase.auth().currentUser.uid })
-            }).then(response => response.json()).then(data => console.log(data));
+            axios.post('/user/challenge', { opponent: playerName, playerId: firebase.auth().currentUser.uid })
+            .catch(error => console.warn(error))
         }
     }
 
     async getMultiplayerSessions() {
         if (firebase.auth().currentUser) {
-            let headers = new Headers({
-                'Authorization': 'Basic ' + ServerConfig.auth,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            });
-
             try {
-                let response = await fetch(ServerConfig.baseUrl + '/multiplayer/sessions/' + firebase.auth().currentUser.uid, { headers: headers });
-                if (!response.ok) {
-                    console.log('error while fetching player sessions ' + response.statusText);
-                    return [];
-                } else {
-                    let games = await response.json();
-                    return games.sessions;
-                }
+                let response = await axios.get('/multiplayer/sessions/' + firebase.auth().currentUser.uid);
+                return response.data.sessions;
             } catch (error) {
-                console.log('error while fetching player sessions ' + error.toString());
+                console.log('error while fetching player sessions ' + error);
                 return [];
             }
         } else {
@@ -472,20 +457,8 @@ class Multiplayer {
             console.log('RELAY ACTION ' + this.playerEventIndex);
             action.emitted = firebase.firestore.Timestamp.fromDate(new Date());
 
-            fetch(ServerConfig.baseUrl + '/multiplayer/relay/action', {
-                method: 'post',
-                headers: new Headers({
-                    'Authorization': 'Basic ' + ServerConfig.auth,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }),
-                body: JSON.stringify({ event: action, sessionId: this.currentGameSession })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    console.error(response.statusText);
-                }
-            }).catch(error => console.log(error));
+            axios.post('/multiplayer/relay/action', { event: action, sessionId: this.currentGameSession })
+            .catch(error => console.warn(error));
         }
     }
 

@@ -12,7 +12,7 @@ import { ChoclabPalette } from '../controls';
 import MeshPreview from '../../3d/MeshPreview';
 import IconButton from '@material-ui/core/IconButton';
 import Snackbar from '@material-ui/core/Snackbar';
-import { ServerConfig } from '../../helper/settings';
+import { axios } from '../../helper/settings';
 
 class Choclab extends Component {
     constructor(props) {
@@ -52,25 +52,17 @@ class Choclab extends Component {
                         aria-label="close"
                         color="inherit"
                         onClick={() => {
-                            fetch(ServerConfig.baseUrl + '/undo/upgrade', {
-                                method: 'post',
-                                headers: new Headers({
-                                    'Authorization': 'Basic ' + ServerConfig.auth,
-                                    'Accept': 'application/json',
-                                    'Content-Type': 'application/json'
-                                }),
-                                body: JSON.stringify({ 
-                                    player: user.uid,
-                                    entity: this.state.selectedEntityType,
-                                    attribute: this.state.upgrade.attribute,
-                                    actionId: this.state.upgradeAction
-                                })
-                            }).then(response => this.handleFetchError(response))
-                            .then(data => {
-                                this.props.updateLevel(data.level).then(() => {
-                                    this.props.updatePlayerStats({ 'coins': data.coins });
+                            axios.post('/undo/upgrade', { 
+                                player: user.uid,
+                                entity: this.state.selectedEntityType,
+                                attribute: this.state.upgrade.attribute,
+                                actionId: this.state.upgradeAction
+                            })
+                            .then(response => {
+                                this.props.updateLevel(response.data.level).then(() => {
+                                    this.props.updatePlayerStats({ 'coins': response.data.coins });
                                     OfflineStore.playerStore.get('stats').then(playerStats => {
-                                        playerStats.coins = data.coins;
+                                        playerStats.coins = response.data.coins;
                                         OfflineStore.playerStore.set('stats', playerStats);
                                     });
                                     this.setState({ 
@@ -80,7 +72,7 @@ class Choclab extends Component {
                                         "upgradeAction": undefined
                                     })
                                 })
-                            }).catch(error => console.error(error));
+                            }).catch(error => console.warn(error));
                         }}
                       >
                         <Undo />
@@ -103,30 +95,22 @@ class Choclab extends Component {
                                     <div className={attribute.color} style={{ width: percentage + '%'}}></div>
                                     { classNames === 'progress' && values[0] < values[1] && this.props.playerInfos.stats.coins >= this.state.selectedEntity.coins() && !this.props.playerInfos.isAnonymous ?
                                     <AddBox onClick={() => {
-                                        fetch(ServerConfig.baseUrl + '/upgrade/entity', {
-                                            method: 'post',
-                                            headers: new Headers({
-                                                'Authorization': 'Basic ' + ServerConfig.auth,
-                                                'Accept': 'application/json',
-                                                'Content-Type': 'application/json'
-                                            }),
-                                            body: JSON.stringify({ 
-                                                player: user.uid,
-                                                entity: this.state.selectedEntityType,
-                                                attribute: attribute.name 
-                                            })
-                                        }).then(response => this.handleFetchError(response))
-                                        .then(data => {
-                                            this.props.updateLevel(data.level).then(() => {
-                                                this.props.updatePlayerStats({ 'coins': data.coins });
+                                        axios.post('/upgrade/entity', { 
+                                            player: user.uid,
+                                            entity: this.state.selectedEntityType,
+                                            attribute: attribute.name 
+                                        })
+                                        .then(response => {
+                                            this.props.updateLevel(response.data.level).then(() => {
+                                                this.props.updatePlayerStats({ 'coins': response.data.coins });
                                                 OfflineStore.playerStore.get('stats').then(playerStats => {
-                                                    playerStats.coins = data.coins;
+                                                    playerStats.coins = response.data.coins;
                                                     OfflineStore.playerStore.set('stats', playerStats);
                                                 });
                                                 this.setState({ 
                                                     "selectedEntity": getEntityDescriptor(this.state.selectedEntityType, this.props.level),
                                                     "upgradeMessageOpen": true,
-                                                    "upgradeAction": data.last_upgrade_action,
+                                                    "upgradeAction": response.data.last_upgrade_action,
                                                     "upgrade": {
                                                         "attribute": attribute.name,
                                                         "value": values[0],
@@ -135,7 +119,7 @@ class Choclab extends Component {
                                                     }
                                                 })
                                             });
-                                        }).catch(error => console.error(error));
+                                        }).catch(error => console.warn(error));
                                     }} /> : null }
                                 </div>
                             </div>

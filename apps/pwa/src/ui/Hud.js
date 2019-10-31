@@ -17,7 +17,7 @@ import Fab from '@material-ui/core/Fab';
 import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
-import { ServerConfig } from '../helper/settings';
+import { axios } from '../helper/settings';
 
 class Hud extends Component {
     constructor(props) {
@@ -43,16 +43,10 @@ class Hud extends Component {
 
         if (typeof this.props.challengedPlayer !== 'undefined') {
             this.setState({ multiplayerScreen: true });
-            fetch(ServerConfig.baseUrl + '/user/' + this.props.challengedPlayer, {            
-                headers: new Headers({
-                    'Authorization': 'Basic ' + ServerConfig.auth,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                })
-            }).then(response => this.handleFetchError(response))
-            .then(player => {
-                console.log('final player data', player);
-                this.multiplayerScreen.showPlayerProfile({ opponent: player });
+            axios.get('/user/' + this.props.challengedPlayer)
+            .then(response => {
+                console.log('final player data', response.data);
+                this.multiplayerScreen.showPlayerProfile({ opponent: response.data });
             }).catch(error => console.warn(error));
         }
     }

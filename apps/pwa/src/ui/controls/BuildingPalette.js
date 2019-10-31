@@ -8,7 +8,8 @@ import { GameStateTypes } from '../../gameplay/GameplayReducer';
 import { Jukebox } from '../misc';
 
 class BuildingPalette extends Component {
-    componentWillMount() {
+    constructor(props) {
+        super(props);
         this.buildingsForSeclection = [{
             type: EntityType.FACTORY,
             className: 'factory',
