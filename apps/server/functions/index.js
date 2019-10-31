@@ -108,7 +108,7 @@ app.post('/user/challenge', async (req, res) => {
                                       'notification': {
                                         'title':  player.username + ' challenges you @battlechoc',
                                         'body': 'This could be a great fight!',
-                                        'click_action': 'https://battlechoc.com' //?sessionid=' + databaseSession.id
+                                        'click_action': 'https://battlechoc.com?sessionId=' + databaseSession.id
                                       },
                                       'to': token
                                     }
@@ -275,7 +275,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                               'notification': {
                                 'title':  opponent + ' finished the turn @battlechoc',
                                 'body': 'Let\'s go. It\'s your move!',
-                                'click_action': 'https://battlechoc.com'
+                                'click_action': 'https://battlechoc.com?sessionId=' + req.body.sessionId
                               },
                               'to': token
                             }
