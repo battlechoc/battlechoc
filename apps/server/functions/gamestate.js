@@ -408,7 +408,7 @@ class Reducer {
                     fountain.hp = Math.round(fountain.hp - damage);
                     if (fountain.hp < 1) {
                         cellsWithFountains[0].occupiedBy = [];
-                        neighbors = getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, game.board, otherPlayerField(game).grid);
+                        neighbors = getCellPatch3x3({ row: cellsWithFountains[0].row, col: cellsWithFountains[0].col }, game.board, otherPlayerField(game).grid);
                         neighbors.forEach(neighbor => {
                             const otherFountainNearby = getCellPatch3x3({ row: neighbor.row, col: neighbor.col }, game.board, otherPlayerField(game).grid).filter(cell => cell.occupiedBy.map(entity => entity.type).includes(entities.EntityType.CHOCOLATE_FOUNTAIN));
                             if (otherFountainNearby.length === 0) {
