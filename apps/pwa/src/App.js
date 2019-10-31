@@ -352,7 +352,7 @@ class App extends Component {
     }
 
     showOverview() {
-        this.setState({ params: { ...this.state.params, sessionid: undefined } });
+        this.setState({ params: { ...this.state.params, sessionId: undefined } });
         Jukebox.stopMusic(true);
         this.props.showOverview();
         this.props.gameResumeable(false);
@@ -398,7 +398,8 @@ class App extends Component {
                     endGame={() => this.endGame()}
                     surrender={() => this.surrender()}
                     onRef={hud => this.hud = hud}
-                    challengedPlayer={this.state.params.challenge} />
+                    challengedPlayer={this.state.params.challenge}
+                    sessionId={this.state.params.sessionId} />
                 {this.props.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
             </div>
         );
