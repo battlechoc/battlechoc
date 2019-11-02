@@ -17,7 +17,8 @@ const UiActionTypes = Object.freeze({
     startTutorial: 'battlechoc/ui/startTutorial',
     stopTutorial: 'battlechoc/ui/stopTutorial',
     updatePlayerStats: 'battlechoc/ui/updatePlayerStats',
-    updateMultiplayerSessions: 'battlechoc/ui/updateMultiplayerSessions'
+    updateMultiplayerSessions: 'battlechoc/ui/updateMultiplayerSessions',
+    loadFriendsList: 'battlechoc/ui/loadFriendsList'
 });
 
 const selectBuilding = createAction(UiActionTypes.selectBuilding);
@@ -37,5 +38,6 @@ const startTutorial = createAction(UiActionTypes.startTutorial);
 const stopTutorial = createAction(UiActionTypes.stopTutorial);
 const updatePlayerStats = createAction(UiActionTypes.updatePlayerStats);
 const updateMultiplayerSessions = createAction(UiActionTypes.updateMultiplayerSessions);
+const loadFriendsList = createAction(UiActionTypes.loadFriendsList);
 
-export { updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };
+export { loadFriendsList, updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };

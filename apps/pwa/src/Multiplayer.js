@@ -46,7 +46,8 @@ class Multiplayer {
             updatePlayerStats: () => console.warn("calling updatePlayerStats without beeing initialized"),
             notifyPlayerSignedIn: () => console.warn("calling notifyPlayerSignedIn without beeing initialized"),
             updateLevel: () => console.warn("calling updateLevel without beeing initialized"),
-            updateMultiplayerSessions: () => console.warn("calling updateMultiplayerSessions without beeing initialized")
+            updateMultiplayerSessions: () => console.warn("calling updateMultiplayerSessions without beeing initialized"),
+            loadFriendsList: () => console.warn("calling loadFriendsList without beeing initialized")
         };
 
         try {
@@ -151,6 +152,7 @@ class Multiplayer {
 
             this.askForNotification(user);
             this.getMultiplayerSessions();
+            this.fetchFriendsList();
         } else {
             this.localPlayer = undefined;
             this.signInAnonymouslyIfNotAlreadySignedIn();
@@ -336,11 +338,13 @@ class Multiplayer {
         }
     }
 
-    challengePlayer(playerName) {
-        console.log('challenge ' + playerName);
+    async challengePlayer(playerName) {
         if (typeof playerName !== 'undefined' && firebase.auth().currentUser !== 'undefined') {
-            axios.post('/user/challenge', { opponent: playerName, playerId: firebase.auth().currentUser.uid })
-            .catch(error => console.warn(error))
+            try {
+                await axios.post('/user/challenge', { opponent: playerName, playerId: firebase.auth().currentUser.uid })
+            } catch(error) {
+                console.warn(error)
+            }
         }
     }
 
@@ -351,6 +355,32 @@ class Multiplayer {
                 this.callbacks.updateMultiplayerSessions(response.data.sessions);
             } catch (error) {
                 console.warn('error while fetching player sessions ' + error);
+            }
+        } else {
+            console.warn('user not logged in');
+        }
+    }
+
+    async fetchFriendsList() {
+        if (firebase.auth().currentUser) {
+            try {
+                let response = await axios.get('/user/friends/' + firebase.auth().currentUser.uid);
+                this.callbacks.loadFriendsList(response.data);
+            } catch (error) {
+                console.warn('error while fetching friends ' + error);
+            }
+        } else {
+            console.warn('user not logged in');
+        }        
+    }
+
+    async removeFriend(friend) {
+        if (firebase.auth().currentUser) {
+            try {
+                await axios.delete('/user/friend/', { data: { userId: firebase.auth().currentUser.uid, friend: friend }});
+                this.fetchFriendsList();
+            } catch (error) {
+                console.warn('error while removing friend ' + error);
             }
         } else {
             console.warn('user not logged in');
