@@ -61,13 +61,37 @@ app.get('/user/friends/:userId', async (req, res) => {
     }
 });
 
-app.post('/user/friends', async (req, res) => {
-    let ref = admin.firestore().collection('players').doc(req.body.userId);
-    try {
-        await ref.update({ friends: admin.firestore.FieldValue.arrayUnion(req.body.friendId) });
-        res.status(200).end();
-    } catch (error) {
-        res.status(500).json({ 'error': error });
+app.post('/user/friend', async (req, res) => {
+    const players = admin.firestore().collection('players');
+    let docs = await players.where('username', '==', req.body.friend).get();
+    if (docs.size < 1) {
+        res.status(404).json({ error: 'PLAYERNAME "' + req.body.opponent + '" DOES NOT EXIST'});
+    } else {
+        let friendId = docs.docs[0].id;
+        let ref = players.doc(req.body.userId);
+        try {
+            await ref.update({ friends: admin.firestore.FieldValue.arrayUnion(friendId) });
+            res.status(200).end();
+        } catch (error) {
+            res.status(500).json({ 'error': error });
+        }
+    }
+});
+
+app.delete('/user/friend', async (req, res) => {
+    const players = admin.firestore().collection('players');
+    let docs = await players.where('username', '==', req.body.friend).get();
+    if (docs.size < 1) {
+        res.status(404).json({ error: 'PLAYERNAME "' + req.body.opponent + '" DOES NOT EXIST'});
+    } else {
+        let friendId = docs.docs[0].id;
+        let ref = players.doc(req.body.userId);
+        try {
+            await ref.update({ friends: admin.firestore.FieldValue.arrayRemove(friendId) });
+            res.status(200).end();
+        } catch (error) {
+            res.status(500).json({ 'error': error });
+        }
     }
 });
 
@@ -555,7 +579,7 @@ app.get('/user/:name', async (req, res) => {
 app.post('/user/username', (req, res) => {
     let players = admin.firestore().collection('players');
     players.doc(req.body.player).get().then(doc => {
-        let regex = /^([a-zA-ZäöüÄöü][a-zA-Z0-9_äöüÄÖÜ]{3,15})$/;
+        let regex = /^([a-zA-Z][a-zA-Z0-9_]{3,15})$/;
         if (regex.test(req.body.username) && req.body.username.toUpperCase() !== 'CHOCNONYMOUS') {
             if (doc.exists) {
                 players.doc(req.body.player).update({
