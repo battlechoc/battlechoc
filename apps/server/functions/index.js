@@ -44,6 +44,33 @@ app.post('/debugging/gamestate', (req, res) => {
         .catch(error => res.json({ result: error }));
 });
 
+app.get('/user/friends/:userId', async (req, res) => {
+    let ref = admin.firestore().collection('players').doc(req.params.userId);
+    let doc = await ref.get();
+    let player = doc.data();
+    if (typeof player.friends === 'undefined') {
+        res.json([]);
+    } else {
+        let friends = [];
+        await Promise.all(player.friends.map(async (friendId) => {
+            let friend = await admin.firestore().collection('players').doc(friendId).get();
+            friends.push({ username: friend.data().username });           
+        }));              
+        
+        res.json(friends); 
+    }
+});
+
+app.post('/user/friends', async (req, res) => {
+    let ref = admin.firestore().collection('players').doc(req.body.userId);
+    try {
+        await ref.update({ friends: admin.firestore.FieldValue.arrayUnion(req.body.friendId) });
+        res.status(200).end();
+    } catch (error) {
+        res.status(500).json({ 'error': error });
+    }
+});
+
 app.post('/user/challenge', async (req, res) => {
     const permissions = admin.firestore().collection('permissions');
     const players = admin.firestore().collection('players');
