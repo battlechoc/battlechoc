@@ -11,6 +11,7 @@ const uiReducer = createReducer({
     tutorialAlreadySeen: false,
     overviewVisible: false,
     tutorial: false,
+    friends: [],
     multiplayerSessions: [],
     playerInfos: { stats: EmptyPlayerStats, isSignedIn: false },
     language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
@@ -85,6 +86,10 @@ const uiReducer = createReducer({
         },
         [UiActions.updateMultiplayerSessions]: (state, action) => {
             state.multiplayerSessions = action.payload;
+        },
+        [UiActions.loadFriendsList]: (state, action) => {
+            state.friends = action.payload;
+            OfflineStore.playerStore.friends = action.payload;
         }
     }
 );

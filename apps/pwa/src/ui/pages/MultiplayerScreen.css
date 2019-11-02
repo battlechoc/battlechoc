@@ -96,6 +96,34 @@
   display: none;
 }
 
+#friendsList .friendsRow:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+#friendsList .friendsRow:nth-child(odd) {
+  background-color: rgba(0, 0, 0, 0.025) !important;
+}
+
+#friendsList .friendsRow {
+  display: flex;
+  justify-content: center;
+  padding: 10px;
+}
+
+#friendsList .friendsRow button {
+  margin: 0 5px;
+}
+
+#friendsList .friendsRow div:first-child {
+  padding: 5px;
+}
+
+#friendsList .friendsRow div:first-child {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+}
+
 @media screen and (max-width: 850px) {
   #multiplayer .controls .menuButton {
     font-size: 0.85rem;

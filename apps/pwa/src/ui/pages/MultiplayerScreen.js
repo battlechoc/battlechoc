@@ -6,13 +6,15 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import { Button } from '@material-ui/core';
+import Fab from '@material-ui/core/Fab';
 import { Jukebox, Translation as t } from '../misc';
-import { PlayArrow, Cancel, AccountCircle, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne } from '@material-ui/icons';
+import { PlayArrow, Cancel, AccountCircle, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne, SportsEsports, Delete } from '@material-ui/icons';
 import { connect } from 'react-redux';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';
 import { multiplayer } from '../../Multiplayer';
+import withMobileDialog from '@material-ui/core/withMobileDialog';
 
 class MultiplayerScreen extends Component {
     constructor(props) {
@@ -21,12 +23,14 @@ class MultiplayerScreen extends Component {
         TimeAgo.addLocale(de);
         this.state = {
             showPlayerProfile: false,
+            showFriends: false
         }
     }
 
     componentDidMount() {
         this.props.onRef(this);
         multiplayer.getMultiplayerSessions();
+        multiplayer.fetchFriendsList();
     }
 
     timeToString(millis) {
@@ -76,6 +80,26 @@ class MultiplayerScreen extends Component {
         this.props.enterMultiplayerGame(sessionId);
     }
 
+    removeFriend = friend => {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        this.setState({ removing: friend });
+        multiplayer.removeFriend(friend);
+    }
+
+    canNotChallenge = username => {
+        return this.props.multiplayerSessions.map(session => session.opponent.name).includes(username);
+    }
+
+    challengePlayer = async username => {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        this.setState({ 
+            showPlayerProfile: false,
+            showFriends: false
+        });
+        await multiplayer.challengePlayer(username);
+        multiplayer.getMultiplayerSessions();        
+    }
+
     render() {
         return (
             <div id="multiplayer">
@@ -98,14 +122,7 @@ class MultiplayerScreen extends Component {
                         {(() => {
                             if (typeof this.props.multiplayerSessions !== 'undefined' && this.state.player) {
                                 if (!this.props.multiplayerSessions.map(game => game.opponent.name).includes(this.state.player.name)) {
-                                    return <Button onClick={() => {
-                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                multiplayer.challengePlayer(this.state.player.name);
-                                                this.setState({ showPlayerProfile: false });
-                                                multiplayer.getMultiplayerSessions().then(games => {
-                                                    this.setState({ openGames:  games});
-                                                });
-                                            }} color="primary">{t[this.props.language].START_GAME}</Button>
+                                    return <Button onClick={() => this.challengePlayer(this.state.player.name)} color="primary">{t[this.props.language].START_GAME}</Button>
                                 } else {
                                     return <Button onClick={() => {
                                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -122,6 +139,32 @@ class MultiplayerScreen extends Component {
                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                             this.setState({ showPlayerProfile: false });
                         }} color="primary">{t[this.props.language].BUTTON_BACK}</Button>
+                    </DialogActions>
+                </Dialog>
+
+                <Dialog
+                    fullWidth={true}
+                    fullScreen={this.props.fullScreen}
+                    open={this.state.showFriends}
+                    onClose={() => this.setState({ showFriends: false })}
+                    aria-labelledby="friendsList">
+                    <DialogTitle>{t[this.props.language].FRIENDS}</DialogTitle>
+                    <DialogContent>
+                        <div id="friendsList">
+                            {this.props.friends.length > 0 ? this.props.friends.map((friend, i) => <div key={i} className="friendsRow">
+                                    <div>{friend.username}</div>
+                                    <div>
+                                        <Fab size="small" disabled={this.state.removing === friend.username || this.canNotChallenge(friend.username)} color="primary" aria-label="play" onClick={() => this.challengePlayer(friend.username)}><SportsEsports /></Fab>
+                                        <Fab size="small" disabled={this.state.removing === friend.username} color="primary" aria-label="delete" onClick={() => this.removeFriend(friend.username)} ><Delete /></Fab>
+                                    </div>
+                                </div>) : <p>{t[this.props.language].FRIENDS_INFO}</p> }
+                        </div>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => {
+                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                            this.setState({ showFriends: false });
+                        }} color="primary">{t[this.props.language].BUTTON_BACK}</Button>                    
                     </DialogActions>
                 </Dialog>
 
@@ -142,7 +185,9 @@ class MultiplayerScreen extends Component {
                             }
                         });
                     }}>{t[this.props.language].SHARE_LINK}</div>
-                    <div className="menuButton">{t[this.props.language].FRIENDS}</div>
+                    <div className="menuButton" onClick={() => {
+                        this.setState({ showFriends: true })
+                    }}>{t[this.props.language].FRIENDS}</div>
                 </div>
                 <div className="openGames">
                     <div className="gamestable">
@@ -169,14 +214,16 @@ class MultiplayerScreen extends Component {
 }
 
 MultiplayerScreen.propTypes = {
-    enterMultiplayerGame: PropTypes.func.isRequired
+    enterMultiplayerGame: PropTypes.func.isRequired,
+    fullScreen: PropTypes.bool.isRequired
 }
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
     language: state.ui.language,
-    multiplayerSessions: state.ui.multiplayerSessions
+    multiplayerSessions: state.ui.multiplayerSessions,
+    friends: state.ui.friends
 });
 
 const MultiplayerScreenContainer = connect(mapStateToProps)(MultiplayerScreen);
-export default MultiplayerScreenContainer;
+export default withMobileDialog({ breakpoint: 'xs' })(MultiplayerScreenContainer);
