@@ -65,7 +65,7 @@ app.post('/user/friend', async (req, res) => {
     const players = admin.firestore().collection('players');
     let docs = await players.where('username', '==', req.body.friend).get();
     if (docs.size < 1) {
-        res.status(404).json({ error: 'PLAYERNAME "' + req.body.opponent + '" DOES NOT EXIST'});
+        res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST'});
     } else {
         let friendId = docs.docs[0].id;
         let ref = players.doc(req.body.userId);
@@ -82,7 +82,7 @@ app.delete('/user/friend', async (req, res) => {
     const players = admin.firestore().collection('players');
     let docs = await players.where('username', '==', req.body.friend).get();
     if (docs.size < 1) {
-        res.status(404).json({ error: 'PLAYERNAME "' + req.body.opponent + '" DOES NOT EXIST'});
+        res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST'});
     } else {
         let friendId = docs.docs[0].id;
         let ref = players.doc(req.body.userId);
