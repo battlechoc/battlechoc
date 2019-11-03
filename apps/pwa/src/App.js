@@ -18,6 +18,7 @@ import { gameplayLog } from './gameplay/GamePlayLogger';
 import BuildFactoryTestSituation from './situations/tests/BuildFactoryTest';
 import FactoryExtensionTest from './situations/tests/FactoryExtensionTest';
 import Hud from './ui/Hud';
+import uuidv4 from 'uuid/v4';
 import Tutorial from './tutorial/Tutorial';
 
 const Scene = React.lazy(() => import('./3d/Scene'));
@@ -359,7 +360,7 @@ class App extends Component {
         this.props.gameResumeable(false);
         OfflineStore.gamestateStore.clear();
         let winners = Rules.determineWinner(this.props.game);
-        let stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: winners };
+        let stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: winners, id: uuidv4() };
         multiplayer.pushGameStats([stats]);
     }
 

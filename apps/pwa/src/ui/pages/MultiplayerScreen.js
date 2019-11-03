@@ -121,9 +121,9 @@ class MultiplayerScreen extends Component {
                     <DialogActions>
                         {(() => {
                             if (typeof this.props.multiplayerSessions !== 'undefined' && this.state.player) {
-                                if (!this.props.multiplayerSessions.map(game => game.opponent.name).includes(this.state.player.name)) {
+                                if (!this.props.multiplayerSessions.map(game => game.opponent.name).includes(this.state.player.name) && this.state.player.name !== this.props.account.username) {
                                     return <Button onClick={() => this.challengePlayer(this.state.player.name)} color="primary">{t[this.props.language].START_GAME}</Button>
-                                } else {
+                                } else if (typeof this.state.profile.id !== 'undefined') {
                                     return <Button onClick={() => {
                                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                                 this.props.enterMultiplayerGame(this.state.profile.id);
@@ -222,7 +222,8 @@ const mapStateToProps = state => ({
     game: state.gameplay.game,
     language: state.ui.language,
     multiplayerSessions: state.ui.multiplayerSessions,
-    friends: state.ui.friends
+    friends: state.ui.friends,
+    account: state.ui.playerInfos.stats
 });
 
 const MultiplayerScreenContainer = connect(mapStateToProps)(MultiplayerScreen);

@@ -42,12 +42,12 @@ class Hud extends Component {
         this.props.onRef(this);
 
         if (typeof this.props.challengedPlayer !== 'undefined') {
-            this.setState({ multiplayerScreen: true });
-            axios.get('/user/' + this.props.challengedPlayer)
-            .then(response => {
-                console.log('final player data', response.data);
-                this.multiplayerScreen.showPlayerProfile({ opponent: response.data });
-            }).catch(error => console.warn(error));
+            this.setState({ multiplayerScreen: true }, () => {
+                axios.get('/user/' + this.props.challengedPlayer)
+                .then(response => {
+                    this.multiplayerScreen.showPlayerProfile({ opponent: response.data });
+                }).catch(error => console.warn(error));
+            });
         }
 
         if (typeof this.props.sessionId !== 'undefined') {
