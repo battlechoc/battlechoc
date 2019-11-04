@@ -70,6 +70,7 @@
   font-weight: 400;
   font-size: 0.875rem;
   line-height: 1.43;
+  user-select: none;
   display: flex;
   justify-content: center;
 }
@@ -78,6 +79,7 @@
   color: rgba(0,0,0,0.87);
   font-size: 0.75rem;
   font-weight: 500;
+  cursor: unset !important;
   line-height: 1.3125rem;
 }
 
@@ -97,14 +99,8 @@
   display: none;
 }
 
-#friendsList .friendsRow:first-child {
-  border: 1px solid #e5e5e5;
-}
-
 #friendsList .friendsRow {
-  border-left: 1px solid #e5e5e5;
-  border-right: 1px solid #e5e5e5;
-  border-bottom: 1px solid #e5e5e5;
+  background-color: white;
 }
 
 #friendsList .friendsRow {

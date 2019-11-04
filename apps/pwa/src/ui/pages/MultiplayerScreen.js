@@ -171,6 +171,7 @@ class MultiplayerScreen extends Component {
                     fullWidth={true}
                     fullScreen={this.props.fullScreen}
                     open={this.state.showFriends}
+                    PaperProps={{ style: {backgroundColor: '#f5f5f5'}}}
                     onClose={() => this.setState({ showFriends: false })}
                     aria-labelledby="friendsList">
                     <DialogTitle>{t[this.props.language].FRIENDS}</DialogTitle>
