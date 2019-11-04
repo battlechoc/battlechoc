@@ -63,6 +63,7 @@
 #multiplayer .gamestable div {
   padding: 8px 0;
   width: 20%;
+  cursor: pointer;
   flex-wrap: wrap;
   border-bottom: 1px solid rgba(224, 224, 224, 1);
   color: rgba(0, 0, 0, 0.87);
@@ -96,12 +97,14 @@
   display: none;
 }
 
-#friendsList .friendsRow:nth-child(even) {
-  background-color: rgba(0, 0, 0, 0.05) !important;
+#friendsList .friendsRow:first-child {
+  border: 1px solid #e5e5e5;
 }
 
-#friendsList .friendsRow:nth-child(odd) {
-  background-color: rgba(0, 0, 0, 0.025) !important;
+#friendsList .friendsRow {
+  border-left: 1px solid #e5e5e5;
+  border-right: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e5e5;
 }
 
 #friendsList .friendsRow {
@@ -145,9 +148,36 @@
     width: calc(22.5vw - 12px);
     padding: 12px 6px;
   }
+
+  .multiplayer-statistics svg {
+    font-size: 3rem;
+  }
 }
 
 @media screen and (max-width: 500px) {
+
+  .multiplayer-statistics {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .multiplayer-statistics p {
+    display: flex;
+    flex-direction: row-reverse;
+    font-size: 2rem;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .multiplayer-statistics svg {
+    font-size: 4rem;
+    margin-right: 10vw;
+  }
+
+  #multiplayer .openGames {
+    overflow-y: scroll;
+  }
+
   #multiplayer .gamestable {
     display: block;
     background-color: unset;

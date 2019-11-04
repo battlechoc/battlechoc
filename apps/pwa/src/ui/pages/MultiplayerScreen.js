@@ -113,6 +113,7 @@ class MultiplayerScreen extends Component {
             <div id="multiplayer">
                 <Dialog
                     fullWidth={true}
+                    fullScreen={this.props.fullScreen}
                     open={this.state.showPlayerProfile}
                     onClose={() => this.setState({ showPlayerProfile: false })}
                     aria-labelledby="playerProfile">
@@ -212,6 +213,7 @@ class MultiplayerScreen extends Component {
                     <div className="menuButton" onClick={() => {
                         this.setState({ showFriends: true })
                     }}>{t[this.props.language].FRIENDS}</div>
+                    <div className="menuButton">{t[this.props.language].SEARCH_PLAYERS}</div>
                 </div>
                 <div className="openGames">
                     <div className="gamestable">
