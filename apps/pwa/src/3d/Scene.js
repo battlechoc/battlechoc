@@ -67,7 +67,7 @@ class Scene extends Component {
         let name = position.x + '-6.5-' + position.z;
         if (this.energyBars.includes(name)) {
             this.scene.stopAnimation(this.scene.getMeshByName('energy.bar.' + name));
-        }        
+        }
     }
 
     showEnergyBar = (entity, position) => {
@@ -85,11 +85,11 @@ class Scene extends Component {
         bar.isPickable = false;
         let material = new StandardMaterial('energy.bar.material.' + name, this.scene);
         if (energy < 0.3) {
-            material.diffuseColor﻿ = Color3.FromHexString("#D05531");
+            material.diffuseColor = Color3.FromHexString("#D05531");
         } else if (energy < 0.6) {
-            material.diffuseColor﻿ = Color3.FromHexString("#DFBF31");
+            material.diffuseColor = Color3.FromHexString("#DFBF31");
         } else {
-            material.diffuseColor﻿ = Color3.FromHexString("#70bf31");
+            material.diffuseColor = Color3.FromHexString("#70bf31");
         }
 
         bar.material = material;
@@ -118,15 +118,15 @@ class Scene extends Component {
     componentDidUpdate() {
         if (typeof this.props.game !== 'undefined' && typeof this.lookAtOpponent !== 'undefined') {
             if (!this.lookAtOpponent && ((!multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state !== GameStateTypes.ATTACK_PHASE) ||
-                ( multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state === GameStateTypes.ATTACK_PHASE))) {
+                (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state === GameStateTypes.ATTACK_PHASE))) {
                 this.lookAtOpponent = true;
                 this.performCameraFlight();
             } else if (this.lookAtOpponent && ((!multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state === GameStateTypes.ATTACK_PHASE) ||
-                ( multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state !== GameStateTypes.ATTACK_PHASE))) {
+                (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state !== GameStateTypes.ATTACK_PHASE))) {
                 this.lookAtOpponent = false;
                 this.performCameraFlight();
             }
-        
+
             if (this.playerGameField !== null) {
                 this.opponentGameField.update();
                 this.playerGameField.update();
@@ -152,14 +152,14 @@ class Scene extends Component {
         material.opacityTexture = texture;
 
         info.material = material;
-        
+
         let drawInfo = (filename, color, text) => {
             let image = new Image();
             image.src = filename;
             image.onload = () => {
                 this.setRenderLoop();
                 context.drawImage(image, 0, 0);
-                texture.update(); 
+                texture.update();
 
                 if (typeof text !== 'undefined') {
                     let shadowColor = '#7b0000';
@@ -170,7 +170,7 @@ class Scene extends Component {
                     texture.drawText(text, 48, 102, 'bold 48px PT Serif', shadowColor, null, true, true);
                     texture.drawText(text, 46, 100, 'bold 48px PT Serif', color, null, true, true);
                 }
-                
+
                 let flyaway = new Animation('flyaway_' + id, "position.y", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
                 let fade = new Animation("fade", "visibility", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
                 fade.setKeys([{ frame: 0, value: 1.0 }, { frame: 100, value: .8 }, { frame: 120, value: 0.0 }]);
@@ -187,17 +187,17 @@ class Scene extends Component {
         }
 
         if (messageType === this.InfoType.CACAO_HARVESTED) {
-            drawInfo('images/cacao_no_background.png','#70bf31', '+' + amount);
+            drawInfo('images/cacao_no_background.png', '#70bf31', '+' + amount);
         } else if (messageType === this.InfoType.CACAO_CONSUMED) {
-            drawInfo('images/cacao_no_background.png','#c70000', '-' + amount);
+            drawInfo('images/cacao_no_background.png', '#c70000', '-' + amount);
         } else if (messageType === this.InfoType.INCREASE_CACAO_PER_TURN) {
-            drawInfo('images/cacaoPerTurn.png','#70bf31', '+' + amount);
+            drawInfo('images/cacaoPerTurn.png', '#70bf31', '+' + amount);
         } else if (messageType === this.InfoType.INCREASE_BUILDINGS_PER_TURN) {
-            drawInfo('images/buildingsPerTurn.png','#70bf31', '+' + amount);
+            drawInfo('images/buildingsPerTurn.png', '#70bf31', '+' + amount);
         } else if (messageType === this.InfoType.INCREASE_ATTACKS_PER_TURN) {
-            drawInfo('images/attacksPerTurn.png','#70bf31', '+' + amount);
+            drawInfo('images/attacksPerTurn.png', '#70bf31', '+' + amount);
         } else if (messageType === this.InfoType.INCREASE_SPY_ATTACKS_PER_TURN) {
-            drawInfo('images/spyAttacksPerTurn.png','#70bf31', '+' + amount);
+            drawInfo('images/spyAttacksPerTurn.png', '#70bf31', '+' + amount);
         } else if (messageType === this.InfoType.BUNNY_CAUGHT) {
             drawInfo('images/bunnyCaught.png');
         }
@@ -246,7 +246,7 @@ class Scene extends Component {
     clear() {
         let instances = this.scene.meshes.filter(mesh => mesh.isAnInstance);
         for (let mesh = 0; mesh < instances.length; mesh++) {
-            instances[mesh].dispose();   
+            instances[mesh].dispose();
         }
         this.playerGameField = null;
         this.opponentGameField = null;
@@ -255,21 +255,21 @@ class Scene extends Component {
         this.lookAtOpponent = undefined;
     }
 
-    highlightCannons = (highlight=true) => {
+    highlightCannons = (highlight = true) => {
         let parent = this.scene.getMeshByName(EntityType.RUM_TRUFFLE_CANNON + '__root__');
         let children = parent.getChildren()[0].getChildren().length > 0 ? parent.getChildren()[0].getChildren() : parent.getChildren();
 
         children.forEach(child => {
             if (highlight) {
-                this.highlightLayer.addMesh(child, new Color3(1, 1, 0));   
+                this.highlightLayer.addMesh(child, new Color3(1, 1, 0));
             } else {
                 this.highlightLayer.removeMesh(child);
             }
-        });                    
+        });
     }
 
-    detonateAtShield(row, col, playerField=false) {
-        let truffle = MeshBuilder.CreateTorus('knot', {diameter: 0.1}, this.scene);
+    detonateAtShield(row, col, playerField = false) {
+        let truffle = MeshBuilder.CreateTorus('knot', { diameter: 0.1 }, this.scene);
         truffle.material = this.scene.getMaterialByName(BoardCellTypes.BROWN + '.material');
         if (playerField) {
             truffle.position = new Vector3(row, 5, col);
@@ -277,6 +277,24 @@ class Scene extends Component {
         } else {
             truffle.position = new Vector3(row - this.opponentGameFieldDistance, 5, col + this.opponentGameFieldDistance);
             this.opponentGameField.explode(truffle);
+        }
+    }
+
+    getFountain(row, col, board, field) {
+        let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
+        let neighbors = [];
+        for (let r = row - 1; r < row + 2; r++) {
+            for (let c = col - 1; c < col + 2; c++) {
+                if (r >= 0 && c >= 0 && r < board.size.rows && c < board.size.cols) {
+                    neighbors.push(cellAt(board, field, r, c));
+                }
+            }
+        }
+        const cellsWithFountains = neighbors.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CHOCOLATE_FOUNTAIN));
+        if (cellsWithFountains.length > 0) {
+            return cellsWithFountains[0].occupiedBy.filter(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN)[0];
+        } else {
+            return undefined;
         }
     }
 
@@ -401,7 +419,11 @@ class Scene extends Component {
                     let selectedCell = cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col);
                     this.detonateAtShield(row, col);
                     if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0) {
-                        this.showEnergyBar(selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0], position.clone());
+                        if (selectedCell.shielded) {
+                            this.showEnergyBar(this.getFountain(row, col, this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex), position.clone());
+                        } else {
+                            this.showEnergyBar(selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0], position.clone());
+                        }
                     } else {
                         this.hideEnergyBar(position.clone());
                     }
@@ -426,11 +448,11 @@ class Scene extends Component {
                 } else {
                     throw error;
                 }
-            }); 
+            });
         }
     }
 
-    setRenderLoop(run=true) {
+    setRenderLoop(run = true) {
         if (run) {
             if (this.renderLoopRepetitions === 0) {
                 this.engine.runRenderLoop(this.animate);
@@ -456,7 +478,7 @@ class Scene extends Component {
         this.scene.beginDirectAnimation(this.camera, [flight], 0, 60, false, 1, () => this.setRenderLoop(false));
     };
 
-    startGame = (game, overrideUiState=false) => {
+    startGame = (game, overrideUiState = false) => {
         const playerFieldIndex = game.players[multiplayer.localPlayerIndex].fieldIndex;
         const opponentFieldIndex = game.players[1 - multiplayer.localPlayerIndex].fieldIndex;
         if ((multiplayer.isLocalPlayer(game.currentPlayerIndex) && game.state !== GameStateTypes.ATTACK_PHASE) ||
@@ -484,7 +506,7 @@ class Scene extends Component {
     render() {
         return (
             <div>
-                { this.props.assetsReady ? null : <AssetLoadingView onRef={loadingView => this.loadingView = loadingView} /> }
+                {this.props.assetsReady ? null : <AssetLoadingView onRef={loadingView => this.loadingView = loadingView} />}
                 <canvas className="gameCanvas" ref={container => { this.container = container }} />
             </div>
         );
