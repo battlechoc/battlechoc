@@ -392,6 +392,19 @@ class Multiplayer {
         }
     }
 
+    async addFriend(friend) {
+        if (firebase.auth().currentUser) {
+            try {
+                await axios.post('/user/friend/', { userId: firebase.auth().currentUser.uid, friend: friend });
+                this.fetchFriendsList();
+            } catch (error) {
+                console.warn('error while adding friend ' + error);
+            }
+        } else {
+            console.warn('user not logged in');
+        }
+    }
+
     signInAnonymouslyIfNotAlreadySignedIn() {
         return new Promise((resolve, reject) => {
             if (firebase.auth().currentUser) {

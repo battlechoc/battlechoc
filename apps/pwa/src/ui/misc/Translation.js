@@ -190,6 +190,8 @@ const languages = {
         START_GAME: 'Start Game',
         JOIN_GAME: 'Join Game',
         FRIENDS_INFO: 'You don\'t have any friends right now',
+        ADD_FRIEND: 'Add to Friends',
+        REMOVE_FRIEND: 'Remove from Friends',
         ATTRIBUTE_NAME: attribute => {
             switch (attribute) {
                 case 'hp': return 'Hp';
@@ -391,6 +393,8 @@ const languages = {
         START_GAME: 'Spiel starten',
         JOIN_GAME: 'Spiel beitreten',
         FRIENDS_INFO: 'Du hast zur Zeit noch keine Freunde',
+        ADD_FRIEND: 'Als Freund hinzufügen',
+        REMOVE_FRIEND: 'Freund entfernen',
         ATTRIBUTE_NAME: attribute => {
             switch (attribute) {
                 case 'hp': return 'Hp';

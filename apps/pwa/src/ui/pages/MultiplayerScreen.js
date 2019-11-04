@@ -8,7 +8,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import { Button } from '@material-ui/core';
 import Fab from '@material-ui/core/Fab';
 import { Jukebox, Translation as t } from '../misc';
-import { PlayArrow, Cancel, AccountCircle, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne, SportsEsports, Delete } from '@material-ui/icons';
+import { PersonAddDisabled, PersonAdd, PlayArrow, Cancel, AccountCircle, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne, SportsEsports, Delete } from '@material-ui/icons';
 import { connect } from 'react-redux';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
@@ -80,11 +80,19 @@ class MultiplayerScreen extends Component {
         this.props.enterMultiplayerGame(sessionId);
     }
 
-    removeFriend = friend => {
+    removeFriend = async friend => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.setState({ removing: friend });
-        multiplayer.removeFriend(friend);
+        this.setState({ pendingFriendRequest: friend });
+        await multiplayer.removeFriend(friend);
+        this.setState({ pendingFriendRequest: undefined });
     }
+
+    addFriend = async friend => {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        this.setState({ pendingFriendRequest: friend });
+        await multiplayer.addFriend(friend);
+        this.setState({ pendingFriendRequest: undefined });       
+    } 
 
     canNotChallenge = username => {
         return this.props.multiplayerSessions.map(session => session.opponent.name).includes(username);
@@ -130,9 +138,25 @@ class MultiplayerScreen extends Component {
                                                 this.setState({ showPlayerProfile: false });
                                             }} color="primary">{t[this.props.language].JOIN_GAME}</Button>
                                 }
-                            } else {
-                                return null;
                             }
+                            return null;                           
+                        })()}
+
+                        {(() => {
+                            if (typeof this.props.multiplayerSessions !== 'undefined' && this.state.player) {
+                                if (!this.props.friends.map(friend => friend.username).includes(this.state.player.name)) {
+                                    return <Button onClick={() => {
+                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                        this.addFriend(this.state.player.name);
+                                    }} color="primary" startIcon={<PersonAdd />}>{t[this.props.language].ADD_FRIEND}</Button>
+                                } else {
+                                    return <Button disabled={this.state.pendingFriendRequest === this.state.player.name} onClick={() => {
+                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                        this.removeFriend(this.state.player.name);
+                                    }} color="primary" startIcon={<PersonAddDisabled />}>{t[this.props.language].REMOVE_FRIEND}</Button>
+                                }
+                            }
+                            return null;
                         })()}
 
                         <Button onClick={() => {
@@ -154,8 +178,8 @@ class MultiplayerScreen extends Component {
                             {this.props.friends.length > 0 ? this.props.friends.map((friend, i) => <div key={i} className="friendsRow">
                                     <div>{friend.username}</div>
                                     <div>
-                                        <Fab size="small" disabled={this.state.removing === friend.username || this.canNotChallenge(friend.username)} color="primary" aria-label="play" onClick={() => this.challengePlayer(friend.username)}><SportsEsports /></Fab>
-                                        <Fab size="small" disabled={this.state.removing === friend.username} color="primary" aria-label="delete" onClick={() => this.removeFriend(friend.username)} ><Delete /></Fab>
+                                        <Fab size="small" disabled={this.state.pendingFriendRequest === friend.username || this.canNotChallenge(friend.username)} color="primary" aria-label="play" onClick={() => this.challengePlayer(friend.username)}><SportsEsports /></Fab>
+                                        <Fab size="small" disabled={this.state.pendingFriendRequest === friend.username} color="primary" aria-label="delete" onClick={() => this.removeFriend(friend.username)} ><Delete /></Fab>
                                     </div>
                                 </div>) : <p>{t[this.props.language].FRIENDS_INFO}</p> }
                         </div>
