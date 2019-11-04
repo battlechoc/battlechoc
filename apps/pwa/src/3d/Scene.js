@@ -376,25 +376,26 @@ class Scene extends Component {
             } else if (this.props.selectedAttack === AttackType.FRUIT) {
                 let description = getEntityDescriptor(EntityType.FRUIT_CANNON, this.props.game.players[multiplayer.localPlayerIndex].level);
                 attack = description.attack()[0];
-            } 
+            }
 
             let damage = (1 + ((Math.random() * 0.4) - 0.2)) * attack;
 
-            this.props.attack({
+            const attackParams = {
                 issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
                 attackType: this.props.selectedAttack,
                 damage: damage,
                 row: row,
                 col: col
-            }).then(() => {
-                if (this.props.selectedAttack === AttackType.BUNNY) {
+            };
+            this.props.attack(attackParams).then(() => {
+                if (attackParams.attackType === AttackType.BUNNY) {
                     if (this.props.game.players[multiplayer.localPlayerIndex].attacksPerTurn[AttackType.BUNNY] > 0) {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
                     } else {
                         Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
                         this.spawnInfo(this.InfoType.BUNNY_CAUGHT, position.clone());
                     }
-                } else if (typeof this.props.selectedAttack !== 'undefined') {
+                } else if (typeof attackParams.attackType !== 'undefined') {
                     Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
                     let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
                     let selectedCell = cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col);
@@ -406,9 +407,9 @@ class Scene extends Component {
                     }
                 }
 
-                if (this.props.game.players[multiplayer.localPlayerIndex].attacks[this.props.selectedAttack] === 0) {
+                if (this.props.game.players[multiplayer.localPlayerIndex].attacks[attackParams.attackType] === 0) {
                     const attackTypes = [AttackType.TRUFFLE, AttackType.FRUIT, AttackType.HOT_CHOCOLATE, AttackType.BUNNY];
-                    let undepletedAttack = attackTypes.filter(attackType => this.props.game.players[multiplayer.localPlayerIndex].attacks[attackType]);
+                    let undepletedAttack = attackTypes.filter(attackType => this.props.game.players[multiplayer.localPlayerIndex].attacks[attackType] > 0);
                     if (undepletedAttack.length > 0) {
                         this.props.selectAttack(undepletedAttack[0]).catch(error => {
                             if (error instanceof BattlechocError) {
