@@ -95,6 +95,24 @@ app.delete('/user/friend', async (req, res) => {
     }
 });
 
+app.get('/query/user/:name', async (req, res) => {
+    const players = admin.firestore().collection('players');
+    let docs = await players.where('username', '>', '').select('username').get();
+    let limit = 10;
+    let results = [];
+    for (let doc of docs.docs) {
+        let player = doc.data();
+        if (player.username.toLowerCase().includes(req.params.name.toLocaleLowerCase())) {
+            results.push(player.username);
+        }
+
+        if (results.length >= limit) {
+            break;
+        }
+    }
+    res.json(results);
+});
+
 app.post('/user/challenge', async (req, res) => {
     const permissions = admin.firestore().collection('permissions');
     const players = admin.firestore().collection('players');
