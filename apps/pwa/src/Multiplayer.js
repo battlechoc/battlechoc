@@ -405,6 +405,10 @@ class Multiplayer {
         }
     }
 
+    async findUsers(query) {
+        return ( await axios.get('/query/user/' + query)).data;
+    }
+
     signInAnonymouslyIfNotAlreadySignedIn() {
         return new Promise((resolve, reject) => {
             if (firebase.auth().currentUser) {

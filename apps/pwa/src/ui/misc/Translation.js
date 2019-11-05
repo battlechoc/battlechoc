@@ -193,6 +193,7 @@ const languages = {
         ADD_FRIEND: 'Add to Friends',
         REMOVE_FRIEND: 'Remove from Friends',
         SEARCH_PLAYERS: 'Search player',
+        SEARCH_USER_INFO: 'No player found',
         ATTRIBUTE_NAME: attribute => {
             switch (attribute) {
                 case 'hp': return 'Hp';
@@ -397,6 +398,7 @@ const languages = {
         ADD_FRIEND: 'Als Freund hinzufügen',
         REMOVE_FRIEND: 'Freund entfernen',
         SEARCH_PLAYERS: 'Spieler suchen',
+        SEARCH_USER_INFO: 'Es wurde kein Spieler gefunden',
         ATTRIBUTE_NAME: attribute => {
             switch (attribute) {
                 case 'hp': return 'Hp';

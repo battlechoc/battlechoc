@@ -5,6 +5,7 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import TextField from '@material-ui/core/TextField';
 import { Button } from '@material-ui/core';
 import Fab from '@material-ui/core/Fab';
 import { Jukebox, Translation as t } from '../misc';
@@ -23,7 +24,10 @@ class MultiplayerScreen extends Component {
         TimeAgo.addLocale(de);
         this.state = {
             showPlayerProfile: false,
-            showFriends: false
+            showFriends: false,
+            showSearch: false,
+            userSearchText: '',
+            searchResults: []
         }
     }
 
@@ -106,6 +110,13 @@ class MultiplayerScreen extends Component {
         });
         await multiplayer.challengePlayer(username);
         multiplayer.getMultiplayerSessions();        
+    }
+
+    async findUser(query) {
+        if (query !== '') {
+            let results = await multiplayer.findUsers(query); 
+            this.setState({searchResults: results});
+        }
     }
 
     render() {
@@ -194,6 +205,41 @@ class MultiplayerScreen extends Component {
                     </DialogActions>
                 </Dialog>
 
+                <Dialog
+                    fullWidth={true}
+                    fullScreen={this.props.fullScreen}
+                    open={this.state.showSearch}
+                    PaperProps={{ style: {backgroundColor: '#f5f5f5'}}}
+                    onClose={() => this.setState({ showSearch: false })}
+                    aria-labelledby="searchFriends">
+                    <DialogTitle>{t[this.props.language].SEARCH_PLAYERS}</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            label="Name"
+                            value={this.state.userSearchText}
+                            inputProps={{ spellCheck: 'false' }}
+                            InputLabelProps={{ style: {color: 'rgba(69, 123, 130, 0.8)' }}}
+                            onChange={event => {
+                                this.setState({userSearchText: event.target.value});
+                                this.findUser(event.target.value);
+                            }}
+                            margin="normal"
+                        /> 
+                        <div id="friendsList">
+                            {this.state.searchResults.length > 0 ? this.state.searchResults.map((user, i) => <div key={i} 
+                                onClick={() => this.showPlayerProfile({ opponent: user })} className="friendsRow">
+                                    <div>{user.name}</div>
+                                </div>) : <p>{t[this.props.language].SEARCH_USER_INFO}</p> }
+                        </div>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => {
+                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                            this.setState({ showSearch: false });
+                        }} color="primary">{t[this.props.language].BUTTON_BACK}</Button>                    
+                    </DialogActions>
+                </Dialog>
+
                 <div className="controls">
                     <div className="menuButton">{t[this.props.language].RANDOM_OPPONENT}</div>
                     <div className="menuButton" onClick={() => {
@@ -214,7 +260,10 @@ class MultiplayerScreen extends Component {
                     <div className="menuButton" onClick={() => {
                         this.setState({ showFriends: true })
                     }}>{t[this.props.language].FRIENDS}</div>
-                    <div className="menuButton">{t[this.props.language].SEARCH_PLAYERS}</div>
+                    <div className="menuButton" onClick={() => {
+                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                        this.setState({ showSearch: true });
+                    }}>{t[this.props.language].SEARCH_PLAYERS}</div>
                 </div>
                 <div className="openGames">
                     <div className="gamestable">
