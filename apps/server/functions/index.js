@@ -102,15 +102,61 @@ app.get('/query/user/:name', async (req, res) => {
     let results = [];
     for (let doc of docs.docs) {
         let player = doc.data();
+
         if (player.username.toLowerCase().includes(req.params.name.toLocaleLowerCase())) {
-            results.push(player.username);
+            results.push(doc.id);
         }
 
         if (results.length >= limit) {
             break;
         }
     }
-    res.json(results);
+
+    if (results.length > 0) {
+        let refs = await admin.firestore().getAll(...results.map(id => players.doc(id)));
+        console.log(refs);
+        let result = []
+        for (let doc of refs) {
+            let player = doc.data();
+
+            if (typeof player.level !== 'undefined') {
+                player.level = Object.values(player.level).map(attribute => Object.values(attribute).reduce((a, b) => a + b, 0)).reduce((a, b) => a + b, 0);
+            } else {
+                player.level = 0;
+            }
+
+            if (typeof player.trackRecord !== 'undefined') {
+                player.losses = player.trackRecord.filter(record => record.lost).length;
+                player.winnings = player.trackRecord.filter(record => record.won).length;
+                player.drawn = player.trackRecord.filter(record => typeof record.winners !== 'undefined').filter(record => record.winners.length > 1).length;
+            } else {
+                player.losses = 0;
+                player.winnings = 0;
+                player.drawn = 0;
+            }
+            player.name = player.username;
+            // hide player specific fields
+            player.trackRecord = undefined;
+            player.last_upgrade_action = undefined;
+            player.coins = undefined;
+            let score = player.score;
+            player.score = undefined;
+            player.friends = undefined;
+            player.username = undefined;
+            if (typeof score === 'undefined' || isNaN(score)) {
+                let scores = await players.where('score', '>', 0).get();
+                player = Object.assign(player, {ranking: scores.size});
+            } else {
+                let scores = await players.where('score', '>=', score).get();
+                player = Object.assign(player, {ranking: scores.size});
+            }
+            result.push(player);        
+        }
+
+        res.json(result);
+    } else {
+        res.json([]);
+    }
 });
 
 app.post('/user/challenge', async (req, res) => {
@@ -521,8 +567,8 @@ app.get('/rank/:player', (req, res) => {
     let players = admin.firestore().collection('players');
     players.doc(req.params.player).get().then(doc => {
         let player = doc.data();
-        if (typeof player.score === 'undefined') {
-            players.get()
+        if (typeof player.score === 'undefined' || isNaN(player.score)) {
+            players.where('score', '>', 0).get()
             .then(scores => res.json({ ranking: scores.size}))
             .catch(error => res.status(500).json({ error: error.toString() }));
         } else {
@@ -582,8 +628,8 @@ app.get('/user/:name', async (req, res) => {
         player.score = undefined;
         player.username = undefined;
 
-        if (typeof score === 'undefined') {
-            players.get()
+        if (typeof score === 'undefined' || isNaN(score)) {
+            players.where('score', '>', 0).get()
             .then(scores => res.json(Object.assign(player, {ranking: scores.size})))
             .catch(error => res.status(500).json({ error: error.toString() }));
         } else {
