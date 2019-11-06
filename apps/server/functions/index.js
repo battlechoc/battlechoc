@@ -582,15 +582,19 @@ app.post('/undo/upgrade', (req, res) => {
 app.get('/rank/:player', (req, res) => {
     let players = admin.firestore().collection('players');
     players.doc(req.params.player).get().then(doc => {
-        let player = doc.data();
-        if (typeof player.score === 'undefined' || isNaN(player.score)) {
-            players.where('score', '>', 0).get()
-            .then(scores => res.json({ ranking: scores.size}))
-            .catch(error => res.status(500).json({ error: error.toString() }));
+        if (doc.exists) {
+            let player = doc.data();
+            if (typeof player.score === 'undefined' || isNaN(player.score)) {
+                players.where('score', '>', 0).get()
+                .then(scores => res.json({ ranking: scores.size}))
+                .catch(error => res.status(500).json({ error: error.toString() }));
+            } else {
+                players.where('score', '>=', player.score).get()
+                .then(scores => res.json({ ranking: scores.size }))
+                .catch(error => res.status(500).json({ error: error.toString() }));
+            }
         } else {
-            players.where('score', '>=', player.score).get()
-            .then(scores => res.json({ ranking: scores.size }))
-            .catch(error => res.status(500).json({ error: error.toString() }));
+            res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
         }
     }).catch(error => res.status(500).json({ error: error.toString() }));
 });
