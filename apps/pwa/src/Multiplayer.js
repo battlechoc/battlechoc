@@ -154,6 +154,7 @@ class Multiplayer {
             this.getMultiplayerSessions();
             this.fetchFriendsList();
         } else {
+            console.log('try to signin');
             this.localPlayer = undefined;
             this.signInAnonymouslyIfNotAlreadySignedIn();
         }
@@ -165,11 +166,6 @@ class Multiplayer {
 
     isLocalPlayer(playerIdx) {
         return playerIdx === this.localPlayerIndex;
-    }
-
-    mergeAccounts() {
-        console.log("merging offline stats with account");
-        this.mergePlayerStats();
     }
 
     pushGameStats(gameStats) {
@@ -204,89 +200,91 @@ class Multiplayer {
         }
     }
 
-    mergePlayerStats() {
-        // gets called when player logs in and has already some stats offline
-        if (firebase.auth().currentUser && firebase.auth().currentUser.isAnonymous === false) {
-            console.log("merging stats for logged in user");
-            OfflineStore.playerStore.get('stats').then(playerStats => {
-                if (typeof playerStats !== 'undefined') {
-                    console.log(playerStats);
-                    const playerInfosRef = firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid);
-                    playerInfosRef.get().then(doc => {
-                        if (!doc.exists) {
-                            console.log("player stats not yet existing...using offline element");
-                            firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).set(playerStats)
-                                .catch(err => { console.log('Could not store stats for player', err); });
-                        } else {
-                            let newStats = doc.data();
-                            if (typeof newStats.trackRecord === 'undefined') {
-                                newStats.trackRecord = [];
-                            }
-                            if (typeof newStats.coins === 'undefined') {
-                                newStats.coins = 0;
-                            }
-                            console.log(newStats);
-                            if (playerStats.trackRecord.length > 0) {
-                                const recalculatedCoins = this.calculateCoinsFromTrackRecord(playerStats.trackRecord);
-                                console.log("recalculated coins: " + recalculatedCoins + " local coins: " + playerStats.coins);
-                                newStats.coins = newStats.coins + recalculatedCoins;
-                                newStats.trackRecord.push(...playerStats.trackRecord);
-                                OfflineStore.playerStore.set('stats', EmptyPlayerStats)
-                                    .catch(err => console.warn("could not set new player stats in idb.", err));
-                            }
-                            playerInfosRef.update(newStats).catch(err => console.warn("could not update player track record.", err));
-                            this.callbacks.updatePlayerStats(newStats);
-                            if (typeof newStats.level !== 'undefined') {
-                                this.callbacks.updateLevel(newStats.level);
-                            }
-                        }
-                    }).catch(err => console.warn("could not retrieve player track record.", err));
+    async mergePlayerStats() {
+        if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) {
+            try {
+                var offlineAccount = await OfflineStore.playerStore.get('stats');
+            } catch (error) {
+                console.warn('failed to get player infos from offline store', error);
+                return this.fetchPlayerStats();
+            }
 
-                    this.callbacks.updatePlayerStats(playerStats);
-                } else {
-                    this.fetchPlayerStats();
-                }
-            }).catch(err => {
-                console.log(err);
+            if (typeof offlineAccount === 'undefined') {
                 this.fetchPlayerStats();
-            });
-        } else {
-            console.warn("should not be called when not logged in correctly");
+            } else {
+                let ref = firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid);
+                let doc = await ref.get();
+                if (!doc.exists) {
+                    try {
+                        firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).set(offlineAccount);
+                    } catch(error) { 
+                        console.log('could not store stats for player', error); 
+                    }
+                } else {
+                    let onlineAccount = doc.data();
+                    if (typeof onlineAccount.trackRecord === 'undefined') {
+                        onlineAccount.trackRecord = [];
+                    }
+                    if (typeof onlineAccount.coins === 'undefined') {
+                        onlineAccount.coins = 0;
+                    }
+
+                    let onlineRecords = onlineAccount.trackRecord.map(record => record.id);
+                    offlineAccount.trackRecord.forEach(record => {
+                        if (!onlineRecords.includes(record.id)) {
+                            onlineAccount.trackRecord.push(record);
+                            onlineAccount.coins += this.calculateCoinsFromTrackRecord([record]);
+                            onlineAccount.score += this.calculateCoinsFromTrackRecord([record]);
+                        }
+                    });
+
+                    ref.update(onlineAccount).catch(error => console.warn("could not update player track record.", error));
+                    OfflineStore.playerStore.set('stats', onlineAccount).catch(error => console.warn("could not set new player stats in idb.", error));
+                    
+                    this.callbacks.updatePlayerStats(onlineAccount);
+                    if (typeof onlineAccount.level !== 'undefined') {
+                        this.callbacks.updateLevel(onlineAccount.level);
+                    }
+                }
+            }
         }
     }
 
-    fetchPlayerStats() {
-        // if logged on and not logged on as anonymous user, fetch player stats from firestore otherwise fetch from idb
-        if (firebase.auth().currentUser && firebase.auth().currentUser.isAnonymous === false) {
-            console.log("fetching player stats for logged on user");
-            const playerInfosRef = firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid);
-            playerInfosRef.get().then(doc => {
-                if (!doc.exists) {
-                    console.log("player stats not yet existing...creating new object");
-                    playerInfosRef.set(EmptyPlayerStats)
-                        .then(() => { this.callbacks.updatePlayerStats(EmptyPlayerStats); })
-                        .catch(err => { console.log('Could not store coins for player', err); });
-                } else {
-                    this.callbacks.updatePlayerStats(doc.data());
-                    console.log(doc.data());
-                }
-            }).catch(err => console.warn("could not retrieve player track record.", err));
-        } else {
-            console.log("fetching player stats for logged off user");
-            OfflineStore.playerStore.get('stats').then(playerStats => {
-                if (typeof playerStats === 'undefined') {
-                    OfflineStore.playerStore.set('stats', EmptyPlayerStats)
-                        .catch(err => console.warn("could not set new player stats in idb.", err));
+    async fetchPlayerStats() {
+        if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) {
+            let ref = firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid);
+            
+            try {
+                var doc = await ref.get();
+            } catch (error) {
+                return console.warn(error);
+            }
+
+            if (doc.exists) {
+                this.callbacks.updatePlayerStats(doc.data());
+            } else {
+                try {
+                    await ref.set(EmptyPlayerStats);
                     this.callbacks.updatePlayerStats(EmptyPlayerStats);
-                } else {
-                    this.callbacks.updatePlayerStats(playerStats);
+                } catch (error) { 
+                    console.log('Could not store coins for player', error);
                 }
-            }).catch(err => {
-                OfflineStore.playerStore.set('stats', EmptyPlayerStats)
-                    .catch(err => console.warn("could not set new player stats in idb.", err));
-                console.warn("could not retrieve offline player stats trying to set an empty object anyway.", err);
+            }
+        } else {
+            try {
+                var offlineAccount = await OfflineStore.playerStore.get('stats');
+            } catch (error) {
+                OfflineStore.playerStore.set('stats', EmptyPlayerStats);
                 this.callbacks.updatePlayerStats(EmptyPlayerStats);
-            });
+                return console.warn(error);
+            }
+
+            if (typeof offlineAccount === 'undefined') {
+                OfflineStore.playerStore.set('stats', EmptyPlayerStats);
+                this.callbacks.updatePlayerStats(EmptyPlayerStats);
+            } else {
+                this.callbacks.updatePlayerStats(offlineAccount);
+            }
         }
     }
 
@@ -298,13 +296,20 @@ class Multiplayer {
                     return coins;
                 }
 
-                if (gameStats.winners.length === 1) {
-                    if (!this.isLocalPlayer(gameStats.winners[0].idx)) {
+                if (typeof gameStats.winners !== 'undefined') {
+                    if (gameStats.winners.length === 1) {
+                        if (!this.isLocalPlayer(gameStats.winners[0].idx)) {
+                            coins = 0;
+                        }
+                    } else if (gameStats.winners.length === 2) {
+                        coins = Math.floor(coins / 2);
+                    }
+                } else {
+                    if (gameStats.lost) {
                         coins = 0;
                     }
-                } else if (gameStats.winners.length === 2) {
-                    coins = Math.floor(coins / 2);
                 }
+
                 return currentCoins + coins;
             }, 0);
         }
@@ -385,6 +390,23 @@ class Multiplayer {
         } else {
             console.warn('user not logged in');
         }
+    }
+
+    async addFriend(friend) {
+        if (firebase.auth().currentUser) {
+            try {
+                await axios.post('/user/friend/', { userId: firebase.auth().currentUser.uid, friend: friend });
+                this.fetchFriendsList();
+            } catch (error) {
+                console.warn('error while adding friend ' + error);
+            }
+        } else {
+            console.warn('user not logged in');
+        }
+    }
+
+    async findUsers(query) {
+        return ( await axios.get('/query/user/' + query)).data;
     }
 
     signInAnonymouslyIfNotAlreadySignedIn() {

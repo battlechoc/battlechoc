@@ -29,7 +29,7 @@ const FirebaseSigninUiConfig = {
         signInFailure: (err) => {
             if (err.code === "firebaseui/anonymous-upgrade-merge-conflict") {
                 firebase.auth().signInWithCredential(err.credential).then(() => {
-                    multiplayer.mergeAccounts();
+                    multiplayer.mergePlayerStats();
                 }).catch(signInErr => {
                     console.log("could not sign in with credentials after merge conflict during anonymous account upgrade. ", signInErr);
                 })

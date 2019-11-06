@@ -5,10 +5,11 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
+import TextField from '@material-ui/core/TextField';
 import { Button } from '@material-ui/core';
 import Fab from '@material-ui/core/Fab';
 import { Jukebox, Translation as t } from '../misc';
-import { PlayArrow, Cancel, AccountCircle, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne, SportsEsports, Delete } from '@material-ui/icons';
+import { PersonAddDisabled, PersonAdd, PlayArrow, Cancel, AccountCircle, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne, SportsEsports, Delete } from '@material-ui/icons';
 import { connect } from 'react-redux';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
@@ -23,7 +24,10 @@ class MultiplayerScreen extends Component {
         TimeAgo.addLocale(de);
         this.state = {
             showPlayerProfile: false,
-            showFriends: false
+            showFriends: false,
+            showSearch: false,
+            userSearchText: '',
+            searchResults: []
         }
     }
 
@@ -80,11 +84,19 @@ class MultiplayerScreen extends Component {
         this.props.enterMultiplayerGame(sessionId);
     }
 
-    removeFriend = friend => {
+    removeFriend = async friend => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.setState({ removing: friend });
-        multiplayer.removeFriend(friend);
+        this.setState({ pendingFriendRequest: friend });
+        await multiplayer.removeFriend(friend);
+        this.setState({ pendingFriendRequest: undefined });
     }
+
+    addFriend = async friend => {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        this.setState({ pendingFriendRequest: friend });
+        await multiplayer.addFriend(friend);
+        this.setState({ pendingFriendRequest: undefined });       
+    } 
 
     canNotChallenge = username => {
         return this.props.multiplayerSessions.map(session => session.opponent.name).includes(username);
@@ -94,10 +106,18 @@ class MultiplayerScreen extends Component {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         this.setState({ 
             showPlayerProfile: false,
-            showFriends: false
+            showFriends: false,
+            showSearch: false
         });
         await multiplayer.challengePlayer(username);
         multiplayer.getMultiplayerSessions();        
+    }
+
+    async findUser(query) {
+        if (query !== '') {
+            let results = await multiplayer.findUsers(query); 
+            this.setState({searchResults: results});
+        }
     }
 
     render() {
@@ -105,6 +125,7 @@ class MultiplayerScreen extends Component {
             <div id="multiplayer">
                 <Dialog
                     fullWidth={true}
+                    fullScreen={this.props.fullScreen}
                     open={this.state.showPlayerProfile}
                     onClose={() => this.setState({ showPlayerProfile: false })}
                     aria-labelledby="playerProfile">
@@ -121,18 +142,34 @@ class MultiplayerScreen extends Component {
                     <DialogActions>
                         {(() => {
                             if (typeof this.props.multiplayerSessions !== 'undefined' && this.state.player) {
-                                if (!this.props.multiplayerSessions.map(game => game.opponent.name).includes(this.state.player.name)) {
+                                if (!this.props.multiplayerSessions.map(game => game.opponent.name).includes(this.state.player.name) && this.state.player.name !== this.props.account.username) {
                                     return <Button onClick={() => this.challengePlayer(this.state.player.name)} color="primary">{t[this.props.language].START_GAME}</Button>
-                                } else {
+                                } else if (typeof this.state.profile.id !== 'undefined') {
                                     return <Button onClick={() => {
                                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                                 this.props.enterMultiplayerGame(this.state.profile.id);
                                                 this.setState({ showPlayerProfile: false });
                                             }} color="primary">{t[this.props.language].JOIN_GAME}</Button>
                                 }
-                            } else {
-                                return null;
                             }
+                            return null;                           
+                        })()}
+
+                        {(() => {
+                            if (typeof this.props.multiplayerSessions !== 'undefined' && this.state.player) {
+                                if (!this.props.friends.map(friend => friend.username).includes(this.state.player.name)) {
+                                    return <Button onClick={() => {
+                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                        this.addFriend(this.state.player.name);
+                                    }} color="primary" startIcon={<PersonAdd />}>{t[this.props.language].ADD_FRIEND}</Button>
+                                } else {
+                                    return <Button disabled={this.state.pendingFriendRequest === this.state.player.name} onClick={() => {
+                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                        this.removeFriend(this.state.player.name);
+                                    }} color="primary" startIcon={<PersonAddDisabled />}>{t[this.props.language].REMOVE_FRIEND}</Button>
+                                }
+                            }
+                            return null;
                         })()}
 
                         <Button onClick={() => {
@@ -146,6 +183,7 @@ class MultiplayerScreen extends Component {
                     fullWidth={true}
                     fullScreen={this.props.fullScreen}
                     open={this.state.showFriends}
+                    PaperProps={{ style: {backgroundColor: '#f5f5f5'}}}
                     onClose={() => this.setState({ showFriends: false })}
                     aria-labelledby="friendsList">
                     <DialogTitle>{t[this.props.language].FRIENDS}</DialogTitle>
@@ -154,8 +192,8 @@ class MultiplayerScreen extends Component {
                             {this.props.friends.length > 0 ? this.props.friends.map((friend, i) => <div key={i} className="friendsRow">
                                     <div>{friend.username}</div>
                                     <div>
-                                        <Fab size="small" disabled={this.state.removing === friend.username || this.canNotChallenge(friend.username)} color="primary" aria-label="play" onClick={() => this.challengePlayer(friend.username)}><SportsEsports /></Fab>
-                                        <Fab size="small" disabled={this.state.removing === friend.username} color="primary" aria-label="delete" onClick={() => this.removeFriend(friend.username)} ><Delete /></Fab>
+                                        <Fab size="small" disabled={this.state.pendingFriendRequest === friend.username || this.canNotChallenge(friend.username)} color="primary" aria-label="play" onClick={() => this.challengePlayer(friend.username)}><SportsEsports /></Fab>
+                                        <Fab size="small" disabled={this.state.pendingFriendRequest === friend.username} color="primary" aria-label="delete" onClick={() => this.removeFriend(friend.username)} ><Delete /></Fab>
                                     </div>
                                 </div>) : <p>{t[this.props.language].FRIENDS_INFO}</p> }
                         </div>
@@ -164,6 +202,41 @@ class MultiplayerScreen extends Component {
                         <Button onClick={() => {
                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                             this.setState({ showFriends: false });
+                        }} color="primary">{t[this.props.language].BUTTON_BACK}</Button>                    
+                    </DialogActions>
+                </Dialog>
+
+                <Dialog
+                    fullWidth={true}
+                    fullScreen={this.props.fullScreen}
+                    open={this.state.showSearch}
+                    PaperProps={{ style: {backgroundColor: '#f5f5f5'}}}
+                    onClose={() => this.setState({ showSearch: false })}
+                    aria-labelledby="searchFriends">
+                    <DialogTitle>{t[this.props.language].SEARCH_PLAYERS}</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            label="Name"
+                            value={this.state.userSearchText}
+                            inputProps={{ spellCheck: 'false' }}
+                            InputLabelProps={{ style: {color: 'rgba(69, 123, 130, 0.8)' }}}
+                            onChange={event => {
+                                this.setState({userSearchText: event.target.value});
+                                this.findUser(event.target.value);
+                            }}
+                            margin="normal"
+                        /> 
+                        <div id="friendsList">
+                            {this.state.searchResults.length > 0 ? this.state.searchResults.map((user, i) => <div key={i} 
+                                onClick={() => this.showPlayerProfile({ opponent: user })} className="friendsRow">
+                                    <div>{user.name}</div>
+                                </div>) : <p>{t[this.props.language].SEARCH_USER_INFO}</p> }
+                        </div>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => {
+                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                            this.setState({ showSearch: false });
                         }} color="primary">{t[this.props.language].BUTTON_BACK}</Button>                    
                     </DialogActions>
                 </Dialog>
@@ -188,6 +261,10 @@ class MultiplayerScreen extends Component {
                     <div className="menuButton" onClick={() => {
                         this.setState({ showFriends: true })
                     }}>{t[this.props.language].FRIENDS}</div>
+                    <div className="menuButton" onClick={() => {
+                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                        this.setState({ showSearch: true });
+                    }}>{t[this.props.language].SEARCH_PLAYERS}</div>
                 </div>
                 <div className="openGames">
                     <div className="gamestable">
@@ -222,7 +299,8 @@ const mapStateToProps = state => ({
     game: state.gameplay.game,
     language: state.ui.language,
     multiplayerSessions: state.ui.multiplayerSessions,
-    friends: state.ui.friends
+    friends: state.ui.friends,
+    account: state.ui.playerInfos.stats
 });
 
 const MultiplayerScreenContainer = connect(mapStateToProps)(MultiplayerScreen);
