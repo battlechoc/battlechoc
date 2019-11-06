@@ -101,6 +101,8 @@
 
 #friendsList .friendsRow {
   background-color: white;
+  cursor: pointer;
+  user-select: none;
 }
 
 #friendsList .friendsRow {

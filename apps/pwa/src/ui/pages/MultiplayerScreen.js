@@ -106,7 +106,8 @@ class MultiplayerScreen extends Component {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         this.setState({ 
             showPlayerProfile: false,
-            showFriends: false
+            showFriends: false,
+            showSearch: false
         });
         await multiplayer.challengePlayer(username);
         multiplayer.getMultiplayerSessions();        
