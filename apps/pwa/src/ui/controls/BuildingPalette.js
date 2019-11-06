@@ -66,8 +66,9 @@ class BuildingPalette extends Component {
     }
 
     playerCanBuild(building) {
+        const buildingDescriptor = getEntityDescriptor(building.type, this.props.level);
         const canBuild = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn > 0 &&
-            this.props.game.players[multiplayer.localPlayerIndex].cacao >= building.costs &&
+            this.props.game.players[multiplayer.localPlayerIndex].cacao >= buildingDescriptor.costs() &&
             this.props.game.players[multiplayer.localPlayerIndex].buildings > 0;
         if (building.type === EntityType.SPYING_EASTER_BUNNY) {
             const playerField = this.props.game.players[multiplayer.localPlayerIndex].fieldIndex;
