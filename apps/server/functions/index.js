@@ -47,17 +47,21 @@ app.post('/debugging/gamestate', (req, res) => {
 app.get('/user/friends/:userId', async (req, res) => {
     let ref = admin.firestore().collection('players').doc(req.params.userId);
     let doc = await ref.get();
-    let player = doc.data();
-    if (typeof player.friends === 'undefined') {
-        res.json([]);
+    if (doc.exists) {
+        let player = doc.data();
+        if (typeof player.friends === 'undefined') {
+            res.json([]);
+        } else {
+            let friends = [];
+            await Promise.all(player.friends.map(async (friendId) => {
+                let friend = await admin.firestore().collection('players').doc(friendId).get();
+                friends.push({ username: friend.data().username });           
+            }));              
+            
+            res.json(friends); 
+        }
     } else {
-        let friends = [];
-        await Promise.all(player.friends.map(async (friendId) => {
-            let friend = await admin.firestore().collection('players').doc(friendId).get();
-            friends.push({ username: friend.data().username });           
-        }));              
-        
-        res.json(friends); 
+        res.status(404).json({ error: 'PLAYER NOT FOUND'});
     }
 });
 
