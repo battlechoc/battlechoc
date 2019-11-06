@@ -450,10 +450,17 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
             let doc = await players.doc(opponentId).get();
             if (doc.exists) {
                 let opponent = doc.data();
-                let winnings = opponent.trackRecord.filter(record => record.won).length;
-                let losses = opponent.trackRecord.filter(record => record.lost).length;
-                let drawn = opponent.trackRecord.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
-                
+
+
+                let winnings = 0;
+                let losses = 0;
+                let drawn = 0;
+                if (typeof opponent.trackRecord !== 'undefined') {
+                    winnings = opponent.trackRecord.filter(record => record.won).length;
+                    losses = opponent.trackRecord.filter(record => record.lost).length;
+                    drawn = opponent.trackRecord.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+                }
+
                 if (typeof opponent.level === 'undefined') {
                     opponent.level = entities.EmptyPlayerStats.level;
                 }
@@ -462,7 +469,12 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
                             .map(attributes => Object.values(attributes).reduce((level, prev) => Number(level) + Number(prev)))
                             .reduce((value, prev) => value + prev);
                 
-                let ranking = (await players.where('score', '>=', opponent.score).get()).size
+                let ranking = 0;
+                if (typeof opponent.score === 'undefined' || isNaN(opponent.score)) {
+                    ranking = (await players.where('score', '>', 0).get()).size
+                } else {
+                    ranking = (await players.where('score', '>=', opponent.score).get()).size
+                }
 
                 games[i].opponent = {
                     name: opponent.username,
