@@ -7,7 +7,7 @@ import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame, updateLevel } from './gameplay/GameActions';
-import { startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList } from './ui/UiActions';
+import { startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -44,7 +44,9 @@ class App extends Component {
             updatePlayerStats: this.props.updatePlayerStats,
             updateLevel: this.props.updateLevel,
             updateMultiplayerSessions: this.props.updateMultiplayerSessions,
-            loadFriendsList: this.props.loadFriendsList
+            loadFriendsList: this.props.loadFriendsList,
+            setPlayerRank: this.props.setPlayerRank,
+            notifyPlayerSignedIn: this.props.notifyPlayerSignedIn
         });
 
         let browserLanguage = 'en';
@@ -442,7 +444,9 @@ const mapDispatchToProps = {
     updatePlayerStats,
     updateLevel,
     updateMultiplayerSessions,
-    loadFriendsList
+    loadFriendsList,
+    setPlayerRank,
+    notifyPlayerSignedIn
 };
 
 const AppContainer = connect(

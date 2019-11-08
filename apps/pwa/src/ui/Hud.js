@@ -6,7 +6,7 @@ import OfflineStore from '../OfflineStore';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
-import { Info, Tooltip, Settings, AppleHint, SignInOrUp } from './dialogs';
+import { Info, Tooltip, Settings, AppleHint, AccountOverview } from './dialogs';
 import { CircularProgress, Button } from '@material-ui/core';
 import Dialog from '@material-ui/core/Dialog';
 import Typography from '@material-ui/core/Typography';
@@ -25,10 +25,12 @@ class Hud extends Component {
         this.state = {
             clickable: true,
             open: false,
+            showAccountOverview: false,
             upgradeMessageOpen: false,
             multiplayerScreen: false,
             choclabScreen: false
         }
+        this.signInOrUp = React.createRef();
     }
 
     handleFetchError(response) {
@@ -89,9 +91,9 @@ class Hud extends Component {
         });
     }
 
-    openSignInOrUp = () => {
+    openAccountOverview = () => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.signInOrUp.open();
+        this.setState({ showAccountOverview: true });
     }
 
     resumeOrStartGame = () => {
@@ -109,7 +111,7 @@ class Hud extends Component {
             <div className={this.props.className}>
                 <Tooltip />
                 <Settings startTutorial={this.props.startTutorial} surrender={this.props.surrender} onRef={settings => (this.settings = settings)} />
-                <SignInOrUp onRef={signInOrUp => (this.signInOrUp = signInOrUp)} />
+                <AccountOverview open={this.state.showAccountOverview} close={() => this.setState({ showAccountOverview: false })} />
                 {(() => {
                     if (stage === 'CHOCLAB_SCREEN') {
                         return <div className="actionbar">
@@ -148,7 +150,7 @@ class Hud extends Component {
                             </Fab>
                         </div>
                     } else {
-                        return <Actionbar endGame={this.props.endGame} showSettings={this.openSettings} showSignInOrUp={this.openSignInOrUp} />
+                        return <Actionbar endGame={this.props.endGame} showSettings={this.openSettings} showSignInOrUp={this.openAccountOverview} />
                     }
                 })()}
 

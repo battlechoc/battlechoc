@@ -47,7 +47,8 @@ class Multiplayer {
             notifyPlayerSignedIn: () => console.warn("calling notifyPlayerSignedIn without beeing initialized"),
             updateLevel: () => console.warn("calling updateLevel without beeing initialized"),
             updateMultiplayerSessions: () => console.warn("calling updateMultiplayerSessions without beeing initialized"),
-            loadFriendsList: () => console.warn("calling loadFriendsList without beeing initialized")
+            loadFriendsList: () => console.warn("calling loadFriendsList without beeing initialized"),
+            setPlayerRank: () => console.warn("calling setPlayerRank without beeing initialized")
         };
 
         try {
@@ -153,6 +154,7 @@ class Multiplayer {
             this.askForNotification(user);
             this.getMultiplayerSessions();
             this.fetchFriendsList();
+            this.computeRank();
         } else {
             console.log('try to signin');
             this.localPlayer = undefined;
@@ -377,6 +379,19 @@ class Multiplayer {
         } else {
             console.warn('user not logged in');
         }        
+    }
+
+    async computeRank() {
+        if (firebase.auth().currentUser) {
+            try {
+                let data = (await axios.get('/rank/' + firebase.auth().currentUser.uid)).data;
+                this.callbacks.setPlayerRank(data.ranking);
+            } catch {
+                this.callbacks.setPlayerRank('Offline');
+            }            
+        } else {
+            this.callbacks.setPlayerRank('Offline');
+        }
     }
 
     async removeFriend(friend) {
