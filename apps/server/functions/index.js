@@ -356,14 +356,20 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         if (issuer === session.game.players[0].id) {
             console.log('push event to player 0 event array', req.body.event)
             try {
-                await ref.update({ events_from_0: admin.firestore.FieldValue.arrayUnion(req.body.event) });
+                await ref.update({ 
+                    events_from_0: admin.firestore.FieldValue.arrayUnion(req.body.event), 
+                    last_changed: new Date()
+                });
             } catch (error) {
                 return res.status(500).json({ 'error': error });
             }
         } else if (issuer === session.game.players[1].id) {
             console.log('push event to player 1 event array', req.body.event)
             try {
-                await ref.update({ events_from_1: admin.firestore.FieldValue.arrayUnion(req.body.event) });
+                await ref.update({ 
+                    events_from_1: admin.firestore.FieldValue.arrayUnion(req.body.event),
+                    last_changed: new Date()  
+                });
             } catch (error) {
                 return res.status(500).json({ 'error': error });
             }
@@ -454,8 +460,7 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
             let doc = await players.doc(opponentId).get();
             if (doc.exists) {
                 let opponent = doc.data();
-
-
+                
                 let winnings = 0;
                 let losses = 0;
                 let drawn = 0;
