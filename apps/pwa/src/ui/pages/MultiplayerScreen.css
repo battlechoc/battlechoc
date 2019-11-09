@@ -49,6 +49,7 @@
   flex-direction: column;
   justify-content: flex-start;
   width: calc(75vw + 102px - 6px);
+  overflow-y: scroll;
 }
 
 #multiplayer .gamestable {
@@ -170,10 +171,6 @@
   .multiplayer-statistics svg {
     font-size: 4rem;
     margin-right: 10vw;
-  }
-
-  #multiplayer .openGames {
-    overflow-y: scroll;
   }
 
   #multiplayer .gamestable {
