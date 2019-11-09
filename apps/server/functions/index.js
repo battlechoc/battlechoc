@@ -723,24 +723,35 @@ app.get('/random/opponent/for/:playerId', async (req, res) => {
     }
 });
 
-app.post('/user/username', (req, res) => {
+app.post('/user/username', async (req, res) => {
     let players = admin.firestore().collection('players');
-    players.doc(req.body.player).get().then(doc => {
-        let regex = /^([a-zA-Z][a-zA-Z0-9_]{3,15})$/;
-        if (regex.test(req.body.username) && req.body.username.toUpperCase() !== 'CHOCNONYMOUS') {
-            if (doc.exists) {
-                players.doc(req.body.player).update({
-                    username: req.body.username
-                }).then(() => {
-                    res.end();
-                }).catch(error => res.status(500).json({ error: error }));
+
+    try {
+        var docs = await players.where('username', '==', req.body.username).get();
+    } catch (error) {
+        return res.status(500).json({ error: error.toString() });
+    }
+
+    if (docs.size > 0) {
+        res.status(400).json({ error: 'PLAYERNAME ALREADY EXISTS'});
+    } else {
+        players.doc(req.body.player).get().then(doc => {
+            let regex = /^([a-zA-Z][a-zA-Z0-9_]{3,15})$/;
+            if (regex.test(req.body.username) && req.body.username.toUpperCase() !== 'CHOCNONYMOUS') {
+                if (doc.exists) {
+                    players.doc(req.body.player).update({
+                        username: req.body.username
+                    }).then(() => {
+                        res.end();
+                    }).catch(error => res.status(500).json({ error: error }));
+                } else {
+                    res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
+                }
             } else {
-                res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
+                res.status(400).json({ error: 'USERNAME NOT VALID'});
             }
-        } else {
-            res.status(400).json({ error: 'USERNAME NOT VALID'});
-        }
-    }).catch(error => res.status(500).json({ error: error.toString() }));
+        }).catch(error => res.status(500).json({ error: error.toString() }));
+    }
 });
 
 exports.api = functions.region('europe-west1').https.onRequest(app);
