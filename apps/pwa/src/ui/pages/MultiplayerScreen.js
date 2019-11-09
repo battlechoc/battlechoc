@@ -304,4 +304,4 @@ const mapStateToProps = state => ({
 });
 
 const MultiplayerScreenContainer = connect(mapStateToProps)(MultiplayerScreen);
-export default withMobileDialog({ breakpoint: 'xs' })(MultiplayerScreenContainer);
+export default withMobileDialog({ breakpoint: 'md' })(MultiplayerScreenContainer);
