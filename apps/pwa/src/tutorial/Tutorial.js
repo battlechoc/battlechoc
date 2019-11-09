@@ -4,7 +4,6 @@ import './Tutorial.css';
 import { connect } from 'react-redux';
 import { AppBar, Toolbar, Typography, IconButton } from '@material-ui/core';
 import { ArrowBackIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Done } from '@material-ui/icons';
-import withMobileDialog from '@material-ui/core/withMobileDialog';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
@@ -32,7 +31,6 @@ class Tutorial extends Component {
     constructor(props) {
         super(props);
         let username = 'Chocnonymous';
-        console.log(this.props.playerInfos.stats)
         if (typeof this.props.playerInfos.stats !== 'undefined') {
             if (typeof this.props.playerInfos.stats.username !== 'undefined') {
                 username = this.props.playerInfos.stats.username;
@@ -94,6 +92,7 @@ class Tutorial extends Component {
     }
 
     closeTutorial = startGame => {
+        console.log('CLOSE TUTORIAL');
         if (this.state.playerHasName) {
             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
             this.setState({ open: false });
@@ -156,8 +155,8 @@ class Tutorial extends Component {
 
         let dialogTitle = "Du hast es fast geschafft"
         let dialogContent = [
-            <Typography key="0" >Bevor wir starten solltest du dir unbedingt einen coolen Namen überlegen! Freunde können dich anhand deines Names wiederkennen und deine Gegner bringt er vielleicht zum Zittern.</Typography>,
-            <PlayerNameInput key="1" setPlayerName={this.setPlayerName}/>
+            <PlayerNameInput key="1" setPlayerName={this.setPlayerName}/>,
+            <Typography key="0" >Bevor wir starten solltest du dir unbedingt einen coolen Namen überlegen! Freunde können dich anhand deines Names wiederkennen und deine Gegner bringt er vielleicht zum Zittern.</Typography>
         ];
         let dialogActions = []
 
@@ -183,12 +182,12 @@ class Tutorial extends Component {
 
                 <Dialog
                   fullWidth={true}
-                  fullScreen={this.props.fullScreen}
+                  fullScreen={true}
                   open={this.state.open}
                   onClose={this.closeTutorial}
                   aria-labelledby="report-form-dialog-title">
-                    <DialogTitle>{ dialogTitle }</DialogTitle>
-                    <DialogContent>{ dialogContent }</DialogContent>
+                    <DialogTitle className="tutorialDialogTitle">{ dialogTitle }</DialogTitle>
+                    <DialogContent className="tutorialDialogContent">{ dialogContent }</DialogContent>
                     <DialogActions>{ dialogActions }</DialogActions>
                 </Dialog>
 
@@ -210,4 +209,4 @@ const TutorialContainer = connect(
   mapDispatchToProps
 )(Tutorial);
 
-export default withMobileDialog({ breakpoint: 'sm' })(TutorialContainer);
+export default TutorialContainer;

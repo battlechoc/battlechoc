@@ -10,7 +10,6 @@ class ActionValidationError extends BattlechocError {
 class InvalidActionIssuerError extends BattlechocError {
     constructor(action, issuerId, currentPlayerId, ...args) {
         super(...args);
-        console.dir(action);
         this.message = action.type + ' issued by ' + issuerId + ' cannot be issued by this issuer because it is not her turn. Current player is ' + currentPlayerId;
     }
 }

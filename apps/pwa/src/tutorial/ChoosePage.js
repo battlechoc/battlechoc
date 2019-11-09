@@ -5,9 +5,9 @@ import { connect } from 'react-redux';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 class ChoosePage extends Component {
-    componentWillReceiveProps(nextProps) {
-        if (typeof nextProps.game !== 'undefined') {
-            if (nextProps.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START) {
+    componentDidUpdate() {
+        if (typeof this.props.game !== 'undefined') {
+            if (this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START) {
                 this.props.fulfilled();
             }
         }

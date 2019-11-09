@@ -34,7 +34,6 @@ class Settings extends Component {
       showErrorReport: false,
       includeDeviceInformation: false,
       additionalReportMessage: '',
-      tutorialAlreadySeen: false,
       snackbar: {
         visible: false,
         text: 'The problem report was sent successfully!'
@@ -46,8 +45,8 @@ class Settings extends Component {
     this.props.onRef(this);
   }
 
-  open = (tutorialAlreadySeen) => {
-    this.setState({ open: true, tutorialAlreadySeen: tutorialAlreadySeen });
+  open = () => {
+    this.setState({ open: true });
   }
 
   handleClose = () => {
@@ -230,7 +229,7 @@ class Settings extends Component {
               </Button>
 
               {(() => {
-                if ((this.state.tutorialAlreadySeen || this.props.playerInfos.stats.username !== 'Chocnonymous') && typeof this.props.game === 'undefined') {
+                if (this.props.playerInfos.stats.username !== 'Chocnonymous' && typeof this.props.game === 'undefined') {
                   return (
                     <div>
                       <Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {
@@ -247,7 +246,7 @@ class Settings extends Component {
                 }
               })()}
 
-              { typeof this.props.game !== 'undefined' ?
+              { typeof this.props.game !== 'undefined' && !this.props.tutorial ?
                   <Button variant="outlined" className="dialogButton" onClick={() => {
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     if (this.state.attentionTextVisible) {
@@ -290,7 +289,8 @@ Settings.propTypes = {
 const mapStateToProps = state => ({
   game: state.gameplay.game,
   language: state.ui.language,
-  playerInfos: state.ui.playerInfos
+  playerInfos: state.ui.playerInfos,
+  tutorial: state.ui.tutorial
 });
 
 const mapDispatchToProps = {

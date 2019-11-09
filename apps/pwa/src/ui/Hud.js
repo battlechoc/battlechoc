@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import './Hud.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import OfflineStore from '../OfflineStore';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
@@ -84,11 +83,9 @@ class Hud extends Component {
         }
     }
 
-    openSettings = () => {
-        OfflineStore.settingsStore.get('tutorialAlreadySeen').then(tutorialAlreadySeen => {
-            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-            this.settings.open(tutorialAlreadySeen);
-        });
+    openSettings = () => {        
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        this.settings.open();
     }
 
     openAccountOverview = () => {
@@ -161,10 +158,15 @@ class Hud extends Component {
                     if (stage === 'TITLE_SCREEN') {
                         let controls = []
 
-                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>Singleplayer</div>);
-                        controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
-                        controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
+                        let playername = this.props.playerInfos.stats.username;
+                        let hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous';
+
+                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>{hideOptions ? t[this.props.language].NEW_GAME : 'Singleplayer'}</div>);
                         
+                        if (!hideOptions) {
+                            controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
+                            controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
+                        }
                         return (
                             <div id="mainMenu">
                                 {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">

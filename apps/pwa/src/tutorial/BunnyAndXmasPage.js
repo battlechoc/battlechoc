@@ -19,14 +19,14 @@ class BunnyAndXmasPage extends Component {
         };
     }
 
-    componentWillReceiveProps(nextProps) {
-        if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined') {
-            if (!nextProps.game.board.fields[1].grid[4].occupiedBy.map(entity => entity.type).includes(EntityType.CREAM) && this.state.breakpoint === 0) {
+    componentDidUpdate() {
+        if (typeof this.props.game !== 'undefined') {
+            if (!this.props.game.board.fields[1].grid[4].occupiedBy.map(entity => entity.type).includes(EntityType.CREAM) && this.state.breakpoint === 0) {
                 this.setState({
                     breakpoint: 1,
                     messages: [...this.state.messages, { text: 'TUTORIAL_BUNNY_MESSAGE_4', type: 'text', delay: 2500}]
                 });
-            } else if (nextProps.game.state === GameStateTypes.BUILD_PHASE && this.state.breakpoint === 1) {
+            } else if (this.props.game.state === GameStateTypes.BUILD_PHASE && this.state.breakpoint === 1) {
                 this.setState({
                     breakpoint: 2,
                     messages: [...this.state.messages, 
@@ -34,7 +34,7 @@ class BunnyAndXmasPage extends Component {
                     { text: 'TUTORIAL_BUNNY_MESSAGE_6', type: 'text', delay: 2500},
                     { text: 'TUTORIAL_BUNNY_MESSAGE_7', type: 'text', delay: 2500}]
                 });
-            } else if (nextProps.game.state === GameStateTypes.BUILD_PHASE && this.props.game.currentPlayerIndex === 0 && nextProps.game.currentPlayerIndex === 1 && this.state.breakpoint === 2) {
+            } else if (this.props.game.state === GameStateTypes.BUILD_PHASE && this.props.game.currentPlayerIndex === 1 && this.state.breakpoint === 2) {
                 this.setState({ 
                     breakpoint: 3,
                     messages: [...this.state.messages, 
@@ -42,7 +42,7 @@ class BunnyAndXmasPage extends Component {
                                { src: '../animations/loading.gif', type: 'image', delay: 500, alt: 'opponent turn animation' },
                                { text: 'TUTORIAL_BUNNY_MESSAGE_9', type: 'text', delay: 1000}]
                 });           
-            } else if (!nextProps.game.players[1].hasFactory && this.gameRunning) {
+            } else if (!this.props.game.players[1].hasFactory && this.gameRunning) {
                 this.gameRunning = false;
                 setTimeout(() => this.props.fulfilled(), 3000);
             }

@@ -100,9 +100,7 @@ class Multiplayer {
             }
 
             firebase.firestore().collection('players').doc(user.uid).set({}, { merge: true }).then(() => {
-                if (!firebase.auth().currentUser.isAnonymous) {
-                    this.mergePlayerStats();
-                }
+                this.mergePlayerStats();
             }).catch(err => {
                 console.log("could not create player entry.", err);
             });
@@ -171,7 +169,7 @@ class Multiplayer {
     }
 
     pushGameStats(gameStats) {
-        if (firebase.auth().currentUser && firebase.auth().currentUser.isAnonymous === false) {
+        if (firebase.auth().currentUser) {
             const playerInfosRef = firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid);
             playerInfosRef.get().then(doc => {
                 if (!doc.exists) {
@@ -181,9 +179,10 @@ class Multiplayer {
                     if (typeof playerStats.trackRecord === 'undefined') {
                         playerStats.trackRecord = [];
                     }
-                    playerStats.trackRecord.push(...gameStats);
-                    playerStats.coins = playerStats.coins + this.calculateCoinsFromTrackRecord(gameStats);
-                    playerStats.score = playerStats.score + this.calculateCoinsFromTrackRecord(gameStats);
+                    playerStats.trackRecord.push(...gameStats);                    
+                    let calculatedCoins = this.calculateCoinsFromTrackRecord(gameStats);
+                    playerStats.coins = playerStats.coins + calculatedCoins;
+                    playerStats.score = isNaN(playerStats.score) ? calculatedCoins : playerStats.score + calculatedCoins; 
                     playerInfosRef.update(playerStats).catch(err => console.warn("could not update player track record.", err));
                     this.callbacks.updatePlayerStats(playerStats);
                 }
@@ -194,7 +193,9 @@ class Multiplayer {
                     playerStats.trackRecord = [];
                 }
                 playerStats.trackRecord.push(...gameStats);
-                playerStats.coins = playerStats.coins + this.calculateCoinsFromTrackRecord(gameStats);
+                let calculatedCoins = this.calculateCoinsFromTrackRecord(gameStats);
+                playerStats.coins = playerStats.coins + calculatedCoins;
+                playerStats.score = isNaN(playerStats.score) ? calculatedCoins : playerStats.score + calculatedCoins; 
                 OfflineStore.playerStore.set('stats', playerStats)
                     .catch(err => console.warn("could not set new player stats", err));
                 this.callbacks.updatePlayerStats(playerStats);
@@ -203,7 +204,7 @@ class Multiplayer {
     }
 
     async mergePlayerStats() {
-        if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) {
+        if (firebase.auth().currentUser) {
             try {
                 var offlineAccount = await OfflineStore.playerStore.get('stats');
             } catch (error) {
@@ -253,7 +254,7 @@ class Multiplayer {
     }
 
     async fetchPlayerStats() {
-        if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) {
+        if (firebase.auth().currentUser) {
             let ref = firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid);
             
             try {
