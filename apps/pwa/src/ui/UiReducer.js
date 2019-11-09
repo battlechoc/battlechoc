@@ -12,6 +12,7 @@ const uiReducer = createReducer({
     overviewVisible: false,
     tutorial: false,
     friends: [],
+    ranking: 'Offline',
     multiplayerSessions: [],
     playerInfos: { stats: EmptyPlayerStats, isSignedIn: false },
     language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
@@ -73,6 +74,8 @@ const uiReducer = createReducer({
             state.playerInfos.name = undefined;
             state.playerInfos.uid = undefined;
             state.playerInfos.stats = EmptyPlayerStats;
+            state.ranking = 'Offline';
+            OfflineStore.playerStore.set('stats', EmptyPlayerStats);
         },
         [UiActions.stopTutorial]: (state, action) => {
             state.tutorial = false;
@@ -90,6 +93,9 @@ const uiReducer = createReducer({
         [UiActions.loadFriendsList]: (state, action) => {
             state.friends = action.payload;
             OfflineStore.playerStore.friends = action.payload;
+        },
+        [UiActions.setPlayerRank]: (state, action) => {
+            state.ranking = action.payload;
         }
     }
 );

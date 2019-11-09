@@ -153,6 +153,16 @@
   }
 }
 
+@media screen and (max-height: 250px) {
+  .tutorialDialogTitle {
+    display: none;
+  }
+
+  .tutorialDialogContent > div > .MuiTextField-root {
+    margin-top: 0;
+  }
+}
+
 @media screen and (orientation:portrait) { 
   .tutorial.hud {
     margin-top: 0;

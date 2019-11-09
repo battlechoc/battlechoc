@@ -5,10 +5,10 @@ import ChatLikeInstructions from './ChatLikeInstructions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 
 class BuildFactoryPage extends Component {
-    componentWillReceiveProps(nextProps) {
+    componentDidUpdate() {
         this.gameRunning = true;
-        if (typeof nextProps.game !== 'undefined') {
-            if (nextProps.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && this.gameRunning) {
+        if (typeof this.props.game !== 'undefined') {
+            if (this.props.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && this.gameRunning) {
                 this.gameRunning = false;
                 setTimeout(() => this.props.fulfilled(), 3000);
             }

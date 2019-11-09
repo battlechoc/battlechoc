@@ -93,7 +93,7 @@ class Choclab extends Component {
                                 <div className="label"><span>{ t[this.props.language].ATTRIBUTE_NAME(attribute.name) }</span><span>{ Math.round(values[0]) }</span></div>
                                 <div>
                                     <div className={attribute.color} style={{ width: percentage + '%'}}></div>
-                                    { classNames === 'progress' && values[0] < values[1] && this.props.playerInfos.stats.coins >= this.state.selectedEntity.coins() && !this.props.playerInfos.isAnonymous ?
+                                    { classNames === 'progress' && values[0] < values[1] && this.props.playerInfos.stats.coins >= this.state.selectedEntity.coins() ?
                                     <AddBox onClick={() => {
                                         axios.post('/upgrade/entity', { 
                                             player: user.uid,

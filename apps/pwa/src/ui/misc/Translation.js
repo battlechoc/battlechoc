@@ -3,6 +3,7 @@ import { EntityType, AttackType } from '../../gameplay/GameEntities';
 const languages = {
     en: {
         SIGNINORUP: 'Sign in',
+        NEW_GAME: 'New Game',
         SIGN_OUT: 'Sign out',
         ACCOUNTINFOS: 'Account infos',
         ACCOUNTINFOS_PREVIEW: 'Coming soon, infos about your account and player stats.',
@@ -208,6 +209,7 @@ const languages = {
     },
     de: {
         SIGNINORUP: 'Anmelden',
+        NEW_GAME: 'Neues Spiel',
         SIGN_OUT: 'Abmelden',
         ACCOUNTINFOS: 'Account Informationen',
         ACCOUNTINFOS_PREVIEW: 'Hier findest du bald Infos über deinen Account und Spieler-Statistiken.',

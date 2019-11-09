@@ -7,7 +7,7 @@ import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame, updateLevel } from './gameplay/GameActions';
-import { startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList } from './ui/UiActions';
+import { startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -44,7 +44,9 @@ class App extends Component {
             updatePlayerStats: this.props.updatePlayerStats,
             updateLevel: this.props.updateLevel,
             updateMultiplayerSessions: this.props.updateMultiplayerSessions,
-            loadFriendsList: this.props.loadFriendsList
+            loadFriendsList: this.props.loadFriendsList,
+            setPlayerRank: this.props.setPlayerRank,
+            notifyPlayerSignedIn: this.props.notifyPlayerSignedIn
         });
 
         let browserLanguage = 'en';
@@ -250,91 +252,82 @@ class App extends Component {
     }
 
     prepareNewGame = (resumeGame, joinMultiplayer, multiplayerGameState) => {
-        console.log(this.props.playerInfos)
-        console.log(this.props.playerInfos.stats.username);
-        OfflineStore.settingsStore.get('tutorialAlreadySeen').then(tutorialAlreadySeen => {
-            tutorialAlreadySeen = typeof tutorialAlreadySeen === 'undefined' ? false : tutorialAlreadySeen;
-            console.log('tutorial already seen ', tutorialAlreadySeen);
-            if (tutorialAlreadySeen || this.props.playerInfos.stats.username !== 'Chocnonymous') {
-                Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
-                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                gameplayLog.clear();
+        if (this.props.playerInfos.stats.username === 'Chocnonymous') {
+            this.startTutorial();
+        } else {
+            Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
+            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+            gameplayLog.clear();
 
-                let isAndroid = /Android/i.test(navigator.userAgent);
-                let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-                let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-                if (!isFullscreen && !isiOS) {
-                    if (typeof document.documentElement.requestFullscreen === 'function') {
-                        document.documentElement.requestFullscreen().then(() => {
-                            if (isAndroid) {
-                                window.screen.orientation.lock('landscape').catch(error => console.log('Unable to lock orientation to landscape'));
-                            }
-                        }).catch(error => {
-                            console.log(error.name + ': ' + error.message);
+            let isAndroid = /Android/i.test(navigator.userAgent);
+            let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
+            let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+            if (!isFullscreen && !isiOS) {
+                if (typeof document.documentElement.requestFullscreen === 'function') {
+                    document.documentElement.requestFullscreen().then(() => {
+                        if (isAndroid) {
+                            window.screen.orientation.lock('landscape').catch(error => console.log('Unable to lock orientation to landscape'));
+                        }
+                    }).catch(error => {
+                        console.log(error.name + ': ' + error.message);
+                    });
+                }
+            }
+
+            if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
+                this.props.joinGame(multiplayerGameState).then(() => {
+                    this.opponent = { player: this.props.game.players[0] };
+                    if (this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START && !multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
+                        this.hud.lockUi();
+                    } else if (this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START && this.props.game.state !== GameStateTypes.CHOOSE_FIELD) {
+                        this.scene.startGame(this.props.game, false);
+                    }
+                });
+            } else {
+                OfflineStore.getResumeableGame().then((resumeableGame) => {
+                    this.opponent = new Augustus({
+                        chooseStart: this.props.chooseStart,
+                        chooseField: this.props.chooseField,
+                        build: this.props.build,
+                        attack: this.props.attack,
+                        finishTurn: this.props.finishTurn,
+                        finishBuildPhase: this.props.finishBuildPhase
+                    });
+                    if (typeof resumeableGame !== 'undefined' && resumeGame) {
+                        this.props.resumeGame(resumeableGame.gameplay).then(() => {
+                            this.opponent.player = resumeableGame.gameplay.players[1];
+                            this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
+                            this.props.loadUiState(resumeableGame.ui).then(() => {
+                                if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
+                                    this.scene.startGame(this.props.game, false);
+                                }
+                            });
+                        });
+                    } else {
+                        this.props.gameResumeable(false);
+                        OfflineStore.gamestateStore.clear();
+                        let players = [
+                            createPlayer("Charlie Bucket", PlayerType.HUMAN, this.props.playerInfos.stats.level),
+                            createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP, this.props.playerInfos.stats.level)
+                        ];
+
+                        this.props.startGame(players).then(() => {
+                            this.opponent.type = Augustus.randomizeType();
+                            this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
+                            this.props.createBoard({
+                                boardSize: { rows: 10, cols: 10 },
+                                boardSeed: 42
+                            });
                         });
                     }
-                }
-
-                if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
-                    this.props.joinGame(multiplayerGameState).then(() => {
-                        this.opponent = { player: this.props.game.players[0] };
-                        if (this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START && !multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
-                            this.hud.lockUi();
-                        } else if (this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START && this.props.game.state !== GameStateTypes.CHOOSE_FIELD) {
-                            this.scene.startGame(this.props.game, false);
-                        }
-                    });
-                } else {
-                    OfflineStore.getResumeableGame().then((resumeableGame) => {
-                        this.opponent = new Augustus({
-                            chooseStart: this.props.chooseStart,
-                            chooseField: this.props.chooseField,
-                            build: this.props.build,
-                            attack: this.props.attack,
-                            finishTurn: this.props.finishTurn,
-                            finishBuildPhase: this.props.finishBuildPhase
-                        });
-                        if (typeof resumeableGame !== 'undefined' && resumeGame) {
-                            this.props.resumeGame(resumeableGame.gameplay).then(() => {
-                                this.opponent.player = resumeableGame.gameplay.players[1];
-                                this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
-                                this.props.loadUiState(resumeableGame.ui).then(() => {
-                                    if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
-                                        this.scene.startGame(this.props.game, false);
-                                    }
-                                });
-                            });
-                        } else {
-                            this.props.gameResumeable(false);
-                            OfflineStore.gamestateStore.clear();
-                            let players = [
-                                createPlayer("Charlie Bucket", PlayerType.HUMAN, this.props.playerInfos.stats.level),
-                                createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP, this.props.playerInfos.stats.level)
-                            ];
-
-                            this.props.startGame(players).then(() => {
-                                this.opponent.type = Augustus.randomizeType();
-                                this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
-                                this.props.createBoard({
-                                    boardSize: { rows: 10, cols: 10 },
-                                    boardSeed: 42
-                                });
-                            });
-                        }
-                    });
-                }
-            } else {
-                this.startTutorial();
+                });
             }
-        });
+        }
     }
 
     endGame() {
-        Jukebox.stopMusic(true);
-
-        if (this.props.tutorial) {
-            this.closeTutorial(false);
-        } else {
+        if (!this.props.tutorial) {
+            Jukebox.stopMusic(true);
             setTimeout(() => {
                 this.props.finishGame();
                 this.props.resetUi();
@@ -442,7 +435,9 @@ const mapDispatchToProps = {
     updatePlayerStats,
     updateLevel,
     updateMultiplayerSessions,
-    loadFriendsList
+    loadFriendsList,
+    setPlayerRank,
+    notifyPlayerSignedIn
 };
 
 const AppContainer = connect(

@@ -160,7 +160,7 @@ class Rules {
         }
 
         if (typeof currentState !== 'undefined') {
-            if (!state.gameplay.game.isRunning && (action.type !== GameActionTypes.finishGame && action.type !== UiActionTypes.gameResumeable && action.type !== UiActionTypes.showOverview && action.type !== UiActionTypes.updatePlayerStats)) {
+            if (!state.gameplay.game.isRunning && ![UiActionTypes.stopTutorial, GameActionTypes.finishGame, UiActionTypes.gameResumeable, UiActionTypes.showOverview, UiActionTypes.updatePlayerStats].includes(action.type)) {
                 return new Errors.GameAlreadyEndedError(action);
             }
         }
@@ -205,7 +205,7 @@ class Rules {
             }
         } else if (action.type === GameActionTypes.updateLevel) {
             return true;
-        } else if ([UiActionTypes.loadFriendsList, UiActionTypes.startTutorial, UiActionTypes.stopTutorial, UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.updateMultiplayerSessions, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable, UiActionTypes.notifyPlayerSignedIn, UiActionTypes.notifyPlayerSignedOut, UiActionTypes.updatePlayerStats].includes(action.type)) {
+        } else if ([UiActionTypes.setPlayerRank, UiActionTypes.loadFriendsList, UiActionTypes.startTutorial, UiActionTypes.stopTutorial, UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.updateMultiplayerSessions, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable, UiActionTypes.notifyPlayerSignedIn, UiActionTypes.notifyPlayerSignedOut, UiActionTypes.updatePlayerStats].includes(action.type)) {
             return true;
         } else {
             return new Errors.ActionValidationError(action);

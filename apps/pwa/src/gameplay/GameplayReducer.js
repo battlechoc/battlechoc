@@ -263,9 +263,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                     if (entity.hp < 1) {
                         if (entity.type === EntityType.FACTORY) {
                             opponent.hasFactory = false;
-                            console.log(opponent.buildingsPerTurn)
                             opponent.buildingsPerTurn -= calculateBuildingsPerTurn(getEntityDescriptor(EntityType.FACTORY, opponent.level), cellColor);
-                            console.log(opponent.buildingsPerTurn)
                             opponent.cacaoPerTurn -= calculateCacaoPerTurn(getEntityDescriptor(EntityType.FACTORY, opponent.level), cellColor);
                             console.log('FACTORY DESTROYED');
                         } else if (entity.type === EntityType.FACTORY_EXTENSION) {

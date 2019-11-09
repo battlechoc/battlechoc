@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { axios } from '../../helper/settings';
 import Axios from 'axios';
 import { makeStyles } from '@material-ui/core/styles';
-import { green } from '@material-ui/core/colors';
 import withWidth, { isWidthUp } from '@material-ui/core/withWidth';
 import { Send, HourglassFull } from '@material-ui/icons';
 import { Fab, TextField, CircularProgress } from '@material-ui/core';
@@ -17,9 +16,9 @@ const useStyles = makeStyles(theme => ({
     position: 'relative',
   },
   buttonSuccess: {
-    backgroundColor: green[500],
+    backgroundColor: '#457B82',
     '&:hover': {
-      backgroundColor: green[700],
+      backgroundColor: '#324D5C',
     },
   },
   fabProgress: {
@@ -28,15 +27,18 @@ const useStyles = makeStyles(theme => ({
     top: 0,
     left: 0,
     zIndex: 1,
+  },
+  playerNameInput: {
+    width: '100%'
   }
 }));
 
 export default withWidth()(props => {
     const classes = useStyles();
-    const [loading, setLoading] = React.useState(false);
-    const [playerNameValid, setPlayerNameValid] = React.useState(false);
-    const [playerNameAvailable, setPlayerNameAvailable] = React.useState(false);
-    const [playerName, setPlayerName] = React.useState(typeof props.current === 'undefined' ? 'Chocnonymous' : props.current);
+    const [loading, setLoading] = useState(false);
+    const [playerNameValid, setPlayerNameValid] = useState(false);
+    const [playerNameAvailable, setPlayerNameAvailable] = useState(false);
+    const [playerName, setPlayerName] = useState(typeof props.current === 'undefined' ? 'Chocnonymous' : props.current);
 
     const buttonClassname = playerNameAvailable ? classes.buttonSuccess : null;
 
@@ -92,6 +94,7 @@ export default withWidth()(props => {
         <div className={classes.root}>
             <TextField
                 label="Name"
+                className={classes.playerNameInput}
                 error={!playerNameAvailable || !playerNameValid}
                 value={playerName}
                 helperText={getHelperText()}

@@ -2,11 +2,10 @@ import React, { Component } from 'react';
 import './Hud.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import OfflineStore from '../OfflineStore';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
-import { Info, Tooltip, Settings, AppleHint, SignInOrUp } from './dialogs';
+import { Info, Tooltip, Settings, AppleHint, AccountOverview } from './dialogs';
 import { CircularProgress, Button } from '@material-ui/core';
 import Dialog from '@material-ui/core/Dialog';
 import Typography from '@material-ui/core/Typography';
@@ -25,10 +24,12 @@ class Hud extends Component {
         this.state = {
             clickable: true,
             open: false,
+            showAccountOverview: false,
             upgradeMessageOpen: false,
             multiplayerScreen: false,
             choclabScreen: false
         }
+        this.signInOrUp = React.createRef();
     }
 
     handleFetchError(response) {
@@ -82,16 +83,14 @@ class Hud extends Component {
         }
     }
 
-    openSettings = () => {
-        OfflineStore.settingsStore.get('tutorialAlreadySeen').then(tutorialAlreadySeen => {
-            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-            this.settings.open(tutorialAlreadySeen);
-        });
+    openSettings = () => {        
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        this.settings.open();
     }
 
-    openSignInOrUp = () => {
+    openAccountOverview = () => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.signInOrUp.open();
+        this.setState({ showAccountOverview: true });
     }
 
     resumeOrStartGame = () => {
@@ -109,7 +108,7 @@ class Hud extends Component {
             <div className={this.props.className}>
                 <Tooltip />
                 <Settings startTutorial={this.props.startTutorial} surrender={this.props.surrender} onRef={settings => (this.settings = settings)} />
-                <SignInOrUp onRef={signInOrUp => (this.signInOrUp = signInOrUp)} />
+                <AccountOverview open={this.state.showAccountOverview} close={() => this.setState({ showAccountOverview: false })} />
                 {(() => {
                     if (stage === 'CHOCLAB_SCREEN') {
                         return <div className="actionbar">
@@ -148,7 +147,7 @@ class Hud extends Component {
                             </Fab>
                         </div>
                     } else {
-                        return <Actionbar endGame={this.props.endGame} showSettings={this.openSettings} showSignInOrUp={this.openSignInOrUp} />
+                        return <Actionbar endGame={this.props.endGame} showSettings={this.openSettings} showSignInOrUp={this.openAccountOverview} />
                     }
                 })()}
 
@@ -159,10 +158,15 @@ class Hud extends Component {
                     if (stage === 'TITLE_SCREEN') {
                         let controls = []
 
-                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>Singleplayer</div>);
-                        controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
-                        controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
+                        let playername = this.props.playerInfos.stats.username;
+                        let hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous';
+
+                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>{hideOptions ? t[this.props.language].NEW_GAME : 'Singleplayer'}</div>);
                         
+                        if (!hideOptions) {
+                            controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
+                            controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
+                        }
                         return (
                             <div id="mainMenu">
                                 {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">

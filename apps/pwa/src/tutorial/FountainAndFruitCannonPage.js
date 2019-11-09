@@ -17,9 +17,9 @@ class FountainAndFruitCannonPage extends Component {
         };
     }
 
-    componentWillReceiveProps(nextProps) {
+    componentDidUpdate() {
         if (typeof this.props.game !== 'undefined') {
-            if (nextProps.game.state === GameStateTypes.ATTACK_PHASE && this.state.breakpoint === 0) {
+            if (this.props.game.state === GameStateTypes.ATTACK_PHASE && this.state.breakpoint === 0) {
                 this.setState({
                     breakpoint: 1,
                     messages: [...this.state.messages, 
@@ -28,7 +28,7 @@ class FountainAndFruitCannonPage extends Component {
                     	{ text: 'TUTORIAL_FOUNTAIN_MESSAGE_5', type: 'text', delay: 2500}
                     ]
                 });
-            } else if (nextProps.game.players[0].cacao >= 40 && nextProps.game.state === GameStateTypes.BUILD_PHASE && nextProps.game.currentPlayerIndex === 0 && this.state.breakpoint === 1) {
+            } else if (this.props.game.players[0].cacao >= 40 && this.props.game.state === GameStateTypes.BUILD_PHASE && this.props.game.currentPlayerIndex === 0 && this.state.breakpoint === 1) {
                 this.setState({ 
                     breakpoint: 2,
                     messages: [...this.state.messages, 
@@ -37,9 +37,9 @@ class FountainAndFruitCannonPage extends Component {
                                { text: 'TUTORIAL_FOUNTAIN_MESSAGE_7', type: 'text', delay: 1000},
                                { text: 'TUTORIAL_FOUNTAIN_MESSAGE_8', type: 'text', delay: 1000}]
                 });           
-            } else if (!nextProps.game.players[1].hasFactory && this.gameRunning) {
+            } else if (!this.props.game.players[1].hasFactory && this.gameRunning) {
                 this.gameRunning = false;
-                setTimeout(() => this.props.fulfilled(), 3000);
+                setTimeout(() => this.props.fulfilled(), 2000);
             }
         }
     }

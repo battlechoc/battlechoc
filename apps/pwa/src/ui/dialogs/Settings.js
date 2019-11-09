@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import './Settings.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { changeLanguage, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats } from '../UiActions';
+import { changeLanguage, updatePlayerStats } from '../UiActions';
 import { Jukebox, Translation as t } from '../misc';
 import OfflineStore from '../../OfflineStore';
 import withMobileDialog from '@material-ui/core/withMobileDialog';
@@ -21,7 +21,6 @@ import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
 import Checkbox from '@material-ui/core/Checkbox';
 import TextField from '@material-ui/core/TextField';
-import { multiplayer } from '../../Multiplayer';
 import { axios } from '../../helper/settings';
 import PlayerNameInput from '../controls/PlayerNameInput';
 import firebase from '@firebase/app';
@@ -35,7 +34,6 @@ class Settings extends Component {
       showErrorReport: false,
       includeDeviceInformation: false,
       additionalReportMessage: '',
-      tutorialAlreadySeen: false,
       snackbar: {
         visible: false,
         text: 'The problem report was sent successfully!'
@@ -47,8 +45,8 @@ class Settings extends Component {
     this.props.onRef(this);
   }
 
-  open = (tutorialAlreadySeen) => {
-    this.setState({ open: true, tutorialAlreadySeen: tutorialAlreadySeen });
+  open = () => {
+    this.setState({ open: true });
   }
 
   handleClose = () => {
@@ -231,7 +229,7 @@ class Settings extends Component {
               </Button>
 
               {(() => {
-                if ((this.state.tutorialAlreadySeen || this.props.playerInfos.stats.username !== 'Chocnonymous') && typeof this.props.game === 'undefined') {
+                if (this.props.playerInfos.stats.username !== 'Chocnonymous' && typeof this.props.game === 'undefined') {
                   return (
                     <div>
                       <Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {
@@ -248,18 +246,7 @@ class Settings extends Component {
                 }
               })()}
 
-              {(() => {
-                if (this.props.playerInfos.isAnonymous === false) {
-                  return (<Button className="dialogButton" color="secondary" variant="outlined" onClick={() => {
-                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                    multiplayer.signOut(this.props.notifyPlayerSignedOut);
-                  }}>
-                    {t[this.props.language].SIGN_OUT}
-                  </Button>);
-                }
-              })()}
-
-              { typeof this.props.game !== 'undefined' ?
+              { typeof this.props.game !== 'undefined' && !this.props.tutorial ?
                   <Button variant="outlined" className="dialogButton" onClick={() => {
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     if (this.state.attentionTextVisible) {
@@ -302,13 +289,12 @@ Settings.propTypes = {
 const mapStateToProps = state => ({
   game: state.gameplay.game,
   language: state.ui.language,
-  playerInfos: state.ui.playerInfos
+  playerInfos: state.ui.playerInfos,
+  tutorial: state.ui.tutorial
 });
 
 const mapDispatchToProps = {
   changeLanguage,
-  notifyPlayerSignedIn,
-  notifyPlayerSignedOut,
   updatePlayerStats
 };
 
