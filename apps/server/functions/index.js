@@ -447,7 +447,7 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
                     'last_changed': game.last_changed.toMillis(),
                     'created': game.created.toMillis(),
                     'myTurn': game.currentPlayerIndex === playerIndex,
-                    'turns': game['events_from_' + playerIndex].filter(event => event.payload.type === 'battlechoc/gameplay/finishTurn').length,
+                    'turns': game['events_from_' + playerIndex].filter(event => event.type === 'battlechoc/gameplay/finishTurn').length,
                     'statistics': game.game.players[playerIndex].statistics
                 });
             }
