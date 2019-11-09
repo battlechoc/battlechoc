@@ -84,6 +84,10 @@ const AccountOverview = props => {
             fullWidth={true}
             fullScreen={true}
             open={props.open}
+            PaperProps={{style: {
+                background: 'rgb(235,235,235)',
+                background: 'linear-gradient(0deg, rgba(235,235,235,1) 0%, rgba(232,218,198,1) 98%)'
+            }}}
             onClose={() => props.close()}
             aria-labelledby="accountOverview"
             id="accountOverviewDialog">

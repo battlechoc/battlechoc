@@ -425,6 +425,10 @@ class Multiplayer {
         return ( await axios.get('/query/user/' + query)).data;
     }
 
+    async findRandomPlayer() {
+        return ( await axios.get('/random/opponent/for/' + firebase.auth().currentUser.uid)).data;
+    }
+
     signInAnonymouslyIfNotAlreadySignedIn() {
         return new Promise((resolve, reject) => {
             if (firebase.auth().currentUser) {
