@@ -120,6 +120,16 @@ class MultiplayerScreen extends Component {
         }
     }
 
+    sortByTimestamp( a, b ) {
+      if ( a.last_changed < b.last_changed ){
+        return 1;
+      }
+      if ( a.last_changed > b.last_changed ){
+        return -1;
+      }
+      return 0;
+    }
+
     render() {
         return (
             <div id="multiplayer">
@@ -274,7 +284,7 @@ class MultiplayerScreen extends Component {
                         <div className="tableHead">{t[this.props.language].LAST_ACTION}</div>
                         <div className="tableHead">{t[this.props.language].POTENTIAL_COINS}</div>
 
-                        {typeof this.props.multiplayerSessions !== 'undefined' ? this.props.multiplayerSessions.map((row, i) => (
+                        {typeof this.props.multiplayerSessions !== 'undefined' ? this.props.multiplayerSessions.sort(this.sortByTimestamp).map((row, i) => (
                             [
                                 <div key={i} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} gameActions`}><PlayArrow onClick={() => this.props.enterMultiplayerGame(row.id)} /><Cancel /><AccountCircle onClick={() => this.showPlayerProfile(row)} /></div>,
                                 <div key={i+1} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">player</span><span>{row.opponent.name}</span></div>,
