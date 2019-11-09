@@ -8,6 +8,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import TextField from '@material-ui/core/TextField';
 import { Button } from '@material-ui/core';
 import Fab from '@material-ui/core/Fab';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import { Jukebox, Translation as t } from '../misc';
 import { PersonAddDisabled, PersonAdd, PlayArrow, Cancel, AccountCircle, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne, SportsEsports, Delete } from '@material-ui/icons';
 import { connect } from 'react-redux';
@@ -25,6 +26,7 @@ class MultiplayerScreen extends Component {
         this.state = {
             showPlayerProfile: false,
             showFriends: false,
+            searchingRandomOpponent: false,
             showSearch: false,
             userSearchText: '',
             searchResults: []
@@ -252,7 +254,20 @@ class MultiplayerScreen extends Component {
                 </Dialog>
 
                 <div className="controls">
-                    <div className="menuButton">{t[this.props.language].RANDOM_OPPONENT}</div>
+                    <div className={(this.state.searchingRandomOpponent ? "disabled " : "") + "menuButton"} onClick={() => {
+                        if (!this.state.searchingRandomOpponent) {
+                            this.setState({ searchingRandomOpponent: true }, async () => {
+                                try {
+                                    let player = await multiplayer.findRandomPlayer();
+                                    this.showPlayerProfile({ opponent: player });
+                                } catch (error) {
+                                    console.warn(error.toString());
+                                } finally {
+                                    this.setState({ searchingRandomOpponent: false });
+                                }
+                            });
+                        } 
+                    }} >{this.state.searchingRandomOpponent ? <CircularProgress size={20} /> : t[this.props.language].RANDOM_OPPONENT}</div>
                     <div className="menuButton" onClick={() => {
                         multiplayer.createChallengeMeLink().then(link => {
                             console.log(link);
