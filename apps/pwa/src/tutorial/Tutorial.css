@@ -171,6 +171,7 @@
   .tutorial.hud .choose {
     flex-direction: row;
     height: 50vh;
+    margin-top: 8.5vh;
   }
 
   .tutorial.hud .fields {

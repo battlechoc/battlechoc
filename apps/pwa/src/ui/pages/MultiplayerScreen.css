@@ -39,6 +39,11 @@
   max-width: 250px;
 }
 
+#multiplayer .controls .disabled.menuButton {
+  filter: unset;
+  background-color: #3b0f00;
+}
+
 #multiplayer .controls .menuButton {
   margin-top: 0 !important;
 }
