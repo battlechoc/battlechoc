@@ -361,6 +361,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                     last_changed: new Date()
                 });
             } catch (error) {
+                console.warn('Failed to push event ' + req.body.event.toString() + ' to the event list of player 0');
                 return res.status(500).json({ 'error': error });
             }
         } else if (issuer === session.game.players[1].id) {
@@ -371,6 +372,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                     last_changed: new Date()  
                 });
             } catch (error) {
+                console.warn('Failed to push event ' + req.body.event.toString() + ' to the event list of player 1');
                 return res.status(500).json({ 'error': error });
             }
         } else {
@@ -418,10 +420,13 @@ app.post('/multiplayer/relay/action', async (req, res) => {
             res.status(400).json(result);
         } else {
             try {
+                delete session.events_from_0;
+                delete session.events_from_1;
+
                 await ref.set(session, {merge: true});
                 res.status(200).end();
             } catch (error) {
-                res.status(500).json({ 'error': error });
+                res.status(500).json({ 'error': error.toString() });
             }
         }
     }
