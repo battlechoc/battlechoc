@@ -267,7 +267,7 @@ class MultiplayerScreen extends Component {
                                 }
                             });
                         } 
-                    }} >{this.state.searchingRandomOpponent ? <CircularProgress size={20} /> : t[this.props.language].RANDOM_OPPONENT}</div>
+                    }} >{this.state.searchingRandomOpponent ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[this.props.language].RANDOM_OPPONENT}</div>
                     <div className="menuButton" onClick={() => {
                         multiplayer.createChallengeMeLink().then(link => {
                             console.log(link);

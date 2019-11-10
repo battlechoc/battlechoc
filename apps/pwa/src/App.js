@@ -165,7 +165,9 @@ class App extends Component {
             if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined' && typeof OfflineStore.gamestateStore !== 'undefined' &&
                 (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (multiplayer.isLocalPlayer(nextProps.game.currentPlayerIndex) === true)) {
 
-                if (!this.props.tutorial) {
+                let isSingleplayerGame = nextProps.game.players.filter(player => player.type === PlayerType.AUGUSTUS_GLOOP).length > 0;
+
+                if (!this.props.tutorial && isSingleplayerGame) {
                     let resumeableGame = {};
                     resumeableGame.gameplay = nextProps.game;
                     resumeableGame.ui = nextProps.ui;
