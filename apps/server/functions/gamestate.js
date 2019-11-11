@@ -289,6 +289,9 @@ class Rules {
                 action.payload.attackType !== entities.AttackType.BUNNY && action.payload.attackType !== entities.AttackType.HOT_CHOCOLATE) {
                 console.warn('FIELD IS EMPTY');
                 return false;
+            } else if (entities.AttackType.HOT_CHOCOLATE && this.otherPlayerBoardCell(game, action.payload).molten) {
+                console.log('FIELD IS ALREADY MOLTEN');
+                return false;
             } else {
                 return true;
             }

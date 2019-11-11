@@ -218,7 +218,7 @@ app.post('/user/challenge', async (req, res) => {
 
                 try {
                     let databaseSession = await admin.firestore().collection('multiplayerGameSessions').add(session);
-                    permissions.doc(req.body.playerId).get().then(doc => {
+                    permissions.doc(opponentId).get().then(doc => {
                         if (doc.exists) {
                             permission = doc.data();
                             if (typeof permission.messaging !== 'undefined') {
@@ -227,7 +227,8 @@ app.post('/user/challenge', async (req, res) => {
                                       'notification': {
                                         'title':  player.username + ' challenges you @battlechoc',
                                         'body': 'This could be a great fight!',
-                                        'click_action': 'https://battlechoc.com?sessionId=' + databaseSession.id
+                                        'click_action': 'https://battlechoc.com?sessionId=' + databaseSession.id,
+                                        'image': 'https://battlechoc.com/icon-144x144.png'
                                       },
                                       'to': token
                                     }
@@ -402,7 +403,8 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                               'notification': {
                                 'title':  opponent + ' finished the turn @battlechoc',
                                 'body': 'Let\'s go. It\'s your move!',
-                                'click_action': 'https://battlechoc.com?sessionId=' + req.body.sessionId
+                                'click_action': 'https://battlechoc.com?sessionId=' + req.body.sessionId,
+                                'image': 'https://battlechoc.com/icon-144x144.png'
                               },
                               'to': token
                             }
