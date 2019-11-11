@@ -76,7 +76,7 @@ class Rules {
         let cell = this.currentPlayerBoardCell(gameState, cellIdx);
         if (entityType === GameEntities.EntityType.SPYING_EASTER_BUNNY && this.currentPlayerField(gameState).grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.SPYING_EASTER_BUNNY)).length > 0) {
             return new Errors.BuildNotPossibleError('Can only build one spying easter bunny.');
-        } else if (cell.molten === true) {
+        } else if (cell.molten) {
             return new Errors.BuildNotPossibleError('Cannot build on molten cells.');
         } else if (entityType === GameEntities.EntityType.FRUIT_CANNON && cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.RUM_TRUFFLE_CANNON)) {
             return true;
@@ -198,6 +198,8 @@ class Rules {
             } else if (this.otherPlayerBoardCell(state.gameplay.game, action.payload).occupiedBy.length === 0 &&
                 action.payload.attackType !== GameEntities.AttackType.BUNNY && action.payload.attackType !== GameEntities.AttackType.HOT_CHOCOLATE) {
                 return new Errors.TargetEmptyError();
+            } else if (GameEntities.AttackType.HOT_CHOCOLATE && this.otherPlayerBoardCell(state.gameplay.game, action.payload).molten) {
+                return new Errors.AlreadyMolten();
             } else {
                 return true;
             }
