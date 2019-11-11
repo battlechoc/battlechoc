@@ -96,6 +96,9 @@ const uiReducer = createReducer({
         },
         [UiActions.setPlayerRank]: (state, action) => {
             state.ranking = action.payload;
+        },
+        [UiActions.updateLevel]: (state, action) => {
+            state.playerInfos.stats.level = action.payload;
         }
     }
 );

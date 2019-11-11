@@ -45,7 +45,6 @@ class Multiplayer {
         this.callbacks = {
             updatePlayerStats: () => console.warn("calling updatePlayerStats without beeing initialized"),
             notifyPlayerSignedIn: () => console.warn("calling notifyPlayerSignedIn without beeing initialized"),
-            updateLevel: () => console.warn("calling updateLevel without beeing initialized"),
             updateMultiplayerSessions: () => console.warn("calling updateMultiplayerSessions without beeing initialized"),
             loadFriendsList: () => console.warn("calling loadFriendsList without beeing initialized"),
             setPlayerRank: () => console.warn("calling setPlayerRank without beeing initialized")
@@ -196,8 +195,11 @@ class Multiplayer {
                 let calculatedCoins = this.calculateCoinsFromTrackRecord(gameStats);
                 playerStats.coins = playerStats.coins + calculatedCoins;
                 playerStats.score = isNaN(playerStats.score) ? calculatedCoins : playerStats.score + calculatedCoins; 
-                OfflineStore.playerStore.set('stats', playerStats)
-                    .catch(err => console.warn("could not set new player stats", err));
+                try {
+                    OfflineStore.playerStore.set('stats', playerStats)
+                } catch (error) {
+                    console.warn(error);
+                }
                 this.callbacks.updatePlayerStats(playerStats);
             }).catch(err => console.warn("could not retrieve offline player stats", err));
         }
@@ -245,9 +247,6 @@ class Multiplayer {
                     OfflineStore.playerStore.set('stats', onlineAccount).catch(error => console.warn("could not set new player stats in idb.", error));
                     
                     this.callbacks.updatePlayerStats(onlineAccount);
-                    if (typeof onlineAccount.level !== 'undefined') {
-                        this.callbacks.updateLevel(onlineAccount.level);
-                    }
                 }
             }
         }

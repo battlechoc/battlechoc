@@ -137,7 +137,7 @@ class Tooltip extends Component {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
-    level: state.gameplay.level,
+    level: state.ui.playerInfos.stats.level,
     language: state.ui.language,
     tappedBuilding: state.ui.tappedBuilding,
     selectedAttack: state.ui.selectedAttack
