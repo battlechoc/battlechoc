@@ -374,6 +374,7 @@ class Multiplayer {
             try {
                 let response = await axios.get('/user/friends/' + firebase.auth().currentUser.uid);
                 this.callbacks.loadFriendsList(response.data);
+                return response.data;
             } catch (error) {
                 console.warn('error while fetching friends ' + error);
             }
@@ -501,6 +502,9 @@ class Multiplayer {
                 break;
             case GameActionTypes.finishBuildPhase:
                 this.gameActions.finishBuildPhase(action.payload);
+                break;
+            case GameActionTypes.endGame:
+                this.gameActions.endGame(action.payload).catch(error => console.log(error));
                 break;
             default:
                 console.warn('invalid action type shall be emitted. check implementation. call the coders.');

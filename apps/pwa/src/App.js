@@ -238,16 +238,12 @@ class App extends Component {
             } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
                 let timeoutId = setTimeout(() => this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
                 this.timeouts.push(timeoutId);
-            } else if (gameTransition === GameTransitions.PLAYER_JOINED) {
-                this.opponent.player = {
-                    player: nextProps.game.players[1]
-                };
             }
         }
     }
 
     enterMultiplayerGame = sessionId => {
-        multiplayer.enterGameSession(sessionId, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField })
+        multiplayer.enterGameSession(sessionId, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField, endGame: this.props.endGame })
         .then(session => {
             this.prepareNewGame(true, true, session.game);
         });

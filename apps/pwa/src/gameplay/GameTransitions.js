@@ -1,5 +1,5 @@
 import { GameStateTypes } from './GameplayReducer';
-import { playerHasAttacks, PlayerType } from './Player';
+import { playerHasAttacks } from './Player';
 import { multiplayer } from '../Multiplayer';
 
 const GameTransitions = Object.freeze({
@@ -100,8 +100,6 @@ function getGameTransition(currentState, nextState) {
         multiplayer.isLocalPlayer(nextState.currentPlayerIndex) === true &&
         playerHasAttacks(nextState.players[multiplayer.localPlayerIndex]) === false) {
         return GameTransitions.ATTACKS_DEPLETED;
-    } else if (currentState.players[1].type === PlayerType.AUGUSTUS_GLOOP && nextState.players[1].type === PlayerType.HUMAN) {
-        return GameTransitions.PLAYER_JOINED;
     } else {
         return GameTransitions.INVALID;
     }
