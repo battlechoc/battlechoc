@@ -7,7 +7,7 @@ import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn } from './ui/UiActions';
+import { startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -277,6 +277,11 @@ class App extends Component {
                     if (this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START && !multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
                         this.hud.lockUi();
                     } else if (this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START && this.props.game.state !== GameStateTypes.CHOOSE_FIELD) {
+                        if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
+                            this.props.tapBuilding(EntityType.CACAOTREE);
+                            this.props.selectBuilding(EntityType.CACAOTREE);
+                        }
+
                         this.scene.startGame(this.props.game, false);
                     }
                 });
@@ -433,7 +438,9 @@ const mapDispatchToProps = {
     updateMultiplayerSessions,
     loadFriendsList,
     setPlayerRank,
-    notifyPlayerSignedIn
+    notifyPlayerSignedIn,
+    selectBuilding,
+    tapBuilding
 };
 
 const AppContainer = connect(
