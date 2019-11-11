@@ -122,10 +122,6 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
     [GameActions.joinGame]: (state, action) => {
         state.game = action.payload;
     },
-    [GameActions.playerJoined]: (state, action) => {
-        state.game.players = action.payload.players;
-        console.log(state.game.players);
-    },
     [GameActions.createBoard]: (state, action) => {
         state.game.board = Board.generate(action.payload.boardSize, action.payload.boardSeed);
         state.game.state = GameStateTypes.CHOOSE_FIELD_OR_START;
@@ -332,9 +328,6 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
     },
     [GameActions.finishGame]: (state, action) => {
         state.game = undefined;
-    },
-    [GameActions.updateLevel]: (state, action) => {
-        state.level = action.payload;
     }
 });
 

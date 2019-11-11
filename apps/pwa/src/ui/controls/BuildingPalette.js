@@ -141,7 +141,7 @@ const mapStateToProps = state => ({
     game: state.gameplay.game,
     selectedBuilding: state.ui.selectedBuilding,
     whitelist: state.ui.whitelistBuildings,
-    level: state.gameplay.level
+    level: state.ui.playerInfos.stats.level
 });
 
 const mapDispatchToProps = {

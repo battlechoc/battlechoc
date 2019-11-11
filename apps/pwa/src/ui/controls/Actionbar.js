@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import './Actionbar.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { build, attack, chooseStart, chooseField, finishTurn, finishBuildPhase, playerJoined } from '../../gameplay/GameActions';
+import { build, attack, chooseStart, chooseField, finishTurn, finishBuildPhase } from '../../gameplay/GameActions';
 import { BattlechocError } from '../../gameplay/Errors';
 import { playerHasAttacks, playerHasAttacksPerTurn } from '../../gameplay/Player';
 import { getCheapest } from '../../gameplay/GameEntities';
@@ -247,7 +247,6 @@ const mapDispatchToProps = {
     finishBuildPhase,
     finishTurn,
     deselectBuildings,
-    playerJoined,
     deselectAttack,
     build,
     attack,

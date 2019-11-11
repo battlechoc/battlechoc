@@ -2,8 +2,7 @@ import React, { Component } from 'react';
 import './Choclab.css';
 import firebase from '@firebase/app';
 import OfflineStore from '../../OfflineStore';
-import { updateLevel } from '../../gameplay/GameActions';
-import { updatePlayerStats } from '../UiActions';
+import { updatePlayerStats, updateLevel } from '../UiActions';
 import { Translation as t } from '../misc';
 import { connect } from 'react-redux';
 import { getEntityDescriptor } from '../../gameplay/GameEntities';
@@ -144,7 +143,7 @@ class Choclab extends Component {
 const mapStateToProps = state => ({
     game: state.gameplay.game,
     language: state.ui.language,
-    level: state.gameplay.level,
+    level: state.ui.playerInfos.stats.level,
     playerInfos: state.ui.playerInfos
 });
 

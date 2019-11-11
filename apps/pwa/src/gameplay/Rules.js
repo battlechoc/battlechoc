@@ -167,8 +167,6 @@ class Rules {
 
         if (typeof currentState === 'undefined' && [GameActionTypes.startGame, GameActionTypes.resumeGame, GameActionTypes.joinGame].includes(action.type)) {
             return true;
-        } else if (action.type === GameActionTypes.playerJoined) {
-            return currentState === GameStateTypes.CHOOSE_FIELD_OR_START && state.gameplay.game.currentPlayerIndex === 0;
         } else if (action.type === GameActionTypes.createBoard) {
             return currentState === GameStateTypes.START;
         } else if (action.type === GameActionTypes.chooseStart) {
@@ -203,9 +201,7 @@ class Rules {
             } else {
                 return true;
             }
-        } else if (action.type === GameActionTypes.updateLevel) {
-            return true;
-        } else if ([UiActionTypes.setPlayerRank, UiActionTypes.loadFriendsList, UiActionTypes.startTutorial, UiActionTypes.stopTutorial, UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.updateMultiplayerSessions, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable, UiActionTypes.notifyPlayerSignedIn, UiActionTypes.notifyPlayerSignedOut, UiActionTypes.updatePlayerStats].includes(action.type)) {
+        } else if ([UiActionTypes.updateLevel, UiActionTypes.setPlayerRank, UiActionTypes.loadFriendsList, UiActionTypes.startTutorial, UiActionTypes.stopTutorial, UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.updateMultiplayerSessions, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable, UiActionTypes.notifyPlayerSignedIn, UiActionTypes.notifyPlayerSignedOut, UiActionTypes.updatePlayerStats].includes(action.type)) {
             return true;
         } else {
             return new Errors.ActionValidationError(action);

@@ -515,7 +515,7 @@ class Scene extends Component {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
-    level: state.gameplay.level,
+    level: state.ui.playerInfos.stats.level,
     selectedBuilding: state.ui.selectedBuilding,
     selectedAttack: state.ui.selectedAttack,
     assetsReady: state.ui.assetsReady,
