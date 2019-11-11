@@ -16,6 +16,7 @@ import Fab from '@material-ui/core/Fab';
 import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
+import { multiplayer } from '../Multiplayer';
 import { axios } from '../helper/settings';
 
 class Hud extends Component {
@@ -39,20 +40,38 @@ class Hud extends Component {
         return response.json();
     }
 
+    sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     componentDidMount() {
         this.props.onRef(this);
 
         if (typeof this.props.challengedPlayer !== 'undefined') {
-            this.setState({ multiplayerScreen: true }, () => {
-                axios.get('/user/' + this.props.challengedPlayer)
-                .then(response => {
+            this.setState({ multiplayerScreen: true }, async () => {
+                try {
+                    let response = await axios.get('/user/' + this.props.challengedPlayer)
                     this.multiplayerScreen.showPlayerProfile({ opponent: response.data });
-                }).catch(error => console.warn(error));
+                } catch(error) {
+                    console.warn(error);
+                }
             });
         }
 
         if (typeof this.props.sessionId !== 'undefined') {
-            this.setState({ multiplayerScreen: true }, () => this.multiplayerScreen.joinGame(this.props.sessionId));
+            this.setState({ multiplayerScreen: true }, async () => {
+                try {
+                    let sessions = undefined;
+                    while (typeof sessions === 'undefined') {
+                        sessions = await multiplayer.getMultiplayerSessions();
+                        await this.sleep(250);
+                    }
+                    console.log('sessions', sessions);
+                    this.multiplayerScreen.tryToJoinGame(this.props.sessionId, sessions);
+                } catch (error) {
+                    console.warn(error);
+                }
+            });
         }
     }
 
