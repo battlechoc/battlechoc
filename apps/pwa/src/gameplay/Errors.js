@@ -70,4 +70,11 @@ class GameNotRunningError extends BattlechocError {
     }
 }
 
-export { BattlechocError, GameNotRunningError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, TargetEmptyError, NoAttacksLeftError, UnexpectedStateError, InvalidActionIssuerError, GameAlreadyEndedError };
+class AlreadyMolten extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'This field is already molten';
+    }
+}
+
+export { BattlechocError, AlreadyMolten, GameNotRunningError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, TargetEmptyError, NoAttacksLeftError, UnexpectedStateError, InvalidActionIssuerError, GameAlreadyEndedError };
