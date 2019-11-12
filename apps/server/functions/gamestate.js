@@ -398,8 +398,8 @@ class Reducer {
                         opponent.attacksPerTurn[entities.AttackType.HOT_CHOCOLATE] += 1;
                         opponent.attacks[entities.AttackType.HOT_CHOCOLATE] = otherPlayer(game).attacksPerTurn[entities.AttackType.HOT_CHOCOLATE];
                     }
-                } else if (attackedCell.shielded === true && attackType !== entities.AttackType.HOT_CHOCOLATE) {
-                    let damage = action.payload.attack;
+                } else if (attackedCell.shielded && attackType !== entities.AttackType.HOT_CHOCOLATE) {
+                    let damage = action.payload.damage;
                     if (attackType === entities.AttackType.TRUFFLE) {
                         damage = 0.1 * damage;
                     }
