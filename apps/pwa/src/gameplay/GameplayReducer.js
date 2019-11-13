@@ -217,7 +217,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                 opponent.attacksPerTurn[AttackType.HOT_CHOCOLATE] += 1;
                 opponent.attacks[AttackType.HOT_CHOCOLATE] = opponent.attacksPerTurn[AttackType.HOT_CHOCOLATE];
             }
-        } else if (attackedCell.shielded === true && attackType !== AttackType.HOT_CHOCOLATE) {
+        } else if (attackedCell.shielded && attackType !== AttackType.HOT_CHOCOLATE) {
             let damage = action.payload.damage;
             if (attackType === AttackType.TRUFFLE) {
                 damage = 0.1 * damage;
@@ -255,7 +255,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
     
                         entity.hp = Math.round(entity.hp - damage);
                     }
-    
+
                     if (entity.hp < 1) {
                         if (entity.type === EntityType.FACTORY) {
                             opponent.hasFactory = false;

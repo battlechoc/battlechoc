@@ -20,7 +20,9 @@ const UiActionTypes = Object.freeze({
     updateMultiplayerSessions: 'battlechoc/ui/updateMultiplayerSessions',
     loadFriendsList: 'battlechoc/ui/loadFriendsList',
     setPlayerRank: 'battlechoc/ui/setPlayerRank',
-    updateLevel: 'battlechoc/ui/updateLevel'
+    updateLevel: 'battlechoc/ui/updateLevel',
+    showQuickMessage: 'battlechoc/ui/showQuickMessage',
+    hideQuickMessage: 'battlechoc/ui/hideQuickMessage'
 });
 
 const selectBuilding = createAction(UiActionTypes.selectBuilding);
@@ -42,6 +44,8 @@ const updatePlayerStats = createAction(UiActionTypes.updatePlayerStats);
 const updateMultiplayerSessions = createAction(UiActionTypes.updateMultiplayerSessions);
 const loadFriendsList = createAction(UiActionTypes.loadFriendsList);
 const setPlayerRank = createAction(UiActionTypes.setPlayerRank);
-const updateLevel = createAction(UiActionTypes.updateLevel)
+const updateLevel = createAction(UiActionTypes.updateLevel);
+const showQuickMessage = createAction(UiActionTypes.showQuickMessage);
+const hideQuickMessage = createAction(UiActionTypes.hideQuickMessage);
 
-export { updateLevel, setPlayerRank, loadFriendsList, updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };
+export { showQuickMessage, hideQuickMessage, updateLevel, setPlayerRank, loadFriendsList, updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };

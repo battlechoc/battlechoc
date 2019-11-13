@@ -15,7 +15,12 @@ const uiReducer = createReducer({
     ranking: 'Offline',
     multiplayerSessions: [],
     playerInfos: { stats: EmptyPlayerStats, isSignedIn: false },
-    language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en'
+    language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en',
+    quickMessage: {
+        show: false,
+        text: '',
+        type: 'warning'
+    }
 }, {
         [UiActions.resetUi]: (state, action) => {
             state.whitelistBuildings = undefined;
@@ -99,6 +104,16 @@ const uiReducer = createReducer({
         },
         [UiActions.updateLevel]: (state, action) => {
             state.playerInfos.stats.level = action.payload;
+        },
+        [UiActions.showQuickMessage]: (state, action) => {
+            state.quickMessage.show = true;
+            state.quickMessage.text = action.payload.text || '';
+            state.quickMessage.variant = action.payload.variant || 'warning';
+        },
+        [UiActions.hideQuickMessage]: (state, action) => {
+            state.quickMessage.show = false;
+            state.quickMessage.text = '';
+            state.quickMessage.type = 'warning';
         }
     }
 );

@@ -7,7 +7,7 @@ import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding } from './ui/UiActions';
+import { hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -20,6 +20,7 @@ import FactoryExtensionTest from './situations/tests/FactoryExtensionTest';
 import Hud from './ui/Hud';
 import uuidv4 from 'uuid/v4';
 import Tutorial from './tutorial/Tutorial';
+import QuickMessage from './ui/dialogs/QuickMessage';
 
 const Scene = React.lazy(() => import('./3d/Scene'));
 
@@ -36,7 +37,12 @@ class App extends Component {
             }
         }
         this.timeouts = [];
-        this.state = { params: params };
+        this.state = { 
+            params: params, 
+            displayMessage: true, 
+            displayedMessage: 'The game you want to join has already ended', 
+            messageType: 'warning' 
+        };
     }
 
     componentDidMount() {
@@ -245,6 +251,11 @@ class App extends Component {
         multiplayer.enterGameSession(sessionId, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField, endGame: this.props.endGame })
         .then(session => {
             this.prepareNewGame(true, true, session.game);
+        })
+        .catch(error => {
+            if (error instanceof ReferenceError) {
+                this.props.showQuickMessage({ text: t[this.props.language].WARNING_GAME_NOT_JOINABLE });
+            }
         });
     }
 
@@ -384,6 +395,13 @@ class App extends Component {
     render() {
         return (
             <div className="app">
+                <QuickMessage
+                    open={this.props.quickMessage.show}
+                    variant={this.props.quickMessage.variant}
+                    onClose={() => this.props.hideQuickMessage()}
+                    message={this.props.quickMessage.text}
+                />
+
                 { typeof this.props.game === 'undefined' ? <div id="background"></div> : null }
                 <Suspense fallback={null}>
                     <Scene onRef={scene => this.scene = scene} />
@@ -410,7 +428,8 @@ const mapStateToProps = state => ({
     ui: state.ui,
     tutorial: state.ui.tutorial,
     assetsReady: state.ui.assetsReady,
-    playerInfos: state.ui.playerInfos
+    playerInfos: state.ui.playerInfos,
+    quickMessage: state.ui.quickMessage
 });
 
 const mapDispatchToProps = {
@@ -440,7 +459,9 @@ const mapDispatchToProps = {
     setPlayerRank,
     notifyPlayerSignedIn,
     selectBuilding,
-    tapBuilding
+    tapBuilding,
+    hideQuickMessage,
+    showQuickMessage
 };
 
 const AppContainer = connect(

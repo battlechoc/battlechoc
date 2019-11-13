@@ -69,10 +69,12 @@ const AccountOverview = props => {
     let winnings = 0;
     let losses = 0;
     let drawn = 0;
-    if (typeof props.playerInfos.stats.trackRecord !== 'undefined') {
-        winnings = props.playerInfos.stats.trackRecord.filter(record => record.won).length;
-        losses = props.playerInfos.stats.trackRecord.filter(record => record.lost).length;
-        drawn = props.playerInfos.stats.trackRecord.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+
+    if (typeof props.playerInfos.stats.trackRecord !== 'undefined' && firebase.auth().currentUser) {
+        let finishedGames = props.playerInfos.stats.trackRecord.filter(record => typeof record.winners !== 'undefined');
+        winnings = finishedGames.filter(record => record.winners.filter(winner => winner.id === firebase.auth().currentUser.uid || winner.name === 'Charlie Bucket').length === 1).length;
+        drawn = finishedGames.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+        losses = finishedGames.length - winnings - drawn;
     }
 
     React.useEffect(() => {
