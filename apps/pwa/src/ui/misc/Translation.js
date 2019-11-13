@@ -205,7 +205,8 @@ const languages = {
                 case 'fortune': return 'Fortune';
                 default: return 'Unknown';
             }
-        }
+        },
+        WARNING_GAME_NOT_JOINABLE: 'The game you want to join has already ended'
     },
     de: {
         SIGNINORUP: 'Anmelden',
@@ -411,7 +412,8 @@ const languages = {
                 case 'fortune': return 'Glück';
                 default: return 'Unknown';
             }
-        }
+        },
+        WARNING_GAME_NOT_JOINABLE: 'Das gewünschte Spiel wurde bereits beendet'
     }
 };
 

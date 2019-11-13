@@ -559,20 +559,24 @@ class Multiplayer {
         } else {
             this.gameActions = gameActions;
             let session = doc.data();
-            this.localPlayerIndex = session.game.players.findIndex(player => player.id === firebase.auth().currentUser.uid);
-            this.unsubscribeGameSession = reference.onSnapshot(doc => {
-                let session = doc.data();
-                this.sessionData = session;
-                this.processEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
-            }, error => {
-                console.error('encountered error while trying to establish observer of multiplayer session', error.toString());
-            });
+            if (session.game.isRunning) {
+                this.localPlayerIndex = session.game.players.findIndex(player => player.id === firebase.auth().currentUser.uid);
+                this.unsubscribeGameSession = reference.onSnapshot(doc => {
+                    let session = doc.data();
+                    this.sessionData = session;
+                    this.processEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
+                }, error => {
+                    console.error('encountered error while trying to establish observer of multiplayer session', error.toString());
+                });
 
-            this.opponentEventIndex = session['events_from_' + (1 - this.localPlayerIndex)].length;
-            this.playerEventIndex = session['events_from_' + this.localPlayerIndex].length;
-            this.currentGameSession = doc.id;
-            this.localPlayerId = firebase.auth().currentUser.uid;
-            return session;
+                this.opponentEventIndex = session['events_from_' + (1 - this.localPlayerIndex)].length;
+                this.playerEventIndex = session['events_from_' + this.localPlayerIndex].length;
+                this.currentGameSession = doc.id;
+                this.localPlayerId = firebase.auth().currentUser.uid;
+                return session;
+            } else {
+                throw ReferenceError('session is not running anymore');
+            }
         }
     }
 }
