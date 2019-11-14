@@ -81,6 +81,8 @@ const uiReducer = createReducer({
             state.playerInfos.stats = EmptyPlayerStats;
             state.ranking = 'Offline';
             OfflineStore.playerStore.set('stats', EmptyPlayerStats);
+            OfflineStore.playerStore.set('friends', undefined);
+            OfflineStore.playerStore.set('multiplayerSessions', undefined);
         },
         [UiActions.stopTutorial]: (state, action) => {
             state.tutorial = false;
@@ -94,10 +96,11 @@ const uiReducer = createReducer({
         },
         [UiActions.updateMultiplayerSessions]: (state, action) => {
             state.multiplayerSessions = action.payload;
+            OfflineStore.playerStore.set('multiplayerSessions', action.payload);
         },
         [UiActions.loadFriendsList]: (state, action) => {
             state.friends = action.payload;
-            OfflineStore.playerStore.friends = action.payload;
+            OfflineStore.playerStore.set('friends', action.payload);
         },
         [UiActions.setPlayerRank]: (state, action) => {
             state.ranking = action.payload;
