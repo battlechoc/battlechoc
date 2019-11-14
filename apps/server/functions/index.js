@@ -501,7 +501,15 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
                     winnings: winnings
                 }
             } else {
-                return res.status(404).json({ error: 'OPPONENT NOT FOUND'});
+                games[i].game.isRunning = false;
+                games[i].opponent = {
+                    name: 'Chocnonymous',
+                    ranking: 0,
+                    level: 0,
+                    drawn: 0,
+                    losses: 0,
+                    winnings: 0
+                }
             }
         }
 
