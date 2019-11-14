@@ -26,6 +26,7 @@ class MultiplayerScreen extends Component {
         this.state = {
             showPlayerProfile: false,
             showFriends: false,
+            showSurrenderDialog: false,
             searchingRandomOpponent: false,
             showSearch: false,
             userSearchText: '',
@@ -123,6 +124,10 @@ class MultiplayerScreen extends Component {
         multiplayer.getMultiplayerSessions();        
     }
 
+    surrenderGame = sessionId => {
+        this.setState({ showSurrenderDialog: true });
+    }
+
     async findUser(query) {
         if (query !== '') {
             let results = await multiplayer.findUsers(query); 
@@ -143,6 +148,25 @@ class MultiplayerScreen extends Component {
     render() {
         return (
             <div id="multiplayer">
+                <Dialog
+                    fullWidth={true}
+                    fullScreen={this.props.fullScreen}
+                    open={this.state.showSurrenderDialog}
+                    onClose={() => this.setState({ showSurrenderDialog: false })}
+                    aria-labelledby="surrenderGame">
+                    <DialogTitle>Surrender Game</DialogTitle>
+                    <DialogContent>
+                        <p>Do you really want to surrender this game?</p>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => {
+                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                            this.setState({ showSurrenderDialog: false });
+                        }} color="primary">{t[this.props.language].BUTTON_BACK}</Button>
+                    </DialogActions>
+                </Dialog>
+
+
                 <Dialog
                     fullWidth={true}
                     fullScreen={this.props.fullScreen}
@@ -309,7 +333,7 @@ class MultiplayerScreen extends Component {
 
                         {typeof this.props.multiplayerSessions !== 'undefined' ? this.props.multiplayerSessions.sort(this.sortByTimestamp).map((row, i) => (
                             [
-                                <div key={i} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} gameActions`}><PlayArrow onClick={() => this.props.enterMultiplayerGame(row.id)} /><Cancel /><AccountCircle onClick={() => this.showPlayerProfile(row)} /></div>,
+                                <div key={i} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} gameActions`}><PlayArrow onClick={() => this.props.enterMultiplayerGame(row.id)} /><Cancel onClick={() => this.surrenderGame(row.id)} /><AccountCircle onClick={() => this.showPlayerProfile(row)} /></div>,
                                 <div key={i+1} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">player</span><span>{row.opponent.name}</span></div>,
                                 <div key={i+2} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
                                 <div key={i+3} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.last_changed)}</span></div>,

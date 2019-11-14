@@ -69,6 +69,18 @@ class App extends Component {
             }
         });
 
+        OfflineStore.playerStore.get('multiplayerSessions').then(multiplayerSessions => {
+            if (typeof multiplayerSessions !== 'undefined') {
+                this.props.updateMultiplayerSessions(multiplayerSessions);
+            }
+        });
+
+        OfflineStore.playerStore.get('friends').then(friends => {
+            if (typeof friends !== 'undefined') {
+                this.props.loadFriendsList(friends);
+            }
+        });
+
         OfflineStore.hasGameToResume().then((resumeable) => {
             this.props.gameResumeable(resumeable);
         });
@@ -346,6 +358,7 @@ class App extends Component {
                 this.props.resetUi();
                 multiplayer.reset();
                 this.scene.clear();
+                multiplayer.getMultiplayerSessions();
             }, 1000);
         }
     }
