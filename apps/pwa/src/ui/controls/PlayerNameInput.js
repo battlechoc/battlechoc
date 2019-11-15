@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { axios } from '../../helper/settings';
+import { ServerRequest } from '../../helper/settings';
 import Axios from 'axios';
 import { makeStyles } from '@material-ui/core/styles';
 import withWidth, { isWidthUp } from '@material-ui/core/withWidth';
@@ -52,7 +52,7 @@ export default withWidth()(props => {
             }
 
             setLoading(true);
-            axios.get('/check/available/' + name, {cancelToken: source.token})
+            ServerRequest('get', '/check/available/' + name, source.token)
             .then(response => {
                 setPlayerNameAvailable(response.data.available);
                 setLoading(false);

@@ -7,7 +7,7 @@ import OfflineStore from './OfflineStore';
 import { GameActionTypes } from './gameplay/GameActions';
 import { AttackType } from './gameplay/GameEntities';
 import { Jukebox } from './ui/misc';
-import { axios } from './helper/settings';
+import { ServerRequest } from './helper/settings';
 
 const MultiplayerGameSessionState = Object.freeze({
     UNINITIALIZED: 'MultiplayerGameSessionState.Uninitialized',
@@ -92,7 +92,7 @@ class Multiplayer {
         });
     }
 
-    authStateChanged(user) {
+    async authStateChanged(user) {
         if (user) {
             if (typeof this.callbacks.notifyPlayerSignedIn !== 'undefined') {
                 this.callbacks.notifyPlayerSignedIn({ email: user.email, uid: user.uid, name: user.displayName, isAnonymous: user.isAnonymous });
@@ -105,49 +105,6 @@ class Multiplayer {
             });
 
             this.localPlayer = user;
-            const userStatusDatabaseRef = firebase.database().ref('/status/' + this.localPlayer.uid);
-            const userStatusFirestoreRef = firebase.firestore().doc('/status/' + this.localPlayer.uid);
-
-            let isOfflineForDatabase = {
-                state: 'offlinedb',
-                last_changed: firebase.database.ServerValue.TIMESTAMP,
-            };
-
-            let isOnlineForDatabase = {
-                state: 'onlinedb',
-                last_changed: firebase.database.ServerValue.TIMESTAMP,
-            };
-
-            let isOfflineForFirestore = {
-                state: 'offlinest',
-                last_changed: firebase.firestore.FieldValue.serverTimestamp(),
-            };
-
-            let isOnlineForFirestore = {
-                state: 'onlinest',
-                last_changed: firebase.firestore.FieldValue.serverTimestamp(),
-            };
-
-            firebase.database().ref('.info/connected').on('value', function (snapshot) {
-                if (snapshot.val() === false) {
-                    try {
-                        userStatusFirestoreRef.set(isOfflineForFirestore);
-                    } catch (error) {
-                        console.warn(error);
-                    }
-                    return;
-                };
-
-                userStatusDatabaseRef.onDisconnect().set(isOfflineForDatabase).then(function () {
-                    try {
-                        userStatusDatabaseRef.set(isOnlineForDatabase);
-                        userStatusFirestoreRef.set(isOnlineForFirestore);
-                    } catch (error) {
-                        console.warn(error);
-                    }
-                }).catch(error => console.warn(error));
-            });
-
             this.askForNotification(user);
             this.getMultiplayerSessions();
             this.fetchFriendsList();
@@ -348,7 +305,7 @@ class Multiplayer {
     async challengePlayer(playerName) {
         if (typeof playerName !== 'undefined' && firebase.auth().currentUser !== 'undefined') {
             try {
-                await axios.post('/user/challenge', { opponent: playerName, playerId: firebase.auth().currentUser.uid })
+                await ServerRequest('post', '/user/challenge', { opponent: playerName });
             } catch(error) {
                 console.warn(error)
             }
@@ -358,7 +315,7 @@ class Multiplayer {
     async getMultiplayerSessions() {
         if (firebase.auth().currentUser) {
             try {
-                let response = await axios.get('/multiplayer/sessions/' + firebase.auth().currentUser.uid);
+                let response = await ServerRequest('get', '/multiplayer/sessions');
                 this.callbacks.updateMultiplayerSessions(response.data.sessions);
             } catch (error) {
                 console.warn('error while fetching player sessions ' + error);
@@ -371,7 +328,7 @@ class Multiplayer {
     async fetchFriendsList() {
         if (firebase.auth().currentUser) {
             try {
-                let response = await axios.get('/user/friends/' + firebase.auth().currentUser.uid);
+                let response = await ServerRequest('get', '/user/friends');
                 this.callbacks.loadFriendsList(response.data);
                 return response.data;
             } catch (error) {
@@ -385,7 +342,7 @@ class Multiplayer {
     async computeRank() {
         if (firebase.auth().currentUser) {
             try {
-                let data = (await axios.get('/rank/' + firebase.auth().currentUser.uid)).data;
+                let data = (await ServerRequest('get', '/rank')).data;
                 this.callbacks.setPlayerRank(data.ranking);
             } catch {
                 this.callbacks.setPlayerRank('Offline');
@@ -398,7 +355,7 @@ class Multiplayer {
     async removeFriend(friend) {
         if (firebase.auth().currentUser) {
             try {
-                await axios.delete('/user/friend/', { data: { userId: firebase.auth().currentUser.uid, friend: friend }});
+                await ServerRequest('delete', '/user/friend', { friend: friend });
                 this.fetchFriendsList();
             } catch (error) {
                 console.warn('error while removing friend ' + error);
@@ -411,7 +368,7 @@ class Multiplayer {
     async addFriend(friend) {
         if (firebase.auth().currentUser) {
             try {
-                await axios.post('/user/friend/', { userId: firebase.auth().currentUser.uid, friend: friend });
+                await ServerRequest('post', '/user/friend/', { friend: friend });
                 this.fetchFriendsList();
             } catch (error) {
                 console.warn('error while adding friend ' + error);
@@ -422,11 +379,15 @@ class Multiplayer {
     }
 
     async findUsers(query) {
-        return ( await axios.get('/query/user/' + query)).data;
+        return (await ServerRequest('get', '/query/user/' + query)).data;
     }
 
     async findRandomPlayer() {
-        return ( await axios.get('/random/opponent/for/' + firebase.auth().currentUser.uid)).data;
+        return (await ServerRequest('get', '/random/opponent')).data;
+    }
+
+    async surrenderGame(sessionId) {
+        await ServerRequest('post', '/surrender', { sessionId: sessionId });
     }
 
     signInAnonymouslyIfNotAlreadySignedIn() {
@@ -522,14 +483,14 @@ class Multiplayer {
         }
     }
 
-    relayAction(action) {
+    relayAction (action) {
         if (typeof this.currentGameSession !== 'undefined' && action.payload.issuer === this.localPlayerId) {
             action.index = this.playerEventIndex;
             this.playerEventIndex += 1;
             console.log('RELAY ACTION ' + this.playerEventIndex);
             action.emitted = firebase.firestore.Timestamp.fromDate(new Date());
 
-            axios.post('/multiplayer/relay/action', { event: action, sessionId: this.currentGameSession })
+            ServerRequest('post', '/multiplayer/relay/action', { event: action, sessionId: this.currentGameSession })
             .catch(error => console.warn(error));
         }
     }

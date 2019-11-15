@@ -21,9 +21,8 @@ import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
 import Checkbox from '@material-ui/core/Checkbox';
 import TextField from '@material-ui/core/TextField';
-import { axios } from '../../helper/settings';
+import { ServerRequest } from '../../helper/settings';
 import PlayerNameInput from '../controls/PlayerNameInput';
-import firebase from '@firebase/app';
 
 class Settings extends Component {
   constructor(props) {
@@ -54,7 +53,7 @@ class Settings extends Component {
   }
 
   setPlayerName = playerName => {
-    axios.post('/user/username', { player: firebase.auth().currentUser.uid, username: playerName })
+    ServerRequest('post', '/user/username', { username: playerName })
     .then(response => {        
       this.props.updatePlayerStats({ username: playerName });
       OfflineStore.playerStore.get('stats').then(playerStats => {
@@ -164,7 +163,7 @@ class Settings extends Component {
                   message: this.state.additionalReportMessage
                 };
 
-                axios.post('/debugging/gamestate', { report: report })
+                ServerRequest('post', '/debugging/gamestate', { report: report })
                 .then(response => this.setState({
                   snackbar: {
                     text: t[this.props.language].SNACKBAR_SEND,

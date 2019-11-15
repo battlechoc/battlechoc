@@ -206,7 +206,10 @@ const languages = {
                 default: return 'Unknown';
             }
         },
-        WARNING_GAME_NOT_JOINABLE: 'The game you want to join has already ended'
+        WARNING_GAME_NOT_JOINABLE: 'The game you want to join has already ended',
+        SURRENDER: 'Surrender',
+        SURRENDER_GAME: 'Surrender Game',
+        SURRENDER_GAME_TEXT: name => 'Do you really want to surrender the game against ' + name
     },
     de: {
         SIGNINORUP: 'Anmelden',
@@ -413,7 +416,10 @@ const languages = {
                 default: return 'Unknown';
             }
         },
-        WARNING_GAME_NOT_JOINABLE: 'Das gewünschte Spiel wurde bereits beendet'
+        WARNING_GAME_NOT_JOINABLE: 'Das gewünschte Spiel wurde bereits beendet',
+        SURRENDER: 'Aufgeben',
+        SURRENDER_GAME: 'Spiel aufgeben',
+        SURRENDER_GAME_TEXT: name => 'Möchtest du das Spiel gegen ' + name + ' wirklich aufgeben?'
     }
 };
 

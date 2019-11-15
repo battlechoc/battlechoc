@@ -17,7 +17,7 @@ import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
 import { multiplayer } from '../Multiplayer';
-import { axios } from '../helper/settings';
+import { ServerRequest } from '../helper/settings';
 
 class Hud extends Component {
     constructor(props) {
@@ -50,7 +50,7 @@ class Hud extends Component {
         if (typeof this.props.challengedPlayer !== 'undefined') {
             this.setState({ multiplayerScreen: true }, async () => {
                 try {
-                    let response = await axios.get('/user/' + this.props.challengedPlayer)
+                    let response = await ServerRequest('get', '/user/' + this.props.challengedPlayer);
                     this.multiplayerScreen.showPlayerProfile({ opponent: response.data });
                 } catch(error) {
                     console.warn(error);
