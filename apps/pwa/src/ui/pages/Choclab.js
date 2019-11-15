@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import './Choclab.css';
-import firebase from '@firebase/app';
 import OfflineStore from '../../OfflineStore';
 import { updatePlayerStats, updateLevel } from '../UiActions';
 import { Translation as t } from '../misc';
@@ -11,7 +10,7 @@ import { ChoclabPalette } from '../controls';
 import MeshPreview from '../../3d/MeshPreview';
 import IconButton from '@material-ui/core/IconButton';
 import Snackbar from '@material-ui/core/Snackbar';
-import { axios } from '../../helper/settings';
+import { ServerRequest } from '../../helper/settings';
 
 class Choclab extends Component {
     constructor(props) {
@@ -21,16 +20,7 @@ class Choclab extends Component {
         }
     }
 
-    handleFetchError(response) {
-        if (!response.ok) {
-            throw Error(response.statusText);
-        }
-        return response.json();
-    }
-
     render() {
-        let user = firebase.auth().currentUser;
-
         return (
             <div id="choclab">
                 {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
@@ -50,9 +40,8 @@ class Choclab extends Component {
                       <IconButton
                         aria-label="close"
                         color="inherit"
-                        onClick={() => {
-                            axios.post('/undo/upgrade', { 
-                                player: user.uid,
+                        onClick={async () => {
+                            ServerRequest('post', '/undo/upgrade', {
                                 entity: this.state.selectedEntityType,
                                 attribute: this.state.upgrade.attribute,
                                 actionId: this.state.upgradeAction
@@ -93,9 +82,8 @@ class Choclab extends Component {
                                 <div>
                                     <div className={attribute.color} style={{ width: percentage + '%'}}></div>
                                     { classNames === 'progress' && values[0] < values[1] && this.props.playerInfos.stats.coins >= this.state.selectedEntity.coins() ?
-                                    <AddBox onClick={() => {
-                                        axios.post('/upgrade/entity', { 
-                                            player: user.uid,
+                                    <AddBox onClick={() => {                                        
+                                        ServerRequest('post', '/upgrade/entity', {
                                             entity: this.state.selectedEntityType,
                                             attribute: attribute.name 
                                         })

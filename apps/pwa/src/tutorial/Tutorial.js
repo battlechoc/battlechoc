@@ -21,8 +21,7 @@ import TreeAndCannonTutorial from '../situations/tutorial/TreeAndCannonTutorial'
 import BunnyAndXmasTutorial from '../situations/tutorial/BunnyAndXmasTutorial';
 import FountainAndFruitCannonTutorial from '../situations/tutorial/FountainAndFruitCannonTutorial';
 import { Translation as t } from '../ui/misc';
-import { axios } from '../helper/settings';
-import firebase from '@firebase/app';
+import { ServerRequest } from '../helper/settings';
 import OfflineStore from '../OfflineStore';
 import { updatePlayerStats } from '../ui/UiActions';
 import PlayerNameInput from '../ui/controls/PlayerNameInput';
@@ -101,7 +100,7 @@ class Tutorial extends Component {
     }
 
     setPlayerName = playerName => {
-        axios.post('/user/username', { player: firebase.auth().currentUser.uid, username: playerName })
+        ServerRequest('post', '/user/username', { username: playerName })
         .then(response => {        
             this.props.updatePlayerStats({ username: playerName });
             OfflineStore.playerStore.get('stats').then(playerStats => {

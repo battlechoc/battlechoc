@@ -1,13 +1,24 @@
 import axios from 'axios';
+import firebase from '@firebase/app';
 
-const ServerConfig = {
-    auth: btoa('battlechoc-pwa:***REMOVED***'),
-    baseUrl: 'https://europe-west1-battlechoc.cloudfunctions.net/api'
-};
+const baseUrl = 'https://europe-west1-battlechoc.cloudfunctions.net/api';
+const instance = axios.create({ baseURL: baseUrl });
 
-const instance = axios.create({
-  baseURL: ServerConfig.baseUrl,
-  headers: { 'Authorization': 'Basic ' + ServerConfig.auth }
-});
+const ServerRequest = async (method, url, body) => {
+	let token = await firebase.auth().currentUser.getIdToken(true);
+    let config = { headers: { 'Authorization': `Bearer ${token}` } };
 
-export { instance as axios };
+	if (method === 'post') {
+		return instance.post(url, body, config);
+	} else if (method === 'delete') {
+		config.data = body;
+		return instance.delete(url, config);
+	} else {
+		if (typeof body !== 'undefined') {
+			config.cancelToken = body;
+		}
+		return instance.get(url, config);
+	}
+}
+
+export { ServerRequest };
