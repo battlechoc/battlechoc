@@ -111,12 +111,12 @@ const AccountOverview = props => {
                     <div className="accountAttribute"><AccountCircle /> { props.playerInfos.stats.username }</div>
                     
                     <div className="accountSubAttributes">
-                        <div className="accountAttribute"><PlusOne />Level<span className="attributeValue">{ level }</span></div>
-                        <div className="accountAttribute"><EmojiEvents />Rank<span className="attributeValue">{ props.ranking }</span></div>
-                        <div className="accountAttribute"><ThumbUp />Won<span className="attributeValue">{ winnings }</span></div>
-                        <div className="accountAttribute"><ThumbsUpDown />Drawn<span className="attributeValue">{ drawn }</span></div>
-                        <div className="accountAttribute"><ThumbDown />Lost<span className="attributeValue">{losses }</span></div>
-                        <div className="accountAttribute"><img src="images/coins.png" alt="choco coins" />Coins<span className="attributeValue">{ props.playerInfos.stats.coins }</span></div>
+                        <div className="accountAttribute"><PlusOne />{t[props.language].ACCOUNT_OVERVIEW_LEVEL}<span className="attributeValue">{ level }</span></div>
+                        <div className="accountAttribute"><EmojiEvents />{t[props.language].ACCOUNT_OVERVIEW_RANK}<span className="attributeValue">{ props.ranking }</span></div>
+                        <div className="accountAttribute"><ThumbUp />{t[props.language].ACCOUNT_OVERVIEW_WON}<span className="attributeValue">{ winnings }</span></div>
+                        <div className="accountAttribute"><ThumbsUpDown />{t[props.language].ACCOUNT_OVERVIEW_DRAWN}<span className="attributeValue">{ drawn }</span></div>
+                        <div className="accountAttribute"><ThumbDown />{t[props.language].ACCOUNT_OVERVIEW_LOST}<span className="attributeValue">{losses }</span></div>
+                        <div className="accountAttribute"><img src="images/coins.png" alt="choco coins" />{t[props.language].ACCOUNT_OVERVIEW_COINS}<span className="attributeValue">{ props.playerInfos.stats.coins }</span></div>
                     </div>
 
                     {(() => {
@@ -125,13 +125,13 @@ const AccountOverview = props => {
                                 return (
                                     <div className="infobox">
                                         <StyledFirebaseAuth uiConfig={FirebaseSigninUiConfig} firebaseAuth={firebase.auth()} />
-                                        <p>To share your account across devices and restore your data if your device is lost, it's possible to connect it to one of these options</p>
+                                        <p>{t[props.language].ACCOUNT_OVERVIEW_CREATE_INFO}</p>
                                     </div>
                                 );
                             } else {
                                 return (
                                     <div className="infobox">
-                                        <p className="loggedinInfo">Your Account is associated with {props.playerInfos.email}</p>
+                                        <p className="loggedinInfo">{t[props.language].ACCOUNT_OVERVIEW_ASSOCIATION} {props.playerInfos.email}</p>
                                         <Button className={classes.logoutButton} variant="outlined" onClick={signOut}>
                                             {t[props.language].SIGN_OUT}
                                         </Button>

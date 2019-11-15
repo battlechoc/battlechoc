@@ -65,13 +65,13 @@ class GameEndOverview extends Component {
     }
     
     createPie() {
-        let statistics = this.props.game.players[multiplayer.localPlayerIndex].statistics;
-        let data = [statistics.attacks, 
+        const statistics = this.props.game.players[multiplayer.localPlayerIndex].statistics;
+        const data = [statistics.attacks, 
                     statistics.builtEntities * 2, 
                     statistics.espionages * 10, 
                     statistics.moltenFields * 50];
-        let total = data.reduce((a, b) => a + b, 0);
-        let color = [
+        const total = data.reduce((a, b) => a + b, 0);
+        const color = [
           "#D92B4B", 
           "#7EBFD9",
           "#F2BF27",
@@ -79,10 +79,12 @@ class GameEndOverview extends Component {
         ];
         var offset = 0;
         for(let i = 0; i < data.length; i++) {
-            let size = this.sliceSize(data[i], total);
-            this.iterateSlices(size, offset, i, 0, color[i]);
-            document.querySelector('.legend li:nth-child(' + (i+1) + ')').style.borderColor = color[i];
-            offset += size;
+            if (data[i] > 0) {
+                let size = this.sliceSize(data[i], total);
+                this.iterateSlices(size, offset, i, 0, color[i]);
+                document.querySelector('.legend li:nth-child(' + (i+1) + ')').style.borderColor = color[i];
+                offset += size;
+            }
         }
     }
 
