@@ -367,7 +367,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         res.status(404).json({error: 'SESSION NOT FOUND'});
     } else {
         let session = doc.data();
-        if (!session.game.players.includes(req.user.uid)) {
+        if (!session.players.includes(req.user.uid)) {
             return res.status(401).end();
         }
 
