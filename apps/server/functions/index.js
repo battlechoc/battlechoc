@@ -2,7 +2,6 @@ const functions = require('firebase-functions');
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const basicAuth = require('express-basic-auth')
 const bodyParser = require('body-parser');
 const entities = require('./entities.js');
 const admin = require('firebase-admin');
@@ -27,11 +26,27 @@ const corsOptions = {
 }
 
 app.use(bodyParser.json());
-
 app.use(cors(corsOptions));
-app.use(basicAuth({
-    users: { 'battlechoc-pwa': '***REMOVED***' }
-}));
+
+app.use(async (req, res, next) => {
+    if (!req.headers.authorization) {
+        return res.status(403).end();
+    }
+
+    let authorization = req.headers.authorization.split(' ');
+    if (authorization.length === 2) {
+        try {
+            var token = await admin.auth().verifyIdToken(authorization[1]);
+        } catch (error) {
+            return res.status(403).json({ error: error.toString() });
+        }
+
+        req.user = token;
+        next();
+    } else {
+        return res.status(403).end();
+    }
+});
 
 app.get('/debugging/gamestate', (req, res) => {
     res.json({ gamestate: 'NOT IMPLEMENTED YET!' });
@@ -44,8 +59,8 @@ app.post('/debugging/gamestate', (req, res) => {
         .catch(error => res.json({ result: error }));
 });
 
-app.get('/user/friends/:userId', async (req, res) => {
-    let ref = admin.firestore().collection('players').doc(req.params.userId);
+app.get('/user/friends', async (req, res) => {
+    let ref = admin.firestore().collection('players').doc(req.user.uid);
     let doc = await ref.get();
     if (doc.exists) {
         let player = doc.data();
@@ -72,7 +87,7 @@ app.post('/user/friend', async (req, res) => {
         res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST'});
     } else {
         let friendId = docs.docs[0].id;
-        let ref = players.doc(req.body.userId);
+        let ref = players.doc(req.user.uid);
         try {
             await ref.update({ friends: admin.firestore.FieldValue.arrayUnion(friendId) });
             res.status(200).end();
@@ -89,7 +104,7 @@ app.delete('/user/friend', async (req, res) => {
         res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST'});
     } else {
         let friendId = docs.docs[0].id;
-        let ref = players.doc(req.body.userId);
+        let ref = players.doc(req.user.uid);
         try {
             await ref.update({ friends: admin.firestore.FieldValue.arrayRemove(friendId) });
             res.status(200).end();
@@ -172,10 +187,10 @@ app.post('/user/challenge', async (req, res) => {
     } else {
         let opponentId = docs.docs[0].id;
         let opponent = docs.docs[0].data();
-        if (opponentId === req.body.playerId) {
+        if (opponentId === req.user.uid) {
             res.status(400).json({ error: 'CANNOT CREATE A GAME CHALLENGING YOURSELF' });
         } else {
-            let doc = await players.doc(req.body.playerId).get();
+            let doc = await players.doc(req.user.uid).get();
             if (!doc.exists) {
                 res.status(404).json({ error: 'PLAYER NOT FOUND'});
             } else {
@@ -196,7 +211,7 @@ app.post('/user/challenge', async (req, res) => {
                 let session = {
                     players: [
                         opponentId,
-                        req.body.playerId
+                        req.user.uid
                     ],
                     created: new Date(),
                     last_changed: new Date(),
@@ -207,7 +222,7 @@ app.post('/user/challenge', async (req, res) => {
                     events_from_1: [],
                     lastProcessedEvent: [0, 0],
                     game: {
-                        players: [entities.createPlayer(req.body.opponent, opponentId, 'PlayerType.HUMAN', opponentLevel), entities.createPlayer(player.username, req.body.playerId, 'PlayerType.HUMAN', playerLevel)],
+                        players: [entities.createPlayer(req.body.opponent, opponentId, 'PlayerType.HUMAN', opponentLevel), entities.createPlayer(player.username, req.user.uid, 'PlayerType.HUMAN', playerLevel)],
                         currentPlayerIndex: coinToss,
                         state: 'GameStateTypes.CHOOSE_FIELD_OR_START',
                         isRunning: true,
@@ -352,6 +367,10 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         res.status(404).json({error: 'SESSION NOT FOUND'});
     } else {
         let session = doc.data();
+        if (!session.game.players.includes(req.user.uid)) {
+            return res.status(401).end();
+        }
+
         let issuer = req.body.event.payload.issuer;
 
         if (issuer === session.game.players[0].id) {
@@ -434,10 +453,14 @@ app.post('/multiplayer/relay/action', async (req, res) => {
     }
 });
 
-app.get('/multiplayer/sessions/:userId', async (req, res) => {
+app.post('/surrender', async (req, res) => {
+
+});
+
+app.get('/multiplayer/sessions', async (req, res) => {
     let docs = null;
     try {
-        docs = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.params.userId).get();
+        docs = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
     } catch (error) {
         return res.status(500).json({error: error});
     }
@@ -445,7 +468,7 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
     if (docs.size > 0) {
         docs.forEach(doc => {
             let game = doc.data();
-            let playerIndex = game.game.players.findIndex(player => player.id === req.params.userId);
+            let playerIndex = game.game.players.findIndex(player => player.id === req.user.uid);
             if (game.game.isRunning) {
                 games.push({
                     'id': doc.id,
@@ -462,7 +485,7 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
 
         for (let i = 0; i < games.length; i++) {
             let game = games[i];
-            let opponentId = game.players.filter(playerId => playerId != req.params.userId)[0];
+            let opponentId = game.players.filter(playerId => playerId != req.user.uid)[0];
             const players = admin.firestore().collection('players');
             let doc = await players.doc(opponentId).get();
             if (doc.exists) {
@@ -534,7 +557,7 @@ const basicLevel = {
 
 app.post('/upgrade/entity', (req, res) => {
     let players = admin.firestore().collection('players');
-    players.doc(req.body.player).get().then(doc => {
+    players.doc(req.user.uid).get().then(doc => {
         if (doc.exists) {
             let player = doc.data();
 
@@ -553,7 +576,7 @@ app.post('/upgrade/entity', (req, res) => {
                 } else {                
                     level[req.body.entity][req.body.attribute] = level[req.body.entity][req.body.attribute] + 1;
                     let upgradeAction = { id: uuidv4(), timestamp: new Date().getTime() };
-                    players.doc(req.body.player).update({
+                    players.doc(req.user.uid).update({
                         coins: player.coins - costs,
                         level: level,
                         last_upgrade_action: upgradeAction
@@ -572,7 +595,7 @@ app.post('/upgrade/entity', (req, res) => {
 
 app.post('/undo/upgrade', (req, res) => {
     let players = admin.firestore().collection('players');
-    players.doc(req.body.player).get().then(doc => {
+    players.doc(req.user.uid).get().then(doc => {
         if (doc.exists) {
             let player = doc.data();
             if (typeof player.last_upgrade_action === 'undefined' || player.last_upgrade_action === null) {
@@ -585,7 +608,7 @@ app.post('/undo/upgrade', (req, res) => {
                 let level = player.level;
                 level[req.body.entity][req.body.attribute] = level[req.body.entity][req.body.attribute] - 1;
                 let costs = entities.calculateCosts(req.body.entity, level);
-                players.doc(req.body.player).update({
+                players.doc(req.user.uid).update({
                     coins: player.coins + costs,
                     level: level,
                     last_upgrade_action: null
@@ -599,9 +622,9 @@ app.post('/undo/upgrade', (req, res) => {
     }).catch(error => res.status(500).json({ error: error.toString() }));
 });
 
-app.get('/rank/:player', (req, res) => {
+app.get('/rank', (req, res) => {
     let players = admin.firestore().collection('players');
-    players.doc(req.params.player).get().then(doc => {
+    players.doc(req.user.uid).get().then(doc => {
         if (doc.exists) {
             let player = doc.data();
             if (typeof player.score === 'undefined' || isNaN(player.score)) {
@@ -680,7 +703,7 @@ app.get('/user/:name', async (req, res) => {
     }
 });
 
-app.get('/random/opponent/for/:playerId', async (req, res) => {
+app.get('/random/opponent', async (req, res) => {
     let players = admin.firestore().collection('players');
     try {
         var docs = await players.where('username', '>', '').get();
@@ -688,11 +711,11 @@ app.get('/random/opponent/for/:playerId', async (req, res) => {
         return res.status(500).json({ error: error.toString() })
     }
 
-    invalidOpponentIds = [req.params.playerId];
+    invalidOpponentIds = [req.user.uid];
 
-    sessions = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.params.playerId).get();
+    sessions = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
     for (let session of sessions.docs) {
-        invalidOpponentIds.push(session.data().players.filter(id => id !== req.params.playerId)[0]);
+        invalidOpponentIds.push(session.data().players.filter(id => id !== req.user.uid)[0]);
     }
 
     let validDocs = docs.docs.filter(player => !invalidOpponentIds.includes(player.id));
@@ -750,11 +773,11 @@ app.post('/user/username', async (req, res) => {
     if (docs.size > 0) {
         res.status(400).json({ error: 'PLAYERNAME ALREADY EXISTS'});
     } else {
-        players.doc(req.body.player).get().then(doc => {
+        players.doc(req.user.uid).get().then(doc => {
             let regex = /^([a-zA-Z][a-zA-Z0-9_]{3,15})$/;
             if (regex.test(req.body.username) && req.body.username.toUpperCase() !== 'CHOCNONYMOUS') {
                 if (doc.exists) {
-                    players.doc(req.body.player).update({
+                    players.doc(req.user.uid).update({
                         username: req.body.username
                     }).then(() => {
                         res.end();
