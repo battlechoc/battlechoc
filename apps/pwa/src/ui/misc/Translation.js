@@ -7,9 +7,24 @@ const languages = {
         SIGN_OUT: 'Sign out',
         ACCOUNTINFOS: 'Account infos',
         ACCOUNTINFOS_PREVIEW: 'Coming soon, infos about your account and player stats.',
+        ACCOUNT_OVERVIEW_ASSOCIATION: 'Your Account is associated with',
         SETTINGS: 'Settings',
         SETTINGS_ATTENTION_TEXT: 'Attention, if you press the button above again, you give up the current game and your opponent wins',
+        ACCOUNT_OVERVIEW_CREATE_INFO: 'To share your account across devices and restore your progress in battlechoc if your device is lost, it is possible to connect it to one of these options.',
+        ACCOUNT_OVERVIEW_LEVEL: 'Level',
+        ACCOUNT_OVERVIEW_RANK: 'Rank',
+        ACCOUNT_OVERVIEW_WON: 'Won',
+        ACCOUNT_OVERVIEW_DRAWN: 'Drawn',
+        ACCOUNT_OVERVIEW_LOST: 'Lost',
+        ACCOUNT_OVERVIEW_COINS: 'Coins',
         SETTINGS_QUIT: 'Quit Game',
+        SETTINGS_CHANGE_PLAYER_NAME: 'Change Playername',
+        SETTINGS_PLAYER_NAME_IN_USE: 'username already in use',
+        SETTINGS_PLAYER_NAME_INVALID: 'username not valid (3-15 chars or digits, first sign should be a char)',
+        HUD_WAITING_FOR_PLAYER: 'Wait for second player..',
+        HUD_RESUME_GAME: 'Resume Game',
+        HUD_ASK_NEW_OR_RESUME: 'Do you want to start a new game or resume your last one?',
+        HUD_NEW_GAME: 'New game',
         GERMAN: 'German',
         ENGLISH: 'English',
         LANGUAGE: 'Language',
@@ -195,6 +210,7 @@ const languages = {
         REMOVE_FRIEND: 'Remove from Friends',
         SEARCH_PLAYERS: 'Search player',
         SEARCH_USER_INFO: 'No player found',
+        CHOCLAB_INCREASED_BY: 'increased by',
         ATTRIBUTE_NAME: attribute => {
             switch (attribute) {
                 case 'hp': return 'Hp';
@@ -217,9 +233,24 @@ const languages = {
         SIGN_OUT: 'Abmelden',
         ACCOUNTINFOS: 'Account Informationen',
         ACCOUNTINFOS_PREVIEW: 'Hier findest du bald Infos über deinen Account und Spieler-Statistiken.',
+        ACCOUNT_OVERVIEW_ASSOCIATION: 'Dein Account ist verbunden mit',
+        ACCOUNT_OVERVIEW_CREATE_INFO: 'Um auf deinen Account von mehreren Geräten aus zugriefen zu können oder um deinen Spielfortschritt wieder herstellen zu können, wenn eines deiner Geräte verloren geht, ist es möglich ihn an eine dieser Optionen zu binden.',
+        ACCOUNT_OVERVIEW_LEVEL: 'Level',
+        ACCOUNT_OVERVIEW_RANK: 'Rang',
+        ACCOUNT_OVERVIEW_WON: 'Siege',
+        ACCOUNT_OVERVIEW_DRAWN: 'Unentschieden',
+        ACCOUNT_OVERVIEW_LOST: 'Verloren',
+        ACCOUNT_OVERVIEW_COINS: 'Taler',
         SETTINGS: 'Einstellungen',
         SETTINGS_ATTENTION_TEXT: 'Achtung, wenn du den Button erneut betätigst, gibst du das aktuelle Spiel auf und der Gegner gewinnt',
         SETTINGS_QUIT: 'Spiel beenden',
+        SETTINGS_CHANGE_PLAYER_NAME: 'Spielername ändern',
+        SETTINGS_PLAYER_NAME_IN_USE: 'Spielername bereits vergeben',
+        SETTINGS_PLAYER_NAME_INVALID: 'Spielername ungültig (3-15 Buchstaben oder Zahlen, das erste Zeichen muss ein Buchstabe sein)',
+        HUD_WAITING_FOR_PLAYER: 'Warte auf zweiten Spieler..',
+        HUD_RESUME_GAME: 'Weiter spielen',
+        HUD_ASK_NEW_OR_RESUME: 'Möchtest du ein neues Spiel starten oder das letzte Spiel fortsetzen?',
+        HUD_NEW_GAME: 'Neues Spiel',
         GERMAN: 'Deutsch',
         ENGLISH: 'Englisch',
         LANGUAGE: 'Sprache',
@@ -405,15 +436,16 @@ const languages = {
         REMOVE_FRIEND: 'Freund entfernen',
         SEARCH_PLAYERS: 'Spieler suchen',
         SEARCH_USER_INFO: 'Es wurde kein Spieler gefunden',
+        CHOCLAB_INCREASED_BY: 'erhöht um',
         ATTRIBUTE_NAME: attribute => {
             switch (attribute) {
-                case 'hp': return 'Hp';
+                case 'hp': return 'Lebenspunkte';
                 case 'area': return 'Reichweite';
                 case 'buildingsPerTurn': return 'Gebäude pro Runde';
                 case 'cacaoPerTurn': return 'Kakao pro Runde';
                 case 'attack': return 'Angriff';
                 case 'fortune': return 'Glück';
-                default: return 'Unknown';
+                default: return 'Unbekannt';
             }
         },
         WARNING_GAME_NOT_JOINABLE: 'Das gewünschte Spiel wurde bereits beendet',

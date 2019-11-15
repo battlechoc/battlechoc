@@ -203,21 +203,21 @@ class Hud extends Component {
                                         open={this.state.open}
                                         onClose={() => this.setState({ open: false })}
                                         aria-labelledby="resumeOrStartGame">
-                                        <DialogTitle>Resume Game</DialogTitle>
+                                        <DialogTitle>{t[this.props.language].HUD_RESUME_GAME}</DialogTitle>
                                         <DialogContent>
-                                            <Typography>Do you want to start a new game or resume your last one?</Typography>
+                                            <Typography>{t[this.props.language].HUD_ASK_NEW_OR_RESUME}</Typography>
                                         </DialogContent>
                                         <DialogActions>
                                             <Button onClick={() => {
                                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                                 this.setState({ open: false });
                                                 this.props.prepareNewGameCallback(false);
-                                            }} color="primary">New Game</Button>
+                                            }} color="primary">{t[this.props.language].HUD_NEW_GAME}</Button>-
                                             <Button onClick={() => {
                                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                                 this.setState({ open: false });
                                                 this.props.prepareNewGameCallback(true);
-                                            }} color="primary">Resume</Button>
+                                            }} color="primary">{t[this.props.language].HUD_RESUME_GAME}</Button>
                                         </DialogActions>
                                     </Dialog>
                                 </div>
@@ -227,7 +227,7 @@ class Hud extends Component {
                     } else if (stage === 'CHOOSE_MENU') {
                         let waitingNotification = null;
                         if (typeof this.props.multiplayerWaiting !== 'undefined') {
-                            waitingNotification = <div className="multiplayerNotification"><p>Wait for second player..</p><CircularProgress /></div>;
+                            waitingNotification = <div className="multiplayerNotification"><p>{t[this.props.language].HUD_WAITING_FOR_PLAYER}</p><CircularProgress /></div>;
                         }
                         return (
                             <div className="chooseStage">

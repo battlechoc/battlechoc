@@ -35,7 +35,7 @@ class Choclab extends Component {
                     onClose={() => this.setState({upgradeMessageOpen: false})}
                     autoHideDuration={10000}
                     ContentProps={{'aria-describedby': 'message-id'}}
-                    message={typeof this.state.upgrade !== 'undefined' ? <span id="message-id">{`${t[this.props.language].ATTRIBUTE_NAME(this.state.upgrade.attribute)} increased by ${this.state.upgrade.value}!`}</span> : null}
+                    message={typeof this.state.upgrade !== 'undefined' ? <span id="message-id">{`${t[this.props.language].ATTRIBUTE_NAME(this.state.upgrade.attribute)} ${t[this.props.language].CHOCLAB_INCREASED_BY} ${this.state.upgrade.value}!`}</span> : null}
                     action={
                       <IconButton
                         aria-label="close"
