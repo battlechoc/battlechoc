@@ -2,7 +2,6 @@ const functions = require('firebase-functions');
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const basicAuth = require('express-basic-auth')
 const bodyParser = require('body-parser');
 const entities = require('./entities.js');
 const admin = require('firebase-admin');
@@ -28,11 +27,27 @@ const corsOptions = {
 }
 
 app.use(bodyParser.json());
-
 app.use(cors(corsOptions));
-app.use(basicAuth({
-    users: { 'battlechoc-pwa': '***REMOVED***' }
-}));
+
+app.use(async (req, res, next) => {
+    if (!req.headers.authorization) {
+        return res.status(403).end();
+    }
+
+    let authorization = req.headers.authorization.split(' ');
+    if (authorization.length === 2) {
+        try {
+            var token = await admin.auth().verifyIdToken(authorization[1]);
+        } catch (error) {
+            return res.status(403).json({ error: error.toString() });
+        }
+
+        req.user = token;
+        next();
+    } else {
+        return res.status(403).end();
+    }
+});
 
 app.get('/debugging/gamestate', (req, res) => {
     res.json({ gamestate: 'NOT IMPLEMENTED YET!' });
@@ -45,20 +60,24 @@ app.post('/debugging/gamestate', (req, res) => {
         .catch(error => res.json({ result: error }));
 });
 
-app.get('/user/friends/:userId', async (req, res) => {
-    let ref = admin.firestore().collection('players').doc(req.params.userId);
+app.get('/user/friends', async (req, res) => {
+    let ref = admin.firestore().collection('players').doc(req.user.uid);
     let doc = await ref.get();
-    let player = doc.data();
-    if (typeof player.friends === 'undefined') {
-        res.json([]);
+    if (doc.exists) {
+        let player = doc.data();
+        if (typeof player.friends === 'undefined') {
+            res.json([]);
+        } else {
+            let friends = [];
+            await Promise.all(player.friends.map(async (friendId) => {
+                let friend = await admin.firestore().collection('players').doc(friendId).get();
+                friends.push({ username: friend.data().username });           
+            }));              
+            
+            res.json(friends); 
+        }
     } else {
-        let friends = [];
-        await Promise.all(player.friends.map(async (friendId) => {
-            let friend = await admin.firestore().collection('players').doc(friendId).get();
-            friends.push({ username: friend.data().username });
-        }));
-
-        res.json(friends);
+        res.status(404).json({ error: 'PLAYER NOT FOUND'});
     }
 });
 
@@ -69,7 +88,7 @@ app.post('/user/friend', async (req, res) => {
         res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST' });
     } else {
         let friendId = docs.docs[0].id;
-        let ref = players.doc(req.body.userId);
+        let ref = players.doc(req.user.uid);
         try {
             await ref.update({ friends: admin.firestore.FieldValue.arrayUnion(friendId) });
             res.status(200).end();
@@ -86,13 +105,77 @@ app.delete('/user/friend', async (req, res) => {
         res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST' });
     } else {
         let friendId = docs.docs[0].id;
-        let ref = players.doc(req.body.userId);
+        let ref = players.doc(req.user.uid);
         try {
             await ref.update({ friends: admin.firestore.FieldValue.arrayRemove(friendId) });
             res.status(200).end();
         } catch (error) {
             res.status(500).json({ 'error': error });
         }
+    }
+});
+
+app.get('/query/user/:name', async (req, res) => {
+    const players = admin.firestore().collection('players');
+    let docs = await players.where('username', '>', '').select('username').get();
+    let limit = 10;
+    let results = [];
+    for (let doc of docs.docs) {
+        let player = doc.data();
+
+        if (player.username.toLowerCase().includes(req.params.name.toLocaleLowerCase())) {
+            results.push(doc.id);
+        }
+
+        if (results.length >= limit) {
+            break;
+        }
+    }
+
+    if (results.length > 0) {
+        let refs = await admin.firestore().getAll(...results.map(id => players.doc(id)));
+        console.log(refs);
+        let result = []
+        for (let doc of refs) {
+            let player = doc.data();
+
+            if (typeof player.level !== 'undefined') {
+                player.level = Object.values(player.level).map(attribute => Object.values(attribute).reduce((a, b) => a + b, 0)).reduce((a, b) => a + b, 0);
+            } else {
+                player.level = 0;
+            }
+
+            if (typeof player.trackRecord !== 'undefined') {
+                player.losses = player.trackRecord.filter(record => record.lost).length;
+                player.winnings = player.trackRecord.filter(record => record.won).length;
+                player.drawn = player.trackRecord.filter(record => typeof record.winners !== 'undefined').filter(record => record.winners.length > 1).length;
+            } else {
+                player.losses = 0;
+                player.winnings = 0;
+                player.drawn = 0;
+            }
+            player.name = player.username;
+            // hide player specific fields
+            player.trackRecord = undefined;
+            player.last_upgrade_action = undefined;
+            player.coins = undefined;
+            let score = player.score;
+            player.score = undefined;
+            player.friends = undefined;
+            player.username = undefined;
+            if (typeof score === 'undefined' || isNaN(score)) {
+                let scores = await players.where('score', '>', 0).get();
+                player = Object.assign(player, {ranking: scores.size});
+            } else {
+                let scores = await players.where('score', '>=', score).get();
+                player = Object.assign(player, {ranking: scores.size});
+            }
+            result.push(player);        
+        }
+
+        res.json(result);
+    } else {
+        res.json([]);
     }
 });
 
@@ -105,10 +188,10 @@ app.post('/user/challenge', async (req, res) => {
     } else {
         let opponentId = docs.docs[0].id;
         let opponent = docs.docs[0].data();
-        if (opponentId === req.body.playerId) {
+        if (opponentId === req.user.uid) {
             res.status(400).json({ error: 'CANNOT CREATE A GAME CHALLENGING YOURSELF' });
         } else {
-            let doc = await players.doc(req.body.playerId).get();
+            let doc = await players.doc(req.user.uid).get();
             if (!doc.exists) {
                 res.status(404).json({ error: 'PLAYER NOT FOUND' });
             } else {
@@ -129,7 +212,7 @@ app.post('/user/challenge', async (req, res) => {
                 let session = {
                     players: [
                         opponentId,
-                        req.body.playerId
+                        req.user.uid
                     ],
                     created: new Date(),
                     last_changed: new Date(),
@@ -140,7 +223,7 @@ app.post('/user/challenge', async (req, res) => {
                     events_from_1: [],
                     lastProcessedEvent: [0, 0],
                     game: {
-                        players: [entities.createPlayer(req.body.opponent, opponentId, 'PlayerType.HUMAN', opponentLevel), entities.createPlayer(player.username, req.body.playerId, 'PlayerType.HUMAN', playerLevel)],
+                        players: [entities.createPlayer(req.body.opponent, opponentId, 'PlayerType.HUMAN', opponentLevel), entities.createPlayer(player.username, req.user.uid, 'PlayerType.HUMAN', playerLevel)],
                         currentPlayerIndex: coinToss,
                         state: 'GameStateTypes.CHOOSE_FIELD_OR_START',
                         isRunning: true,
@@ -151,18 +234,19 @@ app.post('/user/challenge', async (req, res) => {
 
                 try {
                     let databaseSession = await admin.firestore().collection('multiplayerGameSessions').add(session);
-                    permissions.doc(req.body.playerId).get().then(doc => {
+                    permissions.doc(opponentId).get().then(doc => {
                         if (doc.exists) {
                             permission = doc.data();
                             if (typeof permission.messaging !== 'undefined') {
                                 permission.messaging.forEach(token => {
                                     const payload = {
-                                        'notification': {
-                                            'title': player.username + ' challenges you @battlechoc',
-                                            'body': 'This could be a great fight!',
-                                            'click_action': 'https://battlechoc.com?sessionId=' + databaseSession.id
-                                        },
-                                        'to': token
+                                      'notification': {
+                                        'title':  player.username + ' challenges you @battlechoc',
+                                        'body': 'This could be a great fight!',
+                                        'click_action': 'https://battlechoc.com?sessionId=' + databaseSession.id,
+                                        'image': 'https://battlechoc.com/icon-144x144.png'
+                                      },
+                                      'to': token
                                     }
 
                                     axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
@@ -284,20 +368,32 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         res.status(404).json({ error: 'SESSION NOT FOUND' });
     } else {
         let session = doc.data();
+        if (!session.players.includes(req.user.uid)) {
+            return res.status(401).end();
+        }
+
         let issuer = req.body.event.payload.issuer;
 
         if (issuer === session.game.players[0].id) {
             console.log('push event to player 0 event array', req.body.event)
             try {
-                await ref.update({ events_from_0: admin.firestore.FieldValue.arrayUnion(req.body.event) });
+                await ref.update({ 
+                    events_from_0: admin.firestore.FieldValue.arrayUnion(req.body.event), 
+                    last_changed: new Date()
+                });
             } catch (error) {
+                console.warn('Failed to push event ' + req.body.event.toString() + ' to the event list of player 0');
                 return res.status(500).json({ 'error': error });
             }
         } else if (issuer === session.game.players[1].id) {
             console.log('push event to player 1 event array', req.body.event)
             try {
-                await ref.update({ events_from_1: admin.firestore.FieldValue.arrayUnion(req.body.event) });
+                await ref.update({ 
+                    events_from_1: admin.firestore.FieldValue.arrayUnion(req.body.event),
+                    last_changed: new Date()  
+                });
             } catch (error) {
+                console.warn('Failed to push event ' + req.body.event.toString() + ' to the event list of player 1');
                 return res.status(500).json({ 'error': error });
             }
         } else {
@@ -324,12 +420,13 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                     if (typeof permission.messaging !== 'undefined') {
                         permission.messaging.forEach(token => {
                             const payload = {
-                                'notification': {
-                                    'title': opponent + ' finished the turn @battlechoc',
-                                    'body': 'Let\'s go. It\'s your move!',
-                                    'click_action': 'https://battlechoc.com?sessionId=' + req.body.sessionId
-                                },
-                                'to': token
+                              'notification': {
+                                'title':  opponent + ' finished the turn @battlechoc',
+                                'body': 'Let\'s go. It\'s your move!',
+                                'click_action': 'https://battlechoc.com?sessionId=' + req.body.sessionId,
+                                'image': 'https://battlechoc.com/icon-144x144.png'
+                              },
+                              'to': token
                             }
 
                             axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
@@ -345,19 +442,26 @@ app.post('/multiplayer/relay/action', async (req, res) => {
             res.status(400).json(result);
         } else {
             try {
-                await ref.set(session, { merge: true });
+                delete session.events_from_0;
+                delete session.events_from_1;
+
+                await ref.set(session, {merge: true});
                 res.status(200).end();
             } catch (error) {
-                res.status(500).json({ 'error': error });
+                res.status(500).json({ 'error': error.toString() });
             }
         }
     }
 });
 
-app.get('/multiplayer/sessions/:userId', async (req, res) => {
+app.post('/surrender', async (req, res) => {
+
+});
+
+app.get('/multiplayer/sessions', async (req, res) => {
     let docs = null;
     try {
-        docs = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.params.userId).get();
+        docs = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
     } catch (error) {
         return res.status(500).json({ error: error });
     }
@@ -365,7 +469,7 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
     if (docs.size > 0) {
         docs.forEach(doc => {
             let game = doc.data();
-            let playerIndex = game.game.players.findIndex(player => player.id === req.params.userId);
+            let playerIndex = game.game.players.findIndex(player => player.id === req.user.uid);
             if (game.game.isRunning) {
                 games.push({
                     'id': doc.id,
@@ -373,8 +477,8 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
                     'status': game.status,
                     'last_changed': game.last_changed.toMillis(),
                     'created': game.created.toMillis(),
-                    'myTurn': game.currentPlayerIndex === playerIndex,
-                    'turns': game['events_from_' + playerIndex].filter(event => event.payload.type === 'battlechoc/gameplay/finishTurn').length,
+                    'myTurn': game.game.currentPlayerIndex === playerIndex,
+                    'turns': game['events_from_' + playerIndex].filter(event => event.type === 'battlechoc/gameplay/finishTurn').length,
                     'statistics': game.game.players[playerIndex].statistics
                 });
             }
@@ -382,24 +486,35 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
 
         for (let i = 0; i < games.length; i++) {
             let game = games[i];
-            let opponentId = game.players.filter(playerId => playerId != req.params.userId)[0];
+            let opponentId = game.players.filter(playerId => playerId != req.user.uid)[0];
             const players = admin.firestore().collection('players');
             let doc = await players.doc(opponentId).get();
             if (doc.exists) {
                 let opponent = doc.data();
-                let winnings = opponent.trackRecord.filter(record => record.won).length;
-                let losses = opponent.trackRecord.filter(record => record.lost).length;
-                let drawn = opponent.trackRecord.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+                
+                let winnings = 0;
+                let losses = 0;
+                let drawn = 0;
+                if (typeof opponent.trackRecord !== 'undefined') {
+                    winnings = opponent.trackRecord.filter(record => record.won).length;
+                    losses = opponent.trackRecord.filter(record => record.lost).length;
+                    drawn = opponent.trackRecord.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+                }
 
                 if (typeof opponent.level === 'undefined') {
                     opponent.level = entities.EmptyPlayerStats.level;
                 }
 
                 let level = Object.values(opponent.level)
-                    .map(attributes => Object.values(attributes).reduce((level, prev) => Number(level) + Number(prev)))
-                    .reduce((value, prev) => value + prev);
-
-                let ranking = (await players.where('score', '>=', opponent.score).get()).size
+                            .map(attributes => Object.values(attributes).reduce((level, prev) => Number(level) + Number(prev)))
+                            .reduce((value, prev) => value + prev);
+                
+                let ranking = 0;
+                if (typeof opponent.score === 'undefined' || isNaN(opponent.score)) {
+                    ranking = (await players.where('score', '>', 0).get()).size
+                } else {
+                    ranking = (await players.where('score', '>=', opponent.score).get()).size
+                }
 
                 games[i].opponent = {
                     name: opponent.username,
@@ -410,7 +525,15 @@ app.get('/multiplayer/sessions/:userId', async (req, res) => {
                     winnings: winnings
                 }
             } else {
-                return res.status(404).json({ error: 'OPPONENT NOT FOUND' });
+                games[i].game.isRunning = false;
+                games[i].opponent = {
+                    name: 'Chocnonymous',
+                    ranking: 0,
+                    level: 0,
+                    drawn: 0,
+                    losses: 0,
+                    winnings: 0
+                }
             }
         }
 
@@ -435,7 +558,7 @@ const basicLevel = {
 
 app.post('/upgrade/entity', (req, res) => {
     let players = admin.firestore().collection('players');
-    players.doc(req.body.player).get().then(doc => {
+    players.doc(req.user.uid).get().then(doc => {
         if (doc.exists) {
             let player = doc.data();
 
@@ -454,7 +577,7 @@ app.post('/upgrade/entity', (req, res) => {
                 } else {
                     level[req.body.entity][req.body.attribute] = level[req.body.entity][req.body.attribute] + 1;
                     let upgradeAction = { id: uuidv4(), timestamp: new Date().getTime() };
-                    players.doc(req.body.player).update({
+                    players.doc(req.user.uid).update({
                         coins: player.coins - costs,
                         level: level,
                         last_upgrade_action: upgradeAction
@@ -473,7 +596,7 @@ app.post('/upgrade/entity', (req, res) => {
 
 app.post('/undo/upgrade', (req, res) => {
     let players = admin.firestore().collection('players');
-    players.doc(req.body.player).get().then(doc => {
+    players.doc(req.user.uid).get().then(doc => {
         if (doc.exists) {
             let player = doc.data();
             if (typeof player.last_upgrade_action === 'undefined' || player.last_upgrade_action === null) {
@@ -486,7 +609,7 @@ app.post('/undo/upgrade', (req, res) => {
                 let level = player.level;
                 level[req.body.entity][req.body.attribute] = level[req.body.entity][req.body.attribute] - 1;
                 let costs = entities.calculateCosts(req.body.entity, level);
-                players.doc(req.body.player).update({
+                players.doc(req.user.uid).update({
                     coins: player.coins + costs,
                     level: level,
                     last_upgrade_action: null
@@ -500,18 +623,22 @@ app.post('/undo/upgrade', (req, res) => {
     }).catch(error => res.status(500).json({ error: error.toString() }));
 });
 
-app.get('/rank/:player', (req, res) => {
+app.get('/rank', (req, res) => {
     let players = admin.firestore().collection('players');
-    players.doc(req.params.player).get().then(doc => {
-        let player = doc.data();
-        if (typeof player.score === 'undefined') {
-            players.get()
+    players.doc(req.user.uid).get().then(doc => {
+        if (doc.exists) {
+            let player = doc.data();
+            if (typeof player.score === 'undefined' || isNaN(player.score)) {
+                players.where('score', '>', 0).get()
+                .then(scores => res.json({ ranking: scores.size}))
+                .catch(error => res.status(500).json({ error: error.toString() }));
+            } else {
+                players.where('score', '>=', player.score).get()
                 .then(scores => res.json({ ranking: scores.size }))
                 .catch(error => res.status(500).json({ error: error.toString() }));
+            }
         } else {
-            players.where('score', '>=', player.score).get()
-                .then(scores => res.json({ ranking: scores.size }))
-                .catch(error => res.status(500).json({ error: error.toString() }));
+            res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
         }
     }).catch(error => res.status(500).json({ error: error.toString() }));
 });
@@ -565,10 +692,10 @@ app.get('/user/:name', async (req, res) => {
         player.score = undefined;
         player.username = undefined;
 
-        if (typeof score === 'undefined') {
-            players.get()
-                .then(scores => res.json(Object.assign(player, { ranking: scores.size })))
-                .catch(error => res.status(500).json({ error: error.toString() }));
+        if (typeof score === 'undefined' || isNaN(score)) {
+            players.where('score', '>', 0).get()
+            .then(scores => res.json(Object.assign(player, {ranking: scores.size})))
+            .catch(error => res.status(500).json({ error: error.toString() }));
         } else {
             players.where('score', '>=', score).get()
                 .then(scores => res.json(Object.assign(player, { ranking: scores.size })))
@@ -577,24 +704,93 @@ app.get('/user/:name', async (req, res) => {
     }
 });
 
-app.post('/user/username', (req, res) => {
+app.get('/random/opponent', async (req, res) => {
     let players = admin.firestore().collection('players');
-    players.doc(req.body.player).get().then(doc => {
-        let regex = /^([a-zA-Z][a-zA-Z0-9_]{3,15})$/;
-        if (regex.test(req.body.username) && req.body.username.toUpperCase() !== 'CHOCNONYMOUS') {
-            if (doc.exists) {
-                players.doc(req.body.player).update({
-                    username: req.body.username
-                }).then(() => {
-                    res.end();
-                }).catch(error => res.status(500).json({ error: error }));
-            } else {
-                res.status(404).json({ error: 'PLAYER DOES NOT EXIST' });
-            }
+    try {
+        var docs = await players.where('username', '>', '').get();
+    } catch (error) {
+        return res.status(500).json({ error: error.toString() })
+    }
+
+    invalidOpponentIds = [req.user.uid];
+
+    sessions = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
+    for (let session of sessions.docs) {
+        invalidOpponentIds.push(session.data().players.filter(id => id !== req.user.uid)[0]);
+    }
+
+    let validDocs = docs.docs.filter(player => !invalidOpponentIds.includes(player.id));
+    if (validDocs.length === 0) {
+        res.status(404).json({ error: 'NO MATCHING PLAYER FOUND' });
+    } else {
+        let randomId = Math.floor(Math.random() * validDocs.length);
+        let player = validDocs[randomId].data();
+
+        if (typeof player.level !== 'undefined') {
+            player.level = Object.values(player.level).map(attribute => Object.values(attribute).reduce((a, b) => a + b, 0)).reduce((a, b) => a + b, 0);
         } else {
-            res.status(400).json({ error: 'USERNAME NOT VALID' });
+            player.level = 0;
         }
-    }).catch(error => res.status(500).json({ error: error.toString() }));
+
+        if (typeof player.trackRecord !== 'undefined') {
+            player.losses = player.trackRecord.filter(record => record.lost).length;
+            player.winnings = player.trackRecord.filter(record => record.won).length;
+            player.drawn = player.trackRecord.filter(record => typeof record.winners !== 'undefined').filter(record => record.winners.length > 1).length;
+        } else {
+            player.losses = 0;
+            player.winnings = 0;
+            player.drawn = 0;
+        }
+        player.name = player.username;
+        // hide player specific fields
+        player.trackRecord = undefined;
+        player.last_upgrade_action = undefined;
+        player.coins = undefined;
+        let score = player.score;
+        player.score = undefined;
+        player.username = undefined;
+
+        if (typeof score === 'undefined' || isNaN(score)) {
+            players.where('score', '>', 0).get()
+            .then(scores => res.json(Object.assign(player, {ranking: scores.size})))
+            .catch(error => res.status(500).json({ error: error.toString() }));
+        } else {
+            players.where('score', '>=', score).get()
+            .then(scores => res.json(Object.assign(player, {ranking: scores.size})))
+            .catch(error => res.status(500).json({ error: error.toString() }));
+        }
+    }
+});
+
+app.post('/user/username', async (req, res) => {
+    let players = admin.firestore().collection('players');
+
+    try {
+        var docs = await players.where('username', '==', req.body.username).get();
+    } catch (error) {
+        return res.status(500).json({ error: error.toString() });
+    }
+
+    if (docs.size > 0) {
+        res.status(400).json({ error: 'PLAYERNAME ALREADY EXISTS'});
+    } else {
+        players.doc(req.user.uid).get().then(doc => {
+            let regex = /^([a-zA-Z][a-zA-Z0-9_]{3,15})$/;
+            if (regex.test(req.body.username) && req.body.username.toUpperCase() !== 'CHOCNONYMOUS') {
+                if (doc.exists) {
+                    players.doc(req.user.uid).update({
+                        username: req.body.username
+                    }).then(() => {
+                        res.end();
+                    }).catch(error => res.status(500).json({ error: error }));
+                } else {
+                    res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
+                }
+            } else {
+                res.status(400).json({ error: 'USERNAME NOT VALID'});
+            }
+        }).catch(error => res.status(500).json({ error: error.toString() }));
+    }
 });
 
 app.post('/user/language', (req, res) => {

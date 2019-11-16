@@ -289,6 +289,9 @@ class Rules {
                 action.payload.attackType !== entities.AttackType.BUNNY && action.payload.attackType !== entities.AttackType.HOT_CHOCOLATE) {
                 console.warn('FIELD IS EMPTY');
                 return false;
+            } else if (entities.AttackType.HOT_CHOCOLATE && this.otherPlayerBoardCell(game, action.payload).molten) {
+                console.log('FIELD IS ALREADY MOLTEN');
+                return false;
             } else {
                 return true;
             }
@@ -395,8 +398,8 @@ class Reducer {
                         opponent.attacksPerTurn[entities.AttackType.HOT_CHOCOLATE] += 1;
                         opponent.attacks[entities.AttackType.HOT_CHOCOLATE] = otherPlayer(game).attacksPerTurn[entities.AttackType.HOT_CHOCOLATE];
                     }
-                } else if (attackedCell.shielded === true && attackType !== entities.AttackType.HOT_CHOCOLATE) {
-                    let damage = action.payload.attack;
+                } else if (attackedCell.shielded && attackType !== entities.AttackType.HOT_CHOCOLATE) {
+                    let damage = action.payload.damage;
                     if (attackType === entities.AttackType.TRUFFLE) {
                         damage = 0.1 * damage;
                     }
