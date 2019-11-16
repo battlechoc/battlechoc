@@ -17,6 +17,7 @@ import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';
 import { multiplayer } from '../../Multiplayer';
 import withMobileDialog from '@material-ui/core/withMobileDialog';
+import logger from '../../helper/logger';
 
 class MultiplayerScreen extends Component {
     constructor(props) {
@@ -91,7 +92,7 @@ class MultiplayerScreen extends Component {
         if (sessions.map(session => session.id).includes(sessionId)) {
             this.props.enterMultiplayerGame(sessionId);
         } else {
-            console.warn('unknown session id for joining');
+            logger.warn('unknown session id for joining');
         }
     }
 
@@ -301,7 +302,7 @@ class MultiplayerScreen extends Component {
                                     let player = await multiplayer.findRandomPlayer();
                                     this.showPlayerProfile({ opponent: player });
                                 } catch (error) {
-                                    console.warn(error.toString());
+                                    logger.warn(error.toString());
                                 } finally {
                                     this.setState({ searchingRandomOpponent: false });
                                 }
@@ -310,13 +311,12 @@ class MultiplayerScreen extends Component {
                     }} >{this.state.searchingRandomOpponent ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[this.props.language].RANDOM_OPPONENT}</div>
                     <div className="menuButton" onClick={() => {
                         multiplayer.createChallengeMeLink().then(link => {
-                            console.log(link);
                             if (navigator.share) {
                                 navigator.share({
                                     title: window.document.title,
                                     text: t[this.props.language].INVITATION,
                                     url: link,
-                                }).catch((error) => console.log('error sharing multiplayer session', error));
+                                }).catch((error) => logger.info('error sharing multiplayer session', error));
                             } else {
                                 let whatsappWindowRef = window.open();
                                 whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + link);

@@ -108,6 +108,12 @@
 
     #accountOverview > .accountAttribute {
         font-size: 2rem;
+        flex-grow: 1;
+    }
+
+    #accountOverview .accountSubAttributes {
+        margin-bottom: 15vh;
+        align-items: center;
     }
 }
 
@@ -155,13 +161,19 @@
         height: 0.6em;
     }
 
-    #accountOverview .accountAttribute {
-        font-size: 1.3rem;
+    #accountOverview > .accountAttribute {
+        font-size: 2rem;
+    }
+
+    #accountOverview > .accountAttribute svg {
+        font-size: 5rem;
+        width: 0.8em;
+        height: 0.8em;
     }
 
     #accountOverview .accountSubAttributes .accountAttribute .attributeValue {
         font-size: 1rem;
-    }    
+    }
 }
 
 @media screen and (orientation: landscape) and (max-height: 760px) {
@@ -176,11 +188,30 @@
     }
 
     #accountOverview .accountAttribute {
-        font-size: 1.3rem;
+        font-size: 1rem;
+    }
+
+    #accountOverview > .accountAttribute {
+        font-size: 2rem;
     }
 
     #accountOverview .accountSubAttributes .accountAttribute .attributeValue {
         font-size: 1rem;
+    }
+
+    #accountOverview .accountAttribute svg {
+        width: 4vw;
+        height: 4vw;
+    }
+
+    #accountOverview > .accountAttribute svg {
+        font-size: 4rem;
+        width: 1.1em;
+        height: 1.1em;
+    }
+
+    #accountOverview .accountAttribute img {
+        max-width: 6vw;
     }
 
     #accountOverview .infobox #firebaseui_container > .firebaseui-page-provider-sign-in {
@@ -220,18 +251,19 @@
 
     #accountOverview .accountSubAttributes {
         align-items: center;
+        flex-grow: 1;
         margin-bottom: 0.5em;
     }
 
     #accountOverview .accountSubAttributes .accountAttribute {
-        width: 14vw;
-        height: 14vw;
+        width: 14.2vw;
+        height: 14.2vw;
         font-size: 1rem;
     }
 
     #accountOverview .accountAttribute svg {
-        width: 0.8em;
-        height: 0.8em;
+        width: 0.6em;
+        height: 0.6em;
     }
 }
 
@@ -259,6 +291,10 @@
 
     #accountOverviewDialog .accountInfoTitle {
         display: none;
+    }
+
+    #accountOverview .accountSubAttributes {
+        margin-top: 10vh;
     }
 }
 

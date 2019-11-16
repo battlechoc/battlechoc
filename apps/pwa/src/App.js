@@ -21,6 +21,7 @@ import Hud from './ui/Hud';
 import uuidv4 from 'uuid/v4';
 import Tutorial from './tutorial/Tutorial';
 import QuickMessage from './ui/dialogs/QuickMessage';
+import logger from './helper/logger';
 
 const Scene = React.lazy(() => import('./3d/Scene'));
 
@@ -98,7 +99,7 @@ class App extends Component {
 
     handleError = error => {
         if (error instanceof BattlechocError) {
-            console.warn(error);
+            logger.warn(error);
         } else {
             throw error;
         }
@@ -286,10 +287,10 @@ class App extends Component {
                 if (typeof document.documentElement.requestFullscreen === 'function') {
                     document.documentElement.requestFullscreen().then(() => {
                         if (isAndroid) {
-                            window.screen.orientation.lock('landscape').catch(error => console.log('Unable to lock orientation to landscape'));
+                            window.screen.orientation.lock('landscape').catch(error => logger.info('Unable to lock orientation to landscape'));
                         }
                     }).catch(error => {
-                        console.log(error.name + ': ' + error.message);
+                        logger.warn(error.name + ': ' + error.message);
                     });
                 }
             }

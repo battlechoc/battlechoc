@@ -18,10 +18,17 @@ import { makeStyles } from '@material-ui/core/styles';
 import Fab from '@material-ui/core/Fab';
 
 const useStyles = makeStyles(theme => ({
-  logoutButton: {
-    color: '#f3f7df',
-    borderColor: '#f3f7df'
-  }
+    header: {
+        backgroundColor: '#324D5C',
+        boxShadow: '1px 1px 6px #000',
+        color: 'white',
+        textShadow: '1px 1px 3px #000',
+        padding: '8px'
+    },
+    logoutButton: {
+        color: '#f3f7df',
+        borderColor: '#f3f7df'
+    }
 }));
 
 const FirebaseSigninUiConfig = {
@@ -92,7 +99,7 @@ const AccountOverview = props => {
             onClose={() => props.close()}
             aria-labelledby="accountOverview"
             id="accountOverviewDialog">
-            <DialogTitle id="accountOverviewTitle">
+            <DialogTitle className={classes.header} id="accountOverviewTitle">
                 <Fab
                     size="small"
                     color="primary"
