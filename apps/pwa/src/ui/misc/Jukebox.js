@@ -1,3 +1,5 @@
+import logger from '../../helper/logger';
+
 class Jukebox {
     constructor() {
         this.mute = false;
@@ -82,7 +84,7 @@ class Audio {
         this.url = url;
         this.loop = loop;
         this.offset = 0;
-        this.load().catch(error => console.warn('Audio was unable to load: ' + error));
+        this.load().catch(error => logger.warn('Audio was unable to load: ' + error));
     }
 
     load() {
@@ -108,7 +110,7 @@ class Audio {
                     try {
                         this.source.stop();
                     } catch (error) {
-                        console.log(error);
+                        logger.info(error);
                     }
                 }
                 this.source = this.context.createBufferSource();
@@ -136,7 +138,7 @@ class Audio {
             try {
                 this.source.stop();
             } catch (error) {
-                console.log(error);
+                logger.info(error);
             }
         }
     }

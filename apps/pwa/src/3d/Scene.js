@@ -12,6 +12,7 @@ import { playerHasAttacks } from '../gameplay/Player';
 import { Scene as BabylonScene, DynamicTexture, Mesh, StandardMaterial, DirectionalLight, Engine, HighlightLayer, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation, MeshBuilder } from 'babylonjs';
 import { AssetLoadingViewContainer as AssetLoadingView } from '../AssetLoader';
 import 'babylonjs-loaders';
+import logger from '../helper/logger';
 
 class Scene extends Component {
 
@@ -354,7 +355,7 @@ class Scene extends Component {
                                         this.props.deselectBuildings();
                                     }).catch(error => {
                                         if (error instanceof BattlechocError) {
-                                            console.warn(error);
+                                            logger.warn(error);
                                         } else {
                                             throw error;
                                         }
@@ -365,7 +366,7 @@ class Scene extends Component {
                                         this.props.deselectAttack();
                                     }).catch(error => {
                                         if (error instanceof BattlechocError) {
-                                            console.warn(error);
+                                            logger.warn(error);
                                         } else {
                                             throw error;
                                         }
@@ -377,7 +378,7 @@ class Scene extends Component {
                 }
             }).catch(error => {
                 if (error instanceof BattlechocError) {
-                    console.warn(error);
+                    logger.warn(error);
                 } else {
                     throw error;
                 }
@@ -435,7 +436,7 @@ class Scene extends Component {
                     if (undepletedAttack.length > 0) {
                         this.props.selectAttack(undepletedAttack[0]).catch(error => {
                             if (error instanceof BattlechocError) {
-                                console.warn(error);
+                                logger.warn(error);
                             } else {
                                 throw error;
                             }
@@ -444,7 +445,7 @@ class Scene extends Component {
                 }
             }).catch(error => {
                 if (error instanceof BattlechocError) {
-                    console.warn(error);
+                    logger.warn(error);
                 } else {
                     throw error;
                 }

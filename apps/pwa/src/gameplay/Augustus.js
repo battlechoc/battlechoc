@@ -2,6 +2,7 @@ import { EntityType, AttackType, BoardCellTypes, createEntity, getEntityDescript
 import { BattlechocError } from './Errors';
 import { NonPlayerCharacter } from './Player';
 import { Jukebox } from '../ui/misc';
+import logger from '../helper/logger';
 
 const AugustusType = Object.freeze({
     DEFENSIVE: 'AugustusType.DEFENSIVE',
@@ -80,7 +81,7 @@ export default class Augustus extends NonPlayerCharacter {
                 await this.actions.finishTurn({ issuer: this.player.id });
             } catch (error) {
                 if (error instanceof BattlechocError) {
-                    this.devhint(error);
+                    logger.info(error);
                 } else {
                     throw error;
                 }
@@ -164,7 +165,7 @@ export default class Augustus extends NonPlayerCharacter {
 
     handleAttackError(error) {
         if (error instanceof BattlechocError) {
-            this.devhint(error.message);
+            logger.info(error.message);
             this.actions.finishTurn({ issuer: this.player.id });
         } else {
             throw error;
@@ -220,7 +221,7 @@ export default class Augustus extends NonPlayerCharacter {
 
             if (this.player.attacks[AttackType.BUNNY] > 0 && creamyFields.length) {
                 let target = creamyFields[Math.floor(Math.random() * creamyFields.length)];
-                this.devhint('OPPONENT BUNNY IS GOING TO SPY : ' + target);
+                logger.info('OPPONENT BUNNY IS GOING TO SPY : ' + target);
                 this.simulateAttack(target, AttackType.BUNNY, detonateAtShield, showEnergyBar, hideEnergyBar);
             } else if (this.player.attacks[AttackType.HOT_CHOCOLATE] > 0) {
                 let target;
@@ -243,7 +244,7 @@ export default class Augustus extends NonPlayerCharacter {
             } else {
                 this.actions.finishTurn({ issuer: this.player.id }).catch(error => {
                     if (error instanceof BattlechocError) {
-                        this.devhint(error);
+                        logger.info(error);
                     } else {
                         throw error;
                     }
@@ -292,17 +293,11 @@ export default class Augustus extends NonPlayerCharacter {
         }
     }
 
-    devhint(message) {
-    	if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    		console.log('DEV HINT: ', message);
-    	}
-    }
-
     setBuildingAtBestPosition(possibleCells, building) {
         return new Promise((resolve, reject) => {
             let bestCellsForBuilding = this.getBestCellsForBuilding(possibleCells.filter(cell => cell.molten === false), building.type);
             let targetCell = (bestCellsForBuilding.length > 0) ? bestCellsForBuilding[Math.floor(Math.random() * bestCellsForBuilding.length)] : possibleCells[Math.floor(Math.random() * possibleCells.length)];
-            this.devhint(building.type + ' ' + targetCell.row + ' ' + targetCell.col + ' ' + targetCell.type);
+            logger.info(building.type + ' ' + targetCell.row + ' ' + targetCell.col + ' ' + targetCell.type);
 
             building.position = {
                 row: targetCell.row,
@@ -314,7 +309,7 @@ export default class Augustus extends NonPlayerCharacter {
 
     handleBuildError(error) {
         if (error instanceof BattlechocError) {
-            this.devhint(error);
+            logger.info(error);
         } else {
             throw error;
         }

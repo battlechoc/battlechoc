@@ -79,7 +79,6 @@ class MeshPreview extends Component {
         	});
 
         	if (entity === EntityType.CHOCOLATE_FOUNTAIN) {
-        		console.log(this.preview)
         		this.preview.forEach(mesh => {
 	                if (mesh.material) {
 	                	if (mesh.material.name === 'Shield') {

@@ -11,6 +11,7 @@ import MeshPreview from '../../3d/MeshPreview';
 import IconButton from '@material-ui/core/IconButton';
 import Snackbar from '@material-ui/core/Snackbar';
 import { ServerRequest } from '../../helper/settings';
+import logger from '../../helper/logger';
 
 class Choclab extends Component {
     constructor(props) {
@@ -60,7 +61,7 @@ class Choclab extends Component {
                                         "upgradeAction": undefined
                                     })
                                 })
-                            }).catch(error => console.warn(error));
+                            }).catch(error => logger.warn(error));
                         }}
                       >
                         <Undo />
@@ -106,7 +107,7 @@ class Choclab extends Component {
                                                     }
                                                 })
                                             });
-                                        }).catch(error => console.warn(error));
+                                        }).catch(error => logger.warn(error));
                                     }} /> : null }
                                 </div>
                             </div>

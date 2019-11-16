@@ -8,6 +8,7 @@ import { GameActionTypes } from './gameplay/GameActions';
 import { AttackType } from './gameplay/GameEntities';
 import { Jukebox } from './ui/misc';
 import { ServerRequest } from './helper/settings';
+import logger from './helper/logger';
 
 const MultiplayerGameSessionState = Object.freeze({
     UNINITIALIZED: 'MultiplayerGameSessionState.Uninitialized',
@@ -43,24 +44,24 @@ class Multiplayer {
 
         this.localPlayerIndex = 0;
         this.callbacks = {
-            updatePlayerStats: () => console.warn("calling updatePlayerStats without beeing initialized"),
-            notifyPlayerSignedIn: () => console.warn("calling notifyPlayerSignedIn without beeing initialized"),
-            updateMultiplayerSessions: () => console.warn("calling updateMultiplayerSessions without beeing initialized"),
-            loadFriendsList: () => console.warn("calling loadFriendsList without beeing initialized"),
-            setPlayerRank: () => console.warn("calling setPlayerRank without beeing initialized")
+            updatePlayerStats: () => logger.warn("calling updatePlayerStats without beeing initialized"),
+            notifyPlayerSignedIn: () => logger.warn("calling notifyPlayerSignedIn without beeing initialized"),
+            updateMultiplayerSessions: () => logger.warn("calling updateMultiplayerSessions without beeing initialized"),
+            loadFriendsList: () => logger.warn("calling loadFriendsList without beeing initialized"),
+            setPlayerRank: () => logger.warn("calling setPlayerRank without beeing initialized")
         };
 
         try {
             firebase.initializeApp(firebaseConfig);
             firebase.firestore().enablePersistence()
-            .catch(err => console.log("could not enable offline persistence of firestore.", err));
+            .catch(err => logger.info("could not enable offline persistence of firestore.", err));
             this.messaging = firebase.messaging();
             this.messaging.usePublicVapidKey("BJ6zc8pE57SS98ocjLmtHBuaGgDjIirTpAALyYIR_zywwBJbmssDWhbn78WPhoJfjN28htOBI4bwlVzjwHMCqak");
             firebase.auth().onAuthStateChanged((user) => {
                 this.authStateChanged(user);
             });
         } catch (error) {
-            console.log(error);
+            logger.info(error);
         }
     }
 
@@ -72,10 +73,10 @@ class Multiplayer {
                         let ref = firebase.firestore().collection('permissions').doc(user.uid);
                         ref.set({ messaging: firebase.firestore.FieldValue.arrayUnion(currentToken) }, {merge: true} );
                     } else {
-                        console.log('No Instance ID token available. Request permission to generate one.');
+                        logger.info('No Instance ID token available. Request permission to generate one.');
                     }
                 }).catch((error) => {
-                    console.log('An error occurred while retrieving token. ', error);
+                    logger.info('An error occurred while retrieving token. ', error);
                 });
             
                 this.messaging.onTokenRefresh(() => {
@@ -83,11 +84,11 @@ class Multiplayer {
                         let ref = firebase.firestore().collection('permissions').doc(user.uid);
                         ref.set({ messaging: firebase.firestore.FieldValue.arrayUnion(refreshedToken) }, {merge: true} );
                     }).catch((err) => {
-                        console.log('Unable to retrieve refreshed token ', err);
+                        logger.info('Unable to retrieve refreshed token ', err);
                     });
                 });
             } else {
-                console.log('Unable to get permission to notify.');
+                logger.info('Unable to get permission to notify.');
             }
         });
     }
@@ -101,7 +102,7 @@ class Multiplayer {
             firebase.firestore().collection('players').doc(user.uid).set({}, { merge: true }).then(() => {
                 this.mergePlayerStats();
             }).catch(err => {
-                console.log("could not create player entry.", err);
+                logger.info("could not create player entry.", err);
             });
 
             this.localPlayer = user;
@@ -110,7 +111,7 @@ class Multiplayer {
             this.fetchFriendsList();
             this.computeRank();
         } else {
-            console.log('try to signin');
+            logger.info('try to signin');
             this.localPlayer = undefined;
             this.signInAnonymouslyIfNotAlreadySignedIn();
         }
@@ -129,7 +130,7 @@ class Multiplayer {
             const playerInfosRef = firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid);
             playerInfosRef.get().then(doc => {
                 if (!doc.exists) {
-                    console.warn('No such document!');
+                    logger.warn('No such document!');
                 } else {
                     let playerStats = doc.data();
                     if (typeof playerStats.trackRecord === 'undefined') {
@@ -139,10 +140,10 @@ class Multiplayer {
                     let calculatedCoins = this.calculateCoinsFromTrackRecord(gameStats);
                     playerStats.coins = playerStats.coins + calculatedCoins;
                     playerStats.score = isNaN(playerStats.score) ? calculatedCoins : playerStats.score + calculatedCoins; 
-                    playerInfosRef.update(playerStats).catch(err => console.warn("could not update player track record.", err));
+                    playerInfosRef.update(playerStats).catch(err => logger.warn("could not update player track record.", err));
                     this.callbacks.updatePlayerStats(playerStats);
                 }
-            }).catch(err => console.warn("could not retrieve player track record.", err));
+            }).catch(err => logger.warn("could not retrieve player track record.", err));
         } else {
             OfflineStore.playerStore.get('stats').then(playerStats => {
                 if (typeof playerStats.trackRecord === 'undefined') {
@@ -155,10 +156,10 @@ class Multiplayer {
                 try {
                     OfflineStore.playerStore.set('stats', playerStats)
                 } catch (error) {
-                    console.warn(error);
+                    logger.warn(error);
                 }
                 this.callbacks.updatePlayerStats(playerStats);
-            }).catch(err => console.warn("could not retrieve offline player stats", err));
+            }).catch(err => logger.warn("could not retrieve offline player stats", err));
         }
     }
 
@@ -167,7 +168,7 @@ class Multiplayer {
             try {
                 var offlineAccount = await OfflineStore.playerStore.get('stats');
             } catch (error) {
-                console.warn('failed to get player infos from offline store', error);
+                logger.warn('failed to get player infos from offline store', error);
                 return this.fetchPlayerStats();
             }
 
@@ -180,7 +181,7 @@ class Multiplayer {
                     try {
                         firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).set(offlineAccount);
                     } catch(error) { 
-                        console.log('could not store stats for player', error); 
+                        logger.info('could not store stats for player', error); 
                     }
                 } else {
                     let onlineAccount = doc.data();
@@ -200,8 +201,8 @@ class Multiplayer {
                         }
                     });
 
-                    ref.update(onlineAccount).catch(error => console.warn("could not update player track record.", error));
-                    OfflineStore.playerStore.set('stats', onlineAccount).catch(error => console.warn("could not set new player stats in idb.", error));
+                    ref.update(onlineAccount).catch(error => logger.warn("could not update player track record.", error));
+                    OfflineStore.playerStore.set('stats', onlineAccount).catch(error => logger.warn("could not set new player stats in idb.", error));
                     
                     this.callbacks.updatePlayerStats(onlineAccount);
                 }
@@ -216,7 +217,7 @@ class Multiplayer {
             try {
                 var doc = await ref.get();
             } catch (error) {
-                return console.warn(error);
+                return logger.warn(error);
             }
 
             if (doc.exists) {
@@ -226,7 +227,7 @@ class Multiplayer {
                     await ref.set(EmptyPlayerStats);
                     this.callbacks.updatePlayerStats(EmptyPlayerStats);
                 } catch (error) { 
-                    console.log('Could not store coins for player', error);
+                    logger.info('Could not store coins for player', error);
                 }
             }
         } else {
@@ -235,7 +236,7 @@ class Multiplayer {
             } catch (error) {
                 OfflineStore.playerStore.set('stats', EmptyPlayerStats);
                 this.callbacks.updatePlayerStats(EmptyPlayerStats);
-                return console.warn(error);
+                return logger.warn(error);
             }
 
             if (typeof offlineAccount === 'undefined') {
@@ -281,7 +282,7 @@ class Multiplayer {
                 notifyPlayerSignedOut();
             }
         }).catch(function (error) {
-            console.log("could not sign out because some error happened.", error);
+            logger.info("could not sign out because some error happened.", error);
             if (typeof signOutErrorHandler !== 'undefined') {
                 signOutErrorHandler(error);
             }
@@ -293,9 +294,9 @@ class Multiplayer {
             let doc = await firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).get();
             if (doc.exists) {
                 let player = doc.data();
-                console.log(player);
+                logger.info(player);
                 if (typeof player.username !== 'undefined') {
-                    console.log('https://battlechoc.com?challenge=' + player.username);
+                    logger.info('https://battlechoc.com?challenge=' + player.username);
                     return 'https://battlechoc.com?challenge=' + player.username;
                 }
             }
@@ -307,7 +308,7 @@ class Multiplayer {
             try {
                 await ServerRequest('post', '/user/challenge', { opponent: playerName });
             } catch(error) {
-                console.warn(error)
+                logger.warn(error)
             }
         }
     }
@@ -318,10 +319,10 @@ class Multiplayer {
                 let response = await ServerRequest('get', '/multiplayer/sessions');
                 this.callbacks.updateMultiplayerSessions(response.data.sessions);
             } catch (error) {
-                console.warn('error while fetching player sessions ' + error);
+                logger.warn('error while fetching player sessions ' + error);
             }
         } else {
-            console.warn('user not logged in');
+            logger.warn('user not logged in');
         }
     }
 
@@ -332,10 +333,10 @@ class Multiplayer {
                 this.callbacks.loadFriendsList(response.data);
                 return response.data;
             } catch (error) {
-                console.warn('error while fetching friends ' + error);
+                logger.warn('error while fetching friends ' + error);
             }
         } else {
-            console.warn('user not logged in');
+            logger.warn('user not logged in');
         }        
     }
 
@@ -358,10 +359,10 @@ class Multiplayer {
                 await ServerRequest('delete', '/user/friend', { friend: friend });
                 this.fetchFriendsList();
             } catch (error) {
-                console.warn('error while removing friend ' + error);
+                logger.warn('error while removing friend ' + error);
             }
         } else {
-            console.warn('user not logged in');
+            logger.warn('user not logged in');
         }
     }
 
@@ -371,10 +372,10 @@ class Multiplayer {
                 await ServerRequest('post', '/user/friend/', { friend: friend });
                 this.fetchFriendsList();
             } catch (error) {
-                console.warn('error while adding friend ' + error);
+                logger.warn('error while adding friend ' + error);
             }
         } else {
-            console.warn('user not logged in');
+            logger.warn('user not logged in');
         }
     }
 
@@ -393,13 +394,13 @@ class Multiplayer {
     signInAnonymouslyIfNotAlreadySignedIn() {
         return new Promise((resolve, reject) => {
             if (firebase.auth().currentUser) {
-                console.log("already signed in. will not sign in again as anonymous");
+                logger.info("already signed in. will not sign in again as anonymous");
                 resolve(firebase.auth().currentUser);
             } else {
-                console.log("not signed in. trying to sign in anonymously");
+                logger.info("not signed in. trying to sign in anonymously");
                 firebase.auth().signInAnonymously().then(signInResult => {
-                    console.log("done signing in. logged in anonymously. " + firebase.auth().currentUser.uid);
-                    console.log(signInResult);
+                    logger.info("done signing in. logged in anonymously. " + firebase.auth().currentUser.uid);
+                    logger.info(signInResult);
                     this.callbacks.notifyPlayerSignedIn({
                         uid: signInResult.uid,
                         isAnonymous: signInResult.isAnonymous
@@ -464,16 +465,15 @@ class Multiplayer {
                 this.gameActions.finishBuildPhase(action.payload);
                 break;
             case GameActionTypes.endGame:
-                this.gameActions.endGame(action.payload).catch(error => console.log(error));
+                this.gameActions.endGame(action.payload).catch(error => logger.info(error));
                 break;
             default:
-                console.warn('invalid action type shall be emitted. check implementation. call the coders.');
+                logger.warn('invalid action type shall be emitted. check implementation. call the coders.');
         }
     }
 
     processEvents(events) {
         if (events.length > this.opponentEventIndex) {
-            console.log('process events ', events);
             const newEventIndex = events.length;
             events.splice(0, this.opponentEventIndex);
             events.forEach(action => {
@@ -487,11 +487,10 @@ class Multiplayer {
         if (typeof this.currentGameSession !== 'undefined' && action.payload.issuer === this.localPlayerId) {
             action.index = this.playerEventIndex;
             this.playerEventIndex += 1;
-            console.log('RELAY ACTION ' + this.playerEventIndex);
             action.emitted = firebase.firestore.Timestamp.fromDate(new Date());
 
             ServerRequest('post', '/multiplayer/relay/action', { event: action, sessionId: this.currentGameSession })
-            .catch(error => console.warn(error));
+            .catch(error => logger.warn(error));
         }
     }
 
@@ -511,7 +510,7 @@ class Multiplayer {
         try {
             var doc = await reference.get();
         } catch (error) {
-            console.error('error while fetching the session reference', error.toString());
+            logger.error('error while fetching the session reference', error.toString());
             return;
         }
 
@@ -527,7 +526,7 @@ class Multiplayer {
                     this.sessionData = session;
                     this.processEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
                 }, error => {
-                    console.error('encountered error while trying to establish observer of multiplayer session', error.toString());
+                    logger.error('encountered error while trying to establish observer of multiplayer session', error.toString());
                 });
 
                 this.opponentEventIndex = session['events_from_' + (1 - this.localPlayerIndex)].length;

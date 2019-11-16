@@ -18,6 +18,7 @@ import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
 import { multiplayer } from '../Multiplayer';
 import { ServerRequest } from '../helper/settings';
+import logger from '../helper/logger';
 
 class Hud extends Component {
     constructor(props) {
@@ -53,7 +54,7 @@ class Hud extends Component {
                     let response = await ServerRequest('get', '/user/' + this.props.challengedPlayer);
                     this.multiplayerScreen.showPlayerProfile({ opponent: response.data });
                 } catch(error) {
-                    console.warn(error);
+                    logger.warn(error);
                 }
             });
         }
@@ -66,10 +67,9 @@ class Hud extends Component {
                         sessions = await multiplayer.getMultiplayerSessions();
                         await this.sleep(250);
                     }
-                    console.log('sessions', sessions);
                     this.multiplayerScreen.tryToJoinGame(this.props.sessionId, sessions);
                 } catch (error) {
-                    console.warn(error);
+                    logger.warn(error);
                 }
             });
         }
