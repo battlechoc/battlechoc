@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ServerRequest } from '../../helper/settings';
+import { Translation as t } from '../misc';
 import Axios from 'axios';
 import { makeStyles } from '@material-ui/core/styles';
 import withWidth, { isWidthUp } from '@material-ui/core/withWidth';
@@ -82,9 +83,9 @@ export default withWidth()(props => {
         if (loading) {
             return '';
         } else if (!playerNameAvailable) {
-            return 'username already in use';
+            return t[props.language].SETTINGS_PLAYER_NAME_IN_USE;
         } else if (!playerNameValid) {
-            return 'username not valid (3-15 chars or digits, first sign should be a char)';
+            return t[props.language].SETTINGS_PLAYER_NAME_INVALID;
         } else {
             return '';
         }

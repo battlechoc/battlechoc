@@ -238,8 +238,8 @@ class Settings extends Component {
                       }}>
                         {t[this.props.language].RESTART_TUTORIAL}
                       </Button>
-                      <p className="player-name-label">Change Playername</p>
-                      <PlayerNameInput setPlayerName={this.setPlayerName} current={this.props.playerInfos.stats.username} />
+                      <p className="player-name-label">{t[this.props.language].SETTINGS_CHANGE_PLAYER_NAME}</p>
+                      <PlayerNameInput setPlayerName={this.setPlayerName} current={this.props.playerInfos.stats.username} language={this.props.language}/>
                     </div>
                   )
                 }
