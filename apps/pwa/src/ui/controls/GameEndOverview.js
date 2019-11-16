@@ -122,19 +122,19 @@ class GameEndOverview extends Component {
                 <div className="statistics">                    
                     <ul className="legend">
                         <li>
-                            <em>Attacks</em>
+                            <em>{t[this.props.language].GAME_END_OVERVIEW_ATTACKS}</em>
                             <span className="amount">{ statistics.attacks }</span>
                         </li>
                         <li>
-                            <em>Entities Overall</em>
+                            <em>{t[this.props.language].GAME_END_OVERVIEW_ENTITIES}</em>
                             <span><span className="amount">{ statistics.builtEntities }</span><b>&times; 2</b></span>
                         </li>
                         <li>
-                            <em>Espionages</em>
+                            <em>{t[this.props.language].GAME_END_OVERVIEW_ESPIONAGES}</em>
                             <span><span className="amount">{ statistics.espionages }</span><b>&times; 10</b></span>
                         </li>
                         <li>
-                            <em>Molten fields</em>
+                            <em>{t[this.props.language].GAME_END_OVERVIEW_MOLTEN_FIELDS}</em>
                             <span><span className="amount">{ statistics.moltenFields }</span><b>&times; 50</b></span>
                         </li>
                     </ul>
