@@ -154,8 +154,8 @@ class Tutorial extends Component {
 
         let dialogTitle = "Du hast es fast geschafft"
         let dialogContent = [
-            <PlayerNameInput key="1" setPlayerName={this.setPlayerName}/>,
-            <Typography key="0" >Bevor wir starten solltest du dir unbedingt einen coolen Namen überlegen! Freunde können dich anhand deines Names wiederkennen und deine Gegner bringt er vielleicht zum Zittern.</Typography>
+            <PlayerNameInput key="1" setPlayerName={this.setPlayerName} language={this.props.language}/>,
+            <Typography key="0" >{t[this.props.language].TUTORIAL_CHOOSE_NAME_INFO}</Typography>
         ];
         let dialogActions = []
 
