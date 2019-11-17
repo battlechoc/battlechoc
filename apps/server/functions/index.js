@@ -454,13 +454,32 @@ app.post('/multiplayer/relay/action', async (req, res) => {
 });
 
 app.post('/surrender', async (req, res) => {
+    let ref = admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId);
+    let doc = await ref.get();
+    if (!doc.exists) {
+        res.status(404).json({error: 'SESSION NOT FOUND'});
+    } else {
+        let session = doc.data();
+        if (!session.players.includes(req.user.uid)) {
+            return res.status(401).end();
+        }
+        let 
 
+        let event = {
+            index: 
+            type: 'battlechoc/gameplay/endGame',
+            payload: {
+                winners: session.game.players.filter(player => player.id !== req.user.uid),
+                issuer: req.user.uid
+            },
+            sessionId: req.body.sessionId
+        }
+    }
 });
 
 app.get('/multiplayer/sessions', async (req, res) => {
-    let docs = null;
     try {
-        docs = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
+        var docs = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
     } catch (error) {
         return res.status(500).json({error: error});
     }
@@ -774,7 +793,7 @@ app.post('/user/username', async (req, res) => {
         res.status(400).json({ error: 'PLAYERNAME ALREADY EXISTS'});
     } else {
         players.doc(req.user.uid).get().then(doc => {
-            let regex = /^([a-zA-Z][a-zA-Z0-9_]{3,15})$/;
+            let regex = /^([a-zA-Z][a-zA-Z0-9_]{2,15})$/;
             if (regex.test(req.body.username) && req.body.username.toUpperCase() !== 'CHOCNONYMOUS') {
                 if (doc.exists) {
                     players.doc(req.user.uid).update({
