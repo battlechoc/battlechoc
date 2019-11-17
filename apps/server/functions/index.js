@@ -682,7 +682,7 @@ app.get('/check/available/:username', (req, res) => {
     } else {
         let players = admin.firestore().collection('players');
         players.where('username', '==', req.params.username).get()
-            .then(player => res.json({ available: player.size === 0 && req.params.username.toUpperCase() !== 'CHOCNONYMOUS' }))
+            .then(player => res.json({ name: req.params.username, available: player.size === 0 && req.params.username.toUpperCase() !== 'CHOCNONYMOUS' }))
             .catch(error => res.status(500).json({ error: error.toString() }));
     }
 });
