@@ -6,6 +6,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import withWidth, { isWidthUp } from '@material-ui/core/withWidth';
 import { Send, HourglassFull } from '@material-ui/icons';
 import { Fab, TextField, CircularProgress } from '@material-ui/core';
+import logger from '../../helper/logger';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -47,30 +48,31 @@ export default withWidth()(props => {
     const CancelToken = Axios.CancelToken;
     const source = CancelToken.source();
 
-    const checkAvailable = name => {
+    const checkAvailable = async name => {
         if (name !== '') {
             if (loading) {
                 source.cancel();
             }
-
             setLoading(true);
-            ServerRequest('get', '/check/available/' + name, source.token)
-            .then(response => {
-                setPlayerNameAvailable(response.data.available);
-                setLoading(false);
-            })
-            .catch(error => {
+            
+            try {
+                let response = await ServerRequest('get', '/check/available/' + name, source.token);
+                if (response.data.name === name) {
+                    setPlayerNameAvailable(response.data.available);
+                }
+            } catch(error) {
                 if (!Axios.isCancel(error)) {
-                    console.warn(error);
+                    logger.warn(error);
                     setPlayerNameAvailable(false);
                 }
+            } finally {
                 setLoading(false);
-            });
+            }
         }
     }
 
     const validate = name => {
-        let regex = /^([a-zA-Z][a-zA-Z0-9_]{3,15})$/;
+        let regex = /^([a-zA-Z][a-zA-Z0-9_]{2,15})$/;
         return regex.test(name) && name.toUpperCase() !== 'CHOCNONYMOUS';
     }
 
@@ -101,10 +103,9 @@ export default withWidth()(props => {
                 value={playerName}
                 helperText={getHelperText()}
                 inputProps={{ spellCheck: 'false' }}
+                InputLabelProps={{ style: {color: 'rgb(48, 86, 91)'}}}
                 onChange={event => {
                     setPlayerName(event.target.value);
-                    setPlayerNameAvailable(false);
-                    setPlayerNameValid(false);
                     setUnchanged(event.target.value === props.current)
                     checkAvailable(event.target.value);
                     setPlayerNameValid(validate(event.target.value));

@@ -19,9 +19,6 @@ const variantIcon = {
 
 function QuickMessage(props) {
     const useStyles = makeStyles(theme => ({
-        warning: {
-            backgroundColor: 'rgb(91,47,25)',
-        },
         icon: {
             fontSize: 20
         },
@@ -45,6 +42,7 @@ function QuickMessage(props) {
             }
         },
         root: {
+            backgroundColor: 'rgb(91,47,25)',
             [theme.breakpoints.down('sm')]: {
                 flexGrow: 1,
                 fontSize: '0.8em',
@@ -69,7 +67,7 @@ function QuickMessage(props) {
             onClose={onClose}
         >
             <SnackbarContent
-                className={`${classes.root} ${classes[variant]}`}
+                className={classes.root}
                 aria-describedby="client-snackbar"
                 message={
                   <span id="client-snackbar" className={classes.message}>

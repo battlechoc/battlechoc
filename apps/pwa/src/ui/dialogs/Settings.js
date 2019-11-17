@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './Settings.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { changeLanguage, updatePlayerStats, hideQuickMessage, showQuickMessage } from '../UiActions';
@@ -11,6 +10,7 @@ import DialogContent from '@material-ui/core/DialogContent';
 import InputLabel from '@material-ui/core/InputLabel';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import FormControl from '@material-ui/core/FormControl';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Select from '@material-ui/core/Select';
 import Checkbox from '@material-ui/core/Checkbox';
@@ -64,12 +64,28 @@ const useStyles = makeStyles(theme => ({
       backgroundColor: '#5b2f19',
       boxShadow: '1px 1px 6px #000',
       fontSize: '1rem',
-      margin: '2vh 0',
+      marginTop: '4vh',
       textAlign: 'center',
       color: '#f3f7df',
       userSelect: 'none',
       textShadow: '1px 1px 3px #000',
       textTransform: 'uppercase'
+    },
+    inactiveButton: {
+      backgroundColor: '#555 !important',
+    },
+    dialogContent: {
+      [theme.breakpoints.up('sm')]: {
+        width: '70vw',
+        margin: '0 auto'
+      }      
+    },
+    reportInformation: {
+      marginTop: '4vh',
+      color: theme.palette.primary.main
+    },
+    primaryColor: {
+      color: theme.palette.primary.main
     }
 }));
 
@@ -78,6 +94,7 @@ const Settings = props =>  {
   const [withDeviceInformation, setWithDeviceInformation] = useState(false);
   const [showAttentionText, setShowAttentionText] = useState(false);
   const [additionalReportMessage, setAdditionalReportMessage] = useState(false);
+  const [sendingReport, setSendingReport] = useState(false);
   const [editPlayerName, setEditPlayerName] = useState(false);
 
   const classes = useStyles();
@@ -88,7 +105,7 @@ const Settings = props =>  {
       OfflineStore.playerStore.get('stats').then(playerStats => {
         playerStats.username = playerName;
         OfflineStore.playerStore.set('stats', playerStats);
-        props.close();
+        setEditPlayerName(false);
       })
     }).catch(error => console.warn(error));
   }
@@ -119,7 +136,6 @@ const Settings = props =>  {
           <Fab
               size="small"
               color="primary"
-              aria-label="back"
               onClick={() => {
                   Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                   setShowErrorReport(false);
@@ -129,61 +145,73 @@ const Settings = props =>  {
           <span className={classes.headline}>{t[props.language].REPORT_PROBLEM}</span>
         </DialogTitle>
         <DialogContent>
-          <form noValidate autoComplete="off">
-            <Typography>{t[props.language].REPORT_INFORMATION}</Typography>
-            <TextField
-              label={t[props.language].REPORT_CUSTOM_MESSAGE}
-              placeholder={t[props.language].REPORT_CUSTOM_MESSAGE_PLACEHOLDER}
-              multiline
-              fullWidth
-              InputProps={{ style: { fontSize: '0.9rem' } }}
-              InputLabelProps={{
-                style: { color: '#457B82' },
-                shrink: true
-              }}
-              className={classes.userReport}
-              variant="outlined"
-              onChange={event => setAdditionalReportMessage(event.target.value)}
-            />
-          </form>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={withDeviceInformation}
-                onChange={event => {
-                  Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                  if (event.target.checked) {
-                    setWithDeviceInformation(true);
-                  } else {
-                    setWithDeviceInformation(false);
-                  }
+          <div className={classes.dialogContent}>
+            <form noValidate autoComplete="off">
+              <TextField
+                label={t[props.language].REPORT_CUSTOM_MESSAGE}
+                placeholder={t[props.language].REPORT_CUSTOM_MESSAGE_PLACEHOLDER}
+                multiline
+                fullWidth
+                InputProps={{ style: { fontSize: '0.9rem' } }}
+                InputLabelProps={{
+                  style: { color: '#457B82' },
+                  shrink: true
                 }}
+                className={`${classes.userReport}`}
+                inputProps={{className: classes.primaryColor }}
+                variant="outlined"
+                onChange={event => setAdditionalReportMessage(event.target.value)}
               />
-            }
-            label={t[props.language].REPORT_DEVICE_INFO}
-          />
-          <div className={classes.menuButton} onClick={async () => {
-            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-            try {
-              let gamestate = await OfflineStore.gamestateStore.get('gamestate');
-              let report = {
-                deviceInformation: withDeviceInformation ? navigator.userAgent : undefined,
-                gamestate: gamestate,
-                message: additionalReportMessage,
-                logs: logger.summarize()
-              };
-              await ServerRequest('post', '/debugging/gamestate', { report: report })
-            } catch(error) {
-              logger.warn(error);
-              props.showQuickMessage({ 
-                text: t[props.language].ERROR_SENDING_PROBLEM_REPORT, 
-                variant: 'error' 
-              });
-            }
-            setAdditionalReportMessage('')
-            setWithDeviceInformation(false)
-            setShowErrorReport(false);
-          }}>{t[props.language].REPORT_PROBLEM}</div>
+            </form>
+            <FormControlLabel
+              className={classes.primaryColor}
+              control={
+                <Checkbox
+                  checked={withDeviceInformation}
+                  onChange={event => {
+                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                    setWithDeviceInformation(event.target.checked);
+                  }}
+                />
+              }
+              label={t[props.language].REPORT_DEVICE_INFO}
+            />
+            <div className={`${classes.menuButton} ${sendingReport ? classes.inactiveButton : ''}`} onClick={async () => {
+              if (!sendingReport) {
+                setSendingReport(true);
+                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                try {
+                  let gamestate = await OfflineStore.gamestateStore.get('gamestate');
+                  let report = {
+                    deviceInformation: withDeviceInformation ? navigator.userAgent : undefined,
+                    gamestate: gamestate,
+                    player: props.playerInfos.stats.username,
+                    message: additionalReportMessage,
+                    logs: logger.summarize(),
+                    report_date: (new Date()).getTime()
+                  };
+                  await ServerRequest('post', '/debugging/gamestate', { report: report });
+                  props.showQuickMessage({ 
+                    text: t[props.language].SUCCESSFULLY_SENDING_PROBLEM_REPORT, 
+                    variant: 'success' 
+                  });
+                } catch(error) {
+                  logger.warn(error);
+                  props.showQuickMessage({ 
+                    text: t[props.language].ERROR_SENDING_PROBLEM_REPORT, 
+                    variant: 'error' 
+                  });
+                } finally {
+                  setAdditionalReportMessage('')
+                  setWithDeviceInformation(false)
+                  setShowErrorReport(false);
+                  setSendingReport(false)
+                  props.close();
+                }
+              }
+            }}>{sendingReport ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].REPORT_PROBLEM}</div>
+            <Typography className={classes.reportInformation}>{t[props.language].REPORT_INFORMATION}</Typography>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -202,64 +230,67 @@ const Settings = props =>  {
           <span className={classes.headline}>{t[props.language].SETTINGS}</span>
         </DialogTitle>
         <DialogContent>
-          { editPlayerName ? <PlayerNameInput setPlayerName={setPlayerName} current={props.playerInfos.stats.username} language={props.language}/> :
-            <div className={classes.username}>
-              <AccountCircle className={classes.accountCircle} /> { props.playerInfos.stats.username }
-              <Fab onClick={() => setEditPlayerName(true)} className={classes.editUsername} size="small" color="primary"><Edit /></Fab>
-            </div>
-          }
-          <FormControl id="settingsFormControl">
-            <InputLabel htmlFor="lang-selection">{t[props.language].LANGUAGE}</InputLabel>
-            <Select
-              native
-              value={props.language}
-              onChange={event => {
+          <div className={classes.dialogContent}>
+            { 
+              typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous' ?
+                editPlayerName ? <PlayerNameInput setPlayerName={setPlayerName} current={props.playerInfos.stats.username} language={props.language}/> :
+                <div className={classes.username}>
+                  <AccountCircle className={classes.accountCircle} /> { props.playerInfos.stats.username }
+                  <Fab onClick={() => setEditPlayerName(true)} className={classes.editUsername} size="small" color="primary"><Edit /></Fab>
+                </div> : null
+            }
+            <FormControl style={{width: '100%'}}>
+              <InputLabel htmlFor="lang-selection" style={{color: 'rgb(48, 86, 91)'}}>{t[props.language].LANGUAGE}</InputLabel>
+              <Select
+                native
+                value={props.language}
+                onChange={event => {
+                  Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                  props.changeLanguage(event.target.value);
+                }}
+                inputProps={{ name: 'language', id: 'lang-selection' }}>
+                <option value="en">{t[props.language].ENGLISH}</option>
+                <option value="de">{t[props.language].GERMAN}</option>
+              </Select>
+              <div className={classes.menuButton} onClick={() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                props.changeLanguage(event.target.value);
-              }}
-              inputProps={{ name: 'language', id: 'lang-selection' }}>
-              <option value="en">{t[props.language].ENGLISH}</option>
-              <option value="de">{t[props.language].GERMAN}</option>
-            </Select>
-            <div className={classes.menuButton} onClick={() => {
-              Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-              props.close();
-              setShowAttentionText(false);
-              setShowErrorReport(true);
-            }}>{t[props.language].REPORT_PROBLEM}</div>
-            {(() => {
-              if (props.playerInfos.stats.username !== 'Chocnonymous' && typeof props.game === 'undefined') {
-                return (
-                  <div>
-                    <div className={classes.menuButton} onClick={() => {
-                      Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                      props.startTutorial();
+                setShowAttentionText(false);
+                setShowErrorReport(true);
+              }}>{t[props.language].REPORT_PROBLEM}</div>
+              {(() => {
+                if (props.playerInfos.stats.username !== 'Chocnonymous' && typeof props.game === 'undefined') {
+                  return (
+                    <div>
+                      <div className={classes.menuButton} onClick={() => {
+                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                        props.startTutorial();
+                        props.close();
+                        setShowAttentionText(false);
+                      }}>{t[props.language].RESTART_TUTORIAL}</div>
+                    </div>
+                  )
+                }
+              })()}
+
+              { typeof props.game !== 'undefined' && !props.tutorial ?
+                  <div className={classes.menuButton} onClick={() => {
+                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                    if (showAttentionText) {
+                      props.surrender();
                       props.close();
                       setShowAttentionText(false);
-                    }}>{t[props.language].RESTART_TUTORIAL}</div>
-                  </div>
-                )
+                    } else {
+                      setShowAttentionText(true);
+                    }
+                  }}>{t[props.language].SETTINGS_QUIT}</div> : null
               }
-            })()}
-
-            { typeof props.game !== 'undefined' && !props.tutorial ?
-                <div className={classes.menuButton} onClick={() => {
-                  Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                  if (showAttentionText) {
-                    props.surrender();
-                    props.close();
-                    setShowAttentionText(false);
-                  } else {
-                    setShowAttentionText(true);
-                  }
-                }}>{t[props.language].SETTINGS_QUIT}</div> : null
-            }
-            {
-              showAttentionText && typeof props.game !== 'undefined' ?
-                <Typography color="error" className="attentionText">{t[props.language].SETTINGS_ATTENTION_TEXT}</Typography>
-                : null
-            }
-          </FormControl>
+              {
+                showAttentionText && typeof props.game !== 'undefined' ?
+                  <Typography color="error" className="attentionText">{t[props.language].SETTINGS_ATTENTION_TEXT}</Typography>
+                  : null
+              }
+            </FormControl>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -88,6 +88,11 @@ const AccountOverview = props => {
         multiplayer.computeRank();
     }, [props.open]);
 
+    let loggedIn = false;
+    if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) {
+        loggedIn = true;
+    }
+
     return (
         <Dialog
             fullWidth={true}
@@ -117,7 +122,7 @@ const AccountOverview = props => {
                 <div id="accountOverview">
                     <div className="accountAttribute"><AccountCircle /> { props.playerInfos.stats.username }</div>
                     
-                    <div className="accountSubAttributes">
+                    <div className={'accountSubAttributes' + (loggedIn ? ' loggedIn' : '')}>
                         <div className="accountAttribute"><PlusOne />{t[props.language].ACCOUNT_OVERVIEW_LEVEL}<span className="attributeValue">{ level }</span></div>
                         <div className="accountAttribute"><EmojiEvents />{t[props.language].ACCOUNT_OVERVIEW_RANK}<span className="attributeValue">{ props.ranking }</span></div>
                         <div className="accountAttribute"><ThumbUp />{t[props.language].ACCOUNT_OVERVIEW_WON}<span className="attributeValue">{ winnings }</span></div>
@@ -126,29 +131,18 @@ const AccountOverview = props => {
                         <div className="accountAttribute"><img src="images/coins.png" alt="choco coins" />{t[props.language].ACCOUNT_OVERVIEW_COINS}<span className="attributeValue">{ props.playerInfos.stats.coins }</span></div>
                     </div>
 
-                    {(() => {
-                        if (firebase.auth().currentUser) {
-                            if (firebase.auth().currentUser.isAnonymous) {
-                                return (
-                                    <div className="infobox">
-                                        <StyledFirebaseAuth uiConfig={FirebaseSigninUiConfig} firebaseAuth={firebase.auth()} />
-                                        <p>{t[props.language].ACCOUNT_OVERVIEW_CREATE_INFO}</p>
-                                    </div>
-                                );
-                            } else {
-                                return (
-                                    <div className="infobox">
-                                        <p className="loggedinInfo">{t[props.language].ACCOUNT_OVERVIEW_ASSOCIATION} {props.playerInfos.email}</p>
-                                        <Button className={classes.logoutButton} variant="outlined" onClick={signOut}>
-                                            {t[props.language].SIGN_OUT}
-                                        </Button>
-                                    </div>
-                                );
-                            }
-                        } else {
-                            return <StyledFirebaseAuth uiConfig={FirebaseSigninUiConfig} firebaseAuth={firebase.auth()} />;
-                        }
-                    })()}
+                    { loggedIn ?    
+                        <div className="infobox">
+                            <p className="loggedinInfo">{t[props.language].ACCOUNT_OVERVIEW_ASSOCIATION} {props.playerInfos.email}</p>
+                            <Button className={classes.logoutButton} variant="outlined" onClick={signOut}>
+                                {t[props.language].SIGN_OUT}
+                            </Button>
+                        </div> :
+                        <div className="infobox">
+                            <StyledFirebaseAuth uiConfig={FirebaseSigninUiConfig} firebaseAuth={firebase.auth()} />
+                            <p>{t[props.language].ACCOUNT_OVERVIEW_CREATE_INFO}</p>
+                        </div>                     
+                    }
                 </div>
             </DialogContent>
         </Dialog>
