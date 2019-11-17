@@ -464,10 +464,11 @@ app.post('/surrender', async (req, res) => {
         if (!session.players.includes(req.user.uid)) {
             return res.status(401).end();
         }
-        let 
+
+        let playerIndex = session.game.players.findIndex(player => player.id === req.user.uid);
 
         let event = {
-            index: 
+            index: session['events_from_' + playerIndex].length,
             type: 'battlechoc/gameplay/endGame',
             payload: {
                 winners: session.game.players.filter(player => player.id !== req.user.uid),
@@ -475,6 +476,18 @@ app.post('/surrender', async (req, res) => {
             },
             sessionId: req.body.sessionId
         }
+
+        session['events_from_' + playerIndex].push(event);
+        session.lastProcessedEvent[playerIndex] += 1;
+        session.last_changed = new Date();
+        session.game.isRunning = false;
+        session.game.winners = event.payload.winners;
+        session.game.players.filter(player => player.id !== req.user.uid)[0].statistics.won = true;
+        session.game.players.filter(player => player.id !== req.user.uid)[0].statistics.lost = false;
+        session.game.players.filter(player => player.id === req.user.uid)[0].statistics.won = false;
+        session.game.players.filter(player => player.id === req.user.uid)[0].statistics.lost = true;
+
+        await ref.set(session, {merge: true});
     }
 });
 
