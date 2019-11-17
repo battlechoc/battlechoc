@@ -11,6 +11,7 @@ const axios = require('axios');
 
 admin.initializeApp();
 
+const validLanguages = ['de', 'en'];
 const whitelist = ['https://battlechoc.dev', 'https://battlechoc.com', 'http://localhost:3000', 'https://localhost:3000', 'chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop'];
 const corsOptions = {
     origin: function (origin, callback) {
@@ -84,7 +85,7 @@ app.post('/user/friend', async (req, res) => {
     const players = admin.firestore().collection('players');
     let docs = await players.where('username', '==', req.body.friend).get();
     if (docs.size < 1) {
-        res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST'});
+        res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST' });
     } else {
         let friendId = docs.docs[0].id;
         let ref = players.doc(req.user.uid);
@@ -101,7 +102,7 @@ app.delete('/user/friend', async (req, res) => {
     const players = admin.firestore().collection('players');
     let docs = await players.where('username', '==', req.body.friend).get();
     if (docs.size < 1) {
-        res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST'});
+        res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST' });
     } else {
         let friendId = docs.docs[0].id;
         let ref = players.doc(req.user.uid);
@@ -183,7 +184,7 @@ app.post('/user/challenge', async (req, res) => {
     const players = admin.firestore().collection('players');
     let docs = await players.where('username', '==', req.body.opponent).get();
     if (docs.size < 1) {
-        res.status(404).json({ error: 'OPPONENT "' + req.body.opponent + '" DOES NOT EXIST'});
+        res.status(404).json({ error: 'OPPONENT "' + req.body.opponent + '" DOES NOT EXIST' });
     } else {
         let opponentId = docs.docs[0].id;
         let opponent = docs.docs[0].data();
@@ -192,7 +193,7 @@ app.post('/user/challenge', async (req, res) => {
         } else {
             let doc = await players.doc(req.user.uid).get();
             if (!doc.exists) {
-                res.status(404).json({ error: 'PLAYER NOT FOUND'});
+                res.status(404).json({ error: 'PLAYER NOT FOUND' });
             } else {
                 let player = doc.data();
                 let coinToss = Math.round(Math.random());
@@ -227,7 +228,7 @@ app.post('/user/challenge', async (req, res) => {
                         state: 'GameStateTypes.CHOOSE_FIELD_OR_START',
                         isRunning: true,
                         winners: [],
-                        board: entities.Board.generate({rows: 10, cols: 10}, Math.round(Math.random() * Math.pow(10, 8)))
+                        board: entities.Board.generate({ rows: 10, cols: 10 }, Math.round(Math.random() * Math.pow(10, 8)))
                     }
                 };
 
@@ -248,16 +249,16 @@ app.post('/user/challenge', async (req, res) => {
                                       'to': token
                                     }
 
-                                    axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: {'Authorization' : 'key=***REMOVED***'}})
-                                    .then(() => console.log('Successfully send notification'))
-                                    .catch(error => console.warn('PLAYER NOTIFICATION FAILED' + error.toString()));
+                                    axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
+                                        .then(() => console.log('Successfully send notification'))
+                                        .catch(error => console.warn('PLAYER NOTIFICATION FAILED' + error.toString()));
                                 });
                             }
                         }
                     }).catch(error => console.warn('ERROR WHILE PLAYER NOTIFICATION ' + error.toString()));
 
                     res.json({ sessionId: databaseSession.id });
-                } catch(error) {
+                } catch (error) {
                     res.status(500).json({ error: error.toString() });
                 }
             }
@@ -289,7 +290,7 @@ const processEvents = (session, events) => {
                                 event.invalid = true;
                             }
                             faildValidityChecks += 1;
-                        }                  
+                        }
                     } else {
                         unprocessedEvents += 1;
                     }
@@ -325,7 +326,7 @@ const processEvents = (session, events) => {
     }
 
     return {
-        'unprocessedEvents': unprocessedEvents, 
+        'unprocessedEvents': unprocessedEvents,
         'processedEvents': processedEvents,
         'faildValidityChecks': faildValidityChecks
     }
@@ -335,28 +336,28 @@ const processEventsInOrder = session => {
     let events = session.events_from_0;
     events = events.concat(session.events_from_1);
     events.sort((a, b) => (a.emitted.nanoseconds > b.emitted.nanoseconds) ? 1 : -1)
-    
+
     const timeout = new Date().getTime() + 10000;
 
     var unprocessedEvents, processedEvents, faildValidityChecks = processEvents(session, events);
     console.log(unprocessedEvents, processedEvents, faildValidityChecks)
     if (faildValidityChecks > 0) {
-        return { error: 'SOME EVENTS DID NOT PASS THE VALIDITY CHECK'}
+        return { error: 'SOME EVENTS DID NOT PASS THE VALIDITY CHECK' }
     }
 
     while (unprocessedEvents > 0 && processedEvents > 0 && (new Date().getTime()) > timeout) {
         unprocessedEvents, processedEvents, faildValidityChecks = processEvents(session, events);
         console.log(unprocessedEvents, processedEvents, faildValidityChecks)
         if (faildValidityChecks > 0) {
-            return { error: 'SOME EVENTS DID NOT PASS THE VALIDITY CHECK'}
+            return { error: 'SOME EVENTS DID NOT PASS THE VALIDITY CHECK' }
         }
     }
 
     if (new Date().getTime() > timeout) {
         console.warn('Event loop hang up ' + JSON.stringify(session));
-        return { error: 'INCORRECT EVENTS LOOP HANG UP'}
+        return { error: 'INCORRECT EVENTS LOOP HANG UP' }
     } else {
-        return { done: 'PROCESSED EVENTS'}
+        return { done: 'PROCESSED EVENTS' }
     }
 }
 
@@ -364,7 +365,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
     let ref = admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId);
     let doc = await ref.get();
     if (!doc.exists) {
-        res.status(404).json({error: 'SESSION NOT FOUND'});
+        res.status(404).json({ error: 'SESSION NOT FOUND' });
     } else {
         let session = doc.data();
         if (!session.players.includes(req.user.uid)) {
@@ -396,7 +397,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                 return res.status(500).json({ 'error': error });
             }
         } else {
-            res.status(400).json({error: 'UNKNOWN ISSUER'});
+            res.status(400).json({ error: 'UNKNOWN ISSUER' });
         }
 
         try {
@@ -428,9 +429,9 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                               'to': token
                             }
 
-                            axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: {'Authorization' : 'key=***REMOVED***'}})
-                            .then(() => console.log('Successfully send notification'))
-                            .catch(error => console.warn('PLAYER NOTIFICATION FAILED' + error.toString()));
+                            axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
+                                .then(() => console.log('Successfully send notification'))
+                                .catch(error => console.warn('PLAYER NOTIFICATION FAILED' + error.toString()));
                         });
                     }
                 }
@@ -481,7 +482,7 @@ app.get('/multiplayer/sessions', async (req, res) => {
     try {
         var docs = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
     } catch (error) {
-        return res.status(500).json({error: error});
+        return res.status(500).json({ error: error });
     }
     const games = [];
     if (docs.size > 0) {
@@ -491,8 +492,8 @@ app.get('/multiplayer/sessions', async (req, res) => {
             if (game.game.isRunning) {
                 games.push({
                     'id': doc.id,
-                    'players': game.players, 
-                    'status': game.status, 
+                    'players': game.players,
+                    'status': game.status,
                     'last_changed': game.last_changed.toMillis(),
                     'created': game.created.toMillis(),
                     'myTurn': game.game.currentPlayerIndex === playerIndex,
@@ -562,14 +563,14 @@ app.get('/multiplayer/sessions', async (req, res) => {
 })
 
 const basicLevel = {
-    'EntityType.CREAM': { hp: 0, area: 0},
+    'EntityType.CREAM': { hp: 0, area: 0 },
     'EntityType.FACTORY': { hp: 0, buildingsPerTurn: 0, cacaoPerTurn: 0 },
     'EntityType.FACTORY_EXTENSION': { hp: 0, buildingsPerTurn: 0 },
     'EntityType.CACAOTREE': { hp: 0, cacaoPerTurn: 0 },
     'EntityType.RUM_TRUFFLE_CANNON': { hp: 0, attack: 0, area: 0 },
     'EntityType.FRUIT_CANNON': { hp: 0, attack: 0, area: 0 },
     'EntityType.SPYING_EASTER_BUNNY': { hp: 0, area: 0, fortune: 0 },
-    'EntityType.XMAS_FACTORY': {  hp: 0, area: 0 },
+    'EntityType.XMAS_FACTORY': { hp: 0, area: 0 },
     'EntityType.HOT_CHOCOLATE_BALLISTA': { hp: 0, area: 0, fortune: 0 },
     'EntityType.CHOCOLATE_FOUNTAIN': { hp: 0 }
 }
@@ -588,11 +589,11 @@ app.post('/upgrade/entity', (req, res) => {
 
                 let limit = entities.getMaximumLevel(req.body.entity, level, req.body.attribute);
                 let costs = entities.calculateCosts(req.body.entity, level);
-                if ( player.coins < costs ) {
-                    res.status(400).json({ error: 'NOT ENOUGH COINS'});
-                } else if ( (level[req.body.entity][req.body.attribute] + 1) > limit ) {
+                if (player.coins < costs) {
+                    res.status(400).json({ error: 'NOT ENOUGH COINS' });
+                } else if ((level[req.body.entity][req.body.attribute] + 1) > limit) {
                     res.status(400).json({ error: 'LEVEL LIMIT OF ' + req.body.attribute + ' REACHED' });
-                } else {                
+                } else {
                     level[req.body.entity][req.body.attribute] = level[req.body.entity][req.body.attribute] + 1;
                     let upgradeAction = { id: uuidv4(), timestamp: new Date().getTime() };
                     players.doc(req.user.uid).update({
@@ -607,7 +608,7 @@ app.post('/upgrade/entity', (req, res) => {
                 res.status(400).json({ error: 'PLAYER HAS NO COINS' });
             }
         } else {
-            res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
+            res.status(404).json({ error: 'PLAYER DOES NOT EXIST' });
         }
     }).catch(error => res.status(500).json({ error: error }));
 });
@@ -619,9 +620,9 @@ app.post('/undo/upgrade', (req, res) => {
             let player = doc.data();
             if (typeof player.last_upgrade_action === 'undefined' || player.last_upgrade_action === null) {
                 res.status(400).json({ error: 'NO UPGRADE ACTION REGISTERED' });
-            } else if ((new Date().getTime() - 60000) > player.last_upgrade_action.timestamp) {
+            } else if ((new Date().getTime() - 60000) > player.last_upgrade_action.timestamp) {
                 res.status(400).json({ error: 'LAST UPGRADE ACTION OUTDATED' });
-            } else if (player.last_upgrade_action.id !== req.body.actionId) {
+            } else if (player.last_upgrade_action.id !== req.body.actionId) {
                 res.status(400).json({ error: 'ACTION ID IS NOT VALID' });
             } else {
                 let level = player.level;
@@ -636,7 +637,7 @@ app.post('/undo/upgrade', (req, res) => {
                 }).catch(error => res.status(500).json({ error: error }));
             }
         } else {
-            res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
+            res.status(404).json({ error: 'PLAYER DOES NOT EXIST' });
         }
     }).catch(error => res.status(500).json({ error: error.toString() }));
 });
@@ -664,12 +665,12 @@ app.get('/rank', (req, res) => {
 app.get('/check/available/:username', (req, res) => {
     if (typeof req.params.username === 'undefined' ||
         req.params.username === '') {
-        res.status(400).json({ error: 'USERNAME EMPTY'});
+        res.status(400).json({ error: 'USERNAME EMPTY' });
     } else {
         let players = admin.firestore().collection('players');
         players.where('username', '==', req.params.username).get()
-        .then(player => res.json({ available: player.size === 0 && req.params.username.toUpperCase() !== 'CHOCNONYMOUS' }))
-        .catch(error => res.status(500).json({ error: error.toString() }));
+            .then(player => res.json({ available: player.size === 0 && req.params.username.toUpperCase() !== 'CHOCNONYMOUS' }))
+            .catch(error => res.status(500).json({ error: error.toString() }));
     }
 });
 
@@ -682,7 +683,7 @@ app.get('/user/:name', async (req, res) => {
     }
 
     if (snapshot.empty) {
-        res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
+        res.status(404).json({ error: 'PLAYER DOES NOT EXIST' });
     } else {
         let player = snapshot.docs[0].data();
 
@@ -716,8 +717,8 @@ app.get('/user/:name', async (req, res) => {
             .catch(error => res.status(500).json({ error: error.toString() }));
         } else {
             players.where('score', '>=', score).get()
-            .then(scores => res.json(Object.assign(player, {ranking: scores.size})))
-            .catch(error => res.status(500).json({ error: error.toString() }));
+                .then(scores => res.json(Object.assign(player, { ranking: scores.size })))
+                .catch(error => res.status(500).json({ error: error.toString() }));
         }
     }
 });
@@ -808,6 +809,25 @@ app.post('/user/username', async (req, res) => {
                 res.status(400).json({ error: 'USERNAME NOT VALID'});
             }
         }).catch(error => res.status(500).json({ error: error.toString() }));
+    }
+});
+
+app.post('/user/language', (req, res) => {
+    let players = admin.firestore().collection('players');
+    if (validLanguages.includes(req.body.language)) {
+        players.doc(req.body.player).get().then(doc => {
+            if (doc.exists) {
+                players.doc(req.body.player).update({
+                    language: req.body.language
+                }).then(() => {
+                    res.json({ language: language });
+                }).catch(error => res.status(500).json({ error: error }));;
+            } else {
+                res.status(404).json({ error: 'PLAYER DOES NOT EXIST' });
+            }
+        }).catch(error => res.status(500).json({ error: error.toString() }));
+    } else {
+        res.status(404).json({ error: 'INVALID LANGUAGE GIVEN' });
     }
 });
 
