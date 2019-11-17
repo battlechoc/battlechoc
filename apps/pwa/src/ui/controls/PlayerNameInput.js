@@ -6,6 +6,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import withWidth, { isWidthUp } from '@material-ui/core/withWidth';
 import { Send, HourglassFull } from '@material-ui/icons';
 import { Fab, TextField, CircularProgress } from '@material-ui/core';
+import logger from '../../helper/logger';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -40,36 +41,38 @@ export default withWidth()(props => {
     const [playerNameValid, setPlayerNameValid] = useState(false);
     const [playerNameAvailable, setPlayerNameAvailable] = useState(false);
     const [playerName, setPlayerName] = useState(typeof props.current === 'undefined' ? 'Chocnonymous' : props.current);
+    const [unchanged, setUnchanged] = useState(props.current === playerName);
 
     const buttonClassname = playerNameAvailable ? classes.buttonSuccess : null;
 
     const CancelToken = Axios.CancelToken;
     const source = CancelToken.source();
 
-    const checkAvailable = name => {
+    const checkAvailable = async name => {
         if (name !== '') {
             if (loading) {
                 source.cancel();
             }
-
             setLoading(true);
-            ServerRequest('get', '/check/available/' + name, source.token)
-            .then(response => {
-                setPlayerNameAvailable(response.data.available);
-                setLoading(false);
-            })
-            .catch(error => {
+            
+            try {
+                let response = await ServerRequest('get', '/check/available/' + name, source.token);
+                if (response.data.name === name) {
+                    setPlayerNameAvailable(response.data.available);
+                }
+            } catch(error) {
                 if (!Axios.isCancel(error)) {
-                    console.warn(error);
+                    logger.warn(error);
                     setPlayerNameAvailable(false);
                 }
+            } finally {
                 setLoading(false);
-            });
+            }
         }
     }
 
     const validate = name => {
-        let regex = /^([a-zA-Z][a-zA-Z0-9_]{3,15})$/;
+        let regex = /^([a-zA-Z][a-zA-Z0-9_]{2,15})$/;
         return regex.test(name) && name.toUpperCase() !== 'CHOCNONYMOUS';
     }
 
@@ -80,7 +83,7 @@ export default withWidth()(props => {
     };
 
     const getHelperText = () => {
-        if (loading) {
+        if (loading || unchanged) {
             return '';
         } else if (!playerNameAvailable) {
             return t[props.language].SETTINGS_PLAYER_NAME_IN_USE;
@@ -96,14 +99,14 @@ export default withWidth()(props => {
             <TextField
                 label="Name"
                 className={classes.playerNameInput}
-                error={!playerNameAvailable || !playerNameValid}
+                error={(!playerNameAvailable || !playerNameValid) && !unchanged}
                 value={playerName}
                 helperText={getHelperText()}
                 inputProps={{ spellCheck: 'false' }}
+                InputLabelProps={{ style: {color: 'rgb(48, 86, 91)'}}}
                 onChange={event => {
                     setPlayerName(event.target.value);
-                    setPlayerNameAvailable(false);
-                    setPlayerNameValid(false);
+                    setUnchanged(event.target.value === props.current)
                     checkAvailable(event.target.value);
                     setPlayerNameValid(validate(event.target.value));
                 }}
@@ -111,7 +114,7 @@ export default withWidth()(props => {
             />    
             <div className={classes.wrapper}>
                 <Fab
-                  disabled={loading || !playerNameAvailable || !playerNameValid}
+                  disabled={loading || !playerNameAvailable || !playerNameValid || unchanged}
                   aria-label="send"
                   color="primary"
                   size="small"

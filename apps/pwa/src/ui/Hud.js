@@ -26,6 +26,7 @@ class Hud extends Component {
         this.state = {
             clickable: true,
             open: false,
+            openSettings: false,
             showAccountOverview: false,
             upgradeMessageOpen: false,
             multiplayerScreen: false,
@@ -104,7 +105,7 @@ class Hud extends Component {
 
     openSettings = () => {        
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.settings.open();
+        this.setState({ openSettings: true });
     }
 
     openAccountOverview = () => {
@@ -126,7 +127,7 @@ class Hud extends Component {
         return (
             <div className={this.props.className}>
                 <Tooltip />
-                <Settings startTutorial={this.props.startTutorial} surrender={this.props.surrender} onRef={settings => (this.settings = settings)} />
+                <Settings startTutorial={this.props.startTutorial} surrender={this.props.surrender} open={this.state.openSettings} close={() => this.setState({openSettings: false})} />
                 <AccountOverview open={this.state.showAccountOverview} close={() => this.setState({ showAccountOverview: false })} />
                 {(() => {
                     if (stage === 'CHOCLAB_SCREEN') {

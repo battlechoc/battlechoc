@@ -154,7 +154,7 @@ class Tutorial extends Component {
 
         let dialogTitle = "Du hast es fast geschafft"
         let dialogContent = [
-            <PlayerNameInput key="1" setPlayerName={this.setPlayerName} language={this.props.language}/>,
+            <PlayerNameInput key="1" setPlayerName={this.setPlayerName} current={this.props.playerInfos.stats.username} language={this.props.language}/>,
             <Typography key="0" >{t[this.props.language].TUTORIAL_CHOOSE_NAME_INFO}</Typography>
         ];
         let dialogActions = []
@@ -183,8 +183,7 @@ class Tutorial extends Component {
                   fullWidth={true}
                   fullScreen={true}
                   open={this.state.open}
-                  onClose={this.closeTutorial}
-                  aria-labelledby="report-form-dialog-title">
+                  onClose={this.closeTutorial}>
                     <DialogTitle className="tutorialDialogTitle">{ dialogTitle }</DialogTitle>
                     <DialogContent className="tutorialDialogContent">{ dialogContent }</DialogContent>
                     <DialogActions>{ dialogActions }</DialogActions>

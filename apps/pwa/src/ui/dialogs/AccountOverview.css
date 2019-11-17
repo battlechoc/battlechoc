@@ -111,8 +111,12 @@
         flex-grow: 1;
     }
 
-    #accountOverview .accountSubAttributes {
+    #accountOverview .loggedIn.accountSubAttributes {
         margin-bottom: 15vh;
+        align-items: center;
+    }
+
+    #accountOverview .accountSubAttributes {
         align-items: center;
     }
 }
@@ -252,6 +256,9 @@
     #accountOverview .accountSubAttributes {
         align-items: center;
         flex-grow: 1;
+    }
+
+    #accountOverview .loggedIn.accountSubAttributes {
         margin-bottom: 0.5em;
     }
 

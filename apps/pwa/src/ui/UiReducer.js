@@ -116,7 +116,7 @@ const uiReducer = createReducer({
         [UiActions.hideQuickMessage]: (state, action) => {
             state.quickMessage.show = false;
             state.quickMessage.text = '';
-            state.quickMessage.type = 'warning';
+            state.quickMessage.variant = 'warning';
         }
     }
 );
