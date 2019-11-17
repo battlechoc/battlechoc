@@ -130,7 +130,7 @@ class MultiplayerScreen extends Component {
     }
 
     surrenderGame = async sessionId => {
-        await multiplayer.surrenderGame();
+        await multiplayer.surrenderGame(sessionId);
         multiplayer.getMultiplayerSessions();
     }
 
