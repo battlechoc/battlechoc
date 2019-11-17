@@ -40,6 +40,7 @@ export default withWidth()(props => {
     const [playerNameValid, setPlayerNameValid] = useState(false);
     const [playerNameAvailable, setPlayerNameAvailable] = useState(false);
     const [playerName, setPlayerName] = useState(typeof props.current === 'undefined' ? 'Chocnonymous' : props.current);
+    const [unchanged, setUnchanged] = useState(props.current === playerName);
 
     const buttonClassname = playerNameAvailable ? classes.buttonSuccess : null;
 
@@ -80,7 +81,7 @@ export default withWidth()(props => {
     };
 
     const getHelperText = () => {
-        if (loading) {
+        if (loading || unchanged) {
             return '';
         } else if (!playerNameAvailable) {
             return t[props.language].SETTINGS_PLAYER_NAME_IN_USE;
@@ -96,7 +97,7 @@ export default withWidth()(props => {
             <TextField
                 label="Name"
                 className={classes.playerNameInput}
-                error={!playerNameAvailable || !playerNameValid}
+                error={(!playerNameAvailable || !playerNameValid) && !unchanged}
                 value={playerName}
                 helperText={getHelperText()}
                 inputProps={{ spellCheck: 'false' }}
@@ -104,6 +105,7 @@ export default withWidth()(props => {
                     setPlayerName(event.target.value);
                     setPlayerNameAvailable(false);
                     setPlayerNameValid(false);
+                    setUnchanged(event.target.value === props.current)
                     checkAvailable(event.target.value);
                     setPlayerNameValid(validate(event.target.value));
                 }}
@@ -111,7 +113,7 @@ export default withWidth()(props => {
             />    
             <div className={classes.wrapper}>
                 <Fab
-                  disabled={loading || !playerNameAvailable || !playerNameValid}
+                  disabled={loading || !playerNameAvailable || !playerNameValid || unchanged}
                   aria-label="send"
                   color="primary"
                   size="small"

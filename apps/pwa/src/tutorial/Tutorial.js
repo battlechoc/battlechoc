@@ -183,8 +183,7 @@ class Tutorial extends Component {
                   fullWidth={true}
                   fullScreen={true}
                   open={this.state.open}
-                  onClose={this.closeTutorial}
-                  aria-labelledby="report-form-dialog-title">
+                  onClose={this.closeTutorial}>
                     <DialogTitle className="tutorialDialogTitle">{ dialogTitle }</DialogTitle>
                     <DialogContent className="tutorialDialogContent">{ dialogContent }</DialogContent>
                     <DialogActions>{ dialogActions }</DialogActions>

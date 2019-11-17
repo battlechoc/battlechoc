@@ -25,6 +25,14 @@ class Logger {
             console.error(message);
         }
     }
+
+    summarize() {
+        return {
+            infos: this.infos,
+            warnings: this.warnings,
+            errors: this.errors
+        }
+    }
 }
 
 const logger = new Logger();
