@@ -456,7 +456,12 @@ app.post('/multiplayer/relay/action', async (req, res) => {
 
 app.post('/surrender', async (req, res) => {
     let ref = admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId);
-    let doc = await ref.get();
+    try {
+        var doc = await ref.get();
+    } catch (error) {
+        return res.status(500).json({ 'error': error });
+    }
+
     if (!doc.exists) {
         res.status(404).json({error: 'SESSION NOT FOUND'});
     } else {
