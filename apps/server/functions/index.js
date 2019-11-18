@@ -146,9 +146,10 @@ app.get('/query/user/:name', async (req, res) => {
             }
 
             if (typeof player.trackRecord !== 'undefined') {
-                player.losses = player.trackRecord.filter(record => record.lost).length;
-                player.winnings = player.trackRecord.filter(record => record.won).length;
-                player.drawn = player.trackRecord.filter(record => typeof record.winners !== 'undefined').filter(record => record.winners.length > 1).length;
+                let finishedGames = player.trackRecord.filter(record => typeof record.winners !== 'undefined');
+                player.winnings = finishedGames.filter(record => record.winners.filter(winner => winner.id === doc.id || winner.name === 'Charlie Bucket').length === 1).length;
+                player.drawn = finishedGames.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+                player.losses = finishedGames.length - player.winnings - player.drawn;
             } else {
                 player.losses = 0;
                 player.winnings = 0;
@@ -533,9 +534,10 @@ app.get('/multiplayer/sessions', async (req, res) => {
                 let losses = 0;
                 let drawn = 0;
                 if (typeof opponent.trackRecord !== 'undefined') {
-                    winnings = opponent.trackRecord.filter(record => record.won).length;
-                    losses = opponent.trackRecord.filter(record => record.lost).length;
-                    drawn = opponent.trackRecord.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+                    let finishedGames = opponent.trackRecord.filter(record => typeof record.winners !== 'undefined');
+                    winnings = finishedGames.filter(record => record.winners.filter(winner => winner.id === doc.id || winner.name === 'Charlie Bucket').length === 1).length;
+                    drawn = finishedGames.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+                    losses = finishedGames.length - winnings - drawn;
                 }
 
                 if (typeof opponent.level === 'undefined') {
@@ -712,9 +714,10 @@ app.get('/user/:name', async (req, res) => {
         }
 
         if (typeof player.trackRecord !== 'undefined') {
-            player.losses = player.trackRecord.filter(record => record.lost).length;
-            player.winnings = player.trackRecord.filter(record => record.won).length;
-            player.drawn = player.trackRecord.filter(record => typeof record.winners !== 'undefined').filter(record => record.winners.length > 1).length;
+            let finishedGames = player.trackRecord.filter(record => typeof record.winners !== 'undefined');
+            player.winnings = finishedGames.filter(record => record.winners.filter(winner => winner.id === snapshot.docs[0].id || winner.name === 'Charlie Bucket').length === 1).length;
+            player.drawn = finishedGames.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+            player.losses = finishedGames.length - player.winnings - player.drawn;
         } else {
             player.losses = 0;
             player.winnings = 0;
@@ -770,9 +773,10 @@ app.get('/random/opponent', async (req, res) => {
         }
 
         if (typeof player.trackRecord !== 'undefined') {
-            player.losses = player.trackRecord.filter(record => record.lost).length;
-            player.winnings = player.trackRecord.filter(record => record.won).length;
-            player.drawn = player.trackRecord.filter(record => typeof record.winners !== 'undefined').filter(record => record.winners.length > 1).length;
+            let finishedGames = player.trackRecord.filter(record => typeof record.winners !== 'undefined');
+            player.winnings = finishedGames.filter(record => record.winners.filter(winner => winner.id === validDocs[randomId].id || winner.name === 'Charlie Bucket').length === 1).length;
+            player.drawn = finishedGames.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+            player.losses = finishedGames.length - player.winnings - player.drawn;
         } else {
             player.losses = 0;
             player.winnings = 0;
