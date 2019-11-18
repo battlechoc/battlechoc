@@ -842,9 +842,9 @@ app.post('/user/username', async (req, res) => {
 app.post('/user/language', (req, res) => {
     let players = admin.firestore().collection('players');
     if (validLanguages.includes(req.body.language)) {
-        players.doc(req.body.player).get().then(doc => {
+        players.doc(req.user.uid).get().then(doc => {
             if (doc.exists) {
-                players.doc(req.body.player).update({
+                players.doc(req.user.uid).update({
                     language: req.body.language
                 }).then(() => {
                     res.json({ language: language });
