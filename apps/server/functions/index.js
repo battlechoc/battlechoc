@@ -493,7 +493,12 @@ app.post('/surrender', async (req, res) => {
         session.game.players.filter(player => player.id === req.user.uid)[0].statistics.won = false;
         session.game.players.filter(player => player.id === req.user.uid)[0].statistics.lost = true;
 
-        await ref.set(session, {merge: true});
+        try {
+            await ref.set(session, {merge: true});
+            res.status(200).end();
+        } catch (error) {
+            res.status(500).json({ 'error': error });
+        }
     }
 });
 
