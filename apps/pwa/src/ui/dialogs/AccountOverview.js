@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './AccountOverview.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
@@ -13,9 +13,10 @@ import { Jukebox, Translation as t } from '../misc';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Button from '@material-ui/core/Button';
-import { AccountCircle, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne, KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
+import { AccountCircle, PlayArrow, HourglassEmpty, PersonAddDisabled, PersonAdd, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne, KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/core/styles';
 import Fab from '@material-ui/core/Fab';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 const useStyles = makeStyles(theme => ({
     header: {
@@ -28,6 +29,52 @@ const useStyles = makeStyles(theme => ({
     logoutButton: {
         color: '#f3f7df',
         borderColor: '#f3f7df'
+    },
+    menuButton: {
+        cursor: 'pointer',
+        padding: '12px',
+        backgroundColor: '#5b2f19',
+        boxShadow: '1px 1px 6px #000',
+        fontSize: '1rem',
+        margin: '1vh',
+        minWidth: '50vw',
+        textAlign: 'center',
+        color: '#f3f7df',
+        userSelect: 'none',
+        textShadow: '1px 1px 3px #000',
+        textTransform: 'uppercase',
+        display: 'flex',
+        alignItems: 'center',
+        '@media screen and (max-width: 460px)': {
+          minWidth: '70vw'
+        },
+        '@media screen and (min-width: 600px)': {
+          minWidth: '40vw'
+        },
+        '@media screen and (min-width: 900px)': {
+          minWidth: '30vw'
+        }
+    },
+    pendingButton: {
+        backgroundColor: '#777'
+    },
+    opponentActions: {
+        display: 'flex',
+        flexDirection: 'column',
+        '@media screen and (max-height: 400px) and (orientation: landscape)': {
+          marginTop: '5vh'
+        }
+    },
+    actionIcon: {
+        padding: '0.5rem',
+        border: '1px solid #f3f7df',
+        borderRadius: '50%'
+    },
+    actionTitle: {
+        display: 'flex',
+        justifyContent: 'center',
+        flexGrow: 1,
+        marginLeft: '-0.5rem'
     }
 }));
 
@@ -61,36 +108,56 @@ const FirebaseSigninUiConfig = {
 
 const AccountOverview = props => {
     const classes = useStyles();
-    let signOut = () => {
-        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        multiplayer.signOut(props.notifyPlayerSignedOut);
-    }
+    const [refreshFriend, setRefreshFriend] = useState(false);
+
+    let isPlayerAccount = typeof props.playerAccount === 'undefined'; 
 
     let level = 0;
-    if (typeof props.playerInfos.stats.level !== 'undefined') {
-        level = Object.values(props.playerInfos.stats.level)
-        .map(attributes => Object.values(attributes).reduce((level, prev) => Number(level) + Number(prev)))
-        .reduce((value, prev) => value + prev);
-    }
-
     let winnings = 0;
     let losses = 0;
     let drawn = 0;
-
-    if (typeof props.playerInfos.stats.trackRecord !== 'undefined' && firebase.auth().currentUser) {
-        let finishedGames = props.playerInfos.stats.trackRecord.filter(record => typeof record.winners !== 'undefined');
-        winnings = finishedGames.filter(record => record.winners.filter(winner => winner.id === firebase.auth().currentUser.uid || winner.name === 'Charlie Bucket').length === 1).length;
-        drawn = finishedGames.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
-        losses = finishedGames.length - winnings - drawn;
-    }
+    let loggedIn = false;
+    let playerName = 'Chocnonymous';
+    let ranking = 0;
 
     React.useEffect(() => {
-        multiplayer.computeRank();
-    }, [props.open]);
+        if (typeof props.playerAccount === 'undefined') {
+            multiplayer.computeRank();
+        }
+    }, [props.open, props.playerAccount]);
 
-    let loggedIn = false;
-    if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) {
-        loggedIn = true;
+    if (isPlayerAccount) {
+        var signOut = () => {
+            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+            multiplayer.signOut(props.notifyPlayerSignedOut);
+        }
+
+        playerName = props.playerInfos.stats.username;
+        ranking = props.ranking;
+
+        if (typeof props.playerInfos.stats.level !== 'undefined') {
+            level = Object.values(props.playerInfos.stats.level)
+            .map(attributes => Object.values(attributes).reduce((level, prev) => Number(level) + Number(prev)))
+            .reduce((value, prev) => value + prev);
+        }
+
+        if (typeof props.playerInfos.stats.trackRecord !== 'undefined' && firebase.auth().currentUser) {
+            let finishedGames = props.playerInfos.stats.trackRecord.filter(record => typeof record.winners !== 'undefined');
+            winnings = finishedGames.filter(record => record.winners.filter(winner => winner.id === firebase.auth().currentUser.uid || winner.name === 'Charlie Bucket').length === 1).length;
+            drawn = finishedGames.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+            losses = finishedGames.length - winnings - drawn;
+        }
+
+        if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) {
+            loggedIn = true;
+        }
+    } else {
+        playerName = props.playerAccount.name;
+        level = props.playerAccount.level;
+        winnings = props.playerAccount.winnings;
+        losses = props.playerAccount.losses;
+        drawn = props.playerAccount.drawn;
+        ranking = props.playerAccount.ranking;
     }
 
     return (
@@ -101,7 +168,7 @@ const AccountOverview = props => {
             PaperProps={{style: {
                 background: 'linear-gradient(0deg, rgba(255,255,255,1) 0%, rgba(252,238,228,1) 98%)'
             }}}
-            onClose={() => props.close()}
+            onClose={props.close}
             aria-labelledby="accountOverview"
             id="accountOverviewDialog">
             <DialogTitle className={classes.header} id="accountOverviewTitle">
@@ -116,22 +183,77 @@ const AccountOverview = props => {
                     <ArrowBackIcon />
                 </Fab>
                 <span className="dialogTitleText accountInfoTitle">{ t[props.language].ACCOUNTINFOS }</span>
-                <span className="dialogTitleText playerInfoTitle">{ props.playerInfos.stats.username }</span>
+                <span className="dialogTitleText playerInfoTitle">{ playerName }</span>
             </DialogTitle>
             <DialogContent>
-                <div id="accountOverview">
-                    <div className="accountAttribute"><AccountCircle /> { props.playerInfos.stats.username }</div>
+                <div className={isPlayerAccount ? 'accountOverview' : 'opponent accountOverview'}>
+                    <div className="accountAttribute"><AccountCircle /> { playerName }</div>
                     
-                    <div className={'accountSubAttributes' + (loggedIn ? ' loggedIn' : '')}>
+                    {(() => {
+                        if (typeof props.multiplayerSessions !== 'undefined' && !isPlayerAccount) {
+                            let actions = [];
+                            let gamesAgaistOpponent = props.multiplayerSessions.filter(session => session.opponent.name === playerName);
+                            if (gamesAgaistOpponent.length === 0) {
+                                actions.push(<div key={0} className={classes.menuButton} onClick={() => {
+                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                    props.challengePlayer(playerName);
+                                    props.close();
+                                }}>
+                                    <PlayArrow className={classes.actionIcon} />
+                                    <span className={classes.actionTitle}>{t[props.language].START_GAME}</span>
+                                </div>);
+                            } else {
+                                actions.push(<div key={1} className={classes.menuButton} onClick={() => {
+                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                    props.joinGame(gamesAgaistOpponent[0].id);
+                                    props.close();
+                                }}>
+                                    {gamesAgaistOpponent[0].myTurn ? <PlayArrow className={classes.actionIcon} /> : <HourglassEmpty className={classes.actionIcon} />}
+                                    <span className={classes.actionTitle}>{t[props.language].JOIN_GAME}</span>
+                                </div>);
+                            }
+
+                            if (!props.friends.map(friend => friend.username).includes(playerName)) {
+                                actions.push(<div key={3} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
+                                    if (!refreshFriend) {
+                                        setRefreshFriend(true);
+                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                        await props.addFriend(playerName);
+                                        setRefreshFriend(false);
+                                    }
+                                }}>
+                                    <PersonAdd className={classes.actionIcon} />
+                                    <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].ADD_FRIEND}</span>
+                                </div>);
+                            } else {
+                                actions.push(<div key={4} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
+                                    if (!refreshFriend) {
+                                        setRefreshFriend(true);
+                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                        props.removeFriend(playerName);
+                                        await props.addFriend(playerName);
+                                        setRefreshFriend(false);
+                                    }
+                                }}>
+                                    <PersonAddDisabled className={classes.actionIcon} />
+                                    <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].REMOVE_FRIEND}</span>
+                                </div>);
+                            }
+
+                            return <div className={classes.opponentActions}>{actions}</div>;
+                        }                        
+                    })()}
+
+                    <div className={'accountSubAttributes' + (loggedIn ? ' loggedIn' : '') + (isPlayerAccount ? '' : ' opponent')}>
                         <div className="accountAttribute"><PlusOne />{t[props.language].ACCOUNT_OVERVIEW_LEVEL}<span className="attributeValue">{ level }</span></div>
-                        <div className="accountAttribute"><EmojiEvents />{t[props.language].ACCOUNT_OVERVIEW_RANK}<span className="attributeValue">{ props.ranking }</span></div>
+                        <div className="accountAttribute"><EmojiEvents />{t[props.language].ACCOUNT_OVERVIEW_RANK}<span className="attributeValue">{ ranking }</span></div>
                         <div className="accountAttribute"><ThumbUp />{t[props.language].ACCOUNT_OVERVIEW_WON}<span className="attributeValue">{ winnings }</span></div>
                         <div className="accountAttribute"><ThumbsUpDown />{t[props.language].ACCOUNT_OVERVIEW_DRAWN}<span className="attributeValue">{ drawn }</span></div>
                         <div className="accountAttribute"><ThumbDown />{t[props.language].ACCOUNT_OVERVIEW_LOST}<span className="attributeValue">{losses }</span></div>
-                        <div className="accountAttribute"><img src="images/coins.png" alt="choco coins" />{t[props.language].ACCOUNT_OVERVIEW_COINS}<span className="attributeValue">{ props.playerInfos.stats.coins }</span></div>
+                        { isPlayerAccount ? <div className="accountAttribute"><img src="images/coins.png" alt="choco coins" />{t[props.language].ACCOUNT_OVERVIEW_COINS}<span className="attributeValue">{ props.playerInfos.stats.coins }</span></div> : null }
                     </div>
 
-                    { loggedIn ?    
+                    { isPlayerAccount ? loggedIn ?    
                         <div className="infobox">
                             <p className="loggedinInfo">{t[props.language].ACCOUNT_OVERVIEW_ASSOCIATION} {props.playerInfos.email}</p>
                             <Button className={classes.logoutButton} variant="outlined" onClick={signOut}>
@@ -141,7 +263,7 @@ const AccountOverview = props => {
                         <div className="infobox">
                             <StyledFirebaseAuth uiConfig={FirebaseSigninUiConfig} firebaseAuth={firebase.auth()} />
                             <p>{t[props.language].ACCOUNT_OVERVIEW_CREATE_INFO}</p>
-                        </div>                     
+                        </div> : null                 
                     }
                 </div>
             </DialogContent>
@@ -157,7 +279,9 @@ AccountOverview.propTypes = {
 const mapStateToProps = state => ({
     language: state.ui.language,
     playerInfos: state.ui.playerInfos,
-    ranking: state.ui.ranking
+    ranking: state.ui.ranking,
+    multiplayerSessions: state.ui.multiplayerSessions,
+    friends: state.ui.friends
 });
 
 const mapDispatchToProps = {
