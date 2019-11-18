@@ -20,7 +20,7 @@ const uiReducer = createReducer({
     quickMessage: {
         show: false,
         text: '',
-        type: 'warning'
+        variant: 'warning'
     }
 }, {
     [UiActions.resetUi]: (state, action) => {
