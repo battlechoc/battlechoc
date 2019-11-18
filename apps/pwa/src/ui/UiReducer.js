@@ -125,64 +125,6 @@ const uiReducer = createReducer({
         state.quickMessage.text = '';
         state.quickMessage.variant = 'warning';
     }
-},
-    [UiActions.showOverview]: (state, action) => {
-        state.overviewVisible = true;
-    },
-    [UiActions.notifyPlayerSignedIn]: (state, action) => {
-        state.playerInfos.isSignedIn = true;
-        state.playerInfos.isAnonymous = action.payload.isAnonymous;
-        state.playerInfos.email = action.payload.email;
-        state.playerInfos.uid = action.payload.uid;
-        state.playerInfos.name = action.payload.name;
-    },
-    [UiActions.notifyPlayerSignedOut]: (state, action) => {
-        state.playerInfos.isSignedIn = false;
-        state.playerInfos.isAnonymous = true;
-        state.playerInfos.email = undefined;
-        state.playerInfos.name = undefined;
-        state.playerInfos.uid = undefined;
-        state.playerInfos.stats = EmptyPlayerStats;
-        state.ranking = 'Offline';
-        OfflineStore.playerStore.set('stats', EmptyPlayerStats);
-        OfflineStore.playerStore.set('friends', undefined);
-        OfflineStore.playerStore.set('multiplayerSessions', undefined);
-    },
-    [UiActions.stopTutorial]: (state, action) => {
-        state.tutorial = false;
-        OfflineStore.settingsStore.set("tutorialAlreadySeen", true);
-    },
-    [UiActions.startTutorial]: (state, action) => {
-        state.tutorial = true;
-    },
-    [UiActions.updatePlayerStats]: (state, action) => {
-        Object.assign(state.playerInfos.stats, action.payload);
-    },
-    [UiActions.updateMultiplayerSessions]: (state, action) => {
-        state.multiplayerSessions = action.payload;
-        OfflineStore.playerStore.set('multiplayerSessions', action.payload);
-    },
-    [UiActions.loadFriendsList]: (state, action) => {
-        state.friends = action.payload;
-        OfflineStore.playerStore.set('friends', action.payload);
-    },
-    [UiActions.setPlayerRank]: (state, action) => {
-        state.ranking = action.payload;
-    },
-    [UiActions.updateLevel]: (state, action) => {
-        state.playerInfos.stats.level = action.payload;
-    },
-    [UiActions.showQuickMessage]: (state, action) => {
-        state.quickMessage.show = true;
-        state.quickMessage.text = action.payload.text || '';
-        state.quickMessage.variant = action.payload.variant || 'warning';
-    },
-    [UiActions.hideQuickMessage]: (state, action) => {
-        state.quickMessage.show = false;
-        state.quickMessage.text = '';
-        state.quickMessage.type = 'warning';
-    }
-}
-);
+});
 
 export default uiReducer
