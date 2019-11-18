@@ -7,11 +7,10 @@ const entities = require('./entities.js');
 const admin = require('firebase-admin');
 const uuidv4 = require('uuid/v4');
 const gamestate = require('./gamestate.js');
+const t = require('./translations.js');
 const axios = require('axios');
-
 admin.initializeApp();
 
-const validLanguages = ['de', 'en'];
 const whitelist = ['https://battlechoc.dev', 'https://battlechoc.com', 'http://localhost:3000', 'https://localhost:3000', 'chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop'];
 const corsOptions = {
     origin: function (origin, callback) {
@@ -189,6 +188,10 @@ app.post('/user/challenge', async (req, res) => {
     } else {
         let opponentId = docs.docs[0].id;
         let opponent = docs.docs[0].data();
+        let language = opponent.language;
+        if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
+            language = t.getDefaultLanguage();
+        }
         if (opponentId === req.user.uid) {
             res.status(400).json({ error: 'CANNOT CREATE A GAME CHALLENGING YOURSELF' });
         } else {
@@ -242,8 +245,8 @@ app.post('/user/challenge', async (req, res) => {
                                 permission.messaging.forEach(token => {
                                     const payload = {
                                       'notification': {
-                                        'title':  player.username + ' challenges you @battlechoc',
-                                        'body': 'This could be a great fight!',
+                                        'title':  player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
+                                        'body': t.t[language].NOTIFICATION_CHALLENGE_BODY,
                                         'click_action': 'https://battlechoc.com?sessionId=' + databaseSession.id,
                                         'image': 'https://battlechoc.com/icon-144x144.png'
                                       },
@@ -841,7 +844,7 @@ app.post('/user/username', async (req, res) => {
 
 app.post('/user/language', (req, res) => {
     let players = admin.firestore().collection('players');
-    if (validLanguages.includes(req.body.language)) {
+    if (t.isValidLanguage(req.body.language)) {
         players.doc(req.user.uid).get().then(doc => {
             if (doc.exists) {
                 players.doc(req.user.uid).update({
