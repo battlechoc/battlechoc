@@ -6,7 +6,8 @@ const instance = axios.create({ baseURL: baseUrl });
 
 const ServerRequest = async (method, url, body) => {
 	let token = await firebase.auth().currentUser.getIdToken(true);
-    let config = { headers: { 'Authorization': `Bearer ${token}` } };
+
+	let config = { headers: { 'Authorization': `Bearer ${token}` } };
 
 	if (method === 'post') {
 		return instance.post(url, body, config);
