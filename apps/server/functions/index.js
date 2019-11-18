@@ -842,13 +842,13 @@ app.post('/user/username', async (req, res) => {
 app.post('/user/language', (req, res) => {
     let players = admin.firestore().collection('players');
     if (validLanguages.includes(req.body.language)) {
-        players.doc(req.body.player).get().then(doc => {
+        players.doc(req.user.uid).get().then(doc => {
             if (doc.exists) {
-                players.doc(req.body.player).update({
+                players.doc(req.user.uid).update({
                     language: req.body.language
                 }).then(() => {
-                    res.json({ language: language });
-                }).catch(error => res.status(500).json({ error: error }));;
+                    res.json({ language: req.body.language });
+                }).catch(error => res.status(500).json({ error: error.toString() }));;
             } else {
                 res.status(404).json({ error: 'PLAYER DOES NOT EXIST' });
             }
