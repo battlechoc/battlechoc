@@ -460,8 +460,8 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                         permission.messaging.forEach(token => {
                             const payload = {
                               'notification': {
-                                'title':  opponent + ' finished the turn @battlechoc',
-                                'body': 'Let\'s go. It\'s your move!',
+                                'title':  opponent + t.t[language].NOTIFICATION_TURN_FINISHED_TITLE,
+                                'body': t.t[language].NOTIFICATION_TURN_FINISHED_BODY,
                                 'click_action': 'https://battlechoc.com?sessionId=' + req.body.sessionId,
                                 'image': 'https://battlechoc.com/icon-144x144.png'
                               },
