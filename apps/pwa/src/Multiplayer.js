@@ -357,7 +357,7 @@ class Multiplayer {
         if (firebase.auth().currentUser) {
             try {
                 await ServerRequest('delete', '/user/friend', { friend: friend });
-                this.fetchFriendsList();
+                await this.fetchFriendsList();
             } catch (error) {
                 logger.warn('error while removing friend ' + error);
             }
@@ -370,7 +370,7 @@ class Multiplayer {
         if (firebase.auth().currentUser) {
             try {
                 await ServerRequest('post', '/user/friend/', { friend: friend });
-                this.fetchFriendsList();
+                await this.fetchFriendsList();
             } catch (error) {
                 logger.warn('error while adding friend ' + error);
             }

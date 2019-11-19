@@ -108,9 +108,16 @@ class Hud extends Component {
         this.setState({ openSettings: true });
     }
 
-    openAccountOverview = () => {
+    openAccountOverview = (playerAccount) => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.setState({ showAccountOverview: true });
+        this.setState({ 
+            showAccountOverview: true,
+            playerAccount: playerAccount
+        });
+    }
+
+    closeAccountOverview = () => {
+        this.setState({ showAccountOverview: false});
     }
 
     resumeOrStartGame = () => {
@@ -121,6 +128,11 @@ class Hud extends Component {
         }
     }
 
+    joinGame = sessionId => {
+        this.setState({ multiplayerScreen: false, choclabScreen: false });
+        this.props.enterMultiplayerGame(sessionId);
+    }
+
     render() {
         const stage = this.estimateStage();
         let textAnimation = typeof this.state.message === 'undefined' ? undefined : <div id="textAnimation" className="zoom">{this.state.message}</div>
@@ -128,7 +140,11 @@ class Hud extends Component {
             <div className={this.props.className}>
                 <Tooltip />
                 <Settings startTutorial={this.props.startTutorial} surrender={this.props.surrender} open={this.state.openSettings} close={() => this.setState({openSettings: false})} />
-                <AccountOverview open={this.state.showAccountOverview} close={() => this.setState({ showAccountOverview: false })} />
+                <AccountOverview
+                    challengePlayer={name => this.multiplayerScreen.challengePlayer(name)}
+                    addFriend={async friend => await this.multiplayerScreen.addFriend(friend)} 
+                    removeFriend={async friend => await this.multiplayerScreen.removeFriend(friend)} 
+                    joinGame={this.joinGame} playerAccount={this.state.playerAccount} open={this.state.showAccountOverview} close={this.closeAccountOverview} />
                 {(() => {
                     if (stage === 'CHOCLAB_SCREEN') {
                         return <div className="actionbar">
@@ -136,7 +152,6 @@ class Hud extends Component {
                                 size="small"
                                 key="4"
                                 color="primary"
-                                aria-label="back"
                                 className="icon"
                                 onClick={() => this.setState({ choclabScreen: false })}>
                                 <ArrowBackIcon />
@@ -148,7 +163,6 @@ class Hud extends Component {
                                 size="small"
                                 key="4"
                                 color="primary"
-                                aria-label="back"
                                 className="icon"
                                 onClick={() => this.setState({ multiplayerScreen: false })}>
                                 <ArrowBackIcon />
@@ -160,7 +174,6 @@ class Hud extends Component {
                                 size="small"
                                 key="4"
                                 color="primary"
-                                aria-label="back"
                                 className="icon"
                                 onClick={() => this.setState({ challengedProfile: undefined })}>
                                 <ArrowBackIcon />
@@ -237,11 +250,7 @@ class Hud extends Component {
                             </div>
                         );
                     } else if (stage === 'MULTIPLAYER_SCREEN') {
-                        return <MultiplayerScreen enterMultiplayerGame={sessionId => {
-                                this.setState({ multiplayerScreen: false, choclabScreen: false });
-                                this.props.enterMultiplayerGame(sessionId);
-                            }
-                        } onRef={multiplayerScreen => this.multiplayerScreen = multiplayerScreen}/>
+                        return <MultiplayerScreen openAccountOverview={this.openAccountOverview} enterMultiplayerGame={this.joinGame} onRef={multiplayerScreen => this.multiplayerScreen = multiplayerScreen}/>
                     } else if (stage === 'CHOCLAB_SCREEN') {
                         return <Choclab />
                     } else {

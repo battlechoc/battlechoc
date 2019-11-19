@@ -1,4 +1,4 @@
-#accountOverview {
+.accountOverview {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -6,14 +6,14 @@
     height: 100%;
 }
 
-#accountOverview .accountAttribute svg {
+.accountOverview .accountAttribute svg {
     font-size: 3rem;
     color: rgba(69, 123, 130, 1);
     width: 5vw;
     height: 5vw;
 }
 
-#accountOverview > .accountAttribute svg {
+.accountOverview > .accountAttribute svg {
     font-size: 4rem;
 }
 
@@ -21,7 +21,7 @@
     display: none;
 }
 
-#accountOverview .accountAttribute {
+.accountOverview .accountAttribute {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -29,13 +29,13 @@
     user-select: none;
 }
 
-#accountOverview > .accountAttribute {
+.accountOverview > .accountAttribute {
     font-size: 2.5rem;
     color: rgba(9, 63, 70, 0.8);
     font-weight: bolder;
 }
 
-#accountOverview .accountSubAttributes {
+.accountOverview .accountSubAttributes {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
@@ -43,7 +43,7 @@
     justify-content: center;
 }
 
-#accountOverview .accountSubAttributes .accountAttribute {
+.accountOverview .accountSubAttributes .accountAttribute {
     background-color: rgba(69, 123, 130, 0.6);
     border-radius: 50%;
     margin: 1vw 3vw;
@@ -54,12 +54,12 @@
     flex-direction: column;
 }
 
-#accountOverview .accountSubAttributes .accountAttribute .attributeValue {
+.accountOverview .accountSubAttributes .accountAttribute .attributeValue {
     font-size: 2rem;
     color: rgba(9, 63, 70, 0.8);
 }
 
-#accountOverview .accountAttribute img {
+.accountOverview .accountAttribute img {
     max-width: 10vw;
     filter: hue-rotate(155deg) brightness(0.8) contrast(0.5);
 }
@@ -82,7 +82,7 @@
     text-align: left;
 }
 
-#accountOverview .firebaseui-id-page-sign-in, #accountOverview .firebaseui-id-page-password-sign-in {
+.accountOverview .firebaseui-id-page-sign-in, .accountOverview .firebaseui-id-page-password-sign-in {
     position: fixed;
     top: 0;
     left: 0;
@@ -96,39 +96,44 @@
 }
 
 @media screen and (max-width: 700px) {
-    #accountOverview .accountSubAttributes .accountAttribute {
+    .accountOverview .accountSubAttributes .accountAttribute {
         margin: 1.5vw;
         width: 20vw;
         height: 20vw;
     }
 
-    #accountOverview .accountSubAttributes .accountAttribute .attributeValue {
+    .accountOverview .accountSubAttributes .accountAttribute .attributeValue {
         font-size: 1.5rem;
     }
 
-    #accountOverview > .accountAttribute {
+    .accountOverview > .accountAttribute {
         font-size: 2rem;
         flex-grow: 1;
     }
 
-    #accountOverview .loggedIn.accountSubAttributes {
+    .opponent.accountOverview > .accountAttribute {
+        font-size: 2rem;
+        flex-grow: unset;
+    }
+
+    .accountOverview .loggedIn.accountSubAttributes {
         margin-bottom: 15vh;
         align-items: center;
     }
 
-    #accountOverview .accountSubAttributes {
+    .accountOverview .accountSubAttributes {
         align-items: center;
     }
 }
 
 @media screen and (max-width: 600px) {
-    #accountOverview .accountSubAttributes .accountAttribute {
+    .accountOverview .accountSubAttributes .accountAttribute {
         margin: 2vw;
         width: 25vw;
         height: 25vw;
     }
 
-    #accountOverview .accountSubAttributes {
+    .accountOverview .accountSubAttributes {
         width: 100%; 
     }
 
@@ -136,116 +141,120 @@
         padding: 0;
     }
 
-    #accountOverview {
+    .accountOverview {
         justify-content: space-between;
     }
 
-    #accountOverview .accountAttribute svg {
+    .opponent.accountOverview {
+        justify-content: space-around;
+    }
+
+    .accountOverview .accountAttribute svg {
         width: 1em;
         height: 1em;
     }
 }
 
 @media screen and (max-width: 500px) {
-    #accountOverview .accountSubAttributes .accountAttribute {
+    .accountOverview .accountSubAttributes .accountAttribute {
         width: 28vw;
         height: 28vw;
         font-size: 1rem;
     }
 
-    #accountOverview .accountAttribute svg {
+    .accountOverview .accountAttribute svg {
         width: 0.8em;
         height: 0.8em;
     }
 }
 
 @media screen and (max-width: 400px) {
-    #accountOverview .accountAttribute svg {
+    .accountOverview .accountAttribute svg {
         width: 0.6em;
         height: 0.6em;
     }
 
-    #accountOverview > .accountAttribute {
+    .accountOverview > .accountAttribute {
         font-size: 2rem;
     }
 
-    #accountOverview > .accountAttribute svg {
+    .accountOverview > .accountAttribute svg {
         font-size: 5rem;
         width: 0.8em;
         height: 0.8em;
     }
 
-    #accountOverview .accountSubAttributes .accountAttribute .attributeValue {
+    .accountOverview .accountSubAttributes .accountAttribute .attributeValue {
         font-size: 1rem;
     }
 }
 
 @media screen and (orientation: landscape) and (max-height: 760px) {
-    #accountOverview .accountSubAttributes {
+    .accountOverview .accountSubAttributes {
         width: 100%; 
     }
 
-    #accountOverview .accountSubAttributes .accountAttribute {
+    .accountOverview .accountSubAttributes .accountAttribute {
         margin: 0 0.5vw;
         width: 12vw;
         height: 12vw;
     }
 
-    #accountOverview .accountAttribute {
+    .accountOverview .accountAttribute {
         font-size: 1rem;
     }
 
-    #accountOverview > .accountAttribute {
+    .accountOverview > .accountAttribute {
         font-size: 2rem;
     }
 
-    #accountOverview .accountSubAttributes .accountAttribute .attributeValue {
+    .accountOverview .accountSubAttributes .accountAttribute .attributeValue {
         font-size: 1rem;
     }
 
-    #accountOverview .accountAttribute svg {
+    .accountOverview .accountAttribute svg {
         width: 4vw;
         height: 4vw;
     }
 
-    #accountOverview > .accountAttribute svg {
+    .accountOverview > .accountAttribute svg {
         font-size: 4rem;
         width: 1.1em;
         height: 1.1em;
     }
 
-    #accountOverview .accountAttribute img {
+    .accountOverview .accountAttribute img {
         max-width: 6vw;
     }
 
-    #accountOverview .infobox #firebaseui_container > .firebaseui-page-provider-sign-in {
+    .accountOverview .infobox #firebaseui_container > .firebaseui-page-provider-sign-in {
         max-width: unset;
     }
 
-    #accountOverview .infobox #firebaseui_container > .firebaseui-page-provider-sign-in:nth-child(2) {
+    .accountOverview .infobox #firebaseui_container > .firebaseui-page-provider-sign-in:nth-child(2) {
         display: none;
     }
 
-    #accountOverview .infobox #firebaseui_container .firebaseui-idp-list {
+    .accountOverview .infobox #firebaseui_container .firebaseui-idp-list {
         display: flex;
         margin: 0;
     }
 
-    #accountOverview .infobox #firebaseui_container .firebaseui-idp-list > .firebaseui-list-item {
+    .accountOverview .infobox #firebaseui_container .firebaseui-idp-list > .firebaseui-list-item {
         margin: 0 0.5em;
     }
 
-    #accountOverview .infobox #firebaseui_container > .firebaseui-page-provider-sign-in > .firebaseui-card-content {
+    .accountOverview .infobox #firebaseui_container > .firebaseui-page-provider-sign-in > .firebaseui-card-content {
         padding: 0;
     }
 }
 
 @media screen and (max-height: 600px) and (orientation: landscape) {
-    #accountOverview .firebaseui-idp-list > .firebaseui-list-item {
+    .accountOverview .firebaseui-idp-list > .firebaseui-list-item {
         margin-bottom: 5px;
     }
 
-    #accountOverview .infobox > p {
+    .accountOverview .infobox > p {
         margin: 0.5em;
     } 
 
@@ -253,42 +262,42 @@
         font-size: 0.7rem;
     }
 
-    #accountOverview .accountSubAttributes {
+    .accountOverview .accountSubAttributes {
         align-items: center;
         flex-grow: 1;
     }
 
-    #accountOverview .loggedIn.accountSubAttributes {
+    .accountOverview .loggedIn.accountSubAttributes {
         margin-bottom: 0.5em;
     }
 
-    #accountOverview .accountSubAttributes .accountAttribute {
+    .accountOverview .accountSubAttributes .accountAttribute {
         width: 14.2vw;
         height: 14.2vw;
         font-size: 1rem;
     }
 
-    #accountOverview .accountAttribute svg {
+    .accountOverview .accountAttribute svg {
         width: 0.6em;
         height: 0.6em;
     }
 }
 
 @media screen and (max-height: 320px) and (orientation: landscape) {
-    #accountOverview .accountSubAttributes .accountAttribute {
+    .accountOverview .accountSubAttributes .accountAttribute {
         width: 14.5vw;
         height: 14.5vw;
         font-size: 0.8rem;
     }
 
-    #accountOverview .accountAttribute svg {
+    .accountOverview .accountAttribute svg {
         width: 0.5em;
         height: 0.5em;
     }
 }
 
 @media screen and (max-height: 600px) {
-    #accountOverview > .accountAttribute {
+    .accountOverview > .accountAttribute {
         display: none;
     }
 
@@ -300,49 +309,53 @@
         display: none;
     }
 
-    #accountOverview .accountSubAttributes {
+    .accountOverview .accountSubAttributes {
         margin-top: 10vh;
+    }
+
+    .accountOverview .opponent.accountSubAttributes {
+        margin-top: 0;
     }
 }
 
 @media screen and (max-height: 600px) and (orientation: portrait) {
-    #accountOverview .accountSubAttributes .accountAttribute {
+    .accountOverview .accountSubAttributes .accountAttribute {
         width: 25vw;
         height: 25vw;
         font-size: 1rem;
     }
 
-    #accountOverview .infobox {
+    .accountOverview .infobox {
         padding: 0;
     }
 
-    #accountOverview .infobox ul.firebaseui-idp-list {
+    .accountOverview .infobox ul.firebaseui-idp-list {
         margin-bottom: 4px;
     }
 
-    #accountOverview .infobox > p {
+    .accountOverview .infobox > p {
         margin: 0.1em;
     } 
 
-    #accountOverview .infobox > .loggedinInfo {
+    .accountOverview .infobox > .loggedinInfo {
         padding: 1rem;
     }
 
-    #accountOverview .infobox > button {
+    .accountOverview .infobox > button {
         margin: 1rem;
     }
 }
 
 @media screen and (max-height: 400px) and (orientation: landscape) {
-    #accountOverview form .firebaseui-card-header:first-child {
+    .accountOverview form .firebaseui-card-header:first-child {
         display: none;
     }
 
-    #accountOverview form .firebaseui-error-wrapper {
+    .accountOverview form .firebaseui-error-wrapper {
         min-height: unset;
     }
 
-    #accountOverview form .firebaseui-title {
+    .accountOverview form .firebaseui-title {
         display: none;
     }
 }
@@ -352,7 +365,7 @@
         margin: 0;
     }
 
-    #accountOverview .accountSubAttributes .accountAttribute {
+    .accountOverview .accountSubAttributes .accountAttribute {
         width: 16vw;
         height: 16vw;
         margin: 0.2vw 3vw;
@@ -360,7 +373,7 @@
 } 
 
 @media screen and (min-width: 1100px) {
-    #accountOverview .accountSubAttributes {
+    .accountOverview .accountSubAttributes {
         width: 100%; 
     }
 
@@ -368,7 +381,7 @@
         padding: 0;
     }
 
-    #accountOverview .accountSubAttributes .accountAttribute {
+    .accountOverview .accountSubAttributes .accountAttribute {
         margin: 0 1vw;
         width: 14vw;
         height: 14vw;
