@@ -61,20 +61,56 @@ app.post('/debugging/gamestate', (req, res) => {
 });
 
 app.get('/user/friends', async (req, res) => {
-    let ref = admin.firestore().collection('players').doc(req.user.uid);
+    let players = admin.firestore().collection('players')
+    let ref = players.doc(req.user.uid);
     let doc = await ref.get();
     if (doc.exists) {
         let player = doc.data();
         if (typeof player.friends === 'undefined') {
             res.json([]);
-        } else {
+        } else if (player.friends.length > 0) {
+            let refs = await admin.firestore().getAll(...player.friends.map(id => players.doc(id)));
             let friends = [];
-            await Promise.all(player.friends.map(async (friendId) => {
-                let friend = await admin.firestore().collection('players').doc(friendId).get();
-                friends.push({ username: friend.data().username });           
-            }));              
-            
+            for (let doc of refs) {
+                let player = doc.data();
+
+                if (typeof player.level !== 'undefined') {
+                    player.level = Object.values(player.level).map(attribute => Object.values(attribute).reduce((a, b) => a + b, 0)).reduce((a, b) => a + b, 0);
+                } else {
+                    player.level = 0;
+                }
+
+                if (typeof player.trackRecord !== 'undefined') {
+                    let finishedGames = player.trackRecord.filter(record => typeof record.winners !== 'undefined');
+                    player.winnings = finishedGames.filter(record => record.winners.filter(winner => winner.id === doc.id || winner.name === 'Charlie Bucket').length === 1).length;
+                    player.drawn = finishedGames.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+                    player.losses = finishedGames.length - player.winnings - player.drawn;
+                } else {
+                    player.losses = 0;
+                    player.winnings = 0;
+                    player.drawn = 0;
+                }
+                player.name = player.username;
+                // hide player specific fields
+                player.trackRecord = undefined;
+                player.last_upgrade_action = undefined;
+                player.coins = undefined;
+                let score = player.score;
+                player.score = undefined;
+                player.friends = undefined;
+                player.username = undefined;
+                if (typeof score === 'undefined' || isNaN(score)) {
+                    let scores = await players.where('score', '>', 0).get();
+                    player = Object.assign(player, {ranking: scores.size});
+                } else {
+                    let scores = await players.where('score', '>=', score).get();
+                    player = Object.assign(player, {ranking: scores.size});
+                }
+                friends.push(player);           
+            }
             res.json(friends); 
+        } else {
+            res.json([]);
         }
     } else {
         res.status(404).json({ error: 'PLAYER NOT FOUND'});
@@ -134,7 +170,6 @@ app.get('/query/user/:name', async (req, res) => {
 
     if (results.length > 0) {
         let refs = await admin.firestore().getAll(...results.map(id => players.doc(id)));
-        console.log(refs);
         let result = []
         for (let doc of refs) {
             let player = doc.data();
