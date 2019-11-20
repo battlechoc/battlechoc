@@ -91,10 +91,6 @@
     max-width: unset;
 }
 
-#accountOverviewTitle .dialogTitleText {
-    margin-left: 5vw;
-}
-
 @media screen and (max-width: 700px) {
     .accountOverview .accountSubAttributes .accountAttribute {
         margin: 1.5vw;
@@ -165,6 +161,10 @@
     .accountOverview .accountAttribute svg {
         width: 0.8em;
         height: 0.8em;
+    }
+
+    .accountOverview .loggedIn.accountSubAttributes {
+        margin-bottom: 5vh;
     }
 }
 
@@ -298,14 +298,6 @@
 
 @media screen and (max-height: 600px) {
     .accountOverview > .accountAttribute {
-        display: none;
-    }
-
-    #accountOverviewDialog .playerInfoTitle {
-        display: inline;
-    }
-
-    #accountOverviewDialog .accountInfoTitle {
         display: none;
     }
 

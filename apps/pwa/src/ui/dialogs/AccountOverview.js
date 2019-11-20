@@ -8,24 +8,15 @@ import * as firebaseui from 'firebaseui';
 import { multiplayer } from '../../Multiplayer';
 import firebase from 'firebase/app';
 import 'firebase/auth';
-import Dialog from '@material-ui/core/Dialog';
 import { Jukebox, Translation as t } from '../misc';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogTitle from '@material-ui/core/DialogTitle';
 import Button from '@material-ui/core/Button';
-import { AccountCircle, PlayArrow, HourglassEmpty, PersonAddDisabled, PersonAdd, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne, KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
+import { AccountCircle, PlayArrow, HourglassEmpty, PersonAddDisabled, PersonAdd, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/core/styles';
-import Fab from '@material-ui/core/Fab';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import BattlechocDialog from './BattlechocDialog';
+import useMediaQuery from '@material-ui/core/useMediaQuery';
 
 const useStyles = makeStyles(theme => ({
-    header: {
-        backgroundColor: '#324D5C',
-        boxShadow: '1px 1px 6px #000',
-        color: 'white',
-        textShadow: '1px 1px 3px #000',
-        padding: '8px'
-    },
     logoutButton: {
         color: '#f3f7df',
         borderColor: '#f3f7df'
@@ -35,24 +26,33 @@ const useStyles = makeStyles(theme => ({
         padding: '12px',
         backgroundColor: '#5b2f19',
         boxShadow: '1px 1px 6px #000',
-        fontSize: '1rem',
         margin: '1vh',
         minWidth: '50vw',
         textAlign: 'center',
         color: '#f3f7df',
         userSelect: 'none',
+        fontSize: '1rem',
         textShadow: '1px 1px 3px #000',
         textTransform: 'uppercase',
         display: 'flex',
         alignItems: 'center',
-        '@media screen and (max-width: 460px)': {
-          minWidth: '70vw'
+        '@media screen and (max-width: 399px)': {
+            minWidth: '70vw',
+            fontSize: '0.8rem'
+        },
+        '@media screen and (min-width: 400px)': {
+            minWidth: '50vw',
+            fontSize: '0.8rem'
+        },
+        '@media screen and (min-width: 500px)': {
+            fontSize: '0.8rem'
         },
         '@media screen and (min-width: 600px)': {
-          minWidth: '40vw'
+            minWidth: '40vw',
+            fontSize: '0.9rem'
         },
         '@media screen and (min-width: 900px)': {
-          minWidth: '30vw'
+            minWidth: '30vw'
         }
     },
     pendingButton: {
@@ -161,113 +161,91 @@ const AccountOverview = props => {
     }
 
     return (
-        <Dialog
-            fullWidth={true}
-            fullScreen={true}
+        <BattlechocDialog
             open={props.open}
-            PaperProps={{style: {
-                background: 'linear-gradient(0deg, rgba(255,255,255,1) 0%, rgba(252,238,228,1) 98%)'
-            }}}
-            onClose={props.close}
-            aria-labelledby="accountOverview"
-            id="accountOverviewDialog">
-            <DialogTitle className={classes.header} id="accountOverviewTitle">
-                <Fab
-                    size="small"
-                    color="primary"
-                    aria-label="back"
-                    onClick={() => {
-                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                        props.close();
-                    }}>
-                    <ArrowBackIcon />
-                </Fab>
-                <span className="dialogTitleText accountInfoTitle">{ t[props.language].ACCOUNTINFOS }</span>
-                <span className="dialogTitleText playerInfoTitle">{ playerName }</span>
-            </DialogTitle>
-            <DialogContent>
-                <div className={isPlayerAccount ? 'accountOverview' : 'opponent accountOverview'}>
-                    <div className="accountAttribute"><AccountCircle /> { playerName }</div>
-                    
-                    {(() => {
-                        if (typeof props.multiplayerSessions !== 'undefined' && !isPlayerAccount) {
-                            let actions = [];
-                            let gamesAgaistOpponent = props.multiplayerSessions.filter(session => session.opponent.name === playerName);
-                            if (gamesAgaistOpponent.length === 0) {
-                                actions.push(<div key={0} className={classes.menuButton} onClick={() => {
+            close={props.close}
+            id="accountOverviewDialog"
+            title={useMediaQuery('screen and (max-height: 600px)') ? playerName : t[props.language].ACCOUNTINFOS}>
+            <div className={isPlayerAccount ? 'accountOverview' : 'opponent accountOverview'}>
+                <div className="accountAttribute"><AccountCircle /> { playerName }</div>
+                {(() => {
+                    if (typeof props.multiplayerSessions !== 'undefined' && !isPlayerAccount) {
+                        let actions = [];
+                        let gamesAgaistOpponent = props.multiplayerSessions.filter(session => session.opponent.name === playerName);
+                        if (gamesAgaistOpponent.length === 0) {
+                            actions.push(<div key={0} className={classes.menuButton} onClick={() => {
+                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                props.challengePlayer(playerName);
+                                props.close();
+                            }}>
+                                <PlayArrow className={classes.actionIcon} />
+                                <span className={classes.actionTitle}>{t[props.language].START_GAME}</span>
+                            </div>);
+                        } else {
+                            actions.push(<div key={1} className={classes.menuButton} onClick={() => {
+                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                props.joinGame(gamesAgaistOpponent[0].id);
+                                props.close();
+                            }}>
+                                {gamesAgaistOpponent[0].myTurn ? <PlayArrow className={classes.actionIcon} /> : <HourglassEmpty className={classes.actionIcon} />}
+                                <span className={classes.actionTitle}>{t[props.language].JOIN_GAME}</span>
+                            </div>);
+                        }
+
+                        if (!props.friends.map(friend => friend.username).includes(playerName)) {
+                            actions.push(<div key={3} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
+                                if (!refreshFriend) {
+                                    setRefreshFriend(true);
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                    props.challengePlayer(playerName);
-                                    props.close();
-                                }}>
-                                    <PlayArrow className={classes.actionIcon} />
-                                    <span className={classes.actionTitle}>{t[props.language].START_GAME}</span>
-                                </div>);
-                            } else {
-                                actions.push(<div key={1} className={classes.menuButton} onClick={() => {
+                                    await props.addFriend(playerName);
+                                    setRefreshFriend(false);
+                                }
+                            }}>
+                                <PersonAdd className={classes.actionIcon} />
+                                <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].ADD_FRIEND}</span>
+                            </div>);
+                        } else {
+                            actions.push(<div key={4} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
+                                if (!refreshFriend) {
+                                    setRefreshFriend(true);
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                    props.joinGame(gamesAgaistOpponent[0].id);
-                                    props.close();
-                                }}>
-                                    {gamesAgaistOpponent[0].myTurn ? <PlayArrow className={classes.actionIcon} /> : <HourglassEmpty className={classes.actionIcon} />}
-                                    <span className={classes.actionTitle}>{t[props.language].JOIN_GAME}</span>
-                                </div>);
-                            }
+                                    props.removeFriend(playerName);
+                                    await props.addFriend(playerName);
+                                    setRefreshFriend(false);
+                                }
+                            }}>
+                                <PersonAddDisabled className={classes.actionIcon} />
+                                <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].REMOVE_FRIEND}</span>
+                            </div>);
+                        }
 
-                            if (!props.friends.map(friend => friend.username).includes(playerName)) {
-                                actions.push(<div key={3} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
-                                    if (!refreshFriend) {
-                                        setRefreshFriend(true);
-                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                        await props.addFriend(playerName);
-                                        setRefreshFriend(false);
-                                    }
-                                }}>
-                                    <PersonAdd className={classes.actionIcon} />
-                                    <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].ADD_FRIEND}</span>
-                                </div>);
-                            } else {
-                                actions.push(<div key={4} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
-                                    if (!refreshFriend) {
-                                        setRefreshFriend(true);
-                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                        props.removeFriend(playerName);
-                                        await props.addFriend(playerName);
-                                        setRefreshFriend(false);
-                                    }
-                                }}>
-                                    <PersonAddDisabled className={classes.actionIcon} />
-                                    <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].REMOVE_FRIEND}</span>
-                                </div>);
-                            }
+                        return <div className={classes.opponentActions}>{actions}</div>;
+                    }                        
+                })()}
 
-                            return <div className={classes.opponentActions}>{actions}</div>;
-                        }                        
-                    })()}
-
-                    <div className={'accountSubAttributes' + (loggedIn ? ' loggedIn' : '') + (isPlayerAccount ? '' : ' opponent')}>
-                        <div className="accountAttribute"><PlusOne />{t[props.language].ACCOUNT_OVERVIEW_LEVEL}<span className="attributeValue">{ level }</span></div>
-                        <div className="accountAttribute"><EmojiEvents />{t[props.language].ACCOUNT_OVERVIEW_RANK}<span className="attributeValue">{ ranking }</span></div>
-                        <div className="accountAttribute"><ThumbUp />{t[props.language].ACCOUNT_OVERVIEW_WON}<span className="attributeValue">{ winnings }</span></div>
-                        <div className="accountAttribute"><ThumbsUpDown />{t[props.language].ACCOUNT_OVERVIEW_DRAWN}<span className="attributeValue">{ drawn }</span></div>
-                        <div className="accountAttribute"><ThumbDown />{t[props.language].ACCOUNT_OVERVIEW_LOST}<span className="attributeValue">{losses }</span></div>
-                        { isPlayerAccount ? <div className="accountAttribute"><img src="images/coins.png" alt="choco coins" />{t[props.language].ACCOUNT_OVERVIEW_COINS}<span className="attributeValue">{ props.playerInfos.stats.coins }</span></div> : null }
-                    </div>
-
-                    { isPlayerAccount ? loggedIn ?    
-                        <div className="infobox">
-                            <p className="loggedinInfo">{t[props.language].ACCOUNT_OVERVIEW_ASSOCIATION} {props.playerInfos.email}</p>
-                            <Button className={classes.logoutButton} variant="outlined" onClick={signOut}>
-                                {t[props.language].SIGN_OUT}
-                            </Button>
-                        </div> :
-                        <div className="infobox">
-                            <StyledFirebaseAuth uiConfig={FirebaseSigninUiConfig} firebaseAuth={firebase.auth()} />
-                            <p>{t[props.language].ACCOUNT_OVERVIEW_CREATE_INFO}</p>
-                        </div> : null                 
-                    }
+                <div className={'accountSubAttributes' + (loggedIn ? ' loggedIn' : '') + (isPlayerAccount ? '' : ' opponent')}>
+                    <div className="accountAttribute"><PlusOne />{t[props.language].ACCOUNT_OVERVIEW_LEVEL}<span className="attributeValue">{ level }</span></div>
+                    <div className="accountAttribute"><EmojiEvents />{t[props.language].ACCOUNT_OVERVIEW_RANK}<span className="attributeValue">{ ranking }</span></div>
+                    <div className="accountAttribute"><ThumbUp />{t[props.language].ACCOUNT_OVERVIEW_WON}<span className="attributeValue">{ winnings }</span></div>
+                    <div className="accountAttribute"><ThumbsUpDown />{t[props.language].ACCOUNT_OVERVIEW_DRAWN}<span className="attributeValue">{ drawn }</span></div>
+                    <div className="accountAttribute"><ThumbDown />{t[props.language].ACCOUNT_OVERVIEW_LOST}<span className="attributeValue">{losses }</span></div>
+                    { isPlayerAccount ? <div className="accountAttribute"><img src="images/coins.png" alt="choco coins" />{t[props.language].ACCOUNT_OVERVIEW_COINS}<span className="attributeValue">{ props.playerInfos.stats.coins }</span></div> : null }
                 </div>
-            </DialogContent>
-        </Dialog>
+
+                { isPlayerAccount ? loggedIn ?    
+                    <div className="infobox">
+                        <p className="loggedinInfo">{t[props.language].ACCOUNT_OVERVIEW_ASSOCIATION} {props.playerInfos.email}</p>
+                        <Button className={classes.logoutButton} variant="outlined" onClick={signOut}>
+                            {t[props.language].SIGN_OUT}
+                        </Button>
+                    </div> :
+                    <div className="infobox">
+                        <StyledFirebaseAuth uiConfig={FirebaseSigninUiConfig} firebaseAuth={firebase.auth()} />
+                        <p>{t[props.language].ACCOUNT_OVERVIEW_CREATE_INFO}</p>
+                    </div> : null                 
+                }
+            </div>
+        </BattlechocDialog>
     );
 };
 

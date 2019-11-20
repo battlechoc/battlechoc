@@ -1,23 +1,18 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import './MultiplayerScreen.css';
-import Dialog from '@material-ui/core/Dialog';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogTitle from '@material-ui/core/DialogTitle';
 import TextField from '@material-ui/core/TextField';
-import { Button } from '@material-ui/core';
-import Fab from '@material-ui/core/Fab';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { Jukebox, Translation as t } from '../misc';
-import { PlayArrow, HourglassEmpty, Cancel, AccountCircle, SportsEsports, Delete } from '@material-ui/icons';
+import { PlayArrow, HourglassEmpty, Cancel, AccountCircle } from '@material-ui/icons';
 import { connect } from 'react-redux';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';
 import { multiplayer } from '../../Multiplayer';
-import withMobileDialog from '@material-ui/core/withMobileDialog';
 import logger from '../../helper/logger';
+import BattlechocDialog from '../dialogs/BattlechocDialog';
+import PlayerList from '../controls/PlayerList';
 
 class MultiplayerScreen extends Component {
     constructor(props) {
@@ -145,70 +140,54 @@ class MultiplayerScreen extends Component {
       return 0;
     }
 
+    sortByUsername( a, b ) {
+      if ( a.username > b.username ){
+        return 1;
+      }
+      if ( a.username < b.username ){
+        return -1;
+      }
+      return 0;
+    }
+
     render() {
         return (
             <div id="multiplayer">
-                <Dialog
-                    fullWidth={true}
-                    fullScreen={this.props.fullScreen}
+                <BattlechocDialog
                     open={this.state.showSurrenderDialog}
-                    onClose={() => this.setState({ showSurrenderDialog: false })}>
-                    <DialogTitle>{t[this.props.language].SURRENDER_GAME}</DialogTitle>
-                    <DialogContent>
+                    close={() => this.setState({ showSurrenderDialog: false })}
+                    title={t[this.props.language].SURRENDER_GAME}>
+                    <div className="surrenderDialog">
                         <p>{t[this.props.language].SURRENDER_GAME_TEXT(this.state.surrenderOpponentName)}</p>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => {
+                        <div className="menuButton" onClick={() => {
                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                             this.setState({ showSurrenderDialog: false, surrenderGameId: undefined, surrenderOpponentName: undefined });
                             this.surrenderGame(this.state.surrenderGameId);
-                        }}>{t[this.props.language].SURRENDER}</Button>
-                        <Button onClick={() => {
-                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                            this.setState({ showSurrenderDialog: false, surrenderGameId: undefined, surrenderOpponentName: undefined });
-                        }} color="primary">{t[this.props.language].BUTTON_BACK}</Button>
-                    </DialogActions>
-                </Dialog>
+                        }}>{t[this.props.language].SURRENDER}</div>
+                    </div>
+                </BattlechocDialog>
 
-                <Dialog
-                    fullWidth={true}
-                    fullScreen={this.props.fullScreen}
+                <BattlechocDialog
                     open={this.state.showFriends}
-                    PaperProps={{ style: {backgroundColor: '#f5f5f5'}}}
-                    onClose={() => this.setState({ showFriends: false })}
-                    aria-labelledby="friendsList">
-                    <DialogTitle>{t[this.props.language].FRIENDS}</DialogTitle>
-                    <DialogContent>
-                        <div id="friendsList">
-                            {this.props.friends.length > 0 ? Object.assign([], this.props.friends).sort().map((friend, i) => <div key={i} className="friendsRow">
-                                    <div>{friend.username}</div>
-                                    <div>
-                                        <Fab size="small" disabled={this.state.pendingFriendRequest === friend.username || this.canNotChallenge(friend.username)} color="primary" aria-label="play" onClick={() => this.challengePlayer(friend.username)}><SportsEsports /></Fab>
-                                        <Fab size="small" disabled={this.state.pendingFriendRequest === friend.username} color="primary" aria-label="delete" onClick={() => this.removeFriend(friend.username)} ><Delete /></Fab>
-                                    </div>
-                                </div>) : <p>{t[this.props.language].FRIENDS_INFO}</p> }
-                        </div>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => {
-                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                            this.setState({ showFriends: false });
-                        }} color="primary">{t[this.props.language].BUTTON_BACK}</Button>                    
-                    </DialogActions>
-                </Dialog>
+                    close={() => this.setState({ showFriends: false })}
+                    title={t[this.props.language].FRIENDS}>
+                    <PlayerList 
+                        players={this.props.friends} 
+                        removeFriend={this.removeFriend}
+                        challenge={this.challengePlayer}
+                        showProfile={this.showPlayerProfile}
+                        sessions={this.props.multiplayerSessions} />
+                </BattlechocDialog>
 
-                <Dialog
-                    fullWidth={true}
-                    fullScreen={this.props.fullScreen}
+                <BattlechocDialog
                     open={this.state.showSearch}
-                    PaperProps={{ style: {backgroundColor: '#f5f5f5'}}}
-                    onClose={() => this.setState({ showSearch: false })}
-                    aria-labelledby="searchFriends">
-                    <DialogTitle>{t[this.props.language].SEARCH_PLAYERS}</DialogTitle>
-                    <DialogContent>
+                    close={() => this.setState({ showSearch: false })}
+                    title={t[this.props.language].SEARCH_PLAYERS}>
+                    <div className="playerSearchDialog">
                         <TextField
                             label="Name"
                             value={this.state.userSearchText}
+                            style={{display: 'flex'}}
                             inputProps={{ spellCheck: 'false' }}
                             InputLabelProps={{ style: {color: 'rgba(69, 123, 130, 0.8)' }}}
                             onChange={event => {
@@ -217,20 +196,16 @@ class MultiplayerScreen extends Component {
                             }}
                             margin="normal"
                         /> 
-                        <div id="friendsList">
-                            {this.state.searchResults.length > 0 ? this.state.searchResults.map((user, i) => <div key={i} 
-                                onClick={() => this.showPlayerProfile({ opponent: user })} className="friendsRow">
-                                    <div>{user.name}</div>
-                                </div>) : <p>{t[this.props.language].SEARCH_USER_INFO}</p> }
-                        </div>
-                    </DialogContent>
-                    <DialogActions>
-                        <Button onClick={() => {
-                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                            this.setState({ showSearch: false });
-                        }} color="primary">{t[this.props.language].BUTTON_BACK}</Button>                    
-                    </DialogActions>
-                </Dialog>
+                        <PlayerList 
+                            players={this.state.searchResults} 
+                            friends={this.props.friends}
+                            addFriend={this.addFriend}
+                            removeFriend={this.removeFriend}
+                            challenge={this.challengePlayer}
+                            showProfile={this.showPlayerProfile}
+                            sessions={this.props.multiplayerSessions} />
+                    </div>
+                </BattlechocDialog>
 
                 <div className="controls">
                     <div className={(this.state.searchingRandomOpponent ? "disabled " : "") + "menuButton"} onClick={() => {
@@ -298,8 +273,7 @@ class MultiplayerScreen extends Component {
 }
 
 MultiplayerScreen.propTypes = {
-    enterMultiplayerGame: PropTypes.func.isRequired,
-    fullScreen: PropTypes.bool.isRequired
+    enterMultiplayerGame: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({
@@ -311,4 +285,4 @@ const mapStateToProps = state => ({
 });
 
 const MultiplayerScreenContainer = connect(mapStateToProps)(MultiplayerScreen);
-export default withMobileDialog({ breakpoint: 'md' })(MultiplayerScreenContainer);
+export default MultiplayerScreenContainer;

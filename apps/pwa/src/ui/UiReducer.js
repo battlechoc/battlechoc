@@ -4,6 +4,7 @@ import { EntityType } from '../gameplay/GameEntities';
 import OfflineStore from '../OfflineStore';
 import { EmptyPlayerStats } from '../Multiplayer';
 import { ServerRequest } from '../helper/settings';
+import logger from '../helper/logger';
 
 const uiReducer = createReducer({
     selectedBuilding: EntityType.FACTORY,
@@ -44,12 +45,12 @@ const uiReducer = createReducer({
     [UiActions.changeLanguage]: (state, action) => {
         state.language = action.payload;
         ServerRequest('post', '/user/language', { language: action.payload })
-            .then(response => {
-                OfflineStore.settingsStore.set("language", action.payload);
-            }).catch(error => {
-                OfflineStore.settingsStore.set("language", action.payload);
-                console.warn(error)
-            });
+        .catch(error => {
+            if (!error instanceof ReferenceError) {
+                logger.warn(error)
+            }
+        })
+        .finally(() => OfflineStore.settingsStore.set("language", action.payload));
     },
     [UiActions.deselectAttack]: (state, action) => {
         state.selectedAttack = undefined;
