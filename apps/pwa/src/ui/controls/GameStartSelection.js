@@ -45,7 +45,7 @@ class GameStartSelection extends Component {
                 className = 'cream';
             }
             return <div key={i} className={cell.previewStyle}>
-                <img className={className} alt="filled with cream" src="images/cream_preview.png" />
+                <img className={className} alt="filled with cream" src="/images/cream_preview.png" />
             </div>
         };
         return (
@@ -55,7 +55,7 @@ class GameStartSelection extends Component {
                         if (typeof this.props.game.board !== 'undefined') {
                             const creamedCells = this.props.game.board.fields[0].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM));
                             return <div className="creamedCellCount">
-                                <img alt="filled with cream" src="images/cream_preview.png" />
+                                <img alt="filled with cream" src="/images/cream_preview.png" />
                                 <p>{creamedCells.length}</p>
                             </div>
                         }
@@ -78,7 +78,7 @@ class GameStartSelection extends Component {
                         if (typeof this.props.game.board !== 'undefined') {
                             const creamedCells = this.props.game.board.fields[1].grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM));
                             return <div className="creamedCellCount">
-                                <img alt="filled with cream" src="images/cream_preview.png" />
+                                <img alt="filled with cream" src="/images/cream_preview.png" />
                                 <p>{creamedCells.length}</p>
                             </div>
                         }

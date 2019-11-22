@@ -67,7 +67,7 @@ class ChoclabPalette extends Component {
                         let className = this.state.selectedEntity === building.type ? 'selected previewContainer' : 'canbuild previewContainer';
                         return <div className={className} key={i}>
                             <div className={building.className + ' enabled preview'} 
-                                 style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }} onClick={() => {
+                                 style={{ backgroundImage: 'url(/images/toolbar_icon_palette.png)' }} onClick={() => {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                     this.selectEntity(building.type);
                             }} />

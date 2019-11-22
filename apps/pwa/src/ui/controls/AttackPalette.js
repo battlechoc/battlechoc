@@ -77,7 +77,7 @@ class AttackPalette extends Component {
                                     }
                                 }}>
                                     <div className="attackCount">{this.attacks(attack.type)}</div>
-                                    <div style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }}
+                                    <div style={{ backgroundImage: 'url(/images/toolbar_icon_palette.png)' }}
                                         className={attack.className + (canAttack ? ' enabled preview' : ' disabled preview')} />
                                 </div>
                             </div>

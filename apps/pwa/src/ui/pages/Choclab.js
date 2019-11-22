@@ -26,7 +26,7 @@ class Choclab extends Component {
             <div id="choclab">
                 {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
                     <span>{ this.props.playerInfos.stats.coins }</span>
-                    <img src="images/coins.png" alt="choco coins" />
+                    <img src="/images/coins.png" alt="choco coins" />
                 </div> : null}
                 <MeshPreview onRef={meshPreview => this.meshPreview = meshPreview}/>
 
@@ -116,7 +116,7 @@ class Choclab extends Component {
                     { this.state.selectedEntity ? (
                         <div className="coin costs">
                             <span>{ this.state.selectedEntity.coins() }</span>
-                            <img src="images/coins.png" alt="choco coins" />
+                            <img src="/images/coins.png" alt="choco coins" />
                         </div>) : null }
                 </div>
                 <ChoclabPalette selectEntity={entity => {

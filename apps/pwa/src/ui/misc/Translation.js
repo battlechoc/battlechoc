@@ -227,6 +227,7 @@ const languages = {
             }
         },
         WARNING_GAME_NOT_JOINABLE: 'The game you want to join has already ended',
+        WARNING_PLAYER_NOT_FOUND: name => 'Player ' + name + ' not found',
         SURRENDER: 'Surrender',
         SURRENDER_GAME: 'Surrender Game',
         SURRENDER_GAME_TEXT: name => 'Do you really want to surrender the game against ' + name
@@ -457,6 +458,7 @@ const languages = {
             }
         },
         WARNING_GAME_NOT_JOINABLE: 'Das gewünschte Spiel wurde bereits beendet',
+        WARNING_PLAYER_NOT_FOUND: name => 'Spieler ' + name + ' wurde nicht gefunden',
         SURRENDER: 'Aufgeben',
         SURRENDER_GAME: 'Spiel aufgeben',
         SURRENDER_GAME_TEXT: name => 'Möchtest du das Spiel gegen ' + name + ' wirklich aufgeben?'
