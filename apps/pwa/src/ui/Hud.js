@@ -3,6 +3,7 @@ import './Hud.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
+import { showQuickMessage } from './UiActions';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AppleHint, AccountOverview } from './dialogs';
@@ -19,6 +20,7 @@ import Choclab from './pages/Choclab';
 import { multiplayer } from '../Multiplayer';
 import { ServerRequest } from '../helper/settings';
 import logger from '../helper/logger';
+import firebase from '@firebase/app';
 
 class Hud extends Component {
     constructor(props) {
@@ -26,6 +28,7 @@ class Hud extends Component {
         this.state = {
             clickable: true,
             open: false,
+            openInfo: false,
             openSettings: false,
             showAccountOverview: false,
             upgradeMessageOpen: false,
@@ -52,10 +55,21 @@ class Hud extends Component {
         if (typeof this.props.challengedPlayer !== 'undefined') {
             this.setState({ multiplayerScreen: true }, async () => {
                 try {
+                    while (!firebase.auth().currentUser) {
+                        await this.sleep(100);
+                    }
                     let response = await ServerRequest('get', '/user/' + this.props.challengedPlayer);
                     this.multiplayerScreen.showPlayerProfile({ opponent: response.data });
-                } catch(error) {
-                    logger.warn(error);
+                } catch (error) {
+                    if (error.response) {
+                        if (error.response.status === 404) {
+                            this.props.showQuickMessage({ text: t[this.props.language].WARNING_PLAYER_NOT_FOUND(this.props.challengedPlayer) });
+                        } else {
+                            logger.warn(error, error.response.toString());
+                        }
+                    } else {
+                        logger.error(error);
+                    }
                 }
             });
         }
@@ -204,11 +218,11 @@ class Hud extends Component {
                             <div id="mainMenu">
                                 {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
                                     <span>{this.props.playerInfos.stats.coins}</span>
-                                    <img src="images/coins.png" alt="choco coins" />
+                                    <img src="/images/coins.png" alt="choco coins" />
                                 </div> : null}
                                 <SocialIcons />
                                 <div className="logo">
-                                    <img alt="logo" src="images/logo.png?v=1.0" />
+                                    <img alt="logo" src="/images/logo.png?v=1.0" />
                                 </div>
                                 <div className="titleMenu">
                                     {this.props.assetsReady ? controls : null}
@@ -235,7 +249,7 @@ class Hud extends Component {
                                         </DialogActions>
                                     </Dialog>
                                 </div>
-                                <Info />
+                                <Info language={this.props.language} openInfo={this.props.openInfo} />
                             </div>
                         );
                     } else if (stage === 'CHOOSE_MENU') {
@@ -291,8 +305,13 @@ const mapStateToProps = state => ({
     playerInfos: state.ui.playerInfos
 });
 
+const mapDispatchToProps = {
+    showQuickMessage
+};
+
 const HudContainer = connect(
-    mapStateToProps
+    mapStateToProps,
+    mapDispatchToProps
 )(Hud);
 
 export default HudContainer;

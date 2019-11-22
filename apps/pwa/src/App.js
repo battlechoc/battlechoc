@@ -28,21 +28,28 @@ const Scene = React.lazy(() => import('./3d/Scene'));
 class App extends Component {
     constructor(props) {
         super(props);
-        let params = {};
-        if (window.location.search.length > 0) {
-            window.location.search.substr(1).split('&').forEach(param => {
-                params[param.split('=')[0]] = param.split('=')[1];
-            });
-            if (typeof window.history !== 'undefined' && typeof window.history.pushState !== 'undefined') {
-                window.history.pushState({}, document.title, window.location.pathname);
-            }
+        let path = window.location.pathname;
+        let openInfo = false;
+        if (path === '/privacy-policy') {
+            openInfo = true;
+        } else if (/^(\/[a-zA-Z][a-zA-Z0-9_]{2,15})$/.test(path)) {
+            var player = path.slice(1);
+        } else if (path.startsWith('/situation/')) {
+            var situation = path.replace('/situation/', '').slice(0,32);
+        } else if (path.startsWith('/session/')) {
+            var session = path.replace('/session/', '').slice(0,20);
         }
+
+        if (path !== '/') {
+            window.history.pushState({}, null, window.location.origin);
+        }
+
         this.timeouts = [];
         this.state = { 
-            params: params, 
-            displayMessage: true, 
-            displayedMessage: 'The game you want to join has already ended', 
-            messageType: 'warning' 
+            player: player,
+            situation: situation,
+            session: session,
+            openInfo: openInfo
         };
     }
 
@@ -134,7 +141,7 @@ class App extends Component {
             this.opponent.player = this.props.game.players[1];
             this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
             this.props.loadUiState(situation.ui).then(() => {
-                this.setState({ params: { ...this.state.params, situation: undefined } }, () => {
+                this.setState({ situation: undefined }, () => {
                     if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
                         this.scene.startGame(this.props.game, false);
                     }
@@ -145,9 +152,9 @@ class App extends Component {
 
     UNSAFE_componentWillReceiveProps(nextProps) {
         if (!this.props.assetsReady && nextProps.assetsReady) {
-            if (this.state.params.situation === 'd41d8cd98f00b204e9800998ecf8427e') {
+            if (this.state.situation === 'd41d8cd98f00b204e9800998ecf8427e') {
                 this.loadSituation(BuildFactoryTestSituation);
-            } else if (this.state.params.situation === '2042050de74e855affdb312da85badbf') {
+            } else if (this.state.situation === '2042050de74e855affdb312da85badbf') {
                 this.loadSituation(FactoryExtensionTest);
             }
         }
@@ -374,7 +381,6 @@ class App extends Component {
     }
 
     showOverview() {
-        this.setState({ params: { ...this.state.params, sessionId: undefined } });
         Jukebox.stopMusic(true);
         this.props.showOverview();
         this.props.gameResumeable(false);
@@ -427,8 +433,9 @@ class App extends Component {
                     endGame={() => this.endGame()}
                     surrender={() => this.surrender()}
                     onRef={hud => this.hud = hud}
-                    challengedPlayer={this.state.params.challenge}
-                    sessionId={this.state.params.sessionId} />
+                    challengedPlayer={this.state.player}
+                    openInfo={this.state.openInfo}
+                    sessionId={this.state.session} />
                 {this.props.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
             </div>
         );

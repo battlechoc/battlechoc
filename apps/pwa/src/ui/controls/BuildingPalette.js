@@ -118,7 +118,7 @@ class BuildingPalette extends Component {
                                 let className = canBuild ? (this.props.selectedBuilding === building.type ? 'selected previewContainer' : 'canbuild previewContainer') : 'previewContainer';
                                 return <div className={className} key={i}>
                                     <div className={building.className + (canBuild ? ' enabled preview' : ' disabled preview')} 
-                                         style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }} onClick={() => {
+                                         style={{ backgroundImage: 'url(/images/toolbar_icon_palette.png)' }} onClick={() => {
                                         this.tapBuilding(building.type);
                                         if (canBuild) {
                                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);

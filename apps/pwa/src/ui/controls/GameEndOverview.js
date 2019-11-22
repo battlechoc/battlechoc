@@ -141,7 +141,7 @@ class GameEndOverview extends Component {
                     <div id="pie">
                         <div id="coins">
                             <span className={ this.state.outcome }>{ this.state.awards }</span>
-                            <img src="images/coins.png" alt="choco coins" />
+                            <img src="/images/coins.png" alt="choco coins" />
                         </div>
                     </div>
                 </div>

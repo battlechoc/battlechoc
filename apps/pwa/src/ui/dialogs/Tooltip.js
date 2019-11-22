@@ -107,7 +107,7 @@ class Tooltip extends Component {
     render() {
         if (typeof this.props.game !== 'undefined') {
             let { title, message } = this.getContent()
-            let loadingAnimation = multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === false ? <img className="loadingAnimation" src="animations/loading.gif" alt="loading" /> : null;
+            let loadingAnimation = multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === false ? <img className="loadingAnimation" src="/animations/loading.gif" alt="loading" /> : null;
             if (typeof title !== 'undefined') {
                 return (
                     <div id="tooltipContainer">

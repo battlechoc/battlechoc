@@ -188,19 +188,19 @@ class Scene extends Component {
         }
 
         if (messageType === this.InfoType.CACAO_HARVESTED) {
-            drawInfo('images/cacao_no_background.png', '#70bf31', '+' + amount);
+            drawInfo('/images/cacao_no_background.png', '#70bf31', '+' + amount);
         } else if (messageType === this.InfoType.CACAO_CONSUMED) {
-            drawInfo('images/cacao_no_background.png', '#c70000', '-' + amount);
+            drawInfo('/images/cacao_no_background.png', '#c70000', '-' + amount);
         } else if (messageType === this.InfoType.INCREASE_CACAO_PER_TURN) {
-            drawInfo('images/cacaoPerTurn.png', '#70bf31', '+' + amount);
+            drawInfo('/images/cacaoPerTurn.png', '#70bf31', '+' + amount);
         } else if (messageType === this.InfoType.INCREASE_BUILDINGS_PER_TURN) {
-            drawInfo('images/buildingsPerTurn.png', '#70bf31', '+' + amount);
+            drawInfo('/images/buildingsPerTurn.png', '#70bf31', '+' + amount);
         } else if (messageType === this.InfoType.INCREASE_ATTACKS_PER_TURN) {
-            drawInfo('images/attacksPerTurn.png', '#70bf31', '+' + amount);
+            drawInfo('/images/attacksPerTurn.png', '#70bf31', '+' + amount);
         } else if (messageType === this.InfoType.INCREASE_SPY_ATTACKS_PER_TURN) {
-            drawInfo('images/spyAttacksPerTurn.png', '#70bf31', '+' + amount);
+            drawInfo('/images/spyAttacksPerTurn.png', '#70bf31', '+' + amount);
         } else if (messageType === this.InfoType.BUNNY_CAUGHT) {
-            drawInfo('images/bunnyCaught.png');
+            drawInfo('/images/bunnyCaught.png');
         }
     }
 

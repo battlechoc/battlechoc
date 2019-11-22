@@ -5,15 +5,15 @@ class Jukebox {
         this.mute = false;
         this.buffer = [];
         this.SOUNDS = Object.freeze({
-            UI_ACCEPT: { filename: 'sound/ui_accept.mp3', sound: null },
-            UI_BUILD: { filename: 'sound/ui_build.mp3', sound: null },
-            ATTACK_EXPLOSION: { filename: 'sound/attack_explosion.mp3', sound: null },
-            ATTACK_BUNNY: { filename: 'sound/attack_bunny.mp3', sound: null },
-            BUNNY_CAUGHT: { filename: 'sound/bunny_caught.mp3', sound: null }
+            UI_ACCEPT: { filename: '/sound/ui_accept.mp3', sound: null },
+            UI_BUILD: { filename: '/sound/ui_build.mp3', sound: null },
+            ATTACK_EXPLOSION: { filename: '/sound/attack_explosion.mp3', sound: null },
+            ATTACK_BUNNY: { filename: '/sound/attack_bunny.mp3', sound: null },
+            BUNNY_CAUGHT: { filename: '/sound/bunny_caught.mp3', sound: null }
         });
 
         this.SONGS = Object.freeze({
-            MAIN_THEME: { filename: 'music/CacaoLiving.mp3', music: null }
+            MAIN_THEME: { filename: '/music/CacaoLiving.mp3', music: null }
         });
 
         this.soundContext = new (window.AudioContext || window.webkitAudioContext)();

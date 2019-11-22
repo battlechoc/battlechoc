@@ -182,7 +182,7 @@ class Gamefield {
         }
         
         let particleSystem = new ParticleSystem("particles", 2000, this.scene);
-        particleSystem.particleTexture = new Texture("images/raindrop.png", this.scene);
+        particleSystem.particleTexture = new Texture("/images/raindrop.png", this.scene);
 
         particleSystem.emitter = fountain;
         particleSystem.minEmitBox = new Vector3(0, 0, 0);

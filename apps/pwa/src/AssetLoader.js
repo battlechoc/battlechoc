@@ -57,7 +57,7 @@ class AssetLoadingView extends Component {
 
     loadAssets(scene) {
         for (let key in assetLoader.assets.models) {
-            SceneLoader.ImportMesh('', 'models/', assetLoader.assets.models[key] + '?v=' + assetVersion, scene, group => {
+            SceneLoader.ImportMesh('', '/models/', assetLoader.assets.models[key] + '?v=' + assetVersion, scene, group => {
                 group.forEach((mesh, i) => {
                     if (Object.values(BoardCellTypes).includes(key) && mesh.name !== '__root__') {
                         let material = new StandardMaterial(key + '.material', scene);
@@ -91,7 +91,7 @@ class AssetLoadingView extends Component {
         }
 
         for (let i = 0; i < Object.keys(assetLoader.assets.images).length; i++) {
-            this.loadImage('images/' + assetLoader.assets.images[Object.keys(assetLoader.assets.images)[i]]).then(() => this.updateProgress());
+            this.loadImage('/images/' + assetLoader.assets.images[Object.keys(assetLoader.assets.images)[i]]).then(() => this.updateProgress());
         }                     
     }
 

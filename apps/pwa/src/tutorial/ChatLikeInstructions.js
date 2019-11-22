@@ -72,7 +72,7 @@ class ChatLikeInstructions extends Component {
                 return <div key={i}>{message.element}</div>;
             } else if (message.type === 'image') {
                 if (['factory', 'cacaotree', 'cannon', 'fruitCannon'].includes(message.src)) {
-                    return <div key={i} className="media"><div className="speechBubble"><div className={message.src + ' preview'} style={{ backgroundImage: 'url(images/toolbar_icon_palette.png)' }}></div></div></div>;
+                    return <div key={i} className="media"><div className="speechBubble"><div className={message.src + ' preview'} style={{ backgroundImage: 'url(/images/toolbar_icon_palette.png)' }}></div></div></div>;
                 } else if (message.src === 'skip') {
                     return <div key={i} className="media"><div className="speechBubble"><IconButton color="inherit" aria-label="next"><ArrowForwardIcon /></IconButton></div></div>;
                 } else {
