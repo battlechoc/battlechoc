@@ -294,10 +294,8 @@ class Multiplayer {
             let doc = await firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).get();
             if (doc.exists) {
                 let player = doc.data();
-                logger.info(player);
                 if (typeof player.username !== 'undefined') {
-                    logger.info('https://battlechoc.com?challenge=' + player.username);
-                    return 'https://battlechoc.com?challenge=' + player.username;
+                    return 'https://battlechoc.com/' + player.username;
                 }
             }
         }
