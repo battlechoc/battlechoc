@@ -1,6 +1,6 @@
 import { createReducer } from 'redux-starter-kit';
 import * as GameActions from './GameActions';
-import { EntityType, BoardCellTypes, AttackType, Board, createEntity, getEntityDescriptor } from './GameEntities';
+import { EntityType, BoardCellTypes, AttackType, Board, createEntity, getEntityDescriptor, getCheapest } from './GameEntities';
 import { PlayerType } from './Player';
 import { multiplayer, EmptyPlayerStats } from '../Multiplayer';
 import logger from '../helper/logger';
@@ -68,7 +68,7 @@ function prepareBuildPhase(gameState) {
     currentPlayer(gameState).attacks[AttackType.HOT_CHOCOLATE] = currentPlayer(gameState).attacksPerTurn[AttackType.HOT_CHOCOLATE];
     currentPlayer(gameState).attacks[AttackType.BUNNY] = currentPlayer(gameState).attacksPerTurn[AttackType.BUNNY];
     currentPlayer(gameState).buildings = currentPlayer(gameState).buildingsPerTurn;
-    if (currentPlayer(gameState).buildings > 0) {
+    if (currentPlayer(gameState).buildings > 0 && currentPlayer(gameState).cacao >= getCheapest(currentPlayer(gameState).level).costs()) {
         gameState.state = GameStateTypes.BUILD_PHASE;
     } else {
         gameState.state = GameStateTypes.ATTACK_PHASE;
