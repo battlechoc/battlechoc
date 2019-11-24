@@ -4,7 +4,9 @@ import { Provider } from 'react-redux';
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
+import { Translation as t } from './ui/misc';
 import rootReducer from './RootReducer';
+import { showQuickMessage } from './ui/UiActions';
 import { gameplayLogger } from './gameplay/GamePlayLogger';
 import actionValidator from './gameplay/ActionValidator';
 import multiplayerActionRelay from './gameplay/MultiplayerActionRelay';
@@ -156,7 +158,17 @@ ReactDOM.render(
     document.getElementById('root')
 );
 
+let config = {
+    onUpdate: () => {
+        let language = store.getState().ui.language;
+        store.dispatch(showQuickMessage({ 
+            text: t[language].PWA_UPDATE_AVAILABLE,
+            variant: 'info'
+        }));
+    }
+}
+
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
 // Learn more about service workers: http://bit.ly/CRA-PWA
-serviceWorker.register();
+serviceWorker.register(config);

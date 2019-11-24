@@ -230,7 +230,8 @@ const languages = {
         WARNING_PLAYER_NOT_FOUND: name => 'Player ' + name + ' not found',
         SURRENDER: 'Surrender',
         SURRENDER_GAME: 'Surrender Game',
-        SURRENDER_GAME_TEXT: name => 'Do you really want to surrender the game against ' + name
+        SURRENDER_GAME_TEXT: name => 'Do you really want to surrender the game against ' + name,
+        PWA_UPDATE_AVAILABLE: 'A new version is available and will be used as soon as you restart the pwa, or the browser'
     },
     de: {
         SIGNINORUP: 'Anmelden',
@@ -461,7 +462,8 @@ const languages = {
         WARNING_PLAYER_NOT_FOUND: name => 'Spieler ' + name + ' wurde nicht gefunden',
         SURRENDER: 'Aufgeben',
         SURRENDER_GAME: 'Spiel aufgeben',
-        SURRENDER_GAME_TEXT: name => 'Möchtest du das Spiel gegen ' + name + ' wirklich aufgeben?'
+        SURRENDER_GAME_TEXT: name => 'Möchtest du das Spiel gegen ' + name + ' wirklich aufgeben?',
+        PWA_UPDATE_AVAILABLE: 'Eine neue Version ist verfügbar und wird nach Neustart der PWA, oder des Browsers, verwendet.'
     }
 };
 

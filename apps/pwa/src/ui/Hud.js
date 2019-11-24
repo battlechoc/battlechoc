@@ -272,7 +272,7 @@ class Hud extends Component {
                             <div>
                                 <AttackPalette />
                                 <BuildingPalette />
-                                <InfoPanel />
+                                <InfoPanel players={this.props.game.players} />
                                 {this.props.overviewVisible ? <GameEndOverview finishGame={() => this.props.endGame()} /> : null}
                             </div>
                         )
