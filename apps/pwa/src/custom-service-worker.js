@@ -34,5 +34,5 @@ workbox.routing.registerRoute(
 );
 
 workbox.core.skipWaiting();
-workbox.core.clientsClaim():
+workbox.core.clientsClaim();
 workbox.precaching.precacheAndRoute([]);

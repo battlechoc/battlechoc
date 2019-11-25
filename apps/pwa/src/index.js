@@ -168,7 +168,20 @@ let config = {
     }
 }
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: http://bit.ly/CRA-PWA
 serviceWorker.register(config);
+
+window.addEventListener("offline", () => { 
+    let language = store.getState().ui.language;
+    store.dispatch(showQuickMessage({ 
+        text: t[language].PWA_OFFLINE_MODE,
+        variant: 'info'
+    }));
+});
+
+window.addEventListener("online", () => { 
+    let language = store.getState().ui.language;
+    store.dispatch(showQuickMessage({ 
+        text: t[language].PWA_ONLINE_MODE,
+        variant: 'info'
+    }));
+});

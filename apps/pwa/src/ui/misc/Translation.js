@@ -231,7 +231,9 @@ const languages = {
         SURRENDER: 'Surrender',
         SURRENDER_GAME: 'Surrender Game',
         SURRENDER_GAME_TEXT: name => 'Do you really want to surrender the game against ' + name,
-        PWA_UPDATE_AVAILABLE: 'A new version is available and will be used as soon as you restart the pwa, or the browser'
+        PWA_UPDATE_AVAILABLE: 'A new version is available and will be used as soon as you restart the pwa, or the browser',
+        PWA_OFFLINE_MODE: 'You are running battlechoc without internet connection, so only the singleplayer mode is available',
+        PWA_ONLINE_MODE: 'You\'re re-connected to the Internet'
     },
     de: {
         SIGNINORUP: 'Anmelden',
@@ -463,7 +465,9 @@ const languages = {
         SURRENDER: 'Aufgeben',
         SURRENDER_GAME: 'Spiel aufgeben',
         SURRENDER_GAME_TEXT: name => 'Möchtest du das Spiel gegen ' + name + ' wirklich aufgeben?',
-        PWA_UPDATE_AVAILABLE: 'Eine neue Version ist verfügbar und wird nach Neustart der PWA, oder des Browsers, verwendet.'
+        PWA_UPDATE_AVAILABLE: 'Eine neue Version ist verfügbar und wird nach Neustart der PWA, oder des Browsers, verwendet',
+        PWA_OFFLINE_MODE: 'Du benutzt battlechoc ohne Internetverbindung, daher ist ausschließlich der Singleplayer-Modus verfügbar',
+        PWA_ONLINE_MODE: 'Du bist wieder mit dem Internet verbunden'
     }
 };
 
