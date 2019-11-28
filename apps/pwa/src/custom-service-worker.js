@@ -1,26 +1,26 @@
 workbox.routing.registerRoute(
   /https:.*sound\/.*\.mp3/,
-  new workbox.strategies.CacheFirst({ cacheName: 'sound-cache' })
+  new workbox.strategies.StaleWhileRevalidate({ cacheName: 'sound-cache' })
 );
 
 workbox.routing.registerRoute(
   /https:.*music\/.*\.mp3/,
-  new workbox.strategies.CacheFirst({ cacheName: 'music-cache' })
+  new workbox.strategies.StaleWhileRevalidate({ cacheName: 'music-cache' })
 );
 
 workbox.routing.registerRoute(
   /https:.*models\/.*\.glb/,
-  new workbox.strategies.CacheFirst({ cacheName: 'model-cache' })
+  new workbox.strategies.StaleWhileRevalidate({ cacheName: 'model-cache' })
 );
 
 workbox.routing.registerRoute(
   /https:.*images\/.*\.png/,
-  new workbox.strategies.CacheFirst({ cacheName: 'image-cache' })
+  new workbox.strategies.StaleWhileRevalidate({ cacheName: 'image-cache' })
 );
 
 workbox.routing.registerRoute(
   /https:.*animations\/.*\.gif/,
-  new workbox.strategies.CacheFirst({ cacheName: 'animation-cache' })
+  new workbox.strategies.StaleWhileRevalidate({ cacheName: 'animation-cache' })
 );
 
 workbox.routing.registerRoute(
