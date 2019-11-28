@@ -13,7 +13,8 @@
             ],
             globDirectory: 'build',
             swSrc: path.join('src', 'custom-service-worker.js'),
-            swDest: 'service-worker.js'
+            swDest: 'service-worker.js',
+            maximumFileSizeToCacheInBytes: 4 * 1024 * 1024
           })
         );
 
