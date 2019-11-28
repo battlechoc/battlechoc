@@ -24,10 +24,7 @@ function QuickMessage(props) {
         },
         iconVariant: {
             opacity: 0.9,
-            marginRight: theme.spacing(1),
-            [theme.breakpoints.down('xs')]: {
-                display: 'none'
-            }
+            marginRight: theme.spacing(1)
         },
         message: {
             display: 'flex',

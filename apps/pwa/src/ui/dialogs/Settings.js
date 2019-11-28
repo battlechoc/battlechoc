@@ -43,8 +43,8 @@ const useStyles = makeStyles(theme => ({
       marginLeft: '1vw'
     },
     logoutButton: {
-        color: '#f3f7df',
-        borderColor: '#f3f7df'
+      color: '#f3f7df',
+      borderColor: '#f3f7df'
     },
     menuButton: {
       cursor: 'pointer',
