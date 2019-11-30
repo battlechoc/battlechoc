@@ -6,7 +6,7 @@ import { GameStateTypes } from '../gameplay/GameplayReducer';
 import { showQuickMessage } from './UiActions';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
-import { Info, Tooltip, Settings, AppleHint, AccountOverview } from './dialogs';
+import { Info, Tooltip, Settings, AccountOverview } from './dialogs';
 import { CircularProgress, Button } from '@material-ui/core';
 import Dialog from '@material-ui/core/Dialog';
 import Typography from '@material-ui/core/Typography';
@@ -149,7 +149,6 @@ class Hud extends Component {
 
     render() {
         const stage = this.estimateStage();
-        let textAnimation = typeof this.state.message === 'undefined' ? undefined : <div id="textAnimation" className="zoom">{this.state.message}</div>
         return (
             <div className={this.props.className}>
                 <Tooltip />
@@ -197,9 +196,6 @@ class Hud extends Component {
                         return <Actionbar endGame={this.props.endGame} showSettings={this.openSettings} showSignInOrUp={this.openAccountOverview} />
                     }
                 })()}
-
-                {textAnimation}
-                <AppleHint message={t[this.props.language].IOS_MESSAGE} />
 
                 {(() => {
                     if (stage === 'TITLE_SCREEN') {

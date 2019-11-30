@@ -102,6 +102,20 @@ class App extends Component {
         window.onblur = () => Jukebox.pauseMusic();
 
         multiplayer.fetchPlayerStats(this.props.updatePlayerStats);
+
+
+        let iOSDevice = /^(iPhone|iPad|iPod)/.test(navigator.platform);
+        let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+        let isPWA = window.matchMedia('(display-mode: fullscreen)').matches;
+
+        if (iOSDevice && !isFullscreen && !isPWA) {
+            OfflineStore.settingsStore.get('iOSMessage').then(iOSMessage => {
+                if (typeof iOSMessage === 'undefined') {
+                    this.props.showQuickMessage({ text: t[this.props.language].IOS_MESSAGE, variant: 'apple-pwa-hint' });
+                    OfflineStore.settingsStore.set("iOSMessage", "hide next time");
+                }
+            });
+        }
     }
 
     handleError = error => {
