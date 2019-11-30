@@ -138,18 +138,6 @@
   background-color: #BF1B28;
 }
 
-.iosMessage > div {
-  flex-direction: column-reverse;
-}
-
-.iosMessage button {
-  padding-bottom: 0 !important;
-}
-
-.iosMessage span > svg {
-  margin-bottom: -5px;
-}
-
 .multiplayerNotification {
   position: absolute;
   width: 100%;
@@ -426,10 +414,6 @@ img.without.cream {
   .logo { top: 11vh; }
   .logo img { width: 70vw; }
   .titleMenu { top: 50%; }
-}
-
-@media screen and (orientation:landscape) {
-  .iosMessage { display: none !important; }
 }
 
 @media screen and (max-width: 959px) {
