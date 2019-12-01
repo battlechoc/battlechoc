@@ -29,7 +29,6 @@ const uiReducer = createReducer({
         state.whitelistAttacks = undefined;
         state.tappedBuilding = EntityType.FACTORY;
         state.selectedBuilding = EntityType.FACTORY;
-        state.multiplayerWaiting = undefined;
         state.selectedAttack = undefined;
         state.overviewVisible = false;
     },

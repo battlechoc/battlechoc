@@ -7,7 +7,7 @@ import { showQuickMessage } from './UiActions';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AccountOverview } from './dialogs';
-import { CircularProgress, Button } from '@material-ui/core';
+import { Button } from '@material-ui/core';
 import Dialog from '@material-ui/core/Dialog';
 import Typography from '@material-ui/core/Typography';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -151,7 +151,6 @@ class Hud extends Component {
         const stage = this.estimateStage();
         return (
             <div className={this.props.className}>
-                <Tooltip />
                 <Settings startTutorial={this.props.startTutorial} surrender={this.props.surrender} open={this.state.openSettings} close={() => this.setState({openSettings: false})} />
                 <AccountOverview
                     challengePlayer={name => this.multiplayerScreen.challengePlayer(name)}
@@ -218,7 +217,7 @@ class Hud extends Component {
                                 </div> : null}
                                 <SocialIcons />
                                 <div className="logo">
-                                    <img alt="logo" src="/images/logo.png?v=2.0" />
+                                    <img alt="logo" src="/images/logo.png?v=3.0" />
                                 </div>
                                 <div className="titleMenu">
                                     {this.props.assetsReady ? controls : null}
@@ -249,13 +248,16 @@ class Hud extends Component {
                             </div>
                         );
                     } else if (stage === 'CHOOSE_MENU') {
-                        let waitingNotification = null;
-                        if (typeof this.props.multiplayerWaiting !== 'undefined') {
-                            waitingNotification = <div className="multiplayerNotification"><p>{t[this.props.language].HUD_WAITING_FOR_PLAYER}</p><CircularProgress /></div>;
-                        }
                         return (
                             <div className="chooseStage">
-                                {waitingNotification}
+                                <Tooltip 
+                                    state={this.props.state} 
+                                    currentPlayerName={this.props.game.players[multiplayer.localPlayerIndex].name}
+                                    language={this.props.language}
+                                    tappedBuilding={this.props.tappedBuilding}
+                                    selectedAttack={this.props.selectedAttack}
+                                    level={this.props.game.players[multiplayer.localPlayerIndex].level}
+                                    playerTurn={multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)} />
                                 <GameStartSelection clickable={this.state.clickable} />
                             </div>
                         );
@@ -266,6 +268,14 @@ class Hud extends Component {
                     } else {
                         return (
                             <div>
+                                <Tooltip 
+                                    state={this.props.state} 
+                                    currentPlayerName={this.props.game.players[multiplayer.localPlayerIndex].name}
+                                    language={this.props.language}
+                                    tappedBuilding={this.props.tappedBuilding}
+                                    selectedAttack={this.props.selectedAttack}
+                                    level={this.props.game.players[multiplayer.localPlayerIndex].level}
+                                    playerTurn={multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)} />
                                 <AttackPalette />
                                 <BuildingPalette />
                                 <InfoPanel players={this.props.game.players} />
@@ -297,8 +307,9 @@ const mapStateToProps = state => ({
     overviewVisible: state.ui.overviewVisible,
     resumeGamePossible: state.ui.resumeGamePossible,
     assetsReady: state.ui.assetsReady,
-    multiplayerWaiting: state.ui.multiplayerWaiting,
-    playerInfos: state.ui.playerInfos
+    playerInfos: state.ui.playerInfos,
+    tappedBuilding: state.ui.tappedBuilding,
+    selectedAttack: state.ui.selectedAttack
 });
 
 const mapDispatchToProps = {
