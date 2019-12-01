@@ -218,7 +218,7 @@ class Hud extends Component {
                                 </div> : null}
                                 <SocialIcons />
                                 <div className="logo">
-                                    <img alt="logo" src="/images/logo.png?v=1.0" />
+                                    <img alt="logo" src="/images/logo.png?v=2.0" />
                                 </div>
                                 <div className="titleMenu">
                                     {this.props.assetsReady ? controls : null}
