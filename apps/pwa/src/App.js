@@ -164,8 +164,8 @@ class App extends Component {
         });
     }
 
-    UNSAFE_componentWillReceiveProps(nextProps) {
-        if (!this.props.assetsReady && nextProps.assetsReady) {
+    componentDidUpdate(prevProps) {
+        if (!prevProps.assetsReady && this.props.assetsReady) {
             if (this.state.situation === 'd41d8cd98f00b204e9800998ecf8427e') {
                 this.loadSituation(BuildFactoryTestSituation);
             } else if (this.state.situation === '2042050de74e855affdb312da85badbf') {
@@ -173,12 +173,12 @@ class App extends Component {
             }
         }
 
-        multiplayer.refreshGameState(nextProps.game);
-        const gameTransition = getGameTransition(this.props.game, nextProps.game);
+        multiplayer.refreshGameState(this.props.game);
+        const gameTransition = getGameTransition(prevProps.game, this.props.game);
 
         let gameStopped = typeof this.props.game !== 'undefined' ? !this.props.game.isRunning : false;
-        if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined') {
-            if (this.props.game.isRunning === true && nextProps.game.isRunning === false) {
+        if (typeof this.props.game !== 'undefined' && typeof prevProps.game !== 'undefined') {
+            if (prevProps.game.isRunning && !this.props.game.isRunning) {
                 gameStopped = true;
                 if (!this.props.tutorial) {
                     let timeoutId = setTimeout(() => this.showOverview(), 2000);
@@ -192,41 +192,41 @@ class App extends Component {
 
         if (typeof this.scene !== 'undefined') {
             if (typeof this.scene.playerGameField !== 'undefined') {
-                if (nextProps.selectedBuilding === EntityType.FRUIT_CANNON && this.props.selectedBuilding !== EntityType.FRUIT_CANNON) {
+                if (this.props.selectedBuilding === EntityType.FRUIT_CANNON && prevProps.selectedBuilding !== EntityType.FRUIT_CANNON) {
                     this.scene.highlightCannons();
-                } else if (nextProps.selectedBuilding !== EntityType.FRUIT_CANNON && this.props.selectedBuilding === EntityType.FRUIT_CANNON) {
+                } else if (this.props.selectedBuilding !== EntityType.FRUIT_CANNON && prevProps.selectedBuilding === EntityType.FRUIT_CANNON) {
                     this.scene.highlightCannons(false);
                 }
             }
         }
 
         if (!gameStopped) {
-            if (typeof this.props.game !== 'undefined' && typeof nextProps.game !== 'undefined' && typeof OfflineStore.gamestateStore !== 'undefined' &&
-                (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE) && (multiplayer.isLocalPlayer(nextProps.game.currentPlayerIndex) === true)) {
+            if (typeof prevProps.game !== 'undefined' && typeof this.props.game !== 'undefined' && typeof OfflineStore.gamestateStore !== 'undefined' &&
+                (this.props.game.state === GameStateTypes.BUILD_PHASE || this.props.game.state === GameStateTypes.ATTACK_PHASE) && (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true)) {
 
-                let isSingleplayerGame = nextProps.game.players.filter(player => player.type === PlayerType.AUGUSTUS_GLOOP).length > 0;
+                let isSingleplayerGame = this.props.game.players.filter(player => player.type === PlayerType.AUGUSTUS_GLOOP).length > 0;
 
-                if (!this.props.tutorial && isSingleplayerGame) {
+                if (!prevProps.tutorial && isSingleplayerGame) {
                     let resumeableGame = {};
-                    resumeableGame.gameplay = nextProps.game;
-                    resumeableGame.ui = nextProps.ui;
+                    resumeableGame.gameplay = this.props.game;
+                    resumeableGame.ui = this.props.ui;
                     OfflineStore.saveCurrentGame(resumeableGame).then(() => {
-                        this.props.gameResumeable(true).catch(this.handleError);
+                        prevProps.gameResumeable(true).catch(this.handleError);
                     });
                 }
             }
-            if (nextProps.game !== undefined && (nextProps.game.state === GameStateTypes.BUILD_PHASE || nextProps.game.state === GameStateTypes.ATTACK_PHASE)) {
-                const winners = Rules.determineWinner(nextProps.game);
+            if (this.props.game !== undefined && (this.props.game.state === GameStateTypes.BUILD_PHASE || this.props.game.state === GameStateTypes.ATTACK_PHASE)) {
+                const winners = Rules.determineWinner(this.props.game);
                 if (typeof winners !== 'undefined') {
-                    this.props.endGame({
+                    prevProps.endGame({
                         winners: winners,
-                        issuer: nextProps.game.players[multiplayer.localPlayerIndex].id
+                        issuer: this.props.game.players[multiplayer.localPlayerIndex].id
                     });
                 }
             }
 
-            if (this.props.selectedBuilding === EntityType.FRUIT_CANNON && typeof this.scene !== 'undefined' && typeof this.scene.playerGameField !== 'undefined' && typeof nextProps.game !== 'undefined' && (nextProps.game.state !== GameStateTypes.BUILD_PHASE || multiplayer.isLocalPlayer(nextProps.game.currentPlayerIndex) === false ||
-                nextProps.game.players[multiplayer.localPlayerIndex].buildings === 0 || nextProps.selectedBuilding !== EntityType.FRUIT_CANNON)) {
+            if (prevProps.selectedBuilding === EntityType.FRUIT_CANNON && typeof this.scene !== 'undefined' && typeof this.scene.playerGameField !== 'undefined' && typeof this.props.game !== 'undefined' && (this.props.game.state !== GameStateTypes.BUILD_PHASE || multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === false ||
+                this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.selectedBuilding !== EntityType.FRUIT_CANNON)) {
                 this.scene.highlightCannons(false);
             }
             if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
@@ -241,9 +241,9 @@ class App extends Component {
                     this.opponent.simulateChooseFieldDecision();
                 }
             } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
-                this.scene.startGame(nextProps.game);
+                this.scene.startGame(this.props.game);
             } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
-                this.scene.startGame(nextProps.game);
+                this.scene.startGame(this.props.game);
                 if (this.opponent.player.type === PlayerType.AUGUSTUS_GLOOP) {
                     this.opponent.simulateInitialPlacement();
                 }
@@ -257,13 +257,13 @@ class App extends Component {
                 const attacks = [AttackType.BUNNY, AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.FRUIT];
                 let availableAttackType = undefined;
                 for (var attackType in attacks) {
-                    if (nextProps.game.players[multiplayer.localPlayerIndex].attacks[attacks[attackType]] > 0) {
+                    if (this.props.game.players[multiplayer.localPlayerIndex].attacks[attacks[attackType]] > 0) {
                         availableAttackType = attacks[attackType];
                         break;
                     }
                 }
                 if (typeof availableAttackType !== 'undefined') {
-                    let timeoutId = setTimeout(() => this.props.selectAttack(attacks[attackType]).catch(this.handleError), 200);
+                    let timeoutId = setTimeout(() => prevProps.selectAttack(attacks[attackType]).catch(this.handleError), 200);
                     this.timeouts.push(timeoutId);
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
@@ -275,7 +275,7 @@ class App extends Component {
                     this.opponent.simulateAttackPhase((row, col) => this.scene.detonateAtShield(row, col, true), entity => this.scene.showEnergyBar(entity), position => this.scene.hideEnergyBar(null, position));
                 }
             } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
-                let timeoutId = setTimeout(() => this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
+                let timeoutId = setTimeout(() => prevProps.finishTurn({ issuer: prevProps.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
                 this.timeouts.push(timeoutId);
             }
         }
