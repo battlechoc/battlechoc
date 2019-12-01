@@ -1,6 +1,6 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import './Tooltip.css';
-import { connect } from 'react-redux';
 import { GameStateTypes } from '../../gameplay/GameplayReducer';
 import { getEntityDescriptor } from '../../gameplay/GameEntities';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
@@ -9,9 +9,7 @@ import ExpansionPanel from '@material-ui/core/ExpansionPanel';
 import MuiExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import MuiExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import Typography from '@material-ui/core/Typography';
-import { withTheme } from '@material-ui/core/styles';
 import { Translation as t } from '../misc';
-import { multiplayer } from '../../Multiplayer';
 
 const ExpansionPanelSummary = withStyles(theme => ({
     root: {
@@ -47,104 +45,83 @@ const ExpansionPanelDetails = withStyles(theme => ({
     },
 }))(MuiExpansionPanelDetails);
 
-class Tooltip extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            expanded: false
+const Tooltip = props => {
+    const [expanded, setExpanded] = useState(false);
+    let title = null, message = null;
+
+    if (props.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
+        title = t[props.language].TOOLTIP_INITIAL_TURN_TITLE;
+        if (props.playerTurn) {
+            message = t[props.language].TOOLTIP_INITIAL_TURN_MESSAGE;
         }
-    }
-
-    getContent() {
-        let gameState = this.props.game.state;
-        const currentPlayerIsLocalPlayer = multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex);
-
-        if (gameState === GameStateTypes.CHOOSE_FIELD_OR_START) {
-            var title = t[this.props.language].TOOLTIP_INITIAL_TURN_TITLE;
-            if (currentPlayerIsLocalPlayer) {
-                var message = t[this.props.language].TOOLTIP_INITIAL_TURN_MESSAGE;
-            }
-        } else if (gameState === GameStateTypes.CHOOSE_FIELD) {
-            title = t[this.props.language].TOOLTIP_INITIAL_TURN_TITLE;
-            message = t[this.props.language].TOOLTIP_INITIAL_TURN_OPPONENT(this.props.game.players[this.props.game.currentPlayerIndex].name);
-        } else if (gameState === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-            gameState === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
-            title = t[this.props.language].TOOLTIP_INITIAL_PLACEMENT_TITLE;
-            if (currentPlayerIsLocalPlayer) {
-                message = t[this.props.language].TOOLTIP_INITIAL_PLACEMENT_MESSAGE;
-            }
-        } else if (gameState === GameStateTypes.BUILD_PHASE) {
-            title = t[this.props.language].TOOLTIP_BUILD_PHASE_TITLE;
-            if (currentPlayerIsLocalPlayer) {
-                if (typeof this.props.tappedBuilding === 'undefined') {
-                    message = t[this.props.language].TOOLTIP_BUILD_PHASE_MESSAGE;
-                } else {
-                    const building = getEntityDescriptor(this.props.tappedBuilding, this.props.level);
-                    const { info, costs, advantages } = t[this.props.language].TOOLTIP_BUILDING_INFO(this.props.tappedBuilding, building);
-                    title = t[this.props.language].TOOLTIP_BUILDING_TITLE(this.props.tappedBuilding);
-                    message = <span className="tooltipBuildingInfo">
-                        <span>{info}</span>
-                        {typeof costs !== 'undefined' ? <span>{costs}</span> : null}
-                        {typeof advantages !== 'undefined' ? <span>{advantages}</span> : null}
-                    </span>;
-                }
-            }
-        } else if (gameState === GameStateTypes.ATTACK_PHASE) {
-            title = t[this.props.language].TOOLTIP_ATTACK_PHASE_TITLE;
-            if (currentPlayerIsLocalPlayer) {
-                if (typeof this.props.selectedAttack !== 'undefined') {
-                    title = t[this.props.language].TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE(this.props.selectedAttack);
-                    message = t[this.props.language].TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE(this.props.selectedAttack);
-                } else {
-                    message = t[this.props.language].TOOLTIP_ATTACK_PHASE_MESSAGE;
-                }
-            }
+    } else if (props.state === GameStateTypes.CHOOSE_FIELD) {
+        title = t[props.language].TOOLTIP_INITIAL_TURN_TITLE;
+        message = t[props.language].TOOLTIP_INITIAL_TURN_OPPONENT(props.currentPlayerName);
+    } else if (props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
+        title = t[props.language].TOOLTIP_INITIAL_PLACEMENT_TITLE;
+        if (props.playerTurn) {
+            message = t[props.language].TOOLTIP_INITIAL_PLACEMENT_MESSAGE;
         }
-
-        return { title, message }
-    }
-
-    render() {
-        if (typeof this.props.game !== 'undefined') {
-            let { title, message } = this.getContent()
-            let loadingAnimation = multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === false ? <img className="loadingAnimation" src="/animations/loading.gif" alt="loading" /> : null;
-            if (typeof title !== 'undefined') {
-                return (
-                    <div id="tooltipContainer">
-                        <ExpansionPanel square id="tooltip" expanded={this.state.expanded && typeof message !== 'undefined'} onChange={() => {
-                            if (typeof message !== 'undefined') {
-                                this.setState({ expanded: !this.state.expanded });
-                            }
-                        }}>
-                            <ExpansionPanelSummary className="tooltipHeader" expandIcon={<ExpandMoreIcon />}>
-                                <Typography variant="h6" color="textSecondary">{title}</Typography>
-                            </ExpansionPanelSummary>
-                            <ExpansionPanelDetails>
-                                <Typography paragraph={true}>{message}</Typography>
-                            </ExpansionPanelDetails>
-                        </ExpansionPanel>
-                        {loadingAnimation}
-                    </div>
-                );
+    } else if (props.state === GameStateTypes.BUILD_PHASE) {
+        title = t[props.language].TOOLTIP_BUILD_PHASE_TITLE;
+        if (props.playerTurn) {
+            if (typeof props.tappedBuilding === 'undefined') {
+                message = t[props.language].TOOLTIP_BUILD_PHASE_MESSAGE;
             } else {
-                return null;
+                let building = getEntityDescriptor(props.tappedBuilding, props.level);
+                let { info, costs, advantages } = t[props.language].TOOLTIP_BUILDING_INFO(props.tappedBuilding, building);
+                title = t[props.language].TOOLTIP_BUILDING_TITLE(props.tappedBuilding);
+                message = <span className="tooltipBuildingInfo">
+                    <span>{info}</span>
+                    {typeof costs !== 'undefined' ? <span>{costs}</span> : null}
+                    {typeof advantages !== 'undefined' ? <span>{advantages}</span> : null}
+                </span>;
             }
-        } else {
-            return null;
         }
+    } else if (props.state === GameStateTypes.ATTACK_PHASE) {
+        title = t[props.language].TOOLTIP_ATTACK_PHASE_TITLE;
+        if (props.playerTurn) {
+            if (typeof props.selectedAttack !== 'undefined') {
+                title = t[props.language].TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE(props.selectedAttack);
+                message = t[props.language].TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE(props.selectedAttack);
+            } else {
+                message = t[props.language].TOOLTIP_ATTACK_PHASE_MESSAGE;
+            }
+        }
+    }
+
+    let loadingAnimation = !props.playerTurn ? <img className="loadingAnimation" src="/animations/loading.gif" alt="loading" /> : null;
+    if (title) {
+        return (
+            <div id="tooltipContainer">
+                <ExpansionPanel square id="tooltip" expanded={expanded && message !== null} onClick={() => {
+                    if (message !== null) {
+                        setExpanded(!expanded);
+                    }
+                }}>
+                    <ExpansionPanelSummary className="tooltipHeader" expandIcon={message !== null ? <ExpandMoreIcon /> : null}>
+                        <Typography variant="h6" color="textSecondary">{title}</Typography>
+                    </ExpansionPanelSummary>
+                    <ExpansionPanelDetails>
+                        <Typography paragraph={true}>{message}</Typography>
+                    </ExpansionPanelDetails>
+                </ExpansionPanel>
+                { loadingAnimation }
+            </div>
+        );
+    } else {
+        return null;
     }
 }
 
-const mapStateToProps = state => ({
-    game: state.gameplay.game,
-    level: state.ui.playerInfos.stats.level,
-    language: state.ui.language,
-    tappedBuilding: state.ui.tappedBuilding,
-    selectedAttack: state.ui.selectedAttack
-});
+Tooltip.propTypes = {
+  state: PropTypes.string.isRequired,
+  currentPlayerName: PropTypes.string.isRequired,
+  language: PropTypes.string.isRequired,
+  tappedBuilding: PropTypes.string,
+  selectedAttack: PropTypes.string,
+  level: PropTypes.object.isRequired,
+  playerTurn: PropTypes.bool.isRequired
+}
 
-const TooltipContainer = connect(
-    mapStateToProps
-)(Tooltip);
-
-export default withTheme(TooltipContainer);
+export default Tooltip;
