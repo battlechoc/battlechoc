@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="apple-mobile-web-app-status-bar-style" content="#457B82" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-icon-180.png">
     <link rel="apple-touch-icon" sizes="167x167" href="%PUBLIC_URL%/apple-icon-167.png">
     <link rel="apple-touch-icon" sizes="152x152" href="%PUBLIC_URL%/apple-icon-152.png">
@@ -23,6 +23,23 @@
       if (window.location.port !== '3000' && typeof window.__REACT_DEVTOOLS_GLOBAL_HOOK__ === 'object') {
         window.__REACT_DEVTOOLS_GLOBAL_HOOK__.inject = function () {}
       }
+
+      let isWebPSupported = () => {
+        return new Promise(resolve => {
+          let image = new Image();
+          image.src = 'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
+          image.onload = image.onerror = function () {
+              resolve(image.height === 2);
+          };        
+        })
+      }
+      isWebPSupported().then(isSupported => {
+        if (isSupported) {
+          document.getElementById('root').classList.add('webp-support');
+        } else {
+          document.getElementById('root').classList.add('no-webp-support');
+        }
+      });
     </script>
     <div id="root"></div>
   </body>

@@ -7,6 +7,103 @@
   z-index: 2;  
 }
 
+#choclab #chocolate-coins {
+  position: absolute;
+  top: 10px;
+  right: 0;
+  display: flex;  
+}
+
+#choclab .coin.costs img {
+  width: 48px;
+  height: 32px;  
+}
+
+#choclab .coin.costs {
+  padding-top: 12px;
+  justify-content: flex-end;
+  display: flex;
+}
+
+#choclab .coin.costs span {
+  font-size: 1.5rem;
+  color: #1DA6B5;
+  text-shadow: 1px 1px 1px #000;
+  font-weight: bold;
+}
+
+#choclab .entityStats .progress > div:first-child {
+  padding-top: 12px;
+}
+
+#choclab .entityStats .progress > div:last-child {
+  height: 28px;
+  border-radius: 3px;
+  background: rgba(0,0,0, 0.1);
+  position: relative;
+}
+
+#choclab .entityStats {
+  position: absolute;
+  width: 25vw;
+  right: 2vw;
+  top: 10vh;
+}
+
+#choclab .entityStats .label {
+  display: flex;
+  align-items: flex-end;
+  color: rgba(0,0,0,0.87);
+  text-transform: uppercase;
+}
+
+#choclab .entityStats .label span:first-child {
+  flex-grow: 1;
+}
+
+#choclab .entityStats .progress div div {
+  position: absolute;
+  height: 100%;
+}
+
+#choclab .entityStats .progress div svg {
+  position: absolute;
+  right: 0;
+  cursor: pointer;
+}
+
+#choclab .entityStats .locked.progress div svg {
+  cursor: unset;
+}
+
+#choclab .locked div:nth-child(2) {
+  filter: grayscale(1);
+}
+
+#choclab .green + svg {
+  color: #78BB0C;
+}
+
+#choclab .blue + svg {
+  color: #0B6BBF;
+}
+
+#choclab .red + svg {
+  color: #BF1B28;
+}
+
+#choclab .entityStats .progress .green {
+  background-color: #78BB0C;
+}
+
+#choclab .entityStats .progress .blue {
+  background-color: #0B6BBF;
+}
+
+#choclab .entityStats .progress .red {
+  background-color: #BF1B28;
+}
+
 #choclab .controls {
   display: flex;
   margin-top: 92px;
