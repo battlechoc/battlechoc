@@ -7,12 +7,7 @@ import { showQuickMessage } from './UiActions';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AccountOverview } from './dialogs';
-import { Button } from '@material-ui/core';
-import Dialog from '@material-ui/core/Dialog';
-import Typography from '@material-ui/core/Typography';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogTitle from '@material-ui/core/DialogTitle';
+import BattlechocDialog from './dialogs/BattlechocDialog';
 import Fab from '@material-ui/core/Fab';
 import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import MultiplayerScreen from './pages/MultiplayerScreen';
@@ -21,6 +16,7 @@ import { multiplayer } from '../Multiplayer';
 import { ServerRequest } from '../helper/settings';
 import logger from '../helper/logger';
 import firebase from '@firebase/app';
+import { OptimizedImage } from '../helper/compatibility';
 
 class Hud extends Component {
     constructor(props) {
@@ -209,40 +205,43 @@ class Hud extends Component {
                             controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
                             controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
                         }
+
                         return (
                             <div id="mainMenu">
-                                {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
+                                {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="chocolate-coins">
                                     <span>{this.props.playerInfos.stats.coins}</span>
-                                    <img src="/images/coins.png" alt="choco coins" />
+                                    <OptimizedImage src="/images/coins.png?v=2.0" alt="choco coins" />
                                 </div> : null}
                                 <SocialIcons />
                                 <div className="logo">
-                                    <img alt="logo" src="/images/logo.png?v=3.0" />
+                                    <picture>
+                                      <source srcSet="/images/logo.webp?v=1.0" type="image/webp" />
+                                      <source srcSet="/images/logo.png?v=3.0" type="image/jpeg" /> 
+                                      <img src="/images/logo.png?v=3.0" alt="battlechoc logo" />
+                                    </picture>
                                 </div>
                                 <div className="titleMenu">
                                     {this.props.assetsReady ? controls : null}
-                                    <Dialog
-                                        fullWidth={true}
+                                    <BattlechocDialog
                                         open={this.state.open}
-                                        onClose={() => this.setState({ open: false })}
-                                        aria-labelledby="resumeOrStartGame">
-                                        <DialogTitle>{t[this.props.language].HUD_RESUME_GAME}</DialogTitle>
-                                        <DialogContent>
-                                            <Typography>{t[this.props.language].HUD_ASK_NEW_OR_RESUME}</Typography>
-                                        </DialogContent>
-                                        <DialogActions>
-                                            <Button onClick={() => {
-                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                this.setState({ open: false });
-                                                this.props.prepareNewGameCallback(false);
-                                            }} color="primary">{t[this.props.language].HUD_NEW_GAME}</Button>-
-                                            <Button onClick={() => {
-                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                this.setState({ open: false });
-                                                this.props.prepareNewGameCallback(true);
-                                            }} color="primary">{t[this.props.language].HUD_RESUME_GAME}</Button>
-                                        </DialogActions>
-                                    </Dialog>
+                                        close={() => this.setState({ open: false })}
+                                        title={t[this.props.language].HUD_RESUME_GAME}>
+                                        <div className="resumeGameDialog">
+                                            <p>{t[this.props.language].HUD_ASK_NEW_OR_RESUME}</p>
+                                            <div className="actions">
+                                                <div className="menuButton" onClick={() => {
+                                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                                    this.setState({ open: false });
+                                                    this.props.prepareNewGameCallback(true);
+                                                }}>{t[this.props.language].HUD_RESUME_GAME}</div>
+                                                <div className="menuButton" onClick={() => {
+                                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                                    this.setState({ open: false });
+                                                    this.props.prepareNewGameCallback(false);
+                                                }}>{t[this.props.language].HUD_NEW_GAME}</div>
+                                            </div>
+                                        </div>
+                                    </BattlechocDialog>
                                 </div>
                                 <Info language={this.props.language} openInfo={this.props.openInfo} />
                             </div>

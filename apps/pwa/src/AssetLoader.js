@@ -5,6 +5,7 @@ import { assetsReady } from './ui/UiActions';
 import { EntityType, BoardCellTypes } from './gameplay/GameEntities';
 import { SceneLoader, StandardMaterial, Color3, Engine } from 'babylonjs';
 import 'babylonjs-loaders';
+import { features } from './helper/compatibility';
 
 class AssetLoader {
     constructor(){
@@ -28,7 +29,7 @@ class AssetLoader {
             images: {
                 CACAO_NO_BACKGROUND: 'cacao_no_background.png',
                 CACAO_PER_TURN: 'cacaoPerTurn.png',
-                TOOLBAR_ICON_PALETTE: 'toolbar_icon_palette.png',
+                TOOLBAR_ICON_PALETTE: 'toolbar_icon_palette' + (features.isWebPSupported ? '.webp' : '.png'),
                 ATTACKS_PER_TUN: 'attacksPerTurn.png',
                 CREAM_PREVIEW: 'cream_preview.png',
                 BUILDINGS_PER_TURN: 'buildingsPerTurn.png',

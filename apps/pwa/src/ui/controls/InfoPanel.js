@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import { multiplayer } from '../../Multiplayer';
+import { features } from '../../helper/compatibility';
 
 const useStyles = makeStyles(theme => ({
     panel: {
@@ -35,6 +36,14 @@ const useStyles = makeStyles(theme => ({
         backgroundImage: 'url(/images/toolbar_icon_palette.png)',
         backgroundPosition: '-300% -200%' 
     },
+    webPCacao: {
+        backgroundImage: 'url(/images/toolbar_icon_palette.webp)',
+        backgroundPosition: '-200% -200%' 
+    },
+    webPBuildings: {
+        backgroundImage: 'url(/images/toolbar_icon_palette.webp)',
+        backgroundPosition: '-300% -200%' 
+    },
     image: {
         userSelect: 'none',
         filter: 'brightness(130%)',
@@ -60,14 +69,17 @@ const InfoPanel = props => {
     const classes = useStyles();
     let index = multiplayer.localPlayerIndex;
 
+    let cacaoClass = features.isWebPSupported ? classes.webPCacao : classes.cacao;
+    let buildingsClass = features.isWebPSupported ? classes.webPBuildings : classes.buildings;
+
     return (
         <div className={classes.panel}>
             <div className={classes.icon}>
-                <div className={`${classes.cacao} ${classes.image}`}/>
+                <div className={`${cacaoClass} ${classes.image}`}/>
                 <p>{props.players[index].cacao}</p>
             </div>
             <div className={classes.icon}>
-                <div className={`${classes.buildings} ${classes.image}`}/>
+                <div className={`${buildingsClass} ${classes.image}`}/>
                 <p>{props.players[index].buildings + '/' + props.players[index].buildingsPerTurn}</p>
             </div>
         </div>

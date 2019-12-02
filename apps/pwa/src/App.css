@@ -36,7 +36,15 @@ html, body, #root {
   position: absolute;
   width: 100%;
   height: 100%;
-  background: url(/images/background.png) no-repeat center center fixed; 
-  background-size: cover;
   filter: blur(5px) opacity(0.4);
+}
+
+.no-webp-support #background {
+  background: url(/images/background.jpg) no-repeat center center fixed;
+  background-size: cover;
+}
+
+.webp-support #background {
+  background: url(/images/background.webp) no-repeat center center fixed;
+  background-size: cover;
 }

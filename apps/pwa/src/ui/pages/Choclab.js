@@ -12,6 +12,7 @@ import IconButton from '@material-ui/core/IconButton';
 import Snackbar from '@material-ui/core/Snackbar';
 import { ServerRequest } from '../../helper/settings';
 import logger from '../../helper/logger';
+import { OptimizedImage } from '../../helper/compatibility';
 
 class Choclab extends Component {
     constructor(props) {
@@ -24,9 +25,9 @@ class Choclab extends Component {
     render() {
         return (
             <div id="choclab">
-                {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="coins">
+                {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="chocolate-coins">
                     <span>{ this.props.playerInfos.stats.coins }</span>
-                    <img src="/images/coins.png" alt="choco coins" />
+                    <OptimizedImage src="/images/coins.png?v=2.0" alt="choco coins" />
                 </div> : null}
                 <MeshPreview onRef={meshPreview => this.meshPreview = meshPreview}/>
 
@@ -116,7 +117,7 @@ class Choclab extends Component {
                     { this.state.selectedEntity ? (
                         <div className="coin costs">
                             <span>{ this.state.selectedEntity.coins() }</span>
-                            <img src="/images/coins.png" alt="choco coins" />
+                            <OptimizedImage src="/images/coins.png?v=2.0" alt="choco coins" />
                         </div>) : null }
                 </div>
                 <ChoclabPalette selectEntity={entity => {
