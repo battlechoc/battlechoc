@@ -71,6 +71,7 @@ const Info = props => {
             <Fab
                 size="small"
                 color="primary"
+                aria-label="impress"
                 onClick={() => {
                     setOpen(true);
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
