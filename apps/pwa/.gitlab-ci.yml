@@ -31,7 +31,6 @@ build:
     - master
     - develop
 
-
  test:
    stage: test
    variables:
