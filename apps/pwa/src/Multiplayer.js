@@ -107,9 +107,11 @@ class Multiplayer {
 
             this.localPlayer = user;
             this.askForNotification(user);
-            this.getMultiplayerSessions();
-            this.fetchFriendsList();
-            this.computeRank();
+            if (window.navigator.onLine) {
+                this.getMultiplayerSessions();
+                this.fetchFriendsList();
+                this.computeRank();
+            }
         } else {
             logger.info('try to signin');
             this.localPlayer = undefined;
