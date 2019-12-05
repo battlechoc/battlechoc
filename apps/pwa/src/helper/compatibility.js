@@ -11,3 +11,4 @@ const OptimizedImage = props => {
 }
 
 export { features, OptimizedImage };
+
