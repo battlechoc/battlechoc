@@ -27,39 +27,12 @@ describe('browser', () => {
 
     test('should start the tutorial', async () => {
       await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
-      await expect(page).toMatchElement('.titleMenu', { text: 'Singleplayer' });
+      await expect(page).toMatchElement('.titleMenu', { text: 'New Game' });
       await page.click('.titleMenu .menuButton:first-child');
       await expect(page).toMatchElement('h6', { text: 'Interactive battlechoc Tutorial' });
       await page.click('.active.button .stackedIcon');
       await expect(page).toMatchElement('h6', { text: 'The chocolate factory' });
       await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test002.png' })
-    }, timeout);
-
-    test('should start the game without error', async () => {
-      await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
-      await expect(page).toMatchElement('.titleMenu', { text: 'Singleplayer' });
-      await page.click('.titleMenu .menuButton:first-child');
-      await expect(page).toMatchElement('h6', { text: 'Interactive battlechoc Tutorial' });
-      // start skipping tutorial
-      await page.click('.MuiToolbar-root button');
-      await page.waitFor(500);
-      await page.click('.MuiToolbar-root button:last-child');
-      await page.waitFor(500);
-      await page.click('.MuiToolbar-root button:last-child');
-      await page.waitFor(500);
-      await page.click('.MuiToolbar-root button:last-child');
-      await page.waitFor(500);
-      await page.click('.MuiToolbar-root button:last-child');
-      await page.waitFor(500);
-      await page.click('.MuiToolbar-root button:last-child');
-      await page.waitFor(500);
-      await page.click('.MuiDialogActions-root .MuiButtonBase-root:last-child span');
-      await page.waitFor(1000);
-      // end skipping tutorial
-      await page.waitForSelector('.active.button .stackedIcon');
-      await page.click('.active.button .stackedIcon');
-      await page.waitForSelector('.factory.enabled.preview');
-      await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test001.png' });
     }, timeout);
   },
   timeout
@@ -82,12 +55,12 @@ describe('iPhone', () => {
 
   test('should show an info on iOS', async () => {
     await page.goto('http://localhost:' + global.__PORT__, {waitUntil: 'networkidle2', timeout: 0});
-    await page.waitForSelector('.iosMessage', {timeout: timeout});
+    await page.waitForSelector('#client-snackbar', {timeout: timeout});
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test003.png' })
   }, timeout);
 
   test('should build a factory on a brown field', async () => {
-    await page.goto('http://localhost:' + global.__PORT__ + '?situation=d41d8cd98f00b204e9800998ecf8427e');
+    await page.goto('http://localhost:' + global.__PORT__ + '/situation/d41d8cd98f00b204e9800998ecf8427e');
     await page.waitForSelector('.factory.enabled.preview', {timeout: timeout});
     await page.waitFor(3000);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test005.png' });
@@ -96,7 +69,7 @@ describe('iPhone', () => {
   }, timeout);
 
   test('should build a factory on a white field', async () => {
-    await page.goto('http://localhost:' + global.__PORT__ + '?situation=d41d8cd98f00b204e9800998ecf8427e');
+    await page.goto('http://localhost:' + global.__PORT__ + '/situation/d41d8cd98f00b204e9800998ecf8427e');
     await page.waitForSelector('.factory.enabled.preview', {timeout: timeout});
     await page.waitFor(3000);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test006.png' });
@@ -105,7 +78,7 @@ describe('iPhone', () => {
   }, timeout);
 
   test('should move to opponent turn and back after building the factory', async () => {
-    await page.goto('http://localhost:' + global.__PORT__ + '?situation=d41d8cd98f00b204e9800998ecf8427e');
+    await page.goto('http://localhost:' + global.__PORT__ + '/situation/d41d8cd98f00b204e9800998ecf8427e');
     await page.waitForSelector('.factory.enabled.preview', {timeout: timeout});
     await page.waitFor(3000);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_0.png' });
