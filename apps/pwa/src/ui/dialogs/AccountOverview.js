@@ -231,9 +231,9 @@ const AccountOverview = props => {
                     <div className="accountAttribute"><ThumbDown />{t[props.language].ACCOUNT_OVERVIEW_LOST}<span className="attributeValue">{losses }</span></div>
                     { isPlayerAccount ? <div className="accountAttribute">
                     <picture>
-                      <source srcSet="/images/coins.webp?v=1.0" type="image/webp" />
-                      <source srcSet="/images/coins.png?v=2.0" type="image/jpeg" /> 
-                      <img src="/images/coins.png?v=2.0" alt="choco coins" />
+                      <source srcSet="/images/coins.webp" type="image/webp" />
+                      <source srcSet="/images/coins.png" type="image/jpeg" /> 
+                      <img src="/images/coins.png" alt="choco coins" />
                     </picture>
                     {t[props.language].ACCOUNT_OVERVIEW_COINS}<span className="attributeValue">{ props.playerInfos.stats.coins }</span></div> : null }
                 </div>

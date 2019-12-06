@@ -210,14 +210,14 @@ class Hud extends Component {
                             <div id="mainMenu">
                                 {typeof this.props.playerInfos.stats.coins !== 'undefined' ? <div id="chocolate-coins">
                                     <span>{this.props.playerInfos.stats.coins}</span>
-                                    <OptimizedImage src="/images/coins.png?v=2.0" alt="choco coins" />
+                                    <OptimizedImage src="/images/coins.png" alt="choco coins" />
                                 </div> : null}
                                 <SocialIcons />
                                 <div className="logo">
                                     <picture>
-                                      <source srcSet="/images/logo.webp?v=1.0" type="image/webp" />
-                                      <source srcSet="/images/logo.png?v=3.0" type="image/jpeg" /> 
-                                      <img src="/images/logo.png?v=3.0" alt="battlechoc logo" />
+                                      <source srcSet="/images/logo.webp" type="image/webp" />
+                                      <source srcSet="/images/logo.png" type="image/jpeg" /> 
+                                      <img src="/images/logo.png" alt="battlechoc logo" />
                                     </picture>
                                 </div>
                                 <div className="titleMenu">

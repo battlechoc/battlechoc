@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Scene as BabylonScene, SceneLoader, HemisphericLight, Engine, FlyCamera, Vector3, Color3, Color4, Camera, StandardMaterial } from 'babylonjs';
-import { assetLoader, assetVersion } from '../AssetLoader';
+import { assetLoader } from '../AssetLoader';
 import { BoardCellTypes, EntityType } from '../gameplay/GameEntities';
 import 'babylonjs-loaders';
 
@@ -30,7 +30,7 @@ class MeshPreview extends Component {
 		    this.scene.render();
 		});
 
-		SceneLoader.ImportMesh('', 'models/', assetLoader.assets.models[BoardCellTypes.BROWN] + '?v=' + assetVersion, this.scene, group => {
+		SceneLoader.ImportMesh('', 'models/', assetLoader.assets.models[BoardCellTypes.BROWN], this.scene, group => {
 			let material = new StandardMaterial('brown.field.material', this.scene);
             material.diffuseColor﻿ = Color3.FromHexString("#824529");
             material.sideOrientation = 0;
@@ -67,7 +67,7 @@ class MeshPreview extends Component {
     }
 
     loadMesh(entity) {
-    	SceneLoader.ImportMesh('', 'models/', assetLoader.assets.models[entity] + '?v=' + assetVersion, this.scene, group => {
+    	SceneLoader.ImportMesh('', 'models/', assetLoader.assets.models[entity], this.scene, group => {
     		if (typeof this.preview !== 'undefined') {
     			this.scene.unregisterBeforeRender(this.rotate);
     			this.preview.forEach(mesh => mesh.dispose());
