@@ -90,6 +90,8 @@ const uiReducer = createReducer({
         OfflineStore.playerStore.set('stats', EmptyPlayerStats);
         OfflineStore.playerStore.set('friends', undefined);
         OfflineStore.playerStore.set('multiplayerSessions', undefined);
+        state.resumeGamePossible = false;
+        OfflineStore.gamestateStore.clear();
     },
     [UiActions.stopTutorial]: (state, action) => {
         state.tutorial = false;
