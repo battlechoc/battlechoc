@@ -3,6 +3,8 @@ workbox.core.clientsClaim();
 
 workbox.precaching.precacheAndRoute((self.__precacheManifest || []).concat([
   { url: '/', revision: '1' },
+  { url: '/index.html?app_runs_as=pwa&app_version=1', revision: '1' },
+  { url: '/manifest.json', revision: '1' },
   { url: '/sound/attack_bunny.mp3', revision: '1' },
   { url: '/sound/attack_explosion.mp3', revision: '1' },
   { url: '/sound/bunny_caught.mp3', revision: '1' },
@@ -77,25 +79,50 @@ workbox.routing.registerRoute(
 
 workbox.routing.registerRoute(
   /https:.*models\/.*\.glb/,
-  new workbox.strategies.StaleWhileRevalidate({ cacheName: 'model-cache' })
+  new workbox.strategies.StaleWhileRevalidate({ 
+    cacheName: 'model-cache',
+    plugins: [
+      new workbox.cacheableResponse.Plugin({statuses: [200]}) 
+    ]
+  })
 );
 
 workbox.routing.registerRoute(
   /https:.*images\/.*\.(png|webp)/,
-  new workbox.strategies.StaleWhileRevalidate({ cacheName: 'image-cache' })
+  new workbox.strategies.StaleWhileRevalidate({ 
+    cacheName: 'image-cache',
+    plugins: [
+      new workbox.cacheableResponse.Plugin({statuses: [200]})
+    ]
+  })
 );
 
 workbox.routing.registerRoute(
   /https:.*animations\/.*\.gif/,
-  new workbox.strategies.StaleWhileRevalidate({ cacheName: 'animation-cache' })
+  new workbox.strategies.StaleWhileRevalidate({ 
+    cacheName: 'animation-cache',
+    plugins: [
+      new workbox.cacheableResponse.Plugin({statuses: [200]})
+    ]
+  })
 );
 
 workbox.routing.registerRoute(
   /^https:\/\/fonts\.googleapis\.com/,
-  new workbox.strategies.StaleWhileRevalidate({ cacheName: 'google-fonts-stylesheets' })
+  new workbox.strategies.StaleWhileRevalidate({ 
+    cacheName: 'google-fonts-stylesheets',
+    plugins: [
+      new workbox.cacheableResponse.Plugin({statuses: [200]})
+    ]
+  })
 );
 
 workbox.routing.registerRoute(
   /^https:\/\/fonts\.gstatic\.com/,
-  new workbox.strategies.StaleWhileRevalidate({ cacheName: 'google-fonts-webfonts' })
+  new workbox.strategies.StaleWhileRevalidate({ 
+    cacheName: 'google-fonts-webfonts',
+    plugins: [
+      new workbox.cacheableResponse.Plugin({statuses: [200]})
+    ]
+  })
 );
