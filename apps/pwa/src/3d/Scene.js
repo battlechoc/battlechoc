@@ -339,41 +339,45 @@ class Scene extends Component {
                     let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;
                     setTimeout(() => {
-                        if (building.type === EntityType.CACAOTREE) {
-                            this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), cacaoDelta);
-                        } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
-                            this.spawnInfo(this.InfoType.INCREASE_ATTACKS_PER_TURN, position.clone(), 1);
-                        } else if (building.type === EntityType.FACTORY_EXTENSION) {
-                            this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), buildingsDelta);
-                        } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
-                            this.spawnInfo(this.InfoType.INCREASE_SPY_ATTACKS_PER_TURN, position.clone(), 1);
-                        }
-                        setTimeout(() => {
-                            if (this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs()) {
-                                if (playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true) {
-                                    this.props.finishBuildPhase({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
-                                        this.props.deselectBuildings();
-                                    }).catch(error => {
-                                        if (error instanceof BattlechocError) {
-                                            logger.warn(error);
-                                        } else {
-                                            throw error;
-                                        }
-                                    });
-                                } else {
-                                    this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
-                                        this.props.deselectBuildings();
-                                        this.props.deselectAttack();
-                                    }).catch(error => {
-                                        if (error instanceof BattlechocError) {
-                                            logger.warn(error);
-                                        } else {
-                                            throw error;
-                                        }
-                                    });
-                                }
+                        if (typeof this.props.game !== 'undefined') { 
+                            if (building.type === EntityType.CACAOTREE) {
+                                this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), cacaoDelta);
+                            } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
+                                this.spawnInfo(this.InfoType.INCREASE_ATTACKS_PER_TURN, position.clone(), 1);
+                            } else if (building.type === EntityType.FACTORY_EXTENSION) {
+                                this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), buildingsDelta);
+                            } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
+                                this.spawnInfo(this.InfoType.INCREASE_SPY_ATTACKS_PER_TURN, position.clone(), 1);
                             }
-                        }, 2000);
+                            setTimeout(() => {
+                                if (typeof this.props.game !== 'undefined') { 
+                                    if (this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs()) {
+                                        if (playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true) {
+                                            this.props.finishBuildPhase({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
+                                                this.props.deselectBuildings();
+                                            }).catch(error => {
+                                                if (error instanceof BattlechocError) {
+                                                    logger.warn(error);
+                                                } else {
+                                                    throw error;
+                                                }
+                                            });
+                                        } else {
+                                            this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
+                                                this.props.deselectBuildings();
+                                                this.props.deselectAttack();
+                                            }).catch(error => {
+                                                if (error instanceof BattlechocError) {
+                                                    logger.warn(error);
+                                                } else {
+                                                    throw error;
+                                                }
+                                            });
+                                        }
+                                    }
+                                }
+                            }, 2000);
+                        }
                     }, 1000);
                 }
             }).catch(error => {

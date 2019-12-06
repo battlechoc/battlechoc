@@ -278,17 +278,14 @@ class Multiplayer {
         return 0;
     }
 
-    signOut(notifyPlayerSignedOut, signOutErrorHandler) {
-        firebase.auth().signOut().then(function () {
-            if (typeof notifyPlayerSignedOut !== 'undefined') {
+    signOut(notifyPlayerSignedOut) {
+        firebase.auth().signOut().then(() => {
+            if (typeof notifyPlayerSignedOut === 'function') {
                 notifyPlayerSignedOut();
+            } else {
+                logger.warn("player notification callback is not a function");
             }
-        }).catch(function (error) {
-            logger.info("could not sign out because some error happened.", error);
-            if (typeof signOutErrorHandler !== 'undefined') {
-                signOutErrorHandler(error);
-            }
-        });
+        }).catch(error => logger.info("Error while sign out", error));
     }
 
     async createChallengeMeLink() {
