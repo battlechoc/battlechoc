@@ -42,7 +42,6 @@ class AssetLoader {
 }
 
 const assetLoader = new AssetLoader();
-const assetVersion = '8.0';
 
 class AssetLoadingView extends Component {
     constructor(props) {
@@ -58,7 +57,7 @@ class AssetLoadingView extends Component {
 
     loadAssets(scene) {
         for (let key in assetLoader.assets.models) {
-            SceneLoader.ImportMesh('', '/models/', assetLoader.assets.models[key] + '?v=' + assetVersion, scene, group => {
+            SceneLoader.ImportMesh('', '/models/', assetLoader.assets.models[key], scene, group => {
                 group.forEach((mesh, i) => {
                     if (Object.values(BoardCellTypes).includes(key) && mesh.name !== '__root__') {
                         let material = new StandardMaterial(key + '.material', scene);
@@ -108,7 +107,7 @@ class AssetLoadingView extends Component {
     loadImage(src) {
         return new Promise((resolve, reject) => {
             let xhr = new XMLHttpRequest();
-            xhr.open('GET', src + '?v=' + assetVersion);
+            xhr.open('GET', src);
             xhr.onload = () => {
               if (xhr.status >= 200 && xhr.status < 300) {
                 resolve(xhr.response);
@@ -133,4 +132,4 @@ const AssetLoadingViewContainer = connect(
     mapStateToProps, 
     mapDispatchToProps
 )(AssetLoadingView);
-export { assetLoader, AssetLoadingViewContainer, assetVersion };
+export { assetLoader, AssetLoadingViewContainer };

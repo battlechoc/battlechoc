@@ -142,9 +142,9 @@ class GameEndOverview extends Component {
                         <div id="coins">
                             <span className={ this.state.outcome }>{ this.state.awards }</span>
                             <picture>
-                              <source srcSet="/images/coins.webp?v=1.0" type="image/webp" />
-                              <source srcSet="/images/coins.png?v=2.0" type="image/jpeg" /> 
-                              <img src="/images/coins.png?v=2.0" alt="choco coins" />
+                              <source srcSet="/images/coins.webp" type="image/webp" />
+                              <source srcSet="/images/coins.png" type="image/jpeg" /> 
+                              <img src="/images/coins.png" alt="choco coins" />
                             </picture>
                         </div>
                     </div>
