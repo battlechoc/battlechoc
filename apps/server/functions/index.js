@@ -89,15 +89,14 @@ app.get('/user/friends', async (req, res) => {
                     player.winnings = 0;
                     player.drawn = 0;
                 }
-                player.name = player.username;
                 // hide player specific fields
+                player.name = player.username;
                 player.trackRecord = undefined;
                 player.last_upgrade_action = undefined;
                 player.coins = undefined;
                 let score = player.score;
                 player.score = undefined;
                 player.friends = undefined;
-                player.username = undefined;
                 if (typeof score === 'undefined' || isNaN(score)) {
                     let scores = await players.where('score', '>', 0).get();
                     player = Object.assign(player, {ranking: scores.size});
