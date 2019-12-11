@@ -84,7 +84,7 @@ function prepareBuildPhase(gameState) {
     currentPlayer(gameState).attacks[entities.AttackType.HOT_CHOCOLATE] = currentPlayer(gameState).attacksPerTurn[entities.AttackType.HOT_CHOCOLATE];
     currentPlayer(gameState).attacks[entities.AttackType.BUNNY] = currentPlayer(gameState).attacksPerTurn[entities.AttackType.BUNNY];
     currentPlayer(gameState).buildings = currentPlayer(gameState).buildingsPerTurn;
-    if (currentPlayer(gameState).buildings > 0) {
+    if (currentPlayer(gameState).buildings > 0 && currentPlayer(gameState).cacao >= entities.getCheapest(currentPlayer(gameState).level).costs()) {
         gameState.state = GameStateTypes.BUILD_PHASE;
     } else {
         gameState.state = GameStateTypes.ATTACK_PHASE;

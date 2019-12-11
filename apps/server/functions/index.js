@@ -99,19 +99,19 @@ app.get('/user/friends', async (req, res) => {
                 player.friends = undefined;
                 if (typeof score === 'undefined' || isNaN(score)) {
                     let scores = await players.where('score', '>', 0).get();
-                    player = Object.assign(player, {ranking: scores.size});
+                    player = Object.assign(player, { ranking: scores.size });
                 } else {
                     let scores = await players.where('score', '>=', score).get();
-                    player = Object.assign(player, {ranking: scores.size});
+                    player = Object.assign(player, { ranking: scores.size });
                 }
-                friends.push(player);           
+                friends.push(player);
             }
-            res.json(friends); 
+            res.json(friends);
         } else {
             res.json([]);
         }
     } else {
-        res.status(404).json({ error: 'PLAYER NOT FOUND'});
+        res.status(404).json({ error: 'PLAYER NOT FOUND' });
     }
 });
 
@@ -199,12 +199,12 @@ app.get('/query/user/:name', async (req, res) => {
             player.username = undefined;
             if (typeof score === 'undefined' || isNaN(score)) {
                 let scores = await players.where('score', '>', 0).get();
-                player = Object.assign(player, {ranking: scores.size});
+                player = Object.assign(player, { ranking: scores.size });
             } else {
                 let scores = await players.where('score', '>=', score).get();
-                player = Object.assign(player, {ranking: scores.size});
+                player = Object.assign(player, { ranking: scores.size });
             }
-            result.push(player);        
+            result.push(player);
         }
 
         res.json(result);
@@ -278,13 +278,13 @@ app.post('/user/challenge', async (req, res) => {
                             if (typeof permission.messaging !== 'undefined') {
                                 permission.messaging.forEach(token => {
                                     const payload = {
-                                      'notification': {
-                                        'title':  player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
-                                        'body': t.t[language].NOTIFICATION_CHALLENGE_BODY,
-                                        'click_action': 'https://battlechoc.com?sessionId=' + databaseSession.id,
-                                        'image': 'https://battlechoc.com/icon-144x144.png'
-                                      },
-                                      'to': token
+                                        'notification': {
+                                            'title': player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
+                                            'body': t.t[language].NOTIFICATION_CHALLENGE_BODY,
+                                            'click_action': 'https://battlechoc.com?sessionId=' + databaseSession.id,
+                                            'image': 'https://battlechoc.com/icon-144x144.png'
+                                        },
+                                        'to': token
                                     }
 
                                     axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
@@ -415,8 +415,8 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         if (issuer === session.game.players[0].id) {
             console.log('push event to player 0 event array', req.body.event)
             try {
-                await ref.update({ 
-                    events_from_0: admin.firestore.FieldValue.arrayUnion(req.body.event), 
+                await ref.update({
+                    events_from_0: admin.firestore.FieldValue.arrayUnion(req.body.event),
                     last_changed: new Date()
                 });
             } catch (error) {
@@ -426,9 +426,9 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         } else if (issuer === session.game.players[1].id) {
             console.log('push event to player 1 event array', req.body.event)
             try {
-                await ref.update({ 
+                await ref.update({
                     events_from_1: admin.firestore.FieldValue.arrayUnion(req.body.event),
-                    last_changed: new Date()  
+                    last_changed: new Date()
                 });
             } catch (error) {
                 console.warn('Failed to push event ' + req.body.event.toString() + ' to the event list of player 1');
@@ -450,6 +450,14 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         let updatedPlayerId = session.game.currentPlayerIndex;
 
         if (playerId !== updatedPlayerId) {
+            let language;
+            let opponentPlayerDoc = await admin.firestore().collection('players').doc(session.game.players[updatedPlayerId].id).get();
+            if (doc.exists) {
+                language = opponentPlayerDoc.data().language;
+            }
+            if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
+                language = t.getDefaultLanguage();
+            }
             const permissions = admin.firestore().collection('permissions');
             const opponent = session.game.players[playerId].name;
             permissions.doc(session.game.players[updatedPlayerId].id).get().then(doc => {
@@ -458,13 +466,13 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                     if (typeof permission.messaging !== 'undefined') {
                         permission.messaging.forEach(token => {
                             const payload = {
-                              'notification': {
-                                'title':  opponent + ' finished the turn @battlechoc',
-                                'body': 'Let\'s go. It\'s your move!',
-                                'click_action': 'https://battlechoc.com?sessionId=' + req.body.sessionId,
-                                'image': 'https://battlechoc.com/icon-144x144.png'
-                              },
-                              'to': token
+                                'notification': {
+                                    'title': opponent + t.t[language].NOTIFICATION_TURN_FINISHED_TITLE,
+                                    'body': t.t[language].NOTIFICATION_TURN_FINISHED_BODY,
+                                    'click_action': 'https://battlechoc.com?sessionId=' + req.body.sessionId,
+                                    'image': 'https://battlechoc.com/icon-144x144.png'
+                                },
+                                'to': token
                             }
 
                             axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
@@ -483,7 +491,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                 delete session.events_from_0;
                 delete session.events_from_1;
 
-                await ref.set(session, {merge: true});
+                await ref.set(session, { merge: true });
                 res.status(200).end();
             } catch (error) {
                 res.status(500).json({ 'error': error.toString() });
@@ -501,7 +509,7 @@ app.post('/surrender', async (req, res) => {
     }
 
     if (!doc.exists) {
-        res.status(404).json({error: 'SESSION NOT FOUND'});
+        res.status(404).json({ error: 'SESSION NOT FOUND' });
     } else {
         let session = doc.data();
         if (!session.players.includes(req.user.uid)) {
@@ -531,7 +539,7 @@ app.post('/surrender', async (req, res) => {
         session.game.players.filter(player => player.id === req.user.uid)[0].statistics.lost = true;
 
         try {
-            await ref.set(session, {merge: true});
+            await ref.set(session, { merge: true });
             res.status(200).end();
         } catch (error) {
             res.status(500).json({ 'error': error });
@@ -571,7 +579,7 @@ app.get('/multiplayer/sessions', async (req, res) => {
             let doc = await players.doc(opponentId).get();
             if (doc.exists) {
                 let opponent = doc.data();
-                
+
                 let winnings = 0;
                 let losses = 0;
                 let drawn = 0;
@@ -587,9 +595,9 @@ app.get('/multiplayer/sessions', async (req, res) => {
                 }
 
                 let level = Object.values(opponent.level)
-                            .map(attributes => Object.values(attributes).reduce((level, prev) => Number(level) + Number(prev)))
-                            .reduce((value, prev) => value + prev);
-                
+                    .map(attributes => Object.values(attributes).reduce((level, prev) => Number(level) + Number(prev)))
+                    .reduce((value, prev) => value + prev);
+
                 let ranking = 0;
                 if (typeof opponent.score === 'undefined' || isNaN(opponent.score)) {
                     ranking = (await players.where('score', '>', 0).get()).size
@@ -711,15 +719,15 @@ app.get('/rank', (req, res) => {
             let player = doc.data();
             if (typeof player.score === 'undefined' || isNaN(player.score)) {
                 players.where('score', '>', 0).get()
-                .then(scores => res.json({ ranking: scores.size}))
-                .catch(error => res.status(500).json({ error: error.toString() }));
+                    .then(scores => res.json({ ranking: scores.size }))
+                    .catch(error => res.status(500).json({ error: error.toString() }));
             } else {
                 players.where('score', '>=', player.score).get()
-                .then(scores => res.json({ ranking: scores.size }))
-                .catch(error => res.status(500).json({ error: error.toString() }));
+                    .then(scores => res.json({ ranking: scores.size }))
+                    .catch(error => res.status(500).json({ error: error.toString() }));
             }
         } else {
-            res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
+            res.status(404).json({ error: 'PLAYER DOES NOT EXIST' });
         }
     }).catch(error => res.status(500).json({ error: error.toString() }));
 });
@@ -776,8 +784,8 @@ app.get('/user/:name', async (req, res) => {
 
         if (typeof score === 'undefined' || isNaN(score)) {
             players.where('score', '>', 0).get()
-            .then(scores => res.json(Object.assign(player, {ranking: scores.size})))
-            .catch(error => res.status(500).json({ error: error.toString() }));
+                .then(scores => res.json(Object.assign(player, { ranking: scores.size })))
+                .catch(error => res.status(500).json({ error: error.toString() }));
         } else {
             players.where('score', '>=', score).get()
                 .then(scores => res.json(Object.assign(player, { ranking: scores.size })))
@@ -835,12 +843,12 @@ app.get('/random/opponent', async (req, res) => {
 
         if (typeof score === 'undefined' || isNaN(score)) {
             players.where('score', '>', 0).get()
-            .then(scores => res.json(Object.assign(player, {ranking: scores.size})))
-            .catch(error => res.status(500).json({ error: error.toString() }));
+                .then(scores => res.json(Object.assign(player, { ranking: scores.size })))
+                .catch(error => res.status(500).json({ error: error.toString() }));
         } else {
             players.where('score', '>=', score).get()
-            .then(scores => res.json(Object.assign(player, {ranking: scores.size})))
-            .catch(error => res.status(500).json({ error: error.toString() }));
+                .then(scores => res.json(Object.assign(player, { ranking: scores.size })))
+                .catch(error => res.status(500).json({ error: error.toString() }));
         }
     }
 });
@@ -855,7 +863,7 @@ app.post('/user/username', async (req, res) => {
     }
 
     if (docs.size > 0) {
-        res.status(400).json({ error: 'PLAYERNAME ALREADY EXISTS'});
+        res.status(400).json({ error: 'PLAYERNAME ALREADY EXISTS' });
     } else {
         players.doc(req.user.uid).get().then(doc => {
             let regex = /^([a-zA-Z][a-zA-Z0-9_]{2,15})$/;
@@ -867,10 +875,10 @@ app.post('/user/username', async (req, res) => {
                         res.end();
                     }).catch(error => res.status(500).json({ error: error }));
                 } else {
-                    res.status(404).json({ error: 'PLAYER DOES NOT EXIST'});
+                    res.status(404).json({ error: 'PLAYER DOES NOT EXIST' });
                 }
             } else {
-                res.status(400).json({ error: 'USERNAME NOT VALID'});
+                res.status(400).json({ error: 'USERNAME NOT VALID' });
             }
         }).catch(error => res.status(500).json({ error: error.toString() }));
     }

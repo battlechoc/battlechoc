@@ -658,6 +658,14 @@ function getEntityDescriptor(entityType, level) {
     }
 }
 
+function getCheapest(level) {
+    if (typeof level === 'undefined') {
+        level = EmptyPlayerStats.level;
+    }
+
+    return getEntityDescriptor(EntityType.CREAM, level);
+}
+
 module.exports = {
     calculateCosts: (entity, level) => {
         if (!EntityDescriptors.has(entity)) {
@@ -680,5 +688,6 @@ module.exports = {
     EntityType: EntityType,
     AttackType: AttackType,
     getEntityDescriptor: getEntityDescriptor,
+    getCheapest: getCheapest,
     BoardCellTypes: BoardCellTypes
 }
