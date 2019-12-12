@@ -1,44 +1,20 @@
-import React, { Component } from 'react';
-import './GameEndOverview.css';
-import { connect } from 'react-redux';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
+import './GameEndOverview.css';
 import { ArrowBack } from '@material-ui/icons';
 import Fab from '@material-ui/core/Fab';
 import { Translation as t } from '../misc';
 import { multiplayer } from '../../Multiplayer';
+import { OptimizedImage } from '../../helper/compatibility';
 
-class GameEndOverview extends Component {
-    constructor(props) {
-        super(props);
-        this.state = { 
-            outcome: 'win',
-            awards: 0
-        }
-    }
+const useMountEffect = effect => useEffect(effect, [])
 
-    componentDidMount() {
-        this.calculateChocoCoins();
-        this.createPie();
-    }
-
-    sliceSize(dataNum, dataTotal) {
+const GameEndOverview = props => {
+    let sliceSize = (dataNum, dataTotal) => {
         return (dataNum / dataTotal) * 360;
     }
-
-    estimateHeadlineText() {
-        let headine = t[this.props.language].MESSAGE_WIN_GAME
-        if (this.props.game.winners.length === 1) {
-            if (!multiplayer.isLocalPlayer(this.props.game.winners[0].idx)) {
-                headine = t[this.props.language].MESSAGE_LOST_GAME;
-            }
-        } else if (this.props.game.winners.length === 2) {
-            headine = t[this.props.language].MESSAGE_DRAW_GAME;
-        }
-
-        return headine;
-    }
     
-    addSlice(sliceSize, offset, sliceID, color) {
+    let addSlice = (sliceSize, offset, sliceID, color) => {
         let pie = document.getElementById('pie');
         let slice = document.createElement('div');
         slice.className = 'slice';
@@ -53,19 +29,19 @@ class GameEndOverview extends Component {
         span.style.backgroundColor = color;
     }
     
-    iterateSlices(sliceSize, offset, dataCount, sliceCount, color) {
+    let iterateSlices = (sliceSize, offset, dataCount, sliceCount, color) => {
         var sliceID = "s"+dataCount+"-"+sliceCount;
         var maxSize = 179;
         if(sliceSize <= maxSize) {
-            this.addSlice(sliceSize, offset, sliceID, color);
+            addSlice(sliceSize, offset, sliceID, color);
         } else {
-            this.addSlice(maxSize, offset, sliceID, color);
-            this.iterateSlices(sliceSize-maxSize, offset+maxSize, dataCount, sliceCount+1, color);
+            addSlice(maxSize, offset, sliceID, color);
+            iterateSlices(sliceSize-maxSize, offset+maxSize, dataCount, sliceCount+1, color);
         }
     }
     
-    createPie() {
-        const statistics = this.props.game.players[multiplayer.localPlayerIndex].statistics;
+    useMountEffect(() => {
+        let statistics = props.player.statistics;
         const data = [statistics.attacks, 
                     statistics.builtEntities * 2, 
                     statistics.espionages * 10, 
@@ -80,100 +56,86 @@ class GameEndOverview extends Component {
         var offset = 0;
         for(let i = 0; i < data.length; i++) {
             if (data[i] > 0) {
-                let size = this.sliceSize(data[i], total);
-                this.iterateSlices(size, offset, i, 0, color[i]);
+                let size = sliceSize(data[i], total);
+                iterateSlices(size, offset, i, 0, color[i]);
                 document.querySelector('.legend li:nth-child(' + (i+1) + ')').style.borderColor = color[i];
                 offset += size;
             }
         }
-    }
+    });
+    
+    let statistics = props.player.statistics;
+    let awards = statistics.attacks + statistics.builtEntities * 2 + statistics.espionages * 10 + statistics.moltenFields * 50;
+    let outcome = 'win';
 
-    calculateChocoCoins() {
-        let statistics = this.props.game.players[multiplayer.localPlayerIndex].statistics;
-        let awards = statistics.attacks + statistics.builtEntities * 2 + statistics.espionages * 10 + statistics.moltenFields * 50;
-        
-        if (this.props.game.winners.length === 1) {
-            if (!multiplayer.isLocalPlayer(this.props.game.winners[0].idx)) {
-                awards = 0;
-                this.setState({ 
-                    outcome: 'lost',
-                    awards: awards 
-                });
-            } else {
-                this.setState({ 
-                    outcome: 'win',
-                    awards: awards 
-                });                
-            }
-        } else if (this.props.game.winners.length === 2) {
-            awards = Math.floor(awards / 2);
-            this.setState({ 
-                outcome: 'draw',
-                awards: awards 
-            });
+    if (props.winners.length === 1) {
+        if (!multiplayer.isLocalPlayer(props.winners[0].idx)) {
+            awards = 0;
+            outcome = 'lost';
         }
+    } else if (props.winners.length === 2) {
+        awards = Math.floor(awards / 2);
+        outcome = 'draw';
     }
 
-    render() {
-        let statistics = this.props.game.players[multiplayer.localPlayerIndex].statistics;
-        return (
-            <div className="overview">
-                <h1>{ this.estimateHeadlineText() }</h1>
-                <div className="statistics">                    
-                    <ul className="legend">
-                        <li>
-                            <em>{t[this.props.language].GAME_END_OVERVIEW_ATTACKS}</em>
-                            <span className="amount">{ statistics.attacks }</span>
-                        </li>
-                        <li>
-                            <em>{t[this.props.language].GAME_END_OVERVIEW_ENTITIES}</em>
-                            <span><span className="amount">{ statistics.builtEntities }</span><b>&times; 2</b></span>
-                        </li>
-                        <li>
-                            <em>{t[this.props.language].GAME_END_OVERVIEW_ESPIONAGES}</em>
-                            <span><span className="amount">{ statistics.espionages }</span><b>&times; 10</b></span>
-                        </li>
-                        <li>
-                            <em>{t[this.props.language].GAME_END_OVERVIEW_MOLTEN_FIELDS}</em>
-                            <span><span className="amount">{ statistics.moltenFields }</span><b>&times; 50</b></span>
-                        </li>
-                    </ul>
-                    <div id="pie">
-                        <div id="coins">
-                            <span className={ this.state.outcome }>{ this.state.awards }</span>
-                            <picture>
-                              <source srcSet="/images/coins.webp" type="image/webp" />
-                              <source srcSet="/images/coins.png" type="image/jpeg" /> 
-                              <img src="/images/coins.png" alt="choco coins" />
-                            </picture>
-                        </div>
+    let headine = t[props.language].MESSAGE_WIN_GAME
+    if (props.winners.length === 1) {
+        if (!multiplayer.isLocalPlayer(props.winners[0].idx)) {
+            headine = t[props.language].MESSAGE_LOST_GAME;
+        }
+    } else if (props.winners.length === 2) {
+        headine = t[props.language].MESSAGE_DRAW_GAME;
+    }
+
+    return (
+        <div className="overview">
+            <h1>{ headine }</h1>
+            <div className="statistics">                    
+                <ul className="legend">
+                    <li>
+                        <em>{t[props.language].GAME_END_OVERVIEW_ATTACKS}</em>
+                        <span className="amount">{ statistics.attacks }</span>
+                    </li>
+                    <li>
+                        <em>{t[props.language].GAME_END_OVERVIEW_ENTITIES}</em>
+                        <span><span className="amount">{ statistics.builtEntities }</span><b>&times; 2</b></span>
+                    </li>
+                    <li>
+                        <em>{t[props.language].GAME_END_OVERVIEW_ESPIONAGES}</em>
+                        <span><span className="amount">{ statistics.espionages }</span><b>&times; 10</b></span>
+                    </li>
+                    <li>
+                        <em>{t[props.language].GAME_END_OVERVIEW_MOLTEN_FIELDS}</em>
+                        <span><span className="amount">{ statistics.moltenFields }</span><b>&times; 50</b></span>
+                    </li>
+                </ul>
+                <div id="pie">
+                    <div id="coins">
+                        <span className={ outcome }>{ awards }</span>
+                        <OptimizedImage src="/images/coins.png" alt="choco coins" />
                     </div>
                 </div>
-
-                <div className="actions">
-                    <Fab
-                        size="large"
-                        color="primary"
-                        aria-label="back"
-                        className="icon"
-                        onClick={() => this.props.finishGame()}>
-                        <ArrowBack  />
-                    </Fab>
-                </div>
             </div>
-        );
-    }
+
+            <div className="actions">
+                <Fab
+                    size="large"
+                    color="primary"
+                    aria-label="back"
+                    className="icon"
+                    onClick={() => props.finishGame()}>
+                    <ArrowBack  />
+                </Fab>
+            </div>
+        </div>
+    );
 }
 
 GameEndOverview.propTypes = {
-    finishGame: PropTypes.func.isRequired
-}
+    finishGame: PropTypes.func.isRequired,
+    winners: PropTypes.array.isRequired,
+    player: PropTypes.object.isRequired,
+    language: PropTypes.string.isRequired
+};
 
-const mapStateToProps = state => ({
-    game: state.gameplay.game,
-    language: state.ui.language,
-    playerInfos: state.ui.playerInfos
-});
-
-const GameEndOverviewContainer = connect(mapStateToProps)(GameEndOverview);
-export default GameEndOverviewContainer;
+export default GameEndOverview;

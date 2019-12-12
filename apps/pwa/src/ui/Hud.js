@@ -214,11 +214,7 @@ class Hud extends Component {
                                 </div> : null}
                                 <SocialIcons />
                                 <div className="logo">
-                                    <picture>
-                                      <source srcSet="/images/logo.webp" type="image/webp" />
-                                      <source srcSet="/images/logo.png" type="image/jpeg" /> 
-                                      <img src="/images/logo.png" alt="battlechoc logo" />
-                                    </picture>
+                                    <OptimizedImage src="/images/logo.png" alt="battlechoc logo" />
                                 </div>
                                 <div className="titleMenu">
                                     {this.props.assetsReady ? controls : null}
@@ -265,20 +261,21 @@ class Hud extends Component {
                     } else if (stage === 'CHOCLAB_SCREEN') {
                         return <Choclab />
                     } else {
+                        let player = this.props.game.players[multiplayer.localPlayerIndex];
                         return (
                             <div>
                                 <Tooltip 
                                     state={this.props.state} 
-                                    currentPlayerName={this.props.game.players[multiplayer.localPlayerIndex].name}
+                                    currentPlayerName={player.name}
                                     language={this.props.language}
                                     tappedBuilding={this.props.tappedBuilding}
                                     selectedAttack={this.props.selectedAttack}
-                                    level={this.props.game.players[multiplayer.localPlayerIndex].level}
+                                    level={player.level}
                                     playerTurn={multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)} />
                                 <AttackPalette />
                                 <BuildingPalette />
                                 <InfoPanel players={this.props.game.players} />
-                                {this.props.overviewVisible ? <GameEndOverview finishGame={() => this.props.endGame()} /> : null}
+                                {this.props.overviewVisible ? <GameEndOverview player={player} winners={this.props.game.winners} language={this.props.language} finishGame={() => this.props.endGame()} /> : null}
                             </div>
                         )
                     }

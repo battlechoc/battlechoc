@@ -65,15 +65,15 @@ section {
 }
 
 .overview #coins img {
-  width: 45%;
+  width: 40%;
   bottom: 40%;
   position: absolute;
 }
 
 .overview #coins span {
   font-size: 3.5rem;
-  color: #1DA6B5;
-  text-shadow: 1px 3px 1px #105B63;
+  color: #5bb9bf;
+  text-shadow: 0px 2px 2px #324D5C;
   font-weight: bold;
   position: absolute;
   z-index: 6;
