@@ -193,6 +193,14 @@ class Multiplayer {
                     }
                 } else {
                     let onlineAccount = doc.data();
+                    
+                    // downward compatibility for old level system
+                    if (typeof Object.values(onlineAccount.level)[0] === 'object') {
+                        console.log('UPDATE TO A NEW LEVEL SYSTEM VERSION')
+                        onlineAccount.level = EmptyPlayerStats.level;
+                        ref.set({ level: EmptyPlayerStats.level }, { merge: true });
+                    }
+
                     if (typeof onlineAccount.trackRecord === 'undefined') {
                         onlineAccount.trackRecord = [];
                     }
@@ -221,7 +229,7 @@ class Multiplayer {
     async fetchPlayerStats() {
         if (firebase.auth().currentUser) {
             let ref = firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid);
-            
+
             try {
                 var doc = await ref.get();
             } catch (error) {
@@ -229,6 +237,12 @@ class Multiplayer {
             }
 
             if (doc.exists) {
+                // downward compatibility for old level system 
+                if (typeof Object.values(doc.data().level)[0] === 'object') {
+                    console.log('UPDATE TO A NEW LEVEL SYSTEM VERSION')
+                    doc.data().level = EmptyPlayerStats.level;
+                    ref.set({ level: EmptyPlayerStats.level }, { merge: true });
+                }
                 this.callbacks.updatePlayerStats(doc.data());
             } else {
                 try {
