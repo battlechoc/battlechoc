@@ -339,7 +339,12 @@ const Choclab = props => {
                     </div> : null }
                     <div className={classes.actions}>
                         { entityType !== EntityType.CREAM  && upgradePossible ? 
-                            <div className={`${classes.button} ${!upgradePossible || updateRunning ? classes.inactive : null}`} onClick={() => updateLevel(entityType)}>
+                            <div className={`${classes.button} ${!upgradePossible || updateRunning || props.playerInfos.stats.coins < currentEntity.coins ? classes.inactive : null}`} onClick={() => {
+                                    if (upgradePossible && !updateRunning && props.playerInfos.stats.coins >= currentEntity.coins) {
+                                        updateLevel(entityType);
+                                    }
+                                }
+                            }>
                                 <span>Upgrade</span>
                                 <div className={classes.costs}>
                                     <span>{ currentEntity.coins }</span>
