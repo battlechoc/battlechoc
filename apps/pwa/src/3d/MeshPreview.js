@@ -7,7 +7,6 @@ import 'babylonjs-loaders';
 class MeshPreview extends Component {
 
     componentDidMount() {
-    	this.props.onRef(this);
         this.engine = new Engine(this.container, true);
 
         let createScene = () => {
@@ -25,7 +24,6 @@ class MeshPreview extends Component {
         }
 
         this.scene = createScene();
-
         this.engine.runRenderLoop(() => {
 		    this.scene.render();
 		});
@@ -38,17 +36,31 @@ class MeshPreview extends Component {
             group[1].scaling = new Vector3(1.5, 1, 1.5);
 		});
 		window.addEventListener('resize', this.resize);
+        this.loadMesh(this.props.selectedEntity.type);
     }
 
     componentWillUnmount() {
         window.removeEventListener('resize', this.resize);
     }
 
+    componentDidUpdate(prevProps) {
+        if (prevProps.selectedEntity !== this.props.selectedEntity) {
+            this.loadMesh(this.props.selectedEntity.type);
+        }
+    }
+
     estimateOrthographicSize() {
         const width = this.container.clientWidth;
         const height = this.container.clientHeight;
         let ratio = width / height;
-        let distance = 2
+        
+        let distance = 2;
+
+        if (window.innerWidth < 600) {
+            distance = 1.5;
+        } else if (window.innerWidth < 800) {
+            distance = 2.5;
+        }
 
         this.camera.orthoTop = distance;
         this.camera.orthoBottom = - distance;
@@ -93,7 +105,7 @@ class MeshPreview extends Component {
     } 
 
     render() {
-        return <canvas className="previewCanvas" ref={container => { this.container = container }} />;
+        return <canvas ref={container => { this.container = container }} />;
     }
 }
 

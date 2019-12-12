@@ -28,10 +28,6 @@ html, body, #root {
   width: 100%;
 }
 
-.previewCanvas {
-  flex-grow: 1;
-}
-
 #background {
   position: absolute;
   width: 100%;

@@ -137,8 +137,7 @@ const AccountOverview = props => {
 
         if (typeof props.playerInfos.stats.level !== 'undefined') {
             level = Object.values(props.playerInfos.stats.level)
-            .map(attributes => Object.values(attributes).reduce((level, prev) => Number(level) + Number(prev)))
-            .reduce((value, prev) => value + prev);
+            .reduce((value, prev) => value + prev, 1);
         }
 
         if (typeof props.playerInfos.stats.trackRecord !== 'undefined' && firebase.auth().currentUser) {

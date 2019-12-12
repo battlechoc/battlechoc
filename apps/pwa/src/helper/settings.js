@@ -2,6 +2,7 @@ import axios from 'axios';
 import firebase from '@firebase/app';
 
 const baseUrl = 'https://europe-west1-battlechoc.cloudfunctions.net/api';
+
 const instance = axios.create({ baseURL: baseUrl });
 
 const ServerRequest = async (method, url, body) => {

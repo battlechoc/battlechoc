@@ -68,7 +68,7 @@ function prepareBuildPhase(gameState) {
     currentPlayer(gameState).attacks[AttackType.HOT_CHOCOLATE] = currentPlayer(gameState).attacksPerTurn[AttackType.HOT_CHOCOLATE];
     currentPlayer(gameState).attacks[AttackType.BUNNY] = currentPlayer(gameState).attacksPerTurn[AttackType.BUNNY];
     currentPlayer(gameState).buildings = currentPlayer(gameState).buildingsPerTurn;
-    if (currentPlayer(gameState).buildings > 0 && currentPlayer(gameState).cacao >= getCheapest(currentPlayer(gameState).level).costs()) {
+    if (currentPlayer(gameState).buildings > 0 && currentPlayer(gameState).cacao >= getCheapest(currentPlayer(gameState).level).costs) {
         gameState.state = GameStateTypes.BUILD_PHASE;
     } else {
         gameState.state = GameStateTypes.ATTACK_PHASE;
@@ -77,9 +77,6 @@ function prepareBuildPhase(gameState) {
 
 function calculateCacaoPerTurn(building, cellColor) {
     let cacaoPerTurn = building.cacaoPerTurn;
-    if (typeof cacaoPerTurn === 'function') {
-        cacaoPerTurn = building.cacaoPerTurn()[0];
-    }
     if (cellColor === BoardCellTypes.WHITE) {
         cacaoPerTurn = Math.round(cacaoPerTurn * 1.5);
     }
@@ -88,9 +85,6 @@ function calculateCacaoPerTurn(building, cellColor) {
 
 function calculateBuildingsPerTurn(building, cellColor) {
     let buildingsPerTurn = building.buildingsPerTurn;
-    if (typeof buildingsPerTurn === 'function') {
-        buildingsPerTurn = building.buildingsPerTurn()[0];
-    }
     if (cellColor === BoardCellTypes.BLACK) {
         buildingsPerTurn += 1;
     }
@@ -271,21 +265,21 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                             logger.info('CACAOTREE DESTROYED');
                         } else if (entity.type === EntityType.RUM_TRUFFLE_CANNON) {
                             const destroyedBuildingDescriptor = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, opponent.level);
-                            opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType()] -= destroyedBuildingDescriptor.attacksPerTurn();
+                            opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
                             logger.info('CANNON DESTROYED');
                         } else if (entity.type === EntityType.HOT_CHOCOLATE_BALLISTA) {
                             const destroyedBuildingDescriptor = getEntityDescriptor(EntityType.HOT_CHOCOLATE_BALLISTA, opponent.level);
-                            opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType()] -= destroyedBuildingDescriptor.attacksPerTurn();
+                            opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
                             logger.info('BALISTA DESTROYED');
                         } else if (entity.type === EntityType.FRUIT_CANNON) {
                             const destroyedBuildingDescriptor = getEntityDescriptor(EntityType.FRUIT_CANNON, opponent.level);
-                            opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType()] -= destroyedBuildingDescriptor.attacksPerTurn();
+                            opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
                             const rumTruffleCannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, opponent.level);
-                            opponent.attacksPerTurn[rumTruffleCannon.attackType()] -= rumTruffleCannon.attacksPerTurn();
+                            opponent.attacksPerTurn[rumTruffleCannon.attackType] -= rumTruffleCannon.attacksPerTurn;
                             logger.info('FRUIT CANNON DESTROYED');
                         } else if (entity.type === EntityType.SPYING_EASTER_BUNNY) {
                             const destroyedBuildingDescriptor = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY, opponent.level);
-                            opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType()] -= destroyedBuildingDescriptor.attacksPerTurn();
+                            opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
                             logger.info('SPYING EASTER BUNNY DESTROYED');
                         } else if (attackType === AttackType.HOT_CHOCOLATE && entity.type === EntityType.CHOCOLATE_FOUNTAIN) {
                             attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.CHOCOLATE_FOUNTAIN);
