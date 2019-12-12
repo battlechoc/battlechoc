@@ -59,13 +59,22 @@ describe('iPhone', () => {
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test003.png' })
   }, timeout);
 
+  test('should build a factory on a black field', async () => {
+    await page.goto('http://localhost:' + global.__PORT__ + '/situation/d41d8cd98f00b204e9800998ecf8427e');
+    await page.waitForSelector('.factory.enabled.preview', {timeout: timeout});
+    await page.waitFor(3000);
+    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test005.png' });
+    await page.mouse.click(336, 241);
+    await expect(page).toMatchElement('p', {text: '0/2', timeout: timeout});
+  }, timeout);
+
   test('should build a factory on a brown field', async () => {
     await page.goto('http://localhost:' + global.__PORT__ + '/situation/d41d8cd98f00b204e9800998ecf8427e');
     await page.waitForSelector('.factory.enabled.preview', {timeout: timeout});
     await page.waitFor(3000);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test005.png' });
     await page.mouse.click(388, 209);
-    await expect(page).toMatchElement('p', {text: '0/2', timeout: timeout});
+    await expect(page).toMatchElement('p', {text: '0/1', timeout: timeout});
   }, timeout);
 
   test('should build a factory on a white field', async () => {
@@ -74,7 +83,7 @@ describe('iPhone', () => {
     await page.waitFor(3000);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test006.png' });
     await page.mouse.click(363, 223);
-    await expect(page).toMatchElement('p', {text: '0/2', timeout: timeout});
+    await expect(page).toMatchElement('p', {text: '0/1', timeout: timeout});
   }, timeout);
 
   test('should move to opponent turn and back after building the factory', async () => {
@@ -83,7 +92,7 @@ describe('iPhone', () => {
     await page.waitFor(3000);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_0.png' });
     await page.mouse.click(335, 238);
-    await expect(page).toMatchElement('p', {text: '0/3', timeout: timeout});
+    await expect(page).toMatchElement('p', {text: '0/2', timeout: timeout});
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_1.png' });
     await page.waitForSelector('img.loadingAnimation', {timeout: timeout});
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2_2.png' });
@@ -91,7 +100,7 @@ describe('iPhone', () => {
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2_1.png' });
     await page.waitFor(3000);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2_0.png' });
-    await expect(page).toMatchElement('p', {text: '3/3', timeout: timeout});
+    await expect(page).toMatchElement('p', {text: '2/2', timeout: timeout});
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2.png' });
   }, timeout);
 }, timeout);
