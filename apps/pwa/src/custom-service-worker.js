@@ -1,10 +1,11 @@
 workbox.core.skipWaiting();
 workbox.core.clientsClaim();
 
+// NEXT REVISION will replaced by $CI_COMMIT_SHORT_SHA hash within the GitLab build process
 workbox.precaching.precacheAndRoute((self.__precacheManifest || []).concat([
-  { url: '/', revision: '2' },
-  { url: '/index.html?app_runs_as=pwa&app_version=1', revision: '2' },
-  { url: '/manifest.json', revision: '2' },
+  { url: '/', revision: 'NEXT_REVISION' },
+  { url: '/index.html?app_runs_as=pwa&app_version=1', revision: 'NEXT_REVISION' },
+  { url: '/manifest.json', revision: 'NEXT_REVISION' },
   { url: '/sound/attack_bunny.mp3', revision: '1' },
   { url: '/sound/attack_explosion.mp3', revision: '1' },
   { url: '/sound/bunny_caught.mp3', revision: '1' },
