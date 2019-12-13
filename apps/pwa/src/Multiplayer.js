@@ -195,10 +195,14 @@ class Multiplayer {
                     let onlineAccount = doc.data();
                     
                     // downward compatibility for old level system
-                    if (typeof Object.values(onlineAccount.level)[0] === 'object') {
-                        console.log('UPDATE TO A NEW LEVEL SYSTEM VERSION')
+                    if (typeof onlineAccount.level !== 'undefined') {
+                        if (typeof Object.values(onlineAccount.level)[0] === 'object') {
+                            console.log('UPDATE TO A NEW LEVEL SYSTEM VERSION')
+                            onlineAccount.level = EmptyPlayerStats.level;
+                            ref.set({ level: EmptyPlayerStats.level }, { merge: true });
+                        }
+                    } else {
                         onlineAccount.level = EmptyPlayerStats.level;
-                        ref.set({ level: EmptyPlayerStats.level }, { merge: true });
                     }
 
                     if (typeof onlineAccount.trackRecord === 'undefined') {
