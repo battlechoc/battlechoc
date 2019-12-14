@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ServerRequest } from '../../helper/settings';
 import { Translation as t } from '../misc';
 import Axios from 'axios';
@@ -37,39 +37,51 @@ const useStyles = makeStyles(theme => ({
 
 export default withWidth()(props => {
     const classes = useStyles();
+    const { setPlayerName, current, width, language } = props;
     const [loading, setLoading] = useState(false);
     const [playerNameValid, setPlayerNameValid] = useState(false);
     const [playerNameAvailable, setPlayerNameAvailable] = useState(false);
-    const [playerName, setPlayerName] = useState(typeof props.current === 'undefined' ? 'Chocnonymous' : props.current);
-    const [unchanged, setUnchanged] = useState(props.current === playerName);
+    const [playerName, updatePlayerName] = useState(typeof current === 'undefined' ? 'Chocnonymous' : current);
+    const [unchanged, setUnchanged] = useState(current === playerName);
 
     const buttonClassname = playerNameAvailable ? classes.buttonSuccess : null;
 
-    const CancelToken = Axios.CancelToken;
-    const source = CancelToken.source();
+    const [axiosSource, setAxiosSource] = useState(Axios.CancelToken.source());
+    const [requestRunning, setRequestRunning] = useState(false);
+    const [requestTimeout, setRequestTimeout] = useState(null);
 
-    const checkAvailable = async name => {
-        if (name !== '') {
-            if (loading) {
-                source.cancel();
+    useEffect(() => {
+        setUnchanged(playerName === current)
+        if (playerName !== '' && playerName !== current) {
+            setPlayerNameValid(validate(playerName));
+
+            clearTimeout(requestTimeout);
+            if (requestRunning) {
+                axiosSource.cancel();
             }
+        
             setLoading(true);
-            
-            try {
-                let response = await ServerRequest('get', '/check/available/' + name, source.token);
-                if (response.data.name === name) {
+            setRequestTimeout(setTimeout( async () => {
+                let source = Axios.CancelToken.source()
+                setAxiosSource(source);
+                
+                try {
+                    setRequestRunning(true);
+                    let response = await ServerRequest('get', '/check/available/' + playerName, source.token);
                     setPlayerNameAvailable(response.data.available);
+                } catch(error) {
+                    if (!Axios.isCancel(error)) {
+                        logger.warn(error);
+                        setPlayerNameAvailable(false);
+                    }
+                } finally {
+                    setRequestRunning(false);
+                    setLoading(false);
                 }
-            } catch(error) {
-                if (!Axios.isCancel(error)) {
-                    logger.warn(error);
-                    setPlayerNameAvailable(false);
-                }
-            } finally {
-                setLoading(false);
-            }
+            }, 500));
         }
-    }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [playerName])
 
     const validate = name => {
         let regex = /^([a-zA-Z][a-zA-Z0-9_]{2,15})$/;
@@ -78,7 +90,7 @@ export default withWidth()(props => {
 
     const handleButtonClick = () => {
         if (playerNameAvailable && playerNameValid && !loading) {
-            props.setPlayerName(playerName);
+            setPlayerName(playerName);
         }
     };
 
@@ -86,9 +98,9 @@ export default withWidth()(props => {
         if (loading || unchanged) {
             return '';
         } else if (!playerNameAvailable) {
-            return t[props.language].SETTINGS_PLAYER_NAME_IN_USE;
+            return t[language].SETTINGS_PLAYER_NAME_IN_USE;
         } else if (!playerNameValid) {
-            return t[props.language].SETTINGS_PLAYER_NAME_INVALID;
+            return t[language].SETTINGS_PLAYER_NAME_INVALID;
         } else {
             return '';
         }
@@ -105,10 +117,7 @@ export default withWidth()(props => {
                 inputProps={{ spellCheck: 'false' }}
                 InputLabelProps={{ style: {color: 'rgb(48, 86, 91)'}}}
                 onChange={event => {
-                    setPlayerName(event.target.value);
-                    setUnchanged(event.target.value === props.current)
-                    checkAvailable(event.target.value);
-                    setPlayerNameValid(validate(event.target.value));
+                    updatePlayerName(event.target.value);
                 }}
                 margin="normal"
             />    
@@ -123,7 +132,7 @@ export default withWidth()(props => {
                 >
                   {loading ? <HourglassFull /> :  <Send />}
                 </Fab>
-                {loading && <CircularProgress size={isWidthUp('md', props.width) ? 48 : 40} className={classes.fabProgress} />}
+                {loading && <CircularProgress size={isWidthUp('md', width) ? 48 : 40} className={classes.fabProgress} />}
             </div>
         </div>
     );
