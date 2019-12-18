@@ -1,5 +1,6 @@
 import axios from 'axios';
 import firebase from '@firebase/app';
+import { NoHealthyInternetConnectionError } from '../gameplay/Errors';
 
 const baseUrl = 'https://europe-west1-battlechoc.cloudfunctions.net/api';
 
@@ -23,7 +24,7 @@ const ServerRequest = async (method, url, body) => {
             return instance.get(url, config);
         }
     } else {
-        throw ReferenceError('The firebase user does not exist');
+        throw new NoHealthyInternetConnectionError();
     }
 }
 

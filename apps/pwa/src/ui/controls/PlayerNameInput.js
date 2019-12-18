@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ServerRequest } from '../../helper/settings';
 import { Translation as t } from '../misc';
 import Axios from 'axios';
@@ -7,6 +7,7 @@ import withWidth, { isWidthUp } from '@material-ui/core/withWidth';
 import { Send, HourglassFull } from '@material-ui/icons';
 import { Fab, TextField, CircularProgress } from '@material-ui/core';
 import logger from '../../helper/logger';
+import { NoHealthyInternetConnectionError } from '../../gameplay/Errors';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -43,10 +44,11 @@ export default withWidth()(props => {
     const [playerNameAvailable, setPlayerNameAvailable] = useState(false);
     const [playerName, updatePlayerName] = useState(typeof current === 'undefined' ? 'Chocnonymous' : current);
     const [unchanged, setUnchanged] = useState(current === playerName);
+    const [badInternetConnection, setBadInternetConnection] = useState(false);
 
     const buttonClassname = playerNameAvailable ? classes.buttonSuccess : null;
 
-    const [axiosSource, setAxiosSource] = useState(Axios.CancelToken.source());
+    const source = useRef(Axios.CancelToken.source());
     const [requestRunning, setRequestRunning] = useState(false);
     const [requestTimeout, setRequestTimeout] = useState(null);
 
@@ -54,25 +56,27 @@ export default withWidth()(props => {
         setUnchanged(playerName === current)
         if (playerName !== '' && playerName !== current) {
             setPlayerNameValid(validate(playerName));
+            setPlayerNameAvailable(true);
 
             clearTimeout(requestTimeout);
             if (requestRunning) {
-                axiosSource.cancel();
+                source.current.cancel();
             }
         
             setLoading(true);
             setRequestTimeout(setTimeout( async () => {
-                let source = Axios.CancelToken.source()
-                setAxiosSource(source);
+                source.current = Axios.CancelToken.source()
                 
                 try {
                     setRequestRunning(true);
-                    let response = await ServerRequest('get', '/check/available/' + playerName, source.token);
+                    let response = await ServerRequest('get', '/check/available/' + playerName, source.current.token);
                     setPlayerNameAvailable(response.data.available);
+                    setBadInternetConnection(false);
                 } catch(error) {
-                    if (!Axios.isCancel(error)) {
+                    if (error instanceof NoHealthyInternetConnectionError || error.code === 'auth/network-request-failed') {
+                        setBadInternetConnection(true);
+                    } else if (!Axios.isCancel(error)) {
                         logger.warn(error);
-                        setPlayerNameAvailable(false);
                     }
                 } finally {
                     setRequestRunning(false);
@@ -97,6 +101,8 @@ export default withWidth()(props => {
     const getHelperText = () => {
         if (loading || unchanged) {
             return '';
+        } else if (badInternetConnection) {
+            return t[language].NO_HEALTHY_INTERNET;
         } else if (!playerNameAvailable) {
             return t[language].SETTINGS_PLAYER_NAME_IN_USE;
         } else if (!playerNameValid) {
@@ -111,7 +117,7 @@ export default withWidth()(props => {
             <TextField
                 label="Name"
                 className={classes.playerNameInput}
-                error={(!playerNameAvailable || !playerNameValid) && !unchanged}
+                error={(!playerNameAvailable || !playerNameValid || badInternetConnection) && !unchanged}
                 value={playerName}
                 helperText={getHelperText()}
                 inputProps={{ spellCheck: 'false' }}
@@ -123,7 +129,7 @@ export default withWidth()(props => {
             />    
             <div className={classes.wrapper}>
                 <Fab
-                  disabled={loading || !playerNameAvailable || !playerNameValid || unchanged}
+                  disabled={loading || !playerNameAvailable || !playerNameValid || unchanged || badInternetConnection}
                   aria-label="send"
                   color="primary"
                   size="small"

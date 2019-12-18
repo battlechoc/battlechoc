@@ -400,10 +400,6 @@ class Multiplayer {
         }
     }
 
-    async findUsers(query) {
-        return (await ServerRequest('get', '/query/user/' + query)).data;
-    }
-
     async findRandomPlayer() {
         return (await ServerRequest('get', '/random/opponent')).data;
     }

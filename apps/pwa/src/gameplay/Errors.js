@@ -77,4 +77,11 @@ class AlreadyMolten extends BattlechocError {
     }
 }
 
-export { BattlechocError, AlreadyMolten, GameNotRunningError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, TargetEmptyError, NoAttacksLeftError, UnexpectedStateError, InvalidActionIssuerError, GameAlreadyEndedError };
+class NoHealthyInternetConnectionError extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'You may not have a healthy internet connection at the moment. Please try again later'
+    }
+}
+
+export { BattlechocError, NoHealthyInternetConnectionError, AlreadyMolten, GameNotRunningError, ActionValidationError, NoBuildingsLeftError, NoCacaoLeftError, BuildNotPossibleError, TargetEmptyError, NoAttacksLeftError, UnexpectedStateError, InvalidActionIssuerError, GameAlreadyEndedError };

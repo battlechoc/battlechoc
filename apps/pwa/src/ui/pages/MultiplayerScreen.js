@@ -4,15 +4,18 @@ import './MultiplayerScreen.css';
 import TextField from '@material-ui/core/TextField';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { Jukebox, Translation as t } from '../misc';
+import Axios from 'axios';
 import { PlayArrow, HourglassEmpty, Cancel, AccountCircle } from '@material-ui/icons';
 import { connect } from 'react-redux';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';
 import { multiplayer } from '../../Multiplayer';
+import { ServerRequest } from '../../helper/settings';
 import logger from '../../helper/logger';
 import BattlechocDialog from '../dialogs/BattlechocDialog';
 import PlayerList from '../controls/PlayerList';
+import { NoHealthyInternetConnectionError } from '../../gameplay/Errors';
 
 class MultiplayerScreen extends Component {
     constructor(props) {
@@ -25,8 +28,13 @@ class MultiplayerScreen extends Component {
             searchingRandomOpponent: false,
             showSearch: false,
             userSearchText: '',
-            searchResults: []
+            searchResults: [],
+            waitForResponse: false,
+            badInternetConnection: false
         }
+        this.source = Axios.CancelToken.source();
+        this.inputRef = React.createRef();
+        this.requestRunning = false;
     }
 
     componentDidMount() {
@@ -123,13 +131,6 @@ class MultiplayerScreen extends Component {
         multiplayer.getMultiplayerSessions();
     }
 
-    async findUser(query) {
-        if (query !== '') {
-            let results = await multiplayer.findUsers(query); 
-            this.setState({searchResults: results});
-        }
-    }
-
     sortByTimestamp( a, b ) {
       if ( a.last_changed < b.last_changed ){
         return 1;
@@ -148,6 +149,47 @@ class MultiplayerScreen extends Component {
         return -1;
       }
       return 0;
+    }
+
+    async searchUser() {
+        if (this.state.userSearchText !== '') {             
+            clearTimeout(this.requestTimeout);
+            if (this.requestRunning) {
+                this.source.cancel();
+            }
+
+            this.setState({ searchResults: [] });
+            let queryString = this.state.userSearchText;
+            this.requestTimeout = (setTimeout( 
+                async () => {
+                    this.setState({ waitForResponse: true });
+                    this.source = Axios.CancelToken.source();
+                    this.requestRunning = true;
+
+                    try {
+                        let response = await ServerRequest('get', '/query/user/' + queryString, this.source.token);
+                        let users = response.data;
+                        users.forEach(user => {
+                            if (typeof user.level === 'string') {
+                                user.level = 1;
+                            }
+                        });
+                        this.setState({ badInternetConnection: false, searchResults: response.data });
+                        console.log(queryString, response.data);
+                        this.inputRef.current.blur();
+                    } catch(error) {
+                        if (error instanceof NoHealthyInternetConnectionError || error.code === 'auth/network-request-failed') {
+                            this.setState({ badInternetConnection: true });
+                        } else if (!Axios.isCancel(error)) {
+                            logger.warn(error);
+                            this.setState({ searchResults: [] });
+                        }
+                    } finally {
+                        this.requestRunning = false;
+                        this.setState({ waitForResponse: false });
+                    }
+                }, 500));
+        }
     }
 
     render() {
@@ -187,15 +229,20 @@ class MultiplayerScreen extends Component {
                         <TextField
                             label="Name"
                             value={this.state.userSearchText}
+                            error={this.state.badInternetConnection && !this.state.waitForResponse}
+                            helperText={this.state.badInternetConnection && !this.state.waitForResponse ? t[this.props.language].NO_HEALTHY_INTERNET : ''}
                             style={{display: 'flex'}}
-                            inputProps={{ spellCheck: 'false' }}
+                            inputProps={{ spellCheck: 'false', autoFocus: true }}
                             InputLabelProps={{ style: {color: 'rgba(69, 123, 130, 0.8)' }}}
                             onChange={event => {
-                                this.setState({userSearchText: event.target.value});
-                                this.findUser(event.target.value);
+                                this.setState({userSearchText: event.target.value}, () => this.searchUser());
                             }}
                             margin="normal"
-                        /> 
+                            InputProps={{ 
+                                endAdornment: this.state.waitForResponse ? <CircularProgress size={18} /> : null,
+                                inputRef: this.inputRef
+                            }}
+                        />
                         <PlayerList 
                             players={this.state.searchResults} 
                             friends={this.props.friends}
