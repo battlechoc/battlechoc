@@ -103,6 +103,7 @@ const Settings = props =>  {
     props.close();
     setShowAttentionText(false);
     setShowErrorReport(false);
+    setEditPlayerName(false);
   }
 
   return (
