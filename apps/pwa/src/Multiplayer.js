@@ -45,8 +45,9 @@ class Multiplayer {
             databaseURL: "https://battlechoc.firebaseio.com",
             projectId: "battlechoc",
             storageBucket: "battlechoc.appspot.com",
-            messagingSenderId: "618424349380"
-        };
+            messagingSenderId: "618424349380",
+            appId: "1:618424349380:web:8880b60bbdd61aaf360f91"
+        };    
 
         this.localPlayerIndex = 0;
         this.callbacks = {
