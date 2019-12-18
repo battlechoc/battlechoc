@@ -120,7 +120,7 @@ export default withWidth()(props => {
                 error={(!playerNameAvailable || !playerNameValid || badInternetConnection) && !unchanged}
                 value={playerName}
                 helperText={getHelperText()}
-                inputProps={{ spellCheck: 'false' }}
+                inputProps={{ spellCheck: 'false', autoFocus: true }}
                 InputLabelProps={{ style: {color: 'rgb(48, 86, 91)'}}}
                 onChange={event => {
                     updatePlayerName(event.target.value);
