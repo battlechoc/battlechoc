@@ -58,15 +58,17 @@ class Multiplayer {
             setPlayerRank: () => logger.warn("calling setPlayerRank without beeing initialized")
         };
 
+        firebase.initializeApp(firebaseConfig);
+        firebase.firestore().enablePersistence()
+        .catch(err => logger.info("could not enable offline persistence of firestore.", err));
+
+        firebase.auth().onAuthStateChanged((user) => {
+            this.authStateChanged(user);
+        });
+
         try {
-            firebase.initializeApp(firebaseConfig);
-            firebase.firestore().enablePersistence()
-            .catch(err => logger.info("could not enable offline persistence of firestore.", err));
             this.messaging = firebase.messaging();
             this.messaging.usePublicVapidKey("BJ6zc8pE57SS98ocjLmtHBuaGgDjIirTpAALyYIR_zywwBJbmssDWhbn78WPhoJfjN28htOBI4bwlVzjwHMCqak");
-            firebase.auth().onAuthStateChanged((user) => {
-                this.authStateChanged(user);
-            });
         } catch (error) {
             logger.info(error);
         }
