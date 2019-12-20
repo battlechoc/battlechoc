@@ -17,7 +17,7 @@ export default class FactoryExtensionTest extends Situation {
 
         this.modifyBoard({col: 2, row: 2, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY)]});
         this.modifyBoard({col: 6, row: 1, playerIndex: 1, cellType: BoardCellTypes.WHITE, buildings: [createEntity(EntityType.XMAS_FACTORY)]});
-        this.modifyBoard({col: 7, row: 1, playerIndex: 1, cellType: BoardCellTypes.BROWN, buildings: [createEntity(EntityType.RUM_TRUFFLE_CANNON)] });
+        this.modifyBoard({col: 7, row: 1, playerIndex: 1, cellType: BoardCellTypes.BROWN, buildings: [createEntity(EntityType.FRUIT_CANNON)] });
 
         let game = this.game.gameplay.game;
 
@@ -39,6 +39,8 @@ export default class FactoryExtensionTest extends Situation {
         game.players[1].buildings = game.players[1].buildingsPerTurn;
         game.players[1].attacks[AttackType.TRUFFLE] = 1;
         game.players[1].attacksPerTurn[AttackType.TRUFFLE] = 1;
+        game.players[1].attacks[AttackType.FRUIT] = 1;
+        game.players[1].attacksPerTurn[AttackType.FRUIT] = 1;
     }
 
     static get ui() {
