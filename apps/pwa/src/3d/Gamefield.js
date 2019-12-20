@@ -87,12 +87,8 @@ class Gamefield {
             }
 
             if (!this.isPlayerGameField) {
-                if (phenotype === EntityType.RUM_TRUFFLE_CANNON) {
-                    mesh.rotation.y = Math.PI;
-                } else if (phenotype === EntityType.SPYING_EASTER_BUNNY) {
-                    mesh.rotation.y = Math.PI;
-                } else if (phenotype === EntityType.HOT_CHOCOLATE_BALLISTA) {
-                    mesh.rotation.y = Math.PI;
+                if ([EntityType.RUM_TRUFFLE_CANNON, EntityType.FRUIT_CANNON, EntityType.SPYING_EASTER_BUNNY, EntityType.HOT_CHOCOLATE_BALLISTA].includes(phenotype)) {
+                    mesh.rotation.y = Math.PI
                 }
             }
         });
