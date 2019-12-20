@@ -203,7 +203,7 @@ class Rules {
             } else {
                 return true;
             }
-        } else if ([UiActionTypes.hideQuickMessage, UiActionTypes.showQuickMessage, UiActionTypes.updateLevel, UiActionTypes.setPlayerRank, UiActionTypes.loadFriendsList, UiActionTypes.startTutorial, UiActionTypes.stopTutorial, UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.updateMultiplayerSessions, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable, UiActionTypes.notifyPlayerSignedIn, UiActionTypes.notifyPlayerSignedOut, UiActionTypes.updatePlayerStats].includes(action.type)) {
+        } else if ([UiActionTypes.startSessionRefresh, UiActionTypes.stopSessionRefresh, UiActionTypes.hideQuickMessage, UiActionTypes.showQuickMessage, UiActionTypes.updateLevel, UiActionTypes.setPlayerRank, UiActionTypes.loadFriendsList, UiActionTypes.startTutorial, UiActionTypes.stopTutorial, UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.updateMultiplayerSessions, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable, UiActionTypes.notifyPlayerSignedIn, UiActionTypes.notifyPlayerSignedOut, UiActionTypes.updatePlayerStats].includes(action.type)) {
             return true;
         } else {
             return new Errors.ActionValidationError(action);

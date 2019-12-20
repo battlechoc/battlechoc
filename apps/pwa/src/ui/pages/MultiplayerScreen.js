@@ -5,6 +5,7 @@ import TextField from '@material-ui/core/TextField';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { Jukebox, Translation as t } from '../misc';
 import Axios from 'axios';
+import { showQuickMessage } from '../UiActions';
 import { PlayArrow, HourglassEmpty, Cancel, AccountCircle } from '@material-ui/icons';
 import { connect } from 'react-redux';
 import TimeAgo from 'javascript-time-ago';
@@ -39,7 +40,7 @@ class MultiplayerScreen extends Component {
 
     componentDidMount() {
         this.props.onRef(this);
-        multiplayer.getMultiplayerSessions();
+        multiplayer.getMultiplayerSessions(() => this.props.showQuickMessage({ text: t[this.props.language].SESSION_REFRESH_FAILED}));
         multiplayer.fetchFriendsList();
     }
 
@@ -291,7 +292,8 @@ class MultiplayerScreen extends Component {
                         this.setState({ showSearch: true });
                     }}>{t[this.props.language].SEARCH_PLAYERS}</div>
                 </div>
-                <div className="openGames">
+                
+                { this.props.sessionRefreshActions > 0 ? <CircularProgress /> : <div className="openGames">
                     <div className="gamestable">
                         <div className="tableHead">{t[this.props.language].ACTIONS}</div>
                         <div className="tableHead">{t[this.props.language].OPPONENT}</div>
@@ -313,7 +315,7 @@ class MultiplayerScreen extends Component {
                             ]
                         }) : null}
                     </div>
-                </div>
+                </div> }
             </div>
         );
     }
@@ -328,8 +330,16 @@ const mapStateToProps = state => ({
     language: state.ui.language,
     multiplayerSessions: state.ui.multiplayerSessions,
     friends: state.ui.friends,
-    account: state.ui.playerInfos.stats
+    account: state.ui.playerInfos.stats,
+    sessionRefreshActions: state.ui.sessionRefreshActions
 });
 
-const MultiplayerScreenContainer = connect(mapStateToProps)(MultiplayerScreen);
+const mapDispatchToProps = {
+    showQuickMessage
+};
+
+const MultiplayerScreenContainer = connect(
+    mapStateToProps,
+    mapDispatchToProps
+)(MultiplayerScreen);
 export default MultiplayerScreenContainer;

@@ -7,7 +7,7 @@ import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
 import { AttackType, EntityType } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding } from './ui/UiActions';
+import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -59,7 +59,10 @@ class App extends Component {
             updateMultiplayerSessions: this.props.updateMultiplayerSessions,
             loadFriendsList: this.props.loadFriendsList,
             setPlayerRank: this.props.setPlayerRank,
-            notifyPlayerSignedIn: this.props.notifyPlayerSignedIn
+            notifyPlayerSignedIn: this.props.notifyPlayerSignedIn,
+            stopSessionRefresh: this.props.stopSessionRefresh,
+            startSessionRefresh: this.props.startSessionRefresh,
+            showQuickMessage: this.props.showQuickMessage
         });
 
         let browserLanguage = 'en';
@@ -499,7 +502,9 @@ const mapDispatchToProps = {
     selectBuilding,
     tapBuilding,
     hideQuickMessage,
-    showQuickMessage
+    showQuickMessage,
+    startSessionRefresh,
+    stopSessionRefresh
 };
 
 const AppContainer = connect(
