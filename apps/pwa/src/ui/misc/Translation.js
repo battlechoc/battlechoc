@@ -236,7 +236,8 @@ const languages = {
         PWA_OFFLINE_MODE: 'You are running battlechoc without internet connection, so only the singleplayer mode is available',
         PWA_ONLINE_MODE: 'You\'re re-connected to the Internet',
         UPDATE_LEVEL_FAILED: upgrade => 'It was not possible to perform the ' + (upgrade ? 'up' : 'down') + 'grade. Check your internet connection',
-        NO_HEALTHY_INTERNET: 'You may not have a healthy internet connection. Please try again later'
+        NO_HEALTHY_INTERNET: 'You may not have a healthy internet connection. Please try again later',
+        SESSION_REFRESH_FAILED: 'Multiplayer session refresh failed. Please check your internet connection'
     },
     de: {
         SIGNINORUP: 'Anmelden',
@@ -473,7 +474,8 @@ const languages = {
         PWA_OFFLINE_MODE: 'Du benutzt battlechoc ohne Internetverbindung, daher ist ausschließlich der Singleplayer-Modus verfügbar',
         PWA_ONLINE_MODE: 'Du bist wieder mit dem Internet verbunden',
         UPDATE_LEVEL_FAILED: upgrade => 'Es war nicht möglich das ' + (upgrade ? 'Up' : 'Down') + 'grade durchzuführen. Überprüfe deine Internetverbindung',
-        NO_HEALTHY_INTERNET: 'Es gab Verbindungsprobleme. Überprüfe bitte deine Internetverbindung und versuche es erneut'
+        NO_HEALTHY_INTERNET: 'Es gab Verbindungsprobleme. Überprüfe bitte deine Internetverbindung und versuche es erneut',
+        SESSION_REFRESH_FAILED: 'Fehler beim Aktualisieren der Multiplayer Sessions. Überprüfe bitte deine Internetverbindung'
     }
 };
 

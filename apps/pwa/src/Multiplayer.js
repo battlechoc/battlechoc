@@ -55,7 +55,10 @@ class Multiplayer {
             notifyPlayerSignedIn: () => logger.warn("calling notifyPlayerSignedIn without beeing initialized"),
             updateMultiplayerSessions: () => logger.warn("calling updateMultiplayerSessions without beeing initialized"),
             loadFriendsList: () => logger.warn("calling loadFriendsList without beeing initialized"),
-            setPlayerRank: () => logger.warn("calling setPlayerRank without beeing initialized")
+            setPlayerRank: () => logger.warn("calling setPlayerRank without beeing initialized"),
+            startSessionRefresh: () => logger.warn("calling stopSessionRefresh without beeing initialized"),
+            stopSessionRefresh: () => logger.warn("calling stopSessionRefresh without beeing initialized"),
+            showQuickMessage: () => logger.warn("calling showQuickMessage without beeing initialized")
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -117,7 +120,6 @@ class Multiplayer {
             this.localPlayer = user;
             this.askForNotification(user);
             if (window.navigator.onLine) {
-                this.getMultiplayerSessions();
                 this.fetchFriendsList();
                 this.computeRank();
             }
@@ -337,13 +339,19 @@ class Multiplayer {
         }
     }
 
-    async getMultiplayerSessions() {
+    async getMultiplayerSessions(errorHandler=null) {
         if (firebase.auth().currentUser) {
+            this.callbacks.startSessionRefresh();
             try {
                 let response = await ServerRequest('get', '/multiplayer/sessions');
                 this.callbacks.updateMultiplayerSessions(response.data.sessions);
             } catch (error) {
                 logger.warn('error while fetching player sessions ' + error);
+                if (typeof errorHandler === 'function') {
+                    errorHandler();
+                }
+            } finally {
+                this.callbacks.stopSessionRefresh();
             }
         } else {
             logger.warn('user not logged in');

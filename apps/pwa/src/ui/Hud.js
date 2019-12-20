@@ -9,7 +9,7 @@ import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AccountOverview } from './dialogs';
 import BattlechocDialog from './dialogs/BattlechocDialog';
 import Fab from '@material-ui/core/Fab';
-import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
+import { KeyboardArrowLeft as ArrowBackIcon, Refresh } from '@material-ui/icons';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
 import { multiplayer } from '../Multiplayer';
@@ -31,7 +31,6 @@ class Hud extends Component {
             multiplayerScreen: false,
             choclabScreen: false
         }
-        this.signInOrUp = React.createRef();
     }
 
     handleFetchError(response) {
@@ -143,6 +142,10 @@ class Hud extends Component {
         this.props.enterMultiplayerGame(sessionId);
     }
 
+    refreshSessions = () => {
+        multiplayer.getMultiplayerSessions(() => this.props.showQuickMessage({ text: t[this.props.language].SESSION_REFRESH_FAILED}));
+    }
+
     render() {
         const stage = this.estimateStage();
         return (
@@ -174,6 +177,14 @@ class Hud extends Component {
                                 className="icon"
                                 onClick={() => this.setState({ multiplayerScreen: false })}>
                                 <ArrowBackIcon />
+                            </Fab>
+                            <Fab
+                                size="small"
+                                key="5"
+                                color="primary"
+                                className={ this.props.sessionRefreshActions > 0 ? 'rotating icon' : 'icon' }
+                                onClick={() => this.refreshSessions() }>
+                                <Refresh />
                             </Fab>
                         </div>
                     } else if (stage === 'CHALLENGE_SCREEN') {
@@ -305,7 +316,8 @@ const mapStateToProps = state => ({
     assetsReady: state.ui.assetsReady,
     playerInfos: state.ui.playerInfos,
     tappedBuilding: state.ui.tappedBuilding,
-    selectedAttack: state.ui.selectedAttack
+    selectedAttack: state.ui.selectedAttack,
+    sessionRefreshActions: state.ui.sessionRefreshActions
 });
 
 const mapDispatchToProps = {

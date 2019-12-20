@@ -22,7 +22,8 @@ const uiReducer = createReducer({
         show: false,
         text: '',
         variant: 'warning'
-    }
+    },
+    sessionRefreshActions: 0
 }, {
     [UiActions.resetUi]: (state, action) => {
         state.whitelistBuildings = undefined;
@@ -126,6 +127,14 @@ const uiReducer = createReducer({
         state.quickMessage.show = false;
         state.quickMessage.text = '';
         state.quickMessage.variant = 'warning';
+    },
+    [UiActions.startSessionRefresh]: (state, action) => {
+        state.sessionRefreshActions += 1;
+    },
+    [UiActions.stopSessionRefresh]: (state, action) => {
+        if (state.sessionRefreshActions > 0) {
+            state.sessionRefreshActions -= 1;
+        }
     }
 });
 
