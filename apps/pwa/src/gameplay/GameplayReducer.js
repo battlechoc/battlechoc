@@ -187,7 +187,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
         let attackedCell = otherPlayerBoardCell(state.game, action.payload);
         const cellColor = attackedCell.type;
         let opponent = otherPlayer(state.game);
-        
+
         if (attackType === AttackType.BUNNY) {
             const patch = getCellPatch3x3({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
             const xmasFactoryFiltered = patch.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.XMAS_FACTORY));
@@ -202,9 +202,9 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
             } else {
                 logger.info("Bunny got captured. Bunny destroyed and xmas factory converted to ballista.");
                 currentPlayer(state.game).attacksPerTurn[AttackType.BUNNY] = 0;
-                const spyingEasterBunnyCell = currentPlayerField(state.game).grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.SPYING_EASTER_BUNNY))[0];                
+                const spyingEasterBunnyCell = currentPlayerField(state.game).grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.SPYING_EASTER_BUNNY))[0];
                 spyingEasterBunnyCell.occupiedBy = spyingEasterBunnyCell.occupiedBy.filter(entity => entity.type !== EntityType.SPYING_EASTER_BUNNY);
-                
+
                 let ballista = createEntity(EntityType.HOT_CHOCOLATE_BALLISTA, opponent.level);
                 ballista.position = xmasFactoryFiltered[0].occupiedBy.filter(entity => entity.type === EntityType.XMAS_FACTORY)[0].position;
                 xmasFactoryFiltered[0].occupiedBy = xmasFactoryFiltered[0].occupiedBy.filter(entity => entity.type !== EntityType.XMAS_FACTORY);
@@ -237,8 +237,13 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
         } else {
             if (attackType === AttackType.HOT_CHOCOLATE && attackedCell.occupiedBy.length === 0) {
                 attackedCell.molten = true;
-                currentPlayer(state.game).statistics.moltenFields += 1;
+                currentPlayer(state.game).statistics.attacks += 1;
             } else {
+                currentPlayer(state.game).statistics.attacks += 1;
+                if (attackType === AttackType.HOT_CHOCOLATE) {
+                    attackedCell.molten = true;
+                    currentPlayer(state.game).statistics.moltenFields += 1;
+                }
                 attackedCell.occupiedBy.forEach(entity => {
                     if (attackType === AttackType.HOT_CHOCOLATE) {
                         entity.hp = 0;
@@ -247,7 +252,6 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                         if (attackType === AttackType.FRUIT) {
                             damage = 0.1 * damage;
                         }
-    
                         entity.hp = Math.round(entity.hp - damage);
                     }
 
@@ -293,12 +297,6 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                             logger.info('CHOCOLATE FOUNTAIN DESTROYED');
                         }
                         attackedCell.occupiedBy = attackedCell.occupiedBy.filter(fieldEntity => fieldEntity.id !== entity.id);
-                        attackedCell.molten = attackType === AttackType.HOT_CHOCOLATE;
-                        if (attackedCell.molten) {
-                            currentPlayer(state.game).statistics.moltenFields += 1;
-                        } else {
-                            currentPlayer(state.game).statistics.attacks += 1;
-                        }
                     }
                 });
             }
