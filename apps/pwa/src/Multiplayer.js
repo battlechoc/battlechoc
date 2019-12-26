@@ -62,6 +62,7 @@ class Multiplayer {
         };
 
         firebase.initializeApp(firebaseConfig);
+
         firebase.firestore().enablePersistence()
         .catch(err => logger.info("could not enable offline persistence of firestore.", err));
 
@@ -465,7 +466,7 @@ class Multiplayer {
     emitAction(action) {
         switch (action.type) {
             case GameActionTypes.build:
-                this.gameActions.build(action.payload);
+                this.gameActions.build(action.payload).catch(error => logger.info(error));
                 break;
             case GameActionTypes.attack:
                 this.gameActions.attack(action.payload).then(() => {
@@ -478,33 +479,46 @@ class Multiplayer {
                     } else {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
                     }
-                });
+                }).catch(error => logger.info(error));
                 break;
             case GameActionTypes.chooseField:
-                this.gameActions.chooseField(action.payload);
+                this.gameActions.chooseField(action.payload).catch(error => logger.info(error));
                 break;
             case GameActionTypes.chooseStart:
-                this.gameActions.chooseStart(action.payload);
+                this.gameActions.chooseStart(action.payload).catch(error => logger.info(error));
                 break;
             case GameActionTypes.finishTurn:
-                this.gameActions.finishTurn(action.payload);
+                this.gameActions.finishTurn(action.payload).catch(error => logger.info(error));
                 break;
             case GameActionTypes.finishBuildPhase:
-                this.gameActions.finishBuildPhase(action.payload);
+                this.gameActions.finishBuildPhase(action.payload).catch(error => logger.info(error));
                 break;
             case GameActionTypes.endGame:
                 this.gameActions.endGame(action.payload).catch(error => logger.info(error));
                 break;
             default:
-                logger.warn('invalid action type shall be emitted. check implementation. call the coders.');
+                logger.warn('invalid action type shall be emitted.');
         }
     }
 
-    processEvents(events) {
+    processPlayerEvents(events) {
+        if (events.length > this.serverEventIndex) {
+            const newEventIndex = events.length;
+            events.splice(0, this.serverEventIndex);
+            events.forEach(action => {
+                action.payload.emittedByServer = true;
+                this.emitAction(action);
+            });
+            this.serverEventIndex = newEventIndex;
+        }
+    }
+
+    processOpponentEvents(events) {
         if (events.length > this.opponentEventIndex) {
             const newEventIndex = events.length;
             events.splice(0, this.opponentEventIndex);
             events.forEach(action => {
+                action.payload.emittedByServer = true;
                 this.emitAction(action);
             });
             this.opponentEventIndex = newEventIndex;
@@ -525,6 +539,7 @@ class Multiplayer {
     reset() {
         this.localPlayerIndex = 0;
         this.opponentEventIndex = 0;
+        this.serverEventIndex = 0;
         this.playerEventIndex = 0;
         this.currentGameSession = undefined;
         if (typeof this.unsubscribeGameSession !== 'undefined') {
@@ -552,12 +567,14 @@ class Multiplayer {
                 this.unsubscribeGameSession = reference.onSnapshot(doc => {
                     let session = doc.data();
                     this.sessionData = session;
-                    this.processEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
+                    this.processPlayerEvents(session['events_from_' + (this.localPlayerIndex)]);
+                    this.processOpponentEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
                 }, error => {
                     logger.error('encountered error while trying to establish observer of multiplayer session', error.toString());
                 });
 
                 this.opponentEventIndex = session['events_from_' + (1 - this.localPlayerIndex)].length;
+                this.serverEventIndex = session['events_from_' + this.localPlayerIndex].length;
                 this.playerEventIndex = session['events_from_' + this.localPlayerIndex].length;
                 this.currentGameSession = doc.id;
                 this.localPlayerId = firebase.auth().currentUser.uid;
