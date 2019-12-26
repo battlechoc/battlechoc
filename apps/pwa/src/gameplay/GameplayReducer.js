@@ -235,71 +235,72 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                 logger.info('CHOCOLATE FOUNTAIN DESTROYED');
             }
         } else {
-            if (attackType === AttackType.HOT_CHOCOLATE && attackedCell.occupiedBy.length === 0) {
+            if (attackedCell.occupiedBy.length > 0) {
+                currentPlayer(state.game).statistics.attacks += 1;
+            }
+
+            if (attackType === AttackType.HOT_CHOCOLATE) {
                 attackedCell.molten = true;
-                currentPlayer(state.game).statistics.attacks += 1;
-            } else {
-                currentPlayer(state.game).statistics.attacks += 1;
-                if (attackType === AttackType.HOT_CHOCOLATE) {
-                    attackedCell.molten = true;
+                if (attackedCell.occupiedBy.length > 0) {
                     currentPlayer(state.game).statistics.moltenFields += 1;
                 }
-                attackedCell.occupiedBy.forEach(entity => {
-                    if (attackType === AttackType.HOT_CHOCOLATE) {
-                        entity.hp = 0;
-                    } else {
-                        let damage = action.payload.damage;
-                        if (attackType === AttackType.FRUIT) {
-                            damage = 0.1 * damage;
-                        }
-                        entity.hp = Math.round(entity.hp - damage);
-                    }
-
-                    if (entity.hp < 1) {
-                        if (entity.type === EntityType.FACTORY) {
-                            opponent.hasFactory = false;
-                            opponent.buildingsPerTurn -= calculateBuildingsPerTurn(getEntityDescriptor(EntityType.FACTORY, opponent.level), cellColor);
-                            opponent.cacaoPerTurn -= calculateCacaoPerTurn(getEntityDescriptor(EntityType.FACTORY, opponent.level), cellColor);
-                            logger.info('FACTORY DESTROYED');
-                        } else if (entity.type === EntityType.FACTORY_EXTENSION) {
-                            opponent.buildingsPerTurn -= calculateBuildingsPerTurn(getEntityDescriptor(EntityType.FACTORY_EXTENSION, opponent.level), cellColor);
-                            logger.info('FACTORY EXTENSION DESTROYED');
-                        } else if (entity.type === EntityType.CACAOTREE) {
-                            opponent.cacaoPerTurn -= calculateCacaoPerTurn(getEntityDescriptor(EntityType.CACAOTREE, opponent.level), cellColor);
-                            logger.info('CACAOTREE DESTROYED');
-                        } else if (entity.type === EntityType.RUM_TRUFFLE_CANNON) {
-                            const destroyedBuildingDescriptor = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, opponent.level);
-                            opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
-                            logger.info('CANNON DESTROYED');
-                        } else if (entity.type === EntityType.HOT_CHOCOLATE_BALLISTA) {
-                            const destroyedBuildingDescriptor = getEntityDescriptor(EntityType.HOT_CHOCOLATE_BALLISTA, opponent.level);
-                            opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
-                            logger.info('BALISTA DESTROYED');
-                        } else if (entity.type === EntityType.FRUIT_CANNON) {
-                            const destroyedBuildingDescriptor = getEntityDescriptor(EntityType.FRUIT_CANNON, opponent.level);
-                            opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
-                            const rumTruffleCannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, opponent.level);
-                            opponent.attacksPerTurn[rumTruffleCannon.attackType] -= rumTruffleCannon.attacksPerTurn;
-                            logger.info('FRUIT CANNON DESTROYED');
-                        } else if (entity.type === EntityType.SPYING_EASTER_BUNNY) {
-                            const destroyedBuildingDescriptor = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY, opponent.level);
-                            opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
-                            logger.info('SPYING EASTER BUNNY DESTROYED');
-                        } else if (attackType === AttackType.HOT_CHOCOLATE && entity.type === EntityType.CHOCOLATE_FOUNTAIN) {
-                            attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.CHOCOLATE_FOUNTAIN);
-                            const neighbors = getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, state.game.board, otherPlayerField(state.game).grid);
-                            neighbors.forEach(neighbor => {
-                                const otherFountainNearby = getCellPatch3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CHOCOLATE_FOUNTAIN));
-                                if (otherFountainNearby.length === 0) {
-                                    neighbor.shielded = false;
-                                }
-                            });
-                            logger.info('CHOCOLATE FOUNTAIN DESTROYED');
-                        }
-                        attackedCell.occupiedBy = attackedCell.occupiedBy.filter(fieldEntity => fieldEntity.id !== entity.id);
-                    }
-                });
             }
+
+            attackedCell.occupiedBy.forEach(entity => {
+                if (attackType === AttackType.HOT_CHOCOLATE) {
+                    entity.hp = 0;
+                } else {
+                    let damage = action.payload.damage;
+                    if (attackType === AttackType.FRUIT) {
+                        damage = 0.1 * damage;
+                    }
+                    entity.hp = Math.round(entity.hp - damage);
+                }
+
+                if (entity.hp < 1) {
+                    if (entity.type === EntityType.FACTORY) {
+                        opponent.hasFactory = false;
+                        opponent.buildingsPerTurn -= calculateBuildingsPerTurn(getEntityDescriptor(EntityType.FACTORY, opponent.level), cellColor);
+                        opponent.cacaoPerTurn -= calculateCacaoPerTurn(getEntityDescriptor(EntityType.FACTORY, opponent.level), cellColor);
+                        logger.info('FACTORY DESTROYED');
+                    } else if (entity.type === EntityType.FACTORY_EXTENSION) {
+                        opponent.buildingsPerTurn -= calculateBuildingsPerTurn(getEntityDescriptor(EntityType.FACTORY_EXTENSION, opponent.level), cellColor);
+                        logger.info('FACTORY EXTENSION DESTROYED');
+                    } else if (entity.type === EntityType.CACAOTREE) {
+                        opponent.cacaoPerTurn -= calculateCacaoPerTurn(getEntityDescriptor(EntityType.CACAOTREE, opponent.level), cellColor);
+                        logger.info('CACAOTREE DESTROYED');
+                    } else if (entity.type === EntityType.RUM_TRUFFLE_CANNON) {
+                        const destroyedBuildingDescriptor = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, opponent.level);
+                        opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
+                        logger.info('CANNON DESTROYED');
+                    } else if (entity.type === EntityType.HOT_CHOCOLATE_BALLISTA) {
+                        const destroyedBuildingDescriptor = getEntityDescriptor(EntityType.HOT_CHOCOLATE_BALLISTA, opponent.level);
+                        opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
+                        logger.info('BALISTA DESTROYED');
+                    } else if (entity.type === EntityType.FRUIT_CANNON) {
+                        const destroyedBuildingDescriptor = getEntityDescriptor(EntityType.FRUIT_CANNON, opponent.level);
+                        opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
+                        const rumTruffleCannon = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, opponent.level);
+                        opponent.attacksPerTurn[rumTruffleCannon.attackType] -= rumTruffleCannon.attacksPerTurn;
+                        logger.info('FRUIT CANNON DESTROYED');
+                    } else if (entity.type === EntityType.SPYING_EASTER_BUNNY) {
+                        const destroyedBuildingDescriptor = getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY, opponent.level);
+                        opponent.attacksPerTurn[destroyedBuildingDescriptor.attackType] -= destroyedBuildingDescriptor.attacksPerTurn;
+                        logger.info('SPYING EASTER BUNNY DESTROYED');
+                    } else if (attackType === AttackType.HOT_CHOCOLATE && entity.type === EntityType.CHOCOLATE_FOUNTAIN) {
+                        attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.CHOCOLATE_FOUNTAIN);
+                        const neighbors = getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, state.game.board, otherPlayerField(state.game).grid);
+                        neighbors.forEach(neighbor => {
+                            const otherFountainNearby = getCellPatch3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CHOCOLATE_FOUNTAIN));
+                            if (otherFountainNearby.length === 0) {
+                                neighbor.shielded = false;
+                            }
+                        });
+                        logger.info('CHOCOLATE FOUNTAIN DESTROYED');
+                    }
+                    attackedCell.occupiedBy = attackedCell.occupiedBy.filter(fieldEntity => fieldEntity.id !== entity.id);
+                }
+            });
         }
     },
     [GameActions.endGame]: (state, action) => {
