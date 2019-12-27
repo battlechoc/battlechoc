@@ -71,7 +71,15 @@ class Scene extends Component {
         }
     }
 
-    showEnergyBar = (entity, position) => {
+    showEnergyBar = (entity, position, showShieldEnergyToo=false) => {
+        if (showShieldEnergyToo) {
+            let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
+            let selectedCell = cellAt(this.props.game.board, this.props.game.players[multiplayer.localPlayerIndex].fieldIndex, entity.position.row, entity.position.col);
+            if (selectedCell.shielded) {
+                this.showEnergyBar(this.getFountain(entity.position.row, entity.position.col, this.props.game.board, this.props.game.players[multiplayer.localPlayerIndex].fieldIndex));
+            }            
+        }
+
         if (typeof position === 'undefined') {
             position = new Vector3(entity.position.row, 6.5, entity.position.col);
         } else {
@@ -269,7 +277,7 @@ class Scene extends Component {
         });
     }
 
-    detonateAtShield(row, col, playerField = false) {
+    detonateAtPosition(row, col, playerField = false) {
         let truffle = MeshBuilder.CreateTorus('knot', { diameter: 0.1 }, this.scene);
         truffle.material = this.scene.getMaterialByName(BoardCellTypes.BROWN + '.material');
         if (playerField) {
@@ -422,7 +430,7 @@ class Scene extends Component {
                     Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
                     let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
                     let selectedCell = cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col);
-                    this.detonateAtShield(row, col);
+                    this.detonateAtPosition(row, col);
                     if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0) {
                         if (selectedCell.shielded) {
                             this.showEnergyBar(this.getFountain(row, col, this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex), position.clone());

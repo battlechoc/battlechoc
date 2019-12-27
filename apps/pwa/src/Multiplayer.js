@@ -59,7 +59,8 @@ class Multiplayer {
             setPlayerRank: () => logger.warn("calling setPlayerRank without beeing initialized"),
             startSessionRefresh: () => logger.warn("calling stopSessionRefresh without beeing initialized"),
             stopSessionRefresh: () => logger.warn("calling stopSessionRefresh without beeing initialized"),
-            showQuickMessage: () => logger.warn("calling showQuickMessage without beeing initialized")
+            showQuickMessage: () => logger.warn("calling showQuickMessage without beeing initialized"),
+            detonateAtPosition: () => logger.warn("calling detonateAtPosition without beeing initialized")
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -470,14 +471,16 @@ class Multiplayer {
                 break;
             case GameActionTypes.attack:
                 this.gameActions.attack(action.payload).then(() => {
-                    if (action.payload.attackType === AttackType.BUNNY) {
+                    let attackType = action.payload.attackType;
+                    if (attackType === AttackType.BUNNY) {
                         if (this.gameState.players[1 - this.localPlayerIndex].attacksPerTurn[AttackType.BUNNY] > 0) {
                             Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
                         } else {
                             Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
                         }
-                    } else {
+                    } else if ([AttackType.FRUIT, AttackType.TRUFFLE].includes(attackType)) {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
+                        this.callbacks.detonateAtPosition(action.payload.row, action.payload.col);
                     }
                 }).catch(error => logger.info(error));
                 break;

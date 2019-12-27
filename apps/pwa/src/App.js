@@ -62,7 +62,23 @@ class App extends Component {
             notifyPlayerSignedIn: this.props.notifyPlayerSignedIn,
             stopSessionRefresh: this.props.stopSessionRefresh,
             startSessionRefresh: this.props.startSessionRefresh,
-            showQuickMessage: this.props.showQuickMessage
+            showQuickMessage: this.props.showQuickMessage,
+            detonateAtPosition: (row, col) => {
+                try {
+                    this.scene.detonateAtPosition(row, col, true);
+                    let playerBoard = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex]
+                    let selectedCell = playerBoard.grid[row * this.props.game.board.size.cols + col];
+                    
+                    if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0) {
+                        let entity = selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0];
+                        this.scene.showEnergyBar(entity, undefined, true);
+                    } else {
+                        this.scene.hideEnergyBar(null, {row: row, col: col});
+                    }
+                } catch (error) {
+                    logger.warn(error);
+                }
+            }
         });
 
         let browserLanguage = 'en';
@@ -278,7 +294,7 @@ class App extends Component {
             } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
                 let opponentType = getOpponentType();
                 if (opponentType === PlayerType.AUGUSTUS_GLOOP || opponentType === PlayerType.VIOLET_BEAUREGARDE) {
-                    this.opponent.simulateAttackPhase((row, col) => this.scene.detonateAtShield(row, col, true), entity => this.scene.showEnergyBar(entity), position => this.scene.hideEnergyBar(null, position));
+                    this.opponent.simulateAttackPhase((row, col) => this.scene.detonateAtPosition(row, col, true), entity => this.scene.showEnergyBar(entity), position => this.scene.hideEnergyBar(null, position));
                 }
             } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
                 let timeoutId = setTimeout(() => prevProps.finishTurn({ issuer: prevProps.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
