@@ -9,6 +9,7 @@ import { AttackType } from './gameplay/GameEntities';
 import { Jukebox } from './ui/misc';
 import { ServerRequest } from './helper/settings';
 import logger from './helper/logger';
+import uuidv4 from 'uuid/v4';
 
 const MultiplayerGameSessionState = Object.freeze({
     UNINITIALIZED: 'MultiplayerGameSessionState.Uninitialized',
@@ -62,7 +63,6 @@ class Multiplayer {
         };
 
         firebase.initializeApp(firebaseConfig);
-
         firebase.firestore().enablePersistence()
         .catch(err => logger.info("could not enable offline persistence of firestore.", err));
 
@@ -466,7 +466,7 @@ class Multiplayer {
     emitAction(action) {
         switch (action.type) {
             case GameActionTypes.build:
-                this.gameActions.build(action.payload).catch(error => logger.info(error));
+                this.gameActions.build(action.payload);
                 break;
             case GameActionTypes.attack:
                 this.gameActions.attack(action.payload).then(() => {
@@ -497,39 +497,55 @@ class Multiplayer {
                 this.gameActions.endGame(action.payload).catch(error => logger.info(error));
                 break;
             default:
-                logger.warn('invalid action type shall be emitted.');
+                logger.warn('invalid action type shall be emitted. check implementation. call the coders.');
         }
     }
 
-    processPlayerEvents(events) {
-        if (events.length > this.serverEventIndex) {
-            const newEventIndex = events.length;
-            events.splice(0, this.serverEventIndex);
-            events.forEach(action => {
-                action.payload.emittedByServer = true;
-                this.emitAction(action);
-            });
-            this.serverEventIndex = newEventIndex;
-        }
-    }
-
-    processOpponentEvents(events) {
+    processEvents(events) {
         if (events.length > this.opponentEventIndex) {
             const newEventIndex = events.length;
             events.splice(0, this.opponentEventIndex);
             events.forEach(action => {
-                action.payload.emittedByServer = true;
                 this.emitAction(action);
             });
             this.opponentEventIndex = newEventIndex;
         }
     }
 
+    validateEvents(events) {
+        if (events.length > this.serverEventIndex) {
+            const newEventIndex = events.length;
+            events.splice(0, this.serverEventIndex);
+            
+            logger.info('Start new action validation');
+
+            for (let action of events) {
+                let localState = this.validActions.get(action.uid);
+                this.validActions.set(localState.action.uid, { action: localState.action, valid: true });
+            }
+            let noInvalidAction = true;
+            this.validActions.forEach(action => {
+                if (!action.valid) {
+                    noInvalidAction = false;
+                    logger.info('Local action that does not exists in server ' + JSON.stringify(action.action));
+                }
+            });
+
+            if (noInvalidAction) {
+                logger.info('All actions are valid local and on server-side');
+            }
+
+            this.serverEventIndex = newEventIndex;
+        }        
+    }
+
     relayAction (action) {
         if (typeof this.currentGameSession !== 'undefined' && action.payload.issuer === this.localPlayerId) {
             action.index = this.playerEventIndex;
+            action.uid = uuidv4();
             this.playerEventIndex += 1;
             action.emitted = firebase.firestore.Timestamp.fromDate(new Date());
+            this.validActions.set(action.uid, { action: action, valid: false });
 
             ServerRequest('post', '/multiplayer/relay/action', { event: action, sessionId: this.currentGameSession })
             .catch(error => logger.warn(error));
@@ -539,8 +555,9 @@ class Multiplayer {
     reset() {
         this.localPlayerIndex = 0;
         this.opponentEventIndex = 0;
-        this.serverEventIndex = 0;
         this.playerEventIndex = 0;
+        this.serverEventIndex = 0;
+        this.validActions = new Map();
         this.currentGameSession = undefined;
         if (typeof this.unsubscribeGameSession !== 'undefined') {
             this.unsubscribeGameSession();
@@ -567,15 +584,23 @@ class Multiplayer {
                 this.unsubscribeGameSession = reference.onSnapshot(doc => {
                     let session = doc.data();
                     this.sessionData = session;
-                    this.processPlayerEvents(session['events_from_' + (this.localPlayerIndex)]);
-                    this.processOpponentEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
+                    this.processEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
+                    this.validateEvents(session['events_from_' + this.localPlayerIndex]);
                 }, error => {
                     logger.error('encountered error while trying to establish observer of multiplayer session', error.toString());
                 });
 
                 this.opponentEventIndex = session['events_from_' + (1 - this.localPlayerIndex)].length;
-                this.serverEventIndex = session['events_from_' + this.localPlayerIndex].length;
                 this.playerEventIndex = session['events_from_' + this.localPlayerIndex].length;
+                this.serverEventIndex = session['events_from_' + this.localPlayerIndex].length;
+                this.validActions = new Map();
+                for (let action of session['events_from_' + this.localPlayerIndex]) {
+                    if (typeof action.uid !== 'undefined') {
+                        this.validActions.set(action.uid, { action: action, valid: true });
+                    } else {
+                        this.validActions.set(uuidv4(), { action: action, valid: true });
+                    }
+                }
                 this.currentGameSession = doc.id;
                 this.localPlayerId = firebase.auth().currentUser.uid;
                 return session;
