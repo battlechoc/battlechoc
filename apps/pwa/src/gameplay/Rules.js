@@ -160,7 +160,7 @@ class Rules {
         }
 
         if (typeof currentState !== 'undefined') {
-            if (!state.gameplay.game.isRunning && ![UiActionTypes.stopTutorial, GameActionTypes.finishGame, UiActionTypes.gameResumeable, UiActionTypes.showOverview, UiActionTypes.updatePlayerStats].includes(action.type)) {
+            if (!state.gameplay.game.isRunning && ![UiActionTypes.stopTutorial, GameActionTypes.finishGame, UiActionTypes.gameResumeable, UiActionTypes.showOverview, UiActionTypes.showQuickMessage, UiActionTypes.hideQuickMessage, UiActionTypes.updatePlayerStats].includes(action.type)) {
                 return new Errors.GameAlreadyEndedError(action);
             }
         }

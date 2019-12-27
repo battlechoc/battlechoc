@@ -9,6 +9,7 @@ import { AttackType } from './gameplay/GameEntities';
 import { Jukebox } from './ui/misc';
 import { ServerRequest } from './helper/settings';
 import logger from './helper/logger';
+import uuidv4 from 'uuid/v4';
 
 const MultiplayerGameSessionState = Object.freeze({
     UNINITIALIZED: 'MultiplayerGameSessionState.Uninitialized',
@@ -58,7 +59,8 @@ class Multiplayer {
             setPlayerRank: () => logger.warn("calling setPlayerRank without beeing initialized"),
             startSessionRefresh: () => logger.warn("calling stopSessionRefresh without beeing initialized"),
             stopSessionRefresh: () => logger.warn("calling stopSessionRefresh without beeing initialized"),
-            showQuickMessage: () => logger.warn("calling showQuickMessage without beeing initialized")
+            showQuickMessage: () => logger.warn("calling showQuickMessage without beeing initialized"),
+            detonateAtPosition: () => logger.warn("calling detonateAtPosition without beeing initialized")
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -469,28 +471,30 @@ class Multiplayer {
                 break;
             case GameActionTypes.attack:
                 this.gameActions.attack(action.payload).then(() => {
-                    if (action.payload.attackType === AttackType.BUNNY) {
+                    let attackType = action.payload.attackType;
+                    if (attackType === AttackType.BUNNY) {
                         if (this.gameState.players[1 - this.localPlayerIndex].attacksPerTurn[AttackType.BUNNY] > 0) {
                             Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
                         } else {
                             Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
                         }
-                    } else {
+                    } else if ([AttackType.FRUIT, AttackType.TRUFFLE].includes(attackType)) {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
+                        this.callbacks.detonateAtPosition(action.payload.row, action.payload.col);
                     }
-                });
+                }).catch(error => logger.info(error));
                 break;
             case GameActionTypes.chooseField:
-                this.gameActions.chooseField(action.payload);
+                this.gameActions.chooseField(action.payload).catch(error => logger.info(error));
                 break;
             case GameActionTypes.chooseStart:
-                this.gameActions.chooseStart(action.payload);
+                this.gameActions.chooseStart(action.payload).catch(error => logger.info(error));
                 break;
             case GameActionTypes.finishTurn:
-                this.gameActions.finishTurn(action.payload);
+                this.gameActions.finishTurn(action.payload).catch(error => logger.info(error));
                 break;
             case GameActionTypes.finishBuildPhase:
-                this.gameActions.finishBuildPhase(action.payload);
+                this.gameActions.finishBuildPhase(action.payload).catch(error => logger.info(error));
                 break;
             case GameActionTypes.endGame:
                 this.gameActions.endGame(action.payload).catch(error => logger.info(error));
@@ -511,11 +515,40 @@ class Multiplayer {
         }
     }
 
+    validateEvents(events) {
+        if (events.length > this.serverEventIndex) {
+            const newEventIndex = events.length;
+            events.splice(0, this.serverEventIndex);
+            
+            logger.info('Start new action validation');
+
+            for (let action of events) {
+                let localState = this.validActions.get(action.uid);
+                this.validActions.set(localState.action.uid, { action: localState.action, valid: true });
+            }
+            let noInvalidAction = true;
+            this.validActions.forEach(action => {
+                if (!action.valid) {
+                    noInvalidAction = false;
+                    logger.info('Local action that does not exists in server ' + JSON.stringify(action.action));
+                }
+            });
+
+            if (noInvalidAction) {
+                logger.info('All actions are valid local and on server-side');
+            }
+
+            this.serverEventIndex = newEventIndex;
+        }        
+    }
+
     relayAction (action) {
         if (typeof this.currentGameSession !== 'undefined' && action.payload.issuer === this.localPlayerId) {
             action.index = this.playerEventIndex;
+            action.uid = uuidv4();
             this.playerEventIndex += 1;
             action.emitted = firebase.firestore.Timestamp.fromDate(new Date());
+            this.validActions.set(action.uid, { action: action, valid: false });
 
             ServerRequest('post', '/multiplayer/relay/action', { event: action, sessionId: this.currentGameSession })
             .catch(error => logger.warn(error));
@@ -526,6 +559,8 @@ class Multiplayer {
         this.localPlayerIndex = 0;
         this.opponentEventIndex = 0;
         this.playerEventIndex = 0;
+        this.serverEventIndex = 0;
+        this.validActions = new Map();
         this.currentGameSession = undefined;
         if (typeof this.unsubscribeGameSession !== 'undefined') {
             this.unsubscribeGameSession();
@@ -553,12 +588,22 @@ class Multiplayer {
                     let session = doc.data();
                     this.sessionData = session;
                     this.processEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
+                    this.validateEvents(session['events_from_' + this.localPlayerIndex]);
                 }, error => {
                     logger.error('encountered error while trying to establish observer of multiplayer session', error.toString());
                 });
 
                 this.opponentEventIndex = session['events_from_' + (1 - this.localPlayerIndex)].length;
                 this.playerEventIndex = session['events_from_' + this.localPlayerIndex].length;
+                this.serverEventIndex = session['events_from_' + this.localPlayerIndex].length;
+                this.validActions = new Map();
+                for (let action of session['events_from_' + this.localPlayerIndex]) {
+                    if (typeof action.uid !== 'undefined') {
+                        this.validActions.set(action.uid, { action: action, valid: true });
+                    } else {
+                        this.validActions.set(uuidv4(), { action: action, valid: true });
+                    }
+                }
                 this.currentGameSession = doc.id;
                 this.localPlayerId = firebase.auth().currentUser.uid;
                 return session;
