@@ -419,7 +419,7 @@ class Reducer {
                         currentPlayer(game).statistics.attacks += 1;
                     }
 
-                    if (attackType === AttackType.HOT_CHOCOLATE) {
+                    if (attackType === entities.AttackType.HOT_CHOCOLATE) {
                         attackedCell.molten = true;
 
                         if (attackedCell.occupiedBy.length > 0) {
