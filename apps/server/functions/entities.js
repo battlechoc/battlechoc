@@ -189,7 +189,7 @@ const EntityDescriptors = Object.freeze(new Map([
         attack: growFunction(level, 27, 926),
         costs: growFunction(level, 40, 1012),
         coins: growFunction(level, 55, 27043),
-        attackType: AttackType.FRUIT,
+        attackType: AttackType.TRUFFLE,
         attacksPerTurn: 1
     })],
     [EntityType.FRUIT_CANNON, level => ({
@@ -197,7 +197,7 @@ const EntityDescriptors = Object.freeze(new Map([
         attack: growFunction(level, 27, 1486),
         costs: growFunction(level, 40, 755),
         coins: growFunction(level, 55, 27043),
-        attackType: AttackType.TRUFFLE,
+        attackType: AttackType.FRUIT,
         attacksPerTurn: 1
     })],
     [EntityType.SPYING_EASTER_BUNNY, level => ({
