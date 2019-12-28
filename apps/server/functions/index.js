@@ -246,7 +246,6 @@ app.post('/user/challenge', async (req, res) => {
                     playerLevel = entities.EmptyPlayerStats.level;
                 }
 
-
                 let session = {
                     players: [
                         opponentId,
@@ -380,14 +379,14 @@ const processEventsInOrder = session => {
     var { unprocessedEvents, processedEvents, faildValidityChecks } = processEvents(session, events);
     console.log(unprocessedEvents, processedEvents, faildValidityChecks)
     if (faildValidityChecks > 0) {
-        return { error: 'SOME EVENTS DID NOT PASS THE VALIDITY CHECK' }
+        console.warn('SOME EVENTS DID NOT PASS THE VALIDITY CHECK')
     }
 
     while (unprocessedEvents > 0 && processedEvents > 0 && (new Date().getTime()) > timeout) {
         ({ unprocessedEvents, processedEvents, faildValidityChecks } = processEvents(session, events));
-        console.log(unprocessedEvents, processedEvents, faildValidityChecks)
+        console.log(unprocessedEvents, processedEvents, faildValidityChecks);
         if (faildValidityChecks > 0) {
-            return { error: 'SOME EVENTS DID NOT PASS THE VALIDITY CHECK' }
+            console.warn('SOME EVENTS DID NOT PASS THE VALIDITY CHECK');
         }
     }
 
