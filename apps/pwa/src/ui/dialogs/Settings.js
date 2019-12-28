@@ -152,14 +152,15 @@ const Settings = props =>  {
               setSendingReport(true);
               Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
               try {
-                let gamestate = await OfflineStore.gamestateStore.get('gamestate');
-                let report = {
+                let gamestate = props.game;
+                console.log(gamestate);
+                const report = {
                   deviceInformation: withDeviceInformation ? navigator.userAgent : undefined,
                   gamestate: gamestate,
                   player: props.playerInfos.stats.username,
                   message: additionalReportMessage,
                   logs: logger.summarize(),
-                  report_date: (new Date()).getTime()
+                  reported: (new Date()).getTime()
                 };
                 await ServerRequest('post', '/debugging/gamestate', { report: report });
                 props.showQuickMessage({ 
