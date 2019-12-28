@@ -50,7 +50,7 @@ app.use(async (req, res, next) => {
 
 app.post('/debugging/gamestate', (req, res) => {
     let report = req.body.report;
-    return admin.firestore().collection('reports').add({ report })
+    return admin.firestore().collection('reports').add(report)
         .then(rows => res.json({ result: 'Bugreport with ID: ' + rows.id + ' added.' }))
         .catch(error => res.json({ result: error }));
 });
@@ -373,14 +373,14 @@ const processEventsInOrder = session => {
 
     const timeout = new Date().getTime() + 10000;
 
-    var unprocessedEvents, processedEvents, faildValidityChecks = processEvents(session, events);
+    var { unprocessedEvents, processedEvents, faildValidityChecks } = processEvents(session, events);
     console.log(unprocessedEvents, processedEvents, faildValidityChecks)
     if (faildValidityChecks > 0) {
         return { error: 'SOME EVENTS DID NOT PASS THE VALIDITY CHECK' }
     }
 
     while (unprocessedEvents > 0 && processedEvents > 0 && (new Date().getTime()) > timeout) {
-        unprocessedEvents, processedEvents, faildValidityChecks = processEvents(session, events);
+        ({ unprocessedEvents, processedEvents, faildValidityChecks } = processEvents(session, events));
         console.log(unprocessedEvents, processedEvents, faildValidityChecks)
         if (faildValidityChecks > 0) {
             return { error: 'SOME EVENTS DID NOT PASS THE VALIDITY CHECK' }
