@@ -69,8 +69,14 @@ class App extends Component {
                     let playerBoard = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex]
                     let selectedCell = playerBoard.grid[row * this.props.game.board.size.cols + col];
                     
-                    if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0) {
-                        let entity = selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM)[0];
+                    if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0 || selectedCell.shielded) {
+                        let entity = selectedCell.occupiedBy[0];
+                        
+                        let entitiesWithHp = selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM);
+                        if (entitiesWithHp.length > 0) {
+                            entity = entitiesWithHp[0];
+                        }
+
                         this.scene.showEnergyBar(entity, undefined, true);
                     } else {
                         this.scene.hideEnergyBar(null, {row: row, col: col});

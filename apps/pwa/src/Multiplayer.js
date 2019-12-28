@@ -467,7 +467,7 @@ class Multiplayer {
     emitAction(action) {
         switch (action.type) {
             case GameActionTypes.build:
-                this.gameActions.build(action.payload);
+                this.gameActions.build(action.payload).catch(error => logger.info(error));
                 break;
             case GameActionTypes.attack:
                 this.gameActions.attack(action.payload).then(() => {
