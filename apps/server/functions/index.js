@@ -48,13 +48,9 @@ app.use(async (req, res, next) => {
     }
 });
 
-app.get('/debugging/gamestate', (req, res) => {
-    res.json({ gamestate: 'NOT IMPLEMENTED YET!' });
-});
-
 app.post('/debugging/gamestate', (req, res) => {
     let report = req.body.report;
-    return admin.firestore().collection('reports').add({ "report": report })
+    return admin.firestore().collection('reports').add(report)
         .then(rows => res.json({ result: 'Bugreport with ID: ' + rows.id + ' added.' }))
         .catch(error => res.json({ result: error }));
 });
