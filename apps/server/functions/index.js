@@ -48,9 +48,13 @@ app.use(async (req, res, next) => {
     }
 });
 
+app.get('/debugging/gamestate', (req, res) => {
+    res.json({ gamestate: 'NOT IMPLEMENTED YET!' });
+});
+
 app.post('/debugging/gamestate', (req, res) => {
     let report = req.body.report;
-    return admin.firestore().collection('reports').add(report)
+    return admin.firestore().collection('reports').add({ "report": report })
         .then(rows => res.json({ result: 'Bugreport with ID: ' + rows.id + ' added.' }))
         .catch(error => res.json({ result: error }));
 });
@@ -375,7 +379,7 @@ const processEventsInOrder = session => {
     var { unprocessedEvents, processedEvents, faildValidityChecks } = processEvents(session, events);
     console.log(unprocessedEvents, processedEvents, faildValidityChecks)
     if (faildValidityChecks > 0) {
-        console.warn('SOME EVENTS DID NOT PASS THE VALIDITY CHECK')
+        console.warn('SOME EVENTS DID NOT PASS THE VALIDITY CHECK');
     }
 
     while (unprocessedEvents > 0 && processedEvents > 0 && (new Date().getTime()) > timeout) {
@@ -526,7 +530,7 @@ app.post('/surrender', async (req, res) => {
         session.game.players.filter(player => player.id === req.user.uid)[0].statistics.lost = true;
 
         try {
-            await ref.set(session, {merge: true});
+            await ref.set(session);
             res.status(200).end();
         } catch (error) {
             res.status(500).json({ 'error': error });
