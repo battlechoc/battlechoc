@@ -176,7 +176,6 @@ class MultiplayerScreen extends Component {
                             }
                         });
                         this.setState({ badInternetConnection: false, searchResults: response.data });
-                        console.log(queryString, response.data);
                         this.inputRef.current.blur();
                     } catch(error) {
                         if (error instanceof NoHealthyInternetConnectionError || error.code === 'auth/network-request-failed') {
