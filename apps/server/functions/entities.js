@@ -78,12 +78,15 @@ class Board {
                         previewStyle = 'black';
                     }
 
+                    let cream = createEntity(EntityType.CREAM);
+                    cream.position = { col: col, row: row };
+
                     field.grid.push({
                         type: cellType,
                         previewStyle: previewStyle,
                         row: row,
                         col: col,
-                        occupiedBy: creamed ? [createEntity(EntityType.CREAM)] : [],
+                        occupiedBy: creamed ? [cream] : [],
                         molten: false,
                         shielded: false
                     });
