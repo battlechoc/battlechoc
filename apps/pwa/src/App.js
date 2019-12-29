@@ -348,8 +348,12 @@ class App extends Component {
             if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
                 this.props.joinGame(multiplayerGameState).then(() => {
                     this.opponent = { player: this.props.game.players[0] };
-                    if ((this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START || this.props.game.state === GameStateTypes.CHOOSE_FIELD) && !multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
-                        this.hud.lockUi();
+                    if ((this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START || this.props.game.state === GameStateTypes.CHOOSE_FIELD)) {
+                        if (!multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
+                            this.hud.lockUi();
+                        } else {
+                            this.hud.unlockUi();
+                        }
                     } else if (this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START && this.props.game.state !== GameStateTypes.CHOOSE_FIELD) {
                         if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
                             this.props.tapBuilding(EntityType.CACAOTREE);
