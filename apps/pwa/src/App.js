@@ -35,9 +35,9 @@ class App extends Component {
         } else if (/^(\/[a-zA-Z][a-zA-Z0-9_]{2,15})$/.test(path)) {
             var player = path.slice(1);
         } else if (path.startsWith('/situation/')) {
-            var situation = path.replace('/situation/', '').slice(0,32);
+            var situation = path.replace('/situation/', '').slice(0, 32);
         } else if (path.startsWith('/session/')) {
-            var session = path.replace('/session/', '').slice(0,20);
+            var session = path.replace('/session/', '').slice(0, 20);
         }
 
         if (path !== '/') {
@@ -45,7 +45,7 @@ class App extends Component {
         }
 
         this.timeouts = [];
-        this.state = { 
+        this.state = {
             player: player,
             situation: situation,
             session: session,
@@ -54,7 +54,7 @@ class App extends Component {
     }
 
     componentDidMount() {
-        multiplayer.registerCallbacks({ 
+        multiplayer.registerCallbacks({
             updatePlayerStats: this.props.updatePlayerStats,
             updateMultiplayerSessions: this.props.updateMultiplayerSessions,
             loadFriendsList: this.props.loadFriendsList,
@@ -68,10 +68,10 @@ class App extends Component {
                     this.scene.detonateAtPosition(row, col, true);
                     let playerBoard = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex]
                     let selectedCell = playerBoard.grid[row * this.props.game.board.size.cols + col];
-                    
+
                     if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0 || selectedCell.shielded) {
                         let entity = selectedCell.occupiedBy[0];
-                        
+
                         let entitiesWithHp = selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM);
                         if (entitiesWithHp.length > 0) {
                             entity = entitiesWithHp[0];
@@ -79,7 +79,7 @@ class App extends Component {
 
                         this.scene.showEnergyBar(entity, undefined, true);
                     } else {
-                        this.scene.hideEnergyBar(null, {row: row, col: col});
+                        this.scene.hideEnergyBar(null, { row: row, col: col });
                     }
                 } catch (error) {
                     logger.warn(error);
@@ -263,6 +263,7 @@ class App extends Component {
                     this.opponent.simulateChooseFieldOrStartDecision();
                 }
             } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START) {
+                this.hud.lockUi();
                 if (getOpponentType() === PlayerType.AUGUSTUS_GLOOP) {
                     this.opponent.simulateChooseFieldDecision();
                 }
@@ -311,14 +312,14 @@ class App extends Component {
 
     enterMultiplayerGame = sessionId => {
         multiplayer.enterGameSession(sessionId, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField, endGame: this.props.endGame })
-        .then(session => {
-            this.prepareNewGame(true, true, session.game);
-        })
-        .catch(error => {
-            if (error instanceof ReferenceError) {
-                this.props.showQuickMessage({ text: t[this.props.language].WARNING_GAME_NOT_JOINABLE });
-            }
-        });
+            .then(session => {
+                this.prepareNewGame(true, true, session.game);
+            })
+            .catch(error => {
+                if (error instanceof ReferenceError) {
+                    this.props.showQuickMessage({ text: t[this.props.language].WARNING_GAME_NOT_JOINABLE });
+                }
+            });
     }
 
     prepareNewGame = (resumeGame, joinMultiplayer, multiplayerGameState) => {
@@ -347,8 +348,12 @@ class App extends Component {
             if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
                 this.props.joinGame(multiplayerGameState).then(() => {
                     this.opponent = { player: this.props.game.players[0] };
-                    if (this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START && !multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
-                        this.hud.lockUi();
+                    if ((this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START || this.props.game.state === GameStateTypes.CHOOSE_FIELD)) {
+                        if (!multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
+                            this.hud.lockUi();
+                        } else {
+                            this.hud.unlockUi();
+                        }
                     } else if (this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START && this.props.game.state !== GameStateTypes.CHOOSE_FIELD) {
                         if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
                             this.props.tapBuilding(EntityType.CACAOTREE);
@@ -464,7 +469,7 @@ class App extends Component {
                     message={this.props.quickMessage.text}
                 />
 
-                { typeof this.props.game === 'undefined' ? <div id="background"></div> : null }
+                {typeof this.props.game === 'undefined' ? <div id="background"></div> : null}
                 <Suspense fallback={null}>
                     <Scene onRef={scene => this.scene = scene} />
                 </Suspense>
