@@ -33,7 +33,7 @@ class GameStartSelection extends Component {
                 if (this.props.clickable === true) {
                     classNames += ' selectedByPlayer';
                 } else {
-                    classNames += ' inactive';
+                    classNames += ' inactiveSelected';
                 }
             }
         } else {
