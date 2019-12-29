@@ -235,10 +235,6 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                 logger.info('CHOCOLATE FOUNTAIN DESTROYED');
             }
         } else {
-            if (attackedCell.occupiedBy.length > 0) {
-                currentPlayer(state.game).statistics.attacks += 1;
-            }
-
             if (attackType === AttackType.HOT_CHOCOLATE) {
                 attackedCell.molten = true;
                 if (attackedCell.occupiedBy.length > 0) {
@@ -258,6 +254,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                 }
 
                 if (entity.hp < 1) {
+                    currentPlayer(state.game).statistics.attacks += 1;
                     if (entity.type === EntityType.FACTORY) {
                         opponent.hasFactory = false;
                         opponent.buildingsPerTurn -= calculateBuildingsPerTurn(getEntityDescriptor(EntityType.FACTORY, opponent.level), cellColor);
