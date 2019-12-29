@@ -5,7 +5,6 @@ const app = express();
 const bodyParser = require('body-parser');
 const entities = require('./entities.js');
 const admin = require('firebase-admin');
-const uuidv4 = require('uuid/v4');
 const gamestate = require('./gamestate.js');
 const t = require('./translations.js');
 const axios = require('axios');
@@ -535,11 +534,16 @@ app.post('/surrender', async (req, res) => {
 });
 
 app.get('/multiplayer/sessions', async (req, res) => {
+    var t0 = performance.now();
     try {
         var docs = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
     } catch (error) {
         return res.status(500).json({ error: error });
     }
+
+    var t1 = performance.now();
+    console.log("Call firestore sessions took " + (t1 - t0) + " milliseconds.");
+
     const games = [];
     if (docs.size > 0) {
         docs.forEach(doc => {
@@ -610,9 +614,12 @@ app.get('/multiplayer/sessions', async (req, res) => {
                 }
             }
         }
-
+        let t2 = performance.now();
+        console.log("Call before response took " + (t2 - t0) + " milliseconds.");
         res.json({ sessions: games })
     } else {
+        let t2 = performance.now();
+        console.log("Call before response took " + (t2 - t0) + " milliseconds.");
         res.json({ sessions: [] })
     }
 })
