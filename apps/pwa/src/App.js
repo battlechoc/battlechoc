@@ -448,6 +448,7 @@ class App extends Component {
         }
 
         if (startGame) {
+            this.hud.unlockUi();
             this.prepareNewGame(false);
         }
     }
