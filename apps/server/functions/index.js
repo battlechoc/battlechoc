@@ -311,7 +311,7 @@ const processEvents = (session, events) => {
     if (events.length > (session.lastProcessedEvent[0] + session.lastProcessedEvent[1])) {
         events.filter(event => !event.hasOwnProperty('processed')).forEach(event => {
             if (event.payload.issuer === session.game.players[0].id) {
-                if (session.game.currentPlayerIndex === 0 || event.type === gamesate.GameActionTypes.endGame) {
+                if (session.game.currentPlayerIndex === 0 || event.type === gamestate.GameActionTypes.endGame) {
                     if (session.lastProcessedEvent[0] < event.index) {
                         unprocessedEvents += 1;
                     } else if (session.lastProcessedEvent[0] === event.index) {
@@ -335,7 +335,7 @@ const processEvents = (session, events) => {
                     unprocessedEvents += 1;
                 }
             } else {
-                if (session.game.currentPlayerIndex === 1 || event.type === gamesate.GameActionTypes.endGame) {
+                if (session.game.currentPlayerIndex === 1 || event.type === gamestate.GameActionTypes.endGame) {
                     if (session.lastProcessedEvent[1] < event.index) {
                         unprocessedEvents += 1;
                     } else if (session.lastProcessedEvent[1] === event.index) {
