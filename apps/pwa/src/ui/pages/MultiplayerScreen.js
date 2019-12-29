@@ -169,12 +169,6 @@ class MultiplayerScreen extends Component {
 
                     try {
                         let response = await ServerRequest('get', '/query/user/' + queryString, this.source.token);
-                        let users = response.data;
-                        users.forEach(user => {
-                            if (typeof user.level === 'string') {
-                                user.level = 1;
-                            }
-                        });
                         this.setState({ badInternetConnection: false, searchResults: response.data });
                         this.inputRef.current.blur();
                     } catch(error) {
