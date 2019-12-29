@@ -264,6 +264,11 @@ img.without.cream {
   cursor: unset;
 }
 
+.inactiveSelected {
+  background-color: #324D5C !important;
+  cursor: unset;
+}
+
 #socialIcons {
   display: flex;
   align-items: center;
