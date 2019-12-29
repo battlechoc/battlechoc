@@ -513,5 +513,6 @@ class Reducer {
 
 module.exports = {
     Rules: Rules,
-    Reducer: Reducer
+    Reducer: Reducer,
+    GameActionTypes: GameActionTypes
 }
