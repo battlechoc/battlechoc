@@ -153,6 +153,11 @@ const AccountOverview = props => {
     } else {
         playerName = props.playerAccount.name;
         level = props.playerAccount.level;
+
+        if (typeof level !== 'number') {
+            level = 1;
+        }
+
         winnings = props.playerAccount.winnings;
         losses = props.playerAccount.losses;
         drawn = props.playerAccount.drawn;
