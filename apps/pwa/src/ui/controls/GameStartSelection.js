@@ -30,7 +30,11 @@ class GameStartSelection extends Component {
             if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) === true) {
                 classNames += ' inactive';
             } else {
-                classNames += ' selectedByPlayer';
+                if (this.props.clickable === true) {
+                    classNames += ' selectedByPlayer';
+                } else {
+                    classNames += ' inactive';
+                }
             }
         } else {
             classNames += ' inactive';
