@@ -4,7 +4,6 @@ import './GameEndOverview.css';
 import { ArrowBack } from '@material-ui/icons';
 import Fab from '@material-ui/core/Fab';
 import { Translation as t } from '../misc';
-import { multiplayer } from '../../Multiplayer';
 import { OptimizedImage } from '../../helper/compatibility';
 
 const useMountEffect = effect => useEffect(effect, [])
@@ -69,7 +68,7 @@ const GameEndOverview = props => {
     let outcome = 'win';
 
     if (props.winners.length === 1) {
-        if (!multiplayer.isLocalPlayer(props.winners[0].idx)) {
+        if (props.player.id !== props.winners[0].id) {
             awards = 0;
             outcome = 'lost';
         }
@@ -80,7 +79,7 @@ const GameEndOverview = props => {
 
     let headine = t[props.language].MESSAGE_WIN_GAME
     if (props.winners.length === 1) {
-        if (!multiplayer.isLocalPlayer(props.winners[0].idx)) {
+        if (props.player.id !== props.winners[0].id) {
             headine = t[props.language].MESSAGE_LOST_GAME;
         }
     } else if (props.winners.length === 2) {

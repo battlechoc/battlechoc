@@ -308,7 +308,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
         state.game.winners = action.payload.winners;
 
         if (action.payload.winners.length === 1) {
-            if (!multiplayer.isLocalPlayer(action.payload.winners[0].idx)) {
+            if (!multiplayer.isLocalPlayer(state.game.players.findIndex(player => player.id === action.payload.winners[0].id))) {
                 currentPlayer(state.game).statistics.lost = true;
                 currentPlayer(state.game).statistics.won = false;
             } else {
