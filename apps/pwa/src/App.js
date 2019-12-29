@@ -432,8 +432,7 @@ class App extends Component {
         this.props.showOverview();
         this.props.gameResumeable(false);
         OfflineStore.gamestateStore.clear();
-        let winners = Rules.determineWinner(this.props.game);
-        let stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: winners, id: uuidv4() };
+        let stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: this.props.game.winners, id: uuidv4() };
         multiplayer.pushGameStats([stats]);
     }
 
