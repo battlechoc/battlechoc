@@ -130,6 +130,7 @@ class Hud extends Component {
     }
 
     resumeOrStartGame = () => {
+        this.unlockUi();
         if (this.props.resumeGamePossible) {
             this.setState({ open: true })
         } else {
