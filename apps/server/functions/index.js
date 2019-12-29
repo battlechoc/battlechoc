@@ -538,22 +538,21 @@ app.post('/surrender', async (req, res) => {
 });
 
 app.get('/multiplayer/sessions', async (req, res) => {
-    var t0 = performance.now();
+    console.time("firestore");
     try {
         var docs = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
     } catch (error) {
         return res.status(500).json({ error: error });
     }
 
-    var t1 = performance.now();
-    console.log("Call firestore sessions took " + (t1 - t0) + " milliseconds.");
-
+    console.timeEnd("firestore");
+    console.time("remains");
     const games = [];
     if (docs.size > 0) {
         docs.forEach(doc => {
             let game = doc.data();
-            let playerIndex = game.game.players.findIndex(player => player.id === req.user.uid);
             if (game.game.isRunning) {
+                const playerIndex = game.game.players.findIndex(player => player.id === req.user.uid);
                 games.push({
                     'id': doc.id,
                     'players': game.players,
@@ -567,14 +566,12 @@ app.get('/multiplayer/sessions', async (req, res) => {
             }
         })
 
+        const players = admin.firestore().collection('players');
         for (let i = 0; i < games.length; i++) {
-            let game = games[i];
-            let opponentId = game.players.filter(playerId => playerId != req.user.uid)[0];
-            const players = admin.firestore().collection('players');
+            let opponentId = games[i].players.filter(playerId => playerId != req.user.uid)[0];
             let doc = await players.doc(opponentId).get();
             if (doc.exists) {
                 let opponent = doc.data();
-                
                 let winnings = 0;
                 let losses = 0;
                 let drawn = 0;
@@ -618,12 +615,10 @@ app.get('/multiplayer/sessions', async (req, res) => {
                 }
             }
         }
-        let t2 = performance.now();
-        console.log("Call before response took " + (t2 - t0) + " milliseconds.");
+        console.timeEnd("remains");
         res.json({ sessions: games })
     } else {
-        let t2 = performance.now();
-        console.log("Call before response took " + (t2 - t0) + " milliseconds.");
+        console.timeEnd("remains");
         res.json({ sessions: [] })
     }
 })
