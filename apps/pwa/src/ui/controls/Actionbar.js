@@ -175,7 +175,7 @@ class Actionbar extends Component {
                                 key="6"
                                 color="primary"
                                 aria-label="finish turn"
-                                className={(this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) ? "icon blinking" : "icon"}
+                                className="icon"
                                 onClick={() => {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                     this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
@@ -200,7 +200,7 @@ class Actionbar extends Component {
                             key="7"
                             color="primary"
                             aria-label="finish turn"
-                            className={(playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true) ? "icon" : "icon blinking"}
+                            className="icon"
                             onClick={() => {
                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                 this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
