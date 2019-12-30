@@ -10,6 +10,7 @@ const gamestate = require('./gamestate.js');
 const t = require('./translations.js');
 const axios = require('axios');
 admin.initializeApp();
+const db = admin.firestore();
 
 const whitelist = ['https://battlechoc.dev', 'https://battlechoc.com', 'http://localhost:3000', 'https://localhost:3000', 'chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop'];
 const corsOptions = {
@@ -54,13 +55,13 @@ app.get('/debugging/gamestate', (req, res) => {
 
 app.post('/debugging/gamestate', (req, res) => {
     let report = req.body.report;
-    return admin.firestore().collection('reports').add({ "report": report })
+    return db.collection('reports').add({ "report": report })
         .then(rows => res.json({ result: 'Bugreport with ID: ' + rows.id + ' added.' }))
         .catch(error => res.json({ result: error }));
 });
 
 app.get('/user/friends', async (req, res) => {
-    let players = admin.firestore().collection('players')
+    let players = db.collection('players')
     let ref = players.doc(req.user.uid);
     let doc = await ref.get();
     if (doc.exists) {
@@ -68,7 +69,7 @@ app.get('/user/friends', async (req, res) => {
         if (typeof player.friends === 'undefined') {
             res.json([]);
         } else if (player.friends.length > 0) {
-            let refs = await admin.firestore().getAll(...player.friends.map(id => players.doc(id)));
+            let refs = await db.getAll(...player.friends.map(id => players.doc(id)));
             let friends = [];
             for (let doc of refs) {
                 let player = doc.data();
@@ -116,7 +117,7 @@ app.get('/user/friends', async (req, res) => {
 });
 
 app.post('/user/friend', async (req, res) => {
-    const players = admin.firestore().collection('players');
+    const players = db.collection('players');
     let docs = await players.where('username', '==', req.body.friend).get();
     if (docs.size < 1) {
         res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST' });
@@ -133,7 +134,7 @@ app.post('/user/friend', async (req, res) => {
 });
 
 app.delete('/user/friend', async (req, res) => {
-    const players = admin.firestore().collection('players');
+    const players = db.collection('players');
     let docs = await players.where('username', '==', req.body.friend).get();
     if (docs.size < 1) {
         res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST' });
@@ -150,7 +151,7 @@ app.delete('/user/friend', async (req, res) => {
 });
 
 app.get('/query/user/:name', async (req, res) => {
-    const players = admin.firestore().collection('players');
+    const players = db.collection('players');
     let docs = await players.where('username', '>', '').select('username').get();
     let limit = 10;
     let results = [];
@@ -167,7 +168,7 @@ app.get('/query/user/:name', async (req, res) => {
     }
 
     if (results.length > 0) {
-        let refs = await admin.firestore().getAll(...results.map(id => players.doc(id)));
+        let refs = await db.getAll(...results.map(id => players.doc(id)));
         let result = []
         for (let doc of refs) {
             let player = doc.data();
@@ -214,8 +215,8 @@ app.get('/query/user/:name', async (req, res) => {
 });
 
 app.post('/user/challenge', async (req, res) => {
-    const permissions = admin.firestore().collection('permissions');
-    const players = admin.firestore().collection('players');
+    const permissions = db.collection('permissions');
+    const players = db.collection('players');
     let docs = await players.where('username', '==', req.body.opponent).get();
     if (docs.size < 1) {
         res.status(404).json({ error: 'OPPONENT "' + req.body.opponent + '" DOES NOT EXIST' });
@@ -270,7 +271,7 @@ app.post('/user/challenge', async (req, res) => {
                 };
 
                 try {
-                    let databaseSession = await admin.firestore().collection('multiplayerGameSessions').add(session);
+                    let databaseSession = await db.collection('multiplayerGameSessions').add(session);
                     permissions.doc(opponentId).get().then(doc => {
                         if (doc.exists) {
                             permission = doc.data();
@@ -399,7 +400,7 @@ const processEventsInOrder = session => {
 }
 
 app.post('/multiplayer/relay/action', async (req, res) => {
-    let ref = admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId);
+    let ref = db.collection('multiplayerGameSessions').doc(req.body.sessionId);
     let doc = await ref.get();
     if (!doc.exists) {
         res.status(404).json({ error: 'SESSION NOT FOUND' });
@@ -449,7 +450,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         let updatedPlayerId = session.game.currentPlayerIndex;
 
         if (playerId !== updatedPlayerId) {
-            const permissions = admin.firestore().collection('permissions');
+            const permissions = db.collection('permissions');
             const opponent = session.game.players[playerId].name;
             permissions.doc(session.game.players[updatedPlayerId].id).get().then(doc => {
                 if (doc.exists) {
@@ -492,7 +493,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
 });
 
 app.post('/surrender', async (req, res) => {
-    let ref = admin.firestore().collection('multiplayerGameSessions').doc(req.body.sessionId);
+    let ref = db.collection('multiplayerGameSessions').doc(req.body.sessionId);
     try {
         var doc = await ref.get();
     } catch (error) {
@@ -540,7 +541,7 @@ app.post('/surrender', async (req, res) => {
 
 app.get('/multiplayer/sessions', async (req, res) => {
     try {
-        var docs = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
+        var docs = await db.collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
     } catch (error) {
         return res.status(500).json({ error: error });
     }
@@ -566,7 +567,7 @@ app.get('/multiplayer/sessions', async (req, res) => {
         for (let i = 0; i < games.length; i++) {
             let game = games[i];
             let opponentId = game.players.filter(playerId => playerId != req.user.uid)[0];
-            const players = admin.firestore().collection('players');
+            const players = db.collection('players');
             let doc = await players.doc(opponentId).get();
             if (doc.exists) {
                 let opponent = doc.data();
@@ -622,7 +623,7 @@ app.get('/multiplayer/sessions', async (req, res) => {
 })
 
 app.post('/update/level', (req, res) => {
-    let players = admin.firestore().collection('players');
+    let players = db.collection('players');
     players.doc(req.user.uid).get().then(doc => {
         if (!doc.exists) {
             return res.status(404).json({ error: 'PLAYER DOES NOT EXIST' });
@@ -680,8 +681,12 @@ app.post('/update/level', (req, res) => {
     });  
 });
 
+app.get('/highscore', (req, res) => {
+    let players = db.collection('players');
+});
+
 app.get('/rank', (req, res) => {
-    let players = admin.firestore().collection('players');
+    let players = db.collection('players');
     players.doc(req.user.uid).get().then(doc => {
         if (doc.exists) {
             let player = doc.data();
@@ -705,7 +710,7 @@ app.get('/check/available/:username', (req, res) => {
         req.params.username === '') {
         res.status(400).json({ error: 'USERNAME EMPTY' });
     } else {
-        let players = admin.firestore().collection('players');
+        let players = db.collection('players');
         players.where('username', '==', req.params.username).get()
             .then(player => res.json({ name: req.params.username, available: player.size === 0 && req.params.username.toUpperCase() !== 'CHOCNONYMOUS' }))
             .catch(error => res.status(500).json({ error: error.toString() }));
@@ -713,7 +718,7 @@ app.get('/check/available/:username', (req, res) => {
 });
 
 app.get('/user/:name', async (req, res) => {
-    let players = admin.firestore().collection('players');
+    let players = db.collection('players');
     try {
         var snapshot = await players.where('username', '==', req.params.name).get();
     } catch (error) {
@@ -763,7 +768,7 @@ app.get('/user/:name', async (req, res) => {
 });
 
 app.get('/random/opponent', async (req, res) => {
-    let players = admin.firestore().collection('players');
+    let players = db.collection('players');
     try {
         var docs = await players.where('username', '>', '').get();
     } catch (error) {
@@ -772,7 +777,7 @@ app.get('/random/opponent', async (req, res) => {
 
     invalidOpponentIds = [req.user.uid];
 
-    sessions = await admin.firestore().collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
+    sessions = await db.collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
     for (let session of sessions.docs) {
         invalidOpponentIds.push(session.data().players.filter(id => id !== req.user.uid)[0]);
     }
@@ -822,7 +827,7 @@ app.get('/random/opponent', async (req, res) => {
 });
 
 app.post('/user/username', async (req, res) => {
-    let players = admin.firestore().collection('players');
+    let players = db.collection('players');
 
     try {
         var docs = await players.where('username', '==', req.body.username).get();
@@ -853,7 +858,7 @@ app.post('/user/username', async (req, res) => {
 });
 
 app.post('/user/language', (req, res) => {
-    let players = admin.firestore().collection('players');
+    let players = db.collection('players');
     if (t.isValidLanguage(req.body.language)) {
         players.doc(req.user.uid).get().then(doc => {
             if (doc.exists) {
