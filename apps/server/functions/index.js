@@ -5,7 +5,6 @@ const app = express();
 const bodyParser = require('body-parser');
 const entities = require('./entities.js');
 const admin = require('firebase-admin');
-const uuidv4 = require('uuid/v4');
 const gamestate = require('./gamestate.js');
 const t = require('./translations.js');
 const axios = require('axios');
@@ -540,17 +539,21 @@ app.post('/surrender', async (req, res) => {
 });
 
 app.get('/multiplayer/sessions', async (req, res) => {
+    console.time("firestore");
     try {
         var docs = await db.collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
     } catch (error) {
         return res.status(500).json({ error: error });
     }
+
+    console.timeEnd("firestore");
+    console.time("remains");
     const games = [];
     if (docs.size > 0) {
         docs.forEach(doc => {
             let game = doc.data();
-            let playerIndex = game.game.players.findIndex(player => player.id === req.user.uid);
             if (game.game.isRunning) {
+                const playerIndex = game.game.players.findIndex(player => player.id === req.user.uid);
                 games.push({
                     'id': doc.id,
                     'players': game.players,
@@ -564,6 +567,7 @@ app.get('/multiplayer/sessions', async (req, res) => {
             }
         })
 
+        const players = admin.firestore().collection('players');
         for (let i = 0; i < games.length; i++) {
             let game = games[i];
             let opponentId = game.players.filter(playerId => playerId != req.user.uid)[0];
@@ -571,7 +575,6 @@ app.get('/multiplayer/sessions', async (req, res) => {
             let doc = await players.doc(opponentId).get();
             if (doc.exists) {
                 let opponent = doc.data();
-                
                 let winnings = 0;
                 let losses = 0;
                 let drawn = 0;
@@ -615,9 +618,10 @@ app.get('/multiplayer/sessions', async (req, res) => {
                 }
             }
         }
-
+        console.timeEnd("remains");
         res.json({ sessions: games })
     } else {
+        console.timeEnd("remains");
         res.json({ sessions: [] })
     }
 })

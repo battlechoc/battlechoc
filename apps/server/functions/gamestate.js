@@ -415,10 +415,6 @@ class Reducer {
                         console.log('CHOCOLATE FOUNTAIN DESTROYED');
                     }
                 } else {
-                    if (attackedCell.occupiedBy.length > 0) {
-                        currentPlayer(game).statistics.attacks += 1;
-                    }
-
                     if (attackType === entities.AttackType.HOT_CHOCOLATE) {
                         attackedCell.molten = true;
 
@@ -439,6 +435,7 @@ class Reducer {
                         }
 
                         if (entity.hp < 1) {
+                            currentPlayer(game).statistics.attacks += 1;
                             if (entity.type === entities.EntityType.FACTORY) {
                                 opponent.hasFactory = false;
                                 console.log(opponent.buildingsPerTurn)
