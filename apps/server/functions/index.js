@@ -688,8 +688,72 @@ app.post('/update/level', (req, res) => {
     });  
 });
 
-app.get('/highscore', (req, res) => {
+app.get('/highscore', async (req, res) => {
     let players = db.collection('players');
+    try {
+        var doc = await players.doc(req.user.uid).get();
+    } catch (error) {
+        return res.status(500).json({ error: error.toString() });
+    }
+
+    let player = doc.data();
+    
+    try {
+        var docs = await players.orderBy('score', 'desc').orderBy('username').get();
+    } catch (error) {
+        return res.status(500).json({ error: error.toString() });
+    }
+
+    let highscore = [];
+    if (typeof req.query.page === 'undefined') {
+        var rank = docs.docs.findIndex(player => player.id === req.user.uid);
+        var page = Math.ceil(rank / 10);
+    } else {
+        var page = req.query.page;
+    }
+
+    let lastPage = Math.ceil(docs.size / 10);
+
+    let users = docs.docs.slice((page - 1) * 10, (page - 1) * 10 + 10);
+    for (let [i, user] of users.entries()) {
+        let userdata = user.data();
+
+        if (typeof userdata.level !== 'undefined') {
+            userdata.level = Object.values(userdata.level).reduce((a, b) => a + b, 1);
+        } else {
+            userdata.level = 0;
+        }
+
+        if (typeof userdata.level === 'string') {
+            userdata.level = 0;
+        }
+
+        if (typeof userdata.trackRecord !== 'undefined') {
+            let finishedGames = userdata.trackRecord.filter(record => typeof record.winners !== 'undefined');
+            userdata.winnings = finishedGames.filter(record => record.winners.filter(winner => winner.id === user.id || winner.name === 'Charlie Bucket').length === 1).length;
+            userdata.drawn = finishedGames.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+            userdata.losses = finishedGames.length - userdata.winnings - userdata.drawn;
+        } else {
+            userdata.losses = 0;
+            userdata.winnings = 0;
+            userdata.drawn = 0;
+        }
+        userdata.name = userdata.username;
+        userdata.ranking = i + (page - 1) * 10 + 1;
+        // hide userdata specific fields
+        userdata.trackRecord = undefined;
+        userdata.friends = undefined;
+        userdata.language = undefined;
+        userdata.coins = undefined;
+        userdata.username = undefined;
+        userdata.last_upgrade_action = undefined;
+        highscore.push(userdata);
+    }
+    res.json({
+        page: page,
+        lastPage: lastPage,
+        list: highscore
+    });
 });
 
 app.get('/rank', (req, res) => {
