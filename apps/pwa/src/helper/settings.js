@@ -1,10 +1,16 @@
 import axios from 'axios';
 import firebase from '@firebase/app';
-import { NoHealthyInternetConnectionError } from '../gameplay/Errors';
+import * as http from 'http';
+import * as https from 'https';
+import { NoHealthyInternetConnectionError } from '../gameplay/Errors';
 
-const baseUrl = 'http://localhost:5000/battlechoc/europe-west1/api';
+const baseUrl = 'https://europe-west2-battlechoc.cloudfunctions.net/api';
 
-const instance = axios.create({ baseURL: baseUrl });
+const instance = axios.create({
+    baseURL: baseUrl,
+    httpAgent: new http.Agent({ keepAlive: true }),
+    httpsAgent: new https.Agent({ keepAlive: true })
+});
 
 const ServerRequest = async (method, url, body) => {
     if (firebase.auth().currentUser) {
