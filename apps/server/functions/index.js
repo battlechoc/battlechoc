@@ -34,6 +34,20 @@ app.use(async (req, res, next) => {
         return res.status(403).end();
     }
 
+    if (!req.headers['battlechoc-pwa-version']) {
+        req.battlechocPwaVersion = 0;
+        console.log('PWA version of this request is older than 01.01.2020');
+    } else {
+        req.battlechocPwaVersion = req.headers['battlechoc-pwa-version'];
+        console.log('PWA version of this request is ' + req.battlechocPwaVersion);
+    }
+
+    if (!req.headers['battlechoc-pwa-date']) {
+        req.battlechocPwaDate = 0;
+    } else {
+        req.battlechocPwaDate = req.headers['battlechoc-pwa-date'];
+    }
+
     let authorization = req.headers.authorization.split(' ');
     if (authorization.length === 2) {
         try {
