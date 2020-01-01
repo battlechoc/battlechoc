@@ -709,7 +709,7 @@ app.get('/highscore', async (req, res) => {
         var rank = docs.docs.findIndex(player => player.id === req.user.uid);
         var page = Math.ceil(rank / 10);
     } else {
-        var page = req.query.page;
+        var page = Number(req.query.page);
     }
 
     let lastPage = Math.ceil(docs.size / 10);
