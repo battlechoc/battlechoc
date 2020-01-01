@@ -9,7 +9,8 @@ import { Jukebox, Translation as t } from './misc';
 import { Info, Tooltip, Settings, AccountOverview } from './dialogs';
 import BattlechocDialog from './dialogs/BattlechocDialog';
 import Fab from '@material-ui/core/Fab';
-import { KeyboardArrowLeft as ArrowBackIcon, Refresh } from '@material-ui/icons';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import { KeyboardArrowLeft as ArrowBackIcon, Refresh, FormatListNumbered, Casino, People, Search, Share } from '@material-ui/icons';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
 import { multiplayer } from '../Multiplayer';
@@ -29,7 +30,8 @@ class Hud extends Component {
             showAccountOverview: false,
             upgradeMessageOpen: false,
             multiplayerScreen: false,
-            choclabScreen: false
+            choclabScreen: false,
+            searchingRandomOpponent: false
         }
     }
 
@@ -147,6 +149,36 @@ class Hud extends Component {
         multiplayer.getMultiplayerSessions(() => this.props.showQuickMessage({ text: t[this.props.language].SESSION_REFRESH_FAILED}));
     }
 
+    createProfileLink = () => {
+        multiplayer.createChallengeMeLink().then(link => {
+            if (navigator.share) {
+                navigator.share({
+                    title: window.document.title,
+                    text: t[this.props.language].INVITATION,
+                    url: link,
+                }).catch((error) => logger.info('error sharing multiplayer session', error));
+            } else {
+                let whatsappWindowRef = window.open();
+                whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + link);
+            }
+        });
+    }
+
+    searchRandomOpponent = () => {
+        if (!this.state.searchingRandomOpponent) {
+            this.setState({ searchingRandomOpponent: true }, async () => {
+                try {
+                    let player = await multiplayer.findRandomPlayer();
+                    this.multiplayerScreen.showPlayerProfile({ opponent: player });
+                } catch (error) {
+                    logger.warn(error.toString());
+                } finally {
+                    this.setState({ searchingRandomOpponent: false });
+                }
+            });
+        }
+    }
+
     render() {
         const stage = this.estimateStage();
         return (
@@ -162,7 +194,6 @@ class Hud extends Component {
                         return <div className="actionbar">
                             <Fab
                                 size="small"
-                                key="4"
                                 color="primary"
                                 className="icon"
                                 onClick={() => this.setState({ choclabScreen: false })}>
@@ -170,10 +201,9 @@ class Hud extends Component {
                             </Fab>
                         </div>
                     } else if (stage === 'MULTIPLAYER_SCREEN') {
-                        return <div className="actionbar">
+                        return <div className="actionbar" style={{ width: '100%', position: 'relative', marginBottom: '5vh' }}>
                             <Fab
                                 size="small"
-                                key="4"
                                 color="primary"
                                 className="icon"
                                 onClick={() => this.setState({ multiplayerScreen: false })}>
@@ -181,18 +211,53 @@ class Hud extends Component {
                             </Fab>
                             <Fab
                                 size="small"
-                                key="5"
                                 color="primary"
                                 className={ this.props.sessionRefreshActions > 0 ? 'rotating icon' : 'icon' }
                                 onClick={() => this.refreshSessions() }>
                                 <Refresh />
+                            </Fab>
+                            <div style={{ flexGrow: 1 }} />
+                            <Fab
+                                size="small"
+                                color="primary"
+                                className="icon"
+                                onClick={() => this.multiplayerScreen.openHighscorePage() }>
+                                <FormatListNumbered />
+                            </Fab>
+                            <Fab
+                                size="small"
+                                color="primary"
+                                className="icon"
+                                onClick={this.searchRandomOpponent}>
+                                { this.state.searchingRandomOpponent ? <CircularProgress style={{ color: 'white' }} size={18} /> : <Casino /> }
+                            </Fab>
+                            <Fab
+                                size="small"
+                                color="primary"
+                                className="icon"
+                                onClick={() => this.multiplayerScreen.openFriendsPage()}>
+                                <People />
+                            </Fab>
+                            <Fab
+                                size="small"
+                                color="primary"
+                                className="icon"
+                                onClick={this.createProfileLink}>
+                                <Share />
+                            </Fab>
+                            <Fab
+                                size="small"
+                                color="primary"
+                                className="icon"
+                                style={{ marginRight: 5 }}
+                                onClick={() => this.multiplayerScreen.openSearchPage()}>
+                                <Search />
                             </Fab>
                         </div>
                     } else if (stage === 'CHALLENGE_SCREEN') {
                         return <div className="actionbar">
                             <Fab
                                 size="small"
-                                key="4"
                                 color="primary"
                                 className="icon"
                                 onClick={() => this.setState({ challengedProfile: undefined })}>

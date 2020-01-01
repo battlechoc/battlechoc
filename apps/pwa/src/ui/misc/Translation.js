@@ -237,7 +237,8 @@ const languages = {
         PWA_ONLINE_MODE: 'You\'re re-connected to the Internet',
         UPDATE_LEVEL_FAILED: upgrade => 'It was not possible to perform the ' + (upgrade ? 'up' : 'down') + 'grade. Check your internet connection',
         NO_HEALTHY_INTERNET: 'You may not have a healthy internet connection. Please try again later',
-        SESSION_REFRESH_FAILED: 'Multiplayer session refresh failed. Please check your internet connection'
+        SESSION_REFRESH_FAILED: 'Multiplayer session refresh failed. Please check your internet connection',
+        FETCH_HIGHSCORE_FAILED: 'Failed to fetch highscore. Please check your internet connection'
     },
     de: {
         SIGNINORUP: 'Anmelden',
@@ -475,7 +476,8 @@ const languages = {
         PWA_ONLINE_MODE: 'Du bist wieder mit dem Internet verbunden',
         UPDATE_LEVEL_FAILED: upgrade => 'Es war nicht möglich das ' + (upgrade ? 'Up' : 'Down') + 'grade durchzuführen. Überprüfe deine Internetverbindung',
         NO_HEALTHY_INTERNET: 'Es gab Verbindungsprobleme. Überprüfe bitte deine Internetverbindung und versuche es erneut',
-        SESSION_REFRESH_FAILED: 'Fehler beim Aktualisieren der Multiplayer Sessions. Überprüfe bitte deine Internetverbindung'
+        SESSION_REFRESH_FAILED: 'Fehler beim Aktualisieren der Multiplayer Sessions. Überprüfe bitte deine Internetverbindung',
+        FETCH_HIGHSCORE_FAILED: 'Fehler beim Laden des Highscores. Überprüfe bitte deine Internetverbindung'
     }
 };
 

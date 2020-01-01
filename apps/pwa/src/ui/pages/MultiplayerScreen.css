@@ -9,6 +9,24 @@
   flex-direction: column;
 }
 
+.highscore-paginator {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px;
+}
+
+.highscore-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.highscore-page > div {
+  width: 80vw;
+  max-width: 900px;
+}
+
 .multiplayer-statistics {
   display: flex;
 }
@@ -80,11 +98,52 @@
   overflow-y: scroll;
 }
 
+#multiplayer .session-list {
+  width: calc(75vw + 102px - 6px);
+}
+
 #multiplayer .gamestable {
   background-color: rgba(255, 255, 255, 0.8);
   display: flex;
   flex-wrap: wrap;
   padding: 0;
+}
+
+.no-sessions-info {
+  background-color: rgba(255, 255, 255, 0.8);
+  width: 80vw;
+  max-width: 600px;
+  margin-top: 5vh;
+  padding: 16px;
+  box-shadow: 2px 2px 6px rgba(0,0,0,0.6);
+  color: #324D5C;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.no-sessions-info h4 {
+  margin: 10px 0 0 0;
+}
+
+.no-sessions-info p {
+  margin: 0;
+  user-select: none;
+}
+
+.no-sessions-info ul {
+  list-style: none;
+  user-select: none;
+  padding: 0;
+}
+
+.no-sessions-info li {
+  padding: 5px;
+}
+
+.no-sessions-info li svg {
+  vertical-align: middle;
+  margin-right: 10px;
 }
 
 #multiplayer .gamestable div {
@@ -142,6 +201,10 @@
     width: 100%;
   }
 
+  #multiplayer .session-list {
+    width: 100%;
+  }
+
   #multiplayer .controls .menuButton {
     font-size: 0.6rem;
     width: calc(22.5vw - 12px);
@@ -157,6 +220,12 @@
   .playerSearchDialog {
     width: 70vw;
     margin: 0 auto;
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .highscore-page > div {
+    width: 100vw;
   }
 }
 
@@ -256,6 +325,20 @@
 
   #multiplayer .gamestable div:nth-child(odd) {
     background-color: rgba(255, 255, 255, 0.6) !important;
+  }
+}
+
+@media screen and (max-width: 450px) {
+  .no-sessions-info {
+    padding: 8px;
+    font-size: 0.7rem;
+  }
+}
+
+@media screen and (max-height: 479px) {
+  .no-sessions-info {
+    padding: 8px;
+    font-size: 0.7rem;
   }
 }
 

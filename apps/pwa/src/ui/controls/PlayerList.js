@@ -9,7 +9,10 @@ const useStyles = makeStyles(theme => ({
     list: {
         marginTop: '16px',
         backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        boxShadow: '2px 2px 6px rgba(0,0,0,0.6)'
+        boxShadow: '2px 2px 6px rgba(0,0,0,0.6)',
+        '@media screen and (max-width: 450px)': {
+            fontSize: '0.8rem'
+        }
     },
     row: {
         borderBottom: '1px solid rgba(224, 224, 224, 1)',
@@ -18,21 +21,53 @@ const useStyles = makeStyles(theme => ({
         display: 'flex',
         justifyContent: 'center',
     },
+    headline: {
+        color: 'white',
+        backgroundColor: '#324D5C',
+        boxShadow: '1px 1px 3px #000',
+        borderBottom: 0,
+        textShadow: '1px 1px 3px #000',
+        '& > div:last-child': {
+            padding: '15px'
+        }
+    },
     button: {
         margin: '0 5px'
     },
-    playername: {
+    property: {
         padding: '15px',
-        flexGrow: '1',
         display: 'flex',
-        alignItems: 'center',
+        justifyContent: 'flex-start',
+        width: '15%',
         '@media screen and (min-width: 960px)': {
             padding: '24px'
-        }
+        }        
+    },
+    name: {
+        justifyContent: 'center',
+        flexGrow: 1,
+        padding: '15px',
+        display: 'flex',
+        '@media screen and (min-width: 960px)': {
+            padding: '24px'
+        }        
     },
     actions: {
         display: 'flex',
         alignItems: 'center'
+    },
+    own: {
+        backgroundColor: '#5b2f19',
+        color: 'white'
+    },
+    placeholder: {
+        width: 100,
+        '@media screen and (min-width: 960px)': {
+            width: 116
+        },
+        '@media screen and (max-width: 600px)': {
+            width: 92
+        }
     }
 }));
 
@@ -79,24 +114,36 @@ const PlayerList = props => {
         }
     }
 
+    let openPlayerProfile = player => {
+        let isPlayer = props.username === player.name;
+        if (!isPlayer) {
+            props.showProfile({ opponent: player });
+        }
+    }
+
     if (props.players.length > 0) {
         return (
             <div className={classes.list}>
+            { props.withScore ? <div className={`${classes.row} ${classes.headline}`}><div className={classes.property} style={{ width: '10%'}}>Rank</div><div className={classes.property}>Score</div><div className={classes.name}>Name</div><div className={classes.actions}>Actions</div></div> : null }
             { 
-                props.players.map((player, i) => 
-                <div key={i} className={classes.row}>
-                    <div onClick={() => props.showProfile({ opponent: player })} className={classes.playername}>{player.name}</div>
-                    <div className={classes.actions}>
-                        <Fab className={classes.button} size="small" disabled={pendingRequest === player.name || canNotChallenge(player.name)} color="primary" onClick={() => props.challenge(player.name)}><SportsEsports /></Fab>
+                props.players.map((player, i) => {
+                    let isPlayer = props.username === player.name;
+                    return <div key={i} className={isPlayer ? `${classes.own} ${classes.row}` : classes.row }>
+                        { props.withScore ? <div onClick={() => openPlayerProfile(player)} className={classes.property} style={{ width: '10%'}}>{player.ranking}</div> : null }
+                        { props.withScore ? <div onClick={() => openPlayerProfile(player)} className={classes.property}>{player.score}</div> : null }
+                        <div onClick={() => openPlayerProfile(player)} className={classes.name}>{player.name}</div>
+                        { !isPlayer ? <div className={classes.actions}>
+                            <Fab className={classes.button} size="small" disabled={pendingRequest === player.name || canNotChallenge(player.name)} color="primary" onClick={() => props.challenge(player.name)}><SportsEsports /></Fab>
+                            
+                            {
+                                isFriend(player.name) ?
+                                    <Fab className={classes.button} size="small" disabled={pendingRequest === player.name} color="primary" onClick={() => removeFriend(player.name)} ><PersonAddDisabled /></Fab>
+                                :  <Fab className={classes.button} size="small" disabled={pendingRequest === player.name} color="primary" onClick={() => addFriend(player.name)} ><PersonAdd /></Fab> 
+                            }
                         
-                        {
-                            isFriend(player.name) ?
-                                <Fab className={classes.button} size="small" disabled={pendingRequest === player.name} color="primary" onClick={() => removeFriend(player.name)} ><PersonAddDisabled /></Fab>
-                            :  <Fab className={classes.button} size="small" disabled={pendingRequest === player.name} color="primary" onClick={() => addFriend(player.name)} ><PersonAdd /></Fab> 
-                        }
-                    
+                        </div> : <div className={classes.placeholder} /> }
                     </div>
-                </div>)
+                })
             }
             </div>
         );
@@ -107,12 +154,19 @@ const PlayerList = props => {
 
 PlayerList.propTypes = {
     showProfile: PropTypes.func.isRequired,
+    withScore: PropTypes.bool,
+    username: PropTypes.string,
     players: PropTypes.array.isRequired,
     friends: PropTypes.array,
     sessions: PropTypes.array.isRequired,
     challenge: PropTypes.func.isRequired,
     addFriend: PropTypes.func,
     removeFriend: PropTypes.func.isRequired
+}
+
+PlayerList.defaultProps = {
+    withScore: false,
+    username: ''
 }
 
 export default PlayerList;

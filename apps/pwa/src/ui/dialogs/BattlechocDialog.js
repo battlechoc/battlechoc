@@ -13,6 +13,7 @@ const useStyles = makeStyles(theme => ({
         backgroundColor: '#324D5C',
         boxShadow: '1px 1px 6px #000',
         color: 'white',
+        userSelect: 'none',
         textShadow: '1px 1px 3px #000',
         padding: '8px'
     },
