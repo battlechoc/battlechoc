@@ -4,7 +4,7 @@ import * as http from 'http';
 import * as https from 'https';
 import { NoHealthyInternetConnectionError } from '../gameplay/Errors';
 
-const baseUrl = 'https://europe-west1-battlechoc.cloudfunctions.net/api';
+const baseUrl = 'https://europe-west2-battlechoc.cloudfunctions.net/api';
 
 const instance = axios.create({
     baseURL: baseUrl,
