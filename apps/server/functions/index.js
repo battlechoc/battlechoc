@@ -10,6 +10,7 @@ const t = require('./translations.js');
 const axios = require('axios');
 admin.initializeApp();
 const db = admin.firestore();
+let instanceCount = 0;
 
 const whitelist = ['https://battlechoc.dev', 'https://battlechoc.com', 'http://localhost:3000', 'https://localhost:3000', 'chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop'];
 const corsOptions = {
@@ -539,6 +540,8 @@ app.post('/surrender', async (req, res) => {
 });
 
 app.get('/multiplayer/sessions', async (req, res) => {
+    instanceCount += 1;
+    console.log("instance counter: " + instanceCount);
     console.time("firestore");
     try {
         var docs = await db.collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
@@ -567,7 +570,7 @@ app.get('/multiplayer/sessions', async (req, res) => {
             }
         })
 
-        const players = admin.firestore().collection('players');
+        const players = db.collection('players');
         for (let i = 0; i < games.length; i++) {
             let game = games[i];
             let opponentId = game.players.filter(playerId => playerId != req.user.uid)[0];
@@ -880,4 +883,4 @@ app.post('/user/language', (req, res) => {
     }
 });
 
-exports.api = functions.region('europe-west1').https.onRequest(app);
+exports.api = functions.region('europe-west2').https.onRequest(app);
