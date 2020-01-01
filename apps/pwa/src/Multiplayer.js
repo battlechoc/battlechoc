@@ -419,6 +419,19 @@ class Multiplayer {
         }
     }
 
+    async fetchHighscore(page) {
+        if (firebase.auth().currentUser) {
+            try {
+                return (await ServerRequest('get', '/highscore' + (typeof page !== 'undefined' ? '?page=' + page : ''))).data;
+            } catch (error) {
+                logger.warn('error while adding friend ' + error);
+                throw error;
+            }
+        } else {
+            logger.warn('user not logged in');
+        }        
+    }
+
     async findRandomPlayer() {
         return (await ServerRequest('get', '/random/opponent')).data;
     }

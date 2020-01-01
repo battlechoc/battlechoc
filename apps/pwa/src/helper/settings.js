@@ -4,7 +4,7 @@ import * as http from 'http';
 import * as https from 'https';
 import { NoHealthyInternetConnectionError } from '../gameplay/Errors';
 
-const baseUrl = 'https://europe-west1-battlechoc.cloudfunctions.net/api';
+const baseUrl = 'https://europe-west2-battlechoc.cloudfunctions.net/api';
 
 const instance = axios.create({
     baseURL: baseUrl,
@@ -16,7 +16,20 @@ const ServerRequest = async (method, url, body) => {
     if (firebase.auth().currentUser) {
         let token = await firebase.auth().currentUser.getIdToken(true);
 
-        let config = { headers: { 'Authorization': `Bearer ${token}` } };
+        let date = 'LOCAL_DATETIME';
+        let version = 'LOCAL_VERSION';
+
+        if (date.startsWith('LOCAL')) {
+            date = new Date().getTime();
+        } else {
+            date = new Date(date).getTime();
+        }
+
+        if (version.startsWith('LOCAL')) {
+            version = 'latest-dev'
+        }
+
+        let config = { headers: { 'Authorization': `Bearer ${token}`, 'battlechoc-pwa-version': version, 'battlechoc-pwa-date': date } };
 
         if (method === 'post') {
             return instance.post(url, body, config);
