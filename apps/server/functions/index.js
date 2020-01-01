@@ -947,4 +947,4 @@ app.post('/user/language', (req, res) => {
     }
 });
 
-exports.api = functions.region('europe-west2').https.onRequest(app);
+exports.api = functions.region('europe-west1', 'europe-west2').https.onRequest(app);
