@@ -466,11 +466,12 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         if (playerId !== updatedPlayerId) {
             const permissions = db.collection('permissions');
             const opponent = session.game.players[playerId].name;
-            permissions.doc(session.game.players[updatedPlayerId].id).get().then(doc => {
+            permissions.doc(session.game.players[updatedPlayerId].id).get().then(async doc => {
                 if (doc.exists) {
                     permission = doc.data();
                     if (typeof permission.messaging !== 'undefined') {
-                        permission.messaging.forEach(token => {
+                        let validPermissions = [];
+                        for (token of permission.messaging) {
                             const payload = {
                               'notification': {
                                 'title':  opponent + ' finished the turn @battlechoc',
@@ -481,10 +482,28 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                               'to': token
                             }
 
-                            axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
-                                .then(() => console.log('Successfully send notification'))
-                                .catch(error => console.warn('PLAYER NOTIFICATION FAILED' + error.toString()));
-                        });
+                            try {
+                                let response = await axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
+                           
+                                if (response.data.failure === 1 && typeof response.data.results !== 'undefined' && response.data.results.length > 0 && response.data.results[0].error === 'NotRegistered') {
+                                    console.log('Cleanup expired user registration token ' + token);
+                                } else {
+                                    console.log('Successfully send notification');
+                                    console.log(`Token ${token} is still valid`);
+                                    validPermissions.push(token);
+                                }
+                            } catch (error) {
+                                console.warn('PLAYER NOTIFICATION FAILED' + error.toString());
+                                validPermissions.push(token);
+                            }
+                        }
+
+                        if (validPermissions.toString() === permission.messaging.toString()) {
+                            console.log('No token update needed. All tokens are still valid')
+                        } else {
+                            permissions.doc(session.game.players[updatedPlayerId].id).set({ messaging: validPermissions });
+                            console.log('Updating user tokens because some of them were invalid. Cleaned up tokens: ' + validPermissions.toString());
+                        }
                     }
                 }
             }).catch(error => console.warn('ERROR WHILE PLAYER NOTIFICATION ' + error.toString()));
@@ -590,7 +609,13 @@ app.get('/multiplayer/sessions', async (req, res) => {
             let game = games[i];
             let opponentId = game.players.filter(playerId => playerId != req.user.uid)[0];
             const players = db.collection('players');
-            let doc = await players.doc(opponentId).get();
+            
+            try {
+                var doc = await players.doc(opponentId).get();
+            } catch (error) {
+                return res.status(500).json({ error: error });
+            }
+
             if (doc.exists) {
                 let opponent = doc.data();
                 let winnings = 0;
@@ -610,10 +635,15 @@ app.get('/multiplayer/sessions', async (req, res) => {
                 let level = Object.values(opponent.level).reduce((value, prev) => value + prev, 1);
                 
                 let ranking = 0;
-                if (typeof opponent.score === 'undefined' || isNaN(opponent.score)) {
-                    ranking = (await players.where('score', '>', 0).get()).size
-                } else {
-                    ranking = (await players.where('score', '>=', opponent.score).get()).size
+
+                try {
+                    if (typeof opponent.score === 'undefined' || isNaN(opponent.score)) {
+                        ranking = (await players.where('score', '>', 0).get()).size
+                    } else {
+                        ranking = (await players.where('score', '>=', opponent.score).get()).size
+                    }
+                } catch (error) {
+                    return res.status(500).json({ error: error });
                 }
 
                 games[i].opponent = {
