@@ -4,11 +4,6 @@ import './Tutorial.css';
 import { connect } from 'react-redux';
 import { AppBar, Toolbar, Typography, IconButton } from '@material-ui/core';
 import { ArrowBackIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Done } from '@material-ui/icons';
-import Button from '@material-ui/core/Button';
-import Dialog from '@material-ui/core/Dialog';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
 import ChoosePage from './ChoosePage';
 import BuildFactoryPage from './BuildFactoryPage';
 import TreesAndCannonsPage from './TreesAndCannonsPage';
@@ -25,6 +20,7 @@ import { ServerRequest } from '../helper/settings';
 import OfflineStore from '../OfflineStore';
 import { updatePlayerStats } from '../ui/UiActions';
 import PlayerNameInput from '../ui/controls/PlayerNameInput';
+import BattlechocDialog from '../ui/dialogs/BattlechocDialog';
 
 class Tutorial extends Component {
     constructor(props) {
@@ -152,43 +148,36 @@ class Tutorial extends Component {
             <FountainAndFruitCannonPage fulfilled={this.fulfilled} appbar={appbar}/>
         ];
 
-        let dialogTitle = "Du hast es fast geschafft"
-        let dialogContent = [
-            <PlayerNameInput key="1" setPlayerName={this.setPlayerName} current={this.props.playerInfos.stats.username} language={this.props.language}/>,
-            <Typography key="0" >{t[this.props.language].TUTORIAL_CHOOSE_NAME_INFO}</Typography>
-        ];
-        let dialogActions = []
+        let dialogTitle = t[this.props.language].TUTORIAL_DIALOG_TITLE_BEFORE;
+        let dialogContent = <div>
+            <PlayerNameInput setPlayerName={this.setPlayerName} current={this.props.playerInfos.stats.username} language={this.props.language}/>
+            <p style={{ color: '#324D5C' }}>{t[this.props.language].TUTORIAL_CHOOSE_NAME_INFO}</p>
+        </div>;
+        let canClose = false;
 
         if (this.state.playerHasName) {
             dialogTitle = t[this.props.language].TUTORIAL_DIALOG_TITLE;
-            dialogContent = [
-                <Typography key="0" >{t[this.props.language].TUTORIAL_DIALOG_MESSAGE}</Typography>,
-                <Typography key="1" color="primary" className="hint">{"\u27AA " + t[this.props.language].TUTORIAL_DIALOG_HINT}</Typography>
-            ];
-            dialogActions = [
-                <Button key="2" onClick={() => this.closeTutorial(false)} color="primary">
-                    {t[this.props.language].TUTORIAL_DIALOG_BACK}
-                </Button>,
-                <Button key="3" onClick={() => this.closeTutorial(true)} color="primary">
+            dialogContent = <div className="tutorial-finished">
+                <p>{t[this.props.language].TUTORIAL_DIALOG_MESSAGE} {t[this.props.language].TUTORIAL_DIALOG_HINT}</p>
+                <div className="menuButton" style={{ fontSize: '1.1rem' }} onClick={() => this.closeTutorial(true)}>
                   {t[this.props.language].TUTORIAL_DIALOG_PLAY_GAME}
-                </Button>
-            ];
+                </div>
+            </div>;
+            canClose = true;
         }
 
         return (
             <div id="tutorial">
                 {pages[this.state.page]}
 
-                <Dialog
-                  fullWidth={true}
-                  fullScreen={true}
-                  open={this.state.open}
-                  onClose={this.closeTutorial}>
-                    <DialogTitle className="tutorialDialogTitle">{ dialogTitle }</DialogTitle>
-                    <DialogContent className="tutorialDialogContent">{ dialogContent }</DialogContent>
-                    <DialogActions>{ dialogActions }</DialogActions>
-                </Dialog>
-
+                <BattlechocDialog
+                    open={this.state.open}
+                    close={() => this.closeTutorial(false)}
+                    closable={ canClose }
+                    autoHideTitle={ true }
+                    title={ dialogTitle }>
+                    { dialogContent }
+                </BattlechocDialog>
             </div>
         );
     }

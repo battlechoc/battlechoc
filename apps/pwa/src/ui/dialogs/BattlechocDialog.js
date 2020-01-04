@@ -22,11 +22,45 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
+function debounce(fn, ms) {
+    let timer
+    return _ => {
+        clearTimeout(timer)
+        timer = setTimeout(_ => {
+            timer = null
+            fn.apply(this, arguments)
+        }, ms)
+    };
+}
+
 const BattlechocDialog = props =>  {
     const classes = useStyles();
     const closeDialog = () => {
-        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        props.close();
+        if (props.closable) {
+            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+            props.close();
+        }
+    }
+
+    const [dimensions, setDimensions] = React.useState({ 
+        height: window.innerHeight,
+        width: window.innerWidth
+    });
+
+    React.useEffect(() => {
+        const debouncedHandleResize = debounce(function handleResize() {
+            setDimensions({
+                height: window.innerHeight,
+                width: window.innerWidth
+            })
+        }, 200);
+        window.addEventListener('resize', debouncedHandleResize)
+        return _ => { window.removeEventListener('resize', debouncedHandleResize) }
+    });
+
+    let displayTitle = true;
+    if (props.autoHideTitle && dimensions.height < 100) {
+        displayTitle = false;
     }
 
     return (
@@ -38,11 +72,14 @@ const BattlechocDialog = props =>  {
               background: 'linear-gradient(0deg, rgba(255,255,255,1) 0%, rgba(252,238,228,1) 98%)'
             }}}
             onClose={closeDialog}>
-            <DialogTitle className={classes.header}>
-                <Fab color="primary" size="small" onClick={closeDialog}><ArrowBackIcon /></Fab>
+            { displayTitle ? <DialogTitle className={classes.header}>
+                { props.closable ? <Fab color="primary" size="small" onClick={closeDialog}><ArrowBackIcon /></Fab> : null }
                 <span className={classes.headline}>{props.title}</span>
-            </DialogTitle>
-            <DialogContent>
+            </DialogTitle> : null }
+            <DialogContent style={ displayTitle ? null : {
+                paddingTop: 0,
+                '& > :first-child': { padding: 0 }
+            }}>
                 {props.children}
             </DialogContent>
         </Dialog>
@@ -50,10 +87,17 @@ const BattlechocDialog = props =>  {
 }
 
 BattlechocDialog.propTypes = {
-  open: PropTypes.bool.isRequired,
-  close: PropTypes.func.isRequired,
-  children: PropTypes.element.isRequired,
-  title: PropTypes.string.isRequired
+    open: PropTypes.bool.isRequired,
+    close: PropTypes.func.isRequired,
+    closable: PropTypes.bool,
+    autoHideTitle: PropTypes.bool,
+    children: PropTypes.element.isRequired,
+    title: PropTypes.string.isRequired
+}
+
+BattlechocDialog.defaultProps = {
+    closable: true,
+    autoHideTitle: false
 }
 
 export default BattlechocDialog;
