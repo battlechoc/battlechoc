@@ -3,9 +3,23 @@
   width: 100%;
 }
 
-.hint {
-  font-size: 0.8rem !important;
-  margin-top: 15px !important;
+.tutorial-finished {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5vh;  
+}
+
+.tutorial-finished p {
+  margin: 0;
+  justify-content: center;
+  display: flex;
+  color: #324D5C;
+  text-align: center;
+}
+
+.tutorial-finished > div {
+  margin-top: 5vh;
 }
 
 .tutorial-headline {

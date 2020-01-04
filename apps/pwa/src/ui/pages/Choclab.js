@@ -85,7 +85,6 @@ const useStyles = makeStyles(theme => ({
         '& span': {
             fontSize: '1.2rem',
             color: '#5bb9bf',
-            textShadow: '0px 2px 2px #324D5C',
             fontWeight: 'bold',
             '@media screen and (max-width: 900px)': {
                 fontSize: '1rem'
