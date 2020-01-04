@@ -3,6 +3,10 @@
   position: relative;
 }
 
+.scrollable.hud {
+  overflow-y: scroll;
+}
+
 .logo {
   position: absolute;
   z-index: 2;

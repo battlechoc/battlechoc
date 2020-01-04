@@ -182,7 +182,7 @@ class Hud extends Component {
     render() {
         const stage = this.estimateStage();
         return (
-            <div className={this.props.className}>
+            <div className={this.state.multiplayerScreen ? 'scrollable ' + this.props.className : this.props.className}>
                 <Settings startTutorial={this.props.startTutorial} surrender={this.props.surrender} open={this.state.openSettings} close={() => this.setState({openSettings: false})} />
                 <AccountOverview
                     challengePlayer={name => this.multiplayerScreen.challengePlayer(name)}
