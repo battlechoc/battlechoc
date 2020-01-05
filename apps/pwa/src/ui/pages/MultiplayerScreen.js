@@ -93,14 +93,6 @@ class MultiplayerScreen extends Component {
         this.props.enterMultiplayerGame(sessionId);
     }
 
-    tryToJoinGame = async (sessionId, sessions) => {
-        if (sessions.map(session => session.id).includes(sessionId)) {
-            this.props.enterMultiplayerGame(sessionId);
-        } else {
-            logger.warn('unknown session id for joining');
-        }
-    }
-
     removeFriend = async friend => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         this.setState({ pendingFriendRequest: friend });

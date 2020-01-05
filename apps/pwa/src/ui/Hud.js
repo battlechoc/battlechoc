@@ -30,6 +30,7 @@ class Hud extends Component {
             showAccountOverview: false,
             upgradeMessageOpen: false,
             multiplayerScreen: false,
+            waitingRoom: false,
             choclabScreen: false,
             searchingRandomOpponent: false
         }
@@ -72,16 +73,29 @@ class Hud extends Component {
         }
 
         if (typeof this.props.sessionId !== 'undefined') {
-            this.setState({ multiplayerScreen: true }, async () => {
+            this.setState({ waitingRoom: true }, async () => {
                 try {
                     let sessions = undefined;
+                    let retry = false;
                     while (typeof sessions === 'undefined') {
-                        sessions = await multiplayer.getMultiplayerSessions();
-                        await this.sleep(250);
+                        if (retry) {
+                            await this.sleep(250);
+                        }
+                        sessions = await multiplayer.getMultiplayerSessions(null, this.props.sessionId);
+                        retry = true;
                     }
-                    this.multiplayerScreen.tryToJoinGame(this.props.sessionId, sessions);
+
+                    if (sessions.length > 0) {
+                        this.joinGame(sessions[0].id);
+                    } else {
+                        logger.warn(`${this.props.sessionId} is not a session of this player`);
+                        this.props.showQuickMessage({ text: t[this.props.language].WARNING_GAME_NOT_JOINABLE_VIA_URL });
+                    }
                 } catch (error) {
                     logger.warn(error);
+                    this.props.showQuickMessage({ text: t[this.props.language].ERROR_GAME_NOT_JOINABLE_VIA_URL });
+                } finally {
+                    this.setState({ waitingRoom: false });
                 }
             });
         }
@@ -97,7 +111,7 @@ class Hud extends Component {
 
     estimateStage() {
         const state = this.props.state;
-        if (typeof state === 'undefined' && !this.state.multiplayerScreen && !this.state.choclabScreen && !this.state.challengedProfile) {
+        if (typeof state === 'undefined' && !this.state.multiplayerScreen && !this.state.choclabScreen && !this.state.challengedProfile && !this.state.waitingRoom) {
             return 'TITLE_SCREEN'
         } else if (state === GameStateTypes.START ||
             state === GameStateTypes.CHOOSE_FIELD_OR_START ||
@@ -109,6 +123,8 @@ class Hud extends Component {
             return 'CHOCLAB_SCREEN';
         } else if (this.state.challengedProfile) {
             return 'CHALLENGE_SCREEN';
+        } else if (this.state.waitingRoom) {
+            return 'WAITING_ROOM';
         } else {
             return 'INGAME';
         }
@@ -264,6 +280,8 @@ class Hud extends Component {
                                 <ArrowBackIcon />
                             </Fab>
                         </div>
+                    } else if (stage === 'WAITING_ROOM') {
+                        return null;
                     } else {
                         return <Actionbar endGame={this.props.endGame} showSettings={this.openSettings} showSignInOrUp={this.openAccountOverview} />
                     }
@@ -337,6 +355,8 @@ class Hud extends Component {
                         return <MultiplayerScreen openAccountOverview={this.openAccountOverview} enterMultiplayerGame={this.joinGame} onRef={multiplayerScreen => this.multiplayerScreen = multiplayerScreen}/>
                     } else if (stage === 'CHOCLAB_SCREEN') {
                         return <Choclab />
+                    } else if (stage === 'WAITING_ROOM') {
+                        return <div className="waiting-room"><p>{ t[this.props.language].TRY_TO_JOIN_GAME }</p><CircularProgress /></div>
                     } else {
                         let player = this.props.game.players[multiplayer.localPlayerIndex];
                         return (
