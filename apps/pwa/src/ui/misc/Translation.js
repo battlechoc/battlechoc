@@ -242,7 +242,8 @@ const languages = {
         FETCH_HIGHSCORE_FAILED: 'Failed to fetch highscore. Please check your internet connection',
         WARNING_GAME_NOT_JOINABLE_VIA_URL: 'The selected game is already ended or not associated with your account',
         ERROR_GAME_NOT_JOINABLE_VIA_URL: 'Failed to start the game. Please check your internet connection',
-        TRY_TO_JOIN_GAME: 'We try to connect you directly to your multiplayer game. Please wait a moment'
+        TRY_TO_JOIN_GAME: 'We try to connect you directly to your multiplayer game. Please wait a moment',
+        NOTIFICATION_PERMISSION_INFO: 'We will now request your permission to inform you if someone challenges you, or an opponent has finished his turn and you are up to play'
     },
     de: {
         SIGNINORUP: 'Anmelden',
@@ -485,7 +486,8 @@ const languages = {
         FETCH_HIGHSCORE_FAILED: 'Fehler beim Laden des Highscores. Überprüfe bitte deine Internetverbindung',
         WARNING_GAME_NOT_JOINABLE_VIA_URL: 'Das gewählte Spiel wurde bereits beendet, oder ist nicht deinem Account zugeordnet',
         ERROR_GAME_NOT_JOINABLE_VIA_URL: 'Spielstart fehlgeschlagen. Bitte überprüfe deine Internetverbindung',
-        TRY_TO_JOIN_GAME: 'Bitte warte kurz. Wir versuchen dich direkt mit deinem Multiplayerspiel zu verbinden'
+        TRY_TO_JOIN_GAME: 'Bitte warte kurz. Wir versuchen dich direkt mit deinem Multiplayerspiel zu verbinden',
+        NOTIFICATION_PERMISSION_INFO: 'Wir werden dich gleich um Erlaubnis fragen, dich informieren zu dürfen, falls jemand dich herausfordert, oder ein Gegner seinen Zug beendet hat und du an der Reihe bist'
     }
 };
 
