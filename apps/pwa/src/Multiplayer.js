@@ -79,7 +79,12 @@ class Multiplayer {
         }
     }
 
-    askForNotification(user) {
+    shouldAskForNotificationPermission() {
+        return firebase.auth().currentUser && 'Notification' in window && Notification.permission === 'default';
+    }
+
+    askForNotificationPermission() {      
+        let user = firebase.auth().currentUser;
         Notification.requestPermission().then((permission) => {
             if (permission === 'granted') {
                 this.messaging.getToken().then((currentToken) => {
@@ -120,7 +125,7 @@ class Multiplayer {
             });
 
             this.localPlayer = user;
-            this.askForNotification(user);
+
             if (window.navigator.onLine) {
                 this.fetchFriendsList();
                 this.computeRank();

@@ -48,6 +48,18 @@ class MultiplayerScreen extends Component {
         this.props.onRef(this);
         multiplayer.getMultiplayerSessions(() => this.props.showQuickMessage({ text: t[this.props.language].SESSION_REFRESH_FAILED}));
         multiplayer.fetchFriendsList();
+
+        this.shouldAskForPermissionTimeout = setTimeout(() => {
+            if (multiplayer.shouldAskForNotificationPermission()) {
+                this.props.showQuickMessage({ text: t[this.props.language].NOTIFICATION_PERMISSION_INFO, variant: 'info' });
+                this.askForPermissionTimeout = setTimeout(() => multiplayer.askForNotificationPermission(), 5000);
+            }
+        }, 2000);
+    }
+
+    componentWillUnmount() {
+        clearTimeout(this.shouldAskForPermissionTimeout);
+        clearTimeout(this.askForPermissionTimeout);
     }
 
     timeToString(millis) {
