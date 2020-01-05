@@ -575,14 +575,15 @@ app.post('/surrender', async (req, res) => {
 app.get('/multiplayer/sessions', async (req, res) => {
     instanceCount += 1;
     console.log("instance counter: " + instanceCount);
+
     console.time("firestore");
     try {
         var docs = await db.collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
     } catch (error) {
         return res.status(500).json({ error: error });
     }
-
     console.timeEnd("firestore");
+
     console.time("remains");
     const games = [];
     if (docs.size > 0) {
@@ -750,7 +751,7 @@ app.get('/highscore', async (req, res) => {
 
     let highscore = [];
     if (typeof req.query.page === 'undefined') {
-        var rank = docs.docs.findIndex(player => player.id === req.user.uid);
+        var rank = docs.docs.findIndex(player => player.id === req.user.uid) + 1;
         var page = Math.ceil(rank / 10);
     } else {
         var page = Number(req.query.page);
