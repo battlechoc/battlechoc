@@ -239,7 +239,10 @@ const languages = {
         UPDATE_LEVEL_FAILED: upgrade => 'It was not possible to perform the ' + (upgrade ? 'up' : 'down') + 'grade. Check your internet connection',
         NO_HEALTHY_INTERNET: 'You may not have a healthy internet connection. Please try again later',
         SESSION_REFRESH_FAILED: 'Multiplayer session refresh failed. Please check your internet connection',
-        FETCH_HIGHSCORE_FAILED: 'Failed to fetch highscore. Please check your internet connection'
+        FETCH_HIGHSCORE_FAILED: 'Failed to fetch highscore. Please check your internet connection',
+        WARNING_GAME_NOT_JOINABLE_VIA_URL: 'The selected game is already ended or not associated with your account',
+        ERROR_GAME_NOT_JOINABLE_VIA_URL: 'Failed to start the game. Please check your internet connection',
+        TRY_TO_JOIN_GAME: 'We try to connect you directly to your multiplayer game. Please wait a moment'
     },
     de: {
         SIGNINORUP: 'Anmelden',
@@ -479,7 +482,10 @@ const languages = {
         UPDATE_LEVEL_FAILED: upgrade => 'Es war nicht möglich das ' + (upgrade ? 'Up' : 'Down') + 'grade durchzuführen. Überprüfe deine Internetverbindung',
         NO_HEALTHY_INTERNET: 'Es gab Verbindungsprobleme. Überprüfe bitte deine Internetverbindung und versuche es erneut',
         SESSION_REFRESH_FAILED: 'Fehler beim Aktualisieren der Multiplayer Sessions. Überprüfe bitte deine Internetverbindung',
-        FETCH_HIGHSCORE_FAILED: 'Fehler beim Laden des Highscores. Überprüfe bitte deine Internetverbindung'
+        FETCH_HIGHSCORE_FAILED: 'Fehler beim Laden des Highscores. Überprüfe bitte deine Internetverbindung',
+        WARNING_GAME_NOT_JOINABLE_VIA_URL: 'Das gewählte Spiel wurde bereits beendet, oder ist nicht deinem Account zugeordnet',
+        ERROR_GAME_NOT_JOINABLE_VIA_URL: 'Spielstart fehlgeschlagen. Bitte überprüfe deine Internetverbindung',
+        TRY_TO_JOIN_GAME: 'Bitte warte kurz. Wir versuchen dich direkt mit deinem Multiplayerspiel zu verbinden'
     }
 };
 

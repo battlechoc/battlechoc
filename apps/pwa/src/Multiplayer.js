@@ -347,12 +347,15 @@ class Multiplayer {
         }
     }
 
-    async getMultiplayerSessions(errorHandler = null) {
+    async getMultiplayerSessions(errorHandler = null, returnSession = null) {
         if (firebase.auth().currentUser) {
             this.callbacks.startSessionRefresh();
             try {
                 let response = await ServerRequest('get', '/multiplayer/sessions');
                 this.callbacks.updateMultiplayerSessions(response.data.sessions);
+                if (returnSession) {
+                    return response.data.sessions.filter(session => session.id === returnSession );
+                }
             } catch (error) {
                 logger.warn('error while fetching player sessions ' + error);
                 if (typeof errorHandler === 'function') {
