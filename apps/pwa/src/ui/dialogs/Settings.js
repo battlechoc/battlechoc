@@ -157,7 +157,7 @@ const Settings = props =>  {
                 const report = {
                   deviceInformation: withDeviceInformation ? navigator.userAgent : undefined,
                   gamestate: gamestate,
-                  player: props.playerInfos.stats.username,
+                  player: (typeof props.playerInfos.uid !== 'undefined') ? props.playerInfos.uid : props.playerInfos.stats.username,
                   message: additionalReportMessage,
                   logs: logger.summarize(),
                   reported: (new Date()).getTime()
