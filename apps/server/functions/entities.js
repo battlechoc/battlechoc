@@ -31,6 +31,31 @@ const EntityType = Object.freeze({
             return true;
         else
             return false;
+    },
+    levelFieldName: function (entityType) {
+        if (entityType === EntityType.CREAM) {
+            return 'level_cream';
+        } else if (entityType === EntityType.FACTORY) {
+            return 'level_factory';
+        } else if (entityType === EntityType.CACAOTREE) {
+            return 'level_cacaotree';
+        } else if (entityType === EntityType.RUM_TRUFFLE_CANNON) {
+            return 'level_rum_truffle_cannon';
+        } else if (entityType === EntityType.FACTORY_EXTENSION) {
+            return 'level_factory_extension';
+        } else if (entityType === EntityType.SPYING_EASTER_BUNNY) {
+            return 'level_spying_easter_bunny';
+        } else if (entityType === EntityType.XMAS_FACTORY) {
+            return 'level_xmas_factory';
+        } else if (entityType === EntityType.HOT_CHOCOLATE_BALLISTA) {
+            return 'level_hot_chocolate_ballista';
+        } else if (entityType === EntityType.CHOCOLATE_FOUNTAIN) {
+            return 'level_chocolate_fountain';
+        } else if (entityType === EntityType.FRUIT_CANNON) {
+            return 'level_fruit_cannon';
+        } else {
+            return undefined;
+        }
     }
 });
 
@@ -288,6 +313,10 @@ function getCheapest(level) {
     return getEntityDescriptor(EntityType.CREAM, level);
 }
 
+function levelFieldNameFromEntityType(entityType) {
+    return EntityType.levelFieldName(entityType);
+}
+
 module.exports = {
     calculateCosts: (entityType, level) => {
         if (!EntityDescriptors.has(entityType)) {
@@ -307,6 +336,7 @@ module.exports = {
     Board: Board,
     createPlayer: createPlayer,
     createEntity: createEntity,
+    levelFieldNameFromEntityType: levelFieldNameFromEntityType,
     EmptyPlayerStats: EmptyPlayerStats,
     EntityType: EntityType,
     AttackType: AttackType,
