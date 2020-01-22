@@ -180,13 +180,14 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
     },
     [GameActions.build]: (state, action) => {
         let building = action.payload.building;
-        let assignment = uuidv4();
-
+        
         if (building.type === EntityType.DONUT_PORTAL_RED) {
-            let blueDonut = currentPlayerField(state.game).grid.map(cell => cell.occupiedBy).find(entity => entity.type === EntityType.DONUT_PORTAL_BLUE && typeof entity.assignment === 'undefined');
+            let blueDonut = currentPlayer(state.game).activeDonuts.find(entity => entity.type === EntityType.DONUT_PORTAL_BLUE && typeof entity.assignment === 'undefined');
             if (blueDonut) {
+                let assignment = uuidv4();
                 blueDonut.assignment = assignment;
                 building.assignment = assignment;
+                console.log(blueDonut, building);
             }
         }
 
@@ -232,12 +233,6 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
             } else {
                 currentPlayer(state.game).donuts = currentPlayer(state.game).donuts.filter(donut => donut.type !== building.type);
                 currentPlayer(state.game).activeDonuts.push(action.payload.building);
-                if (building.type === EntityType.DONUT_PORTAL_RED) {
-                    let blueDonut = currentPlayer(state.game).activeDonuts.find(entity => entity.type === EntityType.DONUT_PORTAL_BLUE && typeof entity.assignment === 'undefined');
-                    if (blueDonut) {
-                        blueDonut.assignment = assignment;
-                    }
-                }
             }
         }
     },

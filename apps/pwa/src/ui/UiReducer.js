@@ -138,7 +138,11 @@ const uiReducer = createReducer({
         }
     },
     [UiActions.toggleDonutHighlighting]: (state, action) => {
-        state.donutHighlighting = !state.donutHighlighting;
+        if (typeof action.payload !== 'undefined') {
+            state.donutHighlighting = action.payload;
+        } else {
+            state.donutHighlighting = !state.donutHighlighting;
+        }
     }
 });
 

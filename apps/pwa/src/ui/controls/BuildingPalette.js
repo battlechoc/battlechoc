@@ -115,23 +115,29 @@ const BuildingPalette = props => {
         }
     } 
 
+    let donutSelection = null;
+    
+    if (player.donuts.length > 0 || player.activeDonuts.length > 0) { 
+        donutSelection = <div id="donutSelection">
+            { player.activeDonuts.length > 0 ? <Fab
+                color="primary"
+                className="donut-visiblity icon"
+                onClick={() => props.toggleDonutHighlighting() }>
+                { props.donutHighlighting ? <VisibilityOff /> : <Visibility /> }                    
+            </Fab> : null }
+            { player.donuts.length > 0 ? <div className={props.selectedBuilding === player.donuts[0].type ? 'selected previewContainer' : 'canbuild previewContainer'}>
+                <div className={'enabled preview' + getDonutClass(player.donuts[0])}  onClick={() => {
+                    tapBuilding(player.donuts[0].type);
+                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                    selectBuilding(player.donuts[0].type);
+                }} />
+            </div> : null }
+        </div>
+    }
+
     return (
         <div>
-            { player.donuts.length > 0 || player.activeDonuts.length > 0 ? <div id="donutSelection">
-                { player.activeDonuts.length > 0 ? <Fab
-                    color="primary"
-                    className="donut-visiblity icon"
-                    onClick={() => props.toggleDonutHighlighting() }>
-                    { props.donutHighlighting ? <VisibilityOff /> : <Visibility /> }                    
-                </Fab> : null }
-                { player.donuts.length > 0 ? <div className={props.selectedBuilding === player.donuts[0].type ? 'selected previewContainer' : 'canbuild previewContainer'}>
-                    <div className={'enabled preview' + getDonutClass(player.donuts[0])}  onClick={() => {
-                        tapBuilding(player.donuts[0].type);
-                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                        selectBuilding(player.donuts[0].type);
-                    }} />
-                </div> : null }
-            </div> : null }
+            { buildingSelectionIsVisible() ? donutSelection : null }
             <div id="buildingSelection">
                 {(() => {
                     if (buildingSelectionIsVisible()) {

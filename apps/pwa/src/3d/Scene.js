@@ -375,7 +375,6 @@ class Scene extends Component {
             let buildingsPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn;
             this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
-                console.log(building);
                 if (building.type === EntityType.DONUT_PORTAL_BLUE) {
                     this.props.selectBuilding(EntityType.DONUT_PORTAL_RED);
                     this.props.tapBuilding(EntityType.DONUT_PORTAL_RED);

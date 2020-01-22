@@ -292,7 +292,9 @@ function getEntityDescriptor(entityType, level) {
     if (!EntityDescriptors.has(entityType)) {
         throw new Error("Invalid entity type given: " + entityType);
     } else {
-        return { type: entityType, ...EntityDescriptors.get(entityType)(level[entityType]) };
+        let descriptor = { type: entityType, ...EntityDescriptors.get(entityType)(level[entityType]) }
+        descriptor.max = { hp: descriptor.hp }
+        return descriptor;
     }
 }
 
