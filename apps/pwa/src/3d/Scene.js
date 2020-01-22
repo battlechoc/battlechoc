@@ -1,11 +1,11 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { multiplayer } from '../Multiplayer';
-import { deselectBuildings, selectAttack, deselectAttack, selectBuilding } from '../ui/UiActions';
+import { deselectBuildings, selectAttack, deselectAttack, selectBuilding, tapBuilding } from '../ui/UiActions';
 import { build, attack, finishTurn, finishBuildPhase } from '../gameplay/GameActions';
 import { GameStateTypes } from '../gameplay/GameplayReducer';
 import Gamefield from './Gamefield';
-import { EntityType, AttackType, BoardCellTypes, createEntity, getEntityDescriptor, getCheapest } from '../gameplay/GameEntities';
+import { EntityType, AttackType, BoardCellTypes, createEntity, getEntityDescriptor, getCheapest, isDonut } from '../gameplay/GameEntities';
 import { BattlechocError } from '../gameplay/Errors';
 import { Jukebox } from '../ui/misc';
 import { playerHasAttacks } from '../gameplay/Player';
@@ -277,6 +277,59 @@ class Scene extends Component {
         });
     }
 
+    highlightDonuts = (highlight = true) => {
+        let highlights = [
+            {type: EntityType.DONUT_PORTAL_BLUE, color: new Color3(0.3, 0.3, 1)}, 
+            {type: EntityType.DONUT_PORTAL_RED, color: new Color3(1, 0.3, 0.3)},
+            {type: EntityType.DONUT_CREAM_WHITE, color: new Color3(0.9, 0.9, 0.9)},
+            {type: EntityType.DONUT_SURPRISE_YELLOW, color: new Color3(1, 1, 0.3)},
+            {type: EntityType.DONUT_HEALTH_GREEN, color: new Color3(0.3, 1, 0.3)},
+            {type: EntityType.DONUT_STOP_PINK, color: new Color3(1, 0.41, 0.7)}
+        ]
+
+        for (let entity of highlights) {
+            let parent = this.scene.getMeshByName(entity.type + '__root__');
+            let children = parent.getChildren()[0].getChildren().length > 0 ? parent.getChildren()[0].getChildren() : parent.getChildren();
+
+            for (let child of children) {
+                if (highlight) {
+                    this.highlightLayer.addMesh(child, entity.color);
+                } else {
+                    this.highlightLayer.removeMesh(child);
+                }
+            }
+        }
+
+        let entities = [
+            EntityType.CREAM, 
+            EntityType.FACTORY, 
+            EntityType.FACTORY_EXTENSION,
+            EntityType.CACAOTREE,
+            EntityType.RUM_TRUFFLE_CANNON,
+            EntityType.FRUIT_CANNON,
+            EntityType.SPYING_EASTER_BUNNY,
+            EntityType.XMAS_FACTORY,
+            EntityType.HOT_CHOCOLATE_BALLISTA,
+            EntityType.CHOCOLATE_FOUNTAIN,
+            EntityType.DONUT_FACTORY
+        ]
+
+        for (let entityType of [...entities, EntityType.CREAM + '.AROUND.BUILDING']) {
+            let parent = this.scene.getMeshByName(entityType + '__root__');
+            let children = parent.getChildren()[0].getChildren().length > 0 ? parent.getChildren()[0].getChildren() : parent.getChildren();
+
+            children.forEach(child => {
+                if (highlight) {
+                    child.visibility = 0;
+                } else {
+                    child.visibility = 1;
+                }
+            });
+        }
+
+        this.scene.render();
+    }
+
     detonateAtPosition(row, col, playerField = false) {
         let truffle = MeshBuilder.CreateTorus('knot', { diameter: 0.1 }, this.scene);
         truffle.material = this.scene.getMaterialByName(BoardCellTypes.BROWN + '.material');
@@ -322,6 +375,14 @@ class Scene extends Component {
             let buildingsPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn;
             this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
+                console.log(building);
+                if (building.type === EntityType.DONUT_PORTAL_BLUE) {
+                    this.props.selectBuilding(EntityType.DONUT_PORTAL_RED);
+                    this.props.tapBuilding(EntityType.DONUT_PORTAL_RED);
+                } else if (isDonut(building.type)) {
+                    this.props.deselectBuildings();
+                }
+
                 if (building.type !== EntityType.CREAM) {
                     this.showEnergyBar(building);
                 }
@@ -342,7 +403,7 @@ class Scene extends Component {
                         }
                     }, 3000);
                 } else {
-                    let description = getEntityDescriptor(this.props.selectedBuilding, this.props.game.players[multiplayer.localPlayerIndex].level);
+                    let description = getEntityDescriptor(building.type, this.props.game.players[multiplayer.localPlayerIndex].level);
                     this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs);
                     let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;
@@ -542,6 +603,7 @@ const mapDispatchToProps = {
     deselectBuildings,
     selectAttack,
     selectBuilding,
+    tapBuilding,
     deselectAttack,
     finishBuildPhase
 };

@@ -24,7 +24,8 @@ const UiActionTypes = Object.freeze({
     showQuickMessage: 'battlechoc/ui/showQuickMessage',
     hideQuickMessage: 'battlechoc/ui/hideQuickMessage',
     startSessionRefresh: 'battlechoc/ui/startSessionRefresh',
-    stopSessionRefresh: 'battlechoc/ui/stopSessionRefresh'
+    stopSessionRefresh: 'battlechoc/ui/stopSessionRefresh',
+    toggleDonutHighlighting: 'battlechoc/ui/toggleDonutHighlighting'
 });
 
 const selectBuilding = createAction(UiActionTypes.selectBuilding);
@@ -51,5 +52,6 @@ const showQuickMessage = createAction(UiActionTypes.showQuickMessage);
 const hideQuickMessage = createAction(UiActionTypes.hideQuickMessage);
 const startSessionRefresh = createAction(UiActionTypes.startSessionRefresh);
 const stopSessionRefresh = createAction(UiActionTypes.stopSessionRefresh);
+const toggleDonutHighlighting = createAction(UiActionTypes.toggleDonutHighlighting);
 
-export { stopSessionRefresh, startSessionRefresh, showQuickMessage, hideQuickMessage, updateLevel, setPlayerRank, loadFriendsList, updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };
+export { toggleDonutHighlighting, stopSessionRefresh, startSessionRefresh, showQuickMessage, hideQuickMessage, updateLevel, setPlayerRank, loadFriendsList, updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };

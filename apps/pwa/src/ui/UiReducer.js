@@ -23,7 +23,8 @@ const uiReducer = createReducer({
         text: '',
         variant: 'warning'
     },
-    sessionRefreshActions: 0
+    sessionRefreshActions: 0,
+    donutHighlighting: false
 }, {
     [UiActions.resetUi]: (state, action) => {
         state.whitelistBuildings = undefined;
@@ -135,6 +136,9 @@ const uiReducer = createReducer({
         if (state.sessionRefreshActions > 0) {
             state.sessionRefreshActions -= 1;
         }
+    },
+    [UiActions.toggleDonutHighlighting]: (state, action) => {
+        state.donutHighlighting = !state.donutHighlighting;
     }
 });
 

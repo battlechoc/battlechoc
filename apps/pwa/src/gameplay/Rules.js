@@ -76,19 +76,28 @@ class Rules {
         let cell = this.currentPlayerBoardCell(gameState, cellIdx);
         if (entityType === GameEntities.EntityType.SPYING_EASTER_BUNNY && this.currentPlayerField(gameState).grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.SPYING_EASTER_BUNNY)).length > 0) {
             return new Errors.BuildNotPossibleError('Can only build one spying easter bunny.');
+        } else if (entityType === GameEntities.EntityType.DONUT_FACTORY && this.currentPlayerField(gameState).grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.DONUT_FACTORY)).length > 0) {
+            return new Errors.BuildNotPossibleError('Can only build one donut factory.');
+        } else if ([GameEntities.EntityType.DONUT_PORTAL_BLUE, GameEntities.EntityType.DONUT_PORTAL_RED].includes(entityType)) {
+            if (cell.occupiedBy.some(entity => [GameEntities.EntityType.DONUT_PORTAL_BLUE, GameEntities.EntityType.DONUT_PORTAL_RED].includes(entity.type))) {
+                return new Errors.BuildNotPossibleError('Build not possible on given field row: ' +
+                    cellIdx.row + ' col: ' + cellIdx.col + ', entity type: ' + entityType + ' cell occupied already by another trap: ' + JSON.stringify(cell.occupiedBy.filter(entity => [GameEntities.EntityType.DONUT_PORTAL_BLUE, GameEntities.EntityType.DONUT_PORTAL_RED].includes(entity.type))));
+            } else {
+                return true;
+            }
         } else if (cell.molten) {
             return new Errors.BuildNotPossibleError('Cannot build on molten cells.');
         } else if (entityType === GameEntities.EntityType.FRUIT_CANNON && cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.RUM_TRUFFLE_CANNON)) {
             return true;
         } else if (entityType !== GameEntities.EntityType.FRUIT_CANNON &&
-            ((entityType !== GameEntities.EntityType.FACTORY_EXTENSION && cell.occupiedBy.length === 0) ||
+            ((entityType !== GameEntities.EntityType.FACTORY_EXTENSION && cell.occupiedBy.filter(entity => ![GameEntities.EntityType.DONUT_PORTAL_BLUE, GameEntities.EntityType.DONUT_PORTAL_RED].includes(entity.type)).length === 0) ||
                 (entityType === GameEntities.EntityType.CREAM && !cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.CREAM)) ||
                 (entityType === GameEntities.EntityType.FACTORY_EXTENSION && ((cell.occupiedBy.length === 1 && cell.occupiedBy[0].type === GameEntities.EntityType.CREAM) || cell.occupiedBy.length === 0) && this.canBuildFactoryExtensionOnCell(cellIdx, gameState)) ||
                 (entityType !== GameEntities.EntityType.CREAM && entityType !== GameEntities.EntityType.FACTORY_EXTENSION && cell.occupiedBy.length === 1 && cell.occupiedBy[0].type === GameEntities.EntityType.CREAM))) {
             return true;
         } else {
             return new Errors.BuildNotPossibleError('Build not possible on given field row: ' +
-                cellIdx.row + ' col: ' + cellIdx.col + ', entity type: ' + entityType + ' cell occupied by: ' + cell.occupiedBy);
+                cellIdx.row + ' col: ' + cellIdx.col + ', entity type: ' + entityType + ' cell occupied by: ' + JSON.stringify(cell.occupiedBy));
         }
     }
 
@@ -203,7 +212,7 @@ class Rules {
             } else {
                 return true;
             }
-        } else if ([UiActionTypes.startSessionRefresh, UiActionTypes.stopSessionRefresh, UiActionTypes.hideQuickMessage, UiActionTypes.showQuickMessage, UiActionTypes.updateLevel, UiActionTypes.setPlayerRank, UiActionTypes.loadFriendsList, UiActionTypes.startTutorial, UiActionTypes.stopTutorial, UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.updateMultiplayerSessions, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable, UiActionTypes.notifyPlayerSignedIn, UiActionTypes.notifyPlayerSignedOut, UiActionTypes.updatePlayerStats].includes(action.type)) {
+        } else if ([UiActionTypes.toggleDonutHighlighting, UiActionTypes.startSessionRefresh, UiActionTypes.stopSessionRefresh, UiActionTypes.hideQuickMessage, UiActionTypes.showQuickMessage, UiActionTypes.updateLevel, UiActionTypes.setPlayerRank, UiActionTypes.loadFriendsList, UiActionTypes.startTutorial, UiActionTypes.stopTutorial, UiActionTypes.showOverview, UiActionTypes.resetUi, UiActionTypes.loadUiState, UiActionTypes.updateMultiplayerSessions, UiActionTypes.selectBuilding, UiActionTypes.assetsReady, UiActionTypes.tapBuilding, UiActionTypes.selectAttack, UiActionTypes.changeLanguage, UiActionTypes.showStatistics, UiActionTypes.deselectBuildings, UiActionTypes.deselectAttack, UiActionTypes.gameResumeable, UiActionTypes.notifyPlayerSignedIn, UiActionTypes.notifyPlayerSignedOut, UiActionTypes.updatePlayerStats].includes(action.type)) {
             return true;
         } else {
             return new Errors.ActionValidationError(action);

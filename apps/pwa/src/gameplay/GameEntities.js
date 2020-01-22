@@ -18,6 +18,13 @@ const EntityType = Object.freeze({
     XMAS_FACTORY: 'EntityType.XMAS_FACTORY',
     HOT_CHOCOLATE_BALLISTA: 'EntityType.HOT_CHOCOLATE_BALLISTA',
     CHOCOLATE_FOUNTAIN: 'EntityType.CHOCOLATE_FOUNTAIN',
+    DONUT_FACTORY: 'EntityType.DONUT_FACTORY',
+    DONUT_PORTAL_BLUE: 'EntityType.DONUT_PORTAL_BLUE',
+    DONUT_PORTAL_RED: 'EntityType.DONUT_PORTAL_RED',
+    DONUT_SURPRISE_YELLOW: 'EntityType.DONUT_SURPRISE_YELLOW',
+    DONUT_HEALTH_GREEN: 'EntityType.DONUT_HEALTH_GREEN',
+    DONUT_STOP_PINK: 'EntityType.DONUT_STOP_PINK',
+    DONUT_CREAM_WHITE: 'EntityType.DONUT_CREAM_WHITE',
     isInstanceOf: function (entityType) {
         if (entityType === EntityType.CREAM ||
             entityType === EntityType.FACTORY ||
@@ -28,12 +35,28 @@ const EntityType = Object.freeze({
             entityType === EntityType.XMAS_FACTORY ||
             entityType === EntityType.HOT_CHOCOLATE_BALLISTA ||
             entityType === EntityType.CHOCOLATE_FOUNTAIN ||
-            entityType === EntityType.FRUIT_CANNON)
+            entityType === EntityType.FRUIT_CANNON ||
+            entityType === EntityType.DONUT_FACTORY ||
+            entityType === EntityType.DONUT_PORTAL_RED ||
+            entityType === EntityType.DONUT_PORTAL_BLUE ||
+            entityType === EntityType.DONUT_SURPRISE_YELLOW ||
+            entityType === EntityType.DONUT_HEALTH_GREEN ||
+            entityType === EntityType.DONUT_STOP_PINK ||
+            entityType === EntityType.DONUT_CREAM_WHITE)
             return true;
         else
             return false;
     }
 });
+
+const isDonut = entityType => [
+        EntityType.DONUT_HEALTH_GREEN,
+        EntityType.DONUT_STOP_PINK, 
+        EntityType.DONUT_CREAM_WHITE, 
+        EntityType.DONUT_PORTAL_RED, 
+        EntityType.DONUT_PORTAL_BLUE, 
+        EntityType.DONUT_SURPRISE_YELLOW
+    ].includes(entityType)
 
 const AttackType = Object.freeze({
     TRUFFLE: 'AttackType.TRUFFLE',
@@ -188,10 +211,52 @@ const EntityDescriptors = Object.freeze(new Map([
         hp: growFunction(level, 230, 32012),
         costs: growFunction(level, 120, 3306),
         coins: growFunction(level, 46, 20244)
+    })],
+    [EntityType.DONUT_FACTORY, level => ({
+        hp: growFunction(level, 32, 4201),
+        donutProbability: (() => {
+            if (level > 19) {
+                return 0.9;
+            } else if (level > 14) {
+                return 0.7;
+            } else if (level > 9) {
+                return 0.5;
+            } else if (level > 4) {
+                return 0.4;
+            } else {
+                return 0.3;
+            }
+        })(),
+        donutTypes: (() => {
+            if (level > 19) {
+                return 5;
+            } else if (level > 14) {
+                return 4;
+            } else if (level > 9) {
+                return 3;
+            } else if (level > 4) {
+                return 2;
+            } else {
+                return 1;
+            }
+        })(),
+        costs: growFunction(level, 240, 7208),
+        coins: growFunction(level, 44, 20100)
     })]
 ]));
 
 function createEntity(entityType, level) {
+    if (isDonut(entityType)) {
+        return {
+            id: uuidv4(),
+            type: entityType,
+            hp: 1,
+            costs: 0,
+            coins: 0,
+            max: {hp: 1}
+        };
+    }
+
     if (typeof level === 'undefined') {
         level = EmptyPlayerStats.level;
     }
@@ -210,6 +275,16 @@ function createEntity(entityType, level) {
 }
 
 function getEntityDescriptor(entityType, level) {
+    if (isDonut(entityType)) {
+        return {
+            type: entityType,
+            hp: 1,
+            costs: 0,
+            coins: 0,
+            max: {hp: 1}
+        };
+    }
+
     if (typeof level === 'undefined') {
         level = EmptyPlayerStats.level;
     }
@@ -229,4 +304,4 @@ function getCheapest(level) {
     return getEntityDescriptor(EntityType.CREAM, level);
 }
 
-export { BoardCellTypes, Board, EntityType, AttackType, EntityDescriptors, createEntity, getEntityDescriptor, getCheapest, finalLevel };
+export { BoardCellTypes, Board, EntityType, AttackType, EntityDescriptors, createEntity, getEntityDescriptor, getCheapest, finalLevel, isDonut };

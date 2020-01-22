@@ -25,6 +25,13 @@ class AssetLoader {
                 [EntityType.HOT_CHOCOLATE_BALLISTA]: 'hotChocolateBallista.glb',
                 [EntityType.CHOCOLATE_FOUNTAIN]: 'chocolateFountain.glb',
                 [EntityType.FRUIT_CANNON]: 'fruitCannon.glb',
+                [EntityType.DONUT_FACTORY]: 'donutFactory.glb',
+                [EntityType.DONUT_PORTAL_RED]: 'donutPortalRed.glb',
+                [EntityType.DONUT_PORTAL_BLUE]: 'donutPortalBlue.glb',
+                [EntityType.DONUT_SURPRISE_YELLOW]: 'donutSurpriseYellow.glb',
+                [EntityType.DONUT_STOP_PINK]: 'donutStopPink.glb',
+                [EntityType.DONUT_CREAM_WHITE]: 'donutCreamWhite.glb',
+                [EntityType.DONUT_HEALTH_GREEN]: 'donutHealthGreen.glb'
             },
             images: {
                 CACAO_NO_BACKGROUND: 'cacao_no_background.png',

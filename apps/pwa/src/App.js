@@ -255,6 +255,15 @@ class App extends Component {
                 this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.selectedBuilding !== EntityType.FRUIT_CANNON)) {
                 this.scene.highlightCannons(false);
             }
+
+            if (!prevProps.donutHighlighting && this.props.donutHighlighting) {
+                this.scene.highlightDonuts();
+            }
+            
+            if (prevProps.donutHighlighting && !this.props.donutHighlighting) {
+                this.scene.highlightDonuts(false);
+            }
+
             if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
                 this.hud.unlockUi();
                 this.colorStartButton = 1;
@@ -493,6 +502,7 @@ const mapStateToProps = state => ({
     game: state.gameplay.game,
     language: state.ui.language,
     selectedBuilding: state.ui.selectedBuilding,
+    donutHighlighting: state.ui.donutHighlighting,
     ui: state.ui,
     tutorial: state.ui.tutorial,
     assetsReady: state.ui.assetsReady,

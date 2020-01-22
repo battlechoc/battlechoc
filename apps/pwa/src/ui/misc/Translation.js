@@ -47,6 +47,9 @@ const languages = {
                 case EntityType.SPYING_EASTER_BUNNY: return 'Spying easter bunny';
                 case EntityType.CHOCOLATE_FOUNTAIN: return 'Chocolate fountain';
                 case EntityType.FRUIT_CANNON: return 'Fruit cannon';
+                case EntityType.DONUT_FACTORY: return 'Donut Factory';
+                case EntityType.DONUT_PORTAL_RED: return 'Red donut portal';
+                case EntityType.DONUT_PORTAL_BLUE: return 'Blue donut portal';
                 default: return 'Unkown';
             }
         },
@@ -61,13 +64,13 @@ const languages = {
                     return {
                         info: 'A factory extension can only be placed directly next to your factory',
                         costs: 'Cacao costs: ' + building.costs,
-                        advantages: 'Buildings per turn +2'
+                        advantages: 'Buildings per turn +' + building.buildingsPerTurn
                     }
                 case EntityType.CACAOTREE:
                     return {
                         info: 'The cacao tree offers you all the resources you need',
                         costs: 'Cacao costs: ' + building.costs,
-                        advantages: 'Cacao per turn +30'
+                        advantages: 'Cacao per turn +' + building.cacaoPerTurn
                     }
                 case EntityType.RUM_TRUFFLE_CANNON:
                     return {
@@ -97,6 +100,17 @@ const languages = {
                         info: 'The fruit cannon destroys creams and chocolate fountains of your enemy.',
                         costs: 'Cacao costs: ' + building.costs,
                         advantages: 'Fruit attacks per turn +1'
+                    }
+                case EntityType.DONUT_FACTORY:
+                    return {
+                        info: 'The donut factory is going to produce donut traps which can be very dangerous to your opponent',
+                        costs: 'Cacao costs: ' + building.costs,
+                        advantages: `Produces a donut per turn with a probability of ${building.donutProbability * 100}%` 
+                    }
+                case EntityType.DONUT_PORTAL_RED:
+                case EntityType.DONUT_PORTAL_BLUE:
+                    return {
+                        info: 'If the blue donut is triggered by any attack, or the Easter Bunny, a portal will swap the fields and their entities with the one of the corresponding red donut'
                     }
                 default: return { info: 'Unkown building' }
             }
@@ -225,6 +239,8 @@ const languages = {
                 case 'cacaoPerTurn': return 'Cacao per turn';
                 case 'attack': return 'Attack';
                 case 'fortune': return 'Fortune';
+                case 'donutProbability': return 'Donut probability';
+                case 'donutTypes': return 'Donut types';
                 default: return 'Unknown';
             }
         },
@@ -291,6 +307,9 @@ const languages = {
                 case EntityType.SPYING_EASTER_BUNNY: return 'Osterhase';
                 case EntityType.CHOCOLATE_FOUNTAIN: return 'Schokoladenbrunnen';
                 case EntityType.FRUIT_CANNON: return 'Fruchtkanone';
+                case EntityType.DONUT_FACTORY: return 'Donutfabrik';
+                case EntityType.DONUT_PORTAL_RED: return 'Rotes Donut-Portal';
+                case EntityType.DONUT_PORTAL_BLUE: return 'Blaues Donut-Portal';
                 default: return 'Unbekannt';
             }
         },
@@ -341,6 +360,17 @@ const languages = {
                         info: 'Die Fruchtkanone zerstört nur Sahnehäubchen oder gegnerische Schokoladenbrunnen.',
                         costs: 'Kakaokosten: ' + building.costs,
                         advantages: 'Fruchtangriffe pro Runde +1'
+                    }
+                case EntityType.DONUT_FACTORY:
+                    return {
+                        info: 'Die Donutfabrik stellt Donutfallen her, die dem Gegner sehr gefährlich werden können',
+                        costs: 'Cacao costs: ' + building.costs,
+                        advantages: `Produziert pro Runde einen Donut mit einer Wahrscheinlichkeit von ${building.donutProbability * 100}%` 
+                    }
+                case EntityType.DONUT_PORTAL_RED:
+                case EntityType.DONUT_PORTAL_BLUE:
+                    return {
+                        info: 'Wenn der blaue Donut durch einen Angriff oder den Osterhasen ausgelöst wird, vertauscht ein Portal das Feld und ihre Einheiten mit dem, des dazugehörigen roten Donuts'
                     }
                 default: return { info: 'Unbekanntes Gebäude' }
             }
@@ -469,6 +499,8 @@ const languages = {
                 case 'cacaoPerTurn': return 'Kakao pro Runde';
                 case 'attack': return 'Angriff';
                 case 'fortune': return 'Glück';
+                case 'donutProbability': return 'Donut Wahrscheinlichkeit';
+                case 'donutTypes': return 'Donut Arten';
                 default: return 'Unbekannt';
             }
         },

@@ -1,4 +1,4 @@
-import { EntityType } from '../gameplay/GameEntities';
+import { EntityType, isDonut } from '../gameplay/GameEntities';
 import { Mesh, ParticleSystem, Vector3, Color4, ActionManager, ExecuteCodeAction, SolidParticleSystem, Texture } from 'babylonjs';
 
 class Gamefield {
@@ -20,7 +20,10 @@ class Gamefield {
         let playerField = this.getPlayerField();
         playerField.grid.forEach((cell, i) => {
             if (!cell.molten) {
-                this.createMeshInstance(cell.type, cell);
+                if (!cell.occupiedBy.some(entity => isDonut(entity.type))) {
+                    this.createMeshInstance(cell.type, cell);
+                }
+                
                 this.renderEntities(cell);
             }
         });
@@ -38,11 +41,11 @@ class Gamefield {
         } else {
             cell.occupiedBy.forEach(entity => {
                 let phenotype = entity.type;
-                if (entity.type === EntityType.CREAM && cell.occupiedBy.length > 1 && this.isPlayerGameField) {
+                if (entity.type === EntityType.CREAM && cell.occupiedBy.filter(entity => !isDonut(entity.type)).length > 1 && this.isPlayerGameField) {
                     phenotype = EntityType.CREAM + '.AROUND.BUILDING';
                 }
 
-                if (entity.type === EntityType.CREAM || cell.occupiedBy.length === 1 || !cell.occupiedBy.map(building => building.type).includes(EntityType.CREAM) || this.isPlayerGameField) {
+                if (entity.type === EntityType.CREAM || cell.occupiedBy.filter(entity => !isDonut(entity.type)).length === 1 || !cell.occupiedBy.map(building => building.type).includes(EntityType.CREAM) || this.isPlayerGameField) {
                     this.createMeshInstance(phenotype, cell);
                 }
             });
@@ -103,15 +106,45 @@ class Gamefield {
             }
         });
 
+        playerField.grid.filter((cell, i) => !this.playerField.grid[i].occupiedBy.some(entity => isDonut(entity.type)) && cell.occupiedBy.some(entity => isDonut(entity.type))).forEach(cell => {
+            let field = this.scene.getMeshByName(this.fieldIdx + '.' + cell.type + '.' + cell.row + '.' + cell.col);
+            field.dispose();
+        });
+
+        let conatinsTrap = (playerField, position) => {
+            return playerField.grid[position].occupiedBy.findIndex(entity => isDonut(entity.type)) > -1;
+        }
+        
         let explodeCream = position => {
-            let phenotype = !this.isPlayerGameField ? EntityType.CREAM : EntityType.CREAM + '.AROUND.BUILDING';
+            let entities = this.playerField.grid[position].occupiedBy;
+            let hasTrap = conatinsTrap(this.playerField, position);
+            let plainCream = entities.length === 1 || (entities.length === 2 && hasTrap)
+            let creamPheonotype = plainCream ? EntityType.CREAM : EntityType.CREAM + '.AROUND.BUILDING';
+            let phenotype = !this.isPlayerGameField ? EntityType.CREAM : creamPheonotype;
             let mesh = this.scene.getMeshByName(this.fieldIdx + '.' + phenotype + '.' + this.playerField.grid[position].row + '.' + this.playerField.grid[position].col);
             this.explode(mesh);
         };
 
         let changes = playerField.grid.map((cell, i) => JSON.stringify(cell.occupiedBy) === JSON.stringify(this.playerField.grid[i].occupiedBy) ? null : i);
         changes.filter(position => position !== null).forEach(position => {
-            if (playerField.grid[position].occupiedBy.length < this.playerField.grid[position].occupiedBy.length) {                
+            if (conatinsTrap(this.playerField, position) && !conatinsTrap(playerField, position) && !playerField.grid[position].molten) {
+                this.setRenderLoop();
+                for (let entity of this.playerField.grid[position].occupiedBy) {
+                    if (entity.type === EntityType.CREAM) {
+                        let meshes = this.scene.getMeshesByID(this.fieldIdx + '.' + EntityType.CREAM + '.AROUND.BUILDING.' + entity.row + '.' + entity.col);
+                        if (meshes) {
+                            meshes.forEach(mesh => mesh.dispose());
+                        }
+                    } 
+                    let meshes = this.scene.getMeshesByID(this.fieldIdx + '.' + entity.type + '.' + playerField.grid[position].row + '.' + playerField.grid[position].col);
+                    if (meshes) {
+                        meshes.forEach(mesh => mesh.dispose());
+                    }
+                }
+                this.createMeshInstance(playerField.grid[position].type, playerField.grid[position]);
+                this.renderEntities(playerField.grid[position]);
+                this.scene.render();
+            } else if (playerField.grid[position].occupiedBy.length < this.playerField.grid[position].occupiedBy.length) {                
                 if (playerField.grid[position].occupiedBy.length === 0) {
                     if (this.playerField.grid[position].occupiedBy.length > 1 && this.playerField.grid[position].occupiedBy.map(building => building.type).includes(EntityType.CREAM)) {
                         this.playerField.grid[position].occupiedBy.filter(building => building.type !== EntityType.CREAM).forEach(entity => {
