@@ -64,8 +64,6 @@ class Multiplayer {
         };
 
         firebase.initializeApp(firebaseConfig);
-        firebase.firestore().enablePersistence()
-            .catch(err => logger.info("could not enable offline persistence of firestore.", err));
 
         firebase.auth().onAuthStateChanged((user) => {
             this.authStateChanged(user);
@@ -83,14 +81,13 @@ class Multiplayer {
         return firebase.auth().currentUser && 'Notification' in window && Notification.permission === 'default';
     }
 
-    askForNotificationPermission() {      
+    askForNotificationPermission() {
         let user = firebase.auth().currentUser;
         Notification.requestPermission().then((permission) => {
             if (permission === 'granted') {
                 this.messaging.getToken().then((currentToken) => {
                     if (currentToken) {
-                        let ref = firebase.firestore().collection('permissions').doc(user.uid);
-                        ref.set({ messaging: firebase.firestore.FieldValue.arrayUnion(currentToken) }, { merge: true });
+                        await ServerRequest('post', '/user/permissions', { token: currentToken });
                     } else {
                         logger.info('No Instance ID token available. Request permission to generate one.');
                     }
@@ -100,8 +97,7 @@ class Multiplayer {
 
                 this.messaging.onTokenRefresh(() => {
                     this.messaging.getToken().then((refreshedToken) => {
-                        let ref = firebase.firestore().collection('permissions').doc(user.uid);
-                        ref.set({ messaging: firebase.firestore.FieldValue.arrayUnion(refreshedToken) }, { merge: true });
+                        await ServerRequest('post', '/user/permissions', { token: refreshedToken });
                     }).catch((err) => {
                         logger.info('Unable to retrieve refreshed token ', err);
                     });
@@ -147,29 +143,13 @@ class Multiplayer {
 
     pushGameStats(gameStats) {
         if (firebase.auth().currentUser) {
-            const playerInfosRef = firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid);
-            playerInfosRef.get().then(doc => {
-                if (!doc.exists) {
-                    logger.warn('No such document!');
-                } else {
-                    let playerStats = doc.data();
-                    if (typeof playerStats.trackRecord === 'undefined') {
-                        playerStats.trackRecord = [];
-                    }
-                    playerStats.trackRecord.push(...gameStats);
-                    let calculatedCoins = this.calculateCoinsFromTrackRecord(gameStats);
-                    playerStats.coins = playerStats.coins + calculatedCoins;
-                    playerStats.score = isNaN(playerStats.score) ? calculatedCoins : playerStats.score + calculatedCoins;
-                    playerInfosRef.update(playerStats).catch(err => {
-                        logger.warn("could not update player track record.");
-                        logger.warn(err);
-                    });
-                    this.callbacks.updatePlayerStats(playerStats);
-                }
-            }).catch(err => {
-                logger.warn("could not retrieve player track record.");
+            try {
+                const data = await ServerRequest('post', '/user/trackrecords', { stats: gameStats }).data;
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player track record.");
                 logger.warn(err);
-            });
+            }
         } else {
             OfflineStore.playerStore.get('stats').then(playerStats => {
                 if (typeof playerStats.trackRecord === 'undefined') {
@@ -332,12 +312,11 @@ class Multiplayer {
 
     async createChallengeMeLink() {
         if (firebase.auth().currentUser) {
-            let doc = await firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).get();
-            if (doc.exists) {
-                let player = doc.data();
-                if (typeof player.username !== 'undefined') {
-                    return 'https://battlechoc.com/' + player.username;
-                }
+            try {
+                let data = await ServerRequest('get', '/user/name').data;
+                return 'https://battlechoc.com/' + data.name;
+            } catch (error) {
+                logger.warn(error)
             }
         }
     }
@@ -359,7 +338,7 @@ class Multiplayer {
                 let response = await ServerRequest('get', '/multiplayer/sessions');
                 this.callbacks.updateMultiplayerSessions(response.data.sessions);
                 if (returnSession) {
-                    return response.data.sessions.filter(session => session.id === returnSession );
+                    return response.data.sessions.filter(session => session.id === returnSession);
                 }
             } catch (error) {
                 logger.warn('error while fetching player sessions ' + error);
@@ -437,7 +416,7 @@ class Multiplayer {
             }
         } else {
             logger.warn('user not logged in');
-        }        
+        }
     }
 
     async findRandomPlayer() {
