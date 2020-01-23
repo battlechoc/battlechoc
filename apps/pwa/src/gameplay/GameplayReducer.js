@@ -63,8 +63,8 @@ function getCellPatch3x3(cellIdx, board, grid) {
 
 function getCellPatch5x5(cellIdx, board, grid) {
     var patch = [];
-    for (let row = cellIdx.row - 1; row < cellIdx.row + 4; row++) {
-        for (let col = cellIdx.col - 1; col < cellIdx.col + 4; col++) {
+    for (let row = cellIdx.row - 2; row < cellIdx.row + 3; row++) {
+        for (let col = cellIdx.col - 2; col < cellIdx.col + 3; col++) {
             if (row >= 0 && col >= 0 && row < board.size.rows && col < board.size.cols) {
                 patch.push(boardCell(grid, board.size, { row: row, col: col }));
             }
@@ -182,7 +182,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
         let building = action.payload.building;
         
         if (building.type === EntityType.DONUT_PORTAL_RED) {
-            let blueDonut = currentPlayer(state.game).activeDonuts.find(entity => entity.type === EntityType.DONUT_PORTAL_BLUE && typeof entity.assignment === 'undefined');
+            let blueDonut = currentPlayer(state.game).activeDonuts.find(donut => donut.type === EntityType.DONUT_PORTAL_BLUE && typeof donut.assignment === 'undefined');
             if (blueDonut) {
                 let assignment = uuidv4();
                 blueDonut.assignment = assignment;
@@ -278,8 +278,8 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
             console.log(`HIT WHITE DONUT @ [${whiteDonut.position.row},${whiteDonut.position.col}]`);
             attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_CREAM_WHITE);
             let patch = getCellPatch5x5({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
-            patch.forEach((cell) => {
-                if (!cell.occupiedBy.includes(EntityType.CREAM)) {
+            patch.forEach(cell => {
+                if (!cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) {
                     let cream = createEntity(EntityType.CREAM, opponent.level);
                     cream.position = { row: cell.row, col: cell.col };
                     cell.occupiedBy.push(cream);
@@ -306,7 +306,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
             } else if (donutType === 1) {
                 let patch = getCellPatch5x5({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
                 patch.forEach((cell) => {
-                    if (!cell.occupiedBy.includes(EntityType.CREAM)) {
+                    if (!cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) {
                         let cream = createEntity(EntityType.CREAM, opponent.level);
                         cream.position = { row: cell.row, col: cell.col };
                         cell.occupiedBy.push(cream);
