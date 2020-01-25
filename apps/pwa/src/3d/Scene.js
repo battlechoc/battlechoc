@@ -361,19 +361,21 @@ class Scene extends Component {
     }
 
     playerFieldClick(row, col, position) {
+        let player = this.props.game.players[multiplayer.localPlayerIndex]
         let buildingSelected = this.props.selectedBuilding;
         let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
-        if (buildingSelected || (initialPlacement && this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn === 0)) {
+        
+        if (buildingSelected || (initialPlacement && player.buildingsPerTurn === 0)) {
             let building;
             if (initialPlacement) {
-                building = createEntity(EntityType.FACTORY, this.props.game.players[multiplayer.localPlayerIndex].level);
+                building = createEntity(EntityType.FACTORY, player.level);
             } else {
-                building = createEntity(this.props.selectedBuilding, this.props.game.players[multiplayer.localPlayerIndex].level);
+                building = createEntity(this.props.selectedBuilding, player.level);
             }
             building.position = { row: row, col: col };
-            let playerCacaoPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn;
-            let buildingsPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn;
-            this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
+            let playerCacaoPerTurnBefore = player.cacaoPerTurn;
+            let buildingsPerTurnBefore = player.buildingsPerTurn;
+            this.props.build({ issuer: player.id, building: building }).then(() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
                 if (building.type === EntityType.DONUT_PORTAL_BLUE) {
                     this.props.selectBuilding(EntityType.DONUT_PORTAL_RED);
@@ -386,26 +388,26 @@ class Scene extends Component {
                     this.showEnergyBar(building);
                 }
                 if (initialPlacement) {
-                    this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn);
+                    this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), player.buildingsPerTurn);
                     this.props.deselectBuildings();
                     this.props.deselectAttack();
-                    let playerId = this.props.game.players[multiplayer.localPlayerIndex].id;
+                    let playerId = player.id;
                     setTimeout(() => {
-                        let description = getEntityDescriptor(EntityType.FACTORY, this.props.game.players[multiplayer.localPlayerIndex].level);
+                        let description = getEntityDescriptor(EntityType.FACTORY, player.level);
                         this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), description.cacaoPerTurn);
                     }, 1000);
                     setTimeout(() => {
-                        if (playerId === this.props.game.players[multiplayer.localPlayerIndex].id) {
-                            this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
+                        if (playerId === player.id) {
+                            this.props.finishTurn({ issuer: player.id });
                             this.props.deselectBuildings();
                             this.props.deselectAttack();
                         }
                     }, 3000);
                 } else {
-                    let description = getEntityDescriptor(building.type, this.props.game.players[multiplayer.localPlayerIndex].level);
+                    let description = getEntityDescriptor(building.type, player.level);
                     this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs);
-                    let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
-                    let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;
+                    let cacaoDelta = player.cacaoPerTurn - playerCacaoPerTurnBefore;
+                    let buildingsDelta = player.buildingsPerTurn - buildingsPerTurnBefore;
                     setTimeout(() => {
                         if (typeof this.props.game !== 'undefined') { 
                             if (building.type === EntityType.CACAOTREE) {
@@ -419,9 +421,10 @@ class Scene extends Component {
                             }
                             setTimeout(() => {
                                 if (typeof this.props.game !== 'undefined') { 
-                                    if (this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) {
-                                        if (playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true) {
-                                            this.props.finishBuildPhase({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
+                                    player = this.props.game.players[multiplayer.localPlayerIndex]
+                                    if ( player.donuts.length === 0 && ( player.buildings === 0 || player.cacao < getCheapest().costs )) {
+                                        if (playerHasAttacks(player) === true) {
+                                            this.props.finishBuildPhase({ issuer: player.id }).then(() => {
                                                 this.props.deselectBuildings();
                                             }).catch(error => {
                                                 if (error instanceof BattlechocError) {
@@ -431,7 +434,7 @@ class Scene extends Component {
                                                 }
                                             });
                                         } else {
-                                            this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
+                                            this.props.finishTurn({ issuer: player.id }).then(() => {
                                                 this.props.deselectBuildings();
                                                 this.props.deselectAttack();
                                             }).catch(error => {

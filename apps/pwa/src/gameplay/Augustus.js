@@ -166,7 +166,9 @@ export default class Augustus extends NonPlayerCharacter {
     handleAttackError(error) {
         if (error instanceof BattlechocError) {
             logger.info(error.message);
-            this.actions.finishTurn({ issuer: this.player.id });
+            this.actions.finishTurn({ issuer: this.player.id }).catch(error => {
+                logger.warn('Turn already ended', error);
+            });
         } else {
             throw error;
         }

@@ -249,7 +249,7 @@ class App extends Component {
                 }
             }
 
-            const getOpponentType = () => prevProps.game.players[1 - multiplayer.localPlayerIndex].type;
+            let opponentType = typeof prevProps.game !== 'undefined' ? prevProps.game.players[1 - multiplayer.localPlayerIndex].type : undefined;
 
             if (prevProps.selectedBuilding === EntityType.FRUIT_CANNON && typeof this.scene !== 'undefined' && typeof this.scene.playerGameField !== 'undefined' && typeof this.props.game !== 'undefined' && (this.props.game.state !== GameStateTypes.BUILD_PHASE || !multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) ||
                 this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.selectedBuilding !== EntityType.FRUIT_CANNON)) {
@@ -274,23 +274,23 @@ class App extends Component {
                 this.hud.unlockUi();
                 this.colorStartButton = 1;
             } else if (gameTransition === GameTransitions.OPPONENT_STARTS_GAME) {
-                if (getOpponentType() === PlayerType.AUGUSTUS_GLOOP) {
+                if (opponentType === PlayerType.AUGUSTUS_GLOOP) {
                     this.opponent.simulateChooseFieldOrStartDecision();
                 }
             } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START) {
                 this.hud.lockUi();
-                if (getOpponentType() === PlayerType.AUGUSTUS_GLOOP) {
+                if (opponentType === PlayerType.AUGUSTUS_GLOOP) {
                     this.opponent.simulateChooseFieldDecision();
                 }
             } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
                 this.scene.startGame(this.props.game);
             } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
                 this.scene.startGame(this.props.game);
-                if (getOpponentType() === PlayerType.AUGUSTUS_GLOOP) {
+                if (opponentType === PlayerType.AUGUSTUS_GLOOP) {
                     this.opponent.simulateInitialPlacement();
                 }
             } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT) {
-                if (getOpponentType() === PlayerType.AUGUSTUS_GLOOP) {
+                if (opponentType === PlayerType.AUGUSTUS_GLOOP) {
                     this.opponent.simulateInitialPlacement();
                 }
             } else if (gameTransition === GameTransitions.PLAYER_BUILD_PHASE) {
@@ -309,12 +309,10 @@ class App extends Component {
                     this.timeouts.push(timeoutId);
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
-                let opponentType = getOpponentType();
                 if (opponentType === PlayerType.AUGUSTUS_GLOOP || opponentType === PlayerType.VIOLET_BEAUREGARDE) {
                     this.opponent.simulateBuildPhase();
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
-                let opponentType = getOpponentType();
                 if (opponentType === PlayerType.AUGUSTUS_GLOOP || opponentType === PlayerType.VIOLET_BEAUREGARDE) {
                     this.opponent.simulateAttackPhase((row, col) => this.scene.detonateAtPosition(row, col, true), entity => this.scene.showEnergyBar(entity), position => this.scene.hideEnergyBar(null, position));
                 }

@@ -5,24 +5,24 @@ class Logger {
         this.errors = [];
     }
 
-    info(message) {
+    info(...message) {
         this.infos.push({ time: (new Date()).getTime(), message: message });
         if (window.location.host === 'localhost:3000') {
-            console.log(message);
+            console.log(...message);
         }
     }
 
-    warn(message) {
+    warn(...message) {
         this.warnings.push({ time: (new Date()).getTime(), message: message });
         if (window.location.host === 'localhost:3000') {
-            console.warn(message);
+            console.warn(...message);
         }
     }
 
-    error(message) {
+    error(...message) {
         this.erros.push({ time: (new Date()).getTime(), message: message });
         if (window.location.host === 'localhost:3000') {
-            console.error(message);
+            console.error(...message);
         }
     }
 

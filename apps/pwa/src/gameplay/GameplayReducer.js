@@ -187,7 +187,6 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                 let assignment = uuidv4();
                 blueDonut.assignment = assignment;
                 building.assignment = assignment;
-                console.log(blueDonut, building);
             }
         }
 
@@ -243,76 +242,44 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
         const cellColor = attackedCell.type;
         let opponent = otherPlayer(state.game);
 
-        let blueDonut = attackedCell.occupiedBy.find(entity => entity.type === EntityType.DONUT_PORTAL_BLUE);
-        if (typeof blueDonut !== 'undefined') {
-            console.log(`HIT BLUE DONUT @ [${blueDonut.position.row},${blueDonut.position.col}]`);
-            attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_PORTAL_BLUE);
+        console.log(JSON.stringify(attackedCell))
 
-            let redDonut = otherPlayer(state.game).activeDonuts.find(entity => entity.assignment === blueDonut.assignment);
-            if (typeof redDonut !== 'undefined') {
-                console.log(`THERE IS A RELATED RED DONUT@ [${redDonut.position.row},${redDonut.position.col}]`);
-                let redDonutCell = otherPlayerBoardCell(state.game, redDonut.position);
-                redDonutCell.occupiedBy = redDonutCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_PORTAL_RED);
-                let pivot = redDonutCell.occupiedBy;
-                redDonutCell.occupiedBy = attackedCell.occupiedBy;
-                attackedCell.occupiedBy = pivot;
-                attackedCell.occupiedBy.forEach(entity => entity.position = redDonut.position);
-                redDonutCell.occupiedBy.forEach(entity => entity.position = blueDonut.position);
+        const testAndTriggerTraps = (force=false) => {
+            if (attackedCell.shielded && !force) {
+                return;
             }
-        }
 
-        let greenDonut = attackedCell.occupiedBy.find(entity => entity.type === EntityType.DONUT_HEALTH_GREEN);
-        if (typeof greenDonut !== 'undefined') {
-            console.log(`HIT GREEN DONUT @ [${greenDonut.position.row},${greenDonut.position.col}]`);
-            attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_HEALTH_GREEN);
-            let patch = getCellPatch5x5({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
-            patch.forEach((cell) => {
-                cell.occupiedBy.forEach(entity => {
-                    entity.hp = getEntityDescriptor(entity.type, otherPlayer(state.game).level).max.hp;
-                });
-            });
-        }
+            let blueDonut = otherPlayer(state.game).activeDonuts.find(entity => entity.type === EntityType.DONUT_PORTAL_BLUE && entity.position.row === attackedCell.row && entity.position.col === attackedCell.col);
+            if (typeof blueDonut !== 'undefined') {
+                console.log(`HIT BLUE DONUT @ [${blueDonut.position.row},${blueDonut.position.col}]`);
+                let redDonut = otherPlayer(state.game).activeDonuts.find(entity => entity.type === EntityType.DONUT_PORTAL_RED && entity.assignment === blueDonut.assignment);
+                if (typeof redDonut !== 'undefined') {
+                    console.log(`THERE IS A RELATED RED DONUT@ [${redDonut.position.row},${redDonut.position.col}]`);
+                    let redDonutCell = otherPlayerBoardCell(state.game, redDonut.position);
+                    
+                    redDonutCell.occupiedBy = redDonutCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_PORTAL_RED);
+                    attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_PORTAL_BLUE);
+                    
+                    otherPlayer(state.game).activeDonuts = otherPlayer(state.game).activeDonuts.filter(donut => donut.assignment !== blueDonut.assignment);
+                    
+                    let pivot = JSON.parse(JSON.stringify(redDonutCell));
+                    console.log(JSON.stringify(pivot, undefined, 2))
+                    redDonutCell.occupiedBy = attackedCell.occupiedBy;
+                    attackedCell.occupiedBy = pivot.occupiedBy;
 
-        let whiteDonut = attackedCell.occupiedBy.find(entity => entity.type === EntityType.DONUT_CREAM_WHITE);
-        if (typeof whiteDonut !== 'undefined') {
-            console.log(`HIT WHITE DONUT @ [${whiteDonut.position.row},${whiteDonut.position.col}]`);
-            attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_CREAM_WHITE);
-            let patch = getCellPatch5x5({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
-            patch.forEach(cell => {
-                if (!cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) {
-                    let cream = createEntity(EntityType.CREAM, opponent.level);
-                    cream.position = { row: cell.row, col: cell.col };
-                    cell.occupiedBy.push(cream);
+                    attackedCell.occupiedBy.forEach(entity => entity.position = redDonut.position);
+                    redDonutCell.occupiedBy.forEach(entity => entity.position = blueDonut.position);
+
+                    redDonutCell.type = attackedCell.type;
+                    attackedCell.type = pivot.type;
                 }
-            });
-        }
+            }
 
-        let pinkDonut = attackedCell.occupiedBy.find(entity => entity.type === EntityType.DONUT_STOP_PINK);
-        if (typeof pinkDonut !== 'undefined') {
-            console.log(`HIT PINK DONUT @ [${pinkDonut.position.row},${pinkDonut.position.col}]`);
-            attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_STOP_PINK);
-            prepareBuildPhase(state.game);
-        }
-
-        let yellowDonut = attackedCell.occupiedBy.find(entity => entity.type === EntityType.DONUT_SURPRISE_YELLOW);
-        if (typeof yellowDonut !== 'undefined') {
-            console.log(`HIT YELLOW DONUT @ [${yellowDonut.position.row},${yellowDonut.position.col}]`);
-            attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_SURPRISE_YELLOW);
-            
-            let donutType = Math.round(Math.random() * 2)
-
-            if (donutType === 0) {
-                prepareBuildPhase(state.game);
-            } else if (donutType === 1) {
-                let patch = getCellPatch5x5({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
-                patch.forEach((cell) => {
-                    if (!cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) {
-                        let cream = createEntity(EntityType.CREAM, opponent.level);
-                        cream.position = { row: cell.row, col: cell.col };
-                        cell.occupiedBy.push(cream);
-                    }
-                });
-            } else if (donutType === 2) {
+            let greenDonut = attackedCell.occupiedBy.find(entity => entity.type === EntityType.DONUT_HEALTH_GREEN);
+            if (typeof greenDonut !== 'undefined') {
+                console.log(`HIT GREEN DONUT @ [${greenDonut.position.row},${greenDonut.position.col}]`);
+                attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_HEALTH_GREEN);
+                otherPlayer(state.game).activeDonuts = otherPlayer(state.game).activeDonuts.filter(donut => donut.id !== greenDonut.id);
                 let patch = getCellPatch5x5({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
                 patch.forEach((cell) => {
                     cell.occupiedBy.forEach(entity => {
@@ -320,6 +287,61 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                     });
                 });
             }
+
+            let whiteDonut = attackedCell.occupiedBy.find(entity => entity.type === EntityType.DONUT_CREAM_WHITE);
+            if (typeof whiteDonut !== 'undefined') {
+                console.log(`HIT WHITE DONUT @ [${whiteDonut.position.row},${whiteDonut.position.col}]`);
+                attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_CREAM_WHITE);
+                otherPlayer(state.game).activeDonuts = otherPlayer(state.game).activeDonuts.filter(donut => donut.id !== whiteDonut.id);
+                let patch = getCellPatch5x5({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
+                patch.forEach(cell => {
+                    if (!cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) {
+                        let cream = createEntity(EntityType.CREAM, opponent.level);
+                        cream.position = { row: cell.row, col: cell.col };
+                        cell.occupiedBy.push(cream);
+                    }
+                });
+            }
+
+            let pinkDonut = attackedCell.occupiedBy.find(entity => entity.type === EntityType.DONUT_STOP_PINK);
+            if (typeof pinkDonut !== 'undefined') {
+                console.log(`HIT PINK DONUT @ [${pinkDonut.position.row},${pinkDonut.position.col}]`);
+                attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_STOP_PINK);
+                otherPlayer(state.game).activeDonuts = otherPlayer(state.game).activeDonuts.filter(donut => donut.id !== pinkDonut.id);
+                prepareBuildPhase(state.game);
+            }
+
+            let yellowDonut = attackedCell.occupiedBy.find(entity => entity.type === EntityType.DONUT_SURPRISE_YELLOW);
+            if (typeof yellowDonut !== 'undefined') {
+                console.log(`HIT YELLOW DONUT @ [${yellowDonut.position.row},${yellowDonut.position.col}]`);
+                attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_SURPRISE_YELLOW);
+                otherPlayer(state.game).activeDonuts = otherPlayer(state.game).activeDonuts.filter(donut => donut.id !== yellowDonut.id);
+                let donutType = Math.round(Math.random() * 2)
+
+                if (donutType === 0) {
+                    prepareBuildPhase(state.game);
+                } else if (donutType === 1) {
+                    let patch = getCellPatch5x5({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
+                    patch.forEach((cell) => {
+                        if (!cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) {
+                            let cream = createEntity(EntityType.CREAM, opponent.level);
+                            cream.position = { row: cell.row, col: cell.col };
+                            cell.occupiedBy.push(cream);
+                        }
+                    });
+                } else if (donutType === 2) {
+                    let patch = getCellPatch5x5({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
+                    patch.forEach((cell) => {
+                        cell.occupiedBy.forEach(entity => {
+                            entity.hp = getEntityDescriptor(entity.type, otherPlayer(state.game).level).max.hp;
+                        });
+                    });
+                }
+            }
+        }
+
+        if (![AttackType.HOT_CHOCOLATE, AttackType.BUNNY].includes(attackType)) {
+            testAndTriggerTraps();
         }
 
         if (attackType === AttackType.BUNNY) {
@@ -366,12 +388,15 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                         neighbor.shielded = false;
                     }
                 });
+                testAndTriggerTraps();
                 logger.info('CHOCOLATE FOUNTAIN DESTROYED');
             }
         } else {
             if (attackType === AttackType.HOT_CHOCOLATE) {
+                testAndTriggerTraps(true);
                 attackedCell.molten = true;
-                if (attackedCell.occupiedBy.length > 0) {
+                
+                if (attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0) {
                     currentPlayer(state.game).statistics.moltenFields += 1;
                 }
             }
@@ -380,11 +405,13 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                 if (attackType === AttackType.HOT_CHOCOLATE) {
                     entity.hp = 0;
                 } else {
-                    let damage = action.payload.damage;
-                    if (attackType === AttackType.FRUIT) {
-                        damage = 0.1 * damage;
+                    if (!isDonut(entity.type)) {
+                        let damage = action.payload.damage;
+                        if (attackType === AttackType.FRUIT) {
+                            damage = 0.1 * damage;
+                        }
+                        entity.hp = Math.round(entity.hp - damage);
                     }
-                    entity.hp = Math.round(entity.hp - damage);
                 }
 
                 if (entity.hp < 1) {

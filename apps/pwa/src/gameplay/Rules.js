@@ -93,7 +93,7 @@ class Rules {
             ((entityType !== GameEntities.EntityType.FACTORY_EXTENSION && cell.occupiedBy.filter(entity => !GameEntities.isDonut(entity.type)).length === 0) ||
                 (entityType === GameEntities.EntityType.CREAM && !cell.occupiedBy.map(entity => entity.type).includes(GameEntities.EntityType.CREAM)) ||
                 (entityType === GameEntities.EntityType.FACTORY_EXTENSION && ((cell.occupiedBy.length === 1 && cell.occupiedBy[0].type === GameEntities.EntityType.CREAM) || cell.occupiedBy.length === 0) && this.canBuildFactoryExtensionOnCell(cellIdx, gameState)) ||
-                (entityType !== GameEntities.EntityType.CREAM && entityType !== GameEntities.EntityType.FACTORY_EXTENSION && cell.occupiedBy.length === 1 && cell.occupiedBy[0].type === GameEntities.EntityType.CREAM))) {
+                (entityType !== GameEntities.EntityType.CREAM && entityType !== GameEntities.EntityType.FACTORY_EXTENSION && cell.occupiedBy.filter(entity => !GameEntities.isDonut(entity.type)).length === 1 && cell.occupiedBy.filter(entity => !GameEntities.isDonut(entity.type))[0].type === GameEntities.EntityType.CREAM))) {
             return true;
         } else {
             return new Errors.BuildNotPossibleError('Build not possible on given field row: ' +
@@ -193,6 +193,8 @@ class Rules {
         } else if (action.type === GameActionTypes.build) {
             if (currentState !== GameStateTypes.BUILD_PHASE && currentState !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && currentState !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
                 return new Errors.UnexpectedStateError(currentState);
+            } else if (this.currentPlayer(state.gameplay.game).donuts.length > 0 && GameEntities.isDonut(action.payload.building.type)) {
+                return this.canBuildOnCell(action.payload.building.position, action.payload.building.type, state.gameplay.game);
             } else if ((this.currentPlayer(state.gameplay.game).buildings === 0 || (this.currentPlayer(state.gameplay.game).buildingsPerTurn === 0 && action.payload.building.type === GameEntities.EntityType.FACTORY_EXTENSION)) &&
                 action.payload.building.type !== GameEntities.EntityType.FACTORY) {
                 return new Errors.NoBuildingsLeftError();

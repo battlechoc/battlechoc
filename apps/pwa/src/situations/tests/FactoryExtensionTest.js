@@ -30,7 +30,7 @@ export default class FactoryExtensionTest extends Situation {
         this.modifyBoard({col: 3, row: 5, cellType: BoardCellTypes.BLACK });
         this.modifyBoard({col: 3, row: 4, cellType: BoardCellTypes.BLACK });
         this.modifyBoard({col: 1, row: 3, cellType: BoardCellTypes.WHITE, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.RUM_TRUFFLE_CANNON)] });
-        this.modifyBoard({col: 6, row: 6, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.FACTORY)] });
+        this.modifyBoard({col: 6, row: 6, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY, game.players[0].level)] });
         this.modifyBoard({col: 6, row: 7, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.DONUT_FACTORY, game.players[0].level)] });
         this.modifyBoard({col: 2, row: 0, cellType: BoardCellTypes.WHITE});
 
@@ -45,7 +45,7 @@ export default class FactoryExtensionTest extends Situation {
         game.players[0].hasFactory = true;
         game.players[0].attacks[AttackType.TRUFFLE] = 1;
         game.players[0].donutProbability = 1;
-        game.players[0].donuts = [createEntity(EntityType.DONUT_CREAM_WHITE)]
+        game.players[0].donuts = [createEntity(EntityType.DONUT_PORTAL_BLUE), createEntity(EntityType.DONUT_PORTAL_RED)]
         game.players[0].attacksPerTurn[AttackType.TRUFFLE] = 1;
 
         game.players[1].level = EmptyPlayerStats.level;
