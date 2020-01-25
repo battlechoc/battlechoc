@@ -134,7 +134,7 @@ class Gamefield {
                 this.renderEntities(this.playerField.grid[position]);
                 this.scene.render();
             } else if (playerField.grid[position].occupiedBy.length < this.playerField.grid[position].occupiedBy.length) {                
-                if (playerField.grid[position].occupiedBy.filter(entity => !isDonut(entity)).length === 0) {                    
+                if (playerField.grid[position].occupiedBy.filter(entity => !isDonut(entity.type)).length === 0) {                
                     if (this.playerField.grid[position].occupiedBy.length > 1 && this.playerField.grid[position].occupiedBy.map(building => building.type).includes(EntityType.CREAM)) {
                         this.playerField.grid[position].occupiedBy.filter(building => building.type !== EntityType.CREAM && !isDonut(building.type)).forEach(entity => {
                             if (!this.isPlayerGameField) {

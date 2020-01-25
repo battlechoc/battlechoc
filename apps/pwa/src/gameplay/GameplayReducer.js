@@ -86,17 +86,16 @@ function prepareBuildPhase(gameState) {
     
     if (typeof currentPlayer(gameState).donuts !== 'undefined' && donutProbability < currentPlayer(gameState).donutProbability && currentPlayer(gameState).donuts.length === 0) {
         let donutFactory = getEntityDescriptor(EntityType.DONUT_FACTORY, currentPlayer(gameState).level);
-        let possibleDonutTypes = donutFactory.donutTypes;
-
-        let donutType = Math.round(Math.random() * (possibleDonutTypes - 1));
+        let donutType = Math.floor(Math.random() * donutFactory.donutTypes) + 1;
+        console.log(JSON.stringify(donutType), JSON.stringify(donutFactory.donutTypes));
         let donuts = [createEntity(EntityType.DONUT_PORTAL_BLUE), createEntity(EntityType.DONUT_PORTAL_RED)]
-        if (donutType === 1) {
+        if (donutType === 2) {
             donuts = [createEntity(EntityType.DONUT_HEALTH_GREEN)]
-        } else if (donutType === 2) {
-            donuts = [createEntity(EntityType.DONUT_SURPRISE_YELLOW)]
         } else if (donutType === 3) {
-            donuts = [createEntity(EntityType.DONUT_STOP_PINK)]
+            donuts = [createEntity(EntityType.DONUT_SURPRISE_YELLOW)]
         } else if (donutType === 4) {
+            donuts = [createEntity(EntityType.DONUT_STOP_PINK)]
+        } else if (donutType === 5) {
             donuts = [createEntity(EntityType.DONUT_CREAM_WHITE)]
         }
         currentPlayer(gameState).donuts = donuts;
@@ -242,8 +241,6 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
         const cellColor = attackedCell.type;
         let opponent = otherPlayer(state.game);
 
-        console.log(JSON.stringify(attackedCell))
-
         const testAndTriggerTraps = (force=false) => {
             if (attackedCell.shielded && !force) {
                 return;
@@ -263,7 +260,6 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                     otherPlayer(state.game).activeDonuts = otherPlayer(state.game).activeDonuts.filter(donut => donut.assignment !== blueDonut.assignment);
                     
                     let pivot = JSON.parse(JSON.stringify(redDonutCell));
-                    console.log(JSON.stringify(pivot, undefined, 2))
                     redDonutCell.occupiedBy = attackedCell.occupiedBy;
                     attackedCell.occupiedBy = pivot.occupiedBy;
 
