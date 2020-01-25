@@ -48,8 +48,12 @@ const languages = {
                 case EntityType.CHOCOLATE_FOUNTAIN: return 'Chocolate fountain';
                 case EntityType.FRUIT_CANNON: return 'Fruit cannon';
                 case EntityType.DONUT_FACTORY: return 'Donut Factory';
-                case EntityType.DONUT_PORTAL_RED: return 'Red donut portal';
-                case EntityType.DONUT_PORTAL_BLUE: return 'Blue donut portal';
+                case EntityType.DONUT_PORTAL_RED: return 'Red portal donut';
+                case EntityType.DONUT_PORTAL_BLUE: return 'Blue portal donut';
+                case EntityType.DONUT_STOP_PINK: return 'Pink stop donut';
+                case EntityType.DONUT_SURPRISE_YELLOW: return 'Yellow surprise donut';
+                case EntityType.DONUT_HEALTH_GREEN: return 'Green health donut';
+                case EntityType.DONUT_CREAM_WHITE: return 'White cream donut';
                 default: return 'Unkown';
             }
         },
@@ -110,7 +114,23 @@ const languages = {
                 case EntityType.DONUT_PORTAL_RED:
                 case EntityType.DONUT_PORTAL_BLUE:
                     return {
-                        info: 'If the blue donut is triggered by any attack, or the Easter Bunny, a portal will swap the fields and their entities with the one of the corresponding red donut'
+                        info: 'If the blue donut is triggered by any attack, a portal will swap the fields and all entities with it\'s corresponding red donut'
+                    }
+                case EntityType.DONUT_CREAM_WHITE:
+                    return {
+                        info: 'If the white donut is triggered by any attack, the 5x5 area around the donut will be filled with cream'
+                    }
+                case EntityType.DONUT_HEALTH_GREEN:
+                    return {
+                        info: 'If the green donut is triggered by any attack, the 5x5 area around the donut will be fully healed'
+                    }
+                case EntityType.DONUT_STOP_PINK:
+                    return {
+                        info: 'If the pink donut is triggered by any attack, the opponent attack phase will stop immediately'
+                    }
+                case EntityType.DONUT_SURPRISE_YELLOW:
+                    return {
+                        info: 'If the yellow donut is triggered by any attack, it will randomly heal it\'s 5x5 area, fill it with cream, or stop the opponent\'s attack phase immediately'
                     }
                 default: return { info: 'Unkown building' }
             }
@@ -308,8 +328,12 @@ const languages = {
                 case EntityType.CHOCOLATE_FOUNTAIN: return 'Schokoladenbrunnen';
                 case EntityType.FRUIT_CANNON: return 'Fruchtkanone';
                 case EntityType.DONUT_FACTORY: return 'Donutfabrik';
-                case EntityType.DONUT_PORTAL_RED: return 'Rotes Donut-Portal';
-                case EntityType.DONUT_PORTAL_BLUE: return 'Blaues Donut-Portal';
+                case EntityType.DONUT_PORTAL_RED: return 'Roter Portal-Donut';
+                case EntityType.DONUT_PORTAL_BLUE: return 'Blauer Portal-Donut';
+                case EntityType.DONUT_STOP_PINK: return 'Pinker Stop-Donut';
+                case EntityType.DONUT_SURPRISE_YELLOW: return 'Gelber Überraschungs-Donut';
+                case EntityType.DONUT_HEALTH_GREEN: return 'Grüner Heilungs-Donut';
+                case EntityType.DONUT_CREAM_WHITE: return 'Weißer Sahne-Donut';
                 default: return 'Unbekannt';
             }
         },
@@ -370,7 +394,23 @@ const languages = {
                 case EntityType.DONUT_PORTAL_RED:
                 case EntityType.DONUT_PORTAL_BLUE:
                     return {
-                        info: 'Wenn der blaue Donut durch einen Angriff oder den Osterhasen ausgelöst wird, vertauscht ein Portal das Feld und ihre Einheiten mit dem, des dazugehörigen roten Donuts'
+                        info: 'Wenn der blaue Donut durch einen Angriff ausgelöst wird, vertauscht er durch ein Portal sein Feld und alle Einheiten mit dem dazugehörigen roten Donut'
+                    }
+                case EntityType.DONUT_CREAM_WHITE:
+                    return {
+                        info: 'Wenn der weiße Donut durch einen Angriff ausgelöst wird, füllt er seine 5x5 Umgebung mit Sahne'
+                    }
+                case EntityType.DONUT_HEALTH_GREEN:
+                    return {
+                        info: 'Wenn der grüne Donut durch einen Angriff ausgelöst wird, heilt er seine 5x5 Umgebung vollständig'
+                    }
+                case EntityType.DONUT_STOP_PINK:
+                    return {
+                        info: 'Wenn der pinke Donut durch einen Angriff ausgelöst wird, endet die Angriffsphase des Gegners sofort'
+                    }
+                case EntityType.DONUT_SURPRISE_YELLOW:
+                    return {
+                        info: 'Wenn der gelbe Donut durch einen Angriff ausgelöst wird, füllt er entweder zufällig seine 5x5 Umgebung mit Sahne, heilt sie vollständig, oder beendet die Angriffsphase des Gegners sofort'
                     }
                 default: return { info: 'Unbekanntes Gebäude' }
             }

@@ -45,7 +45,7 @@ export default class FactoryExtensionTest extends Situation {
         game.players[0].hasFactory = true;
         game.players[0].attacks[AttackType.TRUFFLE] = 1;
         game.players[0].donutProbability = 1;
-        game.players[0].donuts = [createEntity(EntityType.DONUT_PORTAL_BLUE), createEntity(EntityType.DONUT_PORTAL_RED)]
+        game.players[0].donuts = [createEntity(EntityType.DONUT_HEALTH_GREEN)]
         game.players[0].attacksPerTurn[AttackType.TRUFFLE] = 1;
 
         game.players[1].level = EmptyPlayerStats.level;
