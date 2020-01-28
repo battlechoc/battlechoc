@@ -961,7 +961,7 @@ app.get('/random/opponent', async (req, res) => {
         const statement = "SELECT * FROM players WHERE score > 0 AND NOT (name='') IS NOT FALSE AND NOT(id = ANY('{" + invalidOpponentIds.join() + "}'::text[]))";
         const queryResult = await dbPool.query(statement);
         if (queryResult.rows.length > 0) {
-            res.json(await createPlayerStatsObject(queryResult.rows[Math.floor(Math.random() * queryResult.rows)], true));
+            res.json(await createPlayerStatsObject(queryResult.rows[Math.floor(Math.random() * queryResult.rows.length)], true));
         } else {
             console.warn('Could not find a matching player for ', req.user.uid);
             res.status(404).json({ error: 'NO MATCHING PLAYER FOUND' });
