@@ -999,7 +999,6 @@ const addTrackRecord = async (userId, record) => {
         winner = record.winners[0].id;
         if (record.won === true && record.lost !== true) {
             gameResult = 'won';
-            this.props.playerInfos.uid
         } else if (record.lost === true && record.won !== true) {
             gameResult = 'lost';
         }
