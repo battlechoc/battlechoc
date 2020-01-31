@@ -32,21 +32,26 @@ class Gamefield {
     renderEntities(cell, remove=false) {
         if (remove) {
             cell.occupiedBy.forEach(entity => {
-                let phenotype = entity.type;
-                if (entity.type === EntityType.CREAM && cell.occupiedBy.filter(entity => !isDonut(entity.type)).length > 1 && this.isPlayerGameField) {
-                    phenotype = EntityType.CREAM + '.AROUND.BUILDING';
+                if (this.isPlayerGameField || !isDonut(entity.type)) {
+                    let phenotype = entity.type;
+                    if (entity.type === EntityType.CREAM && cell.occupiedBy.filter(entity => !isDonut(entity.type)).length > 1 && this.isPlayerGameField) {
+                        phenotype = EntityType.CREAM + '.AROUND.BUILDING';
+                    }
+                    
+                    this.removeEntity(entity, phenotype, cell);
                 }
-                this.removeEntity(entity, phenotype, cell);
             });
         } else {
             cell.occupiedBy.forEach(entity => {
-                let phenotype = entity.type;
-                if (entity.type === EntityType.CREAM && cell.occupiedBy.filter(entity => !isDonut(entity.type)).length > 1 && this.isPlayerGameField) {
-                    phenotype = EntityType.CREAM + '.AROUND.BUILDING';
-                }
+                if (this.isPlayerGameField || !isDonut(entity.type)) {
+                    let phenotype = entity.type;
+                    if (entity.type === EntityType.CREAM && cell.occupiedBy.filter(entity => !isDonut(entity.type)).length > 1 && this.isPlayerGameField) {
+                        phenotype = EntityType.CREAM + '.AROUND.BUILDING';
+                    }
 
-                if (entity.type === EntityType.CREAM || cell.occupiedBy.filter(entity => !isDonut(entity.type)).length === 1 || !cell.occupiedBy.map(building => building.type).includes(EntityType.CREAM) || this.isPlayerGameField) {
-                    this.createMeshInstance(phenotype, cell);
+                    if (entity.type === EntityType.CREAM || cell.occupiedBy.filter(entity => !isDonut(entity.type)).length === 1 || !cell.occupiedBy.map(building => building.type).includes(EntityType.CREAM) || this.isPlayerGameField) {
+                        this.createMeshInstance(phenotype, cell);
+                    }
                 }
             });
         }
@@ -106,10 +111,12 @@ class Gamefield {
             }
         });
 
-        playerField.grid.filter((cell, i) => !this.playerField.grid[i].occupiedBy.some(entity => isDonut(entity.type)) && cell.occupiedBy.some(entity => isDonut(entity.type))).forEach(cell => {
-            let field = this.scene.getMeshByName(this.fieldIdx + '.' + cell.type + '.' + cell.row + '.' + cell.col);
-            field.dispose();
-        });
+        if (this.isPlayerGameField) {
+            playerField.grid.filter((cell, i) => !this.playerField.grid[i].occupiedBy.some(entity => isDonut(entity.type)) && cell.occupiedBy.some(entity => isDonut(entity.type))).forEach(cell => {
+                    let field = this.scene.getMeshByName(this.fieldIdx + '.' + cell.type + '.' + cell.row + '.' + cell.col);
+                    field.dispose();
+            });
+        }
 
         let conatinsTrap = (playerField, position) => {
             return playerField.grid[position].occupiedBy.some(entity => isDonut(entity.type));
@@ -129,7 +136,9 @@ class Gamefield {
         changes.filter(position => position !== null).forEach(position => {
             if (conatinsTrap(this.playerField, position) && !conatinsTrap(playerField, position) && !playerField.grid[position].molten) {
                 this.renderEntities(this.playerField.grid[position], true);
-                this.createMeshInstance(playerField.grid[position].type, playerField.grid[position]);
+                if (this.isPlayerGameField) {
+                    this.createMeshInstance(playerField.grid[position].type, playerField.grid[position]);
+                }
                 this.playerField.grid[position] = JSON.parse(JSON.stringify(playerField.grid[position]));
                 this.renderEntities(this.playerField.grid[position]);
                 this.scene.render();

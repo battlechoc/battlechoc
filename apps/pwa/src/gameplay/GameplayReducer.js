@@ -21,6 +21,10 @@ function currentPlayer(gameState) {
     return gameState.players[gameState.currentPlayerIndex];
 }
 
+function containsEntity(cell, entityType) {
+    return cell.occupiedBy.map(entity => entity.type).includes(entityType)
+}
+
 function otherPlayer(gameState) {
     return gameState.players[1 - gameState.currentPlayerIndex];
 }
@@ -87,7 +91,6 @@ function prepareBuildPhase(gameState) {
     if (typeof currentPlayer(gameState).donuts !== 'undefined' && donutProbability < currentPlayer(gameState).donutProbability && currentPlayer(gameState).donuts.length === 0) {
         let donutFactory = getEntityDescriptor(EntityType.DONUT_FACTORY, currentPlayer(gameState).level);
         let donutType = Math.floor(Math.random() * donutFactory.donutTypes) + 1;
-        console.log(JSON.stringify(donutType), JSON.stringify(donutFactory.donutTypes));
         let donuts = [createEntity(EntityType.DONUT_PORTAL_BLUE), createEntity(EntityType.DONUT_PORTAL_RED)]
         if (donutType === 2) {
             donuts = [createEntity(EntityType.DONUT_HEALTH_GREEN)]
@@ -258,7 +261,17 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                     attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_PORTAL_BLUE);
                     
                     otherPlayer(state.game).activeDonuts = otherPlayer(state.game).activeDonuts.filter(donut => donut.assignment !== blueDonut.assignment);
-                    
+
+                    if (containsEntity(attackedCell, EntityType.CHOCOLATE_FOUNTAIN)) {
+                        let neighbors = getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, state.game.board, otherPlayerField(state.game).grid);
+                        neighbors.forEach(neighbor => {
+                            let otherFountainNearby = getCellPatch3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN));
+                            if (otherFountainNearby.length === 0) {
+                                neighbor.shielded = false;
+                            }
+                        });
+                    }
+
                     let pivot = JSON.parse(JSON.stringify(redDonutCell));
                     redDonutCell.occupiedBy = attackedCell.occupiedBy;
                     attackedCell.occupiedBy = pivot.occupiedBy;
@@ -291,7 +304,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                 otherPlayer(state.game).activeDonuts = otherPlayer(state.game).activeDonuts.filter(donut => donut.id !== whiteDonut.id);
                 let patch = getCellPatch5x5({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
                 patch.forEach(cell => {
-                    if (!cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) {
+                    if (!containsEntity(cell, EntityType.CREAM)) {
                         let cream = createEntity(EntityType.CREAM, opponent.level);
                         cream.position = { row: cell.row, col: cell.col };
                         cell.occupiedBy.push(cream);
@@ -319,7 +332,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                 } else if (donutType === 1) {
                     let patch = getCellPatch5x5({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
                     patch.forEach((cell) => {
-                        if (!cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) {
+                        if (!containsEntity(cell, EntityType.CREAM)) {
                             let cream = createEntity(EntityType.CREAM, opponent.level);
                             cream.position = { row: cell.row, col: cell.col };
                             cell.occupiedBy.push(cream);
@@ -342,7 +355,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
 
         if (attackType === AttackType.BUNNY) {
             const patch = getCellPatch3x3({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
-            const xmasFactoryFiltered = patch.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.XMAS_FACTORY));
+            const xmasFactoryFiltered = patch.filter(cell => containsEntity(cell, EntityType.XMAS_FACTORY));
             if (xmasFactoryFiltered.length === 0) {
                 logger.info("Bunny reveals some secrets.");
                 currentPlayer(state.game).statistics.espionages += 1;
@@ -354,7 +367,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
             } else {
                 logger.info("Bunny got captured. Bunny destroyed and xmas factory converted to ballista.");
                 currentPlayer(state.game).attacksPerTurn[AttackType.BUNNY] = 0;
-                const spyingEasterBunnyCell = currentPlayerField(state.game).grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.SPYING_EASTER_BUNNY))[0];
+                const spyingEasterBunnyCell = currentPlayerField(state.game).grid.filter(cell => containsEntity(cell, EntityType.SPYING_EASTER_BUNNY))[0];
                 spyingEasterBunnyCell.occupiedBy = spyingEasterBunnyCell.occupiedBy.filter(entity => entity.type !== EntityType.SPYING_EASTER_BUNNY);
 
                 let ballista = createEntity(EntityType.HOT_CHOCOLATE_BALLISTA, opponent.level);
@@ -371,7 +384,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
             }
 
             let neighbors = getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, state.game.board, otherPlayerField(state.game).grid);
-            let cellsWithFountains = neighbors.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CHOCOLATE_FOUNTAIN));
+            let cellsWithFountains = neighbors.filter(cell => containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN));
 
             let fountain = cellsWithFountains[0].occupiedBy.filter(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN)[0];
             fountain.hp = Math.round(fountain.hp - damage);
@@ -379,7 +392,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                 cellsWithFountains[0].occupiedBy = [];
                 neighbors = getCellPatch3x3({ row: cellsWithFountains[0].row, col: cellsWithFountains[0].col }, state.game.board, otherPlayerField(state.game).grid);
                 neighbors.forEach(neighbor => {
-                    const otherFountainNearby = getCellPatch3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CHOCOLATE_FOUNTAIN));
+                    const otherFountainNearby = getCellPatch3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN));
                     if (otherFountainNearby.length === 0) {
                         neighbor.shielded = false;
                     }
@@ -448,7 +461,7 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                         attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.CHOCOLATE_FOUNTAIN);
                         const neighbors = getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, state.game.board, otherPlayerField(state.game).grid);
                         neighbors.forEach(neighbor => {
-                            const otherFountainNearby = getCellPatch3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CHOCOLATE_FOUNTAIN));
+                            const otherFountainNearby = getCellPatch3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN));
                             if (otherFountainNearby.length === 0) {
                                 neighbor.shielded = false;
                             }
