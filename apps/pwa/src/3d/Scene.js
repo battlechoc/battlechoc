@@ -406,7 +406,9 @@ class Scene extends Component {
                     }, 3000);
                 } else {
                     let description = getEntityDescriptor(building.type, player.level);
-                    this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs);
+                    if (!isDonut(building.type)) {
+                        this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs);
+                    }
                     let cacaoDelta = player.cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = player.buildingsPerTurn - buildingsPerTurnBefore;
                     setTimeout(() => {

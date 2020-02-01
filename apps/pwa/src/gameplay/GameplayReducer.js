@@ -276,8 +276,8 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                     redDonutCell.occupiedBy = attackedCell.occupiedBy;
                     attackedCell.occupiedBy = pivot.occupiedBy;
 
-                    attackedCell.occupiedBy.forEach(entity => entity.position = redDonut.position);
-                    redDonutCell.occupiedBy.forEach(entity => entity.position = blueDonut.position);
+                    attackedCell.occupiedBy.forEach(entity => entity.position = { row: attackedCell.row, col: attackedCell.col});
+                    redDonutCell.occupiedBy.forEach(entity => entity.position = { row: redDonutCell.row, col: redDonutCell.col});
 
                     redDonutCell.type = attackedCell.type;
                     attackedCell.type = pivot.type;

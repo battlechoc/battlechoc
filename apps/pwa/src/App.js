@@ -5,7 +5,7 @@ import { Jukebox, Translation as t } from './ui/misc';
 import OfflineStore from './OfflineStore';
 import Rules from './gameplay/Rules';
 import { multiplayer } from './Multiplayer';
-import { AttackType, EntityType } from './gameplay/GameEntities';
+import { AttackType, EntityType, isDonut } from './gameplay/GameEntities';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
 import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, changeLanguage, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
@@ -53,6 +53,30 @@ class App extends Component {
         };
     }
 
+    detonateAtPosition = (row, col) => {
+        try {
+            this.scene.detonateAtPosition(row, col, true);
+            let playerBoard = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex]
+            let selectedCell = playerBoard.grid[row * this.props.game.board.size.cols + col];
+
+            if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM && !isDonut(entity.type)).length > 0 || selectedCell.shielded) {
+                let entity = selectedCell.occupiedBy.filter(entity => !isDonut(entity.type))[0];
+
+                let entitiesWithHp = selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM && !isDonut(entity.type));
+                if (entitiesWithHp.length > 0) {
+                    entity = entitiesWithHp[0];
+                }
+
+                console.log(entity);
+                this.scene.showEnergyBar(entity, undefined, true);
+            } else {
+                this.scene.hideEnergyBar(null, { row: row, col: col });
+            }
+        } catch (error) {
+            logger.warn(error);
+        }
+    }
+
     componentDidMount() {
         multiplayer.registerCallbacks({
             updatePlayerStats: this.props.updatePlayerStats,
@@ -63,28 +87,7 @@ class App extends Component {
             stopSessionRefresh: this.props.stopSessionRefresh,
             startSessionRefresh: this.props.startSessionRefresh,
             showQuickMessage: this.props.showQuickMessage,
-            detonateAtPosition: (row, col) => {
-                try {
-                    this.scene.detonateAtPosition(row, col, true);
-                    let playerBoard = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex]
-                    let selectedCell = playerBoard.grid[row * this.props.game.board.size.cols + col];
-
-                    if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0 || selectedCell.shielded) {
-                        let entity = selectedCell.occupiedBy[0];
-
-                        let entitiesWithHp = selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM);
-                        if (entitiesWithHp.length > 0) {
-                            entity = entitiesWithHp[0];
-                        }
-
-                        this.scene.showEnergyBar(entity, undefined, true);
-                    } else {
-                        this.scene.hideEnergyBar(null, { row: row, col: col });
-                    }
-                } catch (error) {
-                    logger.warn(error);
-                }
-            }
+            detonateAtPosition: this.detonateAtPosition
         });
 
         let browserLanguage = 'en';
@@ -314,7 +317,7 @@ class App extends Component {
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
                 if (opponentType === PlayerType.AUGUSTUS_GLOOP || opponentType === PlayerType.VIOLET_BEAUREGARDE) {
-                    this.opponent.simulateAttackPhase((row, col) => this.scene.detonateAtPosition(row, col, true), entity => this.scene.showEnergyBar(entity), position => this.scene.hideEnergyBar(null, position));
+                    this.opponent.simulateAttackPhase(this.detonateAtPosition);
                 }
             } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
                 let timeoutId = setTimeout(() => prevProps.finishTurn({ issuer: prevProps.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
