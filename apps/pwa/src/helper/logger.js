@@ -20,7 +20,7 @@ class Logger {
     }
 
     error(message) {
-        this.erros.push({ time: (new Date()).getTime(), message: message });
+        this.errors.push({ time: (new Date()).getTime(), message: message });
         if (window.location.host === 'localhost:3000') {
             console.error(message);
         }
