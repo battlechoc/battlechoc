@@ -407,7 +407,12 @@ class Multiplayer {
     }
 
     async surrenderGame(sessionId) {
-        await ServerRequest('post', '/surrender', { sessionId: sessionId });
+        try {
+            await ServerRequest('post', '/surrender', { sessionId: sessionId });
+        } catch (err) {
+            logger.error("Could not surrender");
+            logger.error(err);
+        }
     }
 
     signInAnonymouslyIfNotAlreadySignedIn() {
@@ -558,42 +563,46 @@ class Multiplayer {
     }
 
     async enterGameSession(sessionId, gameActions) {
-        let reference = firebase.firestore().collection('multiplayerGameSessions').doc(sessionId);
+        const sessionEventQueueReference = firebase.firestore().collection('multiplayerEventQueues').doc(sessionId);
         try {
-            var doc = await reference.get();
+            var sessionEventQueueDoc = await sessionEventQueueReference.get();
+            var session = (await ServerRequest('get', '/multiplayer/session/' + sessionId)).data;
+            if (typeof session === 'undefined') {
+                logger.error('trying to enter a non existing session');
+                return;
+            }
         } catch (error) {
-            logger.error('error while fetching the session reference', error.toString());
+            logger.error('error while fetching session information', error.toString());
             return;
         }
 
-        if (!doc.exists) {
+        if (!sessionEventQueueDoc.exists) {
             return;
         } else {
             this.gameActions = gameActions;
-            let session = doc.data();
+            const sessionEventQueue = sessionEventQueueDoc.data();
             if (session.game.isRunning) {
                 this.localPlayerIndex = session.game.players.findIndex(player => player.id === firebase.auth().currentUser.uid);
-                this.unsubscribeGameSession = reference.onSnapshot(doc => {
-                    let session = doc.data();
-                    this.sessionData = session;
-                    this.processEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
-                    this.validateEvents(session['events_from_' + this.localPlayerIndex]);
+                this.unsubscribeGameSession = sessionEventQueueReference.onSnapshot(doc => {
+                    const eventQueue = doc.data();
+                    this.processEvents(eventQueue.players[1 - this.localPlayerIndex].events);
+                    this.validateEvents(eventQueue.players[this.localPlayerIndex].events);
                 }, error => {
                     logger.error('encountered error while trying to establish observer of multiplayer session', error.toString());
                 });
 
-                this.opponentEventIndex = session['events_from_' + (1 - this.localPlayerIndex)].length;
-                this.playerEventIndex = session['events_from_' + this.localPlayerIndex].length;
-                this.serverEventIndex = session['events_from_' + this.localPlayerIndex].length;
+                this.opponentEventIndex = sessionEventQueue.players[1 - this.localPlayerIndex].events.length;
+                this.playerEventIndex = sessionEventQueue.players[this.localPlayerIndex].events.length;
+                this.serverEventIndex = sessionEventQueue.players[this.localPlayerIndex].events.length;
                 this.validActions = new Map();
-                for (let action of session['events_from_' + this.localPlayerIndex]) {
+                for (let action of sessionEventQueue.players[this.localPlayerIndex].events) {
                     if (typeof action.uid !== 'undefined') {
                         this.validActions.set(action.uid, { action: action, valid: true });
                     } else {
                         this.validActions.set(uuidv4(), { action: action, valid: true });
                     }
                 }
-                this.currentGameSession = doc.id;
+                this.currentGameSession = session.id;
                 this.localPlayerId = firebase.auth().currentUser.uid;
                 return session;
             } else {
