@@ -585,17 +585,17 @@ class Multiplayer {
                 this.localPlayerIndex = session.game.players.findIndex(player => player.id === firebase.auth().currentUser.uid);
                 this.unsubscribeGameSession = sessionEventQueueReference.onSnapshot(doc => {
                     const eventQueue = doc.data();
-                    this.processEvents(eventQueue.players[1 - this.localPlayerIndex]);
-                    this.validateEvents(eventQueue.players[this.localPlayerIndex]);
+                    this.processEvents(eventQueue.players[1 - this.localPlayerIndex].events);
+                    this.validateEvents(eventQueue.players[this.localPlayerIndex].events);
                 }, error => {
                     logger.error('encountered error while trying to establish observer of multiplayer session', error.toString());
                 });
 
-                this.opponentEventIndex = sessionEventQueue.players[1 - this.localPlayerIndex].length;
-                this.playerEventIndex = sessionEventQueue.players[this.localPlayerIndex].length;
-                this.serverEventIndex = sessionEventQueue.players[this.localPlayerIndex].length;
+                this.opponentEventIndex = sessionEventQueue.players[1 - this.localPlayerIndex].events.length;
+                this.playerEventIndex = sessionEventQueue.players[this.localPlayerIndex].events.length;
+                this.serverEventIndex = sessionEventQueue.players[this.localPlayerIndex].events.length;
                 this.validActions = new Map();
-                for (let action of sessionEventQueue.players[this.localPlayerIndex]) {
+                for (let action of sessionEventQueue.players[this.localPlayerIndex].events) {
                     if (typeof action.uid !== 'undefined') {
                         this.validActions.set(action.uid, { action: action, valid: true });
                     } else {
