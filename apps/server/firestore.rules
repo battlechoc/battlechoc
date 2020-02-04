@@ -5,6 +5,12 @@ service cloud.firestore {
       allow create: if true;
     }
     
+    match /multiplayerEventQueues/{session} {
+    	allow create: if true;
+      allow update: if true;
+      allow read: if true;
+    }
+
     match /multiplayerGameSessions/{session} {
     	allow create: if true;
       allow update: if true;

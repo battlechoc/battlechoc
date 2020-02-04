@@ -383,7 +383,7 @@ app.post('/user/challenge', async (req, res) => {
     if (opponentResult.rows.length === 0) {
         res.status(404).json({ error: 'OPPONENT "' + req.body.opponent + '" DOES NOT EXIST' });
     } else {
-        const opponent = createPlayerStatsObject(opponentResult.rows[0], true);
+        const opponent = await createPlayerStatsObject(opponentResult.rows[0], true);
         let language = opponent.language;
         if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
             language = t.getDefaultLanguage();
@@ -395,7 +395,7 @@ app.post('/user/challenge', async (req, res) => {
             if (playerResult.rows.length === 0) {
                 res.status(404).json({ error: 'PLAYER NOT FOUND' });
             } else {
-                const player = createPlayerStatsObject(playerResult.rows[0], true);
+                const player = await createPlayerStatsObject(playerResult.rows[0], true);
                 let coinToss = Math.round(Math.random());
 
                 let opponentLevel = opponent.level;
@@ -408,31 +408,23 @@ app.post('/user/challenge', async (req, res) => {
                     playerLevel = entities.EmptyPlayerStats.level;
                 }
 
-                let session = {
-                    players: [
-                        opponent.id,
-                        req.user.uid
-                    ],
-                    created: new Date(),
-                    last_changed: new Date(),
-                    status: 'MultiplayerGameSessionState.Running',
-                    state: null,
-                    result: null,
-                    events_from_0: [],
-                    events_from_1: [],
-                    lastProcessedEvent: [0, 0],
-                    game: {
-                        players: [entities.createPlayer(req.body.opponent, opponent.id, 'PlayerType.HUMAN', opponentLevel), entities.createPlayer(player.username, req.user.uid, 'PlayerType.HUMAN', playerLevel)],
+                let sessionEventQueue = {
+                    players: [{ id: opponent.id, events: [] }, { id: req.user.uid, events: [] }],
+                    lastProcessedEvent: [0, 0]
+                };
+
+                try {
+                    const databaseSession = await db.collection('multiplayerEventQueues').add(sessionEventQueue);
+                    const initialGameState = {
+                        players: [entities.createPlayer(req.body.opponent, sessionEventQueue.players[0].id, 'PlayerType.HUMAN', opponentLevel), entities.createPlayer(player.username, sessionEventQueue.players[1].id, 'PlayerType.HUMAN', playerLevel)],
                         currentPlayerIndex: coinToss,
                         state: 'GameStateTypes.CHOOSE_FIELD_OR_START',
                         isRunning: true,
                         winners: [],
                         board: entities.Board.generate({ rows: 10, cols: 10 }, Math.round(Math.random() * Math.pow(10, 8)))
-                    }
-                };
-
-                try {
-                    let databaseSession = await db.collection('multiplayerGameSessions').add(session);
+                    };
+                    await dbPool.query('INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, turns) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
+                        databaseSession.id, sessionEventQueue.players[0].id, sessionEventQueue.players[1].id, initialGameState, new Date(), new Date(), 0]);
                     const tokens = await getPlayerMessagingPermissionTokens(req.user.uid);
                     tokens.forEach((token) => {
                         const payload = {
@@ -457,27 +449,27 @@ app.post('/user/challenge', async (req, res) => {
     }
 });
 
-const processEvents = (session, events) => {
+const processEvents = (session, events, eventQueue) => {
     let unprocessedEvents = 0;
     let processedEvents = 0;
     let faildValidityChecks = 0;
 
-    if (events.length > (session.lastProcessedEvent[0] + session.lastProcessedEvent[1])) {
+    if (events.length > (eventQueue.lastProcessedEvent[0] + eventQueue.lastProcessedEvent[1])) {
         events.filter(event => !event.hasOwnProperty('processed')).forEach(event => {
             if (event.payload.issuer === session.game.players[0].id) {
                 if (session.game.currentPlayerIndex === 0 || event.type === gamestate.GameActionTypes.endGame) {
-                    if (session.lastProcessedEvent[0] < event.index) {
+                    if (eventQueue.lastProcessedEvent[0] < event.index) {
                         unprocessedEvents += 1;
-                    } else if (session.lastProcessedEvent[0] === event.index) {
+                    } else if (eventQueue.lastProcessedEvent[0] === event.index) {
                         if (gamestate.Rules.isActionValid(session.game, event)) {
                             gamestate.Reducer.updateState(session.game, event);
-                            session.lastProcessedEvent[0] += 1;
+                            eventQueue.lastProcessedEvent[0] += 1;
                             processedEvents += 1;
                             event.processed = true;
                         } else {
                             console.warn('Validity check failed for ' + JSON.stringify(event))
                             if (!event.hasOwnProperty('invalid')) {
-                                session.lastProcessedEvent[0] += 1;
+                                eventQueue.lastProcessedEvent[0] += 1;
                                 event.invalid = true;
                             }
                             faildValidityChecks += 1;
@@ -490,18 +482,18 @@ const processEvents = (session, events) => {
                 }
             } else {
                 if (session.game.currentPlayerIndex === 1 || event.type === gamestate.GameActionTypes.endGame) {
-                    if (session.lastProcessedEvent[1] < event.index) {
+                    if (eventQueue.lastProcessedEvent[1] < event.index) {
                         unprocessedEvents += 1;
-                    } else if (session.lastProcessedEvent[1] === event.index) {
+                    } else if (eventQueue.lastProcessedEvent[1] === event.index) {
                         if (gamestate.Rules.isActionValid(session.game, event)) {
                             gamestate.Reducer.updateState(session.game, event);
-                            session.lastProcessedEvent[1] += 1;
+                            eventQueue.lastProcessedEvent[1] += 1;
                             processedEvents += 1;
                             event.processed = true;
                         } else {
                             console.warn('Validity check failed for ' + JSON.stringify(event))
                             if (!event.hasOwnProperty('invalid')) {
-                                session.lastProcessedEvent[1] += 1;
+                                eventQueue.lastProcessedEvent[1] += 1;
                                 event.invalid = true;
                             }
                             faildValidityChecks += 1;
@@ -523,9 +515,9 @@ const processEvents = (session, events) => {
     }
 }
 
-const processEventsInOrder = session => {
-    let events = session.events_from_0;
-    events = events.concat(session.events_from_1);
+const processEventsInOrder = (session, eventQueue) => {
+    let events = eventQueue.players[0].events;
+    events = events.concat(eventQueue.players[1].events);
     events.sort((a, b) => {
         if (typeof a.emitted === 'undefined') {
             return -1;
@@ -538,14 +530,14 @@ const processEventsInOrder = session => {
 
     const timeout = new Date().getTime() + 10000;
 
-    var { unprocessedEvents, processedEvents, faildValidityChecks } = processEvents(session, events);
+    var { unprocessedEvents, processedEvents, faildValidityChecks } = processEvents(session, events, eventQueue);
     console.log(unprocessedEvents, processedEvents, faildValidityChecks)
     if (faildValidityChecks > 0) {
         console.warn('SOME EVENTS DID NOT PASS THE VALIDITY CHECK');
     }
 
     while (unprocessedEvents > 0 && processedEvents > 0 && (new Date().getTime()) > timeout) {
-        ({ unprocessedEvents, processedEvents, faildValidityChecks } = processEvents(session, events));
+        ({ unprocessedEvents, processedEvents, faildValidityChecks } = processEvents(session, events, eventQueue));
         console.log(unprocessedEvents, processedEvents, faildValidityChecks);
         if (faildValidityChecks > 0) {
             console.warn('SOME EVENTS DID NOT PASS THE VALIDITY CHECK');
@@ -553,110 +545,148 @@ const processEventsInOrder = session => {
     }
 
     if (new Date().getTime() > timeout) {
-        console.warn('Event loop hang up ' + JSON.stringify(session));
+        console.warn('Event loop hang up ' + JSON.stringify(eventQueue));
         return { error: 'INCORRECT EVENTS LOOP HANG UP' }
     } else {
         return { done: 'PROCESSED EVENTS' }
     }
 }
 
+const updateLastChanged = async (date, sessionId) => {
+    await dbPool.query('UPDATE multiplayer_sessions SET last_updated = $1 WHERE id = $2', [date, sessionId]);
+}
+
+const getSessionData = async (sessionId) => {
+    try {
+        const sessionQueryResult = await dbPool.query("SELECT * from multiplayer_sessions WHERE id = $1", [sessionId]);
+        if (sessionQueryResult.rows.length > 0) {
+            let session = {
+                id: sessionQueryResult.rows[0].id,
+                game: sessionQueryResult.rows[0].gamestate,
+                created: sessionQueryResult.rows[0].created,
+                last_changed: sessionQueryResult.rows[0].last_updated,
+                players: [sessionQueryResult.rows[0].player1, sessionQueryResult.rows[0].player2],
+                turns: sessionQueryResult.rows[0].turns
+            };
+            return session;
+        } else {
+            console.warn("Trying to fetch data for non existing session with id " + sessionId);
+            return undefined;
+        }
+    } catch (err) {
+        console.err("Could not fetch session from database.", err);
+        return undefined;
+    }
+}
+
+const updateSessionGameState = async (id, gameState, turns, lastChanged) => {
+    try {
+        await dbPool.query("UPDATE multiplayer_sessions SET gamestate = $1, last_updated = $2, turns = $3 WHERE id = $4",
+            [gameState, lastChanged, turns, id]);
+    } catch (err) {
+        console.err(err);
+    }
+}
+
+app.get('/multiplayer/session/:id', async (req, res) => {
+    try {
+        const session = await getSessionData(req.params.id);
+        if (typeof session === 'undefined') {
+            res.status(404).json({ error: 'REQUESTED SESSION DOES NOT EXIST' });
+        } else {
+            res.json(session);
+        }
+    } catch (err) {
+        console.error('Could not retrieve session data.', err);
+        res.status(500).json({ error: 'COULD NOT RETRIEVE SESSION DATA.' });
+    }
+});
+
 app.post('/multiplayer/relay/action', async (req, res) => {
-    let ref = db.collection('multiplayerGameSessions').doc(req.body.sessionId);
-    let doc = await ref.get();
-    if (!doc.exists) {
-        res.status(404).json({ error: 'SESSION NOT FOUND' });
+    const eventQueueReference = db.collection('multiplayerEventQueues').doc(req.body.sessionId);
+    let eventQueueDoc = await eventQueueReference.get();
+    if (!eventQueueDoc.exists) {
+        res.status(404).json({ error: 'EVENT QUEUE FOR SESSION NOT FOUND' });
     } else {
-        let session = doc.data();
-        if (!session.players.includes(req.user.uid)) {
+        let eventQueue = eventQueueDoc.data();
+        if (!eventQueue.players.some(player => player.id === req.user.uid)) {
             return res.status(401).end();
         }
 
-        let issuer = req.body.event.payload.issuer;
-
-        if (issuer === session.game.players[0].id) {
-            console.log('push event to player 0 event array', req.body.event)
+        const playerIndex = eventQueue.players.findIndex(player => player.id === req.body.event.payload.issuer);
+        if (playerIndex >= 0) {
+            console.log('push event to players event queue', req.body.event);
             try {
-                await ref.update({
-                    events_from_0: admin.firestore.FieldValue.arrayUnion(req.body.event),
-                    last_changed: new Date()
-                });
-            } catch (error) {
-                console.warn('Failed to push event ' + req.body.event.toString() + ' to the event list of player 0');
-                return res.status(500).json({ 'error': error });
-            }
-        } else if (issuer === session.game.players[1].id) {
-            console.log('push event to player 1 event array', req.body.event)
-            try {
-                await ref.update({
-                    events_from_1: admin.firestore.FieldValue.arrayUnion(req.body.event),
-                    last_changed: new Date()
-                });
-            } catch (error) {
-                console.warn('Failed to push event ' + req.body.event.toString() + ' to the event list of player 1');
-                return res.status(500).json({ 'error': error });
+                eventQueue.players[playerIndex].events.push(req.body.event);
+                await eventQueueReference.set(eventQueue, { merge: true });
+                await updateLastChanged(new Date(), req.body.sessionId);
+            } catch (err) {
+                console.log(err.toString());
+                console.error('Failed to push event ' + req.body.event.toString() + ' to the event list of player 0');
+                return res.status(500).json({ 'error': err.toString() });
             }
         } else {
             res.status(400).json({ error: 'UNKNOWN ISSUER' });
         }
 
         try {
-            doc = await ref.get();
+            eventQueueDoc = await eventQueueReference.get();
         } catch (error) {
             return res.status(500).json({ 'error': error });
         }
 
-        session = doc.data();
+        eventQueue = eventQueueDoc.data();
+        let session = await getSessionData(req.body.sessionId);
         let playerId = session.game.currentPlayerIndex;
-        let result = processEventsInOrder(session);
-        let updatedPlayerId = session.game.currentPlayerIndex;
-
-        if (playerId !== updatedPlayerId) {
-            const opponent = session.game.players[playerId].name;
-            const tokens = await getPlayerMessagingPermissionTokens(session.game.players[updatedPlayerId].id);
-            let expiredTokens = [];
-            await Promise.all(tokens.map(async (token) => {
-                const payload = {
-                    'notification': {
-                        'title': opponent + ' finished the turn @battlechoc',
-                        'body': 'Let\'s go. It\'s your move!',
-                        'click_action': 'https://battlechoc.com/session/' + req.body.sessionId,
-                        'image': 'https://battlechoc.com/icon-144x144.png'
-                    },
-                    'to': token
-                }
-
-                try {
-                    const response = await axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
-                    if (response.data.failure === 1 && typeof response.data.results !== 'undefined' && response.data.results.length > 0 && response.data.results[0].error === 'NotRegistered') {
-                        console.log('Cleanup expired user registration token ' + token);
-                        expiredTokens.push(token);
-                    } else {
-                        console.log('Successfully send notification');
-                        console.log(`Token ${token} is still valid`);
-                    }
-                } catch (error) {
-                    console.warn('PLAYER NOTIFICATION FAILED' + error.toString());
-                }
-            }));
-
-            if (expiredTokens.length === 0) {
-                console.log('No token update needed. All tokens are still valid')
-            } else {
-                await Promise.all(expiredTokens.map(async (expiredToken) => {
-                    await dbPool.query("DELETE FROM permissions WHERE token = $1 AND type = $2 AND player = $3", [expiredToken, 'messaging', session.game.players[updatedPlayerId].id]);
-                }));
-                console.log('Updating user tokens because some of them were invalid. Deleted tokens: ' + expiredTokens.toString());
-            }
-        }
-
+        let result = processEventsInOrder(session, eventQueue);
         if (result.hasOwnProperty('error')) {
             res.status(400).json(result);
         } else {
             try {
-                delete session.events_from_0;
-                delete session.events_from_1;
+                const turns = (typeof eventQueue.players[0].events !== 'undefined') ? eventQueue.players[0].events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
+                await updateSessionGameState(session.id, session.game, turns, new Date());
+                await eventQueueReference.update({
+                    lastProcessedEvent: eventQueue.lastProcessedEvent
+                });
+                let updatedPlayerId = session.game.currentPlayerIndex;
+                if (playerId !== updatedPlayerId) {
+                    const opponent = session.game.players[playerId].name;
+                    const tokens = await getPlayerMessagingPermissionTokens(session.game.players[updatedPlayerId].id);
+                    let expiredTokens = [];
+                    await Promise.all(tokens.map(async (token) => {
+                        const payload = {
+                            'notification': {
+                                'title': opponent + ' finished the turn @battlechoc',
+                                'body': 'Let\'s go. It\'s your move!',
+                                'click_action': 'https://battlechoc.com/session/' + req.body.sessionId,
+                                'image': 'https://battlechoc.com/icon-144x144.png'
+                            },
+                            'to': token
+                        }
 
-                await ref.set(session, { merge: true });
+                        try {
+                            const response = await axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
+                            if (response.data.failure === 1 && typeof response.data.results !== 'undefined' && response.data.results.length > 0 && response.data.results[0].error === 'NotRegistered') {
+                                console.log('Cleanup expired user registration token ' + token);
+                                expiredTokens.push(token);
+                            } else {
+                                console.log('Successfully send notification');
+                                console.log(`Token ${token} is still valid`);
+                            }
+                        } catch (error) {
+                            console.warn('PLAYER NOTIFICATION FAILED' + error.toString());
+                        }
+                    }));
+
+                    if (expiredTokens.length === 0) {
+                        console.log('No token update needed. All tokens are still valid')
+                    } else {
+                        await Promise.all(expiredTokens.map(async (expiredToken) => {
+                            await dbPool.query("DELETE FROM permissions WHERE token = $1 AND type = $2 AND player = $3", [expiredToken, 'messaging', session.game.players[updatedPlayerId].id]);
+                        }));
+                        console.log('Updating user tokens because some of them were invalid. Deleted tokens: ' + expiredTokens.toString());
+                    }
+                }
                 res.status(200).end();
             } catch (error) {
                 res.status(500).json({ 'error': error.toString() });
@@ -666,36 +696,39 @@ app.post('/multiplayer/relay/action', async (req, res) => {
 });
 
 app.post('/surrender', async (req, res) => {
-    let ref = db.collection('multiplayerGameSessions').doc(req.body.sessionId);
+    let eventQueueReference = db.collection('multiplayerEventQueues').doc(req.body.sessionId);
     try {
-        var doc = await ref.get();
+        var eventQueueDoc = await eventQueueReference.get();
     } catch (error) {
         return res.status(500).json({ 'error': error });
     }
 
-    if (!doc.exists) {
-        res.status(404).json({ error: 'SESSION NOT FOUND' });
+    if (!eventQueueDoc.exists) {
+        res.status(404).json({ error: 'EVENT QUEUE FOR SESSION NOT FOUND' });
     } else {
-        let session = doc.data();
-        if (!session.players.includes(req.user.uid)) {
+        let eventQueue = eventQueueDoc.data();
+        if (!eventQueue.players.some(player => player.id === req.user.uid)) {
             return res.status(401).end();
         }
 
-        let playerIndex = session.game.players.findIndex(player => player.id === req.user.uid);
-
+        let playerIndex = eventQueue.players.findIndex(player => player.id === req.user.uid);
         let event = {
-            index: session['events_from_' + playerIndex].length,
+            index: eventQueue.players[playerIndex].events.length,
             type: 'battlechoc/gameplay/endGame',
             payload: {
-                winners: session.game.players.filter(player => player.id !== req.user.uid),
+                winners: eventQueue.players.filter(player => player.id !== req.user.uid),
                 issuer: req.user.uid
             },
             sessionId: req.body.sessionId
         }
 
-        session['events_from_' + playerIndex].push(event);
-        session.lastProcessedEvent[playerIndex] += 1;
-        session.last_changed = new Date();
+        eventQueue.players[playerIndex].events.push(event);
+        eventQueue.lastProcessedEvent[playerIndex] += 1;
+
+        let session = await getSessionData(req.body.sessionId);
+        if (typeof session === 'undefined') {
+            res.status(404).json({ error: 'SESSION NOT FOUND' });
+        }
         session.game.isRunning = false;
         session.game.winners = event.payload.winners;
         session.game.players.filter(player => player.id !== req.user.uid)[0].statistics.won = true;
@@ -704,81 +737,57 @@ app.post('/surrender', async (req, res) => {
         session.game.players.filter(player => player.id === req.user.uid)[0].statistics.lost = true;
 
         try {
-            await ref.set(session);
+            const turns = (typeof eventQueue.players[0].events !== 'undefined') ? eventQueue.players[0].events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
+            await updateSessionGameState(session.id, session.game, turns, new Date());
+            await eventQueueReference.set(eventQueue);
             res.status(200).end();
-        } catch (error) {
-            res.status(500).json({ 'error': error });
+        } catch (err) {
+            console.error(err);
+            res.status(500).json({ 'error': 'COULD NOT UPDATE SESSION STATE' });
         }
     }
 });
 
 app.get('/multiplayer/sessions', async (req, res) => {
-    instanceCount += 1;
-    console.log("instance counter: " + instanceCount);
-
-    console.time("firestore");
     try {
-        var docs = await db.collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
-    } catch (error) {
-        return res.status(500).json({ error: error });
-    }
-    console.timeEnd("firestore");
+        const sessions = [];
+        const sessionQueryResult = await dbPool.query("SELECT * FROM multiplayer_sessions where (player1=$1 OR player2=$1) AND gamestate->>'isRunning' = 'true'", [req.user.uid]);
+        await Promise.all(sessionQueryResult.rows.map(async (row) => {
+            const playerIndex = (row.gamestate.players[0].id === req.user.uid) ? 0 : 1;
+            let session = {
+                'id': row.id,
+                'players': [row.player1, row.player2],
+                'status': 'game.status',
+                'last_changed': row.last_updated.getTime(),
+                'created': row.created.getTime(),
+                'myTurn': row.gamestate.currentPlayerIndex === playerIndex,
+                'turns': row.turns,
+                'statistics': row.gamestate.players[playerIndex].statistics
+            };
 
-    console.time("remains");
-    const games = [];
-    if (docs.size > 0) {
-        docs.forEach(doc => {
-            let game = doc.data();
-            if (game.game.isRunning) {
-                const playerIndex = game.game.players.findIndex(player => player.id === req.user.uid);
-                games.push({
-                    'id': doc.id,
-                    'players': game.players,
-                    'status': game.status,
-                    'last_changed': game.last_changed.toMillis(),
-                    'created': game.created.toMillis(),
-                    'myTurn': game.game.currentPlayerIndex === playerIndex,
-                    'turns': game['events_from_' + playerIndex].filter(event => event.type === 'battlechoc/gameplay/finishTurn').length,
-                    'statistics': game.game.players[playerIndex].statistics
-                });
-            }
-        })
-
-        for (let i = 0; i < games.length; i++) {
-            let game = games[i];
-            let opponentId = game.players.filter(playerId => playerId != req.user.uid)[0];
-            try {
-                const opponentQueryResult = await getPlayerFromId(opponentId);
-                if (opponentQueryResult.rows > 0) {
-                    const opponent = await createPlayerStatsObject(opponentQueryResult.rows[0], true);
-                    games[i].opponent = {
-                        name: opponent.username,
-                        ranking: ranking,
-                        level: level,
-                        drawn: drawn,
-                        losses: losses,
-                        winnings: winnings
-                    }
-                } else {
-                    games[i].game.isRunning = false;
-                    games[i].opponent = {
-                        name: 'Chocnonymous',
-                        ranking: 0,
-                        level: 0,
-                        drawn: 0,
-                        losses: 0,
-                        winnings: 0
-                    }
+            const opponentId = (row.player1 === req.user.uid) ? row.player2 : row.player1;
+            const opponentQueryResult = await getPlayerFromId(opponentId);
+            if (opponentQueryResult.rows.length > 0) {
+                const opponent = await createPlayerStatsObject(opponentQueryResult.rows[0], true);
+                const opponentRank = await computePlayerRanking(opponentQueryResult.rows[0])
+                session.opponent = {
+                    name: opponent.username,
+                    ranking: opponentRank,
+                    level: opponent.level,
+                    drawn: opponent.drawn,
+                    losses: opponent.losses,
+                    winnings: opponent.winnings
                 }
-            } catch (error) {
-                return res.status(500).json({ error: error });
+            } else {
+                console.error("Stale multiplayer session detected. Will be disabled. Id is " + session.id);
+                await dbPool.query("UPDATE multiplayer_sessions SET gamestate = gamestate || {\"isRunning\": false}' WHERE id=$1", [session.id]);
             }
-        }
-        console.timeEnd("remains");
-        res.json({ sessions: games })
-    } else {
-        console.timeEnd("remains");
-        res.json({ sessions: [] })
+            sessions.push(session);
+        }));
+        res.json({ sessions: sessions })
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: error });
     }
 })
 
@@ -866,7 +875,7 @@ app.get('/highscore', async (req, res) => {
 
             const playersCount = await approximatePlayersCount();
             let lastPage = Math.ceil(playersCount / pageSize);
-            const playersOnPageResult = await dbPool.query('SELECT * FROM players ORDER BY score DESC OFFSET $1 LIMIT $2', [(page - 1) * pageSize, pageSize]);
+            const playersOnPageResult = await dbPool.query('SELECT * FROM players WHERE score > 0 ORDER BY score DESC OFFSET $1 LIMIT $2', [(page - 1) * pageSize, pageSize]);
             let highscore = await playersFromQuery(playersOnPageResult.rows);
             highscore.sort((a, b) => {
                 if (a.ranking > b.ranking) {
@@ -938,8 +947,7 @@ app.get('/user/name', async (req, res) => {
 
 app.get('/user/:name', async (req, res) => {
     try {
-        const queryStatement = "SELECT * FROM players WHERE name = $1";
-        const queryResult = await dbPool.query(queryStatement, [req.params.name]);
+        const queryResult = await dbPool.query("SELECT * FROM players WHERE name = $1", [req.params.name]);
         if (queryResult.rows.length > 0) {
             res.json(await playersFromQuery(queryResult.rows));
         } else {
@@ -954,10 +962,10 @@ app.get('/user/:name', async (req, res) => {
 app.get('/random/opponent', async (req, res) => {
     try {
         invalidOpponentIds = [req.user.uid];
-        sessions = await db.collection('multiplayerGameSessions').where('players', 'array-contains', req.user.uid).get();
-        for (let session of sessions.docs) {
-            invalidOpponentIds.push(session.data().players.filter(id => id !== req.user.uid)[0]);
-        }
+        const sessionQueryResult = await dbPool.query("SELECT * FROM multiplayer_sessions where (player1=$1 OR player2=$1) AND gamestate->>'isRunning' = 'true'", [req.user.uid]);
+        await Promise.all(sessionQueryResult.rows.map(async (row) => {
+            invalidOpponentIds.push((row.player1 === req.user.uid) ? row.player2 : row.player1);
+        }));
         const statement = "SELECT * FROM players WHERE score > 0 AND NOT (name='') IS NOT FALSE AND NOT(id = ANY('{" + invalidOpponentIds.join() + "}'::text[]))";
         const queryResult = await dbPool.query(statement);
         if (queryResult.rows.length > 0) {
@@ -1242,34 +1250,5 @@ app.post('/user/language', async (req, res) => {
         res.status(400).json({ error: 'INVALID LANGUAGE GIVEN' });
     }
 });
-
-const importTrackRecord = async (userId, trackRecord) => {
-    trackRecord.forEach(async record => {
-        let gameResult = 'draw';
-        let winner;
-        let winnerType;
-        if (typeof record.winners === 'undefined' || record.winners.length === 0 || (typeof record.lost === 'undefined' && typeof record.won === 'undefined')) {
-            gameResult = 'open';
-        } else {
-            winner = record.winners[0].id;
-            winnerType = (record.winners[0].type === 'PlayerType.HUMAN') ? 'human' : 'npc';
-            if (record.won === true && record.lost !== true) {
-                gameResult = 'won';
-            } else if (record.lost === true && record.won !== true) {
-                gameResult = 'lost';
-            }
-        }
-        const id = (typeof record.id === 'undefined') ? uuidv4() : record.id;
-        try {
-            await dbPool.query('INSERT INTO track_records(id, player, winner, result, entities_destroyed, entities_molten, entities_revealed, entities_built, winner_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT DO NOTHING',
-                [id, userId, winner, gameResult, record.attacks, record.moltenFields, record.espionages, record.builtEntities, winnerType]);
-        } catch (err) {
-            console.error('Could not insert entry into track_records.', err);
-            console.error(importedTrackIds);
-            console.error(importedTrackIds.includes(id));
-            console.error(userId + " -- " + id);
-        }
-    });
-}
 
 exports.api = functions.region('europe-west2').https.onRequest(app);
