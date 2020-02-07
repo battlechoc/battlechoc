@@ -37,7 +37,8 @@ const EmptyPlayerStats = Object.freeze({
         'EntityType.SPYING_EASTER_BUNNY': 0,
         'EntityType.XMAS_FACTORY': 0,
         'EntityType.HOT_CHOCOLATE_BALLISTA': 0,
-        'EntityType.CHOCOLATE_FOUNTAIN': 0
+        'EntityType.CHOCOLATE_FOUNTAIN': 0,
+        'EntityType.DONUT_FACTORY': 0
     }
 });
 

@@ -8,6 +8,16 @@
   display: flex;
 }
 
+#donutSelection {
+  position: absolute;
+  bottom: 59px;
+  left: 0;
+  z-index: 1;
+  margin-bottom: 5px;
+  margin-left: 5px;
+  display: flex;
+}
+
 #attackSelection {
   position: absolute;
   bottom: 0;
@@ -54,6 +64,17 @@
 .fruitCannon.preview { background-position: 0% -200%; }
 .ballista.preview { background-position: -200% -100%; }
 
+.donut.preview { 
+  background-image: url('/images/donut_icon_palette.png') !important;
+  background-size: contain;
+}
+.donut.factory.preview { background-position: 0% 0%; }
+.stop.donut.preview { background-position: 500% 0%; }
+.portal.donut.preview { background-position: 400% 0%; }
+.surprise.donut.preview { background-position: 300% 0%; }
+.health.donut.preview { background-position: 200% 0%; }
+.cream.donut.preview { background-position: 100% 0%; }
+
 .preview {
   margin-left: 5px;
   user-select: none;
@@ -86,9 +107,26 @@
 
 @media screen and (min-width: 901px) {
   .preview {
+    width: 54px !important;
+    height: 54px !important;
+    background-size: 216px 162px;
+  }
+
+  .donut.preview {
+    width: 54px !important;
+    height: 54px !important;
+    background-size: 324px 54px;
+  }
+
+  .donut-visiblity {
     width: 54px;
     height: 54px;
-    background-size: 216px 162px;
+  }
+
+  .donut-visiblity svg {
+    font-size: 34px;
+    width: 34px !important;
+    height: 34px !important;
   }
 }
 
@@ -99,8 +137,27 @@
     background-size: 168px 126px;
   }
 
+  .donut.preview {
+    width: 42px !important;
+    height: 42px !important;
+    background-size: 252px 42px;
+  }
+
   .attackCount {
     font-size: 1.8em;
+  }
+
+  #donutSelection {
+    bottom: 47px;
+  }
+
+  .donut-visiblity {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .donut-visiblity svg {
+    font-size: 24px;
   }
 }
 
@@ -110,6 +167,18 @@
     height: 30px;
     border-width: 2px !important;
     background-size: 120px 90px;
+  }
+
+  .donut.preview {
+    width: 30px !important;
+    height: 30px !important;
+    background-size: 330px 30px;
+  }
+
+  #donutSelection {
+    bottom: 35px;
+    margin-bottom: 0px;
+    margin-left: 0px;
   }
 
   .selected .preview {
@@ -129,5 +198,15 @@
     flex-flow: row wrap;
     margin-bottom: 0px;
     margin-left: 0px;
+  }
+
+  .donut-visiblity {
+    width: 30px !important;
+    height: 30px !important;
+    min-height: unset !important; 
+  }
+
+  .donut-visiblity svg {
+    font-size: 18px;
   }
 }

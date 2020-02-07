@@ -19,6 +19,9 @@ export default class Situation {
                     currentPlayerIndex: 0,
                     board: Board.generate({rows: this.boardSize, cols: this.boardSize}, 42),
                     isRunning: true,
+                    donutProbability: 0,
+                    donuts: [],
+                    activeDonuts: [],
                     winners: []
                 }
             },

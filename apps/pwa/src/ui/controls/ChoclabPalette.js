@@ -82,6 +82,10 @@ const ChoclabPalette = props => {
         type: EntityType.HOT_CHOCOLATE_BALLISTA,
         className: 'ballista',
         alt: 'hot chocolate ballista',
+    },{
+        type: EntityType.DONUT_FACTORY,
+        className: 'donutFactory',
+        alt: 'donut factory'
     }];
 
     let selectEntity = buildingType => {

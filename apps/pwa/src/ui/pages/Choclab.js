@@ -159,6 +159,10 @@ const useStyles = makeStyles(theme => ({
     cacaoPerTurn: { backgroundColor: 'rgb(69, 123, 130)' },
     area: { backgroundColor: 'rgb(69, 123, 130)' },
     attack: { backgroundColor: 'rgb(91, 47, 25)' },
+    donutProbability: { backgroundColor: 'rgb(69, 123, 130)' },
+    donutTypes: { backgroundColor: 'rgb(91, 47, 25)' },
+    donutProbabilityForecast: { backgroundColor: 'rgba(69, 123, 130, 0.4)' },
+    donutTypesForecast: { backgroundColor: 'rgba(91, 47, 25, 0.4)' },
     hpForecast: { backgroundColor: 'rgba(50, 77, 92, 0.4)' },
     buildingsPerTurnForecast: { backgroundColor: 'rgba(69, 123, 130, 0.4)' },
     cacaoPerTurnForecast: { backgroundColor: 'rgba(69, 123, 130, 0.4)' },
@@ -306,7 +310,7 @@ const Choclab = props => {
                     <h3>{t[props.language].TOOLTIP_BUILDING_TITLE(entityType)}</h3>
                     { nextLevelDescription }
                     { selectedEntity ? Object.keys(selectedEntity)
-                        .filter(field => ['hp','area','buildingsPerTurn','cacaoPerTurn','attack'].includes(field)).map(attribute => {
+                        .filter(field => ['hp','area','buildingsPerTurn','cacaoPerTurn','attack','donutProbability','donutTypes'].includes(field)).map(attribute => {
                         let percentage = (currentEntity[attribute] / highlyDevelopedEntity[attribute]) * 100;
                         let percentageForcast = (upgradedEntity[attribute] / highlyDevelopedEntity[attribute]) * 100;
                         let attributeDescription = <span className={classes.upgrade}>{currentEntity[attribute]}</span>;
