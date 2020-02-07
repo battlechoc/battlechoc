@@ -23,6 +23,9 @@ const EmptyPlayerStats = Object.freeze({
     username: 'Chocnonymous',
     coins: 0,
     score: 0,
+    winnings: 0,
+    drawn: 0,
+    losses: 0,
     trackRecord: [],
     level: {
         'EntityType.CREAM': 0,
@@ -65,8 +68,6 @@ class Multiplayer {
         };
 
         firebase.initializeApp(firebaseConfig);
-        firebase.firestore().enablePersistence()
-            .catch(err => logger.info("could not enable offline persistence of firestore.", err));
 
         firebase.auth().onAuthStateChanged((user) => {
             this.authStateChanged(user);
@@ -84,14 +85,12 @@ class Multiplayer {
         return firebase.auth().currentUser && 'Notification' in window && Notification.permission === 'default';
     }
 
-    askForNotificationPermission() {      
-        let user = firebase.auth().currentUser;
+    askForNotificationPermission() {
         Notification.requestPermission().then((permission) => {
             if (permission === 'granted') {
-                this.messaging.getToken().then((currentToken) => {
+                this.messaging.getToken().then(async (currentToken) => {
                     if (currentToken) {
-                        let ref = firebase.firestore().collection('permissions').doc(user.uid);
-                        ref.set({ messaging: firebase.firestore.FieldValue.arrayUnion(currentToken) }, { merge: true });
+                        await ServerRequest('post', '/user/permissions', { token: currentToken });
                     } else {
                         logger.info('No Instance ID token available. Request permission to generate one.');
                     }
@@ -100,9 +99,8 @@ class Multiplayer {
                 });
 
                 this.messaging.onTokenRefresh(() => {
-                    this.messaging.getToken().then((refreshedToken) => {
-                        let ref = firebase.firestore().collection('permissions').doc(user.uid);
-                        ref.set({ messaging: firebase.firestore.FieldValue.arrayUnion(refreshedToken) }, { merge: true });
+                    this.messaging.getToken().then(async (refreshedToken) => {
+                        await ServerRequest('post', '/user/permissions', { token: refreshedToken });
                     }).catch((err) => {
                         logger.info('Unable to retrieve refreshed token ', err);
                     });
@@ -119,11 +117,12 @@ class Multiplayer {
                 this.callbacks.notifyPlayerSignedIn({ email: user.email, uid: user.uid, name: user.displayName, isAnonymous: user.isAnonymous });
             }
 
-            firebase.firestore().collection('players').doc(user.uid).set({}, { merge: true }).then(() => {
+            try {
+                await ServerRequest('post', '/user');
                 this.mergePlayerStats();
-            }).catch(err => {
+            } catch (err) {
                 logger.info("could not create player entry.", err);
-            });
+            }
 
             this.localPlayer = user;
 
@@ -146,37 +145,40 @@ class Multiplayer {
         return playerIdx === this.localPlayerIndex;
     }
 
-    pushGameStats(gameStats) {
+    computeTrackRecordStats(trackRecord) {
+        if (typeof trackRecord !== 'undefined' && firebase.auth().currentUser) {
+            let finishedGames = trackRecord.filter(record => typeof record.winners !== 'undefined');
+            const winnings = finishedGames.filter(record => record.winners.filter(winner => winner.id === firebase.auth().currentUser.uid || winner.name === 'Charlie Bucket').length === 1).length;
+            const drawn = finishedGames.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
+            return {
+                winnings: winnings,
+                drawn: drawn,
+                losses: finishedGames.length - winnings - drawn
+            }
+        } else {
+            return { winnings: 0, drawn: 0, losses: 0 };
+        }
+    }
+
+    async pushGameStats(gameStats) {
         if (firebase.auth().currentUser) {
-            const playerInfosRef = firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid);
-            playerInfosRef.get().then(doc => {
-                if (!doc.exists) {
-                    logger.warn('No such document!');
-                } else {
-                    let playerStats = doc.data();
-                    if (typeof playerStats.trackRecord === 'undefined') {
-                        playerStats.trackRecord = [];
-                    }
-                    playerStats.trackRecord.push(...gameStats);
-                    let calculatedCoins = this.calculateCoinsFromTrackRecord(gameStats);
-                    playerStats.coins = playerStats.coins + calculatedCoins;
-                    playerStats.score = isNaN(playerStats.score) ? calculatedCoins : playerStats.score + calculatedCoins;
-                    playerInfosRef.update(playerStats).catch(err => {
-                        logger.warn("could not update player track record.");
-                        logger.warn(err);
-                    });
-                    this.callbacks.updatePlayerStats(playerStats);
-                }
-            }).catch(err => {
-                logger.warn("could not retrieve player track record.");
+            try {
+                const data = (await ServerRequest('post', '/user/trackrecords', { stats: gameStats })).data;
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player track record.");
                 logger.warn(err);
-            });
+            }
         } else {
             OfflineStore.playerStore.get('stats').then(playerStats => {
                 if (typeof playerStats.trackRecord === 'undefined') {
                     playerStats.trackRecord = [];
                 }
                 playerStats.trackRecord.push(...gameStats);
+                let trackRecordStats = this.computeTrackRecordStats(playerStats.trackRecord);
+                playerStats.winnings = trackRecordStats.winnings;
+                playerStats.drawn = trackRecordStats.drawn;
+                playerStats.losses = trackRecordStats.losses;
                 let calculatedCoins = this.calculateCoinsFromTrackRecord(gameStats);
                 playerStats.coins = playerStats.coins + calculatedCoins;
                 playerStats.score = isNaN(playerStats.score) ? calculatedCoins : playerStats.score + calculatedCoins;
@@ -194,60 +196,21 @@ class Multiplayer {
         if (firebase.auth().currentUser) {
             try {
                 var offlineAccount = await OfflineStore.playerStore.get('stats');
-            } catch (error) {
-                logger.warn('failed to get player infos from offline store', error);
+            } catch (err) {
+                logger.warn('failed to get player infos from offline store', err);
                 return this.fetchPlayerStats();
             }
 
             if (typeof offlineAccount === 'undefined') {
                 this.fetchPlayerStats();
             } else {
-                let ref = firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid);
-                let doc = await ref.get();
-                if (!doc.exists) {
-                    try {
-                        firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).set(offlineAccount);
-                    } catch (error) {
-                        logger.info('could not store stats for player', error);
-                    }
-                } else {
-                    let onlineAccount = doc.data();
-
-                    // downward compatibility for old level system
-                    if (typeof onlineAccount.level !== 'undefined') {
-                        if (typeof Object.values(onlineAccount.level)[0] === 'object') {
-                            console.log('UPDATE TO A NEW LEVEL SYSTEM VERSION')
-                            onlineAccount.level = EmptyPlayerStats.level;
-                            ref.set({ level: EmptyPlayerStats.level }, { merge: true });
-                        }
-                    } else {
-                        onlineAccount.level = EmptyPlayerStats.level;
-                    }
-
-                    if (typeof onlineAccount.level['EntityType.DONUT_FACTORY'] === 'undefined') {
-                        onlineAccount.level['EntityType.DONUT_FACTORY'] = 0;
-                    }
-
-                    if (typeof onlineAccount.trackRecord === 'undefined') {
-                        onlineAccount.trackRecord = [];
-                    }
-                    if (typeof onlineAccount.coins === 'undefined') {
-                        onlineAccount.coins = 0;
-                    }
-
-                    let onlineRecords = onlineAccount.trackRecord.map(record => record.id);
-                    offlineAccount.trackRecord.forEach(record => {
-                        if (!onlineRecords.includes(record.id)) {
-                            onlineAccount.trackRecord.push(record);
-                            onlineAccount.coins += this.calculateCoinsFromTrackRecord([record]);
-                            onlineAccount.score += this.calculateCoinsFromTrackRecord([record]);
-                        }
-                    });
-
-                    ref.update(onlineAccount).catch(error => logger.warn("could not update player track record.", error));
-                    OfflineStore.playerStore.set('stats', onlineAccount).catch(error => logger.warn("could not set new player stats in idb.", error));
-
-                    this.callbacks.updatePlayerStats(onlineAccount);
+                try {
+                    const data = (await ServerRequest('post', '/user/merge', { playerInfo: offlineAccount })).data;
+                    OfflineStore.playerStore.set('stats', data.mergedPlayerInfo).catch(error => logger.warn("could not set new player stats in idb.", error));
+                    this.callbacks.updatePlayerStats(data.mergedPlayerInfo);
+                } catch (err) {
+                    logger.warn('Could not merge stats.', err);
+                    return this.fetchPlayerStats();
                 }
             }
         }
@@ -255,29 +218,21 @@ class Multiplayer {
 
     async fetchPlayerStats() {
         if (firebase.auth().currentUser) {
-            let ref = firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid);
-
+            let data;
             try {
-                var doc = await ref.get();
-            } catch (error) {
-                return logger.warn(error);
+                data = (await ServerRequest('get', '/user')).data;
+                if (typeof data.stats === 'undefined') {
+                    data = await ServerRequest('post', '/user');
+                }
+            } catch (err) {
+                logger.warn('not able to fetch player stats from backend', err);
+                data = { stats: EmptyPlayerStats };
             }
 
-            if (doc.exists) {
-                // downward compatibility for old level system 
-                if (typeof Object.values(doc.data().level)[0] === 'object') {
-                    console.log('UPDATE TO A NEW LEVEL SYSTEM VERSION')
-                    doc.data().level = EmptyPlayerStats.level;
-                    ref.set({ level: EmptyPlayerStats.level }, { merge: true });
-                }
-                this.callbacks.updatePlayerStats(doc.data());
-            } else {
-                try {
-                    await ref.set(EmptyPlayerStats);
-                    this.callbacks.updatePlayerStats(EmptyPlayerStats);
-                } catch (error) {
-                    logger.info('Could not store coins for player', error);
-                }
+            try {
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                return logger.warn('cannot persist player coins', err);
             }
         } else {
             try {
@@ -292,6 +247,10 @@ class Multiplayer {
                 OfflineStore.playerStore.set('stats', EmptyPlayerStats);
                 this.callbacks.updatePlayerStats(EmptyPlayerStats);
             } else {
+                let trackRecordStats = this.computeTrackRecordStats(offlineAccount.trackRecord);
+                offlineAccount.winnings = trackRecordStats.winnings;
+                offlineAccount.drawn = trackRecordStats.drawn;
+                offlineAccount.losses = trackRecordStats.losses;
                 this.callbacks.updatePlayerStats(offlineAccount);
             }
         }
@@ -337,12 +296,11 @@ class Multiplayer {
 
     async createChallengeMeLink() {
         if (firebase.auth().currentUser) {
-            let doc = await firebase.firestore().collection('players').doc(firebase.auth().currentUser.uid).get();
-            if (doc.exists) {
-                let player = doc.data();
-                if (typeof player.username !== 'undefined') {
-                    return 'https://battlechoc.com/' + player.username;
-                }
+            try {
+                let data = (await ServerRequest('get', '/user/name')).data;
+                return 'https://battlechoc.com/' + data.name;
+            } catch (error) {
+                logger.warn(error)
             }
         }
     }
@@ -364,7 +322,7 @@ class Multiplayer {
                 let response = await ServerRequest('get', '/multiplayer/sessions');
                 this.callbacks.updateMultiplayerSessions(response.data.sessions);
                 if (returnSession) {
-                    return response.data.sessions.filter(session => session.id === returnSession );
+                    return response.data.sessions.filter(session => session.id === returnSession);
                 }
             } catch (error) {
                 logger.warn('error while fetching player sessions ' + error);
@@ -442,7 +400,7 @@ class Multiplayer {
             }
         } else {
             logger.warn('user not logged in');
-        }        
+        }
     }
 
     async findRandomPlayer() {
@@ -450,7 +408,12 @@ class Multiplayer {
     }
 
     async surrenderGame(sessionId) {
-        await ServerRequest('post', '/surrender', { sessionId: sessionId });
+        try {
+            await ServerRequest('post', '/surrender', { sessionId: sessionId });
+        } catch (err) {
+            logger.error("Could not surrender");
+            logger.error(err);
+        }
     }
 
     signInAnonymouslyIfNotAlreadySignedIn() {
@@ -601,42 +564,46 @@ class Multiplayer {
     }
 
     async enterGameSession(sessionId, gameActions) {
-        let reference = firebase.firestore().collection('multiplayerGameSessions').doc(sessionId);
+        const sessionEventQueueReference = firebase.firestore().collection('multiplayerEventQueues').doc(sessionId);
         try {
-            var doc = await reference.get();
+            var sessionEventQueueDoc = await sessionEventQueueReference.get();
+            var session = (await ServerRequest('get', '/multiplayer/session/' + sessionId)).data;
+            if (typeof session === 'undefined') {
+                logger.error('trying to enter a non existing session');
+                return;
+            }
         } catch (error) {
-            logger.error('error while fetching the session reference', error.toString());
+            logger.error('error while fetching session information', error.toString());
             return;
         }
 
-        if (!doc.exists) {
+        if (!sessionEventQueueDoc.exists) {
             return;
         } else {
             this.gameActions = gameActions;
-            let session = doc.data();
+            const sessionEventQueue = sessionEventQueueDoc.data();
             if (session.game.isRunning) {
                 this.localPlayerIndex = session.game.players.findIndex(player => player.id === firebase.auth().currentUser.uid);
-                this.unsubscribeGameSession = reference.onSnapshot(doc => {
-                    let session = doc.data();
-                    this.sessionData = session;
-                    this.processEvents(session['events_from_' + (1 - this.localPlayerIndex)]);
-                    this.validateEvents(session['events_from_' + this.localPlayerIndex]);
+                this.unsubscribeGameSession = sessionEventQueueReference.onSnapshot(doc => {
+                    const eventQueue = doc.data();
+                    this.processEvents(eventQueue.players[1 - this.localPlayerIndex].events);
+                    this.validateEvents(eventQueue.players[this.localPlayerIndex].events);
                 }, error => {
                     logger.error('encountered error while trying to establish observer of multiplayer session', error.toString());
                 });
 
-                this.opponentEventIndex = session['events_from_' + (1 - this.localPlayerIndex)].length;
-                this.playerEventIndex = session['events_from_' + this.localPlayerIndex].length;
-                this.serverEventIndex = session['events_from_' + this.localPlayerIndex].length;
+                this.opponentEventIndex = sessionEventQueue.players[1 - this.localPlayerIndex].events.length;
+                this.playerEventIndex = sessionEventQueue.players[this.localPlayerIndex].events.length;
+                this.serverEventIndex = sessionEventQueue.players[this.localPlayerIndex].events.length;
                 this.validActions = new Map();
-                for (let action of session['events_from_' + this.localPlayerIndex]) {
+                for (let action of sessionEventQueue.players[this.localPlayerIndex].events) {
                     if (typeof action.uid !== 'undefined') {
                         this.validActions.set(action.uid, { action: action, valid: true });
                     } else {
                         this.validActions.set(uuidv4(), { action: action, valid: true });
                     }
                 }
-                this.currentGameSession = doc.id;
+                this.currentGameSession = session.id;
                 this.localPlayerId = firebase.auth().currentUser.uid;
                 return session;
             } else {

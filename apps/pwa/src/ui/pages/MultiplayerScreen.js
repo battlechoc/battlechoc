@@ -279,9 +279,6 @@ class MultiplayerScreen extends Component {
                                     className="icon"
                                     disabled={this.state.highscorePage === this.state.highscoreLastPage}
                                     onClick={() => {
-                                        console.log(this.state.highscorePage)
-                                        console.log(this.state.highscorePage + 1)
-                                        console.log(this.state.highscoreLastPage)
                                         this.openHighscorePage(Math.min(this.state.highscorePage + 1, this.state.highscoreLastPage))}
                                     }>
                                     <ChevronRight />
@@ -300,6 +297,7 @@ class MultiplayerScreen extends Component {
                             withScore={true}
                             username={this.props.account.username}
                             players={this.state.highscore} 
+                            friends={this.props.friends}
                             removeFriend={this.removeFriend}
                             addFriend={this.addFriend}
                             challenge={this.challengePlayer}

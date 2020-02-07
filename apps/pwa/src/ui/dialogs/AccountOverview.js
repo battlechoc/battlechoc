@@ -140,11 +140,10 @@ const AccountOverview = props => {
             .reduce((value, prev) => value + prev, 1);
         }
 
-        if (typeof props.playerInfos.stats.trackRecord !== 'undefined' && firebase.auth().currentUser) {
-            let finishedGames = props.playerInfos.stats.trackRecord.filter(record => typeof record.winners !== 'undefined');
-            winnings = finishedGames.filter(record => record.winners.filter(winner => winner.id === firebase.auth().currentUser.uid || winner.name === 'Charlie Bucket').length === 1).length;
-            drawn = finishedGames.filter(record => typeof record.winners !== 'undefined' && record.winners.length > 1).length;
-            losses = finishedGames.length - winnings - drawn;
+        if (firebase.auth().currentUser) {
+            winnings = props.playerInfos.stats.winnings;
+            drawn = props.playerInfos.stats.drawn;
+            losses = props.playerInfos.stats.losses;
         }
 
         if (firebase.auth().currentUser && !firebase.auth().currentUser.isAnonymous) {
