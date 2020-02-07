@@ -262,12 +262,16 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
                     
                     otherPlayer(state.game).activeDonuts = otherPlayer(state.game).activeDonuts.filter(donut => donut.assignment !== blueDonut.assignment);
 
-                    if (containsEntity(attackedCell, EntityType.CHOCOLATE_FOUNTAIN)) {
-                        let neighbors = getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, state.game.board, otherPlayerField(state.game).grid);
+                    if ((!containsEntity(attackedCell, EntityType.CHOCOLATE_FOUNTAIN) && containsEntity(redDonutCell, EntityType.CHOCOLATE_FOUNTAIN)) ||
+                        (containsEntity(attackedCell, EntityType.CHOCOLATE_FOUNTAIN) && !containsEntity(redDonutCell, EntityType.CHOCOLATE_FOUNTAIN))) {
+                        let fountain = [...attackedCell.occupiedBy, ...redDonutCell.occupiedBy].find(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN);
+                        let neighbors = [...getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, state.game.board, otherPlayerField(state.game).grid),
+                                         ...getCellPatch3x3({ row: redDonutCell.row, col: redDonutCell.col }, state.game.board, otherPlayerField(state.game).grid)];
                         neighbors.forEach(neighbor => {
-                            let otherFountainNearby = getCellPatch3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN));
-                            if (otherFountainNearby.length === 0) {
-                                neighbor.shielded = false;
+                            let otherFountainsNearby = getCellPatch3x3({ row: neighbor.row, col: neighbor.col }, state.game.board, otherPlayerField(state.game).grid).filter(cell => containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN));
+                            otherFountainsNearby = otherFountainsNearby.filter(cell => !cell.occupiedBy.some(entity => entity.id === fountain.id));
+                            if (otherFountainsNearby.length === 0) {
+                                neighbor.shielded = !neighbor.shielded;
                             }
                         });
                     }
@@ -382,7 +386,6 @@ const gameplayReducer = createReducer({ level: EmptyPlayerStats.level }, {
             if (attackType === AttackType.TRUFFLE) {
                 damage = 0.1 * damage;
             }
-
             let neighbors = getCellPatch3x3({ row: attackedCell.row, col: attackedCell.col }, state.game.board, otherPlayerField(state.game).grid);
             let cellsWithFountains = neighbors.filter(cell => containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN));
 

@@ -20,7 +20,7 @@ class Gamefield {
         let playerField = this.getPlayerField();
         playerField.grid.forEach((cell, i) => {
             if (!cell.molten) {
-                if (!cell.occupiedBy.some(entity => isDonut(entity.type))) {
+                if (!cell.occupiedBy.some(entity => isDonut(entity.type)) || !this.isPlayerGameField) {
                     this.createMeshInstance(cell.type, cell);
                 }
                 

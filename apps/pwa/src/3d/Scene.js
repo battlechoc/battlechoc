@@ -57,7 +57,8 @@ class Scene extends Component {
             INCREASE_CACAO_PER_TURN: 'InfoType.INCREASE_CACAO_PER_TURN',
             INCREASE_ATTACKS_PER_TURN: 'InfoType.INCREASE_ATTACKS_PER_TURN',
             INCREASE_SPY_ATTACKS_PER_TURN: 'InfoType.INCREASE_SPY_ATTACKS_PER_TURN',
-            BUNNY_CAUGHT: 'InfoType.BUNNY_CAUGHT'
+            BUNNY_CAUGHT: 'InfoType.BUNNY_CAUGHT',
+            DONUT_TRAP: 'InfoType.DONUT_TRAP'
         });
     }
 
@@ -144,7 +145,7 @@ class Scene extends Component {
         }
     }
 
-    spawnInfo(messageType, position, amount) {
+    spawnInfo(messageType, position, amount, donutType) {
         let id = Date.now();
         let info = MeshBuilder.CreatePlane('info_' + id, { width: 1.65, height: 1.65 }, this.scene);
         info.isPickable = false;
@@ -154,7 +155,6 @@ class Scene extends Component {
 
         let texture = new DynamicTexture('info_texture_' + id, 208, this.scene);
         let context = texture.getContext();
-
         let material = new StandardMaterial('info_material_' + id, this.scene);
         material.emissiveTexture = texture;
         material.ambientTexture = texture;
@@ -162,12 +162,17 @@ class Scene extends Component {
 
         info.material = material;
 
-        let drawInfo = (filename, color, text) => {
+        let drawInfo = (filename, color, text, donut=false, offsetLeft=0) => {
             let image = new Image();
             image.src = filename;
             image.onload = () => {
                 this.setRenderLoop();
-                context.drawImage(image, 0, 0);
+                
+                if (donut) { 
+                    context.drawImage(image, offsetLeft, 0, 120, 120, 45, 45, 120, 120);
+                } else {
+                    context.drawImage(image, 0, 0);
+                }
                 texture.update();
 
                 if (typeof text !== 'undefined') {
@@ -209,7 +214,31 @@ class Scene extends Component {
             drawInfo('/images/spyAttacksPerTurn.png', '#70bf31', '+' + amount);
         } else if (messageType === this.InfoType.BUNNY_CAUGHT) {
             drawInfo('/images/bunnyCaught.png');
+        } else if (messageType === this.InfoType.DONUT_TRAP) {
+            let offsetLeft = 120;
+            if (donutType === EntityType.DONUT_PORTAL_BLUE) {
+                offsetLeft = 240;
+            } else if (donutType === EntityType.DONUT_HEALTH_GREEN) {
+                offsetLeft = 480;
+            } else if (donutType === EntityType.DONUT_CREAM_WHITE) {
+                offsetLeft = 600;
+            } else if (donutType === EntityType.DONUT_SURPRISE_YELLOW) {
+                offsetLeft = 360;
+            }
+            drawInfo('/images/donut_icon_palette.png', undefined, undefined, true, offsetLeft);
         }
+    }
+
+    triggerDonutInfo(donut, position) {
+        if (typeof position === 'undefined') {
+            position = new Vector3(donut.position.row, 6.5, donut.position.col);
+        } else {
+            position.y = 6.5;
+        }
+
+        console.log(position, donut);
+
+        this.spawnInfo(this.InfoType.DONUT_TRAP, position, undefined, donut.type);
     }
 
     triggerCacaoInfo() {
@@ -484,7 +513,17 @@ class Scene extends Component {
                 row: row,
                 col: col
             };
+
+            let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
+            let selectedCell = cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col);
+            let cellContainsDonut = selectedCell.occupiedBy.some(entity => isDonut(entity.type));
+            let donut = cellContainsDonut ? selectedCell.occupiedBy.filter(entity => isDonut(entity.type))[0] : null;
             this.props.attack(attackParams).then(() => {
+                selectedCell = cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col);
+                if (cellContainsDonut && !selectedCell.occupiedBy.some(entity => isDonut(entity.type))) {
+                    this.triggerDonutInfo(donut, position.clone());
+                }
+                
                 if (attackParams.attackType === AttackType.BUNNY) {
                     if (this.props.game.players[multiplayer.localPlayerIndex].attacksPerTurn[AttackType.BUNNY] > 0) {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
@@ -494,8 +533,6 @@ class Scene extends Component {
                     }
                 } else if (typeof attackParams.attackType !== 'undefined') {
                     Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
-                    let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
-                    let selectedCell = cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col);
                     this.detonateAtPosition(row, col);
                     if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0) {
                         if (selectedCell.shielded) {
