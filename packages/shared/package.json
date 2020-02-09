@@ -6,5 +6,8 @@
   "repository": "git@gitlab.com:battlechoc/battlechoc-shared-functions.git",
   "author": "battlechoc <info@battlechoc.dev>",
   "license": "UNLICENSED",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "uuid": "^3.4.0"
+  }
 }
