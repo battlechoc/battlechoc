@@ -339,4 +339,4 @@ class Board {
 }
 
 export { BoardCellTypes, EntityType, AttackType, isDonut, createEntity, getEntityDescriptor, getCheapest, EntityDescriptors, finalLevel, MultiplayerGameSessionState, EmptyPlayerStats, Board };
-export * from 'errors';
+export * from './errors';
