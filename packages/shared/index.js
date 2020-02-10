@@ -338,17 +338,5 @@ class Board {
   }
 }
 
-module.exports = {
-  BoardCellTypes: BoardCellTypes,
-  EntityType: EntityType,
-  AttackType: AttackType,
-  isDonut: isDonut,
-  createEntity: createEntity,
-  getEntityDescriptor: getEntityDescriptor,
-  getCheapest: getCheapest,
-  EntityDescriptors: EntityDescriptors,
-  finalLevel: finalLevel,
-  MultiplayerGameSessionState: MultiplayerGameSessionState,
-  EmptyPlayerStats: EmptyPlayerStats,
-  Board: Board
-}
+export { BoardCellTypes, EntityType, AttackType, isDonut, createEntity, getEntityDescriptor, getCheapest, EntityDescriptors, finalLevel, MultiplayerGameSessionState, EmptyPlayerStats, Board };
+export * from 'errors';
