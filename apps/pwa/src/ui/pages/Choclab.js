@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { updatePlayerStats, updateLevel, showQuickMessage } from '../UiActions';
 import { Translation as t } from '../misc';
 import { connect } from 'react-redux';
-import { getEntityDescriptor, finalLevel, EntityType } from '../../gameplay/GameEntities';
+import { getEntityDescriptor, finalLevel, EntityType } from 'battlechoc-shared-functions';
 import { ChoclabPalette } from '../controls';
 import MeshPreview from '../../3d/MeshPreview';
 import { OptimizedImage } from '../../helper/compatibility';

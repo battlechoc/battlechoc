@@ -1,6 +1,4 @@
-import { EntityType, AttackType, BoardCellTypes, createEntity, getEntityDescriptor, isDonut } from './GameEntities';
-import { BattlechocError } from './Errors';
-import { NonPlayerCharacter } from './Player';
+import { NonPlayerCharacter, BattlechocError, EntityType, AttackType, BoardCellTypes, createEntity, getEntityDescriptor, isDonut } from 'battlechoc-shared-functions';
 import { Jukebox } from '../ui/misc';
 import logger from '../helper/logger';
 

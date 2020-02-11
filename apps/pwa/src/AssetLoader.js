@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { connect } from 'react-redux';
 import { assetsReady } from './ui/UiActions';
-import { EntityType, BoardCellTypes } from './gameplay/GameEntities';
+import { EntityType, BoardCellTypes } from 'battlechoc-shared-functions';
 import { SceneLoader, StandardMaterial, Color3, Engine } from 'babylonjs';
 import 'babylonjs-loaders';
 import { features } from './helper/compatibility';

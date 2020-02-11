@@ -17,7 +17,7 @@ import { ServerRequest } from '../../helper/settings';
 import logger from '../../helper/logger';
 import BattlechocDialog from '../dialogs/BattlechocDialog';
 import PlayerList from '../controls/PlayerList';
-import { NoHealthyInternetConnectionError } from '../../gameplay/Errors';
+import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
 
 class MultiplayerScreen extends Component {
     constructor(props) {

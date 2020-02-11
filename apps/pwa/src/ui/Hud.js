@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import './Hud.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { GameStateTypes } from '../gameplay/GameplayReducer';
+import { GameStateTypes } from 'battlechoc-shared-functions';
 import { showQuickMessage } from './UiActions';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
 import { Jukebox, Translation as t } from './misc';
@@ -135,8 +135,9 @@ class Hud extends Component {
         this.setState({ openSettings: true });
     }
 
-    openAccountOverview = (playerAccount) => {
+    openAccountOverview = playerAccount => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        console.log(playerAccount);
         this.setState({ 
             showAccountOverview: true,
             playerAccount: playerAccount

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import './Tooltip.css';
-import { GameStateTypes } from '../../gameplay/GameplayReducer';
-import { getEntityDescriptor } from '../../gameplay/GameEntities';
+import { GameStateTypes, getEntityDescriptor } from 'battlechoc-shared-functions';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { withStyles } from '@material-ui/core/styles';
 import ExpansionPanel from '@material-ui/core/ExpansionPanel';

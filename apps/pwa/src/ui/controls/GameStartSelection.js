@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { GameStateTypes } from '../../gameplay/GameplayReducer';
 import { chooseField, chooseStart } from '../../gameplay/GameActions';
-import { EntityType } from '../../gameplay/GameEntities';
+import { GameStateTypes, EntityType } from 'battlechoc-shared-functions';
 import StartIcon from '@material-ui/icons/SupervisorAccount';
 import { multiplayer } from '../../Multiplayer';
 import { Jukebox } from '../misc';

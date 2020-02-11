@@ -1,6 +1,5 @@
 import Situation from '../Situation';
-import { BoardCellTypes, EntityType, createEntity, AttackType, getEntityDescriptor } from '../../gameplay/GameEntities';
-import { EmptyPlayerStats } from '../../Multiplayer';
+import { EmptyPlayerStats, createEntity, getEntityDescriptor, BoardCellTypes, EntityType, AttackType } from 'battlechoc-shared-functions';
 
 export default class FactoryExtensionTest extends Situation {
     constructor() {

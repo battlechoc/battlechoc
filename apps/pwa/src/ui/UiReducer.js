@@ -1,8 +1,7 @@
 import { createReducer } from 'redux-starter-kit';
 import * as UiActions from './UiActions';
-import { EntityType } from '../gameplay/GameEntities';
+import { EmptyPlayerStats, EntityType } from 'battlechoc-shared-functions';
 import OfflineStore from '../OfflineStore';
-import { EmptyPlayerStats } from '../Multiplayer';
 import { ServerRequest } from '../helper/settings';
 import logger from '../helper/logger';
 

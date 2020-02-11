@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import ChatLikeInstructions from './ChatLikeInstructions';
-import { AttackType } from '../gameplay/GameEntities';
+import { AttackType } from 'battlechoc-shared-functions';
 
 class TreesAndCannonsPage extends Component {
     constructor(props) {

@@ -1,4 +1,4 @@
-import { EntityType, isDonut } from '../gameplay/GameEntities';
+import { EntityType, isDonut } from 'battlechoc-shared-functions';
 import { Mesh, ParticleSystem, Vector3, Color4, ActionManager, ExecuteCodeAction, SolidParticleSystem, Texture } from 'babylonjs';
 
 class Gamefield {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { EntityType } from '../../gameplay/GameEntities';
+import { EntityType } from 'battlechoc-shared-functions';
 import { Jukebox } from '../misc';
 import { makeStyles } from '@material-ui/core/styles';
 

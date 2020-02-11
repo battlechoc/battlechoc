@@ -1,6 +1,4 @@
-import { Board, EntityType, BoardCellTypes, createEntity } from '../gameplay/GameEntities';
-import { createPlayer, PlayerType } from '../gameplay/Player';
-import { GameStateTypes } from '../gameplay/GameplayReducer';
+import { GameStateTypes, createPlayer, PlayerType, Board, EntityType, BoardCellTypes, createEntity } from 'battlechoc-shared-functions';
 
 export default class Situation {
     constructor(boardSize, opponentName="Augustus Gloop", playerType=PlayerType.AUGUSTUS_GLOOP) {

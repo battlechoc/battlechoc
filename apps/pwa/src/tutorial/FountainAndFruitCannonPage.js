@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import ChatLikeInstructions from './ChatLikeInstructions';
 import { connect } from 'react-redux';
-import { GameStateTypes } from '../gameplay/GameplayReducer';
+import { GameStateTypes } from 'battlechoc-shared-functions';
 
 class FountainAndFruitCannonPage extends Component {
     constructor(props) {

@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Scene as BabylonScene, SceneLoader, HemisphericLight, Engine, FlyCamera, Vector3, Color3, Color4, Camera, StandardMaterial } from 'babylonjs';
 import { assetLoader } from '../AssetLoader';
-import { BoardCellTypes, EntityType } from '../gameplay/GameEntities';
+import { BoardCellTypes, EntityType } from 'battlechoc-shared-functions';
 import 'babylonjs-loaders';
 
 class MeshPreview extends Component {

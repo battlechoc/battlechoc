@@ -4,43 +4,11 @@ import '@firebase/database';
 import '@firebase/firestore';
 import 'firebase/messaging';
 import OfflineStore from './OfflineStore';
-import { GameActionTypes } from './gameplay/GameActions';
-import { AttackType } from './gameplay/GameEntities';
+import { GameActionTypes, AttackType, EmptyPlayerStats } from 'battlechoc-shared-functions';
 import { Jukebox } from './ui/misc';
 import { ServerRequest } from './helper/settings';
 import logger from './helper/logger';
 import uuidv4 from 'uuid/v4';
-
-const MultiplayerGameSessionState = Object.freeze({
-    UNINITIALIZED: 'MultiplayerGameSessionState.Uninitialized',
-    PENDING: 'MultiplayerGameSessionState.Pending',
-    CREATED: 'MultiplayerGameSessionState.Created',
-    RUNNING: 'MultiplayerGameSessionState.Running',
-    FINISHED: 'MultiplayerGameSessionState.Finished'
-});
-
-const EmptyPlayerStats = Object.freeze({
-    username: 'Chocnonymous',
-    coins: 0,
-    score: 0,
-    winnings: 0,
-    drawn: 0,
-    losses: 0,
-    trackRecord: [],
-    level: {
-        'EntityType.CREAM': 0,
-        'EntityType.FACTORY': 0,
-        'EntityType.FACTORY_EXTENSION': 0,
-        'EntityType.CACAOTREE': 0,
-        'EntityType.RUM_TRUFFLE_CANNON': 0,
-        'EntityType.FRUIT_CANNON': 0,
-        'EntityType.SPYING_EASTER_BUNNY': 0,
-        'EntityType.XMAS_FACTORY': 0,
-        'EntityType.HOT_CHOCOLATE_BALLISTA': 0,
-        'EntityType.CHOCOLATE_FOUNTAIN': 0,
-        'EntityType.DONUT_FACTORY': 0
-    }
-});
 
 class Multiplayer {
     constructor() {
@@ -615,4 +583,4 @@ class Multiplayer {
 
 const multiplayer = new Multiplayer();
 
-export { multiplayer, MultiplayerGameSessionState, EmptyPlayerStats };
+export { multiplayer };

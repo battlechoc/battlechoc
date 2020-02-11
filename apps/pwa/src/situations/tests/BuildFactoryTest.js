@@ -1,6 +1,5 @@
 import Situation from '../Situation';
-import { BoardCellTypes } from '../../gameplay/GameEntities';
-import { GameStateTypes } from '../../gameplay/GameplayReducer';
+import { GameStateTypes, BoardCellTypes } from 'battlechoc-shared-functions';
 
 export default class BuildFactoryTest extends Situation {
     constructor() {
