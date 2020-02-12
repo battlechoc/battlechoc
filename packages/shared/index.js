@@ -1183,7 +1183,7 @@ class Rules {
   }
 }
 
-
+module.exports.BoardCellTypes = BoardCellTypes;
 module.exports.EntityType =  EntityType;
 module.exports.AttackType = AttackType
 module.exports.isDonut = isDonut;
