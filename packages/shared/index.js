@@ -51,7 +51,7 @@ const EntityType = Object.freeze({
 
 const isDonut = entityType => [
   EntityType.DONUT_HEALTH_GREEN,
-  EntityType.DONUT_STOP_PINK, 
+  EntityType.DONUT_STOP_PINK,
   EntityType.DONUT_CREAM_WHITE, 
   EntityType.DONUT_PORTAL_RED, 
   EntityType.DONUT_PORTAL_BLUE, 
@@ -1183,10 +1183,139 @@ class Rules {
   }
 }
 
-export { BoardCellTypes, EntityType, AttackType, isDonut, createEntity, getEntityDescriptor, getCheapest, EntityDescriptors, finalLevel, MultiplayerGameSessionState, EmptyPlayerStats, Board };
-export { PlayerType, createPlayer, playerHasAttacksPerTurn, playerHasHarmfulAttacksPerTurn, playerHasAttacks, NonPlayerCharacter };
-export * from './errors';
 
-export { GameActionTypes, IssuerRelevantActions };
-export { GameStateTypes, startGameReduction, resumeGameReduction, joinGameReduction, createGameReduction, chooseFieldReduction, chooseStartReduction, finishTurnReduction, finishBuildPhaseReduction, buildReduction, attackReduction, endGameReduction, finishGameReduction }
-export { Rules }
+module.exports.EntityType =  EntityType;
+module.exports.AttackType = AttackType
+module.exports.isDonut = isDonut;
+module.exports.createEntity = createEntity;
+module.exports.getEntityDescriptor = getEntityDescriptor;
+module.exports.getCheapest = getCheapest;
+module.exports.EntityDescriptors = EntityDescriptors;
+module.exports.finalLevel = finalLevel;
+module.exports.MultiplayerGameSessionState = MultiplayerGameSessionState;
+module.exports.EmptyPlayerStats = EmptyPlayerStats;
+module.exports.Board = Board;
+module.exports.PlayerType = PlayerType;
+module.exports.createPlayer = createPlayer;
+module.exports.playerHasAttacksPerTurn = playerHasAttacksPerTurn;
+module.exports.playerHasHarmfulAttacksPerTurn = playerHasHarmfulAttacksPerTurn;
+module.exports.playerHasAttacks = playerHasAttacks;
+module.exports.NonPlayerCharacter = NonPlayerCharacter;
+module.exports.GameActionTypes = GameActionTypes;
+module.exports.IssuerRelevantActions = IssuerRelevantActions;
+module.exports.GameStateTypes = GameStateTypes;
+module.exports.startGameReduction = startGameReduction;
+module.exports.resumeGameReduction = resumeGameReduction;
+module.exports.joinGameReduction = joinGameReduction;
+module.exports.createGameReduction = createGameReduction;
+module.exports.chooseFieldReduction = chooseFieldReduction;
+module.exports.chooseStartReduction = chooseStartReduction;
+module.exports.finishTurnReduction = finishTurnReduction;
+module.exports.finishBuildPhaseReduction = finishBuildPhaseReduction;
+module.exports.buildReduction = buildReduction;
+module.exports.attackReduction = attackReduction;
+module.exports.endGameReduction = endGameReduction;
+module.exports.finishGameReduction = finishGameReduction; 
+module.exports.Rules = Rules
+
+/* errors */
+
+class BattlechocError extends Error {};
+
+class ActionValidationError extends BattlechocError {
+    constructor(action, ...args) {
+        super(...args);
+        this.message = action.type + ' is not a valid action';
+    }
+}
+
+class InvalidActionIssuerError extends BattlechocError {
+    constructor(action, issuerId, currentPlayerId, ...args) {
+        super(...args);
+        this.message = action.type + ' issued by ' + issuerId + ' cannot be issued by this issuer because it is not her turn. Current player is ' + currentPlayerId;
+    }
+}
+
+class NoBuildingsLeftError extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'No more buildings can be built';
+    }
+}
+
+class NoCacaoLeftError extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'Not enough cacao left';
+    }
+}
+
+class BuildNotPossibleError extends BattlechocError {
+    constructor(message, ...args) {
+        super(...args);
+        this.message = message;
+    }
+}
+
+class NoAttacksLeftError extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'No attacks left';
+    }
+}
+
+class TargetEmptyError extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'The target field is empty';
+    }
+}
+
+class UnexpectedStateError extends BattlechocError {
+    constructor(state, ...args) {
+        super(...args);
+        this.message = 'Unexpected state for action: ' + state;
+    }
+}
+
+class GameAlreadyEndedError extends BattlechocError {
+    constructor(action, ...args) {
+        super(...args);
+        this.message = 'Action ' + action.type + ' cannot be executed, because the game has already ended!';
+    }
+}
+
+class GameNotRunningError extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'There is currently no running game to access its gamestate!';
+    }
+}
+
+class AlreadyMolten extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'This field is already molten';
+    }
+}
+
+class NoHealthyInternetConnectionError extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'You may not have a healthy internet connection at the moment. Please try again later'
+    }
+}
+
+module.exports.BattlechocError = BattlechocError;
+module.exports.NoHealthyInternetConnectionError = NoHealthyInternetConnectionError;
+module.exports.AlreadyMolten = AlreadyMolten;
+module.exports.GameNotRunningError = GameNotRunningError;
+module.exports.ActionValidationError = ActionValidationError;
+module.exports.NoBuildingsLeftError = NoBuildingsLeftError;
+module.exports.NoCacaoLeftError = NoCacaoLeftError;
+module.exports.BuildNotPossibleError = BuildNotPossibleError;
+module.exports.TargetEmptyError = TargetEmptyError;
+module.exports.NoAttacksLeftError = NoAttacksLeftError;
+module.exports.UnexpectedStateError = UnexpectedStateError;
+module.exports.InvalidActionIssuerError = InvalidActionIssuerError;
+module.exports.GameAlreadyEndedError = GameAlreadyEndedError;
