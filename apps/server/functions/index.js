@@ -3,16 +3,28 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const bodyParser = require('body-parser');
-const entities = require('./entities.js');
 const admin = require('firebase-admin');
-const gamestate = require('./gamestate.js');
 const t = require('./translations.js');
 const uuidv4 = require('uuid/v4');
 const { Pool } = require('pg')
 const axios = require('axios');
 admin.initializeApp();
 const db = admin.firestore();
-let instanceCount = 0;
+
+const Rules = require('battlechoc-shared-functions').Rules;
+const EmptyPlayerStats = require('battlechoc-shared-functions').EmptyPlayerStats;
+const createPlayer = require('battlechoc-shared-functions').createEntity;
+const GameActionTypes = require('battlechoc-shared-functions').GameActionTypes;
+const endGameReduction = require('battlechoc-shared-functions').endGameReduction;
+const attackReduction = require('battlechoc-shared-functions').attackReduction;
+const buildReduction = require('battlechoc-shared-functions').buildReduction;
+const finishBuildPhaseReduction = require('battlechoc-shared-functions').finishBuildPhaseReduction;
+const finishTurnReduction = require('battlechoc-shared-functions').finishTurnReduction;
+const chooseStartReduction = require('battlechoc-shared-functions').chooseStartReduction;
+const chooseFieldReduction = require('battlechoc-shared-functions').chooseFieldReduction;
+const calculateCosts = require('battlechoc-shared-functions').calculateCosts;
+const getMaximumLevel = require('battlechoc-shared-functions').getMaximumLevel;
+const Board = require('battlechoc-shared-functions').Board;
 
 const dbPool = new Pool({
     host: '/cloudsql/battlechoc:europe-west2:battlechoc-prod-psql',
@@ -72,6 +84,20 @@ app.use(async (req, res, next) => {
         return res.status(403).end();
     }
 });
+
+class Reducer {
+    static updateState(game, action) {
+        switch (action.type) {
+            case GameActionTypes.chooseField: return chooseFieldReduction(game, action);
+            case GameActionTypes.chooseStart: return chooseStartReduction(game, action);
+            case GameActionTypes.finishTurn: return finishTurnReduction(game, action);
+            case GameActionTypes.finishBuildPhase: return finishBuildPhaseReduction(game, action);
+            case GameActionTypes.build: return buildReduction(game, action);
+            case GameActionTypes.attack: return attackReduction(game, action);
+            case GameActionTypes.endGame: return endGameReduction(game, action);
+        }
+    }
+}
 
 app.post('/debugging/gamestate', async (req, res) => {
     let report = req.body.report;
@@ -400,12 +426,12 @@ app.post('/user/challenge', async (req, res) => {
 
                 let opponentLevel = opponent.level;
                 if (typeof opponentLevel === 'undefined') {
-                    opponentLevel = entities.EmptyPlayerStats.level;
+                    opponentLevel = EmptyPlayerStats.level;
                 }
 
                 let playerLevel = player.level;
                 if (typeof playerLevel === 'undefined') {
-                    playerLevel = entities.EmptyPlayerStats.level;
+                    playerLevel = EmptyPlayerStats.level;
                 }
 
                 let sessionEventQueue = {
@@ -416,12 +442,12 @@ app.post('/user/challenge', async (req, res) => {
                 try {
                     const databaseSession = await db.collection('multiplayerEventQueues').add(sessionEventQueue);
                     const initialGameState = {
-                        players: [entities.createPlayer(req.body.opponent, sessionEventQueue.players[0].id, 'PlayerType.HUMAN', opponentLevel), entities.createPlayer(player.username, sessionEventQueue.players[1].id, 'PlayerType.HUMAN', playerLevel)],
+                        players: [createPlayer(req.body.opponent, sessionEventQueue.players[0].id, 'PlayerType.HUMAN', opponentLevel), createPlayer(player.username, sessionEventQueue.players[1].id, 'PlayerType.HUMAN', playerLevel)],
                         currentPlayerIndex: coinToss,
                         state: 'GameStateTypes.CHOOSE_FIELD_OR_START',
                         isRunning: true,
                         winners: [],
-                        board: entities.Board.generate({ rows: 10, cols: 10 }, Math.round(Math.random() * Math.pow(10, 8)))
+                        board: Board.generate({ rows: 10, cols: 10 }, Math.round(Math.random() * Math.pow(10, 8)))
                     };
                     await dbPool.query('INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, turns) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
                         databaseSession.id, sessionEventQueue.players[0].id, sessionEventQueue.players[1].id, initialGameState, new Date(), new Date(), 0]);
@@ -457,12 +483,12 @@ const processEvents = (session, events, eventQueue) => {
     if (events.length > (eventQueue.lastProcessedEvent[0] + eventQueue.lastProcessedEvent[1])) {
         events.filter(event => !event.hasOwnProperty('processed')).forEach(event => {
             if (event.payload.issuer === session.game.players[0].id) {
-                if (session.game.currentPlayerIndex === 0 || event.type === gamestate.GameActionTypes.endGame) {
+                if (session.game.currentPlayerIndex === 0 || event.type === GameActionTypes.endGame) {
                     if (eventQueue.lastProcessedEvent[0] < event.index) {
                         unprocessedEvents += 1;
                     } else if (eventQueue.lastProcessedEvent[0] === event.index) {
-                        if (gamestate.Rules.isActionValid(session.game, event)) {
-                            gamestate.Reducer.updateState(session.game, event);
+                        if (Rules.isActionValid(session.game, event)) {
+                            Reducer.updateState(session.game, event);
                             eventQueue.lastProcessedEvent[0] += 1;
                             processedEvents += 1;
                             event.processed = true;
@@ -481,12 +507,12 @@ const processEvents = (session, events, eventQueue) => {
                     unprocessedEvents += 1;
                 }
             } else {
-                if (session.game.currentPlayerIndex === 1 || event.type === gamestate.GameActionTypes.endGame) {
+                if (session.game.currentPlayerIndex === 1 || event.type === GameActionTypes.endGame) {
                     if (eventQueue.lastProcessedEvent[1] < event.index) {
                         unprocessedEvents += 1;
                     } else if (eventQueue.lastProcessedEvent[1] === event.index) {
-                        if (gamestate.Rules.isActionValid(session.game, event)) {
-                            gamestate.Reducer.updateState(session.game, event);
+                        if (Rules.isActionValid(session.game, event)) {
+                            Reducer.updateState(session.game, event);
                             eventQueue.lastProcessedEvent[1] += 1;
                             processedEvents += 1;
                             event.processed = true;
@@ -791,6 +817,32 @@ app.get('/multiplayer/sessions', async (req, res) => {
     }
 })
 
+const levelFieldNameFromEntityType = entityType => {
+    if (entityType === EntityType.CREAM) {
+        return 'level_cream';
+    } else if (entityType === EntityType.FACTORY) {
+        return 'level_factory';
+    } else if (entityType === EntityType.CACAOTREE) {
+        return 'level_cacaotree';
+    } else if (entityType === EntityType.RUM_TRUFFLE_CANNON) {
+        return 'level_rum_truffle_cannon';
+    } else if (entityType === EntityType.FACTORY_EXTENSION) {
+        return 'level_factory_extension';
+    } else if (entityType === EntityType.SPYING_EASTER_BUNNY) {
+        return 'level_spying_easter_bunny';
+    } else if (entityType === EntityType.XMAS_FACTORY) {
+        return 'level_xmas_factory';
+    } else if (entityType === EntityType.HOT_CHOCOLATE_BALLISTA) {
+        return 'level_hot_chocolate_ballista';
+    } else if (entityType === EntityType.CHOCOLATE_FOUNTAIN) {
+        return 'level_chocolate_fountain';
+    } else if (entityType === EntityType.FRUIT_CANNON) {
+        return 'level_fruit_cannon';
+    } else {
+        return undefined;
+    }
+}
+
 app.post('/update/level', async (req, res) => {
     try {
         const playerQueryResult = await getPlayerFromId(req.user.uid);
@@ -799,8 +851,8 @@ app.post('/update/level', async (req, res) => {
             if (typeof player.coins !== 'undefined') {
                 const level = playerLevelObjectFromRecord(player);
                 if (req.body.upgrade) {
-                    const limit = entities.getMaximumLevel(req.body.entityType, level);
-                    const costs = entities.calculateCosts(req.body.entityType, level);
+                    const limit = getMaximumLevel(req.body.entityType, level);
+                    const costs = calculateCosts(req.body.entityType, level);
                     if (player.coins < costs) {
                         console.warn('Player tries to buy upgrade but cannot afford it', req.user.uid);
                         res.status(400).json({ error: 'NOT ENOUGH COINS' });
@@ -809,7 +861,7 @@ app.post('/update/level', async (req, res) => {
                         res.status(400).json({ error: 'LEVEL LIMIT OF ' + req.body.attribute + ' REACHED' });
                     } else {
                         level[req.body.entityType] = level[req.body.entityType] + 1;
-                        const levelFieldName = entities.levelFieldNameFromEntityType(req.body.entityType);
+                        const levelFieldName = levelFieldNameFromEntityType(req.body.entityType);
                         if (typeof levelFieldName !== 'undefined') {
                             await dbPool.query('UPDATE players SET coins = coins - $1, ' + levelFieldName + ' = $2 WHERE id = $3', [costs, level[req.body.entityType], req.user.uid]);
                             res.json({ coins: player.coins - costs, level: level });
@@ -821,10 +873,10 @@ app.post('/update/level', async (req, res) => {
                 } else {
                     if (level[req.body.entityType] > 0) {
                         const previous = { level, [req.body.entityType]: level[req.body.entityType] - 1 };
-                        const costs = entities.calculateCosts(req.body.entityType, previous);
+                        const costs = calculateCosts(req.body.entityType, previous);
                         const coinBackGuarantee = Math.round(0.666 * costs);
                         level[req.body.entityType] = level[req.body.entityType] - 1;
-                        const levelFieldName = entities.levelFieldNameFromEntityType(req.body.entityType);
+                        const levelFieldName = levelFieldNameFromEntityType(req.body.entityType);
                         if (typeof levelFieldName !== 'undefined') {
                             await dbPool.query('UPDATE players SET coins = coins + $1, ' + levelFieldName + ' = $2 WHERE id = $3', [coinBackGuarantee, level[req.body.entityType], req.user.uid]);
                             res.json({ coins: player.coins + coinBackGuarantee, level: level });
