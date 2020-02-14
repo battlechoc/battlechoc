@@ -22,12 +22,12 @@ const finishBuildPhaseReduction = require('battlechoc-shared-functions').finishB
 const finishTurnReduction = require('battlechoc-shared-functions').finishTurnReduction;
 const chooseStartReduction = require('battlechoc-shared-functions').chooseStartReduction;
 const chooseFieldReduction = require('battlechoc-shared-functions').chooseFieldReduction;
-const calculateCosts = require('battlechoc-shared-functions').calculateCosts;
-const getMaximumLevel = require('battlechoc-shared-functions').getMaximumLevel;
 const Board = require('battlechoc-shared-functions').Board;
+const EntityDescriptors = require('battlechoc-shared-functions').EntityDescriptors;
+const finalLevel = require('battlechoc-shared-functions').finalLevel;
 
 const dbPool = new Pool({
-    host: '/cloudsql/battlechoc:europe-west2:battlechoc-prod-psql',
+    host: process.env.NODE_ENV === 'development' ? '34.89.31.252' : '/cloudsql/battlechoc:europe-west2:battlechoc-prod-psql',
     user: 'battlechoc-service-account',
     password: '***REMOVED***',
     database: 'battlechoc',
@@ -190,16 +190,7 @@ const calculateCoinsFromTrackRecord = (trackRecord) => {
 }
 
 const computePlayerLevel = (player) => {
-    return player.level_factory +
-        player.level_factory_extension +
-        player.level_cacaotree +
-        player.level_chocolate_fountain +
-        player.level_cream +
-        player.level_fruit_cannon +
-        player.level_hot_chocolate_ballista +
-        player.level_rum_truffle_cannon +
-        player.level_spying_easter_bunny +
-        player.level_xmas_factory;
+    return Object.values(player.level).reduce((level, current) => level + current, 0);
 }
 
 const computeTrackRecordStats = async (player) => {
@@ -229,26 +220,11 @@ const computeTrackRecordStats = async (player) => {
 
 const computePlayerRanking = async (player) => {
     try {
-        const queryResults = await dbPool.query("SELECT id from players WHERE score > $1", [player.score]);
-        return queryResults.rows.length + 1;
+        const queryResults = await dbPool.query(`SELECT COUNT(id) FROM players WHERE score > ${player.score}`);
+        return Number(queryResults.rows[0].count) + 1;
     } catch (err) {
         console.warn('Could not determine player track record stats.', err);
     }
-}
-
-const playerLevelObjectFromRecord = (playerRecord) => {
-    let level = {};
-    level['EntityType.FACTORY'] = playerRecord.level_factory;
-    level['EntityType.FACTORY_EXTENSION'] = playerRecord.level_factory_extension;
-    level['EntityType.CACAOTREE'] = playerRecord.level_cacaotree;
-    level['EntityType.CHOCOLATE_FOUNTAIN'] = playerRecord.level_chocolate_fountain;
-    level['EntityType.CREAM'] = playerRecord.level_cream;
-    level['EntityType.FRUIT_CANNON'] = playerRecord.level_fruit_cannon;
-    level['EntityType.HOT_CHOCOLATE_BALLISTA'] = playerRecord.level_hot_chocolate_ballista;
-    level['EntityType.RUM_TRUFFLE_CANNON'] = playerRecord.level_rum_truffle_cannon;
-    level['EntityType.SPYING_EASTER_BUNNY'] = playerRecord.level_spying_easter_bunny;
-    level['EntityType.XMAS_FACTORY'] = playerRecord.level_xmas_factory;
-    return level;
 }
 
 const getListOfTrackRecordIds = async (userId) => {
@@ -309,7 +285,7 @@ const createPlayerStatsObject = async (playerRecord, withId = false, withTrackRe
         player.username = playerRecord.name;
         player.coins = playerRecord.coins;
         player.score = playerRecord.score;
-        player.level = playerLevelObjectFromRecord(playerRecord);
+        player.level = playerRecord.level;
         return player;
     } catch (err) {
         console.error('Could not create player stats object from given user id.', err);
@@ -817,29 +793,20 @@ app.get('/multiplayer/sessions', async (req, res) => {
     }
 })
 
-const levelFieldNameFromEntityType = entityType => {
-    if (entityType === EntityType.CREAM) {
-        return 'level_cream';
-    } else if (entityType === EntityType.FACTORY) {
-        return 'level_factory';
-    } else if (entityType === EntityType.CACAOTREE) {
-        return 'level_cacaotree';
-    } else if (entityType === EntityType.RUM_TRUFFLE_CANNON) {
-        return 'level_rum_truffle_cannon';
-    } else if (entityType === EntityType.FACTORY_EXTENSION) {
-        return 'level_factory_extension';
-    } else if (entityType === EntityType.SPYING_EASTER_BUNNY) {
-        return 'level_spying_easter_bunny';
-    } else if (entityType === EntityType.XMAS_FACTORY) {
-        return 'level_xmas_factory';
-    } else if (entityType === EntityType.HOT_CHOCOLATE_BALLISTA) {
-        return 'level_hot_chocolate_ballista';
-    } else if (entityType === EntityType.CHOCOLATE_FOUNTAIN) {
-        return 'level_chocolate_fountain';
-    } else if (entityType === EntityType.FRUIT_CANNON) {
-        return 'level_fruit_cannon';
+const calculateCosts = (entityType, level) => {
+    if (!EntityDescriptors.has(entityType)) {
+        throw new Error("Invalid entity type given: " + entityType);
     } else {
-        return undefined;
+        return EntityDescriptors.get(entityType)(level[entityType]).coins;
+    }
+}
+
+const getMaximumLevel = (entityType, level) => {
+    if (!EntityDescriptors.has(entityType)) {
+        throw new Error("Invalid entity type given: " + entityType);
+    } else {
+        let entity = EntityDescriptors.get(entityType)(level[entityType])
+        return entity.hasOwnProperty('level') ? entity.level.max - 1 : finalLevel;
     }
 }
 
@@ -849,7 +816,11 @@ app.post('/update/level', async (req, res) => {
         if (playerQueryResult.rows.length > 0) {
             const player = playerQueryResult.rows[0];
             if (typeof player.coins !== 'undefined') {
-                const level = playerLevelObjectFromRecord(player);
+                let level = EmptyPlayerStats.level;
+                if (typeof player.level !== 'undefined') {
+                    level = player.level;
+                }
+    
                 if (req.body.upgrade) {
                     const limit = getMaximumLevel(req.body.entityType, level);
                     const costs = calculateCosts(req.body.entityType, level);
@@ -861,29 +832,20 @@ app.post('/update/level', async (req, res) => {
                         res.status(400).json({ error: 'LEVEL LIMIT OF ' + req.body.attribute + ' REACHED' });
                     } else {
                         level[req.body.entityType] = level[req.body.entityType] + 1;
-                        const levelFieldName = levelFieldNameFromEntityType(req.body.entityType);
-                        if (typeof levelFieldName !== 'undefined') {
-                            await dbPool.query('UPDATE players SET coins = coins - $1, ' + levelFieldName + ' = $2 WHERE id = $3', [costs, level[req.body.entityType], req.user.uid]);
-                            res.json({ coins: player.coins - costs, level: level });
-                        } else {
-                            console.error('Given entity type could not be matched to a valid database representation of the entity level.', req.body.entityType);
-                            req.status(500).json({ error: 'COULD NOT UPDATE LEVEL. ENTITY MISMATCH IN SERVER' });
-                        }
+                        await dbPool.query(`UPDATE players SET coins = ${player.coins - costs}, level = $1 WHERE id = $2`, [level, req.user.uid]);
+                        res.json({ coins: player.coins - costs, level: level });
+
                     }
                 } else {
                     if (level[req.body.entityType] > 0) {
                         const previous = { level, [req.body.entityType]: level[req.body.entityType] - 1 };
                         const costs = calculateCosts(req.body.entityType, previous);
                         const coinBackGuarantee = Math.round(0.666 * costs);
+                        
                         level[req.body.entityType] = level[req.body.entityType] - 1;
-                        const levelFieldName = levelFieldNameFromEntityType(req.body.entityType);
-                        if (typeof levelFieldName !== 'undefined') {
-                            await dbPool.query('UPDATE players SET coins = coins + $1, ' + levelFieldName + ' = $2 WHERE id = $3', [coinBackGuarantee, level[req.body.entityType], req.user.uid]);
-                            res.json({ coins: player.coins + coinBackGuarantee, level: level });
-                        } else {
-                            console.error('Given entity type could not be matched to a valid database representation of the entity level.', req.body.entityType);
-                            req.status(500).json({ error: 'COULD NOT UPDATE LEVEL. ENTITY MISMATCH IN SERVER' });
-                        }
+                        
+                        await dbPool.query(`UPDATE players SET coins = ${player.coins + coinBackGuarantee}, level = $1 WHERE id = $2`, [level, req.user.uid]);
+                        res.json({ coins: player.coins + coinBackGuarantee, level: level });
                     } else {
                         res.status(400).json({ error: 'ENTITY LEVEL IS ALREADY ZERO' });
                     }
@@ -1092,24 +1054,14 @@ const fetchPlayerStats = async (userId) => {
 
 const createOrUpdatePlayer = async (userId, player) => {
     try {
-        const username = (typeof player.username === 'undefined') ? '' : player.username;
+        const username = (typeof player.username === 'undefined' || player.username === '') ? EmptyPlayerStats.username : player.username;
         const coins = (typeof player.coins === 'number' && !isNaN(player.coins)) ? player.coins : 0;
         const score = (typeof player.score === 'number' && !isNaN(player.score)) ? player.score : 0;
         const language = (typeof player.language !== 'undefined' && t.isValidLanguage(player.language)) ? player.language : t.getDefaultLanguage();
-        const level_factory = (typeof player.level !== 'undefined' && typeof player.level['EntityType.FACTORY'] === 'number') ? player.level['EntityType.FACTORY'] : 0;
-        const level_factory_extension = (typeof player.level !== 'undefined' && typeof player.level['EntityType.FACTORY_EXTENSION'] === 'number') ? player.level['EntityType.FACTORY_EXTENSION'] : 0;
-        const level_cacaotree = (typeof player.level !== 'undefined' && typeof player.level['EntityType.CACAOTREE'] === 'number') ? player.level['EntityType.CACAOTREE'] : 0;
-        const level_chocolate_fountain = (typeof player.level !== 'undefined' && typeof player.level['EntityType.CHOCOLATE_FOUNTAIN'] === 'number') ? player.level['EntityType.CHOCOLATE_FOUNTAIN'] : 0;
-        const level_cream = (typeof player.level !== 'undefined' && typeof player.level['EntityType.CREAM'] === 'number') ? player.level['EntityType.CREAM'] : 0;
-        const level_fruit_cannon = (typeof player.level !== 'undefined' && typeof player.level['EntityType.FRUIT_CANNON'] === 'number') ? player.level['EntityType.FRUIT_CANNON'] : 0;
-        const level_hot_chocolate_ballista = (typeof player.level !== 'undefined' && typeof player.level['EntityType.HOT_CHOCOLATE_BALLISTA'] === 'number') ? player.level['EntityType.HOT_CHOCOLATE_BALLISTA'] : 0;
-        const level_rum_truffle_cannon = (typeof player.level !== 'undefined' && typeof player.level['EntityType.RUM_TRUFFLE_CANNON'] === 'number') ? player.level['EntityType.RUM_TRUFFLE_CANNON'] : 0;
-        const level_spying_easter_bunny = (typeof player.level !== 'undefined' && typeof player.level['EntityType.SPYING_EASTER_BUNNY'] === 'number') ? player.level['EntityType.SPYING_EASTER_BUNNY'] : 0;
-        const level_xmas_factory = (typeof player.level !== 'undefined' && typeof player.level['EntityType.XMAS_FACTORY'] === 'number') ? player.level['EntityType.XMAS_FACTORY'] : 0;
+        const level = typeof player.level !== 'undefined' ? player.level : EmptyPlayerStats.level;
         const existsCheckResult = await getPlayerFromId(userId);
         if (existsCheckResult.rows.length === 0) {
-            const insertStatement = 'INSERT INTO players(id, name, coins, score, language, level_factory, level_factory_extension, level_cacaotree, level_chocolate_fountain, level_cream, level_fruit_cannon, level_hot_chocolate_ballista, level_rum_truffle_cannon, level_spying_easter_bunny, level_xmas_factory) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *';
-            const queryResult = await dbPool.query(insertStatement, [userId, username, coins, score, language, level_factory, level_factory_extension, level_cacaotree, level_chocolate_fountain, level_cream, level_fruit_cannon, level_hot_chocolate_ballista, level_rum_truffle_cannon, level_spying_easter_bunny, level_xmas_factory]);
+            const queryResult = await dbPool.query('INSERT INTO players(id, name, coins, score, language, level) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [userId, username, coins, score, language, level]);
             if (queryResult.rows.length === 1) {
                 await Promise.all(player.trackRecord.map(async (record) => {
                     await addTrackRecord(userId, record);
@@ -1120,8 +1072,7 @@ const createOrUpdatePlayer = async (userId, player) => {
                 return undefined;
             }
         } else {
-            const statement = 'UPDATE players SET name = $1, coins = $2, score = $3, language = $4, level_factory = $5, level_factory_extension = $6, level_cacaotree = $7, level_chocolate_fountain = $8, level_cream = $9, level_fruit_cannon = $10, level_hot_chocolate_ballista = $11, level_rum_truffle_cannon = $12, level_spying_easter_bunny = $13, level_xmas_factory = $14) WHERE id = $15 RETURNING *';
-            const queryResult = await dbPool.query(statement, [username, coins, score, language, level_factory, level_factory_extension, level_cacaotree, level_chocolate_fountain, level_cream, level_fruit_cannon, level_hot_chocolate_ballista, level_rum_truffle_cannon, level_spying_easter_bunny, level_xmas_factory, userId]);
+            const queryResult = await dbPool.query('UPDATE players SET name = $1, coins = $2, score = $3, language = $4, level = $5 WHERE id = $6 RETURNING *', [username, coins, score, language, level, userId]);
             if (queryResult.rows.length === 1) {
                 await Promise.all(player.trackRecord.map(async (record) => {
                     await addTrackRecord(userId, record);
@@ -1144,20 +1095,10 @@ const createNewPlayer = async (userId) => {
         if (existsCheckResult.rows.length === 0) {
             const coins = 0;
             const score = 0;
-            const username = '';
+            const username = EmptyPlayerStats.username;
             const language = t.getDefaultLanguage();
-            const level_factory = 0;
-            const level_factory_extension = 0;
-            const level_cacaotree = 0;
-            const level_chocolate_fountain = 0;
-            const level_cream = 0;
-            const level_fruit_cannon = 0;
-            const level_hot_chocolate_ballista = 0;
-            const level_rum_truffle_cannon = 0;
-            const level_spying_easter_bunny = 0;
-            const level_xmas_factory = 0;
-            const insertStatement = 'INSERT INTO players(id, name, coins, score, language, level_factory, level_factory_extension, level_cacaotree, level_chocolate_fountain, level_cream, level_fruit_cannon, level_hot_chocolate_ballista, level_rum_truffle_cannon, level_spying_easter_bunny, level_xmas_factory) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *';
-            const queryResult = await dbPool.query(insertStatement, [userId, username, coins, score, language, level_factory, level_factory_extension, level_cacaotree, level_chocolate_fountain, level_cream, level_fruit_cannon, level_hot_chocolate_ballista, level_rum_truffle_cannon, level_spying_easter_bunny, level_xmas_factory]);
+            const level = EmptyPlayerStats.level;
+            const queryResult = await dbPool.query('INSERT INTO players(id, name, coins, score, language, level) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [userId, username, coins, score, language, level]);
             if (queryResult.rows.length === 1) {
                 return await createPlayerStatsObject(queryResult.rows[0]);
             } else {

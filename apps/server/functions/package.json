@@ -2,7 +2,7 @@
   "name": "battlechoc-functions",
   "description": "Cloud Functions for battlechoc",
   "scripts": {
-    "serve": "firebase serve --only functions",
+    "serve": "NODE_ENV=development firebase serve --only functions",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
@@ -17,7 +17,7 @@
     "firebase-functions": "^3.2.0",
     "pg": "^7.17.0",
     "uuid": "^3.3.3",
-    "battlechoc-shared-functions": "git+ssh://git@gitlab.com:battlechoc/battlechoc-shared-functions.git"
+    "battlechoc-shared-functions": "https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git"
   },
   "engines": {
     "node": "10"
