@@ -42,7 +42,6 @@ test:
     CI: "true"
   before_script: 
     - yarn config set cache-folder .yarn
-    - yarn install
     - yarn global add serve
     - nohup serve -s build/ &
   script:
