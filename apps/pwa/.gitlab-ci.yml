@@ -17,6 +17,7 @@ build:
   before_script:
     - export CI_JOB_TIMESTAMP=$(date --utc -Iseconds)
     - yarn config set cache-folder .yarn
+    - apt-get install git
     - git clone git+https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git
     - yarn install 
   script:
