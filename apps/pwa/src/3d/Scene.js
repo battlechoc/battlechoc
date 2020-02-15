@@ -1,14 +1,11 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { multiplayer } from '../Multiplayer';
-import { deselectBuildings, selectAttack, deselectAttack, selectBuilding } from '../ui/UiActions';
+import { deselectBuildings, selectAttack, deselectAttack, selectBuilding, tapBuilding } from '../ui/UiActions';
 import { build, attack, finishTurn, finishBuildPhase } from '../gameplay/GameActions';
-import { GameStateTypes } from '../gameplay/GameplayReducer';
 import Gamefield from './Gamefield';
-import { EntityType, AttackType, BoardCellTypes, createEntity, getEntityDescriptor, getCheapest } from '../gameplay/GameEntities';
-import { BattlechocError } from '../gameplay/Errors';
+import { GameStateTypes, playerHasAttacks, BattlechocError, EntityType, AttackType, BoardCellTypes, createEntity, getEntityDescriptor, getCheapest, isDonut } from 'battlechoc-shared-functions';
 import { Jukebox } from '../ui/misc';
-import { playerHasAttacks } from '../gameplay/Player';
 import { Scene as BabylonScene, DynamicTexture, Mesh, StandardMaterial, DirectionalLight, Engine, HighlightLayer, FlyCamera, Color3, Camera, Vector3, HemisphericLight, Color4, Animation, MeshBuilder } from 'babylonjs';
 import { AssetLoadingViewContainer as AssetLoadingView } from '../AssetLoader';
 import 'babylonjs-loaders';
@@ -57,7 +54,8 @@ class Scene extends Component {
             INCREASE_CACAO_PER_TURN: 'InfoType.INCREASE_CACAO_PER_TURN',
             INCREASE_ATTACKS_PER_TURN: 'InfoType.INCREASE_ATTACKS_PER_TURN',
             INCREASE_SPY_ATTACKS_PER_TURN: 'InfoType.INCREASE_SPY_ATTACKS_PER_TURN',
-            BUNNY_CAUGHT: 'InfoType.BUNNY_CAUGHT'
+            BUNNY_CAUGHT: 'InfoType.BUNNY_CAUGHT',
+            DONUT_TRAP: 'InfoType.DONUT_TRAP'
         });
     }
 
@@ -144,7 +142,7 @@ class Scene extends Component {
         }
     }
 
-    spawnInfo(messageType, position, amount) {
+    spawnInfo(messageType, position, amount, donutType) {
         let id = Date.now();
         let info = MeshBuilder.CreatePlane('info_' + id, { width: 1.65, height: 1.65 }, this.scene);
         info.isPickable = false;
@@ -154,7 +152,6 @@ class Scene extends Component {
 
         let texture = new DynamicTexture('info_texture_' + id, 208, this.scene);
         let context = texture.getContext();
-
         let material = new StandardMaterial('info_material_' + id, this.scene);
         material.emissiveTexture = texture;
         material.ambientTexture = texture;
@@ -162,12 +159,17 @@ class Scene extends Component {
 
         info.material = material;
 
-        let drawInfo = (filename, color, text) => {
+        let drawInfo = (filename, color, text, donut=false, offsetLeft=0) => {
             let image = new Image();
             image.src = filename;
             image.onload = () => {
                 this.setRenderLoop();
-                context.drawImage(image, 0, 0);
+                
+                if (donut) { 
+                    context.drawImage(image, offsetLeft, 0, 120, 120, 45, 45, 120, 120);
+                } else {
+                    context.drawImage(image, 0, 0);
+                }
                 texture.update();
 
                 if (typeof text !== 'undefined') {
@@ -209,7 +211,31 @@ class Scene extends Component {
             drawInfo('/images/spyAttacksPerTurn.png', '#70bf31', '+' + amount);
         } else if (messageType === this.InfoType.BUNNY_CAUGHT) {
             drawInfo('/images/bunnyCaught.png');
+        } else if (messageType === this.InfoType.DONUT_TRAP) {
+            let offsetLeft = 120;
+            if (donutType === EntityType.DONUT_PORTAL_BLUE) {
+                offsetLeft = 240;
+            } else if (donutType === EntityType.DONUT_HEALTH_GREEN) {
+                offsetLeft = 480;
+            } else if (donutType === EntityType.DONUT_CREAM_WHITE) {
+                offsetLeft = 600;
+            } else if (donutType === EntityType.DONUT_SURPRISE_YELLOW) {
+                offsetLeft = 360;
+            }
+            drawInfo('/images/donut_icon_palette.png', undefined, undefined, true, offsetLeft);
         }
+    }
+
+    triggerDonutInfo(donut, position) {
+        if (typeof position === 'undefined') {
+            position = new Vector3(donut.position.row, 6.5, donut.position.col);
+        } else {
+            position.y = 6.5;
+        }
+
+        console.log(position, donut);
+
+        this.spawnInfo(this.InfoType.DONUT_TRAP, position, undefined, donut.type);
     }
 
     triggerCacaoInfo() {
@@ -277,6 +303,59 @@ class Scene extends Component {
         });
     }
 
+    highlightDonuts = (highlight = true) => {
+        let highlights = [
+            {type: EntityType.DONUT_PORTAL_BLUE, color: new Color3(0.3, 0.3, 1)}, 
+            {type: EntityType.DONUT_PORTAL_RED, color: new Color3(1, 0.3, 0.3)},
+            {type: EntityType.DONUT_CREAM_WHITE, color: new Color3(0.9, 0.9, 0.9)},
+            {type: EntityType.DONUT_SURPRISE_YELLOW, color: new Color3(1, 1, 0.3)},
+            {type: EntityType.DONUT_HEALTH_GREEN, color: new Color3(0.3, 1, 0.3)},
+            {type: EntityType.DONUT_STOP_PINK, color: new Color3(1, 0.41, 0.7)}
+        ]
+
+        for (let entity of highlights) {
+            let parent = this.scene.getMeshByName(entity.type + '__root__');
+            let children = parent.getChildren()[0].getChildren().length > 0 ? parent.getChildren()[0].getChildren() : parent.getChildren();
+
+            for (let child of children) {
+                if (highlight) {
+                    this.highlightLayer.addMesh(child, entity.color);
+                } else {
+                    this.highlightLayer.removeMesh(child);
+                }
+            }
+        }
+
+        let entities = [
+            EntityType.CREAM, 
+            EntityType.FACTORY, 
+            EntityType.FACTORY_EXTENSION,
+            EntityType.CACAOTREE,
+            EntityType.RUM_TRUFFLE_CANNON,
+            EntityType.FRUIT_CANNON,
+            EntityType.SPYING_EASTER_BUNNY,
+            EntityType.XMAS_FACTORY,
+            EntityType.HOT_CHOCOLATE_BALLISTA,
+            EntityType.CHOCOLATE_FOUNTAIN,
+            EntityType.DONUT_FACTORY
+        ]
+
+        for (let entityType of [...entities, EntityType.CREAM + '.AROUND.BUILDING']) {
+            let parent = this.scene.getMeshByName(entityType + '__root__');
+            let children = parent.getChildren()[0].getChildren().length > 0 ? parent.getChildren()[0].getChildren() : parent.getChildren();
+
+            children.forEach(child => {
+                if (highlight) {
+                    child.visibility = 0;
+                } else {
+                    child.visibility = 1;
+                }
+            });
+        }
+
+        this.scene.render();
+    }
+
     detonateAtPosition(row, col, playerField = false) {
         let truffle = MeshBuilder.CreateTorus('knot', { diameter: 0.1 }, this.scene);
         truffle.material = this.scene.getMaterialByName(BoardCellTypes.BROWN + '.material');
@@ -308,44 +387,56 @@ class Scene extends Component {
     }
 
     playerFieldClick(row, col, position) {
+        let player = this.props.game.players[multiplayer.localPlayerIndex]
         let buildingSelected = this.props.selectedBuilding;
         let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
-        if (buildingSelected || (initialPlacement && this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn === 0)) {
+        
+        if (buildingSelected || (initialPlacement && player.buildingsPerTurn === 0)) {
             let building;
             if (initialPlacement) {
-                building = createEntity(EntityType.FACTORY, this.props.game.players[multiplayer.localPlayerIndex].level);
+                building = createEntity(EntityType.FACTORY, player.level);
             } else {
-                building = createEntity(this.props.selectedBuilding, this.props.game.players[multiplayer.localPlayerIndex].level);
+                building = createEntity(this.props.selectedBuilding, player.level);
             }
             building.position = { row: row, col: col };
-            let playerCacaoPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn;
-            let buildingsPerTurnBefore = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn;
-            this.props.build({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id, building: building }).then(() => {
+            let playerCacaoPerTurnBefore = player.cacaoPerTurn;
+            let buildingsPerTurnBefore = player.buildingsPerTurn;
+            this.props.build({ issuer: player.id, building: building }).then(() => {
+                player = this.props.game.players[multiplayer.localPlayerIndex]
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
+                if (building.type === EntityType.DONUT_PORTAL_BLUE) {
+                    this.props.selectBuilding(EntityType.DONUT_PORTAL_RED);
+                    this.props.tapBuilding(EntityType.DONUT_PORTAL_RED);
+                } else if (isDonut(building.type)) {
+                    this.props.deselectBuildings();
+                }
+
                 if (building.type !== EntityType.CREAM) {
                     this.showEnergyBar(building);
                 }
                 if (initialPlacement) {
-                    this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn);
+                    this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), player.buildingsPerTurn);
                     this.props.deselectBuildings();
                     this.props.deselectAttack();
-                    let playerId = this.props.game.players[multiplayer.localPlayerIndex].id;
+                    let playerId = player.id;
                     setTimeout(() => {
-                        let description = getEntityDescriptor(EntityType.FACTORY, this.props.game.players[multiplayer.localPlayerIndex].level);
+                        let description = getEntityDescriptor(EntityType.FACTORY, player.level);
                         this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), description.cacaoPerTurn);
                     }, 1000);
                     setTimeout(() => {
-                        if (playerId === this.props.game.players[multiplayer.localPlayerIndex].id) {
-                            this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
+                        if (playerId === player.id) {
+                            this.props.finishTurn({ issuer: player.id });
                             this.props.deselectBuildings();
                             this.props.deselectAttack();
                         }
                     }, 3000);
                 } else {
-                    let description = getEntityDescriptor(this.props.selectedBuilding, this.props.game.players[multiplayer.localPlayerIndex].level);
-                    this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs);
-                    let cacaoDelta = this.props.game.players[multiplayer.localPlayerIndex].cacaoPerTurn - playerCacaoPerTurnBefore;
-                    let buildingsDelta = this.props.game.players[multiplayer.localPlayerIndex].buildingsPerTurn - buildingsPerTurnBefore;
+                    let description = getEntityDescriptor(building.type, player.level);
+                    if (!isDonut(building.type)) {
+                        this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs);
+                    }
+                    let cacaoDelta = player.cacaoPerTurn - playerCacaoPerTurnBefore;
+                    let buildingsDelta = player.buildingsPerTurn - buildingsPerTurnBefore;
                     setTimeout(() => {
                         if (typeof this.props.game !== 'undefined') { 
                             if (building.type === EntityType.CACAOTREE) {
@@ -359,9 +450,10 @@ class Scene extends Component {
                             }
                             setTimeout(() => {
                                 if (typeof this.props.game !== 'undefined') { 
-                                    if (this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.game.players[multiplayer.localPlayerIndex].cacao < getCheapest().costs) {
-                                        if (playerHasAttacks(this.props.game.players[multiplayer.localPlayerIndex]) === true) {
-                                            this.props.finishBuildPhase({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
+                                    player = this.props.game.players[multiplayer.localPlayerIndex]
+                                    if ( player.donuts.length === 0 && ( player.buildings === 0 || player.cacao < getCheapest().costs )) {
+                                        if (playerHasAttacks(player) === true) {
+                                            this.props.finishBuildPhase({ issuer: player.id }).then(() => {
                                                 this.props.deselectBuildings();
                                             }).catch(error => {
                                                 if (error instanceof BattlechocError) {
@@ -371,7 +463,7 @@ class Scene extends Component {
                                                 }
                                             });
                                         } else {
-                                            this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
+                                            this.props.finishTurn({ issuer: player.id }).then(() => {
                                                 this.props.deselectBuildings();
                                                 this.props.deselectAttack();
                                             }).catch(error => {
@@ -418,7 +510,17 @@ class Scene extends Component {
                 row: row,
                 col: col
             };
+
+            let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
+            let selectedCell = cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col);
+            let cellContainsDonut = selectedCell.occupiedBy.some(entity => isDonut(entity.type));
+            let donut = cellContainsDonut ? selectedCell.occupiedBy.filter(entity => isDonut(entity.type))[0] : null;
             this.props.attack(attackParams).then(() => {
+                selectedCell = cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col);
+                if (cellContainsDonut && !selectedCell.occupiedBy.some(entity => isDonut(entity.type))) {
+                    this.triggerDonutInfo(donut, position.clone());
+                }
+                
                 if (attackParams.attackType === AttackType.BUNNY) {
                     if (this.props.game.players[multiplayer.localPlayerIndex].attacksPerTurn[AttackType.BUNNY] > 0) {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
@@ -428,8 +530,6 @@ class Scene extends Component {
                     }
                 } else if (typeof attackParams.attackType !== 'undefined') {
                     Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
-                    let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
-                    let selectedCell = cellAt(this.props.game.board, this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex, row, col);
                     this.detonateAtPosition(row, col);
                     if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0) {
                         if (selectedCell.shielded) {
@@ -542,6 +642,7 @@ const mapDispatchToProps = {
     deselectBuildings,
     selectAttack,
     selectBuilding,
+    tapBuilding,
     deselectAttack,
     finishBuildPhase
 };

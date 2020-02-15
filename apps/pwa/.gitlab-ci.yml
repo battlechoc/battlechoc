@@ -17,6 +17,8 @@ build:
   before_script:
     - export CI_JOB_TIMESTAMP=$(date --utc -Iseconds)
     - yarn config set cache-folder .yarn
+    - apt-get update && apt-get install -y git
+    - git clone https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git
     - yarn install 
   script:
     - sed -i "s/LOCAL_VERSION/$CI_COMMIT_SHORT_SHA/g" src/ui/dialogs/Info.js
@@ -40,7 +42,6 @@ test:
     CI: "true"
   before_script: 
     - yarn config set cache-folder .yarn
-    - yarn install
     - yarn global add serve
     - nohup serve -s build/ &
   script:

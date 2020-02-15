@@ -2,8 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import ChatLikeInstructions from './ChatLikeInstructions';
 import { connect } from 'react-redux';
-import { EntityType } from '../gameplay/GameEntities';
-import { GameStateTypes } from '../gameplay/GameplayReducer';
+import { GameStateTypes, EntityType } from 'battlechoc-shared-functions';
 
 class BunnyAndXmasPage extends Component {
     constructor(props) {

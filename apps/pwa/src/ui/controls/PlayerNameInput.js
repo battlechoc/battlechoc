@@ -7,7 +7,7 @@ import withWidth, { isWidthUp } from '@material-ui/core/withWidth';
 import { Send, HourglassFull } from '@material-ui/icons';
 import { Fab, TextField, CircularProgress } from '@material-ui/core';
 import logger from '../../helper/logger';
-import { NoHealthyInternetConnectionError } from '../../gameplay/Errors';
+import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
 
 const useStyles = makeStyles(theme => ({
   root: {

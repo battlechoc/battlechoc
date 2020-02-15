@@ -2,7 +2,7 @@ import axios from 'axios';
 import firebase from '@firebase/app';
 import * as http from 'http';
 import * as https from 'https';
-import { NoHealthyInternetConnectionError } from '../gameplay/Errors';
+import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
 
 const baseUrl = 'https://europe-west2-battlechoc.cloudfunctions.net/api';
 

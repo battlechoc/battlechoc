@@ -1,7 +1,4 @@
-import { NonPlayerCharacter } from './Player';
-import { EntityType } from '../gameplay/GameEntities';
-import { AttackType } from './GameEntities';
-import { BattlechocError } from './Errors';
+import { NonPlayerCharacter, BattlechocError, EntityType, AttackType } from 'battlechoc-shared-functions';
 
 export default class Violet extends NonPlayerCharacter {
     handleError = error => {

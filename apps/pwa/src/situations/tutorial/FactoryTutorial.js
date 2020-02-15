@@ -1,7 +1,5 @@
 import Situation from '../Situation';
-import { BoardCellTypes } from '../../gameplay/GameEntities';
-import { GameStateTypes } from '../../gameplay/GameplayReducer';
-import { PlayerType } from '../../gameplay/Player';
+import { GameStateTypes, PlayerType, BoardCellTypes } from 'battlechoc-shared-functions';
 
 export default class FactoryTutorialSituation extends Situation {
     constructor() {

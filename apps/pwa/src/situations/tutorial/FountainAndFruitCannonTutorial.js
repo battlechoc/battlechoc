@@ -1,7 +1,5 @@
 import Situation from '../Situation';
-import { BoardCellTypes, EntityType, AttackType, createEntity } from '../../gameplay/GameEntities';
-import { GameStateTypes } from '../../gameplay/GameplayReducer';
-import { PlayerType } from '../../gameplay/Player';
+import { GameStateTypes, PlayerType, BoardCellTypes, EntityType, AttackType, createEntity } from 'battlechoc-shared-functions';
 
 export default class FountainAndFruitCannonSituation extends Situation {
     constructor() {

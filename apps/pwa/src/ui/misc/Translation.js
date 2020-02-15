@@ -1,4 +1,4 @@
-import { EntityType, AttackType } from '../../gameplay/GameEntities';
+import { EntityType, AttackType } from 'battlechoc-shared-functions';
 
 const languages = {
     en: {
@@ -47,6 +47,13 @@ const languages = {
                 case EntityType.SPYING_EASTER_BUNNY: return 'Spying easter bunny';
                 case EntityType.CHOCOLATE_FOUNTAIN: return 'Chocolate fountain';
                 case EntityType.FRUIT_CANNON: return 'Fruit cannon';
+                case EntityType.DONUT_FACTORY: return 'Donut Factory';
+                case EntityType.DONUT_PORTAL_RED: return 'Red portal donut';
+                case EntityType.DONUT_PORTAL_BLUE: return 'Blue portal donut';
+                case EntityType.DONUT_STOP_PINK: return 'Pink stop donut';
+                case EntityType.DONUT_SURPRISE_YELLOW: return 'Yellow surprise donut';
+                case EntityType.DONUT_HEALTH_GREEN: return 'Green health donut';
+                case EntityType.DONUT_CREAM_WHITE: return 'White cream donut';
                 default: return 'Unkown';
             }
         },
@@ -61,13 +68,13 @@ const languages = {
                     return {
                         info: 'A factory extension can only be placed directly next to your factory',
                         costs: 'Cacao costs: ' + building.costs,
-                        advantages: 'Buildings per turn +2'
+                        advantages: 'Buildings per turn +' + building.buildingsPerTurn
                     }
                 case EntityType.CACAOTREE:
                     return {
                         info: 'The cacao tree offers you all the resources you need',
                         costs: 'Cacao costs: ' + building.costs,
-                        advantages: 'Cacao per turn +30'
+                        advantages: 'Cacao per turn +' + building.cacaoPerTurn
                     }
                 case EntityType.RUM_TRUFFLE_CANNON:
                     return {
@@ -97,6 +104,33 @@ const languages = {
                         info: 'The fruit cannon destroys creams and chocolate fountains of your enemy.',
                         costs: 'Cacao costs: ' + building.costs,
                         advantages: 'Fruit attacks per turn +1'
+                    }
+                case EntityType.DONUT_FACTORY:
+                    return {
+                        info: 'The donut factory is going to produce donut traps which can be very dangerous to your opponent',
+                        costs: 'Cacao costs: ' + building.costs,
+                        advantages: `Produces a donut per turn with a probability of ${building.donutProbability * 100}%` 
+                    }
+                case EntityType.DONUT_PORTAL_RED:
+                case EntityType.DONUT_PORTAL_BLUE:
+                    return {
+                        info: 'If the blue donut is triggered by any attack, a portal will swap the fields and all entities with it\'s corresponding red donut'
+                    }
+                case EntityType.DONUT_CREAM_WHITE:
+                    return {
+                        info: 'If the white donut is triggered by any attack, the 5x5 area around the donut will be filled with cream'
+                    }
+                case EntityType.DONUT_HEALTH_GREEN:
+                    return {
+                        info: 'If the green donut is triggered by any attack, the 5x5 area around the donut will be fully healed'
+                    }
+                case EntityType.DONUT_STOP_PINK:
+                    return {
+                        info: 'If the pink donut is triggered by any attack, the opponent attack phase will stop immediately'
+                    }
+                case EntityType.DONUT_SURPRISE_YELLOW:
+                    return {
+                        info: 'If the yellow donut is triggered by any attack, it will randomly heal it\'s 5x5 area, fill it with cream, or stop the opponent\'s attack phase immediately'
                     }
                 default: return { info: 'Unkown building' }
             }
@@ -225,6 +259,8 @@ const languages = {
                 case 'cacaoPerTurn': return 'Cacao per turn';
                 case 'attack': return 'Attack';
                 case 'fortune': return 'Fortune';
+                case 'donutProbability': return 'Donut probability';
+                case 'donutTypes': return 'Donut types';
                 default: return 'Unknown';
             }
         },
@@ -291,6 +327,13 @@ const languages = {
                 case EntityType.SPYING_EASTER_BUNNY: return 'Osterhase';
                 case EntityType.CHOCOLATE_FOUNTAIN: return 'Schokoladenbrunnen';
                 case EntityType.FRUIT_CANNON: return 'Fruchtkanone';
+                case EntityType.DONUT_FACTORY: return 'Donutfabrik';
+                case EntityType.DONUT_PORTAL_RED: return 'Roter Portal-Donut';
+                case EntityType.DONUT_PORTAL_BLUE: return 'Blauer Portal-Donut';
+                case EntityType.DONUT_STOP_PINK: return 'Pinker Stop-Donut';
+                case EntityType.DONUT_SURPRISE_YELLOW: return 'Gelber Überraschungs-Donut';
+                case EntityType.DONUT_HEALTH_GREEN: return 'Grüner Heilungs-Donut';
+                case EntityType.DONUT_CREAM_WHITE: return 'Weißer Sahne-Donut';
                 default: return 'Unbekannt';
             }
         },
@@ -341,6 +384,33 @@ const languages = {
                         info: 'Die Fruchtkanone zerstört nur Sahnehäubchen oder gegnerische Schokoladenbrunnen.',
                         costs: 'Kakaokosten: ' + building.costs,
                         advantages: 'Fruchtangriffe pro Runde +1'
+                    }
+                case EntityType.DONUT_FACTORY:
+                    return {
+                        info: 'Die Donutfabrik stellt Donutfallen her, die dem Gegner sehr gefährlich werden können',
+                        costs: 'Cacao costs: ' + building.costs,
+                        advantages: `Produziert pro Runde einen Donut mit einer Wahrscheinlichkeit von ${building.donutProbability * 100}%` 
+                    }
+                case EntityType.DONUT_PORTAL_RED:
+                case EntityType.DONUT_PORTAL_BLUE:
+                    return {
+                        info: 'Wenn der blaue Donut durch einen Angriff ausgelöst wird, vertauscht er durch ein Portal sein Feld und alle Einheiten mit dem dazugehörigen roten Donut'
+                    }
+                case EntityType.DONUT_CREAM_WHITE:
+                    return {
+                        info: 'Wenn der weiße Donut durch einen Angriff ausgelöst wird, füllt er seine 5x5 Umgebung mit Sahne'
+                    }
+                case EntityType.DONUT_HEALTH_GREEN:
+                    return {
+                        info: 'Wenn der grüne Donut durch einen Angriff ausgelöst wird, heilt er seine 5x5 Umgebung vollständig'
+                    }
+                case EntityType.DONUT_STOP_PINK:
+                    return {
+                        info: 'Wenn der pinke Donut durch einen Angriff ausgelöst wird, endet die Angriffsphase des Gegners sofort'
+                    }
+                case EntityType.DONUT_SURPRISE_YELLOW:
+                    return {
+                        info: 'Wenn der gelbe Donut durch einen Angriff ausgelöst wird, füllt er entweder zufällig seine 5x5 Umgebung mit Sahne, heilt sie vollständig, oder beendet die Angriffsphase des Gegners sofort'
                     }
                 default: return { info: 'Unbekanntes Gebäude' }
             }
@@ -469,6 +539,8 @@ const languages = {
                 case 'cacaoPerTurn': return 'Kakao pro Runde';
                 case 'attack': return 'Angriff';
                 case 'fortune': return 'Glück';
+                case 'donutProbability': return 'Donut Wahrscheinlichkeit';
+                case 'donutTypes': return 'Donut Arten';
                 default: return 'Unbekannt';
             }
         },

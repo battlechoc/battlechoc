@@ -1,5 +1,5 @@
 import { multiplayer } from '../Multiplayer';
-import Rules from './Rules';
+import { Rules } from 'battlechoc-shared-functions';
 
 function multiplayerActionRelayMiddleware() {
     return () => next => action => {

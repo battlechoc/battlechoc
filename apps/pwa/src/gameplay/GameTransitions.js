@@ -1,5 +1,4 @@
-import { GameStateTypes } from './GameplayReducer';
-import { playerHasAttacks } from './Player';
+import { GameStateTypes, playerHasAttacks } from 'battlechoc-shared-functions';
 import { multiplayer } from '../Multiplayer';
 
 const GameTransitions = Object.freeze({

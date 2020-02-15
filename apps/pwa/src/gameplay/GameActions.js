@@ -1,29 +1,5 @@
 import { createAction } from 'redux-starter-kit';
-
-const GameActionTypes = Object.freeze({
-    startGame: 'battlechoc/gameplay/startGame',
-    resumeGame: 'battlechoc/gameplay/resumeGame',
-    finishGame: 'battlechoc/gameplay/finishGame',
-    chooseField: 'battlechoc/gameplay/chooseField',
-    chooseStart: 'battlechoc/gameplay/chooseStart',
-    createBoard: 'battlechoc/gameplay/createBoard',
-    finishTurn: 'battlechoc/gameplay/finishTurn',
-    finishBuildPhase: 'battlechoc/gameplay/finishBuildPhase',
-    build: 'battlechoc/gameplay/build',
-    attack: 'battlechoc/gameplay/attack',
-    endGame: 'battlechoc/gameplay/endGame',
-    joinGame: 'battlechoc/gameplay/joinGame'
-});
-
-const IssuerRelevantActions = [
-    GameActionTypes.chooseField,
-    GameActionTypes.chooseStart,
-    GameActionTypes.finishTurn,
-    GameActionTypes.finishBuildPhase,
-    GameActionTypes.build,
-    GameActionTypes.attack,
-    GameActionTypes.endGame
-];
+import { GameActionTypes } from 'battlechoc-shared-functions';
 
 const startGame = createAction(GameActionTypes.startGame);
 const resumeGame = createAction(GameActionTypes.resumeGame);
@@ -39,5 +15,5 @@ const endGame = createAction(GameActionTypes.endGame);
 const joinGame = createAction(GameActionTypes.joinGame);
 
 export {
-    GameActionTypes, IssuerRelevantActions, startGame, resumeGame, finishGame, chooseField, chooseStart, createBoard, finishTurn, finishBuildPhase, build, attack, endGame, joinGame
+    startGame, resumeGame, finishGame, chooseField, chooseStart, createBoard, finishTurn, finishBuildPhase, build, attack, endGame, joinGame
 };

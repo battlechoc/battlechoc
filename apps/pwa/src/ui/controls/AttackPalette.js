@@ -2,10 +2,8 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { multiplayer } from '../../Multiplayer';
 import { selectAttack } from '../UiActions';
-import { AttackType } from '../../gameplay/GameEntities';
-import { GameStateTypes } from '../../gameplay/GameplayReducer';
+import { GameStateTypes, BattlechocError, AttackType } from 'battlechoc-shared-functions';
 import { Jukebox } from '../misc';
-import { BattlechocError } from '../../gameplay/Errors';
 
 class AttackPalette extends Component {
     constructor(props) {

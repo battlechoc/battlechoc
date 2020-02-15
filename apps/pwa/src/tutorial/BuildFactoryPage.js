@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import ChatLikeInstructions from './ChatLikeInstructions';
-import { GameStateTypes } from '../gameplay/GameplayReducer';
+import { GameStateTypes } from 'battlechoc-shared-functions';
 
 class BuildFactoryPage extends Component {
     componentDidUpdate() {

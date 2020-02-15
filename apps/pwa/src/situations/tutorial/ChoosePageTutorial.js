@@ -1,7 +1,5 @@
 import Situation from '../Situation';
-import { GameStateTypes } from '../../gameplay/GameplayReducer';
-import { PlayerType } from '../../gameplay/Player';
-import { BoardCellTypes, EntityType, createEntity } from '../../gameplay/GameEntities';
+import { GameStateTypes, PlayerType, BoardCellTypes, EntityType, createEntity } from 'battlechoc-shared-functions';
 
 export default class ChoosePageTutorialSituation extends Situation {
     constructor() {

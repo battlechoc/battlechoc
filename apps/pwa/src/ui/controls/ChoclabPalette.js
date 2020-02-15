@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { EntityType } from '../../gameplay/GameEntities';
+import { EntityType } from 'battlechoc-shared-functions';
 import { Jukebox } from '../misc';
 import { makeStyles } from '@material-ui/core/styles';
 
 const useStyles = makeStyles(theme => ({
     palette: {
         width: '50vw',
-        maxWidth: 400,
         position: 'absolute',
         bottom: 0,
         display: 'flex',
@@ -20,19 +19,35 @@ const useStyles = makeStyles(theme => ({
         }
     },
     preview: {
-        width: 'calc(10vw - 5px)',
-        height: 'calc(10vw - 5px)',
+        width: 'calc(10vw - 5px) !important',
+        height: 'calc(10vw - 5px) !important',
         marginTop: 2,
-        backgroundSize: 'calc(4 * (10vw - 5px)) calc(3 * (10vw - 5px))',
+        backgroundSize: 'calc(4 * (10vw - 5px)) calc(3 * (10vw - 5px)) !important',
         '@media screen and (min-width: 800px)': { 
-            width: 75,
-            height: 75,
-            backgroundSize: '300px 225px'
+            width: '75px !important',
+            height: '75px !important',
+            backgroundSize: '300px 225px !important'
         },
         '@media screen and (max-width: 600px) and (orientation: portrait)': {
-            width: 'calc(7.3vh - 5px)',
-            height: 'calc(7.3vh - 5px)',
-            backgroundSize: 'calc(4 * (7.3vh - 5px)) calc(3 * (7.3vh - 5px))'
+            width: 'calc(7.3vh - 5px) !important',
+            height: 'calc(7.3vh - 5px) !important',
+            backgroundSize: 'calc(4 * (7.3vh - 5px)) calc(3 * (7.3vh - 5px)) !important'
+        }
+    },
+    donutFactoryPreview: {
+        width: 'calc(10vw - 5px) !important',
+        height: 'calc(10vw - 5px) !important',
+        marginTop: 2,
+        backgroundSize: 'calc(6 * (10vw - 5px)) calc(10vw - 5px) !important',
+        '@media screen and (min-width: 800px)': { 
+            width: '75px !important',
+            height: '75px !important',
+            backgroundSize: '450px 75px !important'
+        },
+        '@media screen and (max-width: 600px) and (orientation: portrait)': {
+            width: 'calc(7.3vh - 5px) !important',
+            height: 'calc(7.3vh - 5px) !important',
+            backgroundSize: 'calc(6 * (7.3vh - 5px)) calc(7.3vh - 5px) !important'
         }
     }
 }));
@@ -82,20 +97,26 @@ const ChoclabPalette = props => {
         type: EntityType.HOT_CHOCOLATE_BALLISTA,
         className: 'ballista',
         alt: 'hot chocolate ballista',
+    },{
+        type: EntityType.DONUT_FACTORY,
+        className: 'donutFactory',
+        alt: 'donut factory'
     }];
 
-    let selectEntity = buildingType => {
+    const selectEntity = buildingType => {
         setSelectedEntity(buildingType);
         props.selectEntity(buildingType);      
     }
+
+    const isDonutFactory = building => building.type === EntityType.DONUT_FACTORY;
 
     return (
         <div className={classes.palette}>
             {(() => buildingsForSeclection.map((building, i) => {
                     let className = selectedEntity === building.type ? 'selected previewContainer' : 'canbuild previewContainer';
                     return <div className={className} key={i}>
-                        <div className={`${building.className} enabled preview ${classes.preview}`} 
-                             style={{ backgroundImage: 'url(/images/toolbar_icon_palette.png)' }} onClick={() => {
+                        <div className={`${building.className} enabled preview ${isDonutFactory(building) ? classes.donutFactoryPreview : classes.preview}`} 
+                             style={{ backgroundImage: isDonutFactory(building) ? 'url(/images/donut_icon_palette.png)' : 'url(/images/toolbar_icon_palette.png)' }} onClick={() => {
                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                 selectEntity(building.type);
                         }} />
