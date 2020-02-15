@@ -9,3 +9,4 @@ test:
     - yarn
   script:
     - yarn test
+  coverage: /All\sfiles.*?\s+(\d+.\d+)/
