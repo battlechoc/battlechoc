@@ -463,7 +463,7 @@ const processEvents = (session, events, eventQueue) => {
                     if (eventQueue.lastProcessedEvent[0] < event.index) {
                         unprocessedEvents += 1;
                     } else if (eventQueue.lastProcessedEvent[0] === event.index) {
-                        if (Rules.isActionValid(session.game, event)) {
+                        if (Rules.isActionValid(event, session.game)) {
                             Reducer.updateState(session.game, event);
                             eventQueue.lastProcessedEvent[0] += 1;
                             processedEvents += 1;
@@ -487,7 +487,7 @@ const processEvents = (session, events, eventQueue) => {
                     if (eventQueue.lastProcessedEvent[1] < event.index) {
                         unprocessedEvents += 1;
                     } else if (eventQueue.lastProcessedEvent[1] === event.index) {
-                        if (Rules.isActionValid(session.game, event)) {
+                        if (Rules.isActionValid(event, session.game)) {
                             Reducer.updateState(session.game, event);
                             eventQueue.lastProcessedEvent[1] += 1;
                             processedEvents += 1;
