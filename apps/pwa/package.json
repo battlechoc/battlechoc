@@ -8,7 +8,7 @@
     "axios": "^0.19.0",
     "babylonjs": "^4.0.3",
     "babylonjs-loaders": "^4.0.3",
-    "battlechoc-shared-functions": "git+https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git",
+    "battlechoc-shared-functions": "https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git",
     "firebase": "^7.6.0",
     "idb": "^4.0.3",
     "javascript-time-ago": "^2.0.1",
