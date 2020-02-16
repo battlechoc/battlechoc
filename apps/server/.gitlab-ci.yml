@@ -4,8 +4,8 @@ stages:
  - test
  - deploy
  
-variables:
-  DOCKER_HOST: tcp://docker:2375
+services:
+ - docker:dind
 
 test:
   stage: test
