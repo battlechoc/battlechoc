@@ -11,14 +11,13 @@ test:
   stage: test
   before_script:
     - apk add --update nodejs npm
-    - npm install -g yarn
-    - cd functions && yarn
+    - cd functions && npm install
   artifacts:
     expire_in: 5 mins
     paths:
      - functions/node_modules/
   script:
-    - cd functions && yarn test
+    - cd functions && npm run test
   coverage: /All\sfiles.*?\s+(\d+.\d+)/
   
 deploy:
