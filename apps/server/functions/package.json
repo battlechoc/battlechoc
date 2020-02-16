@@ -5,6 +5,9 @@
     "serve": "NODE_ENV=development firebase serve --only functions",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
+    "pretest": "docker run --name battlechoc-test-postgres -p 5432:5432 -e POSTGRES_PASSWORD=hackersdontcare -d postgres",
+    "test": "NODE_ENV=test jest --detectOpenHandles tests --coverage",
+    "posttest": "docker stop battlechoc-test-postgres && docker container rm battlechoc-test-postgres",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log"
   },
@@ -22,5 +25,9 @@
   "engines": {
     "node": "10"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "jest": "^25.1.0",
+    "supertest": "^4.0.2"
+  }
 }
