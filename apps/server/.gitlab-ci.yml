@@ -1,0 +1,21 @@
+image: docker:19.03.1
+
+stages:
+ - test
+ - deploy
+ 
+test:
+  stage: test
+  before_script:
+    - apk add --update nodejs npm
+    - npm install -g yarn
+    - yarn
+  script:
+    - yarn test
+  coverage: /All\sfiles.*?\s+(\d+.\d+)/
+  
+deploy:
+  stage: deploy
+  script:
+    - npm install -g firebase-tools
+    - firebase deploy --only functions:api --token "1/EiwBklB7W-Cdt5XSy5omXsxSI-KfKai36k4FuNOJEng"
