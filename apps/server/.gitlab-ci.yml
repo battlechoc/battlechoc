@@ -11,7 +11,7 @@ test:
   stage: test
   before_script:
     - apk add --update nodejs npm
-    - cd functions && npm install
+    - cd functions && rm package-lock.json && npm install
   script:
     - cd functions && npm run test
   coverage: /All\sfiles.*?\s+(\d+.\d+)/
