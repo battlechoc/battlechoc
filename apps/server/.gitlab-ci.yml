@@ -18,7 +18,10 @@ test:
     paths:
      - functions/node_modules/
   script:
-    - npm run test
+    - docker run --name battlechoc-test-postgres -p 5432:5432 -e POSTGRES_PASSWORD=hackersdontcare -d postgres
+    - sleep 15
+    - NODE_ENV=test jest tests --coverage
+    - docker stop battlechoc-test-postgres && docker container rm battlechoc-test-postgres
   coverage: /All\sfiles.*?\s+(\d+.\d+)/
   
 deploy:
