@@ -12,7 +12,11 @@ test:
   before_script:
     - apk add --update nodejs npm
     - npm install -g yarn
-    - yarn
+    - cd functions && yarn
+  artifacts:
+    expire_in: 5 mins
+    paths:
+     - functions/node_modules/
   script:
     - cd functions && yarn test
   coverage: /All\sfiles.*?\s+(\d+.\d+)/
@@ -22,3 +26,6 @@ deploy:
   script:
     - npm install -g firebase-tools
     - cd functions && firebase deploy --only functions:api --token "1/EiwBklB7W-Cdt5XSy5omXsxSI-KfKai36k4FuNOJEng"
+  only:
+    - master
+
