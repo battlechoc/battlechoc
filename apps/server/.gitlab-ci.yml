@@ -6,6 +6,7 @@ stages:
  
 services:
  - docker:dind
+   alias: localhost
 
 test:
   stage: test
