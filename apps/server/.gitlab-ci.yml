@@ -5,7 +5,7 @@ stages:
  - deploy
  
 services:
- - docker:dind
+ - name: docker:dind
    alias: localhost
 
 test:
