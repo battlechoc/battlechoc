@@ -7,7 +7,11 @@ const EntityType = require('../index').EntityType;
 const getEntityDescriptor = require('../index').getEntityDescriptor;
 const AttackType = require('../index').AttackType;
 const Rules = require('../index').Rules;
+const finishTurnReduction = require('../index').finishTurnReduction;
+const finishBuildPhaseReduction = require('../index').finishBuildPhaseReduction;
 const attackReduction = require('../index').attackReduction;
+const buildReduction = require('../index').buildReduction;
+const EmptyPlayerStats = require('../index').EmptyPlayerStats;
 
 class GamePlayTest extends Situation {
     constructor() {
@@ -20,8 +24,12 @@ class GamePlayTest extends Situation {
         this.modifyBoard({col: 1, row: 2, cellType: BoardCellTypes.WHITE, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.RUM_TRUFFLE_CANNON, this.game.gameplay.game.players[0].level)] });
         this.modifyBoard({col: 1, row: 1, cellType: BoardCellTypes.BROWN, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.RUM_TRUFFLE_CANNON, this.game.gameplay.game.players[0].level)] });
 
-        this.modifyBoard({col: 2, row: 2, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY, this.game.gameplay.game.players[1].level)]});
+        let healthDonut = createEntity(EntityType.DONUT_HEALTH_GREEN);
+        let creamDonut = createEntity(EntityType.DONUT_CREAM_WHITE);
+
+        this.modifyBoard({col: 2, row: 2, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [creamDonut, createEntity(EntityType.FACTORY, this.game.gameplay.game.players[1].level)]});
         this.modifyBoard({col: 7, row: 7, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: []});
+        this.modifyBoard({col: 5, row: 5, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [healthDonut]});
 
         const game = this.game.gameplay.game;
 
@@ -31,6 +39,8 @@ class GamePlayTest extends Situation {
         game.players[1].hasFactory = true;
         game.players[1].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[1].level).buildingsPerTurn + 1;
         game.players[1].buildings = game.players[1].buildingsPerTurn;
+        game.players[1].cacao = 500;
+        game.players[1].activeDonuts = [creamDonut, healthDonut];
 
         game.players[0].hasFactory = true;
         game.players[0].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[0].level).buildingsPerTurn + 1;
@@ -61,6 +71,48 @@ test('should find a winner', () => {
     const position = { row: 2, col: 2 };
     const damage = getEntityDescriptor(EntityType.FACTORY, gameplay.game.players[0].level).hp + 1;
     const event = {
+        "type": GameActionTypes.attack,
+        "payload": {
+            "issuer": gameplay.game.players[0].id,
+            "attackType": AttackType.TRUFFLE,
+            "damage": damage,
+            "row": position.row,
+            "col": position.col
+        }
+    }
+
+    if (Rules.isActionValid(event, game)) {
+        attackReduction(gameplay, event);
+    }
+
+    expect(Rules.determineWinner(gameplay.game)[0].name).toBe(gameplay.game.players[0].name);
+});
+
+test('should find a winner even with donut factory', () => {
+    const game = GamePlayTest.game;
+    const gameplay = game.gameplay;
+
+    finishTurnReduction(game.gameplay);
+    const building = createEntity(EntityType.DONUT_FACTORY, EmptyPlayerStats.level);
+    building.position = {row: 7, col: 6};
+
+    let event = {
+        "type": GameActionTypes.build,
+        "payload": {
+            "issuer": game.gameplay.game.players[1].id,
+            "building": building
+        }
+    }
+
+    expect(Rules.isActionValid(event, game)).toBe(true);
+
+    buildReduction(game.gameplay, event);  
+    finishBuildPhaseReduction(game.gameplay);
+    finishTurnReduction(game.gameplay);
+
+    const position = { row: 2, col: 2 };
+    const damage = getEntityDescriptor(EntityType.FACTORY, gameplay.game.players[0].level).hp + 1;
+    event = {
         "type": GameActionTypes.attack,
         "payload": {
             "issuer": gameplay.game.players[0].id,
