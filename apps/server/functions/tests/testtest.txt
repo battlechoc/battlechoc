@@ -1,7 +1,0 @@
-let pool = new Pool({
-    host:  'localhost',
-    user: 'postgres',
-    password: 'hackersdontcare',
-    database: 'postgres',
-    max: 1
-});
