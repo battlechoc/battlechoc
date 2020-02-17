@@ -951,17 +951,17 @@ const endGameReduction = (state, action) => {
   state.game.winners = action.payload.winners;
 
   if (action.payload.winners.length === 1) {
-      let winner = state.game.players.findIndex(player => player.id === action.payload.winners[0].id)
+      let winner = state.game.players.find(player => player.id === action.payload.winners[0].id)
       winner.statistics.won = true;
       winner.statistics.lost = false;
 
-      let looser = state.game.players.findIndex(player => player.id === action.payload.winners[0].id)
+      let looser = state.game.players.find(player => player.id !== action.payload.winners[0].id)
       looser.statistics.won = false;
       looser.statistics.lost = true;
   } else if (action.payload.winners.length === 2) {
       for (let player of state.game.players) {
-          player.won = false;
-          player.lost = false;
+          player.statistics.won = false;
+          player.statistics.lost = false;
       }
   }
 }

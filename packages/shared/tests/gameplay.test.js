@@ -12,6 +12,7 @@ const finishBuildPhaseReduction = require('../index').finishBuildPhaseReduction;
 const attackReduction = require('../index').attackReduction;
 const buildReduction = require('../index').buildReduction;
 const EmptyPlayerStats = require('../index').EmptyPlayerStats;
+const endGameReduction = require('../index').endGameReduction;
 
 class GamePlayTest extends Situation {
     constructor() {
@@ -127,5 +128,24 @@ test('should find a winner even with donut factory', () => {
         attackReduction(gameplay, event);
     }
 
-    expect(Rules.determineWinner(gameplay.game)[0].name).toBe(gameplay.game.players[0].name);
+    const winners = Rules.determineWinner(gameplay.game);
+    expect(winners[0].name).toBe(gameplay.game.players[0].name);
+
+    event = {
+        "type": "battlechoc/gameplay/endGame",
+        "payload": {
+            "issuer": gameplay.game.players[0].id,
+            "winners": winners
+        }
+    }
+
+    if (Rules.isActionValid(event, game)) {
+        endGameReduction(gameplay, event);
+    }
+
+    expect(gameplay.game.players[0].statistics.won).toBe(true);
+    expect(gameplay.game.players[0].statistics.lost).toBe(false);
+
+    expect(gameplay.game.players[1].statistics.won).toBe(false);
+    expect(gameplay.game.players[1].statistics.lost).toBe(true);
 });
