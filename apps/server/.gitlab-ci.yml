@@ -12,7 +12,10 @@ test:
   stage: test
   before_script:
     - docker run --name battlechoc-test-postgres --net=host -e POSTGRES_PASSWORD=hackersdontcare -d postgres
-    - apk update && apk upgrade && apk add --no-cache bash git openssh
+    - apk update && apk upgrade && apk add --no-cache bash git openssh busybox-extras
+    - telnet localhost 5432
+    - telnet 127.0.0.1 5432
+    - telnet 0.0.0.0 5432
     - apk add --update nodejs npm
     - docker container ls
     - cd functions && npm install
