@@ -5,8 +5,7 @@ stages:
  - deploy
  
 services:
- - name: docker:dind
-   alias: localhost
+ - docker:dind
 
 test:
   stage: test
@@ -14,19 +13,17 @@ test:
     - docker run --name battlechoc-test-postgres --net=host -e POSTGRES_PASSWORD=hackersdontcare -d postgres
     - apk update && apk upgrade && apk add --no-cache bash git openssh busybox-extras
     - telnet docker 5432
-    - telnet 0.0.0.0 5432
-    - telnet localhost 5432
-    - telnet 127.0.0.1 5432
     - apk add --update nodejs npm
     - docker container ls
     - cd functions && npm install
+    - sed -i "s/localhost/docker/g" tests/user.test.js
+    - sed -i "s/localhost/docker/g" main.js
     - npm install -g jest
   artifacts:
     expire_in: 5 mins
     paths:
      - functions/node_modules/
   script:
-    - sleep 15
     - NODE_ENV=test jest tests --coverage
     - docker stop battlechoc-test-postgres && docker container rm battlechoc-test-postgres
   coverage: /All\sfiles.*?\s+(\d+.\d+)/
