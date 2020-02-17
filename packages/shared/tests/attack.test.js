@@ -27,8 +27,9 @@ class AttackTest extends Situation {
         game.state = GameStateTypes.ATTACK_PHASE;
         game.players[0].fieldIndex = 0;
         game.players[1].fieldIndex = 1;
+        game.players[1].hasFactory = true;
         game.players[1].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[1].level).buildingsPerTurn + 1;
-        game.players[1].buildings = game.players[0].buildingsPerTurn;
+        game.players[1].buildings = game.players[1].buildingsPerTurn;
 
         game.players[0].hasFactory = true;
         game.players[0].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[0].level).buildingsPerTurn + 1;
