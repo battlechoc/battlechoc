@@ -1,7 +1,7 @@
 workbox.core.skipWaiting();
 workbox.core.clientsClaim();
 
-// NEXT REVISION will replaced by $CI_COMMIT_SHORT_SHA hash within the GitLab build process
+// NEXT REVISION will replaced by $CI_PIPELINE_ID within the GitLab build process
 workbox.precaching.precacheAndRoute((self.__precacheManifest || []).concat([
   { url: '/', revision: 'NEXT_REVISION' },
   { url: '/index.html?app_runs_as=pwa&app_version=1', revision: 'NEXT_REVISION' },
