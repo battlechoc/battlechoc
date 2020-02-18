@@ -1,55 +1,10 @@
 const request = require('supertest');
-const { Pool } = require('pg');
-const EmptyPlayerStats = require('battlechoc-shared-functions').EmptyPlayerStats;
 const app = require('../main').app;
 const dbPool = require('../main').dbPool;
+const helper = require('./helper');
 
 beforeAll(async done => {
-    let pool = new Pool({
-        host:  'localhost',
-        user: 'postgres',
-        password: 'hackersdontcare',
-        database: 'postgres',
-        max: 1
-    });
-    await pool.query('CREATE DATABASE battlechoc');
-    await pool.end();
-
-    pool = new Pool({
-        host:  'localhost',
-        user: 'postgres',
-        password: 'hackersdontcare',
-        database: 'battlechoc',
-        max: 1
-    });
-
-    await pool.query(`CREATE TABLE players
-    (
-        name text,
-        coins integer,
-        score integer,
-        language text,
-        id text NOT NULL,
-        level json,
-        CONSTRAINT players_pkey PRIMARY KEY (id)
-    )`);
-
-    await pool.query(`CREATE TABLE track_records
-    (
-        result text NOT NULL,
-        player text NOT NULL,
-        winner text,
-        entities_destroyed smallint,
-        entities_molten smallint,
-        entities_revealed smallint,
-        entities_built smallint,
-        winner_type text,
-        id uuid NOT NULL,
-        CONSTRAINT track_records_pkey PRIMARY KEY (id, player)
-    )`);
-
-    await pool.query('INSERT INTO players(id, name, coins, score, language, level) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', ['1337-1337-1337-1337', 'Basti', 0, 0, 'en', EmptyPlayerStats.level]);
-    await pool.end();
+    await helper.setupDatabasePlayground();
     done();
 })
 
@@ -65,5 +20,44 @@ it('should find Basti', async done => {
     expect(response.body[0].name).toBe('Basti');
     done();
 });
+
+it('should add and find a friend and then remove the friend again and find nothing', async done => {
+    let response = await request(app).post('/user/friend').send({friend: 'thebestfriendever'});
+    expect(response.status).toBe(404);
+    response = await request(app).post('/user/friend').send({friend: 'Fabi'});
+    expect(response.status).toBe(200);
+    response = await request(app).get('/user/friends');
+    expect(response.status).toBe(200);
+    expect(response.body.length).toBe(1);
+    expect(response.body[0].name).toBe('Fabi');
+    response = await request(app).delete('/user/friend').send({friend: 'thebestfriendever'});
+    expect(response.status).toBe(404);
+    response = await request(app).delete('/user/friend').send({friend: 'Fabi'});
+    expect(response.status).toBe(200);
+    response = await request(app).get('/user/friends');
+    expect(response.status).toBe(200);
+    expect(response.body.length).toBe(0);
+    done();
+});
+
+it('should not allow to challenge yourself', async done => {
+    const response = await request(app).post('/user/challenge').send({opponent: 'Basti'});
+    expect(response.status).toBe(400);
+    expect(JSON.stringify(response.body)).toBe(JSON.stringify({ error: 'CANNOT CREATE A GAME CHALLENGING YOURSELF' }));
+    done();
+});
+
+it('should not find the opponent', async done => {
+    const response = await request(app).post('/user/challenge').send({opponent: 'thebestfriendever'});
+    expect(response.status).toBe(404);
+    done();
+});
+
+it('should challenge the opponent', async done => {
+    const response = await request(app).post('/user/challenge').send({opponent: 'Fabi'});
+    expect(response.status).toBe(200);
+    done();
+});
+
 
 afterAll(async () => await dbPool.end());

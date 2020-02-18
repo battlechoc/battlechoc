@@ -6,21 +6,21 @@
     "shell": "firebase functions:shell",
     "start": "npm run shell",
     "pretest": "docker run --name battlechoc-test-postgres -p 5432:5432 -e POSTGRES_PASSWORD=hackersdontcare -d postgres",
-    "test": "NODE_ENV=test jest --detectOpenHandles tests --coverage",
+    "test": "NODE_ENV=test GCLOUD_PROJECT=battlechoc FUNCTIONS_EMULATOR=true FIREBASE_CONFIG='{\"databaseURL\":\"https://battlechoc.firebaseio.com\",\"storageBucket\":\"battlechoc.appspot.com\",\"projectId\":\"battlechoc\"}' jest --detectOpenHandles tests --coverage",
     "posttest": "docker stop battlechoc-test-postgres && docker container rm battlechoc-test-postgres",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log"
   },
   "dependencies": {
-    "axios": "^0.19.0",
-    "body-parser": "^1.18.3",
+    "axios": "^0.19.2",
+    "battlechoc-shared-functions": "https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git",
+    "body-parser": "^1.19.0",
     "cors": "^2.8.5",
-    "express": "^4.16.4",
-    "firebase-admin": "^8.6.0",
-    "firebase-functions": "^3.2.0",
-    "pg": "^7.17.0",
-    "uuid": "^3.3.3",
-    "battlechoc-shared-functions": "https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git"
+    "express": "^4.17.1",
+    "firebase-admin": "^8.9.2",
+    "firebase-functions": "^3.3.0",
+    "pg": "^7.18.1",
+    "uuid": "^3.4.0"
   },
   "engines": {
     "node": "10"

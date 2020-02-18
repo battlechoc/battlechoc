@@ -12,7 +12,7 @@ const db = admin.firestore();
 
 const Rules = require('battlechoc-shared-functions').Rules;
 const EmptyPlayerStats = require('battlechoc-shared-functions').EmptyPlayerStats;
-const createPlayer = require('battlechoc-shared-functions').createEntity;
+const createPlayer = require('battlechoc-shared-functions').createPlayer;
 const GameActionTypes = require('battlechoc-shared-functions').GameActionTypes;
 const endGameReduction = require('battlechoc-shared-functions').endGameReduction;
 const attackReduction = require('battlechoc-shared-functions').attackReduction;
@@ -59,11 +59,14 @@ const corsOptions = {
 }
 
 app.use(bodyParser.json());
-app.use(cors(corsOptions));
+
+if (process.env.NODE_ENV !== 'test') {
+    app.use(cors(corsOptions));
+}
 
 app.use(async (req, res, next) => {
     if (process.env.NODE_ENV === 'test') {
-        req.user = { uid: '1337-1337-1337-1337'}
+        req.user = { uid: req.body.uid || '1337-1337-1337-1337' }
         return next();
     }
 
@@ -431,9 +434,12 @@ app.post('/user/challenge', async (req, res) => {
                 };
 
                 try {
-                    const databaseSession = await db.collection('multiplayerEventQueues').add(sessionEventQueue);
+                    let databaseSession = { id: '1337-3321-4456' };
+                    if (process.env.NODE_ENV !== 'test') {
+                        databaseSession = await db.collection('multiplayerEventQueues').add(sessionEventQueue);
+                    }
                     const initialGameState = {
-                        players: [createPlayer(req.body.opponent, sessionEventQueue.players[0].id, 'PlayerType.HUMAN', opponentLevel), createPlayer(player.username, sessionEventQueue.players[1].id, 'PlayerType.HUMAN', playerLevel)],
+                        players: [createPlayer(req.body.opponent, 'PlayerType.HUMAN', opponentLevel, sessionEventQueue.players[0].id), createPlayer(player.username, 'PlayerType.HUMAN', playerLevel, sessionEventQueue.players[1].id)],
                         currentPlayerIndex: coinToss,
                         state: 'GameStateTypes.CHOOSE_FIELD_OR_START',
                         isRunning: true,
@@ -442,6 +448,7 @@ app.post('/user/challenge', async (req, res) => {
                     };
                     await dbPool.query('INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, turns) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
                         databaseSession.id, sessionEventQueue.players[0].id, sessionEventQueue.players[1].id, initialGameState, new Date(), new Date(), 0]);
+                    
                     const tokens = await getPlayerMessagingPermissionTokens(req.user.uid);
                     tokens.forEach((token) => {
                         const payload = {
@@ -459,6 +466,7 @@ app.post('/user/challenge', async (req, res) => {
                     });
                     res.json({ sessionId: databaseSession.id });
                 } catch (error) {
+                    console.log(error.toString())
                     res.status(500).json({ error: error.toString() });
                 }
             }
