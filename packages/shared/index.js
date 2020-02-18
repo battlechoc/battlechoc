@@ -344,16 +344,20 @@ const PlayerType = Object.freeze({
   VIOLET_BEAUREGARDE: 'PlayerType.VIOLET_BEAUREGARDE'
 });
 
-function createPlayer(name, type, level) {
+function createPlayer(name, type, level, id) {
   if (typeof level === 'undefined') {
     level = EmptyPlayerStats.level;
+  }
+
+  if (typeof id === 'undefined') {
+    var id = uuidv4();
   }
 
   let player = {
     name: name,
     level: level,
     type: type,
-    id: uuidv4(),
+    id: id,
     cacao: 100,
     cacaoPerTurn: 0,
     buildings: 0,
