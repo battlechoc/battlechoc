@@ -7,14 +7,9 @@ const t = require('./translations.js');
 const uuidv4 = require('uuid/v4');
 const { Pool } = require('pg')
 const axios = require('axios');
-const serviceAccount = require('./battlechoc-service-account.json');
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://battlechoc.firebaseio.com"
-});
-
+admin.initializeApp();
 const db = admin.firestore();
+
 const Rules = require('battlechoc-shared-functions').Rules;
 const EmptyPlayerStats = require('battlechoc-shared-functions').EmptyPlayerStats;
 const createPlayer = require('battlechoc-shared-functions').createPlayer;
@@ -403,6 +398,16 @@ app.get('/query/user/:name', async (req, res) => {
     }
 });
 
+const addEventQueue = async eventQueue => {
+    if (process.env.NODE_ENV !== 'test') {
+        return await db.collection('multiplayerEventQueues').add(eventQueue);
+    } else {
+        const id = uuidv4(); 
+        await dbPool.query('INSERT INTO multiplayerEventQueues(id, sessionEventQueue) VALUES ($1, $2)', [id, eventQueue]);
+        return { id: id };
+    }
+}
+
 app.post('/user/challenge', async (req, res) => {
     const opponentResult = await getPlayerFromName(req.body.opponent);
     if (opponentResult.rows.length === 0) {
@@ -439,11 +444,7 @@ app.post('/user/challenge', async (req, res) => {
                 };
 
                 try {
-                    const path = db.collection('multiplayerEventQueues').doc().path;
-                    console.log(path);
-                    const ref = await db.doc(path).set(sessionEventQueue);
-                    console.log(ref);
-                    const databaseSession = await db.collection('multiplayerEventQueues').add(sessionEventQueue);                    
+                    const databaseSession = await addEventQueue(sessionEventQueue);                    
                     const initialGameState = {
                         players: [createPlayer(req.body.opponent, 'PlayerType.HUMAN', opponentLevel, sessionEventQueue.players[0].id), createPlayer(player.username, 'PlayerType.HUMAN', playerLevel, sessionEventQueue.players[1].id)],
                         currentPlayerIndex: coinToss,
@@ -472,7 +473,7 @@ app.post('/user/challenge', async (req, res) => {
                     });
                     res.json({ sessionId: databaseSession.id });
                 } catch (error) {
-                    console.log(error)
+                    console.log(error.toString())
                     res.status(500).json({ error: error.toString() });
                 }
             }

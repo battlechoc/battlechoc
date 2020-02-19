@@ -47,15 +47,43 @@ it('should not allow to challenge yourself', async done => {
     done();
 });
 
+it('should challenge the player', async done => {
+    const response = await request(app).post('/user/challenge').send({opponent: 'Fabi'});
+    expect(response.status).toBe(200);
+    done();
+});
+
 it('should not find the opponent', async done => {
     const response = await request(app).post('/user/challenge').send({opponent: 'thebestfriendever'});
     expect(response.status).toBe(404);
     done();
 });
 
-it('should challenge the opponent', async done => {
-    const response = await request(app).post('/user/challenge').send({opponent: 'Fabi'});
+it('should not find a player', async done => {    
+    const response = await request(app).get('/query/user/Zee');
+    expect(response.body.length).toBe(0);
+    done();
+});
+
+it('should not find both players', async done => {    
+    const response = await request(app).get('/query/user/a');
+    expect(response.body.length).toBe(2);
+    done();
+});
+
+it('it should find multiplayer sessions and then get a single session', async done => {
+    let response = await request(app).get('/multiplayer/sessions');
     expect(response.status).toBe(200);
+    expect(response.body.sessions.length).toBeGreaterThan(0);
+
+    const multiplayerSessionId = response.body.sessions[0].id;
+    response = await request(app).get(`/multiplayer/session/${multiplayerSessionId}`);
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe(multiplayerSessionId);
+
+    response = await request(app).get(`/multiplayer/session/12345`);
+    expect(response.status).toBe(404);
+
     done();
 });
 

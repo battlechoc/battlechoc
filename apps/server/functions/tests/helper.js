@@ -78,6 +78,11 @@ const setupDatabasePlayground = async () => {
         friend text NOT NULL
     )`);
 
+    await pool.query(`CREATE TABLE multiplayerEventQueues (
+        id text NOT NULL,
+        sessionEventQueue jsonb
+    )`);
+
     await pool.query('INSERT INTO players(id, name, coins, score, language, level) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', ['1337-1337-1337-1337', 'Basti', 0, 0, 'en', EmptyPlayerStats.level]);
     await pool.query('INSERT INTO players(id, name, coins, score, language, level) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', ['rul0r-rul0r-rul0r-rul0r', 'Fabi', 12, 12, 'de', EmptyPlayerStats.level]);
     await pool.end();
