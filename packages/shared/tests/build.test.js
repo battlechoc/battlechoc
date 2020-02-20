@@ -143,7 +143,7 @@ test('should fail to set a tree without factory', () => {
         }
     }
 
-    expect(Rules.isActionValid(event, game)).toBeInstanceOf(NoBuildingsLeftError);
+    expect(Rules.isActionValid(event, game.gameplay.game)).toBeInstanceOf(NoBuildingsLeftError);
 });
 
 const buildFactoryFirst = game => {
@@ -178,7 +178,7 @@ test('should not fail to set a tree with factory', () => {
         }
     }
 
-    expect(Rules.isActionValid(event, game)).toBe(true);
+    expect(Rules.isActionValid(event, game.gameplay.game)).toBe(true);
     const player = JSON.parse(JSON.stringify(game.gameplay.game.players[0]));
     buildReduction(game.gameplay, event);
     expect(game.gameplay.game.players[0].cacao).toBe(player.cacao - building.costs);
@@ -203,7 +203,7 @@ test('should fail if it\'s not players turn',  () => {
     }
 
     game.gameplay.game.players[0].cacao = building.costs - 5;
-    expect(Rules.isActionValid(event, game)).toBeInstanceOf(InvalidActionIssuerError);
+    expect(Rules.isActionValid(event, game.gameplay.game)).toBeInstanceOf(InvalidActionIssuerError);
 });
 
 test('should fail if player has not enough cacao',  () => {
@@ -225,5 +225,5 @@ test('should fail if player has not enough cacao',  () => {
     }
 
     game.gameplay.game.players[0].cacao = building.costs - 5;
-    expect(Rules.isActionValid(event, game)).toBeInstanceOf(NoCacaoLeftError);
+    expect(Rules.isActionValid(event, game.gameplay.game)).toBeInstanceOf(NoCacaoLeftError);
 });

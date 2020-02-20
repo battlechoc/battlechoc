@@ -66,7 +66,7 @@ test('should fail to attack an empty cell', () => {
         }
     }
 
-    expect(Rules.isActionValid(event, game)).toBeInstanceOf(TargetEmptyError);
+    expect(Rules.isActionValid(event, game.gameplay.game)).toBeInstanceOf(TargetEmptyError);
 });
 
 const getFieldAt = (gamestate, position, fieldIndex=0) => gamestate.game.board.fields[fieldIndex].grid[position.row * gamestate.game.board.size.cols + position.col];
@@ -90,7 +90,7 @@ test('should not fail to attack an cell containing the factory', () => {
         }
     }
 
-    expect(Rules.isActionValid(event, game)).toBe(true);
+    expect(Rules.isActionValid(event, game.gameplay.game)).toBe(true);
 
     const health = getFieldAt(gameplay, position, 1).occupiedBy.find(entity => entity.type === EntityType.FACTORY).hp;
     

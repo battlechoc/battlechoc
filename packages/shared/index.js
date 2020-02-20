@@ -1121,22 +1121,22 @@ class Rules {
       return false;
   }
 
-  static isActionValid(action, state) {
+  static isActionValid(action, game) {
       if (!(this.isGameAction(action))) {
           return new ActionValidationError(action);
       }
 
-      let currentState = typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state;
-      if (Rules.issuerIsInvalid(action, state.gameplay.game) && action.type !== GameActionTypes.endGame) {
+      let currentState = typeof game === 'undefined' ? undefined : game.state;
+      if (Rules.issuerIsInvalid(action, game) && action.type !== GameActionTypes.endGame) {
           let issuerId;
           if (typeof action.payload !== 'undefined') {
               issuerId = action.payload.issuer;
           }
-          return new InvalidActionIssuerError(action, issuerId, this.currentPlayer(state.gameplay.game).id);
+          return new InvalidActionIssuerError(action, issuerId, this.currentPlayer(game).id);
       }
 
       if (typeof currentState !== 'undefined') {
-          if (!state.gameplay.game.isRunning && action.type !== GameActionTypes.finishGame) {
+          if (!game.isRunning && action.type !== GameActionTypes.finishGame) {
               return new GameAlreadyEndedError(action);
           }
       }
@@ -1160,23 +1160,23 @@ class Rules {
       } else if (action.type === GameActionTypes.build) {
           if (currentState !== GameStateTypes.BUILD_PHASE && currentState !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && currentState !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
               return new UnexpectedStateError(currentState);
-          } else if (this.currentPlayer(state.gameplay.game).donuts.length > 0 && isDonut(action.payload.building.type)) {
-              return this.canBuildOnCell(action.payload.building.position, action.payload.building.type, state.gameplay.game);
-          } else if ((this.currentPlayer(state.gameplay.game).buildings === 0 || (this.currentPlayer(state.gameplay.game).buildingsPerTurn === 0 && action.payload.building.type === EntityType.FACTORY_EXTENSION)) &&
+          } else if (this.currentPlayer(game).donuts.length > 0 && isDonut(action.payload.building.type)) {
+              return this.canBuildOnCell(action.payload.building.position, action.payload.building.type, game);
+          } else if ((this.currentPlayer(game).buildings === 0 || (this.currentPlayer(game).buildingsPerTurn === 0 && action.payload.building.type === EntityType.FACTORY_EXTENSION)) &&
               action.payload.building.type !== EntityType.FACTORY) {
               return new NoBuildingsLeftError();
-          } else if (this.currentPlayer(state.gameplay.game).cacao < action.payload.building.costs) {
+          } else if (this.currentPlayer(game).cacao < action.payload.building.costs) {
               return new NoCacaoLeftError();
           } else {
-              return this.canBuildOnCell(action.payload.building.position, action.payload.building.type, state.gameplay.game);
+              return this.canBuildOnCell(action.payload.building.position, action.payload.building.type, game);
           }
       } else if (action.type === GameActionTypes.attack) {
-          if (this.currentPlayer(state.gameplay.game).attacks[action.payload.attackType] === 0) {
+          if (this.currentPlayer(game).attacks[action.payload.attackType] === 0) {
               return new NoAttacksLeftError();
-          } else if (this.otherPlayerBoardCell(state.gameplay.game, action.payload).occupiedBy.length === 0 &&
+          } else if (this.otherPlayerBoardCell(game, action.payload).occupiedBy.length === 0 &&
               action.payload.attackType !== AttackType.BUNNY && action.payload.attackType !== AttackType.HOT_CHOCOLATE) {
               return new TargetEmptyError();
-          } else if (AttackType.HOT_CHOCOLATE && this.otherPlayerBoardCell(state.gameplay.game, action.payload).molten) {
+          } else if (AttackType.HOT_CHOCOLATE && this.otherPlayerBoardCell(game, action.payload).molten) {
               return new AlreadyMolten();
           } else {
               return true;

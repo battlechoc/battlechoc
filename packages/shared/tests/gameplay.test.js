@@ -1,5 +1,6 @@
 const Situation = require('./helper').Situation;
 const createEntity = require('../index').createEntity;
+const createPlayer = require('../index').createPlayer;
 const BoardCellTypes = require('../index').BoardCellTypes;
 const GameStateTypes = require('../index').GameStateTypes;
 const GameActionTypes = require('../index').GameActionTypes;
@@ -65,6 +66,14 @@ test('should not find a winner', () => {
     expect(Rules.determineWinner(gameplay.game)).toBeUndefined();
 });
 
+test('should create a player', () => {
+    const player = createPlayer('Fabi', 'PlayerType.HUMAN', EmptyPlayerStats.level, 'rul0r-rul0r-rul0r-rul0r');
+    const opponent = createPlayer('Basti', 'PlayerType.HUMAN', EmptyPlayerStats.level, '1337-1337-1337');
+
+    expect(player.name).toBe('Fabi');
+    expect(opponent.name).toBe('Basti');
+});
+
 test('should find a winner', () => {
     const game = GamePlayTest.game;
     const gameplay = game.gameplay;
@@ -82,7 +91,7 @@ test('should find a winner', () => {
         }
     }
 
-    if (Rules.isActionValid(event, game)) {
+    if (Rules.isActionValid(event, game.gameplay.game)) {
         attackReduction(gameplay, event);
     }
 
@@ -105,7 +114,7 @@ test('should find a winner even with donut factory', () => {
         }
     }
 
-    expect(Rules.isActionValid(event, game)).toBe(true);
+    expect(Rules.isActionValid(event, game.gameplay.game)).toBe(true);
 
     buildReduction(game.gameplay, event);  
     finishBuildPhaseReduction(game.gameplay);
@@ -124,7 +133,7 @@ test('should find a winner even with donut factory', () => {
         }
     }
 
-    if (Rules.isActionValid(event, game)) {
+    if (Rules.isActionValid(event, game.gameplay.game)) {
         attackReduction(gameplay, event);
     }
 
@@ -139,7 +148,7 @@ test('should find a winner even with donut factory', () => {
         }
     }
 
-    if (Rules.isActionValid(event, game)) {
+    if (Rules.isActionValid(event, game.gameplay.game)) {
         endGameReduction(gameplay, event);
     }
 
