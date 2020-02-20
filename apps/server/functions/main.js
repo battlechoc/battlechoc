@@ -104,15 +104,15 @@ app.use(async (req, res, next) => {
 });
 
 class Reducer {
-    static updateState(game, action) {
+    static updateState(state, action) {
         switch (action.type) {
-            case GameActionTypes.chooseField: return chooseFieldReduction(game, action);
-            case GameActionTypes.chooseStart: return chooseStartReduction(game, action);
-            case GameActionTypes.finishTurn: return finishTurnReduction(game, action);
-            case GameActionTypes.finishBuildPhase: return finishBuildPhaseReduction(game, action);
-            case GameActionTypes.build: return buildReduction(game, action);
-            case GameActionTypes.attack: return attackReduction(game, action);
-            case GameActionTypes.endGame: return endGameReduction(game, action);
+            case GameActionTypes.chooseField: return chooseFieldReduction(state, action);
+            case GameActionTypes.chooseStart: return chooseStartReduction(state, action);
+            case GameActionTypes.finishTurn: return finishTurnReduction(state, action);
+            case GameActionTypes.finishBuildPhase: return finishBuildPhaseReduction(state, action);
+            case GameActionTypes.build: return buildReduction(state, action);
+            case GameActionTypes.attack: return attackReduction(state, action);
+            case GameActionTypes.endGame: return endGameReduction(state, action);
         }
     }
 }
@@ -493,8 +493,8 @@ const processEvents = (session, events, eventQueue) => {
                     if (eventQueue.lastProcessedEvent[0] < event.index) {
                         unprocessedEvents += 1;
                     } else if (eventQueue.lastProcessedEvent[0] === event.index) {
-                        if (Rules.isActionValid(event, session.game)) {
-                            Reducer.updateState(session.game, event);
+                        if (Rules.isActionValid(session.game, event)) {
+                            Reducer.updateState(session, event);
                             eventQueue.lastProcessedEvent[0] += 1;
                             processedEvents += 1;
                             event.processed = true;
@@ -517,8 +517,8 @@ const processEvents = (session, events, eventQueue) => {
                     if (eventQueue.lastProcessedEvent[1] < event.index) {
                         unprocessedEvents += 1;
                     } else if (eventQueue.lastProcessedEvent[1] === event.index) {
-                        if (Rules.isActionValid(event, session.game)) {
-                            Reducer.updateState(session.game, event);
+                        if (Rules.isActionValid(session.game, event)) {
+                            Reducer.updateState(session, event);
                             eventQueue.lastProcessedEvent[1] += 1;
                             processedEvents += 1;
                             event.processed = true;
@@ -634,9 +634,38 @@ app.get('/multiplayer/session/:id', async (req, res) => {
     }
 });
 
+const getEventQueue = async eventQueueId => {
+    if (process.env.NODE_ENV !== 'test') {
+        return await db.collection('multiplayerEventQueues').doc(eventQueueId).get();
+    } else {
+        const eventQueue = await dbPool.query('SELECT sessionEventQueue FROM multiplayerEventQueues WHERE id=$1', [eventQueueId]);
+        return {
+            exists: true,
+            data: () => eventQueue.rows[0].sessioneventqueue
+        }
+    }
+}
+
+const setEventQueue = async (eventQueue, eventQueueId) => {
+    if (process.env.NODE_ENV !== 'test') {
+        await db.collection('multiplayerEventQueues').doc(eventQueueId).set(eventQueue, { merge: true });
+    } else {
+        await dbPool.query('UPDATE multiplayerEventQueues SET sessionEventQueue=$1 WHERE id=$2', [eventQueue, eventQueueId]);
+    }
+}
+
+const updateEventQueue = async (eventQueue, eventQueueId) => {
+    if (process.env.NODE_ENV !== 'test') {
+        await db.collection('multiplayerEventQueues').doc(eventQueueId).update({
+            lastProcessedEvent: eventQueue.lastProcessedEvent
+        });
+    } else {
+        await dbPool.query('UPDATE multiplayerEventQueues SET sessionEventQueue=$1 WHERE id=$2', [eventQueue, eventQueueId]);
+    }
+}
+
 app.post('/multiplayer/relay/action', async (req, res) => {
-    const eventQueueReference = db.collection('multiplayerEventQueues').doc(req.body.sessionId);
-    let eventQueueDoc = await eventQueueReference.get();
+    let eventQueueDoc = await getEventQueue(req.body.sessionId);
     if (!eventQueueDoc.exists) {
         res.status(404).json({ error: 'EVENT QUEUE FOR SESSION NOT FOUND' });
     } else {
@@ -647,22 +676,20 @@ app.post('/multiplayer/relay/action', async (req, res) => {
 
         const playerIndex = eventQueue.players.findIndex(player => player.id === req.body.event.payload.issuer);
         if (playerIndex >= 0) {
-            console.log('push event to players event queue', req.body.event);
             try {
                 eventQueue.players[playerIndex].events.push(req.body.event);
-                await eventQueueReference.set(eventQueue, { merge: true });
+                await setEventQueue(eventQueue, req.body.sessionId);
                 await updateLastChanged(new Date(), req.body.sessionId);
-            } catch (err) {
-                console.log(err.toString());
-                console.error('Failed to push event ' + req.body.event.toString() + ' to the event list of player 0');
-                return res.status(500).json({ 'error': err.toString() });
+            } catch (error) {
+                console.error(`Failed to push event ${req.body.event.toString()} to the event list of player ${playerIndex}`);
+                return res.status(500).json({ 'error': error.toString() });
             }
         } else {
             res.status(400).json({ error: 'UNKNOWN ISSUER' });
         }
 
         try {
-            eventQueueDoc = await eventQueueReference.get();
+            eventQueueDoc = await getEventQueue(req.body.sessionId);
         } catch (error) {
             return res.status(500).json({ 'error': error });
         }
@@ -677,9 +704,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
             try {
                 const turns = (typeof eventQueue.players[0].events !== 'undefined') ? eventQueue.players[0].events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
                 await updateSessionGameState(session.id, session.game, turns, new Date());
-                await eventQueueReference.update({
-                    lastProcessedEvent: eventQueue.lastProcessedEvent
-                });
+                await updateEventQueue(eventQueue, req.body.sessionId);
                 let updatedPlayerId = session.game.currentPlayerIndex;
                 if (playerId !== updatedPlayerId) {
                     const opponent = session.game.players[playerId].name;

@@ -1,7 +1,10 @@
 const request = require('supertest');
+const uuidv4 = require('uuid/v4');
 const app = require('../main').app;
 const dbPool = require('../main').dbPool;
 const helper = require('./helper');
+const GameActionTypes = require('battlechoc-shared-functions').GameActionTypes;
+const GameStateTypes = require('battlechoc-shared-functions').GameStateTypes;
 
 beforeAll(async done => {
     await helper.setupDatabasePlayground();
@@ -87,5 +90,35 @@ it('it should find multiplayer sessions and then get a single session', async do
     done();
 });
 
+it('should add a choose field event to the queue', async done => {
+    let response = await request(app).get('/multiplayer/sessions');
+    const multiplayerSessionId = response.body.sessions[0].id;
+    response = await request(app).get(`/multiplayer/session/${multiplayerSessionId}`);
+    expect(response.status).toBe(200);
+    expect(response.body.game.state).toBe(GameStateTypes.CHOOSE_FIELD_OR_START);
+
+    const currentPlayer = response.body.game.currentPlayerIndex;
+    const issuerId = response.body.game.players[currentPlayer].id;
+    const event = {
+        "type": GameActionTypes.chooseStart,
+        "index": 0,
+        "uid": uuidv4(),
+        "emitted": (new Date()).getTime(),
+        "payload": {
+            "issuer": issuerId
+        }
+    }
+
+    response = await request(app)
+        .post('/multiplayer/relay/action')
+        .send({ event: event, sessionId: multiplayerSessionId, uid: issuerId });
+
+    expect(response.status).toBe(200);
+    response = await request(app).get(`/multiplayer/session/${multiplayerSessionId}`);
+    expect(response.status).toBe(200);
+    expect(response.body.game.state).toBe(GameStateTypes.CHOOSE_FIELD);
+
+    done();
+});
 
 afterAll(async () => await dbPool.end());
