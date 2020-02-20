@@ -604,7 +604,7 @@ function calculateBuildingsPerTurn(building, cellColor) {
   return buildingsPerTurn;
 }
 
-const startGameReduction = (state, action) => {
+const startGameReduction = (game, action) => {
   let coinToss = Math.round(Math.random());
   if (action.payload[1].type === PlayerType.AUGUSTUS_GLOOP) {
       coinToss = 0;
