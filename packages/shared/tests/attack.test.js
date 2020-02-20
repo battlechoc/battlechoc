@@ -49,16 +49,15 @@ class AttackTest extends Situation {
 
 test('should fail to attack an empty cell', () => {
     const position = { row: 7, col: 7 };
-    const game = AttackTest.game;
-    const gameplay = game.gameplay;
+    const game = AttackTest.gameplay.game;
     
-    const description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, gameplay.game.players[0].level);
+    const description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, game.players[0].level);
     const damage = (1 + ((Math.random() * 0.4) - 0.2)) * description.attack;
 
     const event = {
         "type": GameActionTypes.attack,
         "payload": {
-            "issuer": gameplay.game.players[0].id,
+            "issuer": game.players[0].id,
             "attackType": AttackType.TRUFFLE,
             "damage": damage,
             "row": position.row,
@@ -66,23 +65,22 @@ test('should fail to attack an empty cell', () => {
         }
     }
 
-    expect(Rules.isActionValid(event, game.gameplay.game)).toBeInstanceOf(TargetEmptyError);
+    expect(Rules.isActionValid(event, game)).toBeInstanceOf(TargetEmptyError);
 });
 
-const getFieldAt = (gamestate, position, fieldIndex=0) => gamestate.game.board.fields[fieldIndex].grid[position.row * gamestate.game.board.size.cols + position.col];
+const getFieldAt = (board, position, fieldIndex=0) => board.fields[fieldIndex].grid[position.row * board.size.cols + position.col];
 
 test('should not fail to attack an cell containing the factory', () => {
     const position = { row: 2, col: 2 };
-    const game = AttackTest.game;
-    const gameplay = game.gameplay;
+    const game = AttackTest.game.gameplay.game;
     
-    const description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, gameplay.game.players[0].level);
+    const description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, game.players[0].level);
     const damage = (1 + ((Math.random() * 0.4) - 0.2)) * description.attack;
 
     const event = {
         "type": GameActionTypes.attack,
         "payload": {
-            "issuer": gameplay.game.players[0].id,
+            "issuer": game.players[0].id,
             "attackType": AttackType.TRUFFLE,
             "damage": damage,
             "row": position.row,
@@ -90,10 +88,10 @@ test('should not fail to attack an cell containing the factory', () => {
         }
     }
 
-    expect(Rules.isActionValid(event, game.gameplay.game)).toBe(true);
+    expect(Rules.isActionValid(event, game)).toBe(true);
 
-    const health = getFieldAt(gameplay, position, 1).occupiedBy.find(entity => entity.type === EntityType.FACTORY).hp;
+    const health = getFieldAt(game.board, position, 1).occupiedBy.find(entity => entity.type === EntityType.FACTORY).hp;
     
-    attackReduction(gameplay, event);
-    expect(getFieldAt(gameplay, position, 1).occupiedBy.find(entity => entity.type === EntityType.FACTORY).hp).toBeLessThan(health); 
+    attackReduction(game, event);
+    expect(getFieldAt(game.board, position, 1).occupiedBy.find(entity => entity.type === EntityType.FACTORY).hp).toBeLessThan(health); 
 });

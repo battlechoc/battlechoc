@@ -61,9 +61,9 @@ class GamePlayTest extends Situation {
 }
 
 test('should not find a winner', () => {
-    const gameplay = GamePlayTest.gameplay;
+    const game = GamePlayTest.gameplay.game;
     
-    expect(Rules.determineWinner(gameplay.game)).toBeUndefined();
+    expect(Rules.determineWinner(game)).toBeUndefined();
 });
 
 test('should create a player', () => {
@@ -75,15 +75,14 @@ test('should create a player', () => {
 });
 
 test('should find a winner', () => {
-    const game = GamePlayTest.game;
-    const gameplay = game.gameplay;
+    const game = GamePlayTest.gameplay.game;
 
     const position = { row: 2, col: 2 };
-    const damage = getEntityDescriptor(EntityType.FACTORY, gameplay.game.players[0].level).hp + 1;
+    const damage = getEntityDescriptor(EntityType.FACTORY, game.players[0].level).hp + 1;
     const event = {
         "type": GameActionTypes.attack,
         "payload": {
-            "issuer": gameplay.game.players[0].id,
+            "issuer": game.players[0].id,
             "attackType": AttackType.TRUFFLE,
             "damage": damage,
             "row": position.row,
@@ -91,41 +90,40 @@ test('should find a winner', () => {
         }
     }
 
-    if (Rules.isActionValid(event, game.gameplay.game)) {
-        attackReduction(gameplay, event);
+    if (Rules.isActionValid(event, game)) {
+        attackReduction(game, event);
     }
 
-    expect(Rules.determineWinner(gameplay.game)[0].name).toBe(gameplay.game.players[0].name);
+    expect(Rules.determineWinner(game)[0].name).toBe(game.players[0].name);
 });
 
 test('should find a winner even with donut factory', () => {
-    const game = GamePlayTest.game;
-    const gameplay = game.gameplay;
+    const game = GamePlayTest.gameplay.game;
 
-    finishTurnReduction(game.gameplay);
+    finishTurnReduction(game);
     const building = createEntity(EntityType.DONUT_FACTORY, EmptyPlayerStats.level);
     building.position = {row: 7, col: 6};
 
     let event = {
         "type": GameActionTypes.build,
         "payload": {
-            "issuer": game.gameplay.game.players[1].id,
+            "issuer": game.players[1].id,
             "building": building
         }
     }
 
-    expect(Rules.isActionValid(event, game.gameplay.game)).toBe(true);
+    expect(Rules.isActionValid(event, game)).toBe(true);
 
-    buildReduction(game.gameplay, event);  
-    finishBuildPhaseReduction(game.gameplay);
-    finishTurnReduction(game.gameplay);
+    buildReduction(game, event);  
+    finishBuildPhaseReduction(game);
+    finishTurnReduction(game);
 
     const position = { row: 2, col: 2 };
-    const damage = getEntityDescriptor(EntityType.FACTORY, gameplay.game.players[0].level).hp + 1;
+    const damage = getEntityDescriptor(EntityType.FACTORY, game.players[0].level).hp + 1;
     event = {
         "type": GameActionTypes.attack,
         "payload": {
-            "issuer": gameplay.game.players[0].id,
+            "issuer": game.players[0].id,
             "attackType": AttackType.TRUFFLE,
             "damage": damage,
             "row": position.row,
@@ -133,28 +131,28 @@ test('should find a winner even with donut factory', () => {
         }
     }
 
-    if (Rules.isActionValid(event, game.gameplay.game)) {
-        attackReduction(gameplay, event);
+    if (Rules.isActionValid(event, game)) {
+        attackReduction(game, event);
     }
 
-    const winners = Rules.determineWinner(gameplay.game);
-    expect(winners[0].name).toBe(gameplay.game.players[0].name);
+    const winners = Rules.determineWinner(game);
+    expect(winners[0].name).toBe(game.players[0].name);
 
     event = {
         "type": "battlechoc/gameplay/endGame",
         "payload": {
-            "issuer": gameplay.game.players[0].id,
+            "issuer": game.players[0].id,
             "winners": winners
         }
     }
 
-    if (Rules.isActionValid(event, game.gameplay.game)) {
-        endGameReduction(gameplay, event);
+    if (Rules.isActionValid(event, game)) {
+        endGameReduction(game, event);
     }
 
-    expect(gameplay.game.players[0].statistics.won).toBe(true);
-    expect(gameplay.game.players[0].statistics.lost).toBe(false);
+    expect(game.players[0].statistics.won).toBe(true);
+    expect(game.players[0].statistics.lost).toBe(false);
 
-    expect(gameplay.game.players[1].statistics.won).toBe(false);
-    expect(gameplay.game.players[1].statistics.lost).toBe(true);
+    expect(game.players[1].statistics.won).toBe(false);
+    expect(game.players[1].statistics.lost).toBe(true);
 });
