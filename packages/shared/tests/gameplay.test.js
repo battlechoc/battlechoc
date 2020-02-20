@@ -90,7 +90,7 @@ test('should find a winner', () => {
         }
     }
 
-    if (Rules.isActionValid(event, game)) {
+    if (Rules.isActionValid(game, event)) {
         attackReduction(game, event);
     }
 
@@ -112,7 +112,7 @@ test('should find a winner even with donut factory', () => {
         }
     }
 
-    expect(Rules.isActionValid(event, game)).toBe(true);
+    expect(Rules.isActionValid(game, event)).toBe(true);
 
     buildReduction(game, event);  
     finishBuildPhaseReduction(game);
@@ -131,7 +131,7 @@ test('should find a winner even with donut factory', () => {
         }
     }
 
-    if (Rules.isActionValid(event, game)) {
+    if (Rules.isActionValid(game, event)) {
         attackReduction(game, event);
     }
 
@@ -146,7 +146,7 @@ test('should find a winner even with donut factory', () => {
         }
     }
 
-    if (Rules.isActionValid(event, game)) {
+    if (Rules.isActionValid(game, event)) {
         endGameReduction(game, event);
     }
 

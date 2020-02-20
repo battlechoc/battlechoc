@@ -1110,7 +1110,7 @@ class Rules {
       }
   }
 
-  static issuerIsInvalid(action, game) {
+  static issuerIsInvalid(game, action) {
       if (IssuerRelevantActions.includes(action.type)) {
           if (typeof action.payload === 'undefined' ||
               typeof action.payload.issuer === 'undefined' ||
@@ -1121,13 +1121,13 @@ class Rules {
       return false;
   }
 
-  static isActionValid(action, game) {
+  static isActionValid(game, action) {
       if (!(this.isGameAction(action))) {
           return new ActionValidationError(action);
       }
 
       let currentState = typeof game === 'undefined' ? undefined : game.state;
-      if (Rules.issuerIsInvalid(action, game) && action.type !== GameActionTypes.endGame) {
+      if (Rules.issuerIsInvalid(game, action) && action.type !== GameActionTypes.endGame) {
           let issuerId;
           if (typeof action.payload !== 'undefined') {
               issuerId = action.payload.issuer;
