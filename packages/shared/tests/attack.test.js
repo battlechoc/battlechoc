@@ -72,7 +72,8 @@ const getFieldAt = (board, position, fieldIndex=0) => board.fields[fieldIndex].g
 
 test('should not fail to attack an cell containing the factory', () => {
     const position = { row: 2, col: 2 };
-    const game = AttackTest.game.gameplay.game;
+    const gameplay = AttackTest.game.gameplay;
+    const game = gameplay.game;
     
     const description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, game.players[0].level);
     const damage = (1 + ((Math.random() * 0.4) - 0.2)) * description.attack;
@@ -92,6 +93,6 @@ test('should not fail to attack an cell containing the factory', () => {
 
     const health = getFieldAt(game.board, position, 1).occupiedBy.find(entity => entity.type === EntityType.FACTORY).hp;
     
-    attackReduction(game, event);
+    attackReduction(gameplay, event);
     expect(getFieldAt(game.board, position, 1).occupiedBy.find(entity => entity.type === EntityType.FACTORY).hp).toBeLessThan(health); 
 });

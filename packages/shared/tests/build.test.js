@@ -36,7 +36,8 @@ const getFieldAt = (board, position) => board.fields[0].grid[position.row * boar
 
 test('should set a factory on a black field at position (7, 7)', () => {
     const position = { row: 7, col: 7 };
-    const game = BuildTest.gameplay.game;
+    const gameplay = BuildTest.gameplay;
+    const game = gameplay.game;
     const building = createEntity(EntityType.FACTORY, EmptyPlayerStats.level);
     building.position = position;
     const event = {
@@ -50,7 +51,7 @@ test('should set a factory on a black field at position (7, 7)', () => {
     const player = JSON.parse(JSON.stringify(game.players[0]));
 
     expect(getFieldAt(game.board, position).occupiedBy.map(entity => entity.type)).not.toContain(EntityType.FACTORY);
-    buildReduction(game, event);
+    buildReduction(gameplay, event);
     expect(getFieldAt(game.board, position).occupiedBy.map(entity => entity.type)).toContain(EntityType.FACTORY);
     expect(game.players[0].cacao).toBe(player.cacao);
     expect(game.players[0].buildingsPerTurn).toBe(player.buildingsPerTurn + building.buildingsPerTurn + 1);
@@ -58,7 +59,8 @@ test('should set a factory on a black field at position (7, 7)', () => {
 
 test('should set a factory on a brown field at position (6, 7)', () => {
     const position = { row: 6, col: 7 };
-    const game = BuildTest.gameplay.game;
+    const gameplay = BuildTest.gameplay;
+    const game = gameplay.game;
     const building = createEntity(EntityType.FACTORY, EmptyPlayerStats.level);
     building.position = position;
     const event = {
@@ -70,13 +72,14 @@ test('should set a factory on a brown field at position (6, 7)', () => {
     }
 
     const player = JSON.parse(JSON.stringify(game.players[0]));
-    buildReduction(game, event);
+    buildReduction(gameplay, event);
     expect(game.players[0].buildingsPerTurn).toBe(player.buildingsPerTurn + building.buildingsPerTurn);
 });
 
 test('should set a factory on a white field at position (5, 7)', () => {
     const position = { row: 5, col: 7 };
-    const game = BuildTest.gameplay.game;
+    const gameplay = BuildTest.gameplay;
+    const game = gameplay.game;
     const building = createEntity(EntityType.FACTORY, EmptyPlayerStats.level);
     building.position = position;
     const event = {
@@ -88,13 +91,14 @@ test('should set a factory on a white field at position (5, 7)', () => {
     }
 
     const player = JSON.parse(JSON.stringify(game.players[0]));
-    buildReduction(game, event);
+    buildReduction(gameplay, event);
     expect(game.players[0].buildingsPerTurn).toBe(player.buildingsPerTurn + building.buildingsPerTurn);
 });
 
 test('should set a tree on a white field at position (5, 7)', () => {
     const position = { row: 5, col: 7 };
-    const game = BuildTest.gameplay.game;
+    const gameplay = BuildTest.gameplay;
+    const game = gameplay.game;
     const building = createEntity(EntityType.CACAOTREE, EmptyPlayerStats.level);
     building.position = position;
     const event = {
@@ -106,14 +110,15 @@ test('should set a tree on a white field at position (5, 7)', () => {
     }
 
     const player = JSON.parse(JSON.stringify(game.players[0]));
-    buildReduction(game, event);
+    buildReduction(gameplay, event);
     expect(game.players[0].cacao).toBe(player.cacao - building.costs);
     expect(game.players[0].cacaoPerTurn).toBe(player.cacaoPerTurn + Math.round(building.cacaoPerTurn * 1.5));
 });
 
 test('should set a tree on a brown field at position (6, 7)', () => {
     const position = { row: 6, col: 7 };
-    const game = BuildTest.gameplay.game;
+    const gameplay = BuildTest.gameplay;
+    const game = gameplay.game;
     const building = createEntity(EntityType.CACAOTREE, EmptyPlayerStats.level);
     building.position = position;
     const event = {
@@ -125,7 +130,7 @@ test('should set a tree on a brown field at position (6, 7)', () => {
     }
 
     const player = JSON.parse(JSON.stringify(game.players[0]));
-    buildReduction(game, event);
+    buildReduction(gameplay, event);
     expect(game.players[0].cacao).toBe(player.cacao - building.costs);
     expect(game.players[0].cacaoPerTurn).toBe(player.cacaoPerTurn + building.cacaoPerTurn);
 });
@@ -146,26 +151,27 @@ test('should fail to set a tree without factory', () => {
     expect(Rules.isActionValid(game, event)).toBeInstanceOf(NoBuildingsLeftError);
 });
 
-const buildFactoryFirst = game => {
+const buildFactoryFirst = state => {
     let building = createEntity(EntityType.FACTORY, EmptyPlayerStats.level);
     building.position = { row: 1, col: 1 };
     let event = {
         "type": GameActionTypes.build,
         "payload": {
-            "issuer": game.players[0].id,
+            "issuer": state.game.players[0].id,
             "building": building
         }
     }
-    buildReduction(game, event);
+    buildReduction(state, event);
 }
 
 test('should not fail to set a tree with factory', () => {
     const position = { row: 6, col: 7 };
-    const game = BuildTest.gameplay.game;
-    buildFactoryFirst(game);
+    const gameplay = BuildTest.gameplay;
+    const game = gameplay.game;
+    buildFactoryFirst(gameplay);
     const buildings = game.players[0].buildings;
-    finishTurnReduction(game);
-    finishTurnReduction(game);
+    finishTurnReduction(gameplay);
+    finishTurnReduction(gameplay);
     expect(game.players[0].buildings).toBe(buildings + game.players[0].buildingsPerTurn);
     const building = createEntity(EntityType.CACAOTREE, EmptyPlayerStats.level);
     building.position = position;
@@ -180,16 +186,17 @@ test('should not fail to set a tree with factory', () => {
 
     expect(Rules.isActionValid(game, event)).toBe(true);
     const player = JSON.parse(JSON.stringify(game.players[0]));
-    buildReduction(game, event);
+    buildReduction(gameplay, event);
     expect(game.players[0].cacao).toBe(player.cacao - building.costs);
     expect(game.players[0].cacaoPerTurn).toBe(player.cacaoPerTurn + building.cacaoPerTurn);
 });
 
 test('should fail if it\'s not players turn',  () => {
     const position = { row: 6, col: 7 };
-    const game = BuildTest.gameplay.game;
-    buildFactoryFirst(game);
-    finishTurnReduction(game);
+    const gameplay = BuildTest.gameplay;
+    const game = gameplay.game;
+    buildFactoryFirst(gameplay);
+    finishTurnReduction(gameplay);
 
     const building = createEntity(EntityType.CACAOTREE, EmptyPlayerStats.level);
     building.position = position;
@@ -208,10 +215,11 @@ test('should fail if it\'s not players turn',  () => {
 
 test('should fail if player has not enough cacao',  () => {
     const position = { row: 6, col: 7 };
-    const game = BuildTest.gameplay.game;
-    buildFactoryFirst(game);
-    finishTurnReduction(game);
-    finishTurnReduction(game);
+    const gameplay = BuildTest.gameplay;
+    const game = gameplay.game;
+    buildFactoryFirst(gameplay);
+    finishTurnReduction(gameplay);
+    finishTurnReduction(gameplay);
 
     const building = createEntity(EntityType.CACAOTREE, EmptyPlayerStats.level);
     building.position = position;

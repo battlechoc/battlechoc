@@ -75,7 +75,8 @@ test('should create a player', () => {
 });
 
 test('should find a winner', () => {
-    const game = GamePlayTest.gameplay.game;
+    const gameplay = GamePlayTest.gameplay;
+    const game = gameplay.game;
 
     const position = { row: 2, col: 2 };
     const damage = getEntityDescriptor(EntityType.FACTORY, game.players[0].level).hp + 1;
@@ -91,16 +92,17 @@ test('should find a winner', () => {
     }
 
     if (Rules.isActionValid(game, event)) {
-        attackReduction(game, event);
+        attackReduction(gameplay, event);
     }
 
     expect(Rules.determineWinner(game)[0].name).toBe(game.players[0].name);
 });
 
 test('should find a winner even with donut factory', () => {
-    const game = GamePlayTest.gameplay.game;
+    const gameplay = GamePlayTest.gameplay;
+    const game = gameplay.game;
 
-    finishTurnReduction(game);
+    finishTurnReduction(gameplay);
     const building = createEntity(EntityType.DONUT_FACTORY, EmptyPlayerStats.level);
     building.position = {row: 7, col: 6};
 
@@ -114,9 +116,9 @@ test('should find a winner even with donut factory', () => {
 
     expect(Rules.isActionValid(game, event)).toBe(true);
 
-    buildReduction(game, event);  
-    finishBuildPhaseReduction(game);
-    finishTurnReduction(game);
+    buildReduction(gameplay, event);  
+    finishBuildPhaseReduction(gameplay);
+    finishTurnReduction(gameplay);
 
     const position = { row: 2, col: 2 };
     const damage = getEntityDescriptor(EntityType.FACTORY, game.players[0].level).hp + 1;
@@ -132,7 +134,7 @@ test('should find a winner even with donut factory', () => {
     }
 
     if (Rules.isActionValid(game, event)) {
-        attackReduction(game, event);
+        attackReduction(gameplay, event);
     }
 
     const winners = Rules.determineWinner(game);
@@ -147,7 +149,7 @@ test('should find a winner even with donut factory', () => {
     }
 
     if (Rules.isActionValid(game, event)) {
-        endGameReduction(game, event);
+        endGameReduction(gameplay, event);
     }
 
     expect(game.players[0].statistics.won).toBe(true);
