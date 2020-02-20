@@ -4,7 +4,8 @@ import { UiActionTypes } from '../ui/UiActions';
 function actionValidatorMiddleware() {
     return ({ getState }) => next => action => {
         return new Promise((resolve, reject) => {
-        	let validity = Object.values(UiActionTypes).includes(action.type) || Rules.isActionValid(action, getState());
+			const game = getState().gameplay.game;
+        	const validity = Object.values(UiActionTypes).includes(action.type) || Rules.isActionValid(game, action);
         	
         	if (validity instanceof BattlechocError) {
         		reject(validity);
