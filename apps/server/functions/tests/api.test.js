@@ -5,6 +5,7 @@ const dbPool = require('../main').dbPool;
 const helper = require('./helper');
 const GameActionTypes = require('battlechoc-shared-functions').GameActionTypes;
 const GameStateTypes = require('battlechoc-shared-functions').GameStateTypes;
+const EntityType = require('battlechoc-shared-functions').EntityType;
 
 beforeAll(async done => {
     await helper.setupDatabasePlayground();
@@ -90,7 +91,7 @@ it('it should find multiplayer sessions and then get a single session', async do
     done();
 });
 
-it('should add a choose field event to the queue', async done => {
+it('should choose start', async done => {
     let response = await request(app).get('/multiplayer/sessions');
     const multiplayerSessionId = response.body.sessions[0].id;
     response = await request(app).get(`/multiplayer/session/${multiplayerSessionId}`);
@@ -117,6 +118,75 @@ it('should add a choose field event to the queue', async done => {
     response = await request(app).get(`/multiplayer/session/${multiplayerSessionId}`);
     expect(response.status).toBe(200);
     expect(response.body.game.state).toBe(GameStateTypes.CHOOSE_FIELD);
+
+    done();
+});
+
+it('should choose a field', async done => {
+    let response = await request(app).get('/multiplayer/sessions');
+    const multiplayerSessionId = response.body.sessions[0].id;
+    response = await request(app).get(`/multiplayer/session/${multiplayerSessionId}`);
+    expect(response.status).toBe(200);
+    expect(response.body.game.state).toBe(GameStateTypes.CHOOSE_FIELD);
+
+    const currentPlayer = response.body.game.currentPlayerIndex;
+    const issuerId = response.body.game.players[currentPlayer].id;
+    const event = {
+        "type": GameActionTypes.chooseField,
+        "index": 0,
+        "uid": uuidv4(),
+        "emitted": (new Date()).getTime(),
+        "payload": {
+            "issuer": issuerId,
+            "fieldIdx": 1
+        }
+    }
+
+    response = await request(app)
+        .post('/multiplayer/relay/action')
+        .send({ event: event, sessionId: multiplayerSessionId, uid: issuerId });
+
+    expect(response.status).toBe(200);
+    response = await request(app).get(`/multiplayer/session/${multiplayerSessionId}`);
+    expect(response.status).toBe(200);
+    expect(response.body.game.state).toBe(GameStateTypes.PLAYER_1_INITIAL_PLACEMENT);
+
+    done();
+});
+
+it('should surrender the game', async done => {
+    let response = await request(app).get('/multiplayer/sessions');
+    const multiplayerSessionId = response.body.sessions[0].id;
+
+    response = await request(app).get(`/multiplayer/session/${multiplayerSessionId}`);
+    expect(response.status).toBe(200);
+    expect(response.body.game.isRunning).toBe(true);
+
+    response = await request(app).post('/surrender').send({ sessionId: multiplayerSessionId });
+    expect(response.status).toBe(200);
+    
+    response = await request(app).get(`/multiplayer/session/${multiplayerSessionId}`);
+    expect(response.status).toBe(200);
+    expect(response.body.game.isRunning).toBe(false);
+
+    done();
+});
+
+it('should upgrade the tree', async done => {
+    let player = (await dbPool.query("SELECT * FROM players WHERE name='Basti'")).rows[0];
+    expect(player.level[EntityType.CACAOTREE]).toBe(0);
+
+    let response = await request(app).post('/update/level').send({ entityType: EntityType.CACAOTREE, upgrade: true });
+    expect(response.status).toBe(200);
+    
+    player = (await dbPool.query("SELECT * FROM players WHERE name='Basti'")).rows[0];
+    expect(player.level[EntityType.CACAOTREE]).toBe(1);
+
+    response = await request(app).post('/update/level').send({ entityType: EntityType.CACAOTREE, upgrade: false });
+    expect(response.status).toBe(200);
+
+    player = (await dbPool.query("SELECT * FROM players WHERE name='Basti'")).rows[0];
+    expect(player.level[EntityType.CACAOTREE]).toBe(0);
 
     done();
 });

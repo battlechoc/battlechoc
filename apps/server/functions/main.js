@@ -753,9 +753,8 @@ app.post('/multiplayer/relay/action', async (req, res) => {
 });
 
 app.post('/surrender', async (req, res) => {
-    let eventQueueReference = db.collection('multiplayerEventQueues').doc(req.body.sessionId);
     try {
-        var eventQueueDoc = await eventQueueReference.get();
+        var eventQueueDoc = await getEventQueue(req.body.sessionId);
     } catch (error) {
         return res.status(500).json({ 'error': error });
     }
@@ -796,7 +795,7 @@ app.post('/surrender', async (req, res) => {
         try {
             const turns = (typeof eventQueue.players[0].events !== 'undefined') ? eventQueue.players[0].events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
             await updateSessionGameState(session.id, session.game, turns, new Date());
-            await eventQueueReference.set(eventQueue);
+            await setEventQueue(eventQueue, req.body.sessionId);
             res.status(200).end();
         } catch (err) {
             console.error(err);
@@ -884,7 +883,7 @@ app.post('/update/level', async (req, res) => {
                         res.status(400).json({ error: 'NOT ENOUGH COINS' });
                     } else if ((level[req.body.entityType] + 1) > limit) {
                         console.warn('Player tries to buy upgrade but already reached max level', req.user.uid);
-                        res.status(400).json({ error: 'LEVEL LIMIT OF ' + req.body.attribute + ' REACHED' });
+                        res.status(400).json({ error: 'LEVEL LIMIT REACHED' });
                     } else {
                         level[req.body.entityType] = level[req.body.entityType] + 1;
                         await dbPool.query(`UPDATE players SET coins = ${player.coins - costs}, level = $1 WHERE id = $2`, [level, req.user.uid]);
