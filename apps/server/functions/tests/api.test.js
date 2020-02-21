@@ -191,4 +191,57 @@ it('should upgrade the tree', async done => {
     done();
 });
 
+it('should fetch the highscore', async done => {
+    const response = await request(app).get('/highscore');
+    expect(response.status).toBe(200);
+    expect(response.body.list.length).toBe(2);
+    done();
+});
+
+it('should return players rank', async done => {
+    const response = await request(app).get('/rank');
+    expect(response.status).toBe(200);
+    expect(response.body.ranking).toBe(2);
+    done();
+});
+
+it('should create a new user', async done => {
+    let response = await request(app).post('/user');
+    expect(response.status).toBe(200);
+    expect(response.body.stats.username).toBe('Basti');
+
+    response = await request(app).post('/user').send({ uid: '12345-12345-12345' });
+    expect(response.status).toBe(200);
+    expect(response.body.stats.username).toBe('Chocnonymous');
+
+    done();
+});
+
+it('should set a username', async done => {
+    let response = await request(app).post('/user/username').send({ uid: '12345-12345-12345', username: 'Basti' });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('PLAYER WITH GIVEN NAME DOES ALREADY EXIST');
+
+    response = await request(app).post('/user/username').send({ uid: '12345-12345-12345', username: 'B?asti' });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('USERNAME NOT VALID');
+
+    response = await request(app).post('/user/username').send({ uid: '12345-12345-12345', username: 'Paul' });
+    expect(response.status).toBe(200);
+
+    done();
+});
+
+it('change users language', async done => {
+    let response = await request(app).post('/user/language').send({ uid: '12345-12345-12345', language: 'kf' });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('INVALID LANGUAGE GIVEN');
+
+    response = await request(app).post('/user/language').send({ uid: '12345-12345-12345', language: 'de' });
+    expect(response.status).toBe(200);
+
+    done();
+});
+
+
 afterAll(async () => await dbPool.end());
