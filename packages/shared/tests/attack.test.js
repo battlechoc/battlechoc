@@ -14,22 +14,24 @@ class AttackTest extends Situation {
     constructor() {
         super(10);
         this.modifyBoard({row: 7, col: 7, cellType: BoardCellTypes.BLACK });
-        this.modifyBoard({row: 6, col: 7, cellType: BoardCellTypes.BROWN });
+        this.modifyBoard({row: 6, col: 7, cellType: BoardCellTypes.BROWN, buildings: [createEntity(EntityType.CREAM)] });
         this.modifyBoard({row: 5, col: 7, cellType: BoardCellTypes.WHITE });
-        this.modifyBoard({col: 6, row: 6, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY, this.game.gameplay.game.players[0].level)] });
-        this.modifyBoard({col: 1, row: 3, cellType: BoardCellTypes.WHITE, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.RUM_TRUFFLE_CANNON, this.game.gameplay.game.players[0].level)] });
+        this.modifyBoard({row: 6, col: 6, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY, this.game.gameplay.game.players[0].level)] });
+        this.modifyBoard({row: 1, col: 3, cellType: BoardCellTypes.WHITE, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.RUM_TRUFFLE_CANNON, this.game.gameplay.game.players[0].level)] });
 
         const healthDonut = createEntity(EntityType.DONUT_HEALTH_GREEN)
 
-        this.modifyBoard({col: 2, row: 2, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY)]});
-        this.modifyBoard({col: 7, row: 7, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: []});
-        this.modifyBoard({col: 6, row: 7, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [healthDonut]});
+        this.modifyBoard({row: 2, col: 2, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY)]});
+        this.modifyBoard({row: 7, col: 7, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: []});
+        this.modifyBoard({row: 6, col: 7, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [healthDonut]});
 
         const game = this.game.gameplay.game;
 
         game.state = GameStateTypes.ATTACK_PHASE;
+        game.currentPlayerIndex = 0;
         game.players[0].fieldIndex = 0;
         game.players[1].fieldIndex = 1;
+
         game.players[1].hasFactory = true;
         game.players[1].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[1].level).buildingsPerTurn + 1;
         game.players[1].buildings = game.players[1].buildingsPerTurn;
@@ -101,7 +103,6 @@ test('should not fail to attack an cell containing the factory', () => {
     expect(getFieldAt(game.board, position, 1).occupiedBy.find(entity => entity.type === EntityType.FACTORY).hp).toBeLessThan(health); 
 });
 
-
 test('should fail to attack an cell containing only a donut', () => {
     const position = { row: 6, col: 7 };
     const gameplay = AttackTest.game.gameplay;
@@ -120,6 +121,6 @@ test('should fail to attack an cell containing only a donut', () => {
             "col": position.col
         }
     }
-
+    
     expect(Rules.isActionValid(game, event)).toBeInstanceOf(TargetEmptyError);
 });

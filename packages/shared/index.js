@@ -1040,32 +1040,32 @@ class Rules {
   }
 
   static canBuildOnCell(cellIdx, entityType, game) {
-      let cell = this.currentPlayerBoardCell(game, cellIdx);
-      if (entityType === EntityType.SPYING_EASTER_BUNNY && this.currentPlayerField(game).grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.SPYING_EASTER_BUNNY)).length > 0) {
-          return new BuildNotPossibleError('Can only build one spying easter bunny.');
-      } else if (entityType === EntityType.DONUT_FACTORY && this.currentPlayerField(game).grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.DONUT_FACTORY)).length > 0) {
-          return new BuildNotPossibleError('Can only build one donut factory.');
-      } else if (isDonut(entityType)) {
-          if (cell.occupiedBy.some(entity => isDonut(entity.type))) {
-              return new BuildNotPossibleError('Build not possible on given field row: ' +
-                  cellIdx.row + ' col: ' + cellIdx.col + ', entity type: ' + entityType + ' cell occupied already by another trap: ' + JSON.stringify(cell.occupiedBy.filter(entity => isDonut(entity.type))));
-          } else {
-              return true;
-          }
-      } else if (cell.molten) {
-          return new BuildNotPossibleError('Cannot build on molten cells.');
-      } else if (entityType === EntityType.FRUIT_CANNON && cell.occupiedBy.map(entity => entity.type).includes(EntityType.RUM_TRUFFLE_CANNON)) {
-          return true;
-      } else if (entityType !== EntityType.FRUIT_CANNON &&
-          ((entityType !== EntityType.FACTORY_EXTENSION && cell.occupiedBy.filter(entity => !isDonut(entity.type)).length === 0) ||
-              (entityType === EntityType.CREAM && !cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) ||
-              (entityType === EntityType.FACTORY_EXTENSION && ((cell.occupiedBy.length === 1 && cell.occupiedBy[0].type === EntityType.CREAM) || cell.occupiedBy.length === 0) && this.canBuildFactoryExtensionOnCell(cellIdx, game)) ||
-              (entityType !== EntityType.CREAM && entityType !== EntityType.FACTORY_EXTENSION && cell.occupiedBy.filter(entity => !isDonut(entity.type)).length === 1 && cell.occupiedBy.filter(entity => !isDonut(entity.type))[0].type === EntityType.CREAM))) {
-          return true;
-      } else {
-          return new BuildNotPossibleError('Build not possible on given field row: ' +
-              cellIdx.row + ' col: ' + cellIdx.col + ', entity type: ' + entityType + ' cell occupied by: ' + JSON.stringify(cell.occupiedBy));
-      }
+    let cell = this.currentPlayerBoardCell(game, cellIdx);
+    if (entityType === EntityType.SPYING_EASTER_BUNNY && this.currentPlayerField(game).grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.SPYING_EASTER_BUNNY)).length > 0) {
+        return new BuildNotPossibleError('Can only build one spying easter bunny.');
+    } else if (entityType === EntityType.DONUT_FACTORY && this.currentPlayerField(game).grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.DONUT_FACTORY)).length > 0) {
+        return new BuildNotPossibleError('Can only build one donut factory.');
+    } else if (isDonut(entityType)) {
+        if (cell.occupiedBy.some(entity => isDonut(entity.type))) {
+            return new BuildNotPossibleError('Build not possible on given field row: ' +
+                cellIdx.row + ' col: ' + cellIdx.col + ', entity type: ' + entityType + ' cell occupied already by another trap: ' + JSON.stringify(cell.occupiedBy.filter(entity => isDonut(entity.type))));
+        } else {
+            return true;
+        }
+    } else if (cell.molten) {
+        return new BuildNotPossibleError('Cannot build on molten cells.');
+    } else if (entityType === EntityType.FRUIT_CANNON && cell.occupiedBy.map(entity => entity.type).includes(EntityType.RUM_TRUFFLE_CANNON)) {
+        return true;
+    } else if (entityType !== EntityType.FRUIT_CANNON &&
+        ((entityType !== EntityType.FACTORY_EXTENSION && cell.occupiedBy.filter(entity => !isDonut(entity.type)).length === 0) ||
+            (entityType === EntityType.CREAM && !cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) ||
+            (entityType === EntityType.FACTORY_EXTENSION && ((cell.occupiedBy.length === 1 && cell.occupiedBy[0].type === EntityType.CREAM) || cell.occupiedBy.length === 0) && this.canBuildFactoryExtensionOnCell(cellIdx, game)) ||
+            (entityType !== EntityType.CREAM && entityType !== EntityType.FACTORY_EXTENSION && cell.occupiedBy.filter(entity => !isDonut(entity.type)).length === 1 && cell.occupiedBy.filter(entity => !isDonut(entity.type))[0].type === EntityType.CREAM))) {
+        return true;
+    } else {
+        return new BuildNotPossibleError('Build not possible on given field row: ' +
+            cellIdx.row + ' col: ' + cellIdx.col + ', entity type: ' + entityType + ' cell occupied by: ' + JSON.stringify(cell.occupiedBy));
+    }
   }
 
   /**
@@ -1175,7 +1175,7 @@ class Rules {
               return new NoAttacksLeftError();
           } else if (this.otherPlayerBoardCell(game, action.payload).occupiedBy.filter(entity => !isDonut(entity.type)).length === 0 &&
               action.payload.attackType !== AttackType.BUNNY && action.payload.attackType !== AttackType.HOT_CHOCOLATE) {
-              return new TargetEmptyError();
+                return new TargetEmptyError();
           } else if (AttackType.HOT_CHOCOLATE && this.otherPlayerBoardCell(game, action.payload).molten) {
               return new AlreadyMolten();
           } else {
