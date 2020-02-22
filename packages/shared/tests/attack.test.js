@@ -19,8 +19,11 @@ class AttackTest extends Situation {
         this.modifyBoard({col: 6, row: 6, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY, this.game.gameplay.game.players[0].level)] });
         this.modifyBoard({col: 1, row: 3, cellType: BoardCellTypes.WHITE, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.RUM_TRUFFLE_CANNON, this.game.gameplay.game.players[0].level)] });
 
+        const healthDonut = createEntity(EntityType.DONUT_HEALTH_GREEN)
+
         this.modifyBoard({col: 2, row: 2, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY)]});
         this.modifyBoard({col: 7, row: 7, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: []});
+        this.modifyBoard({col: 6, row: 7, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [healthDonut]});
 
         const game = this.game.gameplay.game;
 
@@ -30,6 +33,7 @@ class AttackTest extends Situation {
         game.players[1].hasFactory = true;
         game.players[1].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[1].level).buildingsPerTurn + 1;
         game.players[1].buildings = game.players[1].buildingsPerTurn;
+        game.players[1].activeDonuts = [healthDonut];
 
         game.players[0].hasFactory = true;
         game.players[0].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[0].level).buildingsPerTurn + 1;
@@ -95,4 +99,27 @@ test('should not fail to attack an cell containing the factory', () => {
     
     attackReduction(gameplay, event);
     expect(getFieldAt(game.board, position, 1).occupiedBy.find(entity => entity.type === EntityType.FACTORY).hp).toBeLessThan(health); 
+});
+
+
+test('should fail to attack an cell containing only a donut', () => {
+    const position = { row: 6, col: 7 };
+    const gameplay = AttackTest.game.gameplay;
+    const game = gameplay.game;
+    
+    const description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, game.players[0].level);
+    const damage = (1 + ((Math.random() * 0.4) - 0.2)) * description.attack;
+
+    const event = {
+        "type": GameActionTypes.attack,
+        "payload": {
+            "issuer": game.players[0].id,
+            "attackType": AttackType.TRUFFLE,
+            "damage": damage,
+            "row": position.row,
+            "col": position.col
+        }
+    }
+
+    expect(Rules.isActionValid(game, event)).toBeInstanceOf(TargetEmptyError);
 });

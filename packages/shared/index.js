@@ -1173,7 +1173,7 @@ class Rules {
       } else if (action.type === GameActionTypes.attack) {
           if (this.currentPlayer(game).attacks[action.payload.attackType] === 0) {
               return new NoAttacksLeftError();
-          } else if (this.otherPlayerBoardCell(game, action.payload).occupiedBy.length === 0 &&
+          } else if (this.otherPlayerBoardCell(game, action.payload).occupiedBy.filter(entity => !isDonut(entity.type)).length === 0 &&
               action.payload.attackType !== AttackType.BUNNY && action.payload.attackType !== AttackType.HOT_CHOCOLATE) {
               return new TargetEmptyError();
           } else if (AttackType.HOT_CHOCOLATE && this.otherPlayerBoardCell(game, action.payload).molten) {
