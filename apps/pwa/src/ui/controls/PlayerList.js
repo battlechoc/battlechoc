@@ -4,6 +4,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import { SportsEsports, PersonAddDisabled, PersonAdd } from '@material-ui/icons';
 import { Fab } from '@material-ui/core';
 import logger from '../../helper/logger';
+import { Translation as t } from '../misc';
 
 const useStyles = makeStyles(theme => ({
     list: {
@@ -84,6 +85,12 @@ const PlayerList = props => {
         friends = props.friends;
     }
 
+    let language = props.language;
+    console.log(language);
+    if (typeof props.language !== 'undefined') {
+        language = 'de';
+    }
+
     const isFriend = username => {
         return friends.map(friend => friend.name).includes(username);
     }
@@ -124,7 +131,7 @@ const PlayerList = props => {
     if (props.players.length > 0) {
         return (
             <div className={classes.list}>
-            { props.withScore ? <div className={`${classes.row} ${classes.headline}`}><div className={classes.property} style={{ width: '10%'}}>Rank</div><div className={classes.property}>Score</div><div className={classes.name}>Name</div><div className={classes.actions}>Actions</div></div> : null }
+            { props.withScore ? <div className={`${classes.row} ${classes.headline}`}><div className={classes.property} style={{ width: '10%'}}>{t[language].ACCOUNT_OVERVIEW_RANK}</div><div className={classes.property}>{t[language].PLAYERLIST_SCORE}</div><div className={classes.name}>{t[language].PLAYERLIST_NAME}</div><div className={classes.actions}>{t[language].PLAYERLIST_ACTIONS}</div></div> : null }
             { 
                 props.players.map((player, i) => {
                     let isPlayer = props.username === player.name;
@@ -161,7 +168,8 @@ PlayerList.propTypes = {
     sessions: PropTypes.array.isRequired,
     challenge: PropTypes.func.isRequired,
     addFriend: PropTypes.func,
-    removeFriend: PropTypes.func.isRequired
+    removeFriend: PropTypes.func.isRequired,
+    language: PropTypes.string
 }
 
 PlayerList.defaultProps = {

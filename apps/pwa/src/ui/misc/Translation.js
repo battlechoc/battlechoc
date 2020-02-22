@@ -17,6 +17,16 @@ const languages = {
         ACCOUNT_OVERVIEW_DRAWN: 'Drawn',
         ACCOUNT_OVERVIEW_LOST: 'Lost',
         ACCOUNT_OVERVIEW_COINS: 'Coins',
+        PLAYERLIST_SCORE: 'Score',
+        PLAYERLIST_NAME: 'Name',
+        PLAYERLIST_ACTIONS: 'Actions',
+        MULTIPLAYER_INFO_HEADER: 'You do not have any open multiplayer games',
+        MULTIPLAYER_INFO_HEADER2: 'Use the buttons above to',
+        MULTIPLAYER_INFO_CASINO: 'Challenge a random opponent',
+        MULTIPLAYER_INFO_FRIENDS: 'Pick one from your friends list',
+        MULTIPLAYER_INFO_SHARE: 'Share a link to your profile',
+        MULTIPLAYER_INFO_SEARCH: 'Search for players using their names',
+        MULTIPLAYER_INFO_HIGHSCORE: 'Take a look at the global high score',
         SETTINGS_QUIT: 'Quit Game',
         SETTINGS_PLAYER_NAME_IN_USE: 'username already in use',
         SETTINGS_PLAYER_NAME_INVALID: 'username not valid (3-15 chars or digits, first sign should be a char)',
@@ -295,6 +305,16 @@ const languages = {
         ACCOUNT_OVERVIEW_DRAWN: 'Beide',
         ACCOUNT_OVERVIEW_LOST: 'Verloren',
         ACCOUNT_OVERVIEW_COINS: 'Münzen',
+        PLAYERLIST_SCORE: 'Punkte',
+        PLAYERLIST_NAME: 'Name',
+        PLAYERLIST_ACTIONS: 'Aktionen',
+        MULTIPLAYER_INFO_HEADER: 'Du hast zur Zeit keine offenen Multiplayer-Partien.',
+        MULTIPLAYER_INFO_HEADER2: 'Benutze die Buttons oben, um',
+        MULTIPLAYER_INFO_CASINO: 'einen zufälligen Spieler herauszufordern',
+        MULTIPLAYER_INFO_FRIENDS: 'deine Freundesliste einzusehen',
+        MULTIPLAYER_INFO_SHARE: 'deinen Profillink zu teilen',
+        MULTIPLAYER_INFO_SEARCH: 'nach einem Spieler zu suchen',
+        MULTIPLAYER_INFO_HIGHSCORE: 'dir den aktuellen Highscore anzuschauen',
         SETTINGS: 'Einstellungen',
         SETTINGS_ATTENTION_TEXT: 'Achtung, wenn du den Button erneut betätigst, gibst du das aktuelle Spiel auf und der Gegner gewinnt',
         SETTINGS_QUIT: 'Spiel beenden',
@@ -388,7 +408,7 @@ const languages = {
                 case EntityType.DONUT_FACTORY:
                     return {
                         info: 'Die Donutfabrik stellt Donutfallen her, die dem Gegner sehr gefährlich werden können',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs,
                         advantages: `Produziert pro Runde einen Donut mit einer Wahrscheinlichkeit von ${building.donutProbability * 100}%` 
                     }
                 case EntityType.DONUT_PORTAL_RED:
