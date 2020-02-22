@@ -917,11 +917,11 @@ app.post('/update/level', async (req, res) => {
     }
 });
 
-const approximatePlayersCount = async () => {
+const approximatePlayersCount = async (statement) => {
     try {
-        const result = await dbPool.query("SELECT reltuples FROM pg_class WHERE oid = 'public.players'::regclass;");
+        const result = await dbPool.query("SELECT count(id) FROM players WHERE " + statement);
         if (result.rows.length > 0) {
-            return result.rows[0].reltuples;
+            return result.rows[0].count;
         }
     } catch (err) {
         console.error('Could not count players.', err);
@@ -941,7 +941,7 @@ app.get('/highscore', async (req, res) => {
                 var page = Number(req.query.page);
             }
 
-            const playersCount = await approximatePlayersCount();
+            const playersCount = await approximatePlayersCount('score > 0');
             let lastPage = Math.ceil(playersCount / pageSize);
             const playersOnPageResult = await dbPool.query('SELECT * FROM players WHERE score > 0 ORDER BY score DESC OFFSET $1 LIMIT $2', [(page - 1) * pageSize, pageSize]);
             let highscore = await playersFromQuery(playersOnPageResult.rows);
