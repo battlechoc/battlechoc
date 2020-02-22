@@ -13,7 +13,7 @@ export default class Augustus extends NonPlayerCharacter {
     	super(actions);
         this.type = AugustusType.BALANCED;
         this.discoveredShieldedCells = [];
-        this.visitedShieldedCells = [];
+        this.discoveredUnveiledCells = [];
     }
 
     static randomizeType() {
@@ -91,22 +91,26 @@ export default class Augustus extends NonPlayerCharacter {
 
     estimateAttackTarget(attackType) {
         let uncreamedFields = this.opponentBoard.grid.filter(cell => !this.containsEntity(cell, EntityType.CREAM));
-        let unveiledFactories = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.FACTORY) && !this.discoveredShieldedCells.includes(cell));
-        let unveiledCannons = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.RUM_TRUFFLE_CANNON) && !this.discoveredShieldedCells.includes(cell));
-        let unveiledFruitCannons = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.FRUIT_CANNON) && !this.discoveredShieldedCells.includes(cell));
-        let unveiledBallistas = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.HOT_CHOCOLATE_BALLISTA) && !this.discoveredShieldedCells.includes(cell));
-        let unveiledFactoryExtensions = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.FACTORY_EXTENSION) && !this.discoveredShieldedCells.includes(cell));
-        let unveiledTrees = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.CACAOTREE) && !this.discoveredShieldedCells.includes(cell));
-        let unveiledSpyingEasterBunny = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.SPYING_EASTER_BUNNY) && !this.discoveredShieldedCells.includes(cell));
-        let unveiledXmasFactory = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.XMAS_FACTORY) && !this.discoveredShieldedCells.includes(cell));
+        let unveiledFactories = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.FACTORY) && !this.shieldAlreadyDiscoverd(cell));
+        let unveiledCannons = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.RUM_TRUFFLE_CANNON) && !this.shieldAlreadyDiscoverd(cell));
+        let unveiledFruitCannons = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.FRUIT_CANNON) && !this.shieldAlreadyDiscoverd(cell));
+        let unveiledBallistas = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.HOT_CHOCOLATE_BALLISTA) && !this.shieldAlreadyDiscoverd(cell));
+        let unveiledFactoryExtensions = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.FACTORY_EXTENSION) && !this.shieldAlreadyDiscoverd(cell));
+        let unveiledTrees = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.CACAOTREE) && !this.shieldAlreadyDiscoverd(cell));
+        let unveiledSpyingEasterBunny = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.SPYING_EASTER_BUNNY) && !this.shieldAlreadyDiscoverd(cell));
+        let unveiledXmasFactory = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.XMAS_FACTORY) && !this.shieldAlreadyDiscoverd(cell));
         let unveiledFountains = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN));
-        let creamedCells = this.opponentBoard.grid.filter(cell => this.containsEntity(cell, EntityType.CREAM) && !this.discoveredShieldedCells.includes(cell));
+        let creamedCells = this.opponentBoard.grid.filter(cell => this.containsEntity(cell, EntityType.CREAM));
+        let creamedAndNotShieldedCells = creamedCells.filter(cell => !this.shieldAlreadyDiscoverd(cell));
+        let creamedButRememberedCells = creamedAndNotShieldedCells.filter(cell => this.containsRememberedUnveiledEntities(cell));
 
         if ([AttackType.HOT_CHOCOLATE, AttackType.FRUIT].includes(attackType)) {
             if (unveiledFountains.length > 0) {
                 return unveiledFountains[0];
-            } else if (attackType === AttackType.FRUIT && this.discoveredShieldedCells.length > 0) {
-                return this.discoveredShieldedCells[0];
+            } else if (this.discoveredShieldedCells.filter(cell => this.countEntities(cell) > 0 && !this.containsEntity(cell, EntityType.CREAM)).length > 0) {
+                return this.discoveredShieldedCells.filter(cell => this.countEntities(cell) > 0 && !this.containsEntity(cell, EntityType.CREAM))[0];
+            } else if (this.discoveredShieldedCells.filter(cell => this.countEntities(cell) > 0).length > 0) {
+                return this.discoveredShieldedCells.filter(cell => this.countEntities(cell) > 0)[0];
             }
         }
 
@@ -126,8 +130,15 @@ export default class Augustus extends NonPlayerCharacter {
             return unveiledTrees[0];
         } else if (unveiledXmasFactory.length > 0) {
             return unveiledXmasFactory[0];
+        } else if (creamedButRememberedCells.length > 0) {
+            logger.info(`Remember unveiled entities @[${creamedButRememberedCells[0].row} ${creamedButRememberedCells[0].col}]`)
+            return creamedButRememberedCells[0];
+        } else if (creamedAndNotShieldedCells.length > 0) {
+            return creamedAndNotShieldedCells[Math.floor(Math.random() * creamedAndNotShieldedCells.length)];
+        } else if (uncreamedFields.filter(cell => this.countEntities(cell) > 0).length > 0) {
+            return uncreamedFields.filter(cell => this.countEntities(cell) > 0)[0];
         } else if (creamedCells.length > 0) {
-            return creamedCells[Math.floor(Math.random() * creamedCells.length)];
+            return creamedCells[0];
         } else {
             return this.opponentBoard.grid[Math.floor(Math.random() * this.opponentBoard.grid.length)];
         }
@@ -188,10 +199,18 @@ export default class Augustus extends NonPlayerCharacter {
 
         let damage = (1 + ((Math.random() * 0.4) - 0.2)) * attack;
         let shieldedBefore = this.opponentBoard.grid[target.row * this.boardSize.cols + target.col].shielded;
+        let fountainCellNearby = null;
+
         let selectedCell = this.opponentBoard.grid[target.row * this.boardSize.cols + target.col];
+        if (shieldedBefore) {
+            const shieldedArea = this.getCellPatch3x3(selectedCell, this.opponentBoard.grid);
+            fountainCellNearby = shieldedArea.find(cell => this.containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN))
+        }
+
         let cellContainsDonut = selectedCell.occupiedBy.some(entity => isDonut(entity.type));
         let donut = cellContainsDonut ? selectedCell.occupiedBy.filter(entity => isDonut(entity.type))[0] : null;
         try {
+            logger.info(`Attack cell @[${target.row} ${target.col}] with attack type ${attackType}`);
             await this.actions.attack({
                 issuer: this.player.id,
                 attackType: attackType,
@@ -205,6 +224,10 @@ export default class Augustus extends NonPlayerCharacter {
 
         this.refreshGameState();
         selectedCell = this.opponentBoard.grid[target.row * this.boardSize.cols + target.col];
+        if (this.countEntities(selectedCell) === 0) {
+            this.forgetUnveiledCell(selectedCell);
+        }
+
         if (cellContainsDonut && !selectedCell.occupiedBy.some(entity => isDonut(entity.type))) {
             triggerDonutInfo(donut);
         }
@@ -219,7 +242,18 @@ export default class Augustus extends NonPlayerCharacter {
         } else {
             Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
             if (shieldedBefore && !selectedCell.shielded) {
-                this.discoveredShieldedCells = this.discoveredShieldedCells.filter(cell => !(cell.row === target.row && cell.col === target.col));
+                logger.info(`[${selectedCell.row} ${selectedCell.col}] is not shielded anymore`);
+                this.fieldNotShieldedAnymore(selectedCell);
+                if (fountainCellNearby) {
+                    let cellsNearFountain = this.getCellPatch3x3(fountainCellNearby, this.opponentBoard.grid);
+
+                    for (let cell of cellsNearFountain) {
+                        if (this.shieldAlreadyDiscoverd(cell)) {
+                            logger.info(`Logically conclude that [${cell.row} ${cell.col}] is not shielded anymore`);
+                            this.fieldNotShieldedAnymore(cell);
+                        }
+                    }
+                }
             }
             detonateAtPosition(target.row, target.col);
         }
@@ -231,11 +265,47 @@ export default class Augustus extends NonPlayerCharacter {
         }
     }
 
+    shieldAlreadyDiscoverd(cell) {
+        return this.discoveredShieldedCells.some(field => field.row === cell.row && field.col === cell.col);
+    }
+
+    containsRememberedUnveiledEntities(cell) {
+        return this.discoveredUnveiledCells.some(field => field.row === cell.row && field.col === cell.col);
+    }
+
+    forgetUnveiledCell(cell) {
+        if (this.discoveredUnveiledCells.some(field => field.row === cell.row && field.col === cell.col)) {
+            logger.info(`Forget that [${cell.row} ${cell.col}] had unveiled entities`);
+        }
+        this.discoveredUnveiledCells = this.discoveredUnveiledCells.filter(field => !(field.row === cell.row && field.col === cell.col))
+    }
+
+    fieldNotShieldedAnymore(cell) {
+        this.discoveredShieldedCells = this.discoveredShieldedCells.filter(field => !(field.row === cell.row && field.col === cell.col))
+    }
+
     async simulateAttackPhase(detonateAtPosition, triggerDonutInfo) {
         await this.simulateThinking(1500);
         this.refreshGameState();
         if (this.gameIsRunning) {
-            let creamyFields = this.opponentBoard.grid.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM));
+            let creamyFields = this.opponentBoard.grid.filter(cell => this.containsEntity(cell, EntityType.CREAM));
+            let uncreamedFields = this.opponentBoard.grid.filter(cell => !this.containsEntity(cell, EntityType.CREAM));
+            let unveiledFountains = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN));
+
+            for (let cell of uncreamedFields.filter(cell => this.countEntities(cell) > 0)) {
+                logger.info(`Remember that [${cell.row} ${cell.col}] contains unveiled entities`);
+                this.discoveredUnveiledCells.push(cell)
+            }
+
+            for (let unveiledFountain of unveiledFountains) {
+                let cellsNearFountain = this.getCellPatch3x3(unveiledFountain, this.opponentBoard.grid);
+                for (let cell of cellsNearFountain) {
+                    if (!this.shieldAlreadyDiscoverd(cell)) {
+                        logger.info(`Logically conclude that [${cell.row} ${cell.col}] is shielded`);
+                        this.discoveredShieldedCells.push(cell);
+                    }
+                }
+            }
 
             if (this.player.attacks[AttackType.BUNNY] > 0 && creamyFields.length > 0) {
                 let target = creamyFields[Math.floor(Math.random() * creamyFields.length)];
@@ -245,10 +315,15 @@ export default class Augustus extends NonPlayerCharacter {
                 await this.simulateAttack(target, AttackType.HOT_CHOCOLATE, detonateAtPosition, triggerDonutInfo);
             } else if (this.player.attacks[AttackType.FRUIT] > 0) {
                 let target = this.estimateAttackTarget(AttackType.FRUIT);
+                if (target.shielded && !this.shieldAlreadyDiscoverd(target)) {
+                    logger.info(`Target is shielded. Push [${target.row} ${target.col}]`)
+                    this.discoveredShieldedCells.push(target);
+                }
                 await this.simulateAttack(target, AttackType.FRUIT, detonateAtPosition, triggerDonutInfo);
             } else if (this.player.attacks[AttackType.TRUFFLE] > 0) {
                 let target = this.estimateAttackTarget(AttackType.TRUFFLE);
-                if (target.shielded) {
+                if (target.shielded && !this.shieldAlreadyDiscoverd(target)) {
+                    logger.info(`Target is shielded. Push [${target.row} ${target.col}]`)
                     this.discoveredShieldedCells.push(target);
                 }
                 await this.simulateAttack(target, AttackType.TRUFFLE, detonateAtPosition, triggerDonutInfo);

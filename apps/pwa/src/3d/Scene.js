@@ -232,9 +232,6 @@ class Scene extends Component {
         } else {
             position.y = 6.5;
         }
-
-        console.log(position, donut);
-
         this.spawnInfo(this.InfoType.DONUT_TRAP, position, undefined, donut.type);
     }
 
