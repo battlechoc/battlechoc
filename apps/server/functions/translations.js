@@ -1,5 +1,5 @@
 
-const validLanguages = ['de', 'en'];
+const validLanguages = ['de', 'en', 'jp'];
 const languages = {
     en: {
         NOTIFICATION_CHALLENGE_TITLE: ' challenges you @battlechoc',
@@ -12,6 +12,12 @@ const languages = {
         NOTIFICATION_CHALLENGE_BODY: 'Das könnte ein episches Match werden!',
         NOTIFICATION_TURN_FINISHED_TITLE: ' hat seinen Zug auf battlechoc.com beendet',
         NOTIFICATION_TURN_FINISHED_BODY: 'Weiter gehts. Du bist dran!'
+    },
+    jp: {
+        NOTIFICATION_CHALLENGE_TITLE: ' @battlechocに挑戦',
+        NOTIFICATION_CHALLENGE_BODY: 'これは素晴らしい戦いになるかもしれません',
+        NOTIFICATION_TURN_FINISHED_TITLE: ' ターン@battlechocを終了しました',
+        NOTIFICATION_TURN_FINISHED_BODY: '行こう。それはあなたの動きです!'
     }
 }
 

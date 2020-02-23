@@ -85,6 +85,7 @@ const setupDatabasePlayground = async () => {
 
     await pool.query('INSERT INTO players(id, name, coins, score, language, level) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', ['1337-1337-1337-1337', 'Basti', 100, 100, 'en', EmptyPlayerStats.level]);
     await pool.query('INSERT INTO players(id, name, coins, score, language, level) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', ['rul0r-rul0r-rul0r-rul0r', 'Fabi', 120, 120, 'de', EmptyPlayerStats.level]);
+    await pool.query('INSERT INTO players(id, name, coins, score, language, level) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', ['h0gwarts-9-34', 'Hairy', 900, 125, 'jp', EmptyPlayerStats.level]);
     await pool.end();
 }
 
