@@ -203,6 +203,7 @@ class MultiplayerScreen extends Component {
     openHighscorePage = page => {
         this.setState({ showHighscore: true, highscoreLoading: true, highscore: [] }, async () => {
             try {
+                console.log(page);
                 let highscore = await multiplayer.fetchHighscore(page);
                 this.setState({ 
                     highscoreLoading: false, 
@@ -244,7 +245,8 @@ class MultiplayerScreen extends Component {
                         removeFriend={this.removeFriend}
                         challenge={this.challengePlayer}
                         showProfile={this.showPlayerProfile}
-                        sessions={this.props.multiplayerSessions} />
+                        sessions={this.props.multiplayerSessions}
+                        language={this.props.language} />
                 </BattlechocDialog>
 
                 <BattlechocDialog
@@ -271,7 +273,7 @@ class MultiplayerScreen extends Component {
                                     <ChevronLeft />
                                 </Fab>
                             </div>
-                            { this.state.highscoreLoading ? <CircularProgress size={22} /> : <span style={{color: '#324D5C'}}>Rank {this.state.highscore.length > 0 ? `${this.state.highscore[0].ranking} - ${this.state.highscore[this.state.highscore.length - 1].ranking}` : '1 - 1'}</span> }
+                            { this.state.highscoreLoading ? <CircularProgress size={22} /> : <span style={{color: '#324D5C'}}>{t[this.props.language].ACCOUNT_OVERVIEW_RANK} {this.state.highscore.length > 0 ? `${this.state.highscore[0].ranking} - ${this.state.highscore[this.state.highscore.length - 1].ranking}` : '1 - 1'}</span> }
                             <div>
                                 <Fab
                                     size="small"
@@ -302,7 +304,8 @@ class MultiplayerScreen extends Component {
                             addFriend={this.addFriend}
                             challenge={this.challengePlayer}
                             showProfile={this.showPlayerProfile}
-                            sessions={this.props.multiplayerSessions} /> }
+                            sessions={this.props.multiplayerSessions}
+                            language={this.props.language} /> }
                     </div>
                 </BattlechocDialog>
 
@@ -335,7 +338,8 @@ class MultiplayerScreen extends Component {
                             removeFriend={this.removeFriend}
                             challenge={this.challengePlayer}
                             showProfile={this.showPlayerProfile}
-                            sessions={this.props.multiplayerSessions} />
+                            sessions={this.props.multiplayerSessions}
+                            language={this.props.language} />
                     </div>
                 </BattlechocDialog>
                 
@@ -364,14 +368,14 @@ class MultiplayerScreen extends Component {
                         })}
                     </div></div> : 
                     <div className="no-sessions-info">
-                        <h4>You do not have any open multiplayer games</h4>
-                        <p>Use the buttons above to</p>
+                        <h4>{t[this.props.language].MULTIPLAYER_INFO_HEADER}</h4>
+                        <p>{t[this.props.language].MULTIPLAYER_INFO_HEADER2}</p>
                         <ul>
-                            <li><Casino />Challenge a random opponent</li>
-                            <li><People />Pick one from your friends list</li>
-                            <li><Share />Share a link to your profile</li>
-                            <li><Search />Search for players using their names</li>
-                            <li><FormatListNumbered />Take a look at the global high score</li>
+                            <li><Casino />{t[this.props.language].MULTIPLAYER_INFO_CASINO}</li>
+                            <li><People />{t[this.props.language].MULTIPLAYER_INFO_FRIENDS}</li>
+                            <li><Share />{t[this.props.language].MULTIPLAYER_INFO_SHARE}</li>
+                            <li><Search />{t[this.props.language].MULTIPLAYER_INFO_SEARCH}</li>
+                            <li><FormatListNumbered />{t[this.props.language].MULTIPLAYER_INFO_HIGHSCORE}</li>
                         </ul>
                     </div> }
                 </div> }

@@ -4,6 +4,9 @@ const languages = {
     en: {
         SIGNINORUP: 'Sign in',
         NEW_GAME: 'New Game',
+        MAIN_MENU_SINGLEPLAYER: 'Singleplayer',
+        MAIN_MENU_MULTIPLAYER: 'Multiplayer',
+        MAIN_MENU_CHOCLAB: 'Coclab',
         SIGN_OUT: 'Sign out',
         ACCOUNTINFOS: 'Account infos',
         ACCOUNTINFOS_PREVIEW: 'Coming soon, infos about your account and player stats.',
@@ -17,6 +20,19 @@ const languages = {
         ACCOUNT_OVERVIEW_DRAWN: 'Drawn',
         ACCOUNT_OVERVIEW_LOST: 'Lost',
         ACCOUNT_OVERVIEW_COINS: 'Coins',
+        PLAYERLIST_SCORE: 'Score',
+        PLAYERLIST_NAME: 'Name',
+        PLAYERLIST_ACTIONS: 'Actions',
+        CHOCLAB_UPGRADE: 'Upgrade',
+        CHOCLAB_DOWNGRADE: 'Downgrade',
+        CHOCLAB_LEVEL: 'Level',
+        MULTIPLAYER_INFO_HEADER: 'You do not have any open multiplayer games',
+        MULTIPLAYER_INFO_HEADER2: 'Use the buttons above to',
+        MULTIPLAYER_INFO_CASINO: 'Challenge a random opponent',
+        MULTIPLAYER_INFO_FRIENDS: 'Pick one from your friends list',
+        MULTIPLAYER_INFO_SHARE: 'Share a link to your profile',
+        MULTIPLAYER_INFO_SEARCH: 'Search for players using their names',
+        MULTIPLAYER_INFO_HIGHSCORE: 'Take a look at the global high score',
         SETTINGS_QUIT: 'Quit Game',
         SETTINGS_PLAYER_NAME_IN_USE: 'username already in use',
         SETTINGS_PLAYER_NAME_INVALID: 'username not valid (3-15 chars or digits, first sign should be a char)',
@@ -29,6 +45,7 @@ const languages = {
         GAME_END_OVERVIEW_MOLTEN_FIELDS: 'Molten fields',
         GERMAN: 'German',
         ENGLISH: 'English',
+        JAPANESE: 'Japanese',
         LANGUAGE: 'Language',
         BUTTON_BACK: 'Back',
         INVITATION: 'Join my battlechoc multiplayer game!',
@@ -284,6 +301,9 @@ const languages = {
     de: {
         SIGNINORUP: 'Anmelden',
         NEW_GAME: 'Neues Spiel',
+        MAIN_MENU_SINGLEPLAYER: 'Singleplayer',
+        MAIN_MENU_MULTIPLAYER: 'Multiplayer',
+        MAIN_MENU_CHOCLAB: 'Coclab',
         SIGN_OUT: 'Abmelden',
         ACCOUNTINFOS: 'Account Informationen',
         ACCOUNTINFOS_PREVIEW: 'Hier findest du bald Infos über deinen Account und Spieler-Statistiken.',
@@ -295,6 +315,19 @@ const languages = {
         ACCOUNT_OVERVIEW_DRAWN: 'Beide',
         ACCOUNT_OVERVIEW_LOST: 'Verloren',
         ACCOUNT_OVERVIEW_COINS: 'Münzen',
+        PLAYERLIST_SCORE: 'Punkte',
+        PLAYERLIST_NAME: 'Name',
+        CHOCLAB_UPGRADE: 'Upgrade',
+        CHOCLAB_DOWNGRADE: 'Downgrade',
+        CHOCLAB_LEVEL: 'Level',
+        PLAYERLIST_ACTIONS: 'Aktionen',
+        MULTIPLAYER_INFO_HEADER: 'Du hast zur Zeit keine offenen Multiplayer-Partien.',
+        MULTIPLAYER_INFO_HEADER2: 'Benutze die Buttons oben, um',
+        MULTIPLAYER_INFO_CASINO: 'einen zufälligen Spieler herauszufordern',
+        MULTIPLAYER_INFO_FRIENDS: 'deine Freundesliste einzusehen',
+        MULTIPLAYER_INFO_SHARE: 'deinen Profillink zu teilen',
+        MULTIPLAYER_INFO_SEARCH: 'nach einem Spieler zu suchen',
+        MULTIPLAYER_INFO_HIGHSCORE: 'dir den aktuellen Highscore anzuschauen',
         SETTINGS: 'Einstellungen',
         SETTINGS_ATTENTION_TEXT: 'Achtung, wenn du den Button erneut betätigst, gibst du das aktuelle Spiel auf und der Gegner gewinnt',
         SETTINGS_QUIT: 'Spiel beenden',
@@ -309,6 +342,7 @@ const languages = {
         GAME_END_OVERVIEW_MOLTEN_FIELDS: 'Geschmolzene Felder',
         GERMAN: 'Deutsch',
         ENGLISH: 'Englisch',
+        JAPANESE: 'Japanisch',
         LANGUAGE: 'Sprache',
         BUTTON_BACK: 'Zurück',
         INVITATION: 'Spiel mit mir battlechoc!',
@@ -388,7 +422,7 @@ const languages = {
                 case EntityType.DONUT_FACTORY:
                     return {
                         info: 'Die Donutfabrik stellt Donutfallen her, die dem Gegner sehr gefährlich werden können',
-                        costs: 'Cacao costs: ' + building.costs,
+                        costs: 'Kakaokosten: ' + building.costs,
                         advantages: `Produziert pro Runde einen Donut mit einer Wahrscheinlichkeit von ${building.donutProbability * 100}%` 
                     }
                 case EntityType.DONUT_PORTAL_RED:
@@ -560,6 +594,303 @@ const languages = {
         ERROR_GAME_NOT_JOINABLE_VIA_URL: 'Spielstart fehlgeschlagen. Bitte überprüfe deine Internetverbindung',
         TRY_TO_JOIN_GAME: 'Bitte warte kurz. Wir versuchen dich direkt mit deinem Multiplayerspiel zu verbinden',
         NOTIFICATION_PERMISSION_INFO: 'Wir werden dich gleich um Erlaubnis fragen, dich informieren zu dürfen, falls jemand dich herausfordert, oder ein Gegner seinen Zug beendet hat und du an der Reihe bist'
+    },
+    jp: {
+        SIGNINORUP: 'サインイン',
+        NEW_GAME: '新しいゲーム',
+        MAIN_MENU_SINGLEPLAYER: 'シングルプレーヤー',
+        MAIN_MENU_MULTIPLAYER: 'マルチプレイヤー',
+        MAIN_MENU_CHOCLAB: 'ショコラデンラボ',
+        SIGN_OUT: 'サインアウト',
+        ACCOUNTINFOS: 'アカウント情報',
+        ACCOUNTINFOS_PREVIEW: '近日中に、アカウントとプレーヤーの統計に関する情報を提供します。',
+        ACCOUNT_OVERVIEW_ASSOCIATION: 'あなたのアカウントはに関連付けられています',
+        SETTINGS: '設定',
+        SETTINGS_ATTENTION_TEXT: '注意、上のボタンをもう一度押すと、現在のゲームを放棄し、相手が勝ちます',
+        ACCOUNT_OVERVIEW_CREATE_INFO: 'アカウントをデバイス間で共有し、デバイスが失われた場合のバトルチョックの進捗を復元するには、これらのオプションのいずれかに接続することができます。',
+        ACCOUNT_OVERVIEW_LEVEL: 'レベル',
+        ACCOUNT_OVERVIEW_RANK: 'ランク',
+        ACCOUNT_OVERVIEW_WON: '勝った',
+        ACCOUNT_OVERVIEW_DRAWN: '描かれた',
+        ACCOUNT_OVERVIEW_LOST: '失われた',
+        ACCOUNT_OVERVIEW_COINS: '硬貨',
+        PLAYERLIST_SCORE: 'スコア',
+        PLAYERLIST_NAME: '名前',
+        PLAYERLIST_ACTIONS: '行動',
+        CHOCLAB_UPGRADE: 'アップグレード',
+        CHOCLAB_DOWNGRADE: 'ダウングレード',
+        CHOCLAB_LEVEL: 'レベル',
+        MULTIPLAYER_INFO_HEADER: 'オープンマルチプレイヤーゲームはありません',
+        MULTIPLAYER_INFO_HEADER2: '上記のボタンを使用して',
+        MULTIPLAYER_INFO_CASINO: 'ランダムな相手に挑戦',
+        MULTIPLAYER_INFO_FRIENDS: '友達リストから1つを選択してください',
+        MULTIPLAYER_INFO_SHARE: 'プロフィールへのリンクを共有する',
+        MULTIPLAYER_INFO_SEARCH: '名前を使用してプレイヤーを検索する',
+        MULTIPLAYER_INFO_HIGHSCORE: 'グローバルハイスコアをご覧ください',
+        SETTINGS_QUIT: 'ゲームをやめる',
+        SETTINGS_PLAYER_NAME_IN_USE: 'すでに使用中のユーザー名',
+        SETTINGS_PLAYER_NAME_INVALID: 'ユーザー名が無効です（3〜15文字または数字、最初の記号は文字でなければなりません）',
+        HUD_RESUME_GAME: 'ゲームを再開',
+        HUD_ASK_NEW_OR_RESUME: '新しいゲームを開始しますか、それとも最後のゲームを再開しますか？',
+        HUD_NEW_GAME: '新しいゲーム',
+        GAME_END_OVERVIEW_ATTACKS: '攻撃',
+        GAME_END_OVERVIEW_ENTITIES: 'エンティティ全体',
+        GAME_END_OVERVIEW_ESPIONAGES: 'スパイ',
+        GAME_END_OVERVIEW_MOLTEN_FIELDS: '溶融フィールド',
+        GERMAN: 'ドイツ人',
+        ENGLISH: '英語',
+        JAPANESE: '日本語',
+        LANGUAGE: '言語',
+        BUTTON_BACK: 'バック',
+        INVITATION: 'バトルチョックマルチプレイヤーゲームに参加しましょう！',
+        TOOLTIP_INITIAL_TURN_TITLE: '最初のターン',
+        TOOLTIP_INITIAL_TURN_MESSAGE: '最初のラウンドでは、競技場または最初の動きを選択できます',
+        TOOLTIP_INITIAL_TURN_OPPONENT: name => name + ' ゲームフィールドを選択できるようになりました',
+        TOOLTIP_BUILDING_TITLE: (type) => {
+            switch (type) {
+                case EntityType.CREAM: return 'クリーム';
+                case EntityType.FACTORY_EXTENSION: return '工場拡張';
+                case EntityType.FACTORY: return 'チョコレート工場';
+                case EntityType.HOT_CHOCOLATE_BALLISTA: return 'ホットチョコレートバリスタ';
+                case EntityType.CACAOTREE: return 'カカオの木';
+                case EntityType.RUM_TRUFFLE_CANNON: return 'ラムトリュフキャノン';
+                case EntityType.XMAS_FACTORY: return 'クリスマス工場';
+                case EntityType.SPYING_EASTER_BUNNY: return 'イースターバニーをスパイ';
+                case EntityType.CHOCOLATE_FOUNTAIN: return 'チョコレート噴水';
+                case EntityType.FRUIT_CANNON: return 'フルーツキャノン';
+                case EntityType.DONUT_FACTORY: return 'ドーナツ工場';
+                case EntityType.DONUT_PORTAL_RED: return '赤いポータルドーナツ';
+                case EntityType.DONUT_PORTAL_BLUE: return '青いポータルドーナツ';
+                case EntityType.DONUT_STOP_PINK: return 'ピンクストップドーナツ';
+                case EntityType.DONUT_SURPRISE_YELLOW: return 'イエローサプライズドーナツ';
+                case EntityType.DONUT_HEALTH_GREEN: return '緑の健康ドーナツ';
+                case EntityType.DONUT_CREAM_WHITE: return 'ホワイトクリームドーナツ';
+                default: return '知らない';
+            }
+        },
+        TOOLTIP_BUILDING_INFO: (type, building) => {
+            switch (type) {
+                case EntityType.CREAM:
+                    return {
+                        info: 'クリーム色の建物は敵から隠されます。クリームと建物の順序は関係ありません。',
+                        costs: 'カカオの費用： ' + building.costs
+                    }
+                case EntityType.FACTORY_EXTENSION:
+                    return {
+                        info: 'ファクトリ拡張は、ファクトリのすぐ隣にのみ配置できます。',
+                        costs: 'カカオの費用： ' + building.costs,
+                        advantages: 'ーンごとの建物+' + building.buildingsPerTurn
+                    }
+                case EntityType.CACAOTREE:
+                    return {
+                        info: 'カカオの木はあなたに必要なすべてのリソースを提供します。',
+                        costs: 'カカオの費用： ' + building.costs,
+                        advantages: 'ターンごとのカカオ+' + building.cacaoPerTurn
+                    }
+                case EntityType.RUM_TRUFFLE_CANNON:
+                    return {
+                        info: 'ラムトリュフ大砲が勝利へと導く。',
+                        costs: 'カカオの費用： ' + building.costs,
+                        advantages: 'ターンごとの攻撃+1'
+                    }
+                case EntityType.XMAS_FACTORY:
+                    return {
+                        info: 'イースターのウサギがサンタクロースに溶け込んでいるという噂は本当です！イースターバニーがクリスマス工場の近くに来ると、プレゼントがあなたを待っています。',
+                        costs: 'カカオの費用： ' + building.costs
+                    }
+                case EntityType.SPYING_EASTER_BUNNY:
+                    return {
+                        info: 'スパイイースターバニーは、相手のクリームの下を見ることができますが、クリスマス工場に注意してください。',
+                        costs: 'カカオの費用： ' + building.costs,
+                        advantages: 'ターンごとのスパイ+1'
+                    }
+                case EntityType.CHOCOLATE_FOUNTAIN:
+                    return {
+                        info: 'チョコレートの噴水は、ラムトリュフの大砲攻撃から周囲のすべての建物を守ります。',
+                        costs: 'カカオの費用： ' + building.costs,
+                        advantages: '噴水の周りの3x3セルの領域を確保します。'
+                    }
+                case EntityType.FRUIT_CANNON:
+                    return {
+                        info: '果物の大砲は、敵のクリームとチョコレートの噴水を破壊します。',
+                        costs: 'カカオの費用： ' + building.costs,
+                        advantages: 'ターンごとのフルーツ攻撃+1'
+                    }
+                case EntityType.DONUT_FACTORY:
+                    return {
+                        info: 'ドーナツ工場では、ドーナツトラップを作成しますが、これは相手にとって非常に危険な場合があります。',
+                        costs: 'カカオの費用： ' + building.costs,
+                        advantages: `確率ごとにドーナツを1ターンに生成します${building.donutProbability * 100}%` 
+                    }
+                case EntityType.DONUT_PORTAL_RED:
+                case EntityType.DONUT_PORTAL_BLUE:
+                    return {
+                        info: '青いドーナツが何らかの攻撃によってトリガーされると、ポータルはフィールドとすべてのエンティティを対応する赤いドーナツと交換します'
+                    }
+                case EntityType.DONUT_CREAM_WHITE:
+                    return {
+                        info: '白いドーナツが何らかの攻撃によってトリガーされた場合、ドーナツの周りの5x5領域はクリームで満たされます'
+                    }
+                case EntityType.DONUT_HEALTH_GREEN:
+                    return {
+                        info: '緑色のドーナツが何らかの攻撃によってトリガーされた場合、ドーナツの周囲の5x5の領域は完全に回復します'
+                    }
+                case EntityType.DONUT_STOP_PINK:
+                    return {
+                        info: 'ピンクドーナツが攻撃によってトリガーされた場合、相手の攻撃フェーズはすぐに停止します'
+                    }
+                case EntityType.DONUT_SURPRISE_YELLOW:
+                    return {
+                        info: '黄色のドーナツが攻撃によってトリガーされた場合、ランダムに5x5の領域を回復するか、クリームで満たすか、すぐに敵の攻撃フェーズを停止します'
+                    }
+                default: return { info: '不明な建物' }
+            }
+        },
+        TOOLTIP_INITIAL_PLACEMENT_TITLE: '初期配置',
+        TOOLTIP_INITIAL_PLACEMENT_MESSAGE: 'これで、一度工場を建てることができます。工場を慎重に設定してください：破壊された場合、他の建物を建てることはできません',
+        TOOLTIP_BUILD_PHASE_TITLE: 'ビルド段階',
+        TOOLTIP_BUILD_PHASE_MESSAGE: '以下のリストから建物を選択し、自由なフィールドのいずれかに構築します。クリームは半透明で表示されます。クリーム色で建てられた建物は敵には見えません',
+        TOOLTIP_ATTACK_PHASE_TITLE: '攻撃フェーズ',
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE: (attackType) => {
+            switch (attackType) {
+                case AttackType.TRUFFLE: return 'ラムトリュフ';
+                case AttackType.FRUIT: return 'フルーツ';
+                case AttackType.HOT_CHOCOLATE: return 'ホットチョコレート';
+                case AttackType.BUNNY: return 'イースターバニーをスパイ';
+                default: return '知らない';
+            }
+        },
+        TOOLTIP_ATTACK_PHASE_MESSAGE: '敵の建物をクリックして破壊します。ヒント：スマートな敵はクリームの中に建物を隠します',
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE: (attackType) => {
+            switch (attackType) {
+                case AttackType.TRUFFLE: return '建物とクリームを破壊します。チョコレートファウンテンシールドで緩和できます。';
+                case AttackType.FRUIT: return 'クリームとチョコレートの噴水を破壊します。他の建物は果物の大砲によって害を受けません。';
+                case AttackType.HOT_CHOCOLATE: return '建物、クリーム、さらには攻撃されたゲームフィールドの一部を破壊します。チョコレートファウンテンシールドでは緩和できません。';
+                case AttackType.BUNNY: return '攻撃されたセルの周りの3x3領域内のクリームの下にあるすべての建物を明らかにします。近くのX-mas工場に巻き込まれます。';
+                default: return '知らない';
+            }
+        },
+        MESSAGE_WIN_GAME: 'おめでとう！このゲームに勝った',
+        MESSAGE_LOST_GAME: 'あなたが負けた',
+        MESSAGE_DRAW_GAME: 'ゲームを描く！',
+        META_DESCRIPTION: 'チョコレートとゲームが好きですか？今すぐ始めて、カカオ風味のターンベースの戦略ゲームであるbattlechocをプレイしてください。ゲームに関しては、ウェブサイトよりもアプリを好みますか？もちろん、バトルチョックをホーム画面に追加して、いつでもどこでもオフラインでプレイできます！',
+        META_KEYWORDS: 'チョコレート、ゲーム、戦略ゲーム、ボードゲーム、PWA、ココア、ターンベース、チョコレートガン、ココアツリー',
+        REPORT_CUSTOM_MESSAGE: '追加メッセージ',
+        REPORT_CUSTOM_MESSAGE_PLACEHOLDER: '問題は後に発生します...',
+        REPORT_DEVICE_INFO: 'デバイス情報を追加する',
+        REPORT_PROBLEM: '問題を報告する',
+        RESTART_TUTORIAL: '再起動チュートリアル',
+        ERROR_SENDING_PROBLEM_REPORT: '問題レポートの送信エラー。インターネット接続を確認してください',
+        SUCCESSFULLY_SENDING_PROBLEM_REPORT: '問題レポートが正常に送信されました！',
+        REPORT_INFORMATION: 'レポートにはターン履歴が自動的に含まれるため、ゲームと問題を再現できます。追加メッセージの形でのさらなる観察、またはデバイス情報（オペレーティングシステムなど）は非常に役立ちます。この情報は、バグが修正された直後に削除するか、問題を再現できませんでした。ご協力いただきありがとうございます！',
+        INFO_IMPRESS: '感動',
+        INFO_IMPRESS_COUNTRY: 'ドイツ',
+        INFO_IMPRESS_PHONE: '電話',
+        INFO_IMPRESS_EXECUTIVE_DIRECTORS: '専務理事',
+        INFO_PRIVACY_POLICY: '個人情報保護方針',
+        INFO_PRIVACY_POLICY_TEXT: '現在、バトルチョックでお金を稼ぐことはありません。無料でプレイできます。私たちは常にあなたのデータを保護しようとしています。そのため、2つの方法でデータを収集するだけです。まず、バグ報告を手動で送信すると、データが収集されます。これは、ゲームの状態と移動履歴を保存する場所です。チェックボックスを有効にすると、ブラウザ情報とオペレーティングシステムを指定することもできます。エラーを再現できるようにするために、追加のメッセージが役立つ場合がよくあります。これは、指定時に保存されます。バグを再現して解決できたら、この情報をすぐに削除しますが、遅くともエラーレポートを送信してから2か月後です。データを収集する2番目の方法は、Google Web Analyticsの使用です。これについては、次の段落で詳しく説明します。',
+        INFO_GOOGLE_ANALYTICS: 'battlechocを適応させ、継続的に最適化するために、Google Inc.のWeb分析サービスであるGoogle Web Analytics（1940 Amphitheatre Parkway、Mountain View、CA 94043、USA、以下「Google」と呼びます）を使用します。このコンテキストでは、仮名のユーザープロファイルが作成され、Cookieが使用されます。Cookieは、ブラウザーによってデバイスに自動的に保存される情報を一時的に保存するための小さなテキストファイルです。 Cookieにはウイルスは含まれておらず、危険ではありません。Cookieによって生成される、このWebサイトの使用に関する情報。',
+        INFO_GOOGLE_ANALYTICS_OPERATING_SYSTEM: 'オペレーティング・システム',
+        INFO_GOOGLE_ANALYTICS_BROWSER_TYPE: 'ブラウザの種類/バージョン',
+        INFO_GOOGLE_ANALYTICS_REFERRER_URL: 'リファラーURL（以前にアクセスしたページ）',
+        INFO_GOOGLE_ANALYTICS_HOST_NAME: 'アクセスしているコンピューターのホスト名（IPアドレス）',
+        INFO_GOOGLE_ANALYTICS_SERVER_REQUEST: 'サーバーリクエストの時間',
+        INFO_GOOGLE_ANALYTICS_PREVENT: '米国のGoogleサーバーに転送され、そこに保存されます。この情報は、Webサイトの使用を評価し、市場、UI / UX調査のためのWebサイトアクティビティに関するレポートを生成するために使用されます。この情報は、法律で義務付けられている場合、またはそのような第三者が会社に代わって情報を処理する場合、第三者に開示される場合があります。いかなる状況でも、IPアドレスがGoogleが保持する他のデータと統合されることはありません。 IPアドレスは匿名化されているため、マッピングはできません（IPマスキング）。ブラウザで適切な設定を選択することにより、Cookieの使用を拒否できます。ブラウザのアドオン（https：// tools.google.com/dlpage/gaoptout?hl=en）。ブラウザーアドオンの代替手段として、特にモバイルデバイス上のブラウザーの場合、このリンクをクリックして、Googleアナリティクスがデータを収集しないようにすることができます。オプトアウトCookieは、このWebサイトにアクセスしたときにデータが将来収集されないように設定されています。オプトアウトCookieはこのブラウザでのみ有効であり、当社のWebサイトでのみ有効であり、デバイスに保存されます。このブラウザでCookieを削除した場合、オプトアウトCookieを再度設定する必要があります。 Googleアナリティクスのヘルプ（https://policies.google.com/?hl=en）で、Googleアナリティクスに関連するデータ保護の詳細を確認できます。サービスプロバイダーは、EU-USプライバシー契約の一部です。',
+        TUTORIAL: 'チュートリアル',
+        IOS_MESSAGE: 'iOSでバトルチョックをフルスクリーンモードでプレイするには、iPhone [0]を回転するか、共有アイコン[1]を使用して[2] [ホーム画面に追加]を選択する必要があります',
+        JOIN_MULTIPLAYER: 'マルチプレイヤーゲームに参加する',
+        TUTORIAL_CHOOSE_MESSAGE_1: 'battlechocへようこそ！初めてプレイしているようです',
+        TUTORIAL_CHOOSE_MESSAGE_2: '上のこのアイコンをクリックして、チュートリアルページをスキップできます。',
+        TUTORIAL_CHOOSE_MESSAGE_3: 'このチュートリアルを続けるには、最初のターンまたはゲームフィールドのいずれかを選択してください',
+        TUTORIAL_FACTORY_MESSAGE_1: 'ビルドするにはカカオの木やラムトリュフの大砲、チョコレート工場を建設する必要があります',
+        TUTORIAL_FACTORY_MESSAGE_2: '工場では、ターンごとに2つの建物を建てることができます',
+        TUTORIAL_FACTORY_MESSAGE_3: 'ヒント：ブラックチョコレートで工場を建設すると、工場の性能が向上し、1ターンあたり最大3つの建物を生産できるようになります。',
+        TUTORIAL_FACTORY_MESSAGE_4: 'いずれかのフィールドをタップして工場を配置し、チュートリアルを続けます',
+        TUTORIAL_TREES_MESSAGE_1: '最も重要な建物はカカオの木とラムトリュフの大砲です',
+        TUTORIAL_TREES_MESSAGE_2: '工場と敵の大砲をすべて破壊すると、ゲームに勝ちます',
+        TUTORIAL_TREES_MESSAGE_3: 'カカオを得るためにいくつかの木を植えます。大砲を作るのに必要になる',
+        TUTORIAL_TREES_MESSAGE_4: '大砲を建設し、相手の工場を攻撃してチュートリアルを続けます',
+        TUTORIAL_TREES_MESSAGE_5: 'ヒント：ホワイトフィールドにカカオの木を構築すると、ラウンドごとに1.5倍以上のカカオが生成されます',
+        TUTORIAL_TREES_MESSAGE_6: 'battlechocはターンベースの戦略ゲームです。ターンは2つのゲームフェーズで構成されます：ビルドと攻撃',
+        TUTORIAL_TREES_MESSAGE_7: 'ゲームは、他のアクションを実行できない場合に通知し、次のフェーズまたはターンにガイドします',
+        TUTORIAL_TREES_MESSAGE_8: 'フェーズを早く終了する場合は、上の再生ボタンまたは早送りボタンを使用できます',
+        TUTORIAL_TREES_MESSAGE_9: '見て：あなたはいくつかのカカオを得ました！これで大砲を作ることができます。アイコンをタップして大砲を選択します',
+        TUTORIAL_TREES_MESSAGE_10: 'これで、相手を攻撃できます。ビルドフェーズを完了して、相手のファクトリーをタップするだけです！',
+        TUTORIAL_BUNNY_MESSAGE_1: '相手のゲームフィールドはクリームで満たされています。暗闇に光を取り入れたいですか？',
+        TUTORIAL_BUNNY_MESSAGE_2: 'スパイイースターバニーを使用して、敵のゲームフィールドにあるすべてのクリームを見つけます',
+        TUTORIAL_BUNNY_MESSAGE_3: 'バニーは、選択したフィールドの周りの領域を明らかにしようとしています',
+        TUTORIAL_BUNNY_MESSAGE_4: '大野！相手にはスパイイースターバニーもいます...',
+        TUTORIAL_BUNNY_MESSAGE_5: 'カカオが入った。これで、X-masファクトリを構築する準備が整いました。スパイ攻撃からあなたを守ります',
+        TUTORIAL_BUNNY_MESSAGE_6: 'バニーがX-masファクトリーを含むエリアをスパイする場合',
+        TUTORIAL_BUNNY_MESSAGE_7: 'それは溶けてしまい、あなたはホットチョコレートバリスタを受け取ります！',
+        TUTORIAL_BUNNY_MESSAGE_8: '今、あなたの対戦相手の番です。このアニメーション..',
+        TUTORIAL_BUNNY_MESSAGE_9: '..相手が考えていることを示します',
+        TUTORIAL_FOUNTAIN_MESSAGE_1: 'カカオの木を構築してから、相手の工場を攻撃します',
+        TUTORIAL_FOUNTAIN_MESSAGE_2: 'このチュートリアルを完了するには、敵の工場を破壊します',
+        TUTORIAL_FOUNTAIN_MESSAGE_3: 'ああ、相手はカカオシールドを持っています',
+        TUTORIAL_FOUNTAIN_MESSAGE_4: 'トリュフはシールドを通過できません',
+        TUTORIAL_FOUNTAIN_MESSAGE_5: 'フルーツキャノンを作るのに十分なココアを集めてください',
+        TUTORIAL_FOUNTAIN_MESSAGE_6: 'すごい！フルーツエクステンションで大砲をアップグレードできるようになりました',
+        TUTORIAL_FOUNTAIN_MESSAGE_7: '果物はシールドを通過できますが、チョコレートの噴水とクリームのみを破壊できます',
+        TUTORIAL_FOUNTAIN_MESSAGE_8: 'チョコレートの噴水が破壊されたら、トリュフで工場を攻撃できます',
+        TUTORIAL_TITLE_1: 'インタラクティブバトルチョックチュートリアル',
+        TUTORIAL_TITLE_2: 'チョコレート工場',
+        TUTORIAL_TITLE_3: '木と大砲について',
+        TUTORIAL_TITLE_4: 'クリスマスとバニー',
+        TUTORIAL_TITLE_5: '果物とチョコレートの噴水について',
+        TUTORIAL_DIALOG_TITLE_BEFORE: 'あなたはほとんどそこにいます',
+        TUTORIAL_DIALOG_TITLE: 'できたね！',
+        TUTORIAL_DIALOG_MESSAGE: 'これで、実際のバトルチョックの試合をする準備が整いました。今すぐ開始しますか？',
+        TUTORIAL_DIALOG_HINT: '設定メニューでチュートリアルを再開できるようになりました',
+        TUTORIAL_DIALOG_BACK: 'メニューに戻る',
+        TUTORIAL_DIALOG_PLAY_GAME: '試合を開始する',
+        TUTORIAL_CHOOSE_NAME_INFO: '始める前に、クールな名前を選択することをお勧めします！友人はあなたの名前に基づいてあなたを簡単に見つけることができ、敵はその名前を聞くと最終的に震えます。',
+        ACTIONS: '行動',
+        OPPONENT: '相手',
+        TURNS: 'ターン',
+        MATCH_TIME: '試合時間',
+        LAST_ACTION: '最後のアクション',
+        POTENTIAL_COINS: '潜在的なコイン',
+        RANDOM_OPPONENT: 'ランダムな相手',
+        SHARE_LINK: 'リンクを共有する',
+        FRIENDS: '友だち',
+        START_GAME: 'ゲームを始める',
+        JOIN_GAME: 'ゲームに参加します',
+        FRIENDS_INFO: 'あなたは今友達がいません',
+        ADD_FRIEND: '友達に追加',
+        REMOVE_FRIEND: '友達から削除',
+        SEARCH_PLAYERS: '検索プレーヤー',
+        SEARCH_USER_INFO: 'プレーヤーが見つかりません',
+        CHOCLAB_INCREASED_BY: '増加',
+        ATTRIBUTE_NAME: attribute => {
+            switch (attribute) {
+                case 'hp': return '健康ポイント';
+                case 'area': return '面積効果';
+                case 'buildingsPerTurn': return 'ターンごとの建物';
+                case 'cacaoPerTurn': return 'ターンごとのカカオ';
+                case 'attack': return '攻撃';
+                case 'fortune': return '幸運';
+                case 'donutProbability': return 'ドーナツ確率';
+                case 'donutTypes': return 'ドーナツの種類';
+                default: return 'わからない';
+            }
+        },
+        WARNING_GAME_NOT_JOINABLE: '参加したいゲームは既に終了しています',
+        WARNING_PLAYER_NOT_FOUND: name => name + ' 見つかりません',
+        SURRENDER: '降伏',
+        SURRENDER_GAME: 'サレンダーゲーム',
+        SURRENDER_GAME_TEXT: name => '本当にゲームを放棄したいですか ' + name,
+        PWA_UPDATE_AVAILABLE: '新しいバージョンが利用可能であり、pwaまたはブラウザを再起動するとすぐに使用されます',
+        PWA_OFFLINE_MODE: 'インターネットに接続せずにBattlechocを実行しているため、シングルプレイヤーモードのみが使用可能です',
+        PWA_ONLINE_MODE: 'インターネットに再接続しました',
+        UPDATE_LEVEL_FAILED: upgrade => '実行することができませんでした ' + (upgrade ? 'アップ' : 'ダウン') + 'グレード。 インターネット接続を確認してください',
+        NO_HEALTHY_INTERNET: 'インターネット接続が正常でない可能性があります。後でもう一度やり直してください。',
+        SESSION_REFRESH_FAILED: 'マルチプレイヤーセッションの更新に失敗しました。インターネット接続を確認してください。',
+        FETCH_HIGHSCORE_FAILED: 'ハイスコ​​アを取得できませんでした。インターネット接続を確認してください。',
+        WARNING_GAME_NOT_JOINABLE_VIA_URL: '選択したゲームは既に終了しているか、アカウントに関連付けられていません。',
+        ERROR_GAME_NOT_JOINABLE_VIA_URL: 'ゲームを開始できませんでした。インターネット接続を確認してください。',
+        TRY_TO_JOIN_GAME: '私たちはあなたをマルチプレイヤーゲームに直接接続しようとします。少々お待ちください。',
+        NOTIFICATION_PERMISSION_INFO: '誰かがあなたに挑戦したり、対戦相手が彼のターンを終えて、あなたがプレーする準備ができている場合、私たちはあなたにあなたに通知する許可を求めます。'
     }
 };
 
