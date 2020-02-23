@@ -12,6 +12,26 @@ beforeAll(async done => {
     done();
 })
 
+it('should not be available to choose playername', async done => {
+    const response = await request(app).get('/check/available/Basti');
+    expect(response.status).toBe(200);
+    expect(response.body.available).toBe(false);
+    done();
+});
+
+it('should not check empty playername', async done => {
+    const response = await request(app).get('/check/available/');
+    expect(response.status).toBe(404);
+    done();
+});
+
+it('should be available to choose playername', async done => {
+    const response = await request(app).get('/check/available/BB8');
+    expect(response.status).toBe(200);
+    expect(response.body.available).toBe(true);
+    done();
+});
+
 it('should not find Chcononymous', async done => {
     const response = await request(app).get('/user/Chocnonymous');
     expect(response.status).toBe(404);
@@ -69,9 +89,9 @@ it('should not find a player', async done => {
     done();
 });
 
-it('should not find both players', async done => {    
+it('should find three players', async done => {    
     const response = await request(app).get('/query/user/a');
-    expect(response.body.length).toBe(2);
+    expect(response.body.length).toBe(3);
     done();
 });
 
@@ -194,14 +214,29 @@ it('should upgrade the tree', async done => {
 it('should fetch the highscore', async done => {
     const response = await request(app).get('/highscore');
     expect(response.status).toBe(200);
-    expect(response.body.list.length).toBe(2);
+    expect(response.body.list.length).toBe(3);
     done();
 });
 
 it('should return players rank', async done => {
     const response = await request(app).get('/rank');
     expect(response.status).toBe(200);
-    expect(response.body.ranking).toBe(2);
+    expect(response.body.ranking).toBe(3);
+    done();
+});
+
+it('should return random opponent', async done => {
+    const response = await request(app).get('/random/opponent');
+    expect(response.status).toBe(200);
+
+    done();
+});
+
+it('should return random opponent', async done => {
+    const response = await request(app).get('/user/name');
+    expect(response.status).toBe(200);
+    expect(response.body.name).toBe("Basti");
+
     done();
 });
 
@@ -232,16 +267,36 @@ it('should set a username', async done => {
     done();
 });
 
-it('change users language', async done => {
-    let response = await request(app).post('/user/language').send({ uid: '12345-12345-12345', language: 'kf' });
-    expect(response.status).toBe(400);
-    expect(response.body.error).toBe('INVALID LANGUAGE GIVEN');
-
-    response = await request(app).post('/user/language').send({ uid: '12345-12345-12345', language: 'de' });
+it('should add player track record', async done => {
+    const response = await request(app).post('/user/trackrecords').send({"stats":[{"attacks":7,"builtEntities":6,"espionages":0,"moltenFields":0,"won":true,"lost":false,"winners":[{"idx":0,"name":"Charlie Bucket","level":{"EntityType.CREAM":0,"EntityType.FACTORY":15,"EntityType.FACTORY_EXTENSION":8,"EntityType.CACAOTREE":15,"EntityType.RUM_TRUFFLE_CANNON":12,"EntityType.FRUIT_CANNON":14,"EntityType.SPYING_EASTER_BUNNY":11,"EntityType.XMAS_FACTORY":8,"EntityType.HOT_CHOCOLATE_BALLISTA":13,"EntityType.CHOCOLATE_FOUNTAIN":15,"EntityType.DONUT_FACTORY":5},"type":"PlayerType.HUMAN","id":"cfc41eab-c394-41ef-8545-7371e9d5a40a","cacao":61,"cacaoPerTurn":843,"buildings":2,"buildingsPerTurn":5,"donutProbability":0,"donuts":[],"activeDonuts":[],"attacks":{"AttackType.TRUFFLE":1,"AttackType.HOT_CHOCOLATE":0,"AttackType.FRUIT":0,"AttackType.BUNNY":0},"attacksPerTurn":{"AttackType.TRUFFLE":4,"AttackType.HOT_CHOCOLATE":0,"AttackType.FRUIT":0,"AttackType.BUNNY":0},"hasFactory":true,"statistics":{"attacks":7,"builtEntities":6,"espionages":0,"moltenFields":0},"fieldIndex":0}],"id":"1f908d03-50e1-4f3d-bc97-ef5de2fed722"}]});
     expect(response.status).toBe(200);
+    expect(response.body.stats.winnings).toBe("1");
 
     done();
 });
 
+it('should fail to add player track record', async done => {
+    const response = await request(app).post('/user/trackrecords').send({});
+    expect(response.status).toBe(500);
+
+    done();
+});
+
+
+it('should change users language', async done => {
+    let response = await request(app).post('/user/language').send({ uid: '12345-12345-12345', language: 'de' });
+    expect(response.status).toBe(200);
+    expect(response.body.language).toBe('de');
+
+    done();
+});
+
+it('should not change to invalid language', async done => {
+    let response = await request(app).post('/user/language').send({ uid: '12345-12345-12345', language: 'kf' });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('INVALID LANGUAGE GIVEN');
+
+    done();
+});
 
 afterAll(async () => await dbPool.end());
