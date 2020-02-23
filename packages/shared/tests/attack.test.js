@@ -9,6 +9,8 @@ const AttackType = require('../index').AttackType;
 const Rules = require('../index').Rules;
 const TargetEmptyError = require('../index').TargetEmptyError;
 const attackReduction = require('../index').attackReduction;
+const setRandomSeed = require('../index').setRandomSeed;
+const getRandomNumber = require('../index').getRandomNumber;
 
 class AttackTest extends Situation {
     constructor() {
@@ -19,11 +21,14 @@ class AttackTest extends Situation {
         this.modifyBoard({row: 6, col: 6, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY, this.game.gameplay.game.players[0].level)] });
         this.modifyBoard({row: 1, col: 3, cellType: BoardCellTypes.WHITE, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.RUM_TRUFFLE_CANNON, this.game.gameplay.game.players[0].level)] });
 
+        const surpriseDonut = createEntity(EntityType.DONUT_SURPRISE_YELLOW)
         const healthDonut = createEntity(EntityType.DONUT_HEALTH_GREEN)
 
         this.modifyBoard({row: 2, col: 2, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY)]});
         this.modifyBoard({row: 7, col: 7, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: []});
         this.modifyBoard({row: 6, col: 7, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [healthDonut]});
+        this.modifyBoard({row: 5, col: 7, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [surpriseDonut, createEntity(EntityType.XMAS_FACTORY)]});
+        this.modifyBoard({row: 1, col: 1, playerIndex: 1, cellType: BoardCellTypes.BRWON, buildings: [createEntity(EntityType.XMAS_FACTORY)]});
 
         const game = this.game.gameplay.game;
 
@@ -35,7 +40,7 @@ class AttackTest extends Situation {
         game.players[1].hasFactory = true;
         game.players[1].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[1].level).buildingsPerTurn + 1;
         game.players[1].buildings = game.players[1].buildingsPerTurn;
-        game.players[1].activeDonuts = [healthDonut];
+        game.players[1].activeDonuts = [surpriseDonut, healthDonut];
 
         game.players[0].hasFactory = true;
         game.players[0].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[0].level).buildingsPerTurn + 1;
@@ -121,6 +126,72 @@ test('should fail to attack an cell containing only a donut', () => {
             "col": position.col
         }
     }
-    
+
     expect(Rules.isActionValid(game, event)).toBeInstanceOf(TargetEmptyError);
+});
+
+test('should give everytime the same random number', () => {
+    setRandomSeed(2453);
+    expect(getRandomNumber()).toBe(0.5063910039907569);
+    expect(getRandomNumber()).toBe(0.20797195665363688);
+});
+
+test('should test the yellow donut', () => {
+    const position = { row: 5, col: 7 };
+    const gameplay = JSON.parse(JSON.stringify(AttackTest.game.gameplay));
+    const game = gameplay.game;
+    
+    const description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, game.players[0].level);
+    const damage = (1 + ((Math.random() * 0.4) - 0.2)) * description.attack;
+
+    const event = {
+        "type": GameActionTypes.attack,
+        "payload": {
+            "issuer": game.players[0].id,
+            "attackType": AttackType.TRUFFLE,
+            "damage": damage,
+            "row": position.row,
+            "col": position.col
+        }
+    }
+
+    expect(Rules.isActionValid(game, event)).toBe(true);
+    setRandomSeed(42);
+    attackReduction(gameplay, event);
+
+    let field = gameplay.game.board.fields[1].grid[position.row * gameplay.game.board.size.cols + position.col];
+    expect(field.occupiedBy.map(entity => entity.type)).toContain(EntityType.HOT_CHOCOLATE_BALLISTA);
+    field = gameplay.game.board.fields[1].grid[1 * gameplay.game.board.size.cols + 1];
+    expect(field.occupiedBy.map(entity => entity.type)).toContain(EntityType.HOT_CHOCOLATE_BALLISTA);
+    expect(gameplay.game.players[1].attacksPerTurn[AttackType.HOT_CHOCOLATE]).toBe(2);
+});
+
+test('should test the yellow donut', () => {
+    const position = { row: 5, col: 7 };
+    const gameplay = JSON.parse(JSON.stringify(AttackTest.game.gameplay));
+    const game = gameplay.game;
+    
+    const description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, game.players[0].level);
+    const damage = (1 + ((Math.random() * 0.4) - 0.2)) * description.attack;
+
+    const event = {
+        "type": GameActionTypes.attack,
+        "payload": {
+            "issuer": game.players[0].id,
+            "attackType": AttackType.TRUFFLE,
+            "damage": damage,
+            "row": position.row,
+            "col": position.col
+        }
+    }
+
+    expect(Rules.isActionValid(game, event)).toBe(true);
+    setRandomSeed(46);
+    attackReduction(gameplay, event);
+
+    let field = gameplay.game.board.fields[1].grid[position.row * gameplay.game.board.size.cols + position.col];
+    expect(field.occupiedBy.map(entity => entity.type)).toContain(EntityType.CHOCOLATE_FOUNTAIN);
+    field = gameplay.game.board.fields[1].grid[1 * gameplay.game.board.size.cols + 1];
+    expect(field.occupiedBy.map(entity => entity.type)).toContain(EntityType.CHOCOLATE_FOUNTAIN);
+    expect(field.shielded).toBe(true);
 });

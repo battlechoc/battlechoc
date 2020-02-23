@@ -1,5 +1,15 @@
 const uuidv4 = require('uuid/v4');
 
+const setRandomSeed = seed => {
+  const seedableRandom = function(s) {
+    return function() { s = Math.sin(s) * 10000; return s - Math.floor(s); };
+  };
+  
+  Math.random = seedableRandom(seed);
+}
+
+const getRandomNumber = () => Math.random();
+
 const BoardCellTypes = Object.freeze({
   WHITE: 'BoardCellTypes.WHITE',
   BROWN: 'BoardCellTypes.BROWN',
@@ -570,13 +580,13 @@ function prepareBuildPhase(state) {
       let donutType = Math.floor(Math.random() * donutFactory.donutTypes) + 1;
       let donuts = [createEntity(EntityType.DONUT_PORTAL_BLUE), createEntity(EntityType.DONUT_PORTAL_RED)]
       if (donutType === 2) {
-          donuts = [createEntity(EntityType.DONUT_HEALTH_GREEN)]
+        donuts = [createEntity(EntityType.DONUT_HEALTH_GREEN)]
       } else if (donutType === 3) {
-          donuts = [createEntity(EntityType.DONUT_SURPRISE_YELLOW)]
+        donuts = [createEntity(EntityType.DONUT_STOP_PINK)]
       } else if (donutType === 4) {
-          donuts = [createEntity(EntityType.DONUT_STOP_PINK)]
+        donuts = [createEntity(EntityType.DONUT_CREAM_WHITE)]
       } else if (donutType === 5) {
-          donuts = [createEntity(EntityType.DONUT_CREAM_WHITE)]
+        donuts = [createEntity(EntityType.DONUT_SURPRISE_YELLOW)]
       }
       currentPlayer(state.game).donuts = donuts;
   }
@@ -814,7 +824,7 @@ const attackReduction = (state, action) => {
           console.log(`HIT YELLOW DONUT @ [${yellowDonut.position.row},${yellowDonut.position.col}]`);
           attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_SURPRISE_YELLOW);
           otherPlayer(state.game).activeDonuts = otherPlayer(state.game).activeDonuts.filter(donut => donut.id !== yellowDonut.id);
-          let donutType = Math.round(Math.random() * 2)
+          let donutType = Math.round(Math.random() * 4)
 
           if (donutType === 0) {
               prepareBuildPhase(state);
@@ -828,12 +838,32 @@ const attackReduction = (state, action) => {
                   }
               });
           } else if (donutType === 2) {
-              let patch = getCellPatch5x5({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
-              patch.forEach((cell) => {
-                  cell.occupiedBy.forEach(entity => {
-                      entity.hp = getEntityDescriptor(entity.type, otherPlayer(state.game).level).max.hp;
-                  });
-              });
+            const patch = getCellPatch5x5({ row: action.payload.row, col: action.payload.col }, state.game.board, otherPlayerField(state.game).grid);
+            patch.forEach((cell) => {
+                cell.occupiedBy.forEach(entity => {
+                    entity.hp = getEntityDescriptor(entity.type, otherPlayer(state.game).level).max.hp;
+                });
+            });
+          } else if (donutType === 3) {            
+            for (let xmasFactoryCell of otherPlayerField(state.game).grid.filter(cell => containsEntity(cell, EntityType.XMAS_FACTORY))) {
+              const ballista = createEntity(EntityType.HOT_CHOCOLATE_BALLISTA, opponent.level);
+              ballista.position = { row: xmasFactoryCell.row, col: xmasFactoryCell.col };
+              xmasFactoryCell.occupiedBy = xmasFactoryCell.occupiedBy.filter(entity => entity.type !== EntityType.XMAS_FACTORY);
+              xmasFactoryCell.occupiedBy.push(ballista);
+              opponent.attacksPerTurn[AttackType.HOT_CHOCOLATE] += 1;
+              opponent.attacks[AttackType.HOT_CHOCOLATE] = opponent.attacksPerTurn[AttackType.HOT_CHOCOLATE];
+            }
+          } else if (donutType === 4) {
+            for (let xmasFactoryCell of otherPlayerField(state.game).grid.filter(cell => containsEntity(cell, EntityType.XMAS_FACTORY))) {
+              const fountain = createEntity(EntityType.CHOCOLATE_FOUNTAIN, opponent.level);
+              fountain.position = { row: xmasFactoryCell.row, col: xmasFactoryCell.col };
+              xmasFactoryCell.occupiedBy = xmasFactoryCell.occupiedBy.filter(entity => entity.type !== EntityType.XMAS_FACTORY);
+              xmasFactoryCell.occupiedBy.push(fountain);
+              const neighbors = getCellPatch3x3({ row: fountain.position.row, col: fountain.position.col }, state.game.board, otherPlayerField(state.game).grid);
+              for (let i = 0; i < neighbors.length; i++) {
+                  neighbors[i].shielded = true;
+              }
+            }        
           }
       }
   }
@@ -1187,6 +1217,8 @@ class Rules {
   }
 }
 
+module.exports.setRandomSeed = setRandomSeed;
+module.exports.getRandomNumber = getRandomNumber;
 module.exports.BoardCellTypes = BoardCellTypes;
 module.exports.EntityType =  EntityType;
 module.exports.AttackType = AttackType
