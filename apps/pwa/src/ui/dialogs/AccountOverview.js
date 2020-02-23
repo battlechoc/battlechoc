@@ -15,6 +15,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import BattlechocDialog from './BattlechocDialog';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
+import { EmptyPlayerStats } from 'battlechoc-shared-functions';
 
 const useStyles = makeStyles(theme => ({
     logoutButton: {
@@ -75,6 +76,13 @@ const useStyles = makeStyles(theme => ({
         justifyContent: 'center',
         flexGrow: 1,
         marginLeft: '-0.5rem'
+    },
+    noAccountInfo: {
+        width: '80vw',
+        fontSize: '1.1rem',
+        textAlign: 'center',
+        color: 'rgba(9, 63, 70, 0.8)',
+        fontWeight: 'bolder'
     }
 }));
 
@@ -175,54 +183,58 @@ const AccountOverview = props => {
                     if (typeof props.multiplayerSessions !== 'undefined' && !isPlayerAccount) {
                         let actions = [];
                         let gamesAgaistOpponent = props.multiplayerSessions.filter(session => session.opponent.name === playerName);
-                        if (gamesAgaistOpponent.length === 0) {
-                            actions.push(<div key={0} className={classes.menuButton} onClick={() => {
-                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                props.challengePlayer(playerName);
-                                props.close();
-                            }}>
-                                <PlayArrow className={classes.actionIcon} />
-                                <span className={classes.actionTitle}>{t[props.language].START_GAME}</span>
-                            </div>);
-                        } else {
-                            actions.push(<div key={1} className={classes.menuButton} onClick={() => {
-                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                props.joinGame(gamesAgaistOpponent[0].id);
-                                props.close();
-                            }}>
-                                {gamesAgaistOpponent[0].myTurn ? <PlayArrow className={classes.actionIcon} /> : <HourglassEmpty className={classes.actionIcon} />}
-                                <span className={classes.actionTitle}>{t[props.language].JOIN_GAME}</span>
-                            </div>);
-                        }
-
-                        if (!props.friends.map(friend => friend.username).includes(playerName)) {
-                            actions.push(<div key={3} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
-                                if (!refreshFriend) {
-                                    setRefreshFriend(true);
+                        if (props.playerInfos.stats.username !== EmptyPlayerStats.username) {
+                            if (gamesAgaistOpponent.length === 0) {
+                                actions.push(<div key={0} className={classes.menuButton} onClick={() => {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                    await props.addFriend(playerName);
-                                    setRefreshFriend(false);
-                                }
-                            }}>
-                                <PersonAdd className={classes.actionIcon} />
-                                <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].ADD_FRIEND}</span>
-                            </div>);
-                        } else {
-                            actions.push(<div key={4} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
-                                if (!refreshFriend) {
-                                    setRefreshFriend(true);
+                                    props.challengePlayer(playerName);
+                                    props.close();
+                                }}>
+                                    <PlayArrow className={classes.actionIcon} />
+                                    <span className={classes.actionTitle}>{t[props.language].START_GAME}</span>
+                                </div>);
+                            } else {
+                                actions.push(<div key={1} className={classes.menuButton} onClick={() => {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                    props.removeFriend(playerName);
-                                    await props.addFriend(playerName);
-                                    setRefreshFriend(false);
-                                }
-                            }}>
-                                <PersonAddDisabled className={classes.actionIcon} />
-                                <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].REMOVE_FRIEND}</span>
-                            </div>);
-                        }
+                                    props.joinGame(gamesAgaistOpponent[0].id);
+                                    props.close();
+                                }}>
+                                    {gamesAgaistOpponent[0].myTurn ? <PlayArrow className={classes.actionIcon} /> : <HourglassEmpty className={classes.actionIcon} />}
+                                    <span className={classes.actionTitle}>{t[props.language].JOIN_GAME}</span>
+                                </div>);
+                            }
+                    
+                            if (!props.friends.map(friend => friend.name).includes(playerName)) {
+                                actions.push(<div key={3} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
+                                    if (!refreshFriend) {
+                                        setRefreshFriend(true);
+                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                        await props.addFriend(playerName);
+                                        setRefreshFriend(false);
+                                    }
+                                }}>
+                                    <PersonAdd className={classes.actionIcon} />
+                                    <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].ADD_FRIEND}</span>
+                                </div>);
+                            } else {
+                                actions.push(<div key={4} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
+                                    if (!refreshFriend) {
+                                        setRefreshFriend(true);
+                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                        props.removeFriend(playerName);
+                                        await props.addFriend(playerName);
+                                        setRefreshFriend(false);
+                                    }
+                                }}>
+                                    <PersonAddDisabled className={classes.actionIcon} />
+                                    <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].REMOVE_FRIEND}</span>
+                                </div>);
+                            }
 
-                        return <div className={classes.opponentActions}>{actions}</div>;
+                            return <div className={classes.opponentActions}>{actions}</div>;
+                        } else {
+                            return <div className={classes.noAccountInfo} >{t[props.language].NO_ACCOUNT_INFO}</div>;
+                        }
                     }                        
                 })()}
 
