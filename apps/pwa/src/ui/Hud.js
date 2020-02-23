@@ -31,6 +31,7 @@ class Hud extends Component {
             upgradeMessageOpen: false,
             multiplayerScreen: false,
             waitingRoom: false,
+            waitingRoomText: t[props.language].TRY_TO_JOIN_GAME,
             choclabScreen: false,
             searchingRandomOpponent: false
         }
@@ -51,13 +52,13 @@ class Hud extends Component {
         this.props.onRef(this);
 
         if (typeof this.props.challengedPlayer !== 'undefined') {
-            this.setState({ multiplayerScreen: true }, async () => {
+            this.setState({ waitingRoom: true, waitingRoomText: t[this.props.language].TRY_TO_SHOW_PLAYER_ACCOUNT }, async () => {
                 try {
                     while (!firebase.auth().currentUser) {
                         await this.sleep(100);
                     }
                     let response = await ServerRequest('get', '/user/' + this.props.challengedPlayer);
-                    this.multiplayerScreen.showPlayerProfile({ opponent: response.data[0] });
+                    this.openAccountOverview(response.data[0]);
                 } catch (error) {
                     if (error.response) {
                         if (error.response.status === 404) {
@@ -68,12 +69,14 @@ class Hud extends Component {
                     } else {
                         logger.error(error);
                     }
+                } finally {
+                    this.setState({ waitingRoom: false });
                 }
             });
         }
 
         if (typeof this.props.sessionId !== 'undefined') {
-            this.setState({ waitingRoom: true }, async () => {
+            this.setState({ waitingRoom: true, waitingRoomText: t[this.props.language].TRY_TO_JOIN_GAME }, async () => {
                 try {
                     let sessions = undefined;
                     let retry = false;
@@ -137,7 +140,6 @@ class Hud extends Component {
 
     openAccountOverview = playerAccount => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        console.log(playerAccount);
         this.setState({ 
             showAccountOverview: true,
             playerAccount: playerAccount
@@ -357,7 +359,7 @@ class Hud extends Component {
                     } else if (stage === 'CHOCLAB_SCREEN') {
                         return <Choclab />
                     } else if (stage === 'WAITING_ROOM') {
-                        return <div className="waiting-room"><p>{ t[this.props.language].TRY_TO_JOIN_GAME }</p><CircularProgress /></div>
+                        return <div className="waiting-room"><p>{ this.state.waitingRoomText }</p><CircularProgress /></div>
                     } else {
                         let player = this.props.game.players[multiplayer.localPlayerIndex];
                         return (

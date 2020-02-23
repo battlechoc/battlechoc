@@ -296,7 +296,9 @@ const languages = {
         WARNING_GAME_NOT_JOINABLE_VIA_URL: 'The selected game is already ended or not associated with your account',
         ERROR_GAME_NOT_JOINABLE_VIA_URL: 'Failed to start the game. Please check your internet connection',
         TRY_TO_JOIN_GAME: 'We try to connect you directly to your multiplayer game. Please wait a moment',
-        NOTIFICATION_PERMISSION_INFO: 'We will now request your permission to inform you if someone challenges you, or an opponent has finished his turn and you are up to play'
+        TRY_TO_SHOW_PLAYER_ACCOUNT: 'Loading player account. Please wait a moment',
+        NOTIFICATION_PERMISSION_INFO: 'We will now request your permission to inform you if someone challenges you, or an opponent has finished his turn and you are up to play',
+        NO_ACCOUNT_INFO: 'You are currently not logged in. Use the settings icon to login or just start a new game on the main page for creating a new one'
     },
     de: {
         SIGNINORUP: 'Anmelden',
@@ -593,7 +595,9 @@ const languages = {
         WARNING_GAME_NOT_JOINABLE_VIA_URL: 'Das gewählte Spiel wurde bereits beendet, oder ist nicht deinem Account zugeordnet',
         ERROR_GAME_NOT_JOINABLE_VIA_URL: 'Spielstart fehlgeschlagen. Bitte überprüfe deine Internetverbindung',
         TRY_TO_JOIN_GAME: 'Bitte warte kurz. Wir versuchen dich direkt mit deinem Multiplayerspiel zu verbinden',
-        NOTIFICATION_PERMISSION_INFO: 'Wir werden dich gleich um Erlaubnis fragen, dich informieren zu dürfen, falls jemand dich herausfordert, oder ein Gegner seinen Zug beendet hat und du an der Reihe bist'
+        TRY_TO_SHOW_PLAYER_ACCOUNT: 'Einen Augenblick bitte. Spielerinformationen werden geladen',
+        NOTIFICATION_PERMISSION_INFO: 'Wir werden dich gleich um Erlaubnis fragen, dich informieren zu dürfen, falls jemand dich herausfordert, oder ein Gegner seinen Zug beendet hat und du an der Reihe bist',
+        NO_ACCOUNT_INFO: 'Du bist zur Zeit nicht angemeldet. Melde dich im Einstellungsmenü an, oder starte einfach ein neues Spiel auf der Hauptseite, um einen neuen Account zu erstellen'
     },
     jp: {
         SIGNINORUP: 'サインイン',
@@ -890,7 +894,9 @@ const languages = {
         WARNING_GAME_NOT_JOINABLE_VIA_URL: '選択したゲームは既に終了しているか、アカウントに関連付けられていません。',
         ERROR_GAME_NOT_JOINABLE_VIA_URL: 'ゲームを開始できませんでした。インターネット接続を確認してください。',
         TRY_TO_JOIN_GAME: '私たちはあなたをマルチプレイヤーゲームに直接接続しようとします。少々お待ちください。',
-        NOTIFICATION_PERMISSION_INFO: '誰かがあなたに挑戦したり、対戦相手が彼のターンを終えて、あなたがプレーする準備ができている場合、私たちはあなたにあなたに通知する許可を求めます。'
+        TRY_TO_SHOW_PLAYER_ACCOUNT: 'プレーヤーアカウントを読み込んでいます。しばらくお待ちください',
+        NOTIFICATION_PERMISSION_INFO: '誰かがあなたに挑戦したり、対戦相手が彼のターンを終えて、あなたがプレーする準備ができている場合、私たちはあなたにあなたに通知する許可を求めます。',
+        NO_ACCOUNT_INFO: '現在ログインしていません。設定メニューにログインするか、メインページで新しいゲームを開始して新しいアカウントを作成します'
     }
 };
 
