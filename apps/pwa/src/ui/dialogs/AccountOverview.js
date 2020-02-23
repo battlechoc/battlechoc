@@ -195,7 +195,7 @@ const AccountOverview = props => {
                             </div>);
                         }
 
-                        if (!props.friends.map(friend => friend.username).includes(playerName)) {
+                        if (!props.friends.map(friend => friend.name).includes(playerName)) {
                             actions.push(<div key={3} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
                                 if (!refreshFriend) {
                                     setRefreshFriend(true);

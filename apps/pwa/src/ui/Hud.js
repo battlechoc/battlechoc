@@ -57,7 +57,7 @@ class Hud extends Component {
                         await this.sleep(100);
                     }
                     let response = await ServerRequest('get', '/user/' + this.props.challengedPlayer);
-                    this.multiplayerScreen.showPlayerProfile({ opponent: response.data });
+                    this.multiplayerScreen.showPlayerProfile({ opponent: response.data[0] });
                 } catch (error) {
                     if (error.response) {
                         if (error.response.status === 404) {
@@ -295,11 +295,11 @@ class Hud extends Component {
                         let playername = this.props.playerInfos.stats.username;
                         let hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous';
 
-                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>{hideOptions ? t[this.props.language].NEW_GAME : 'Singleplayer'}</div>);
+                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>{hideOptions ? t[this.props.language].NEW_GAME : t[this.props.language].MAIN_MENU_SINGLEPLAYER}</div>);
                         
                         if (!hideOptions) {
-                            controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>Multiplayer</div>);
-                            controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>Choclab</div>);
+                            controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>{t[this.props.language].MAIN_MENU_MULTIPLAYER}</div>);
+                            controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>{t[this.props.language].MAIN_MENU_CHOCLAB}</div>);
                         }
 
                         return (

@@ -86,7 +86,6 @@ const PlayerList = props => {
     }
 
     let language = props.language;
-    console.log(language);
     if (typeof props.language !== 'undefined') {
         language = 'de';
     }

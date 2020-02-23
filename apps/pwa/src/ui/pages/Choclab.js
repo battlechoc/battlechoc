@@ -295,7 +295,7 @@ const Choclab = props => {
     }
 
     if (upgradePossible) {
-        nextLevelDescription = <h4 className={classes.upgrade}><span>{`Level ${props.level[entityType] + 1}`}</span><DoubleArrow /><span>{ props.level[entityType] + 2 }</span></h4>
+        nextLevelDescription = <h4 className={classes.upgrade}><span>{t[props.language].CHOCLAB_LEVEL} {props.level[entityType] + 1}</span><DoubleArrow /><span>{ props.level[entityType] + 2 }</span></h4>
     }
     return (
         <div className={classes.page}>
@@ -348,7 +348,7 @@ const Choclab = props => {
                                     }
                                 }
                             }>
-                                <span>Upgrade</span>
+                                <span>{t[props.language].CHOCLAB_UPGRADE}</span>
                                 <div className={classes.costs}>
                                     <span>{ currentEntity.coins }</span>
                                     <OptimizedImage src="/images/coins.png" alt="choco coins" />
@@ -362,7 +362,7 @@ const Choclab = props => {
                                     updateLevel(entityType, false)
                                 }
                             }}>
-                                <span>Downgrade</span>
+                                <span>{t[props.language].CHOCLAB_DOWNGRADE}</span>
                                 { downgradePossible ? <div className={classes.costs}>
                                     <span>-{ Math.round(downgradedEntity.coins * 0.666) }</span>
                                     <OptimizedImage src="/images/coins.png" alt="choco coins" />
