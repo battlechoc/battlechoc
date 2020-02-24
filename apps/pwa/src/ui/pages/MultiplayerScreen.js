@@ -203,7 +203,6 @@ class MultiplayerScreen extends Component {
     openHighscorePage = page => {
         this.setState({ showHighscore: true, highscoreLoading: true, highscore: [] }, async () => {
             try {
-                console.log(page);
                 let highscore = await multiplayer.fetchHighscore(page);
                 this.setState({ 
                     highscoreLoading: false, 

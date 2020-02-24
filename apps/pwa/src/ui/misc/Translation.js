@@ -6,7 +6,7 @@ const languages = {
         NEW_GAME: 'New Game',
         MAIN_MENU_SINGLEPLAYER: 'Singleplayer',
         MAIN_MENU_MULTIPLAYER: 'Multiplayer',
-        MAIN_MENU_CHOCLAB: 'Coclab',
+        MAIN_MENU_CHOCLAB: 'Choclab',
         SIGN_OUT: 'Sign out',
         ACCOUNTINFOS: 'Account infos',
         ACCOUNTINFOS_PREVIEW: 'Coming soon, infos about your account and player stats.',
@@ -51,131 +51,64 @@ const languages = {
         INVITATION: 'Join my battlechoc multiplayer game!',
         TOOLTIP_INITIAL_TURN_TITLE: 'Initial Turn',
         TOOLTIP_INITIAL_TURN_MESSAGE: 'In the first round you can choose a playing field or the first move',
-        TOOLTIP_INITIAL_TURN_OPPONENT: name => name + ' can now select a game field',
-        TOOLTIP_BUILDING_TITLE: (type) => {
-            switch (type) {
-                case EntityType.CREAM: return 'Cream';
-                case EntityType.FACTORY_EXTENSION: return 'Factory extension';
-                case EntityType.FACTORY: return 'Chocolate Factory';
-                case EntityType.HOT_CHOCOLATE_BALLISTA: return 'Hot chocolate ballista';
-                case EntityType.CACAOTREE: return 'Cacao tree';
-                case EntityType.RUM_TRUFFLE_CANNON: return 'Rum truffle cannon';
-                case EntityType.XMAS_FACTORY: return 'X-mas factory';
-                case EntityType.SPYING_EASTER_BUNNY: return 'Spying easter bunny';
-                case EntityType.CHOCOLATE_FOUNTAIN: return 'Chocolate fountain';
-                case EntityType.FRUIT_CANNON: return 'Fruit cannon';
-                case EntityType.DONUT_FACTORY: return 'Donut Factory';
-                case EntityType.DONUT_PORTAL_RED: return 'Red portal donut';
-                case EntityType.DONUT_PORTAL_BLUE: return 'Blue portal donut';
-                case EntityType.DONUT_STOP_PINK: return 'Pink stop donut';
-                case EntityType.DONUT_SURPRISE_YELLOW: return 'Yellow surprise donut';
-                case EntityType.DONUT_HEALTH_GREEN: return 'Green health donut';
-                case EntityType.DONUT_CREAM_WHITE: return 'White cream donut';
-                default: return 'Unkown';
-            }
-        },
-        TOOLTIP_BUILDING_INFO: (type, building) => {
-            switch (type) {
-                case EntityType.CREAM:
-                    return {
-                        info: 'Buildings built in cream will be hidden from the enemy. The building order of cream and buildings does not matter',
-                        costs: 'Cacao costs: ' + building.costs
-                    }
-                case EntityType.FACTORY_EXTENSION:
-                    return {
-                        info: 'A factory extension can only be placed directly next to your factory',
-                        costs: 'Cacao costs: ' + building.costs,
-                        advantages: 'Buildings per turn +' + building.buildingsPerTurn
-                    }
-                case EntityType.CACAOTREE:
-                    return {
-                        info: 'The cacao tree offers you all the resources you need',
-                        costs: 'Cacao costs: ' + building.costs,
-                        advantages: 'Cacao per turn +' + building.cacaoPerTurn
-                    }
-                case EntityType.RUM_TRUFFLE_CANNON:
-                    return {
-                        info: 'The rum truffle cannon leads you to victory',
-                        costs: 'Cacao costs: ' + building.costs,
-                        advantages: 'Attacks per turn +1'
-                    }
-                case EntityType.XMAS_FACTORY:
-                    return {
-                        info: 'The rumor that Easter bunnies are melted down to Santa Clauses is true! If an Easter bunny comes near the Christmas factory, a present is waiting for you',
-                        costs: 'Cacao costs: ' + building.costs
-                    }
-                case EntityType.SPYING_EASTER_BUNNY:
-                    return {
-                        info: 'The spying easter bunny can look under the cream of the opponent, but watch out for Christmas factories',
-                        costs: 'Cacao costs: ' + building.costs,
-                        advantages: 'Spying per turn +1'
-                    }
-                case EntityType.CHOCOLATE_FOUNTAIN:
-                    return {
-                        info: 'The chocolate fountain safes all surrounding buildings from rum truffle cannon attacks.',
-                        costs: 'Cacao costs: ' + building.costs,
-                        advantages: 'Secures an area of 3x3 cells around the fountain.'
-                    }
-                case EntityType.FRUIT_CANNON:
-                    return {
-                        info: 'The fruit cannon destroys creams and chocolate fountains of your enemy.',
-                        costs: 'Cacao costs: ' + building.costs,
-                        advantages: 'Fruit attacks per turn +1'
-                    }
-                case EntityType.DONUT_FACTORY:
-                    return {
-                        info: 'The donut factory is going to produce donut traps which can be very dangerous to your opponent',
-                        costs: 'Cacao costs: ' + building.costs,
-                        advantages: `Produces a donut per turn with a probability of ${building.donutProbability * 100}%` 
-                    }
-                case EntityType.DONUT_PORTAL_RED:
-                case EntityType.DONUT_PORTAL_BLUE:
-                    return {
-                        info: 'If the blue donut is triggered by any attack, a portal will swap the fields and all entities with it\'s corresponding red donut'
-                    }
-                case EntityType.DONUT_CREAM_WHITE:
-                    return {
-                        info: 'If the white donut is triggered by any attack, the 5x5 area around the donut will be filled with cream'
-                    }
-                case EntityType.DONUT_HEALTH_GREEN:
-                    return {
-                        info: 'If the green donut is triggered by any attack, the 5x5 area around the donut will be fully healed'
-                    }
-                case EntityType.DONUT_STOP_PINK:
-                    return {
-                        info: 'If the pink donut is triggered by any attack, the opponent attack phase will stop immediately'
-                    }
-                case EntityType.DONUT_SURPRISE_YELLOW:
-                    return {
-                        info: 'If the yellow donut is triggered by any attack, it will randomly heal it\'s 5x5 area, fill it with cream, or stop the opponent\'s attack phase immediately'
-                    }
-                default: return { info: 'Unkown building' }
-            }
-        },
+        TOOLTIP_INITIAL_TURN_OPPONENT_PART: ' can now select a game field.',
+        TOOLTIP_BUILDING_TITLE_CREAM: 'Cream',
+        TOOLTIP_BUILDING_TITLE_FACTORY_EXTENSION: 'Factory extension',
+        TOOLTIP_BUILDING_TITLE_FACTORY: 'Factory',
+        TOOLTIP_BUILDING_TITLE_HOT_CHOCOLATE_BALLISTA: 'Hot chocolate ballista',
+        TOOLTIP_BUILDING_TITLE_CACAOTREE: 'Cacao tree',
+        TOOLTIP_BUILDING_TITLE_RUM_TRUFFLE_CANNON: 'Rum truffle cannon',
+        TOOLTIP_BUILDING_TITLE_XMAS_FACTORY: 'X-mas factory',
+        TOOLTIP_BUILDING_TITLE_SPYING_EASTER_BUNNY: 'Spying easter bunny',
+        TOOLTIP_BUILDING_TITLE_CHOCOLATE_FOUNTAIN: 'Chocolate fountain',
+        TOOLTIP_BUILDING_TITLE_FRUIT_CANNON: 'Fruit cannon',
+        TOOLTIP_BUILDING_TITLE_DONUT_FACTORY: 'Donut factory',
+        TOOLTIP_BUILDING_TITLE_DONUT_PORTAL_RED: 'Red portal donut',
+        TOOLTIP_BUILDING_TITLE_DONUT_PORTAL_BLUE: 'Blue portal donut',
+        TOOLTIP_BUILDING_TITLE_DONUT_STOP_PINK: 'Pink stop donut',
+        TOOLTIP_BUILDING_TITLE_DONUT_SURPRISE_YELLOW: 'Yellow surprise donut',
+        TOOLTIP_BUILDING_TITLE_DONUT_HEALTH_GREEN: 'Green health donut',
+        TOOLTIP_BUILDING_TITLE_DONUT_CREAM_WHITE: 'White cream donut',
+        TOOLTIP_BUILDING_TITLE_UNKNOWN: 'Unknown',
+        TOOLTIP_BUILDING_INFO_CREAM: 'Buildings built in cream will be hidden from the enemy. The building order of cream and buildings does not matter',
+        TOOLTIP_BUILDING_INFO_FACTORY_EXTENSION: 'A factory extension can only be placed directly next to your factory',
+        TOOLTIP_BUILDING_INFO_CACAOTREE: 'The cacao tree offers you all the resources you need',
+        TOOLTIP_BUILDING_INFO_RUM_TRUFFLE_CANNON: 'The rum truffle cannon leads you to victory',
+        TOOLTIP_BUILDING_INFO_XMAS_FACTORY: 'The rumor that Easter bunnies are melted down to Santa Clauses is true! If an Easter bunny comes near the Christmas factory, a present is waiting for you',
+        TOOLTIP_BUILDING_INFO_SPYING_EASTER_BUNNY: 'The spying easter bunny can look under the cream of the opponent, but watch out for Christmas factories',
+        TOOLTIP_BUILDING_INFO_CHOCOLATE_FOUNTAIN: 'The chocolate fountain safes all surrounding buildings from rum truffle cannon attacks.',
+        TOOLTIP_BUILDING_INFO_FRUIT_CANNON: 'The fruit cannon destroys creams and chocolate fountains of your enemy.',
+        TOOLTIP_BUILDING_INFO_DONUT_FACTORY: 'The donut factory is going to produce donut traps which can be very dangerous to your opponent',
+        TOOLTIP_BUILDING_INFO_DONUT_PORTAL_RED_BLUE: 'If the blue donut is triggered by any attack, a portal will swap the fields and all entities with it\'s corresponding red donut',
+        TOOLTIP_BUILDING_INFO_DONUT_STOP_PINK: 'If the pink donut is triggered by any attack, the opponent attack phase will stop immediately',
+        TOOLTIP_BUILDING_INFO_DONUT_SURPRISE_YELLOW: 'If the yellow donut is triggered by any attack, it will randomly heal it\'s 5x5 area, fill it with cream, or stop the opponent\'s attack phase immediately',
+        TOOLTIP_BUILDING_INFO_DONUT_HEALTH_GREEN: 'If the green donut is triggered by any attack, the 5x5 area around the donut will be fully healed',
+        TOOLTIP_BUILDING_INFO_DONUT_CREAM_WHITE: 'If the white donut is triggered by any attack, the 5x5 area around the donut will be filled with cream',
+        TOOLTIP_BUILDING_INFO_UNKNOWN: 'Unknown building',
+        TOOLTIP_BUILDING_COSTS_PART: 'Cacao costs: ',
+        TOOLTIP_BUILDING_INFO_BUILDINGS_PER_TURN: 'Buildings per turn +',
+        TOOLTIP_BUILDING_INFO_CACAO_PER_TURN: 'Cacao per turn +',
+        TOOLTIP_BUILDING_INFO_ATTACKS_PER_TURN: 'Attacks per turn +1',
+        TOOLTIP_BUILDING_INFO_SPYING_PER_TURN: 'Spying per turn +1',
+        TOOLTIP_BUILDING_INFO_CHOCOLATE_FOUNTAIN_ADVANTAGE: 'Secures an area of 3x3 cells around the fountain.',
+        TOOLTIP_BUILDING_INFO_FRUIT_CANNON_ADVANTAGE: 'Fruit attacks per turn +1',
+        TOOLTIP_BUILDING_INFO_DONUT_FACTORY_ADVANTAGE_PART: 'Produces a donut per turn with a probability of ',
         TOOLTIP_INITIAL_PLACEMENT_TITLE: 'Initial Placement',
         TOOLTIP_INITIAL_PLACEMENT_MESSAGE: 'Now you can build the factory once. Set the factory carefully: If it is destroyed, you cannot build any other buildings',
         TOOLTIP_BUILD_PHASE_TITLE: 'Build Phase',
         TOOLTIP_BUILD_PHASE_MESSAGE: 'Choose a building from the list below and build it on any of the free fields. The cream is displayed translucent. A building built in cream will be invisible to the enemy',
         TOOLTIP_ATTACK_PHASE_TITLE: 'Attack Phase',
-        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE: (attackType) => {
-            switch (attackType) {
-                case AttackType.TRUFFLE: return 'Rum truffle';
-                case AttackType.FRUIT: return 'Fruit';
-                case AttackType.HOT_CHOCOLATE: return 'Hot chocolate';
-                case AttackType.BUNNY: return 'Spying easter bunny';
-                default: return 'Unkown';
-            }
-        },
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_TRUFFLE: 'Rum truffle',
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_FRUIT: 'Fruit',
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_HOT_CHOCOLATE: 'Hot chocolate',
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_BUNNY: 'Spying easter bunny',
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_UNKNOWN: 'Unknown',
         TOOLTIP_ATTACK_PHASE_MESSAGE: 'Click on an enemy building to destroy it. Hint: Smart enemies hide buildings within cream',
-        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE: (attackType) => {
-            switch (attackType) {
-                case AttackType.TRUFFLE: return 'Destroys buildings and cream. Can be mitigated by the chocolate fountain shield.';
-                case AttackType.FRUIT: return 'Destroys creams and the chocolate fountain. Other buildings are not harmed by the fruit cannon.';
-                case AttackType.HOT_CHOCOLATE: return 'Destroys buildings, creams and even the part of the gamefield that is attacked. Cannot be mitigated by the chocolate fountain shield.';
-                case AttackType.BUNNY: return 'Reveals all the buildings under creams within a 3x3 region around the attacked cell. Gets caught by X-mas factories in the vincinity.';
-                default: return 'Unkown';
-            }
-        },
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_TRUFFLE: 'Destroys buildings and cream. Can be mitigated by the chocolate fountain shield.',
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_FRUIT: 'Destroys creams and the chocolate fountain. Other buildings are not harmed by the fruit cannon.',
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_HOT_CHOCOLATE: 'Destroys buildings, creams and even the part of the gamefield that is attacked. Cannot be mitigated by the chocolate fountain shield.',
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_BUNNY: 'Reveals all the buildings under creams within a 3x3 region around the attacked cell. Gets caught by X-mas factories in the vincinity.',
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_UNKNOWN: 'Unknwon',
         MESSAGE_WIN_GAME: 'Congratulations! You won this game',
         MESSAGE_LOST_GAME: 'You lost',
         MESSAGE_DRAW_GAME: 'Draw game!',
@@ -238,7 +171,7 @@ const languages = {
         TUTORIAL_FOUNTAIN_MESSAGE_5: 'Collect enough cocoa to build a fruit cannon',
         TUTORIAL_FOUNTAIN_MESSAGE_6: 'Great! Now you can upgrade your cannons with a fruit extension',
         TUTORIAL_FOUNTAIN_MESSAGE_7: 'While fruits can pass the shield, they can only destroy the chocolate fountain and cream',
-        TUTORIAL_FOUNTAIN_MESSAGE_8: 'Once the chocolate fountain is destroyed you can attack the factory with truffles',        
+        TUTORIAL_FOUNTAIN_MESSAGE_8: 'Once the chocolate fountain is destroyed you can attack the factory with truffles',
         TUTORIAL_TITLE_1: 'Interactive battlechoc Tutorial',
         TUTORIAL_TITLE_2: 'The chocolate factory',
         TUTORIAL_TITLE_3: 'About trees and cannons',
@@ -268,42 +201,189 @@ const languages = {
         SEARCH_PLAYERS: 'Search player',
         SEARCH_USER_INFO: 'No player found',
         CHOCLAB_INCREASED_BY: 'increased by',
-        ATTRIBUTE_NAME: attribute => {
-            switch (attribute) {
-                case 'hp': return 'Hp';
-                case 'area': return 'Area Effect';
-                case 'buildingsPerTurn': return 'Buildings per turn';
-                case 'cacaoPerTurn': return 'Cacao per turn';
-                case 'attack': return 'Attack';
-                case 'fortune': return 'Fortune';
-                case 'donutProbability': return 'Donut probability';
-                case 'donutTypes': return 'Donut types';
-                default: return 'Unknown';
-            }
-        },
         WARNING_GAME_NOT_JOINABLE: 'The game you want to join has already ended',
-        WARNING_PLAYER_NOT_FOUND: name => 'Player ' + name + ' not found',
         SURRENDER: 'Surrender',
         SURRENDER_GAME: 'Surrender Game',
-        SURRENDER_GAME_TEXT: name => 'Do you really want to surrender the game against ' + name,
         PWA_UPDATE_AVAILABLE: 'A new version is available and will be used as soon as you restart the pwa, or the browser',
         PWA_OFFLINE_MODE: 'You are running battlechoc without internet connection, so only the singleplayer mode is available',
         PWA_ONLINE_MODE: 'You\'re re-connected to the Internet',
-        UPDATE_LEVEL_FAILED: upgrade => 'It was not possible to perform the ' + (upgrade ? 'up' : 'down') + 'grade. Check your internet connection',
         NO_HEALTHY_INTERNET: 'You may not have a healthy internet connection. Please try again later',
         SESSION_REFRESH_FAILED: 'Multiplayer session refresh failed. Please check your internet connection',
         FETCH_HIGHSCORE_FAILED: 'Failed to fetch highscore. Please check your internet connection',
         WARNING_GAME_NOT_JOINABLE_VIA_URL: 'The selected game is already ended or not associated with your account',
         ERROR_GAME_NOT_JOINABLE_VIA_URL: 'Failed to start the game. Please check your internet connection',
         TRY_TO_JOIN_GAME: 'We try to connect you directly to your multiplayer game. Please wait a moment',
-        NOTIFICATION_PERMISSION_INFO: 'We will now request your permission to inform you if someone challenges you, or an opponent has finished his turn and you are up to play'
+        TRY_TO_SHOW_PLAYER_ACCOUNT: 'Loading player account. Please wait a moment',
+        NOTIFICATION_PERMISSION_INFO: 'We will now request your permission to inform you if someone challenges you, or an opponent has finished his turn and you are up to play',
+        NO_ACCOUNT_INFO: 'You are currently not logged in. Use the settings icon to login or just start a new game on the main page for creating a new one',
+        WARNING_PLAYER_NOT_FOUND_PRE_PART: 'Player ',
+        WARNING_PLAYER_NOT_FOUND_POST_PART: ' not found',
+        SURRENDER_GAME_TEXT_PART: 'Do you really want to surrender the game against ',
+        UPDATE_LEVEL_FAILED_UPGRADE: 'It was not possible to perform the upgrade. Check your internet connection',
+        UPDATE_LEVEL_FAILED_DOWNGRADE: 'It was not possible to perform the downgrade. Check your internet connection',
+        ATTRIBUTE_NAME_hp: 'HP',
+        ATTRIBUTE_NAME_area: 'Area effect',
+        ATTRIBUTE_NAME_buildingsPerTurn: 'Buildings per turn',
+        ATTRIBUTE_NAME_cacaoPerTurn: 'Cacao per turn',
+        ATTRIBUTE_NAME_attack: 'Attack',
+        ATTRIBUTE_NAME_fortune: 'Fortune',
+        ATTRIBUTE_NAME_donutProbability: 'Donut probability',
+        ATTRIBUTE_NAME_donutTypes: 'Donut types',
+        ATTRIBUTE_NAME_UNKNOWN: 'Unknown',
+        TOOLTIP_INITIAL_TURN_OPPONENT: function (name) {
+            return name + this.TOOLTIP_INITIAL_TURN_OPPONENT_PART;
+        },
+        TOOLTIP_BUILDING_TITLE: function (type) {
+            switch (type) {
+                case EntityType.CREAM:
+                case EntityType.FACTORY_EXTENSION:
+                case EntityType.FACTORY:
+                case EntityType.HOT_CHOCOLATE_BALLISTA:
+                case EntityType.CACAOTREE:
+                case EntityType.RUM_TRUFFLE_CANNON:
+                case EntityType.XMAS_FACTORY:
+                case EntityType.SPYING_EASTER_BUNNY:
+                case EntityType.CHOCOLATE_FOUNTAIN:
+                case EntityType.FRUIT_CANNON:
+                case EntityType.DONUT_FACTORY:
+                case EntityType.DONUT_PORTAL_RED:
+                case EntityType.DONUT_PORTAL_BLUE:
+                case EntityType.DONUT_STOP_PINK:
+                case EntityType.DONUT_SURPRISE_YELLOW:
+                case EntityType.DONUT_HEALTH_GREEN:
+                case EntityType.DONUT_CREAM_WHITE:
+                    return this['TOOLTIP_BUILDING_TITLE_' + type.replace('EntityType.', '')];
+                default: return this.TOOLTIP_BUILDING_TITLE_UNKNOWN;
+            }
+        },
+        TOOLTIP_BUILDING_INFO: function (type, building) {
+            switch (type) {
+                case EntityType.CREAM:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_CREAM,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs
+                    }
+                case EntityType.FACTORY_EXTENSION:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_FACTORY_EXTENSION,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_BUILDINGS_PER_TURN + building.buildingsPerTurn
+                    }
+                case EntityType.CACAOTREE:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_CACAOTREE,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_CACAO_PER_TURN + building.cacaoPerTurn
+                    }
+                case EntityType.RUM_TRUFFLE_CANNON:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_RUM_TRUFFLE_CANNON,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_ATTACKS_PER_TURN
+                    }
+                case EntityType.XMAS_FACTORY:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_XMAS_FACTORY,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs
+                    }
+                case EntityType.SPYING_EASTER_BUNNY:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_SPYING_EASTER_BUNNY,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_SPYING_PER_TURN
+                    }
+                case EntityType.CHOCOLATE_FOUNTAIN:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_CHOCOLATE_FOUNTAIN,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_CHOCOLATE_FOUNTAIN_ADVANTAGE
+                    }
+                case EntityType.FRUIT_CANNON:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_FRUIT_CANNON,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_FRUIT_CANNON_ADVANTAGE
+                    }
+                case EntityType.DONUT_FACTORY:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_DONUT_FACTORY,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_DONUT_FACTORY_ADVANTAGE_PART + `${building.donutProbability * 100}%`
+                    }
+                case EntityType.DONUT_PORTAL_RED:
+                case EntityType.DONUT_PORTAL_BLUE:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_DONUT_PORTAL_RED_BLUE
+                    }
+                case EntityType.DONUT_CREAM_WHITE:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_DONUT_CREAM_WHITE
+                    }
+                case EntityType.DONUT_HEALTH_GREEN:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_DONUT_HEALTH_GREEN
+                    }
+                case EntityType.DONUT_STOP_PINK:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_DONUT_STOP_PINK
+                    }
+                case EntityType.DONUT_SURPRISE_YELLOW:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_DONUT_SURPRISE_YELLOW
+                    }
+                default: return { info: this.TOOLTIP_BUILDING_INFO_UNKNOWN }
+            }
+        },
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE: function(attackType) {
+            switch (attackType) {
+                case AttackType.TRUFFLE:
+                case AttackType.FRUIT:
+                case AttackType.HOT_CHOCOLATE:
+                case AttackType.BUNNY:
+                    return this['TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_' + attackType.replace('AttackType.', '')];
+                default: return this.TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_UNKNOWN;
+            }
+        },
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE: function (attackType) {
+            switch (attackType) {
+                case AttackType.TRUFFLE:
+                case AttackType.FRUIT:
+                case AttackType.HOT_CHOCOLATE:
+                case AttackType.BUNNY:
+                    return this['TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_' + attackType.replace('AttackType.', '')];;
+                default: return this.TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_UNKNOWN;
+            }
+        },
+        ATTRIBUTE_NAME: function (attribute) {
+            switch (attribute) {
+                case 'hp':
+                case 'area':
+                case 'buildingsPerTurn':
+                case 'cacaoPerTurn':
+                case 'attack':
+                case 'fortune':
+                case 'donutProbability':
+                case 'donutTypes':
+                    return this['ATTRIBUTE_NAME_' + attribute];
+                default: return this.ATTRIBUTE_NAME_UNKNOWN;
+            }
+        },
+        WARNING_PLAYER_NOT_FOUND: function (name) {
+            return this.WARNING_PLAYER_NOT_FOUND_PRE_PART + name + this.WARNING_PLAYER_NOT_FOUND_PRE_PART
+        },
+        SURRENDER_GAME_TEXT: function (name) {
+            return this.SURRENDER_GAME_TEXT_PART + name
+        },
+        UPDATE_LEVEL_FAILED: function (upgrade) {
+            return upgrade ? this.UPDATE_LEVEL_FAILED_UPGRADE : this.UPDATE_LEVEL_FAILED_DOWNGRADE;
+        }
     },
     de: {
         SIGNINORUP: 'Anmelden',
         NEW_GAME: 'Neues Spiel',
         MAIN_MENU_SINGLEPLAYER: 'Singleplayer',
         MAIN_MENU_MULTIPLAYER: 'Multiplayer',
-        MAIN_MENU_CHOCLAB: 'Coclab',
+        MAIN_MENU_CHOCLAB: 'Choclab',
         SIGN_OUT: 'Abmelden',
         ACCOUNTINFOS: 'Account Informationen',
         ACCOUNTINFOS_PREVIEW: 'Hier findest du bald Infos über deinen Account und Spieler-Statistiken.',
@@ -423,7 +503,7 @@ const languages = {
                     return {
                         info: 'Die Donutfabrik stellt Donutfallen her, die dem Gegner sehr gefährlich werden können',
                         costs: 'Kakaokosten: ' + building.costs,
-                        advantages: `Produziert pro Runde einen Donut mit einer Wahrscheinlichkeit von ${building.donutProbability * 100}%` 
+                        advantages: `Produziert pro Runde einen Donut mit einer Wahrscheinlichkeit von ${building.donutProbability * 100}%`
                     }
                 case EntityType.DONUT_PORTAL_RED:
                 case EntityType.DONUT_PORTAL_BLUE:
@@ -535,7 +615,7 @@ const languages = {
         TUTORIAL_FOUNTAIN_MESSAGE_5: 'Ernte genügend Kakao um eine Fruchtkanone zu bauen',
         TUTORIAL_FOUNTAIN_MESSAGE_6: 'Super! Du kannst nun deine Kannonen mit einer Frucherweiterung upgraden',
         TUTORIAL_FOUNTAIN_MESSAGE_7: 'Früchte können zwar den Schild durchdringen, jedoch zerstören sie nur den Schokobrunnen und Sahne',
-        TUTORIAL_FOUNTAIN_MESSAGE_8: 'Aber sobald der Schokobrunnen zerstört ist, können deine Rumtrüffelkanonen die Fabrik deines Gegners zerstören!',   
+        TUTORIAL_FOUNTAIN_MESSAGE_8: 'Aber sobald der Schokobrunnen zerstört ist, können deine Rumtrüffelkanonen die Fabrik deines Gegners zerstören!',
         TUTORIAL_TITLE_1: 'Interaktives battlechoc Tutorial',
         TUTORIAL_TITLE_2: 'Die Schokoladenfabrik',
         TUTORIAL_TITLE_3: 'Kakaobäume und Rumtrüffelkanonen',
@@ -565,35 +645,182 @@ const languages = {
         SEARCH_PLAYERS: 'Spieler suchen',
         SEARCH_USER_INFO: 'Es wurde kein Spieler gefunden',
         CHOCLAB_INCREASED_BY: 'erhöht um',
-        ATTRIBUTE_NAME: attribute => {
-            switch (attribute) {
-                case 'hp': return 'Lebenspunkte';
-                case 'area': return 'Reichweite';
-                case 'buildingsPerTurn': return 'Gebäude pro Runde';
-                case 'cacaoPerTurn': return 'Kakao pro Runde';
-                case 'attack': return 'Angriff';
-                case 'fortune': return 'Glück';
-                case 'donutProbability': return 'Donut Wahrscheinlichkeit';
-                case 'donutTypes': return 'Donut Arten';
-                default: return 'Unbekannt';
-            }
-        },
         WARNING_GAME_NOT_JOINABLE: 'Das gewünschte Spiel wurde bereits beendet',
-        WARNING_PLAYER_NOT_FOUND: name => 'Spieler ' + name + ' wurde nicht gefunden',
         SURRENDER: 'Aufgeben',
         SURRENDER_GAME: 'Spiel aufgeben',
-        SURRENDER_GAME_TEXT: name => 'Möchtest du das Spiel gegen ' + name + ' wirklich aufgeben?',
         PWA_UPDATE_AVAILABLE: 'Eine neue Version ist verfügbar und wird nach Neustart der PWA, oder des Browsers, verwendet',
         PWA_OFFLINE_MODE: 'Du benutzt battlechoc ohne Internetverbindung, daher ist ausschließlich der Singleplayer-Modus verfügbar',
         PWA_ONLINE_MODE: 'Du bist wieder mit dem Internet verbunden',
-        UPDATE_LEVEL_FAILED: upgrade => 'Es war nicht möglich das ' + (upgrade ? 'Up' : 'Down') + 'grade durchzuführen. Überprüfe deine Internetverbindung',
         NO_HEALTHY_INTERNET: 'Es gab Verbindungsprobleme. Überprüfe bitte deine Internetverbindung und versuche es erneut',
         SESSION_REFRESH_FAILED: 'Fehler beim Aktualisieren der Multiplayer Sessions. Überprüfe bitte deine Internetverbindung',
         FETCH_HIGHSCORE_FAILED: 'Fehler beim Laden des Highscores. Überprüfe bitte deine Internetverbindung',
         WARNING_GAME_NOT_JOINABLE_VIA_URL: 'Das gewählte Spiel wurde bereits beendet, oder ist nicht deinem Account zugeordnet',
         ERROR_GAME_NOT_JOINABLE_VIA_URL: 'Spielstart fehlgeschlagen. Bitte überprüfe deine Internetverbindung',
         TRY_TO_JOIN_GAME: 'Bitte warte kurz. Wir versuchen dich direkt mit deinem Multiplayerspiel zu verbinden',
-        NOTIFICATION_PERMISSION_INFO: 'Wir werden dich gleich um Erlaubnis fragen, dich informieren zu dürfen, falls jemand dich herausfordert, oder ein Gegner seinen Zug beendet hat und du an der Reihe bist'
+        TRY_TO_SHOW_PLAYER_ACCOUNT: 'Einen Augenblick bitte. Spielerinformationen werden geladen',
+        NOTIFICATION_PERMISSION_INFO: 'Wir werden dich gleich um Erlaubnis fragen, dich informieren zu dürfen, falls jemand dich herausfordert, oder ein Gegner seinen Zug beendet hat und du an der Reihe bist',
+        NO_ACCOUNT_INFO: 'Du bist zur Zeit nicht angemeldet. Melde dich im Einstellungsmenü an, oder starte einfach ein neues Spiel auf der Hauptseite, um einen neuen Account zu erstellen',
+        WARNING_PLAYER_NOT_FOUND_PRE_PART: 'Spieler ',
+        WARNING_PLAYER_NOT_FOUND_POST_PART: ' wurde nicht gefunden',
+        SURRENDER_GAME_TEXT_PART: 'Möchtest du das Spiel wirklich aufgeben gegen ',
+        UPDATE_LEVEL_FAILED_UPGRADE: 'Es war nicht möglich das Upgrade durchzuführen. Überprüfe deine Internetverbindung',
+        UPDATE_LEVEL_FAILED_DOWNGRADE: 'Es war nicht möglich das Downgrade durchzuführen. Überprüfe deine Internetverbindung',
+        ATTRIBUTE_NAME_hp: 'Lebenspunkte',
+        ATTRIBUTE_NAME_area: 'Reichweite',
+        ATTRIBUTE_NAME_buildingsPerTurn: 'Gebäude pro Runde',
+        ATTRIBUTE_NAME_cacaoPerTurn: 'Kakao pro Runde',
+        ATTRIBUTE_NAME_attack: 'Angriff',
+        ATTRIBUTE_NAME_fortune: 'Glück',
+        ATTRIBUTE_NAME_donutProbability: 'Donut-Wahrscheinlichkeit',
+        ATTRIBUTE_NAME_donutTypes: 'Donutsorten',
+        ATTRIBUTE_NAME_UNKNOWN: 'Unbekannt',
+        TOOLTIP_INITIAL_TURN_OPPONENT: function (name) {
+            return name + this.TOOLTIP_INITIAL_TURN_OPPONENT_PART;
+        },
+        TOOLTIP_BUILDING_TITLE: function (type) {
+            switch (type) {
+                case EntityType.CREAM:
+                case EntityType.FACTORY_EXTENSION:
+                case EntityType.FACTORY:
+                case EntityType.HOT_CHOCOLATE_BALLISTA:
+                case EntityType.CACAOTREE:
+                case EntityType.RUM_TRUFFLE_CANNON:
+                case EntityType.XMAS_FACTORY:
+                case EntityType.SPYING_EASTER_BUNNY:
+                case EntityType.CHOCOLATE_FOUNTAIN:
+                case EntityType.FRUIT_CANNON:
+                case EntityType.DONUT_FACTORY:
+                case EntityType.DONUT_PORTAL_RED:
+                case EntityType.DONUT_PORTAL_BLUE:
+                case EntityType.DONUT_STOP_PINK:
+                case EntityType.DONUT_SURPRISE_YELLOW:
+                case EntityType.DONUT_HEALTH_GREEN:
+                case EntityType.DONUT_CREAM_WHITE:
+                    return this['TOOLTIP_BUILDING_TITLE_' + type.replace('EntityType.', '')];
+                default: return this.TOOLTIP_BUILDING_TITLE_UNKNOWN;
+            }
+        },
+        TOOLTIP_BUILDING_INFO: function (type, building) {
+            switch (type) {
+                case EntityType.CREAM:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_CREAM,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs
+                    }
+                case EntityType.FACTORY_EXTENSION:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_FACTORY_EXTENSION,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_BUILDINGS_PER_TURN + building.buildingsPerTurn
+                    }
+                case EntityType.CACAOTREE:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_CACAOTREE,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_CACAO_PER_TURN + building.cacaoPerTurn
+                    }
+                case EntityType.RUM_TRUFFLE_CANNON:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_RUM_TRUFFLE_CANNON,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_ATTACKS_PER_TURN
+                    }
+                case EntityType.XMAS_FACTORY:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_XMAS_FACTORY,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs
+                    }
+                case EntityType.SPYING_EASTER_BUNNY:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_SPYING_EASTER_BUNNY,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_SPYING_PER_TURN
+                    }
+                case EntityType.CHOCOLATE_FOUNTAIN:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_CHOCOLATE_FOUNTAIN,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_CHOCOLATE_FOUNTAIN_ADVANTAGE
+                    }
+                case EntityType.FRUIT_CANNON:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_FRUIT_CANNON,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_FRUIT_CANNON_ADVANTAGE
+                    }
+                case EntityType.DONUT_FACTORY:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_DONUT_FACTORY,
+                        costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                        advantages: this.TOOLTIP_BUILDING_INFO_DONUT_FACTORY_ADVANTAGE_PART + `${building.donutProbability * 100}%`
+                    }
+                case EntityType.DONUT_PORTAL_RED:
+                case EntityType.DONUT_PORTAL_BLUE:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_DONUT_PORTAL_RED_BLUE
+                    }
+                case EntityType.DONUT_CREAM_WHITE:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_DONUT_CREAM_WHITE
+                    }
+                case EntityType.DONUT_HEALTH_GREEN:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_DONUT_HEALTH_GREEN
+                    }
+                case EntityType.DONUT_STOP_PINK:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_DONUT_STOP_PINK
+                    }
+                case EntityType.DONUT_SURPRISE_YELLOW:
+                    return {
+                        info: this.TOOLTIP_BUILDING_INFO_DONUT_SURPRISE_YELLOW
+                    }
+                default: return { info: this.TOOLTIP_BUILDING_INFO_UNKNOWN }
+            }
+        },
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE: function(attackType) {
+            switch (attackType) {
+                case AttackType.TRUFFLE:
+                case AttackType.FRUIT:
+                case AttackType.HOT_CHOCOLATE:
+                case AttackType.BUNNY:
+                    return this['TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_' + attackType.replace('AttackType.', '')];
+                default: return this.TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_UNKNOWN;
+            }
+        },
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE: function (attackType) {
+            switch (attackType) {
+                case AttackType.TRUFFLE:
+                case AttackType.FRUIT:
+                case AttackType.HOT_CHOCOLATE:
+                case AttackType.BUNNY:
+                    return this['TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_' + attackType.replace('AttackType.', '')];;
+                default: return this.TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_UNKNOWN;
+            }
+        },
+        ATTRIBUTE_NAME: function (attribute) {
+            switch (attribute) {
+                case 'hp':
+                case 'area':
+                case 'buildingsPerTurn':
+                case 'cacaoPerTurn':
+                case 'attack':
+                case 'fortune':
+                case 'donutProbability':
+                case 'donutTypes':
+                    return this['ATTRIBUTE_NAME_' + attribute];
+                default: return this.ATTRIBUTE_NAME_UNKNOWN;
+            }
+        },
+        WARNING_PLAYER_NOT_FOUND: function (name) {
+            return this.WARNING_PLAYER_NOT_FOUND_PRE_PART + name + this.WARNING_PLAYER_NOT_FOUND_PRE_PART
+        },
+        SURRENDER_GAME_TEXT: function (name) {
+            return this.SURRENDER_GAME_TEXT_PART + name
+        },
+        UPDATE_LEVEL_FAILED: function (upgrade) {
+            return upgrade ? this.UPDATE_LEVEL_FAILED_UPGRADE : this.UPDATE_LEVEL_FAILED_DOWNGRADE;
+        }
     },
     jp: {
         SIGNINORUP: 'サインイン',
@@ -720,7 +947,7 @@ const languages = {
                     return {
                         info: 'ドーナツ工場では、ドーナツトラップを作成しますが、これは相手にとって非常に危険な場合があります。',
                         costs: 'カカオの費用： ' + building.costs,
-                        advantages: `確率ごとにドーナツを1ターンに生成します${building.donutProbability * 100}%` 
+                        advantages: `確率ごとにドーナツを1ターンに生成します${building.donutProbability * 100}%`
                     }
                 case EntityType.DONUT_PORTAL_RED:
                 case EntityType.DONUT_PORTAL_BLUE:
@@ -890,7 +1117,9 @@ const languages = {
         WARNING_GAME_NOT_JOINABLE_VIA_URL: '選択したゲームは既に終了しているか、アカウントに関連付けられていません。',
         ERROR_GAME_NOT_JOINABLE_VIA_URL: 'ゲームを開始できませんでした。インターネット接続を確認してください。',
         TRY_TO_JOIN_GAME: '私たちはあなたをマルチプレイヤーゲームに直接接続しようとします。少々お待ちください。',
-        NOTIFICATION_PERMISSION_INFO: '誰かがあなたに挑戦したり、対戦相手が彼のターンを終えて、あなたがプレーする準備ができている場合、私たちはあなたにあなたに通知する許可を求めます。'
+        TRY_TO_SHOW_PLAYER_ACCOUNT: 'プレーヤーアカウントを読み込んでいます。しばらくお待ちください',
+        NOTIFICATION_PERMISSION_INFO: '誰かがあなたに挑戦したり、対戦相手が彼のターンを終えて、あなたがプレーする準備ができている場合、私たちはあなたにあなたに通知する許可を求めます。',
+        NO_ACCOUNT_INFO: '現在ログインしていません。設定メニューにログインするか、メインページで新しいゲームを開始して新しいアカウントを作成します'
     }
 };
 
