@@ -14,6 +14,7 @@ const attackReduction = require('../index').attackReduction;
 const buildReduction = require('../index').buildReduction;
 const EmptyPlayerStats = require('../index').EmptyPlayerStats;
 const endGameReduction = require('../index').endGameReduction;
+const Board = require('../index').Board;
 
 class GamePlayTest extends Situation {
     constructor() {
@@ -157,4 +158,17 @@ test('should find a winner even with donut factory', () => {
 
     expect(game.players[1].statistics.won).toBe(false);
     expect(game.players[1].statistics.lost).toBe(true);
+});
+
+test('should be the same board', () => {
+    const firstBoard = Board.generate(10, 1234);
+    const secondBoard = Board.generate(10, 1234);
+    const thirdBoard = Board.generate(10, 1233);
+
+    expect(JSON.stringify(firstBoard)).toBe(JSON.stringify(secondBoard));
+    expect(JSON.stringify(secondBoard)).not.toBe(JSON.stringify(thirdBoard));
+    
+    const randomBoard = Board.generate(10);
+
+    expect(randomBoard.seed).toBe(42);
 });

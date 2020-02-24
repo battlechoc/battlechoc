@@ -309,14 +309,25 @@ function getCheapest(level) {
 }
 
 class Board {
-  static generate(size, seed) {
-    let playerFields = [];
+  static generate(size, seed=null) {
+    let random = Math.random;
+    if (seed) {
+      const seedableRandom = function(s) {
+        return function() { s = Math.sin(s) * 10000; return s - Math.floor(s); };
+      };
+
+      random = seedableRandom(seed);
+    } else {
+      seed = 42;
+    }
+
+    const playerFields = [];
     for (let player = 0; player < 2; player++) {
-      let field = { grid: [] };
+      const field = { grid: [] };
       for (let row = 0; row < size.rows; row++) {
         for (let col = 0; col < size.cols; col++) {
-          let fieldtype = Math.floor(Math.random() * 6);
-          let creamed = Math.random() < 0.7
+          const fieldtype = Math.floor(random() * 6);
+          const creamed = random() < 0.7
           let cellType = BoardCellTypes.BROWN;
           let previewStyle = 'brown';
           
@@ -328,7 +339,7 @@ class Board {
             previewStyle = 'black';
           }
           
-          let cream = createEntity(EntityType.CREAM);
+          const cream = createEntity(EntityType.CREAM);
           cream.position = { col: col, row: row };
           
           field.grid.push({
