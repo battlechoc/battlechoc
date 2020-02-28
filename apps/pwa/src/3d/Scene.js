@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { multiplayer } from '../Multiplayer';
 import { deselectBuildings, selectAttack, deselectAttack, selectBuilding, tapBuilding } from '../ui/UiActions';
-import { build, attack, finishTurn, finishBuildPhase } from '../gameplay/GameActions';
+import { InfoType, build, attack, finishTurn, finishBuildPhase } from '../gameplay/GameActions';
 import Gamefield from './Gamefield';
 import { GameStateTypes, playerHasAttacks, BattlechocError, EntityType, AttackType, BoardCellTypes, createEntity, getEntityDescriptor, getCheapest, isDonut } from 'battlechoc-shared-functions';
 import { Jukebox } from '../ui/misc';
@@ -46,17 +46,6 @@ class Scene extends Component {
         this.opponentGameField = null;
         this.renderLoopRepetitions = 0;
         this.opponentGameFieldDistance = 12;
-
-        this.InfoType = Object.freeze({
-            CACAO_HARVESTED: 'InfoType.CACAO_HARVESTED',
-            CACAO_CONSUMED: 'InfoType.CACAO_CONSUMED',
-            INCREASE_BUILDINGS_PER_TURN: 'InfoType.INCREASE_BUILDINGS_PER_TURN',
-            INCREASE_CACAO_PER_TURN: 'InfoType.INCREASE_CACAO_PER_TURN',
-            INCREASE_ATTACKS_PER_TURN: 'InfoType.INCREASE_ATTACKS_PER_TURN',
-            INCREASE_SPY_ATTACKS_PER_TURN: 'InfoType.INCREASE_SPY_ATTACKS_PER_TURN',
-            BUNNY_CAUGHT: 'InfoType.BUNNY_CAUGHT',
-            DONUT_TRAP: 'InfoType.DONUT_TRAP'
-        });
     }
 
     hideEnergyBar = (position, field) => {
@@ -143,11 +132,15 @@ class Scene extends Component {
     }
 
     spawnInfo(messageType, position, amount, donutType) {
+        if (!(position instanceof Vector3)) {
+            position = new Vector3(position.row, 6.5, position.col);
+        }
+
         let id = Date.now();
         let info = MeshBuilder.CreatePlane('info_' + id, { width: 1.65, height: 1.65 }, this.scene);
         info.isPickable = false;
         info.position = position;
-        info.position.y = 6;
+        info.position.y = this.props.tutorial ? 4 : 6;
         info.billboardMode = Mesh.BILLBOARDMODE_ALL;
 
         let texture = new DynamicTexture('info_texture_' + id, 208, this.scene);
@@ -197,21 +190,21 @@ class Scene extends Component {
             }
         }
 
-        if (messageType === this.InfoType.CACAO_HARVESTED) {
+        if (messageType === InfoType.CACAO_HARVESTED) {
             drawInfo('/images/cacao_no_background.png', '#70bf31', '+' + amount);
-        } else if (messageType === this.InfoType.CACAO_CONSUMED) {
+        } else if (messageType === InfoType.CACAO_CONSUMED) {
             drawInfo('/images/cacao_no_background.png', '#c70000', '-' + amount);
-        } else if (messageType === this.InfoType.INCREASE_CACAO_PER_TURN) {
+        } else if (messageType === InfoType.INCREASE_CACAO_PER_TURN) {
             drawInfo('/images/cacaoPerTurn.png', '#70bf31', '+' + amount);
-        } else if (messageType === this.InfoType.INCREASE_BUILDINGS_PER_TURN) {
+        } else if (messageType === InfoType.INCREASE_BUILDINGS_PER_TURN) {
             drawInfo('/images/buildingsPerTurn.png', '#70bf31', '+' + amount);
-        } else if (messageType === this.InfoType.INCREASE_ATTACKS_PER_TURN) {
+        } else if (messageType === InfoType.INCREASE_ATTACKS_PER_TURN) {
             drawInfo('/images/attacksPerTurn.png', '#70bf31', '+' + amount);
-        } else if (messageType === this.InfoType.INCREASE_SPY_ATTACKS_PER_TURN) {
+        } else if (messageType === InfoType.INCREASE_SPY_ATTACKS_PER_TURN) {
             drawInfo('/images/spyAttacksPerTurn.png', '#70bf31', '+' + amount);
-        } else if (messageType === this.InfoType.BUNNY_CAUGHT) {
+        } else if (messageType === InfoType.BUNNY_CAUGHT) {
             drawInfo('/images/bunnyCaught.png');
-        } else if (messageType === this.InfoType.DONUT_TRAP) {
+        } else if (messageType === InfoType.DONUT_TRAP) {
             let offsetLeft = 120;
             if (donutType === EntityType.DONUT_PORTAL_BLUE) {
                 offsetLeft = 240;
@@ -232,7 +225,7 @@ class Scene extends Component {
         } else {
             position.y = 6.5;
         }
-        this.spawnInfo(this.InfoType.DONUT_TRAP, position, undefined, donut.type);
+        this.spawnInfo(InfoType.DONUT_TRAP, position, undefined, donut.type);
     }
 
     triggerCacaoInfo() {
@@ -244,12 +237,12 @@ class Scene extends Component {
         let trees = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.CACAOTREE));
         let description = getEntityDescriptor(EntityType.CACAOTREE, this.props.game.players[multiplayer.localPlayerIndex].level);
         trees.forEach(cell => {
-            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), cell.type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn);
+            this.spawnInfo(InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), cell.type === BoardCellTypes.WHITE ? Math.round(description.cacaoPerTurn * 1.5) : description.cacaoPerTurn);
         });
         let factory = cells.filter(cell => cell.occupiedBy.map(entity => entity.type).includes(EntityType.FACTORY));
         description = getEntityDescriptor(EntityType.FACTORY, this.props.game.players[multiplayer.localPlayerIndex].level);
         factory.forEach(cell => {
-            this.spawnInfo(this.InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), description.cacaoPerTurn);
+            this.spawnInfo(InfoType.CACAO_HARVESTED, new Vector3(cell.row, 0, cell.col), description.cacaoPerTurn);
         });
     }
 
@@ -276,9 +269,9 @@ class Scene extends Component {
     }
 
     clear() {
-        let instances = this.scene.meshes.filter(mesh => mesh.isAnInstance);
-        for (let mesh = 0; mesh < instances.length; mesh++) {
-            instances[mesh].dispose();
+        const instances = this.scene.meshes.filter(mesh => mesh.isAnInstance);
+        for (const instance of instances) {
+            instance.dispose();
         }
         this.playerGameField = null;
         this.opponentGameField = null;
@@ -412,13 +405,13 @@ class Scene extends Component {
                     this.showEnergyBar(building);
                 }
                 if (initialPlacement) {
-                    this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), player.buildingsPerTurn);
+                    this.spawnInfo(InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), player.buildingsPerTurn);
                     this.props.deselectBuildings();
                     this.props.deselectAttack();
                     let playerId = player.id;
                     setTimeout(() => {
                         let description = getEntityDescriptor(EntityType.FACTORY, player.level);
-                        this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), description.cacaoPerTurn);
+                        this.spawnInfo(InfoType.INCREASE_CACAO_PER_TURN, position.clone(), description.cacaoPerTurn);
                     }, 1000);
                     setTimeout(() => {
                         if (playerId === player.id) {
@@ -430,20 +423,20 @@ class Scene extends Component {
                 } else {
                     let description = getEntityDescriptor(building.type, player.level);
                     if (!isDonut(building.type)) {
-                        this.spawnInfo(this.InfoType.CACAO_CONSUMED, position.clone(), description.costs);
+                        this.spawnInfo(InfoType.CACAO_CONSUMED, position.clone(), description.costs);
                     }
                     let cacaoDelta = player.cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = player.buildingsPerTurn - buildingsPerTurnBefore;
                     setTimeout(() => {
                         if (typeof this.props.game !== 'undefined') { 
                             if (building.type === EntityType.CACAOTREE) {
-                                this.spawnInfo(this.InfoType.INCREASE_CACAO_PER_TURN, position.clone(), cacaoDelta);
+                                this.spawnInfo(InfoType.INCREASE_CACAO_PER_TURN, position.clone(), cacaoDelta);
                             } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
-                                this.spawnInfo(this.InfoType.INCREASE_ATTACKS_PER_TURN, position.clone(), 1);
+                                this.spawnInfo(InfoType.INCREASE_ATTACKS_PER_TURN, position.clone(), 1);
                             } else if (building.type === EntityType.FACTORY_EXTENSION) {
-                                this.spawnInfo(this.InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), buildingsDelta);
+                                this.spawnInfo(InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), buildingsDelta);
                             } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
-                                this.spawnInfo(this.InfoType.INCREASE_SPY_ATTACKS_PER_TURN, position.clone(), 1);
+                                this.spawnInfo(InfoType.INCREASE_SPY_ATTACKS_PER_TURN, position.clone(), 1);
                             }
                             setTimeout(() => {
                                 if (typeof this.props.game !== 'undefined') { 
@@ -523,7 +516,7 @@ class Scene extends Component {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
                     } else {
                         Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
-                        this.spawnInfo(this.InfoType.BUNNY_CAUGHT, position.clone());
+                        this.spawnInfo(InfoType.BUNNY_CAUGHT, position.clone());
                     }
                 } else if (typeof attackParams.attackType !== 'undefined') {
                     Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);

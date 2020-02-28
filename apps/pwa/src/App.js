@@ -173,16 +173,14 @@ class App extends Component {
             await this.props.resetUi();
         }
 
-        this.props.resumeGame(situation.gameplay).then(() => {
-            this.opponent.player = this.props.game.players[1];
-            this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
-            this.props.loadUiState(situation.ui).then(() => {
-                this.setState({ situation: undefined }, () => {
-                    if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
-                        this.scene.startGame(this.props.game, false);
-                    }
-                });
-            });
+        await this.props.resumeGame(situation.gameplay);
+        this.opponent.player = this.props.game.players[1];
+        this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
+        await this.props.loadUiState(situation.ui);
+        this.setState({ situation: undefined }, () => {
+            if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
+                this.scene.startGame(this.props.game, false);
+            }
         });
     }
 
@@ -375,7 +373,7 @@ class App extends Component {
                     }
                 });
             } else {
-                OfflineStore.getResumeableGame().then((resumeableGame) => {
+                OfflineStore.getResumeableGame().then(resumeableGame => {
                     this.opponent = new Augustus({
                         chooseStart: this.props.chooseStart,
                         chooseField: this.props.chooseField,
@@ -407,7 +405,7 @@ class App extends Component {
                             this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
                             this.props.createBoard({
                                 boardSize: { rows: 10, cols: 10 },
-                                boardSeed: 42
+                                boardSeed: Math.floor(Math.random * 1000000)
                             });
                         });
                     }
@@ -447,16 +445,24 @@ class App extends Component {
         multiplayer.pushGameStats([stats]);
     }
 
-    closeTutorial = (startGame) => {
+    async reset() {
+        if (typeof this.props.game !== 'undefined') {
+            this.scene.clear();
+            await this.props.finishGame();
+            await this.props.resetUi();
+        }
+    }
+
+    setRenderLoop(run) {
+        this.scene.setRenderLoop(run);
+    }
+
+    closeTutorial = async startGame => {
         this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
 
         Jukebox.stopMusic(true);
         this.props.stopTutorial();
-        if (typeof this.props.game !== 'undefined') {
-            this.props.finishGame();
-            this.props.resetUi();
-            this.scene.clear();
-        }
+        await this.reset();
 
         if (startGame) {
             this.hud.unlockUi();
@@ -494,7 +500,7 @@ class App extends Component {
                     challengedPlayer={this.state.player}
                     openInfo={this.state.openInfo}
                     sessionId={this.state.session} />
-                {this.props.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
+                {this.props.tutorial ? <Tutorial spawnInfo={(messageType, position, amount, donutType) => this.scene.spawnInfo(messageType, position, amount, donutType)} setRenderLoop={run => this.setRenderLoop(run)} reset={async () => await this.reset()} loadSituation={async situation => await this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
             </div>
         );
     }

@@ -26,6 +26,8 @@
   flex-grow: 1;
   text-transform: uppercase;
   text-align: center;
+  font-size: 1.2rem;
+  margin: 16px 0;
 }
 
 .tutorial-message {
@@ -62,6 +64,20 @@
 .user-name-input {
   display: flex;
   align-items: flex-end;
+}
+
+.battlechoc-tutorial-info {
+  height: calc(40vh - 64px);
+  overflow-y: scroll;
+  margin: 0 auto;
+  background: white;
+  padding: 5px; 
+}
+
+.battlechoc-tutorial-info > p {
+  color: #457B82;
+  font-size: 1.2rem;
+  padding: 0 5vw;
 }
 
 .speechBubbles {
