@@ -36,6 +36,14 @@ export default class Cream extends Situation {
         return (new Cream()).game.gameplay.game;
     }
 
+    static get title() {
+        return 'Never build without cream';
+    }
+
+    static get description() {
+        return 'All entities that are built in cream are invisible to your opponent';
+    }
+
     async play(game, manipulate, spawnInfo, sleep) {
         this.running = true;
         let pseudoGame = JSON.parse(JSON.stringify(game));        

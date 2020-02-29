@@ -33,6 +33,14 @@ export default class RumTruffleCannon extends Situation {
         return (new RumTruffleCannon()).game.gameplay.game;
     }
 
+    static get title() {
+        return 'All you need is a Rum Truffle Cannon';
+    }
+
+    static get description() {
+        return 'To distroy your opponents entites you will need cannons. You can attack 1 field per turn using a Rum Truffle Cannon';
+    }
+
     async play(game, manipulate, spawnInfo, sleep) {
         this.running = true;
         let pseudoGame = JSON.parse(JSON.stringify(game));

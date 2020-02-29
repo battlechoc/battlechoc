@@ -60,7 +60,7 @@ export default class Situation {
             pseudoGame.players[0].attacks[AttackType.TRUFFLE] += descriptor.attacksPerTurn;
             pseudoGame.players[0].cacao -= descriptor.costs;
             spawnInfo(InfoType.INCREASE_ATTACKS_PER_TURN, position, descriptor.attacksPerTurn)
-        } else if (entityType === EntityType.FACTORY) {
+        } else if (entityType === EntityType.FACTORY || entityType === EntityType.FACTORY_EXTENSION) {
             const descriptor = getEntityDescriptor(entityType);
             let buildingsPerTurn = descriptor.buildingsPerTurn;
             if (this.getFieldAt(pseudoGame.board, position).type === BoardCellTypes.BLACK) {

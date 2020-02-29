@@ -18,7 +18,7 @@ import uuidv4 from 'uuid/v4';
 import Tutorial from './tutorial/Tutorial';
 import QuickMessage from './ui/dialogs/QuickMessage';
 import logger from './helper/logger';
-
+import { TutorialSituations } from'./situations/tutorial/';
 const Scene = React.lazy(() => import('./3d/Scene'));
 
 class App extends Component {
@@ -160,6 +160,23 @@ class App extends Component {
         } else {
             return 0;
         }
+    }
+
+    availableTutorials = () => {
+        const tutorials = [
+            TutorialSituations.BATTLECHOC_INTRO, 
+            TutorialSituations.FACTORY, 
+            TutorialSituations.CACAO_TREE, 
+            TutorialSituations.RUM_TRUFFLE_CANNON, 
+            TutorialSituations.CREAM
+        ];
+
+        const score = this.props.playerInfos.stats.score;
+        if (score > 0) {
+            tutorials.push(TutorialSituations.FACTORY_EXTENSION);
+        }
+
+        return tutorials;
     }
 
     async loadSituation(situation) {
@@ -428,7 +445,7 @@ class App extends Component {
         }
     }
 
-    endGame() {
+    endGame(coins) {
         if (!this.props.tutorial) {
             Jukebox.stopMusic(true);
             setTimeout(() => {
@@ -436,6 +453,19 @@ class App extends Component {
                 this.props.resetUi();
                 multiplayer.reset();
                 this.scene.clear();
+
+                const score = this.props.playerInfos.stats.score;
+                if (typeof coins !== 'undefined' && coins > 0) {
+                    if (score - coins === 0) {
+                        this.props.startTutorial([TutorialSituations.FACTORY_EXTENSION]);
+                    } else if ((score - coins) < 200 && score > 200) {
+                        // show "unlocked bunny xmas and hot chocolate"
+                    } else if ((score - coins) < 500 && score > 500) {
+                        // show "unlocked shild fruit cannon"
+                    } else if ((score - coins) < 1000 && score > 1000) {
+                        // show "unlocked donuts, muliplayer and choclab"
+                    }
+                }
                 multiplayer.getMultiplayerSessions();
             }, 1000);
         }
@@ -487,7 +517,7 @@ class App extends Component {
     startTutorial() {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
-        this.props.startTutorial();
+        this.props.startTutorial(this.availableTutorials());
     }
 
     render() {
@@ -508,7 +538,7 @@ class App extends Component {
                     enterMultiplayerGame={this.enterMultiplayerGame}
                     startTutorial={() => this.startTutorial()}
                     className={this.props.tutorial ? 'tutorial hud' : 'hud'}
-                    endGame={() => this.endGame()}
+                    endGame={coins => this.endGame(coins)}
                     surrender={() => this.surrender()}
                     onRef={hud => this.hud = hud}
                     challengedPlayer={this.state.player}

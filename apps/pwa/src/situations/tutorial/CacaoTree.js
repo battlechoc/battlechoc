@@ -30,6 +30,14 @@ export default class CacaoTree extends Situation {
         return (new CacaoTree()).game.gameplay.game;
     }
 
+    static get title() {
+        return 'Appreciate the Cacao Tree';
+    }
+
+    static get description() {
+        return 'You need cacao to produce entities. The cacao tree will give you cacao per turn. It performs better on a white chocolate field';
+    }
+
     async play(game, manipulate, spawnInfo, sleep) {
         this.running = true;
         let pseudoGame = JSON.parse(JSON.stringify(game));        

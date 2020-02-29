@@ -34,6 +34,14 @@ export default class BattlechocIntro extends Situation {
         return (new BattlechocIntro()).game.gameplay.game;
     }
 
+    static get title() {
+        return 'Welcome to battlechoc';
+    }
+
+    static get description() {
+        return 'battlechoc is a turn-based strategy game with chocolate flavor. You win the game if you distroy the chocolate factory and cannons of your opponent';
+    }
+
     async play(game, manipulate, spawnInfo, sleep) {
         this.running = true;
         let pseudoGame = JSON.parse(JSON.stringify(game));        

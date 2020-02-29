@@ -20,6 +20,14 @@ export default class Factory extends Situation {
         return (new Factory()).game.gameplay.game;
     }
 
+    static get title() {
+        return 'The Chocolate Factory';
+    }
+
+    static get description() {
+        return 'The factory can be build in the first turn and allows you to build all other entities. It performs better on a dark chocolate field';
+    }
+
     async play(game, manipulate, spawnInfo, sleep) {
         this.running = true;
         let pseudoGame = JSON.parse(JSON.stringify(game));        

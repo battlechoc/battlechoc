@@ -100,6 +100,7 @@ const uiReducer = createReducer({
     },
     [UiActions.startTutorial]: (state, action) => {
         state.tutorial = true;
+        state.loopAnimations = action.payload;
     },
     [UiActions.updatePlayerStats]: (state, action) => {
         Object.assign(state.playerInfos.stats, action.payload);
