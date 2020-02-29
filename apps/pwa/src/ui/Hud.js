@@ -294,10 +294,11 @@ class Hud extends Component {
                     if (stage === 'TITLE_SCREEN') {
                         let controls = []
 
-                        let playername = this.props.playerInfos.stats.username;
-                        let hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous';
+                        const playername = this.props.playerInfos.stats.username;
+                        const score = this.props.playerInfos.stats.score
+                        const hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 2000;
 
-                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>{hideOptions ? t[this.props.language].NEW_GAME : t[this.props.language].MAIN_MENU_SINGLEPLAYER}</div>);
+                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t[this.props.language].NEW_GAME : t[this.props.language].MAIN_MENU_SINGLEPLAYER}</div>);
                         
                         if (!hideOptions) {
                             controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>{t[this.props.language].MAIN_MENU_MULTIPLAYER}</div>);

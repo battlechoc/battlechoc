@@ -148,6 +148,20 @@ class App extends Component {
         }
     }
 
+    calculateHandicap = score => {
+        if (score < 1) {
+            return 4;
+        } else if (score < 200) {
+            return 3;
+        } else if (score < 500) {
+            return 2;
+        } else if (score < 1000) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
     async loadSituation(situation) {
         if (this.props.tutorial) {
             this.opponent = new Violet({
@@ -163,7 +177,7 @@ class App extends Component {
                 attack: this.props.attack,
                 finishTurn: this.props.finishTurn,
                 finishBuildPhase: this.props.finishBuildPhase
-            });
+            }, this.calculateHandicap(this.props.playerInfos.stats.score));
         }
 
         if (typeof this.props.game !== 'undefined') {
@@ -381,7 +395,7 @@ class App extends Component {
                         attack: this.props.attack,
                         finishTurn: this.props.finishTurn,
                         finishBuildPhase: this.props.finishBuildPhase
-                    });
+                    }, this.calculateHandicap(this.props.playerInfos.stats.score));
                     if (typeof resumeableGame !== 'undefined' && resumeGame) {
                         this.props.resumeGame(resumeableGame.gameplay).then(() => {
                             this.opponent.player = resumeableGame.gameplay.players[1];
