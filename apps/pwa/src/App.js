@@ -172,7 +172,18 @@ class App extends Component {
         ];
 
         const score = this.props.playerInfos.stats.score;
-        if (score > 0) {
+        if (score > 500) {
+            tutorials.push(TutorialSituations.FACTORY_EXTENSION);
+            tutorials.push(TutorialSituations.EASTER_BUNNY);
+            tutorials.push(TutorialSituations.XMAS_FACTORY);
+            tutorials.push(TutorialSituations.HOT_CHOCOLATE_BALLISTA);
+            tutorials.push(TutorialSituations.CHOCOLATE_FOUNTAIN);
+        } else if (score > 200) {
+            tutorials.push(TutorialSituations.FACTORY_EXTENSION);
+            tutorials.push(TutorialSituations.EASTER_BUNNY);
+            tutorials.push(TutorialSituations.XMAS_FACTORY);
+            tutorials.push(TutorialSituations.HOT_CHOCOLATE_BALLISTA);
+        } else if (score > 0) {
             tutorials.push(TutorialSituations.FACTORY_EXTENSION);
         }
 
@@ -295,6 +306,10 @@ class App extends Component {
                 ( multiplayer.isLocalPlayer(prevProps.game.currentPlayerIndex) !== multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)
                 || ( prevProps.game.state === GameStateTypes.BUILD_PHASE && this.props.game.state === GameStateTypes.ATTACK_PHASE ))) {
                 this.props.toggleDonutHighlighting(false);
+            }
+
+            if (this.props.tutorial) {
+                return;
             }
 
             if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
@@ -459,9 +474,9 @@ class App extends Component {
                     if (score - coins === 0) {
                         this.props.startTutorial([TutorialSituations.FACTORY_EXTENSION]);
                     } else if ((score - coins) < 200 && score > 200) {
-                        // show "unlocked bunny xmas and hot chocolate"
+                        this.props.startTutorial([TutorialSituations.EASTER_BUNNY, TutorialSituations.XMAS_FACTORY, TutorialSituations.HOT_CHOCOLATE_BALLISTA]);
                     } else if ((score - coins) < 500 && score > 500) {
-                        // show "unlocked shild fruit cannon"
+                        this.props.startTutorial([TutorialSituations.CHOCOLATE_FOUNTAIN]);
                     } else if ((score - coins) < 1000 && score > 1000) {
                         // show "unlocked donuts, muliplayer and choclab"
                     }
@@ -491,6 +506,7 @@ class App extends Component {
 
     async reset() {
         if (typeof this.props.game !== 'undefined') {
+            this.scene.stopAllAnimations();
             this.scene.clear();
             await this.props.finishGame();
             await this.props.resetUi();
@@ -544,7 +560,12 @@ class App extends Component {
                     challengedPlayer={this.state.player}
                     openInfo={this.state.openInfo}
                     sessionId={this.state.session} />
-                {this.props.tutorial ? <Tutorial spawnInfo={(messageType, position, amount, donutType) => this.scene.spawnInfo(messageType, position, amount, donutType)} setRenderLoop={run => this.setRenderLoop(run)} reset={async () => await this.reset()} loadSituation={async situation => await this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
+                {this.props.tutorial ? <Tutorial 
+                    spawnInfo={(messageType, position, amount, donutType) => this.scene.spawnInfo(messageType, position, amount, donutType)} 
+                    setRenderLoop={run => this.setRenderLoop(run)} 
+                    reset={async () => await this.reset()} 
+                    loadSituation={async situation => await this.loadSituation(situation)} 
+                    closeTutorial={this.closeTutorial} /> : null}
             </div>
         );
     }

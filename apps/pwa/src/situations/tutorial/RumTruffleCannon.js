@@ -1,9 +1,9 @@
 import Situation from '../Situation';
-import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType } from 'battlechoc-shared-functions';
+import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType, AttackType } from 'battlechoc-shared-functions';
 
 export default class RumTruffleCannon extends Situation {
     constructor() {
-        super(3, 'Violet Beauregarde', PlayerType.VIOLET_BEAUREGARDE, 12);
+        super(3, 'Violet Beauregarde', PlayerType.VIOLET_BEAUREGARDE, 27);
         const game = this.game.gameplay.game;
         game.players[0].fieldIndex = 0;
         game.players[1].fieldIndex = 1;
@@ -24,6 +24,8 @@ export default class RumTruffleCannon extends Situation {
 
         this.game.ui.whitelistBuildings = [EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON];
         this.game.ui.selectedBuilding = EntityType.RUM_TRUFFLE_CANNON;
+        this.game.ui.whitelistAttacks = [AttackType.TRUFFLE];
+        this.game.ui.selectedAttacks = AttackType.TRUFFLE;
     }
     static get ui() {
         return (new RumTruffleCannon()).game.ui;

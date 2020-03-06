@@ -24,7 +24,7 @@ export default class BattlechocIntro extends Situation {
         game.players[1].hasFactory = true;
         game.players[1].buildingsPerTurn = 3;
         game.players[1].buildings = game.players[1].buildingsPerTurn;
-        this.running = false;
+        this.game.ui.selectedAttack = AttackType.TRUFFLE;
     }
     static get ui() {
         return (new BattlechocIntro()).game.ui;

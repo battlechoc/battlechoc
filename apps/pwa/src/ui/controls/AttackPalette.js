@@ -53,9 +53,9 @@ const AttackPalette = props => {
 
     let whitelist = props.whitelist;
     if (!props.tutorial) {
-        if ( props.score < 500) {
+        if ( props.score < 1 ) {
             whitelist = [AttackType.TRUFFLE];
-        } else if ( props.score < 1000) {
+        } else if ( props.score < 500) {
             whitelist = [AttackType.TRUFFLE, AttackType.BUNNY, AttackType.HOT_CHOCOLATE];
         }
     }

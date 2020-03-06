@@ -36,14 +36,13 @@ export default class Situation {
 
     getFieldAt(board, position, fieldIndex=0) { 
         return board.fields[fieldIndex].grid[position.row * board.size.cols + position.col]
-    
     }
 
     forceStop() {
         this.running = false;
     }
 
-    async build(entityType, position, pseudoGame, spawnInfo, manipulate) {
+    async build(entityType, position, pseudoGame, spawnInfo, manipulate) {  
         this.getFieldAt(pseudoGame.board, position).occupiedBy.push(createEntity(entityType));
         if (entityType === EntityType.CACAOTREE) {
             const descriptor = getEntityDescriptor(entityType);
@@ -68,6 +67,10 @@ export default class Situation {
             }
             pseudoGame.players[0].buildingsPerTurn += buildingsPerTurn;
             spawnInfo(InfoType.INCREASE_BUILDINGS_PER_TURN, position, buildingsPerTurn)
+        } else if (entityType === EntityType.SPYING_EASTER_BUNNY) {
+            pseudoGame.players[0].attacks[AttackType.BUNNY] += 1;
+            pseudoGame.players[0].attacksPerTurn[AttackType.BUNNY] += 1;
+            spawnInfo(InfoType.INCREASE_SPY_ATTACKS_PER_TURN, position, 1);
         }
         return await manipulate(pseudoGame);
     }

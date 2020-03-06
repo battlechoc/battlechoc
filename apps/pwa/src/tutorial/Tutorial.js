@@ -15,7 +15,7 @@ import LoopAnimation from './LoopAnimation';
 import { manipulateGame } from '../gameplay/GameActions';
 import { ActionValidationError, EmptyPlayerStats } from 'battlechoc-shared-functions';
 import logger from '../helper/logger';
-import { BattlechocIntro, Factory, CacaoTree, RumTruffleCannon, Cream, TutorialSituations, FactoryExtension } from'../situations/tutorial/';
+import { BattlechocIntro, Factory, CacaoTree, RumTruffleCannon, Cream, TutorialSituations, FactoryExtension, EasterBunny, XmasFactory, HotChocolateBallista, ChocolateFountain } from'../situations/tutorial/';
 
 const Tutorial = props => {
     const [page, setPage] = useState(0);
@@ -53,6 +53,14 @@ const Tutorial = props => {
                 return Cream;
             case TutorialSituations.FACTORY_EXTENSION:
                 return FactoryExtension;
+            case TutorialSituations.EASTER_BUNNY:
+                return EasterBunny;
+            case TutorialSituations.XMAS_FACTORY:
+                return XmasFactory;
+            case TutorialSituations.HOT_CHOCOLATE_BALLISTA:
+                return HotChocolateBallista;
+            case TutorialSituations.CHOCOLATE_FOUNTAIN:
+                return ChocolateFountain;
             default:
                 throw new Error(`Unkown loop ${situation}`);
         }

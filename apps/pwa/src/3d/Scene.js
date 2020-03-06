@@ -10,6 +10,7 @@ import { Scene as BabylonScene, DynamicTexture, Mesh, StandardMaterial, Directio
 import { AssetLoadingViewContainer as AssetLoadingView } from '../AssetLoader';
 import 'babylonjs-loaders';
 import logger from '../helper/logger';
+import uuidv4 from 'uuid/v4';
 
 class Scene extends Component {
 
@@ -36,12 +37,12 @@ class Scene extends Component {
             return scene;
         }
 
+        this.animations = [];
         this.scene = createScene();
         this.energyBars = [];
         this.highlightLayer = new HighlightLayer('highlightLayer', this.scene);
         this.animate = () => this.scene.render();
         window.addEventListener('resize', this.resize);
-        this.animations = [];
         this.playerGameField = null;
         this.opponentGameField = null;
         this.renderLoopRepetitions = 0;
@@ -56,6 +57,14 @@ class Scene extends Component {
         if (this.energyBars.includes(name)) {
             this.scene.stopAnimation(this.scene.getMeshByName('energy.bar.' + name));
         }
+    }
+
+    stopAllAnimations = () => {
+        for (const callback of this.animations) {
+            this.scene.stopAnimation(callback.target);
+            //callback.stopAnimation();
+        }
+        this.animations = [];
     }
 
     showEnergyBar = (entity, position, showShieldEnergyToo=false) => {
@@ -181,11 +190,18 @@ class Scene extends Component {
                 let keyframes = [{ frame: 0, value: info.position.y }, { frame: 120, value: info.position.y + 2.5 }];
                 flyaway.setKeys(keyframes);
                 info.animations = [flyaway, fade];
-                this.scene.beginAnimation(info, 0, 180, false, 1, () => {
+                const uuid = uuidv4();
+                this.animations.push({ id: uuid, target: info, stopAnimation: () => {
                     info.dispose();
                     texture.dispose();
                     material.dispose();
                     this.setRenderLoop(false);
+                    this.animations = this.animations.filter(callback => callback.id !== uuid);
+                }});
+                this.scene.beginAnimation(info, 0, 180, false, 1, () =>  {
+                    if (this.animations.findIndex(callback => callback.id === uuid) > -1) {
+                        this.animations.find(callback => callback.id === uuid).stopAnimation();
+                    }
                 });
             }
         }
@@ -377,6 +393,10 @@ class Scene extends Component {
     }
 
     playerFieldClick(row, col, position) {
+        if (this.props.tutorial) {
+            return;
+        }
+
         let player = this.props.game.players[multiplayer.localPlayerIndex]
         let buildingSelected = this.props.selectedBuilding;
         let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
@@ -481,6 +501,10 @@ class Scene extends Component {
     }
 
     opponentFieldClick(row, col, position) {
+        if (this.props.tutorial) {
+            return;
+        }
+
         if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) && this.props.game.state === GameStateTypes.ATTACK_PHASE) {
             let attack = 0;
             if (this.props.selectedAttack === AttackType.TRUFFLE) {

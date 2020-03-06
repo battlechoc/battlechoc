@@ -1,14 +1,18 @@
 export default class LoopAnimation {
     constructor(getGame, manipulate, spawnInfo, setRenderLoop, reset, loadSituation) {
         this.getGame = getGame;
-        this.manipulate = manipulate;
-        this.spawnInfo = spawnInfo;
         this.setRenderLoop = setRenderLoop;
         this.reset = reset;
         this.loadSituation = loadSituation;
         this.token = { cancel: null };
         this.running = false;
         this.next = null;
+        this.manipulate = manipulate;
+        this.spawnInfo = (...args) => {
+            if (this.running) {
+                spawnInfo(...args);
+            }
+        };
     }
 
     stop() {
