@@ -49,23 +49,31 @@ class App extends Component {
         };
     }
 
-    detonateAtPosition = (row, col) => {
+    detonateAtPosition = (row, col, playerField=true) => {
         try {
-            this.scene.detonateAtPosition(row, col, true);
-            let playerBoard = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex]
-            let selectedCell = playerBoard.grid[row * this.props.game.board.size.cols + col];
+            const position = { row: row, col: col };
+            let playerIndex = multiplayer.localPlayerIndex;
+            if (!playerField) {
+                playerIndex = 1 - playerIndex;
+                position.row -= this.scene.opponentGameFieldDistance;
+                position.col += this.scene.opponentGameFieldDistance;
+            }
 
+            this.scene.detonateAtPosition(row, col, playerField);
+            const playerBoard = this.props.game.board.fields[this.props.game.players[playerIndex].fieldIndex]
+            const selectedCell = playerBoard.grid[row * this.props.game.board.size.cols + col];
+            
             if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM && !isDonut(entity.type)).length > 0 || selectedCell.shielded) {
                 let entity = selectedCell.occupiedBy.filter(entity => !isDonut(entity.type))[0];
 
-                let entitiesWithHp = selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM && !isDonut(entity.type));
+                const entitiesWithHp = selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM && !isDonut(entity.type));
                 if (entitiesWithHp.length > 0) {
                     entity = entitiesWithHp[0];
                 }
 
-                this.scene.showEnergyBar(entity, undefined, true);
+                this.scene.showEnergyBar(entity, position, playerField);
             } else {
-                this.scene.hideEnergyBar(null, { row: row, col: col });
+                this.scene.hideEnergyBar(null, position);
             }
         } catch (error) {
             logger.warn(error);
@@ -178,6 +186,7 @@ class App extends Component {
             tutorials.push(TutorialSituations.XMAS_FACTORY);
             tutorials.push(TutorialSituations.HOT_CHOCOLATE_BALLISTA);
             tutorials.push(TutorialSituations.CHOCOLATE_FOUNTAIN);
+            tutorials.push(TutorialSituations.FRUIT_CANNON);
         } else if (score > 200) {
             tutorials.push(TutorialSituations.FACTORY_EXTENSION);
             tutorials.push(TutorialSituations.EASTER_BUNNY);
@@ -476,7 +485,7 @@ class App extends Component {
                     } else if ((score - coins) < 200 && score > 200) {
                         this.props.startTutorial([TutorialSituations.EASTER_BUNNY, TutorialSituations.XMAS_FACTORY, TutorialSituations.HOT_CHOCOLATE_BALLISTA]);
                     } else if ((score - coins) < 500 && score > 500) {
-                        this.props.startTutorial([TutorialSituations.CHOCOLATE_FOUNTAIN]);
+                        this.props.startTutorial([TutorialSituations.CHOCOLATE_FOUNTAIN, TutorialSituations.FRUIT_CANNON]);
                     } else if ((score - coins) < 1000 && score > 1000) {
                         // show "unlocked donuts, muliplayer and choclab"
                     }
@@ -564,6 +573,7 @@ class App extends Component {
                     spawnInfo={(messageType, position, amount, donutType) => this.scene.spawnInfo(messageType, position, amount, donutType)} 
                     setRenderLoop={run => this.setRenderLoop(run)} 
                     reset={async () => await this.reset()} 
+                    detonateAtPosition={this.detonateAtPosition}
                     loadSituation={async situation => await this.loadSituation(situation)} 
                     closeTutorial={this.closeTutorial} /> : null}
             </div>

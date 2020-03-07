@@ -50,10 +50,15 @@ class Scene extends Component {
     }
 
     hideEnergyBar = (position, field) => {
-        if (position === null) {
-            position = new Vector3(field.row, 6.5, field.col);
+        let height = 6.5;
+        if (this.props.tutorial) {
+            height = 5.25;
         }
-        let name = position.x + '-6.5-' + position.z;
+
+        if (position === null) {
+            position = new Vector3(field.row, height, field.col);
+        }
+        let name = `${position.x}-${height}-${position.z}`;
         if (this.energyBars.includes(name)) {
             this.scene.stopAnimation(this.scene.getMeshByName('energy.bar.' + name));
         }
@@ -62,33 +67,49 @@ class Scene extends Component {
     stopAllAnimations = () => {
         for (const callback of this.animations) {
             this.scene.stopAnimation(callback.target);
-            //callback.stopAnimation();
         }
+
+        if (this.opponentGameField) {
+            this.opponentGameField.stopAllAnimations();
+        }
+
+        if (this.playerGameField) {
+            this.playerGameField.stopAllAnimations();
+        }
+
         this.animations = [];
     }
 
     showEnergyBar = (entity, position, showShieldEnergyToo=false) => {
         if (showShieldEnergyToo) {
-            let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
-            let selectedCell = cellAt(this.props.game.board, this.props.game.players[multiplayer.localPlayerIndex].fieldIndex, entity.position.row, entity.position.col);
+            const cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
+            const selectedCell = cellAt(this.props.game.board, this.props.game.players[multiplayer.localPlayerIndex].fieldIndex, entity.position.row, entity.position.col);
             if (selectedCell.shielded) {
                 this.showEnergyBar(this.getFountain(entity.position.row, entity.position.col, this.props.game.board, this.props.game.players[multiplayer.localPlayerIndex].fieldIndex));
             }            
         }
 
-        if (typeof position === 'undefined') {
-            position = new Vector3(entity.position.row, 6.5, entity.position.col);
-        } else {
-            position.y = 6.5;
+        let height = 6.5;
+        if (this.props.tutorial) {
+            height = 5.25;
         }
-        let name = position.x + '-6.5-' + position.z;
+
+        if (typeof position === 'undefined') {
+            position = new Vector3(entity.position.row, height, entity.position.col);
+        } else if (!(position instanceof Vector3)) {
+            position = new Vector3(position.row, height, position.col);
+        } else {
+            position.y = height;
+        }
+
+        const name = `${position.x}-${height}-${position.z}`;
         this.hideEnergyBar(position);
         this.energyBars.push(name);
 
-        let energy = entity.hp / entity.max.hp;
-        let bar = MeshBuilder.CreatePlane('energy.bar.' + name, { width: energy, height: 0.15 }, this.scene);
+        const energy = entity.hp / entity.max.hp;
+        const bar = MeshBuilder.CreatePlane('energy.bar.' + name, { width: energy, height: 0.15 }, this.scene);
         bar.isPickable = false;
-        let material = new StandardMaterial('energy.bar.material.' + name, this.scene);
+        const material = new StandardMaterial('energy.bar.material.' + name, this.scene);
         if (energy < 0.3) {
             material.diffuseColor = Color3.FromHexString("#D05531");
         } else if (energy < 0.6) {
@@ -103,16 +124,25 @@ class Scene extends Component {
         bar.position.x = bar.position.x + (1 - energy) * 0.35;
         bar.position.z = bar.position.z - (1 - energy) * 0.35;
 
-        let fade = new Animation("fade", "visibility", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+        const fade = new Animation("fade", "visibility", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
         fade.setKeys([{ frame: 0, value: 1.0 }, { frame: 180, value: 0.9 }, { frame: 240, value: 0.0 }]);
 
         this.setRenderLoop();
         bar.animations = [fade];
-        this.scene.beginAnimation(bar, 0, 240, false, 1, () => {
+
+        const uuid = uuidv4();
+        this.animations.push({ id: uuid, target: bar, stopAnimation: () => {
             material.dispose();
             bar.dispose();
             this.energyBars = this.energyBars.filter(bar => bar !== name);
             this.setRenderLoop(false);
+            this.animations = this.animations.filter(callback => callback.id !== uuid);
+        }});
+
+        this.scene.beginAnimation(bar, 0, 240, false, 1,  () =>  {
+            if (this.animations.findIndex(callback => callback.id === uuid) > -1) {
+                this.animations.find(callback => callback.id === uuid).stopAnimation();
+            }
         });
     }
 

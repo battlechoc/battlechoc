@@ -71,6 +71,10 @@ export default class Situation {
             pseudoGame.players[0].attacks[AttackType.BUNNY] += 1;
             pseudoGame.players[0].attacksPerTurn[AttackType.BUNNY] += 1;
             spawnInfo(InfoType.INCREASE_SPY_ATTACKS_PER_TURN, position, 1);
+        } else if (entityType === EntityType.FRUIT_CANNON) {
+            this.getFieldAt(pseudoGame.board, position).occupiedBy = this.getFieldAt(pseudoGame.board, position).occupiedBy.filter(entity => entity.type !== EntityType.RUM_TRUFFLE_CANNON);
+            pseudoGame.players[0].attacks[AttackType.FRUIT] += 1;
+            pseudoGame.players[0].attacksPerTurn[AttackType.FRUIT] += 1;
         }
         return await manipulate(pseudoGame);
     }

@@ -15,14 +15,14 @@ import LoopAnimation from './LoopAnimation';
 import { manipulateGame } from '../gameplay/GameActions';
 import { ActionValidationError, EmptyPlayerStats } from 'battlechoc-shared-functions';
 import logger from '../helper/logger';
-import { BattlechocIntro, Factory, CacaoTree, RumTruffleCannon, Cream, TutorialSituations, FactoryExtension, EasterBunny, XmasFactory, HotChocolateBallista, ChocolateFountain } from'../situations/tutorial/';
+import { BattlechocIntro, Factory, CacaoTree, RumTruffleCannon, Cream, TutorialSituations, FactoryExtension, EasterBunny, XmasFactory, HotChocolateBallista, ChocolateFountain, FruitCannon } from'../situations/tutorial/';
 
 const Tutorial = props => {
     const [page, setPage] = useState(0);
     const [open, setOpen] = useState(false);
     const [playerHasName, setPlayerHasName] = useState(props.playerInfos.stats.username !== EmptyPlayerStats.username)
     
-    const { manipulateGame, spawnInfo, setRenderLoop, reset, loadSituation } = props;
+    const { manipulateGame, spawnInfo, setRenderLoop, reset, loadSituation, detonateAtPosition } = props;
     const manipulate = async state => {
         try {
             await manipulateGame(state);
@@ -36,7 +36,7 @@ const Tutorial = props => {
         return JSON.parse(JSON.stringify(state));
     }
     
-    const loopAnimation = useRef(new LoopAnimation(() => props.game, manipulate, spawnInfo, setRenderLoop, reset, loadSituation)) 
+    const loopAnimation = useRef(new LoopAnimation(() => props.game, manipulate, spawnInfo, setRenderLoop, reset, loadSituation, detonateAtPosition)) 
     loopAnimation.current.getGame = () => props.game;
 
     const getSituation = situation => {
@@ -61,6 +61,8 @@ const Tutorial = props => {
                 return HotChocolateBallista;
             case TutorialSituations.CHOCOLATE_FOUNTAIN:
                 return ChocolateFountain;
+            case TutorialSituations.FRUIT_CANNON:
+                return FruitCannon;
             default:
                 throw new Error(`Unkown loop ${situation}`);
         }
@@ -169,7 +171,8 @@ Tutorial.propTypes = {
     loadSituation: PropTypes.func.isRequired,
     reset: PropTypes.func.isRequired,
     setRenderLoop: PropTypes.func.isRequired,
-    spawnInfo: PropTypes.func.isRequired
+    spawnInfo: PropTypes.func.isRequired,
+    detonateAtPosition: PropTypes.func.isRequired
 }
 
 const mapStateToProps = state => ({ 

@@ -8,6 +8,7 @@ export {default as EasterBunny} from './EasterBunny';
 export {default as XmasFactory} from './XmasFactory';
 export {default as HotChocolateBallista} from './HotChocolateBallista';
 export {default as ChocolateFountain} from './ChocolateFountain';
+export {default as FruitCannon} from './FruitCannon';
 
 const TutorialSituations = Object.freeze({
     BATTLECHOC_INTRO: 'TutorialSituations.BattlechocIntro',
@@ -19,7 +20,8 @@ const TutorialSituations = Object.freeze({
     EASTER_BUNNY: 'TutorialSituation.EasterBunny',
     XMAS_FACTORY: 'TutorialSituation.XmasFactory',
     HOT_CHOCOLATE_BALLISTA: 'TutorialSituation.HotChocolateBallista',
-    CHOCOLATE_FOUNTAIN: 'TutorialSituation.ChocolateFountain'
+    CHOCOLATE_FOUNTAIN: 'TutorialSituation.ChocolateFountain',
+    FRUIT_CANNON: 'TutorialSituation.FruitCannon'
 });
 
 export { TutorialSituations };

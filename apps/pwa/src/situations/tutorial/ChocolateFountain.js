@@ -1,5 +1,5 @@
 import Situation from '../Situation';
-import { GameStateTypes, PlayerType, BoardCellTypes, EntityType, AttackType, createEntity } from 'battlechoc-shared-functions';
+import { GameStateTypes, PlayerType, BoardCellTypes, EntityType, AttackType, createEntity, getEntityDescriptor } from 'battlechoc-shared-functions';
 
 export default class ChocolateFountain extends Situation {
     constructor() {
@@ -27,6 +27,8 @@ export default class ChocolateFountain extends Situation {
         game.players[1].attacks[AttackType.TRUFFLE] = 6;
 
         game.state = GameStateTypes.BUILD_PHASE;
+        this.game.ui.whitelistBuildings = [EntityType.CHOCOLATE_FOUNTAIN];
+        this.game.ui.selectedBuilding = EntityType.CHOCOLATE_FOUNTAIN;
     }
 
     static get ui() {
@@ -45,15 +47,21 @@ export default class ChocolateFountain extends Situation {
         return 'The attacks of a Rum Truffle Cannon are very ineffective against the chocolate fountain, protecting the figures under its 3x3 field with its chocolate shield';
     }
 
-    async play(game, manipulate, spawnInfo, sleep) {
+    async play(game, manipulate, spawnInfo, sleep, detonateAtPosition) {
         this.running = true;
-        let pseudoGame = JSON.parse(JSON.stringify(game));        
+        let pseudoGame = JSON.parse(JSON.stringify(game));
         pseudoGame = await this.build(EntityType.CHOCOLATE_FOUNTAIN, { row: 1, col: 1 }, pseudoGame, spawnInfo, manipulate);
         await sleep(1500);
         if (!this.running) {
             return;
         }
 
+        for (const cell of pseudoGame.board.fields[0].grid) {
+            cell.shielded = true;
+            for (const entity of cell.occupiedBy) {
+                entity.position = {row: cell.row, col: cell.col};
+            }
+        }
         pseudoGame.state = GameStateTypes.BUILD_PHASE;
         pseudoGame.currentPlayerIndex = 1;
         pseudoGame = await manipulate(pseudoGame);
@@ -65,6 +73,34 @@ export default class ChocolateFountain extends Situation {
         pseudoGame.state = GameStateTypes.ATTACK_PHASE;
         pseudoGame = await manipulate(pseudoGame);
         await sleep(1500);
+
+        const damage = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON).attack;
+
+        pseudoGame.board.fields[0].grid[4].occupiedBy.find(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN).hp -= damage; 
+        pseudoGame = await manipulate(pseudoGame);
+        detonateAtPosition(2, 1);
+        await sleep(400);
+        pseudoGame.board.fields[0].grid[4].occupiedBy.find(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN).hp -= damage; 
+        pseudoGame = await manipulate(pseudoGame);
+        detonateAtPosition(2, 1);
+        await sleep(200);
+        pseudoGame.board.fields[0].grid[4].occupiedBy.find(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN).hp -= damage; 
+        pseudoGame = await manipulate(pseudoGame);
+        detonateAtPosition(2, 1);
+        await sleep(400);
+        pseudoGame.board.fields[0].grid[4].occupiedBy.find(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN).hp -= damage; 
+        pseudoGame = await manipulate(pseudoGame);
+        detonateAtPosition(2, 1);
+        await sleep(600);
+        pseudoGame.board.fields[0].grid[4].occupiedBy.find(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN).hp -= damage; 
+        pseudoGame = await manipulate(pseudoGame);
+        detonateAtPosition(2, 1);
+        await sleep(200);
+        pseudoGame.board.fields[0].grid[4].occupiedBy.find(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN).hp -= damage; 
+        pseudoGame = await manipulate(pseudoGame);
+        detonateAtPosition(2, 1);
+        await sleep(1000);
+
         this.running = false;
     }
 }
