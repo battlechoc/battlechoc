@@ -296,7 +296,7 @@ class Hud extends Component {
 
                         const playername = this.props.playerInfos.stats.username;
                         const score = this.props.playerInfos.stats.score
-                        const hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 2000;
+                        const hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
 
                         controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t[this.props.language].NEW_GAME : t[this.props.language].MAIN_MENU_SINGLEPLAYER}</div>);
                         
@@ -326,13 +326,11 @@ class Hud extends Component {
                                             <div className="actions">
                                                 <div className="menuButton" onClick={() => {
                                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                    this.setState({ open: false });
-                                                    this.props.prepareNewGameCallback(true);
+                                                    this.setState({ open: false }, () => this.props.prepareNewGameCallback(true));
                                                 }}>{t[this.props.language].HUD_RESUME_GAME}</div>
                                                 <div className="menuButton" onClick={() => {
                                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                    this.setState({ open: false });
-                                                    this.props.prepareNewGameCallback(false);
+                                                    this.setState({ open: false }, () => this.props.prepareNewGameCallback(false));
                                                 }}>{t[this.props.language].HUD_NEW_GAME}</div>
                                             </div>
                                         </div>

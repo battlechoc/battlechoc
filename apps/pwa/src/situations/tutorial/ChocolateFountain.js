@@ -29,6 +29,7 @@ export default class ChocolateFountain extends Situation {
         game.state = GameStateTypes.BUILD_PHASE;
         this.game.ui.whitelistBuildings = [EntityType.CHOCOLATE_FOUNTAIN];
         this.game.ui.selectedBuilding = EntityType.CHOCOLATE_FOUNTAIN;
+        this.game.ui.tappedBuilding = EntityType.CHOCOLATE_FOUNTAIN;
     }
 
     static get ui() {

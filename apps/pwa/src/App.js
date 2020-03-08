@@ -180,7 +180,15 @@ class App extends Component {
         ];
 
         const score = this.props.playerInfos.stats.score;
-        if (score > 500) {
+        if (score > 1000) {
+            tutorials.push(TutorialSituations.FACTORY_EXTENSION);
+            tutorials.push(TutorialSituations.EASTER_BUNNY);
+            tutorials.push(TutorialSituations.XMAS_FACTORY);
+            tutorials.push(TutorialSituations.HOT_CHOCOLATE_BALLISTA);
+            tutorials.push(TutorialSituations.CHOCOLATE_FOUNTAIN);
+            tutorials.push(TutorialSituations.FRUIT_CANNON);
+            tutorials.push(TutorialSituations.DONUT_FACTORY);
+        } else if (score > 500) {
             tutorials.push(TutorialSituations.FACTORY_EXTENSION);
             tutorials.push(TutorialSituations.EASTER_BUNNY);
             tutorials.push(TutorialSituations.XMAS_FACTORY);
@@ -487,7 +495,9 @@ class App extends Component {
                     } else if ((score - coins) < 500 && score > 500) {
                         this.props.startTutorial([TutorialSituations.CHOCOLATE_FOUNTAIN, TutorialSituations.FRUIT_CANNON]);
                     } else if ((score - coins) < 1000 && score > 1000) {
-                        // show "unlocked donuts, muliplayer and choclab"
+                        this.props.showQuickMessage({ text: 'Congratulations you\'ve unlocked the Choclab. This is the place for upgrading your entities!', variant: 'success'});
+                        this.props.showQuickMessage({ text: 'You have unlocked the multiplayer mode. Play against other players worldwide and reach the top of the highscore!', variant: 'success'});
+                        this.props.startTutorial([TutorialSituations.DONUT_FACTORY]);
                     }
                 }
                 multiplayer.getMultiplayerSessions();
@@ -548,12 +558,15 @@ class App extends Component {
     render() {
         return (
             <div className="app">
-                <QuickMessage
-                    open={this.props.quickMessage.show}
-                    variant={this.props.quickMessage.variant}
-                    onClose={() => this.props.hideQuickMessage()}
-                    message={this.props.quickMessage.text}
+                { this.props.quickMessages.map((message, key) => <QuickMessage
+                    open={true}
+                    key={key}
+                    position={key}
+                    variant={message.variant}
+                    onClose={() => this.props.hideQuickMessage(message.id)}
+                    message={message.text}
                 />
+                )}
 
                 {typeof this.props.game === 'undefined' ? <div id="background"></div> : null}
                 <Suspense fallback={null}>
@@ -590,7 +603,7 @@ const mapStateToProps = state => ({
     tutorial: state.ui.tutorial,
     assetsReady: state.ui.assetsReady,
     playerInfos: state.ui.playerInfos,
-    quickMessage: state.ui.quickMessage
+    quickMessages: state.ui.quickMessages
 });
 
 const mapDispatchToProps = {

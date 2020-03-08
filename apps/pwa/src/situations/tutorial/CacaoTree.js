@@ -21,6 +21,7 @@ export default class CacaoTree extends Situation {
 
         this.game.ui.whitelistBuildings = [EntityType.CACAOTREE];
         this.game.ui.selectedBuilding = EntityType.CACAOTREE;
+        this.game.ui.tappedBuilding = EntityType.CACAOTREE;
     }
     static get ui() {
         return (new CacaoTree()).game.ui;

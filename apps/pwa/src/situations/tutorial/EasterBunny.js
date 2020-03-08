@@ -27,6 +27,7 @@ export default class EasterBunny extends Situation {
 
         this.game.ui.whitelistBuildings = [EntityType.SPYING_EASTER_BUNNY];
         this.game.ui.selectedBuilding = EntityType.SPYING_EASTER_BUNNY;
+        this.game.ui.tappedBuilding = EntityType.SPYING_EASTER_BUNNY;
         this.game.ui.whitelistAttacks = [AttackType.BUNNY];
         this.game.ui.selectedAttacks = AttackType.BUNNY;
     }

@@ -27,6 +27,7 @@ export default class Cream extends Situation {
 
         this.game.ui.whitelistBuildings = [EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM];
         this.game.ui.selectedBuilding = EntityType.CREAM;
+        this.game.ui.tappedBuilding = EntityType.CREAM;
     }
     static get ui() {
         return (new Cream()).game.ui;

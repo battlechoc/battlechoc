@@ -28,6 +28,7 @@ export default class XmasFactory extends Situation {
 
         this.game.ui.whitelistBuildings = [EntityType.XMAS_FACTORY];
         this.game.ui.selectedBuilding = EntityType.XMAS_FACTORY;
+        this.game.ui.tappedBuilding = EntityType.XMAS_FACTORY;
     }
     static get ui() {
         return (new XmasFactory()).game.ui;

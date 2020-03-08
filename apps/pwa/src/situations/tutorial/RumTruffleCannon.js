@@ -24,6 +24,7 @@ export default class RumTruffleCannon extends Situation {
 
         this.game.ui.whitelistBuildings = [EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON];
         this.game.ui.selectedBuilding = EntityType.RUM_TRUFFLE_CANNON;
+        this.game.ui.tappedBuilding = EntityType.RUM_TRUFFLE_CANNON;
         this.game.ui.whitelistAttacks = [AttackType.TRUFFLE];
         this.game.ui.selectedAttacks = AttackType.TRUFFLE;
     }

@@ -18,6 +18,7 @@ export default class FactoryExtension extends Situation {
         
         this.game.ui.whitelistBuildings = [EntityType.FACTORY_EXTENSION];
         this.game.ui.selectedBuilding = EntityType.FACTORY_EXTENSION;
+        this.game.ui.tappedBuilding = EntityType.FACTORY_EXTENSION;
     }
 
     static get ui() {
