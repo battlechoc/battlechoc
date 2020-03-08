@@ -3,7 +3,7 @@ import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType } 
 
 export default class DonutFactory extends Situation {
     constructor() {
-        super(5, 'Violet Beauregarde', PlayerType.VIOLET_BEAUREGARDE, 55);
+        super(3, 'Violet Beauregarde', PlayerType.VIOLET_BEAUREGARDE, 55);
         const game = this.game.gameplay.game;
         game.players[0].fieldIndex = 0;
         game.players[1].fieldIndex = 1;
@@ -40,8 +40,17 @@ export default class DonutFactory extends Situation {
     async play(game, manipulate, spawnInfo, sleep) {
         this.running = true;
         let pseudoGame = JSON.parse(JSON.stringify(game));        
-        await this.build(EntityType.DONUT_FACTORY, { row: 2, col: 1 }, pseudoGame, spawnInfo, manipulate);
+        pseudoGame = await this.build(EntityType.DONUT_FACTORY, { row: 2, col: 1 }, pseudoGame, spawnInfo, manipulate);
         await sleep(1500);
+        pseudoGame.currentPlayerIndex = 1;
+        pseudoGame = await manipulate(pseudoGame);
+        await sleep(2500);
+        pseudoGame.currentPlayerIndex = 0;
+        pseudoGame.players[0].donuts.push(createEntity(EntityType.DONUT_PORTAL_BLUE));
+        pseudoGame.players[0].donuts.push(createEntity(EntityType.DONUT_PORTAL_RED));
+        pseudoGame = await manipulate(pseudoGame);
+        await sleep(1500);
+
         this.running = false;
     }
 }

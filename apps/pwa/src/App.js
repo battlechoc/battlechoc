@@ -188,6 +188,7 @@ class App extends Component {
             tutorials.push(TutorialSituations.CHOCOLATE_FOUNTAIN);
             tutorials.push(TutorialSituations.FRUIT_CANNON);
             tutorials.push(TutorialSituations.DONUT_FACTORY);
+            tutorials.push(TutorialSituations.DONUTS);
         } else if (score > 500) {
             tutorials.push(TutorialSituations.FACTORY_EXTENSION);
             tutorials.push(TutorialSituations.EASTER_BUNNY);
@@ -497,7 +498,7 @@ class App extends Component {
                     } else if ((score - coins) < 1000 && score > 1000) {
                         this.props.showQuickMessage({ text: 'Congratulations you\'ve unlocked the Choclab. This is the place for upgrading your entities!', variant: 'success'});
                         this.props.showQuickMessage({ text: 'You have unlocked the multiplayer mode. Play against other players worldwide and reach the top of the highscore!', variant: 'success'});
-                        this.props.startTutorial([TutorialSituations.DONUT_FACTORY]);
+                        this.props.startTutorial([TutorialSituations.DONUT_FACTORY, TutorialSituations.DONUTS]);
                     }
                 }
                 multiplayer.getMultiplayerSessions();
