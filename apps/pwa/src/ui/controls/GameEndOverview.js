@@ -64,16 +64,16 @@ const GameEndOverview = props => {
     });
     
     let statistics = props.player.statistics;
-    let awards = statistics.attacks + statistics.builtEntities * 2 + statistics.espionages * 10 + statistics.moltenFields * 50;
+    let coins = statistics.attacks + statistics.builtEntities * 2 + statistics.espionages * 10 + statistics.moltenFields * 50;
     let outcome = 'win';
 
     if (props.winners.length === 1) {
         if (props.player.id !== props.winners[0].id) {
-            awards = 0;
+            coins = 0;
             outcome = 'lost';
         }
     } else if (props.winners.length === 2) {
-        awards = Math.floor(awards / 2);
+        coins = Math.floor(coins / 2);
         outcome = 'draw';
     }
 
@@ -110,7 +110,7 @@ const GameEndOverview = props => {
                 </ul>
                 <div id="pie">
                     <div id="coins">
-                        <span className={ outcome }>{ awards }</span>
+                        <span className={ outcome }>{ coins }</span>
                         <OptimizedImage src="/images/coins.png" alt="choco coins" />
                     </div>
                 </div>
@@ -122,7 +122,7 @@ const GameEndOverview = props => {
                     color="primary"
                     aria-label="back"
                     className="icon"
-                    onClick={() => props.finishGame()}>
+                    onClick={() => props.finishGame(coins)}>
                     <ArrowBack  />
                 </Fab>
             </div>

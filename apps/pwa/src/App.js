@@ -18,7 +18,7 @@ import uuidv4 from 'uuid/v4';
 import Tutorial from './tutorial/Tutorial';
 import QuickMessage from './ui/dialogs/QuickMessage';
 import logger from './helper/logger';
-
+import { TutorialSituations } from'./situations/tutorial/';
 const Scene = React.lazy(() => import('./3d/Scene'));
 
 class App extends Component {
@@ -49,23 +49,31 @@ class App extends Component {
         };
     }
 
-    detonateAtPosition = (row, col) => {
+    detonateAtPosition = (row, col, playerField=true) => {
         try {
-            this.scene.detonateAtPosition(row, col, true);
-            let playerBoard = this.props.game.board.fields[this.props.game.players[multiplayer.localPlayerIndex].fieldIndex]
-            let selectedCell = playerBoard.grid[row * this.props.game.board.size.cols + col];
+            const position = { row: row, col: col };
+            let playerIndex = multiplayer.localPlayerIndex;
+            if (!playerField) {
+                playerIndex = 1 - playerIndex;
+                position.row -= this.scene.opponentGameFieldDistance;
+                position.col += this.scene.opponentGameFieldDistance;
+            }
 
+            this.scene.detonateAtPosition(row, col, playerField);
+            const playerBoard = this.props.game.board.fields[this.props.game.players[playerIndex].fieldIndex]
+            const selectedCell = playerBoard.grid[row * this.props.game.board.size.cols + col];
+            
             if (selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM && !isDonut(entity.type)).length > 0 || selectedCell.shielded) {
                 let entity = selectedCell.occupiedBy.filter(entity => !isDonut(entity.type))[0];
 
-                let entitiesWithHp = selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM && !isDonut(entity.type));
+                const entitiesWithHp = selectedCell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM && !isDonut(entity.type));
                 if (entitiesWithHp.length > 0) {
                     entity = entitiesWithHp[0];
                 }
 
-                this.scene.showEnergyBar(entity, undefined, true);
+                this.scene.showEnergyBar(entity, position, playerField);
             } else {
-                this.scene.hideEnergyBar(null, { row: row, col: col });
+                this.scene.hideEnergyBar(null, position);
             }
         } catch (error) {
             logger.warn(error);
@@ -148,6 +156,58 @@ class App extends Component {
         }
     }
 
+    calculateHandicap = score => {
+        if (score < 1) {
+            return 4;
+        } else if (score < 200) {
+            return 3;
+        } else if (score < 500) {
+            return 2;
+        } else if (score < 1000) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    availableTutorials = () => {
+        const tutorials = [
+            TutorialSituations.BATTLECHOC_INTRO, 
+            TutorialSituations.FACTORY, 
+            TutorialSituations.CACAO_TREE, 
+            TutorialSituations.RUM_TRUFFLE_CANNON, 
+            TutorialSituations.CREAM
+        ];
+
+        const score = this.props.playerInfos.stats.score;
+        if (score > 1000) {
+            tutorials.push(TutorialSituations.FACTORY_EXTENSION);
+            tutorials.push(TutorialSituations.EASTER_BUNNY);
+            tutorials.push(TutorialSituations.XMAS_FACTORY);
+            tutorials.push(TutorialSituations.HOT_CHOCOLATE_BALLISTA);
+            tutorials.push(TutorialSituations.CHOCOLATE_FOUNTAIN);
+            tutorials.push(TutorialSituations.FRUIT_CANNON);
+            tutorials.push(TutorialSituations.DONUT_FACTORY);
+            tutorials.push(TutorialSituations.DONUTS);
+        } else if (score > 500) {
+            tutorials.push(TutorialSituations.FACTORY_EXTENSION);
+            tutorials.push(TutorialSituations.EASTER_BUNNY);
+            tutorials.push(TutorialSituations.XMAS_FACTORY);
+            tutorials.push(TutorialSituations.HOT_CHOCOLATE_BALLISTA);
+            tutorials.push(TutorialSituations.CHOCOLATE_FOUNTAIN);
+            tutorials.push(TutorialSituations.FRUIT_CANNON);
+        } else if (score > 200) {
+            tutorials.push(TutorialSituations.FACTORY_EXTENSION);
+            tutorials.push(TutorialSituations.EASTER_BUNNY);
+            tutorials.push(TutorialSituations.XMAS_FACTORY);
+            tutorials.push(TutorialSituations.HOT_CHOCOLATE_BALLISTA);
+        } else if (score > 0) {
+            tutorials.push(TutorialSituations.FACTORY_EXTENSION);
+        }
+
+        return tutorials;
+    }
+
     async loadSituation(situation) {
         if (this.props.tutorial) {
             this.opponent = new Violet({
@@ -163,7 +223,7 @@ class App extends Component {
                 attack: this.props.attack,
                 finishTurn: this.props.finishTurn,
                 finishBuildPhase: this.props.finishBuildPhase
-            });
+            }, this.calculateHandicap(this.props.playerInfos.stats.score));
         }
 
         if (typeof this.props.game !== 'undefined') {
@@ -173,16 +233,14 @@ class App extends Component {
             await this.props.resetUi();
         }
 
-        this.props.resumeGame(situation.gameplay).then(() => {
-            this.opponent.player = this.props.game.players[1];
-            this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
-            this.props.loadUiState(situation.ui).then(() => {
-                this.setState({ situation: undefined }, () => {
-                    if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
-                        this.scene.startGame(this.props.game, false);
-                    }
-                });
-            });
+        await this.props.resumeGame(situation.gameplay);
+        this.opponent.player = this.props.game.players[1];
+        this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
+        await this.props.loadUiState(situation.ui);
+        this.setState({ situation: undefined }, () => {
+            if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
+                this.scene.startGame(this.props.game, false);
+            }
         });
     }
 
@@ -266,6 +324,10 @@ class App extends Component {
                 ( multiplayer.isLocalPlayer(prevProps.game.currentPlayerIndex) !== multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)
                 || ( prevProps.game.state === GameStateTypes.BUILD_PHASE && this.props.game.state === GameStateTypes.ATTACK_PHASE ))) {
                 this.props.toggleDonutHighlighting(false);
+            }
+
+            if (this.props.tutorial) {
+                return;
             }
 
             if (gameTransition === GameTransitions.OPPONENT_HAS_CHOSEN_START) {
@@ -375,7 +437,7 @@ class App extends Component {
                     }
                 });
             } else {
-                OfflineStore.getResumeableGame().then((resumeableGame) => {
+                OfflineStore.getResumeableGame().then(resumeableGame => {
                     this.opponent = new Augustus({
                         chooseStart: this.props.chooseStart,
                         chooseField: this.props.chooseField,
@@ -383,7 +445,7 @@ class App extends Component {
                         attack: this.props.attack,
                         finishTurn: this.props.finishTurn,
                         finishBuildPhase: this.props.finishBuildPhase
-                    });
+                    }, this.calculateHandicap(this.props.playerInfos.stats.score));
                     if (typeof resumeableGame !== 'undefined' && resumeGame) {
                         this.props.resumeGame(resumeableGame.gameplay).then(() => {
                             this.opponent.player = resumeableGame.gameplay.players[1];
@@ -407,7 +469,7 @@ class App extends Component {
                             this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
                             this.props.createBoard({
                                 boardSize: { rows: 10, cols: 10 },
-                                boardSeed: 42
+                                boardSeed: Math.floor(Math.random * 1000000)
                             });
                         });
                     }
@@ -416,7 +478,7 @@ class App extends Component {
         }
     }
 
-    endGame() {
+    endGame(coins) {
         if (!this.props.tutorial) {
             Jukebox.stopMusic(true);
             setTimeout(() => {
@@ -424,6 +486,21 @@ class App extends Component {
                 this.props.resetUi();
                 multiplayer.reset();
                 this.scene.clear();
+
+                const score = this.props.playerInfos.stats.score;
+                if (typeof coins !== 'undefined' && coins > 0) {
+                    if (score - coins === 0) {
+                        this.props.startTutorial([TutorialSituations.FACTORY_EXTENSION]);
+                    } else if ((score - coins) < 200 && score > 200) {
+                        this.props.startTutorial([TutorialSituations.EASTER_BUNNY, TutorialSituations.XMAS_FACTORY, TutorialSituations.HOT_CHOCOLATE_BALLISTA]);
+                    } else if ((score - coins) < 500 && score > 500) {
+                        this.props.startTutorial([TutorialSituations.CHOCOLATE_FOUNTAIN, TutorialSituations.FRUIT_CANNON]);
+                    } else if ((score - coins) < 1000 && score > 1000) {
+                        this.props.showQuickMessage({ text: 'Congratulations you\'ve unlocked the Choclab. This is the place for upgrading your entities!', variant: 'success'});
+                        this.props.showQuickMessage({ text: 'You have unlocked the multiplayer mode. Play against other players worldwide and reach the top of the highscore!', variant: 'success'});
+                        this.props.startTutorial([TutorialSituations.DONUT_FACTORY, TutorialSituations.DONUTS]);
+                    }
+                }
                 multiplayer.getMultiplayerSessions();
             }, 1000);
         }
@@ -447,16 +524,25 @@ class App extends Component {
         multiplayer.pushGameStats([stats]);
     }
 
-    closeTutorial = (startGame) => {
+    async reset() {
+        if (typeof this.props.game !== 'undefined') {
+            this.scene.stopAllAnimations();
+            this.scene.clear();
+            await this.props.finishGame();
+            await this.props.resetUi();
+        }
+    }
+
+    setRenderLoop(run) {
+        this.scene.setRenderLoop(run);
+    }
+
+    closeTutorial = async startGame => {
         this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
 
         Jukebox.stopMusic(true);
         this.props.stopTutorial();
-        if (typeof this.props.game !== 'undefined') {
-            this.props.finishGame();
-            this.props.resetUi();
-            this.scene.clear();
-        }
+        await this.reset();
 
         if (startGame) {
             this.hud.unlockUi();
@@ -467,18 +553,21 @@ class App extends Component {
     startTutorial() {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
-        this.props.startTutorial();
+        this.props.startTutorial(this.availableTutorials());
     }
 
     render() {
         return (
             <div className="app">
-                <QuickMessage
-                    open={this.props.quickMessage.show}
-                    variant={this.props.quickMessage.variant}
-                    onClose={() => this.props.hideQuickMessage()}
-                    message={this.props.quickMessage.text}
+                { this.props.quickMessages.map((message, key) => <QuickMessage
+                    open={true}
+                    key={key}
+                    position={key}
+                    variant={message.variant}
+                    onClose={() => this.props.hideQuickMessage(message.id)}
+                    message={message.text}
                 />
+                )}
 
                 {typeof this.props.game === 'undefined' ? <div id="background"></div> : null}
                 <Suspense fallback={null}>
@@ -488,13 +577,19 @@ class App extends Component {
                     enterMultiplayerGame={this.enterMultiplayerGame}
                     startTutorial={() => this.startTutorial()}
                     className={this.props.tutorial ? 'tutorial hud' : 'hud'}
-                    endGame={() => this.endGame()}
+                    endGame={coins => this.endGame(coins)}
                     surrender={() => this.surrender()}
                     onRef={hud => this.hud = hud}
                     challengedPlayer={this.state.player}
                     openInfo={this.state.openInfo}
                     sessionId={this.state.session} />
-                {this.props.tutorial ? <Tutorial loadSituation={situation => this.loadSituation(situation)} closeTutorial={this.closeTutorial} /> : null}
+                {this.props.tutorial ? <Tutorial 
+                    spawnInfo={(messageType, position, amount, donutType) => this.scene.spawnInfo(messageType, position, amount, donutType)} 
+                    setRenderLoop={run => this.setRenderLoop(run)} 
+                    reset={async () => await this.reset()} 
+                    detonateAtPosition={this.detonateAtPosition}
+                    loadSituation={async situation => await this.loadSituation(situation)} 
+                    closeTutorial={this.closeTutorial} /> : null}
             </div>
         );
     }
@@ -509,7 +604,7 @@ const mapStateToProps = state => ({
     tutorial: state.ui.tutorial,
     assetsReady: state.ui.assetsReady,
     playerInfos: state.ui.playerInfos,
-    quickMessage: state.ui.quickMessage
+    quickMessages: state.ui.quickMessages
 });
 
 const mapDispatchToProps = {

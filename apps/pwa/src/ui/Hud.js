@@ -294,10 +294,11 @@ class Hud extends Component {
                     if (stage === 'TITLE_SCREEN') {
                         let controls = []
 
-                        let playername = this.props.playerInfos.stats.username;
-                        let hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous';
+                        const playername = this.props.playerInfos.stats.username;
+                        const score = this.props.playerInfos.stats.score
+                        const hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
 
-                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>{hideOptions ? t[this.props.language].NEW_GAME : t[this.props.language].MAIN_MENU_SINGLEPLAYER}</div>);
+                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t[this.props.language].NEW_GAME : t[this.props.language].MAIN_MENU_SINGLEPLAYER}</div>);
                         
                         if (!hideOptions) {
                             controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>{t[this.props.language].MAIN_MENU_MULTIPLAYER}</div>);
@@ -325,13 +326,11 @@ class Hud extends Component {
                                             <div className="actions">
                                                 <div className="menuButton" onClick={() => {
                                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                    this.setState({ open: false });
-                                                    this.props.prepareNewGameCallback(true);
+                                                    this.setState({ open: false }, () => this.props.prepareNewGameCallback(true));
                                                 }}>{t[this.props.language].HUD_RESUME_GAME}</div>
                                                 <div className="menuButton" onClick={() => {
                                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                    this.setState({ open: false });
-                                                    this.props.prepareNewGameCallback(false);
+                                                    this.setState({ open: false }, () => this.props.prepareNewGameCallback(false));
                                                 }}>{t[this.props.language].HUD_NEW_GAME}</div>
                                             </div>
                                         </div>
@@ -375,7 +374,7 @@ class Hud extends Component {
                                 <AttackPalette />
                                 <BuildingPalette />
                                 <InfoPanel players={this.props.game.players} />
-                                {this.props.overviewVisible ? <GameEndOverview player={player} winners={this.props.game.winners} language={this.props.language} finishGame={() => this.props.endGame()} /> : null}
+                                {this.props.overviewVisible ? <GameEndOverview player={player} winners={this.props.game.winners} language={this.props.language} finishGame={coins => this.props.endGame(coins)} /> : null}
                             </div>
                         )
                     }
