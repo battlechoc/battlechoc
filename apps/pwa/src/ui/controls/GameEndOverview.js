@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import './GameEndOverview.css';
 import { ArrowBack } from '@material-ui/icons';
 import Fab from '@material-ui/core/Fab';
-import { Translation as t } from '../misc';
+import { translate as t } from '../misc';
 import { OptimizedImage } from '../../helper/compatibility';
 
 const useMountEffect = effect => useEffect(effect, [])
@@ -64,26 +64,26 @@ const GameEndOverview = props => {
     });
     
     let statistics = props.player.statistics;
-    let awards = statistics.attacks + statistics.builtEntities * 2 + statistics.espionages * 10 + statistics.moltenFields * 50;
+    let coins = statistics.attacks + statistics.builtEntities * 2 + statistics.espionages * 10 + statistics.moltenFields * 50;
     let outcome = 'win';
 
     if (props.winners.length === 1) {
         if (props.player.id !== props.winners[0].id) {
-            awards = 0;
+            coins = 0;
             outcome = 'lost';
         }
     } else if (props.winners.length === 2) {
-        awards = Math.floor(awards / 2);
+        coins = Math.floor(coins / 2);
         outcome = 'draw';
     }
 
-    let headine = t[props.language].MESSAGE_WIN_GAME
+    let headine = t('MESSAGE_WIN_GAME');
     if (props.winners.length === 1) {
         if (props.player.id !== props.winners[0].id) {
-            headine = t[props.language].MESSAGE_LOST_GAME;
+            headine = t('MESSAGE_LOST_GAME');
         }
     } else if (props.winners.length === 2) {
-        headine = t[props.language].MESSAGE_DRAW_GAME;
+        headine = t('MESSAGE_DRAW_GAME');
     }
 
     return (
@@ -92,25 +92,25 @@ const GameEndOverview = props => {
             <div className="statistics">                    
                 <ul className="legend">
                     <li>
-                        <em>{t[props.language].GAME_END_OVERVIEW_ATTACKS}</em>
+                        <em>{t('GAME_END_OVERVIEW_ATTACKS')}</em>
                         <span className="amount">{ statistics.attacks }</span>
                     </li>
                     <li>
-                        <em>{t[props.language].GAME_END_OVERVIEW_ENTITIES}</em>
+                        <em>{t('GAME_END_OVERVIEW_ENTITIES')}</em>
                         <span><span className="amount">{ statistics.builtEntities }</span><b>&times; 2</b></span>
                     </li>
                     <li>
-                        <em>{t[props.language].GAME_END_OVERVIEW_ESPIONAGES}</em>
+                        <em>{t('GAME_END_OVERVIEW_ESPIONAGES')}</em>
                         <span><span className="amount">{ statistics.espionages }</span><b>&times; 10</b></span>
                     </li>
                     <li>
-                        <em>{t[props.language].GAME_END_OVERVIEW_MOLTEN_FIELDS}</em>
+                        <em>{t('GAME_END_OVERVIEW_MOLTEN_FIELDS')}</em>
                         <span><span className="amount">{ statistics.moltenFields }</span><b>&times; 50</b></span>
                     </li>
                 </ul>
                 <div id="pie">
                     <div id="coins">
-                        <span className={ outcome }>{ awards }</span>
+                        <span className={ outcome }>{ coins }</span>
                         <OptimizedImage src="/images/coins.png" alt="choco coins" />
                     </div>
                 </div>
@@ -122,7 +122,7 @@ const GameEndOverview = props => {
                     color="primary"
                     aria-label="back"
                     className="icon"
-                    onClick={() => props.finishGame()}>
+                    onClick={() => props.finishGame(coins)}>
                     <ArrowBack  />
                 </Fab>
             </div>
@@ -133,8 +133,7 @@ const GameEndOverview = props => {
 GameEndOverview.propTypes = {
     finishGame: PropTypes.func.isRequired,
     winners: PropTypes.array.isRequired,
-    player: PropTypes.object.isRequired,
-    language: PropTypes.string.isRequired
+    player: PropTypes.object.isRequired
 };
 
 export default GameEndOverview;

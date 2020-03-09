@@ -8,7 +8,7 @@ import ExpansionPanel from '@material-ui/core/ExpansionPanel';
 import MuiExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import MuiExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import Typography from '@material-ui/core/Typography';
-import { Translation as t } from '../misc';
+import { translate as t } from '../misc';
 
 const ExpansionPanelSummary = withStyles(theme => ({
     root: {
@@ -49,27 +49,27 @@ const Tooltip = props => {
     let title = null, message = null;
 
     if (props.state === GameStateTypes.CHOOSE_FIELD_OR_START) {
-        title = t[props.language].TOOLTIP_INITIAL_TURN_TITLE;
+        title = t('TOOLTIP_INITIAL_TURN_TITLE');
         if (props.playerTurn) {
-            message = t[props.language].TOOLTIP_INITIAL_TURN_MESSAGE;
+            message = t('TOOLTIP_INITIAL_TURN_MESSAGE');
         }
     } else if (props.state === GameStateTypes.CHOOSE_FIELD) {
-        title = t[props.language].TOOLTIP_INITIAL_TURN_TITLE;
-        message = t[props.language].TOOLTIP_INITIAL_TURN_OPPONENT(props.currentPlayerName);
+        title = t('TOOLTIP_INITIAL_TURN_TITLE');
+        message = t('TOOLTIP_INITIAL_TURN_OPPONENT', props.currentPlayerName);
     } else if (props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
-        title = t[props.language].TOOLTIP_INITIAL_PLACEMENT_TITLE;
+        title = t('TOOLTIP_INITIAL_PLACEMENT_TITLE');
         if (props.playerTurn) {
-            message = t[props.language].TOOLTIP_INITIAL_PLACEMENT_MESSAGE;
+            message = t('TOOLTIP_INITIAL_PLACEMENT_MESSAGE');
         }
     } else if (props.state === GameStateTypes.BUILD_PHASE) {
-        title = t[props.language].TOOLTIP_BUILD_PHASE_TITLE;
+        title = t('TOOLTIP_BUILD_PHASE_TITLE');
         if (props.playerTurn) {
             if (typeof props.tappedBuilding === 'undefined') {
-                message = t[props.language].TOOLTIP_BUILD_PHASE_MESSAGE;
+                message = t('TOOLTIP_BUILD_PHASE_MESSAGE');
             } else {
                 let building = getEntityDescriptor(props.tappedBuilding, props.level);
-                let { info, costs, advantages } = t[props.language].TOOLTIP_BUILDING_INFO(props.tappedBuilding, building);
-                title = t[props.language].TOOLTIP_BUILDING_TITLE(props.tappedBuilding);
+                let { info, costs, advantages } = t('TOOLTIP_BUILDING_INFO', props.tappedBuilding, building);
+                title = t('TOOLTIP_BUILDING_TITLE', props.tappedBuilding);
                 message = <span className="tooltipBuildingInfo">
                     <span>{info}</span>
                     {typeof costs !== 'undefined' ? <span>{costs}</span> : null}
@@ -78,13 +78,13 @@ const Tooltip = props => {
             }
         }
     } else if (props.state === GameStateTypes.ATTACK_PHASE) {
-        title = t[props.language].TOOLTIP_ATTACK_PHASE_TITLE;
+        title = t('TOOLTIP_ATTACK_PHASE_TITLE');
         if (props.playerTurn) {
             if (typeof props.selectedAttack !== 'undefined') {
-                title = t[props.language].TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE(props.selectedAttack);
-                message = t[props.language].TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE(props.selectedAttack);
+                title = t('TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE', props.selectedAttack);
+                message = t('TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE', props.selectedAttack);
             } else {
-                message = t[props.language].TOOLTIP_ATTACK_PHASE_MESSAGE;
+                message = t('TOOLTIP_ATTACK_PHASE_MESSAGE');
             }
         }
     }
@@ -116,7 +116,6 @@ const Tooltip = props => {
 Tooltip.propTypes = {
   state: PropTypes.string.isRequired,
   currentPlayerName: PropTypes.string.isRequired,
-  language: PropTypes.string.isRequired,
   tappedBuilding: PropTypes.string,
   selectedAttack: PropTypes.string,
   level: PropTypes.object.isRequired,

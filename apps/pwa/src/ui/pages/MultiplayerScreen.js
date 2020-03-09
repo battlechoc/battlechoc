@@ -4,8 +4,7 @@ import './MultiplayerScreen.css';
 import TextField from '@material-ui/core/TextField';
 import Fab from '@material-ui/core/Fab';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { Jukebox, Translation as t } from '../misc';
-import { translate as tt } from '../misc/Translation';
+import { Jukebox, translate as t, getCurrentLanguage } from '../misc';
 import Axios from 'axios';
 import { showQuickMessage } from '../UiActions';
 import { PlayArrow, ChevronRight, LastPage, FirstPage, ChevronLeft, HourglassEmpty, Cancel, AccountCircle, FormatListNumbered, Casino, People, Search, Share } from '@material-ui/icons';
@@ -18,7 +17,7 @@ import { ServerRequest } from '../../helper/settings';
 import logger from '../../helper/logger';
 import BattlechocDialog from '../dialogs/BattlechocDialog';
 import PlayerList from '../controls/PlayerList';
-import { NoHealthyInternetConnectionError, EntityType } from 'battlechoc-shared-functions';
+import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
 
 class MultiplayerScreen extends Component {
     constructor(props) {
@@ -43,20 +42,16 @@ class MultiplayerScreen extends Component {
         this.source = Axios.CancelToken.source();
         this.inputRef = React.createRef();
         this.requestRunning = false;
-
-        console.log(tt("NEW_GAME"));
-        console.log(tt("TOOLTIP_BUILDING_TITLE", EntityType.CREAM));
-        console.log(t.testtest("NEW_GAME"));
     }
 
     componentDidMount() {
         this.props.onRef(this);
-        multiplayer.getMultiplayerSessions(() => this.props.showQuickMessage({ text: t[this.props.language].SESSION_REFRESH_FAILED}));
+        multiplayer.getMultiplayerSessions(() => this.props.showQuickMessage({ text: t('SESSION_REFRESH_FAILED')}));
         multiplayer.fetchFriendsList();
 
         this.shouldAskForPermissionTimeout = setTimeout(() => {
             if (multiplayer.shouldAskForNotificationPermission()) {
-                this.props.showQuickMessage({ text: t[this.props.language].NOTIFICATION_PERMISSION_INFO, variant: 'info' });
+                this.props.showQuickMessage({ text: t('NOTIFICATION_PERMISSION_INFO'), variant: 'info' });
                 this.askForPermissionTimeout = setTimeout(() => multiplayer.askForNotificationPermission(), 5000);
             }
         }, 2000);
@@ -90,7 +85,7 @@ class MultiplayerScreen extends Component {
     timeAgo(millis) {
         let timeAgo = new TimeAgo('en-US');
 
-        if (this.props.language === 'de') {
+        if (getCurrentLanguage() === 'de') {
             timeAgo = new TimeAgo('de-DE');
         }
         
@@ -217,7 +212,7 @@ class MultiplayerScreen extends Component {
                 });
             } catch (error) {
                 logger.warn(error);
-                this.props.showQuickMessage({ text: t[this.props.language].FETCH_HIGHSCORE_FAILED});
+                this.props.showQuickMessage({ text: t('FETCH_HIGHSCORE_FAILED')});
                 this.setState({ showHighscore: false, highscoreLoading: false });
             }
         });
@@ -229,28 +224,27 @@ class MultiplayerScreen extends Component {
                 <BattlechocDialog
                     open={this.state.showSurrenderDialog}
                     close={() => this.setState({ showSurrenderDialog: false })}
-                    title={t[this.props.language].SURRENDER_GAME}>
+                    title={t('SURRENDER_GAME')}>
                     <div className="surrenderDialog">
-                        <p>{t[this.props.language].SURRENDER_GAME_TEXT(this.state.surrenderOpponentName)}</p>
+                        <p>{t('SURRENDER_GAME_TEXT', this.state.surrenderOpponentName)}</p>
                         <div className="menuButton" onClick={() => {
                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                             this.setState({ showSurrenderDialog: false, surrenderGameId: undefined, surrenderOpponentName: undefined });
                             this.surrenderGame(this.state.surrenderGameId);
-                        }}>{t[this.props.language].SURRENDER}</div>
+                        }}>{t('SURRENDER')}</div>
                     </div>
                 </BattlechocDialog>
 
                 <BattlechocDialog
                     open={this.state.showFriends}
                     close={() => this.setState({ showFriends: false })}
-                    title={t[this.props.language].FRIENDS}>
+                    title={t('FRIENDS')}>
                     <PlayerList 
                         players={this.props.friends} 
                         removeFriend={this.removeFriend}
                         challenge={this.challengePlayer}
                         showProfile={this.showPlayerProfile}
-                        sessions={this.props.multiplayerSessions}
-                        language={this.props.language} />
+                        sessions={this.props.multiplayerSessions} />
                 </BattlechocDialog>
 
                 <BattlechocDialog
@@ -277,7 +271,7 @@ class MultiplayerScreen extends Component {
                                     <ChevronLeft />
                                 </Fab>
                             </div>
-                            { this.state.highscoreLoading ? <CircularProgress size={22} /> : <span style={{color: '#324D5C'}}>{t[this.props.language].ACCOUNT_OVERVIEW_RANK} {this.state.highscore.length > 0 ? `${this.state.highscore[0].ranking} - ${this.state.highscore[this.state.highscore.length - 1].ranking}` : '1 - 1'}</span> }
+                            { this.state.highscoreLoading ? <CircularProgress size={22} /> : <span style={{color: '#324D5C'}}>{t('ACCOUNT_OVERVIEW_RANK')} {this.state.highscore.length > 0 ? `${this.state.highscore[0].ranking} - ${this.state.highscore[this.state.highscore.length - 1].ranking}` : '1 - 1'}</span> }
                             <div>
                                 <Fab
                                     size="small"
@@ -308,21 +302,20 @@ class MultiplayerScreen extends Component {
                             addFriend={this.addFriend}
                             challenge={this.challengePlayer}
                             showProfile={this.showPlayerProfile}
-                            sessions={this.props.multiplayerSessions}
-                            language={this.props.language} /> }
+                            sessions={this.props.multiplayerSessions} /> }
                     </div>
                 </BattlechocDialog>
 
                 <BattlechocDialog
                     open={this.state.showSearch}
                     close={() => this.setState({ showSearch: false })}
-                    title={t[this.props.language].SEARCH_PLAYERS}>
+                    title={t('SEARCH_PLAYERS')}>
                     <div className="playerSearchDialog">
                         <TextField
                             label="Name"
                             value={this.state.userSearchText}
                             error={this.state.badInternetConnection && !this.state.waitForResponse}
-                            helperText={this.state.badInternetConnection && !this.state.waitForResponse ? t[this.props.language].NO_HEALTHY_INTERNET : ''}
+                            helperText={this.state.badInternetConnection && !this.state.waitForResponse ? t('NO_HEALTHY_INTERNET') : ''}
                             style={{display: 'flex'}}
                             inputProps={{ spellCheck: 'false', autoFocus: true }}
                             InputLabelProps={{ style: {color: 'rgba(69, 123, 130, 0.8)' }}}
@@ -342,8 +335,7 @@ class MultiplayerScreen extends Component {
                             removeFriend={this.removeFriend}
                             challenge={this.challengePlayer}
                             showProfile={this.showPlayerProfile}
-                            sessions={this.props.multiplayerSessions}
-                            language={this.props.language} />
+                            sessions={this.props.multiplayerSessions} />
                     </div>
                 </BattlechocDialog>
                 
@@ -351,11 +343,11 @@ class MultiplayerScreen extends Component {
                     { this.props.multiplayerSessions.length > 0 ?
                     <div className="openGames">
                     <div className="gamestable">
-                        <div className="tableHead">{t[this.props.language].ACTIONS}</div>
-                        <div className="tableHead">{t[this.props.language].OPPONENT}</div>
-                        <div className="tableHead">{t[this.props.language].TURNS}</div>
-                        <div className="tableHead">{t[this.props.language].LAST_ACTION}</div>
-                        <div className="tableHead">{t[this.props.language].POTENTIAL_COINS}</div>
+                        <div className="tableHead">{t('ACTIONS')}</div>
+                        <div className="tableHead">{t('OPPONENT')}</div>
+                        <div className="tableHead">{t('TURNS')}</div>
+                        <div className="tableHead">{t('LAST_ACTION')}</div>
+                        <div className="tableHead">{t('POTENTIAL_COINS')}</div>
 
                         {Object.assign([], this.props.multiplayerSessions).sort(this.sortByTimestamp).map((row, i) => {
                             let joinGameIcon = <HourglassEmpty onClick={() => this.props.enterMultiplayerGame(row.id)} />;
@@ -372,14 +364,14 @@ class MultiplayerScreen extends Component {
                         })}
                     </div></div> : 
                     <div className="no-sessions-info">
-                        <h4>{t[this.props.language].MULTIPLAYER_INFO_HEADER}</h4>
-                        <p>{t[this.props.language].MULTIPLAYER_INFO_HEADER2}</p>
+                        <h4>{t('MULTIPLAYER_INFO_HEADER')}</h4>
+                        <p>{t('MULTIPLAYER_INFO_HEADER2')}</p>
                         <ul>
-                            <li><Casino />{t[this.props.language].MULTIPLAYER_INFO_CASINO}</li>
-                            <li><People />{t[this.props.language].MULTIPLAYER_INFO_FRIENDS}</li>
-                            <li><Share />{t[this.props.language].MULTIPLAYER_INFO_SHARE}</li>
-                            <li><Search />{t[this.props.language].MULTIPLAYER_INFO_SEARCH}</li>
-                            <li><FormatListNumbered />{t[this.props.language].MULTIPLAYER_INFO_HIGHSCORE}</li>
+                            <li><Casino />{t('MULTIPLAYER_INFO_CASINO')}</li>
+                            <li><People />{t('MULTIPLAYER_INFO_FRIENDS')}</li>
+                            <li><Share />{t('MULTIPLAYER_INFO_SHARE')}</li>
+                            <li><Search />{t('MULTIPLAYER_INFO_SEARCH')}</li>
+                            <li><FormatListNumbered />{t('MULTIPLAYER_INFO_HIGHSCORE')}</li>
                         </ul>
                     </div> }
                 </div> }
@@ -394,7 +386,6 @@ MultiplayerScreen.propTypes = {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
-    language: state.ui.language,
     multiplayerSessions: state.ui.multiplayerSessions,
     friends: state.ui.friends,
     account: state.ui.playerInfos.stats,

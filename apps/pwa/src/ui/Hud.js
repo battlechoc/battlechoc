@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { GameStateTypes } from 'battlechoc-shared-functions';
 import { showQuickMessage } from './UiActions';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
-import { Jukebox, Translation as t } from './misc';
+import { Jukebox, translate as t } from './misc';
 import { Info, Tooltip, Settings, AccountOverview } from './dialogs';
 import BattlechocDialog from './dialogs/BattlechocDialog';
 import Fab from '@material-ui/core/Fab';
@@ -31,7 +31,7 @@ class Hud extends Component {
             upgradeMessageOpen: false,
             multiplayerScreen: false,
             waitingRoom: false,
-            waitingRoomText: t[props.language].TRY_TO_JOIN_GAME,
+            waitingRoomText: t('TRY_TO_JOIN_GAME'),
             choclabScreen: false,
             searchingRandomOpponent: false
         }
@@ -52,7 +52,7 @@ class Hud extends Component {
         this.props.onRef(this);
 
         if (typeof this.props.challengedPlayer !== 'undefined') {
-            this.setState({ waitingRoom: true, waitingRoomText: t[this.props.language].TRY_TO_SHOW_PLAYER_ACCOUNT }, async () => {
+            this.setState({ waitingRoom: true, waitingRoomText: t('TRY_TO_SHOW_PLAYER_ACCOUNT') }, async () => {
                 try {
                     while (!firebase.auth().currentUser) {
                         await this.sleep(100);
@@ -62,7 +62,7 @@ class Hud extends Component {
                 } catch (error) {
                     if (error.response) {
                         if (error.response.status === 404) {
-                            this.props.showQuickMessage({ text: t[this.props.language].WARNING_PLAYER_NOT_FOUND(this.props.challengedPlayer) });
+                            this.props.showQuickMessage({ text: t('WARNING_PLAYER_NOT_FOUND', this.props.challengedPlayer) });
                         } else {
                             logger.warn(error, error.response.toString());
                         }
@@ -76,7 +76,7 @@ class Hud extends Component {
         }
 
         if (typeof this.props.sessionId !== 'undefined') {
-            this.setState({ waitingRoom: true, waitingRoomText: t[this.props.language].TRY_TO_JOIN_GAME }, async () => {
+            this.setState({ waitingRoom: true, waitingRoomText: t('TRY_TO_JOIN_GAME') }, async () => {
                 try {
                     let sessions = undefined;
                     let retry = false;
@@ -92,11 +92,11 @@ class Hud extends Component {
                         this.joinGame(sessions[0].id);
                     } else {
                         logger.warn(`${this.props.sessionId} is not a session of this player`);
-                        this.props.showQuickMessage({ text: t[this.props.language].WARNING_GAME_NOT_JOINABLE_VIA_URL });
+                        this.props.showQuickMessage({ text: t('WARNING_GAME_NOT_JOINABLE_VIA_URL') });
                     }
                 } catch (error) {
                     logger.warn(error);
-                    this.props.showQuickMessage({ text: t[this.props.language].ERROR_GAME_NOT_JOINABLE_VIA_URL });
+                    this.props.showQuickMessage({ text: t('ERROR_GAME_NOT_JOINABLE_VIA_URL') });
                 } finally {
                     this.setState({ waitingRoom: false });
                 }
@@ -165,7 +165,7 @@ class Hud extends Component {
     }
 
     refreshSessions = () => {
-        multiplayer.getMultiplayerSessions(() => this.props.showQuickMessage({ text: t[this.props.language].SESSION_REFRESH_FAILED}));
+        multiplayer.getMultiplayerSessions(() => this.props.showQuickMessage({ text: t('SESSION_REFRESH_FAILED')}));
     }
 
     createProfileLink = () => {
@@ -173,12 +173,12 @@ class Hud extends Component {
             if (navigator.share) {
                 navigator.share({
                     title: window.document.title,
-                    text: t[this.props.language].INVITATION,
+                    text: t('INVITATION'),
                     url: link,
                 }).catch((error) => logger.info('error sharing multiplayer session', error));
             } else {
                 let whatsappWindowRef = window.open();
-                whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t[this.props.language].INVITATION + ' - ' + link);
+                whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t('INVITATION') + ' - ' + link);
             }
         });
     }
@@ -294,14 +294,15 @@ class Hud extends Component {
                     if (stage === 'TITLE_SCREEN') {
                         let controls = []
 
-                        let playername = this.props.playerInfos.stats.username;
-                        let hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous';
+                        const playername = this.props.playerInfos.stats.username;
+                        const score = this.props.playerInfos.stats.score
+                        const hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
 
-                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>{hideOptions ? t[this.props.language].NEW_GAME : t[this.props.language].MAIN_MENU_SINGLEPLAYER}</div>);
+                        controls.push(<div key="0" className="menuButton" onClick={() => this.resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t('NEW_GAME') : t('MAIN_MENU_SINGLEPLAYER')}</div>);
                         
                         if (!hideOptions) {
-                            controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>{t[this.props.language].MAIN_MENU_MULTIPLAYER}</div>);
-                            controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>{t[this.props.language].MAIN_MENU_CHOCLAB}</div>);
+                            controls.push(<div key="1" className="menuButton" onClick={() => this.setState({ multiplayerScreen: true })}>{t('MAIN_MENU_MULTIPLAYER')}</div>);
+                            controls.push(<div key="2" className="menuButton" onClick={() => this.setState({ choclabScreen: true })}>{t('MAIN_MENU_CHOCLAB')}</div>);
                         }
 
                         return (
@@ -319,25 +320,23 @@ class Hud extends Component {
                                     <BattlechocDialog
                                         open={this.state.open}
                                         close={() => this.setState({ open: false })}
-                                        title={t[this.props.language].HUD_RESUME_GAME}>
+                                        title={t('HUD_RESUME_GAME')}>
                                         <div className="resumeGameDialog">
-                                            <p>{t[this.props.language].HUD_ASK_NEW_OR_RESUME}</p>
+                                            <p>{t('HUD_ASK_NEW_OR_RESUME')}</p>
                                             <div className="actions">
                                                 <div className="menuButton" onClick={() => {
                                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                    this.setState({ open: false });
-                                                    this.props.prepareNewGameCallback(true);
-                                                }}>{t[this.props.language].HUD_RESUME_GAME}</div>
+                                                    this.setState({ open: false }, () => this.props.prepareNewGameCallback(true));
+                                                }}>{t('HUD_RESUME_GAME')}</div>
                                                 <div className="menuButton" onClick={() => {
                                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                    this.setState({ open: false });
-                                                    this.props.prepareNewGameCallback(false);
-                                                }}>{t[this.props.language].HUD_NEW_GAME}</div>
+                                                    this.setState({ open: false }, () => this.props.prepareNewGameCallback(false));
+                                                }}>{t('HUD_NEW_GAME')}</div>
                                             </div>
                                         </div>
                                     </BattlechocDialog>
                                 </div>
-                                <Info language={this.props.language} openInfo={this.props.openInfo} />
+                                <Info openInfo={this.props.openInfo} />
                             </div>
                         );
                     } else if (stage === 'CHOOSE_MENU') {
@@ -346,7 +345,6 @@ class Hud extends Component {
                                 <Tooltip 
                                     state={this.props.state} 
                                     currentPlayerName={this.props.game.players[multiplayer.localPlayerIndex].name}
-                                    language={this.props.language}
                                     tappedBuilding={this.props.tappedBuilding}
                                     selectedAttack={this.props.selectedAttack}
                                     level={this.props.game.players[multiplayer.localPlayerIndex].level}
@@ -367,7 +365,6 @@ class Hud extends Component {
                                 <Tooltip 
                                     state={this.props.state} 
                                     currentPlayerName={player.name}
-                                    language={this.props.language}
                                     tappedBuilding={this.props.tappedBuilding}
                                     selectedAttack={this.props.selectedAttack}
                                     level={player.level}
@@ -375,7 +372,7 @@ class Hud extends Component {
                                 <AttackPalette />
                                 <BuildingPalette />
                                 <InfoPanel players={this.props.game.players} />
-                                {this.props.overviewVisible ? <GameEndOverview player={player} winners={this.props.game.winners} language={this.props.language} finishGame={() => this.props.endGame()} /> : null}
+                                {this.props.overviewVisible ? <GameEndOverview player={player} winners={this.props.game.winners} finishGame={coins => this.props.endGame(coins)} /> : null}
                             </div>
                         )
                     }
@@ -399,7 +396,6 @@ Hud.propTypes = {
 const mapStateToProps = state => ({
     game: state.gameplay.game,
     state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
-    language: state.ui.language,
     overviewVisible: state.ui.overviewVisible,
     resumeGamePossible: state.ui.resumeGamePossible,
     assetsReady: state.ui.assetsReady,

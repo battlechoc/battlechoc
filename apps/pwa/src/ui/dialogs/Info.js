@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Fab from '@material-ui/core/Fab';
 import { InfoOutlined } from '@material-ui/icons';
-import { Jukebox, Translation as t } from '../misc';
+import { Jukebox, translate as t, getCurrentLanguage } from '../misc';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';
@@ -60,7 +60,7 @@ const Info = props => {
     let timeSinceUpdate = timeAgo.format(date);
     timeSinceUpdate = 'last update ' + timeSinceUpdate 
 
-    if (props.language === 'de') {
+    if (getCurrentLanguage() === 'de') {
         timeAgo = new TimeAgo('de-DE');
         timeSinceUpdate = timeAgo.format(date);
         timeSinceUpdate = 'Letztes Update ' + timeSinceUpdate;
@@ -83,28 +83,28 @@ const Info = props => {
                 close={handleClose}
                 title={`battlechoc - ${version} - ${timeSinceUpdate}`}>
                 <div className={classes.text}>
-                    <h2>{t[props.language].INFO_IMPRESS}</h2>
+                    <h2>{t('INFO_IMPRESS')}</h2>
                     <p>
                         battlechoc GbR<br />
                         Triftweg 5<br />
                         38550 Isenbüttel<br />
-                        {t[props.language].INFO_IMPRESS_COUNTRY}<br /><br />
+                        {t('INFO_IMPRESS_COUNTRY')}<br /><br />
                         E-mail: info@battlechoc.com<br />
-                        {t[props.language].INFO_IMPRESS_PHONE}: + 49 151 65486876<br /><br />
-                        {t[props.language].INFO_IMPRESS_EXECUTIVE_DIRECTORS}: Dr. Sebastian Bode & Fabian Bormann
+                        {t('INFO_IMPRESS_PHONE')}: + 49 151 65486876<br /><br />
+                        {t('INFO_IMPRESS_EXECUTIVE_DIRECTORS')}: Dr. Sebastian Bode & Fabian Bormann
                     </p>
-                    <h2>{t[props.language].INFO_PRIVACY_POLICY}</h2>
-                    <p>{t[props.language].INFO_PRIVACY_POLICY_TEXT}</p>
+                    <h2>{t('INFO_PRIVACY_POLICY')}</h2>
+                    <p>{t('INFO_PRIVACY_POLICY_TEXT')}</p>
                     <h3>Google Web Analytics</h3>
-                    <p>{t[props.language].INFO_GOOGLE_ANALYTICS}</p>
+                    <p>{t('INFO_GOOGLE_ANALYTICS')}</p>
                     <ul>
-                        <li>{t[props.language].INFO_GOOGLE_ANALYTICS_OPERATING_SYSTEM}</li>
-                        <li>{t[props.language].INFO_GOOGLE_ANALYTICS_BROWSER_TYPE}</li>
-                        <li>{t[props.language].INFO_GOOGLE_ANALYTICS_REFERRER_URL}</li>
-                        <li>{t[props.language].INFO_GOOGLE_ANALYTICS_HOST_NAME}</li>
-                        <li>{t[props.language].INFO_GOOGLE_ANALYTICS_SERVER_REQUEST}</li>
+                        <li>{t('INFO_GOOGLE_ANALYTICS_OPERATING_SYSTEM')}</li>
+                        <li>{t('INFO_GOOGLE_ANALYTICS_BROWSER_TYPE')}</li>
+                        <li>{t('INFO_GOOGLE_ANALYTICS_REFERRER_URL')}</li>
+                        <li>{t('INFO_GOOGLE_ANALYTICS_HOST_NAME')}</li>
+                        <li>{t('INFO_GOOGLE_ANALYTICS_SERVER_REQUEST')}</li>
                     </ul>
-                    <p>{t[props.language].INFO_GOOGLE_ANALYTICS_PREVENT}</p>
+                    <p>{t('INFO_GOOGLE_ANALYTICS_PREVENT')}</p>
                 </div>
             </BattlechocDialog>
         </div>

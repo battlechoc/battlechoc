@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { updatePlayerStats, updateLevel, showQuickMessage } from '../UiActions';
-import { Translation as t } from '../misc';
+import { translate as t } from '../misc';
 import { connect } from 'react-redux';
 import { getEntityDescriptor, finalLevel, EntityType } from 'battlechoc-shared-functions';
 import { ChoclabPalette } from '../controls';
@@ -288,14 +288,14 @@ const Choclab = props => {
             })
             .catch(error => {
                 logger.warn(error);
-                props.showQuickMessage({ text: t[props.language].UPDATE_LEVEL_FAILED(upgrade) });
+                props.showQuickMessage({ text: t('UPDATE_LEVEL_FAILED', upgrade) });
             })
             .finally(() => setUpdateRunning(false));
         }
     }
 
     if (upgradePossible) {
-        nextLevelDescription = <h4 className={classes.upgrade}><span>{t[props.language].CHOCLAB_LEVEL} {props.level[entityType] + 1}</span><DoubleArrow /><span>{ props.level[entityType] + 2 }</span></h4>
+        nextLevelDescription = <h4 className={classes.upgrade}><span>{t('CHOCLAB_LEVEL')} {props.level[entityType] + 1}</span><DoubleArrow /><span>{ props.level[entityType] + 2 }</span></h4>
     }
     return (
         <div className={classes.page}>
@@ -307,7 +307,7 @@ const Choclab = props => {
                 <MeshPreview selectedEntity={selectedEntity} />
 
                 <div className={classes.attributes}>
-                    <h3>{t[props.language].TOOLTIP_BUILDING_TITLE(entityType)}</h3>
+                    <h3>{t('TOOLTIP_BUILDING_TITLE', entityType)}</h3>
                     { nextLevelDescription }
                     { selectedEntity ? Object.keys(selectedEntity)
                         .filter(field => ['hp','area','buildingsPerTurn','cacaoPerTurn','attack','donutProbability','donutTypes'].includes(field)).map(attribute => {
@@ -321,7 +321,7 @@ const Choclab = props => {
 
                         return (
                             <div className={classes.progress} key={attribute}>
-                                <div className={classes.label}><span>{ t[props.language].ATTRIBUTE_NAME(attribute) }</span>{attributeDescription}</div>
+                                <div className={classes.label}><span>{ t('ATTRIBUTE_NAME', attribute) }</span>{attributeDescription}</div>
                                 <div>
                                     <div className={classes[attribute]} style={{ width: percentage + '%'}}></div>
                                     { upgradePossible ? <div className={classes[attribute + 'Forecast']} style={{ width: percentageForcast + '%'}}></div> : null }
@@ -348,7 +348,7 @@ const Choclab = props => {
                                     }
                                 }
                             }>
-                                <span>{t[props.language].CHOCLAB_UPGRADE}</span>
+                                <span>{t('CHOCLAB_UPGRADE')}</span>
                                 <div className={classes.costs}>
                                     <span>{ currentEntity.coins }</span>
                                     <OptimizedImage src="/images/coins.png" alt="choco coins" />
@@ -362,7 +362,7 @@ const Choclab = props => {
                                     updateLevel(entityType, false)
                                 }
                             }}>
-                                <span>{t[props.language].CHOCLAB_DOWNGRADE}</span>
+                                <span>{t('CHOCLAB_DOWNGRADE')}</span>
                                 { downgradePossible ? <div className={classes.costs}>
                                     <span>-{ Math.round(downgradedEntity.coins * 0.666) }</span>
                                     <OptimizedImage src="/images/coins.png" alt="choco coins" />
@@ -379,7 +379,6 @@ const Choclab = props => {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
-    language: state.ui.language,
     level: state.ui.playerInfos.stats.level,
     playerInfos: state.ui.playerInfos
 });

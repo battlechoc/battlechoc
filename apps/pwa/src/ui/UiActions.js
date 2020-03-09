@@ -5,7 +5,6 @@ const UiActionTypes = Object.freeze({
     tapBuilding: 'battlechoc/ui/tapBuilding',
     selectAttack: 'battlechoc/ui/selectAttack',
     deselectAttack: 'battlechoc/ui/deselectAttack',
-    changeLanguage: 'battlechoc/ui/changeLanguage',
     deselectBuildings: 'battlechoc/ui/deselectBuildings',
     gameResumeable: 'battlechoc/ui/gameResumeable',
     showOverview: 'battlechoc/ui/showOverview',
@@ -33,7 +32,6 @@ const tapBuilding = createAction(UiActionTypes.tapBuilding);
 const selectAttack = createAction(UiActionTypes.selectAttack);
 const deselectAttack = createAction(UiActionTypes.deselectAttack);
 const deselectBuildings = createAction(UiActionTypes.deselectBuildings);
-const changeLanguage = createAction(UiActionTypes.changeLanguage);
 const gameResumeable = createAction(UiActionTypes.gameResumeable);
 const assetsReady = createAction(UiActionTypes.assetsReady);
 const loadUiState = createAction(UiActionTypes.loadUiState);
@@ -54,4 +52,4 @@ const startSessionRefresh = createAction(UiActionTypes.startSessionRefresh);
 const stopSessionRefresh = createAction(UiActionTypes.stopSessionRefresh);
 const toggleDonutHighlighting = createAction(UiActionTypes.toggleDonutHighlighting);
 
-export { toggleDonutHighlighting, stopSessionRefresh, startSessionRefresh, showQuickMessage, hideQuickMessage, updateLevel, setPlayerRank, loadFriendsList, updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };
+export { toggleDonutHighlighting, stopSessionRefresh, startSessionRefresh, showQuickMessage, hideQuickMessage, updateLevel, setPlayerRank, loadFriendsList, updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };

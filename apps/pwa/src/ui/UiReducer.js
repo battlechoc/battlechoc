@@ -2,9 +2,7 @@ import { createReducer } from 'redux-starter-kit';
 import * as UiActions from './UiActions';
 import { EmptyPlayerStats, EntityType } from 'battlechoc-shared-functions';
 import OfflineStore from '../OfflineStore';
-import { ServerRequest } from '../helper/settings';
-import logger from '../helper/logger';
-import { setCurrentLanguage } from './misc/Translation';
+import uuidv4 from 'uuid/v4';
 
 const uiReducer = createReducer({
     selectedBuilding: EntityType.FACTORY,
@@ -18,11 +16,7 @@ const uiReducer = createReducer({
     multiplayerSessions: [],
     playerInfos: { stats: EmptyPlayerStats, isSignedIn: false },
     language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en',
-    quickMessage: {
-        show: false,
-        text: '',
-        variant: 'warning'
-    },
+    quickMessages: [],
     sessionRefreshActions: 0,
     donutHighlighting: false
 }, {
@@ -42,18 +36,6 @@ const uiReducer = createReducer({
     },
     [UiActions.selectAttack]: (state, action) => {
         state.selectedAttack = action.payload;
-    },
-    [UiActions.changeLanguage]: (state, action) => {
-        setCurrentLanguage(action.payload);
-        // TODO remove from state
-        state.language = action.payload;
-        ServerRequest('post', '/user/language', { language: action.payload })
-        .catch(error => {
-            if (!error instanceof ReferenceError) {
-                logger.warn(error)
-            }
-        })
-        .finally(() => OfflineStore.settingsStore.set("language", action.payload));
     },
     [UiActions.deselectAttack]: (state, action) => {
         state.selectedAttack = undefined;
@@ -103,6 +85,7 @@ const uiReducer = createReducer({
     },
     [UiActions.startTutorial]: (state, action) => {
         state.tutorial = true;
+        state.loopAnimations = action.payload;
     },
     [UiActions.updatePlayerStats]: (state, action) => {
         Object.assign(state.playerInfos.stats, action.payload);
@@ -122,14 +105,10 @@ const uiReducer = createReducer({
         state.playerInfos.stats.level = action.payload;
     },
     [UiActions.showQuickMessage]: (state, action) => {
-        state.quickMessage.show = true;
-        state.quickMessage.text = action.payload.text || '';
-        state.quickMessage.variant = action.payload.variant || 'warning';
+        state.quickMessages.push({ id: uuidv4(), text: action.payload.text || '', variant: action.payload.variant || 'warning' });
     },
     [UiActions.hideQuickMessage]: (state, action) => {
-        state.quickMessage.show = false;
-        state.quickMessage.text = '';
-        state.quickMessage.variant = 'warning';
+        state.quickMessages = state.quickMessages.filter(message => message.id !== action.payload);
     },
     [UiActions.startSessionRefresh]: (state, action) => {
         state.sessionRefreshActions += 1;
