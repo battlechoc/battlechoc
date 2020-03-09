@@ -79,6 +79,7 @@ const useStyles = makeStyles(theme => ({
 
 function useForceUpdate(){
   const [value, setValue] = useState(0);
+  console.debug(value);
   return () => setValue(value => ++value);
 }
 
