@@ -29,7 +29,7 @@ export default class EasterBunny extends Situation {
         this.game.ui.selectedBuilding = EntityType.SPYING_EASTER_BUNNY;
         this.game.ui.tappedBuilding = EntityType.SPYING_EASTER_BUNNY;
         this.game.ui.whitelistAttacks = [AttackType.BUNNY];
-        this.game.ui.selectedAttacks = AttackType.BUNNY;
+        this.game.ui.selectedAttack = AttackType.BUNNY;
     }
     static get ui() {
         return (new EasterBunny()).game.ui;
@@ -62,7 +62,7 @@ export default class EasterBunny extends Situation {
         for (const field of pseudoGame.board.fields[1].grid) {
             field.occupiedBy = field.occupiedBy.filter(entitiy => entitiy.type !== EntityType.CREAM);
         }
-
+        pseudoGame.players[0].attacks[AttackType.BUNNY] -= 1;
         await manipulate(pseudoGame);
         this.running = false;
     }
