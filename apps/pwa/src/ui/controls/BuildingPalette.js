@@ -134,6 +134,19 @@ const BuildingPalette = props => {
         </div>
     }
 
+    let whitelist = props.whitelist;
+    if (!props.tutorial) {
+        if ( props.score < 1) {
+            whitelist = [EntityType.FACTORY, EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM];
+        } else if (props.score < 200) {
+            whitelist = [EntityType.FACTORY, EntityType.FACTORY_EXTENSION, EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM];
+        } else if (props.score < 500) {
+            whitelist = [EntityType.FACTORY, EntityType.FACTORY_EXTENSION, EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY, EntityType.XMAS_FACTORY];
+        } else if (props.score < 1000) {
+            whitelist = [EntityType.FACTORY, EntityType.FACTORY_EXTENSION, EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY, EntityType.XMAS_FACTORY, EntityType.FRUIT_CANNON, EntityType.CHOCOLATE_FOUNTAIN];
+        }
+    }
+
     return (
         <div>
             { buildingSelectionIsVisible() ? donutSelection : null }
@@ -141,8 +154,8 @@ const BuildingPalette = props => {
                 {(() => {
                     if (buildingSelectionIsVisible()) {
                         return buildingsForSeclection.map((building, i) => {
-                            if (typeof props.whitelist !== 'undefined') {
-                                if (!props.whitelist.includes(building.type)) {
+                            if (typeof whitelist !== 'undefined') {
+                                if (!whitelist.includes(building.type)) {
                                     return null;
                                 }
                             }
@@ -183,7 +196,9 @@ const mapStateToProps = state => ({
     game: state.gameplay.game,
     selectedBuilding: state.ui.selectedBuilding,
     whitelist: state.ui.whitelistBuildings,
-    donutHighlighting: state.ui.donutHighlighting
+    donutHighlighting: state.ui.donutHighlighting,
+    score: state.ui.playerInfos.stats.score,
+    tutorial: state.ui.tutorial
 });
 
 const mapDispatchToProps = {

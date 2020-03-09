@@ -1,5 +1,6 @@
 import { EntityType, isDonut } from 'battlechoc-shared-functions';
 import { Mesh, ParticleSystem, Vector3, Color4, ActionManager, ExecuteCodeAction, SolidParticleSystem, Texture } from 'babylonjs';
+import uuidv4 from 'uuid/v4';
 
 class Gamefield {
     constructor(isPlayerGameField, position, getPlayerField, fieldIdx, size, scene, action, setRenderLoop) {
@@ -13,6 +14,7 @@ class Gamefield {
         this.getPlayerField = () => getPlayerField();
         this.playerField = JSON.parse(JSON.stringify(this.getPlayerField()));
         this.build();
+        this.animations = [];
         this.setRenderLoop = setRenderLoop;
     }
 
@@ -245,13 +247,28 @@ class Gamefield {
             field.dispose();
         }, 1000);
 
-        setTimeout(() => {
+        const uuid = uuidv4();
+        this.animations.push({ id: uuid, stopAnimation: () => {
             this.scene.stopAnimation(fountain);
             this.setRenderLoop(false);
             particleSystem.dispose();
             fountain.dispose();
             this.scene.render();
-        }, 3000);      
+            this.animations = this.animations.filter(callback => callback.id !== uuid);
+        }});
+
+        setTimeout(() => {
+            if (this.animations.findIndex(callback => callback.id === uuid) > -1) {
+                this.animations.find(callback => callback.id === uuid).stopAnimation();
+            }
+        }, 3000);
+    }
+
+    stopAllAnimations = () => {
+        for (const callback of this.animations) {
+            callback.stopAnimation();
+        }
+        this.animations = [];
     }
 
     explode(mesh) {
@@ -299,12 +316,19 @@ class Gamefield {
         }
         this.scene.registerBeforeRender(setParticles);
 
-
-        setTimeout(() => {
+        const uuid = uuidv4();
+        this.animations.push({ id: uuid, stopAnimation: () => {
             this.scene.unregisterBeforeRender(setParticles);
             solidParticleSystem.dispose();
             solidParticleSystem = null;
             this.setRenderLoop(false);
+            this.animations = this.animations.filter(callback => callback.id !== uuid);
+        }});
+
+        setTimeout(() => {
+            if (this.animations.findIndex(callback => callback.id === uuid) > -1) {
+                this.animations.find(callback => callback.id === uuid).stopAnimation();
+            }
         }, 3000);
         mesh.dispose();
     }

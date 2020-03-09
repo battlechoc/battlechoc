@@ -28,6 +28,18 @@
   display: flex;
 }
 
+.tutorial #buildingSelection {
+  z-index: 0;
+}
+
+.tutorial #donutSelection {
+  z-index: 0;
+}
+
+.tutorial #attackSelection {
+  z-index: 0;
+}
+
 .selected .attackCount {
   margin-top: 3px;
 }
