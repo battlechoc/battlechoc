@@ -113,8 +113,8 @@ const Tutorial = props => {
     }
 
     
-    let backIcon = <IconButton color="inherit" aria-label="back" onClick={back}><ArrowBackIcon /></IconButton>
-    let nextIcon = <IconButton color="inherit" aria-label="next" onClick={next}><ArrowForwardIcon /></IconButton>
+    let backIcon = <IconButton id="prev-loop" color="inherit" aria-label="back" onClick={back}><ArrowBackIcon /></IconButton>
+    let nextIcon = <IconButton id="next-loop" color="inherit" aria-label="next" onClick={next}><ArrowForwardIcon /></IconButton>
     if (page === 0) {
         backIcon = null;
     }
@@ -124,14 +124,6 @@ const Tutorial = props => {
     if (page >= props.loopAnimations.length - 1) {
         nextIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={() => setOpen(true)}><Done /></IconButton>
     }
-
-    const appbar = <AppBar position="static" color="secondary" className="tutorialAppbar">
-                    <Toolbar>
-                        { backIcon }
-                        <h6 className="tutorial-headline">{ situation.title }</h6>
-                        { nextIcon }
-                    </Toolbar>
-                    </AppBar>
 
     let dialogTitle = t[props.language].TUTORIAL_DIALOG_TITLE_BEFORE;
     let dialogContent = <div>
@@ -154,7 +146,13 @@ const Tutorial = props => {
     return (
         <div id="tutorial">
             <div>
-                { appbar }
+                <AppBar position="static" color="secondary" className="tutorialAppbar">
+                <Toolbar>
+                    { backIcon }
+                    <h6 className="tutorial-headline">{ situation.title }</h6>
+                    { nextIcon }
+                </Toolbar>
+                </AppBar>
                 <div className="battlechoc-tutorial-info"><p>{ situation.description }</p></div>
             </div>
             <BattlechocDialog
