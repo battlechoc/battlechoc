@@ -1,0 +1,381 @@
+import { EntityType, AttackType } from 'battlechoc-shared-functions';
+
+const translations = {
+    SIGNINORUP: 'Anmelden',
+    NEW_GAME: 'Neues Spiel',
+    MAIN_MENU_SINGLEPLAYER: 'Singleplayer',
+    MAIN_MENU_MULTIPLAYER: 'Multiplayer',
+    MAIN_MENU_CHOCLAB: 'Choclab',
+    SIGN_OUT: 'Abmelden',
+    ACCOUNTINFOS: 'Account Informationen',
+    ACCOUNTINFOS_PREVIEW: 'Hier findest du bald Infos über deinen Account und Spieler-Statistiken.',
+    ACCOUNT_OVERVIEW_ASSOCIATION: 'Dein Account ist verbunden mit',
+    ACCOUNT_OVERVIEW_CREATE_INFO: 'Um auf deinen Account von mehreren Geräten aus zugriefen zu können oder um deinen Spielfortschritt wieder herstellen zu können, wenn eines deiner Geräte verloren geht, ist es möglich ihn an eine dieser Optionen zu binden.',
+    ACCOUNT_OVERVIEW_LEVEL: 'Level',
+    ACCOUNT_OVERVIEW_RANK: 'Rang',
+    ACCOUNT_OVERVIEW_WON: 'Siege',
+    ACCOUNT_OVERVIEW_DRAWN: 'Beide',
+    ACCOUNT_OVERVIEW_LOST: 'Verloren',
+    ACCOUNT_OVERVIEW_COINS: 'Münzen',
+    PLAYERLIST_SCORE: 'Punkte',
+    PLAYERLIST_NAME: 'Name',
+    CHOCLAB_UPGRADE: 'Upgrade',
+    CHOCLAB_DOWNGRADE: 'Downgrade',
+    CHOCLAB_LEVEL: 'Level',
+    PLAYERLIST_ACTIONS: 'Aktionen',
+    MULTIPLAYER_INFO_HEADER: 'Du hast zur Zeit keine offenen Multiplayer-Partien.',
+    MULTIPLAYER_INFO_HEADER2: 'Benutze die Buttons oben, um',
+    MULTIPLAYER_INFO_CASINO: 'einen zufälligen Spieler herauszufordern',
+    MULTIPLAYER_INFO_FRIENDS: 'deine Freundesliste einzusehen',
+    MULTIPLAYER_INFO_SHARE: 'deinen Profillink zu teilen',
+    MULTIPLAYER_INFO_SEARCH: 'nach einem Spieler zu suchen',
+    MULTIPLAYER_INFO_HIGHSCORE: 'dir den aktuellen Highscore anzuschauen',
+    SETTINGS: 'Einstellungen',
+    SETTINGS_ATTENTION_TEXT: 'Achtung, wenn du den Button erneut betätigst, gibst du das aktuelle Spiel auf und der Gegner gewinnt',
+    SETTINGS_QUIT: 'Spiel beenden',
+    SETTINGS_PLAYER_NAME_IN_USE: 'Spielername bereits vergeben',
+    SETTINGS_PLAYER_NAME_INVALID: 'Spielername ungültig (3-15 Buchstaben oder Zahlen, das erste Zeichen muss ein Buchstabe sein)',
+    HUD_RESUME_GAME: 'Weiter spielen',
+    HUD_ASK_NEW_OR_RESUME: 'Möchtest du ein neues Spiel starten oder das letzte Spiel fortsetzen?',
+    HUD_NEW_GAME: 'Neues Spiel',
+    GAME_END_OVERVIEW_ATTACKS: 'Angriffe',
+    GAME_END_OVERVIEW_ENTITIES: 'Einheiten insgesamt',
+    GAME_END_OVERVIEW_ESPIONAGES: 'Spionagen',
+    GAME_END_OVERVIEW_MOLTEN_FIELDS: 'Geschmolzene Felder',
+    GERMAN: 'Deutsch',
+    ENGLISH: 'Englisch',
+    JAPANESE: 'Japanisch',
+    LANGUAGE: 'Sprache',
+    BUTTON_BACK: 'Zurück',
+    INVITATION: 'Spiel mit mir battlechoc!',
+    TOOLTIP_INITIAL_TURN_TITLE: 'Erste Runde',
+    TOOLTIP_INITIAL_TURN_MESSAGE: 'In der ersten Runde kannst du dich für eines der Spielfelder, oder den ersten Zug entscheiden',
+    TOOLTIP_INITIAL_TURN_OPPONENT_PART: ' kann nun ein Spielfeld aussuchen.',
+    TOOLTIP_BUILDING_TITLE_CREAM: 'Sahne',
+    TOOLTIP_BUILDING_TITLE_FACTORY_EXTENSION: 'Fabrikerweiterung',
+    TOOLTIP_BUILDING_TITLE_FACTORY: 'Schokoladenfabrik',
+    TOOLTIP_BUILDING_TITLE_HOT_CHOCOLATE_BALLISTA: 'Heiße Schokoladenschleuder',
+    TOOLTIP_BUILDING_TITLE_CACAOTREE: 'Kakaobaum',
+    TOOLTIP_BUILDING_TITLE_RUM_TRUFFLE_CANNON: 'Rumkugel-Kanone',
+    TOOLTIP_BUILDING_TITLE_XMAS_FACTORY: 'Weihnachtsfabrik',
+    TOOLTIP_BUILDING_TITLE_SPYING_EASTER_BUNNY: 'Spionage-Osterhase',
+    TOOLTIP_BUILDING_TITLE_CHOCOLATE_FOUNTAIN: 'Schokoladenbrunnen',
+    TOOLTIP_BUILDING_TITLE_FRUIT_CANNON: 'Fruchtkanone',
+    TOOLTIP_BUILDING_TITLE_DONUT_FACTORY: 'Donutfabrik',
+    TOOLTIP_BUILDING_TITLE_DONUT_PORTAL_RED: 'Roter Portal-Donut',
+    TOOLTIP_BUILDING_TITLE_DONUT_PORTAL_BLUE: 'Blauer Portal-Donut',
+    TOOLTIP_BUILDING_TITLE_DONUT_STOP_PINK: 'Pinker Stop-Donut',
+    TOOLTIP_BUILDING_TITLE_DONUT_SURPRISE_YELLOW: 'Gelber Überraschungs-Donut',
+    TOOLTIP_BUILDING_TITLE_DONUT_HEALTH_GREEN: 'Grüner Heilungs-Donut',
+    TOOLTIP_BUILDING_TITLE_DONUT_CREAM_WHITE: 'Weißer Sahne-Donut',
+    TOOLTIP_BUILDING_TITLE_UNKNOWN: 'Unbekannt',
+    TOOLTIP_BUILDING_INFO_CREAM: 'Gebäude die in Sahne gebaut sind bleiben dem Gegner verborgen. Die Baureihenfolge von Sahne und Gebäude sind dabei egal.',
+    TOOLTIP_BUILDING_INFO_FACTORY_EXTENSION: 'Eine Fabrikerweiterung kann nur direkt neben deiner Fabrik platziert werden.',
+    TOOLTIP_BUILDING_INFO_CACAOTREE: 'Der Kakaobaum gibt dir alles was du an Rohstoffen brauchst.',
+    TOOLTIP_BUILDING_INFO_RUM_TRUFFLE_CANNON: 'Die Rumtrüffelkanone führt dich zum Sieg.',
+    TOOLTIP_BUILDING_INFO_XMAS_FACTORY: 'Das Gerücht, dass Osterhasen zu Weihnachtsmännern eingeschmolzen werden stimmt! Kommt ein Osterhase in die Nähe der Weihnachtsfabrik wartet ein Geschenk auf dich.',
+    TOOLTIP_BUILDING_INFO_SPYING_EASTER_BUNNY: 'Der Spionage-Osterhase kann unter die Sahne des Gegners schauen, aber achte auf mögliche Weihnachtsfabriken.',
+    TOOLTIP_BUILDING_INFO_CHOCOLATE_FOUNTAIN: 'Der Schololadenbrunnen schützt in einem Bereich von 3x3 Feldern um ihn herum alle anderen Gebäude gegen gegnerischen Beschuss und kann nur durch die Hot Chocolate Ballista oder eine Fruchtkanone zerstört werden.',
+    TOOLTIP_BUILDING_INFO_FRUIT_CANNON: 'Die Fruchtkanone zerstört nur Sahnehäubchen oder gegnerische Schokoladenbrunnen.',
+    TOOLTIP_BUILDING_INFO_DONUT_FACTORY: 'Die Donutfabrik stellt Donutfallen her, die dem Gegner sehr gefährlich werden können.',
+    TOOLTIP_BUILDING_INFO_DONUT_PORTAL_RED_BLUE: 'Wenn der blaue Donut durch einen Angriff ausgelöst wird, vertauscht er durch ein Portal sein Feld und alle Einheiten mit dem dazugehörigen roten Donut.',
+    TOOLTIP_BUILDING_INFO_DONUT_STOP_PINK: 'Wenn der pinke Donut durch einen Angriff ausgelöst wird, endet die Angriffsphase des Gegners sofort.',
+    TOOLTIP_BUILDING_INFO_DONUT_SURPRISE_YELLOW: 'Wenn der gelbe Donut durch einen Angriff ausgelöst wird, füllt er entweder zufällig seine 5x5 Umgebung mit Sahne, heilt sie vollständig, oder beendet die Angriffsphase des Gegners sofort.',
+    TOOLTIP_BUILDING_INFO_DONUT_HEALTH_GREEN: 'Wenn der grüne Donut durch einen Angriff ausgelöst wird, heilt er seine 5x5 Umgebung vollständig.',
+    TOOLTIP_BUILDING_INFO_DONUT_CREAM_WHITE: 'Wenn der weiße Donut durch einen Angriff ausgelöst wird, füllt er seine 5x5 Umgebung mit Sahne.',
+    TOOLTIP_BUILDING_INFO_UNKNOWN: 'Unbekanntes Gebäude',
+    TOOLTIP_BUILDING_COSTS_PART: 'Kakaokosten: ',
+    TOOLTIP_BUILDING_INFO_BUILDINGS_PER_TURN: 'Gebäude pro Runde +',
+    TOOLTIP_BUILDING_INFO_CACAO_PER_TURN: 'Kakao pro Runde +',
+    TOOLTIP_BUILDING_INFO_ATTACKS_PER_TURN: 'Angriffe pro Runde +1',
+    TOOLTIP_BUILDING_INFO_SPYING_PER_TURN: 'Spionage pro Runde +1',
+    TOOLTIP_BUILDING_INFO_CHOCOLATE_FOUNTAIN_ADVANTAGE: 'Schützt einen 3x3 großen Bereich.',
+    TOOLTIP_BUILDING_INFO_FRUIT_CANNON_ADVANTAGE: 'Fruchtangriffe pro Runde +1',
+    TOOLTIP_BUILDING_INFO_DONUT_FACTORY_ADVANTAGE_PART: 'Produziert pro Runde einen Donut mit einer Wahrscheinlichkeit von ',
+    TOOLTIP_INITIAL_PLACEMENT_TITLE: 'Erste Bauphase',
+    TOOLTIP_INITIAL_PLACEMENT_MESSAGE: 'In der ersten Bauphase kannst du einmalig die Fabrik setzen. Überlege daher gut: Ist die Fabrik zerstört kannst du keine weiteren Gebäude bauen',
+    TOOLTIP_BUILD_PHASE_TITLE: 'Bauphase',
+    TOOLTIP_BUILD_PHASE_MESSAGE: 'Wähle ein Gebäude aus der unteren Symbolleiste aus und plaziere es. Sahne ist durchsichtig dargestellt. Ein Gebäude, dass in Sahne gebaut wird ist unsichtbar für den Gegner',
+    TOOLTIP_ATTACK_PHASE_TITLE: 'Angiffsphase',
+    TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_TRUFFLE: 'Rumkugel',
+    TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_FRUIT: 'Frucht',
+    TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_HOT_CHOCOLATE: 'Heiße Schokolade',
+    TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_BUNNY: 'Spionage-Osterhase',
+    TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_UNKNOWN: 'Unbekannt',
+    TOOLTIP_ATTACK_PHASE_MESSAGE: 'Klicke auf ein gegnerisches Gebäude um es anzugreifen. Hinweis: Kluge Gegner verstecken ihre Gebäude unter Sahne',
+    TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_TRUFFLE: 'Zerstört Gebäude und Sahne. Kann durch den Schild des Schokobrunnens abgewehrt werden.',
+    TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_FRUIT: 'Zerstört Sahne und Schokobrunnen. Andere Gebäude werden durch die Fruchtkanone nicht gefährdet.',
+    TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_HOT_CHOCOLATE: 'Zerstört Gebäude, Sahne und sogar das Spielfeld an der Stelle des Angriffs. Kann nicht durch den Schokobrunnenschild abgewehrt werden.',
+    TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_BUNNY: 'Deckt alle Felder mit Sahne im 3x3 Umfeld des Angriffs auf. Wird von der Weihnachtsfabrik eingefangen, wenn sie in der Nähe des Angriffs ist.',
+    TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_UNKNOWN: 'Unbekannt',
+    MESSAGE_WIN_GAME: 'Glückwunsch! Du hast das Spiel gewonnen',
+    MESSAGE_LOST_GAME: 'Du hast verloren',
+    MESSAGE_DRAW_GAME: 'Unentschieden!',
+    META_DESCRIPTION: 'Du magst Schokolade und Spiele? Lege jetzt los und spiele battlechoc ein rundenbasiertes Strategiespiel mit Kakaoflavor. Apps sind dir lieber als Websites wenn es ums spielen geht? Klar: Füge battlechoc einfach zu deinem Homescreen hinzu und spiele es offline wo und wann du willst!',
+    META_KEYWORDS: 'Schokolade, Spiele, Strategiespiel, Brettspiel, PWA, Kakao, rundenbasiert, Schokoladenkanone, Kakaobaum',
+    REPORT_CUSTOM_MESSAGE: 'Zusätzliche Nachricht',
+    REPORT_CUSTOM_MESSAGE_PLACEHOLDER: 'Das Problem tritt auf, wenn ...',
+    REPORT_PROBLEM: 'Problembericht senden',
+    RESTART_TUTORIAL: 'Tutorial wiederholen',
+    REPORT_DEVICE_INFO: 'Geräteinformationen anhängen',
+    ERROR_SENDING_PROBLEM_REPORT: 'Fehler beim Senden des Problemberichts. Prüfe deine Internetverbindung',
+    SUCCESSFULLY_SENDING_PROBLEM_REPORT: 'Dein Problembericht wurde erfolgreich verschickt!',
+    REPORT_INFORMATION: 'Der Bericht enthält automatisch deine Zug History, damit wir dein Spiel und damit den Fehler nachstellen können. Weitere Beobachtungen in Form einer zusätzlichen Nachricht, oder deine Geräteinformationen (Betriebssystem, etc.) helfen dabei enorm. Wir verwenden diese Informationen ausschließlich zum nachstellen und beheben des Fehlers und löschen diese im Anschluss. Danke für deine Hilfe!',
+    INFO_IMPRESS: 'Impressum',
+    INFO_IMPRESS_COUNTRY: 'Deutschland',
+    INFO_IMPRESS_PHONE: 'Telefon',
+    INFO_IMPRESS_EXECUTIVE_DIRECTORS: 'Geschäftsführung',
+    INFO_PRIVACY_POLICY: 'Datenschutzerklärung',
+    INFO_PRIVACY_POLICY_TEXT: 'Derzeit verdienen wir kein Geld mit battlechoc und es ist für jeden frei spielbar. Wir sind stets bemüht, eure Daten zu schützen. Deshalb erheben wir allgemein nur so wenig Daten wie möglich. Zum einen speichern wir Fehlerberichte, die du uns aktiv über die Einstellungen sendest. Hier sichern wir deinen Spielstand und deinen Zugverlauf, damit wir dein Problem nachstellen können. Durch aktives Bestätigen einer Checkbox kannst du uns auch zusätzlich Browserinformationen und dein Betriebssystem mitteilen. Um den Fehler nachvollziehen zu können, hilft oft auch eine zusätzliche Nachricht, die wir bei Angabe ebenfalls speichern. Nachdem wir den Fehler reproduzieren und beheben konnten, werden wir all diese Informationen unverzüglich löschen, spätestens jedoch nach 2 Monaten nach Absenden des Fehlerberichts. Der zweite Weg, durch den wir Daten erheben, ist die Verwendung von Google Web Analytics. Wir möchten dies im folgenden Abschnitt näher erläutern.',
+    INFO_GOOGLE_ANALYTICS: 'Zur Anpassung und kontinuierlichen Optimierung von battlechoc verwenden wir Google Web Analytics, einen Webanalysedienst von Google Inc. (1600 Amphitheater Parkway, Mountain View, CA 94043, USA, im Folgenden "Google" genannt). In diesem Zusammenhang werden pseudonymisierte Nutzerprofile erstellt und Cookies verwendet. Cookies sind kleine Textdateien zur temporären Speicherung von Informationen, die von deinem Browser automatisch auf deinem Gerät gespeichert werden. Cookies enthalten keine Viren und sind nicht gefährlich. Das Cookie enthält beispielsweise folgende Informationen über deine Nutzung von battlechoc:',
+    INFO_GOOGLE_ANALYTICS_OPERATING_SYSTEM: 'Betriebssystem',
+    INFO_GOOGLE_ANALYTICS_BROWSER_TYPE: 'Browsername / Version',
+    INFO_GOOGLE_ANALYTICS_REFERRER_URL: 'Die vorherige Seite, die dich auf battlechoc verlinkt hat',
+    INFO_GOOGLE_ANALYTICS_HOST_NAME: 'Dein host name, sowie die verwendete IP Adresse',
+    INFO_GOOGLE_ANALYTICS_SERVER_REQUEST: 'Dauer des Server-Requests',
+    INFO_GOOGLE_ANALYTICS_PREVENT: 'Diese Daten werden ebenfalls auf einen Google-Server in den USA übertragen und dort gespeichert. Die Informationen werden verwendet, um die Nutzung der Website zu bewerten, um Berichte über die Aktivitäten der Website für den Markt und unsere UI/UX-Forschung zu erstellen. Diese Informationen können auch an Dritte weitergegeben werden, wenn dies gesetzlich vorgeschrieben ist. In keinem Fall wird jedoch deine IP-Adresse mit anderen Daten von Google zusammengeführt. Die IP-Adressen sind anonymisiert, so dass kein Mapping auf dich persönlich möglich ist (IP-Masking). Du kannst die Verwendung von Cookies ablehnen, indem du die entsprechenden Einstellungen in deinem Browser vornimmst. Es ist auch möglich durch die Verwendung eins Browser-Add-ons (https://tools.google.com/dlpage/gaoptout?hl=de), die Erhebung von Daten, durch deine Nutzung von battlechoc, zu verhindern (einschließlich deiner IP-Adresse und die Verarbeitung dieser Daten durch Google). Als Alternative zum Browser-Add-on, insbesondere für Browser auf mobilen Geräten, kannst du verhindern, dass Google Analytics Daten sammelt, indem du auf den obigen Link klickst: Ein Opt-out Cookie wird gesetzt, um zu verhindern, dass deine Daten in Zukunft beim Besuch von battlechoc erfasst werden. Das Opt-out-Cookie ist nur in diesem Browser und nur für unsere Website gültig und wird auf deinem Gerät gespeichert. Wenn du die Cookies in diesem Browser löscht, musst du das Opt-out-Cookie erneut setzen. Weitere Informationen zum Thema Datenschutz im Zusammenhang mit Google Analytics findest du im Abschnitt Hilfe zu Google Analytics (https://policies.google.com/?hl=de). Der Dienstleister ist Teil des EU-US-Datenschutzabkommens.',
+    TUTORIAL: 'Tutorial',
+    IOS_MESSAGE: 'Drehe dein iPhone, um battlechoc im Vollbildmodus spielen zu können [0] oder verwende die Share-Funktion [1] und klicke auf [2] "Zum Home-Bildschirm"',
+    JOIN_MULTIPLAYER: 'Multiplayer Spiel beitreten',
+    TUTORIAL_CHOOSE_MESSAGE_1: 'Willkommen bei battlechoc! Es scheint das erste mal zu sein, dass du eine Runde spielst',
+    TUTORIAL_CHOOSE_MESSAGE_2: 'Du kannst die Tutorial Kapitel durch einen Klick auf dieses Icon überspringen',
+    TUTORIAL_CHOOSE_MESSAGE_3: 'Um mit dem Tutorial fortzufahren wähle zwischen dem ersten Zug, oder einem der beiden Spielfelder',
+    TUTORIAL_FACTORY_MESSAGE_1: 'Du benötigst eine Schokoladenfabrik, um z.B. Kakaobäume oder Rumtrüffelkanonen bauen zu können',
+    TUTORIAL_FACTORY_MESSAGE_2: 'Die Fabrik erlaubt dir 2 Gebäude pro Runde zu setzen',
+    TUTORIAL_FACTORY_MESSAGE_3: 'Tipp: Wenn du eine Fabrik auf schwarze Schokolade baust, arbeitet sie besser und kann bis zu 3 Gebäude pro Runde herstellen',
+    TUTORIAL_FACTORY_MESSAGE_4: 'Tippe auf eines der Felder, um die Fabrik zu setzen und mit dem Tutorial fortzufahren',
+    TUTORIAL_TREES_MESSAGE_1: 'Die wichtigsten Gebäude in battlechoc sind der Kakaobaum und die Rumtrüffelkanone',
+    TUTORIAL_TREES_MESSAGE_2: 'Du gewinnst das Spiel, wenn die Fabrik und alle Kanonen deines Gegners zerstört wurden',
+    TUTORIAL_TREES_MESSAGE_3: 'Pflanze einen Baum, um jede Runde Kakao zu erhalten, welches du z.B. für den Bau von Kanonen benötigst',
+    TUTORIAL_TREES_MESSAGE_4: 'Baue eine Kanone und greife deinen Gegner an, um mit dem Tutorial fortzufahren',
+    TUTORIAL_TREES_MESSAGE_5: 'Tipp: Du erhältst 1.5x mehr Kakao pro Runde, wenn du einen Baum auf weiße Schokolade setzt',
+    TUTORIAL_TREES_MESSAGE_6: 'battlechoc ist ein rundenbasiertes Strategiespiel. Eine Runde besteht aus Bau- und Angriffsphase',
+    TUTORIAL_TREES_MESSAGE_7: 'Falls du keine Aktion mehr ausführen kannst, beendet das Spiel automatisch deine Phase bzw. Runde',
+    TUTORIAL_TREES_MESSAGE_8: 'Wenn du vorzeitig eine Phase beenden möchtest, dann nutze den Vorspulen- bzw. Play-Button in der oberen Leiste',
+    TUTORIAL_TREES_MESSAGE_9: 'Du hast Kakao erhalten! Baue nun eine Kanone. Wähle die Kanone aus, indem du auf das Icon tippst',
+    TUTORIAL_TREES_MESSAGE_10: 'Jetzt kannst du deinen Gegner angreifen! Beende deine Bauphase und tippe auf die Fabrik deines Gegners',
+    TUTORIAL_BUNNY_MESSAGE_1: 'Die Gegnerischen Gebäude sind mit Sahne verdeckt. Willst du etwas Licht ins Dunkle bringen?',
+    TUTORIAL_BUNNY_MESSAGE_2: 'Benutze den Spionage-Osterhase, um die Felder des Gegners aufzudecken',
+    TUTORIAL_BUNNY_MESSAGE_3: 'Wähle ein Spielfeld aus. Der Osterhase wird die Felder um das ausgewählte Feld aufdecken',
+    TUTORIAL_BUNNY_MESSAGE_4: 'Oh nein! Dein Gegner besitzt ebenfalls einen Spionage-Osterhasen ...',
+    TUTORIAL_BUNNY_MESSAGE_5: 'Du hast etwas Kakao geerntet. Damit kannst du eine Weihnachtsfabrik bauen. Die Weihnachtsfabrik verhindert Spionage-Angriffe',
+    TUTORIAL_BUNNY_MESSAGE_6: 'Wenn der Osterhase ein Gebiet aufdecken möchte, indem eine Weihnachtsfabrik steht..',
+    TUTORIAL_BUNNY_MESSAGE_7: '.. wird er eingeschmolzen und du erhältst eine heiße Schokoladenschleuder!',
+    TUTORIAL_BUNNY_MESSAGE_8: 'Jetzt ist dein Gegner am Zug. Diese Animation ..',
+    TUTORIAL_BUNNY_MESSAGE_9: '.. bedeutet, dass dein Gegner nachdenkt',
+    TUTORIAL_FOUNTAIN_MESSAGE_1: 'Baue einen Kakaobaum und greife die gegnerische Fabrik an',
+    TUTORIAL_FOUNTAIN_MESSAGE_2: 'Zerstöre die Schokoladenfabrik deines Gegners um das Tutorial zu beenden',
+    TUTORIAL_FOUNTAIN_MESSAGE_3: 'Oh nein! Dein Gegner hat einen Schokoladenschild',
+    TUTORIAL_FOUNTAIN_MESSAGE_4: 'Normale Rumtrüffel können das Schild nicht durchdringen',
+    TUTORIAL_FOUNTAIN_MESSAGE_5: 'Ernte genügend Kakao um eine Fruchtkanone zu bauen',
+    TUTORIAL_FOUNTAIN_MESSAGE_6: 'Super! Du kannst nun deine Kannonen mit einer Frucherweiterung upgraden',
+    TUTORIAL_FOUNTAIN_MESSAGE_7: 'Früchte können zwar den Schild durchdringen, jedoch zerstören sie nur den Schokobrunnen und Sahne',
+    TUTORIAL_FOUNTAIN_MESSAGE_8: 'Aber sobald der Schokobrunnen zerstört ist, können deine Rumtrüffelkanonen die Fabrik deines Gegners zerstören!',
+    TUTORIAL_TITLE_1: 'Interaktives battlechoc Tutorial',
+    TUTORIAL_TITLE_2: 'Die Schokoladenfabrik',
+    TUTORIAL_TITLE_3: 'Kakaobäume und Rumtrüffelkanonen',
+    TUTORIAL_TITLE_4: 'Die Wahrheit über Weihnachten und Ostern',
+    TUTORIAL_TITLE_5: 'Schokobrunnen und Früchte',
+    TUTORIAL_DIALOG_TITLE_BEFORE: 'Du hast es fast geschafft',
+    TUTORIAL_DIALOG_TITLE: 'Du hast es geschafft!',
+    TUTORIAL_DIALOG_MESSAGE: 'Nun bist du bereit um eine richtige Runde battlechoc zu spielen. Willst du direkt starten?',
+    TUTORIAL_DIALOG_HINT: 'Es ist dir nun möglich aus dem Einstellungsmenü das Tutorial neu zu starten',
+    TUTORIAL_DIALOG_BACK: 'Zum Menü',
+    TUTORIAL_DIALOG_PLAY_GAME: 'Jetzt Spielen',
+    TUTORIAL_CHOOSE_NAME_INFO: 'Bevor wir starten solltest du dir unbedingt einen coolen Namen überlegen! Freunde können dich anhand deines Names wiederkennen und deine Gegner bringt er vielleicht zum Zittern.',
+    ACTIONS: 'Aktionen',
+    OPPONENT: 'Gegenspieler',
+    TURNS: 'Züge',
+    MATCH_TIME: 'Spielzeit',
+    LAST_ACTION: 'Letzte Aktion',
+    POTENTIAL_COINS: 'Mögliche Coins',
+    RANDOM_OPPONENT: 'Zufälliger Gegner',
+    SHARE_LINK: 'Profil-Link teilen',
+    FRIENDS: 'Freunde',
+    START_GAME: 'Spiel starten',
+    JOIN_GAME: 'Spiel beitreten',
+    FRIENDS_INFO: 'Du hast zur Zeit noch keine Freunde',
+    ADD_FRIEND: 'Als Freund hinzufügen',
+    REMOVE_FRIEND: 'Freund entfernen',
+    SEARCH_PLAYERS: 'Spieler suchen',
+    SEARCH_USER_INFO: 'Es wurde kein Spieler gefunden',
+    CHOCLAB_INCREASED_BY: 'erhöht um',
+    WARNING_GAME_NOT_JOINABLE: 'Das gewünschte Spiel wurde bereits beendet',
+    SURRENDER: 'Aufgeben',
+    SURRENDER_GAME: 'Spiel aufgeben',
+    PWA_UPDATE_AVAILABLE: 'Eine neue Version ist verfügbar und wird nach Neustart der PWA, oder des Browsers, verwendet',
+    PWA_OFFLINE_MODE: 'Du benutzt battlechoc ohne Internetverbindung, daher ist ausschließlich der Singleplayer-Modus verfügbar',
+    PWA_ONLINE_MODE: 'Du bist wieder mit dem Internet verbunden',
+    NO_HEALTHY_INTERNET: 'Es gab Verbindungsprobleme. Überprüfe bitte deine Internetverbindung und versuche es erneut',
+    SESSION_REFRESH_FAILED: 'Fehler beim Aktualisieren der Multiplayer Sessions. Überprüfe bitte deine Internetverbindung',
+    FETCH_HIGHSCORE_FAILED: 'Fehler beim Laden des Highscores. Überprüfe bitte deine Internetverbindung',
+    WARNING_GAME_NOT_JOINABLE_VIA_URL: 'Das gewählte Spiel wurde bereits beendet, oder ist nicht deinem Account zugeordnet',
+    ERROR_GAME_NOT_JOINABLE_VIA_URL: 'Spielstart fehlgeschlagen. Bitte überprüfe deine Internetverbindung',
+    TRY_TO_JOIN_GAME: 'Bitte warte kurz. Wir versuchen dich direkt mit deinem Multiplayerspiel zu verbinden',
+    TRY_TO_SHOW_PLAYER_ACCOUNT: 'Einen Augenblick bitte. Spielerinformationen werden geladen',
+    NOTIFICATION_PERMISSION_INFO: 'Wir werden dich gleich um Erlaubnis fragen, dich informieren zu dürfen, falls jemand dich herausfordert, oder ein Gegner seinen Zug beendet hat und du an der Reihe bist',
+    NO_ACCOUNT_INFO: 'Du bist zur Zeit nicht angemeldet. Melde dich im Einstellungsmenü an, oder starte einfach ein neues Spiel auf der Hauptseite, um einen neuen Account zu erstellen',
+    WARNING_PLAYER_NOT_FOUND_PRE_PART: 'Spieler ',
+    WARNING_PLAYER_NOT_FOUND_POST_PART: ' wurde nicht gefunden',
+    SURRENDER_GAME_TEXT_PART: 'Möchtest du das Spiel wirklich aufgeben gegen ',
+    UPDATE_LEVEL_FAILED_UPGRADE: 'Es war nicht möglich das Upgrade durchzuführen. Überprüfe deine Internetverbindung',
+    UPDATE_LEVEL_FAILED_DOWNGRADE: 'Es war nicht möglich das Downgrade durchzuführen. Überprüfe deine Internetverbindung',
+    ATTRIBUTE_NAME_hp: 'Lebenspunkte',
+    ATTRIBUTE_NAME_area: 'Reichweite',
+    ATTRIBUTE_NAME_buildingsPerTurn: 'Gebäude pro Runde',
+    ATTRIBUTE_NAME_cacaoPerTurn: 'Kakao pro Runde',
+    ATTRIBUTE_NAME_attack: 'Angriff',
+    ATTRIBUTE_NAME_fortune: 'Glück',
+    ATTRIBUTE_NAME_donutProbability: 'Donut-Wahrscheinlichkeit',
+    ATTRIBUTE_NAME_donutTypes: 'Donutsorten',
+    ATTRIBUTE_NAME_UNKNOWN: 'Unbekannt',
+    TOOLTIP_INITIAL_TURN_OPPONENT: function (name) {
+        return name + this.TOOLTIP_INITIAL_TURN_OPPONENT_PART;
+    },
+    TOOLTIP_BUILDING_TITLE: function (type) {
+        switch (type) {
+            case EntityType.CREAM:
+            case EntityType.FACTORY_EXTENSION:
+            case EntityType.FACTORY:
+            case EntityType.HOT_CHOCOLATE_BALLISTA:
+            case EntityType.CACAOTREE:
+            case EntityType.RUM_TRUFFLE_CANNON:
+            case EntityType.XMAS_FACTORY:
+            case EntityType.SPYING_EASTER_BUNNY:
+            case EntityType.CHOCOLATE_FOUNTAIN:
+            case EntityType.FRUIT_CANNON:
+            case EntityType.DONUT_FACTORY:
+            case EntityType.DONUT_PORTAL_RED:
+            case EntityType.DONUT_PORTAL_BLUE:
+            case EntityType.DONUT_STOP_PINK:
+            case EntityType.DONUT_SURPRISE_YELLOW:
+            case EntityType.DONUT_HEALTH_GREEN:
+            case EntityType.DONUT_CREAM_WHITE:
+                return this['TOOLTIP_BUILDING_TITLE_' + type.replace('EntityType.', '')];
+            default: return this.TOOLTIP_BUILDING_TITLE_UNKNOWN;
+        }
+    },
+    TOOLTIP_BUILDING_INFO: function (type, building) {
+        switch (type) {
+            case EntityType.CREAM:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_CREAM,
+                    costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs
+                }
+            case EntityType.FACTORY_EXTENSION:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_FACTORY_EXTENSION,
+                    costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                    advantages: this.TOOLTIP_BUILDING_INFO_BUILDINGS_PER_TURN + building.buildingsPerTurn
+                }
+            case EntityType.CACAOTREE:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_CACAOTREE,
+                    costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                    advantages: this.TOOLTIP_BUILDING_INFO_CACAO_PER_TURN + building.cacaoPerTurn
+                }
+            case EntityType.RUM_TRUFFLE_CANNON:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_RUM_TRUFFLE_CANNON,
+                    costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                    advantages: this.TOOLTIP_BUILDING_INFO_ATTACKS_PER_TURN
+                }
+            case EntityType.XMAS_FACTORY:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_XMAS_FACTORY,
+                    costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs
+                }
+            case EntityType.SPYING_EASTER_BUNNY:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_SPYING_EASTER_BUNNY,
+                    costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                    advantages: this.TOOLTIP_BUILDING_INFO_SPYING_PER_TURN
+                }
+            case EntityType.CHOCOLATE_FOUNTAIN:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_CHOCOLATE_FOUNTAIN,
+                    costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                    advantages: this.TOOLTIP_BUILDING_INFO_CHOCOLATE_FOUNTAIN_ADVANTAGE
+                }
+            case EntityType.FRUIT_CANNON:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_FRUIT_CANNON,
+                    costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                    advantages: this.TOOLTIP_BUILDING_INFO_FRUIT_CANNON_ADVANTAGE
+                }
+            case EntityType.DONUT_FACTORY:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_DONUT_FACTORY,
+                    costs: this.TOOLTIP_BUILDING_COSTS_PART + building.costs,
+                    advantages: this.TOOLTIP_BUILDING_INFO_DONUT_FACTORY_ADVANTAGE_PART + `${building.donutProbability * 100}%`
+                }
+            case EntityType.DONUT_PORTAL_RED:
+            case EntityType.DONUT_PORTAL_BLUE:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_DONUT_PORTAL_RED_BLUE
+                }
+            case EntityType.DONUT_CREAM_WHITE:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_DONUT_CREAM_WHITE
+                }
+            case EntityType.DONUT_HEALTH_GREEN:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_DONUT_HEALTH_GREEN
+                }
+            case EntityType.DONUT_STOP_PINK:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_DONUT_STOP_PINK
+                }
+            case EntityType.DONUT_SURPRISE_YELLOW:
+                return {
+                    info: this.TOOLTIP_BUILDING_INFO_DONUT_SURPRISE_YELLOW
+                }
+            default: return { info: this.TOOLTIP_BUILDING_INFO_UNKNOWN }
+        }
+    },
+    TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE: function (attackType) {
+        switch (attackType) {
+            case AttackType.TRUFFLE:
+            case AttackType.FRUIT:
+            case AttackType.HOT_CHOCOLATE:
+            case AttackType.BUNNY:
+                return this['TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_' + attackType.replace('AttackType.', '')];
+            default: return this.TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_UNKNOWN;
+        }
+    },
+    TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE: function (attackType) {
+        switch (attackType) {
+            case AttackType.TRUFFLE:
+            case AttackType.FRUIT:
+            case AttackType.HOT_CHOCOLATE:
+            case AttackType.BUNNY:
+                return this['TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_' + attackType.replace('AttackType.', '')];;
+            default: return this.TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_UNKNOWN;
+        }
+    },
+    ATTRIBUTE_NAME: function (attribute) {
+        switch (attribute) {
+            case 'hp':
+            case 'area':
+            case 'buildingsPerTurn':
+            case 'cacaoPerTurn':
+            case 'attack':
+            case 'fortune':
+            case 'donutProbability':
+            case 'donutTypes':
+                return this['ATTRIBUTE_NAME_' + attribute];
+            default: return this.ATTRIBUTE_NAME_UNKNOWN;
+        }
+    },
+    WARNING_PLAYER_NOT_FOUND: function (name) {
+        return this.WARNING_PLAYER_NOT_FOUND_PRE_PART + name + this.WARNING_PLAYER_NOT_FOUND_PRE_PART
+    },
+    SURRENDER_GAME_TEXT: function (name) {
+        return this.SURRENDER_GAME_TEXT_PART + name
+    },
+    UPDATE_LEVEL_FAILED: function (upgrade) {
+        return upgrade ? this.UPDATE_LEVEL_FAILED_UPGRADE : this.UPDATE_LEVEL_FAILED_DOWNGRADE;
+    }
+}
+
+export default translations;

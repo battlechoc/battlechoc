@@ -1,6 +1,56 @@
 import { EntityType, AttackType } from 'battlechoc-shared-functions';
+import * as translations from './translations';
+
+class Translation {
+    constructor() {
+        this.currentLanguage = window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en';
+    }
+
+    isValid(language) {
+        return ['en', 'de', 'jp'].includes(language);
+    }
+}
+
+const translation = new Translation();
+
+function setCurrentLanguage(language) {
+    if (translation.isValid(language)) {
+        translation.currentLanguage = language;
+    } else {
+        console.error("invalid language " + language + " given. Current language " + translation.currentLanguage + " used.");
+    }
+}
+
+function getCurrentLanguage() {
+    return translation.currentLanguage;
+}
+
+function translate(key) {
+    if (typeof key === 'undefined') {
+        console.error("invalid translation key given");
+        return '';
+    } else {
+        const currentTranslation = translations[translation.currentLanguage];
+        if (typeof currentTranslation === 'undefined') {
+            console.warn("translations data for current language " + translation.currentLanguage + " undefined. this is weired.");
+            return '';
+        } else {
+            if (typeof currentTranslation[key] === 'undefined') {
+                console.warn("invalid translation key " + key + " given for current language " + translation.currentLanguage);
+                return '';
+            } else {
+                if (typeof currentTranslation[key] === 'function') {
+                    return currentTranslation[key](...([].slice.call(arguments, 1)));
+                } else {
+                    return currentTranslation[key];
+                }
+            }
+        }
+    }
+}
 
 const languages = {
+    testtest: translate,
     en: {
         SIGNINORUP: 'Sign in',
         NEW_GAME: 'New Game',
@@ -334,7 +384,7 @@ const languages = {
                 default: return { info: this.TOOLTIP_BUILDING_INFO_UNKNOWN }
             }
         },
-        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE: function(attackType) {
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE: function (attackType) {
             switch (attackType) {
                 case AttackType.TRUFFLE:
                 case AttackType.FRUIT:
@@ -428,131 +478,64 @@ const languages = {
         INVITATION: 'Spiel mit mir battlechoc!',
         TOOLTIP_INITIAL_TURN_TITLE: 'Erste Runde',
         TOOLTIP_INITIAL_TURN_MESSAGE: 'In der ersten Runde kannst du dich für eines der Spielfelder, oder den ersten Zug entscheiden',
-        TOOLTIP_INITIAL_TURN_OPPONENT: name => name + ' kann nun ein Spielfeld aussuchen',
-        TOOLTIP_BUILDING_TITLE: (type) => {
-            switch (type) {
-                case EntityType.CREAM: return 'Sahne';
-                case EntityType.FACTORY: return 'Schokoladenfabrik';
-                case EntityType.HOT_CHOCOLATE_BALLISTA: return 'Heiße Schokoladenschleuder';
-                case EntityType.FACTORY_EXTENSION: return 'Fabrikerweiterung';
-                case EntityType.CACAOTREE: return 'Kakaobaum';
-                case EntityType.RUM_TRUFFLE_CANNON: return 'Rumkugel-Kanone';
-                case EntityType.XMAS_FACTORY: return 'Weihnachtsfabrik';
-                case EntityType.SPYING_EASTER_BUNNY: return 'Osterhase';
-                case EntityType.CHOCOLATE_FOUNTAIN: return 'Schokoladenbrunnen';
-                case EntityType.FRUIT_CANNON: return 'Fruchtkanone';
-                case EntityType.DONUT_FACTORY: return 'Donutfabrik';
-                case EntityType.DONUT_PORTAL_RED: return 'Roter Portal-Donut';
-                case EntityType.DONUT_PORTAL_BLUE: return 'Blauer Portal-Donut';
-                case EntityType.DONUT_STOP_PINK: return 'Pinker Stop-Donut';
-                case EntityType.DONUT_SURPRISE_YELLOW: return 'Gelber Überraschungs-Donut';
-                case EntityType.DONUT_HEALTH_GREEN: return 'Grüner Heilungs-Donut';
-                case EntityType.DONUT_CREAM_WHITE: return 'Weißer Sahne-Donut';
-                default: return 'Unbekannt';
-            }
-        },
-        TOOLTIP_BUILDING_INFO: (type, building) => {
-            switch (type) {
-                case EntityType.CREAM:
-                    return {
-                        info: 'Gebäude die in Sahne gebaut sind bleiben dem Gegner verborgen. Die Baureihenfolge von Sahne und Gebäude sind dabei egal',
-                        costs: 'Kakaokosten: ' + building.costs
-                    }
-                case EntityType.FACTORY_EXTENSION:
-                    return {
-                        info: 'Eine Fabrikerweiterung kann nur direkt neben deiner Fabrik platziert werden',
-                        costs: 'Kakaokosten: ' + building.costs,
-                        advantages: 'Gebäude pro Runde +2'
-                    }
-                case EntityType.CACAOTREE:
-                    return {
-                        info: 'Der Kakaobaum gibt dir alles was du an Rohstoffen brauchst',
-                        costs: 'Kakaokosten: ' + building.costs,
-                        advantages: 'Kakao pro Runde +30'
-                    }
-                case EntityType.RUM_TRUFFLE_CANNON:
-                    return {
-                        info: 'Die Rumtrüffelkanone führt dich zum Sieg',
-                        costs: 'Kakaokosten: ' + building.costs,
-                        advantages: 'Angriffe pro Runde +1'
-                    }
-                case EntityType.XMAS_FACTORY:
-                    return {
-                        info: 'Das Gerücht, dass Osterhasen zu Weihnachtsmännern eingeschmolzen werden stimmt! Kommt ein Osterhase in die Nähe der Weihnachtsfabrik wartet ein Geschenk auf dich',
-                        costs: 'Kakaokosten: ' + building.costs
-                    }
-                case EntityType.SPYING_EASTER_BUNNY:
-                    return {
-                        info: 'Der Spionage-Osterhase kann unter die Sahne des Gegners schauen, aber achte auf mögliche Weihnachtsfabriken',
-                        costs: 'Kakaokosten: ' + building.costs,
-                        advantages: 'Spionage pro Runde +1'
-                    }
-                case EntityType.CHOCOLATE_FOUNTAIN:
-                    return {
-                        info: 'Der Schololadenbrunnen schützt in einem Bereich von 3x3 Feldern um ihn herum alle anderen Gebäude gegen gegnerischen Beschuss und kann nur durch die Hot Chocolate Ballista oder eine Fruchtkanone zerstört werden.',
-                        costs: 'Kakaokosten: ' + building.costs,
-                        advantages: 'Schützt einen 3x3 großen Bereich'
-                    }
-                case EntityType.FRUIT_CANNON:
-                    return {
-                        info: 'Die Fruchtkanone zerstört nur Sahnehäubchen oder gegnerische Schokoladenbrunnen.',
-                        costs: 'Kakaokosten: ' + building.costs,
-                        advantages: 'Fruchtangriffe pro Runde +1'
-                    }
-                case EntityType.DONUT_FACTORY:
-                    return {
-                        info: 'Die Donutfabrik stellt Donutfallen her, die dem Gegner sehr gefährlich werden können',
-                        costs: 'Kakaokosten: ' + building.costs,
-                        advantages: `Produziert pro Runde einen Donut mit einer Wahrscheinlichkeit von ${building.donutProbability * 100}%`
-                    }
-                case EntityType.DONUT_PORTAL_RED:
-                case EntityType.DONUT_PORTAL_BLUE:
-                    return {
-                        info: 'Wenn der blaue Donut durch einen Angriff ausgelöst wird, vertauscht er durch ein Portal sein Feld und alle Einheiten mit dem dazugehörigen roten Donut'
-                    }
-                case EntityType.DONUT_CREAM_WHITE:
-                    return {
-                        info: 'Wenn der weiße Donut durch einen Angriff ausgelöst wird, füllt er seine 5x5 Umgebung mit Sahne'
-                    }
-                case EntityType.DONUT_HEALTH_GREEN:
-                    return {
-                        info: 'Wenn der grüne Donut durch einen Angriff ausgelöst wird, heilt er seine 5x5 Umgebung vollständig'
-                    }
-                case EntityType.DONUT_STOP_PINK:
-                    return {
-                        info: 'Wenn der pinke Donut durch einen Angriff ausgelöst wird, endet die Angriffsphase des Gegners sofort'
-                    }
-                case EntityType.DONUT_SURPRISE_YELLOW:
-                    return {
-                        info: 'Wenn der gelbe Donut durch einen Angriff ausgelöst wird, füllt er entweder zufällig seine 5x5 Umgebung mit Sahne, heilt sie vollständig, oder beendet die Angriffsphase des Gegners sofort'
-                    }
-                default: return { info: 'Unbekanntes Gebäude' }
-            }
-        },
+        TOOLTIP_INITIAL_TURN_OPPONENT_PART: ' kann nun ein Spielfeld aussuchen.',
+        TOOLTIP_BUILDING_TITLE_CREAM: 'Sahne',
+        TOOLTIP_BUILDING_TITLE_FACTORY_EXTENSION: 'Fabrikerweiterung',
+        TOOLTIP_BUILDING_TITLE_FACTORY: 'Schokoladenfabrik',
+        TOOLTIP_BUILDING_TITLE_HOT_CHOCOLATE_BALLISTA: 'Heiße Schokoladenschleuder',
+        TOOLTIP_BUILDING_TITLE_CACAOTREE: 'Kakaobaum',
+        TOOLTIP_BUILDING_TITLE_RUM_TRUFFLE_CANNON: 'Rumkugel-Kanone',
+        TOOLTIP_BUILDING_TITLE_XMAS_FACTORY: 'Weihnachtsfabrik',
+        TOOLTIP_BUILDING_TITLE_SPYING_EASTER_BUNNY: 'Spionage-Osterhase',
+        TOOLTIP_BUILDING_TITLE_CHOCOLATE_FOUNTAIN: 'Schokoladenbrunnen',
+        TOOLTIP_BUILDING_TITLE_FRUIT_CANNON: 'Fruchtkanone',
+        TOOLTIP_BUILDING_TITLE_DONUT_FACTORY: 'Donutfabrik',
+        TOOLTIP_BUILDING_TITLE_DONUT_PORTAL_RED: 'Roter Portal-Donut',
+        TOOLTIP_BUILDING_TITLE_DONUT_PORTAL_BLUE: 'Blauer Portal-Donut',
+        TOOLTIP_BUILDING_TITLE_DONUT_STOP_PINK: 'Pinker Stop-Donut',
+        TOOLTIP_BUILDING_TITLE_DONUT_SURPRISE_YELLOW: 'Gelber Überraschungs-Donut',
+        TOOLTIP_BUILDING_TITLE_DONUT_HEALTH_GREEN: 'Grüner Heilungs-Donut',
+        TOOLTIP_BUILDING_TITLE_DONUT_CREAM_WHITE: 'Weißer Sahne-Donut',
+        TOOLTIP_BUILDING_TITLE_UNKNOWN: 'Unbekannt',
+        TOOLTIP_BUILDING_INFO_CREAM: 'Gebäude die in Sahne gebaut sind bleiben dem Gegner verborgen. Die Baureihenfolge von Sahne und Gebäude sind dabei egal.',
+        TOOLTIP_BUILDING_INFO_FACTORY_EXTENSION: 'Eine Fabrikerweiterung kann nur direkt neben deiner Fabrik platziert werden.',
+        TOOLTIP_BUILDING_INFO_CACAOTREE: 'Der Kakaobaum gibt dir alles was du an Rohstoffen brauchst.',
+        TOOLTIP_BUILDING_INFO_RUM_TRUFFLE_CANNON: 'Die Rumtrüffelkanone führt dich zum Sieg.',
+        TOOLTIP_BUILDING_INFO_XMAS_FACTORY: 'Das Gerücht, dass Osterhasen zu Weihnachtsmännern eingeschmolzen werden stimmt! Kommt ein Osterhase in die Nähe der Weihnachtsfabrik wartet ein Geschenk auf dich.',
+        TOOLTIP_BUILDING_INFO_SPYING_EASTER_BUNNY: 'Der Spionage-Osterhase kann unter die Sahne des Gegners schauen, aber achte auf mögliche Weihnachtsfabriken.',
+        TOOLTIP_BUILDING_INFO_CHOCOLATE_FOUNTAIN: 'Der Schololadenbrunnen schützt in einem Bereich von 3x3 Feldern um ihn herum alle anderen Gebäude gegen gegnerischen Beschuss und kann nur durch die Hot Chocolate Ballista oder eine Fruchtkanone zerstört werden.',
+        TOOLTIP_BUILDING_INFO_FRUIT_CANNON: 'Die Fruchtkanone zerstört nur Sahnehäubchen oder gegnerische Schokoladenbrunnen.',
+        TOOLTIP_BUILDING_INFO_DONUT_FACTORY: 'Die Donutfabrik stellt Donutfallen her, die dem Gegner sehr gefährlich werden können.',
+        TOOLTIP_BUILDING_INFO_DONUT_PORTAL_RED_BLUE: 'Wenn der blaue Donut durch einen Angriff ausgelöst wird, vertauscht er durch ein Portal sein Feld und alle Einheiten mit dem dazugehörigen roten Donut.',
+        TOOLTIP_BUILDING_INFO_DONUT_STOP_PINK: 'Wenn der pinke Donut durch einen Angriff ausgelöst wird, endet die Angriffsphase des Gegners sofort.',
+        TOOLTIP_BUILDING_INFO_DONUT_SURPRISE_YELLOW: 'Wenn der gelbe Donut durch einen Angriff ausgelöst wird, füllt er entweder zufällig seine 5x5 Umgebung mit Sahne, heilt sie vollständig, oder beendet die Angriffsphase des Gegners sofort.',
+        TOOLTIP_BUILDING_INFO_DONUT_HEALTH_GREEN: 'Wenn der grüne Donut durch einen Angriff ausgelöst wird, heilt er seine 5x5 Umgebung vollständig.',
+        TOOLTIP_BUILDING_INFO_DONUT_CREAM_WHITE: 'Wenn der weiße Donut durch einen Angriff ausgelöst wird, füllt er seine 5x5 Umgebung mit Sahne.',
+        TOOLTIP_BUILDING_INFO_UNKNOWN: 'Unbekanntes Gebäude',
+        TOOLTIP_BUILDING_COSTS_PART: 'Kakaokosten: ',
+        TOOLTIP_BUILDING_INFO_BUILDINGS_PER_TURN: 'Gebäude pro Runde +',
+        TOOLTIP_BUILDING_INFO_CACAO_PER_TURN: 'Kakao pro Runde +',
+        TOOLTIP_BUILDING_INFO_ATTACKS_PER_TURN: 'Angriffe pro Runde +1',
+        TOOLTIP_BUILDING_INFO_SPYING_PER_TURN: 'Spionage pro Runde +1',
+        TOOLTIP_BUILDING_INFO_CHOCOLATE_FOUNTAIN_ADVANTAGE: 'Schützt einen 3x3 großen Bereich.',
+        TOOLTIP_BUILDING_INFO_FRUIT_CANNON_ADVANTAGE: 'Fruchtangriffe pro Runde +1',
+        TOOLTIP_BUILDING_INFO_DONUT_FACTORY_ADVANTAGE_PART: 'Produziert pro Runde einen Donut mit einer Wahrscheinlichkeit von ',
         TOOLTIP_INITIAL_PLACEMENT_TITLE: 'Erste Bauphase',
         TOOLTIP_INITIAL_PLACEMENT_MESSAGE: 'In der ersten Bauphase kannst du einmalig die Fabrik setzen. Überlege daher gut: Ist die Fabrik zerstört kannst du keine weiteren Gebäude bauen',
         TOOLTIP_BUILD_PHASE_TITLE: 'Bauphase',
         TOOLTIP_BUILD_PHASE_MESSAGE: 'Wähle ein Gebäude aus der unteren Symbolleiste aus und plaziere es. Sahne ist durchsichtig dargestellt. Ein Gebäude, dass in Sahne gebaut wird ist unsichtbar für den Gegner',
         TOOLTIP_ATTACK_PHASE_TITLE: 'Angiffsphase',
-        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE: (attackType) => {
-            switch (attackType) {
-                case AttackType.TRUFFLE: return 'Rumkugel';
-                case AttackType.FRUIT: return 'Frucht';
-                case AttackType.HOT_CHOCOLATE: return 'Heiße Schokolade';
-                case AttackType.BUNNY: return 'Spionage-Osterhase';
-                default: return 'Unbekannt';
-            }
-        },
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_TRUFFLE: 'Rumkugel',
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_FRUIT: 'Frucht',
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_HOT_CHOCOLATE: 'Heiße Schokolade',
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_BUNNY: 'Spionage-Osterhase',
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_UNKNOWN: 'Unbekannt',
         TOOLTIP_ATTACK_PHASE_MESSAGE: 'Klicke auf ein gegnerisches Gebäude um es anzugreifen. Hinweis: Kluge Gegner verstecken ihre Gebäude unter Sahne',
-        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE: (attackType) => {
-            switch (attackType) {
-                case AttackType.TRUFFLE: return 'Zerstört Gebäude und Sahne. Kann durch den Schild des Schokobrunnens abgewehrt werden.';
-                case AttackType.FRUIT: return 'Zerstört Sahne und Schokobrunnen. Andere Gebäude werden durch die Fruchtkanone nicht gefährdet.';
-                case AttackType.HOT_CHOCOLATE: return 'Zerstört Gebäude, Sahne und sogar das Spielfeld an der Stelle des Angriffs. Kann nicht durch den Schokobrunnenschild abgewehrt werden.';
-                case AttackType.BUNNY: return 'Deckt alle Felder mit Sahne im 3x3 Umfeld des Angriffs auf. Wird von der Weihnachtsfabrik eingefangen, wenn sie in der Nähe des Angriffs ist.';
-                default: return 'Klicke auf ein gegnerisches Gebäude um es anzugreifen. Hinweis: Kluge Gegner verstecken ihre Gebäude unter Sahne';
-            }
-        },
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_TRUFFLE: 'Zerstört Gebäude und Sahne. Kann durch den Schild des Schokobrunnens abgewehrt werden.',
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_FRUIT: 'Zerstört Sahne und Schokobrunnen. Andere Gebäude werden durch die Fruchtkanone nicht gefährdet.',
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_HOT_CHOCOLATE: 'Zerstört Gebäude, Sahne und sogar das Spielfeld an der Stelle des Angriffs. Kann nicht durch den Schokobrunnenschild abgewehrt werden.',
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_BUNNY: 'Deckt alle Felder mit Sahne im 3x3 Umfeld des Angriffs auf. Wird von der Weihnachtsfabrik eingefangen, wenn sie in der Nähe des Angriffs ist.',
+        TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_UNKNOWN: 'Unbekannt',
         MESSAGE_WIN_GAME: 'Glückwunsch! Du hast das Spiel gewonnen',
         MESSAGE_LOST_GAME: 'Du hast verloren',
         MESSAGE_DRAW_GAME: 'Unentschieden!',
@@ -778,7 +761,7 @@ const languages = {
                 default: return { info: this.TOOLTIP_BUILDING_INFO_UNKNOWN }
             }
         },
-        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE: function(attackType) {
+        TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE: function (attackType) {
             switch (attackType) {
                 case AttackType.TRUFFLE:
                 case AttackType.FRUIT:
@@ -1123,5 +1106,4 @@ const languages = {
     }
 };
 
-
-export default languages;
+export { languages, setCurrentLanguage, getCurrentLanguage, translate };

@@ -18,6 +18,7 @@ import uuidv4 from 'uuid/v4';
 import Tutorial from './tutorial/Tutorial';
 import QuickMessage from './ui/dialogs/QuickMessage';
 import logger from './helper/logger';
+import { setCurrentLanguage } from './ui/misc/Translation';
 
 const Scene = React.lazy(() => import('./3d/Scene'));
 
@@ -95,8 +96,10 @@ class App extends Component {
         OfflineStore.settingsStore.get('language').then(language => {
             if (typeof language !== 'undefined') {
                 this.props.changeLanguage(language);
+                setCurrentLanguage(language);
             } else {
                 this.props.changeLanguage(browserLanguage);
+                setCurrentLanguage(browserLanguage);
             }
         });
 

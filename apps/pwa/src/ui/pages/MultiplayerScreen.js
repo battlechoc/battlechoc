@@ -5,6 +5,7 @@ import TextField from '@material-ui/core/TextField';
 import Fab from '@material-ui/core/Fab';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { Jukebox, Translation as t } from '../misc';
+import { translate as tt } from '../misc/Translation';
 import Axios from 'axios';
 import { showQuickMessage } from '../UiActions';
 import { PlayArrow, ChevronRight, LastPage, FirstPage, ChevronLeft, HourglassEmpty, Cancel, AccountCircle, FormatListNumbered, Casino, People, Search, Share } from '@material-ui/icons';
@@ -17,7 +18,7 @@ import { ServerRequest } from '../../helper/settings';
 import logger from '../../helper/logger';
 import BattlechocDialog from '../dialogs/BattlechocDialog';
 import PlayerList from '../controls/PlayerList';
-import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
+import { NoHealthyInternetConnectionError, EntityType } from 'battlechoc-shared-functions';
 
 class MultiplayerScreen extends Component {
     constructor(props) {
@@ -42,6 +43,10 @@ class MultiplayerScreen extends Component {
         this.source = Axios.CancelToken.source();
         this.inputRef = React.createRef();
         this.requestRunning = false;
+
+        console.log(tt("NEW_GAME"));
+        console.log(tt("TOOLTIP_BUILDING_TITLE", EntityType.CREAM));
+        console.log(t.testtest("NEW_GAME"));
     }
 
     componentDidMount() {

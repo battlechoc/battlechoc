@@ -4,6 +4,7 @@ import { EmptyPlayerStats, EntityType } from 'battlechoc-shared-functions';
 import OfflineStore from '../OfflineStore';
 import { ServerRequest } from '../helper/settings';
 import logger from '../helper/logger';
+import { setCurrentLanguage } from './misc/Translation';
 
 const uiReducer = createReducer({
     selectedBuilding: EntityType.FACTORY,
@@ -43,6 +44,8 @@ const uiReducer = createReducer({
         state.selectedAttack = action.payload;
     },
     [UiActions.changeLanguage]: (state, action) => {
+        setCurrentLanguage(action.payload);
+        // TODO remove from state
         state.language = action.payload;
         ServerRequest('post', '/user/language', { language: action.payload })
         .catch(error => {
