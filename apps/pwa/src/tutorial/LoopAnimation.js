@@ -1,5 +1,5 @@
 export default class LoopAnimation {
-    constructor(getGame, manipulate, spawnInfo, setRenderLoop, reset, loadSituation, detonateAtPosition, selectBuilding, tapBuilding) {
+    constructor(getGame, manipulate, spawnInfo, setRenderLoop, reset, loadSituation, detonateAtPosition, selectBuilding, tapBuilding, selectAttack) {
         this.getGame = getGame;
         this.setRenderLoop = setRenderLoop;
         this.reset = reset;
@@ -7,6 +7,7 @@ export default class LoopAnimation {
         this.detonateAtPosition = detonateAtPosition;
         this.selectBuilding = selectBuilding;
         this.tapBuilding = tapBuilding;
+        this.selectAttack = selectAttack;
         this.token = { cancel: null };
         this.running = false;
         this.next = null;
@@ -58,7 +59,7 @@ export default class LoopAnimation {
         await sleep(1000);
         const game = this.getGame();
         this.situation = new Situation();
-        await this.situation.play(game, this.manipulate, this.spawnInfo, sleep, this.detonateAtPosition, this.selectBuilding, this.tapBuilding);
+        await this.situation.play(game, this.manipulate, this.spawnInfo, sleep, this.detonateAtPosition, this.selectBuilding, this.tapBuilding, this.selectAttack);
         await sleep(2000);
         this.setRenderLoop(false);
         await this.reset();

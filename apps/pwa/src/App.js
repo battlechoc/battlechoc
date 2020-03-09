@@ -592,7 +592,8 @@ class App extends Component {
                     detonateAtPosition={this.detonateAtPosition}
                     selectBuilding={this.props.selectBuilding}
                     tapBuilding={this.props.tapBuilding}
-                    loadSituation={async situation => await this.loadSituation(situation)}
+                    selectAttack={this.props.selectAttack}
+                    loadSituation={async situation => await this.loadSituation(situation)} 
                     closeTutorial={this.closeTutorial} /> : null}
             </div>
         );

@@ -11,9 +11,9 @@ export default class FactoryExtension extends Situation {
         this.modifyBoard({ row: 1, col: 2, cellType: BoardCellTypes.BLACK, buildings:[] });
         game.state = GameStateTypes.BUILD_PHASE;
         game.currentPlayerIndex = 0;
-        game.players[0].cacao = 400;
-        game.players[0].buildingsPerTurn = 3;
-        game.players[0].buildings = 3;
+        game.players[0].cacao = 500;
+        game.players[0].buildingsPerTurn = 4;
+        game.players[0].buildings = 4;
         game.players[0].hasFactory = true;
         
         this.game.ui.whitelistBuildings = [EntityType.FACTORY_EXTENSION];
