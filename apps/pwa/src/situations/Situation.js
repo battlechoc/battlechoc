@@ -44,26 +44,30 @@ export default class Situation {
 
     async build(entityType, position, pseudoGame, spawnInfo, manipulate) {  
         this.getFieldAt(pseudoGame.board, position).occupiedBy.push(createEntity(entityType));
+        const descriptor = getEntityDescriptor(entityType);
         if (entityType === EntityType.CACAOTREE) {
-            const descriptor = getEntityDescriptor(entityType);
             let cacaoPerTurn = descriptor.cacaoPerTurn;
             if (this.getFieldAt(pseudoGame.board, position).type === BoardCellTypes.WHITE) {
                 cacaoPerTurn = Math.round(cacaoPerTurn * 1.5);
             }
             pseudoGame.players[0].cacaoPerTurn += cacaoPerTurn;
             pseudoGame.players[0].cacao -= descriptor.costs;
+            pseudoGame.players[0].buildings -= 1;
             spawnInfo(InfoType.INCREASE_CACAO_PER_TURN, position, cacaoPerTurn);
         } else if (entityType === EntityType.RUM_TRUFFLE_CANNON) {
-            const descriptor = getEntityDescriptor(entityType);
             pseudoGame.players[0].attacksPerTurn[AttackType.TRUFFLE] += descriptor.attacksPerTurn;
             pseudoGame.players[0].attacks[AttackType.TRUFFLE] += descriptor.attacksPerTurn;
             pseudoGame.players[0].cacao -= descriptor.costs;
+            pseudoGame.players[0].buildings -= 1;
             spawnInfo(InfoType.INCREASE_ATTACKS_PER_TURN, position, descriptor.attacksPerTurn)
         } else if (entityType === EntityType.FACTORY || entityType === EntityType.FACTORY_EXTENSION) {
-            const descriptor = getEntityDescriptor(entityType);
             let buildingsPerTurn = descriptor.buildingsPerTurn;
             if (this.getFieldAt(pseudoGame.board, position).type === BoardCellTypes.BLACK) {
                 buildingsPerTurn += 1;
+            }
+            if (entityType === EntityType.FACTORY_EXTENSION) {
+                pseudoGame.players[0].buildings -= 1;
+                pseudoGame.players[0].cacao -= descriptor.costs;
             }
             pseudoGame.players[0].buildingsPerTurn += buildingsPerTurn;
             spawnInfo(InfoType.INCREASE_BUILDINGS_PER_TURN, position, buildingsPerTurn)
@@ -71,10 +75,17 @@ export default class Situation {
             pseudoGame.players[0].attacks[AttackType.BUNNY] += 1;
             pseudoGame.players[0].attacksPerTurn[AttackType.BUNNY] += 1;
             spawnInfo(InfoType.INCREASE_SPY_ATTACKS_PER_TURN, position, 1);
+            pseudoGame.players[0].buildings -= 1;
+            pseudoGame.players[0].cacao -= descriptor.costs;
         } else if (entityType === EntityType.FRUIT_CANNON) {
             this.getFieldAt(pseudoGame.board, position).occupiedBy = this.getFieldAt(pseudoGame.board, position).occupiedBy.filter(entity => entity.type !== EntityType.RUM_TRUFFLE_CANNON);
             pseudoGame.players[0].attacks[AttackType.FRUIT] += 1;
             pseudoGame.players[0].attacksPerTurn[AttackType.FRUIT] += 1;
+            pseudoGame.players[0].buildings -= 1;
+            pseudoGame.players[0].cacao -= descriptor.costs;
+        } else if ([EntityType.CREAM, EntityType.XMAS_FACTORY, EntityType.CHOCOLATE_FOUNTAIN, EntityType.DONUT_FACTORY].includes(entityType)) {
+            pseudoGame.players[0].cacao -= descriptor.costs;
+            pseudoGame.players[0].buildings -= 1;
         }
         return await manipulate(pseudoGame);
     }

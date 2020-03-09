@@ -37,7 +37,7 @@ export default class DonutFactory extends Situation {
         return 'The Donut Factory produces one donut per round with a certain probability. Donuts triggers like traps when they are attacked. The Donut Factory can be improved in the Choclab to unlock new donut types';
     }
 
-    async play(game, manipulate, spawnInfo, sleep) {
+    async play(game, manipulate, spawnInfo, sleep, detonateAtPosition, selectBuilding, tapBuilding) {
         this.running = true;
         let pseudoGame = JSON.parse(JSON.stringify(game));        
         pseudoGame = await this.build(EntityType.DONUT_FACTORY, { row: 2, col: 1 }, pseudoGame, spawnInfo, manipulate);
@@ -50,7 +50,9 @@ export default class DonutFactory extends Situation {
         pseudoGame.players[0].donuts.push(createEntity(EntityType.DONUT_PORTAL_RED));
         pseudoGame = await manipulate(pseudoGame);
         await sleep(1500);
-
+        selectBuilding(EntityType.DONUT_PORTAL_BLUE);
+        tapBuilding(EntityType.DONUT_PORTAL_BLUE);
+        await sleep(1000);
         this.running = false;
     }
 }

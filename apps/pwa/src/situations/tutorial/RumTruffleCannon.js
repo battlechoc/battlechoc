@@ -26,7 +26,7 @@ export default class RumTruffleCannon extends Situation {
         this.game.ui.selectedBuilding = EntityType.RUM_TRUFFLE_CANNON;
         this.game.ui.tappedBuilding = EntityType.RUM_TRUFFLE_CANNON;
         this.game.ui.whitelistAttacks = [AttackType.TRUFFLE];
-        this.game.ui.selectedAttacks = AttackType.TRUFFLE;
+        this.game.ui.selectedAttack = AttackType.TRUFFLE;
     }
     static get ui() {
         return (new RumTruffleCannon()).game.ui;
@@ -49,7 +49,18 @@ export default class RumTruffleCannon extends Situation {
         let pseudoGame = JSON.parse(JSON.stringify(game));
         pseudoGame = await this.build(EntityType.RUM_TRUFFLE_CANNON, { row: 0, col: 0 }, pseudoGame, spawnInfo, manipulate);
         await sleep(800);
-        await this.build(EntityType.RUM_TRUFFLE_CANNON, { row: 1, col: 1 }, pseudoGame, spawnInfo, manipulate);
+        pseudoGame = await this.build(EntityType.RUM_TRUFFLE_CANNON, { row: 1, col: 1 }, pseudoGame, spawnInfo, manipulate);
+        await sleep(1000);
+        if (!this.running) {
+            return;
+        }
+        pseudoGame.state = GameStateTypes.ATTACK_PHASE;
+        pseudoGame = await manipulate(pseudoGame);
+        await sleep(1500);
+        this.getFieldAt(pseudoGame.board, { row: 0, col: 0 }, 1).occupiedBy = [];
+        pseudoGame.players[0].attacks[AttackType.TRUFFLE] -= 1;
+        await manipulate(pseudoGame);
+        await sleep(1000);        
         this.running = false;
     }
 }

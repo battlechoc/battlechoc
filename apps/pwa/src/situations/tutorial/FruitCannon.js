@@ -20,9 +20,9 @@ export default class FruitCannon extends Situation {
         game.currentPlayerIndex = 0;
 
         game.players[0].hasFactory = true;
-        game.players[0].cacao = 400;
-        game.players[0].buildingsPerTurn = 3;
-        game.players[0].buildings = 3;
+        game.players[0].cacao = 600;
+        game.players[0].buildingsPerTurn = 5;
+        game.players[0].buildings = 5;
         game.players[0].attacksPerTurn[AttackType.TRUFFLE] = 5;
         game.players[0].attacks[AttackType.TRUFFLE] = 5;
 
@@ -52,7 +52,7 @@ export default class FruitCannon extends Situation {
         return 'You can upgrade your cannons to fruit cannons to be able to fire a fruit shot in addition to a truffle. Fruit cannons are ineffective against normal entities but very effective against chocolate shields';
     }
 
-    async play(game, manipulate, spawnInfo, sleep, detonateAtPosition) {
+    async play(game, manipulate, spawnInfo, sleep, detonateAtPosition, selectBuilding, tapBuilding, selectAttack) {
         this.running = true;
         let pseudoGame = JSON.parse(JSON.stringify(game));
         await sleep(400);
@@ -83,14 +83,17 @@ export default class FruitCannon extends Situation {
         const damage = getEntityDescriptor(EntityType.FRUIT_CANNON).attack * 2;
 
         pseudoGame.board.fields[1].grid[4].occupiedBy.find(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN).hp -= damage; 
+        pseudoGame.players[0].attacks[AttackType.FRUIT] -= 1;
         pseudoGame = await manipulate(pseudoGame);
         detonateAtPosition(1, 1, false);
         await sleep(400);
         pseudoGame.board.fields[1].grid[4].occupiedBy.find(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN).hp -= damage; 
+        pseudoGame.players[0].attacks[AttackType.FRUIT] -= 1;
         pseudoGame = await manipulate(pseudoGame);
         detonateAtPosition(1, 1, false);
         await sleep(200);
         pseudoGame.board.fields[1].grid[4].occupiedBy.find(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN).hp -= damage; 
+        pseudoGame.players[0].attacks[AttackType.FRUIT] -= 1;
         pseudoGame = await manipulate(pseudoGame);
         detonateAtPosition(1, 1, false);
         await sleep(400);
@@ -98,14 +101,19 @@ export default class FruitCannon extends Situation {
         for (const cell of pseudoGame.board.fields[1].grid) {
             cell.shielded = false;
         }
+        pseudoGame.players[0].attacks[AttackType.FRUIT] -= 1;
         pseudoGame = await manipulate(pseudoGame);
         detonateAtPosition(1, 1, false);
+        await sleep(500);
+        selectAttack(AttackType.TRUFFLE);
         await sleep(1000);
         pseudoGame.board.fields[1].grid[0].occupiedBy.find(entity => entity.type === EntityType.FACTORY).hp -= Math.ceil(getEntityDescriptor(EntityType.FACTORY).hp / 2); 
+        pseudoGame.players[0].attacks[AttackType.TRUFFLE] -= 1;
         pseudoGame = await manipulate(pseudoGame);
         detonateAtPosition(0, 0, false);
         await sleep(800);
         pseudoGame.board.fields[1].grid[0].occupiedBy = [];
+        pseudoGame.players[0].attacks[AttackType.TRUFFLE] -= 1;
         await manipulate(pseudoGame);
         detonateAtPosition(0, 0, false);
         await sleep(1500);

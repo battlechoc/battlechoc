@@ -22,7 +22,7 @@ const Tutorial = props => {
     const [open, setOpen] = useState(false);
     const [playerHasName, setPlayerHasName] = useState(props.playerInfos.stats.username !== EmptyPlayerStats.username)
     
-    const { manipulateGame, spawnInfo, setRenderLoop, reset, loadSituation, detonateAtPosition, selectBuilding, tapBuilding } = props;
+    const { manipulateGame, spawnInfo, setRenderLoop, reset, loadSituation, detonateAtPosition, selectBuilding, tapBuilding, selectAttack } = props;
     const manipulate = async state => {
         try {
             await manipulateGame(state);
@@ -36,7 +36,7 @@ const Tutorial = props => {
         return JSON.parse(JSON.stringify(state));
     }
     
-    const loopAnimation = useRef(new LoopAnimation(() => props.game, manipulate, spawnInfo, setRenderLoop, reset, loadSituation, detonateAtPosition, selectBuilding, tapBuilding)) 
+    const loopAnimation = useRef(new LoopAnimation(() => props.game, manipulate, spawnInfo, setRenderLoop, reset, loadSituation, detonateAtPosition, selectBuilding, tapBuilding, selectAttack)) 
     loopAnimation.current.getGame = () => props.game;
 
     const getSituation = situation => {
