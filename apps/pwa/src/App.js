@@ -588,6 +588,8 @@ class App extends Component {
                     setRenderLoop={run => this.setRenderLoop(run)} 
                     reset={async () => await this.reset()} 
                     detonateAtPosition={this.detonateAtPosition}
+                    selectBuilding={this.props.selectBuilding}
+                    tapBuilding={this.props.tapBuilding}
                     loadSituation={async situation => await this.loadSituation(situation)} 
                     closeTutorial={this.closeTutorial} /> : null}
             </div>

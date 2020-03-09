@@ -25,6 +25,9 @@ export default class BattlechocIntro extends Situation {
         game.players[1].buildingsPerTurn = 3;
         game.players[1].buildings = game.players[1].buildingsPerTurn;
         this.game.ui.selectedAttack = AttackType.TRUFFLE;
+
+        this.game.ui.selectedBuilding = EntityType.CACAOTREE;
+        this.game.ui.tappedBuilding = EntityType.CACAOTREE;
     }
     static get ui() {
         return (new BattlechocIntro()).game.ui;
@@ -42,11 +45,14 @@ export default class BattlechocIntro extends Situation {
         return 'battlechoc is a turn-based strategy game with chocolate flavor. You win the game if you distroy the chocolate factory and cannons of your opponent';
     }
 
-    async play(game, manipulate, spawnInfo, sleep) {
+    async play(game, manipulate, spawnInfo, sleep, detonateAtPosition, selectBuilding, tapBuilding) {
         this.running = true;
         let pseudoGame = JSON.parse(JSON.stringify(game));        
         pseudoGame = await this.build(EntityType.CACAOTREE, { row: 0, col: 1 }, pseudoGame, spawnInfo, manipulate);
         await sleep(800);
+        selectBuilding(EntityType.RUM_TRUFFLE_CANNON);
+        tapBuilding(EntityType.RUM_TRUFFLE_CANNON)
+        await sleep(1000);
         pseudoGame = await this.build(EntityType.RUM_TRUFFLE_CANNON, { row: 2, col: 1 }, pseudoGame, spawnInfo, manipulate);
         await sleep(800);
         pseudoGame = await this.build(EntityType.RUM_TRUFFLE_CANNON, { row: 0, col: 0 }, pseudoGame, spawnInfo, manipulate);
@@ -60,6 +66,8 @@ export default class BattlechocIntro extends Situation {
         this.getFieldAt(pseudoGame.board, { row: 0, col: 0 }, 1).occupiedBy = [];
         pseudoGame.players[0].attacks[AttackType.TRUFFLE] -= 1;
         await manipulate(pseudoGame);
+        detonateAtPosition(0, 0, false);
+        await sleep(1000);
         this.running = false;
     }
 }
