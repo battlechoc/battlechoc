@@ -45,11 +45,12 @@ export default class HotChocolateBallista extends Situation {
         return 'The Hot Chocolate Ballista instantly destroys every enitiy, but also melts down the game field';
     }
 
-    async play(game, manipulate, spawnInfo, sleep) {
-        this.running = true;
+    async play({game, manipulate, sleep, isRunning}) {
         let pseudoGame = JSON.parse(JSON.stringify(game));
         await sleep(800);
-
+        if (!isRunning()) {
+            return;
+        }
         pseudoGame.state = GameStateTypes.ATTACK_PHASE;
         pseudoGame = await manipulate(pseudoGame);
         await sleep(1500);
@@ -60,7 +61,5 @@ export default class HotChocolateBallista extends Situation {
         pseudoGame.players[0].attacks[AttackType.HOT_CHOCOLATE] = 0;
         await manipulate(pseudoGame);
         await sleep(1500);
-
-        this.running = false;
     }
 }

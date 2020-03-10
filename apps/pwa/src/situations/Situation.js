@@ -31,15 +31,10 @@ export default class Situation {
                 whitelistAttacks: undefined
             }
         };
-        this.running = false;
     }
 
     getFieldAt(board, position, fieldIndex=0) { 
         return board.fields[fieldIndex].grid[position.row * board.size.cols + position.col]
-    }
-
-    forceStop() {
-        this.running = false;
     }
 
     async build(entityType, position, pseudoGame, spawnInfo, manipulate) {  

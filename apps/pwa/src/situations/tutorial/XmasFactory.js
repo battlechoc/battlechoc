@@ -46,19 +46,18 @@ export default class XmasFactory extends Situation {
         return 'If a Spying Easter Bunny tries to uncover an area containing a Xmas Factory, it will melt down and you receive a Hot Chocolate Ballista';
     }
 
-    async play(game, manipulate, spawnInfo, sleep) {
-        this.running = true;
+    async play({game, manipulate, spawnInfo, sleep, isRunning}) {
         let pseudoGame = JSON.parse(JSON.stringify(game));
         pseudoGame = await this.build(EntityType.XMAS_FACTORY, { row: 0, col: 0 }, pseudoGame, spawnInfo, manipulate);
         await sleep(1000);
-        if (!this.running) {
+        if (!isRunning()) {
             return;
         }
         pseudoGame.state = GameStateTypes.BUILD_PHASE;
         pseudoGame.currentPlayerIndex = 1;
         pseudoGame = await manipulate(pseudoGame);
         await sleep(2500);
-        if (!this.running) {
+        if (!isRunning()) {
             return;
         }
         pseudoGame.state = GameStateTypes.ATTACK_PHASE;
@@ -70,6 +69,5 @@ export default class XmasFactory extends Situation {
         field.occupiedBy.push(createEntity(EntityType.HOT_CHOCOLATE_BALLISTA));
         spawnInfo(InfoType.BUNNY_CAUGHT, { row: 0, col: 0 });
         await manipulate(pseudoGame);
-        this.running = false;
     }
 }

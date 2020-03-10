@@ -121,7 +121,13 @@ const Tutorial = props => {
     const situation = getSituation(props.loopAnimations[page]);
 
     if (page >= props.loopAnimations.length - 1) {
-        nextIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={() => setOpen(true)}><Done /></IconButton>
+        nextIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={() => {
+            if (playerHasName) {
+                closeTutorial(false);
+            } else { 
+                setOpen(true);
+            }
+        }}><Done /></IconButton>
     }
 
     let dialogTitle = t('TUTORIAL_DIALOG_TITLE_BEFORE');
