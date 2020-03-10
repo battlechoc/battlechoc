@@ -7,6 +7,7 @@ import { GameStateTypes, EntityType, getEntityDescriptor } from 'battlechoc-shar
 import { Jukebox } from '../misc';
 import Fab from '@material-ui/core/Fab';
 import { Visibility, VisibilityOff } from '@material-ui/icons';
+import LockIcon from '@material-ui/icons/Lock';
 
 const BuildingPalette = props => {
     let player = props.game.players[multiplayer.localPlayerIndex];
@@ -29,6 +30,7 @@ const BuildingPalette = props => {
         type: EntityType.FACTORY_EXTENSION,
         className: 'factoryExtension',
         alt: 'factory extension preview',
+        scoreToUnlock: 1,
         costs: getEntityDescriptor(EntityType.FACTORY_EXTENSION, player.level).costs
     }, {
         type: EntityType.CREAM,
@@ -39,26 +41,31 @@ const BuildingPalette = props => {
         type: EntityType.SPYING_EASTER_BUNNY,
         className: 'bunny',
         alt: 'easter factory',
+        scoreToUnlock: 200,
         costs: getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY, player.level).costs
     }, {
         type: EntityType.XMAS_FACTORY,
         className: 'xmasFactory',
         alt: 'xmas factory',
+        scoreToUnlock: 200,
         costs: getEntityDescriptor(EntityType.XMAS_FACTORY, player.level).costs
     }, {
         type: EntityType.CHOCOLATE_FOUNTAIN,
         className: 'fountain',
         alt: 'chocolate fountain',
+        scoreToUnlock: 500,
         costs: getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN, player.level).costs
     }, {
         type: EntityType.FRUIT_CANNON,
         className: 'fruitCannon',
         alt: 'fruit cannon',
+        scoreToUnlock: 500, 
         costs: getEntityDescriptor(EntityType.FRUIT_CANNON, player.level).costs
     },{
         type: EntityType.DONUT_FACTORY,
         className: 'donut factory',
         alt: 'donut factory',
+        scoreToUnlock: 1000,
         costs: getEntityDescriptor(EntityType.DONUT_FACTORY, player.level).costs
     }];
 
@@ -156,7 +163,11 @@ const BuildingPalette = props => {
                         return buildingsForSeclection.map((building, i) => {
                             if (typeof whitelist !== 'undefined') {
                                 if (!whitelist.includes(building.type)) {
-                                    return null;
+                                    if (!props.tutorial && props.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && props.game.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
+                                        return <div className="unlocked-entity preview" key={i}><LockIcon className="lock-icon" /><span>{ building.scoreToUnlock }</span></div>;
+                                    } else {
+                                        return null
+                                    }
                                 }
                             }
                             let canBuild = playerCanBuild(building);

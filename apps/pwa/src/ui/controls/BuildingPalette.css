@@ -98,6 +98,32 @@
   -moz-filter: brightness(130%);
 }
 
+.unlocked-entity {
+  background: rgba(9, 63, 70, 0.8);
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 100%;
+}
+
+.unlocked-entity span {
+  position: absolute;
+  color: #fff;
+  font-size: 1rem;
+  top: 17.25%;
+}
+
+.unlocked-entity .lock-icon {
+  position: absolute;
+  color: #fff;
+  font-size: 1.1rem;
+  top: 52.5%;
+  height: 22px;
+  width: 22px;
+}
+
 .selected .preview {
   border-radius: 100%;
   margin: -3px -3px -3px 2px;
@@ -155,6 +181,16 @@
     background-size: 252px 42px;
   }
 
+  .unlocked-entity span {
+    font-size: 0.8rem;
+  }
+  
+  .unlocked-entity .lock-icon {
+    font-size: 0.9rem;
+    height: 18px;
+    width: 18px;
+  }
+
   .attackCount {
     font-size: 1.8em;
   }
@@ -185,6 +221,17 @@
     width: 30px !important;
     height: 30px !important;
     background-size: 330px 30px;
+  }
+
+  .unlocked-entity span {
+    font-size: 0.6rem;
+  }
+  
+  .unlocked-entity .lock-icon {
+    font-size: 0.6rem;
+    height: 10px;
+    width: 10px;
+    top: 55%;
   }
 
   #donutSelection {
