@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Actionbar.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
@@ -9,200 +9,165 @@ import { multiplayer } from '../../Multiplayer';
 import Fab from '@material-ui/core/Fab';
 import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, PermIdentity, KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import { Jukebox } from '../misc';
+import logger from '../../helper/logger';
 
-class Actionbar extends Component {
-    constructor(props) {
-        super(props);
-        let userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-        let isPWA = window.matchMedia('(display-mode: fullscreen)').matches && /iPad|iPhone|iPod|Android/.test(userAgent);
-        let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-        this.state = {
-            activeMusicButton: true,
-            activeFullscreenButton: !isFullscreen && !isiOS && !isPWA
+const Actionbar = props => {
+    const [activeMusicButton, setActiveMusicButton] = useState(true);
+    const [activeFullscreenButton, setActiveFullscreenButton] = useState(true);
+    
+    useEffect(() => {
+        const fullscreenchange = () => {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
+            const isPWA = window.matchMedia('(display-mode: fullscreen)').matches && /iPad|iPhone|iPod|Android/.test(userAgent);
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+            setActiveFullscreenButton(!isFullscreen && !isiOS && !isPWA);
         }
-    }
 
-    componentDidMount() {
-        document.addEventListener("fullscreenchange", this.fullscreenchange, false);
-    }
+        document.addEventListener("fullscreenchange", fullscreenchange, false);
+        fullscreenchange();
+        
+        return () => {
+            document.removeEventListener("fullscreenchange", fullscreenchange, false);
+        };
+    }, [])
 
-    componentWillUnmount() {
-        document.removeEventListener("fullscreenchange", this.fullscreenchange, false);
-    }
-
-    toggleMusic() {
+    const toggleMusic = () => {
         Jukebox.toggleMute();
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.setState({ activeMusicButton: !this.state.activeMusicButton });
+        setActiveMusicButton(!activeMusicButton);
     }
 
-    fullscreenchange = () => {
-        let userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-        let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-        let isPWA = window.matchMedia('(display-mode: fullscreen)').matches && /iPad|iPhone|iPod|Android/.test(userAgent);
-        this.setState({
-            activeFullscreenButton: !isFullscreen && !isiOS && !isPWA
-        });
-    }
-
-    toggleFullscreen() {
+    const toggleFullscreen = () => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         document.documentElement.requestFullscreen().then(() => {
-            window.screen.orientation.lock('landscape').catch(error => console.log('Unable to lock orientation to landscape'));
+            window.screen.orientation.lock('landscape').catch(_ => logger.info('Unable to lock orientation to landscape'));
         });
     }
 
-    render() {
-        let buttons = []
+     
+    const buttons = []
 
-        if (typeof this.props.game !== 'undefined' && !this.props.tutorial) {
-            buttons.push(
-                <Fab
-                    size="small"
-                    key="-1"
-                    color="primary"
-                    aria-label="back"
-                    className="icon"
-                    onClick={() => this.props.endGame()}>
-                    <ArrowBackIcon />
-                </Fab>
-            );
-        }
-
-
+    if (typeof props.game !== 'undefined' && !props.tutorial) {
         buttons.push(
             <Fab
                 size="small"
-                key="0"
+                key="-1"
                 color="primary"
-                aria-label="settings"
+                aria-label="back"
                 className="icon"
-                onClick={() => this.props.showSettings()}>
-                <Settings />
+                onClick={() => props.endGame()}>
+                <ArrowBackIcon />
             </Fab>
         );
+    }
 
-        if (typeof this.props.game === 'undefined') {
-            buttons.push(
-                <Fab
-                    size="small"
-                    key="1"
-                    color="primary"
-                    aria-label="signinorup"
-                    className="icon"
-                    onClick={() => this.props.showSignInOrUp()}>
-                    <PermIdentity />
-                </Fab>
-            );
-        }
+    buttons.push(
+        <Fab
+            size="small"
+            key="0"
+            color="primary"
+            aria-label="settings"
+            className="icon"
+            onClick={() => props.showSettings()}>
+            <Settings />
+        </Fab>
+    );
 
-        if (this.state.activeMusicButton) {
-            buttons.push(
-                <Fab
-                    size="small"
-                    key="2"
-                    color="primary"
-                    aria-label="volume up"
-                    className="icon"
-                    onClick={() => this.toggleMusic()}>
-                    <VolumeUp />
-                </Fab>
-            );
-        } else {
-            buttons.push(
-                <Fab
-                    size="small"
-                    key="2"
-                    color="primary"
-                    aria-label="volume off"
-                    className="icon"
-                    onClick={() => this.toggleMusic()}>
-                    <VolumeOff />
-                </Fab>
-            );
-        }
+    if (typeof props.game === 'undefined') {
+        buttons.push(
+            <Fab
+                size="small"
+                key="1"
+                color="primary"
+                aria-label="signinorup"
+                className="icon"
+                onClick={() => props.showSignInOrUp()}>
+                <PermIdentity />
+            </Fab>
+        );
+    }
 
-        if (this.state.activeFullscreenButton) {
-            buttons.push(
-                <Fab
-                    size="small"
-                    key="3"
-                    color="primary"
-                    aria-label="toggle fullscreen"
-                    className="icon"
-                    onClick={this.toggleFullscreen}>
-                    <Fullscreen />
-                </Fab>
-            );
-        }
+    if (activeMusicButton) {
+        buttons.push(
+            <Fab
+                size="small"
+                key="2"
+                color="primary"
+                aria-label="volume up"
+                className="icon"
+                onClick={toggleMusic}>
+                <VolumeUp />
+            </Fab>
+        );
+    } else {
+        buttons.push(
+            <Fab
+                size="small"
+                key="2"
+                color="primary"
+                aria-label="volume off"
+                className="icon"
+                onClick={toggleMusic}>
+                <VolumeOff />
+            </Fab>
+        );
+    }
 
-        if (typeof this.props.game !== 'undefined') {
-            if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
-                if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
-                    if (playerHasAttacksPerTurn(this.props.game.players[multiplayer.localPlayerIndex])) {
-                        buttons.push([
-                            <Fab
-                                size="small"
-                                key="5"
-                                color="primary"
-                                aria-label="skip build phase"
-                                className="icon"
-                                onClick={() => {
-                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                    this.props.finishBuildPhase({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
-                                        this.props.deselectBuildings();
-                                        this.props.deselectAttack();
-                                    }).catch(error => {
-                                        if (error instanceof BattlechocError) {
-                                            console.warn(error);
-                                        } else {
-                                            throw error;
-                                        }
-                                    });
-                                }}>
-                                <PlayArrow />
-                            </Fab>
-                        ]);
-                    } else {
-                        buttons.push([
-                            <Fab
-                                size="small"
-                                key="6"
-                                color="primary"
-                                aria-label="finish turn"
-                                className="icon"
-                                onClick={() => {
-                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                    this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
-                                        this.props.deselectBuildings();
-                                        this.props.deselectAttack();
-                                    }).catch(error => {
-                                        if (error instanceof BattlechocError) {
-                                            console.warn(error);
-                                        } else {
-                                            throw error;
-                                        }
-                                    });
-                                }}>
-                                <FastForward />
-                            </Fab>
-                        ]);
-                    }
-                } else if (this.props.game.state === GameStateTypes.ATTACK_PHASE) {
-                    buttons.push(
+    if (activeFullscreenButton) {
+        buttons.push(
+            <Fab
+                size="small"
+                key="3"
+                color="primary"
+                aria-label="toggle fullscreen"
+                className="icon"
+                onClick={toggleFullscreen}>
+                <Fullscreen />
+            </Fab>
+        );
+    }
+
+    if (typeof props.game !== 'undefined') {
+        if (multiplayer.isLocalPlayer(props.game.currentPlayerIndex)) {
+            if (props.game.state === GameStateTypes.BUILD_PHASE) {
+                if (playerHasAttacksPerTurn(props.game.players[multiplayer.localPlayerIndex])) {
+                    buttons.push([
                         <Fab
                             size="small"
-                            key="7"
+                            key="5"
+                            color="primary"
+                            aria-label="skip build phase"
+                            className="icon"
+                            onClick={() => {
+                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                props.finishBuildPhase({ issuer: props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
+                                    props.deselectBuildings();
+                                    props.deselectAttack();
+                                }).catch(error => {
+                                    if (error instanceof BattlechocError) {
+                                        console.warn(error);
+                                    } else {
+                                        throw error;
+                                    }
+                                });
+                            }}>
+                            <PlayArrow />
+                        </Fab>
+                    ]);
+                } else {
+                    buttons.push([
+                        <Fab
+                            size="small"
+                            key="6"
                             color="primary"
                             aria-label="finish turn"
                             className="icon"
                             onClick={() => {
                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                this.props.finishTurn({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
-                                    this.props.deselectBuildings();
-                                    this.props.deselectAttack();
+                                props.finishTurn({ issuer: props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
+                                    props.deselectBuildings();
+                                    props.deselectAttack();
                                 }).catch(error => {
                                     if (error instanceof BattlechocError) {
                                         console.warn(error);
@@ -213,13 +178,36 @@ class Actionbar extends Component {
                             }}>
                             <FastForward />
                         </Fab>
-                    );
+                    ]);
                 }
+            } else if (props.game.state === GameStateTypes.ATTACK_PHASE) {
+                buttons.push(
+                    <Fab
+                        size="small"
+                        key="7"
+                        color="primary"
+                        aria-label="finish turn"
+                        className="icon"
+                        onClick={() => {
+                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                            props.finishTurn({ issuer: props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
+                                props.deselectBuildings();
+                                props.deselectAttack();
+                            }).catch(error => {
+                                if (error instanceof BattlechocError) {
+                                    console.warn(error);
+                                } else {
+                                    throw error;
+                                }
+                            });
+                        }}>
+                        <FastForward />
+                    </Fab>
+                );
             }
         }
-
-        return <div className="actionbar"> {buttons} </div>;
     }
+    return <div className="actionbar"> {buttons} </div>;
 }
 
 Actionbar.propTypes = {

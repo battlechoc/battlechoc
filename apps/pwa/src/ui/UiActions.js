@@ -24,7 +24,11 @@ const UiActionTypes = Object.freeze({
     hideQuickMessage: 'battlechoc/ui/hideQuickMessage',
     startSessionRefresh: 'battlechoc/ui/startSessionRefresh',
     stopSessionRefresh: 'battlechoc/ui/stopSessionRefresh',
-    toggleDonutHighlighting: 'battlechoc/ui/toggleDonutHighlighting'
+    toggleDonutHighlighting: 'battlechoc/ui/toggleDonutHighlighting',
+    showNotification: 'battlechoc/ui/showNotification',
+    hideNotification: 'battlechoc/ui/hideNotification',
+    lockHudUi: 'battlechoc/ui/lockHudUi',
+    unlockHudUi: 'battlechoc/ui/unlockHudUi',
 });
 
 const selectBuilding = createAction(UiActionTypes.selectBuilding);
@@ -51,5 +55,9 @@ const hideQuickMessage = createAction(UiActionTypes.hideQuickMessage);
 const startSessionRefresh = createAction(UiActionTypes.startSessionRefresh);
 const stopSessionRefresh = createAction(UiActionTypes.stopSessionRefresh);
 const toggleDonutHighlighting = createAction(UiActionTypes.toggleDonutHighlighting);
+const showNotification = createAction(UiActionTypes.showNotification);
+const hideNotification = createAction(UiActionTypes.hideNotification);
+const lockHudUi = createAction(UiActionTypes.lockHudUi);
+const unlockHudUi = createAction(UiActionTypes.lockHudUi);
 
-export { toggleDonutHighlighting, stopSessionRefresh, startSessionRefresh, showQuickMessage, hideQuickMessage, updateLevel, setPlayerRank, loadFriendsList, updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };
+export { lockHudUi, unlockHudUi, showNotification, hideNotification, toggleDonutHighlighting, stopSessionRefresh, startSessionRefresh, showQuickMessage, hideQuickMessage, updateLevel, setPlayerRank, loadFriendsList, updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };

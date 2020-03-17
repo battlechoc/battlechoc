@@ -14,16 +14,13 @@ const AttackPalette = props => {
     }, {
         type: AttackType.BUNNY,
         className: 'bunny',
-        scoreToUnlock: 500,
         alt: 'easter factory'
     }, {
         type: AttackType.FRUIT,
-        scoreToUnlock: 500,
         className: 'fruitCannon',
         alt: 'fruit cannon'
     }, {
         type: AttackType.HOT_CHOCOLATE,
-        scoreToUnlock: 500,
         className: 'ballista',
         alt: 'hot chocolate ballista'
     }];
@@ -72,7 +69,7 @@ const AttackPalette = props => {
                         if (typeof whitelist !== 'undefined') {
                             if (!whitelist.includes(attack.type)) {
                                 if (!props.tutorial) {
-                                    return <div className="unlocked-entity preview" key={i}><LockIcon className="lock-icon" /><span>{ attack.scoreToUnlock }</span></div>;
+                                    return <div className="unlocked-entity preview" key={i}><LockIcon className="lock-icon" /></div>;
                                 } else {
                                     return null
                                 }

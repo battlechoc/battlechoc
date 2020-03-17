@@ -7,7 +7,7 @@ import { ArrowBackIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Don
 import { Jukebox, translate as t } from '../ui/misc';
 import { ServerRequest } from '../helper/settings';
 import OfflineStore from '../OfflineStore';
-import { updatePlayerStats } from '../ui/UiActions';
+import { updatePlayerStats, showNotification } from '../ui/UiActions';
 import PlayerNameInput from '../ui/controls/PlayerNameInput';
 import BattlechocDialog from '../ui/dialogs/BattlechocDialog';
 import LoopAnimation from './LoopAnimation';
@@ -94,6 +94,9 @@ const Tutorial = props => {
             loopAnimation.current.stop();
             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
             setOpen(false);
+            if (props.notificationOnLoopsEnd) {
+                props.showNotification(props.notificationOnLoopsEnd);
+            }
             props.closeTutorial(startGame);
         }
     }
@@ -183,12 +186,13 @@ Tutorial.propTypes = {
 }
 
 const mapStateToProps = state => ({ 
-    game: state.gameplay.game, 
+    game: state.gameplay.game,
+    notificationOnLoopsEnd: state.ui.notificationOnLoopsEnd,
     playerInfos: state.ui.playerInfos,
     loopAnimations: state.ui.loopAnimations
 });
 
-const mapDispatchToProps = { updatePlayerStats, manipulateGame };
+const mapDispatchToProps = { updatePlayerStats, manipulateGame, showNotification };
 
 const TutorialContainer = connect(
   mapStateToProps,
