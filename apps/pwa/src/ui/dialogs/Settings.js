@@ -220,7 +220,7 @@ const Settings = props =>  {
               inputProps={{ name: 'language', id: 'lang-selection' }}>
               <option value="en">{t('ENGLISH')}</option>
               <option value="de">{t('GERMAN')}</option>
-              <option value="jp">{t('JAPANESE')}</option>
+              <option value="ja">{t('JAPANESE')}</option>
             </Select>
             <div className={classes.menuButton} onClick={() => {
               Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);

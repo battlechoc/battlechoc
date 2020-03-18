@@ -9,7 +9,7 @@ class Translation {
     }
 
     isValid(language) {
-        return ['en', 'de', 'jp'].includes(language);
+        return ['en', 'de', 'ja'].includes(language);
     }
 }
 
@@ -19,12 +19,12 @@ function setCurrentLanguage(language) {
     if (translation.isValid(language)) {
         translation.currentLanguage = language;
         ServerRequest('post', '/user/language', { language: language })
-        .catch(error => {
-            if (!error instanceof ReferenceError) {
-                logger.warn(error)
-            }
-        })
-        .finally(() => OfflineStore.settingsStore.set("language", language));
+            .catch(error => {
+                if (!error instanceof ReferenceError) {
+                    logger.warn(error)
+                }
+            })
+            .finally(() => OfflineStore.settingsStore.set("language", language));
     } else {
         console.error("invalid language " + language + " given. Current language " + translation.currentLanguage + " used.");
     }
