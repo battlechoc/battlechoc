@@ -482,7 +482,6 @@ class App extends Component {
                 this.scene.clear();
 
                 const score = this.props.playerInfos.stats.score;
-                this.props.startTutorial({ loops: [TutorialSituations.FACTORY_EXTENSION], notificationOnLoopsEnd: { title: 'Collect more chocolate coins', message: `You need to collect ${200 - score} more coins to unlock the Easter Bunny, Xmas Facotry and Hot Chocolate Ballista`}});
                 if (typeof coins !== 'undefined' && coins > 0) {
                     if (score - coins === 0) {
                         this.props.startTutorial({ loops: [TutorialSituations.FACTORY_EXTENSION], notificationOnLoopsEnd: { title: 'Collect more chocolate coins', message: `You need to collect ${200 - score} more coins to unlock the Easter Bunny, Xmas Facotry and Hot Chocolate Ballista`}});
