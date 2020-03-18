@@ -4,6 +4,7 @@ import { multiplayer } from '../../Multiplayer';
 import { selectAttack } from '../UiActions';
 import { GameStateTypes, BattlechocError, AttackType } from 'battlechoc-shared-functions';
 import { Jukebox } from '../misc';
+import LockIcon from '@material-ui/icons/Lock';
 
 const AttackPalette = props => {
     const attacksForSeclection = [{
@@ -53,7 +54,7 @@ const AttackPalette = props => {
 
     let whitelist = props.whitelist;
     if (!props.tutorial) {
-        if ( props.score < 1 ) {
+        if ( props.score < 1) {
             whitelist = [AttackType.TRUFFLE];
         } else if ( props.score < 500) {
             whitelist = [AttackType.TRUFFLE, AttackType.BUNNY, AttackType.HOT_CHOCOLATE];
@@ -67,7 +68,11 @@ const AttackPalette = props => {
                     return attacksForSeclection.map((attack, i) => {
                         if (typeof whitelist !== 'undefined') {
                             if (!whitelist.includes(attack.type)) {
-                                return null;
+                                if (!props.tutorial) {
+                                    return <div className="unlocked-entity preview" key={i}><LockIcon className="lock-icon" /></div>;
+                                } else {
+                                    return null
+                                }
                             }
                         }
 

@@ -28,11 +28,9 @@ export default class Factory extends Situation {
         return 'The factory can be build in the first turn and allows you to build all other entities. It performs better on a dark chocolate field';
     }
 
-    async play(game, manipulate, spawnInfo, sleep) {
-        this.running = true;
+    async play({game, manipulate, spawnInfo, sleep}) {
         let pseudoGame = JSON.parse(JSON.stringify(game));        
         await this.build(EntityType.FACTORY, { row: 2, col: 1 }, pseudoGame, spawnInfo, manipulate);
         await sleep(800);
-        this.running = false;
     }
 }

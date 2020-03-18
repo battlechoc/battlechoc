@@ -30,7 +30,6 @@ export default class LoopAnimation {
     start(Situation) {
         if (this.running) {
             this.stop();
-            this.situation.forceStop();
             this.next = async () => {
                 this.running = true;
                 await this.loop(Situation);
@@ -59,7 +58,17 @@ export default class LoopAnimation {
         await sleep(1000);
         const game = this.getGame();
         this.situation = new Situation();
-        await this.situation.play(game, this.manipulate, this.spawnInfo, sleep, this.detonateAtPosition, this.selectBuilding, this.tapBuilding, this.selectAttack);
+        await this.situation.play({
+            game: game, 
+            manipulate: this.manipulate, 
+            spawnInfo: this.spawnInfo, 
+            sleep: sleep, 
+            detonateAtPosition: this.detonateAtPosition, 
+            selectBuilding: this.selectBuilding, 
+            tapBuilding: this.tapBuilding, 
+            selectAttack: this.selectAttack, 
+            isRunning: () => this.running
+        });
         await sleep(2000);
         this.setRenderLoop(false);
         await this.reset();

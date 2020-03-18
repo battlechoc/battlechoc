@@ -47,12 +47,11 @@ export default class EasterBunny extends Situation {
         return 'The Spying Easter Bunny is able to uncover a 3x3 area. You cannot have more than one rabbit at a time';
     }
 
-    async play(game, manipulate, spawnInfo, sleep) {
-        this.running = true;
+    async play({game, manipulate, spawnInfo, sleep, isRunning}) {
         let pseudoGame = JSON.parse(JSON.stringify(game));
         pseudoGame = await this.build(EntityType.SPYING_EASTER_BUNNY, { row: 0, col: 0 }, pseudoGame, spawnInfo, manipulate);
         await sleep(1000);
-        if (!this.running) {
+        if (!isRunning()) {
             return;
         }
         pseudoGame.state = GameStateTypes.ATTACK_PHASE;
@@ -64,6 +63,5 @@ export default class EasterBunny extends Situation {
         }
         pseudoGame.players[0].attacks[AttackType.BUNNY] -= 1;
         await manipulate(pseudoGame);
-        this.running = false;
     }
 }

@@ -52,8 +52,7 @@ export default class FruitCannon extends Situation {
         return 'You can upgrade your cannons to fruit cannons to be able to fire a fruit shot in addition to a truffle. Fruit cannons are ineffective against normal entities but very effective against chocolate shields';
     }
 
-    async play(game, manipulate, spawnInfo, sleep, detonateAtPosition, selectBuilding, tapBuilding, selectAttack) {
-        this.running = true;
+    async play({game, manipulate, spawnInfo, sleep, detonateAtPosition, selectAttack, isRunning}) {
         let pseudoGame = JSON.parse(JSON.stringify(game));
         await sleep(400);
         pseudoGame = await this.build(EntityType.FRUIT_CANNON, { row: 0, col: 1 }, pseudoGame, spawnInfo, manipulate);
@@ -74,12 +73,11 @@ export default class FruitCannon extends Situation {
             }
         }
         pseudoGame.state = GameStateTypes.ATTACK_PHASE;
-        pseudoGame = await manipulate(pseudoGame);
-        await sleep(1500);
-        if (!this.running) {
+        if (!isRunning()) {
             return;
         }
-
+        pseudoGame = await manipulate(pseudoGame);
+        await sleep(1500);
         const damage = getEntityDescriptor(EntityType.FRUIT_CANNON).attack * 2;
 
         pseudoGame.board.fields[1].grid[4].occupiedBy.find(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN).hp -= damage; 
@@ -117,7 +115,5 @@ export default class FruitCannon extends Situation {
         await manipulate(pseudoGame);
         detonateAtPosition(0, 0, false);
         await sleep(1500);
-
-        this.running = false;
     }
 }

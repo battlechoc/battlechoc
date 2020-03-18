@@ -7,6 +7,7 @@ import { GameStateTypes, EntityType, getEntityDescriptor } from 'battlechoc-shar
 import { Jukebox } from '../misc';
 import Fab from '@material-ui/core/Fab';
 import { Visibility, VisibilityOff } from '@material-ui/icons';
+import LockIcon from '@material-ui/icons/Lock';
 
 const BuildingPalette = props => {
     let player = props.game.players[multiplayer.localPlayerIndex];
@@ -53,7 +54,7 @@ const BuildingPalette = props => {
     }, {
         type: EntityType.FRUIT_CANNON,
         className: 'fruitCannon',
-        alt: 'fruit cannon',
+        alt: 'fruit cannon', 
         costs: getEntityDescriptor(EntityType.FRUIT_CANNON, player.level).costs
     },{
         type: EntityType.DONUT_FACTORY,
@@ -156,7 +157,11 @@ const BuildingPalette = props => {
                         return buildingsForSeclection.map((building, i) => {
                             if (typeof whitelist !== 'undefined') {
                                 if (!whitelist.includes(building.type)) {
-                                    return null;
+                                    if (!props.tutorial && props.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && props.game.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
+                                        return <div className="unlocked-entity preview" key={i}><LockIcon className="lock-icon" /></div>;
+                                    } else {
+                                        return null
+                                    }
                                 }
                             }
                             let canBuild = playerCanBuild(building);

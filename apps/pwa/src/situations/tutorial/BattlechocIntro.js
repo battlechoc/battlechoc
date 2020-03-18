@@ -45,8 +45,7 @@ export default class BattlechocIntro extends Situation {
         return 'battlechoc is a turn-based strategy game with chocolate flavor. You win the game if you distroy the chocolate factory and cannons of your opponent';
     }
 
-    async play(game, manipulate, spawnInfo, sleep, detonateAtPosition, selectBuilding, tapBuilding) {
-        this.running = true;
+    async play({game, manipulate, spawnInfo, sleep, detonateAtPosition, selectBuilding, tapBuilding, isRunning}) {
         let pseudoGame = JSON.parse(JSON.stringify(game));        
         pseudoGame = await this.build(EntityType.CACAOTREE, { row: 0, col: 1 }, pseudoGame, spawnInfo, manipulate);
         await sleep(800);
@@ -57,7 +56,7 @@ export default class BattlechocIntro extends Situation {
         await sleep(800);
         pseudoGame = await this.build(EntityType.RUM_TRUFFLE_CANNON, { row: 0, col: 0 }, pseudoGame, spawnInfo, manipulate);
         await sleep(800);
-        if (!this.running) {
+        if (!isRunning()) {
             return;
         }
         pseudoGame.state = GameStateTypes.ATTACK_PHASE;
@@ -68,6 +67,5 @@ export default class BattlechocIntro extends Situation {
         await manipulate(pseudoGame);
         detonateAtPosition(0, 0, false);
         await sleep(1000);
-        this.running = false;
     }
 }

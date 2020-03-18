@@ -44,14 +44,13 @@ export default class RumTruffleCannon extends Situation {
         return 'To distroy your opponents entites you will need cannons. You can attack 1 field per turn using a Rum Truffle Cannon';
     }
 
-    async play(game, manipulate, spawnInfo, sleep) {
-        this.running = true;
+    async play({game, manipulate, spawnInfo, sleep, isRunning}) {
         let pseudoGame = JSON.parse(JSON.stringify(game));
         pseudoGame = await this.build(EntityType.RUM_TRUFFLE_CANNON, { row: 0, col: 0 }, pseudoGame, spawnInfo, manipulate);
         await sleep(800);
         pseudoGame = await this.build(EntityType.RUM_TRUFFLE_CANNON, { row: 1, col: 1 }, pseudoGame, spawnInfo, manipulate);
         await sleep(1000);
-        if (!this.running) {
+        if (!isRunning()) {
             return;
         }
         pseudoGame.state = GameStateTypes.ATTACK_PHASE;
@@ -60,7 +59,6 @@ export default class RumTruffleCannon extends Situation {
         this.getFieldAt(pseudoGame.board, { row: 0, col: 0 }, 1).occupiedBy = [];
         pseudoGame.players[0].attacks[AttackType.TRUFFLE] -= 1;
         await manipulate(pseudoGame);
-        await sleep(1000);        
-        this.running = false;
+        await sleep(1000);
     }
 }

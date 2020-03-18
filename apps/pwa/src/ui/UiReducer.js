@@ -17,8 +17,11 @@ const uiReducer = createReducer({
     playerInfos: { stats: EmptyPlayerStats, isSignedIn: false },
     language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en',
     quickMessages: [],
+    notification: {title: null, message:null, open:false},
     sessionRefreshActions: 0,
-    donutHighlighting: false
+    donutHighlighting: false,
+    hudUiLocked: false,
+    onLoopsEnd: null
 }, {
     [UiActions.resetUi]: (state, action) => {
         state.whitelistBuildings = undefined;
@@ -81,11 +84,13 @@ const uiReducer = createReducer({
     },
     [UiActions.stopTutorial]: (state, action) => {
         state.tutorial = false;
+        state.notificationOnLoopsEnd = null;
         OfflineStore.settingsStore.set("tutorialAlreadySeen", true);
     },
     [UiActions.startTutorial]: (state, action) => {
         state.tutorial = true;
-        state.loopAnimations = action.payload;
+        state.loopAnimations = action.payload.loops;
+        state.notificationOnLoopsEnd = action.payload.notificationOnLoopsEnd || null;
     },
     [UiActions.updatePlayerStats]: (state, action) => {
         Object.assign(state.playerInfos.stats, action.payload);
@@ -105,7 +110,10 @@ const uiReducer = createReducer({
         state.playerInfos.stats.level = action.payload;
     },
     [UiActions.showQuickMessage]: (state, action) => {
-        state.quickMessages.push({ id: uuidv4(), text: action.payload.text || '', variant: action.payload.variant || 'warning' });
+        if ((action.payload.type === 'PWA_ONLINE_MESSAGE' || action.payload.type === 'PWA_OFFLINE_MESSAGE')) {
+            state.quickMessages = state.quickMessages.filter(message => message.type !== 'PWA_ONLINE_MESSAGE' && message.type !== 'PWA_OFFLINE_MESSAGE');
+        }
+        state.quickMessages.push({ type: action.payload.type || 'GENERIC_MESSAGE', id: uuidv4(), text: action.payload.text || '', variant: action.payload.variant || 'warning' });
     },
     [UiActions.hideQuickMessage]: (state, action) => {
         state.quickMessages = state.quickMessages.filter(message => message.id !== action.payload);
@@ -124,6 +132,23 @@ const uiReducer = createReducer({
         } else {
             state.donutHighlighting = !state.donutHighlighting;
         }
+    },
+    [UiActions.showNotification]: (state, action) => {
+        const {title, message} = action.payload;
+        state.notification = {
+            title: title,
+            message: message,
+            open: true
+        }
+    },
+    [UiActions.hideNotification]: state => {
+        state.notification = { title: null, message: null, open: false};
+    },
+    [UiActions.lockHudUi]: state => {
+        state.hudUiLocked = true;
+    },
+    [UiActions.unlockHudUi]: state => {
+        state.hudUiLocked = false;
     }
 });
 

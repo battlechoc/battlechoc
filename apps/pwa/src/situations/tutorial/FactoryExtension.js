@@ -37,8 +37,7 @@ export default class FactoryExtension extends Situation {
         return 'The extension acts exactly like the factory but you can build it only beside your factory';
     }
 
-    async play(game, manipulate, spawnInfo, sleep) {
-        this.running = true;
+    async play({game, manipulate, spawnInfo, sleep}) {
         let pseudoGame = JSON.parse(JSON.stringify(game));        
         pseudoGame = await this.build(EntityType.FACTORY_EXTENSION, { row: 0, col: 1 }, pseudoGame, spawnInfo, manipulate);
         await sleep(800);
@@ -47,6 +46,5 @@ export default class FactoryExtension extends Situation {
         pseudoGame = await this.build(EntityType.FACTORY_EXTENSION, { row: 2, col: 1 }, pseudoGame, spawnInfo, manipulate);
         await sleep(800);
         await this.build(EntityType.FACTORY_EXTENSION, { row: 1, col: 0 }, pseudoGame, spawnInfo, manipulate);
-        this.running = false;
     }
 }

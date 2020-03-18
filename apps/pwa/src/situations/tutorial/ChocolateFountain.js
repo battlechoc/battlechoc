@@ -48,12 +48,11 @@ export default class ChocolateFountain extends Situation {
         return 'The attacks of a Rum Truffle Cannon are very ineffective against the chocolate fountain, protecting the figures under its 3x3 field with its chocolate shield';
     }
 
-    async play(game, manipulate, spawnInfo, sleep, detonateAtPosition) {
-        this.running = true;
+    async play({game, manipulate, spawnInfo, sleep, detonateAtPosition, isRunning}) {
         let pseudoGame = JSON.parse(JSON.stringify(game));
         pseudoGame = await this.build(EntityType.CHOCOLATE_FOUNTAIN, { row: 1, col: 1 }, pseudoGame, spawnInfo, manipulate);
         await sleep(1500);
-        if (!this.running) {
+        if (!isRunning()) {
             return;
         }
 
@@ -67,7 +66,7 @@ export default class ChocolateFountain extends Situation {
         pseudoGame.currentPlayerIndex = 1;
         pseudoGame = await manipulate(pseudoGame);
         await sleep(2500);
-        if (!this.running) {
+        if (!isRunning()) {
             return;
         }
 
@@ -101,7 +100,5 @@ export default class ChocolateFountain extends Situation {
         pseudoGame = await manipulate(pseudoGame);
         detonateAtPosition(2, 1);
         await sleep(1000);
-
-        this.running = false;
     }
 }

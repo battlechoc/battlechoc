@@ -42,8 +42,7 @@ export default class Donuts extends Situation {
         return 'Donuts are triggered by fruit, truffle or hot chocolate attacks. This is the Donut Portal Trap. You will unlock other donuts by upgrading your donut facotry';
     }
 
-    async play(game, manipulate, spawnInfo, sleep, detonateAtPosition, selectBuilding, tapBuilding) {
-        this.running = true;
+    async play({game, manipulate, spawnInfo, sleep, detonateAtPosition, selectBuilding, tapBuilding, isRunning}) {
         let pseudoGame = JSON.parse(JSON.stringify(game));        
         pseudoGame = await this.build(EntityType.DONUT_PORTAL_BLUE, { row: 0, col: 0 }, pseudoGame, spawnInfo, manipulate);
         await sleep(500);
@@ -53,9 +52,17 @@ export default class Donuts extends Situation {
         pseudoGame.players[0].donuts = [];
         pseudoGame = await manipulate(pseudoGame);
         await sleep(2000);
+        if (!isRunning()) {
+            return;
+        }
         pseudoGame.currentPlayerIndex = 1;
         pseudoGame = await manipulate(pseudoGame);
         await sleep(2000);
+        if (!isRunning()) {
+            return;
+        } else {
+            console.log('I\'m still runnning')
+        }
         pseudoGame.state = GameStateTypes.ATTACK_PHASE;
         pseudoGame = await manipulate(pseudoGame);
         await sleep(2000);
@@ -64,6 +71,5 @@ export default class Donuts extends Situation {
         pseudoGame = await manipulate(pseudoGame);
         detonateAtPosition(0, 0);
         await sleep(1000);
-        this.running = false;
     }
 }
