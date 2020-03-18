@@ -172,13 +172,15 @@ serviceWorker.register(config);
 window.addEventListener("offline", () => { 
     store.dispatch(showQuickMessage({ 
         text: t('PWA_OFFLINE_MODE'),
-        variant: 'info'
+        variant: 'info',
+        type: 'PWA_OFFLINE_MESSAGE'
     }));
 });
 
 window.addEventListener("online", () => { 
     store.dispatch(showQuickMessage({ 
         text: t('PWA_ONLINE_MODE'),
-        variant: 'info'
+        variant: 'info',
+        type: 'PWA_ONLINE_MESSAGE'
     }));
 });

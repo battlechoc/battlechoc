@@ -110,7 +110,10 @@ const uiReducer = createReducer({
         state.playerInfos.stats.level = action.payload;
     },
     [UiActions.showQuickMessage]: (state, action) => {
-        state.quickMessages.push({ id: uuidv4(), text: action.payload.text || '', variant: action.payload.variant || 'warning' });
+        if ((action.payload.type === 'PWA_ONLINE_MESSAGE' || action.payload.type === 'PWA_OFFLINE_MESSAGE')) {
+            state.quickMessages = state.quickMessages.filter(message => message.type !== 'PWA_ONLINE_MESSAGE' && message.type !== 'PWA_OFFLINE_MESSAGE');
+        }
+        state.quickMessages.push({ type: action.payload.type || 'GENERIC_MESSAGE', id: uuidv4(), text: action.payload.text || '', variant: action.payload.variant || 'warning' });
     },
     [UiActions.hideQuickMessage]: (state, action) => {
         state.quickMessages = state.quickMessages.filter(message => message.id !== action.payload);
