@@ -1,11 +1,14 @@
 import { Rules, BattlechocError } from 'battlechoc-shared-functions';
+import { manipulateGameAction } from './GameActions';
 import { UiActionTypes } from '../ui/UiActions';
 
 function actionValidatorMiddleware() {
     return ({ getState }) => next => action => {
         return new Promise((resolve, reject) => {
-			const game = getState().gameplay.game;
-        	const validity = Object.values(UiActionTypes).includes(action.type) || Rules.isActionValid(game, action);
+			const state = getState();
+			const game = state.gameplay.game;
+			const tutorial = state.ui.tutorial;
+        	const validity = (tutorial && action.type === manipulateGameAction) || Object.values(UiActionTypes).includes(action.type) || Rules.isActionValid(game, action);
         	
         	if (validity instanceof BattlechocError) {
         		reject(validity);

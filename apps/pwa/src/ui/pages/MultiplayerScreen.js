@@ -1,13 +1,13 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import './MultiplayerScreen.css';
 import TextField from '@material-ui/core/TextField';
 import Fab from '@material-ui/core/Fab';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { Jukebox, Translation as t } from '../misc';
+import { Jukebox, translate as t, getCurrentLanguage } from '../misc';
 import Axios from 'axios';
 import { showQuickMessage } from '../UiActions';
-import { PlayArrow, ChevronRight, LastPage, FirstPage, ChevronLeft, HourglassEmpty, Cancel, AccountCircle, FormatListNumbered, Casino, People, Search, Share } from '@material-ui/icons';
+import { KeyboardArrowLeft as ArrowBackIcon, Refresh, PlayArrow, ChevronRight, LastPage, FirstPage, ChevronLeft, HourglassEmpty, Cancel, AccountCircle, FormatListNumbered, Casino, People, Search, Share } from '@material-ui/icons';
 import { connect } from 'react-redux';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
@@ -19,130 +19,97 @@ import BattlechocDialog from '../dialogs/BattlechocDialog';
 import PlayerList from '../controls/PlayerList';
 import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
 
-class MultiplayerScreen extends Component {
-    constructor(props) {
-        super(props);
+const MultiplayerScreen = props => {
+    const { account, closeMultiplayerScreen, showQuickMessage, openAccountOverview, enterMultiplayerGame, multiplayerSessions, sessionRefreshActions, friends } = props;
+
+    const [searchingRandomOpponent, setSearchingRandomOpponent] = useState(false);    
+    const [showFriends, setShowFriends] = useState(false);  
+    const [showSurrenderDialog, setShowSurrenderDialog] = useState(false);  
+    const [showSearch, setShowSearch] = useState(false);  
+    const [userSearchText, setUserSearchText] = useState('');
+    const [searchResults, setSearchResults] = useState([]);  
+    const [waitForResponse, setWaitForResponse] = useState(false);  
+    const [badInternetConnection, setBadInternetConnection] = useState(false);  
+    const [showHighscore, setShowHighscore] = useState(false);  
+    const [highscoreLoading, setHighscoreLoading] = useState(false);
+    const [highscore, setHighscore] = useState([]); 
+    const [highscoreLastPage, setHighscoreLastPage] = useState(1); 
+    const [highscorePage, setHighscorePage] = useState(1);
+    const [surrenderGameId, setSurrenderGameId] = useState(undefined);
+    const [surrenderOpponentName, setSurrenderOpponentName] = useState(undefined);
+
+    const requestTimeout = useRef();
+    const shouldAskForPermissionTimeout = useRef();
+    const askForPermissionTimeout = useRef();
+    const requestRunning = useRef(false);
+    const source = useRef(Axios.CancelToken.source());
+    
+    const inputRef = React.useRef();
+    
+    useEffect(() => {
         TimeAgo.addLocale(en);
         TimeAgo.addLocale(de);
-        this.state = {
-            showFriends: false,
-            showSurrenderDialog: false,
-            searchingRandomOpponent: false,
-            showSearch: false,
-            userSearchText: '',
-            searchResults: [],
-            waitForResponse: false,
-            badInternetConnection: false,
-            showHighscore: false,
-            highscoreLoading: false,
-            highscore: [],
-            highscoreLastPage: 1,
-            highscorePage: 1
-        }
-        this.source = Axios.CancelToken.source();
-        this.inputRef = React.createRef();
-        this.requestRunning = false;
-    }
 
-    componentDidMount() {
-        this.props.onRef(this);
-        multiplayer.getMultiplayerSessions(() => this.props.showQuickMessage({ text: t[this.props.language].SESSION_REFRESH_FAILED}));
+        multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t('SESSION_REFRESH_FAILED')}));
         multiplayer.fetchFriendsList();
 
-        this.shouldAskForPermissionTimeout = setTimeout(() => {
+        shouldAskForPermissionTimeout.current = setTimeout(() => {
             if (multiplayer.shouldAskForNotificationPermission()) {
-                this.props.showQuickMessage({ text: t[this.props.language].NOTIFICATION_PERMISSION_INFO, variant: 'info' });
-                this.askForPermissionTimeout = setTimeout(() => multiplayer.askForNotificationPermission(), 5000);
+                showQuickMessage({ text: t('NOTIFICATION_PERMISSION_INFO'), variant: 'info' });
+                askForPermissionTimeout.current = setTimeout(() => multiplayer.askForNotificationPermission(), 5000);
             }
         }, 2000);
-    }
 
-    componentWillUnmount() {
-        clearTimeout(this.shouldAskForPermissionTimeout);
-        clearTimeout(this.askForPermissionTimeout);
-    }
-
-    timeToString(millis) {
-        let seconds = Math.floor(millis / 1000);
-        let hours = Math.floor(seconds / 3600);
-        seconds -= hours * 3600;
-        let min = Math.floor(seconds / 60);
-        seconds -= min * 60;
-
-        seconds = '' + seconds;
-        seconds = ('00' + seconds).substring(seconds.length);
-
-        if (hours > 0) {
-            min = '' + min;
-            min = ('00' + min).substring(min.length);
-            return hours + ":" + min + ":" + seconds;
+        return () => {
+            clearTimeout(shouldAskForPermissionTimeout.current);
+            clearTimeout(askForPermissionTimeout.current);
         }
-        else {
-            return min + ":" + seconds;
-        }
-    }
+    }, [showQuickMessage]);
 
-    timeAgo(millis) {
+    const timeAgo = millis => {
         let timeAgo = new TimeAgo('en-US');
-
-        if (this.props.language === 'de') {
+        if (getCurrentLanguage() === 'de') {
             timeAgo = new TimeAgo('de-DE');
         }
-        
-        let timeSinceUpdate = timeAgo.format(millis);
-        return timeSinceUpdate; 
+        return timeAgo.format(millis);
     }
 
-    toggleClassList = id => {
+    const toggleClassList = id => {
         Array.from(document.getElementsByClassName(`row.${id}`)).forEach(div => div.classList.toggle('selected'));
     }
 
-    showPlayerProfile = session => {
-        this.props.openAccountOverview(session.opponent);
-    }
+    const showPlayerProfile = session => openAccountOverview(session.opponent);
 
-    joinGame = sessionId => {
-        this.props.enterMultiplayerGame(sessionId);
-    }
-
-    removeFriend = async friend => {
+    const removeFriend = async friend => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.setState({ pendingFriendRequest: friend });
         await multiplayer.removeFriend(friend);
-        this.setState({ pendingFriendRequest: undefined });
     }
 
-    addFriend = async friend => {
+    const addFriend = async friend => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.setState({ pendingFriendRequest: friend });
-        await multiplayer.addFriend(friend);
-        this.setState({ pendingFriendRequest: undefined });       
+        await multiplayer.addFriend(friend);       
     } 
 
-    canNotChallenge = username => {
-        return this.props.multiplayerSessions.map(session => session.opponent.name).includes(username);
-    }
-
-    challengePlayer = async username => {
+    const challengePlayer = async username => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.setState({ 
-            showFriends: false,
-            showSearch: false
-        });
+        setShowFriends(false);
+        setShowSearch(false)
         await multiplayer.challengePlayer(username);
         multiplayer.getMultiplayerSessions();        
     }
 
-    askSurrenderGame = (sessionId, opponent) => {
-        this.setState({ showSurrenderDialog: true, surrenderGameId: sessionId, surrenderOpponentName: opponent });
+    const askSurrenderGame = (sessionId, opponent) => {
+        setShowSurrenderDialog(true);
+        setSurrenderGameId(sessionId);
+        setSurrenderOpponentName(opponent);
     }
 
-    surrenderGame = async sessionId => {
+    const surrenderGame = async sessionId => {
         await multiplayer.surrenderGame(sessionId);
         multiplayer.getMultiplayerSessions();
     }
 
-    sortByTimestamp( a, b ) {
+    const sortByTimestamp = ( a, b ) => {
       if ( a.last_changed < b.last_changed ){
         return 1;
       }
@@ -152,236 +119,312 @@ class MultiplayerScreen extends Component {
       return 0;
     }
 
-    sortByUsername( a, b ) {
-      if ( a.username > b.username ){
-        return 1;
-      }
-      if ( a.username < b.username ){
-        return -1;
-      }
-      return 0;
-    }
-
-    async searchUser() {
-        if (this.state.userSearchText !== '') {             
-            clearTimeout(this.requestTimeout);
-            if (this.requestRunning) {
-                this.source.cancel();
+    const searchRandomOpponent = async () => {
+        if (!searchingRandomOpponent) {
+            setSearchingRandomOpponent(true);
+            
+            try {
+                const player = await multiplayer.findRandomPlayer();
+                openAccountOverview(player);
+            } catch (error) {
+                logger.warn(error.toString());
+            } finally {
+                setSearchingRandomOpponent(false);
             }
-
-            this.setState({ searchResults: [] });
-            let queryString = this.state.userSearchText;
-            this.requestTimeout = (setTimeout( 
-                async () => {
-                    this.setState({ waitForResponse: true });
-                    this.source = Axios.CancelToken.source();
-                    this.requestRunning = true;
-
-                    try {
-                        let response = await ServerRequest('get', '/query/user/' + queryString, this.source.token);
-                        this.setState({ badInternetConnection: false, searchResults: response.data });
-                        this.inputRef.current.blur();
-                    } catch(error) {
-                        if (error instanceof NoHealthyInternetConnectionError || error.code === 'auth/network-request-failed') {
-                            this.setState({ badInternetConnection: true });
-                        } else if (!Axios.isCancel(error)) {
-                            logger.warn(error);
-                            this.setState({ searchResults: [] });
-                        }
-                    } finally {
-                        this.requestRunning = false;
-                        this.setState({ waitForResponse: false });
-                    }
-                }, 500));
         }
     }
 
-    openFriendsPage = () => this.setState({ showFriends: true })
+    useEffect(() => {
+        const searchUser = async () => {
+            if (userSearchText !== '') {             
+                clearTimeout(requestTimeout.current);
+                if (requestRunning.current) {
+                    source.current.cancel();
+                }
 
-    openSearchPage = () => this.setState({ showSearch: true })
+                setSearchResults([]);
+                requestTimeout.current = (setTimeout( async () => {
+                    setWaitForResponse(true);
+                    source.current = Axios.CancelToken.source();
+                    requestRunning.current = true;
 
-    openHighscorePage = page => {
-        this.setState({ showHighscore: true, highscoreLoading: true, highscore: [] }, async () => {
-            try {
-                console.log(page);
-                let highscore = await multiplayer.fetchHighscore(page);
-                this.setState({ 
-                    highscoreLoading: false, 
-                    highscore: highscore.list, 
-                    highscorePage: highscore.page, 
-                    highscoreLastPage: highscore.lastPage 
-                });
-            } catch (error) {
-                logger.warn(error);
-                this.props.showQuickMessage({ text: t[this.props.language].FETCH_HIGHSCORE_FAILED});
-                this.setState({ showHighscore: false, highscoreLoading: false });
+                    try {
+                        const response = await ServerRequest('get', '/query/user/' + userSearchText, source.current.token);
+                        setBadInternetConnection(false);
+                        setSearchResults(response.data);
+                        if (window.innerHeight < 300) {
+                            inputRef.current.blur();
+                        }
+                    } catch(error) {
+                        if (error instanceof NoHealthyInternetConnectionError || error.code === 'auth/network-request-failed') {
+                            setBadInternetConnection(true);
+                        } else if (!Axios.isCancel(error)) {
+                            logger.warn(error);
+                            setSearchResults([]);
+                        }
+                    } finally {
+                        requestRunning.current = false;
+                        setWaitForResponse(false);
+                    }
+                }, 500));
+            }
+        }
+        searchUser();
+    }, [userSearchText]);
+
+    const openHighscorePage = async page => {
+        setShowHighscore(true);
+        setHighscoreLoading(true);
+        setHighscore([]);
+        try {
+            const highscore = await multiplayer.fetchHighscore(page);
+            setHighscoreLoading(false);
+            setHighscore(highscore.list);
+            setHighscorePage(highscore.page);
+            setHighscoreLastPage(highscore.lastPage);
+        } catch (error) {
+            logger.warn(error);
+            showQuickMessage({ text: t('FETCH_HIGHSCORE_FAILED')});
+            setShowHighscore(false);
+            setHighscoreLoading(false);
+        }
+    }
+
+    
+    const refreshSessions = () => {
+        multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t('SESSION_REFRESH_FAILED')}));
+    }
+
+    const createProfileLink = () => {
+        multiplayer.createChallengeMeLink().then(link => {
+            if (navigator.share) {
+                navigator.share({
+                    title: window.document.title,
+                    text: t('INVITATION'),
+                    url: link,
+                }).catch((error) => logger.info('error sharing multiplayer session', error));
+            } else {
+                let whatsappWindowRef = window.open();
+                whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t('INVITATION') + ' - ' + link);
             }
         });
     }
 
-    render() {
-        return (
-            <div id="multiplayer">
-                <BattlechocDialog
-                    open={this.state.showSurrenderDialog}
-                    close={() => this.setState({ showSurrenderDialog: false })}
-                    title={t[this.props.language].SURRENDER_GAME}>
-                    <div className="surrenderDialog">
-                        <p>{t[this.props.language].SURRENDER_GAME_TEXT(this.state.surrenderOpponentName)}</p>
-                        <div className="menuButton" onClick={() => {
-                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                            this.setState({ showSurrenderDialog: false, surrenderGameId: undefined, surrenderOpponentName: undefined });
-                            this.surrenderGame(this.state.surrenderGameId);
-                        }}>{t[this.props.language].SURRENDER}</div>
-                    </div>
-                </BattlechocDialog>
+    return (
+        <>
+        <div className="actionbar" style={{ width: '100%', position: 'relative', marginBottom: '5vh' }}>
+            <Fab
+                size="small"
+                color="primary"
+                className="icon"
+                onClick={() => closeMultiplayerScreen() }>
+                <ArrowBackIcon />
+            </Fab>
+            <Fab
+                size="small"
+                color="primary"
+                className={ sessionRefreshActions > 0 ? 'rotating icon' : 'icon' }
+                onClick={() => refreshSessions() }>
+                <Refresh />
+            </Fab>
+            <div style={{ flexGrow: 1 }} />
+            <Fab
+                size="small"
+                color="primary"
+                className="icon"
+                onClick={() => openHighscorePage()}>
+                <FormatListNumbered />
+            </Fab>
+            <Fab
+                size="small"
+                color="primary"
+                className="icon"
+                onClick={() => searchRandomOpponent()}>
+                { searchingRandomOpponent ? <CircularProgress style={{ color: 'white' }} size={18} /> : <Casino /> }
+            </Fab>
+            <Fab
+                size="small"
+                color="primary"
+                className="icon"
+                onClick={() => setShowFriends(true)}>
+                <People />
+            </Fab>
+            <Fab
+                size="small"
+                color="primary"
+                className="icon"
+                onClick={createProfileLink}>
+                <Share />
+            </Fab>
+            <Fab
+                size="small"
+                color="primary"
+                className="icon"
+                style={{ marginRight: 5 }}
+                onClick={() => setShowSearch(true)}>
+                <Search />
+            </Fab>
+        </div>
+        <div id="multiplayer">
+            <BattlechocDialog
+                open={showSurrenderDialog}
+                close={() => setShowSurrenderDialog(false)}
+                title={t('SURRENDER_GAME')}>
+                <div className="surrenderDialog">
+                    <p>{t('SURRENDER_GAME_TEXT', surrenderOpponentName)}</p>
+                    <div className="menuButton" onClick={() => {
+                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                        setShowSurrenderDialog(false);
+                        setSurrenderGameId(undefined);
+                        setSurrenderOpponentName(undefined);
+                        surrenderGame(surrenderGameId);
+                    }}>{t('SURRENDER')}</div>
+                </div>
+            </BattlechocDialog>
 
-                <BattlechocDialog
-                    open={this.state.showFriends}
-                    close={() => this.setState({ showFriends: false })}
-                    title={t[this.props.language].FRIENDS}>
-                    <PlayerList 
-                        players={this.props.friends} 
-                        removeFriend={this.removeFriend}
-                        challenge={this.challengePlayer}
-                        showProfile={this.showPlayerProfile}
-                        sessions={this.props.multiplayerSessions}
-                        language={this.props.language} />
-                </BattlechocDialog>
+            <BattlechocDialog
+                open={showFriends}
+                close={() => setShowFriends(false)}
+                title={t('FRIENDS')}>
+                <PlayerList 
+                    players={friends} 
+                    removeFriend={removeFriend}
+                    challenge={challengePlayer}
+                    showProfile={showPlayerProfile}
+                    sessions={multiplayerSessions} />
+            </BattlechocDialog>
 
-                <BattlechocDialog
-                    open={this.state.showHighscore}
-                    close={() => this.setState({ showHighscore: false })}
-                    title="Highscore">
-                    <div className="highscore-page">
-                        <div className="highscore-paginator">
-                            <div>
-                                <Fab
-                                    size="small"
-                                    color="primary"
-                                    className="icon"
-                                    disabled={this.state.highscorePage === 1}
-                                    onClick={() => this.openHighscorePage(1) }>
-                                    <FirstPage />
-                                </Fab>
-                                <Fab
-                                    size="small"
-                                    color="primary"
-                                    className="icon"
-                                    disabled={this.state.highscorePage === 1}
-                                    onClick={() => this.openHighscorePage(Math.max(this.state.highscorePage - 1, 1))}>
-                                    <ChevronLeft />
-                                </Fab>
-                            </div>
-                            { this.state.highscoreLoading ? <CircularProgress size={22} /> : <span style={{color: '#324D5C'}}>{t[this.props.language].ACCOUNT_OVERVIEW_RANK} {this.state.highscore.length > 0 ? `${this.state.highscore[0].ranking} - ${this.state.highscore[this.state.highscore.length - 1].ranking}` : '1 - 1'}</span> }
-                            <div>
-                                <Fab
-                                    size="small"
-                                    color="primary"
-                                    className="icon"
-                                    disabled={this.state.highscorePage === this.state.highscoreLastPage}
-                                    onClick={() => {
-                                        this.openHighscorePage(Math.min(this.state.highscorePage + 1, this.state.highscoreLastPage))}
-                                    }>
-                                    <ChevronRight />
-                                </Fab> 
-                                <Fab
-                                    size="small"
-                                    color="primary"
-                                    className="icon"
-                                    disabled={this.state.highscorePage === this.state.highscoreLastPage}
-                                    onClick={() => this.openHighscorePage(this.state.highscoreLastPage) }>
-                                    <LastPage />
-                                </Fab> 
-                            </div>
+            <BattlechocDialog
+                open={showHighscore}
+                close={() => setShowHighscore(false)}
+                title="Highscore">
+                <div className="highscore-page">
+                    <div className="highscore-paginator">
+                        <div>
+                            <Fab
+                                size="small"
+                                color="primary"
+                                className="icon"
+                                disabled={highscorePage === 1}
+                                onClick={() => openHighscorePage(1) }>
+                                <FirstPage />
+                            </Fab>
+                            <Fab
+                                size="small"
+                                color="primary"
+                                className="icon"
+                                disabled={highscorePage === 1}
+                                onClick={() => openHighscorePage(Math.max(highscorePage - 1, 1))}>
+                                <ChevronLeft />
+                            </Fab>
                         </div>
-                        { this.state.highscoreLoading ? null : <PlayerList 
-                            withScore={true}
-                            username={this.props.account.username}
-                            players={this.state.highscore} 
-                            friends={this.props.friends}
-                            removeFriend={this.removeFriend}
-                            addFriend={this.addFriend}
-                            challenge={this.challengePlayer}
-                            showProfile={this.showPlayerProfile}
-                            sessions={this.props.multiplayerSessions}
-                            language={this.props.language} /> }
+                        { highscoreLoading ? <CircularProgress size={22} /> : <span style={{color: '#324D5C'}}>{t('ACCOUNT_OVERVIEW_RANK')} {highscore.length > 0 ? `${highscore[0].ranking} - ${highscore[highscore.length - 1].ranking}` : '1 - 1'}</span> }
+                        <div>
+                            <Fab
+                                size="small"
+                                color="primary"
+                                className="icon"
+                                disabled={highscorePage === highscoreLastPage}
+                                onClick={() => {
+                                    openHighscorePage(Math.min(highscorePage + 1, highscoreLastPage))}
+                                }>
+                                <ChevronRight />
+                            </Fab> 
+                            <Fab
+                                size="small"
+                                color="primary"
+                                className="icon"
+                                disabled={highscorePage === highscoreLastPage}
+                                onClick={() => openHighscorePage(highscoreLastPage) }>
+                                <LastPage />
+                            </Fab> 
+                        </div>
                     </div>
-                </BattlechocDialog>
+                    { highscoreLoading ? null : <PlayerList 
+                        withScore={true}
+                        username={account.username}
+                        players={highscore} 
+                        friends={friends}
+                        removeFriend={removeFriend}
+                        addFriend={addFriend}
+                        challenge={challengePlayer}
+                        showProfile={showPlayerProfile}
+                        sessions={multiplayerSessions} /> }
+                </div>
+            </BattlechocDialog>
 
-                <BattlechocDialog
-                    open={this.state.showSearch}
-                    close={() => this.setState({ showSearch: false })}
-                    title={t[this.props.language].SEARCH_PLAYERS}>
-                    <div className="playerSearchDialog">
-                        <TextField
-                            label="Name"
-                            value={this.state.userSearchText}
-                            error={this.state.badInternetConnection && !this.state.waitForResponse}
-                            helperText={this.state.badInternetConnection && !this.state.waitForResponse ? t[this.props.language].NO_HEALTHY_INTERNET : ''}
-                            style={{display: 'flex'}}
-                            inputProps={{ spellCheck: 'false', autoFocus: true }}
-                            InputLabelProps={{ style: {color: 'rgba(69, 123, 130, 0.8)' }}}
-                            onChange={event => {
-                                this.setState({userSearchText: event.target.value}, () => this.searchUser());
-                            }}
-                            margin="normal"
-                            InputProps={{ 
-                                endAdornment: this.state.waitForResponse ? <CircularProgress size={18} /> : null,
-                                inputRef: this.inputRef
-                            }}
-                        />
-                        <PlayerList 
-                            players={this.state.searchResults} 
-                            friends={this.props.friends}
-                            addFriend={this.addFriend}
-                            removeFriend={this.removeFriend}
-                            challenge={this.challengePlayer}
-                            showProfile={this.showPlayerProfile}
-                            sessions={this.props.multiplayerSessions}
-                            language={this.props.language} />
-                    </div>
-                </BattlechocDialog>
-                
-                { this.props.sessionRefreshActions > 0 ? <CircularProgress style={{ marginTop: '25vh' }} /> : <div className={this.props.multiplayerSessions.length > 0 ? 'session-list' : 'empty-list'}>
-                    { this.props.multiplayerSessions.length > 0 ?
-                    <div className="openGames">
-                    <div className="gamestable">
-                        <div className="tableHead">{t[this.props.language].ACTIONS}</div>
-                        <div className="tableHead">{t[this.props.language].OPPONENT}</div>
-                        <div className="tableHead">{t[this.props.language].TURNS}</div>
-                        <div className="tableHead">{t[this.props.language].LAST_ACTION}</div>
-                        <div className="tableHead">{t[this.props.language].POTENTIAL_COINS}</div>
+            <BattlechocDialog
+                open={showSearch}
+                close={() => setShowSearch(false)}
+                title={t('SEARCH_PLAYERS')}>
+                <div className="playerSearchDialog">
+                    <TextField
+                        label="Name"
+                        value={userSearchText}
+                        error={badInternetConnection && !waitForResponse}
+                        helperText={badInternetConnection && !waitForResponse ? t('NO_HEALTHY_INTERNET') : ''}
+                        style={{display: 'flex'}}
+                        inputProps={{ spellCheck: 'false', autoFocus: true }}
+                        InputLabelProps={{ style: {color: 'rgba(69, 123, 130, 0.8)' }}}
+                        onChange={event => {
+                            setUserSearchText(event.target.value);
+                        }}
+                        margin="normal"
+                        InputProps={{ 
+                            endAdornment: waitForResponse ? <CircularProgress size={18} /> : null,
+                            inputRef: inputRef
+                        }}
+                    />
+                    <PlayerList 
+                        players={searchResults} 
+                        friends={friends}
+                        addFriend={addFriend}
+                        removeFriend={removeFriend}
+                        challenge={challengePlayer}
+                        showProfile={showPlayerProfile}
+                        sessions={multiplayerSessions} />
+                </div>
+            </BattlechocDialog>
+            
+            { sessionRefreshActions > 0 ? <CircularProgress style={{ marginTop: '25vh' }} /> : <div className={multiplayerSessions.length > 0 ? 'session-list' : 'empty-list'}>
+                { multiplayerSessions.length > 0 ?
+                <div className="openGames">
+                <div className="gamestable">
+                    <div className="tableHead">{t('ACTIONS')}</div>
+                    <div className="tableHead">{t('OPPONENT')}</div>
+                    <div className="tableHead">{t('TURNS')}</div>
+                    <div className="tableHead">{t('LAST_ACTION')}</div>
+                    <div className="tableHead">{t('POTENTIAL_COINS')}</div>
 
-                        {Object.assign([], this.props.multiplayerSessions).sort(this.sortByTimestamp).map((row, i) => {
-                            let joinGameIcon = <HourglassEmpty onClick={() => this.props.enterMultiplayerGame(row.id)} />;
-                            if (row.myTurn) {
-                                joinGameIcon = <PlayArrow onClick={() => this.props.enterMultiplayerGame(row.id)} />;
-                            }
-                            return [
-                                <div key={i} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} gameActions`}>{ joinGameIcon }<Cancel onClick={() => this.askSurrenderGame(row.id, row.opponent.name)} /><AccountCircle onClick={() => this.showPlayerProfile(row)} /></div>,
-                                <div key={i+1} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">player</span><span>{row.opponent.name}</span></div>,
-                                <div key={i+2} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
-                                <div key={i+3} onClick={() => this.showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)}><span className="gamelabel">lastAction</span><span>{this.timeAgo(row.last_changed)}</span></div>,
-                                <div onClick={() => this.showPlayerProfile(row)} onMouseEnter={() => this.toggleClassList(i)} onMouseLeave={() => this.toggleClassList(i)} className={`row.${i} tablefoot`} key={i+4}><span className="gamelabel">potential coins</span><span>{multiplayer.calculateCoinsFromTrackRecord([row.statistics], true)}</span></div>
-                            ]
-                        })}
-                    </div></div> : 
-                    <div className="no-sessions-info">
-                        <h4>{t[this.props.language].MULTIPLAYER_INFO_HEADER}</h4>
-                        <p>{t[this.props.language].MULTIPLAYER_INFO_HEADER2}</p>
-                        <ul>
-                            <li><Casino />{t[this.props.language].MULTIPLAYER_INFO_CASINO}</li>
-                            <li><People />{t[this.props.language].MULTIPLAYER_INFO_FRIENDS}</li>
-                            <li><Share />{t[this.props.language].MULTIPLAYER_INFO_SHARE}</li>
-                            <li><Search />{t[this.props.language].MULTIPLAYER_INFO_SEARCH}</li>
-                            <li><FormatListNumbered />{t[this.props.language].MULTIPLAYER_INFO_HIGHSCORE}</li>
-                        </ul>
-                    </div> }
+                    {Object.assign([], multiplayerSessions).sort(sortByTimestamp).map((row, i) => {
+                        let joinGameIcon = <HourglassEmpty onClick={() => enterMultiplayerGame(row.id)} />;
+                        if (row.myTurn) {
+                            joinGameIcon = <PlayArrow onClick={() => enterMultiplayerGame(row.id)} />;
+                        }
+                        return [
+                            <div key={i} onMouseEnter={() => toggleClassList(i)} onMouseLeave={() => toggleClassList(i)} className={`row.${i} gameActions`}>{ joinGameIcon }<Cancel onClick={() => askSurrenderGame(row.id, row.opponent.name)} /><AccountCircle onClick={() => showPlayerProfile(row)} /></div>,
+                            <div key={i+1} onClick={() => showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => toggleClassList(i)} onMouseLeave={() => toggleClassList(i)}><span className="gamelabel">player</span><span>{row.opponent.name}</span></div>,
+                            <div key={i+2} onClick={() => showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => toggleClassList(i)} onMouseLeave={() => toggleClassList(i)}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
+                            <div key={i+3} onClick={() => showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => toggleClassList(i)} onMouseLeave={() => toggleClassList(i)}><span className="gamelabel">lastAction</span><span>{timeAgo(row.last_changed)}</span></div>,
+                            <div onClick={() => showPlayerProfile(row)} onMouseEnter={() => toggleClassList(i)} onMouseLeave={() => toggleClassList(i)} className={`row.${i} tablefoot`} key={i+4}><span className="gamelabel">potential coins</span><span>{multiplayer.calculateCoinsFromTrackRecord([row.statistics], true)}</span></div>
+                        ]
+                    })}
+                </div></div> : 
+                <div className="no-sessions-info">
+                    <h4>{t('MULTIPLAYER_INFO_HEADER')}</h4>
+                    <p>{t('MULTIPLAYER_INFO_HEADER2')}</p>
+                    <ul>
+                        <li><Casino />{t('MULTIPLAYER_INFO_CASINO')}</li>
+                        <li><People />{t('MULTIPLAYER_INFO_FRIENDS')}</li>
+                        <li><Share />{t('MULTIPLAYER_INFO_SHARE')}</li>
+                        <li><Search />{t('MULTIPLAYER_INFO_SEARCH')}</li>
+                        <li><FormatListNumbered />{t('MULTIPLAYER_INFO_HIGHSCORE')}</li>
+                    </ul>
                 </div> }
-            </div>
-        );
-    }
+            </div> }
+        </div>
+        </>
+    );
 }
 
 MultiplayerScreen.propTypes = {
@@ -390,7 +433,6 @@ MultiplayerScreen.propTypes = {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
-    language: state.ui.language,
     multiplayerSessions: state.ui.multiplayerSessions,
     friends: state.ui.friends,
     account: state.ui.playerInfos.stats,

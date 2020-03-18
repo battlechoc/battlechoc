@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { changeLanguage, updatePlayerStats, hideQuickMessage, showQuickMessage } from '../UiActions';
-import { Jukebox, Translation as t } from '../misc';
+import { updatePlayerStats, hideQuickMessage, showQuickMessage } from '../UiActions';
+import { Jukebox, translate as t, setCurrentLanguage, getCurrentLanguage } from '../misc';
 import OfflineStore from '../../OfflineStore';
 import Typography from '@material-ui/core/Typography';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -77,6 +77,12 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
+function useForceUpdate(){
+  const [value, setValue] = useState(0);
+  console.debug(value);
+  return () => setValue(value => ++value);
+}
+
 const Settings = props =>  {
   const [showErrorReport, setShowErrorReport] = useState(false);
   const [withDeviceInformation, setWithDeviceInformation] = useState(false);
@@ -86,6 +92,8 @@ const Settings = props =>  {
   const [editPlayerName, setEditPlayerName] = useState(false);
 
   const classes = useStyles();
+  const forceUpdate = useForceUpdate();
+
   const setPlayerName = playerName => {
     ServerRequest('post', '/user/username', { username: playerName })
     .then(response => {        
@@ -98,7 +106,7 @@ const Settings = props =>  {
     }).catch(error => console.warn(error));
   }
 
-  const closeDialog = () => {
+  function closeDialog() {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     props.close();
     setShowAttentionText(false);
@@ -115,12 +123,12 @@ const Settings = props =>  {
           setWithDeviceInformation(false);
           setShowErrorReport(false) 
         }}
-        title={t[props.language].REPORT_PROBLEM}>
+        title={t('REPORT_PROBLEM')}>
         <div className={classes.dialogContent}>
           <form noValidate autoComplete="off">
             <TextField
-              label={t[props.language].REPORT_CUSTOM_MESSAGE}
-              placeholder={t[props.language].REPORT_CUSTOM_MESSAGE_PLACEHOLDER}
+              label={t('REPORT_CUSTOM_MESSAGE')}
+              placeholder={t('REPORT_CUSTOM_MESSAGE_PLACEHOLDER')}
               multiline
               fullWidth
               InputProps={{ style: { fontSize: '0.9rem' } }}
@@ -145,7 +153,7 @@ const Settings = props =>  {
                 }}
               />
             }
-            label={t[props.language].REPORT_DEVICE_INFO}
+            label={t('REPORT_DEVICE_INFO')}
           />
           <div className={`${classes.menuButton} ${sendingReport ? classes.inactiveButton : ''}`} onClick={async () => {
             if (!sendingReport) {
@@ -164,13 +172,13 @@ const Settings = props =>  {
                 };
                 await ServerRequest('post', '/debugging/gamestate', { report: report });
                 props.showQuickMessage({ 
-                  text: t[props.language].SUCCESSFULLY_SENDING_PROBLEM_REPORT, 
+                  text: t('SUCCESSFULLY_SENDING_PROBLEM_REPORT'), 
                   variant: 'success' 
                 });
               } catch(error) {
                 logger.warn(error);
                 props.showQuickMessage({ 
-                  text: t[props.language].ERROR_SENDING_PROBLEM_REPORT, 
+                  text: t('ERROR_SENDING_PROBLEM_REPORT'), 
                   variant: 'error' 
                 });
               } finally {
@@ -181,43 +189,44 @@ const Settings = props =>  {
                 props.close();
               }
             }
-          }}>{sendingReport ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].REPORT_PROBLEM}</div>
-          <Typography className={classes.reportInformation}>{t[props.language].REPORT_INFORMATION}</Typography>
+          }}>{sendingReport ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t('REPORT_PROBLEM')}</div>
+          <Typography className={classes.reportInformation}>{t('REPORT_INFORMATION')}</Typography>
         </div>
       </BattlechocDialog>
 
       <BattlechocDialog
         open={props.open}
         close={closeDialog}
-        title={t[props.language].SETTINGS}>
+        title={t('SETTINGS')}>
         <div className={classes.dialogContent}>
           { 
             typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous' ?
-              editPlayerName ? <PlayerNameInput setPlayerName={setPlayerName} current={props.playerInfos.stats.username} language={props.language}/> :
+              editPlayerName ? <PlayerNameInput setPlayerName={setPlayerName} current={props.playerInfos.stats.username} /> :
               <div className={classes.username}>
                 <AccountCircle className={classes.accountCircle} /> { props.playerInfos.stats.username }
                 <Fab onClick={() => setEditPlayerName(true)} className={classes.editUsername} size="small" color="primary"><Edit /></Fab>
               </div> : null
           }
           <FormControl style={{width: '100%'}}>
-            <InputLabel htmlFor="lang-selection" style={{color: 'rgb(48, 86, 91)'}}>{t[props.language].LANGUAGE}</InputLabel>
+            <InputLabel htmlFor="lang-selection" style={{color: 'rgb(48, 86, 91)'}}>{t('LANGUAGE')}</InputLabel>
             <Select
               native
-              value={props.language}
+              value={getCurrentLanguage()}
               onChange={event => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                props.changeLanguage(event.target.value);
+                setCurrentLanguage(event.target.value);
+                forceUpdate();
               }}
               inputProps={{ name: 'language', id: 'lang-selection' }}>
-              <option value="en">{t[props.language].ENGLISH}</option>
-              <option value="de">{t[props.language].GERMAN}</option>
-              <option value="jp">{t[props.language].JAPANESE}</option>
+              <option value="en">{t('ENGLISH')}</option>
+              <option value="de">{t('GERMAN')}</option>
+              <option value="ja">{t('JAPANESE')}</option>
             </Select>
             <div className={classes.menuButton} onClick={() => {
               Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
               setShowAttentionText(false);
               setShowErrorReport(true);
-            }}>{t[props.language].REPORT_PROBLEM}</div>
+            }}>{t('REPORT_PROBLEM')}</div>
             {(() => {
               if (props.playerInfos.stats.username !== 'Chocnonymous' && typeof props.game === 'undefined') {
                 return (
@@ -227,7 +236,7 @@ const Settings = props =>  {
                       props.startTutorial();
                       props.close();
                       setShowAttentionText(false);
-                    }}>{t[props.language].RESTART_TUTORIAL}</div>
+                    }}>{t('RESTART_TUTORIAL')}</div>
                   </div>
                 )
               }
@@ -243,11 +252,11 @@ const Settings = props =>  {
                   } else {
                     setShowAttentionText(true);
                   }
-                }}>{t[props.language].SETTINGS_QUIT}</div> : null
+                }}>{t('SETTINGS_QUIT')}</div> : null
             }
             {
               showAttentionText && typeof props.game !== 'undefined' ?
-                <Typography color="error" className="attentionText">{t[props.language].SETTINGS_ATTENTION_TEXT}</Typography>
+                <Typography color="error" className="attentionText">{t('SETTINGS_ATTENTION_TEXT')}</Typography>
                 : null
             }
           </FormControl>
@@ -266,13 +275,11 @@ Settings.propTypes = {
 
 const mapStateToProps = state => ({
   game: state.gameplay.game,
-  language: state.ui.language,
   playerInfos: state.ui.playerInfos,
   tutorial: state.ui.tutorial,
 });
 
 const mapDispatchToProps = {
-  changeLanguage,
   updatePlayerStats,
   hideQuickMessage, 
   showQuickMessage

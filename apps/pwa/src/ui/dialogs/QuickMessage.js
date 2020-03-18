@@ -84,6 +84,7 @@ function QuickMessage(props) {
               horizontal: 'center',
             }}
             open={open}
+            style={{ marginTop: props.position * 64 }}
             autoHideDuration={4000}
             className={`${classes.anchorOriginTopCenter} ${customStyle}`}
             onClose={onClose}
@@ -110,6 +111,7 @@ function QuickMessage(props) {
 QuickMessage.propTypes = {
     open: PropTypes.bool.isRequired,
     message: PropTypes.string,
+    position: PropTypes.number.isRequired,
     onClose: PropTypes.func.isRequired,
     variant: PropTypes.oneOf(['error', 'info', 'success', 'warning', 'apple-pwa-hint']),
 };

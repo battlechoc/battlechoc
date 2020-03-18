@@ -29,9 +29,12 @@ describe('browser', () => {
       await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
       await expect(page).toMatchElement('.titleMenu', { text: 'New Game' });
       await page.click('.titleMenu .menuButton:first-child');
-      await expect(page).toMatchElement('h6', { text: 'Interactive battlechoc Tutorial' });
-      await page.click('.active.button .stackedIcon');
-      await expect(page).toMatchElement('h6', { text: 'The chocolate factory' });
+      await expect(page).toMatchElement('h6', { text: 'Welcome to battlechoc' });
+      await page.waitFor(1000);
+      await page.click('#next-loop');
+      await page.waitFor(1000);
+      await page.waitForSelector('#prev-loop', {timeout: timeout});
+      await expect(page).toMatchElement('h6', { text: 'The Chocolate Factory'});
       await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test002.png' })
     }, timeout);
   },

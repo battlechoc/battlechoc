@@ -2,8 +2,7 @@ import { createReducer } from 'redux-starter-kit';
 import * as UiActions from './UiActions';
 import { EmptyPlayerStats, EntityType } from 'battlechoc-shared-functions';
 import OfflineStore from '../OfflineStore';
-import { ServerRequest } from '../helper/settings';
-import logger from '../helper/logger';
+import uuidv4 from 'uuid/v4';
 
 const uiReducer = createReducer({
     selectedBuilding: EntityType.FACTORY,
@@ -17,13 +16,12 @@ const uiReducer = createReducer({
     multiplayerSessions: [],
     playerInfos: { stats: EmptyPlayerStats, isSignedIn: false },
     language: window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en',
-    quickMessage: {
-        show: false,
-        text: '',
-        variant: 'warning'
-    },
+    quickMessages: [],
+    notification: {title: null, message:null, open:false},
     sessionRefreshActions: 0,
-    donutHighlighting: false
+    donutHighlighting: false,
+    hudUiLocked: false,
+    onLoopsEnd: null
 }, {
     [UiActions.resetUi]: (state, action) => {
         state.whitelistBuildings = undefined;
@@ -41,16 +39,6 @@ const uiReducer = createReducer({
     },
     [UiActions.selectAttack]: (state, action) => {
         state.selectedAttack = action.payload;
-    },
-    [UiActions.changeLanguage]: (state, action) => {
-        state.language = action.payload;
-        ServerRequest('post', '/user/language', { language: action.payload })
-        .catch(error => {
-            if (!error instanceof ReferenceError) {
-                logger.warn(error)
-            }
-        })
-        .finally(() => OfflineStore.settingsStore.set("language", action.payload));
     },
     [UiActions.deselectAttack]: (state, action) => {
         state.selectedAttack = undefined;
@@ -96,10 +84,13 @@ const uiReducer = createReducer({
     },
     [UiActions.stopTutorial]: (state, action) => {
         state.tutorial = false;
+        state.notificationOnLoopsEnd = null;
         OfflineStore.settingsStore.set("tutorialAlreadySeen", true);
     },
     [UiActions.startTutorial]: (state, action) => {
         state.tutorial = true;
+        state.loopAnimations = action.payload.loops;
+        state.notificationOnLoopsEnd = action.payload.notificationOnLoopsEnd || null;
     },
     [UiActions.updatePlayerStats]: (state, action) => {
         Object.assign(state.playerInfos.stats, action.payload);
@@ -119,14 +110,13 @@ const uiReducer = createReducer({
         state.playerInfos.stats.level = action.payload;
     },
     [UiActions.showQuickMessage]: (state, action) => {
-        state.quickMessage.show = true;
-        state.quickMessage.text = action.payload.text || '';
-        state.quickMessage.variant = action.payload.variant || 'warning';
+        if ((action.payload.type === 'PWA_ONLINE_MESSAGE' || action.payload.type === 'PWA_OFFLINE_MESSAGE')) {
+            state.quickMessages = state.quickMessages.filter(message => message.type !== 'PWA_ONLINE_MESSAGE' && message.type !== 'PWA_OFFLINE_MESSAGE');
+        }
+        state.quickMessages.push({ type: action.payload.type || 'GENERIC_MESSAGE', id: uuidv4(), text: action.payload.text || '', variant: action.payload.variant || 'warning' });
     },
     [UiActions.hideQuickMessage]: (state, action) => {
-        state.quickMessage.show = false;
-        state.quickMessage.text = '';
-        state.quickMessage.variant = 'warning';
+        state.quickMessages = state.quickMessages.filter(message => message.id !== action.payload);
     },
     [UiActions.startSessionRefresh]: (state, action) => {
         state.sessionRefreshActions += 1;
@@ -142,6 +132,23 @@ const uiReducer = createReducer({
         } else {
             state.donutHighlighting = !state.donutHighlighting;
         }
+    },
+    [UiActions.showNotification]: (state, action) => {
+        const {title, message} = action.payload;
+        state.notification = {
+            title: title,
+            message: message,
+            open: true
+        }
+    },
+    [UiActions.hideNotification]: state => {
+        state.notification = { title: null, message: null, open: false};
+    },
+    [UiActions.lockHudUi]: state => {
+        state.hudUiLocked = true;
+    },
+    [UiActions.unlockHudUi]: state => {
+        state.hudUiLocked = false;
     }
 });
 

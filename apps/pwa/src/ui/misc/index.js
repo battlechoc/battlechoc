@@ -1,2 +1,2 @@
 export {default as Jukebox} from './Jukebox';
-export {default as Translation} from './Translation';
+export { setCurrentLanguage, getCurrentLanguage, translate } from './Translation';

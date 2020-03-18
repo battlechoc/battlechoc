@@ -8,7 +8,7 @@ import * as firebaseui from 'firebaseui';
 import { multiplayer } from '../../Multiplayer';
 import firebase from 'firebase/app';
 import 'firebase/auth';
-import { Jukebox, Translation as t } from '../misc';
+import { Jukebox, translate as t } from '../misc';
 import Button from '@material-ui/core/Button';
 import { AccountCircle, PlayArrow, HourglassEmpty, PersonAddDisabled, PersonAdd, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/core/styles';
@@ -176,7 +176,7 @@ const AccountOverview = props => {
             open={props.open}
             close={props.close}
             id="accountOverviewDialog"
-            title={useMediaQuery('screen and (max-height: 600px)') ? playerName : t[props.language].ACCOUNTINFOS}>
+            title={useMediaQuery('screen and (max-height: 600px)') ? playerName : t('ACCOUNTINFOS')}>
             <div className={isPlayerAccount ? 'accountOverview' : 'opponent accountOverview'}>
                 <div className="accountAttribute"><AccountCircle /> { playerName }</div>
                 {(() => {
@@ -191,7 +191,7 @@ const AccountOverview = props => {
                                     props.close();
                                 }}>
                                     <PlayArrow className={classes.actionIcon} />
-                                    <span className={classes.actionTitle}>{t[props.language].START_GAME}</span>
+                                    <span className={classes.actionTitle}>{t('START_GAME')}</span>
                                 </div>);
                             } else {
                                 actions.push(<div key={1} className={classes.menuButton} onClick={() => {
@@ -200,7 +200,7 @@ const AccountOverview = props => {
                                     props.close();
                                 }}>
                                     {gamesAgaistOpponent[0].myTurn ? <PlayArrow className={classes.actionIcon} /> : <HourglassEmpty className={classes.actionIcon} />}
-                                    <span className={classes.actionTitle}>{t[props.language].JOIN_GAME}</span>
+                                    <span className={classes.actionTitle}>{t('JOIN_GAME')}</span>
                                 </div>);
                             }
                     
@@ -214,7 +214,7 @@ const AccountOverview = props => {
                                     }
                                 }}>
                                     <PersonAdd className={classes.actionIcon} />
-                                    <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].ADD_FRIEND}</span>
+                                    <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t('ADD_FRIEND')}</span>
                                 </div>);
                             } else {
                                 actions.push(<div key={4} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
@@ -227,42 +227,42 @@ const AccountOverview = props => {
                                     }
                                 }}>
                                     <PersonAddDisabled className={classes.actionIcon} />
-                                    <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t[props.language].REMOVE_FRIEND}</span>
+                                    <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t('REMOVE_FRIEND')}</span>
                                 </div>);
                             }
 
                             return <div className={classes.opponentActions}>{actions}</div>;
                         } else {
-                            return <div className={classes.noAccountInfo} >{t[props.language].NO_ACCOUNT_INFO}</div>;
+                            return <div className={classes.noAccountInfo} >{t('NO_ACCOUNT_INFO')}</div>;
                         }
                     }                        
                 })()}
 
                 <div className={'accountSubAttributes' + (loggedIn ? ' loggedIn' : '') + (isPlayerAccount ? '' : ' opponent')}>
-                    <div className="accountAttribute"><PlusOne />{t[props.language].ACCOUNT_OVERVIEW_LEVEL}<span className="attributeValue">{ level }</span></div>
-                    <div className="accountAttribute"><EmojiEvents />{t[props.language].ACCOUNT_OVERVIEW_RANK}<span className="attributeValue">{ ranking }</span></div>
-                    <div className="accountAttribute"><ThumbUp />{t[props.language].ACCOUNT_OVERVIEW_WON}<span className="attributeValue">{ winnings }</span></div>
-                    <div className="accountAttribute"><ThumbsUpDown />{t[props.language].ACCOUNT_OVERVIEW_DRAWN}<span className="attributeValue">{ drawn }</span></div>
-                    <div className="accountAttribute"><ThumbDown />{t[props.language].ACCOUNT_OVERVIEW_LOST}<span className="attributeValue">{losses }</span></div>
+                    <div className="accountAttribute"><PlusOne />{t('ACCOUNT_OVERVIEW_LEVEL')}<span className="attributeValue">{ level }</span></div>
+                    <div className="accountAttribute"><EmojiEvents />{t('ACCOUNT_OVERVIEW_RANK')}<span className="attributeValue">{ ranking }</span></div>
+                    <div className="accountAttribute"><ThumbUp />{t('ACCOUNT_OVERVIEW_WON')}<span className="attributeValue">{ winnings }</span></div>
+                    <div className="accountAttribute"><ThumbsUpDown />{t('ACCOUNT_OVERVIEW_DRAWN')}<span className="attributeValue">{ drawn }</span></div>
+                    <div className="accountAttribute"><ThumbDown />{t('ACCOUNT_OVERVIEW_LOST')}<span className="attributeValue">{losses }</span></div>
                     { isPlayerAccount ? <div className="accountAttribute">
                     <picture>
                       <source srcSet="/images/coins.webp" type="image/webp" />
                       <source srcSet="/images/coins.png" type="image/jpeg" /> 
                       <img src="/images/coins.png" alt="choco coins" />
                     </picture>
-                    {t[props.language].ACCOUNT_OVERVIEW_COINS}<span className="attributeValue">{ props.playerInfos.stats.coins }</span></div> : null }
+                    {t('ACCOUNT_OVERVIEW_COINS')}<span className="attributeValue">{ props.playerInfos.stats.coins }</span></div> : null }
                 </div>
 
                 { isPlayerAccount ? loggedIn ?    
                     <div className="infobox">
-                        <p className="loggedinInfo">{t[props.language].ACCOUNT_OVERVIEW_ASSOCIATION} {props.playerInfos.email}</p>
+                        <p className="loggedinInfo">{t('ACCOUNT_OVERVIEW_ASSOCIATION')} {props.playerInfos.email}</p>
                         <Button className={classes.logoutButton} variant="outlined" onClick={signOut}>
-                            {t[props.language].SIGN_OUT}
+                            {t('SIGN_OUT')}
                         </Button>
                     </div> :
                     <div className="infobox">
                         <StyledFirebaseAuth uiConfig={FirebaseSigninUiConfig} firebaseAuth={firebase.auth()} />
-                        <p>{t[props.language].ACCOUNT_OVERVIEW_CREATE_INFO}</p>
+                        <p>{t('ACCOUNT_OVERVIEW_CREATE_INFO')}</p>
                     </div> : null                 
                 }
             </div>
@@ -276,7 +276,6 @@ AccountOverview.propTypes = {
 }
 
 const mapStateToProps = state => ({
-    language: state.ui.language,
     playerInfos: state.ui.playerInfos,
     ranking: state.ui.ranking,
     multiplayerSessions: state.ui.multiplayerSessions,

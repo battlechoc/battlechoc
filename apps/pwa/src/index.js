@@ -4,7 +4,7 @@ import { Provider } from 'react-redux';
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
-import { Translation as t } from './ui/misc';
+import { translate as t } from './ui/misc';
 import rootReducer from './RootReducer';
 import { showQuickMessage } from './ui/UiActions';
 import { gameplayLogger } from './gameplay/GamePlayLogger';
@@ -160,9 +160,8 @@ ReactDOM.render(
 
 let config = {
     onUpdate: () => {
-        let language = store.getState().ui.language;
         store.dispatch(showQuickMessage({ 
-            text: t[language].PWA_UPDATE_AVAILABLE,
+            text: t('PWA_UPDATE_AVAILABLE'),
             variant: 'info'
         }));
     }
@@ -171,17 +170,17 @@ let config = {
 serviceWorker.register(config);
 
 window.addEventListener("offline", () => { 
-    let language = store.getState().ui.language;
     store.dispatch(showQuickMessage({ 
-        text: t[language].PWA_OFFLINE_MODE,
-        variant: 'info'
+        text: t('PWA_OFFLINE_MODE'),
+        variant: 'info',
+        type: 'PWA_OFFLINE_MESSAGE'
     }));
 });
 
 window.addEventListener("online", () => { 
-    let language = store.getState().ui.language;
     store.dispatch(showQuickMessage({ 
-        text: t[language].PWA_ONLINE_MODE,
-        variant: 'info'
+        text: t('PWA_ONLINE_MODE'),
+        variant: 'info',
+        type: 'PWA_ONLINE_MESSAGE'
     }));
 });

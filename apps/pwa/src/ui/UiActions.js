@@ -5,7 +5,6 @@ const UiActionTypes = Object.freeze({
     tapBuilding: 'battlechoc/ui/tapBuilding',
     selectAttack: 'battlechoc/ui/selectAttack',
     deselectAttack: 'battlechoc/ui/deselectAttack',
-    changeLanguage: 'battlechoc/ui/changeLanguage',
     deselectBuildings: 'battlechoc/ui/deselectBuildings',
     gameResumeable: 'battlechoc/ui/gameResumeable',
     showOverview: 'battlechoc/ui/showOverview',
@@ -25,7 +24,11 @@ const UiActionTypes = Object.freeze({
     hideQuickMessage: 'battlechoc/ui/hideQuickMessage',
     startSessionRefresh: 'battlechoc/ui/startSessionRefresh',
     stopSessionRefresh: 'battlechoc/ui/stopSessionRefresh',
-    toggleDonutHighlighting: 'battlechoc/ui/toggleDonutHighlighting'
+    toggleDonutHighlighting: 'battlechoc/ui/toggleDonutHighlighting',
+    showNotification: 'battlechoc/ui/showNotification',
+    hideNotification: 'battlechoc/ui/hideNotification',
+    lockHudUi: 'battlechoc/ui/lockHudUi',
+    unlockHudUi: 'battlechoc/ui/unlockHudUi',
 });
 
 const selectBuilding = createAction(UiActionTypes.selectBuilding);
@@ -33,7 +36,6 @@ const tapBuilding = createAction(UiActionTypes.tapBuilding);
 const selectAttack = createAction(UiActionTypes.selectAttack);
 const deselectAttack = createAction(UiActionTypes.deselectAttack);
 const deselectBuildings = createAction(UiActionTypes.deselectBuildings);
-const changeLanguage = createAction(UiActionTypes.changeLanguage);
 const gameResumeable = createAction(UiActionTypes.gameResumeable);
 const assetsReady = createAction(UiActionTypes.assetsReady);
 const loadUiState = createAction(UiActionTypes.loadUiState);
@@ -53,5 +55,9 @@ const hideQuickMessage = createAction(UiActionTypes.hideQuickMessage);
 const startSessionRefresh = createAction(UiActionTypes.startSessionRefresh);
 const stopSessionRefresh = createAction(UiActionTypes.stopSessionRefresh);
 const toggleDonutHighlighting = createAction(UiActionTypes.toggleDonutHighlighting);
+const showNotification = createAction(UiActionTypes.showNotification);
+const hideNotification = createAction(UiActionTypes.hideNotification);
+const lockHudUi = createAction(UiActionTypes.lockHudUi);
+const unlockHudUi = createAction(UiActionTypes.lockHudUi);
 
-export { toggleDonutHighlighting, stopSessionRefresh, startSessionRefresh, showQuickMessage, hideQuickMessage, updateLevel, setPlayerRank, loadFriendsList, updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, changeLanguage, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };
+export { lockHudUi, unlockHudUi, showNotification, hideNotification, toggleDonutHighlighting, stopSessionRefresh, startSessionRefresh, showQuickMessage, hideQuickMessage, updateLevel, setPlayerRank, loadFriendsList, updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };

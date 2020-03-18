@@ -7,6 +7,7 @@ import { GameStateTypes, EntityType, getEntityDescriptor } from 'battlechoc-shar
 import { Jukebox } from '../misc';
 import Fab from '@material-ui/core/Fab';
 import { Visibility, VisibilityOff } from '@material-ui/icons';
+import LockIcon from '@material-ui/icons/Lock';
 
 const BuildingPalette = props => {
     let player = props.game.players[multiplayer.localPlayerIndex];
@@ -53,7 +54,7 @@ const BuildingPalette = props => {
     }, {
         type: EntityType.FRUIT_CANNON,
         className: 'fruitCannon',
-        alt: 'fruit cannon',
+        alt: 'fruit cannon', 
         costs: getEntityDescriptor(EntityType.FRUIT_CANNON, player.level).costs
     },{
         type: EntityType.DONUT_FACTORY,
@@ -134,6 +135,19 @@ const BuildingPalette = props => {
         </div>
     }
 
+    let whitelist = props.whitelist;
+    if (!props.tutorial) {
+        if ( props.score < 1) {
+            whitelist = [EntityType.FACTORY, EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM];
+        } else if (props.score < 200) {
+            whitelist = [EntityType.FACTORY, EntityType.FACTORY_EXTENSION, EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM];
+        } else if (props.score < 500) {
+            whitelist = [EntityType.FACTORY, EntityType.FACTORY_EXTENSION, EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY, EntityType.XMAS_FACTORY];
+        } else if (props.score < 1000) {
+            whitelist = [EntityType.FACTORY, EntityType.FACTORY_EXTENSION, EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY, EntityType.XMAS_FACTORY, EntityType.FRUIT_CANNON, EntityType.CHOCOLATE_FOUNTAIN];
+        }
+    }
+
     return (
         <div>
             { buildingSelectionIsVisible() ? donutSelection : null }
@@ -141,9 +155,13 @@ const BuildingPalette = props => {
                 {(() => {
                     if (buildingSelectionIsVisible()) {
                         return buildingsForSeclection.map((building, i) => {
-                            if (typeof props.whitelist !== 'undefined') {
-                                if (!props.whitelist.includes(building.type)) {
-                                    return null;
+                            if (typeof whitelist !== 'undefined') {
+                                if (!whitelist.includes(building.type)) {
+                                    if (!props.tutorial && props.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && props.game.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
+                                        return <div className="unlocked-entity preview" key={i}><LockIcon className="lock-icon" /></div>;
+                                    } else {
+                                        return null
+                                    }
                                 }
                             }
                             let canBuild = playerCanBuild(building);
@@ -183,7 +201,9 @@ const mapStateToProps = state => ({
     game: state.gameplay.game,
     selectedBuilding: state.ui.selectedBuilding,
     whitelist: state.ui.whitelistBuildings,
-    donutHighlighting: state.ui.donutHighlighting
+    donutHighlighting: state.ui.donutHighlighting,
+    score: state.ui.playerInfos.stats.score,
+    tutorial: state.ui.tutorial
 });
 
 const mapDispatchToProps = {

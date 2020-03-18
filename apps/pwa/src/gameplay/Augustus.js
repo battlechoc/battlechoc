@@ -9,8 +9,9 @@ const AugustusType = Object.freeze({
 })
 
 export default class Augustus extends NonPlayerCharacter {
-    constructor(actions) {
-    	super(actions);
+    constructor(actions, handicap=0) {
+        super(actions);
+        this.handicap = handicap;
         this.type = AugustusType.BALANCED;
         this.discoveredShieldedCells = [];
         this.discoveredUnveiledCells = [];
@@ -543,25 +544,25 @@ export default class Augustus extends NonPlayerCharacter {
 
         if (this.player.donuts.length > 0) {
             await this.buildEntity(this.player.donuts[0].type);
-        } else if (uncoveredEntities.filter(cell => this.containsEntity(cell, EntityType.FACTORY) && !cell.shielded).length > 0 && hasEnoughCacaoFor(EntityType.CHOCOLATE_FOUNTAIN) && rage < 0.7) {
+        } else if (this.handicap < 2 && uncoveredEntities.filter(cell => this.containsEntity(cell, EntityType.FACTORY) && !cell.shielded).length > 0 && hasEnoughCacaoFor(EntityType.CHOCOLATE_FOUNTAIN) && rage < 0.7) {
             await this.buildEntity(EntityType.CHOCOLATE_FOUNTAIN);
         } else if (uncoveredEntities.length > 0 && hasEnoughCacaoFor(EntityType.CREAM) && rage < 0.4) {
             await this.buildEntity(EntityType.CREAM);
-        } else if (this.discoveredShieldedCells.length > 0 && cannons > 0 && hasEnoughCacaoFor(EntityType.FRUIT_CANNON)) {
+        } else if (this.handicap < 2 && this.discoveredShieldedCells.length > 0 && cannons > 0 && hasEnoughCacaoFor(EntityType.FRUIT_CANNON)) {
             await this.buildEntity(EntityType.FRUIT_CANNON);
         } else if (trees < lowerTreeLimit && hasEnoughCacaoFor(EntityType.CACAOTREE)) {
             await this.buildEntity(EntityType.CACAOTREE);
         } else if ((cannons + fruitcannons) < lowerCannonLimit && hasEnoughCacaoFor(EntityType.RUM_TRUFFLE_CANNON)) {
             await this.buildEntity(EntityType.RUM_TRUFFLE_CANNON);
-        } else if (bunnies < 1 && hasEnoughCacaoFor(EntityType.SPYING_EASTER_BUNNY) && rage > 0.7) {
+        } else if (this.handicap < 3 && bunnies < 1 && hasEnoughCacaoFor(EntityType.SPYING_EASTER_BUNNY) && rage > 0.7) {
             await this.buildEntity(EntityType.SPYING_EASTER_BUNNY);
-        } else if (factoryExtensions < factoryExtensionLimits && hasEnoughCacaoFor(EntityType.FACTORY_EXTENSION)) {
+        } else if (this.handicap < 4 && factoryExtensions < factoryExtensionLimits && hasEnoughCacaoFor(EntityType.FACTORY_EXTENSION)) {
             await this.buildEntity(EntityType.FACTORY_EXTENSION);
-        } else if (fountains < lowerFountainLimit && hasEnoughCacaoFor(EntityType.CHOCOLATE_FOUNTAIN)) {
+        } else if (this.handicap < 2 && fountains < lowerFountainLimit && hasEnoughCacaoFor(EntityType.CHOCOLATE_FOUNTAIN)) {
             await this.buildEntity(EntityType.CHOCOLATE_FOUNTAIN);
-        } else if (donutFactories < 1 && hasEnoughCacaoFor(EntityType.DONUT_FACTORY)) {
+        } else if (this.handicap < 1 && donutFactories < 1 && hasEnoughCacaoFor(EntityType.DONUT_FACTORY)) {
             await this.buildEntity(EntityType.DONUT_FACTORY);
-        } else if (xmasFactories < lowerXmasFactoryLimit && hasEnoughCacaoFor(EntityType.XMAS_FACTORY)) {
+        } else if (this.handicap < 3 && xmasFactories < lowerXmasFactoryLimit && hasEnoughCacaoFor(EntityType.XMAS_FACTORY)) {
             await this.buildEntity(EntityType.XMAS_FACTORY);
         } else if (rage > 0.8 && hasEnoughCacaoFor(EntityType.RUM_TRUFFLE_CANNON)) {
             await this.buildEntity(EntityType.RUM_TRUFFLE_CANNON);

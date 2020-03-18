@@ -3,6 +3,16 @@
   position: relative;
 }
 
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 .waiting-room {
   display: flex;
   flex-direction: column;
@@ -353,7 +363,7 @@ img.without.cream {
 @media screen and (min-width: 480px) and (orientation: portrait) {
   .logo { top: 7vh; }
   .logo img { width: 60vw; }
-  .titleMenu { top: 58%; }
+  .titleMenu { top: 55%; }
   .button {
     width: 40vw;
   }
