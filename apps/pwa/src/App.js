@@ -484,11 +484,20 @@ class App extends Component {
                 const score = this.props.playerInfos.stats.score;
                 if (typeof coins !== 'undefined' && coins > 0) {
                     if (score - coins === 0) {
-                        this.props.startTutorial({ loops: [TutorialSituations.FACTORY_EXTENSION], notificationOnLoopsEnd: { title: 'Collect more chocolate coins', message: `You need to collect ${200 - score} more coins to unlock the Easter Bunny, Xmas Facotry and Hot Chocolate Ballista`}});
+                        this.props.startTutorial({ 
+                            loops: [TutorialSituations.FACTORY_EXTENSION], 
+                            notificationOnLoopsEnd: { title: 'Collect more chocolate coins', message: `You need to collect ${200 - score} more coins to unlock the Easter Bunny, Xmas Facotry and Hot Chocolate Ballista`}
+                        });
                     } else if ((score - coins) < 200 && score > 200) {
-                        this.props.startTutorial({ loops: [TutorialSituations.EASTER_BUNNY, TutorialSituations.XMAS_FACTORY, TutorialSituations.HOT_CHOCOLATE_BALLISTA]});
+                        this.props.startTutorial({ 
+                            loops: [TutorialSituations.EASTER_BUNNY, TutorialSituations.XMAS_FACTORY, TutorialSituations.HOT_CHOCOLATE_BALLISTA],
+                            notificationOnLoopsEnd: { title: 'Chocolate is coming', message: `You need to collect ${500 - score} more coins to unlock the Chocolate Fountain and the Fruit Cannon`}
+                        });
                     } else if ((score - coins) < 500 && score > 500) {
-                        this.props.startTutorial({ loops: [TutorialSituations.CHOCOLATE_FOUNTAIN, TutorialSituations.FRUIT_CANNON]});
+                        this.props.startTutorial({ 
+                            loops: [TutorialSituations.CHOCOLATE_FOUNTAIN, TutorialSituations.FRUIT_CANNON],
+                            notificationOnLoopsEnd: { title: 'The last barrier', message: `Donut Traps, Muliplayer and the Choclab will be yours after collecting ${1000 - score} more coins`}
+                        });
                     } else if ((score - coins) < 1000 && score > 1000) {
                         this.props.showQuickMessage({ text: 'Congratulations you\'ve unlocked the Choclab. This is the place for upgrading your entities!', variant: 'success' });
                         this.props.showQuickMessage({ text: 'You have unlocked the multiplayer mode. Play against other players worldwide and reach the top of the highscore!', variant: 'success' });

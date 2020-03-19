@@ -1,6 +1,7 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType } from 'battlechoc-shared-functions';
 import { InfoType } from '../../gameplay/GameActions';
+import { translate as t } from '../../ui/misc';
 
 export default class XmasFactory extends Situation {
     constructor() {
@@ -39,11 +40,11 @@ export default class XmasFactory extends Situation {
     }
 
     static get title() {
-        return 'You\'ve unlocked the Xmas Factory';
+        return t('TUTORIAL_XMAS_TITLE');
     }
 
     static get description() {
-        return 'If a Spying Easter Bunny tries to uncover an area containing a Xmas Factory, it will melt down and you receive a Hot Chocolate Ballista';
+        return t('TUTORIAL_XMAS_MESSAGE');
     }
 
     async play({game, manipulate, spawnInfo, sleep, isRunning}) {

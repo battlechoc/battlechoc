@@ -1,5 +1,6 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, EntityType, createEntity } from 'battlechoc-shared-functions';
+import { translate as t } from '../../ui/misc';
 
 export default class FactoryExtension extends Situation {
     constructor() {
@@ -30,11 +31,11 @@ export default class FactoryExtension extends Situation {
     }
 
     static get title() {
-        return 'You\'ve unlocked the Factory Extension';
+        return t('TUTORIAL_FACTORY_EXTENSION_TITLE');
     }
 
     static get description() {
-        return 'The extension acts exactly like the factory but you can build it only beside your factory';
+        return t('TUTORIAL_FACTORY_EXTENSION_MESSAGE');
     }
 
     async play({game, manipulate, spawnInfo, sleep}) {

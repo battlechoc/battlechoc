@@ -1,5 +1,6 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, EntityType } from 'battlechoc-shared-functions';
+import { translate as t } from '../../ui/misc';
 
 export default class Factory extends Situation {
     constructor() {
@@ -21,11 +22,11 @@ export default class Factory extends Situation {
     }
 
     static get title() {
-        return 'The Chocolate Factory';
+        return t('TUTORIAL_FACTORY_TITLE');
     }
 
     static get description() {
-        return 'The factory can be build in the first turn and allows you to build all other entities. It performs better on a dark chocolate field';
+        return t('TUTORIAL_FACTORY_MESSAGE');
     }
 
     async play({game, manipulate, spawnInfo, sleep}) {

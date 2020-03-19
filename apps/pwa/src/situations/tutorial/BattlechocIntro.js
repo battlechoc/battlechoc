@@ -1,5 +1,6 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType, AttackType } from 'battlechoc-shared-functions';
+import { translate as t } from '../../ui/misc';
 
 export default class BattlechocIntro extends Situation {
     constructor() {
@@ -38,11 +39,11 @@ export default class BattlechocIntro extends Situation {
     }
 
     static get title() {
-        return 'Welcome to battlechoc';
+        return t('TUTORIAL_INTRO_TITLE');
     }
 
     static get description() {
-        return 'battlechoc is a turn-based strategy game with chocolate flavor. You win the game if you distroy the chocolate factory and cannons of your opponent';
+        return t('TUTORIAL_INTRO_MESSAGE');
     }
 
     async play({game, manipulate, spawnInfo, sleep, detonateAtPosition, selectBuilding, tapBuilding, isRunning}) {

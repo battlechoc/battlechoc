@@ -1,5 +1,6 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType } from 'battlechoc-shared-functions';
+import { translate as t } from '../../ui/misc';
 
 export default class DonutFactory extends Situation {
     constructor() {
@@ -30,11 +31,11 @@ export default class DonutFactory extends Situation {
     }
 
     static get title() {
-        return 'You\'ve unlocked the Donut Factory';
+        return t('TUTORIAL_DONUT_FACTORY_TITLE');
     }
 
     static get description() {
-        return 'The Donut Factory produces one donut per round with a certain probability. Donuts triggers like traps when they are attacked. The Donut Factory can be improved in the Choclab to unlock new donut types';
+        return t('TUTORIAL_DONUT_FACTORY_MESSAGE');
     }
 
     async play({game, manipulate, spawnInfo, sleep, selectBuilding, tapBuilding}) {

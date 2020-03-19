@@ -1,5 +1,6 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType } from 'battlechoc-shared-functions';
+import { translate as t } from '../../ui/misc';
 
 export default class Donuts extends Situation {
     constructor() {
@@ -35,11 +36,11 @@ export default class Donuts extends Situation {
     }
 
     static get title() {
-        return 'Donut Traps';
+        return t('TUTORIAL_DONUTS_TITLE');
     }
 
     static get description() {
-        return 'Donuts are triggered by fruit, truffle or hot chocolate attacks. This is the Donut Portal Trap. You will unlock other donuts by upgrading your donut facotry';
+        return t('TUTORIAL_DONUTS_MESSAGE');
     }
 
     async play({game, manipulate, spawnInfo, sleep, detonateAtPosition, selectBuilding, tapBuilding, isRunning}) {

@@ -1,5 +1,6 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, EntityType, AttackType, createEntity, getEntityDescriptor } from 'battlechoc-shared-functions';
+import { translate as t } from '../../ui/misc';
 
 export default class ChocolateFountain extends Situation {
     constructor() {
@@ -41,11 +42,11 @@ export default class ChocolateFountain extends Situation {
     }
 
     static get title() {
-        return 'You\'ve unlocked the Chocolate Fountain';
+        return t('TUTORIAL_FOUNTAIN_TITLE');
     }
 
     static get description() {
-        return 'The attacks of a Rum Truffle Cannon are very ineffective against the chocolate fountain, protecting the figures under its 3x3 field with its chocolate shield';
+        return t('TUTORIAL_FOUNTAIN_MESSAGE');
     }
 
     async play({game, manipulate, spawnInfo, sleep, detonateAtPosition, isRunning}) {
