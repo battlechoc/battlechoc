@@ -4,7 +4,7 @@ import './Tutorial.css';
 import { connect } from 'react-redux';
 import { AppBar, Toolbar, IconButton } from '@material-ui/core';
 import { ArrowBackIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Done } from '@material-ui/icons';
-import { Jukebox, translate as t } from '../ui/misc';
+import { Jukebox, translate as t, keys as tr } from '../ui/misc';
 import { ServerRequest } from '../helper/settings';
 import OfflineStore from '../OfflineStore';
 import { updatePlayerStats, showNotification } from '../ui/UiActions';
@@ -133,19 +133,19 @@ const Tutorial = props => {
         }}><Done /></IconButton>
     }
 
-    let dialogTitle = t('TUTORIAL_DIALOG_TITLE_BEFORE');
+    let dialogTitle = t(tr.TUTORIAL_DIALOG_TITLE_BEFORE);
     let dialogContent = <div>
         <PlayerNameInput setPlayerName={setPlayerName} current={props.playerInfos.stats.username}/>
-        <p style={{ color: '#324D5C' }}>{t('TUTORIAL_CHOOSE_NAME_INFO')}</p>
+        <p style={{ color: '#324D5C' }}>{t(tr.TUTORIAL_CHOOSE_NAME_INFO)}</p>
     </div>;
     let canClose = false;
 
     if (playerHasName) {
-        dialogTitle = t('TUTORIAL_DIALOG_TITLE');
+        dialogTitle = t(tr.TUTORIAL_DIALOG_TITLE);
         dialogContent = <div className="tutorial-finished">
-            <p>{t('TUTORIAL_DIALOG_MESSAGE')} {t('TUTORIAL_DIALOG_HINT')}</p>
+            <p>{t(tr.TUTORIAL_DIALOG_MESSAGE)} {t(tr.TUTORIAL_DIALOG_HINT)}</p>
             <div className="menuButton" style={{ fontSize: '1.1rem' }} onClick={() => closeTutorial(true)}>
-                {t('TUTORIAL_DIALOG_PLAY_GAME')}
+                {t(tr.TUTORIAL_DIALOG_PLAY_GAME)}
             </div>
         </div>;
         canClose = true;

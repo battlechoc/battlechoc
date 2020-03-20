@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { updatePlayerStats, hideQuickMessage, showQuickMessage } from '../UiActions';
-import { Jukebox, translate as t, setCurrentLanguage, getCurrentLanguage } from '../misc';
+import { Jukebox, translate as t, keys as tr, setCurrentLanguage, getCurrentLanguage } from '../misc';
 import OfflineStore from '../../OfflineStore';
 import Typography from '@material-ui/core/Typography';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -98,7 +98,7 @@ const Settings = props =>  {
     ServerRequest('post', '/user/username', { username: playerName })
     .then(response => {        
       props.updatePlayerStats({ username: playerName });
-      OfflineStore.playerStore.get('stats').then(playerStats => {
+      OfflineStore.playerStore.get(tr.stats).then(playerStats => {
         playerStats.username = playerName;
         OfflineStore.playerStore.set('stats', playerStats);
         setEditPlayerName(false);
@@ -123,12 +123,12 @@ const Settings = props =>  {
           setWithDeviceInformation(false);
           setShowErrorReport(false) 
         }}
-        title={t('REPORT_PROBLEM')}>
+        title={t(tr.REPORT_PROBLEM)}>
         <div className={classes.dialogContent}>
           <form noValidate autoComplete="off">
             <TextField
-              label={t('REPORT_CUSTOM_MESSAGE')}
-              placeholder={t('REPORT_CUSTOM_MESSAGE_PLACEHOLDER')}
+              label={t(tr.REPORT_CUSTOM_MESSAGE)}
+              placeholder={t(tr.REPORT_CUSTOM_MESSAGE_PLACEHOLDER)}
               multiline
               fullWidth
               InputProps={{ style: { fontSize: '0.9rem' } }}
@@ -153,7 +153,7 @@ const Settings = props =>  {
                 }}
               />
             }
-            label={t('REPORT_DEVICE_INFO')}
+            label={t(tr.REPORT_DEVICE_INFO)}
           />
           <div className={`${classes.menuButton} ${sendingReport ? classes.inactiveButton : ''}`} onClick={async () => {
             if (!sendingReport) {
@@ -172,13 +172,13 @@ const Settings = props =>  {
                 };
                 await ServerRequest('post', '/debugging/gamestate', { report: report });
                 props.showQuickMessage({ 
-                  text: t('SUCCESSFULLY_SENDING_PROBLEM_REPORT'), 
+                  text: t(tr.SUCCESSFULLY_SENDING_PROBLEM_REPORT), 
                   variant: 'success' 
                 });
               } catch(error) {
                 logger.warn(error);
                 props.showQuickMessage({ 
-                  text: t('ERROR_SENDING_PROBLEM_REPORT'), 
+                  text: t(tr.ERROR_SENDING_PROBLEM_REPORT), 
                   variant: 'error' 
                 });
               } finally {
@@ -189,15 +189,15 @@ const Settings = props =>  {
                 props.close();
               }
             }
-          }}>{sendingReport ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t('REPORT_PROBLEM')}</div>
-          <Typography className={classes.reportInformation}>{t('REPORT_INFORMATION')}</Typography>
+          }}>{sendingReport ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t(tr.REPORT_PROBLEM)}</div>
+          <Typography className={classes.reportInformation}>{t(tr.REPORT_INFORMATION)}</Typography>
         </div>
       </BattlechocDialog>
 
       <BattlechocDialog
         open={props.open}
         close={closeDialog}
-        title={t('SETTINGS')}>
+        title={t(tr.SETTINGS)}>
         <div className={classes.dialogContent}>
           { 
             typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous' ?
@@ -208,7 +208,7 @@ const Settings = props =>  {
               </div> : null
           }
           <FormControl style={{width: '100%'}}>
-            <InputLabel htmlFor="lang-selection" style={{color: 'rgb(48, 86, 91)'}}>{t('LANGUAGE')}</InputLabel>
+            <InputLabel htmlFor="lang-selection" style={{color: 'rgb(48, 86, 91)'}}>{t(tr.LANGUAGE)}</InputLabel>
             <Select
               native
               value={getCurrentLanguage()}
@@ -218,15 +218,15 @@ const Settings = props =>  {
                 forceUpdate();
               }}
               inputProps={{ name: 'language', id: 'lang-selection' }}>
-              <option value="en">{t('ENGLISH')}</option>
-              <option value="de">{t('GERMAN')}</option>
-              <option value="ja">{t('JAPANESE')}</option>
+              <option value="en">{t(tr.ENGLISH)}</option>
+              <option value="de">{t(tr.GERMAN)}</option>
+              <option value="jp">{t(tr.JAPANESE)}</option>
             </Select>
             <div className={classes.menuButton} onClick={() => {
               Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
               setShowAttentionText(false);
               setShowErrorReport(true);
-            }}>{t('REPORT_PROBLEM')}</div>
+            }}>{t(tr.REPORT_PROBLEM)}</div>
             {(() => {
               if (props.playerInfos.stats.username !== 'Chocnonymous' && typeof props.game === 'undefined') {
                 return (
@@ -236,7 +236,7 @@ const Settings = props =>  {
                       props.startTutorial();
                       props.close();
                       setShowAttentionText(false);
-                    }}>{t('RESTART_TUTORIAL')}</div>
+                    }}>{t(tr.RESTART_TUTORIAL)}</div>
                   </div>
                 )
               }
@@ -252,11 +252,11 @@ const Settings = props =>  {
                   } else {
                     setShowAttentionText(true);
                   }
-                }}>{t('SETTINGS_QUIT')}</div> : null
+                }}>{t(tr.SETTINGS_QUIT)}</div> : null
             }
             {
               showAttentionText && typeof props.game !== 'undefined' ?
-                <Typography color="error" className="attentionText">{t('SETTINGS_ATTENTION_TEXT')}</Typography>
+                <Typography color="error" className="attentionText">{t(tr.SETTINGS_ATTENTION_TEXT)}</Typography>
                 : null
             }
           </FormControl>

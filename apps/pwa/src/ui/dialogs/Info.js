@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Fab from '@material-ui/core/Fab';
 import { InfoOutlined } from '@material-ui/icons';
-import { Jukebox, translate as t, getCurrentLanguage } from '../misc';
+import { Jukebox, translate as t, keys as tr, getCurrentLanguage } from '../misc';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';
@@ -83,18 +83,18 @@ const Info = props => {
                 close={handleClose}
                 title={`battlechoc - ${version} - ${timeSinceUpdate}`}>
                 <div className={classes.text}>
-                    <h2>{t('INFO_IMPRESS')}</h2>
+                    <h2>{t(tr.INFO_IMPRESS)}</h2>
                     <p>
                         battlechoc GbR<br />
                         Triftweg 5<br />
                         38550 Isenbüttel<br />
-                        {t('INFO_IMPRESS_COUNTRY')}<br /><br />
+                        {t(tr.INFO_IMPRESS_COUNTRY)}<br /><br />
                         E-mail: info@battlechoc.com<br />
-                        {t('INFO_IMPRESS_PHONE')}: + 49 151 65486876<br /><br />
-                        {t('INFO_IMPRESS_EXECUTIVE_DIRECTORS')}: Dr. Sebastian Bode & Fabian Bormann
+                        {t(tr.INFO_IMPRESS_PHONE)}: + 49 151 65486876<br /><br />
+                        {t(tr.INFO_IMPRESS_EXECUTIVE_DIRECTORS)}: Dr. Sebastian Bode & Fabian Bormann
                     </p>
-                    <h2>{t('INFO_PRIVACY_POLICY')}</h2>
-                    <p>{t('INFO_PRIVACY_POLICY_TEXT')}</p>
+                    <h2>{t(tr.INFO_PRIVACY_POLICY)}</h2>
+                    <p>{t(tr.INFO_PRIVACY_POLICY_TEXT)}</p>
                 </div>
             </BattlechocDialog>
         </div>
