@@ -289,9 +289,10 @@ export default class Augustus extends NonPlayerCharacter {
         await this.simulateThinking(1500);
         this.refreshGameState();
         if (this.gameIsRunning) {
-            let creamyFields = this.opponentBoard.grid.filter(cell => this.containsEntity(cell, EntityType.CREAM));
-            let uncreamedFields = this.opponentBoard.grid.filter(cell => !this.containsEntity(cell, EntityType.CREAM));
-            let unveiledFountains = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN));
+            const cells = this.opponentBoard.grid.filter(cell => !cell.molten);
+            const creamyFields = cells.filter(cell => this.containsEntity(cell, EntityType.CREAM));
+            const uncreamedFields = cells.filter(cell => !this.containsEntity(cell, EntityType.CREAM));
+            const unveiledFountains = uncreamedFields.filter(cell => this.containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN));
 
             for (let cell of uncreamedFields.filter(cell => this.countEntities(cell) > 0)) {
                 logger.info(`Remember that [${cell.row} ${cell.col}] contains unveiled entities`);
@@ -299,7 +300,7 @@ export default class Augustus extends NonPlayerCharacter {
             }
 
             for (let unveiledFountain of unveiledFountains) {
-                let cellsNearFountain = this.getCellPatch3x3(unveiledFountain, this.opponentBoard.grid);
+                let cellsNearFountain = this.getCellPatch3x3(unveiledFountain, this.opponentBoard.grid).filter(cell => !cell.molten);
                 for (let cell of cellsNearFountain) {
                     if (!this.shieldAlreadyDiscoverd(cell)) {
                         logger.info(`Logically conclude that [${cell.row} ${cell.col}] is shielded`);
@@ -345,16 +346,16 @@ export default class Augustus extends NonPlayerCharacter {
     }
 
     matchCellsAndEntity(entity) {
-        let board = this.board.grid;
-        let cells = board.filter(cell => !cell.molten);
+        const board = this.board.grid;
+        const cells = board.filter(cell => !cell.molten);
 
-        let freeCells = cells.filter(cell => this.countEntities(cell) === 0);
-        let creamedCells = board.filter(cell => this.containsEntity(cell, EntityType.CREAM) && this.countEntities(cell) === 1);
-        let uncoveredEntities = board.filter(cell => !this.containsEntity(cell, EntityType.CREAM) && this.countEntities(cell) > 0);
-        let uncoveredRedDonuts = freeCells.filter(cell => this.containsEntity(cell, EntityType.DONUT_PORTAL_RED));
-        let shieldedCells = creamedCells.filter(cell => cell.shielded);
-        let donutCells = board.filter(cell => cell.occupiedBy.some(entity => isDonut(entity.type) && entity !== EntityType.DONUT_PORTAL_RED) && this.containsEntity(cell) === 0);
-        let donutFreeCells = board.filter(cell => !cell.occupiedBy.some(entity => isDonut(entity.type)));
+        const freeCells = cells.filter(cell => this.countEntities(cell) === 0);
+        const creamedCells = cells.filter(cell => this.containsEntity(cell, EntityType.CREAM) && this.countEntities(cell) === 1);
+        const uncoveredEntities = cells.filter(cell => !this.containsEntity(cell, EntityType.CREAM) && this.countEntities(cell) > 0);
+        const uncoveredRedDonuts = freeCells.filter(cell => this.containsEntity(cell, EntityType.DONUT_PORTAL_RED));
+        const shieldedCells = creamedCells.filter(cell => cell.shielded);
+        const donutCells = cells.filter(cell => cell.occupiedBy.some(entity => isDonut(entity.type) && entity !== EntityType.DONUT_PORTAL_RED) && this.containsEntity(cell) === 0);
+        const donutFreeCells = cells.filter(cell => !cell.occupiedBy.some(entity => isDonut(entity.type)));
 
         if ([EntityType.RUM_TRUFFLE_CANNON, EntityType.CACAOTREE, EntityType.XMAS_FACTORY].includes(entity) && donutCells.length > 0) {
             return donutCells;
@@ -369,14 +370,14 @@ export default class Augustus extends NonPlayerCharacter {
                 return creamedCells.filter(cell => cell.type === BoardCellTypes.WHITE);
             }
         } else if (entity === EntityType.FRUIT_CANNON) {
-            return board.filter(cell => this.containsEntity(cell, EntityType.RUM_TRUFFLE_CANNON));
+            return cells.filter(cell => this.containsEntity(cell, EntityType.RUM_TRUFFLE_CANNON));
         } else if (entity === EntityType.CHOCOLATE_FOUNTAIN) {
-            let factoryCell = board.filter(cell => this.containsEntity(cell, EntityType.FACTORY));
+            const factoryCell = cells.filter(cell => this.containsEntity(cell, EntityType.FACTORY));
             if (factoryCell.length > 0) {
                 let cellsNearFactory = this.getCellPatch3x3(factoryCell[0], board);
                 cellsNearFactory = cellsNearFactory.filter(cell => !this.containsEntity(cell, EntityType.FACTORY) && !cell.molten);
-                let freeCellsNearFactory = cellsNearFactory.filter(cell => this.countEntities(cell) === 0)
-                let creamedCellsNearFactory = cellsNearFactory.filter(cell => this.containsEntity(cell, EntityType.CREAM) && this.countEntities(cell) === 1);
+                const freeCellsNearFactory = cellsNearFactory.filter(cell => this.countEntities(cell) === 0)
+                const creamedCellsNearFactory = cellsNearFactory.filter(cell => this.containsEntity(cell, EntityType.CREAM) && this.countEntities(cell) === 1);
                 if (creamedCellsNearFactory.length > 0) {
                     return creamedCellsNearFactory
                 } else if (freeCellsNearFactory.length > 0) {
@@ -400,13 +401,13 @@ export default class Augustus extends NonPlayerCharacter {
                 return shieldedCells;
             }
         } else if (entity === EntityType.FACTORY_EXTENSION) {
-            let factoryCell = board.filter(cell => this.containsEntity(cell, EntityType.FACTORY));
+            const factoryCell = cells.filter(cell => this.containsEntity(cell, EntityType.FACTORY));
             if (typeof factoryCell[0] !== 'undefined') {
-                let factoryNeighbors = this.getDirectNeighbors(factoryCell[0], board).filter(cell => !cell.molten);
+                const factoryNeighbors = this.getDirectNeighbors(factoryCell[0], board).filter(cell => !cell.molten);
                 return factoryNeighbors.filter(cell => this.containsEntity(cell, EntityType.CREAM) && this.countEntities(cell) === 1);
             }        
         } else if (entity === EntityType.XMAS_FACTORY) {
-            let xmasFactoriesOnShieldedCells = board.filter(cell => this.containsEntity(cell, EntityType.XMAS_FACTORY) && cell.shielded)
+            let xmasFactoriesOnShieldedCells = cells.filter(cell => this.containsEntity(cell, EntityType.XMAS_FACTORY) && cell.shielded)
             if (shieldedCells.length > 0 && xmasFactoriesOnShieldedCells < 3) {
                 return shieldedCells;
             }
@@ -419,7 +420,7 @@ export default class Augustus extends NonPlayerCharacter {
                 return shieldedCells;
             }            
         } else if (entity === EntityType.DONUT_PORTAL_BLUE) {
-            let factoryCell = board.filter(cell => this.containsEntity(cell, EntityType.FACTORY) && !cell.occupiedBy.some(entity => isDonut(entity.type)));
+            let factoryCell = cells.filter(cell => this.containsEntity(cell, EntityType.FACTORY) && !cell.occupiedBy.some(entity => isDonut(entity.type)));
             if (factoryCell.length > 0) {
                 return factoryCell;
             } else {
@@ -494,12 +495,12 @@ export default class Augustus extends NonPlayerCharacter {
             rage -= Math.random() * 0.5
         }
 
-        let cacao = this.player.cacao;
-        let board = this.board.grid;
+        const cacao = this.player.cacao;
+        const board = this.board.grid;
 
-        let hasEnoughCacaoFor = entityType => cacao >= getEntityDescriptor(entityType, this.player.level).costs;
+        const hasEnoughCacaoFor = entityType => cacao >= getEntityDescriptor(entityType, this.player.level).costs;
 
-        let trees = board.filter(cell => this.containsEntity(cell, EntityType.CACAOTREE)).length;
+        const trees = board.filter(cell => this.containsEntity(cell, EntityType.CACAOTREE)).length;
         let lowerTreeLimit = 1;
         if (rage < 0.5) {
             lowerTreeLimit = 2;
@@ -507,8 +508,8 @@ export default class Augustus extends NonPlayerCharacter {
             lowerTreeLimit = 3;
         }
 
-        let uncoveredEntities = board.filter(cell => !this.containsEntity(cell, EntityType.CREAM) && this.countEntities(cell) > 0);
-        let cannons = board.filter(cell => this.containsEntity(cell, EntityType.RUM_TRUFFLE_CANNON)).length;
+        const uncoveredEntities = board.filter(cell => !this.containsEntity(cell, EntityType.CREAM) && this.countEntities(cell) > 0);
+        const cannons = board.filter(cell => this.containsEntity(cell, EntityType.RUM_TRUFFLE_CANNON)).length;
         let lowerCannonLimit = 1;
         if (rage > 0.5) {
             lowerCannonLimit = 2;
@@ -516,9 +517,9 @@ export default class Augustus extends NonPlayerCharacter {
             lowerCannonLimit = 4;
         }
 
-        let fruitcannons = board.filter(cell => this.containsEntity(cell, EntityType.FRUIT_CANNON)).length;
-        let bunnies = board.filter(cell => this.containsEntity(cell, EntityType.SPYING_EASTER_BUNNY)).length;
-        let fountains = board.filter(cell => this.containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN)).length;
+        const fruitcannons = board.filter(cell => this.containsEntity(cell, EntityType.FRUIT_CANNON)).length;
+        const bunnies = board.filter(cell => this.containsEntity(cell, EntityType.SPYING_EASTER_BUNNY)).length;
+        const fountains = board.filter(cell => this.containsEntity(cell, EntityType.CHOCOLATE_FOUNTAIN)).length;
         let lowerFountainLimit = 0;
         if (rage < 0.4) {
             lowerFountainLimit = 1;
@@ -526,15 +527,15 @@ export default class Augustus extends NonPlayerCharacter {
             lowerFountainLimit = 4;
         }
 
-        let xmasFactories = board.filter(cell => this.containsEntity(cell, EntityType.XMAS_FACTORY)).length;
+        const xmasFactories = board.filter(cell => this.containsEntity(cell, EntityType.XMAS_FACTORY)).length;
         let lowerXmasFactoryLimit = 1;
         if (rage < 0.4) {
             lowerXmasFactoryLimit = 2;
         } else if (rage < 0.1) {
             lowerXmasFactoryLimit = 4;
         }
-        let donutFactories = board.filter(cell => this.containsEntity(cell, EntityType.DONUT_FACTORY)).length;
-        let factoryExtensions = board.filter(cell => this.containsEntity(cell, EntityType.FACTORY_EXTENSION)).length;
+        const donutFactories = board.filter(cell => this.containsEntity(cell, EntityType.DONUT_FACTORY)).length;
+        const factoryExtensions = board.filter(cell => this.containsEntity(cell, EntityType.FACTORY_EXTENSION)).length;
         let factoryExtensionLimits = 0;
         if (rage < 0.5) {
             factoryExtensionLimits = 1;
@@ -552,10 +553,10 @@ export default class Augustus extends NonPlayerCharacter {
             await this.buildEntity(EntityType.FRUIT_CANNON);
         } else if (trees < lowerTreeLimit && hasEnoughCacaoFor(EntityType.CACAOTREE)) {
             await this.buildEntity(EntityType.CACAOTREE);
-        } else if ((cannons + fruitcannons) < lowerCannonLimit && hasEnoughCacaoFor(EntityType.RUM_TRUFFLE_CANNON)) {
-            await this.buildEntity(EntityType.RUM_TRUFFLE_CANNON);
         } else if (this.handicap < 3 && bunnies < 1 && hasEnoughCacaoFor(EntityType.SPYING_EASTER_BUNNY) && rage > 0.7) {
             await this.buildEntity(EntityType.SPYING_EASTER_BUNNY);
+        } else if ((cannons + fruitcannons) < lowerCannonLimit && hasEnoughCacaoFor(EntityType.RUM_TRUFFLE_CANNON)) {
+            await this.buildEntity(EntityType.RUM_TRUFFLE_CANNON);
         } else if (this.handicap < 4 && factoryExtensions < factoryExtensionLimits && hasEnoughCacaoFor(EntityType.FACTORY_EXTENSION)) {
             await this.buildEntity(EntityType.FACTORY_EXTENSION);
         } else if (this.handicap < 2 && fountains < lowerFountainLimit && hasEnoughCacaoFor(EntityType.CHOCOLATE_FOUNTAIN)) {
