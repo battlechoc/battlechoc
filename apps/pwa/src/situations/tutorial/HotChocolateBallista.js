@@ -1,5 +1,6 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType, AttackType } from 'battlechoc-shared-functions';
+import { translate as t } from '../../ui/misc';
 
 export default class HotChocolateBallista extends Situation {
     constructor() {
@@ -38,11 +39,11 @@ export default class HotChocolateBallista extends Situation {
     }
 
     static get title() {
-        return 'You\'ve unlocked the Hot Chocolate Ballista';
+        return t('TUTORIAL_BALLISTA_TITLE');
     }
 
     static get description() {
-        return 'The Hot Chocolate Ballista instantly destroys every enitiy, but also melts down the game field';
+        return t('TUTORIAL_BALLISTA_MESSAGE');
     }
 
     async play({game, manipulate, sleep, isRunning}) {

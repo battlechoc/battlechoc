@@ -482,17 +482,25 @@ class App extends Component {
                 this.scene.clear();
 
                 const score = this.props.playerInfos.stats.score;
-                this.props.startTutorial({ loops: [TutorialSituations.FACTORY_EXTENSION], notificationOnLoopsEnd: { title: 'Collect more chocolate coins', message: `You need to collect ${200 - score} more coins to unlock the Easter Bunny, Xmas Facotry and Hot Chocolate Ballista`}});
                 if (typeof coins !== 'undefined' && coins > 0) {
                     if (score - coins === 0) {
-                        this.props.startTutorial({ loops: [TutorialSituations.FACTORY_EXTENSION], notificationOnLoopsEnd: { title: 'Collect more chocolate coins', message: `You need to collect ${200 - score} more coins to unlock the Easter Bunny, Xmas Facotry and Hot Chocolate Ballista`}});
+                        this.props.startTutorial({ 
+                            loops: [TutorialSituations.FACTORY_EXTENSION], 
+                            notificationOnLoopsEnd: { title: t('NOTIFICATION_UNLOCK_EXTENSION_TITLE'), message: t('NOTIFICATION_UNLOCK_EXTENSION_MESSAGE', 200 - score) }
+                        });
                     } else if ((score - coins) < 200 && score > 200) {
-                        this.props.startTutorial({ loops: [TutorialSituations.EASTER_BUNNY, TutorialSituations.XMAS_FACTORY, TutorialSituations.HOT_CHOCOLATE_BALLISTA]});
+                        this.props.startTutorial({ 
+                            loops: [TutorialSituations.EASTER_BUNNY, TutorialSituations.XMAS_FACTORY, TutorialSituations.HOT_CHOCOLATE_BALLISTA],
+                            notificationOnLoopsEnd: { title: t('NOTIFICATION_UNLOCK_BUNNY_TITLE'), message: t('NOTIFICATION_UNLOCK_BUNNY_MESSAGE', 500 - score) }
+                        });
                     } else if ((score - coins) < 500 && score > 500) {
-                        this.props.startTutorial({ loops: [TutorialSituations.CHOCOLATE_FOUNTAIN, TutorialSituations.FRUIT_CANNON]});
+                        this.props.startTutorial({ 
+                            loops: [TutorialSituations.CHOCOLATE_FOUNTAIN, TutorialSituations.FRUIT_CANNON],
+                            notificationOnLoopsEnd: { title: t('NOTIFICATION_UNLOCK_FOUNTAIN_TITLE'), message: t('NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE', 1000 - score) }
+                        });
                     } else if ((score - coins) < 1000 && score > 1000) {
-                        this.props.showQuickMessage({ text: 'Congratulations you\'ve unlocked the Choclab. This is the place for upgrading your entities!', variant: 'success' });
-                        this.props.showQuickMessage({ text: 'You have unlocked the multiplayer mode. Play against other players worldwide and reach the top of the highscore!', variant: 'success' });
+                        this.props.showQuickMessage({ text: t('UNLOCK_CONGRATULATIONS_CHOCLAB'), variant: 'success' });
+                        this.props.showQuickMessage({ text: t('UNLOCK_CONGRATULATIONS_MULTIPLAYER'), variant: 'success' });
                         this.props.startTutorial({ loops: [TutorialSituations.DONUT_FACTORY, TutorialSituations.DONUTS]});
                     }
                 }
@@ -502,7 +510,7 @@ class App extends Component {
     }
 
     surrender() {
-        let winners = []
+        const winners = []
         winners.push(Object.assign({ idx: 1 - multiplayer.localPlayerIndex }, this.props.game.players[1 - multiplayer.localPlayerIndex]));
         this.props.endGame({
             winners: winners,
@@ -515,7 +523,7 @@ class App extends Component {
         this.props.showOverview();
         this.props.gameResumeable(false);
         OfflineStore.gamestateStore.clear();
-        let stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: this.props.game.winners, id: uuidv4() };
+        const stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: this.props.game.winners, id: uuidv4() };
         multiplayer.pushGameStats([stats]);
     }
 

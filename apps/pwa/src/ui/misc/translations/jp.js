@@ -1,5 +1,5 @@
 import { EntityType, AttackType } from 'battlechoc-shared-functions';
-const strings = require('./ja_strings.json');
+const strings = require('./jp_strings.json');
 
 const texts = {
     ...strings,
@@ -149,6 +149,15 @@ const texts = {
     },
     UPDATE_LEVEL_FAILED: function (upgrade) {
         return upgrade ? this.UPDATE_LEVEL_FAILED_UPGRADE : this.UPDATE_LEVEL_FAILED_DOWNGRADE;
+    },
+    NOTIFICATION_UNLOCK_EXTENSION_MESSAGE: function(coins) {
+        return `${this.NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_PRE_PART} ${coins} ${this.NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_POST_PART}`;
+    },
+    NOTIFICATION_UNLOCK_BUNNY_MESSAGE: function(coins) {
+        return `${this.NOTIFICATION_UNLOCK_BUNNY_MESSAGE_PRE_PART} ${coins} ${this.NOTIFICATION_UNLOCK_BUNNY_MESSAGE_POST_PART}`;
+    },
+    NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE: function(coins) {
+        return `${this.NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_PRE_PART} ${coins} ${this.NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_POST_PART}`;
     }
 };
 

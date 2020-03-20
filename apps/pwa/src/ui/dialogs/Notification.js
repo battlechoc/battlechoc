@@ -39,21 +39,17 @@ const Notification = props => {
         }
     }
 
-    if (props.open) {
-        return (
-            <div className={classes.root} style={{animation: `${show ? 'fadeIn' : 'fadeOut'} 1s`}} onAnimationEnd={onAnimationEnd}>
-                <AppBar position="static" style={{ backgroundColor: '#5dbbc3' }} className="tutorialAppbar">
-                    <Toolbar>
-                        <h6 className="tutorial-headline">{props.title}</h6>
-                        <IconButton onClick={() => setShow(false)}><Close style={{ color: 'white' }} /></IconButton>
-                    </Toolbar>
-                </AppBar>
-                <div className={classes.message}><p>{props.message}</p></div>
-            </div>
-        );
-    } else  {
-        return null;
-    }
+    return (
+        <div className={classes.root} style={{animation: `${show ? 'fadeIn' : 'fadeOut'} 1s`}} onAnimationEnd={onAnimationEnd}>
+            <AppBar position="static" style={{ backgroundColor: '#5dbbc3' }} className="tutorialAppbar">
+                <Toolbar>
+                    <h6 className="tutorial-headline">{props.title}</h6>
+                    <IconButton onClick={() => setShow(false)}><Close style={{ color: 'white' }} /></IconButton>
+                </Toolbar>
+            </AppBar>
+            <div className={classes.message}><p>{props.message}</p></div>
+        </div>
+    );
 }
 
 export default Notification;

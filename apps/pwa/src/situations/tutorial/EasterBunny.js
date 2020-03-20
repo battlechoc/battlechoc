@@ -1,5 +1,6 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType, AttackType } from 'battlechoc-shared-functions';
+import { translate as t } from '../../ui/misc';
 
 export default class EasterBunny extends Situation {
     constructor() {
@@ -40,11 +41,11 @@ export default class EasterBunny extends Situation {
     }
 
     static get title() {
-        return 'You\'ve unlocked the Spying Easter Bunny';
+        return t('TUTORIAL_BUNNY_TITLE');
     }
 
     static get description() {
-        return 'The Spying Easter Bunny is able to uncover a 3x3 area. You cannot have more than one rabbit at a time';
+        return t('TUTORIAL_BUNNY_MESSAGE');
     }
 
     async play({game, manipulate, spawnInfo, sleep, isRunning}) {

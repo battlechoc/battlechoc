@@ -1,5 +1,6 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType, AttackType } from 'battlechoc-shared-functions';
+import { translate as t } from '../../ui/misc';
 
 export default class RumTruffleCannon extends Situation {
     constructor() {
@@ -37,11 +38,11 @@ export default class RumTruffleCannon extends Situation {
     }
 
     static get title() {
-        return 'All you need is a Rum Truffle Cannon';
+        return t('TUTORIAL_CANNON_TITLE');
     }
 
     static get description() {
-        return 'To distroy your opponents entites you will need cannons. You can attack 1 field per turn using a Rum Truffle Cannon';
+        return t('TUTORIAL_CANNON_MESSAGE');
     }
 
     async play({game, manipulate, spawnInfo, sleep, isRunning}) {

@@ -232,7 +232,7 @@ const Hud = props => {
                                     </div>
                                 </BattlechocDialog>
                             </div>
-                            { notification.open ? <Notification message={notification.message} title={notification.title} close={() => hideNotification} open={notification.open} /> : <Info openInfo={openInfo} /> }
+                            { notification.open ? <Notification message={notification.message} title={notification.title} close={() => hideNotification()} /> : <Info openInfo={openInfo} /> }
                         </div>
                     );
                 } else if (stage === 'CHOOSE_MENU') {
