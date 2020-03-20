@@ -95,16 +95,6 @@ const Info = props => {
                     </p>
                     <h2>{t('INFO_PRIVACY_POLICY')}</h2>
                     <p>{t('INFO_PRIVACY_POLICY_TEXT')}</p>
-                    <h3>Google Web Analytics</h3>
-                    <p>{t('INFO_GOOGLE_ANALYTICS')}</p>
-                    <ul>
-                        <li>{t('INFO_GOOGLE_ANALYTICS_OPERATING_SYSTEM')}</li>
-                        <li>{t('INFO_GOOGLE_ANALYTICS_BROWSER_TYPE')}</li>
-                        <li>{t('INFO_GOOGLE_ANALYTICS_REFERRER_URL')}</li>
-                        <li>{t('INFO_GOOGLE_ANALYTICS_HOST_NAME')}</li>
-                        <li>{t('INFO_GOOGLE_ANALYTICS_SERVER_REQUEST')}</li>
-                    </ul>
-                    <p>{t('INFO_GOOGLE_ANALYTICS_PREVENT')}</p>
                 </div>
             </BattlechocDialog>
         </div>
