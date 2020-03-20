@@ -1,6 +1,6 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType, AttackType } from 'battlechoc-shared-functions';
-import { translate as t } from '../../ui/misc';
+import { translate as t, keys as tr } from '../../ui/misc';
 
 export default class BattlechocIntro extends Situation {
     constructor() {
@@ -39,11 +39,11 @@ export default class BattlechocIntro extends Situation {
     }
 
     static get title() {
-        return t('TUTORIAL_INTRO_TITLE');
+        return t(tr.TUTORIAL_INTRO_TITLE);
     }
 
     static get description() {
-        return t('TUTORIAL_INTRO_MESSAGE');
+        return t(tr.TUTORIAL_INTRO_MESSAGE);
     }
 
     async play({game, manipulate, spawnInfo, sleep, detonateAtPosition, selectBuilding, tapBuilding, isRunning}) {

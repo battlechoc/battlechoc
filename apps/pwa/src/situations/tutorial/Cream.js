@@ -1,6 +1,6 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType } from 'battlechoc-shared-functions';
-import { translate as t } from '../../ui/misc';
+import { translate as t, keys as tr } from '../../ui/misc';
 
 export default class Cream extends Situation {
     constructor() {
@@ -39,11 +39,11 @@ export default class Cream extends Situation {
     }
 
     static get title() {
-        return t('TUTORIAL_CREAM_TITLE');
+        return t(tr.TUTORIAL_CREAM_TITLE);
     }
 
     static get description() {
-        return t('TUTORIAL_CREAM_MESSAGE');
+        return t(tr.TUTORIAL_CREAM_MESSAGE);
     }
 
     async play({game, manipulate, spawnInfo, sleep}) {

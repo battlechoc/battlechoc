@@ -1,6 +1,6 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, EntityType, AttackType, createEntity, getEntityDescriptor } from 'battlechoc-shared-functions';
-import { translate as t } from '../../ui/misc';
+import { translate as t, keys as tr } from '../../ui/misc';
 
 export default class FruitCannon extends Situation {
     constructor() {
@@ -46,11 +46,11 @@ export default class FruitCannon extends Situation {
     }
 
     static get title() {
-        return t('TUTORIAL_FRUIT_CANNON_TITLE');
+        return t(tr.TUTORIAL_FRUIT_CANNON_TITLE);
     }
 
     static get description() {
-        return t('TUTORIAL_FRUIT_CANNON_MESSAGE');
+        return t(tr.TUTORIAL_FRUIT_CANNON_MESSAGE);
     }
 
     async play({game, manipulate, spawnInfo, sleep, detonateAtPosition, selectAttack, isRunning}) {
