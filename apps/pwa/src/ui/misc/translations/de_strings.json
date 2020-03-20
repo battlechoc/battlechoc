@@ -222,5 +222,7 @@
     "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_PRE_PART": "Sammle noch",
     "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_POST_PART": "Schokomünzen, um den Schokobrunnen und die Fruchtkanone freizuschalten",
     "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_PRE_PART": "Donut-Fallen, Multiplayer und das Choclab gehören dir, wenn du noch weitere",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_POST_PART": "Schokomünzen sammelst"
+    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_POST_PART": "Schokomünzen sammelst",
+    "UNLOCK_CONGRATULATIONS_CHOCLAB": "Herzlichen Glückwunsch! Du hast das Choclab freigeschaltet. Hier kannst du deine Einheiten verbessern!",
+    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "Du hast den Multiplayer-Modus freigeschaltet. Spiele gegen andere Spieler weltweit und erklimme den Highscore!"
 }

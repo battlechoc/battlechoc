@@ -222,5 +222,7 @@
     "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_PRE_PART": "収集する必要があります",
     "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_POST_PART": "チョコレートファウンテンとフルーツキャノンのロックを解除するためのコインを増やす",
     "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_PRE_PART": "ドーナツトラップ、Muliplayer、およびChoclabは収集後にあなたのものになります",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_POST_PART": "より多くのコイン"
+    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_POST_PART": "より多くのコイン",
+    "UNLOCK_CONGRATULATIONS_CHOCLAB": "おめでとう、Choclabのロックを解除しました。これは、エンティティをアップグレードする場所です！",
+    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "マルチプレイヤーモードのロックを解除しました。世界中の他のプレイヤーと対戦し、ハイスコアのトップに到達してください！"
 }

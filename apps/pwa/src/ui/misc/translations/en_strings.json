@@ -222,5 +222,7 @@
     "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_PRE_PART": "You need to collect",
     "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_POST_PART": "more coins to unlock the Chocolate Fountain and the Fruit Cannon",
     "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_PRE_PART": "Donut Traps, Muliplayer and the Choclab will be yours after collecting",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_POST_PART": "more coins"
+    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_POST_PART": "more coins",
+    "UNLOCK_CONGRATULATIONS_CHOCLAB": "Congratulations you've unlocked the Choclab. This is the place for upgrading your entities!",
+    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "You have unlocked the multiplayer mode. Play against other players worldwide and reach the top of the highscore!"
 }
