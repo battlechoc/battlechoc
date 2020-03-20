@@ -486,17 +486,17 @@ class App extends Component {
                     if (score - coins === 0) {
                         this.props.startTutorial({ 
                             loops: [TutorialSituations.FACTORY_EXTENSION], 
-                            notificationOnLoopsEnd: { title: 'Collect more chocolate coins', message: `You need to collect ${200 - score} more coins to unlock the Easter Bunny, Xmas Facotry and Hot Chocolate Ballista`}
+                            notificationOnLoopsEnd: { title: t('NOTIFICATION_UNLOCK_EXTENSION_TITLE'), message: t('NOTIFICATION_UNLOCK_EXTENSION_MESSAGE', 200 - score) }
                         });
                     } else if ((score - coins) < 200 && score > 200) {
                         this.props.startTutorial({ 
                             loops: [TutorialSituations.EASTER_BUNNY, TutorialSituations.XMAS_FACTORY, TutorialSituations.HOT_CHOCOLATE_BALLISTA],
-                            notificationOnLoopsEnd: { title: 'Chocolate is coming', message: `You need to collect ${500 - score} more coins to unlock the Chocolate Fountain and the Fruit Cannon`}
+                            notificationOnLoopsEnd: { title: t('NOTIFICATION_UNLOCK_BUNNY_TITLE'), message: t('NOTIFICATION_UNLOCK_BUNNY_MESSAGE', 500 - score) }
                         });
                     } else if ((score - coins) < 500 && score > 500) {
                         this.props.startTutorial({ 
                             loops: [TutorialSituations.CHOCOLATE_FOUNTAIN, TutorialSituations.FRUIT_CANNON],
-                            notificationOnLoopsEnd: { title: 'The last barrier', message: `Donut Traps, Muliplayer and the Choclab will be yours after collecting ${1000 - score} more coins`}
+                            notificationOnLoopsEnd: { title: t('NOTIFICATION_UNLOCK_FOUNTAIN_TITLE'), message: t('NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE', 1000 - score) }
                         });
                     } else if ((score - coins) < 1000 && score > 1000) {
                         this.props.showQuickMessage({ text: 'Congratulations you\'ve unlocked the Choclab. This is the place for upgrading your entities!', variant: 'success' });
@@ -510,7 +510,7 @@ class App extends Component {
     }
 
     surrender() {
-        let winners = []
+        const winners = []
         winners.push(Object.assign({ idx: 1 - multiplayer.localPlayerIndex }, this.props.game.players[1 - multiplayer.localPlayerIndex]));
         this.props.endGame({
             winners: winners,
@@ -523,7 +523,7 @@ class App extends Component {
         this.props.showOverview();
         this.props.gameResumeable(false);
         OfflineStore.gamestateStore.clear();
-        let stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: this.props.game.winners, id: uuidv4() };
+        const stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: this.props.game.winners, id: uuidv4() };
         multiplayer.pushGameStats([stats]);
     }
 

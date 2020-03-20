@@ -213,5 +213,14 @@
     "ATTRIBUTE_NAME_fortune": "Fortune",
     "ATTRIBUTE_NAME_donutProbability": "Donut probability",
     "ATTRIBUTE_NAME_donutTypes": "Donut types",
-    "ATTRIBUTE_NAME_UNKNOWN": "Unknown"
+    "ATTRIBUTE_NAME_UNKNOWN": "Unknown",
+    "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "Collect more chocolate coins",
+    "NOTIFICATION_UNLOCK_BUNNY_TITLE": "Chocolate is coming",
+    "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "The last barrier",
+    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_PRE_PART": "You need to collect",
+    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_POST_PART": "more coins to unlock the Easter Bunny, Xmas Facotry and Hot Chocolate Ballista",
+    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_PRE_PART": "You need to collect",
+    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_POST_PART": "more coins to unlock the Chocolate Fountain and the Fruit Cannon",
+    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_PRE_PART": "Donut Traps, Muliplayer and the Choclab will be yours after collecting",
+    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_POST_PART": "more coins"
 }

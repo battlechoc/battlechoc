@@ -213,5 +213,14 @@
     "ATTRIBUTE_NAME_fortune": "Glück",
     "ATTRIBUTE_NAME_donutProbability": "Donut-Wahrscheinlichkeit",
     "ATTRIBUTE_NAME_donutTypes": "Donutsorten",
-    "ATTRIBUTE_NAME_UNKNOWN": "Unbekannt"
+    "ATTRIBUTE_NAME_UNKNOWN": "Unbekannt",
+    "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "Sammle noch mehr Schokoladenmünzen",
+    "NOTIFICATION_UNLOCK_BUNNY_TITLE": "Die Schokolade naht",
+    "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "Die letzte Hürde",
+    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_PRE_PART": "Sammle noch",
+    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_POST_PART": "Schokomünzen, um den Spionage-Osterhasen, die Weihnachtsfabrik und die heiße Schokoladenschleuder freizuschalten",
+    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_PRE_PART": "Sammle noch",
+    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_POST_PART": "Schokomünzen, um den Schokobrunnen und die Fruchtkanone freizuschalten",
+    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_PRE_PART": "Donut-Fallen, Multiplayer und das Choclab gehören dir, wenn du noch weitere",
+    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_POST_PART": "Schokomünzen sammelst"
 }

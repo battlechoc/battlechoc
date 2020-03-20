@@ -213,5 +213,14 @@
     "ATTRIBUTE_NAME_fortune": "幸運",
     "ATTRIBUTE_NAME_donutProbability": "ドーナツ確率",
     "ATTRIBUTE_NAME_donutTypes": "ドーナツの種類",
-    "ATTRIBUTE_NAME_UNKNOWN": "わからない"
+    "ATTRIBUTE_NAME_UNKNOWN": "わからない",
+    "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "チョコレートコインをもっと集める",
+    "NOTIFICATION_UNLOCK_BUNNY_TITLE": "チョコレートが来ています",
+    "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "最後の障壁",
+    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_PRE_PART": "収集する必要があります",
+    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_POST_PART": "イースターバニー、クリスマスファコトリー、ホットチョコレートバリスタのロックを解除するコイン",
+    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_PRE_PART": "収集する必要があります",
+    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_POST_PART": "チョコレートファウンテンとフルーツキャノンのロックを解除するためのコインを増やす",
+    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_PRE_PART": "ドーナツトラップ、Muliplayer、およびChoclabは収集後にあなたのものになります",
+    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_POST_PART": "より多くのコイン"
 }
