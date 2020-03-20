@@ -9,7 +9,7 @@ class Translation {
     }
 
     isValid(language) {
-        return ['en', 'de', 'ja'].includes(language);
+        return ['en', 'de', 'jp'].includes(language);
     }
 }
 
