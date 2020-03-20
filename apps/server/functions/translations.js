@@ -1,5 +1,5 @@
 
-const validLanguages = ['de', 'en', 'ja'];
+const validLanguages = ['de', 'en', 'jp'];
 const languages = {
     en: {
         NOTIFICATION_CHALLENGE_TITLE: ' challenges you @battlechoc',
