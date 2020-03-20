@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { updatePlayerStats, updateLevel, showQuickMessage } from '../UiActions';
-import { translate as t } from '../misc';
+import { translate as t, keys as tr } from '../misc';
 import { connect } from 'react-redux';
 import { getEntityDescriptor, finalLevel, EntityType } from 'battlechoc-shared-functions';
 import { ChoclabPalette } from '../controls';
@@ -295,7 +295,7 @@ const Choclab = props => {
     }
 
     if (upgradePossible) {
-        nextLevelDescription = <h4 className={classes.upgrade}><span>{t('CHOCLAB_LEVEL')} {props.level[entityType] + 1}</span><DoubleArrow /><span>{ props.level[entityType] + 2 }</span></h4>
+        nextLevelDescription = <h4 className={classes.upgrade}><span>{t(tr.CHOCLAB_LEVEL)} {props.level[entityType] + 1}</span><DoubleArrow /><span>{ props.level[entityType] + 2 }</span></h4>
     }
     return (
         <div className={classes.page}>
@@ -348,7 +348,7 @@ const Choclab = props => {
                                     }
                                 }
                             }>
-                                <span>{t('CHOCLAB_UPGRADE')}</span>
+                                <span>{t(tr.CHOCLAB_UPGRADE)}</span>
                                 <div className={classes.costs}>
                                     <span>{ currentEntity.coins }</span>
                                     <OptimizedImage src="/images/coins.png" alt="choco coins" />
@@ -362,7 +362,7 @@ const Choclab = props => {
                                     updateLevel(entityType, false)
                                 }
                             }}>
-                                <span>{t('CHOCLAB_DOWNGRADE')}</span>
+                                <span>{t(tr.CHOCLAB_DOWNGRADE)}</span>
                                 { downgradePossible ? <div className={classes.costs}>
                                     <span>-{ Math.round(downgradedEntity.coins * 0.666) }</span>
                                     <OptimizedImage src="/images/coins.png" alt="choco coins" />

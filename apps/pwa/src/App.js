@@ -1,7 +1,7 @@
 import React, { Component, Suspense } from 'react';
 import { connect } from 'react-redux';
 import './App.css';
-import { Jukebox, translate as t, setCurrentLanguage } from './ui/misc';
+import { Jukebox, translate as t, keys as tr, setCurrentLanguage } from './ui/misc';
 import OfflineStore from './OfflineStore';
 import { multiplayer } from './Multiplayer';
 import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut } from 'battlechoc-shared-functions';
@@ -127,8 +127,8 @@ class App extends Component {
         });
 
         if (this.props.language !== 'en') {
-            document.querySelector('meta[name="description"]').setAttribute("content", t('META_DESCRIPTION'));
-            document.querySelector('meta[name="keywords"]').setAttribute("content", t('META_KEYWORDS'));
+            document.querySelector('meta[name="description"]').setAttribute("content", t(tr.META_DESCRIPTION));
+            document.querySelector('meta[name="keywords"]').setAttribute("content", t(tr.META_KEYWORDS));
         }
 
         window.onfocus = () => Jukebox.playMusic();
@@ -143,7 +143,7 @@ class App extends Component {
         if (iOSDevice && !isFullscreen && !isPWA) {
             OfflineStore.settingsStore.get('iOSMessage').then(iOSMessage => {
                 if (typeof iOSMessage === 'undefined') {
-                    this.props.showQuickMessage({ text: t('IOS_MESSAGE'), variant: 'apple-pwa-hint' });
+                    this.props.showQuickMessage({ text: t(tr.IOS_MESSAGE), variant: 'apple-pwa-hint' });
                     OfflineStore.settingsStore.set("iOSMessage", "hide next time");
                 }
             });
@@ -384,7 +384,7 @@ class App extends Component {
         })
         .catch(error => {
             if (error instanceof ReferenceError) {
-                this.props.showQuickMessage({ text: t('WARNING_GAME_NOT_JOINABLE') });
+                this.props.showQuickMessage({ text: t(tr.WARNING_GAME_NOT_JOINABLE) });
             }
         });
     }
@@ -486,21 +486,21 @@ class App extends Component {
                     if (score - coins === 0) {
                         this.props.startTutorial({ 
                             loops: [TutorialSituations.FACTORY_EXTENSION], 
-                            notificationOnLoopsEnd: { title: t('NOTIFICATION_UNLOCK_EXTENSION_TITLE'), message: t('NOTIFICATION_UNLOCK_EXTENSION_MESSAGE', 200 - score) }
+                            notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_EXTENSION_TITLE), message: t('NOTIFICATION_UNLOCK_EXTENSION_MESSAGE', 200 - score) }
                         });
                     } else if ((score - coins) < 200 && score > 200) {
                         this.props.startTutorial({ 
                             loops: [TutorialSituations.EASTER_BUNNY, TutorialSituations.XMAS_FACTORY, TutorialSituations.HOT_CHOCOLATE_BALLISTA],
-                            notificationOnLoopsEnd: { title: t('NOTIFICATION_UNLOCK_BUNNY_TITLE'), message: t('NOTIFICATION_UNLOCK_BUNNY_MESSAGE', 500 - score) }
+                            notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_BUNNY_TITLE), message: t('NOTIFICATION_UNLOCK_BUNNY_MESSAGE', 500 - score) }
                         });
                     } else if ((score - coins) < 500 && score > 500) {
                         this.props.startTutorial({ 
                             loops: [TutorialSituations.CHOCOLATE_FOUNTAIN, TutorialSituations.FRUIT_CANNON],
-                            notificationOnLoopsEnd: { title: t('NOTIFICATION_UNLOCK_FOUNTAIN_TITLE'), message: t('NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE', 1000 - score) }
+                            notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_FOUNTAIN_TITLE), message: t('NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE', 1000 - score) }
                         });
                     } else if ((score - coins) < 1000 && score > 1000) {
-                        this.props.showQuickMessage({ text: t('UNLOCK_CONGRATULATIONS_CHOCLAB'), variant: 'success' });
-                        this.props.showQuickMessage({ text: t('UNLOCK_CONGRATULATIONS_MULTIPLAYER'), variant: 'success' });
+                        this.props.showQuickMessage({ text: t(tr.UNLOCK_CONGRATULATIONS_CHOCLAB), variant: 'success' });
+                        this.props.showQuickMessage({ text: t(tr.UNLOCK_CONGRATULATIONS_MULTIPLAYER), variant: 'success' });
                         this.props.startTutorial({ loops: [TutorialSituations.DONUT_FACTORY, TutorialSituations.DONUTS]});
                     }
                 }

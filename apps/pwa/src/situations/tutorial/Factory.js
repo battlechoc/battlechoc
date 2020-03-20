@@ -1,6 +1,6 @@
 import Situation from '../Situation';
 import { GameStateTypes, PlayerType, BoardCellTypes, EntityType } from 'battlechoc-shared-functions';
-import { translate as t } from '../../ui/misc';
+import { translate as t, keys as tr } from '../../ui/misc';
 
 export default class Factory extends Situation {
     constructor() {
@@ -22,11 +22,11 @@ export default class Factory extends Situation {
     }
 
     static get title() {
-        return t('TUTORIAL_FACTORY_TITLE');
+        return t(tr.TUTORIAL_FACTORY_TITLE);
     }
 
     static get description() {
-        return t('TUTORIAL_FACTORY_MESSAGE');
+        return t(tr.TUTORIAL_FACTORY_MESSAGE);
     }
 
     async play({game, manipulate, spawnInfo, sleep}) {

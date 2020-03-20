@@ -1,5 +1,5 @@
 import { EntityType, AttackType } from 'battlechoc-shared-functions';
-const strings = require('./ja_strings.json');
+const strings = require('./jp_strings.json');
 
 const texts = {
     ...strings,

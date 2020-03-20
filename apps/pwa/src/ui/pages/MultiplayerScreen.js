@@ -4,7 +4,7 @@ import './MultiplayerScreen.css';
 import TextField from '@material-ui/core/TextField';
 import Fab from '@material-ui/core/Fab';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import { Jukebox, translate as t, getCurrentLanguage } from '../misc';
+import { Jukebox, translate as t, keys as tr, getCurrentLanguage } from '../misc';
 import Axios from 'axios';
 import { showQuickMessage } from '../UiActions';
 import { KeyboardArrowLeft as ArrowBackIcon, Refresh, PlayArrow, ChevronRight, LastPage, FirstPage, ChevronLeft, HourglassEmpty, Cancel, AccountCircle, FormatListNumbered, Casino, People, Search, Share } from '@material-ui/icons';
@@ -50,12 +50,12 @@ const MultiplayerScreen = props => {
         TimeAgo.addLocale(en);
         TimeAgo.addLocale(de);
 
-        multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t('SESSION_REFRESH_FAILED')}));
+        multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED)}));
         multiplayer.fetchFriendsList();
 
         shouldAskForPermissionTimeout.current = setTimeout(() => {
             if (multiplayer.shouldAskForNotificationPermission()) {
-                showQuickMessage({ text: t('NOTIFICATION_PERMISSION_INFO'), variant: 'info' });
+                showQuickMessage({ text: t(tr.NOTIFICATION_PERMISSION_INFO), variant: 'info' });
                 askForPermissionTimeout.current = setTimeout(() => multiplayer.askForNotificationPermission(), 5000);
             }
         }, 2000);
@@ -184,7 +184,7 @@ const MultiplayerScreen = props => {
             setHighscoreLastPage(highscore.lastPage);
         } catch (error) {
             logger.warn(error);
-            showQuickMessage({ text: t('FETCH_HIGHSCORE_FAILED')});
+            showQuickMessage({ text: t(tr.FETCH_HIGHSCORE_FAILED)});
             setShowHighscore(false);
             setHighscoreLoading(false);
         }
@@ -192,7 +192,7 @@ const MultiplayerScreen = props => {
 
     
     const refreshSessions = () => {
-        multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t('SESSION_REFRESH_FAILED')}));
+        multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED)}));
     }
 
     const createProfileLink = () => {
@@ -200,12 +200,12 @@ const MultiplayerScreen = props => {
             if (navigator.share) {
                 navigator.share({
                     title: window.document.title,
-                    text: t('INVITATION'),
+                    text: t(tr.INVITATION),
                     url: link,
                 }).catch((error) => logger.info('error sharing multiplayer session', error));
             } else {
                 let whatsappWindowRef = window.open();
-                whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t('INVITATION') + ' - ' + link);
+                whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t(tr.INVITATION) + ' - ' + link);
             }
         });
     }
@@ -269,7 +269,7 @@ const MultiplayerScreen = props => {
             <BattlechocDialog
                 open={showSurrenderDialog}
                 close={() => setShowSurrenderDialog(false)}
-                title={t('SURRENDER_GAME')}>
+                title={t(tr.SURRENDER_GAME)}>
                 <div className="surrenderDialog">
                     <p>{t('SURRENDER_GAME_TEXT', surrenderOpponentName)}</p>
                     <div className="menuButton" onClick={() => {
@@ -278,14 +278,14 @@ const MultiplayerScreen = props => {
                         setSurrenderGameId(undefined);
                         setSurrenderOpponentName(undefined);
                         surrenderGame(surrenderGameId);
-                    }}>{t('SURRENDER')}</div>
+                    }}>{t(tr.SURRENDER)}</div>
                 </div>
             </BattlechocDialog>
 
             <BattlechocDialog
                 open={showFriends}
                 close={() => setShowFriends(false)}
-                title={t('FRIENDS')}>
+                title={t(tr.FRIENDS)}>
                 <PlayerList 
                     players={friends} 
                     removeFriend={removeFriend}
@@ -318,7 +318,7 @@ const MultiplayerScreen = props => {
                                 <ChevronLeft />
                             </Fab>
                         </div>
-                        { highscoreLoading ? <CircularProgress size={22} /> : <span style={{color: '#324D5C'}}>{t('ACCOUNT_OVERVIEW_RANK')} {highscore.length > 0 ? `${highscore[0].ranking} - ${highscore[highscore.length - 1].ranking}` : '1 - 1'}</span> }
+                        { highscoreLoading ? <CircularProgress size={22} /> : <span style={{color: '#324D5C'}}>{t(tr.ACCOUNT_OVERVIEW_RANK)} {highscore.length > 0 ? `${highscore[0].ranking} - ${highscore[highscore.length - 1].ranking}` : '1 - 1'}</span> }
                         <div>
                             <Fab
                                 size="small"
@@ -356,13 +356,13 @@ const MultiplayerScreen = props => {
             <BattlechocDialog
                 open={showSearch}
                 close={() => setShowSearch(false)}
-                title={t('SEARCH_PLAYERS')}>
+                title={t(tr.SEARCH_PLAYERS)}>
                 <div className="playerSearchDialog">
                     <TextField
                         label="Name"
                         value={userSearchText}
                         error={badInternetConnection && !waitForResponse}
-                        helperText={badInternetConnection && !waitForResponse ? t('NO_HEALTHY_INTERNET') : ''}
+                        helperText={badInternetConnection && !waitForResponse ? t(tr.NO_HEALTHY_INTERNET) : ''}
                         style={{display: 'flex'}}
                         inputProps={{ spellCheck: 'false', autoFocus: true }}
                         InputLabelProps={{ style: {color: 'rgba(69, 123, 130, 0.8)' }}}
@@ -390,11 +390,11 @@ const MultiplayerScreen = props => {
                 { multiplayerSessions.length > 0 ?
                 <div className="openGames">
                 <div className="gamestable">
-                    <div className="tableHead">{t('ACTIONS')}</div>
-                    <div className="tableHead">{t('OPPONENT')}</div>
-                    <div className="tableHead">{t('TURNS')}</div>
-                    <div className="tableHead">{t('LAST_ACTION')}</div>
-                    <div className="tableHead">{t('POTENTIAL_COINS')}</div>
+                    <div className="tableHead">{t(tr.ACTIONS)}</div>
+                    <div className="tableHead">{t(tr.OPPONENT)}</div>
+                    <div className="tableHead">{t(tr.TURNS)}</div>
+                    <div className="tableHead">{t(tr.LAST_ACTION)}</div>
+                    <div className="tableHead">{t(tr.POTENTIAL_COINS)}</div>
 
                     {Object.assign([], multiplayerSessions).sort(sortByTimestamp).map((row, i) => {
                         let joinGameIcon = <HourglassEmpty onClick={() => enterMultiplayerGame(row.id)} />;
@@ -411,14 +411,14 @@ const MultiplayerScreen = props => {
                     })}
                 </div></div> : 
                 <div className="no-sessions-info">
-                    <h4>{t('MULTIPLAYER_INFO_HEADER')}</h4>
+                    <h4>{t(tr.MULTIPLAYER_INFO_HEADER)}</h4>
                     <p>{t('MULTIPLAYER_INFO_HEADER2')}</p>
                     <ul>
-                        <li><Casino />{t('MULTIPLAYER_INFO_CASINO')}</li>
-                        <li><People />{t('MULTIPLAYER_INFO_FRIENDS')}</li>
-                        <li><Share />{t('MULTIPLAYER_INFO_SHARE')}</li>
-                        <li><Search />{t('MULTIPLAYER_INFO_SEARCH')}</li>
-                        <li><FormatListNumbered />{t('MULTIPLAYER_INFO_HIGHSCORE')}</li>
+                        <li><Casino />{t(tr.MULTIPLAYER_INFO_CASINO)}</li>
+                        <li><People />{t(tr.MULTIPLAYER_INFO_FRIENDS)}</li>
+                        <li><Share />{t(tr.MULTIPLAYER_INFO_SHARE)}</li>
+                        <li><Search />{t(tr.MULTIPLAYER_INFO_SEARCH)}</li>
+                        <li><FormatListNumbered />{t(tr.MULTIPLAYER_INFO_HIGHSCORE)}</li>
                     </ul>
                 </div> }
             </div> }

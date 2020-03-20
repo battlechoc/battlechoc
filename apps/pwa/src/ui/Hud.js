@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { GameStateTypes } from 'battlechoc-shared-functions';
 import { showQuickMessage, showNotification, hideNotification } from './UiActions';
 import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
-import { Jukebox, translate as t } from './misc';
+import { Jukebox, translate as t, keys as tr } from './misc';
 import { Notification, Info, Tooltip, Settings, AccountOverview } from './dialogs';
 import BattlechocDialog from './dialogs/BattlechocDialog';
 import Fab from '@material-ui/core/Fab';
@@ -27,7 +27,7 @@ const Hud = props => {
     const [showAccountOverview, setShowAccountOverview] = useState(false);  
     const [showMultiplayerScreen, setShowMultiplayerScreen] = useState(false);
     const [waitingRoom, setWaitingRoom] = useState(false);
-    const [waitingRoomText, setWaitingRoomText] = useState(t('TRY_TO_JOIN_GAME'));
+    const [waitingRoomText, setWaitingRoomText] = useState(t(tr.TRY_TO_JOIN_GAME));
     const [choclabScreen, setChoclabScreen] = useState(false);
     const [playerAccount, setPlayerAccount] = useState(undefined);
     const [challengedProfile, setChallengedProfile] = useState(undefined);
@@ -52,7 +52,7 @@ const Hud = props => {
         const checkForWaitingRoom = async () => {
             if (typeof challengedPlayer !== 'undefined') {
                 setWaitingRoom(true);
-                setWaitingRoomText(t('TRY_TO_SHOW_PLAYER_ACCOUNT'));
+                setWaitingRoomText(t(tr.TRY_TO_SHOW_PLAYER_ACCOUNT));
                 
                 try {
                     while (!firebase.auth().currentUser) {
@@ -75,7 +75,7 @@ const Hud = props => {
                 }
             } else if (typeof sessionId !== 'undefined') {
                 setWaitingRoom(true);
-                setWaitingRoomText(t('TRY_TO_JOIN_GAME'))
+                setWaitingRoomText(t(tr.TRY_TO_JOIN_GAME))
                 
                 try {
                     let sessions = undefined;
@@ -92,11 +92,11 @@ const Hud = props => {
                         joinGame(sessions[0].id);
                     } else {
                         logger.warn(`${sessionId} is not a session of this player`);
-                        showQuickMessage({ text: t('WARNING_GAME_NOT_JOINABLE_VIA_URL') });
+                        showQuickMessage({ text: t(tr.WARNING_GAME_NOT_JOINABLE_VIA_URL) });
                     }
                 } catch (error) {
                     logger.warn(error);
-                    showQuickMessage({ text: t('ERROR_GAME_NOT_JOINABLE_VIA_URL') });
+                    showQuickMessage({ text: t(tr.ERROR_GAME_NOT_JOINABLE_VIA_URL) });
                 } finally {
                     setWaitingRoom(false);
                 }
@@ -192,11 +192,11 @@ const Hud = props => {
                     const score = playerInfos.stats.score;
                     const hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
 
-                    controls.push(<div key="0" className="menuButton" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t('NEW_GAME') : t('MAIN_MENU_SINGLEPLAYER')}</div>);
+                    controls.push(<div key="0" className="menuButton" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t(tr.NEW_GAME) : t(tr.MAIN_MENU_SINGLEPLAYER)}</div>);
                     
                     if (!hideOptions) {
-                        controls.push(<div key="1" className="menuButton" onClick={() => setShowMultiplayerScreen(true)}>{t('MAIN_MENU_MULTIPLAYER')}</div>);
-                        controls.push(<div key="2" className="menuButton" onClick={() => setChoclabScreen(true)}>{t('MAIN_MENU_CHOCLAB')}</div>);
+                        controls.push(<div key="1" className="menuButton" onClick={() => setShowMultiplayerScreen(true)}>{t(tr.MAIN_MENU_MULTIPLAYER)}</div>);
+                        controls.push(<div key="2" className="menuButton" onClick={() => setChoclabScreen(true)}>{t(tr.MAIN_MENU_CHOCLAB)}</div>);
                     }
 
                     return (
@@ -214,20 +214,20 @@ const Hud = props => {
                                 <BattlechocDialog
                                     open={open}
                                     close={() => setOpen(false)}
-                                    title={t('HUD_RESUME_GAME')}>
+                                    title={t(tr.HUD_RESUME_GAME)}>
                                     <div className="resumeGameDialog">
-                                        <p>{t('HUD_ASK_NEW_OR_RESUME')}</p>
+                                        <p>{t(tr.HUD_ASK_NEW_OR_RESUME)}</p>
                                         <div className="actions">
                                             <div className="menuButton" onClick={() => {
                                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                                 setOpen(false);
                                                 prepareNewGameCallback(true);
-                                            }}>{t('HUD_RESUME_GAME')}</div>
+                                            }}>{t(tr.HUD_RESUME_GAME)}</div>
                                             <div className="menuButton" onClick={() => {
                                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                                 setOpen(false);
                                                 prepareNewGameCallback(false);
-                                            }}>{t('HUD_NEW_GAME')}</div>
+                                            }}>{t(tr.HUD_NEW_GAME)}</div>
                                         </div>
                                     </div>
                                 </BattlechocDialog>

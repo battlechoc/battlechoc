@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import './GameEndOverview.css';
 import { ArrowBack } from '@material-ui/icons';
 import Fab from '@material-ui/core/Fab';
-import { translate as t } from '../misc';
+import { translate as t, keys as tr } from '../misc';
 import { OptimizedImage } from '../../helper/compatibility';
 
 const useMountEffect = effect => useEffect(effect, [])
@@ -77,13 +77,13 @@ const GameEndOverview = props => {
         outcome = 'draw';
     }
 
-    let headine = t('MESSAGE_WIN_GAME');
+    let headine = t(tr.MESSAGE_WIN_GAME);
     if (props.winners.length === 1) {
         if (props.player.id !== props.winners[0].id) {
-            headine = t('MESSAGE_LOST_GAME');
+            headine = t(tr.MESSAGE_LOST_GAME);
         }
     } else if (props.winners.length === 2) {
-        headine = t('MESSAGE_DRAW_GAME');
+        headine = t(tr.MESSAGE_DRAW_GAME);
     }
 
     return (
@@ -92,19 +92,19 @@ const GameEndOverview = props => {
             <div className="statistics">                    
                 <ul className="legend">
                     <li>
-                        <em>{t('GAME_END_OVERVIEW_ATTACKS')}</em>
+                        <em>{t(tr.GAME_END_OVERVIEW_ATTACKS)}</em>
                         <span className="amount">{ statistics.attacks }</span>
                     </li>
                     <li>
-                        <em>{t('GAME_END_OVERVIEW_ENTITIES')}</em>
+                        <em>{t(tr.GAME_END_OVERVIEW_ENTITIES)}</em>
                         <span><span className="amount">{ statistics.builtEntities }</span><b>&times; 2</b></span>
                     </li>
                     <li>
-                        <em>{t('GAME_END_OVERVIEW_ESPIONAGES')}</em>
+                        <em>{t(tr.GAME_END_OVERVIEW_ESPIONAGES)}</em>
                         <span><span className="amount">{ statistics.espionages }</span><b>&times; 10</b></span>
                     </li>
                     <li>
-                        <em>{t('GAME_END_OVERVIEW_MOLTEN_FIELDS')}</em>
+                        <em>{t(tr.GAME_END_OVERVIEW_MOLTEN_FIELDS)}</em>
                         <span><span className="amount">{ statistics.moltenFields }</span><b>&times; 50</b></span>
                     </li>
                 </ul>
