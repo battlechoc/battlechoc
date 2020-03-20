@@ -154,7 +154,7 @@ const Tutorial = props => {
     return (
         <div id="tutorial">
             <div>
-                <AppBar position="static" color="secondary" className="tutorialAppbar">
+                <AppBar position="static" style={{ backgroundColor: '#5dbbc3' }} className="tutorialAppbar">
                 <Toolbar>
                     { backIcon }
                     <h6 className="tutorial-headline">{ situation.title }</h6>
