@@ -1,5 +1,9 @@
 import { EntityType, AttackType } from 'battlechoc-shared-functions';
-const strings = require('./en_strings.json');
+const strings = require('./en_strings.js');
+
+const keys = {...strings};
+Object.keys(keys).forEach(key => keys[key] = key);
+const referenceKeys = Object.freeze(keys);
 
 const translations = {
     ...strings,
@@ -142,7 +146,8 @@ const translations = {
         }
     },
     WARNING_PLAYER_NOT_FOUND: function (name) {
-        return this.WARNING_PLAYER_NOT_FOUND_PRE_PART + name + this.WARNING_PLAYER_NOT_FOUND_PRE_PART
+        return `This is ${name} times easier!`
+        //return this.WARNING_PLAYER_NOT_FOUND_PRE_PART + name + this.WARNING_PLAYER_NOT_FOUND_PRE_PART
     },
     SURRENDER_GAME_TEXT: function (name) {
         return this.SURRENDER_GAME_TEXT_PART + name
@@ -161,4 +166,4 @@ const translations = {
     }
 }
 
-export default translations;
+export { translations, referenceKeys };

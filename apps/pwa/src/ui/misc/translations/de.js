@@ -1,5 +1,5 @@
 import { EntityType, AttackType } from 'battlechoc-shared-functions';
-const strings = require('./de_strings.json');
+const strings = require('./de_strings.js');
 
 const translations = {
     ...strings,

@@ -1,4 +1,4 @@
-{
+module.exports = {
     "SIGNINORUP": "Anmelden",
     "NEW_GAME": "Neues Spiel",
     "MAIN_MENU_SINGLEPLAYER": "Singleplayer",

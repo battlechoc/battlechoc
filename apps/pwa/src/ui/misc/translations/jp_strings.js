@@ -1,4 +1,4 @@
-{
+module.exports = {
     "SIGNINORUP": "サインイン",
     "NEW_GAME": "新しいゲーム",
     "MAIN_MENU_SINGLEPLAYER": "シングルプレーヤー",

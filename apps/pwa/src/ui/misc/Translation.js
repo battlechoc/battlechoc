@@ -13,14 +13,7 @@ class Translation {
     }
 }
 
-function createKeys() {
-    let keysResult = {};
-    Object.keys(translations['en']).forEach(key => keysResult[key] = key);
-    return keysResult;
-}
-
 const translation = new Translation();
-const keys = Object.freeze(createKeys());
 
 function setCurrentLanguage(language) {
     if (translation.isValid(language)) {
@@ -65,4 +58,4 @@ function translate(key) {
     }
 }
 
-export { setCurrentLanguage, getCurrentLanguage, translate, keys };
+export { setCurrentLanguage, getCurrentLanguage, translate };

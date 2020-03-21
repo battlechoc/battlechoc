@@ -1,4 +1,5 @@
-{
+module.exports = {
+    "TESTTESTTEST": "I am a new string",
     "SIGNINORUP": "Sign in",
     "NEW_GAME": "New Game",
     "MAIN_MENU_SINGLEPLAYER": "Singleplayer",
