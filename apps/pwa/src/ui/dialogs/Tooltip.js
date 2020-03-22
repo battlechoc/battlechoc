@@ -55,7 +55,7 @@ const Tooltip = props => {
         }
     } else if (props.state === GameStateTypes.CHOOSE_FIELD) {
         title = t(tr.TOOLTIP_INITIAL_TURN_TITLE);
-        message = t('TOOLTIP_INITIAL_TURN_OPPONENT', props.currentPlayerName);
+        message = t(tr.TOOLTIP_INITIAL_TURN_OPPONENT, props.currentPlayerName);
     } else if (props.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || props.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
         title = t(tr.TOOLTIP_INITIAL_PLACEMENT_TITLE);
         if (props.playerTurn) {
@@ -68,8 +68,8 @@ const Tooltip = props => {
                 message = t(tr.TOOLTIP_BUILD_PHASE_MESSAGE);
             } else {
                 let building = getEntityDescriptor(props.tappedBuilding, props.level);
-                let { info, costs, advantages } = t('TOOLTIP_BUILDING_INFO', props.tappedBuilding, building);
-                title = t('TOOLTIP_BUILDING_TITLE', props.tappedBuilding);
+                let { info, costs, advantages } = t(tr.TOOLTIP_BUILDING_INFO, props.tappedBuilding, building);
+                title = t(tr.TOOLTIP_BUILDING_TITLE, props.tappedBuilding);
                 message = <span className="tooltipBuildingInfo">
                     <span>{info}</span>
                     {typeof costs !== 'undefined' ? <span>{costs}</span> : null}
@@ -81,8 +81,8 @@ const Tooltip = props => {
         title = t(tr.TOOLTIP_ATTACK_PHASE_TITLE);
         if (props.playerTurn) {
             if (typeof props.selectedAttack !== 'undefined') {
-                title = t('TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE', props.selectedAttack);
-                message = t('TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE', props.selectedAttack);
+                title = t(tr.TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE, props.selectedAttack);
+                message = t(tr.TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE, props.selectedAttack);
             } else {
                 message = t(tr.TOOLTIP_ATTACK_PHASE_MESSAGE);
             }

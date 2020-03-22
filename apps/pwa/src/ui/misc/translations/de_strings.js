@@ -1,3 +1,4 @@
+/* eslint-disable no-template-curly-in-string */
 module.exports = {
     "SIGNINORUP": "Anmelden",
     "NEW_GAME": "Neues Spiel",
@@ -193,9 +194,8 @@ module.exports = {
     "TRY_TO_SHOW_PLAYER_ACCOUNT": "Einen Augenblick bitte. Spielerinformationen werden geladen",
     "NOTIFICATION_PERMISSION_INFO": "Wir werden dich gleich um Erlaubnis fragen, dich informieren zu dürfen, falls jemand dich herausfordert, oder ein Gegner seinen Zug beendet hat und du an der Reihe bist",
     "NO_ACCOUNT_INFO": "Du bist zur Zeit nicht angemeldet. Melde dich im Einstellungsmenü an, oder starte einfach ein neues Spiel auf der Hauptseite, um einen neuen Account zu erstellen",
-    "WARNING_PLAYER_NOT_FOUND_PRE_PART": "Spieler ",
-    "WARNING_PLAYER_NOT_FOUND_POST_PART": " wurde nicht gefunden",
-    "SURRENDER_GAME_TEXT_PART": "Möchtest du das Spiel wirklich aufgeben gegen ",
+    "WARNING_PLAYER_NOT_FOUND": "Spieler {{name}} wurde nicht gefunden",
+    "SURRENDER_GAME_TEXT": "Möchtest du das Spiel gegen {{name}} wirklich aufgeben?",
     "UPDATE_LEVEL_FAILED_UPGRADE": "Es war nicht möglich das Upgrade durchzuführen. Überprüfe deine Internetverbindung",
     "UPDATE_LEVEL_FAILED_DOWNGRADE": "Es war nicht möglich das Downgrade durchzuführen. Überprüfe deine Internetverbindung",
     "ATTRIBUTE_NAME_hp": "Lebenspunkte",
@@ -210,12 +210,9 @@ module.exports = {
     "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "Sammle noch mehr Schokoladenmünzen",
     "NOTIFICATION_UNLOCK_BUNNY_TITLE": "Die Schokolade naht",
     "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "Die letzte Hürde",
-    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_PRE_PART": "Sammle noch",
-    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_POST_PART": "Schokomünzen, um den Spionage-Osterhasen, die Weihnachtsfabrik und die heiße Schokoladenschleuder freizuschalten",
-    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_PRE_PART": "Sammle noch",
-    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_POST_PART": "Schokomünzen, um den Schokobrunnen und die Fruchtkanone freizuschalten",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_PRE_PART": "Donut-Fallen, Multiplayer und das Choclab gehören dir, wenn du noch weitere",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_POST_PART": "Schokomünzen sammelst",
+    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE": "Sammle noch {{coins}} Schokomünzen, um den Spionage-Osterhasen, die Weihnachtsfabrik und die heiße Schokoladenschleuder freizuschalten.",
+    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "Sammle noch {{coins}} Schokomünzen, um den Schokobrunnen und die Fruchtkanone freizuschalten.",
+    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Donut-Fallen, Multiplayer und das Choclab gehören dir, wenn du noch weitere {{coins}} Schokomünzen sammelst.",
     "UNLOCK_CONGRATULATIONS_CHOCLAB": "Herzlichen Glückwunsch! Du hast das Choclab freigeschaltet. Hier kannst du deine Einheiten verbessern!",
     "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "Du hast den Multiplayer-Modus freigeschaltet. Spiele gegen andere Spieler weltweit und erklimme den Highscore!"
 }

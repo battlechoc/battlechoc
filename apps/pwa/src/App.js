@@ -486,17 +486,17 @@ class App extends Component {
                     if (score - coins === 0) {
                         this.props.startTutorial({ 
                             loops: [TutorialSituations.FACTORY_EXTENSION], 
-                            notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_EXTENSION_TITLE), message: t('NOTIFICATION_UNLOCK_EXTENSION_MESSAGE', 200 - score) }
+                            notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_EXTENSION_TITLE), message: t(tr.NOTIFICATION_UNLOCK_EXTENSION_MESSAGE, 200 - score) }
                         });
                     } else if ((score - coins) < 200 && score > 200) {
                         this.props.startTutorial({ 
                             loops: [TutorialSituations.EASTER_BUNNY, TutorialSituations.XMAS_FACTORY, TutorialSituations.HOT_CHOCOLATE_BALLISTA],
-                            notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_BUNNY_TITLE), message: t('NOTIFICATION_UNLOCK_BUNNY_MESSAGE', 500 - score) }
+                            notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_BUNNY_TITLE), message: t(tr.NOTIFICATION_UNLOCK_BUNNY_MESSAGE, 500 - score) }
                         });
                     } else if ((score - coins) < 500 && score > 500) {
                         this.props.startTutorial({ 
                             loops: [TutorialSituations.CHOCOLATE_FOUNTAIN, TutorialSituations.FRUIT_CANNON],
-                            notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_FOUNTAIN_TITLE), message: t('NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE', 1000 - score) }
+                            notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_FOUNTAIN_TITLE), message: t(tr.NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE, 1000 - score) }
                         });
                     } else if ((score - coins) < 1000 && score > 1000) {
                         this.props.showQuickMessage({ text: t(tr.UNLOCK_CONGRATULATIONS_CHOCLAB), variant: 'success' });
