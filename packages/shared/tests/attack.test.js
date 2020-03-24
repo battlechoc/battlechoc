@@ -11,6 +11,7 @@ const TargetEmptyError = require('../index').TargetEmptyError;
 const attackReduction = require('../index').attackReduction;
 const setRandomSeed = require('../index').setRandomSeed;
 const getRandomNumber = require('../index').getRandomNumber;
+const uuidv4 = require('uuid/v4');
 
 class AttackTest extends Situation {
     constructor() {
@@ -20,14 +21,22 @@ class AttackTest extends Situation {
         this.modifyBoard({row: 5, col: 7, cellType: BoardCellTypes.WHITE });
         this.modifyBoard({row: 6, col: 6, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY, this.game.gameplay.game.players[0].level)] });
         this.modifyBoard({row: 1, col: 3, cellType: BoardCellTypes.WHITE, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.RUM_TRUFFLE_CANNON, this.game.gameplay.game.players[0].level)] });
+        this.modifyBoard({row: 2, col: 3, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.HOT_CHOCOLATE_BALLISTA, this.game.gameplay.game.players[0].level)] });
 
         const surpriseDonut = createEntity(EntityType.DONUT_SURPRISE_YELLOW)
         const healthDonut = createEntity(EntityType.DONUT_HEALTH_GREEN)
+        const blueDonut = createEntity(EntityType.DONUT_PORTAL_BLUE);
+        const redDonut = createEntity(EntityType.DONUT_PORTAL_RED);
+        let assignment = uuidv4();
+        blueDonut.assignment = assignment;
+        redDonut.assignment = assignment;
 
         this.modifyBoard({row: 2, col: 2, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY)]});
         this.modifyBoard({row: 7, col: 7, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: []});
         this.modifyBoard({row: 6, col: 7, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [healthDonut]});
         this.modifyBoard({row: 5, col: 7, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [surpriseDonut, createEntity(EntityType.XMAS_FACTORY)]});
+        this.modifyBoard({row: 3, col: 5, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [blueDonut, createEntity(EntityType.CACAOTREE)]});
+        this.modifyBoard({row: 3, col: 6, playerIndex: 1, cellType: BoardCellTypes.WHITE, buildings: [redDonut]});
         this.modifyBoard({row: 1, col: 1, playerIndex: 1, cellType: BoardCellTypes.BRWON, buildings: [createEntity(EntityType.XMAS_FACTORY)]});
 
         const game = this.game.gameplay.game;
@@ -40,13 +49,15 @@ class AttackTest extends Situation {
         game.players[1].hasFactory = true;
         game.players[1].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[1].level).buildingsPerTurn + 1;
         game.players[1].buildings = game.players[1].buildingsPerTurn;
-        game.players[1].activeDonuts = [surpriseDonut, healthDonut];
+        game.players[1].activeDonuts = [surpriseDonut, healthDonut, blueDonut, redDonut];
 
         game.players[0].hasFactory = true;
         game.players[0].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[0].level).buildingsPerTurn + 1;
         game.players[0].buildings = game.players[0].buildingsPerTurn;
-        game.players[0].attacks[AttackType.TRUFFLE] = 1;
+        game.players[0].attacks[AttackType.TRUFFLE] = 2;
         game.players[0].attacksPerTurn[AttackType.TRUFFLE] = 1;
+        game.players[0].attacks[AttackType.HOT_CHOCOLATE] = 1;
+        game.players[0].attacksPerTurn[AttackType.HOT_CHOCOLATE] = 1;
     }
 
     static get game() {
@@ -194,4 +205,125 @@ test('should test the yellow donut', () => {
     field = gameplay.game.board.fields[1].grid[1 * gameplay.game.board.size.cols + 1];
     expect(field.occupiedBy.map(entity => entity.type)).toContain(EntityType.CHOCOLATE_FOUNTAIN);
     expect(field.shielded).toBe(true);
+});
+
+
+test('should test portal donut working', () => {
+    const bluePosition = { row: 3, col: 5 };
+    const redPosition = { row: 3, col: 6 };
+    const gameplay = JSON.parse(JSON.stringify(AttackTest.game.gameplay));
+    const game = gameplay.game;
+
+    expect(game.players[1].activeDonuts.filter(donut => donut.type === EntityType.DONUT_PORTAL_BLUE).length).not.toBe(0);
+    expect(game.players[1].activeDonuts.filter(donut => donut.type === EntityType.DONUT_PORTAL_RED).length).not.toBe(0);
+
+    const blueDonut = game.players[1].activeDonuts.filter(donut => donut.type === EntityType.DONUT_PORTAL_BLUE)[0];
+    const redDonut = game.players[1].activeDonuts.filter(donut => donut.type === EntityType.DONUT_PORTAL_RED)[0];
+
+    expect(blueDonut).not.toBeUndefined();
+    expect(redDonut).not.toBeUndefined();
+
+    const description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, game.players[0].level);
+    const damage = (1 + ((Math.random() * 0.4) - 0.2)) * description.attack;
+
+    const event = {
+        "type": GameActionTypes.attack,
+        "payload": {
+            "issuer": game.players[0].id,
+            "attackType": AttackType.TRUFFLE,
+            "damage": damage,
+            "row": bluePosition.row,
+            "col": bluePosition.col
+        }
+    }
+
+    expect(Rules.isActionValid(game, event)).toBe(true);
+    setRandomSeed(46);
+    attackReduction(gameplay, event);
+
+    expect(game.players[1].activeDonuts).not.toContain(blueDonut);
+    expect(game.players[1].activeDonuts).not.toContain(redDonut);
+
+    const blueField = gameplay.game.board.fields[1].grid[bluePosition.row * gameplay.game.board.size.cols + bluePosition.col];
+    const redField = gameplay.game.board.fields[1].grid[redPosition.row * gameplay.game.board.size.cols + redPosition.col];
+    expect(blueField.occupiedBy.map(entity => entity.type)).not.toContain(EntityType.DONUT_PORTAL_BLUE);
+    expect(redField.occupiedBy.map(entity => entity.type)).not.toContain(EntityType.DONUT_PORTAL_RED);
+    expect(blueField.occupiedBy.map(entity => entity.type)).not.toContain(EntityType.CACAOTREE);
+    expect(redField.occupiedBy.map(entity => entity.type)).toContain(EntityType.CACAOTREE);
+});
+
+
+test('should test red donut molten blue donut destroyed', () => {
+    const bluePosition = { row: 3, col: 5 };
+    const redPosition = { row: 3, col: 6 };
+    const gameplay = JSON.parse(JSON.stringify(AttackTest.game.gameplay));
+    const game = gameplay.game;
+
+    expect(game.players[1].activeDonuts.filter(donut => donut.type === EntityType.DONUT_PORTAL_BLUE).length).not.toBe(0);
+    expect(game.players[1].activeDonuts.filter(donut => donut.type === EntityType.DONUT_PORTAL_RED).length).not.toBe(0);
+
+    const blueDonut = game.players[1].activeDonuts.filter(donut => donut.type === EntityType.DONUT_PORTAL_BLUE)[0];
+    const redDonut = game.players[1].activeDonuts.filter(donut => donut.type === EntityType.DONUT_PORTAL_RED)[0];
+
+    expect(blueDonut).not.toBeUndefined();
+    expect(redDonut).not.toBeUndefined();
+
+    const description = getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, game.players[0].level);
+    const damage = (1 + ((Math.random() * 0.4) - 0.2)) * description.attack;
+
+    const event = {
+        "type": GameActionTypes.attack,
+        "payload": {
+            "issuer": game.players[0].id,
+            "attackType": AttackType.HOT_CHOCOLATE,
+            "damage": damage,
+            "row": redPosition.row,
+            "col": redPosition.col
+        }
+    }
+
+    expect(Rules.isActionValid(game, event)).toBe(true);
+    setRandomSeed(46);
+    attackReduction(gameplay, event);
+
+    expect(game.players[1].activeDonuts).not.toContain(blueDonut);
+    expect(game.players[1].activeDonuts).not.toContain(redDonut);
+
+    const blueField = gameplay.game.board.fields[1].grid[bluePosition.row * gameplay.game.board.size.cols + bluePosition.col];
+    const redField = gameplay.game.board.fields[1].grid[redPosition.row * gameplay.game.board.size.cols + redPosition.col];
+    expect(blueField.occupiedBy.map(entity => entity.type)).not.toContain(EntityType.DONUT_PORTAL_BLUE);
+    expect(redField.occupiedBy.map(entity => entity.type)).not.toContain(EntityType.DONUT_PORTAL_RED);
+    expect(blueField.occupiedBy.map(entity => entity.type)).toContain(EntityType.CACAOTREE);
+    expect(redField.occupiedBy.map(entity => entity.type)).not.toContain(EntityType.CACAOTREE);
+    expect(redField.molten).toBe(true);
+
+    const event2 = {
+        "type": GameActionTypes.attack,
+        "payload": {
+            "issuer": game.players[0].id,
+            "attackType": AttackType.TRUFFLE,
+            "damage": 1,
+            "row": bluePosition.row,
+            "col": bluePosition.col
+        }
+    }
+
+    expect(Rules.isActionValid(game, event2)).toBe(true);
+    setRandomSeed(46);
+    attackReduction(gameplay, event2);
+    expect(blueField.occupiedBy.map(entity => entity.type)).toContain(EntityType.CACAOTREE);
+
+    const event3 = {
+        "type": GameActionTypes.attack,
+        "payload": {
+            "issuer": game.players[0].id,
+            "attackType": AttackType.TRUFFLE,
+            "damage": 1,
+            "row": redPosition.row,
+            "col": redPosition.col
+        }
+    }
+
+    expect(Rules.isActionValid(game, event3)).toBeInstanceOf(TargetEmptyError);
+    expect(blueField.occupiedBy.map(entity => entity.type)).toContain(EntityType.CACAOTREE);
 });
