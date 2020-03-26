@@ -11,6 +11,7 @@ const NoBuildingsLeftError = require('../index').NoBuildingsLeftError;
 const finishTurnReduction = require('../index').finishTurnReduction;
 const NoCacaoLeftError = require('../index').NoCacaoLeftError;
 const InvalidActionIssuerError = require('../index').InvalidActionIssuerError;
+const uuidv4 = require('uuid/v4');
 
 class BuildTest extends Situation {
     constructor() {
@@ -133,6 +134,41 @@ test('should set a tree on a brown field at position (6, 7)', () => {
     buildReduction(gameplay, event);
     expect(game.players[0].cacao).toBe(player.cacao - building.costs);
     expect(game.players[0].cacaoPerTurn).toBe(player.cacaoPerTurn + building.cacaoPerTurn);
+});
+
+test('should set a blue and red donut on a brown field at position (6, 7) and (7, 6)', () => {
+    const positionBlue = { row: 6, col: 7 };
+    const positionRed = { row: 7, col: 6 };
+    const gameplay = BuildTest.gameplay;
+    const game = gameplay.game;
+    const blueDonut = createEntity(EntityType.DONUT_PORTAL_BLUE, EmptyPlayerStats.level);
+    const redDonut = createEntity(EntityType.DONUT_PORTAL_RED, EmptyPlayerStats.level);
+    blueDonut.position = positionBlue;
+    redDonut.position = positionRed;
+    let assignment = uuidv4();
+    blueDonut.assignment = assignment;
+    redDonut.assignment = assignment;
+    const eventBlue = {
+        "type": GameActionTypes.build,
+        "payload": {
+            "issuer": game.players[0].id,
+            "building": blueDonut
+        }
+    }
+    const eventRed = {
+        "type": GameActionTypes.build,
+        "payload": {
+            "issuer": game.players[0].id,
+            "building": redDonut
+        }
+    }
+
+    buildReduction(gameplay, eventBlue);
+    expect(getFieldAt(game.board, positionBlue).occupiedBy.map(entity => entity.type)).toContain(EntityType.DONUT_PORTAL_BLUE);
+    expect(game.players[0].activeDonuts.filter(donut => donut.type === EntityType.DONUT_PORTAL_BLUE).length).not.toBe(0);
+    buildReduction(gameplay, eventRed);
+    expect(getFieldAt(game.board, positionRed).occupiedBy.map(entity => entity.type)).toContain(EntityType.DONUT_PORTAL_RED);
+    expect(game.players[0].activeDonuts.filter(donut => donut.type === EntityType.DONUT_PORTAL_RED).length).not.toBe(0);
 });
 
 test('should fail to set a tree without factory', () => {

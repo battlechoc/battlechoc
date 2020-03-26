@@ -738,7 +738,7 @@ const buildReduction = (state, action) => {
             currentPlayer(state.game).cacao -= building.costs;
         } else {
             currentPlayer(state.game).donuts = currentPlayer(state.game).donuts.filter(donut => donut.type !== building.type);
-            currentPlayer(state.game).s.push(action.payload.building);
+            currentPlayer(state.game).activeDonuts.push(action.payload.building);
         }
     }
 }
