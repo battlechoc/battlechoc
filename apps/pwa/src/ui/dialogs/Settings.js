@@ -21,69 +21,69 @@ import { Edit, AccountCircle } from '@material-ui/icons';
 import BattlechocDialog from './BattlechocDialog';
 
 const useStyles = makeStyles(theme => ({
-    userReport: {
-      margin: '20px 0 10px 0'
-    },
-    username: {
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      userSelect: 'none',
-      fontSize: '5vw',
-      color: 'rgba(9, 63, 70, 0.8)',
-      fontWeight: 'bolder',
-      padding: '2vh'
-    },
-    editUsername: {
-      marginLeft: '5vw'
-    },
-    accountCircle: {
-      height: '5vw',
-      width: '5vw',
-      marginLeft: '1vw'
-    },
-    logoutButton: {
-      color: '#f3f7df',
-      borderColor: '#f3f7df'
-    },
-    menuButton: {
-      cursor: 'pointer',
-      padding: '12px',
-      backgroundColor: '#5b2f19',
-      boxShadow: '1px 1px 6px #000',
-      fontSize: '1rem',
-      marginTop: '4vh',
-      textAlign: 'center',
-      color: '#f3f7df',
-      userSelect: 'none',
-      textShadow: '1px 1px 3px #000',
-      textTransform: 'uppercase'
-    },
-    inactiveButton: {
-      backgroundColor: '#555 !important',
-    },
-    dialogContent: {
-      [theme.breakpoints.up('sm')]: {
-        width: '70vw',
-        margin: '0 auto'
-      }      
-    },
-    reportInformation: {
-      marginTop: '4vh',
-      color: theme.palette.primary.main
-    },
-    primaryColor: {
-      color: theme.palette.primary.main
+  userReport: {
+    margin: '20px 0 10px 0'
+  },
+  username: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    userSelect: 'none',
+    fontSize: '5vw',
+    color: 'rgba(9, 63, 70, 0.8)',
+    fontWeight: 'bolder',
+    padding: '2vh'
+  },
+  editUsername: {
+    marginLeft: '5vw'
+  },
+  accountCircle: {
+    height: '5vw',
+    width: '5vw',
+    marginLeft: '1vw'
+  },
+  logoutButton: {
+    color: '#f3f7df',
+    borderColor: '#f3f7df'
+  },
+  menuButton: {
+    cursor: 'pointer',
+    padding: '12px',
+    backgroundColor: '#5b2f19',
+    boxShadow: '1px 1px 6px #000',
+    fontSize: '1rem',
+    marginTop: '4vh',
+    textAlign: 'center',
+    color: '#f3f7df',
+    userSelect: 'none',
+    textShadow: '1px 1px 3px #000',
+    textTransform: 'uppercase'
+  },
+  inactiveButton: {
+    backgroundColor: '#555 !important',
+  },
+  dialogContent: {
+    [theme.breakpoints.up('sm')]: {
+      width: '70vw',
+      margin: '0 auto'
     }
+  },
+  reportInformation: {
+    marginTop: '4vh',
+    color: theme.palette.primary.main
+  },
+  primaryColor: {
+    color: theme.palette.primary.main
+  }
 }));
 
-function useForceUpdate(){
+function useForceUpdate() {
   const [value, setValue] = useState(0);
   console.debug(value);
   return () => setValue(value => ++value);
 }
 
-const Settings = props =>  {
+const Settings = props => {
   const [showErrorReport, setShowErrorReport] = useState(false);
   const [withDeviceInformation, setWithDeviceInformation] = useState(false);
   const [showAttentionText, setShowAttentionText] = useState(false);
@@ -96,14 +96,14 @@ const Settings = props =>  {
 
   const setPlayerName = playerName => {
     ServerRequest('post', '/user/username', { username: playerName })
-    .then(response => {        
-      props.updatePlayerStats({ username: playerName });
-      OfflineStore.playerStore.get(tr.stats).then(playerStats => {
-        playerStats.username = playerName;
-        OfflineStore.playerStore.set('stats', playerStats);
-        setEditPlayerName(false);
-      })
-    }).catch(error => console.warn(error));
+      .then(response => {
+        props.updatePlayerStats({ username: playerName });
+        OfflineStore.playerStore.get('stats').then(playerStats => {
+          playerStats.username = playerName;
+          OfflineStore.playerStore.set('stats', playerStats);
+          setEditPlayerName(false);
+        })
+      }).catch(error => console.warn(error));
   }
 
   function closeDialog() {
@@ -118,10 +118,10 @@ const Settings = props =>  {
     <div>
       <BattlechocDialog
         open={showErrorReport}
-        close={() => { 
+        close={() => {
           setAdditionalReportMessage('');
           setWithDeviceInformation(false);
-          setShowErrorReport(false) 
+          setShowErrorReport(false)
         }}
         title={t(tr.REPORT_PROBLEM)}>
         <div className={classes.dialogContent}>
@@ -137,7 +137,7 @@ const Settings = props =>  {
                 shrink: true
               }}
               className={`${classes.userReport}`}
-              inputProps={{className: classes.primaryColor }}
+              inputProps={{ className: classes.primaryColor }}
               variant="outlined"
               onChange={event => setAdditionalReportMessage(event.target.value)}
             />
@@ -171,15 +171,15 @@ const Settings = props =>  {
                   reported: (new Date()).getTime()
                 };
                 await ServerRequest('post', '/debugging/gamestate', { report: report });
-                props.showQuickMessage({ 
-                  text: t(tr.SUCCESSFULLY_SENDING_PROBLEM_REPORT), 
-                  variant: 'success' 
+                props.showQuickMessage({
+                  text: t(tr.SUCCESSFULLY_SENDING_PROBLEM_REPORT),
+                  variant: 'success'
                 });
-              } catch(error) {
+              } catch (error) {
                 logger.warn(error);
-                props.showQuickMessage({ 
-                  text: t(tr.ERROR_SENDING_PROBLEM_REPORT), 
-                  variant: 'error' 
+                props.showQuickMessage({
+                  text: t(tr.ERROR_SENDING_PROBLEM_REPORT),
+                  variant: 'error'
                 });
               } finally {
                 setAdditionalReportMessage('')
@@ -189,7 +189,7 @@ const Settings = props =>  {
                 props.close();
               }
             }
-          }}>{sendingReport ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t(tr.REPORT_PROBLEM)}</div>
+          }}>{sendingReport ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem' }} size={18} /> : t(tr.REPORT_PROBLEM)}</div>
           <Typography className={classes.reportInformation}>{t(tr.REPORT_INFORMATION)}</Typography>
         </div>
       </BattlechocDialog>
@@ -199,16 +199,16 @@ const Settings = props =>  {
         close={closeDialog}
         title={t(tr.SETTINGS)}>
         <div className={classes.dialogContent}>
-          { 
+          {
             typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous' ?
               editPlayerName ? <PlayerNameInput setPlayerName={setPlayerName} current={props.playerInfos.stats.username} /> :
-              <div className={classes.username}>
-                <AccountCircle className={classes.accountCircle} /> { props.playerInfos.stats.username }
-                <Fab onClick={() => setEditPlayerName(true)} className={classes.editUsername} size="small" color="primary"><Edit /></Fab>
-              </div> : null
+                <div className={classes.username}>
+                  <AccountCircle className={classes.accountCircle} /> {props.playerInfos.stats.username}
+                  <Fab onClick={() => setEditPlayerName(true)} className={classes.editUsername} size="small" color="primary"><Edit /></Fab>
+                </div> : null
           }
-          <FormControl style={{width: '100%'}}>
-            <InputLabel htmlFor="lang-selection" style={{color: 'rgb(48, 86, 91)'}}>{t(tr.LANGUAGE)}</InputLabel>
+          <FormControl style={{ width: '100%' }}>
+            <InputLabel htmlFor="lang-selection" style={{ color: 'rgb(48, 86, 91)' }}>{t(tr.LANGUAGE)}</InputLabel>
             <Select
               native
               value={getCurrentLanguage()}
@@ -242,17 +242,17 @@ const Settings = props =>  {
               }
             })()}
 
-            { typeof props.game !== 'undefined' && !props.tutorial ?
-                <div className={classes.menuButton} onClick={() => {
-                  Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                  if (showAttentionText) {
-                    props.surrender();
-                    props.close();
-                    setShowAttentionText(false);
-                  } else {
-                    setShowAttentionText(true);
-                  }
-                }}>{t(tr.SETTINGS_QUIT)}</div> : null
+            {typeof props.game !== 'undefined' && !props.tutorial ?
+              <div className={classes.menuButton} onClick={() => {
+                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                if (showAttentionText) {
+                  props.surrender();
+                  props.close();
+                  setShowAttentionText(false);
+                } else {
+                  setShowAttentionText(true);
+                }
+              }}>{t(tr.SETTINGS_QUIT)}</div> : null
             }
             {
               showAttentionText && typeof props.game !== 'undefined' ?
@@ -281,7 +281,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = {
   updatePlayerStats,
-  hideQuickMessage, 
+  hideQuickMessage,
   showQuickMessage
 };
 

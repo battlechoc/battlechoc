@@ -1,4 +1,5 @@
-{
+/* eslint-disable no-template-curly-in-string */
+module.exports = {
     "SIGNINORUP": "サインイン",
     "NEW_GAME": "新しいゲーム",
     "MAIN_MENU_SINGLEPLAYER": "シングルプレーヤー",
@@ -193,9 +194,8 @@
     "TRY_TO_SHOW_PLAYER_ACCOUNT": "プレーヤーアカウントを読み込んでいます。しばらくお待ちください",
     "NOTIFICATION_PERMISSION_INFO": "誰かがあなたに挑戦したり、対戦相手が彼のターンを終えて、あなたがプレーする準備ができている場合、私たちはあなたにあなたに通知する許可を求めます。",
     "NO_ACCOUNT_INFO": "現在ログインしていません。設定メニューにログインするか、メインページで新しいゲームを開始して新しいアカウントを作成します",
-    "WARNING_PLAYER_NOT_FOUND_PRE_PART": "",
-    "WARNING_PLAYER_NOT_FOUND_POST_PART": " 見つかりません",
-    "SURRENDER_GAME_TEXT_PART": "本当にゲームを放棄したいですか ",
+    "WARNING_PLAYER_NOT_FOUND": "{{name}} 見つかりません",
+    "SURRENDER_GAME_TEXT": "本当にゲームを放棄したいですか {{name}}",
     "UPDATE_LEVEL_FAILED_UPGRADE": "アップグレードを実行できませんでした。インターネット接続を確認してください。",
     "UPDATE_LEVEL_FAILED_DOWNGRADE": "ダウングレードを実行することはできませんでした。インターネット接続を確認してください。",
     "ATTRIBUTE_NAME_hp": "健康ポイント",
@@ -210,12 +210,9 @@
     "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "チョコレートコインをもっと集める",
     "NOTIFICATION_UNLOCK_BUNNY_TITLE": "チョコレートが来ています",
     "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "最後の障壁",
-    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_PRE_PART": "収集する必要があります",
-    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_POST_PART": "イースターバニー、クリスマスファコトリー、ホットチョコレートバリスタのロックを解除するコイン",
-    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_PRE_PART": "収集する必要があります",
-    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_POST_PART": "チョコレートファウンテンとフルーツキャノンのロックを解除するためのコインを増やす",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_PRE_PART": "ドーナツトラップ、Muliplayer、およびChoclabは収集後にあなたのものになります",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_POST_PART": "より多くのコイン",
+    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE": "収集する必要があります {{coins}} イースターバニー、クリスマスファコトリー、ホットチョコレートバリスタのロックを解除するコイン",
+    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "収集する必要があります {{coins}} チョコレートファウンテンとフルーツキャノンのロックを解除するためのコインを増やす",
+    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "ドーナツトラップ、Muliplayer、およびChoclabは収集後にあなたのものになります {{coins}} より多くのコイン",
     "UNLOCK_CONGRATULATIONS_CHOCLAB": "おめでとう、Choclabのロックを解除しました。これは、エンティティをアップグレードする場所です！",
     "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "マルチプレイヤーモードのロックを解除しました。世界中の他のプレイヤーと対戦し、ハイスコアのトップに到達してください！"
 }

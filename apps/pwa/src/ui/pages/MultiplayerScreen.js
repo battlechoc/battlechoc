@@ -271,7 +271,7 @@ const MultiplayerScreen = props => {
                 close={() => setShowSurrenderDialog(false)}
                 title={t(tr.SURRENDER_GAME)}>
                 <div className="surrenderDialog">
-                    <p>{t('SURRENDER_GAME_TEXT', surrenderOpponentName)}</p>
+                    <p>{t(tr.SURRENDER_GAME_TEXT, surrenderOpponentName)}</p>
                     <div className="menuButton" onClick={() => {
                         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                         setShowSurrenderDialog(false);
@@ -412,7 +412,7 @@ const MultiplayerScreen = props => {
                 </div></div> : 
                 <div className="no-sessions-info">
                     <h4>{t(tr.MULTIPLAYER_INFO_HEADER)}</h4>
-                    <p>{t('MULTIPLAYER_INFO_HEADER2')}</p>
+                    <p>{t(tr.MULTIPLAYER_INFO_HEADER2)}</p>
                     <ul>
                         <li><Casino />{t(tr.MULTIPLAYER_INFO_CASINO)}</li>
                         <li><People />{t(tr.MULTIPLAYER_INFO_FRIENDS)}</li>

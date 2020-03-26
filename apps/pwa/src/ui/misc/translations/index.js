@@ -1,3 +1,1 @@
-export {default as en} from './en';
-export {default as de} from './de';
-export {default as jp} from './jp';
+export {translations as translation, referenceKeys as keys} from './Translations';

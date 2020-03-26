@@ -337,6 +337,8 @@ class Scene extends Component {
                 this.highlightLayer.removeMesh(child);
             }
         });
+
+        this.scene.render();
     }
 
     highlightDonuts = (highlight = true) => {
