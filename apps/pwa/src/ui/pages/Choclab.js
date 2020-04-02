@@ -288,7 +288,7 @@ const Choclab = props => {
             })
             .catch(error => {
                 logger.warn(error);
-                props.showQuickMessage({ text: t('UPDATE_LEVEL_FAILED', upgrade) });
+                props.showQuickMessage({ text: t(tr.UPDATE_LEVEL_FAILED, upgrade) });
             })
             .finally(() => setUpdateRunning(false));
         }
@@ -307,7 +307,7 @@ const Choclab = props => {
                 <MeshPreview selectedEntity={selectedEntity} />
 
                 <div className={classes.attributes}>
-                    <h3>{t('TOOLTIP_BUILDING_TITLE', entityType)}</h3>
+                    <h3>{t(tr.TOOLTIP_BUILDING_TITLE, entityType)}</h3>
                     { nextLevelDescription }
                     { selectedEntity ? Object.keys(selectedEntity)
                         .filter(field => ['hp','area','buildingsPerTurn','cacaoPerTurn','attack','donutProbability','donutTypes'].includes(field)).map(attribute => {
@@ -321,7 +321,7 @@ const Choclab = props => {
 
                         return (
                             <div className={classes.progress} key={attribute}>
-                                <div className={classes.label}><span>{ t('ATTRIBUTE_NAME', attribute) }</span>{attributeDescription}</div>
+                                <div className={classes.label}><span>{ t(tr.ATTRIBUTE_NAME, attribute) }</span>{attributeDescription}</div>
                                 <div>
                                     <div className={classes[attribute]} style={{ width: percentage + '%'}}></div>
                                     { upgradePossible ? <div className={classes[attribute + 'Forecast']} style={{ width: percentageForcast + '%'}}></div> : null }

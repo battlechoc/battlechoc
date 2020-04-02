@@ -1,5 +1,5 @@
+/* eslint-disable no-template-curly-in-string */
 module.exports = {
-    "TESTTESTTEST": "I am a new string",
     "SIGNINORUP": "Sign in",
     "NEW_GAME": "New Game",
     "MAIN_MENU_SINGLEPLAYER": "Singleplayer",
@@ -49,7 +49,7 @@ module.exports = {
     "INVITATION": "Join my battlechoc multiplayer game!",
     "TOOLTIP_INITIAL_TURN_TITLE": "Initial Turn",
     "TOOLTIP_INITIAL_TURN_MESSAGE": "In the first round you can choose a playing field or the first move",
-    "TOOLTIP_INITIAL_TURN_OPPONENT_PART": " can now select a game field.",
+    "TOOLTIP_INITIAL_TURN_OPPONENT": " can now select a game field.",
     "TOOLTIP_BUILDING_TITLE_CREAM": "Cream",
     "TOOLTIP_BUILDING_TITLE_FACTORY_EXTENSION": "Factory extension",
     "TOOLTIP_BUILDING_TITLE_FACTORY": "Factory",
@@ -194,9 +194,8 @@ module.exports = {
     "TRY_TO_SHOW_PLAYER_ACCOUNT": "Loading player account. Please wait a moment.",
     "NOTIFICATION_PERMISSION_INFO": "We will now request your permission to inform you if someone challenges you, or an opponent has finished his turn and you are up to play",
     "NO_ACCOUNT_INFO": "You are currently not logged in. Use the settings icon to login or just start a new game on the main page for creating a new one",
-    "WARNING_PLAYER_NOT_FOUND_PRE_PART": "Player ",
-    "WARNING_PLAYER_NOT_FOUND_POST_PART": " not found",
-    "SURRENDER_GAME_TEXT_PART": "Do you really want to surrender the game against ",
+    "WARNING_PLAYER_NOT_FOUND": "Player {{name}} not found",
+    "SURRENDER_GAME_TEXT": "Do you really want to surrender the game against {{name}}?",
     "UPDATE_LEVEL_FAILED_UPGRADE": "It was not possible to perform the upgrade. Check your internet connection.",
     "UPDATE_LEVEL_FAILED_DOWNGRADE": "It was not possible to perform the downgrade. Check your internet connection.",
     "ATTRIBUTE_NAME_hp": "HP",
@@ -211,12 +210,9 @@ module.exports = {
     "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "Collect more chocolate coins",
     "NOTIFICATION_UNLOCK_BUNNY_TITLE": "Chocolate is coming",
     "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "The last barrier",
-    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_PRE_PART": "You need to collect",
-    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE_POST_PART": "more coins to unlock the Easter Bunny, Xmas Facotry and Hot Chocolate Ballista",
-    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_PRE_PART": "You need to collect",
-    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE_POST_PART": "more coins to unlock the Chocolate Fountain and the Fruit Cannon",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_PRE_PART": "Donut Traps, Muliplayer and the Choclab will be yours after collecting",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE_POST_PART": "more coins",
+    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE": "You need to collect {{coins}} more coins to unlock the Easter Bunny, Xmas Facotry and Hot Chocolate Ballista",
+    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "You need to collect {{coins}} more coins to unlock the Chocolate Fountain and the Fruit Cannon",
+    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Donut Traps, Muliplayer and the Choclab will be yours after collecting {{coins}} more coins",
     "UNLOCK_CONGRATULATIONS_CHOCLAB": "Congratulations you've unlocked the Choclab. This is the place for upgrading your entities!",
     "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "You have unlocked the multiplayer mode. Play against other players worldwide and reach the top of the highscore!"
 }

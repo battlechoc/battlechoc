@@ -63,7 +63,7 @@ const Hud = props => {
                 } catch (error) {
                     if (error.response) {
                         if (error.response.status === 404) {
-                            showQuickMessage({ text: t('WARNING_PLAYER_NOT_FOUND', challengedPlayer) });
+                            showQuickMessage({ text: t(tr.WARNING_PLAYER_NOT_FOUND, challengedPlayer) });
                         } else {
                             logger.warn(error, error.response.toString());
                         }

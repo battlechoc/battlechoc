@@ -39,20 +39,18 @@ function translate(key) {
         console.error("invalid translation key given");
         return '';
     } else {
-        const currentTranslation = translations[translation.currentLanguage];
+        const currentTranslation = translations.translation[translation.currentLanguage];
         if (typeof currentTranslation === 'undefined') {
             console.warn("translations data for current language " + translation.currentLanguage + " undefined. this is weired.");
             return '';
         } else {
-            if (typeof currentTranslation[key] === 'undefined') {
-                console.warn("invalid translation key " + key + " given for current language " + translation.currentLanguage);
-                return '';
+            if (translations.translation.isPredicate(key)) {
+                return translations.translation.callPredicate(translation.currentLanguage, key, ...([].slice.call(arguments, 1)));
+            } else if (typeof currentTranslation[key] === 'string') {
+                return currentTranslation[key];
             } else {
-                if (typeof currentTranslation[key] === 'function') {
-                    return currentTranslation[key](...([].slice.call(arguments, 1)));
-                } else {
-                    return currentTranslation[key];
-                }
+                console.warn("Undefined text key in current translation: {} {}", translation.currentLanguage, key);
+                return '';
             }
         }
     }
