@@ -390,27 +390,31 @@ class App extends Component {
     }
 
     prepareNewGame = (resumeGame, joinMultiplayer, multiplayerGameState) => {
+        const isAndroidApp = typeof window.Android !== 'undefined';
+        const isAndroidDevice = /Android/i.test(navigator.userAgent);
+        const isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
+        const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
+        
+        if (isAndroidApp) {
+            window.Android.setScreenOrientationLandscape();
+        } else if (!isFullscreen && !isiOS) {
+            if (typeof document.documentElement.requestFullscreen === 'function') {
+                document.documentElement.requestFullscreen().then(() => {
+                    if (isAndroidDevice) {
+                        window.screen.orientation.lock('landscape').catch(error => logger.info('Unable to lock orientation to landscape'));
+                    }
+                }).catch(error => {
+                    logger.warn(error.name + ': ' + error.message);
+                });
+            }
+        }
+
         if (this.props.playerInfos.stats.username === 'Chocnonymous') {
             this.startTutorial();
         } else {
             Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
             gameplayLog.clear();
-
-            let isAndroid = /Android/i.test(navigator.userAgent);
-            let isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-            let isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-            if (!isFullscreen && !isiOS) {
-                if (typeof document.documentElement.requestFullscreen === 'function') {
-                    document.documentElement.requestFullscreen().then(() => {
-                        if (isAndroid) {
-                            window.screen.orientation.lock('landscape').catch(error => logger.info('Unable to lock orientation to landscape'));
-                        }
-                    }).catch(error => {
-                        logger.warn(error.name + ': ' + error.message);
-                    });
-                }
-            }
 
             if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
                 this.props.joinGame(multiplayerGameState).then(() => {
@@ -478,6 +482,16 @@ class App extends Component {
             setTimeout(() => {
                 this.props.finishGame();
                 this.props.resetUi();
+
+                const isAndroidApp = typeof window.Android !== 'undefined';
+                const isAndroidDevice = /Android/i.test(navigator.userAgent);
+                
+                if (isAndroidApp) {
+                    window.Android.setScreenOrientationAny();
+                } else if (isAndroidDevice) {
+                    window.screen.orientation.unlock().catch(error => logger.info('Unable to unlock orientation'));
+                }
+
                 multiplayer.reset();
                 this.scene.clear();
 

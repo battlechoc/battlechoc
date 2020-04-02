@@ -41,11 +41,8 @@ const Actionbar = props => {
 
     const toggleFullscreen = () => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        document.documentElement.requestFullscreen().then(() => {
-            window.screen.orientation.lock('landscape').catch(_ => logger.info('Unable to lock orientation to landscape'));
-        });
+        document.documentElement.requestFullscreen().catch(() => logger.info('fullscreen request failed'));
     }
-
      
     const buttons = []
 
