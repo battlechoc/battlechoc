@@ -21,7 +21,8 @@ const Actionbar = props => {
             const isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
             const isPWA = window.matchMedia('(display-mode: fullscreen)').matches && /iPad|iPhone|iPod|Android/.test(userAgent);
             const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-            setActiveFullscreenButton(!isFullscreen && !isiOS && !isPWA);
+            const isAndroidApp = typeof window.Android !== 'undefined';
+            setActiveFullscreenButton(!isFullscreen && !isiOS && !isPWA && !isAndroidApp);
         }
 
         document.addEventListener("fullscreenchange", fullscreenchange, false);
