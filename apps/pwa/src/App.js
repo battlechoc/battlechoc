@@ -489,7 +489,7 @@ class App extends Component {
                 if (isAndroidApp) {
                     window.Android.setScreenOrientationAny();
                 } else if (isAndroidDevice) {
-                    window.screen.orientation.unlock().catch(error => logger.info('Unable to unlock orientation'));
+                    window.screen.orientation.unlock();
                 }
 
                 multiplayer.reset();
