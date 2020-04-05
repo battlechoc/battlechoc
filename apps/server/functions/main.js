@@ -88,6 +88,14 @@ app.use(async (req, res, next) => {
         req.battlechocPwaDate = req.headers['battlechoc-pwa-date'];
     }
 
+    if (!req.headers['battlechoc-android-version']) {
+        req.battlechocAndroidVersion = 0
+    } else {
+        req.battlechocAndroidVersion = req.headers['battlechoc-android-version'];
+        console.log('Incomming request from android app');
+        console.log('Android app version of this request is ' + req.battlechocAndroidVersion);
+    }
+
     let authorization = req.headers.authorization.split(' ');
     if (authorization.length === 2) {
         try {
@@ -163,14 +171,14 @@ app.post('/debugging/gamestate', async (req, res) => {
 });
 
 const getPlayerMessagingPermissionTokens = async (userId) => {
-    let tokens = [];
+    const tokens = [];
     try {
-        const tokenQueryResult = await dbPool.query("SELECT token FROM permissions WHERE player = $1 AND type = $2", [userId, 'messaging']);
-        tokenQueryResult.rows.forEach(row => {
-            if (typeof row.token !== 'undefined') {
-                tokens.push(row.token);
+        const tokenQueryResult = await dbPool.query(`SELECT token FROM permissions WHERE player = ${userId}`);
+        for (const permission of tokenQueryResult.rows) {
+            if (typeof permission.token !== 'undefined') {
+                tokens.push(permission);
             }
-        });
+        }
     } catch (err) {
         console.warn('Cannot fetch tokens for player ', userId, err);
     }
@@ -414,7 +422,7 @@ app.post('/user/challenge', async (req, res) => {
         res.status(404).json({ error: 'OPPONENT "' + req.body.opponent + '" DOES NOT EXIST' });
     } else {
         const opponent = await createPlayerStatsObject(opponentResult.rows[0], true);
-        let language = opponent.language;
+        let language = opponentResult.rows[0].language;
         if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
             language = t.getDefaultLanguage();
         }
@@ -456,21 +464,33 @@ app.post('/user/challenge', async (req, res) => {
                     await dbPool.query('INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, turns) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
                         databaseSession.id, sessionEventQueue.players[0].id, sessionEventQueue.players[1].id, initialGameState, new Date(), new Date(), 0]);
                     
-                    const tokens = await getPlayerMessagingPermissionTokens(req.user.uid);
-                    tokens.forEach((token) => {
-                        const payload = {
-                            'notification': {
-                                'title': player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
-                                'body': t.t[language].NOTIFICATION_CHALLENGE_BODY,
-                                'click_action': 'https://battlechoc.com/session/' + databaseSession.id,
-                                'image': 'https://battlechoc.com/icon-144x144.png'
-                            },
-                            'to': token
+                    const tokens = await getPlayerMessagingPermissionTokens(opponent.id);
+                    for (const permission of tokens) {
+                        const payload = {}
+                        payload.to = permission.token;
+
+                        if (permission.type === 'android-messaging') {
+                            payload.data = {
+                                title: player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
+                                text: t.t[language].NOTIFICATION_CHALLENGE_BODY,
+                                session: databaseSession.id
+                            }
+                        } else {
+                            payload.notification = {
+                                title: player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
+                                body: t.t[language].NOTIFICATION_CHALLENGE_BODY,
+                                click_action: 'https://battlechoc.com/session/' + databaseSession.id
+                            }
                         }
-                        axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
-                            .then(() => console.log('Successfully send notification'))
-                            .catch(error => console.warn('PLAYER NOTIFICATION FAILED' + error.toString()));
-                    });
+
+                        try {
+                            await axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
+                            console.log('Successfully send notification');
+                        } catch (error) {
+                            console.warn('Player notification failed' + error.toString());
+                        }
+                    }
+                    
                     res.json({ sessionId: databaseSession.id });
                 } catch (error) {
                     console.log(error.toString())
@@ -708,27 +728,46 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                 let updatedPlayerId = session.game.currentPlayerIndex;
                 if (playerId !== updatedPlayerId) {
                     const opponent = session.game.players[playerId].name;
-                    const tokens = await getPlayerMessagingPermissionTokens(session.game.players[updatedPlayerId].id);
-                    let expiredTokens = [];
-                    await Promise.all(tokens.map(async (token) => {
-                        const payload = {
-                            'notification': {
-                                'title': opponent + ' finished the turn @battlechoc',
-                                'body': 'Let\'s go. It\'s your move!',
-                                'click_action': 'https://battlechoc.com/session/' + req.body.sessionId,
-                                'image': 'https://battlechoc.com/icon-144x144.png'
-                            },
-                            'to': token
+                    const permissions = await getPlayerMessagingPermissionTokens(session.game.players[updatedPlayerId].id);
+                    const expiredTokens = [];
+
+                    const opponentResult = await getPlayerFromName(opponent);
+                    if (opponentResult.rows.length === 0) {
+                        return res.status(404).json({ error: 'OPPONENT "' + opponent + '" DOES NOT EXIST' });
+                    }
+
+                    let language = opponentResult.rows[0].language;
+                    if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
+                        language = t.getDefaultLanguage();
+                    }
+
+                    await Promise.all(permissions.map(async (permission) => {
+                        const payload = {}
+                        payload.to = permission.token;
+
+                        if (permission.type === 'android-messaging') {
+                            payload.data = {
+                                title: opponent + t.t[language].NOTIFICATION_TURN_FINISHED_TITLE,
+                                text: t.t[language].NOTIFICATION_TURN_FINISHED_BODY,
+                                session: req.body.sessionId,
+                                reason: 'OPPONENT_FINISHED_TURN'
+                            }
+                        } else {
+                            payload.notification = {
+                                title: opponent + t.t[language].NOTIFICATION_TURN_FINISHED_TITLE,
+                                body: t.t[language].NOTIFICATION_TURN_FINISHED_BODY,
+                                click_action: 'https://battlechoc.com/session/' + req.body.sessionId
+                            }
                         }
 
                         try {
                             const response = await axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
                             if (response.data.failure === 1 && typeof response.data.results !== 'undefined' && response.data.results.length > 0 && response.data.results[0].error === 'NotRegistered') {
-                                console.log('Cleanup expired user registration token ' + token);
-                                expiredTokens.push(token);
+                                console.log('Cleanup expired user registration token ' + permission.token);
+                                expiredTokens.push(permission.token);
                             } else {
                                 console.log('Successfully send notification');
-                                console.log(`Token ${token} is still valid`);
+                                console.log(`Token ${permission.token} is still valid`);
                             }
                         } catch (error) {
                             console.warn('PLAYER NOTIFICATION FAILED' + error.toString());
@@ -739,7 +778,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                         console.log('No token update needed. All tokens are still valid')
                     } else {
                         await Promise.all(expiredTokens.map(async (expiredToken) => {
-                            await dbPool.query("DELETE FROM permissions WHERE token = $1 AND type = $2 AND player = $3", [expiredToken, 'messaging', session.game.players[updatedPlayerId].id]);
+                            await dbPool.query("DELETE FROM permissions WHERE token = $1 AND player = $2", [expiredToken, session.game.players[updatedPlayerId].id]);
                         }));
                         console.log('Updating user tokens because some of them were invalid. Deleted tokens: ' + expiredTokens.toString());
                     }
@@ -1050,9 +1089,14 @@ app.get('/random/opponent', async (req, res) => {
 
 app.post('/user/permissions', async (req, res) => {
     try {
-        const existingTokenResult = await dbPool.query("SELECT * FROM permissions WHERE player = $1", [req.user.uid, req.body.token]);
+        const existingTokenResult = await dbPool.query("SELECT * FROM permissions WHERE player = $1 and token = $2", [req.user.uid, req.body.token]);
         if (existingTokenResult.rows.length === 0) {
-            await dbPool.query("INSERT INTO permissions(player, token, type) VALUES ($1, $2, $3)", [req.user.uid, req.body.token, 'messaging']);
+            let tokenType = 'messaging';
+            if (req.battlechocAndroidVersion > 0) {
+                tokenType = 'android-messaging';
+            }
+            
+            await dbPool.query("INSERT INTO permissions(player, token, type) VALUES ($1, $2, $3)", [req.user.uid, req.body.token, tokenType]);
             req.status(200).end();
         } else {
             req.status(400).json({ error: 'WONT INSERT DUPLICATE TOKEN ENTRIES' });
