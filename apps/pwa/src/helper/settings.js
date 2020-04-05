@@ -14,8 +14,7 @@ const instance = axios.create({
 
 const ServerRequest = async (method, url, body) => {
     if (firebase.auth().currentUser) {
-        let token = await firebase.auth().currentUser.getIdToken(true);
-
+        const token = await firebase.auth().currentUser.getIdToken(true);
         let date = 'LOCAL_DATETIME';
         let version = 'LOCAL_VERSION';
 
@@ -27,6 +26,14 @@ const ServerRequest = async (method, url, body) => {
 
         if (version.startsWith('LOCAL')) {
             version = 'latest-dev'
+        }
+
+        if (typeof window.Android !== 'undefined' && typeof window.Android.getAndroidVersionCode === 'function') {
+            const androidAppVersion = window.Android.getAndroidVersionCode();
+            if (androidAppVersion > 10) {
+                window.Android.setFirebaseUserToken(token);
+                window.Android.setPwaVersion(version);
+            }
         }
 
         let config = { headers: { 'Authorization': `Bearer ${token}`, 'battlechoc-pwa-version': version, 'battlechoc-pwa-date': date } };
