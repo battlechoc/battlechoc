@@ -1097,9 +1097,9 @@ app.post('/user/permissions', async (req, res) => {
             }
             
             await dbPool.query("INSERT INTO permissions(player, token, type) VALUES ($1, $2, $3)", [req.user.uid, req.body.token, tokenType]);
-            req.status(200).end();
+            res.status(200).end();
         } else {
-            req.status(400).json({ error: 'WONT INSERT DUPLICATE TOKEN ENTRIES' });
+            res.status(400).json({ error: 'WONT INSERT DUPLICATE TOKEN ENTRIES' });
         }
     } catch (err) {
         console.warn('Could not add new permission token for player.', err);
