@@ -5,6 +5,43 @@ import * as https from 'https';
 import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
 
 const baseUrl = 'https://europe-west2-battlechoc.cloudfunctions.net/api';
+let date = 'LOCAL_DATETIME';
+let version = 'LOCAL_VERSION';
+
+if (date.startsWith('LOCAL')) {
+    date = new Date().getTime();
+} else {
+    date = new Date(date).getTime();
+}
+
+if (version.startsWith('LOCAL')) {
+    version = 'latest-dev'
+}
+
+const setAndroidDefaults = async () => {
+    if (firebase.auth().currentUser) {
+        const token = await firebase.auth().currentUser.getIdToken(true);
+        if (typeof window.Android !== 'undefined' && typeof window.Android.getAndroidVersionCode === 'function') {
+            const androidAppVersion = window.Android.getAndroidVersionCode();
+            if (androidAppVersion > 10) {
+                window.Android.setFirebaseUserToken(token);
+                window.Android.setPwaVersion(version);
+            }
+        }
+    }
+}
+
+const generateNewAndroidMessagingToken = async () => {
+    if (firebase.auth().currentUser) {
+        const token = await firebase.auth().currentUser.getIdToken(true);
+        if (typeof window.Android !== 'undefined' && typeof window.Android.getAndroidVersionCode === 'function') {
+            const androidAppVersion = window.Android.getAndroidVersionCode();
+            if (androidAppVersion > 11) {
+                window.Android.setFirebaseUserToken(token, true);
+            }
+        }    
+    }
+}
 
 const instance = axios.create({
     baseURL: baseUrl,
@@ -15,27 +52,6 @@ const instance = axios.create({
 const ServerRequest = async (method, url, body) => {
     if (firebase.auth().currentUser) {
         const token = await firebase.auth().currentUser.getIdToken(true);
-        let date = 'LOCAL_DATETIME';
-        let version = 'LOCAL_VERSION';
-
-        if (date.startsWith('LOCAL')) {
-            date = new Date().getTime();
-        } else {
-            date = new Date(date).getTime();
-        }
-
-        if (version.startsWith('LOCAL')) {
-            version = 'latest-dev'
-        }
-
-        if (typeof window.Android !== 'undefined' && typeof window.Android.getAndroidVersionCode === 'function') {
-            const androidAppVersion = window.Android.getAndroidVersionCode();
-            if (androidAppVersion > 10) {
-                window.Android.setFirebaseUserToken(token);
-                window.Android.setPwaVersion(version);
-            }
-        }
-
         let config = { headers: { 'Authorization': `Bearer ${token}`, 'battlechoc-pwa-version': version, 'battlechoc-pwa-date': date } };
 
         if (method === 'post') {
@@ -54,4 +70,4 @@ const ServerRequest = async (method, url, body) => {
     }
 }
 
-export { ServerRequest };
+export { ServerRequest, generateNewAndroidMessagingToken, setAndroidDefaults };
