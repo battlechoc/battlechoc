@@ -89,11 +89,7 @@ class Multiplayer {
                 setAndroidDefaults();
                 signinOnAppStart = false;
             } else {
-                if (user.isAnonymous) {
-                    generateNewAndroidMessagingToken();
-                } else {
-                    generateNewAndroidMessagingToken();
-                }
+                generateNewAndroidMessagingToken();
             }
 
             try {
