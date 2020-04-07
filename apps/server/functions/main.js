@@ -173,7 +173,7 @@ app.post('/debugging/gamestate', async (req, res) => {
 const getPlayerMessagingPermissionTokens = async (userId) => {
     const tokens = [];
     try {
-        const tokenQueryResult = await dbPool.query(`SELECT token FROM permissions WHERE player = ${userId}`);
+        const tokenQueryResult = await dbPool.query("SELECT token FROM permissions WHERE player = $1", [userId]);
         for (const permission of tokenQueryResult.rows) {
             if (typeof permission.token !== 'undefined') {
                 tokens.push(permission);
