@@ -1047,6 +1047,7 @@ class Rules {
     }
 
     static isGameAction(action) {
+        console.log('isGameAction checks if action.typ includes gameplay', action.type);
         return action.type.includes('battlechoc/gameplay/');
     }
 
@@ -1179,6 +1180,8 @@ class Rules {
     }
 
     static isActionValid(game, action) {
+        console.log('isActionValid method checks if game action is valid', action);
+
         if (!(this.isGameAction(action))) {
             return new ActionValidationError(action);
         }
