@@ -312,6 +312,9 @@ const createPlayerStatsObject = async (playerRecord, withId = false, withTrackRe
         player.coins = playerRecord.coins;
         player.score = playerRecord.score;
         player.level = playerRecord.level;
+        player.tutorialStarted = playerRecord.tutorial_started;
+        player.tutorialSkipped = playerRecord.tutorial_skipped;
+        player.tutorialFinished = playerRecord.tutorial_finished;
         return player;
     } catch (err) {
         console.error('Could not create player stats object from given user id.', err);
@@ -420,7 +423,7 @@ app.post('/user/tutorial/started', async (req, res) => {
     try {
         const queryResult = await getPlayerFromId(req.user.uid);
         if (queryResult.rows.length === 1) {
-            await dbPool.query('UPDATE players SET tutorialStarted = $1, tutorialFinished = $2, tutorialSkipped = $3 WHERE id = $4', [true, false, false, req.user.uid]);
+            await dbPool.query('UPDATE players SET tutorial_started = $1, tutorial_finished = $2, tutorial_skipped = $3 WHERE id = $4', [true, false, false, req.user.uid]);
             res.status(200).end();
         } else {
             res.status(404).json({ error: 'PLAYER WITH UID "' + req.user.uid + '" DOES NOT EXIST' });
@@ -435,7 +438,7 @@ app.post('/user/tutorial/skipped', async (req, res) => {
     try {
         const queryResult = await getPlayerFromId(req.user.uid);
         if (queryResult.rows.length === 1) {
-            await dbPool.query('UPDATE players SET tutorialStarted = $1, tutorialFinished = $2, tutorialSkipped = $3 WHERE id = $4', [false, true, false, req.user.uid]);
+            await dbPool.query('UPDATE players SET tutorial_started = $1, tutorial_finished = $2, tutorial_skipped = $3 WHERE id = $4', [false, true, false, req.user.uid]);
             res.status(200).end();
         } else {
             res.status(404).json({ error: 'PLAYER WITH UID "' + req.user.uid + '" DOES NOT EXIST' });
@@ -450,7 +453,7 @@ app.post('/user/tutorial/finished', async (req, res) => {
     try {
         const queryResult = await getPlayerFromId(req.user.uid);
         if (queryResult.rows.length === 1) {
-            await dbPool.query('UPDATE players SET tutorialStarted = $1, tutorialFinished = $2, tutorialSkipped = $3 WHERE id = $4', [true, false, true, req.user.uid]);
+            await dbPool.query('UPDATE players SET tutorial_started = $1, tutorial_finished = $2, tutorial_skipped = $3 WHERE id = $4', [true, false, true, req.user.uid]);
             res.status(200).end();
         } else {
             res.status(404).json({ error: 'PLAYER WITH UID "' + req.user.uid + '" DOES NOT EXIST' });
