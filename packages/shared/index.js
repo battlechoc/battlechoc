@@ -96,6 +96,9 @@ const MultiplayerGameSessionState = Object.freeze({
 
 const EmptyPlayerStats = Object.freeze({
     username: 'Chocnonymous',
+    tutorialStarted: false,
+    tutorialSkipped: false,
+    tutorialFinished: false,
     coins: 0,
     score: 0,
     winnings: 0,
@@ -1047,7 +1050,6 @@ class Rules {
     }
 
     static isGameAction(action) {
-        console.log('isGameAction checks if action.typ includes gameplay', action.type);
         return action.type.includes('battlechoc/gameplay/');
     }
 
@@ -1180,8 +1182,6 @@ class Rules {
     }
 
     static isActionValid(game, action) {
-        console.log('isActionValid method checks if game action is valid', action);
-
         if (!(this.isGameAction(action))) {
             return new ActionValidationError(action);
         }
