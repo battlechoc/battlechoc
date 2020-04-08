@@ -416,6 +416,51 @@ const addEventQueue = async eventQueue => {
     }
 }
 
+app.post('/user/tutorial/started', async (req, res) => {
+    try {
+        const queryResult = await getPlayerFromId(req.user.uid);
+        if (queryResult.rows.length === 1) {
+            await dbPool.query('UPDATE players SET tutorialStarted = $1, tutorialFinished = $2, tutorialSkipped = $3 WHERE id = $4', [true, false, false, req.user.uid]);
+            res.status(200).end();
+        } else {
+            res.status(404).json({ error: 'PLAYER WITH UID "' + req.user.uid + '" DOES NOT EXIST' });
+        }
+    } catch (err) {
+        console.warn('Could not update tutorial started state of player.', err);
+        res.status(500).json({ error: err });
+    }
+});
+
+app.post('/user/tutorial/skipped', async (req, res) => {
+    try {
+        const queryResult = await getPlayerFromId(req.user.uid);
+        if (queryResult.rows.length === 1) {
+            await dbPool.query('UPDATE players SET tutorialStarted = $1, tutorialFinished = $2, tutorialSkipped = $3 WHERE id = $4', [false, true, false, req.user.uid]);
+            res.status(200).end();
+        } else {
+            res.status(404).json({ error: 'PLAYER WITH UID "' + req.user.uid + '" DOES NOT EXIST' });
+        }
+    } catch (err) {
+        console.warn('Could not update tutorial skipped state of player.', err);
+        res.status(500).json({ error: err });
+    }
+});
+
+app.post('/user/tutorial/finished', async (req, res) => {
+    try {
+        const queryResult = await getPlayerFromId(req.user.uid);
+        if (queryResult.rows.length === 1) {
+            await dbPool.query('UPDATE players SET tutorialStarted = $1, tutorialFinished = $2, tutorialSkipped = $3 WHERE id = $4', [true, false, true, req.user.uid]);
+            res.status(200).end();
+        } else {
+            res.status(404).json({ error: 'PLAYER WITH UID "' + req.user.uid + '" DOES NOT EXIST' });
+        }
+    } catch (err) {
+        console.warn('Could not update tutorial finished state of player.', err);
+        res.status(500).json({ error: err });
+    }
+});
+
 app.post('/user/challenge', async (req, res) => {
     const opponentResult = await getPlayerFromName(req.body.opponent);
     if (opponentResult.rows.length === 0) {
