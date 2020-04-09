@@ -438,7 +438,7 @@ app.post('/user/tutorial/skipped', async (req, res) => {
     try {
         const queryResult = await getPlayerFromId(req.user.uid);
         if (queryResult.rows.length === 1) {
-            await dbPool.query('UPDATE players SET tutorial_started = $1, tutorial_finished = $2, tutorial_skipped = $3 WHERE id = $4', [false, true, false, req.user.uid]);
+            await dbPool.query('UPDATE players SET tutorial_started = $1, tutorial_finished = $2, tutorial_skipped = $3 WHERE id = $4', [false, false, true, req.user.uid]);
             res.status(200).end();
         } else {
             res.status(404).json({ error: 'PLAYER WITH UID "' + req.user.uid + '" DOES NOT EXIST' });
@@ -453,7 +453,7 @@ app.post('/user/tutorial/finished', async (req, res) => {
     try {
         const queryResult = await getPlayerFromId(req.user.uid);
         if (queryResult.rows.length === 1) {
-            await dbPool.query('UPDATE players SET tutorial_started = $1, tutorial_finished = $2, tutorial_skipped = $3 WHERE id = $4', [true, false, true, req.user.uid]);
+            await dbPool.query('UPDATE players SET tutorial_started = $1, tutorial_finished = $2, tutorial_skipped = $3 WHERE id = $4', [true, true, false, req.user.uid]);
             res.status(200).end();
         } else {
             res.status(404).json({ error: 'PLAYER WITH UID "' + req.user.uid + '" DOES NOT EXIST' });
@@ -1309,14 +1309,19 @@ app.post('/user/merge', async (req, res) => {
 
 app.post('/user/trackrecords', async (req, res) => {
     try {
-        let recordsAdded = [];
-        await Promise.all(req.body.stats.map(async (record) => {
-            if ((await addTrackRecord(req.user.uid, record)) === true) {
-                recordsAdded.push(record);
-            }
-        }));
-        let playerStats = await updatePlayerStats(req.user.uid, recordsAdded);
-        res.status(200).json({ stats: playerStats });
+        if (typeof req.body.stats !== 'undefined') {
+            let recordsAdded = [];
+            console.log(typeof req.body.stats);
+            await Promise.all(req.body.stats.map(async (record) => {
+                if ((await addTrackRecord(req.user.uid, record)) === true) {
+                    recordsAdded.push(record);
+                }
+            }));
+            let playerStats = await updatePlayerStats(req.user.uid, recordsAdded);
+            res.status(200).json({ stats: playerStats });
+        } else {
+            res.status(400).json({ error: 'INVALID REQUEST PARAMETERS' })
+        }
     } catch (err) {
         console.warn('Could not add a new track records for player.', err);
         res.status(500).json({ error: 'COULD NOT ADD TRACK RECORDS' })
@@ -1326,7 +1331,12 @@ app.post('/user/trackrecords', async (req, res) => {
 app.get('/user', async (req, res) => {
     try {
         let playerStats = await fetchPlayerStats(req.user.uid);
-        res.status(200).json({ stats: playerStats });
+        if (typeof playerStats !== 'undefined') {
+            res.status(200).json({ stats: playerStats });
+        } else {
+            console.warn('Could not find stats for player ', req.user.uid);
+            res.status(404).json({ error: 'PLAYER NOT FOUND' });
+        }
     } catch (err) {
         console.warn('Could not retrieve player stats.', err);
         res.status(500).json({ error: 'COULD NOT FETCH PLAYER STATS' })

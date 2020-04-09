@@ -34,6 +34,9 @@ const setupDatabasePlayground = async () => {
         language text,
         id text NOT NULL,
         level json,
+        tutorial_started boolean,
+        tutorial_skipped boolean,
+        tutorial_finished boolean,
         CONSTRAINT players_pkey PRIMARY KEY (id)
     )`);
 
@@ -83,9 +86,9 @@ const setupDatabasePlayground = async () => {
         sessionEventQueue jsonb
     )`);
 
-    await pool.query('INSERT INTO players(id, name, coins, score, language, level) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', ['1337-1337-1337-1337', 'Basti', 100, 100, 'en', EmptyPlayerStats.level]);
-    await pool.query('INSERT INTO players(id, name, coins, score, language, level) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', ['rul0r-rul0r-rul0r-rul0r', 'Fabi', 120, 120, 'de', EmptyPlayerStats.level]);
-    await pool.query('INSERT INTO players(id, name, coins, score, language, level) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', ['h0gwarts-9-34', 'Hairy', 900, 125, 'ja', EmptyPlayerStats.level]);
+    await pool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', ['1337-1337-1337-1337', 'Basti', 100, 100, 'en', EmptyPlayerStats.level, false, false, false]);
+    await pool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', ['rul0r-rul0r-rul0r-rul0r', 'Fabi', 120, 120, 'de', EmptyPlayerStats.level, true, false, false]);
+    await pool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', ['h0gwarts-9-34', 'Hairy', 900, 125, 'ja', EmptyPlayerStats.level, true, false, true]);
     await pool.end();
 }
 

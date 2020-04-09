@@ -64,6 +64,63 @@ it('should add and find a friend and then remove the friend again and find nothi
     done();
 });
 
+it('should find a valid player', async done => {
+    const response = await request(app).get('/user').send({uid: '1337-1337-1337-1337'});
+    expect(response.status).toBe(200);
+    expect(response.body.stats.id).toBe('1337-1337-1337-1337');
+    expect(response.body.stats.tutorialStarted).toBe(false);
+    expect(response.body.stats.tutorialSkipped).toBe(false);
+    expect(response.body.stats.tutorialFinished).toBe(false);
+    expect(response.body.stats.username).toBe('Basti');
+    expect(response.body.stats.coins).toBe(100);
+    expect(response.body.stats.score).toBe(100);
+    expect(response.body.stats.trackRecord.length).toBe(0);
+    done();
+});
+
+it('should not find a valid player', async done => {
+    const response = await request(app).get('/user').send({uid: 'i-do-not-exist'});
+    expect(response.status).toBe(404);
+    expect(JSON.stringify(response.body)).toBe(JSON.stringify({ error: 'PLAYER NOT FOUND' }));
+    done();
+});
+
+it('should update tutorial started', async done => {
+    const response = await request(app).post('/user/tutorial/started').send({uid: '1337-1337-1337-1337'});
+    expect(response.status).toBe(200);
+
+    let player = (await dbPool.query("SELECT * FROM players WHERE id='1337-1337-1337-1337'")).rows[0];
+    expect(player.tutorial_started).toBe(true);
+    expect(player.tutorial_skipped).toBe(false);
+    expect(player.tutorial_finished).toBe(false);
+
+    done();
+});
+
+it('should update tutorial skipped', async done => {
+    const response = await request(app).post('/user/tutorial/skipped').send({uid: '1337-1337-1337-1337'});
+    expect(response.status).toBe(200);
+
+    let player = (await dbPool.query("SELECT * FROM players WHERE id='1337-1337-1337-1337'")).rows[0];
+    expect(player.tutorial_started).toBe(false);
+    expect(player.tutorial_skipped).toBe(true);
+    expect(player.tutorial_finished).toBe(false);
+
+    done();
+});
+
+it('should update tutorial finished', async done => {
+    const response = await request(app).post('/user/tutorial/finished').send({uid: '1337-1337-1337-1337'});
+    expect(response.status).toBe(200);
+
+    let player = (await dbPool.query("SELECT * FROM players WHERE id='1337-1337-1337-1337'")).rows[0];
+    expect(player.tutorial_started).toBe(true);
+    expect(player.tutorial_skipped).toBe(false);
+    expect(player.tutorial_finished).toBe(true);
+
+    done();
+});
+
 it('should not allow to challenge yourself', async done => {
     const response = await request(app).post('/user/challenge').send({opponent: 'Basti'});
     expect(response.status).toBe(400);
@@ -277,8 +334,8 @@ it('should add player track record', async done => {
 
 it('should fail to add player track record', async done => {
     const response = await request(app).post('/user/trackrecords').send({});
-    expect(response.status).toBe(500);
-
+    expect(response.status).toBe(400);
+    expect(JSON.stringify(response.body)).toBe(JSON.stringify({ error: 'INVALID REQUEST PARAMETERS' }));
     done();
 });
 
