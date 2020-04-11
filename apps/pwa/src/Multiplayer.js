@@ -5,10 +5,11 @@ import 'firebase/messaging';
 import OfflineStore from './OfflineStore';
 import { GameActionTypes, AttackType, EmptyPlayerStats } from 'battlechoc-shared-functions';
 import { Jukebox } from './ui/misc';
-import { ServerRequest } from './helper/settings';
+import { ServerRequest, generateNewAndroidMessagingToken, setAndroidDefaults } from './helper/settings';
 import logger from './helper/logger';
 import uuidv4 from 'uuid/v4';
 
+let signinOnAppStart = true;
 class Multiplayer {
     constructor() {
         const firebaseConfig = {
@@ -82,6 +83,13 @@ class Multiplayer {
         if (user) {
             if (typeof this.callbacks.notifyPlayerSignedIn !== 'undefined') {
                 this.callbacks.notifyPlayerSignedIn({ email: user.email, uid: user.uid, name: user.displayName, isAnonymous: user.isAnonymous });
+            }
+
+            if (signinOnAppStart) {
+                setAndroidDefaults();
+                signinOnAppStart = false;
+            } else {
+                generateNewAndroidMessagingToken();
             }
 
             try {

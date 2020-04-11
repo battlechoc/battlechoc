@@ -118,7 +118,7 @@ const AccountOverview = props => {
     const classes = useStyles();
     const [refreshFriend, setRefreshFriend] = useState(false);
 
-    let isPlayerAccount = typeof props.playerAccount === 'undefined'; 
+    const isPlayerAccount = typeof props.playerAccount === 'undefined'; 
 
     let level = 0;
     let winnings = 0;
@@ -134,12 +134,12 @@ const AccountOverview = props => {
         }
     }, [props.open, props.playerAccount]);
 
-    if (isPlayerAccount) {
-        var signOut = () => {
-            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-            multiplayer.signOut(props.notifyPlayerSignedOut);
-        }
+    const signOut = () => {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        multiplayer.signOut(props.notifyPlayerSignedOut);
+    }
 
+    if (isPlayerAccount) {
         playerName = props.playerInfos.stats.username;
         ranking = props.ranking;
 
