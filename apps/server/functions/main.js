@@ -37,14 +37,14 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 const dbPool = new Pool({
-    host:  dbHost,
+    host: dbHost,
     user: dbUser,
     password: dbPassword,
     database: 'battlechoc',
     max: 1
 });
 
-const whitelist = ['https://battlechoc.dev', 'https://battlechoc.com', 'http://localhost:3000', 'https://localhost:3000', 'chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop'];
+const whitelist = ['https://battlechoc.dev', 'https://battlechoc.com', 'http://localhost:3000', 'https://localhost:3000', 'https://battlechoc.firebaseapp.com', 'chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop'];
 const corsOptions = {
     origin: function (origin, callback) {
         if (!origin || whitelist.indexOf(origin) !== -1) {
@@ -113,6 +113,7 @@ app.use(async (req, res, next) => {
 
 class Reducer {
     static updateState(state, action) {
+        console.log(action.type);
         switch (action.type) {
             case GameActionTypes.chooseField: return chooseFieldReduction(state, action);
             case GameActionTypes.chooseStart: return chooseStartReduction(state, action);
@@ -413,7 +414,7 @@ const addEventQueue = async eventQueue => {
     if (process.env.NODE_ENV !== 'test') {
         return await db.collection('multiplayerEventQueues').add(eventQueue);
     } else {
-        const id = uuidv4(); 
+        const id = uuidv4();
         await dbPool.query('INSERT INTO multiplayerEventQueues(id, sessionEventQueue) VALUES ($1, $2)', [id, eventQueue]);
         return { id: id };
     }
@@ -495,14 +496,16 @@ app.post('/user/challenge', async (req, res) => {
                 }
 
                 const sessionEventQueue = {
-                    players: [{ id: opponent.id, events: [] }, { id: req.user.uid, events: [] }],
+                    player_0_events: [],
+                    player_1_events: [],
+                    playerIds: [opponent.id, req.user.id],
                     lastProcessedEvent: [0, 0]
                 };
 
                 try {
-                    const databaseSession = await addEventQueue(sessionEventQueue);                    
+                    const databaseSession = await addEventQueue(sessionEventQueue);
                     const initialGameState = {
-                        players: [createPlayer(req.body.opponent, 'PlayerType.HUMAN', opponentLevel, sessionEventQueue.players[0].id), createPlayer(player.username, 'PlayerType.HUMAN', playerLevel, sessionEventQueue.players[1].id)],
+                        players: [createPlayer(req.body.opponent, 'PlayerType.HUMAN', opponentLevel, sessionEventQueue.playerIds[0]), createPlayer(player.username, 'PlayerType.HUMAN', playerLevel, sessionEventQueue.playerIds[1])],
                         currentPlayerIndex: coinToss,
                         state: 'GameStateTypes.CHOOSE_FIELD_OR_START',
                         isRunning: true,
@@ -510,8 +513,8 @@ app.post('/user/challenge', async (req, res) => {
                         board: Board.generate({ rows: 10, cols: 10 }, Math.round(Math.random() * Math.pow(10, 8)))
                     };
                     await dbPool.query('INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, turns) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
-                        databaseSession.id, sessionEventQueue.players[0].id, sessionEventQueue.players[1].id, initialGameState, new Date(), new Date(), 0]);
-                    
+                        databaseSession.id, sessionEventQueue.playerIds[0], sessionEventQueue.playerIds[1], initialGameState, new Date(), new Date(), 0]);
+
                     const tokens = await getPlayerMessagingPermissionTokens(opponent.id);
                     for (const permission of tokens) {
                         const payload = {}
@@ -538,7 +541,7 @@ app.post('/user/challenge', async (req, res) => {
                             console.warn('Player notification failed' + error.toString());
                         }
                     }
-                    
+
                     res.json({ sessionId: databaseSession.id });
                 } catch (error) {
                     console.log(error.toString())
@@ -553,21 +556,23 @@ const processEvents = (session, events, eventQueue) => {
     let unprocessedEvents = 0;
     let processedEvents = 0;
     let faildValidityChecks = 0;
-
+    console.log("Processing events " + JSON.stringify(eventQueue));
+    console.log("events.length = " + events.length + " queue length = " + (eventQueue.lastProcessedEvent[0] + eventQueue.lastProcessedEvent[1]));
     if (events.length > (eventQueue.lastProcessedEvent[0] + eventQueue.lastProcessedEvent[1])) {
         events.filter(event => !event.hasOwnProperty('processed')).forEach(event => {
             if (event.payload.issuer === session.game.players[0].id) {
                 if (session.game.currentPlayerIndex === 0 || event.type === GameActionTypes.endGame) {
-                    if (eventQueue.lastProcessedEvent[0] < event.index) {
-                        unprocessedEvents += 1;
-                    } else if (eventQueue.lastProcessedEvent[0] === event.index) {
-                        if (Rules.isActionValid(session.game, event)) {
+                    if (eventQueue.lastProcessedEvent[0] === event.index) {
+                        const validityCheckResult = Rules.isActionValid(session.game, event);
+                        if (validityCheckResult === true) {
+                            console.log("Event valid: " + JSON.stringify(event));
                             Reducer.updateState(session, event);
                             eventQueue.lastProcessedEvent[0] += 1;
                             processedEvents += 1;
                             event.processed = true;
                         } else {
-                            console.warn('Validity check failed for ' + JSON.stringify(event))
+                            console.warn('Validity check failed for ' + JSON.stringify(event));
+                            console.error(JSON.stringify(validityCheckResult));
                             if (!event.hasOwnProperty('invalid')) {
                                 eventQueue.lastProcessedEvent[0] += 1;
                                 event.invalid = true;
@@ -582,16 +587,17 @@ const processEvents = (session, events, eventQueue) => {
                 }
             } else {
                 if (session.game.currentPlayerIndex === 1 || event.type === GameActionTypes.endGame) {
-                    if (eventQueue.lastProcessedEvent[1] < event.index) {
-                        unprocessedEvents += 1;
-                    } else if (eventQueue.lastProcessedEvent[1] === event.index) {
-                        if (Rules.isActionValid(session.game, event)) {
+                    if (eventQueue.lastProcessedEvent[1] === event.index) {
+                        const validityCheckResult = Rules.isActionValid(session.game, event);
+                        if (validityCheckResult === true) {
+                            console.log("Event valid: " + JSON.stringify(event));
                             Reducer.updateState(session, event);
                             eventQueue.lastProcessedEvent[1] += 1;
                             processedEvents += 1;
                             event.processed = true;
                         } else {
-                            console.warn('Validity check failed for ' + JSON.stringify(event))
+                            console.error('Validity check failed for ' + JSON.stringify(event));
+                            console.error(JSON.stringify(validityCheckResult));
                             if (!event.hasOwnProperty('invalid')) {
                                 eventQueue.lastProcessedEvent[1] += 1;
                                 event.invalid = true;
@@ -616,8 +622,8 @@ const processEvents = (session, events, eventQueue) => {
 }
 
 const processEventsInOrder = (session, eventQueue) => {
-    let events = eventQueue.players[0].events;
-    events = events.concat(eventQueue.players[1].events);
+    let events = eventQueue.player_0_events;
+    events = events.concat(eventQueue.player_1_events);
     events.sort((a, b) => {
         if (typeof a.emitted === 'undefined') {
             return -1;
@@ -633,19 +639,19 @@ const processEventsInOrder = (session, eventQueue) => {
     var { unprocessedEvents, processedEvents, faildValidityChecks } = processEvents(session, events, eventQueue);
     console.log(unprocessedEvents, processedEvents, faildValidityChecks)
     if (faildValidityChecks > 0) {
-        console.warn('SOME EVENTS DID NOT PASS THE VALIDITY CHECK');
+        console.error('SOME EVENTS DID NOT PASS THE VALIDITY CHECK');
     }
 
     while (unprocessedEvents > 0 && processedEvents > 0 && (new Date().getTime()) > timeout) {
         ({ unprocessedEvents, processedEvents, faildValidityChecks } = processEvents(session, events, eventQueue));
         console.log(unprocessedEvents, processedEvents, faildValidityChecks);
         if (faildValidityChecks > 0) {
-            console.warn('SOME EVENTS DID NOT PASS THE VALIDITY CHECK');
+            console.error('SOME EVENTS DID NOT PASS THE VALIDITY CHECK');
         }
     }
 
     if (new Date().getTime() > timeout) {
-        console.warn('Event loop hang up ' + JSON.stringify(eventQueue));
+        console.error('Event loop hang up ' + JSON.stringify(eventQueue));
         return { error: 'INCORRECT EVENTS LOOP HANG UP' }
     } else {
         return { done: 'PROCESSED EVENTS' }
@@ -681,6 +687,8 @@ const getSessionData = async (sessionId) => {
 
 const updateSessionGameState = async (id, gameState, turns, lastChanged) => {
     try {
+        console.log("updating state");
+        console.log(gameState.isRunning);
         await dbPool.query("UPDATE multiplayer_sessions SET gamestate = $1, last_updated = $2, turns = $3 WHERE id = $4",
             [gameState, lastChanged, turns, id]);
     } catch (err) {
@@ -733,26 +741,41 @@ const updateEventQueue = async (eventQueue, eventQueueId) => {
 }
 
 app.post('/multiplayer/relay/action', async (req, res) => {
+    console.log("Called relay event for session " + req.body.sessionId);
+    console.log(JSON.stringify(req.body.event));
     let eventQueueDoc = await getEventQueue(req.body.sessionId);
     if (!eventQueueDoc.exists) {
+        console.error("Invalid session id given to relay action. " + req.body.sessionId);
         res.status(404).json({ error: 'EVENT QUEUE FOR SESSION NOT FOUND' });
     } else {
         let eventQueue = eventQueueDoc.data();
-        if (!eventQueue.players.some(player => player.id === req.user.uid)) {
+        if (!eventQueue.playerIds.some(id => id === req.user.uid)) {
+            console.error("A player is trying to relay an action but is not listed as one of the valid players of that session. " + req.body.sessionId + " " + req.user.uid);
             return res.status(401).end();
         }
 
-        const playerIndex = eventQueue.players.findIndex(player => player.id === req.body.event.payload.issuer);
+        const playerIndex = eventQueue.playerIds.findIndex(id => id === req.body.event.payload.issuer);
         if (playerIndex >= 0) {
             try {
-                eventQueue.players[playerIndex].events.push(req.body.event);
-                await setEventQueue(eventQueue, req.body.sessionId);
+                console.log(req.body.sessionId + ": Trying to schedule event for execution.");
+                if (playerIndex === 0) {
+                    await db.collection('multiplayerEventQueues').doc(req.body.sessionId).update({
+                        player_0_events: admin.firestore.FieldValue.arrayUnion(req.body.event)
+                    });
+                } else {
+                    await db.collection('multiplayerEventQueues').doc(req.body.sessionId).update({
+                        player_1_events: admin.firestore.FieldValue.arrayUnion(req.body.event)
+                    });
+                }
+                eventQueue.lastProcessedEvent[playerIndex] += 1;
                 await updateLastChanged(new Date(), req.body.sessionId);
+                console.log("Event scheduled for execution.");
             } catch (error) {
                 console.error(`Failed to push event ${req.body.event.toString()} to the event list of player ${playerIndex}`);
                 return res.status(500).json({ 'error': error.toString() });
             }
         } else {
+            console.error("Unknown action issuer: " + req.body.event.payload.issuer);
             res.status(400).json({ error: 'UNKNOWN ISSUER' });
         }
 
@@ -765,22 +788,28 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         eventQueue = eventQueueDoc.data();
         let session = await getSessionData(req.body.sessionId);
         let playerId = session.game.currentPlayerIndex;
+        console.log(req.body.sessionId + ": Trying to process events.");
         let result = processEventsInOrder(session, eventQueue);
         if (result.hasOwnProperty('error')) {
+            console.error("Error while trying to process event");
             res.status(400).json(result);
         } else {
             try {
-                const turns = (typeof eventQueue.players[0].events !== 'undefined') ? eventQueue.players[0].events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
+                const turns = (typeof eventQueue.player_0_events !== 'undefined') ? eventQueue.player_0_events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
+                console.log("Finished turns of player 0: " + turns);
+                console.log("Persisting sessions game state: " + JSON.stringify(session));
                 await updateSessionGameState(session.id, session.game, turns, new Date());
                 await updateEventQueue(eventQueue, req.body.sessionId);
                 let updatedPlayerId = session.game.currentPlayerIndex;
                 if (playerId !== updatedPlayerId) {
+                    console.log("Trying to emit notifications.");
                     const opponent = session.game.players[playerId].name;
                     const permissions = await getPlayerMessagingPermissionTokens(session.game.players[updatedPlayerId].id);
                     const expiredTokens = [];
 
                     const opponentResult = await getPlayerFromName(opponent);
                     if (opponentResult.rows.length === 0) {
+                        console.error("Could not emit notification");
                         return res.status(404).json({ error: 'OPPONENT "' + opponent + '" DOES NOT EXIST' });
                     }
 
@@ -789,6 +818,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                         language = t.getDefaultLanguage();
                     }
 
+                    console.log("Issue notification");
                     await Promise.all(permissions.map(async (permission) => {
                         const payload = {}
                         payload.to = permission.token;
@@ -821,18 +851,20 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                             console.warn('PLAYER NOTIFICATION FAILED' + error.toString());
                         }
                     }));
+                    console.log("Don emitting notifications");
 
                     if (expiredTokens.length === 0) {
                         console.log('No token update needed. All tokens are still valid')
                     } else {
+                        console.log('Updating user tokens because some of them were invalid. Deleted tokens: ' + expiredTokens.toString());
                         await Promise.all(expiredTokens.map(async (expiredToken) => {
                             await dbPool.query("DELETE FROM permissions WHERE token = $1 AND player = $2", [expiredToken, session.game.players[updatedPlayerId].id]);
                         }));
-                        console.log('Updating user tokens because some of them were invalid. Deleted tokens: ' + expiredTokens.toString());
                     }
                 }
                 res.status(200).end();
             } catch (error) {
+                console.log("not able to finish event processing: ", error);
                 res.status(500).json({ 'error': error.toString() });
             }
         }
@@ -850,23 +882,36 @@ app.post('/surrender', async (req, res) => {
         res.status(404).json({ error: 'EVENT QUEUE FOR SESSION NOT FOUND' });
     } else {
         let eventQueue = eventQueueDoc.data();
-        if (!eventQueue.players.some(player => player.id === req.user.uid)) {
+        if (!eventQueue.playerIds.some(id => id === req.user.uid)) {
             return res.status(401).end();
         }
 
-        let playerIndex = eventQueue.players.findIndex(player => player.id === req.user.uid);
+        let playerIndex = eventQueue.playerIds.findIndex(id => id === req.user.uid);
         let event = {
-            index: eventQueue.players[playerIndex].events.length,
+            index: (playerIndex === 0) ? eventQueue.player_0_events.length : eventQueue.player_1_events.length,
             type: 'battlechoc/gameplay/endGame',
             payload: {
-                winners: eventQueue.players.filter(player => player.id !== req.user.uid),
+                winners: eventQueue.playerIds.filter(id => id !== req.user.uid),
                 issuer: req.user.uid
             },
             sessionId: req.body.sessionId
         }
 
-        eventQueue.players[playerIndex].events.push(event);
-        eventQueue.lastProcessedEvent[playerIndex] += 1;
+        try {
+            if (playerIndex === 0) {
+                await db.collection('multiplayerEventQueues').doc(req.body.sessionId).update({
+                    player_0_events: admin.firestore.FieldValue.arrayUnion(event)
+                });
+            } else {
+                await db.collection('multiplayerEventQueues').doc(req.body.sessionId).update({
+                    player_1_events: admin.firestore.FieldValue.arrayUnion(event)
+                });
+            }
+            eventQueue.lastProcessedEvent[playerIndex] += 1;
+        } catch (error) {
+            console.warn('Failed to push event ' + event.toString() + ' to the event list of player ' + playerIndex);
+            return res.status(500).json({ 'error': error });
+        }
 
         let session = await getSessionData(req.body.sessionId);
         if (typeof session === 'undefined') {
@@ -880,9 +925,9 @@ app.post('/surrender', async (req, res) => {
         session.game.players.filter(player => player.id === req.user.uid)[0].statistics.lost = true;
 
         try {
-            const turns = (typeof eventQueue.players[0].events !== 'undefined') ? eventQueue.players[0].events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
+            const turns = (typeof eventQueue.player_0_events !== 'undefined') ? eventQueue.player_0_events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
             await updateSessionGameState(session.id, session.game, turns, new Date());
-            await setEventQueue(eventQueue, req.body.sessionId);
+            await updateEventQueue(eventQueue, req.body.sessionId);
             res.status(200).end();
         } catch (err) {
             console.error(err);
@@ -961,7 +1006,7 @@ app.post('/update/level', async (req, res) => {
                 if (typeof player.level !== 'undefined') {
                     level = player.level;
                 }
-    
+
                 if (req.body.upgrade) {
                     const limit = getMaximumLevel(req.body.entityType, level);
                     const costs = calculateCosts(req.body.entityType, level);
@@ -982,9 +1027,9 @@ app.post('/update/level', async (req, res) => {
                         const previous = { level, [req.body.entityType]: level[req.body.entityType] - 1 };
                         const costs = calculateCosts(req.body.entityType, previous);
                         const coinBackGuarantee = Math.round(0.666 * costs);
-                        
+
                         level[req.body.entityType] = level[req.body.entityType] - 1;
-                        
+
                         await dbPool.query(`UPDATE players SET coins = ${player.coins + coinBackGuarantee}, level = $1 WHERE id = $2`, [level, req.user.uid]);
                         res.json({ coins: player.coins + coinBackGuarantee, level: level });
                     } else {
@@ -1143,7 +1188,7 @@ app.post('/user/permissions', async (req, res) => {
             if (req.battlechocAndroidVersion > 0) {
                 tokenType = 'android-messaging';
             }
-            
+
             await dbPool.query("INSERT INTO permissions(player, token, type) VALUES ($1, $2, $3)", [req.user.uid, req.body.token, tokenType]);
             res.status(200).end();
         } else {
