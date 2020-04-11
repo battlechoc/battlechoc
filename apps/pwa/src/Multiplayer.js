@@ -259,6 +259,98 @@ class Multiplayer {
         return 0;
     }
 
+    async tutorialStarted() {
+        if (firebase.auth().currentUser) {
+            try {
+                const data = (await ServerRequest('post', '/user/tutorial/started')).data;
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player tutorial started state.");
+                logger.warn(err);
+            }
+        } else {
+            OfflineStore.playerStore.get('stats').then(playerStats => {
+                playerStats.tutorialStarted = true;
+                playerStats.tutorialSkipped = false;
+                try {
+                    OfflineStore.playerStore.set('stats', playerStats)
+                } catch (error) {
+                    logger.warn(error);
+                }
+                this.callbacks.updatePlayerStats(playerStats);
+            }).catch(err => logger.warn("could not retrieve offline player stats", err));
+        }
+    }
+
+    async tutorialSkipped() {
+        if (firebase.auth().currentUser) {
+            try {
+                const data = (await ServerRequest('post', '/user/tutorial/skipped')).data;
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player tutorial skipped state.");
+                logger.warn(err);
+            }
+        } else {
+            OfflineStore.playerStore.get('stats').then(playerStats => {
+                playerStats.tutorialStarted = false;
+                playerStats.tutorialSkipped = true;
+                try {
+                    OfflineStore.playerStore.set('stats', playerStats)
+                } catch (error) {
+                    logger.warn(error);
+                }
+                this.callbacks.updatePlayerStats(playerStats);
+            }).catch(err => logger.warn("could not retrieve offline player stats", err));
+        }
+    }
+
+    async tutorialFinished() {
+        if (firebase.auth().currentUser) {
+            try {
+                const data = (await ServerRequest('post', '/user/tutorial/finished')).data;
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player tutorial finished state.");
+                logger.warn(err);
+            }
+        } else {
+            OfflineStore.playerStore.get('stats').then(playerStats => {
+                playerStats.tutorialFinished = true;
+                try {
+                    OfflineStore.playerStore.set('stats', playerStats)
+                } catch (error) {
+                    logger.warn(error);
+                }
+                this.callbacks.updatePlayerStats(playerStats);
+            }).catch(err => logger.warn("could not retrieve offline player stats", err));
+        }
+    }
+
+    async updatePlayerTutorialInfos(playerInfos) {
+        console.log("persisting tutorial infos");
+        console.log(playerInfos.tutorialSkipped);
+        const tutorialInfos = {
+            tutorialStarted: playerInfos.tutorialStarted,
+            tutorialFinished: playerInfos.tutorialFinished,
+            tutorialSkipped: playerInfos.tutorialSkipped
+        };
+        try {
+            OfflineStore.playerStore.set('tutorialinfos', tutorialInfos);
+        } catch (error) {
+            logger.warn(error);
+        }
+
+        if (firebase.auth().currentUser) {
+            try {
+                await ServerRequest('post', '/user/tutorialinfos', { infos: tutorialInfos });
+            } catch (err) {
+                logger.warn("Could not update player tutorial infos");
+                logger.warn(err);
+            }
+        }
+    }
+
     signOut(notifyPlayerSignedOut) {
         firebase.auth().signOut().then(() => {
             if (typeof notifyPlayerSignedOut === 'function') {
@@ -561,17 +653,19 @@ class Multiplayer {
                 this.localPlayerIndex = session.game.players.findIndex(player => player.id === firebase.auth().currentUser.uid);
                 this.unsubscribeGameSession = sessionEventQueueReference.onSnapshot(doc => {
                     const eventQueue = doc.data();
-                    this.processEvents(eventQueue.players[1 - this.localPlayerIndex].events);
-                    this.validateEvents(eventQueue.players[this.localPlayerIndex].events);
+                    this.processEvents(((1 - this.localPlayerIndex) === 0) ? eventQueue.player_0_events : eventQueue.player_1_events);
+                    this.validateEvents((this.localPlayerIndex === 0) ? eventQueue.player_0_events : eventQueue.player_1_events);
                 }, error => {
                     logger.error('encountered error while trying to establish observer of multiplayer session', error.toString());
                 });
 
-                this.opponentEventIndex = sessionEventQueue.players[1 - this.localPlayerIndex].events.length;
-                this.playerEventIndex = sessionEventQueue.players[this.localPlayerIndex].events.length;
-                this.serverEventIndex = sessionEventQueue.players[this.localPlayerIndex].events.length;
+                const opponentPlayerEvents = ((1 - this.localPlayerIndex) === 0) ? sessionEventQueue.player_0_events : sessionEventQueue.player_1_events;
+                const localPlayerEvents = (this.localPlayerIndex === 0) ? sessionEventQueue.player_0_events : sessionEventQueue.player_1_events;
+                this.opponentEventIndex = opponentPlayerEvents.length;
+                this.playerEventIndex = localPlayerEvents.length;
+                this.serverEventIndex = localPlayerEvents.length;
                 this.validActions = new Map();
-                for (let action of sessionEventQueue.players[this.localPlayerIndex].events) {
+                for (let action of localPlayerEvents) {
                     if (typeof action.uid !== 'undefined') {
                         this.validActions.set(action.uid, { action: action, valid: true });
                     } else {
