@@ -498,7 +498,7 @@ app.post('/user/challenge', async (req, res) => {
                 const sessionEventQueue = {
                     player_0_events: [],
                     player_1_events: [],
-                    playerIds: [opponent.id, req.user.id],
+                    playerIds: [opponent.id, req.user.uid],
                     lastProcessedEvent: [0, 0]
                 };
 
@@ -687,8 +687,6 @@ const getSessionData = async (sessionId) => {
 
 const updateSessionGameState = async (id, gameState, turns, lastChanged) => {
     try {
-        console.log("updating state");
-        console.log(gameState.isRunning);
         await dbPool.query("UPDATE multiplayer_sessions SET gamestate = $1, last_updated = $2, turns = $3 WHERE id = $4",
             [gameState, lastChanged, turns, id]);
     } catch (err) {
@@ -722,11 +720,26 @@ const getEventQueue = async eventQueueId => {
     }
 }
 
-const setEventQueue = async (eventQueue, eventQueueId) => {
+const enqueueEvent = async (sessionId, event, playerIndex) => {
     if (process.env.NODE_ENV !== 'test') {
-        await db.collection('multiplayerEventQueues').doc(eventQueueId).set(eventQueue, { merge: true });
+        if (playerIndex === 0) {
+            await db.collection('multiplayerEventQueues').doc(sessionId).update({
+                player_0_events: admin.firestore.FieldValue.arrayUnion(event)
+            });
+        } else {
+            await db.collection('multiplayerEventQueues').doc(sessionId).update({
+                player_1_events: admin.firestore.FieldValue.arrayUnion(event)
+            });
+        }
     } else {
-        await dbPool.query('UPDATE multiplayerEventQueues SET sessionEventQueue=$1 WHERE id=$2', [eventQueue, eventQueueId]);
+        const eventQueueQueryResult = await dbPool.query('SELECT sessionEventQueue FROM multiplayerEventQueues WHERE id=$1', [sessionId]);
+        let eventQueue = eventQueueQueryResult.rows[0].sessioneventqueue;
+        if (playerIndex === 0) {
+            eventQueue.player_0_events.push(event);
+        } else {
+            eventQueue.player_1_events.push(event);
+        }
+        await dbPool.query('UPDATE multiplayerEventQueues SET sessionEventQueue=$1 WHERE id=$2', [eventQueue, sessionId]);
     }
 }
 
@@ -758,20 +771,12 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         if (playerIndex >= 0) {
             try {
                 console.log(req.body.sessionId + ": Trying to schedule event for execution.");
-                if (playerIndex === 0) {
-                    await db.collection('multiplayerEventQueues').doc(req.body.sessionId).update({
-                        player_0_events: admin.firestore.FieldValue.arrayUnion(req.body.event)
-                    });
-                } else {
-                    await db.collection('multiplayerEventQueues').doc(req.body.sessionId).update({
-                        player_1_events: admin.firestore.FieldValue.arrayUnion(req.body.event)
-                    });
-                }
+                await enqueueEvent(req.body.sessionId, req.body.event, playerIndex);
                 eventQueue.lastProcessedEvent[playerIndex] += 1;
                 await updateLastChanged(new Date(), req.body.sessionId);
                 console.log("Event scheduled for execution.");
             } catch (error) {
-                console.error(`Failed to push event ${req.body.event.toString()} to the event list of player ${playerIndex}`);
+                console.error(`Failed to push event ${req.body.event.toString()} to the event list of player ${playerIndex} due to ${error}`);
                 return res.status(500).json({ 'error': error.toString() });
             }
         } else {
@@ -802,7 +807,6 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                 await updateEventQueue(eventQueue, req.body.sessionId);
                 let updatedPlayerId = session.game.currentPlayerIndex;
                 if (playerId !== updatedPlayerId) {
-                    console.log("Trying to emit notifications.");
                     const opponent = session.game.players[playerId].name;
                     const permissions = await getPlayerMessagingPermissionTokens(session.game.players[updatedPlayerId].id);
                     const expiredTokens = [];
@@ -818,7 +822,6 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                         language = t.getDefaultLanguage();
                     }
 
-                    console.log("Issue notification");
                     await Promise.all(permissions.map(async (permission) => {
                         const payload = {}
                         payload.to = permission.token;
@@ -851,7 +854,6 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                             console.warn('PLAYER NOTIFICATION FAILED' + error.toString());
                         }
                     }));
-                    console.log("Don emitting notifications");
 
                     if (expiredTokens.length === 0) {
                         console.log('No token update needed. All tokens are still valid')
@@ -898,15 +900,7 @@ app.post('/surrender', async (req, res) => {
         }
 
         try {
-            if (playerIndex === 0) {
-                await db.collection('multiplayerEventQueues').doc(req.body.sessionId).update({
-                    player_0_events: admin.firestore.FieldValue.arrayUnion(event)
-                });
-            } else {
-                await db.collection('multiplayerEventQueues').doc(req.body.sessionId).update({
-                    player_1_events: admin.firestore.FieldValue.arrayUnion(event)
-                });
-            }
+            await enqueueEvent(req.body.sessionId, event, playerIndex);
             eventQueue.lastProcessedEvent[playerIndex] += 1;
         } catch (error) {
             console.warn('Failed to push event ' + event.toString() + ' to the event list of player ' + playerIndex);
@@ -1356,7 +1350,6 @@ app.post('/user/trackrecords', async (req, res) => {
     try {
         if (typeof req.body.stats !== 'undefined') {
             let recordsAdded = [];
-            console.log(typeof req.body.stats);
             await Promise.all(req.body.stats.map(async (record) => {
                 if ((await addTrackRecord(req.user.uid, record)) === true) {
                     recordsAdded.push(record);

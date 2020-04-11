@@ -131,6 +131,7 @@ it('should not allow to challenge yourself', async done => {
 it('should challenge the player', async done => {
     const response = await request(app).post('/user/challenge').send({opponent: 'Fabi'});
     expect(response.status).toBe(200);
+    console.log(JSON.stringify(response.body));
     done();
 });
 
