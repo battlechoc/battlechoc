@@ -568,6 +568,21 @@ class Multiplayer {
 
     processEvents(events) {
         if (events.length > this.opponentEventIndex) {
+            events.sort((a, b) => {
+                if (typeof a.emitted === 'undefined') {
+                    return -1;
+                } else if (typeof b.emitted === 'undefined') {
+                    return 1;
+                } else {
+                    if (a.emitted.seconds > b.emitted.seconds) {
+                        return 1;
+                    } else if (a.emitted.seconds < b.emitted.seconds) {
+                        return -1;
+                    } else {
+                        return (a.emitted.nanoseconds > b.emitted.nanoseconds) ? 1 : -1
+                    }
+                }
+            });
             const newEventIndex = events.length;
             events.splice(0, this.opponentEventIndex);
             events.forEach(action => {
@@ -579,6 +594,21 @@ class Multiplayer {
 
     validateEvents(events) {
         if (events.length > this.serverEventIndex) {
+            events.sort((a, b) => {
+                if (typeof a.emitted === 'undefined') {
+                    return -1;
+                } else if (typeof b.emitted === 'undefined') {
+                    return 1;
+                } else {
+                    if (a.emitted.seconds > b.emitted.seconds) {
+                        return 1;
+                    } else if (a.emitted.seconds < b.emitted.seconds) {
+                        return -1;
+                    } else {
+                        return (a.emitted.nanoseconds > b.emitted.nanoseconds) ? 1 : -1
+                    }
+                }
+            });
             const newEventIndex = events.length;
             events.splice(0, this.serverEventIndex);
 
