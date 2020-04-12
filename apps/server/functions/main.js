@@ -630,7 +630,13 @@ const processEventsInOrder = (session, eventQueue) => {
         } else if (typeof b.emitted === 'undefined') {
             return 1;
         } else {
-            return (a.emitted.nanoseconds > b.emitted.nanoseconds) ? 1 : -1
+            if (a.emitted.seconds > b.emitted.seconds) {
+                return 1;
+            } else if (a.emitted.seconds < b.emitted.seconds) {
+                return -1;
+            } else {
+                return (a.emitted.nanoseconds > b.emitted.nanoseconds) ? 1 : -1
+            }
         }
     });
 
@@ -772,7 +778,6 @@ app.post('/multiplayer/relay/action', async (req, res) => {
             try {
                 console.log(req.body.sessionId + ": Trying to schedule event for execution.");
                 await enqueueEvent(req.body.sessionId, req.body.event, playerIndex);
-                eventQueue.lastProcessedEvent[playerIndex] += 1;
                 await updateLastChanged(new Date(), req.body.sessionId);
                 console.log("Event scheduled for execution.");
             } catch (error) {
