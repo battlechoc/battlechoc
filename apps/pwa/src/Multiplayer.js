@@ -653,6 +653,15 @@ class Multiplayer {
         }
     }
 
+    async fetchRandomName() {
+        try {
+            return (await ServerRequest('get', '/generaterandomname')).data.username;
+        } catch (err) {
+            console.warn('Could not crete a valid random player name. ', err);
+            return 'Chocnonymous';
+        }
+    }
+
     async enterGameSession(sessionId, gameActions) {
         const sessionEventQueueReference = firebase.firestore().collection('multiplayerEventQueues').doc(sessionId);
         try {
