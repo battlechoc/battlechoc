@@ -567,54 +567,47 @@ class Multiplayer {
     }
 
     processEvents(events) {
-        if (events.length > this.opponentEventIndex) {
-            events.sort((a, b) => {
-                if (typeof a.emitted === 'undefined') {
-                    return -1;
-                } else if (typeof b.emitted === 'undefined') {
-                    return 1;
-                } else {
-                    if (a.emitted.seconds > b.emitted.seconds) {
-                        return 1;
-                    } else if (a.emitted.seconds < b.emitted.seconds) {
-                        return -1;
-                    } else {
-                        return (a.emitted.nanoseconds > b.emitted.nanoseconds) ? 1 : -1
-                    }
-                }
-            });
-            const newEventIndex = events.length;
-            events.splice(0, this.opponentEventIndex);
-            events.forEach(action => {
-                this.emitAction(action);
-            });
-            this.opponentEventIndex = newEventIndex;
+        events.sort((a, b) => {
+            if (typeof a.index === 'undefined') {
+                return -1;
+            } else if (typeof b.index === 'undefined') {
+                return 1;
+            } else {
+                return (a.index > b.index) ? 1 : -1
+            }
+        });
+        let sliced = events;
+        if (this.opponentEventIndex > 1) {
+            const posOfOpponentEventIndex = events.map(function (ev) { return ev.index; }).indexOf(this.opponentEventIndex - 1);
+            if (posOfOpponentEventIndex >= 0) {
+                sliced = events.slice(posOfOpponentEventIndex);
+            }
         }
+        sliced.forEach(action => {
+            if (action.index === this.opponentEventIndex) {
+                console.log("emitting action: " + action.index + " -- " + action.type);
+                this.emitAction(action);
+                this.opponentEventIndex = this.opponentEventIndex + 1;
+            }
+        });
     }
 
     validateEvents(events) {
         if (events.length > this.serverEventIndex) {
             events.sort((a, b) => {
-                if (typeof a.emitted === 'undefined') {
+                if (typeof a.index === 'undefined') {
                     return -1;
-                } else if (typeof b.emitted === 'undefined') {
+                } else if (typeof b.index === 'undefined') {
                     return 1;
                 } else {
-                    if (a.emitted.seconds > b.emitted.seconds) {
-                        return 1;
-                    } else if (a.emitted.seconds < b.emitted.seconds) {
-                        return -1;
-                    } else {
-                        return (a.emitted.nanoseconds > b.emitted.nanoseconds) ? 1 : -1
-                    }
+                    return (a.index > b.index) ? 1 : -1
                 }
             });
             const newEventIndex = events.length;
-            events.splice(0, this.serverEventIndex);
 
             logger.info('Start new action validation');
 
-            for (let action of events) {
+            for (let action of events.slice(0, this.serverEventIndex)) {
                 let localState = this.validActions.get(action.uid);
                 this.validActions.set(localState.action.uid, { action: localState.action, valid: true });
             }
@@ -689,9 +682,34 @@ class Multiplayer {
                     logger.error('encountered error while trying to establish observer of multiplayer session', error.toString());
                 });
 
-                const opponentPlayerEvents = ((1 - this.localPlayerIndex) === 0) ? sessionEventQueue.player_0_events : sessionEventQueue.player_1_events;
-                const localPlayerEvents = (this.localPlayerIndex === 0) ? sessionEventQueue.player_0_events : sessionEventQueue.player_1_events;
-                this.opponentEventIndex = opponentPlayerEvents.length;
+                let opponentPlayerEvents = ((1 - this.localPlayerIndex) === 0) ? sessionEventQueue.player_0_events : sessionEventQueue.player_1_events;
+                opponentPlayerEvents.sort((a, b) => {
+                    if (typeof a.index === 'undefined') {
+                        return -1;
+                    } else if (typeof b.index === 'undefined') {
+                        return 1;
+                    } else {
+                        return (a.index > b.index) ? 1 : -1
+                    }
+                });
+                this.opponentEventIndex = 0;
+                opponentPlayerEvents.forEach(action => {
+                    if (action.index === this.opponentEventIndex) {
+                        this.opponentEventIndex = this.opponentEventIndex + 1;
+                    }
+                });
+
+                console.log("recovered opponent index: " + this.opponentEventIndex);
+                let localPlayerEvents = (this.localPlayerIndex === 0) ? sessionEventQueue.player_0_events : sessionEventQueue.player_1_events;
+                localPlayerEvents.sort((a, b) => {
+                    if (typeof a.index === 'undefined') {
+                        return -1;
+                    } else if (typeof b.index === 'undefined') {
+                        return 1;
+                    } else {
+                        return (a.index > b.index) ? 1 : -1
+                    }
+                });
                 this.playerEventIndex = localPlayerEvents.length;
                 this.serverEventIndex = localPlayerEvents.length;
                 this.validActions = new Map();
