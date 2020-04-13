@@ -7,6 +7,7 @@ const t = require('./translations.js');
 const uuidv4 = require('uuid/v4');
 const { Pool } = require('pg')
 const axios = require('axios');
+const { uniqueNamesGenerator, adjectives, animals, names } = require('unique-names-generator');
 admin.initializeApp();
 const db = admin.firestore();
 
@@ -43,6 +44,13 @@ const dbPool = new Pool({
     database: 'battlechoc',
     max: 1
 });
+
+const randomNameGeneratorConfig = {
+    dictionaries: [adjectives, names, animals],
+    separator: '',
+    length: 3,
+    style: 'capital'
+};
 
 const whitelist = ['https://battlechoc.dev', 'https://battlechoc.com', 'http://localhost:3000', 'https://localhost:3000', 'https://battlechoc.firebaseapp.com', 'chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop'];
 const corsOptions = {
@@ -1383,6 +1391,26 @@ app.get('/user', async (req, res) => {
     } catch (err) {
         console.warn('Could not retrieve player stats.', err);
         res.status(500).json({ error: 'COULD NOT FETCH PLAYER STATS' })
+    }
+});
+
+app.get('/generaterandomname', async (req, res) => {
+    try {
+        const maxTries = 20;
+        let generatedName;
+        let nameFound = false;
+        for (let tries = 0; tries < maxTries; tries++) {
+            generatedName = uniqueNamesGenerator(randomNameGeneratorConfig);
+            const queryResult = await dbPool.query("SELECT * FROM players WHERE name = $1", [generatedName]);
+            if (queryResult.rows.length === 0) {
+                nameFound = true;
+                break;
+            }
+        }
+        res.status(200).json({ username: (nameFound) ? generatedName : 'Chocnonymous' });
+    } catch (err) {
+        console.error('Could not generate a new random username.', err);
+        res.status(500).json({ error: 'COULD NOT GENERATE A NEW RANDOM USERNAME' })
     }
 });
 
