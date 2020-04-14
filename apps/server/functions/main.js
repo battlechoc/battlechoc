@@ -1257,9 +1257,12 @@ const createOrUpdatePlayer = async (userId, player) => {
         const score = (typeof player.score === 'number' && !isNaN(player.score)) ? player.score : 0;
         const language = (typeof player.language !== 'undefined' && t.isValidLanguage(player.language)) ? player.language : t.getDefaultLanguage();
         const level = typeof player.level !== 'undefined' ? player.level : EmptyPlayerStats.level;
+        const tutorialStarted = typeof player.tutorialStarted !== 'undefined' ? player.tutorialStarted : false;
+        const tutorialSkipped = typeof player.tutorialSkipped !== 'undefined' ? player.tutorialSkipped : false;
+        const tutorialFinished = typeof player.tutorialFinished !== 'undefined' ? player.tutorialFinished : false;
         const existsCheckResult = await getPlayerFromId(userId);
         if (existsCheckResult.rows.length === 0) {
-            const queryResult = await dbPool.query('INSERT INTO players(id, name, coins, score, language, level) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [userId, username, coins, score, language, level]);
+            const queryResult = await dbPool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', [userId, username, coins, score, language, level, tutorialStarted, tutorialSkipped, tutorialFinished]);
             if (queryResult.rows.length === 1) {
                 await Promise.all(player.trackRecord.map(async (record) => {
                     await addTrackRecord(userId, record);
@@ -1270,7 +1273,7 @@ const createOrUpdatePlayer = async (userId, player) => {
                 return undefined;
             }
         } else {
-            const queryResult = await dbPool.query('UPDATE players SET name = $1, coins = $2, score = $3, language = $4, level = $5 WHERE id = $6 RETURNING *', [username, coins, score, language, level, userId]);
+            const queryResult = await dbPool.query('UPDATE players SET name = $1, coins = $2, score = $3, language = $4, level = $5, tutorial_started = $6, tutorial_skipped = $7, tutorial_finished = $8 WHERE id = $9 RETURNING *', [username, coins, score, language, level, tutorialStarted, tutorialSkipped, tutorialFinished, userId]);
             if (queryResult.rows.length === 1) {
                 await Promise.all(player.trackRecord.map(async (record) => {
                     await addTrackRecord(userId, record);
@@ -1296,7 +1299,7 @@ const createNewPlayer = async (userId) => {
             const username = EmptyPlayerStats.username;
             const language = t.getDefaultLanguage();
             const level = EmptyPlayerStats.level;
-            const queryResult = await dbPool.query('INSERT INTO players(id, name, coins, score, language, level) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *', [userId, username, coins, score, language, level]);
+            const queryResult = await dbPool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', [userId, username, coins, score, language, level, false, false, false]);
             if (queryResult.rows.length === 1) {
                 return await createPlayerStatsObject(queryResult.rows[0]);
             } else {
