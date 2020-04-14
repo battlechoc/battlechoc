@@ -201,7 +201,7 @@ const Settings = props => {
         <div className={classes.dialogContent}>
           {
             typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous' ?
-              editPlayerName ? <PlayerNameInput setPlayerName={setPlayerName} current={props.playerInfos.stats.username} /> :
+              editPlayerName ? <PlayerNameInput setPlayerName={setPlayerName} startValue={props.playerInfos.stats.username} current={props.playerInfos.stats.username}/> :
                 <div className={classes.username}>
                   <AccountCircle className={classes.accountCircle} /> {props.playerInfos.stats.username}
                   <Fab onClick={() => setEditPlayerName(true)} className={classes.editUsername} size="small" color="primary"><Edit /></Fab>
