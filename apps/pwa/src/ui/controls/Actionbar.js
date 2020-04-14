@@ -9,13 +9,22 @@ import { multiplayer } from '../../Multiplayer';
 import Fab from '@material-ui/core/Fab';
 import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, PermIdentity, KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import { Jukebox } from '../misc';
+import OfflineStore from '../../OfflineStore';
 import logger from '../../helper/logger';
 
 const Actionbar = props => {
-    const [activeMusicButton, setActiveMusicButton] = useState(true);
+    const [activeMusicButton, setActiveMusicButton] = useState(!Jukebox.isMuted);
     const [activeFullscreenButton, setActiveFullscreenButton] = useState(true);
-    
+
     useEffect(() => {
+        const fetchAudioState = async () => {
+            const audioSettings = await OfflineStore.settingsStore.get('audio');
+            if (typeof audioSettings !== 'undefined') {
+                setActiveMusicButton(!audioSettings.sfxMuted);
+            }
+        }
+        fetchAudioState();
+
         const fullscreenchange = () => {
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
             const isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
@@ -27,14 +36,14 @@ const Actionbar = props => {
 
         document.addEventListener("fullscreenchange", fullscreenchange, false);
         fullscreenchange();
-        
+
         return () => {
             document.removeEventListener("fullscreenchange", fullscreenchange, false);
         };
     }, [])
 
     const toggleMusic = () => {
-        Jukebox.toggleMute();
+        Jukebox.mute(!activeMusicButton);
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         setActiveMusicButton(!activeMusicButton);
     }
@@ -43,7 +52,7 @@ const Actionbar = props => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         document.documentElement.requestFullscreen().catch(() => logger.info('fullscreen request failed'));
     }
-     
+
     const buttons = []
 
     if (typeof props.game !== 'undefined' && !props.tutorial) {
