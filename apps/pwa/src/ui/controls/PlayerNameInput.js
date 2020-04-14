@@ -38,12 +38,12 @@ const useStyles = makeStyles(theme => ({
 
 export default withWidth()(props => {
     const classes = useStyles();
-    const { setPlayerName, current, width } = props;
+    const { setPlayerName, startValue, width, current } = props;
     const [loading, setLoading] = useState(false);
     const [playerNameValid, setPlayerNameValid] = useState(false);
     const [playerNameAvailable, setPlayerNameAvailable] = useState(false);
-    const [playerName, updatePlayerName] = useState(typeof current === 'undefined' ? 'Chocnonymous' : current);
-    const [unchanged, setUnchanged] = useState(current === playerName);
+    const [playerName, updatePlayerName] = useState(typeof startValue === 'undefined' ? 'Chocnonymous' : startValue);
+    const [unchanged, setUnchanged] = useState(current === startValue);
     const [badInternetConnection, setBadInternetConnection] = useState(false);
 
     const buttonClassname = playerNameAvailable ? classes.buttonSuccess : null;
@@ -88,7 +88,7 @@ export default withWidth()(props => {
     }, [playerName])
 
     const validate = name => {
-        let regex = /^([a-zA-Z][a-zA-Z0-9_]{2,15})$/;
+        let regex = /^([a-zA-Z][a-zA-Z0-9_]{2,24})$/;
         return regex.test(name) && name.toUpperCase() !== 'CHOCNONYMOUS';
     }
 

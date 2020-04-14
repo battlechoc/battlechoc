@@ -141,7 +141,7 @@ const Tutorial = props => {
 
     let dialogTitle = t(tr.TUTORIAL_DIALOG_TITLE_BEFORE);
     let dialogContent = <div>
-        <PlayerNameInput setPlayerName={setPlayerName} current={initialUserName} />
+        <PlayerNameInput setPlayerName={setPlayerName} startValue={initialUserName} current={props.playerInfos.stats.username}/>
         <p style={{ color: '#324D5C' }}>{t(tr.TUTORIAL_CHOOSE_NAME_INFO)}</p>
     </div>;
     let canClose = false;
