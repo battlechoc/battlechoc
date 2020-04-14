@@ -1,8 +1,14 @@
 import logger from '../../helper/logger';
+import OfflineStore from '../../OfflineStore';
 
 class Jukebox {
     constructor() {
-        this.mute = false;
+        this.isMuted = false;
+        OfflineStore.settingsStore.get('audio').then(audioSettings => {
+            if (typeof audioSettings !== 'undefined') {
+                this.mute(!audioSettings.sfxMuted);
+            }
+        });
         this.buffer = [];
         this.SOUNDS = Object.freeze({
             UI_ACCEPT: { filename: '/sound/ui_accept.mp3', sound: null },
@@ -33,9 +39,9 @@ class Jukebox {
     }
 
     playMusic() {
-        if (typeof this.music !== 'undefined' && !this.mute) {
+        if (typeof this.music !== 'undefined' && !this.isMuted) {
             this.music.play();
-        }       
+        }
     }
 
     pauseMusic() {
@@ -51,28 +57,44 @@ class Jukebox {
         }
     }
 
-    toggleMute() {
-        this.mute = !this.mute;
-        if (this.mute) {
-            this.pauseMusic();
-            if(this.musicContext.state === 'running') {
-                this.musicContext.suspend()
-            }
-            if(this.soundContext.state === 'running') {
-                this.soundContext.suspend()
-            }
+    mute(unmute) {
+        const oldMuteState = this.isMuted;
+        if (unmute === true) {
+            this.isMuted = false;
         } else {
-            if(this.musicContext.state === 'suspended') {
-                this.musicContext.resume().then(() => this.playMusic());  
-            }else{
-                this.playMusic();
+            this.isMuted = true;
+        }
+
+        OfflineStore.settingsStore.set('audio', { musicMuted: this.isMuted, sfxMuted: this.isMuted }).catch((err) => {
+            console.warn('Could not persist audio settings. ', err);
+        });
+
+        if (this.isMuted !== oldMuteState) {
+            if (this.isMuted) {
+                this.pauseMusic();
+                if (this.musicContext.state === 'running') {
+                    this.musicContext.suspend()
+                }
+                if (this.soundContext.state === 'running') {
+                    this.soundContext.suspend()
+                }
+            } else {
+                if (this.musicContext.state === 'suspended') {
+                    this.musicContext.resume().then(() => this.playMusic());
+                } else {
+                    this.playMusic();
+                }
+                this.soundContext.resume();
             }
-            this.soundContext.resume();
         }
     }
 
+    toggleMute() {
+        this.mute(this.isMuted);
+    }
+
     playSound(sound) {
-        if (!this.mute) {
+        if (!this.isMuted) {
             sound.sound.play();
         }
     }
@@ -95,7 +117,7 @@ class Audio {
             xhr.onload = () => {
                 this.context.decodeAudioData(xhr.response, (buffer) => {
                     this.buffer = buffer;
-                    resolve();      
+                    resolve();
                 });
             };
             xhr.onerror = () => reject({ status: xhr.status, statusText: xhr.statusText });
@@ -121,14 +143,14 @@ class Audio {
             } else {
                 let source = this.context.createBufferSource();
                 source.buffer = this.buffer;
-                source.connect(this.context.destination);               
+                source.connect(this.context.destination);
                 source.onended = () => source.disconnect();
                 source.start();
             }
         }
-    }  
+    }
 
-    stop(reset=false) {
+    stop(reset = false) {
         if (typeof this.source !== 'undefined') {
             if (this.loop && !reset) {
                 this.offset = this.context.currentTime;
