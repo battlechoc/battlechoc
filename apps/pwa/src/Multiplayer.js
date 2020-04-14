@@ -260,6 +260,17 @@ class Multiplayer {
     }
 
     async tutorialStarted() {
+        OfflineStore.playerStore.get('stats').then(playerStats => {
+            playerStats.tutorialStarted = true;
+            playerStats.tutorialSkipped = false;
+            try {
+                OfflineStore.playerStore.set('stats', playerStats)
+            } catch (error) {
+                logger.warn(error);
+            }
+            this.callbacks.updatePlayerStats(playerStats);
+        }).catch(err => logger.warn("could not retrieve offline player stats", err));
+
         if (firebase.auth().currentUser) {
             try {
                 const data = (await ServerRequest('post', '/user/tutorial/started')).data;
@@ -268,21 +279,21 @@ class Multiplayer {
                 logger.warn("Could not update player tutorial started state.");
                 logger.warn(err);
             }
-        } else {
-            OfflineStore.playerStore.get('stats').then(playerStats => {
-                playerStats.tutorialStarted = true;
-                playerStats.tutorialSkipped = false;
-                try {
-                    OfflineStore.playerStore.set('stats', playerStats)
-                } catch (error) {
-                    logger.warn(error);
-                }
-                this.callbacks.updatePlayerStats(playerStats);
-            }).catch(err => logger.warn("could not retrieve offline player stats", err));
         }
     }
 
     async tutorialSkipped() {
+        OfflineStore.playerStore.get('stats').then(playerStats => {
+            playerStats.tutorialStarted = false;
+            playerStats.tutorialSkipped = true;
+            try {
+                OfflineStore.playerStore.set('stats', playerStats)
+            } catch (error) {
+                logger.warn(error);
+            }
+            this.callbacks.updatePlayerStats(playerStats);
+        }).catch(err => logger.warn("could not retrieve offline player stats", err));
+
         if (firebase.auth().currentUser) {
             try {
                 const data = (await ServerRequest('post', '/user/tutorial/skipped')).data;
@@ -291,21 +302,20 @@ class Multiplayer {
                 logger.warn("Could not update player tutorial skipped state.");
                 logger.warn(err);
             }
-        } else {
-            OfflineStore.playerStore.get('stats').then(playerStats => {
-                playerStats.tutorialStarted = false;
-                playerStats.tutorialSkipped = true;
-                try {
-                    OfflineStore.playerStore.set('stats', playerStats)
-                } catch (error) {
-                    logger.warn(error);
-                }
-                this.callbacks.updatePlayerStats(playerStats);
-            }).catch(err => logger.warn("could not retrieve offline player stats", err));
         }
     }
 
     async tutorialFinished() {
+        OfflineStore.playerStore.get('stats').then(playerStats => {
+            playerStats.tutorialFinished = true;
+            try {
+                OfflineStore.playerStore.set('stats', playerStats)
+            } catch (error) {
+                logger.warn(error);
+            }
+            this.callbacks.updatePlayerStats(playerStats);
+        }).catch(err => logger.warn("could not retrieve offline player stats", err));
+
         if (firebase.auth().currentUser) {
             try {
                 const data = (await ServerRequest('post', '/user/tutorial/finished')).data;
@@ -314,36 +324,25 @@ class Multiplayer {
                 logger.warn("Could not update player tutorial finished state.");
                 logger.warn(err);
             }
-        } else {
-            OfflineStore.playerStore.get('stats').then(playerStats => {
-                playerStats.tutorialFinished = true;
-                try {
-                    OfflineStore.playerStore.set('stats', playerStats)
-                } catch (error) {
-                    logger.warn(error);
-                }
-                this.callbacks.updatePlayerStats(playerStats);
-            }).catch(err => logger.warn("could not retrieve offline player stats", err));
         }
     }
 
     async updatePlayerTutorialInfos(playerInfos) {
-        console.log("persisting tutorial infos");
-        console.log(playerInfos.tutorialSkipped);
-        const tutorialInfos = {
-            tutorialStarted: playerInfos.tutorialStarted,
-            tutorialFinished: playerInfos.tutorialFinished,
-            tutorialSkipped: playerInfos.tutorialSkipped
-        };
         try {
-            OfflineStore.playerStore.set('tutorialinfos', tutorialInfos);
+            OfflineStore.playerStore.set('stats', playerInfos);
         } catch (error) {
             logger.warn(error);
         }
 
         if (firebase.auth().currentUser) {
             try {
-                await ServerRequest('post', '/user/tutorialinfos', { infos: tutorialInfos });
+                await ServerRequest('post', '/user/tutorialinfos', {
+                    infos: {
+                        tutorialStarted: playerInfos.tutorialStarted,
+                        tutorialFinished: playerInfos.tutorialFinished,
+                        tutorialSkipped: playerInfos.tutorialSkipped
+                    }
+                });
             } catch (err) {
                 logger.warn("Could not update player tutorial infos");
                 logger.warn(err);

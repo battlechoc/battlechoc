@@ -116,6 +116,8 @@ module.exports = {
     "REPORT_CUSTOM_MESSAGE_PLACEHOLDER": "問題は後に発生します...",
     "REPORT_DEVICE_INFO": "デバイス情報を追加する",
     "REPORT_PROBLEM": "問題を報告する",
+    "START_TUTORIAL": "チュートリアルを開始",
+    "SKIP_TUTORIAL": "チュートリアルをスキップ",
     "RESTART_TUTORIAL": "再起動チュートリアル",
     "ERROR_SENDING_PROBLEM_REPORT": "問題レポートの送信エラー。インターネット接続を確認してください",
     "SUCCESSFULLY_SENDING_PROBLEM_REPORT": "問題レポートが正常に送信されました！",

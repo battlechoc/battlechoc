@@ -105,7 +105,8 @@ const Tutorial = props => {
 
     const setPlayerName = playerName => {
         ServerRequest('post', '/user/username', { username: playerName })
-            .then(() => {
+            .then(async () => {
+                await multiplayer.tutorialFinished();
                 props.updatePlayerStats({ username: playerName });
                 OfflineStore.playerStore.get('stats').then(playerStats => {
                     playerStats.username = playerName;
@@ -149,7 +150,7 @@ const Tutorial = props => {
     if (playerHasName) {
         dialogTitle = t(tr.TUTORIAL_DIALOG_TITLE);
         dialogContent = <div className="tutorial-finished">
-            <p>{t(tr.TUTORIAL_DIALOG_MESSAGE)} {t(tr.TUTORIAL_DIALOG_HINT)}</p>
+            <p>{t(tr.TUTORIAL_DIALOG_MESSAGE)}<br/>{t(tr.TUTORIAL_DIALOG_HINT)}</p>
             <div className="menuButton" style={{ fontSize: '1.1rem' }} onClick={() => closeTutorial(true)}>
                 {t(tr.TUTORIAL_DIALOG_PLAY_GAME)}
             </div>
