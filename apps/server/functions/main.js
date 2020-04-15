@@ -462,7 +462,9 @@ app.post('/user/tutorial/finished', async (req, res) => {
     try {
         const queryResult = await getPlayerFromId(req.user.uid);
         if (queryResult.rows.length === 1) {
-            await dbPool.query('UPDATE players SET tutorial_started = $1, tutorial_finished = $2, tutorial_skipped = $3 WHERE id = $4', [true, true, false, req.user.uid]);
+            const coins = queryResult.rows[0].coins + 100;
+            const score = queryResult.rows[0].score + 100;
+            await dbPool.query('UPDATE players SET tutorial_started = $1, tutorial_finished = $2, tutorial_skipped = $3, coins = $4, score = $5 WHERE id = $6', [true, true, false, coins, score, req.user.uid]);
             res.status(200).end();
         } else {
             res.status(404).json({ error: 'PLAYER WITH UID "' + req.user.uid + '" DOES NOT EXIST' });
@@ -1431,7 +1433,7 @@ app.post('/user/username', async (req, res) => {
     try {
         const queryResult = await dbPool.query("SELECT * FROM players WHERE name = $1", [req.body.username]);
         if (queryResult.rows.length === 0) {
-            let regex = /^([a-zA-Z][a-zA-Z0-9_]{2,15})$/;
+            let regex = /^([a-zA-Z][a-zA-Z0-9_]{2,24})$/;
             if (regex.test(req.body.username) && req.body.username.toUpperCase() !== 'CHOCNONYMOUS') {
                 const existingPlayerResult = await dbPool.query("SELECT * FROM players WHERE id = $1", [req.user.uid]);
                 if (existingPlayerResult.rows.length > 0) {

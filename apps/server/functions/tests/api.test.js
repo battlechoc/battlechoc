@@ -110,6 +110,10 @@ it('should update tutorial skipped', async done => {
 });
 
 it('should update tutorial finished', async done => {
+    const playerBeforeFinish = (await dbPool.query("SELECT * FROM players WHERE id='1337-1337-1337-1337'")).rows[0];
+    const coinsBeforeFinish = playerBeforeFinish.coins;
+    const scoreBeforeFinish = playerBeforeFinish.score;
+
     const response = await request(app).post('/user/tutorial/finished').send({uid: '1337-1337-1337-1337'});
     expect(response.status).toBe(200);
 
@@ -117,6 +121,8 @@ it('should update tutorial finished', async done => {
     expect(player.tutorial_started).toBe(true);
     expect(player.tutorial_skipped).toBe(false);
     expect(player.tutorial_finished).toBe(true);
+    expect(player.score).toBe(scoreBeforeFinish + 100);
+    expect(player.coins).toBe(coinsBeforeFinish + 100);
 
     done();
 });
@@ -279,7 +285,7 @@ it('should fetch the highscore', async done => {
 it('should return players rank', async done => {
     const response = await request(app).get('/rank');
     expect(response.status).toBe(200);
-    expect(response.body.ranking).toBe(3);
+    expect(response.body.ranking).toBe(1);
     done();
 });
 
@@ -316,6 +322,10 @@ it('should set a username', async done => {
     expect(response.body.error).toBe('PLAYER WITH GIVEN NAME DOES ALREADY EXIST');
 
     response = await request(app).post('/user/username').send({ uid: '12345-12345-12345', username: 'B?asti' });
+    expect(response.status).toBe(400);
+    expect(response.body.error).toBe('USERNAME NOT VALID');
+
+    response = await request(app).post('/user/username').send({ uid: '12345-12345-12345', username: 'MyNewNameIsFarTooLongLongLong' });
     expect(response.status).toBe(400);
     expect(response.body.error).toBe('USERNAME NOT VALID');
 
