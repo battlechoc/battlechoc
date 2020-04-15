@@ -605,7 +605,8 @@ function prepareBuildPhase(state) {
         currentPlayer(state.game).donuts = donuts;
     }
 
-    if (currentPlayer(state.game).buildings > 0 && currentPlayer(state.game).cacao >= getCheapest(currentPlayer(state.game).level).costs) {
+    if ((currentPlayer(state.game).buildings > 0 && currentPlayer(state.game).cacao >= getCheapest(currentPlayer(state.game).level).costs) ||
+        (typeof currentPlayer(state.game).donuts !== 'undefined' && currentPlayer(state.game).donuts.length > 0)) {
         state.game.state = GameStateTypes.BUILD_PHASE;
     } else {
         state.game.state = GameStateTypes.ATTACK_PHASE;
@@ -1226,6 +1227,8 @@ class Rules {
                 action.payload.building.type !== EntityType.FACTORY) {
                 return new NoBuildingsLeftError();
             } else if (this.currentPlayer(game).cacao < action.payload.building.costs) {
+                console.error("current player cacao: " + this.currentPlayer(game).cacao);
+                console.error("other player cacao: " + this.otherPlayer(game).cacao);
                 return new NoCacaoLeftError();
             } else {
                 return this.canBuildOnCell(action.payload.building.position, action.payload.building.type, game);
