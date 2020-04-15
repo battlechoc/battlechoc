@@ -519,7 +519,11 @@ const GameStateTypes = Object.freeze({
 });
 
 function currentPlayer(game) {
-    return game.players[game.currentPlayerIndex];
+    try {
+        return game.players[game.currentPlayerIndex];
+    } catch (error) {
+        throw new GameNotRunningError();
+    }
 }
 
 function containsEntity(cell, entityType) {
@@ -527,7 +531,11 @@ function containsEntity(cell, entityType) {
 }
 
 function otherPlayer(game) {
-    return game.players[1 - game.currentPlayerIndex];
+    try {
+        return game.players[1 - game.currentPlayerIndex];
+    } catch (error) {
+        throw new GameNotRunningError();
+    }
 }
 
 function playerBoardCell(game, playerIndex, row, col) {
@@ -1175,7 +1183,7 @@ class Rules {
         if (IssuerRelevantActions.includes(action.type)) {
             if (typeof action.payload === 'undefined' ||
                 typeof action.payload.issuer === 'undefined' ||
-                action.payload.issuer !== this.currentPlayer(game).id) {
+                action.payload.issuer !== currentPlayer(game).id) {
                 return true;
             }
         }
@@ -1227,8 +1235,6 @@ class Rules {
                 action.payload.building.type !== EntityType.FACTORY) {
                 return new NoBuildingsLeftError();
             } else if (this.currentPlayer(game).cacao < action.payload.building.costs) {
-                console.error("current player cacao: " + this.currentPlayer(game).cacao);
-                console.error("other player cacao: " + this.otherPlayer(game).cacao);
                 return new NoCacaoLeftError();
             } else {
                 return this.canBuildOnCell(action.payload.building.position, action.payload.building.type, game);
