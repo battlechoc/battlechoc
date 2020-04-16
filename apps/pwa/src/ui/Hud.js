@@ -24,7 +24,7 @@ const Hud = props => {
 
     const [open, setOpen] = useState(false);
     const [openSettings, setOpenSettings] = useState(false);
-    const [showAccountOverview, setShowAccountOverview] = useState(false);  
+    const [showAccountOverview, setShowAccountOverview] = useState(false);
     const [showMultiplayerScreen, setShowMultiplayerScreen] = useState(false);
     const [waitingRoom, setWaitingRoom] = useState(false);
     const [waitingRoomText, setWaitingRoomText] = useState(t(tr.TRY_TO_JOIN_GAME));
@@ -33,7 +33,7 @@ const Hud = props => {
     const [challengedProfile, setChallengedProfile] = useState(undefined);
 
     const sleep = ms => {
-      return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     const openAccountOverview = account => {
@@ -53,7 +53,7 @@ const Hud = props => {
             if (typeof challengedPlayer !== 'undefined') {
                 setWaitingRoom(true);
                 setWaitingRoomText(t(tr.TRY_TO_SHOW_PLAYER_ACCOUNT));
-                
+
                 try {
                     while (!firebase.auth().currentUser) {
                         await sleep(100);
@@ -76,7 +76,7 @@ const Hud = props => {
             } else if (typeof sessionId !== 'undefined') {
                 setWaitingRoom(true);
                 setWaitingRoomText(t(tr.TRY_TO_JOIN_GAME))
-                
+
                 try {
                     let sessions = undefined;
                     let retry = false;
@@ -133,24 +133,33 @@ const Hud = props => {
         }
     }
 
+    const kickOffTutorial = async () => {
+        await multiplayer.tutorialStarted();
+        startTutorial();
+    }
+
+    const skipTutorial = async () => {
+        await multiplayer.tutorialSkipped();
+    }
+
     const stage = estimateStage();
     return (
         <div className={showMultiplayerScreen ? 'scrollable ' + className : className}>
-            <Settings startTutorial={startTutorial} surrender={surrender} open={openSettings} close={() => setOpenSettings(false)} />
+            <Settings startTutorial={kickOffTutorial} surrender={surrender} open={openSettings} close={() => setOpenSettings(false)} />
             <AccountOverview
                 challengePlayer={async username => {
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     await multiplayer.challengePlayer(username);
-                    multiplayer.getMultiplayerSessions();        
+                    multiplayer.getMultiplayerSessions();
                 }}
                 addFriend={async friend => {
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                    await multiplayer.addFriend(friend);       
-                }} 
+                    await multiplayer.addFriend(friend);
+                }}
                 removeFriend={async friend => {
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     await multiplayer.removeFriend(friend);
-                }} 
+                }}
                 joinGame={joinGame} playerAccount={playerAccount} open={showAccountOverview} close={() => setShowAccountOverview(false)} />
             {(() => {
                 if (stage === 'CHOCLAB_SCREEN') {
@@ -179,7 +188,7 @@ const Hud = props => {
                     return null;
                 } else {
                     return <Actionbar endGame={endGame} showSettings={() => {
-                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT); 
+                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                         setOpenSettings(true);
                     }} showSignInOrUp={openAccountOverview} />
                 }
@@ -190,13 +199,20 @@ const Hud = props => {
                     const controls = []
                     const playername = playerInfos.stats.username;
                     const score = playerInfos.stats.score;
+                    const firstPlayScreen = playerInfos.stats.tutorialFinished === false && playerInfos.stats.tutorialSkipped === false;
                     const hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
 
-                    controls.push(<div key="0" className="menuButton" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t(tr.NEW_GAME) : t(tr.MAIN_MENU_SINGLEPLAYER)}</div>);
-                    
-                    if (!hideOptions) {
-                        controls.push(<div key="1" className="menuButton" onClick={() => setShowMultiplayerScreen(true)}>{t(tr.MAIN_MENU_MULTIPLAYER)}</div>);
-                        controls.push(<div key="2" className="menuButton" onClick={() => setChoclabScreen(true)}>{t(tr.MAIN_MENU_CHOCLAB)}</div>);
+                    if (firstPlayScreen) {
+                        controls.push(<div key="0" className="menuButton" onClick={() => kickOffTutorial()}>{t(tr.START_TUTORIAL)}</div>);
+                        controls.push(<div key="1" className="menuButton" onClick={() => skipTutorial()}>{t(tr.SKIP_TUTORIAL)}</div>);
+                        controls.push(<div key="2" className="menuButton" onClick={() => setShowAccountOverview(true)}>{t(tr.SIGNINORUP)}</div>);
+                    } else {
+                        controls.push(<div key="0" className="menuButton" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t(tr.NEW_GAME) : t(tr.MAIN_MENU_SINGLEPLAYER)}</div>);
+
+                        if (!hideOptions) {
+                            controls.push(<div key="1" className="menuButton" onClick={() => setShowMultiplayerScreen(true)}>{t(tr.MAIN_MENU_MULTIPLAYER)}</div>);
+                            controls.push(<div key="2" className="menuButton" onClick={() => setChoclabScreen(true)}>{t(tr.MAIN_MENU_CHOCLAB)}</div>);
+                        }
                     }
 
                     return (
@@ -232,14 +248,14 @@ const Hud = props => {
                                     </div>
                                 </BattlechocDialog>
                             </div>
-                            { notification.open ? <Notification message={notification.message} title={notification.title} close={() => hideNotification()} /> : <Info openInfo={openInfo} /> }
+                            {notification.open ? <Notification message={notification.message} title={notification.title} close={() => hideNotification()} /> : <Info openInfo={openInfo} />}
                         </div>
                     );
                 } else if (stage === 'CHOOSE_MENU') {
                     return (
                         <div className="chooseStage">
-                            <Tooltip 
-                                state={state} 
+                            <Tooltip
+                                state={state}
                                 currentPlayerName={game.players[multiplayer.localPlayerIndex].name}
                                 tappedBuilding={tappedBuilding}
                                 selectedAttack={selectedAttack}
@@ -253,13 +269,13 @@ const Hud = props => {
                 } else if (stage === 'CHOCLAB_SCREEN') {
                     return <Choclab />
                 } else if (stage === 'WAITING_ROOM') {
-                    return <div className="waiting-room"><p>{ waitingRoomText }</p><CircularProgress /></div>
+                    return <div className="waiting-room"><p>{waitingRoomText}</p><CircularProgress /></div>
                 } else {
                     let player = game.players[multiplayer.localPlayerIndex];
                     return (
                         <div>
-                            <Tooltip 
-                                state={state} 
+                            <Tooltip
+                                state={state}
                                 currentPlayerName={player.name}
                                 tappedBuilding={tappedBuilding}
                                 selectedAttack={selectedAttack}

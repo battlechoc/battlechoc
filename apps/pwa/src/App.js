@@ -409,7 +409,7 @@ class App extends Component {
             }
         }
 
-        if (this.props.playerInfos.stats.username === 'Chocnonymous') {
+        if (!this.props.playerInfos.stats.tutorialFinished && !this.props.playerInfos.stats.tutorialSkipped) {
             this.startTutorial();
         } else {
             Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
