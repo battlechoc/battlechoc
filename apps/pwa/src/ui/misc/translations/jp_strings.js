@@ -164,6 +164,8 @@ module.exports = {
     "TUTORIAL_DIALOG_BACK": "メニューに戻る",
     "TUTORIAL_DIALOG_PLAY_GAME": "試合を開始する",
     "TUTORIAL_CHOOSE_NAME_INFO": "始める前に、クールな名前を選択することをお勧めします！友人はあなたの名前に基づいてあなたを簡単に見つけることができ、敵はその名前を聞くと最終的に震えます。",
+    "TUTORIAL_FINISHED_NOTIFICATION_TITLE": "おめでとう",
+    "TUTORIAL_FINISHED_NOTIFICATION_MESSAGE": "チュートリアルをプレイしてユニークなプレイヤー名を選択することで、100コインを獲得しました。楽しんで",
     "ACTIONS": "行動",
     "OPPONENT": "相手",
     "TURNS": "ターン",

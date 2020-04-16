@@ -164,6 +164,8 @@ module.exports = {
     "TUTORIAL_DIALOG_BACK": "Zum Menü",
     "TUTORIAL_DIALOG_PLAY_GAME": "Jetzt Spielen",
     "TUTORIAL_CHOOSE_NAME_INFO": "Verdiene Deine ersten 100 Schokotaler, indem Du einen coolen Namen wählst oder nimm den von uns vorgeschlagenen Namen! Freunde können Dich anhand Deines Namens leicht finden, und Gegner werden erzittern, wenn sie von Dir herausgefordert werden. Du kannst den Namen später jederzeit in den Einstellungen ändern.",
+    "TUTORIAL_FINISHED_NOTIFICATION_TITLE": "Herzlichen Glückwunsch!",
+    "TUTORIAL_FINISHED_NOTIFICATION_MESSAGE": "Du hast grad deine ersten 100 Schokotaler verdient, indem du das Tutorial beendet und einen einzigartigen Spielernamen gewählt hast. Viel Spaß!",
     "ACTIONS": "Aktionen",
     "OPPONENT": "Gegenspieler",
     "TURNS": "Züge",

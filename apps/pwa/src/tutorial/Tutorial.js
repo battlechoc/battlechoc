@@ -106,6 +106,7 @@ const Tutorial = props => {
     const setPlayerName = playerName => {
         ServerRequest('post', '/user/username', { username: playerName })
             .then(async () => {
+                props.showNotification({title: t(tr.TUTORIAL_FINISHED_NOTIFICATION_TITLE), message: t(tr.TUTORIAL_FINISHED_NOTIFICATION_MESSAGE)});
                 await multiplayer.tutorialFinished();
                 props.updatePlayerStats({ username: playerName });
                 OfflineStore.playerStore.get('stats').then(playerStats => {

@@ -145,7 +145,7 @@ const Hud = props => {
     const stage = estimateStage();
     return (
         <div className={showMultiplayerScreen ? 'scrollable ' + className : className}>
-            <Settings startTutorial={startTutorial} surrender={surrender} open={openSettings} close={() => setOpenSettings(false)} />
+            <Settings startTutorial={kickOffTutorial} surrender={surrender} open={openSettings} close={() => setOpenSettings(false)} />
             <AccountOverview
                 challengePlayer={async username => {
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);

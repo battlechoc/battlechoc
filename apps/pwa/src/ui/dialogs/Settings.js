@@ -200,7 +200,7 @@ const Settings = props => {
         title={t(tr.SETTINGS)}>
         <div className={classes.dialogContent}>
           {
-            typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous' ?
+            (typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous') || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true ?
               editPlayerName ? <PlayerNameInput setPlayerName={setPlayerName} startValue={props.playerInfos.stats.username} current={props.playerInfos.stats.username}/> :
                 <div className={classes.username}>
                   <AccountCircle className={classes.accountCircle} /> {props.playerInfos.stats.username}
@@ -228,7 +228,7 @@ const Settings = props => {
               setShowErrorReport(true);
             }}>{t(tr.REPORT_PROBLEM)}</div>
             {(() => {
-              if (props.playerInfos.stats.username !== 'Chocnonymous' && typeof props.game === 'undefined') {
+              if ((props.playerInfos.stats.username !== 'Chocnonymous' && typeof props.game === 'undefined') || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true) {
                 return (
                   <div>
                     <div className={classes.menuButton} onClick={() => {
