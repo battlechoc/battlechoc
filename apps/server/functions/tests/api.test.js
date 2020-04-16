@@ -46,17 +46,17 @@ it('should find Basti', async done => {
 });
 
 it('should add and find a friend and then remove the friend again and find nothing', async done => {
-    let response = await request(app).post('/user/friend').send({friend: 'thebestfriendever'});
+    let response = await request(app).post('/user/friend').send({ friend: 'thebestfriendever' });
     expect(response.status).toBe(404);
-    response = await request(app).post('/user/friend').send({friend: 'Fabi'});
+    response = await request(app).post('/user/friend').send({ friend: 'Fabi' });
     expect(response.status).toBe(200);
     response = await request(app).get('/user/friends');
     expect(response.status).toBe(200);
     expect(response.body.length).toBe(1);
     expect(response.body[0].name).toBe('Fabi');
-    response = await request(app).delete('/user/friend').send({friend: 'thebestfriendever'});
+    response = await request(app).delete('/user/friend').send({ friend: 'thebestfriendever' });
     expect(response.status).toBe(404);
-    response = await request(app).delete('/user/friend').send({friend: 'Fabi'});
+    response = await request(app).delete('/user/friend').send({ friend: 'Fabi' });
     expect(response.status).toBe(200);
     response = await request(app).get('/user/friends');
     expect(response.status).toBe(200);
@@ -65,7 +65,7 @@ it('should add and find a friend and then remove the friend again and find nothi
 });
 
 it('should find a valid player', async done => {
-    const response = await request(app).get('/user').send({uid: '1337-1337-1337-1337'});
+    const response = await request(app).get('/user').send({ uid: '1337-1337-1337-1337' });
     expect(response.status).toBe(200);
     expect(response.body.stats.id).toBe('1337-1337-1337-1337');
     expect(response.body.stats.tutorialStarted).toBe(false);
@@ -79,33 +79,27 @@ it('should find a valid player', async done => {
 });
 
 it('should not find a valid player', async done => {
-    const response = await request(app).get('/user').send({uid: 'i-do-not-exist'});
+    const response = await request(app).get('/user').send({ uid: 'i-do-not-exist' });
     expect(response.status).toBe(404);
     expect(JSON.stringify(response.body)).toBe(JSON.stringify({ error: 'PLAYER NOT FOUND' }));
     done();
 });
 
 it('should update tutorial started', async done => {
-    const response = await request(app).post('/user/tutorial/started').send({uid: '1337-1337-1337-1337'});
+    const response = await request(app).post('/user/tutorial/started').send({ uid: '1337-1337-1337-1337' });
     expect(response.status).toBe(200);
-
-    let player = (await dbPool.query("SELECT * FROM players WHERE id='1337-1337-1337-1337'")).rows[0];
-    expect(player.tutorial_started).toBe(true);
-    expect(player.tutorial_skipped).toBe(false);
-    expect(player.tutorial_finished).toBe(false);
-
+    expect(response.body.stats.tutorialStarted).toBe(true);
+    expect(response.body.stats.tutorialSkipped).toBe(false);
+    expect(response.body.stats.tutorialFinished).toBe(false);
     done();
 });
 
 it('should update tutorial skipped', async done => {
-    const response = await request(app).post('/user/tutorial/skipped').send({uid: '1337-1337-1337-1337'});
+    const response = await request(app).post('/user/tutorial/skipped').send({ uid: '1337-1337-1337-1337' });
     expect(response.status).toBe(200);
-
-    let player = (await dbPool.query("SELECT * FROM players WHERE id='1337-1337-1337-1337'")).rows[0];
-    expect(player.tutorial_started).toBe(false);
-    expect(player.tutorial_skipped).toBe(true);
-    expect(player.tutorial_finished).toBe(false);
-
+    expect(response.body.stats.tutorialStarted).toBe(false);
+    expect(response.body.stats.tutorialSkipped).toBe(true);
+    expect(response.body.stats.tutorialFinished).toBe(false);
     done();
 });
 
@@ -114,46 +108,43 @@ it('should update tutorial finished', async done => {
     const coinsBeforeFinish = playerBeforeFinish.coins;
     const scoreBeforeFinish = playerBeforeFinish.score;
 
-    const response = await request(app).post('/user/tutorial/finished').send({uid: '1337-1337-1337-1337'});
+    const response = await request(app).post('/user/tutorial/finished').send({ uid: '1337-1337-1337-1337' });
     expect(response.status).toBe(200);
-
-    let player = (await dbPool.query("SELECT * FROM players WHERE id='1337-1337-1337-1337'")).rows[0];
-    expect(player.tutorial_started).toBe(true);
-    expect(player.tutorial_skipped).toBe(false);
-    expect(player.tutorial_finished).toBe(true);
-    expect(player.score).toBe(scoreBeforeFinish + 100);
-    expect(player.coins).toBe(coinsBeforeFinish + 100);
-
+    expect(response.body.stats.tutorialStarted).toBe(true);
+    expect(response.body.stats.tutorialSkipped).toBe(false);
+    expect(response.body.stats.tutorialFinished).toBe(true);
+    expect(response.body.stats.coins).toBe(coinsBeforeFinish + 100);
+    expect(response.body.stats.score).toBe(scoreBeforeFinish + 100);
     done();
 });
 
 it('should not allow to challenge yourself', async done => {
-    const response = await request(app).post('/user/challenge').send({opponent: 'Basti'});
+    const response = await request(app).post('/user/challenge').send({ opponent: 'Basti' });
     expect(response.status).toBe(400);
     expect(JSON.stringify(response.body)).toBe(JSON.stringify({ error: 'CANNOT CREATE A GAME CHALLENGING YOURSELF' }));
     done();
 });
 
 it('should challenge the player', async done => {
-    const response = await request(app).post('/user/challenge').send({opponent: 'Fabi'});
+    const response = await request(app).post('/user/challenge').send({ opponent: 'Fabi' });
     expect(response.status).toBe(200);
     console.log(JSON.stringify(response.body));
     done();
 });
 
 it('should not find the opponent', async done => {
-    const response = await request(app).post('/user/challenge').send({opponent: 'thebestfriendever'});
+    const response = await request(app).post('/user/challenge').send({ opponent: 'thebestfriendever' });
     expect(response.status).toBe(404);
     done();
 });
 
-it('should not find a player', async done => {    
+it('should not find a player', async done => {
     const response = await request(app).get('/query/user/Zee');
     expect(response.body.length).toBe(0);
     done();
 });
 
-it('should find three players', async done => {    
+it('should find three players', async done => {
     const response = await request(app).get('/query/user/a');
     expect(response.body.length).toBe(3);
     done();
@@ -248,7 +239,7 @@ it('should surrender the game', async done => {
 
     response = await request(app).post('/surrender').send({ sessionId: multiplayerSessionId });
     expect(response.status).toBe(200);
-    
+
     response = await request(app).get(`/multiplayer/session/${multiplayerSessionId}`);
     expect(response.status).toBe(200);
     expect(response.body.game.isRunning).toBe(false);
@@ -262,7 +253,7 @@ it('should upgrade the tree', async done => {
 
     let response = await request(app).post('/update/level').send({ entityType: EntityType.CACAOTREE, upgrade: true });
     expect(response.status).toBe(200);
-    
+
     player = (await dbPool.query("SELECT * FROM players WHERE name='Basti'")).rows[0];
     expect(player.level[EntityType.CACAOTREE]).toBe(1);
 
@@ -336,7 +327,7 @@ it('should set a username', async done => {
 });
 
 it('should add player track record', async done => {
-    const response = await request(app).post('/user/trackrecords').send({"stats":[{"attacks":7,"builtEntities":6,"espionages":0,"moltenFields":0,"won":true,"lost":false,"winners":[{"idx":0,"name":"Charlie Bucket","level":{"EntityType.CREAM":0,"EntityType.FACTORY":15,"EntityType.FACTORY_EXTENSION":8,"EntityType.CACAOTREE":15,"EntityType.RUM_TRUFFLE_CANNON":12,"EntityType.FRUIT_CANNON":14,"EntityType.SPYING_EASTER_BUNNY":11,"EntityType.XMAS_FACTORY":8,"EntityType.HOT_CHOCOLATE_BALLISTA":13,"EntityType.CHOCOLATE_FOUNTAIN":15,"EntityType.DONUT_FACTORY":5},"type":"PlayerType.HUMAN","id":"cfc41eab-c394-41ef-8545-7371e9d5a40a","cacao":61,"cacaoPerTurn":843,"buildings":2,"buildingsPerTurn":5,"donutProbability":0,"donuts":[],"activeDonuts":[],"attacks":{"AttackType.TRUFFLE":1,"AttackType.HOT_CHOCOLATE":0,"AttackType.FRUIT":0,"AttackType.BUNNY":0},"attacksPerTurn":{"AttackType.TRUFFLE":4,"AttackType.HOT_CHOCOLATE":0,"AttackType.FRUIT":0,"AttackType.BUNNY":0},"hasFactory":true,"statistics":{"attacks":7,"builtEntities":6,"espionages":0,"moltenFields":0},"fieldIndex":0}],"id":"1f908d03-50e1-4f3d-bc97-ef5de2fed722"}]});
+    const response = await request(app).post('/user/trackrecords').send({ "stats": [{ "attacks": 7, "builtEntities": 6, "espionages": 0, "moltenFields": 0, "won": true, "lost": false, "winners": [{ "idx": 0, "name": "Charlie Bucket", "level": { "EntityType.CREAM": 0, "EntityType.FACTORY": 15, "EntityType.FACTORY_EXTENSION": 8, "EntityType.CACAOTREE": 15, "EntityType.RUM_TRUFFLE_CANNON": 12, "EntityType.FRUIT_CANNON": 14, "EntityType.SPYING_EASTER_BUNNY": 11, "EntityType.XMAS_FACTORY": 8, "EntityType.HOT_CHOCOLATE_BALLISTA": 13, "EntityType.CHOCOLATE_FOUNTAIN": 15, "EntityType.DONUT_FACTORY": 5 }, "type": "PlayerType.HUMAN", "id": "cfc41eab-c394-41ef-8545-7371e9d5a40a", "cacao": 61, "cacaoPerTurn": 843, "buildings": 2, "buildingsPerTurn": 5, "donutProbability": 0, "donuts": [], "activeDonuts": [], "attacks": { "AttackType.TRUFFLE": 1, "AttackType.HOT_CHOCOLATE": 0, "AttackType.FRUIT": 0, "AttackType.BUNNY": 0 }, "attacksPerTurn": { "AttackType.TRUFFLE": 4, "AttackType.HOT_CHOCOLATE": 0, "AttackType.FRUIT": 0, "AttackType.BUNNY": 0 }, "hasFactory": true, "statistics": { "attacks": 7, "builtEntities": 6, "espionages": 0, "moltenFields": 0 }, "fieldIndex": 0 }], "id": "1f908d03-50e1-4f3d-bc97-ef5de2fed722" }] });
     expect(response.status).toBe(200);
     expect(response.body.stats.winnings).toBe("1");
 
