@@ -432,7 +432,7 @@ app.post('/user/tutorial/started', async (req, res) => {
     try {
         const queryResult = await dbPool.query('SELECT id FROM players WHERE id = $1', [req.user.uid]);
         if (queryResult.rows.length === 1) {
-            const updateQueryResult = await dbPool.query('UPDATE players SET tutorial_started = $1, tutorial_finished = $2, tutorial_skipped = $3 WHERE id = $4 RETURNING *', [true, false, false, req.user.uid]);
+            const updateQueryResult = await dbPool.query('UPDATE players SET tutorial_started = $1, tutorial_skipped = $2 WHERE id = $3 RETURNING *', [true, false, req.user.uid]);
             if (updateQueryResult.rows.length === 1) {
                 res.status(200).json({ stats: await createPlayerStatsObject(updateQueryResult.rows[0], true, true) });
             } else {
@@ -451,7 +451,7 @@ app.post('/user/tutorial/skipped', async (req, res) => {
     try {
         const queryResult = await dbPool.query('SELECT id FROM players WHERE id = $1', [req.user.uid]);
         if (queryResult.rows.length === 1) {
-            const updateQueryResult = await dbPool.query('UPDATE players SET tutorial_started = $1, tutorial_finished = $2, tutorial_skipped = $3 WHERE id = $4 RETURNING *', [false, false, true, req.user.uid]);
+            const updateQueryResult = await dbPool.query('UPDATE players SET tutorial_started = $1, tutorial_skipped = $2 WHERE id = $3 RETURNING *', [false, true, req.user.uid]);
             if (updateQueryResult.rows.length === 1) {
                 res.status(200).json({ stats: await createPlayerStatsObject(updateQueryResult.rows[0], true, true) });
             } else {
