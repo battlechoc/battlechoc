@@ -92,7 +92,7 @@ const Tutorial = props => {
     }
 
     const closeTutorial = startGame => {
-        if (playerHasName) {
+        if (playerHasName || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true) {
             loopAnimation.current.stop();
             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
             setOpen(false);
@@ -106,7 +106,7 @@ const Tutorial = props => {
     const setPlayerName = playerName => {
         ServerRequest('post', '/user/username', { username: playerName })
             .then(async () => {
-                props.showNotification({title: t(tr.TUTORIAL_FINISHED_NOTIFICATION_TITLE), message: t(tr.TUTORIAL_FINISHED_NOTIFICATION_MESSAGE)});
+                props.showNotification({ title: t(tr.TUTORIAL_FINISHED_NOTIFICATION_TITLE), message: t(tr.TUTORIAL_FINISHED_NOTIFICATION_MESSAGE) });
                 await multiplayer.tutorialFinished();
                 props.updatePlayerStats({ username: playerName });
                 OfflineStore.playerStore.get('stats').then(playerStats => {
@@ -129,12 +129,11 @@ const Tutorial = props => {
 
     if (page >= props.loopAnimations.length - 1) {
         nextIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={async () => {
-            if (playerHasName) {
+            if (playerHasName || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true) {
                 closeTutorial(false);
             } else {
                 const nameValue = (typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous') ?
                     props.playerInfos.stats.username : await multiplayer.fetchRandomName();
-                console.log("generated namevalue: " + nameValue);
                 setInitialUserName(nameValue);
                 setOpen(true);
             }
@@ -143,15 +142,15 @@ const Tutorial = props => {
 
     let dialogTitle = t(tr.TUTORIAL_DIALOG_TITLE_BEFORE);
     let dialogContent = <div>
-        <PlayerNameInput setPlayerName={setPlayerName} startValue={initialUserName} current={props.playerInfos.stats.username}/>
+        <PlayerNameInput setPlayerName={setPlayerName} startValue={initialUserName} current={props.playerInfos.stats.username} />
         <p style={{ color: '#324D5C' }}>{t(tr.TUTORIAL_CHOOSE_NAME_INFO)}</p>
     </div>;
     let canClose = false;
 
-    if (playerHasName) {
+    if (playerHasName || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true) {
         dialogTitle = t(tr.TUTORIAL_DIALOG_TITLE);
         dialogContent = <div className="tutorial-finished">
-            <p>{t(tr.TUTORIAL_DIALOG_MESSAGE)}<br/>{t(tr.TUTORIAL_DIALOG_HINT)}</p>
+            <p>{t(tr.TUTORIAL_DIALOG_MESSAGE)}<br />{t(tr.TUTORIAL_DIALOG_HINT)}</p>
             <div className="menuButton" style={{ fontSize: '1.1rem' }} onClick={() => closeTutorial(true)}>
                 {t(tr.TUTORIAL_DIALOG_PLAY_GAME)}
             </div>
