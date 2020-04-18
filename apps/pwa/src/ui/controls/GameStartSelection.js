@@ -48,7 +48,8 @@ const GameStartSelection = props => {
         if (cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM)) { 
             className = 'cream';
         }
-        return <div key={i} className={cell.previewStyle}>
+        const sizeClassName = (game.board.size.cols === 6) ? "six" : (game.board.size.cols === 8) ? "eight" : "ten";
+        return <div key={i} className={cell.previewStyle + " " + sizeClassName}>
             <img className={className} alt="filled with cream" src="/images/cream_preview.png" />
         </div>
     };
