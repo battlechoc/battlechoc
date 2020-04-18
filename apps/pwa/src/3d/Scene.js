@@ -80,13 +80,13 @@ class Scene extends Component {
         this.animations = [];
     }
 
-    showEnergyBar = (entity, position, showShieldEnergyToo=false) => {
+    showEnergyBar = (entity, position, showShieldEnergyToo = false) => {
         if (showShieldEnergyToo) {
             const cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];
             const selectedCell = cellAt(this.props.game.board, this.props.game.players[multiplayer.localPlayerIndex].fieldIndex, entity.position.row, entity.position.col);
             if (selectedCell.shielded) {
                 this.showEnergyBar(this.getFountain(entity.position.row, entity.position.col, this.props.game.board, this.props.game.players[multiplayer.localPlayerIndex].fieldIndex));
-            }            
+            }
         }
 
         let height = 6.5;
@@ -131,15 +131,17 @@ class Scene extends Component {
         bar.animations = [fade];
 
         const uuid = uuidv4();
-        this.animations.push({ id: uuid, target: bar, stopAnimation: () => {
-            material.dispose();
-            bar.dispose();
-            this.energyBars = this.energyBars.filter(bar => bar !== name);
-            this.setRenderLoop(false);
-            this.animations = this.animations.filter(callback => callback.id !== uuid);
-        }});
+        this.animations.push({
+            id: uuid, target: bar, stopAnimation: () => {
+                material.dispose();
+                bar.dispose();
+                this.energyBars = this.energyBars.filter(bar => bar !== name);
+                this.setRenderLoop(false);
+                this.animations = this.animations.filter(callback => callback.id !== uuid);
+            }
+        });
 
-        this.scene.beginAnimation(bar, 0, 240, false, 1,  () =>  {
+        this.scene.beginAnimation(bar, 0, 240, false, 1, () => {
             if (this.animations.findIndex(callback => callback.id === uuid) > -1) {
                 this.animations.find(callback => callback.id === uuid).stopAnimation();
             }
@@ -191,13 +193,13 @@ class Scene extends Component {
 
         info.material = material;
 
-        let drawInfo = (filename, color, text, donut=false, offsetLeft=0) => {
+        let drawInfo = (filename, color, text, donut = false, offsetLeft = 0) => {
             let image = new Image();
             image.src = filename;
             image.onload = () => {
                 this.setRenderLoop();
-                
-                if (donut) { 
+
+                if (donut) {
                     context.drawImage(image, offsetLeft, 0, 120, 120, 45, 45, 120, 120);
                 } else {
                     context.drawImage(image, 0, 0);
@@ -221,14 +223,16 @@ class Scene extends Component {
                 flyaway.setKeys(keyframes);
                 info.animations = [flyaway, fade];
                 const uuid = uuidv4();
-                this.animations.push({ id: uuid, target: info, stopAnimation: () => {
-                    info.dispose();
-                    texture.dispose();
-                    material.dispose();
-                    this.setRenderLoop(false);
-                    this.animations = this.animations.filter(callback => callback.id !== uuid);
-                }});
-                this.scene.beginAnimation(info, 0, 180, false, 1, () =>  {
+                this.animations.push({
+                    id: uuid, target: info, stopAnimation: () => {
+                        info.dispose();
+                        texture.dispose();
+                        material.dispose();
+                        this.setRenderLoop(false);
+                        this.animations = this.animations.filter(callback => callback.id !== uuid);
+                    }
+                });
+                this.scene.beginAnimation(info, 0, 180, false, 1, () => {
                     if (this.animations.findIndex(callback => callback.id === uuid) > -1) {
                         this.animations.find(callback => callback.id === uuid).stopAnimation();
                     }
@@ -300,6 +304,12 @@ class Scene extends Component {
 
         if (this.props.tutorial) {
             distance = Math.max(3 / ratio, 5);
+        } else if (typeof this.props.game !== 'undefined') {
+            if (this.props.game.board.size.cols === 6) {
+                distance = Math.max(4.5 / ratio, 5);
+            } else if (this.props.game.board.size.cols === 8) {
+                distance = Math.max(6 / ratio, 5);
+            }
         }
 
         this.camera.orthoTop = distance;
@@ -343,12 +353,12 @@ class Scene extends Component {
 
     highlightDonuts = (highlight = true) => {
         let highlights = [
-            {type: EntityType.DONUT_PORTAL_BLUE, color: new Color3(0.3, 0.3, 1)}, 
-            {type: EntityType.DONUT_PORTAL_RED, color: new Color3(1, 0.3, 0.3)},
-            {type: EntityType.DONUT_CREAM_WHITE, color: new Color3(0.9, 0.9, 0.9)},
-            {type: EntityType.DONUT_SURPRISE_YELLOW, color: new Color3(1, 1, 0.3)},
-            {type: EntityType.DONUT_HEALTH_GREEN, color: new Color3(0.3, 1, 0.3)},
-            {type: EntityType.DONUT_STOP_PINK, color: new Color3(1, 0.41, 0.7)}
+            { type: EntityType.DONUT_PORTAL_BLUE, color: new Color3(0.3, 0.3, 1) },
+            { type: EntityType.DONUT_PORTAL_RED, color: new Color3(1, 0.3, 0.3) },
+            { type: EntityType.DONUT_CREAM_WHITE, color: new Color3(0.9, 0.9, 0.9) },
+            { type: EntityType.DONUT_SURPRISE_YELLOW, color: new Color3(1, 1, 0.3) },
+            { type: EntityType.DONUT_HEALTH_GREEN, color: new Color3(0.3, 1, 0.3) },
+            { type: EntityType.DONUT_STOP_PINK, color: new Color3(1, 0.41, 0.7) }
         ]
 
         for (let entity of highlights) {
@@ -365,8 +375,8 @@ class Scene extends Component {
         }
 
         let entities = [
-            EntityType.CREAM, 
-            EntityType.FACTORY, 
+            EntityType.CREAM,
+            EntityType.FACTORY,
             EntityType.FACTORY_EXTENSION,
             EntityType.CACAOTREE,
             EntityType.RUM_TRUFFLE_CANNON,
@@ -432,7 +442,7 @@ class Scene extends Component {
         let player = this.props.game.players[multiplayer.localPlayerIndex]
         let buildingSelected = this.props.selectedBuilding;
         let initialPlacement = this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
-        
+
         if (buildingSelected || (initialPlacement && player.buildingsPerTurn === 0)) {
             let building;
             if (initialPlacement) {
@@ -480,7 +490,7 @@ class Scene extends Component {
                     let cacaoDelta = player.cacaoPerTurn - playerCacaoPerTurnBefore;
                     let buildingsDelta = player.buildingsPerTurn - buildingsPerTurnBefore;
                     setTimeout(() => {
-                        if (typeof this.props.game !== 'undefined') { 
+                        if (typeof this.props.game !== 'undefined') {
                             if (building.type === EntityType.CACAOTREE) {
                                 this.spawnInfo(InfoType.INCREASE_CACAO_PER_TURN, position.clone(), cacaoDelta);
                             } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
@@ -491,9 +501,9 @@ class Scene extends Component {
                                 this.spawnInfo(InfoType.INCREASE_SPY_ATTACKS_PER_TURN, position.clone(), 1);
                             }
                             setTimeout(() => {
-                                if (typeof this.props.game !== 'undefined') { 
+                                if (typeof this.props.game !== 'undefined') {
                                     player = this.props.game.players[multiplayer.localPlayerIndex]
-                                    if ( player.donuts.length === 0 && ( player.buildings === 0 || player.cacao < getCheapest().costs )) {
+                                    if (player.donuts.length === 0 && (player.buildings === 0 || player.cacao < getCheapest().costs)) {
                                         if (playerHasAttacks(player) === true) {
                                             this.props.finishBuildPhase({ issuer: player.id }).then(() => {
                                                 this.props.deselectBuildings();
@@ -566,7 +576,7 @@ class Scene extends Component {
                 if (cellContainsDonut && !selectedCell.occupiedBy.some(entity => isDonut(entity.type))) {
                     this.triggerDonutInfo(donut, position.clone());
                 }
-                
+
                 if (attackParams.attackType === AttackType.BUNNY) {
                     if (this.props.game.players[multiplayer.localPlayerIndex].attacksPerTurn[AttackType.BUNNY] > 0) {
                         Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
@@ -651,6 +661,12 @@ class Scene extends Component {
         let gamefieldHeight = 5;
         if (this.props.tutorial) {
             gamefieldHeight = 3.5;
+        } else if (typeof this.props.game !== 'undefined') {
+            if (this.props.game.board.size.cols === 6) {
+                gamefieldHeight = 4;
+            } else if (this.props.game.board.size.cols === 8) {
+                gamefieldHeight = 4.5;
+            }
         }
 
         this.playerGameField = new Gamefield(true, new Vector3(0, gamefieldHeight, 0), () => this.props.game.board.fields[playerFieldIndex], playerFieldIndex, game.board.size, this.scene, (row, col, eventX, eventY) => this.playerFieldClick(row, col, eventX, eventY), run => this.setRenderLoop(run));
