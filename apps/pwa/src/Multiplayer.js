@@ -259,6 +259,97 @@ class Multiplayer {
         return 0;
     }
 
+    async tutorialStarted() {
+        OfflineStore.playerStore.get('stats').then(playerStats => {
+            playerStats.tutorialStarted = true;
+            playerStats.tutorialSkipped = false;
+            try {
+                OfflineStore.playerStore.set('stats', playerStats)
+            } catch (error) {
+                logger.warn(error);
+            }
+            this.callbacks.updatePlayerStats(playerStats);
+        }).catch(err => logger.warn("could not retrieve offline player stats", err));
+
+        if (firebase.auth().currentUser) {
+            try {
+                const data = (await ServerRequest('post', '/user/tutorial/started')).data;
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player tutorial started state.");
+                logger.warn(err);
+            }
+        }
+    }
+
+    async tutorialSkipped() {
+        OfflineStore.playerStore.get('stats').then(playerStats => {
+            playerStats.tutorialStarted = false;
+            playerStats.tutorialSkipped = true;
+            try {
+                OfflineStore.playerStore.set('stats', playerStats)
+            } catch (error) {
+                logger.warn(error);
+            }
+            this.callbacks.updatePlayerStats(playerStats);
+        }).catch(err => logger.warn("could not retrieve offline player stats", err));
+
+        if (firebase.auth().currentUser) {
+            try {
+                const data = (await ServerRequest('post', '/user/tutorial/skipped')).data;
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player tutorial skipped state.");
+                logger.warn(err);
+            }
+        }
+    }
+
+    async tutorialFinished() {
+        OfflineStore.playerStore.get('stats').then(playerStats => {
+            playerStats.tutorialFinished = true;
+            try {
+                OfflineStore.playerStore.set('stats', playerStats)
+            } catch (error) {
+                logger.warn(error);
+            }
+            this.callbacks.updatePlayerStats(playerStats);
+        }).catch(err => logger.warn("could not retrieve offline player stats", err));
+
+        if (firebase.auth().currentUser) {
+            try {
+                const data = (await ServerRequest('post', '/user/tutorial/finished')).data;
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player tutorial finished state.");
+                logger.warn(err);
+            }
+        }
+    }
+
+    async updatePlayerTutorialInfos(playerInfos) {
+        try {
+            OfflineStore.playerStore.set('stats', playerInfos);
+        } catch (error) {
+            logger.warn(error);
+        }
+
+        if (firebase.auth().currentUser) {
+            try {
+                await ServerRequest('post', '/user/tutorialinfos', {
+                    infos: {
+                        tutorialStarted: playerInfos.tutorialStarted,
+                        tutorialFinished: playerInfos.tutorialFinished,
+                        tutorialSkipped: playerInfos.tutorialSkipped
+                    }
+                });
+            } catch (err) {
+                logger.warn("Could not update player tutorial infos");
+                logger.warn(err);
+            }
+        }
+    }
+
     signOut(notifyPlayerSignedOut) {
         firebase.auth().signOut().then(() => {
             if (typeof notifyPlayerSignedOut === 'function') {
@@ -475,24 +566,47 @@ class Multiplayer {
     }
 
     processEvents(events) {
-        if (events.length > this.opponentEventIndex) {
-            const newEventIndex = events.length;
-            events.splice(0, this.opponentEventIndex);
-            events.forEach(action => {
-                this.emitAction(action);
-            });
-            this.opponentEventIndex = newEventIndex;
+        events.sort((a, b) => {
+            if (typeof a.index === 'undefined') {
+                return -1;
+            } else if (typeof b.index === 'undefined') {
+                return 1;
+            } else {
+                return (a.index > b.index) ? 1 : -1
+            }
+        });
+        let sliced = events;
+        if (this.opponentEventIndex > 1) {
+            const posOfOpponentEventIndex = events.map(function (ev) { return ev.index; }).indexOf(this.opponentEventIndex - 1);
+            if (posOfOpponentEventIndex >= 0) {
+                sliced = events.slice(posOfOpponentEventIndex);
+            }
         }
+        sliced.forEach(action => {
+            if (action.index === this.opponentEventIndex) {
+                console.log("emitting action: " + action.index + " -- " + action.type);
+                this.emitAction(action);
+                this.opponentEventIndex = this.opponentEventIndex + 1;
+            }
+        });
     }
 
     validateEvents(events) {
         if (events.length > this.serverEventIndex) {
+            events.sort((a, b) => {
+                if (typeof a.index === 'undefined') {
+                    return -1;
+                } else if (typeof b.index === 'undefined') {
+                    return 1;
+                } else {
+                    return (a.index > b.index) ? 1 : -1
+                }
+            });
             const newEventIndex = events.length;
-            events.splice(0, this.serverEventIndex);
 
             logger.info('Start new action validation');
 
-            for (let action of events) {
+            for (let action of events.slice(0, this.serverEventIndex)) {
                 let localState = this.validActions.get(action.uid);
                 this.validActions.set(localState.action.uid, { action: localState.action, valid: true });
             }
@@ -538,6 +652,15 @@ class Multiplayer {
         }
     }
 
+    async fetchRandomName() {
+        try {
+            return (await ServerRequest('get', '/generaterandomname')).data.username;
+        } catch (err) {
+            console.warn('Could not crete a valid random player name. ', err);
+            return 'Chocnonymous';
+        }
+    }
+
     async enterGameSession(sessionId, gameActions) {
         const sessionEventQueueReference = firebase.firestore().collection('multiplayerEventQueues').doc(sessionId);
         try {
@@ -561,17 +684,44 @@ class Multiplayer {
                 this.localPlayerIndex = session.game.players.findIndex(player => player.id === firebase.auth().currentUser.uid);
                 this.unsubscribeGameSession = sessionEventQueueReference.onSnapshot(doc => {
                     const eventQueue = doc.data();
-                    this.processEvents(eventQueue.players[1 - this.localPlayerIndex].events);
-                    this.validateEvents(eventQueue.players[this.localPlayerIndex].events);
+                    this.processEvents(((1 - this.localPlayerIndex) === 0) ? eventQueue.player_0_events : eventQueue.player_1_events);
+                    this.validateEvents((this.localPlayerIndex === 0) ? eventQueue.player_0_events : eventQueue.player_1_events);
                 }, error => {
                     logger.error('encountered error while trying to establish observer of multiplayer session', error.toString());
                 });
 
-                this.opponentEventIndex = sessionEventQueue.players[1 - this.localPlayerIndex].events.length;
-                this.playerEventIndex = sessionEventQueue.players[this.localPlayerIndex].events.length;
-                this.serverEventIndex = sessionEventQueue.players[this.localPlayerIndex].events.length;
+                let opponentPlayerEvents = ((1 - this.localPlayerIndex) === 0) ? sessionEventQueue.player_0_events : sessionEventQueue.player_1_events;
+                opponentPlayerEvents.sort((a, b) => {
+                    if (typeof a.index === 'undefined') {
+                        return -1;
+                    } else if (typeof b.index === 'undefined') {
+                        return 1;
+                    } else {
+                        return (a.index > b.index) ? 1 : -1
+                    }
+                });
+                this.opponentEventIndex = 0;
+                opponentPlayerEvents.forEach(action => {
+                    if (action.index === this.opponentEventIndex) {
+                        this.opponentEventIndex = this.opponentEventIndex + 1;
+                    }
+                });
+
+                console.log("recovered opponent index: " + this.opponentEventIndex);
+                let localPlayerEvents = (this.localPlayerIndex === 0) ? sessionEventQueue.player_0_events : sessionEventQueue.player_1_events;
+                localPlayerEvents.sort((a, b) => {
+                    if (typeof a.index === 'undefined') {
+                        return -1;
+                    } else if (typeof b.index === 'undefined') {
+                        return 1;
+                    } else {
+                        return (a.index > b.index) ? 1 : -1
+                    }
+                });
+                this.playerEventIndex = localPlayerEvents.length;
+                this.serverEventIndex = localPlayerEvents.length;
                 this.validActions = new Map();
-                for (let action of sessionEventQueue.players[this.localPlayerIndex].events) {
+                for (let action of localPlayerEvents) {
                     if (typeof action.uid !== 'undefined') {
                         this.validActions.set(action.uid, { action: action, valid: true });
                     } else {

@@ -6,6 +6,7 @@ import { AppBar, Toolbar, IconButton } from '@material-ui/core';
 import { ArrowBackIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Done } from '@material-ui/icons';
 import { Jukebox, translate as t, keys as tr } from '../ui/misc';
 import { ServerRequest } from '../helper/settings';
+import { multiplayer } from '../Multiplayer';
 import OfflineStore from '../OfflineStore';
 import { updatePlayerStats, showNotification } from '../ui/UiActions';
 import PlayerNameInput from '../ui/controls/PlayerNameInput';
@@ -14,13 +15,14 @@ import LoopAnimation from './LoopAnimation';
 import { manipulateGame } from '../gameplay/GameActions';
 import { ActionValidationError, EmptyPlayerStats } from 'battlechoc-shared-functions';
 import logger from '../helper/logger';
-import { BattlechocIntro, Factory, CacaoTree, RumTruffleCannon, Cream, TutorialSituations, FactoryExtension, EasterBunny, XmasFactory, HotChocolateBallista, ChocolateFountain, FruitCannon, DonutFactory, Donuts } from'../situations/tutorial/';
+import { BattlechocIntro, Factory, CacaoTree, RumTruffleCannon, Cream, TutorialSituations, FactoryExtension, EasterBunny, XmasFactory, HotChocolateBallista, ChocolateFountain, FruitCannon, DonutFactory, Donuts } from '../situations/tutorial/';
 
 const Tutorial = props => {
     const [page, setPage] = useState(0);
     const [open, setOpen] = useState(false);
+    const [initialUserName, setInitialUserName] = useState(props.playerInfos.stats.username);
     const [playerHasName, setPlayerHasName] = useState(props.playerInfos.stats.username !== EmptyPlayerStats.username)
-    
+
     const { manipulateGame, spawnInfo, setRenderLoop, reset, loadSituation, detonateAtPosition, selectBuilding, tapBuilding, selectAttack } = props;
     const manipulate = async state => {
         try {
@@ -34,8 +36,8 @@ const Tutorial = props => {
         }
         return JSON.parse(JSON.stringify(state));
     }
-    
-    const loopAnimation = useRef(new LoopAnimation(() => props.game, manipulate, spawnInfo, setRenderLoop, reset, loadSituation, detonateAtPosition, selectBuilding, tapBuilding, selectAttack)) 
+
+    const loopAnimation = useRef(new LoopAnimation(() => props.game, manipulate, spawnInfo, setRenderLoop, reset, loadSituation, detonateAtPosition, selectBuilding, tapBuilding, selectAttack))
     loopAnimation.current.getGame = () => props.game;
 
     const getSituation = situation => {
@@ -70,27 +72,27 @@ const Tutorial = props => {
                 throw new Error(`Unkown loop ${situation}`);
         }
     }
-    
+
     useEffect(() => {
         loopAnimation.current.start(getSituation(props.loopAnimations[0]));
     }, [props.loopAnimations]);
 
     const next = () => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        loopAnimation.current.start(getSituation(props.loopAnimations[ page + 1 ]));
+        loopAnimation.current.start(getSituation(props.loopAnimations[page + 1]));
         setPage(page + 1);
     }
 
     const back = () => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        loopAnimation.current.start(getSituation(props.loopAnimations[ page - 1 ]));
+        loopAnimation.current.start(getSituation(props.loopAnimations[page - 1]));
         if (page > 0) {
             setPage(page - 1);
         }
     }
 
     const closeTutorial = startGame => {
-        if (playerHasName) {
+        if (playerHasName || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true) {
             loopAnimation.current.stop();
             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
             setOpen(false);
@@ -103,18 +105,20 @@ const Tutorial = props => {
 
     const setPlayerName = playerName => {
         ServerRequest('post', '/user/username', { username: playerName })
-        .then(() => {        
-            props.updatePlayerStats({ username: playerName });
-            OfflineStore.playerStore.get('stats').then(playerStats => {
-                playerStats.username = playerName;
-                OfflineStore.playerStore.set('stats', playerStats);
-            });
-            setPlayerHasName(true);
-        })
-        .catch(error => console.warn(error));
+            .then(async () => {
+                props.showNotification({ title: t(tr.TUTORIAL_FINISHED_NOTIFICATION_TITLE), message: t(tr.TUTORIAL_FINISHED_NOTIFICATION_MESSAGE) });
+                await multiplayer.tutorialFinished();
+                props.updatePlayerStats({ username: playerName });
+                OfflineStore.playerStore.get('stats').then(playerStats => {
+                    playerStats.username = playerName;
+                    OfflineStore.playerStore.set('stats', playerStats);
+                });
+                setPlayerHasName(true);
+            })
+            .catch(error => console.warn(error));
     }
 
-    
+
     let backIcon = <IconButton id="prev-loop" color="inherit" aria-label="back" onClick={back}><ArrowBackIcon /></IconButton>
     let nextIcon = <IconButton id="next-loop" color="inherit" aria-label="next" onClick={next}><ArrowForwardIcon /></IconButton>
     if (page === 0) {
@@ -124,10 +128,13 @@ const Tutorial = props => {
     const situation = getSituation(props.loopAnimations[page]);
 
     if (page >= props.loopAnimations.length - 1) {
-        nextIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={() => {
-            if (playerHasName) {
+        nextIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={async () => {
+            if (playerHasName || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true) {
                 closeTutorial(false);
-            } else { 
+            } else {
+                const nameValue = (typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous') ?
+                    props.playerInfos.stats.username : await multiplayer.fetchRandomName();
+                setInitialUserName(nameValue);
                 setOpen(true);
             }
         }}><Done /></IconButton>
@@ -135,15 +142,15 @@ const Tutorial = props => {
 
     let dialogTitle = t(tr.TUTORIAL_DIALOG_TITLE_BEFORE);
     let dialogContent = <div>
-        <PlayerNameInput setPlayerName={setPlayerName} current={props.playerInfos.stats.username}/>
+        <PlayerNameInput setPlayerName={setPlayerName} startValue={initialUserName} current={props.playerInfos.stats.username} />
         <p style={{ color: '#324D5C' }}>{t(tr.TUTORIAL_CHOOSE_NAME_INFO)}</p>
     </div>;
     let canClose = false;
 
-    if (playerHasName) {
+    if (playerHasName || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true) {
         dialogTitle = t(tr.TUTORIAL_DIALOG_TITLE);
         dialogContent = <div className="tutorial-finished">
-            <p>{t(tr.TUTORIAL_DIALOG_MESSAGE)} {t(tr.TUTORIAL_DIALOG_HINT)}</p>
+            <p>{t(tr.TUTORIAL_DIALOG_MESSAGE)}<br />{t(tr.TUTORIAL_DIALOG_HINT)}</p>
             <div className="menuButton" style={{ fontSize: '1.1rem' }} onClick={() => closeTutorial(true)}>
                 {t(tr.TUTORIAL_DIALOG_PLAY_GAME)}
             </div>
@@ -155,13 +162,13 @@ const Tutorial = props => {
         <div id="tutorial">
             <div>
                 <AppBar position="static" style={{ backgroundColor: '#5dbbc3' }} className="tutorialAppbar">
-                <Toolbar>
-                    { backIcon }
-                    <h6 className="tutorial-headline">{ situation.title }</h6>
-                    { nextIcon }
-                </Toolbar>
+                    <Toolbar>
+                        {backIcon}
+                        <h6 className="tutorial-headline">{situation.title}</h6>
+                        {nextIcon}
+                    </Toolbar>
                 </AppBar>
-                <div className="battlechoc-tutorial-info"><p>{ situation.description }</p></div>
+                <div className="battlechoc-tutorial-info"><p>{situation.description}</p></div>
             </div>
             <Dialog
                 open={open}
@@ -173,7 +180,7 @@ const Tutorial = props => {
             </Dialog>
         </div>
     );
-    
+
 }
 
 Tutorial.propTypes = {
@@ -185,7 +192,7 @@ Tutorial.propTypes = {
     detonateAtPosition: PropTypes.func.isRequired
 }
 
-const mapStateToProps = state => ({ 
+const mapStateToProps = state => ({
     game: state.gameplay.game,
     notificationOnLoopsEnd: state.ui.notificationOnLoopsEnd,
     playerInfos: state.ui.playerInfos,
@@ -195,8 +202,8 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = { updatePlayerStats, manipulateGame, showNotification };
 
 const TutorialContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps
+    mapStateToProps,
+    mapDispatchToProps
 )(Tutorial);
 
 export default TutorialContainer;

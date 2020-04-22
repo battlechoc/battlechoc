@@ -203,8 +203,8 @@ const Settings = props => {
         title={t(tr.SETTINGS)}>
         <div>
           {
-            typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous' ?
-              editPlayerName ? <PlayerNameInput setPlayerName={setPlayerName} current={props.playerInfos.stats.username} /> :
+            (typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous') || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true ?
+              editPlayerName ? <PlayerNameInput setPlayerName={setPlayerName} startValue={props.playerInfos.stats.username} current={props.playerInfos.stats.username}/> :
                 <div className={classes.username}>
                   <AccountCircle className={classes.accountCircle} /> {props.playerInfos.stats.username}
                   <Fab onClick={() => setEditPlayerName(true)} className={classes.editUsername} size="small" color="primary"><Edit /></Fab>

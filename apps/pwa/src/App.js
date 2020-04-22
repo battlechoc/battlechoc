@@ -6,7 +6,7 @@ import OfflineStore from './OfflineStore';
 import { multiplayer } from './Multiplayer';
 import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut } from 'battlechoc-shared-functions';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting} from './ui/UiActions';
+import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -379,14 +379,14 @@ class App extends Component {
 
     enterMultiplayerGame = sessionId => {
         multiplayer.enterGameSession(sessionId, { build: this.props.build, attack: this.props.attack, finishTurn: this.props.finishTurn, finishBuildPhase: this.props.finishBuildPhase, chooseStart: this.props.chooseStart, chooseField: this.props.chooseField, endGame: this.props.endGame })
-        .then(session => {
-            this.prepareNewGame(true, true, session.game);
-        })
-        .catch(error => {
-            if (error instanceof ReferenceError) {
-                this.props.showQuickMessage({ text: t(tr.WARNING_GAME_NOT_JOINABLE) });
-            }
-        });
+            .then(session => {
+                this.prepareNewGame(true, true, session.game);
+            })
+            .catch(error => {
+                if (error instanceof ReferenceError) {
+                    this.props.showQuickMessage({ text: t(tr.WARNING_GAME_NOT_JOINABLE) });
+                }
+            });
     }
 
     prepareNewGame = (resumeGame, joinMultiplayer, multiplayerGameState) => {
@@ -394,7 +394,7 @@ class App extends Component {
         const isAndroidDevice = /Android/i.test(navigator.userAgent);
         const isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
         const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-        
+
         if (isAndroidApp) {
             window.Android.setScreenOrientationLandscape();
         } else if (!isFullscreen && !isiOS) {
@@ -409,7 +409,7 @@ class App extends Component {
             }
         }
 
-        if (this.props.playerInfos.stats.username === 'Chocnonymous') {
+        if (!this.props.playerInfos.stats.tutorialFinished && !this.props.playerInfos.stats.tutorialSkipped) {
             this.startTutorial();
         } else {
             Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
@@ -419,12 +419,25 @@ class App extends Component {
             if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
                 this.props.joinGame(multiplayerGameState).then(() => {
                     this.opponent = { player: this.props.game.players[0] };
-                    if (this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START && this.props.game.state !== GameStateTypes.CHOOSE_FIELD) {
+                    if ((this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START || this.props.game.state === GameStateTypes.CHOOSE_FIELD)) {
+                        if (!multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
+                            this.props.lockHudUi();
+                        } else {
+                            this.props.unlockHudUi();
+                        }
+                    } else if (this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
+                        if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
+                            if (this.props.game.players[this.props.game.currentPlayerIndex].hasFactory === true) {
+                                console.log("player already built its factory, but did not kick off finishturn event.");
+                                this.props.finishTurn({ issuer: this.props.game.players[this.props.game.currentPlayerIndex].id });
+                            }
+                        }
+                        this.scene.startGame(this.props.game, false);
+                    } else if (this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START && this.props.game.state !== GameStateTypes.CHOOSE_FIELD) {
                         if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
                             this.props.tapBuilding(EntityType.CACAOTREE);
                             this.props.selectBuilding(EntityType.CACAOTREE);
                         }
-
                         this.scene.startGame(this.props.game, false);
                     }
                 });
@@ -459,8 +472,10 @@ class App extends Component {
                         this.props.startGame(players).then(() => {
                             this.opponent.type = Augustus.randomizeType();
                             this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
+                            // TODO maybe adjust camera position based on boardsize (6/8/10)
+                            const boardSize = (this.props.playerInfos.stats.score < 200) ? { rows: 6, cols: 6 } : (this.props.playerInfos.stats.score < 500) ? { rows: 8, cols: 8 } : { rows: 10, cols: 10 };
                             this.props.createBoard({
-                                boardSize: { rows: 10, cols: 10 },
+                                boardSize: boardSize,
                                 boardSeed: Math.floor(Math.random * 1000000)
                             });
                         });
@@ -479,7 +494,7 @@ class App extends Component {
 
                 const isAndroidApp = typeof window.Android !== 'undefined';
                 const isAndroidDevice = /Android/i.test(navigator.userAgent);
-                
+
                 if (isAndroidApp) {
                     window.Android.setScreenOrientationAny();
                 } else if (isAndroidDevice) {
@@ -492,24 +507,24 @@ class App extends Component {
                 const score = this.props.playerInfos.stats.score;
                 if (typeof coins !== 'undefined' && coins > 0) {
                     if (score - coins === 0) {
-                        this.props.startTutorial({ 
-                            loops: [TutorialSituations.FACTORY_EXTENSION], 
+                        this.props.startTutorial({
+                            loops: [TutorialSituations.FACTORY_EXTENSION],
                             notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_EXTENSION_TITLE), message: t(tr.NOTIFICATION_UNLOCK_EXTENSION_MESSAGE, 200 - score) }
                         });
                     } else if ((score - coins) < 200 && score > 200) {
-                        this.props.startTutorial({ 
+                        this.props.startTutorial({
                             loops: [TutorialSituations.EASTER_BUNNY, TutorialSituations.XMAS_FACTORY, TutorialSituations.HOT_CHOCOLATE_BALLISTA],
                             notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_BUNNY_TITLE), message: t(tr.NOTIFICATION_UNLOCK_BUNNY_MESSAGE, 500 - score) }
                         });
                     } else if ((score - coins) < 500 && score > 500) {
-                        this.props.startTutorial({ 
+                        this.props.startTutorial({
                             loops: [TutorialSituations.CHOCOLATE_FOUNTAIN, TutorialSituations.FRUIT_CANNON],
                             notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_FOUNTAIN_TITLE), message: t(tr.NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE, 1000 - score) }
                         });
                     } else if ((score - coins) < 1000 && score > 1000) {
                         this.props.showQuickMessage({ text: t(tr.UNLOCK_CONGRATULATIONS_CHOCLAB), variant: 'success' });
                         this.props.showQuickMessage({ text: t(tr.UNLOCK_CONGRATULATIONS_MULTIPLAYER), variant: 'success' });
-                        this.props.startTutorial({ loops: [TutorialSituations.DONUT_FACTORY, TutorialSituations.DONUTS]});
+                        this.props.startTutorial({ loops: [TutorialSituations.DONUT_FACTORY, TutorialSituations.DONUTS] });
                     }
                 }
                 multiplayer.getMultiplayerSessions();
@@ -552,6 +567,7 @@ class App extends Component {
         this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
 
         Jukebox.stopMusic(true);
+        console.log("stopping tutorial");
         this.props.stopTutorial();
         await this.reset();
 
@@ -599,7 +615,7 @@ class App extends Component {
                     selectBuilding={this.props.selectBuilding}
                     tapBuilding={this.props.tapBuilding}
                     selectAttack={this.props.selectAttack}
-                    loadSituation={async situation => await this.loadSituation(situation)} 
+                    loadSituation={async situation => await this.loadSituation(situation)}
                     closeTutorial={this.closeTutorial} /> : null}
             </div>
         );
