@@ -4,10 +4,9 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { GameStateTypes } from 'battlechoc-shared-functions';
 import { showQuickMessage, showNotification, hideNotification } from './UiActions';
-import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
+import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, GameEndOverview } from './controls';
 import { Jukebox, translate as t, keys as tr } from './misc';
-import { Notification, Info, Tooltip, Settings, AccountOverview } from './dialogs';
-import BattlechocDialog from './dialogs/BattlechocDialog';
+import { Notification, Info, Tooltip, Settings, AccountOverview, Dialog } from './dialogs';
 import Fab from '@material-ui/core/Fab';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
@@ -17,7 +16,7 @@ import { multiplayer } from '../Multiplayer';
 import { ServerRequest } from '../helper/settings';
 import logger from '../helper/logger';
 import firebase from '@firebase/app';
-import { OptimizedImage } from '../helper/compatibility';
+import { Button } from './controls';
 
 const Hud = props => {
     const { resumeGamePossible, enterMultiplayerGame, sessionId, showQuickMessage, challengedPlayer, assetsReady, overviewVisible, selectedAttack, tappedBuilding, game, state, openInfo, prepareNewGameCallback, className, surrender, startTutorial, playerInfos, endGame, notification, hideNotification } = props;
@@ -192,48 +191,47 @@ const Hud = props => {
                     const score = playerInfos.stats.score;
                     const hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
 
-                    controls.push(<div key="0" className="menuButton" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t(tr.NEW_GAME) : t(tr.MAIN_MENU_SINGLEPLAYER)}</div>);
+                    controls.push(<Button key="0" size="huge" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t(tr.NEW_GAME) : t(tr.MAIN_MENU_SINGLEPLAYER)}</Button>);
                     
                     if (!hideOptions) {
-                        controls.push(<div key="1" className="menuButton" onClick={() => setShowMultiplayerScreen(true)}>{t(tr.MAIN_MENU_MULTIPLAYER)}</div>);
-                        controls.push(<div key="2" className="menuButton" onClick={() => setChoclabScreen(true)}>{t(tr.MAIN_MENU_CHOCLAB)}</div>);
+                        controls.push(<Button key="1" size="huge" color="secondary" onClick={() => setShowMultiplayerScreen(true)}>{t(tr.MAIN_MENU_MULTIPLAYER)}</Button>);
+                        controls.push(<Button key="2" size="huge" color="accent" onClick={() => setChoclabScreen(true)}>{t(tr.MAIN_MENU_CHOCLAB)}</Button>);
                     }
 
                     return (
-                        <div id="mainMenu">
-                            {typeof playerInfos.stats.coins !== 'undefined' ? <div id="chocolate-coins">
-                                <span>{playerInfos.stats.coins}</span>
-                                <OptimizedImage src="/images/coins.png" alt="choco coins" />
-                            </div> : null}
-                            <SocialIcons />
-                            <div className="logo">
-                                <OptimizedImage src="/images/logo.png" alt="battlechoc logo" />
-                            </div>
-                            <div className="titleMenu">
-                                {assetsReady ? controls : null}
-                                <BattlechocDialog
-                                    open={open}
-                                    close={() => setOpen(false)}
-                                    title={t(tr.HUD_RESUME_GAME)}>
-                                    <div className="resumeGameDialog">
-                                        <p>{t(tr.HUD_ASK_NEW_OR_RESUME)}</p>
-                                        <div className="actions">
-                                            <div className="menuButton" onClick={() => {
-                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                setOpen(false);
-                                                prepareNewGameCallback(true);
-                                            }}>{t(tr.HUD_RESUME_GAME)}</div>
-                                            <div className="menuButton" onClick={() => {
-                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                setOpen(false);
-                                                prepareNewGameCallback(false);
-                                            }}>{t(tr.HUD_NEW_GAME)}</div>
+                        <>
+                            <div id="mainMenu">
+                                {typeof playerInfos.stats.coins !== 'undefined' ? <div id="chocolate-coins">
+                                    <span>{playerInfos.stats.coins}</span>
+                                    <div className="coins" />
+                                </div> : null}
+                                <div id="logo"><div id="image" /><div id="stripes"/></div>
+                                <div className="titleMenu">
+                                    {assetsReady ? controls : null}
+                                    <Dialog
+                                        open={open}
+                                        close={() => setOpen(false)}
+                                        title={t(tr.HUD_RESUME_GAME)}>
+                                        <div className="resumeGameDialog">
+                                            <p>{t(tr.HUD_ASK_NEW_OR_RESUME)}</p>
+                                            <div className="actions">
+                                                <div className="menuButton" onClick={() => {
+                                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                                    setOpen(false);
+                                                    prepareNewGameCallback(true);
+                                                }}>{t(tr.HUD_RESUME_GAME)}</div>
+                                                <div className="menuButton" onClick={() => {
+                                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                                    setOpen(false);
+                                                    prepareNewGameCallback(false);
+                                                }}>{t(tr.HUD_NEW_GAME)}</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </BattlechocDialog>
+                                    </Dialog>
+                                </div>
                             </div>
                             { notification.open ? <Notification message={notification.message} title={notification.title} close={() => hideNotification()} /> : <Info openInfo={openInfo} /> }
-                        </div>
+                        </>
                     );
                 } else if (stage === 'CHOOSE_MENU') {
                     return (

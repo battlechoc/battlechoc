@@ -57,7 +57,5 @@ const stopSessionRefresh = createAction(UiActionTypes.stopSessionRefresh);
 const toggleDonutHighlighting = createAction(UiActionTypes.toggleDonutHighlighting);
 const showNotification = createAction(UiActionTypes.showNotification);
 const hideNotification = createAction(UiActionTypes.hideNotification);
-const lockHudUi = createAction(UiActionTypes.lockHudUi);
-const unlockHudUi = createAction(UiActionTypes.lockHudUi);
 
-export { lockHudUi, unlockHudUi, showNotification, hideNotification, toggleDonutHighlighting, stopSessionRefresh, startSessionRefresh, showQuickMessage, hideQuickMessage, updateLevel, setPlayerRank, loadFriendsList, updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };
+export { showNotification, hideNotification, toggleDonutHighlighting, stopSessionRefresh, startSessionRefresh, showQuickMessage, hideQuickMessage, updateLevel, setPlayerRank, loadFriendsList, updateMultiplayerSessions, startTutorial, stopTutorial, showOverview, resetUi, loadUiState, UiActionTypes, selectBuilding, tapBuilding, selectAttack, deselectAttack, deselectBuildings, gameResumeable, assetsReady, notifyPlayerSignedOut, notifyPlayerSignedIn, updatePlayerStats };

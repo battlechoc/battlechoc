@@ -2,7 +2,8 @@
   position: absolute;
   z-index: 4;
   display: flex;
-  padding-top: 5px;
+  top: 5px;
+  left: 5px;
   flex-direction: row;
 }
 

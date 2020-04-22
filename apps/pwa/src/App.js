@@ -419,13 +419,7 @@ class App extends Component {
             if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
                 this.props.joinGame(multiplayerGameState).then(() => {
                     this.opponent = { player: this.props.game.players[0] };
-                    if ((this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START || this.props.game.state === GameStateTypes.CHOOSE_FIELD)) {
-                        if (!multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
-                            this.props.lockHudUi();
-                        } else {
-                            this.props.unlockHudUi();
-                        }
-                    } else if (this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START && this.props.game.state !== GameStateTypes.CHOOSE_FIELD) {
+                    if (this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START && this.props.game.state !== GameStateTypes.CHOOSE_FIELD) {
                         if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
                             this.props.tapBuilding(EntityType.CACAOTREE);
                             this.props.selectBuilding(EntityType.CACAOTREE);
@@ -584,7 +578,7 @@ class App extends Component {
                     message={message.text}
                 />
                 )}
-                {typeof this.props.game === 'undefined' ? <div id="background"></div> : null}
+                {typeof this.props.game === 'undefined' ? <div id="decoration"></div> : null}
                 <Suspense fallback={null}>
                     <Scene onRef={scene => this.scene = scene} />
                 </Suspense>

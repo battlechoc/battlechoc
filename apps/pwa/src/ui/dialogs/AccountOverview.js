@@ -13,7 +13,7 @@ import Button from '@material-ui/core/Button';
 import { AccountCircle, PlayArrow, HourglassEmpty, PersonAddDisabled, PersonAdd, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/core/styles';
 import CircularProgress from '@material-ui/core/CircularProgress';
-import BattlechocDialog from './BattlechocDialog';
+import Dialog from './Dialog';
 import useMediaQuery from '@material-ui/core/useMediaQuery';
 import { EmptyPlayerStats } from 'battlechoc-shared-functions';
 
@@ -172,7 +172,7 @@ const AccountOverview = props => {
     }
 
     return (
-        <BattlechocDialog
+        <Dialog
             open={props.open}
             close={props.close}
             id="accountOverviewDialog"
@@ -266,7 +266,7 @@ const AccountOverview = props => {
                     </div> : null                 
                 }
             </div>
-        </BattlechocDialog>
+        </Dialog>
     );
 };
 

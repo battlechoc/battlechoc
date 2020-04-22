@@ -3,48 +3,39 @@ import PropTypes from 'prop-types';
 import './Tooltip.css';
 import { GameStateTypes, getEntityDescriptor } from 'battlechoc-shared-functions';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import { withStyles } from '@material-ui/core/styles';
-import ExpansionPanel from '@material-ui/core/ExpansionPanel';
-import MuiExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
-import MuiExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
-import Typography from '@material-ui/core/Typography';
 import { translate as t, keys as tr } from '../misc';
+import { makeStyles } from '@material-ui/core/styles';
 
-const ExpansionPanelSummary = withStyles(theme => ({
-    root: {
-        backgroundColor: 'rgba(69, 123, 130, 1)',
-        border: '1px solid rgba(69, 123, 130, 0.2)',
-        color: 'rgba(255, 255, 255, 1)',
-        marginBottom: -1,
-        marginLeft: -1,
-        minHeight: 32,
-        paddingLeft: theme.spacing(2),
-        paddingRight: theme.spacing(2),
-        '&$expanded': {
-            minHeight: 32,
-        },
+const useStyles = makeStyles(theme => ({
+    title: {
+        display: 'flex',
+        fontFamily: 'Bangers',
+        padding: 5,
+        justifyContent: 'space-between',
+        fontSize: '1.5rem'
     },
-    content: {
-        margin: '8px 0',
-        '&$expanded': {
-            margin: '8px 0',
+    button: {
+        background: 'linear-gradient(0deg, #427F83, #13C894)',
+        padding: 5,
+        border: '3px solid #13C894',
+        margin: '5px 0 10px 0',
+        borderRadius: 10,
+        color: 'white'
+    },
+    expanded: {
+        padding: 5,
+        '& p': {
+            margin: '5px 0'
         }
     },
-    expanded: {},
-}))(props => <MuiExpansionPanelSummary {...props} />);
-
-ExpansionPanelSummary.muiName = 'ExpansionPanelSummary';
-
-const ExpansionPanelDetails = withStyles(theme => ({
-    root: {
-        paddingTop: theme.spacing(1),
-        paddingRight: theme.spacing(2),
-        paddingBottom: 0,
-        paddingLeft: theme.spacing(2)
-    },
-}))(MuiExpansionPanelDetails);
+    invisible: {
+        display: 'none'
+    }
+}));
 
 const Tooltip = props => {
+    const classes = useStyles();
+    
     const [expanded, setExpanded] = useState(false);
     let title = null, message = null;
 
@@ -89,22 +80,20 @@ const Tooltip = props => {
         }
     }
 
-    let loadingAnimation = !props.playerTurn ? <img className="loadingAnimation" src="/animations/loading.gif" alt="loading" /> : null;
+    const loadingAnimation = !props.playerTurn ? <img className="loadingAnimation" src="/animations/loading.gif" alt="loading" /> : null;
+    const openTooltip = () => {
+        if (message !== null) {
+            setExpanded(!expanded);
+        }
+    }
+    
     if (title) {
         return (
             <div id="tooltipContainer">
-                <ExpansionPanel square id="tooltip" expanded={expanded && message !== null} onClick={() => {
-                    if (message !== null) {
-                        setExpanded(!expanded);
-                    }
-                }}>
-                    <ExpansionPanelSummary className="tooltipHeader" expandIcon={message !== null ? <ExpandMoreIcon /> : null}>
-                        <Typography variant="h6" color="textSecondary">{title}</Typography>
-                    </ExpansionPanelSummary>
-                    <ExpansionPanelDetails>
-                        <Typography paragraph={true}>{message}</Typography>
-                    </ExpansionPanelDetails>
-                </ExpansionPanel>
+                <div className={classes.button} onClick={openTooltip}>
+                    <span className={classes.title}>{title} {message !== null ? <ExpandMoreIcon /> : null}</span>
+                    <div className={(expanded && message !== null ? classes.expanded : classes.invisible)}><p>{message}</p></div>
+                </div>
                 { loadingAnimation }
             </div>
         );

@@ -9,7 +9,7 @@ import { ServerRequest } from '../helper/settings';
 import OfflineStore from '../OfflineStore';
 import { updatePlayerStats, showNotification } from '../ui/UiActions';
 import PlayerNameInput from '../ui/controls/PlayerNameInput';
-import BattlechocDialog from '../ui/dialogs/BattlechocDialog';
+import { Dialog } from '../ui/dialogs';
 import LoopAnimation from './LoopAnimation';
 import { manipulateGame } from '../gameplay/GameActions';
 import { ActionValidationError, EmptyPlayerStats } from 'battlechoc-shared-functions';
@@ -163,14 +163,14 @@ const Tutorial = props => {
                 </AppBar>
                 <div className="battlechoc-tutorial-info"><p>{ situation.description }</p></div>
             </div>
-            <BattlechocDialog
+            <Dialog
                 open={open}
                 close={() => closeTutorial(false)}
                 closable={ canClose }
                 autoHideTitle={ true }
                 title={ dialogTitle }>
                 { dialogContent }
-            </BattlechocDialog>
+            </Dialog>
         </div>
     );
     

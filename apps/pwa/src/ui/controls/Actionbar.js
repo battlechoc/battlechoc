@@ -6,7 +6,7 @@ import { build, attack, chooseStart, chooseField, finishTurn, finishBuildPhase }
 import { GameStateTypes, playerHasAttacksPerTurn, BattlechocError } from 'battlechoc-shared-functions';
 import { deselectBuildings, deselectAttack } from '../UiActions';
 import { multiplayer } from '../../Multiplayer';
-import Fab from '@material-ui/core/Fab';
+import Fab from './Fab';
 import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, PermIdentity, KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import { Jukebox } from '../misc';
 import logger from '../../helper/logger';
@@ -49,11 +49,9 @@ const Actionbar = props => {
     if (typeof props.game !== 'undefined' && !props.tutorial) {
         buttons.push(
             <Fab
-                size="small"
                 key="-1"
-                color="primary"
+                color="secondary"
                 aria-label="back"
-                className="icon"
                 onClick={() => props.endGame()}>
                 <ArrowBackIcon />
             </Fab>
@@ -62,11 +60,9 @@ const Actionbar = props => {
 
     buttons.push(
         <Fab
-            size="small"
             key="0"
-            color="primary"
-            aria-label="settings"
-            className="icon"
+            color="secondary"
+            icon="settings"
             onClick={() => props.showSettings()}>
             <Settings />
         </Fab>
@@ -74,12 +70,10 @@ const Actionbar = props => {
 
     if (typeof props.game === 'undefined') {
         buttons.push(
-            <Fab
-                size="small"
+            <Fab 
                 key="1"
-                color="primary"
-                aria-label="signinorup"
-                className="icon"
+                color="secondary"
+                icon="user"
                 onClick={() => props.showSignInOrUp()}>
                 <PermIdentity />
             </Fab>
@@ -89,11 +83,9 @@ const Actionbar = props => {
     if (activeMusicButton) {
         buttons.push(
             <Fab
-                size="small"
                 key="2"
-                color="primary"
-                aria-label="volume up"
-                className="icon"
+                color="secondary"
+                icon="volume"
                 onClick={toggleMusic}>
                 <VolumeUp />
             </Fab>
@@ -101,11 +93,9 @@ const Actionbar = props => {
     } else {
         buttons.push(
             <Fab
-                size="small"
                 key="2"
-                color="primary"
-                aria-label="volume off"
-                className="icon"
+                color="secondary"
+                icon="mute"
                 onClick={toggleMusic}>
                 <VolumeOff />
             </Fab>
@@ -115,11 +105,9 @@ const Actionbar = props => {
     if (activeFullscreenButton) {
         buttons.push(
             <Fab
-                size="small"
                 key="3"
-                color="primary"
-                aria-label="toggle fullscreen"
-                className="icon"
+                color="secondary"
+                icon="fullscreen"
                 onClick={toggleFullscreen}>
                 <Fullscreen />
             </Fab>
@@ -132,11 +120,9 @@ const Actionbar = props => {
                 if (playerHasAttacksPerTurn(props.game.players[multiplayer.localPlayerIndex])) {
                     buttons.push([
                         <Fab
-                            size="small"
                             key="5"
-                            color="primary"
+                            color="secondary"
                             aria-label="skip build phase"
-                            className="icon"
                             onClick={() => {
                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                 props.finishBuildPhase({ issuer: props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
@@ -156,11 +142,9 @@ const Actionbar = props => {
                 } else {
                     buttons.push([
                         <Fab
-                            size="small"
                             key="6"
-                            color="primary"
+                            color="secondary"
                             aria-label="finish turn"
-                            className="icon"
                             onClick={() => {
                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                 props.finishTurn({ issuer: props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
@@ -181,11 +165,9 @@ const Actionbar = props => {
             } else if (props.game.state === GameStateTypes.ATTACK_PHASE) {
                 buttons.push(
                     <Fab
-                        size="small"
                         key="7"
-                        color="primary"
+                        color="secondary"
                         aria-label="finish turn"
-                        className="icon"
                         onClick={() => {
                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                             props.finishTurn({ issuer: props.game.players[multiplayer.localPlayerIndex].id }).then(() => {

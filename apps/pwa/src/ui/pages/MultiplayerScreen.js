@@ -15,7 +15,7 @@ import de from 'javascript-time-ago/locale/de';
 import { multiplayer } from '../../Multiplayer';
 import { ServerRequest } from '../../helper/settings';
 import logger from '../../helper/logger';
-import BattlechocDialog from '../dialogs/BattlechocDialog';
+import { Dialog } from '../dialogs';
 import PlayerList from '../controls/PlayerList';
 import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
 
@@ -266,7 +266,7 @@ const MultiplayerScreen = props => {
             </Fab>
         </div>
         <div id="multiplayer">
-            <BattlechocDialog
+            <Dialog
                 open={showSurrenderDialog}
                 close={() => setShowSurrenderDialog(false)}
                 title={t(tr.SURRENDER_GAME)}>
@@ -280,9 +280,9 @@ const MultiplayerScreen = props => {
                         surrenderGame(surrenderGameId);
                     }}>{t(tr.SURRENDER)}</div>
                 </div>
-            </BattlechocDialog>
+            </Dialog>
 
-            <BattlechocDialog
+            <Dialog
                 open={showFriends}
                 close={() => setShowFriends(false)}
                 title={t(tr.FRIENDS)}>
@@ -292,9 +292,9 @@ const MultiplayerScreen = props => {
                     challenge={challengePlayer}
                     showProfile={showPlayerProfile}
                     sessions={multiplayerSessions} />
-            </BattlechocDialog>
+            </Dialog>
 
-            <BattlechocDialog
+            <Dialog
                 open={showHighscore}
                 close={() => setShowHighscore(false)}
                 title="Highscore">
@@ -351,9 +351,9 @@ const MultiplayerScreen = props => {
                         showProfile={showPlayerProfile}
                         sessions={multiplayerSessions} /> }
                 </div>
-            </BattlechocDialog>
+            </Dialog>
 
-            <BattlechocDialog
+            <Dialog
                 open={showSearch}
                 close={() => setShowSearch(false)}
                 title={t(tr.SEARCH_PLAYERS)}>
@@ -384,7 +384,7 @@ const MultiplayerScreen = props => {
                         showProfile={showPlayerProfile}
                         sessions={multiplayerSessions} />
                 </div>
-            </BattlechocDialog>
+            </Dialog>
             
             { sessionRefreshActions > 0 ? <CircularProgress style={{ marginTop: '25vh' }} /> : <div className={multiplayerSessions.length > 0 ? 'session-list' : 'empty-list'}>
                 { multiplayerSessions.length > 0 ?
