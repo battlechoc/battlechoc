@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import CircularProgress from '@material-ui/core/CircularProgress';
+import { Progress } from './ui/controls';
 import { connect } from 'react-redux';
 import { assetsReady } from './ui/UiActions';
 import { EntityType, BoardCellTypes } from 'battlechoc-shared-functions';
@@ -129,7 +129,7 @@ class AssetLoadingView extends Component {
     }
 
     render() {
-        return <CircularProgress className="assetLoader" variant="static" value={this.state.loadingProgress} />
+        return <Progress className="assetLoader" value={this.state.loadingProgress} />
     }
 }
 

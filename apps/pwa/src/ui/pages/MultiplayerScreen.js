@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import './MultiplayerScreen.css';
 import TextField from '@material-ui/core/TextField';
 import Fab from '@material-ui/core/Fab';
-import CircularProgress from '@material-ui/core/CircularProgress';
 import { Jukebox, translate as t, keys as tr, getCurrentLanguage } from '../misc';
 import Axios from 'axios';
 import { showQuickMessage } from '../UiActions';
@@ -16,7 +15,7 @@ import { multiplayer } from '../../Multiplayer';
 import { ServerRequest } from '../../helper/settings';
 import logger from '../../helper/logger';
 import { Dialog } from '../dialogs';
-import PlayerList from '../controls/PlayerList';
+import { Progress, PlayerList } from '../controls';
 import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
 
 const MultiplayerScreen = props => {
@@ -240,7 +239,7 @@ const MultiplayerScreen = props => {
                 color="primary"
                 className="icon"
                 onClick={() => searchRandomOpponent()}>
-                { searchingRandomOpponent ? <CircularProgress style={{ color: 'white' }} size={18} /> : <Casino /> }
+                { searchingRandomOpponent ? <Progress infiniteAnimation size={18} /> : <Casino /> }
             </Fab>
             <Fab
                 size="small"
@@ -318,7 +317,7 @@ const MultiplayerScreen = props => {
                                 <ChevronLeft />
                             </Fab>
                         </div>
-                        { highscoreLoading ? <CircularProgress size={22} /> : <span style={{color: '#324D5C'}}>{t(tr.ACCOUNT_OVERVIEW_RANK)} {highscore.length > 0 ? `${highscore[0].ranking} - ${highscore[highscore.length - 1].ranking}` : '1 - 1'}</span> }
+                        { highscoreLoading ? <Progress infiniteAnimation size={22} /> : <span style={{color: '#324D5C'}}>{t(tr.ACCOUNT_OVERVIEW_RANK)} {highscore.length > 0 ? `${highscore[0].ranking} - ${highscore[highscore.length - 1].ranking}` : '1 - 1'}</span> }
                         <div>
                             <Fab
                                 size="small"
@@ -371,7 +370,7 @@ const MultiplayerScreen = props => {
                         }}
                         margin="normal"
                         InputProps={{ 
-                            endAdornment: waitForResponse ? <CircularProgress size={18} /> : null,
+                            endAdornment: waitForResponse ? <Progress infiniteAnimation size={18} /> : null,
                             inputRef: inputRef
                         }}
                     />
@@ -386,7 +385,7 @@ const MultiplayerScreen = props => {
                 </div>
             </Dialog>
             
-            { sessionRefreshActions > 0 ? <CircularProgress style={{ marginTop: '25vh' }} /> : <div className={multiplayerSessions.length > 0 ? 'session-list' : 'empty-list'}>
+            { sessionRefreshActions > 0 ? <Progress infiniteAnimation style={{ marginTop: '25vh' }} /> : <div className={multiplayerSessions.length > 0 ? 'session-list' : 'empty-list'}>
                 { multiplayerSessions.length > 0 ?
                 <div className="openGames">
                 <div className="gamestable">

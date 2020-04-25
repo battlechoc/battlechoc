@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { createUseStyles } from 'react-jss';
 
@@ -14,15 +14,12 @@ const useStyles = createUseStyles(theme => ({
       borderRadius: 12,
       width: '100%',
       display: 'flex',
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
       alignItems: 'center',
       fontSize: '2rem',
       height: 42,
       background: 'white',
-      border: `3px solid ${theme.color.secondary.light}`,
-      '& > span': {
-        marginLeft: -21
-      }
+      border: `3px solid ${theme.color.secondary.light}`
     },
     dropdown: {
       border: `3px solid ${theme.color.secondary.light}`,
@@ -32,7 +29,10 @@ const useStyles = createUseStyles(theme => ({
       width: 42,
       position: 'absolute',
       top: 0,
-      right: 0
+      right: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
     },
     options: {
       position: 'absolute',
@@ -41,25 +41,40 @@ const useStyles = createUseStyles(theme => ({
       width: 'calc(100% - 6px)',
       flexDirection: 'column',
       border: `3px solid ${theme.color.secondary.light}`,
+      background: 'white',
       borderRadius: 12,
       fontFamily: 'Bangers',
       '& > div': {
-        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
-        padding: '10px 0',
-        borderBottom: `1px solid solid ${theme.color.secondary.light}`,
+        padding: '12px 0',
+        borderBottom: `3px solid ${theme.color.secondary.light}`,
         display: 'flex',
+        color: theme.color.secondary.dark,
         alignItems: 'center',
-        justifyContent: 'center'
+        fontSize: '1.5rem',
+        justifyContent: 'flex-start'
       },
       '& > div:last-child': {
         border: '0px',
-        borderBottomLeftRadius: 12,
-        borderBottomRightRadius: 12
+        borderBottomLeftRadius: 6,
+        borderBottomRightRadius: 6
       },
       '& > div:first-child': {
-        borderTopLeftRadius: 12,
-        borderTopRightRadius: 12
+        borderTopLeftRadius: 6,
+        borderTopRightRadius: 6
       }
+    },
+    icon: {
+      width: '60%',
+      height: '60%'
+    },
+    selected: {
+      backgroundColor: theme.color.secondary.dark,
+      color: 'white !important'
+    },
+    optionIcon: {
+      height: 25,
+      width: 42,
+      margin: '0 6px'
     }
   })
 );
@@ -68,6 +83,25 @@ const Select = props => {
   const [ selected, setSelected ] = useState(props.options[0]);
   const [ visible, setVisible ] = useState(false);
   const classes = useStyles(props);
+  const options = useRef();
+
+  useEffect(() => {
+    const defaultOption = props.options.find(option => option.value === props.defaultSelected);
+    setSelected(defaultOption);
+  }, [props.defaultSelected, props.options]);
+
+  useEffect(() => {
+    const handleClick = event => {
+      if (!options.current.contains(event.target)) {
+        setVisible(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClick);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+    };
+  }, []);
 
   const select = option => {
     if (option.value !== selected.value) {
@@ -79,22 +113,34 @@ const Select = props => {
 
   return (
     <div className={`${classes.wrapper} ${props.className}`}>
-      <div className={classes.input}><span>{ selected.label }</span></div>
-      <div onClick={() => setVisible(true)} className={classes.dropdown}></div>
-      <div className={classes.options} style={visible ? { display: 'flex'} : { display: 'none'}}>
-        { props.options.map(option => <div onClick={() => select(option)}>{ option.label }</div>) }
+      <div className={classes.input}>
+        { selected.icon ? <div className={classes.optionIcon} style={{ backgroundImage: `url(/images/${selected.icon})`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> : null }
+        <span style={ selected.icon ? { marginLeft: 6 } : null }>{ selected.label }</span>
+      </div>
+      <div onClick={() => setVisible(true)} className={classes.dropdown}>
+        <div className={classes.icon} style={{ background: 'url(/images/arrow-down.svg) no-repeat', backgroundSize: '100% 100%'}}></div>
+      </div>
+      <div ref={options} className={classes.options} style={visible ? { display: 'flex'} : { display: 'none'}}>
+        { props.options.map(option => (
+          <div className={selected.value === option.value ? classes.selected : null} key={ option.value } onClick={() => select(option)}>
+            { option.icon ? <div className={classes.optionIcon} style={{ backgroundImage: `url(/images/${option.icon})`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> : null }
+            <span style={ option.icon ? { marginLeft: 12 } : null }>{ option.label }</span>
+          </div>)
+        )}
       </div>
     </div>
   );
 };
 
 Select.defaultProps = {
-  className: ''
+  className: '',
+  defaultSelected: null
 }
 
 Select.propTypes = {
   onChange: PropTypes.func.isRequired,
   options: PropTypes.array.isRequired,
+  defaultSelected: PropTypes.string,
   className: PropTypes.string
 }
 

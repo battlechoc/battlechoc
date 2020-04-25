@@ -4,14 +4,11 @@ import { connect } from 'react-redux';
 import { updatePlayerStats, hideQuickMessage, showQuickMessage } from '../UiActions';
 import { Jukebox, translate as t, keys as tr, setCurrentLanguage, getCurrentLanguage } from '../misc';
 import OfflineStore from '../../OfflineStore';
-import Typography from '@material-ui/core/Typography';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { ServerRequest } from '../../helper/settings';
 import PlayerNameInput from '../controls/PlayerNameInput';
 import logger from '../../helper/logger';
 import { createUseStyles } from 'react-jss';
-import Fab from '@material-ui/core/Fab';
-import { Edit, AccountCircle } from '@material-ui/icons';
 import Dialog from './Dialog';
 import { Button, Select } from '../controls';
 
@@ -63,6 +60,10 @@ const useStyles = createUseStyles(theme => ({
     color: theme.color.secondary.dark,
     padding: 10,
     fontSize: '0.8rem'
+  },
+  playerName: {
+    marginTop: 24,
+    marginBottom: 12
   }
 }));
 
@@ -141,13 +142,16 @@ const Settings = props => {
 
   const options = [{
     value: 'en',
-    label: t(tr.ENGLISH)
+    label: t(tr.ENGLISH),
+    icon: 'en-flag.svg'
   }, {
     value: 'de',
-    label: t(tr.GERMAN)
+    label: t(tr.GERMAN),
+    icon: 'de-flag.svg'
   }, {
     value: 'jp',
-    label: t(tr.JAPANESE)
+    label: t(tr.JAPANESE),
+    icon: 'jp-flag.svg'
   }];
 
   const changeLanguage = value => {
@@ -204,28 +208,9 @@ const Settings = props => {
         <div>
           {
             (typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous') || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true ?
-              editPlayerName ? <PlayerNameInput setPlayerName={setPlayerName} startValue={props.playerInfos.stats.username} current={props.playerInfos.stats.username}/> :
-                <div className={classes.username}>
-                  <AccountCircle className={classes.accountCircle} /> {props.playerInfos.stats.username}
-                  <Fab onClick={() => setEditPlayerName(true)} className={classes.editUsername} size="small" color="primary"><Edit /></Fab>
-                </div> : null
+              <PlayerNameInput className={classes.playerName} onEditMode={() => setEditPlayerName(true)} editMode={editPlayerName} setPlayerName={setPlayerName} startValue={props.playerInfos.stats.username} current={props.playerInfos.stats.username}/> : null
           }
-          {/* <label htmlFor="lang-selection">{t(tr.LANGUAGE)}</label>
-          <select
-            className={classes.select}
-            onChange={event => {
-              Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-              setCurrentLanguage(event.target.value);
-              forceUpdate();
-            }}
-            name="language" 
-            value={getCurrentLanguage()}
-            id="lang-selection">
-              <option value="en">{t(tr.ENGLISH)}</option>
-              <option value="de">{t(tr.GERMAN)}</option>
-              <option value="jp">{t(tr.JAPANESE)}</option>
-          </select> */}
-          <Select onChange={changeLanguage} options={options} />
+          <Select onChange={changeLanguage} options={options} defaultSelected={getCurrentLanguage()} />
 
           <Button className={classes.button} onClick={() => {
             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -261,7 +246,7 @@ const Settings = props => {
           }
           {
             showAttentionText && typeof props.game !== 'undefined' ?
-              <Typography color="error" className="attentionText">{t(tr.SETTINGS_ATTENTION_TEXT)}</Typography>
+              <p color="error" className="attentionText">{t(tr.SETTINGS_ATTENTION_TEXT)}</p>
               : null
           }
         </div>

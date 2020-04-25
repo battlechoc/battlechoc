@@ -77,6 +77,8 @@ const useStyles = createUseStyles(theme => ({
     },
     content: {
         overflowY: 'auto',
+        overflowX: 'hidden',
+        width: '90%',
         paddingRight: 5,
         height: '75%',
         color: 'white'
