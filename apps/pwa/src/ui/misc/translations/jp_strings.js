@@ -218,5 +218,7 @@ module.exports = {
     "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "収集する必要があります {{coins}} チョコレートファウンテンとフルーツキャノンのロックを解除するためのコインを増やす",
     "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "ドーナツトラップ、Muliplayer、およびChoclabは収集後にあなたのものになります {{coins}} より多くのコイン",
     "UNLOCK_CONGRATULATIONS_CHOCLAB": "おめでとう、Choclabのロックを解除しました。これは、エンティティをアップグレードする場所です！",
-    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "マルチプレイヤーモードのロックを解除しました。世界中の他のプレイヤーと対戦し、ハイスコアのトップに到達してください！"
+    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "マルチプレイヤーモードのロックを解除しました。世界中の他のプレイヤーと対戦し、ハイスコアのトップに到達してください！",
+    "PLAYER_NAME_GENERATED_TITLE": "ランダムなプレイヤー名が設定されています",
+    "PLAYER_NAME_GENERATED_BODY": "マルチプレイヤー機能を使用できるように、 {{name}} という名前を選択しました。この名前は、設定メニューでいつでも変更できます。"
 }

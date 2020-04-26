@@ -142,6 +142,10 @@ const Hud = props => {
         await multiplayer.tutorialSkipped();
     }
 
+    const notifyUnlock = async (missingScore, feature) => {
+        props.showNotification({ title: feature + ' not yet unlocked', message: 'You need to earn ' + missingScore + ' more coins to unlock the ' + feature + ' feature.' });
+    }
+
     const stage = estimateStage();
     return (
         <div className={showMultiplayerScreen ? 'scrollable ' + className : className}>
@@ -207,11 +211,14 @@ const Hud = props => {
                         controls.push(<div key="1" className="menuButton" onClick={() => skipTutorial()}>{t(tr.SKIP_TUTORIAL)}</div>);
                         controls.push(<div key="2" className="menuButton" onClick={() => setShowAccountOverview(true)}>{t(tr.SIGNINORUP)}</div>);
                     } else {
-                        controls.push(<div key="0" className="menuButton" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t(tr.NEW_GAME) : t(tr.MAIN_MENU_SINGLEPLAYER)}</div>);
+                        controls.push(<div key="0" className="menuButton" onClick={() => resumeOrStartGame()}>{t(tr.NEW_GAME)}</div>);
 
                         if (!hideOptions) {
                             controls.push(<div key="1" className="menuButton" onClick={() => setShowMultiplayerScreen(true)}>{t(tr.MAIN_MENU_MULTIPLAYER)}</div>);
                             controls.push(<div key="2" className="menuButton" onClick={() => setChoclabScreen(true)}>{t(tr.MAIN_MENU_CHOCLAB)}</div>);
+                        } else {
+                            controls.push(<div key="1" className="menuButton locked" onClick={() => notifyUnlock(1000 - score, 'Multiplayer')}>{t(tr.MAIN_MENU_MULTIPLAYER)}</div>);
+                            controls.push(<div key="2" className="menuButton locked" onClick={() => notifyUnlock(1000 - score, 'Choclab')}>{t(tr.MAIN_MENU_CHOCLAB)}</div>);
                         }
                     }
 

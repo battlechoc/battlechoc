@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
-import { SportsEsports, PersonAddDisabled, PersonAdd } from '@material-ui/icons';
+import { SportsEsports, PersonAddDisabled, PersonAdd } from '@material-ui/icons';
 import { Fab } from '@material-ui/core';
 import logger from '../../helper/logger';
 import { translate as t, keys as tr } from '../misc';
@@ -42,7 +42,7 @@ const useStyles = makeStyles(theme => ({
         width: '15%',
         '@media screen and (min-width: 960px)': {
             padding: '24px'
-        }        
+        }
     },
     name: {
         justifyContent: 'center',
@@ -51,7 +51,7 @@ const useStyles = makeStyles(theme => ({
         display: 'flex',
         '@media screen and (min-width: 960px)': {
             padding: '24px'
-        }        
+        }
     },
     actions: {
         display: 'flex',
@@ -76,8 +76,9 @@ const PlayerList = props => {
     const classes = useStyles();
     const [pendingRequest, setPendingRequest] = useState(null)
 
-    const canNotChallenge = username => {
-        return props.sessions.map(session => session.opponent.name).includes(username);
+    const canNotChallenge = player => {
+        return props.sessions.map(session => session.opponent.name).includes(player.name) ||
+            player.score < 1000;
     }
 
     let friends = props.players;
@@ -125,27 +126,26 @@ const PlayerList = props => {
     if (props.players.length > 0) {
         return (
             <div className={classes.list}>
-            { props.withScore ? <div className={`${classes.row} ${classes.headline}`}><div className={classes.property} style={{ width: '10%'}}>{t(tr.ACCOUNT_OVERVIEW_RANK)}</div><div className={classes.property}>{t(tr.PLAYERLIST_SCORE)}</div><div className={classes.name}>{t(tr.PLAYERLIST_NAME)}</div><div className={classes.actions}>{t(tr.PLAYERLIST_ACTIONS)}</div></div> : null }
-            { 
-                props.players.map((player, i) => {
-                    let isPlayer = props.username === player.name;
-                    return <div key={i} className={isPlayer ? `${classes.own} ${classes.row}` : classes.row }>
-                        { props.withScore ? <div onClick={() => openPlayerProfile(player)} className={classes.property} style={{ width: '10%'}}>{player.ranking}</div> : null }
-                        { props.withScore ? <div onClick={() => openPlayerProfile(player)} className={classes.property}>{player.score}</div> : null }
-                        <div onClick={() => openPlayerProfile(player)} className={classes.name}>{player.name}</div>
-                        { !isPlayer ? <div className={classes.actions}>
-                            <Fab className={classes.button} size="small" disabled={pendingRequest === player.name || canNotChallenge(player.name)} color="primary" onClick={() => props.challenge(player.name)}><SportsEsports /></Fab>
-                            
-                            {
-                                isFriend(player.name) ?
-                                    <Fab className={classes.button} size="small" disabled={pendingRequest === player.name} color="primary" onClick={() => removeFriend(player.name)} ><PersonAddDisabled /></Fab>
-                                :  <Fab className={classes.button} size="small" disabled={pendingRequest === player.name} color="primary" onClick={() => addFriend(player.name)} ><PersonAdd /></Fab> 
-                            }
-                        
-                        </div> : <div className={classes.placeholder} /> }
-                    </div>
-                })
-            }
+                {props.withScore ? <div className={`${classes.row} ${classes.headline}`}><div className={classes.property} style={{ width: '10%' }}>{t(tr.ACCOUNT_OVERVIEW_RANK)}</div><div className={classes.property}>{t(tr.PLAYERLIST_SCORE)}</div><div className={classes.name}>{t(tr.PLAYERLIST_NAME)}</div><div className={classes.actions}>{t(tr.PLAYERLIST_ACTIONS)}</div></div> : null}
+                {
+                    props.players.map((player, i) => {
+                        let isPlayer = props.username === player.name;
+                        return <div key={i} className={isPlayer ? `${classes.own} ${classes.row}` : classes.row}>
+                            {props.withScore ? <div onClick={() => openPlayerProfile(player)} className={classes.property} style={{ width: '10%' }}>{player.ranking}</div> : null}
+                            {props.withScore ? <div onClick={() => openPlayerProfile(player)} className={classes.property}>{player.score}</div> : null}
+                            <div onClick={() => openPlayerProfile(player)} className={classes.name}>{player.name}</div>
+                            {!isPlayer ? <div className={classes.actions}>
+                                <Fab className={classes.button} size="small" disabled={pendingRequest === player.name || canNotChallenge(player)} color="primary" onClick={() => props.challenge(player.name)}><SportsEsports /></Fab>
+                                {
+                                    isFriend(player.name) ?
+                                        <Fab className={classes.button} size="small" disabled={pendingRequest === player.name} color="primary" onClick={() => removeFriend(player.name)} ><PersonAddDisabled /></Fab>
+                                        : <Fab className={classes.button} size="small" disabled={pendingRequest === player.name} color="primary" onClick={() => addFriend(player.name)} ><PersonAdd /></Fab>
+                                }
+
+                            </div> : <div className={classes.placeholder} />}
+                        </div>
+                    })
+                }
             </div>
         );
     } else {
