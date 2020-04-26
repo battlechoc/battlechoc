@@ -6,7 +6,7 @@ import OfflineStore from './OfflineStore';
 import { multiplayer } from './Multiplayer';
 import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut } from 'battlechoc-shared-functions';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting } from './ui/UiActions';
+import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting, showNotification } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -90,7 +90,8 @@ class App extends Component {
             stopSessionRefresh: this.props.stopSessionRefresh,
             startSessionRefresh: this.props.startSessionRefresh,
             showQuickMessage: this.props.showQuickMessage,
-            detonateAtPosition: this.detonateAtPosition
+            detonateAtPosition: this.detonateAtPosition,
+            showNotification: this.props.showNotification
         });
 
         let browserLanguage = 'en';
@@ -665,7 +666,8 @@ const mapDispatchToProps = {
     showQuickMessage,
     startSessionRefresh,
     stopSessionRefresh,
-    toggleDonutHighlighting
+    toggleDonutHighlighting,
+    showNotification
 };
 
 const AppContainer = connect(

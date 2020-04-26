@@ -218,5 +218,7 @@ module.exports = {
     "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "You need to collect {{coins}} more coins to unlock the Chocolate Fountain and the Fruit Cannon",
     "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Donut Traps, Muliplayer and the Choclab will be yours after collecting {{coins}} more coins",
     "UNLOCK_CONGRATULATIONS_CHOCLAB": "Congratulations you've unlocked the Choclab. This is the place for upgrading your entities!",
-    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "You have unlocked the multiplayer mode. Play against other players worldwide and reach the top of the highscore!"
+    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "You have unlocked the multiplayer mode. Play against other players worldwide and reach the top of the highscore!",
+    "PLAYER_NAME_GENERATED_TITLE": "A random player name has been set for you",
+    "PLAYER_NAME_GENERATED_BODY": "We chose the name {{name}} for you to enable you for the multiplayer features. You can change this name at any time in the settings menu."
 }

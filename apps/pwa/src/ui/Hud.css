@@ -293,6 +293,16 @@ img.without.cream {
     text-transform: uppercase;
 }
 
+.menuButton.locked {
+    filter: brightness(0.5);
+}
+
+.menuButton.locked:hover {
+    background-color: #5b2f19;
+    color: #f3f7df;
+    filter: brightness(0.7);
+}
+
 .disabled.menuButton {
     cursor: initial;
     filter: brightness(0.5);

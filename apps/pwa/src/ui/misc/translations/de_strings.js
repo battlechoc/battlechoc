@@ -218,5 +218,7 @@ module.exports = {
     "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "Sammle noch {{coins}} Schokomünzen, um den Schokobrunnen und die Fruchtkanone freizuschalten.",
     "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Donut-Fallen, Multiplayer und das Choclab gehören dir, wenn du noch weitere {{coins}} Schokomünzen sammelst.",
     "UNLOCK_CONGRATULATIONS_CHOCLAB": "Herzlichen Glückwunsch! Du hast das Choclab freigeschaltet. Hier kannst du deine Einheiten verbessern!",
-    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "Du hast den Multiplayer-Modus freigeschaltet. Spiele gegen andere Spieler weltweit und erklimme den Highscore!"
+    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "Du hast den Multiplayer-Modus freigeschaltet. Spiele gegen andere Spieler weltweit und erklimme den Highscore!",
+    "PLAYER_NAME_GENERATED_TITLE": "Ein zufälliger Spielername wurde für dich ausgewählt",
+    "PLAYER_NAME_GENERATED_BODY": "Wir haben den Name {{name}} für dich ausgewählt, um dich für die Multiplayer-Funktionen freizuschalten. Du kannst den Namen jederzeit im Einstellungsmenü ändern."
 }

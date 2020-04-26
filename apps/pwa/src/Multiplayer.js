@@ -4,7 +4,7 @@ import '@firebase/firestore';
 import 'firebase/messaging';
 import OfflineStore from './OfflineStore';
 import { GameActionTypes, AttackType, EmptyPlayerStats } from 'battlechoc-shared-functions';
-import { Jukebox } from './ui/misc';
+import { Jukebox, translate as t, keys as tr } from './ui/misc';
 import { ServerRequest, generateNewAndroidMessagingToken, setAndroidDefaults } from './helper/settings';
 import logger from './helper/logger';
 import uuidv4 from 'uuid/v4';
@@ -32,7 +32,8 @@ class Multiplayer {
             startSessionRefresh: () => logger.warn("calling stopSessionRefresh without beeing initialized"),
             stopSessionRefresh: () => logger.warn("calling stopSessionRefresh without beeing initialized"),
             showQuickMessage: () => logger.warn("calling showQuickMessage without beeing initialized"),
-            detonateAtPosition: () => logger.warn("calling detonateAtPosition without beeing initialized")
+            detonateAtPosition: () => logger.warn("calling detonateAtPosition without beeing initialized"),
+            showNotification: () => logger.warn("calling showNotification without beeing initialized"),
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -94,7 +95,22 @@ class Multiplayer {
 
             try {
                 await ServerRequest('post', '/user');
-                this.mergePlayerStats();
+                const mergedStats = await this.mergePlayerStats();
+                if (typeof mergedStats !== 'undefined') {
+                    if (mergedStats.username === 'Chocnonymous' && (mergedStats.tutorialFinished === true || mergedStats.tutorialSkipped === true)) {
+                        const generatedName = await this.fetchRandomName();
+                        ServerRequest('post', '/user/username', { username: generatedName })
+                            .then(async () => {
+                                this.callbacks.showNotification({ title: t(tr.PLAYER_NAME_GENERATED_TITLE), message: t(tr.PLAYER_NAME_GENERATED_BODY, generatedName) });
+                                this.callbacks.updatePlayerStats({ username: generatedName });
+                                OfflineStore.playerStore.get('stats').then(playerStats => {
+                                    playerStats.username = generatedName;
+                                    OfflineStore.playerStore.set('stats', playerStats);
+                                });
+                            })
+                            .catch(error => console.warn(error));
+                    }
+                }
             } catch (err) {
                 logger.info("could not create player entry.", err);
             }
@@ -177,12 +193,13 @@ class Multiplayer {
             }
 
             if (typeof offlineAccount === 'undefined') {
-                this.fetchPlayerStats();
+                return this.fetchPlayerStats();
             } else {
                 try {
                     const data = (await ServerRequest('post', '/user/merge', { playerInfo: offlineAccount })).data;
                     OfflineStore.playerStore.set('stats', data.mergedPlayerInfo).catch(error => logger.warn("could not set new player stats in idb.", error));
                     this.callbacks.updatePlayerStats(data.mergedPlayerInfo);
+                    return data.mergedPlayerInfo;
                 } catch (err) {
                     logger.warn('Could not merge stats.', err);
                     return this.fetchPlayerStats();
@@ -297,6 +314,19 @@ class Multiplayer {
         if (firebase.auth().currentUser) {
             try {
                 const data = (await ServerRequest('post', '/user/tutorial/skipped')).data;
+                if (data.stats.username === 'Chocnonymous') {
+                    const generatedName = await this.fetchRandomName();
+                    ServerRequest('post', '/user/username', { username: generatedName })
+                        .then(async () => {
+                            this.callbacks.showNotification({ title: t(tr.PLAYER_NAME_GENERATED_TITLE), message: t(tr.PLAYER_NAME_GENERATED_BODY, generatedName) });
+                            this.callbacks.updatePlayerStats({ username: generatedName });
+                            OfflineStore.playerStore.get('stats').then(playerStats => {
+                                playerStats.username = generatedName;
+                                OfflineStore.playerStore.set('stats', playerStats);
+                            });
+                        })
+                        .catch(error => console.warn(error));
+                }
                 this.callbacks.updatePlayerStats(data.stats);
             } catch (err) {
                 logger.warn("Could not update player tutorial skipped state.");
