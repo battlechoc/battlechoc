@@ -62,6 +62,8 @@ const setupDatabasePlayground = async () => {
         gamestate jsonb,
         created timestamp without time zone,
         last_updated timestamp without time zone,
+        last_notification timestamp without time zone,
+        last_action timestamp without time zone,
         turns smallint,
         CONSTRAINT multiplayer_sessions_pkey PRIMARY KEY (id)
     )`);
@@ -86,9 +88,9 @@ const setupDatabasePlayground = async () => {
         sessionEventQueue jsonb
     )`);
 
-    await pool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', ['1337-1337-1337-1337', 'Basti', 100, 100, 'en', EmptyPlayerStats.level, false, false, false]);
-    await pool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', ['rul0r-rul0r-rul0r-rul0r', 'Fabi', 120, 120, 'de', EmptyPlayerStats.level, true, false, false]);
-    await pool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', ['h0gwarts-9-34', 'Hairy', 900, 125, 'ja', EmptyPlayerStats.level, true, false, true]);
+    await pool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', ['1337-1337-1337-1337', 'Basti', 100, 1100, 'en', EmptyPlayerStats.level, false, false, false]);
+    await pool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', ['rul0r-rul0r-rul0r-rul0r', 'Fabi', 120, 1120, 'de', EmptyPlayerStats.level, true, false, false]);
+    await pool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', ['h0gwarts-9-34', 'Hairy', 900, 1125, 'ja', EmptyPlayerStats.level, true, false, true]);
     await pool.end();
 }
 

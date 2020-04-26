@@ -73,7 +73,7 @@ it('should find a valid player', async done => {
     expect(response.body.stats.tutorialFinished).toBe(false);
     expect(response.body.stats.username).toBe('Basti');
     expect(response.body.stats.coins).toBe(100);
-    expect(response.body.stats.score).toBe(100);
+    expect(response.body.stats.score).toBe(1100);
     expect(response.body.stats.trackRecord.length).toBe(0);
     done();
 });

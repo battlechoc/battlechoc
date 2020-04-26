@@ -488,61 +488,19 @@ app.post('/user/tutorial/finished', async (req, res) => {
     }
 });
 
-app.post('/user/challenge', async (req, res) => {
-    const opponentResult = await getPlayerFromName(req.body.opponent);
-    if (opponentResult.rows.length === 0) {
-        res.status(404).json({ error: 'OPPONENT "' + req.body.opponent + '" DOES NOT EXIST' });
-    } else {
-        const opponent = await createPlayerStatsObject(opponentResult.rows[0], true);
-        let language = opponentResult.rows[0].language;
-        if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
-            language = t.getDefaultLanguage();
-        }
-        if (opponent.id === req.user.uid) {
-            res.status(400).json({ error: 'CANNOT CREATE A GAME CHALLENGING YOURSELF' });
-        } else {
-            const playerResult = await getPlayerFromId(req.user.uid);
-            if (playerResult.rows.length === 0) {
-                res.status(404).json({ error: 'PLAYER NOT FOUND' });
-            } else {
-                const player = await createPlayerStatsObject(playerResult.rows[0], true);
-                const coinToss = Math.round(Math.random());
-
-                let opponentLevel = opponent.level;
-                if (typeof opponentLevel === 'undefined') {
-                    opponentLevel = EmptyPlayerStats.level;
-                }
-
-                let playerLevel = player.level;
-                if (typeof playerLevel === 'undefined') {
-                    playerLevel = EmptyPlayerStats.level;
-                }
-
-                const sessionEventQueue = {
-                    player_0_events: [],
-                    player_1_events: [],
-                    playerIds: [opponent.id, req.user.uid],
-                    lastProcessedEvent: [0, 0]
-                };
-
-                try {
-                    const databaseSession = await addEventQueue(sessionEventQueue);
-                    const initialGameState = {
-                        players: [createPlayer(req.body.opponent, 'PlayerType.HUMAN', opponentLevel, sessionEventQueue.playerIds[0]), createPlayer(player.username, 'PlayerType.HUMAN', playerLevel, sessionEventQueue.playerIds[1])],
-                        currentPlayerIndex: coinToss,
-                        state: 'GameStateTypes.CHOOSE_FIELD_OR_START',
-                        isRunning: true,
-                        winners: [],
-                        board: Board.generate({ rows: 10, cols: 10 }, Math.round(Math.random() * Math.pow(10, 8)))
-                    };
-                    await dbPool.query('INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, turns) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
-                        databaseSession.id, sessionEventQueue.playerIds[0], sessionEventQueue.playerIds[1], initialGameState, new Date(), new Date(), 0]);
-
-                    const tokens = await getPlayerMessagingPermissionTokens(opponent.id);
+app.post('/user/notify', async (req, res) => {
+    try {
+        const session = await getSessionData(req.body.sessionId);
+        if (typeof session != 'undefined') {
+            const currentDateTime = (new Date()).getTime();
+            const lastNotifiedTime = (typeof session.last_notification === 'undefined' || session.last_notification === null) ? 0 : session.last_notification.getTime();
+            if ((currentDateTime - lastNotifiedTime) > 1000 * 60 * 60 * 4) {
+                if (session.game.players[session.game.currentPlayerIndex].id !== req.user.uid) {
+                    updateLastNotification(session.id, new Date());
+                    const tokens = await getPlayerMessagingPermissionTokens(session.game.players[session.game.currentPlayerIndex].id);
                     for (const permission of tokens) {
                         const payload = {}
                         payload.to = permission.token;
-
                         if (permission.type === 'android-messaging') {
                             payload.data = {
                                 title: player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
@@ -564,11 +522,107 @@ app.post('/user/challenge', async (req, res) => {
                             console.warn('Player notification failed' + error.toString());
                         }
                     }
+                } else {
+                    console.warn("Cannot notify yourself.");
+                    res.status(400).json({ error: "CANNOT NOTIFY YOURSELF" });
+                }
+            }
+        } else {
+            console.error("Trying to notify player in non existing multiplayer sessiobn. " + req.body.sessionId);
+            res.status(404).json({ error: "CANNOT SOMEONE WITHIN A NON EXISTING MULTIPLAYER SESSION" });
+        }
+    } catch (err) {
+        console.error("Could not notify player in session. ", err);
+        res.status(500).json({ error: "COULD NOT NOTIFY PLAYER IN SESSION" });
+    }
+});
 
-                    res.json({ sessionId: databaseSession.id });
-                } catch (error) {
-                    console.log(error.toString())
-                    res.status(500).json({ error: error.toString() });
+app.post('/user/challenge', async (req, res) => {
+    const opponentResult = await getPlayerFromName(req.body.opponent);
+    if (opponentResult.rows.length === 0) {
+        res.status(404).json({ error: 'OPPONENT "' + req.body.opponent + '" DOES NOT EXIST' });
+    } else {
+        const opponent = await createPlayerStatsObject(opponentResult.rows[0], true);
+        if (opponent.score < 1000) {
+            console.error("Challenged player\'s score is too low to be challenged. " + opponent.score);
+            res.status(400).json({ error: 'CHALLENGED OPPONENT HAS A SCORE THAT IS TOO LOW. ' + opponent.score });
+        } else {
+            let language = opponentResult.rows[0].language;
+            if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
+                language = t.getDefaultLanguage();
+            }
+            if (opponent.id === req.user.uid) {
+                res.status(400).json({ error: 'CANNOT CREATE A GAME CHALLENGING YOURSELF' });
+            } else {
+                const playerResult = await getPlayerFromId(req.user.uid);
+                if (playerResult.rows.length === 0) {
+                    res.status(404).json({ error: 'PLAYER NOT FOUND' });
+                } else {
+                    const player = await createPlayerStatsObject(playerResult.rows[0], true);
+                    const coinToss = Math.round(Math.random());
+
+                    let opponentLevel = opponent.level;
+                    if (typeof opponentLevel === 'undefined') {
+                        opponentLevel = EmptyPlayerStats.level;
+                    }
+
+                    let playerLevel = player.level;
+                    if (typeof playerLevel === 'undefined') {
+                        playerLevel = EmptyPlayerStats.level;
+                    }
+
+                    const sessionEventQueue = {
+                        player_0_events: [],
+                        player_1_events: [],
+                        playerIds: [opponent.id, req.user.uid],
+                        lastProcessedEvent: [0, 0]
+                    };
+
+                    try {
+                        const databaseSession = await addEventQueue(sessionEventQueue);
+                        const initialGameState = {
+                            players: [createPlayer(req.body.opponent, 'PlayerType.HUMAN', opponentLevel, sessionEventQueue.playerIds[0]), createPlayer(player.username, 'PlayerType.HUMAN', playerLevel, sessionEventQueue.playerIds[1])],
+                            currentPlayerIndex: coinToss,
+                            state: 'GameStateTypes.CHOOSE_FIELD_OR_START',
+                            isRunning: true,
+                            winners: [],
+                            board: Board.generate({ rows: 10, cols: 10 }, Math.round(Math.random() * Math.pow(10, 8)))
+                        };
+                        await dbPool.query('INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, turns) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
+                            databaseSession.id, sessionEventQueue.playerIds[0], sessionEventQueue.playerIds[1], initialGameState, new Date(), new Date(), 0]);
+
+                        const tokens = await getPlayerMessagingPermissionTokens(opponent.id);
+                        for (const permission of tokens) {
+                            const payload = {}
+                            payload.to = permission.token;
+
+                            if (permission.type === 'android-messaging') {
+                                payload.data = {
+                                    title: player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
+                                    text: t.t[language].NOTIFICATION_CHALLENGE_BODY,
+                                    session: databaseSession.id
+                                }
+                            } else {
+                                payload.notification = {
+                                    title: player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
+                                    body: t.t[language].NOTIFICATION_CHALLENGE_BODY,
+                                    click_action: 'https://battlechoc.com/session/' + databaseSession.id
+                                }
+                            }
+
+                            try {
+                                await axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
+                                console.log('Successfully send notification');
+                            } catch (error) {
+                                console.warn('Player notification failed' + error.toString());
+                            }
+                        }
+
+                        res.json({ sessionId: databaseSession.id });
+                    } catch (error) {
+                        console.log(error.toString())
+                        res.status(500).json({ error: error.toString() });
+                    }
                 }
             }
         }
@@ -589,6 +643,7 @@ const processEvents = (session, events, eventQueue) => {
                         const validityCheckResult = Rules.isActionValid(session.game, event);
                         if (validityCheckResult === true) {
                             console.log("Event valid: " + JSON.stringify(event));
+                            updateLastAction(session.id, new Date());
                             Reducer.updateState(session, event);
                             eventQueue.lastProcessedEvent[0] += 1;
                             processedEvents += 1;
@@ -614,6 +669,7 @@ const processEvents = (session, events, eventQueue) => {
                         const validityCheckResult = Rules.isActionValid(session.game, event);
                         if (validityCheckResult === true) {
                             console.log("Event valid: " + JSON.stringify(event));
+                            updateLastAction(session.id, new Date());
                             Reducer.updateState(session, event);
                             eventQueue.lastProcessedEvent[1] += 1;
                             processedEvents += 1;
@@ -700,6 +756,8 @@ const getSessionData = async (sessionId) => {
                 game: sessionQueryResult.rows[0].gamestate,
                 created: sessionQueryResult.rows[0].created,
                 last_changed: sessionQueryResult.rows[0].last_updated,
+                last_action: sessionQueryResult.rows[0].last_action,
+                last_notification: sessionQueryResult.rows[0].last_notification,
                 players: [sessionQueryResult.rows[0].player1, sessionQueryResult.rows[0].player2],
                 turns: sessionQueryResult.rows[0].turns
             };
@@ -709,8 +767,26 @@ const getSessionData = async (sessionId) => {
             return undefined;
         }
     } catch (err) {
-        console.err("Could not fetch session from database.", err);
+        console.error("Could not fetch session from database.", err);
         return undefined;
+    }
+}
+
+const updateLastNotification = async (id, notificationTimestamp) => {
+    try {
+        await dbPool.query("UPDATE multiplayer_sessions SET last_notification = $1 WHERE id = $2",
+            [notificationTimestamp, id]);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+const updateLastAction = async (id, actionProcessedTimestamp) => {
+    try {
+        await dbPool.query("UPDATE multiplayer_sessions SET last_action = $1 WHERE id = $2",
+            [actionProcessedTimestamp, id]);
+    } catch (err) {
+        console.error(err);
     }
 }
 
@@ -719,7 +795,7 @@ const updateSessionGameState = async (id, gameState, turns, lastChanged) => {
         await dbPool.query("UPDATE multiplayer_sessions SET gamestate = $1, last_updated = $2, turns = $3 WHERE id = $4",
             [gameState, lastChanged, turns, id]);
     } catch (err) {
-        console.err(err);
+        console.error(err);
     }
 }
 
@@ -969,6 +1045,7 @@ app.get('/multiplayer/sessions', async (req, res) => {
                 'players': [row.player1, row.player2],
                 'status': 'game.status',
                 'last_changed': row.last_updated.getTime(),
+                'last_notification': (typeof row.last_notification === 'undefined' || row.last_notification === null) ? 0 : row.last_notification.getTime(),
                 'created': row.created.getTime(),
                 'myTurn': row.gamestate.currentPlayerIndex === playerIndex,
                 'turns': row.turns,
