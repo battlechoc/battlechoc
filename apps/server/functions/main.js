@@ -498,20 +498,21 @@ app.post('/user/notify', async (req, res) => {
                 if (session.game.players[session.game.currentPlayerIndex].id !== req.user.uid) {
                     updateLastNotification(session.id, new Date());
                     const tokens = await getPlayerMessagingPermissionTokens(session.game.players[session.game.currentPlayerIndex].id);
+                    const playerName = await getPlayerFromId(req.body.uid).rows[0].name;
                     for (const permission of tokens) {
                         const payload = {}
                         payload.to = permission.token;
                         if (permission.type === 'android-messaging') {
                             payload.data = {
-                                title: player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
-                                text: t.t[language].NOTIFICATION_CHALLENGE_BODY,
-                                session: databaseSession.id
+                                title: playerName + t.t[language].NOTIFICATION_REMEMBER_TURN_TITLE,
+                                text: t.t[language].NOTIFICATION_REMEMBER_TURN_BODY,
+                                session: session.id
                             }
                         } else {
                             payload.notification = {
-                                title: player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
-                                body: t.t[language].NOTIFICATION_CHALLENGE_BODY,
-                                click_action: 'https://battlechoc.com/session/' + databaseSession.id
+                                title: playerName + t.t[language].NOTIFICATION_REMEMBER_TURN_TITLE,
+                                body: t.t[language].NOTIFICATION_REMEMBER_TURN_BODY,
+                                click_action: 'https://battlechoc.com/session/' + session.id
                             }
                         }
 
