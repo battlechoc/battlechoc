@@ -497,32 +497,13 @@ app.post('/user/notify', async (req, res) => {
             if ((currentDateTime - lastNotifiedTime) > 1000 * 60 * 60 * 4) {
                 if (session.game.players[session.game.currentPlayerIndex].id !== req.user.uid) {
                     updateLastNotification(session.id, new Date());
-                    const tokens = await getPlayerMessagingPermissionTokens(session.game.players[session.game.currentPlayerIndex].id);
                     const playerName = await getPlayerFromId(req.body.uid).rows[0].name;
-                    for (const permission of tokens) {
-                        const payload = {}
-                        payload.to = permission.token;
-                        if (permission.type === 'android-messaging') {
-                            payload.data = {
-                                title: playerName + t.t[language].NOTIFICATION_REMEMBER_TURN_TITLE,
-                                text: t.t[language].NOTIFICATION_REMEMBER_TURN_BODY,
-                                session: session.id
-                            }
-                        } else {
-                            payload.notification = {
-                                title: playerName + t.t[language].NOTIFICATION_REMEMBER_TURN_TITLE,
-                                body: t.t[language].NOTIFICATION_REMEMBER_TURN_BODY,
-                                click_action: 'https://battlechoc.com/session/' + session.id
-                            }
-                        }
-
-                        try {
-                            await axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
-                            console.log('Successfully send notification');
-                        } catch (error) {
-                            console.warn('Player notification failed' + error.toString());
-                        }
-                    }
+                    await emitPlayerNotification(session.game.players[session.game.currentPlayerIndex].id,
+                        session.id,
+                        playerName + t.t[language].NOTIFICATION_REMEMBER_TURN_TITLE,
+                        t.t[language].NOTIFICATION_REMEMBER_TURN_BODY,
+                        '',
+                        'https://battlechoc.com/session/' + session.id);
                 } else {
                     console.warn("Cannot notify yourself.");
                     res.status(400).json({ error: "CANNOT NOTIFY YOURSELF" });
@@ -592,32 +573,12 @@ app.post('/user/challenge', async (req, res) => {
                         await dbPool.query('INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, turns) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
                             databaseSession.id, sessionEventQueue.playerIds[0], sessionEventQueue.playerIds[1], initialGameState, new Date(), new Date(), 0]);
 
-                        const tokens = await getPlayerMessagingPermissionTokens(opponent.id);
-                        for (const permission of tokens) {
-                            const payload = {}
-                            payload.to = permission.token;
-
-                            if (permission.type === 'android-messaging') {
-                                payload.data = {
-                                    title: player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
-                                    text: t.t[language].NOTIFICATION_CHALLENGE_BODY,
-                                    session: databaseSession.id
-                                }
-                            } else {
-                                payload.notification = {
-                                    title: player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
-                                    body: t.t[language].NOTIFICATION_CHALLENGE_BODY,
-                                    click_action: 'https://battlechoc.com/session/' + databaseSession.id
-                                }
-                            }
-
-                            try {
-                                await axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
-                                console.log('Successfully send notification');
-                            } catch (error) {
-                                console.warn('Player notification failed' + error.toString());
-                            }
-                        }
+                        await emitPlayerNotification(opponent.id,
+                            databaseSession.id,
+                            player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
+                            t.t[language].NOTIFICATION_CHALLENGE_BODY,
+                            '',
+                            'https://battlechoc.com/session/' + databaseSession.id);
 
                         res.json({ sessionId: databaseSession.id });
                     } catch (error) {
@@ -912,62 +873,23 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                 await updateEventQueue(eventQueue, req.body.sessionId);
                 let updatedPlayerId = session.game.currentPlayerIndex;
                 if (playerId !== updatedPlayerId) {
-                    const opponent = session.game.players[playerId].name;
-                    const permissions = await getPlayerMessagingPermissionTokens(session.game.players[updatedPlayerId].id);
-                    const expiredTokens = [];
-
-                    const opponentResult = await getPlayerFromName(opponent);
-                    if (opponentResult.rows.length === 0) {
+                    const receiverResult = await getPlayerFromName(session.game.players[playerId].name);
+                    if (receiverResult.rows.length === 0) {
                         console.error("Could not emit notification");
-                        return res.status(404).json({ error: 'OPPONENT "' + opponent + '" DOES NOT EXIST' });
+                        return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + session.game.players[playerId].name + '" DOES NOT EXIST' });
                     }
 
-                    let language = opponentResult.rows[0].language;
+                    let language = receiverResult.rows[0].language;
                     if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
                         language = t.getDefaultLanguage();
                     }
 
-                    await Promise.all(permissions.map(async (permission) => {
-                        const payload = {}
-                        payload.to = permission.token;
-
-                        if (permission.type === 'android-messaging') {
-                            payload.data = {
-                                title: opponent + t.t[language].NOTIFICATION_TURN_FINISHED_TITLE,
-                                text: t.t[language].NOTIFICATION_TURN_FINISHED_BODY,
-                                session: req.body.sessionId,
-                                reason: 'OPPONENT_FINISHED_TURN'
-                            }
-                        } else {
-                            payload.notification = {
-                                title: opponent + t.t[language].NOTIFICATION_TURN_FINISHED_TITLE,
-                                body: t.t[language].NOTIFICATION_TURN_FINISHED_BODY,
-                                click_action: 'https://battlechoc.com/session/' + req.body.sessionId
-                            }
-                        }
-
-                        try {
-                            const response = await axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
-                            if (response.data.failure === 1 && typeof response.data.results !== 'undefined' && response.data.results.length > 0 && response.data.results[0].error === 'NotRegistered') {
-                                console.log('Cleanup expired user registration token ' + permission.token);
-                                expiredTokens.push(permission.token);
-                            } else {
-                                console.log('Successfully send notification');
-                                console.log(`Token ${permission.token} is still valid`);
-                            }
-                        } catch (error) {
-                            console.warn('PLAYER NOTIFICATION FAILED' + error.toString());
-                        }
-                    }));
-
-                    if (expiredTokens.length === 0) {
-                        console.log('No token update needed. All tokens are still valid')
-                    } else {
-                        console.log('Updating user tokens because some of them were invalid. Deleted tokens: ' + expiredTokens.toString());
-                        await Promise.all(expiredTokens.map(async (expiredToken) => {
-                            await dbPool.query("DELETE FROM permissions WHERE token = $1 AND player = $2", [expiredToken, session.game.players[updatedPlayerId].id]);
-                        }));
-                    }
+                    await emitPlayerNotification(session.game.players[playerId].id,
+                        req.body.sessionId,
+                        session.game.players[playerId].name + t.t[language].NOTIFICATION_TURN_FINISHED_TITLE,
+                        t.t[language].NOTIFICATION_TURN_FINISHED_BODY,
+                        'OPPONENT_FINISHED_TURN',
+                        'https://battlechoc.com/session/' + req.body.sessionId);
                 }
                 res.status(200).end();
             } catch (error) {
@@ -978,60 +900,156 @@ app.post('/multiplayer/relay/action', async (req, res) => {
     }
 });
 
-app.post('/surrender', async (req, res) => {
+const emitPlayerNotification = async (receiverId, sessionId, title, body, reason, clickAction) => {
+    const permissions = await getPlayerMessagingPermissionTokens(receiverId);
+    const expiredTokens = [];
+
+    await Promise.all(permissions.map(async (permission) => {
+        const payload = {}
+        payload.to = permission.token;
+
+        if (permission.type === 'android-messaging') {
+            payload.data = {
+                title: title,
+                text: body,
+                session: sessionId,
+                reason: reason
+            }
+        } else {
+            payload.notification = {
+                title: title,
+                body: body,
+                click_action: clickAction
+            }
+        }
+
+        try {
+            const response = await axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
+            if (response.data.failure === 1 && typeof response.data.results !== 'undefined' && response.data.results.length > 0 && response.data.results[0].error === 'NotRegistered') {
+                console.log('Cleanup expired user registration token ' + permission.token);
+                expiredTokens.push(permission.token);
+            } else {
+                console.log('Successfully send notification');
+                console.log(`Token ${permission.token} is still valid`);
+            }
+        } catch (error) {
+            console.warn('PLAYER NOTIFICATION FAILED' + error.toString());
+        }
+    }));
+
+    if (expiredTokens.length === 0) {
+        console.log('No token update needed. All tokens are still valid')
+    } else {
+        console.log('Updating user tokens because some of them were invalid. Deleted tokens: ' + expiredTokens.toString());
+        await Promise.all(expiredTokens.map(async (expiredToken) => {
+            await dbPool.query("DELETE FROM permissions WHERE token = $1 AND player = $2", [expiredToken, receiverId]);
+        }));
+    }
+}
+
+const surrenderGame = async (sessionId, playerId) => {
     try {
-        var eventQueueDoc = await getEventQueue(req.body.sessionId);
+        var eventQueueDoc = await getEventQueue(sessionId);
     } catch (error) {
-        return res.status(500).json({ 'error': error });
+        console.error("Could not get multiplayer event queue for session " + sessionId);
+        return false;
     }
 
     if (!eventQueueDoc.exists) {
-        res.status(404).json({ error: 'EVENT QUEUE FOR SESSION NOT FOUND' });
+        console.error("Event queue for does not exist for session " + sessionId);
+        return false;
     } else {
         let eventQueue = eventQueueDoc.data();
-        if (!eventQueue.playerIds.some(id => id === req.user.uid)) {
-            return res.status(401).end();
+        if (!eventQueue.playerIds.some(id => id === playerId)) {
+            console.error("Surrender game not allowed for " + playerId);
+            return false;
         }
 
-        let playerIndex = eventQueue.playerIds.findIndex(id => id === req.user.uid);
+        let playerIndex = eventQueue.playerIds.findIndex(id => id === playerId);
         let event = {
             index: (playerIndex === 0) ? eventQueue.player_0_events.length : eventQueue.player_1_events.length,
             type: 'battlechoc/gameplay/endGame',
             payload: {
-                winners: eventQueue.playerIds.filter(id => id !== req.user.uid),
-                issuer: req.user.uid
+                winners: eventQueue.playerIds.filter(id => id !== playerId),
+                issuer: playerId
             },
-            sessionId: req.body.sessionId
+            sessionId: sessionId
         }
 
         try {
-            await enqueueEvent(req.body.sessionId, event, playerIndex);
+            await enqueueEvent(sessionId, event, playerIndex);
             eventQueue.lastProcessedEvent[playerIndex] += 1;
         } catch (error) {
             console.warn('Failed to push event ' + event.toString() + ' to the event list of player ' + playerIndex);
-            return res.status(500).json({ 'error': error });
+            return false;
         }
 
-        let session = await getSessionData(req.body.sessionId);
+        let session = await getSessionData(sessionId);
         if (typeof session === 'undefined') {
-            res.status(404).json({ error: 'SESSION NOT FOUND' });
+            console.error("Could not find session in database " + sessionId);
+            return false;
         }
         session.game.isRunning = false;
         session.game.winners = event.payload.winners;
-        session.game.players.filter(player => player.id !== req.user.uid)[0].statistics.won = true;
-        session.game.players.filter(player => player.id !== req.user.uid)[0].statistics.lost = false;
-        session.game.players.filter(player => player.id === req.user.uid)[0].statistics.won = false;
-        session.game.players.filter(player => player.id === req.user.uid)[0].statistics.lost = true;
+        session.game.players.filter(player => player.id !== playerId)[0].statistics.won = true;
+        session.game.players.filter(player => player.id !== playerId)[0].statistics.lost = false;
+        session.game.players.filter(player => player.id === playerId)[0].statistics.won = false;
+        session.game.players.filter(player => player.id === playerId)[0].statistics.lost = true;
 
         try {
             const turns = (typeof eventQueue.player_0_events !== 'undefined') ? eventQueue.player_0_events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
             await updateSessionGameState(session.id, session.game, turns, new Date());
-            await updateEventQueue(eventQueue, req.body.sessionId);
-            res.status(200).end();
+            await updateEventQueue(eventQueue, sessionId);
+            const looserId = playerId;
+            const winnerId = eventQueue.playerIds.filter(id => id !== playerId)[0];
+            let looserName = '';
+            const looserQueryResult = await dbPool.query("SELECT name FROM players WHERE id = $1", [looserId]);
+            if (looserQueryResult.rows.length > 0) {
+                looserName = looserQueryResult.rows[0].name;
+            }
+            let winnerName = '';
+            const winnerQueryResult = await dbPool.query("SELECT name FROM players WHERE id = $1", [winnerId]);
+            if (winnerQueryResult.rows.length > 0) {
+                winnerName = winnerQueryResult.rows[0].name;
+            }
+            return {
+                winner: {
+                    id: winnerId, name: winnerName
+                },
+                looser: {
+                    id: looserId, name: looserName
+                }
+            };
         } catch (err) {
-            console.error(err);
-            res.status(500).json({ 'error': 'COULD NOT UPDATE SESSION STATE' });
+            console.error("Could not update session state " + sessionId);
+            return false;
         }
+    }
+}
+
+app.post('/surrender', async (req, res) => {
+    const result = await surrenderGame(req.body.sessionId, req.user.uid);
+    if (result !== false) {
+        const receiverResult = await getPlayerFromName(result.winner.name);
+        if (receiverResult.rows.length === 0) {
+            console.error("Could not emit notification");
+            return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + result.winner.name + '" DOES NOT EXIST' });
+        }
+
+        let language = receiverResult.rows[0].language;
+        if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
+            language = t.getDefaultLanguage();
+        }
+
+        await emitPlayerNotification(result.winner.id,
+            req.body.sessionId,
+            result.looser.name + t.t[language].NOTIFICATION_OPPONENT_SURENDERED_TITLE,
+            t.t[language].NOTIFICATION_OPPONENT_SURENDERED_BODY,
+            'OPPONENT_SURRENDERED_GAME',
+            'https://battlechoc.com');
+        res.status(200).end();
+    } else {
+        return res.status(500).json({ 'error': 'COULD NOT SURRENDER GAME' });
     }
 });
 
@@ -1567,5 +1585,62 @@ app.post('/user/language', async (req, res) => {
     }
 });
 
+const sessionCleanupFunction = (context) => {
+    console.log('Cleaning up stale multiplayer sessions ...');
+    try {
+        const sessions = [];
+        const sessionQueryResult = await dbPool.query("SELECT * FROM multiplayer_sessions where last_action < NOW() - INTERVAL '1 day' AND gamestate->>'isRunning' = 'true'");
+        await Promise.all(sessionQueryResult.rows.map(async (row) => {
+            const looserUid = row.game.players[row.game.currentPlayerIndex].id;
+            const result = await surrenderGame(row.id, looserUid);
+            if (result !== false) {
+                sessions.push({ id: row.id });
+
+                // notify the winner
+                const winnerResult = await getPlayerFromName(result.winner.name);
+                if (winnerResult.rows.length === 0) {
+                    console.error('NOTIFICATION RECEIVER "' + result.winner.name + '" DOES NOT EXIST');
+                }
+
+                let winnerLanguage = winnerResult.rows[0].language;
+                if (typeof winnerLanguage === 'undefined' || !t.isValidLanguage(winnerLanguage)) {
+                    winnerLanguage = t.getDefaultLanguage();
+                }
+
+                await emitPlayerNotification(result.winner.id,
+                    row.id,
+                    t.t[winnerLanguage].NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE + result.looser.name,
+                    result.looser.name + t.t[winnerLanguage].NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY,
+                    'SESSION_TIMEOUT_GAME_WON',
+                    'https://battlechoc.com');
+
+                // notify the looser
+                const looserResult = await getPlayerFromName(result.looser.name);
+                if (looserResult.rows.length === 0) {
+                    console.error('NOTIFICATION RECEIVER "' + result.looser.name + '" DOES NOT EXIST');
+                }
+
+                let looserLanguage = looserResult.rows[0].language;
+                if (typeof looserLanguage === 'undefined' || !t.isValidLanguage(looserLanguage)) {
+                    looserLanguage = t.getDefaultLanguage();
+                }
+
+                await emitPlayerNotification(result.looser.id,
+                    row.id,
+                    t.t[looserLanguage].NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE + result.winner.name,
+                    t.t[looserLanguage].NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY,
+                    'SESSION_TIMEOUT_GAME_LOST',
+                    'https://battlechoc.com');
+            } else {
+                console.error("Could not surrender session " + row.id);
+            }
+        }));
+        console.log("Cleaned up session: " + JSON.stringify(sessions));
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 module.exports.app = app;
 module.exports.dbPool = dbPool;
+module.exports.sessionCleanupFunction = sessionCleanupFunction;

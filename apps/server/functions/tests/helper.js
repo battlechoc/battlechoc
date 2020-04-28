@@ -9,7 +9,7 @@ const setupDatabasePlayground = async () => {
     console.log('Done. Start testing');
 
     let pool = new Pool({
-        host:  'localhost',
+        host: 'localhost',
         user: 'postgres',
         password: 'hackersdontcare',
         database: 'postgres',
@@ -19,7 +19,7 @@ const setupDatabasePlayground = async () => {
     await pool.end();
 
     pool = new Pool({
-        host:  'localhost',
+        host: 'localhost',
         user: 'postgres',
         password: 'hackersdontcare',
         database: 'battlechoc',
@@ -91,6 +91,8 @@ const setupDatabasePlayground = async () => {
     await pool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', ['1337-1337-1337-1337', 'Basti', 100, 1100, 'en', EmptyPlayerStats.level, false, false, false]);
     await pool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', ['rul0r-rul0r-rul0r-rul0r', 'Fabi', 120, 1120, 'de', EmptyPlayerStats.level, true, false, false]);
     await pool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', ['h0gwarts-9-34', 'Hairy', 900, 1125, 'ja', EmptyPlayerStats.level, true, false, true]);
+    await pool.query('INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, last_notification, last_action) VALUES ($1, $2, $3, $4, NOW(), NOW(), NOW(), NOW()) RETURNING *', ['alive', 'notreallyaplayer', 'iamnotreal', { isRunning: true }]);
+    await pool.query("INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, last_notification, last_action) VALUES ($1, $2, $3, $4, NOW() - INTERVAL '10 days', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day', NOW() - INTERVAL '2 days') RETURNING *", ['deadgame', 'hoax', 'hagrid', { isRunning: true }]);
     await pool.end();
 }
 
