@@ -1585,7 +1585,7 @@ app.post('/user/language', async (req, res) => {
     }
 });
 
-const sessionCleanupFunction = (context) => {
+const sessionCleanupFunction = async (context) => {
     console.log('Cleaning up stale multiplayer sessions ...');
     try {
         const sessions = [];
