@@ -606,7 +606,7 @@ app.post('/user/challenge', async (req, res) => {
     }
 });
 
-const emitEndGameNotification = (session, endGameAction) => {
+const emitEndGameNotification = async (session, endGameAction) => {
     const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0].id);
     const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0].id);
     const receiverResult = await getPlayerFromName(looser.name);
