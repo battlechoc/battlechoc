@@ -420,13 +420,7 @@ class App extends Component {
             if (joinMultiplayer === true && typeof multiplayerGameState !== 'undefined') {
                 this.props.joinGame(multiplayerGameState).then(() => {
                     this.opponent = { player: this.props.game.players[0] };
-                    if ((this.props.game.state === GameStateTypes.CHOOSE_FIELD_OR_START || this.props.game.state === GameStateTypes.CHOOSE_FIELD)) {
-                        if (!multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
-                            this.props.lockHudUi();
-                        } else {
-                            this.props.unlockHudUi();
-                        }
-                    } else if (this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
+                    if (this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT || this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
                         if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
                             if (this.props.game.players[this.props.game.currentPlayerIndex].hasFactory === true) {
                                 console.log("player already built its factory, but did not kick off finishturn event.");
