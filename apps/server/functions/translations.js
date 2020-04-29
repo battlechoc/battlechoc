@@ -13,7 +13,9 @@ const languages = {
         NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE: 'You lost a game against ',
         NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY: 'You did not take action for more than 24 hours.',
         NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE: 'You won a game against ',
-        NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY: ' did not take action for more than 24 hours.'
+        NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY: ' did not take action for more than 24 hours.',
+        NOTIFICATION_GAME_LOST_TITLE: 'You\'ve lost your game!',
+        NOTIFICATION_GAME_LOST_BODY: 'You lost against '
     },
     de: {
         NOTIFICATION_CHALLENGE_TITLE: ' fordert dich heraus',
@@ -27,7 +29,9 @@ const languages = {
         NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE: 'Du hast verloren gegen ',
         NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY: 'Du hast seit mehr als 24 Stunden keinen Zug mehr gemacht.',
         NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE: 'Du hast gewonnen gegen ',
-        NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY: ' hat seit mehr als 24 Stunden keinen Zug mehr gemacht.'
+        NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY: ' hat seit mehr als 24 Stunden keinen Zug mehr gemacht.',
+        NOTIFICATION_GAME_LOST_TITLE: 'Du hast ein Spiel verloren!',
+        NOTIFICATION_GAME_LOST_BODY: 'Du hast verloren gegen '
     },
     ja: {
         NOTIFICATION_CHALLENGE_TITLE: ' はあなたに挑戦しています',
@@ -41,7 +45,9 @@ const languages = {
         NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE: '対戦相手に負けた ',
         NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY: '24時間以上行動を起こさなかった。',
         NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE: '試合に勝ったのは ',
-        NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY: ' は24時間以上行動を起こさなかった。'
+        NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY: ' は24時間以上行動を起こさなかった。',
+        NOTIFICATION_GAME_LOST_TITLE: 'ゲームに負けました!',
+        NOTIFICATION_GAME_LOST_BODY: 'に負けた '
     }
 }
 

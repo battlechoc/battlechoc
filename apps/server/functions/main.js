@@ -125,11 +125,15 @@ class Reducer {
         switch (action.type) {
             case GameActionTypes.chooseField: return chooseFieldReduction(state, action);
             case GameActionTypes.chooseStart: return chooseStartReduction(state, action);
-            case GameActionTypes.finishTurn: return finishTurnReduction(state, action);
+            case GameActionTypes.finishTurn:
+                updateLastNotification(state.id, null);
+                return finishTurnReduction(state, action);
             case GameActionTypes.finishBuildPhase: return finishBuildPhaseReduction(state, action);
             case GameActionTypes.build: return buildReduction(state, action);
             case GameActionTypes.attack: return attackReduction(state, action);
-            case GameActionTypes.endGame: return endGameReduction(state, action);
+            case GameActionTypes.endGame: 
+                emitEndGameNotification(state, action);
+                return endGameReduction(state, action);
         }
     }
 }
@@ -496,25 +500,36 @@ app.post('/user/notify', async (req, res) => {
             const lastNotifiedTime = (typeof session.last_notification === 'undefined' || session.last_notification === null) ? 0 : session.last_notification.getTime();
             if ((currentDateTime - lastNotifiedTime) > 1000 * 60 * 60 * 4) {
                 if (session.game.players[session.game.currentPlayerIndex].id !== req.user.uid) {
-                    updateLastNotification(session.id, new Date());
-                    const playerName = await getPlayerFromId(req.body.uid).rows[0].name;
+                    updateLastNotification(req.body.sessionId, new Date());
+                    const playerName = (await getPlayerFromId(req.user.uid)).rows[0].name;
+
+                    const receiverResult = await getPlayerFromName(session.game.players[session.game.currentPlayerIndex].name);
+                    if (receiverResult.rows.length === 0) {
+                        console.error("Could not emit notification");
+                        return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + session.game.players[session.game.currentPlayerIndex].name + '" DOES NOT EXIST' });
+                    }
+                    let language = receiverResult.rows[0].language;
+                    if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
+                        language = t.getDefaultLanguage();
+                    }
+
                     await emitPlayerNotification(session.game.players[session.game.currentPlayerIndex].id,
-                        session.id,
+                        req.body.sessionId,
                         playerName + t.t[language].NOTIFICATION_REMEMBER_TURN_TITLE,
                         t.t[language].NOTIFICATION_REMEMBER_TURN_BODY,
                         '',
-                        'https://battlechoc.com/session/' + session.id);
+                        'https://battlechoc.com/session/' + req.body.sessionId);
                 } else {
                     console.warn("Cannot notify yourself.");
                     res.status(400).json({ error: "CANNOT NOTIFY YOURSELF" });
                 }
             }
         } else {
-            console.error("Trying to notify player in non existing multiplayer sessiobn. " + req.body.sessionId);
+            console.error("Trying to notify player in non existing multiplayer session. " + req.body.sessionId);
             res.status(404).json({ error: "CANNOT SOMEONE WITHIN A NON EXISTING MULTIPLAYER SESSION" });
         }
     } catch (err) {
-        console.error("Could not notify player in session. ", err);
+        console.error("Could not notify player in session. " + JSON.stringify(err));
         res.status(500).json({ error: "COULD NOT NOTIFY PLAYER IN SESSION" });
     }
 });
@@ -590,6 +605,27 @@ app.post('/user/challenge', async (req, res) => {
         }
     }
 });
+
+const emitEndGameNotification = (session, endGameAction) => {
+    const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0].id);
+    const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0].id);
+    const receiverResult = await getPlayerFromName(looser.name);
+    if (receiverResult.rows.length === 0) {
+        console.error("Could not emit notification");
+        return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + looser.name + '" DOES NOT EXIST' });
+    }
+    let language = receiverResult.rows[0].language;
+    if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
+        language = t.getDefaultLanguage();
+    }
+
+    await emitPlayerNotification(looser.id,
+        session.id,
+        playerName + t.t[language].NOTIFICATION_GAME_LOST_TITLE,
+        t.t[language].NOTIFICATION_GAME_LOST_BODY + winner.name,
+        '',
+        'https://battlechoc.com');
+}
 
 const processEvents = (session, events, eventQueue) => {
     let unprocessedEvents = 0;
