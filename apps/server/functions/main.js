@@ -1229,7 +1229,7 @@ app.get('/highscore', async (req, res) => {
 
             const playersCount = await approximatePlayersCount('score > 0');
             let lastPage = Math.ceil(playersCount / pageSize);
-            const playersOnPageResult = await dbPool.query('SELECT * FROM players WHERE score > 0 ORDER BY score DESC OFFSET $1 LIMIT $2', [(page - 1) * pageSize, pageSize]);
+            const playersOnPageResult = await dbPool.query("SELECT * FROM players WHERE score > 0 AND name != 'Chocnonymous' ORDER BY score DESC OFFSET $1 LIMIT $2", [(page - 1) * pageSize, pageSize]);
             let highscore = await playersFromQuery(playersOnPageResult.rows);
             highscore.sort((a, b) => {
                 if (a.ranking > b.ranking) {
