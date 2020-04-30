@@ -80,6 +80,19 @@ class Multiplayer {
         });
     }
 
+    async setRandomPlayerName() {
+        const generatedName = await this.fetchRandomName();
+        ServerRequest('post', '/user/username', { username: generatedName })
+            .then(async () => {
+                this.callbacks.showNotification({ title: t(tr.PLAYER_NAME_GENERATED_TITLE), message: t(tr.PLAYER_NAME_GENERATED_BODY, generatedName) });
+                this.callbacks.updatePlayerStats({ username: generatedName });
+                OfflineStore.playerStore.get('stats').then(playerStats => {
+                    playerStats.username = generatedName;
+                    OfflineStore.playerStore.set('stats', playerStats);
+                });
+            })
+            .catch(error => console.warn(error));
+    }
     async authStateChanged(user) {
         if (user) {
             if (typeof this.callbacks.notifyPlayerSignedIn !== 'undefined') {
@@ -98,17 +111,7 @@ class Multiplayer {
                 const mergedStats = await this.mergePlayerStats();
                 if (typeof mergedStats !== 'undefined') {
                     if (mergedStats.username === 'Chocnonymous' && (mergedStats.tutorialFinished === true || mergedStats.tutorialSkipped === true)) {
-                        const generatedName = await this.fetchRandomName();
-                        ServerRequest('post', '/user/username', { username: generatedName })
-                            .then(async () => {
-                                this.callbacks.showNotification({ title: t(tr.PLAYER_NAME_GENERATED_TITLE), message: t(tr.PLAYER_NAME_GENERATED_BODY, generatedName) });
-                                this.callbacks.updatePlayerStats({ username: generatedName });
-                                OfflineStore.playerStore.get('stats').then(playerStats => {
-                                    playerStats.username = generatedName;
-                                    OfflineStore.playerStore.set('stats', playerStats);
-                                });
-                            })
-                            .catch(error => console.warn(error));
+                        await this.setRandomPlayerName();
                     }
                 }
             } catch (err) {
@@ -314,18 +317,9 @@ class Multiplayer {
         if (firebase.auth().currentUser) {
             try {
                 const data = (await ServerRequest('post', '/user/tutorial/skipped')).data;
+                console.log(data);
                 if (data.stats.username === 'Chocnonymous') {
-                    const generatedName = await this.fetchRandomName();
-                    ServerRequest('post', '/user/username', { username: generatedName })
-                        .then(async () => {
-                            this.callbacks.showNotification({ title: t(tr.PLAYER_NAME_GENERATED_TITLE), message: t(tr.PLAYER_NAME_GENERATED_BODY, generatedName) });
-                            this.callbacks.updatePlayerStats({ username: generatedName });
-                            OfflineStore.playerStore.get('stats').then(playerStats => {
-                                playerStats.username = generatedName;
-                                OfflineStore.playerStore.set('stats', playerStats);
-                            });
-                        })
-                        .catch(error => console.warn(error));
+                    await this.setRandomPlayerName();
                 }
                 this.callbacks.updatePlayerStats(data.stats);
             } catch (err) {
