@@ -30,11 +30,11 @@ const useStyles = createUseStyles(theme => ({
         borderRadius: 20,
         position: 'absolute',
         top: 12,
-        right: 12,
+        right: 6,
         overflow: 'hidden',
-        height: 'calc(100% - 88px)',
-        width: 'calc(100% - 88px)',
-        padding: 32,
+        height: 'calc(100% - 88px)', // 12px (top) + 2 * 32px (padding) = 88px 
+        width: 'calc(100% - 30px)', // 6px (left) + 2 * 12px (padding) = 30px
+        padding: '32px 12px',
         display: 'flex',
         alignItems: 'center',
         flexDirection: 'column',
@@ -48,6 +48,14 @@ const useStyles = createUseStyles(theme => ({
             width: '100%',
             height: 'calc(100% - 1px)',
             background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`
+        },
+        [theme.breakpoints.smartphone]: {
+            top: 12,
+            right: 8,
+            overflow: 'hidden',
+            height: 'calc(100% - 88px)', // 12px (top) + 2 * 32px (padding) = 88px 
+            width: 'calc(100% - 56px)',
+            padding: '32px 24px'
         }
     },
     title: {
@@ -55,6 +63,8 @@ const useStyles = createUseStyles(theme => ({
         fontFamily: 'Bangers',
         fontSize: '2.5rem',
         display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         color: 'white',
         padding: '12px 0',
         '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
@@ -78,10 +88,15 @@ const useStyles = createUseStyles(theme => ({
     content: {
         overflowY: 'auto',
         overflowX: 'hidden',
-        width: '90%',
-        paddingRight: 5,
         height: '75%',
-        color: 'white'
+        width: '100%',
+        color: 'white',
+        display: 'flex',
+        justifyContent: 'center',
+        [theme.breakpoints.smartphone]: {
+            width: '80%',
+            paddingRight: '5'
+        }
     },
     border: {
         position: 'absolute',
@@ -127,14 +142,15 @@ const Dialog = props =>  {
     return (
         <div className={`${classes.overlay} ${props.stacked ? classes.stacked : ''}`} style={props.open ? { display: 'flex' } : { display: 'none' }}>
             <div className={classes.dialog}>
-                { props.closable ? <Fab className={classes.close} color="accent" icon="close" onClick={closeDialog} /> : null }
+                { props.closable ? <Fab className={classes.close} color={ props.stacked ? 'secondary' : 'accent' } icon={ props.stacked ? 'back' : 'close' } onClick={closeDialog} /> : null }
                 <div className={classes.body}>
                     <div className={`${classes.border} ${classes.top}`} />
                     <div className={`${classes.border} ${classes.left}`} />
                     <div className={`${classes.border} ${classes.right}`} />
                     <span className={classes.title}>
-                        { props.icon ? <span className={classes.icon} style={{ background: `url(/images/${ props.icon }.svg) no-repeat`, backgroundSize: '100% 100%' }} /> : null }
+                        { props.icon ? <span className={classes.icon} style={{ marginRight: 12, background: `url(/images/${ props.icon }.svg) no-repeat`, backgroundSize: '100% 100%' }} /> : null }
                         { props.title }
+                        { props.titleSlot }
                     </span>
                     { props.subtitle ? <span className={classes.subtitle}>{ props.subtitle }</span> : null }
                     <div className={classes.content}>{ props.children }</div>
@@ -151,6 +167,7 @@ Dialog.propTypes = {
     children: PropTypes.element.isRequired,
     title: PropTypes.string,
     icon: PropTypes.string,
+    titleSlot: PropTypes.element,
     subtitle: PropTypes.string,
     stacked: PropTypes.bool
 }
@@ -159,7 +176,8 @@ Dialog.defaultProps = {
     closable: true,
     subtitle: null,
     icon: null,
-    stacked: false
+    stacked: false,
+    titleSlot: null
 }
 
 export default Dialog;

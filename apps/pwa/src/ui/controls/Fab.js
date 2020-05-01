@@ -12,69 +12,51 @@ const useStyles = createUseStyles(theme => ({
       justifyContent: 'center',
       borderRadius: '100%'
     },
-    icon: {
-      width: '60%',
-      height: '60%'
+    icon: props => {
+      return props.icon === 'trophy' ? {
+        width: '90%',
+        height: '90%',
+        marginTop: 3
+      } : {
+        width: '60%',
+        height: '60%'
+      }        
     },
-    primary: {
-      border: `3px solid ${theme.color.primary.light}`,
-      background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`,
+    background: props => ({
+      border: `3px solid ${theme.color[props.color].light}`,
+      background: `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${theme.color[props.color].light} 100%)`,
       '&:hover': {
-        background: `linear-gradient(0deg, ${theme.color.primary.light} 0%, ${theme.color.primary.dark} 100%)`
+        background: `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${theme.color[props.color].light} 150%)`
       }
-    },
-    secondary: {
-      border: `3px solid ${theme.color.secondary.light}`,
-      background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`,
-      '&:hover': {
-        background: `linear-gradient(0deg, ${theme.color.secondary.light} 0%, ${theme.color.secondary.dark} 100%)`
-      }      
-    },
-    accent: {
-      border: `3px solid ${theme.color.accent.light}`,
-      background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 100%)`,
-      '&:hover': {
-        background: `linear-gradient(0deg, ${theme.color.accent.light} 0%, ${theme.color.accent.dark} 100%)`
-      }      
-    },
-    facebook: {
-      border: '3px solid #6589F4',
-      background: 'linear-gradient(0deg, #435DAC 0%, #6589F4 100%)',
-      '&:hover': {
-        background: 'linear-gradient(0deg, #6589F4 0%, #435DAC 100%)'
-      }  
-    },
-    instagram: {
-      border: '3px solid #FE5A93',
-      background: 'linear-gradient(0deg, #803FBB 0%, #FE5A93 100%)',
-      '&:hover': {
-        background: 'linear-gradient(0deg, #FE5A93 0%, #803FBB 100%)'
-      }       
-    }
+    })
   })
 )
 
 const Fab = props => {
-  const classes = useStyles(props);
   const color = (props.icon === 'facebook' || props.icon === 'instagram') ? props.icon : props.color;
+  const classes = useStyles({ ...props, color: color });
   return (
-    <div onClick={props.onClick} className={`${classes.fab} ${classes[color]} ${props.className}`}>
-      <div className={classes.icon} style={{ background: `url(/images/${ props.icon }.svg) no-repeat`, backgroundSize: '100% 100%' }} />
+    <div style={props.style} onClick={props.onClick} className={`${classes.fab} ${classes.background} ${props.className}`}>
+      <div className={classes.icon} style={{ background: `url(/images/${ props.icon }.svg) no-repeat`, backgroundSize: '100% 100%' , ...props.iconStyle}} />
     </div>
   );
 };
 
 Fab.defaultProps = {
   color: 'primary',
+  style: {},
+  iconStyle: {},
   icon: 'settings',
   className: ''
 }
 
 Fab.propTypes = { 
-  color: PropTypes.oneOf(['primary', 'secondary', 'accent', 'facebook', 'instagram']),
-  icon: PropTypes.oneOf(['info', 'settings', 'mute', 'volume', 'facebook', 'instagram', 'fullscreen', 'user', 'close']),
+  color: PropTypes.oneOf(['primary', 'secondary', 'accent', 'facebook', 'instagram', 'gold']),
+  icon: PropTypes.oneOf(['search', 'info', 'forward', 'backward', 'fast-forward', 'fast-backward', 'settings', 'mute', 'volume', 'facebook', 'instagram', 'fullscreen', 'user', 'close', 'trophy', 'back', 'share', 'refresh']),
+  iconStyle: PropTypes.object,
   className: PropTypes.string,
-  onClick: PropTypes.func.isRequired
+  onClick: PropTypes.func.isRequired,
+  style: PropTypes.object
 }
 
 export default Fab;

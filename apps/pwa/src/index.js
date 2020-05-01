@@ -22,7 +22,24 @@ const theme = {
     color: {
         primary: { light: '#90D01B', dark: '#10A67B'},
         secondary: { light: '#3190C3', dark: '#1B4E69'},
-        accent: { light: '#FF4E85', dark: '#772549'}
+        accent: { light: '#FF4E85', dark: '#772549'},
+        gold: { light: '#FAD25A', dark: '#AE8D0B'},
+        facebook: { light: '#6589F4', dark: '#435DAC'},
+        instagram: { light: '#FE5A93', dark: '#803FBB'}
+    },
+    breakpoints: {
+        desktop: '@media screen and (min-width: 1200px)',
+        laptop: '@media screen and (min-width: 992px)',
+        tablet: '@media screen and (min-width: 768px)',
+        smartphone: '@media screen and (min-width: 576px)',
+        landscape: {
+            smartphone: '@media screen and (min-width: 576px) and (orientation: landscape)',
+            tablet: '@media screen and (min-width: 768px) and (orientation: landscape)'
+        },
+        portrait: {
+            smartphone: '@media screen and (min-width: 576px) and (orientation: portrait)',
+            tablet: '@media screen and (min-width: 768px) and (orientation: portrait)'
+        },      
     }
 }
 

@@ -1,29 +1,7 @@
 #multiplayer {
   display: flex;
-  width: 75%;
-  left: 12.5%;
   align-items: center;
-  z-index: 2;
-  position: absolute;
   flex-direction: column;
-}
-
-.highscore-paginator {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-  padding: 8px;
-}
-
-.highscore-page {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.highscore-page > div {
-  width: 80vw;
-  max-width: 900px;
 }
 
 .multiplayer-statistics {
@@ -218,12 +196,6 @@
   .playerSearchDialog {
     width: 70vw;
     margin: 0 auto;
-  }
-}
-
-@media screen and (max-width: 800px) {
-  .highscore-page > div {
-    width: 100vw;
   }
 }
 

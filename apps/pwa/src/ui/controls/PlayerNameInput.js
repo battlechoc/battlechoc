@@ -6,6 +6,7 @@ import Axios from 'axios';
 import { createUseStyles } from 'react-jss';
 import logger from '../../helper/logger';
 import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
+import Progress from './Progress';
 
 const useStyles = createUseStyles(theme => ({
     root: {
@@ -46,7 +47,7 @@ const useStyles = createUseStyles(theme => ({
         border: `3px solid ${theme.color.secondary.light}`,
         borderRadius: 12,
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
-        height: 42,
+        height: 44,
         width: 42,
         position: 'absolute',
         top: 0,
@@ -55,12 +56,23 @@ const useStyles = createUseStyles(theme => ({
         alignItems: 'center',
         justifyContent: 'center'
     },
+    buttonError: {
+        border: `3px solid ${theme.color.accent.light}`,
+        background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 70%)`,
+        '& > div': {
+            filter: 'hue-rotate(120deg)'
+        }
+    },
     actionIcon: {
         width: '60%',
         height: '60%'
     },
     disabled: {
-        filter: 'grayscale(1)'
+        background: 'linear-gradient(0deg, #666 0%, #aaa 70%)',
+        border: '3px solid #aaa',
+        '& > div': {
+            filter: 'grayscale(1)'
+        }
     }
 }));
 
@@ -68,8 +80,8 @@ const PlayerNameInput = props => {
     const classes = useStyles();
     const { setPlayerName, startValue, current } = props;
     const [loading, setLoading] = useState(false);
-    const [playerNameValid, setPlayerNameValid] = useState(false);
-    const [playerNameAvailable, setPlayerNameAvailable] = useState(false);
+    const [playerNameValid, setPlayerNameValid] = useState(true);
+    const [playerNameAvailable, setPlayerNameAvailable] = useState(true);
     const [playerName, updatePlayerName] = useState(typeof startValue === 'undefined' ? 'Chocnonymous' : startValue);
     const [unchanged, setUnchanged] = useState(current === startValue);
     const [badInternetConnection, setBadInternetConnection] = useState(false);
@@ -81,7 +93,13 @@ const PlayerNameInput = props => {
 
     useEffect(() => {
         setEditMode(props.editMode);
-    }, [props.editMode]);
+        if (!props.editMode) {
+            updatePlayerName(typeof startValue === 'undefined' ? 'Chocnonymous' : startValue);
+            setPlayerNameAvailable(true);
+            setPlayerNameValid(true);
+            setLoading(false);
+        }
+    }, [props.editMode, startValue]);
 
     useEffect(() => {
         setUnchanged(playerName === current)
@@ -152,7 +170,8 @@ const PlayerNameInput = props => {
         }
     }
 
-    const buttonDisabled = editMode && ( loading || !playerNameAvailable || !playerNameValid || unchanged || badInternetConnection );
+    const buttonError = editMode && ( !playerNameAvailable || !playerNameValid );
+    const buttonDisabled = !buttonError && editMode && ( loading || unchanged || badInternetConnection );
 
     return (
         <div className={props.className}>
@@ -172,8 +191,8 @@ const PlayerNameInput = props => {
                     <div className={`${classes.icon} ${classes.fixed}`} style={{ backgroundImage: 'url(/images/user.svg)', backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> 
                     <div style={{ marginLeft: 6 }}>{ playerName }</div>
                 </div> }
-                <div onClick={handleAction} className={`${classes.actionButton} ${buttonDisabled ? classes.disabled : null}`}>
-                    <div className={classes.actionIcon} style={{ backgroundImage: `url(/images/${actionIcon}.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div>
+                <div onClick={handleAction} className={`${classes.actionButton} ${buttonDisabled ? classes.disabled : null} ${buttonError ? classes.buttonError : null}`}>
+                { loading ? <Progress infiniteAnimation={true} size={24} /> : <div className={classes.actionIcon} style={{ backgroundImage: `url(/images/${actionIcon}.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> }
                 </div>
             </div>
         </div>

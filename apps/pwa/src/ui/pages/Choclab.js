@@ -44,30 +44,23 @@ const useStyles = makeStyles(theme => ({
     coins: {
         position: 'absolute',
         top: 5,
-        right: 0,
+        right: 5,
         display: 'flex',
+        alignItems: 'center',
+        zIndex: 1,
         '& span': {
-            fontSize: '2rem',
-            color: '#5bb9bf',
-            textShadow: '0px 2px 2px #324D5C',
+            fontSize: '2.5rem',
+            color: '#fff',
+            '-webkit-text-stroke': '1px #3C1C0C',
+            '-webkit-font-smoothing': 'antialiased',
             fontWeight: 'bold',
-            marginRight: 5
+            fontFamily: 'Bangers',
+            marginRight: 10
         },
-        '& img': {
-            height: 48
-        },
-        '@media screen and (max-width: 959px)': {
-            '& img': {
-                height: 40
-            },
-            '& span': {
-                fontSize: '1.8rem'
-            }
-        },
-        '@media screen and (max-width: 600px)': {
-            '& img': {
-                height: 36
-            }
+        '& > div': {
+            background: 'url(/images/coins.svg) no-repeat',
+            height: 39,
+            width: 57
         }
     },
     costs: {
@@ -301,7 +294,7 @@ const Choclab = props => {
         <div className={classes.page}>
             <div className={classes.coins}>
                 <span>{ props.playerInfos.stats.coins }</span>
-                <OptimizedImage src="/images/coins.png" alt="choco coins" />
+                <div />
             </div>
             <div className={classes.entity}> 
                 <MeshPreview selectedEntity={selectedEntity} />

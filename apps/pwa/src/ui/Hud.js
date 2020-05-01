@@ -4,19 +4,15 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { GameStateTypes } from 'battlechoc-shared-functions';
 import { showQuickMessage, showNotification, hideNotification } from './UiActions';
-import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, GameEndOverview } from './controls';
 import { Jukebox, translate as t, keys as tr } from './misc';
-import { Notification, Info, Tooltip, Settings, AccountOverview, Dialog } from './dialogs';
-import Fab from '@material-ui/core/Fab';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
+import { Notification, Info, Tooltip, Settings, AccountOverview, Dialog, Highscore } from './dialogs';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
 import { multiplayer } from '../Multiplayer';
 import { ServerRequest } from '../helper/settings';
 import logger from '../helper/logger';
 import firebase from '@firebase/app';
-import { Button } from './controls';
+import { Button, Fab, Progress, Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, GameEndOverview } from './controls';
 
 const Hud = props => {
     const { resumeGamePossible, enterMultiplayerGame, sessionId, showQuickMessage, challengedPlayer, assetsReady, overviewVisible, selectedAttack, tappedBuilding, game, state, openInfo, prepareNewGameCallback, className, surrender, startTutorial, playerInfos, endGame, notification, hideNotification } = props;
@@ -24,6 +20,7 @@ const Hud = props => {
     const [open, setOpen] = useState(false);
     const [openSettings, setOpenSettings] = useState(false);
     const [showAccountOverview, setShowAccountOverview] = useState(false);
+    const [overviewStyleStacked, setOverviewStyleStacked] = useState(false);
     const [showMultiplayerScreen, setShowMultiplayerScreen] = useState(false);
     const [waitingRoom, setWaitingRoom] = useState(false);
     const [waitingRoomText, setWaitingRoomText] = useState(t(tr.TRY_TO_JOIN_GAME));
@@ -35,8 +32,9 @@ const Hud = props => {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    const openAccountOverview = account => {
+    const openAccountOverview = (account, stacked=false) => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        setOverviewStyleStacked(stacked);
         setShowAccountOverview(true);
         setPlayerAccount(account);
     }
@@ -159,16 +157,15 @@ const Hud = props => {
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     await multiplayer.removeFriend(friend);
                 }}
+                stackedStyle={overviewStyleStacked}
                 joinGame={joinGame} playerAccount={playerAccount} open={showAccountOverview} close={() => setShowAccountOverview(false)} />
             {(() => {
                 if (stage === 'CHOCLAB_SCREEN') {
                     return <div className="actionbar">
                         <Fab
-                            size="small"
-                            color="primary"
-                            className="icon"
+                            color="secondary"
+                            icon="back"
                             onClick={() => setChoclabScreen(false)}>
-                            <ArrowBackIcon />
                         </Fab>
                     </div>
                 } else if (stage === 'MULTIPLAYER_SCREEN') {
@@ -176,11 +173,9 @@ const Hud = props => {
                 } else if (stage === 'CHALLENGE_SCREEN') {
                     return <div className="actionbar">
                         <Fab
-                            size="small"
-                            color="primary"
-                            className="icon"
+                            color="secondary"
+                            icon="back"
                             onClick={() => setChallengedProfile(undefined)}>
-                            <ArrowBackIcon />
                         </Fab>
                     </div>
                 } else if (stage === 'WAITING_ROOM') {
@@ -202,12 +197,11 @@ const Hud = props => {
                     const hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
 
                     if (firstPlayScreen) {
-                        controls.push(<Button key="0" size="huge" onClick={() => kickOffTutorial()}>{t(tr.START_TUTORIAL)}</Button>);
-                        controls.push(<Button key="1" size="huge" onClick={() => skipTutorial()}>{t(tr.SKIP_TUTORIAL)}</Button>);
-                        controls.push(<Button key="2" size="huge" onClick={() => setShowAccountOverview(true)}>{t(tr.SIGNINORUP)}</Button>);
+                        controls.push(<Button key="0" size="huge" buttonStyle={{ fontSize: '2rem'}} onClick={() => kickOffTutorial()}>{t(tr.START_TUTORIAL)}</Button>);
+                        controls.push(<Button key="1" size="huge" color="accent" buttonStyle={{ fontSize: '1.6rem'}} onClick={() => skipTutorial()}>{t(tr.SKIP_TUTORIAL)}</Button>);
+                        controls.push(<Button key="2" size="huge" color="secondary" buttonStyle={{ fontSize: '2rem'}} onClick={() => setShowAccountOverview(true)}>{t(tr.SIGNINORUP)}</Button>);
                     } else {
                         controls.push(<Button key="0" size="huge" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t(tr.NEW_GAME) : t(tr.MAIN_MENU_SINGLEPLAYER)}</Button>);
-
                         if (!hideOptions) {
                             controls.push(<Button key="1" size="huge" color="secondary" onClick={() => setShowMultiplayerScreen(true)}>{t(tr.MAIN_MENU_MULTIPLAYER)}</Button>);
                             controls.push(<Button key="2" size="huge" color="accent" onClick={() => setChoclabScreen(true)}>{t(tr.MAIN_MENU_CHOCLAB)}</Button>);
@@ -216,6 +210,7 @@ const Hud = props => {
 
                     return (
                         <>
+                            <div id="decoration" />
                             <div id="mainMenu">
                                 {typeof playerInfos.stats.coins !== 'undefined' ? <div id="chocolate-coins">
                                     <span>{playerInfos.stats.coins}</span>
@@ -246,6 +241,7 @@ const Hud = props => {
                                     </Dialog>
                                 </div>
                             </div>
+                            <Highscore playername={playername} showPlayerProfile={session => openAccountOverview(session.opponent, true)} showQuickMessage={showQuickMessage} />
                             { notification.open ? <Notification message={notification.message} title={notification.title} close={() => hideNotification()} /> : <Info openInfo={openInfo} /> }
                         </>
                     );
@@ -263,11 +259,14 @@ const Hud = props => {
                         </div>
                     );
                 } else if (stage === 'MULTIPLAYER_SCREEN') {
-                    return <MultiplayerScreen closeMultiplayerScreen={() => setShowMultiplayerScreen(false)} openAccountOverview={openAccountOverview} enterMultiplayerGame={joinGame} />
+                    return <>
+                        <div id="decoration" />
+                        <MultiplayerScreen closeMultiplayerScreen={() => setShowMultiplayerScreen(false)} openAccountOverview={openAccountOverview} enterMultiplayerGame={joinGame} />
+                    </>;
                 } else if (stage === 'CHOCLAB_SCREEN') {
                     return <Choclab />
                 } else if (stage === 'WAITING_ROOM') {
-                    return <div className="waiting-room"><p>{waitingRoomText}</p><CircularProgress /></div>
+                    return <div className="waiting-room"><p>{waitingRoomText}</p><Progress infiniteAnimation /></div>
                 } else {
                     let player = game.players[multiplayer.localPlayerIndex];
                     return (

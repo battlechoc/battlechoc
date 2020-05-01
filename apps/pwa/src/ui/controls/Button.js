@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { createUseStyles, useTheme } from 'react-jss';
+import { createUseStyles } from 'react-jss';
 
 const useStyles = createUseStyles(theme => ({
     button: {
@@ -16,29 +16,38 @@ const useStyles = createUseStyles(theme => ({
       justifyContent: 'center',
       fontFamily: 'Bangers'
     },
-    border: {
+    iconButton: props => ({
+      color: 'white',
+      width: 36,
+      height: 36,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: '12.5%',
+      border: `3px solid ${theme.color[props.color].light}`
+    }),
+    icon: props => {
+      return props.icon === 'trophy' ? {
+        width: '90%',
+        height: '90%',
+        marginTop: 3
+      } : {
+        width: '60%',
+        height: '60%'
+      }        
+    },
+    border: props => ({
       cursor: 'pointer',
       clipPath: 'url(#menu-button-clip-path)',
-      position: 'relative'
-    },
-    primary: {
-      background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 70%)`,
+      position: 'relative',
+      background: theme.color[props.color].light
+    }),
+    background: props => ({
+      background: `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${theme.color[props.color].light} 70%)`,
       '&:hover': {
-        background: `linear-gradient(0deg, ${theme.color.primary.light} 0%, ${theme.color.primary.dark} 70%)`
+        background: `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${theme.color[props.color].light} 120%)`
       }
-    },
-    secondary: {
-      background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
-      '&:hover': {
-        background: `linear-gradient(0deg, ${theme.color.secondary.light} 0%, ${theme.color.secondary.dark} 70%)`
-      }
-    },
-    accent: {
-      background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 70%)`,
-      '&:hover': {
-        background: `linear-gradient(0deg, ${theme.color.accent.light} 0%, ${theme.color.accent.dark} 70%)`
-      }
-    },
+    }),
     huge: {
       fontSize: '2.5rem',
       width: 252,
@@ -54,17 +63,26 @@ const useStyles = createUseStyles(theme => ({
 
 const Button = props => {
   const classes = useStyles(props);
-  const theme = useTheme();
-  return (
-    <div onClick={props.onClick} className={`${classes.border} ${classes[props.size]} ${props.className}`} style={{ background: theme.color[props.color].light }}>
-      <div className={`${classes[props.color]} ${classes[props.size]} ${classes.button}`}>{props.children}</div>
-    </div>
-  );
+  if (props.icon) {
+    return (
+      <div style={props.style} onClick={props.onClick} className={`${classes.iconButton} ${classes.background} ${props.className}`}>
+        <div className={classes.icon} style={{ background: `url(/images/${ props.icon }.svg) no-repeat`, backgroundSize: '100% 100%', ...props.buttonStyle }} />
+      </div>
+    );
+  } else {
+    return (
+      <div style={props.style} onClick={props.onClick} className={`${classes.border} ${classes[props.size]} ${props.className}`}>
+        <div style={props.buttonStyle} className={`${classes.background} ${classes[props.size]} ${classes.button}`}>{props.children}</div>
+      </div>
+    );
+  }
 };
 
 Button.defaultProps = {
   color: 'primary',
   size: 'normal',
+  style: {},
+  buttonStyle: {},
   className: ''
 }
 
@@ -72,6 +90,8 @@ Button.propTypes = {
   color: PropTypes.oneOf(['primary', 'secondary', 'accent']),
   onClick: PropTypes.func.isRequired,
   className: PropTypes.string,
+  style: PropTypes.object,
+  buttonStyle: PropTypes.object,
   size: PropTypes.oneOf(['huge', 'normal'])
 }
 

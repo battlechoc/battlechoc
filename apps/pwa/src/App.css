@@ -29,6 +29,8 @@ html, body, #root {
   position: absolute;
   top: 50%;
   left: 50%;
+  margin-left: -32px;
+  margin-top: -32px;
 }
 
 .gameCanvas {
@@ -36,4 +38,17 @@ html, body, #root {
   z-index: 1;
   height: 100%;
   width: 100%;
+}
+
+@keyframes rotate {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  from {
+      transform: rotate(0deg);
+  }
+  to {
+      transform: rotate(359deg);
+  }
 }
