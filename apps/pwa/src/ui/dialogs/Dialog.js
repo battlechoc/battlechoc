@@ -58,17 +58,24 @@ const useStyles = createUseStyles(theme => ({
             padding: '32px 24px'
         }
     },
-    title: {
-        zIndex: 12,
-        fontFamily: 'Bangers',
-        fontSize: '2.5rem',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        color: 'white',
-        padding: '12px 0',
-        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
-        '-webkit-font-smoothing': 'antialiased'
+    title: props => {
+        let fontSize = '2.5rem';
+        if (props.autoscale && props.title.length > 7) {
+            fontSize = '1.7rem';
+        }
+
+        return { 
+            zIndex: 12,
+            fontFamily: 'Bangers',
+            fontSize: fontSize,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            color: 'white',
+            padding: '12px 0',
+            '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
+            '-webkit-font-smoothing': 'antialiased'
+        }
     },
     subtitle: {
         zIndex: 12,
@@ -131,7 +138,7 @@ const useStyles = createUseStyles(theme => ({
 }));
 
 const Dialog = props =>  {
-    const classes = useStyles();
+    const classes = useStyles(props);
     const closeDialog = () => {
         if (props.closable) {
             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -169,7 +176,8 @@ Dialog.propTypes = {
     icon: PropTypes.string,
     titleSlot: PropTypes.element,
     subtitle: PropTypes.string,
-    stacked: PropTypes.bool
+    stacked: PropTypes.bool,
+    autoscale: PropTypes.bool
 }
 
 Dialog.defaultProps = {
@@ -177,7 +185,8 @@ Dialog.defaultProps = {
     subtitle: null,
     icon: null,
     stacked: false,
-    titleSlot: null
+    titleSlot: null,
+    autoscale: false
 }
 
 export default Dialog;

@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import './MultiplayerScreen.css';
-import TextField from '@material-ui/core/TextField';
-import { Jukebox, translate as t, keys as tr, getCurrentLanguage } from '../misc';
+import { Jukebox, translate as t, keys as tr } from '../misc';
 import Axios from 'axios';
 import { showQuickMessage } from '../UiActions';
 import { connect } from 'react-redux';
@@ -18,6 +16,12 @@ import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
 import { createUseStyles } from 'react-jss'
 
 const useStyles = createUseStyles(theme => ({
+    page: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        color: 'white'
+    },
     actions: {
         display: 'flex',
         width: '100%',
@@ -52,7 +56,6 @@ const useStyles = createUseStyles(theme => ({
     session: {
         width: 180,
         fontFamily: 'Bangers',
-        color: 'white',
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
         borderRadius: '5%',
         position: 'relative'
@@ -97,7 +100,6 @@ const useStyles = createUseStyles(theme => ({
         alignItems: 'center',
         '& span': {
             fontSize: '1.2rem',
-            color: 'white',
             fontFamily: 'Bangers',
             marginRight: 10
         }, 
@@ -106,6 +108,12 @@ const useStyles = createUseStyles(theme => ({
             height: 19,
             width: 28
         }
+    },
+    surrenderDialog: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center'  
     }
 }));
 
@@ -268,12 +276,12 @@ const MultiplayerScreen = props => {
                 icon="search"
                 onClick={() => setShowSearch(true)} />
         </div>
-        <div id="multiplayer">
+        <div className={classes.page}>
             <Dialog
                 open={showSurrenderDialog}
                 close={() => setShowSurrenderDialog(false)}
                 title={t(tr.SURRENDER_GAME)}>
-                <div className="surrenderDialog">
+                <div className={classes.surrenderDialog}>
                     <p>{t(tr.SURRENDER_GAME_TEXT, surrenderOpponentName)}</p>
                     <Button color="accent" onClick={() => {
                         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -302,23 +310,12 @@ const MultiplayerScreen = props => {
                 close={() => setShowSearch(false)}
                 title={t(tr.SEARCH_PLAYERS)}>
                 <div className="playerSearchDialog">
-                    <TextField
-                        label="Name"
-                        value={userSearchText}
-                        error={badInternetConnection && !waitForResponse}
-                        helperText={badInternetConnection && !waitForResponse ? t(tr.NO_HEALTHY_INTERNET) : ''}
-                        style={{display: 'flex'}}
-                        inputProps={{ spellCheck: 'false', autoFocus: true }}
-                        InputLabelProps={{ style: {color: 'rgba(69, 123, 130, 0.8)' }}}
-                        onChange={event => {
+                    { badInternetConnection && !waitForResponse ? <span>{ t(tr.NO_HEALTHY_INTERNET) }</span> : null }
+                    <span>Name</span>
+                    <input ref={inputRef} value={userSearchText} spellCheck={false} autoFocus onChange={event => {
                             setUserSearchText(event.target.value);
-                        }}
-                        margin="normal"
-                        InputProps={{ 
-                            endAdornment: waitForResponse ? <Progress infiniteAnimation size={18} /> : null,
-                            inputRef: inputRef
-                        }}
-                    />
+                        }} />
+                    { waitForResponse ? <Progress infiniteAnimation size={18} /> : null }
                     <PlayerList 
                         players={searchResults} 
                         friends={friends}
@@ -335,7 +332,9 @@ const MultiplayerScreen = props => {
                 <Button className={classes.action} onClick={() => setShowFriends(true)}>{t(tr.FRIENDS)}</Button>
             </div>
             
-            { multiplayerSessions.length > 0 ? <div className={classes.sessions}>
+            { sessionRefreshActions > 0 ? <Progress infiniteAnimation /> : null }
+
+            { multiplayerSessions.length > 0 && sessionRefreshActions === 0 ? <div className={classes.sessions}>
                 {  Object.assign([], multiplayerSessions).sort(sortByTimestamp).map((row, i) =>
                 <div className={classes.session} key={i}>
                     <div className={classes.header} />
@@ -344,7 +343,7 @@ const MultiplayerScreen = props => {
                         { row.myTurn ? 
                         <Button buttonStyle={{ fontSize: '1.1rem' }} className={classes.button} onClick={() => enterMultiplayerGame(row.id)}>Play</Button> :
                         <Button buttonStyle={{ fontSize: '1.1rem' }} className={classes.button} color="secondary" onClick={() => enterMultiplayerGame(row.id)}>Wait</Button> }
-                        <Button color="accent" buttonStyle={{ fontSize: '1.1rem' }} className={classes.button} onClick={() => askSurrenderGame(row.id, row.opponent.name)}>Surrender</Button>
+                        <Button color="accent" buttonStyle={{ fontSize: '1.1rem' }} className={classes.button} onClick={() => askSurrenderGame(row.id, row.opponent.name)}>{t(tr.SURRENDER)}</Button>
                     </div>
                     <div className={classes.info}>
                         <div className={classes.statistics}>

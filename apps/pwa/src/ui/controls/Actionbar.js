@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import './Actionbar.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { build, attack, chooseStart, chooseField, finishTurn, finishBuildPhase } from '../../gameplay/GameActions';
@@ -7,12 +6,27 @@ import { GameStateTypes, playerHasAttacksPerTurn, BattlechocError } from 'battle
 import { deselectBuildings, deselectAttack } from '../UiActions';
 import { multiplayer } from '../../Multiplayer';
 import Fab from './Fab';
-import { VolumeUp, VolumeOff, Fullscreen, PlayArrow, FastForward, Settings, PermIdentity, KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
 import { Jukebox } from '../misc';
 import OfflineStore from '../../OfflineStore';
 import logger from '../../helper/logger';
+import { createUseStyles } from 'react-jss';
+
+const useStyles = createUseStyles({
+    actions: {
+        position: 'absolute',
+        zIndex: 4,
+        display: 'flex',
+        top: 5,
+        left: 5,
+        flexDirection: 'row',
+        '& > div': {
+            marginRight: 10
+        }
+    }
+});
 
 const Actionbar = props => {
+    const classes = useStyles();
     const [activeMusicButton, setActiveMusicButton] = useState(!Jukebox.isMuted);
     const [activeFullscreenButton, setActiveFullscreenButton] = useState(true);
 
@@ -42,6 +56,10 @@ const Actionbar = props => {
         };
     }, [])
 
+    if (props.tutorial) {
+        return null;
+    }
+
     const toggleMusic = () => {
         Jukebox.mute(!activeMusicButton);
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -55,36 +73,33 @@ const Actionbar = props => {
 
     const buttons = []
 
-    if (typeof props.game !== 'undefined' && !props.tutorial) {
+    if (typeof props.game !== 'undefined') {
         buttons.push(
             <Fab
-                key="-1"
+                key="0"
                 color="secondary"
-                aria-label="back"
+                icon="back"
                 onClick={() => props.endGame()}>
-                <ArrowBackIcon />
             </Fab>
         );
     }
 
     buttons.push(
         <Fab
-            key="0"
+            key="1"
             color="secondary"
             icon="settings"
             onClick={() => props.showSettings()}>
-            <Settings />
         </Fab>
     );
 
     if (typeof props.game === 'undefined') {
         buttons.push(
             <Fab 
-                key="1"
+                key="2"
                 color="secondary"
                 icon="user"
                 onClick={() => props.showSignInOrUp()}>
-                <PermIdentity />
             </Fab>
         );
     }
@@ -92,21 +107,19 @@ const Actionbar = props => {
     if (activeMusicButton) {
         buttons.push(
             <Fab
-                key="2"
+                key="3"
                 color="secondary"
                 icon="volume"
                 onClick={toggleMusic}>
-                <VolumeUp />
             </Fab>
         );
     } else {
         buttons.push(
             <Fab
-                key="2"
+                key="4"
                 color="secondary"
                 icon="mute"
                 onClick={toggleMusic}>
-                <VolumeOff />
             </Fab>
         );
     }
@@ -114,11 +127,10 @@ const Actionbar = props => {
     if (activeFullscreenButton) {
         buttons.push(
             <Fab
-                key="3"
+                key="5"
                 color="secondary"
                 icon="fullscreen"
                 onClick={toggleFullscreen}>
-                <Fullscreen />
             </Fab>
         );
     }
@@ -129,9 +141,9 @@ const Actionbar = props => {
                 if (playerHasAttacksPerTurn(props.game.players[multiplayer.localPlayerIndex])) {
                     buttons.push([
                         <Fab
-                            key="5"
+                            key="6"
                             color="secondary"
-                            aria-label="skip build phase"
+                            icon="forward"
                             onClick={() => {
                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                 props.finishBuildPhase({ issuer: props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
@@ -145,15 +157,14 @@ const Actionbar = props => {
                                     }
                                 });
                             }}>
-                            <PlayArrow />
                         </Fab>
                     ]);
                 } else {
                     buttons.push([
                         <Fab
-                            key="6"
+                            key="7"
                             color="secondary"
-                            aria-label="finish turn"
+                            icon="fast-forward"
                             onClick={() => {
                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                 props.finishTurn({ issuer: props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
@@ -167,16 +178,15 @@ const Actionbar = props => {
                                     }
                                 });
                             }}>
-                            <FastForward />
                         </Fab>
                     ]);
                 }
             } else if (props.game.state === GameStateTypes.ATTACK_PHASE) {
                 buttons.push(
                     <Fab
-                        key="7"
+                        key="8"
                         color="secondary"
-                        aria-label="finish turn"
+                        icon="fast-forward"
                         onClick={() => {
                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                             props.finishTurn({ issuer: props.game.players[multiplayer.localPlayerIndex].id }).then(() => {
@@ -190,13 +200,12 @@ const Actionbar = props => {
                                 }
                             });
                         }}>
-                        <FastForward />
                     </Fab>
                 );
             }
         }
     }
-    return <div className="actionbar"> {buttons} </div>;
+    return <div className={classes.actions}> {buttons} </div>;
 }
 
 Actionbar.propTypes = {

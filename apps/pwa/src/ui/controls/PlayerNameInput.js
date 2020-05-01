@@ -15,9 +15,9 @@ const useStyles = createUseStyles(theme => ({
         position: 'relative'
     },
     input: {
-        width: '100%',
+        width: 'calc(100% - 48px)',
         outline: 'none',
-        borderRadius: 12,
+        borderRadius: '12px 0 0 12px',
         color: theme.color.secondary.dark,
         fontFamily: 'Bangers',
         display: 'flex',
@@ -189,7 +189,7 @@ const PlayerNameInput = props => {
                     }}
                 /> : <div className={classes.input}>
                     <div className={`${classes.icon} ${classes.fixed}`} style={{ backgroundImage: 'url(/images/user.svg)', backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> 
-                    <div style={{ marginLeft: 6 }}>{ playerName }</div>
+                    <div style={{ marginLeft: 6, fontSize: playerName.length > 7 ? '1.7rem' : '2rem' }}>{ playerName }</div>
                 </div> }
                 <div onClick={handleAction} className={`${classes.actionButton} ${buttonDisabled ? classes.disabled : null} ${buttonError ? classes.buttonError : null}`}>
                 { loading ? <Progress infiniteAnimation={true} size={24} /> : <div className={classes.actionIcon} style={{ backgroundImage: `url(/images/${actionIcon}.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> }

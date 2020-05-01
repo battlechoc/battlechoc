@@ -13,6 +13,11 @@ import Dialog from './Dialog';
 import { Button, Select } from '../controls';
 
 const useStyles = createUseStyles(theme => ({
+  wrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  },
   userReport: {
     margin: '5px 0',
     color: theme.color.secondary.dark,
@@ -63,7 +68,8 @@ const useStyles = createUseStyles(theme => ({
   },
   playerName: {
     marginTop: 24,
-    marginBottom: 12
+    marginBottom: 12,
+    width: '100%'
   }
 }));
 
@@ -205,7 +211,7 @@ const Settings = props => {
         close={closeDialog}
         icon="gears"
         title={t(tr.SETTINGS)}>
-        <div>
+        <div className={classes.wrapper}>
           {
             (typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous') || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true ?
               <PlayerNameInput className={classes.playerName} onEditMode={() => setEditPlayerName(true)} editMode={editPlayerName} setPlayerName={setPlayerName} startValue={props.playerInfos.stats.username} current={props.playerInfos.stats.username}/> : null

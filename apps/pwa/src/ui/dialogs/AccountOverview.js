@@ -108,7 +108,7 @@ const useStyles = createUseStyles(theme => ({
         fontFamily: 'Bangers',
         '& p': {
             textAlign: 'center',
-            fontSize: '2rem',
+            fontSize: '1.6rem',
             '-webkit-text-stroke': '1px #1B4E69',
             '-webkit-font-smoothing': 'antialiased'
         }
@@ -118,6 +118,9 @@ const useStyles = createUseStyles(theme => ({
             background: 'unset',
             boxShadow: 'none',
             fontFamily: 'unset',
+            '& .firebaseui-card-header': {
+                border: 'none !important'
+            },
             '& h1.firebaseui-title': {
                 color: 'white'
             },
@@ -278,7 +281,8 @@ const AccountOverview = props => {
             close={props.close}
             stacked={props.stackedStyle}
             id="accountOverviewDialog"
-            title={playerName}
+            autoscale={true}
+            title={playerName.length > 15 ? `${playerName.slice(0, 14)}...` : playerName}
             titleSlot={share}>
             <div className={classes.wrapper}>
                 {(() => {
