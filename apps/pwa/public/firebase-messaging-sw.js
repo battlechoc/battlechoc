@@ -6,3 +6,8 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
+
+messaging.onMessage((payload) => {
+    console.log("push received when fg");
+    console.log(payload);
+});
