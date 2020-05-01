@@ -1098,7 +1098,6 @@ app.get('/multiplayer/sessions', async (req, res) => {
             let session = {
                 'id': row.id,
                 'players': [row.player1, row.player2],
-                'status': 'game.status',
                 'last_changed': row.last_updated.getTime(),
                 'last_notification': (typeof row.last_notification === 'undefined' || row.last_notification === null) ? 0 : row.last_notification.getTime(),
                 'created': row.created.getTime(),
