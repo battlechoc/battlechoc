@@ -37,6 +37,11 @@ class Multiplayer {
         };
 
         firebase.initializeApp(firebaseConfig);
+        const messaging = firebase.messaging();
+        messaging.onMessage((payload) => {
+            console.log("push received when fg in mplayer");
+            console.log(payload);
+        });
 
         firebase.auth().onAuthStateChanged((user) => {
             this.authStateChanged(user);
@@ -52,6 +57,11 @@ class Multiplayer {
 
     shouldAskForNotificationPermission() {
         return firebase.auth().currentUser && 'Notification' in window && Notification.permission === 'default';
+    }
+
+    handlePushMessage(payload) {
+        console.log("handling push message");
+        console.log(payload);
     }
 
     askForNotificationPermission() {
