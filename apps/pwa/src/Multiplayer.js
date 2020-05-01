@@ -37,11 +37,6 @@ class Multiplayer {
         };
 
         firebase.initializeApp(firebaseConfig);
-        const messaging = firebase.messaging();
-        messaging.onMessage((payload) => {
-            console.log("push received when fg in mplayer");
-            console.log(payload);
-        });
 
         firebase.auth().onAuthStateChanged((user) => {
             this.authStateChanged(user);
@@ -50,6 +45,10 @@ class Multiplayer {
         try {
             this.messaging = firebase.messaging();
             this.messaging.usePublicVapidKey("BJ6zc8pE57SS98ocjLmtHBuaGgDjIirTpAALyYIR_zywwBJbmssDWhbn78WPhoJfjN28htOBI4bwlVzjwHMCqak");
+            /*this.messaging.onMessage((payload) => {
+                console.log("payload fg");
+                console.log(payload);
+            })*/
         } catch (error) {
             logger.info(error);
         }
