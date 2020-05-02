@@ -55,7 +55,10 @@ const useStyles = createUseStyles(theme => ({
     marginTop: 15,
   },
   button: {
-    marginTop: 24
+    marginTop: 24,
+    [theme.breakpoints.landscape.smartphone]: {
+      marginTop: 12
+    }
   },
   checkbox: {
     marginBottom: 10
@@ -69,7 +72,14 @@ const useStyles = createUseStyles(theme => ({
   playerName: {
     marginTop: 24,
     marginBottom: 12,
-    width: '100%'
+    width: '100%',
+    [theme.breakpoints.landscape.smartphone]: {
+      marginTop: 12
+    }
+  },
+  actions: {
+    display: 'flex',
+    flexDirection: 'column'
   }
 }));
 
@@ -217,44 +227,45 @@ const Settings = props => {
               <PlayerNameInput className={classes.playerName} onEditMode={() => setEditPlayerName(true)} editMode={editPlayerName} setPlayerName={setPlayerName} startValue={props.playerInfos.stats.username} current={props.playerInfos.stats.username}/> : null
           }
           <Select onChange={changeLanguage} options={options} defaultSelected={getCurrentLanguage()} />
-
-          <Button className={classes.button} onClick={() => {
-            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-            setShowAttentionText(false);
-            setShowErrorReport(true);
-          }}>{t(tr.REPORT_PROBLEM)}</Button>
-          {(() => {
-            if (props.playerInfos.stats.username !== 'Chocnonymous' && typeof props.game === 'undefined') {
-              return (
-                <div>
-                  <Button className={classes.button} color="accent" onClick={() => {
-                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                    props.startTutorial();
-                    props.close();
-                    setShowAttentionText(false);
-                  }}>{t(tr.RESTART_TUTORIAL)}</Button>
-                </div>
-              )
-            }
-          })()}
-
-          {typeof props.game !== 'undefined' && !props.tutorial ?
-            <Button color="accent" className={classes.button} onClick={() => {
+          <div className={classes.actions}>
+            <Button className={classes.button} onClick={() => {
               Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-              if (showAttentionText) {
-                props.surrender();
-                props.close();
-                setShowAttentionText(false);
-              } else {
-                setShowAttentionText(true);
+              setShowAttentionText(false);
+              setShowErrorReport(true);
+            }}>{t(tr.REPORT_PROBLEM)}</Button>
+            {(() => {
+              if (props.playerInfos.stats.username !== 'Chocnonymous' && typeof props.game === 'undefined') {
+                return (
+                  <div>
+                    <Button className={classes.button} color="accent" onClick={() => {
+                      Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                      props.startTutorial();
+                      props.close();
+                      setShowAttentionText(false);
+                    }}>{t(tr.RESTART_TUTORIAL)}</Button>
+                  </div>
+                )
               }
-            }}>{t(tr.SETTINGS_QUIT)}</Button> : null
-          }
-          {
-            showAttentionText && typeof props.game !== 'undefined' ?
-              <p color="error" className="attentionText">{t(tr.SETTINGS_ATTENTION_TEXT)}</p>
-              : null
-          }
+            })()}
+
+            {typeof props.game !== 'undefined' && !props.tutorial ?
+              <Button color="accent" className={classes.button} onClick={() => {
+                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                if (showAttentionText) {
+                  props.surrender();
+                  props.close();
+                  setShowAttentionText(false);
+                } else {
+                  setShowAttentionText(true);
+                }
+              }}>{t(tr.SETTINGS_QUIT)}</Button> : null
+            }
+            {
+              showAttentionText && typeof props.game !== 'undefined' ?
+                <p color="error" className="attentionText">{t(tr.SETTINGS_ATTENTION_TEXT)}</p>
+                : null
+            }
+          </div>
         </div>
       </Dialog>
     </div>

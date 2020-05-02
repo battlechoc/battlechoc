@@ -52,6 +52,11 @@ const useStyles = createUseStyles(theme => ({
       fontSize: '2.5rem',
       width: 252,
       height: 68,
+      [theme.breakpoints.landscape.smartphone]: {
+        fontSize: '1.5rem',
+        width: 246,
+        height: 62,
+      }
     },
     normal: {
       fontSize: '1.5rem',

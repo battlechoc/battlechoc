@@ -15,22 +15,21 @@ html, body, #root {
   width: 100%;
 }
 
-#decoration {
-  position: absolute;
-  bottom: -90px;
-  left: -145px;
-  width: 397px;
-  height: 294px;
-  background: url(/images/decoration.svg) no-repeat;
-  z-index: 1;  
-} 
-
 .assetLoader {
   position: absolute;
   top: 50%;
   left: 50%;
   margin-left: -32px;
   margin-top: -32px;
+}
+
+@media screen and (min-width: 576px) and (orientation: landscape) {
+  .assetLoader {
+    position: absolute;
+    top: 65%;
+    left: 50%;
+    margin-left: -32px;
+  }    
 }
 
 .gameCanvas {
@@ -51,4 +50,28 @@ html, body, #root {
   to {
       transform: rotate(359deg);
   }
+}
+
+@keyframes fadeIn {
+  0% {
+      opacity: 0;
+  }
+  100% {
+      opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+      opacity: 1;
+  }
+  100% {
+      opacity: 0;
+  }
+}
+
+@keyframes pulse {
+0% { transform: scale(1) rotate(360deg); }
+50% { transform: scale(0.5) rotate(180deg); }
+100% { transform: scale(1) rotate(0deg); }
 }

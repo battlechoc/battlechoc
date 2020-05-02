@@ -13,8 +13,75 @@ import { ServerRequest } from '../helper/settings';
 import logger from '../helper/logger';
 import firebase from '@firebase/app';
 import { Button, Fab, Progress, Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, GameEndOverview } from './controls';
+import { createUseStyles } from 'react-jss'
+
+const useStyles = createUseStyles(theme => ({
+    actionbar: {
+        position: 'absolute',
+        top: 5,
+        left: 5,
+        zIndex: 5
+    },
+    logo: {
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        '& > :first-child': {
+            position: 'absolute',
+            top: 70,
+            width: 290,
+            height: 222,
+            background: 'url(/images/logo.svg) no-repeat',
+            zIndex: 1,
+            [theme.breakpoints.landscape.smartphone]: {
+                top: 5,
+                width: 232,
+                height: 178
+            }
+        },
+        '& > :last-child': {
+            position: 'absolute',
+            height: 1600,
+            width: 1600,
+            top: -700,
+            marginLeft: -72,
+            background: 'url(/images/stripes.svg) no-repeat',
+            backgroundSize: 1600,
+            zIndex: 0,
+            animation: 'pulse 20s linear 0s infinite',
+            [theme.breakpoints.landscape.smartphone]: {
+                top: -765
+            }
+        },        
+    },
+    menu: {
+        display: 'flex',
+        height: 230,
+        justifyContent: 'space-between',
+        flexDirection: 'column',
+        position: 'absolute',
+        top: '44%',
+        [theme.breakpoints.landscape.smartphone]: {
+            height: 200,
+            top: '48%'
+        }
+    },
+    decoration: {
+        position: 'fixed',
+        bottom: -90,
+        left: -145,
+        width: 397,
+        height: 294,
+        background: 'url(/images/decoration.svg) no-repeat',
+        zIndex: 3
+    }
+}));
 
 const Hud = props => {
+    const classes = useStyles(props);
     const { resumeGamePossible, enterMultiplayerGame, sessionId, showQuickMessage, challengedPlayer, assetsReady, overviewVisible, selectedAttack, tappedBuilding, game, state, openInfo, prepareNewGameCallback, className, surrender, startTutorial, playerInfos, endGame, notification, hideNotification } = props;
 
     const [open, setOpen] = useState(false);
@@ -161,7 +228,7 @@ const Hud = props => {
                 joinGame={joinGame} playerAccount={playerAccount} open={showAccountOverview} close={() => setShowAccountOverview(false)} />
             {(() => {
                 if (stage === 'CHOCLAB_SCREEN') {
-                    return <div className="actionbar">
+                    return <div className={classes.actionbar}>
                         <Fab
                             color="secondary"
                             icon="back"
@@ -210,36 +277,36 @@ const Hud = props => {
 
                     return (
                         <>
-                            <div id="decoration" />
+                            <div className={classes.decoration} />
                             <div id="mainMenu">
                                 {typeof playerInfos.stats.coins !== 'undefined' ? <div id="chocolate-coins">
                                     <span>{playerInfos.stats.coins}</span>
                                     <div className="coins" />
                                 </div> : null}
-                                <div id="logo"><div id="image" /><div id="stripes"/></div>
-                                <div className="titleMenu">
+                                <div className={classes.logo}><div /><div /></div>
+                                <div className={classes.menu}>
                                     {assetsReady ? controls : null}
-                                    <Dialog
-                                        open={open}
-                                        close={() => setOpen(false)}
-                                        title={t(tr.HUD_RESUME_GAME)}>
-                                        <div className="resumeGameDialog">
-                                            <p>{t(tr.HUD_ASK_NEW_OR_RESUME)}</p>
-                                            <div className="actions">
-                                                <div className="menuButton" onClick={() => {
-                                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                    setOpen(false);
-                                                    prepareNewGameCallback(true);
-                                                }}>{t(tr.HUD_RESUME_GAME)}</div>
-                                                <div className="menuButton" onClick={() => {
-                                                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                    setOpen(false);
-                                                    prepareNewGameCallback(false);
-                                                }}>{t(tr.HUD_NEW_GAME)}</div>
-                                            </div>
-                                        </div>
-                                    </Dialog>
                                 </div>
+                                <Dialog
+                                    open={open}
+                                    close={() => setOpen(false)}
+                                    title={t(tr.HUD_RESUME_GAME)}>
+                                    <div className="resumeGameDialog">
+                                        <p>{t(tr.HUD_ASK_NEW_OR_RESUME)}</p>
+                                        <div className="actions">
+                                            <div className="menuButton" onClick={() => {
+                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                                setOpen(false);
+                                                prepareNewGameCallback(true);
+                                            }}>{t(tr.HUD_RESUME_GAME)}</div>
+                                            <div className="menuButton" onClick={() => {
+                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                                setOpen(false);
+                                                prepareNewGameCallback(false);
+                                            }}>{t(tr.HUD_NEW_GAME)}</div>
+                                        </div>
+                                    </div>
+                                </Dialog>
                             </div>
                             <Highscore playername={playername} showPlayerProfile={session => openAccountOverview(session.opponent, true)} showQuickMessage={showQuickMessage} />
                             { notification.open ? <Notification message={notification.message} title={notification.title} close={() => hideNotification()} /> : <Info openInfo={openInfo} /> }
@@ -260,7 +327,7 @@ const Hud = props => {
                     );
                 } else if (stage === 'MULTIPLAYER_SCREEN') {
                     return <>
-                        <div id="decoration" />
+                        <div className={classes.decoration} />
                         <MultiplayerScreen closeMultiplayerScreen={() => setShowMultiplayerScreen(false)} openAccountOverview={openAccountOverview} enterMultiplayerGame={joinGame} />
                     </>;
                 } else if (stage === 'CHOCLAB_SCREEN') {

@@ -3,24 +3,26 @@ import PropTypes from 'prop-types';
 import { createUseStyles } from 'react-jss';
 
 const useStyles = createUseStyles(theme => ({
-    list: {
+    list: props => ({
         marginTop: 8,
         fontFamily: 'Bangers',
-        fontSize: '1.2rem',
+        fontSize: props.size === 'small' ? '1.2rem' : '1.6rem',
         '& > :nth-child(odd)': {
             backgroundColor: theme.color.secondary.dark
         },
         display: 'table',
         [theme.breakpoints.smartphone]: {
-            fontSize: '1.4rem'
-        }
-    },
-    row: {
+            fontSize: props.size === 'small' ? '1.4rem' : '1.8rem'
+        },
+        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased'
+    }),
+    row: props => ({
         cursor: 'pointer',
         userSelect: 'none',
-        padding: 5,
+        padding: props.size === 'small' ? 5 : 8,
         display: 'table-row',
-    },
+    }),
     cell: {
         display: 'table-cell',
         borderTop: '4px solid transparent',
@@ -43,7 +45,7 @@ const useStyles = createUseStyles(theme => ({
 
 const PlayerList = props => {
     const { username, players, showProfile, withScore } = props;
-    const classes = useStyles();
+    const classes = useStyles(props);
 
     const openPlayerProfile = player => {
         const isPlayer = username === player.name;
@@ -54,7 +56,7 @@ const PlayerList = props => {
 
     if (players.length > 0) {
         return (
-            <div className={classes.list}>
+            <div style={props.style} className={`${classes.list} ${props.className}`}>
             { 
                 players.map((player, i) => {
                     const isPlayer = username === player.name;
@@ -82,14 +84,20 @@ const PlayerList = props => {
 
 PlayerList.defaultProps = {
     withScore: false,
-    username: ''
+    style: {},
+    className: '',
+    username: '',
+    size: 'small'
 }
 
 PlayerList.propTypes = {
     showProfile: PropTypes.func.isRequired,
     players: PropTypes.array.isRequired,
     withScore: PropTypes.bool,
+    style: PropTypes.object,
     username: PropTypes.string,
+    className: PropTypes.string,
+    size: PropTypes.oneOf(['small', 'medium'])
 }
 
 export default PlayerList;

@@ -9,7 +9,7 @@ const useStyles = makeStyles(theme => ({
         position: 'absolute',
         bottom: 0,
         display: 'flex',
-        flexWrap: 'wrap',
+        flexWrap: 'wrap-reverse',
         '@media screen and (max-width: 600px) and (orientation: portrait)': {
             flexDirection: 'column',
             bottom: 5,

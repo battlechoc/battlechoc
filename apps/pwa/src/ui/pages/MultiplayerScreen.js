@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Jukebox, translate as t, keys as tr } from '../misc';
+import { Jukebox, translate as t, keys as tr, getCurrentLanguage } from '../misc';
 import Axios from 'axios';
 import { showQuickMessage } from '../UiActions';
 import { connect } from 'react-redux';
@@ -30,6 +30,15 @@ const useStyles = createUseStyles(theme => ({
         marginTop: 24,
         position: 'relative',
         zIndex: 1,
+        [theme.breakpoints.landscape.smartphone]: {
+            width: 'calc(100% - 3*60px)',
+            position: 'absolute',
+            top: 5,
+            marginTop: 0,
+            marginBottom: 0,
+            left: 'calc(2 * 60px)',
+            justifyContent: 'space-evenly'
+        }
     },
     action: {
         width: 200
@@ -48,17 +57,21 @@ const useStyles = createUseStyles(theme => ({
     sessions: {
         display: 'flex',
         width: '100%',
-        justifyContent: 'space-around',
+        justifyContent: 'center',
         flexWrap: 'wrap',
         position: 'relative',
-        zIndex: 1,
+        zIndex: 4,
     },
     session: {
         width: 180,
+        margin: 10,
         fontFamily: 'Bangers',
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
         borderRadius: '5%',
-        position: 'relative'
+        position: 'relative',
+        [theme.breakpoints.landscape.smartphone]: {
+            margin: '20px 10px 0px 10px'
+        }
     },
     title: {
         fontSize: '1rem',
@@ -114,6 +127,59 @@ const useStyles = createUseStyles(theme => ({
         flexDirection: 'column',
         alignItems: 'center',
         textAlign: 'center'  
+    },
+    timeago: {
+        fontFamily: 'Montserrat',
+        padding: 10,
+        textAlign: 'center'
+    },
+    message: {
+        padding: 10,
+        textAlign: 'center',
+        fontFamily: 'Montserrat',
+        background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 100%)`,
+        borderRadius: 12,
+        border: `3px solid ${theme.color.accent.light}`,
+        position: 'relative',
+        zIndex: 3,
+        margin: '24px 10px 0 10px'
+    },
+    search: {
+        display: 'flex',
+        alignItems: 'center'
+    },
+    label: {
+        fontSize: '1.6rem',
+        fontFamily: 'Bangers',
+        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
+        marginRight: 6
+    }, 
+    input: {
+        color: theme.color.secondary.dark,
+        border: `1px solid ${theme.color.secondary.dark}`,
+        fontFamily: 'Bangers',
+        padding: 6,
+        flexGrow: 1,
+        borderRadius: 6,
+        outline: 'none',
+        fontSize: '1.2rem'
+    },
+    dialog: {
+        width: '90%'
+    },
+    playerList: {
+        width: '100%',
+        marginTop: 24
+    },
+    progress: {
+        position: 'absolute',
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 0
     }
 }));
 
@@ -140,6 +206,13 @@ const MultiplayerScreen = props => {
     
     const inputRef = React.useRef();
     
+    let timeAgo = new TimeAgo('en-US');
+    if (getCurrentLanguage() === 'de') {
+        timeAgo = new TimeAgo('de-DE');
+    } else if (getCurrentLanguage() === 'jp') {
+        timeAgo = new TimeAgo('ja');
+    }
+
     useEffect(() => {
         TimeAgo.addLocale(en);
         TimeAgo.addLocale(de);
@@ -160,7 +233,7 @@ const MultiplayerScreen = props => {
         }
     }, [showQuickMessage]);
 
-    const showPlayerProfile = session => openAccountOverview(session.opponent);
+    const showPlayerProfile = (session, stacked=true) => openAccountOverview(session.opponent, stacked);
 
     const removeFriend = async friend => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -260,6 +333,7 @@ const MultiplayerScreen = props => {
 
     return (
         <>
+        { sessionRefreshActions > 0 ? <Progress className={classes.progress} infiniteAnimation /> : null }
         <div className={classes.actionbar}>
             <Fab
                 color="secondary"
@@ -297,26 +371,39 @@ const MultiplayerScreen = props => {
                 open={showFriends}
                 close={() => setShowFriends(false)}
                 title={t(tr.FRIENDS)}>
-                <PlayerList 
-                    players={friends} 
-                    removeFriend={removeFriend}
-                    challenge={challengePlayer}
-                    showProfile={showPlayerProfile}
-                    sessions={multiplayerSessions} />
+                <div className={classes.dialog}>
+                    <PlayerList
+                        className={classes.playerList}
+                        players={friends}
+                        size="medium"
+                        removeFriend={removeFriend}
+                        challenge={challengePlayer}
+                        showProfile={showPlayerProfile}
+                        sessions={multiplayerSessions} />
+                </div>
             </Dialog>
 
             <Dialog
                 open={showSearch}
                 close={() => setShowSearch(false)}
                 title={t(tr.SEARCH_PLAYERS)}>
-                <div className="playerSearchDialog">
+                <div className={classes.dialog}>
                     { badInternetConnection && !waitForResponse ? <span>{ t(tr.NO_HEALTHY_INTERNET) }</span> : null }
-                    <span>Name</span>
-                    <input ref={inputRef} value={userSearchText} spellCheck={false} autoFocus onChange={event => {
+                    <div className={classes.search}>
+                        <span className={classes.label}>Name</span>
+                        <input className={classes.input} ref={inputRef} value={userSearchText} spellCheck={false} autoFocus onChange={event => {
                             setUserSearchText(event.target.value);
                         }} />
-                    { waitForResponse ? <Progress infiniteAnimation size={18} /> : null }
-                    <PlayerList 
+                    </div>
+                    { waitForResponse ? <Progress style={{
+                        alignItems: 'center',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        margin: 24
+                    }} infiniteAnimation /> : null }
+                    <PlayerList
+                        className={classes.playerList}
+                        size="medium"
                         players={searchResults} 
                         friends={friends}
                         addFriend={addFriend}
@@ -332,8 +419,6 @@ const MultiplayerScreen = props => {
                 <Button className={classes.action} onClick={() => setShowFriends(true)}>{t(tr.FRIENDS)}</Button>
             </div>
             
-            { sessionRefreshActions > 0 ? <Progress infiniteAnimation /> : null }
-
             { multiplayerSessions.length > 0 && sessionRefreshActions === 0 ? <div className={classes.sessions}>
                 {  Object.assign([], multiplayerSessions).sort(sortByTimestamp).map((row, i) =>
                 <div className={classes.session} key={i}>
@@ -345,6 +430,7 @@ const MultiplayerScreen = props => {
                         <Button buttonStyle={{ fontSize: '1.1rem' }} className={classes.button} color="secondary" onClick={() => enterMultiplayerGame(row.id)}>Wait</Button> }
                         <Button color="accent" buttonStyle={{ fontSize: '1.1rem' }} className={classes.button} onClick={() => askSurrenderGame(row.id, row.opponent.name)}>{t(tr.SURRENDER)}</Button>
                     </div>
+                    <div className={classes.timeago}>{`You are waiting for ${timeAgo.format(new Date(row.last_changed), 'time')}`}</div>
                     <div className={classes.info}>
                         <div className={classes.statistics}>
                             <h3>{` Turn ${row.turns}`}</h3>
@@ -353,7 +439,7 @@ const MultiplayerScreen = props => {
                                 <div />
                             </div>
                         </div>
-                        <Fab icon="user" onClick={() => showPlayerProfile(row)} />
+                        <Fab icon="user" onClick={() => showPlayerProfile(row, false)} />
                     </div>
                 </div>) }
             </div> : null }

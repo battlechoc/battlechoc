@@ -58,23 +58,19 @@ const useStyles = createUseStyles(theme => ({
             padding: '32px 24px'
         }
     },
-    title: props => {
-        let fontSize = '2.5rem';
-        if (props.autoscale && props.title.length > 7) {
-            fontSize = '1.7rem';
-        }
-
-        return { 
-            zIndex: 12,
-            fontFamily: 'Bangers',
-            fontSize: fontSize,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            color: 'white',
-            padding: '12px 0',
-            '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
-            '-webkit-font-smoothing': 'antialiased'
+    title: {
+        zIndex: 12,
+        fontFamily: 'Bangers',
+        fontSize: props => props.autoscale && props.title.length > 7 ? '1.7rem' : '2.5rem',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        color: 'white',
+        padding: '12px 0',
+        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
+        [theme.breakpoints.landscape.smartphone]: {
+            padding: 0
         }
     },
     subtitle: {
@@ -84,7 +80,10 @@ const useStyles = createUseStyles(theme => ({
         color: 'white',
         margin: '-12px 0px 12px 0px',
         '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
-        '-webkit-font-smoothing': 'antialiased'
+        '-webkit-font-smoothing': 'antialiased',
+        [theme.breakpoints.landscape.smartphone]: {
+            margin: 0
+        }
     },
     close: {
         position: 'absolute',
@@ -103,6 +102,10 @@ const useStyles = createUseStyles(theme => ({
         [theme.breakpoints.smartphone]: {
             width: '80%',
             paddingRight: '5'
+        },
+        [theme.breakpoints.landscape.smartphone]: {
+            width: '90%',
+            height: '90%'
         }
     },
     border: {

@@ -18,7 +18,10 @@ const useStyles = createUseStyles(theme => ({
     wrapper: {
         display: 'flex',
         flexDirection: 'column',
-        marginTop: 16
+        marginTop: 16,
+        [theme.breakpoints.landscape.smartphone]: {
+            marginTop: 0
+        }
     },
     pendingButton: {
         backgroundColor: '#777'
@@ -110,7 +113,10 @@ const useStyles = createUseStyles(theme => ({
             textAlign: 'center',
             fontSize: '1.6rem',
             '-webkit-text-stroke': '1px #1B4E69',
-            '-webkit-font-smoothing': 'antialiased'
+            '-webkit-font-smoothing': 'antialiased',
+            [theme.breakpoints.landscape.smartphone]: {
+                margin: '16px 0'
+            }
         }
     }, 
     firebaseUi: {
