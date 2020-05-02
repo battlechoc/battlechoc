@@ -942,6 +942,7 @@ const emitPlayerNotification = async (receiverId, sessionId, title, body, reason
 
     await Promise.all(permissions.map(async (permission) => {
         const payload = {}
+        console.log("emitting notification to " + permission.token);
         payload.to = permission.token;
 
         if (permission.type === 'android-messaging') {
@@ -1345,7 +1346,7 @@ app.post('/user/permissions', async (req, res) => {
             await dbPool.query("INSERT INTO permissions(player, token, type) VALUES ($1, $2, $3)", [req.user.uid, req.body.token, tokenType]);
             res.status(200).end();
         } else {
-            res.status(400).json({ error: 'WONT INSERT DUPLICATE TOKEN ENTRIES' });
+            res.status(400).json({ error: 'WON\'T INSERT DUPLICATE TOKEN ENTRIES' });
         }
     } catch (err) {
         console.warn('Could not add new permission token for player.', err);
