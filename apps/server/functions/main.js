@@ -131,7 +131,7 @@ class Reducer {
             case GameActionTypes.finishBuildPhase: return finishBuildPhaseReduction(state, action);
             case GameActionTypes.build: return buildReduction(state, action);
             case GameActionTypes.attack: return attackReduction(state, action);
-            case GameActionTypes.endGame: 
+            case GameActionTypes.endGame:
                 emitEndGameNotification(state, action);
                 return endGameReduction(state, action);
         }
@@ -517,8 +517,10 @@ app.post('/user/notify', async (req, res) => {
                         req.body.sessionId,
                         playerName + t.t[language].NOTIFICATION_REMEMBER_TURN_TITLE,
                         t.t[language].NOTIFICATION_REMEMBER_TURN_BODY,
-                        '',
+                        'REMEMBER_TURN',
                         'https://battlechoc.com/session/' + req.body.sessionId);
+                    const sessions = await getAllActiveMultiplayerSessionsForPlayer(req.user.uid);
+                    res.json({ sessions: sessions });
                 } else {
                     console.warn("Cannot notify yourself.");
                     res.status(400).json({ error: "CANNOT NOTIFY YOURSELF" });
@@ -592,7 +594,7 @@ app.post('/user/challenge', async (req, res) => {
                             databaseSession.id,
                             player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
                             t.t[language].NOTIFICATION_CHALLENGE_BODY,
-                            '',
+                            'CHALLENGED',
                             'https://battlechoc.com/session/' + databaseSession.id);
 
                         res.json({ sessionId: databaseSession.id });
@@ -623,7 +625,7 @@ const emitEndGameNotification = async (session, endGameAction) => {
         session.id,
         playerName + t.t[language].NOTIFICATION_GAME_LOST_TITLE,
         t.t[language].NOTIFICATION_GAME_LOST_BODY + winner.name,
-        '',
+        'GAME_LOST',
         'https://battlechoc.com');
 }
 
@@ -909,10 +911,10 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                 await updateEventQueue(eventQueue, req.body.sessionId);
                 let updatedPlayerId = session.game.currentPlayerIndex;
                 if (playerId !== updatedPlayerId) {
-                    const receiverResult = await getPlayerFromName(session.game.players[playerId].name);
+                    const receiverResult = await getPlayerFromName(session.game.players[1 - playerId].name);
                     if (receiverResult.rows.length === 0) {
                         console.error("Could not emit notification");
-                        return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + session.game.players[playerId].name + '" DOES NOT EXIST' });
+                        return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + session.game.players[1 - playerId].name + '" DOES NOT EXIST' });
                     }
 
                     let language = receiverResult.rows[0].language;
@@ -920,7 +922,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                         language = t.getDefaultLanguage();
                     }
 
-                    await emitPlayerNotification(session.game.players[playerId].id,
+                    await emitPlayerNotification(session.game.players[1 - playerId].id,
                         req.body.sessionId,
                         session.game.players[playerId].name + t.t[language].NOTIFICATION_TURN_FINISHED_TITLE,
                         t.t[language].NOTIFICATION_TURN_FINISHED_BODY,
@@ -941,24 +943,18 @@ const emitPlayerNotification = async (receiverId, sessionId, title, body, reason
     const expiredTokens = [];
 
     await Promise.all(permissions.map(async (permission) => {
-        const payload = {}
-        console.log("emitting notification to " + permission.token);
-        payload.to = permission.token;
-
-        if (permission.type === 'android-messaging') {
-            payload.data = {
+        const payload = {
+            to: permission.token,
+            data: {
                 title: title,
                 text: body,
                 session: sessionId,
-                reason: reason
-            }
-        } else {
-            payload.notification = {
-                title: title,
-                body: body,
+                reason: reason,
                 click_action: clickAction
             }
-        }
+        };
+
+        console.log("emitting notification to " + permission.token);
 
         try {
             const response = await axios.post('https://fcm.googleapis.com/fcm/send', payload, { headers: { 'Authorization': 'key=***REMOVED***' } })
@@ -966,7 +962,7 @@ const emitPlayerNotification = async (receiverId, sessionId, title, body, reason
                 console.log('Cleanup expired user registration token ' + permission.token);
                 expiredTokens.push(permission.token);
             } else {
-                console.log('Successfully send notification');
+                console.log('Successfully sent notification');
                 console.log(`Token ${permission.token} is still valid`);
             }
         } catch (error) {
@@ -1090,43 +1086,48 @@ app.post('/surrender', async (req, res) => {
     }
 });
 
+const getAllActiveMultiplayerSessionsForPlayer = async (playerId) => {
+    const sessions = [];
+    const sessionQueryResult = await dbPool.query("SELECT * FROM multiplayer_sessions where (player1=$1 OR player2=$1) AND gamestate->>'isRunning' = 'true'", [playerId]);
+    await Promise.all(sessionQueryResult.rows.map(async (row) => {
+        const playerIndex = (row.gamestate.players[0].id === playerId) ? 0 : 1;
+        let session = {
+            'id': row.id,
+            'players': [row.player1, row.player2],
+            'last_changed': row.last_updated.getTime(),
+            'last_notification': (typeof row.last_notification === 'undefined' || row.last_notification === null) ? 0 : row.last_notification.getTime(),
+            'created': row.created.getTime(),
+            'myTurn': row.gamestate.currentPlayerIndex === playerIndex,
+            'turns': row.turns,
+            'statistics': row.gamestate.players[playerIndex].statistics
+        };
+
+        const opponentId = (row.player1 === playerId) ? row.player2 : row.player1;
+        const opponentQueryResult = await getPlayerFromId(opponentId);
+        if (opponentQueryResult.rows.length > 0) {
+            const opponent = await createPlayerStatsObject(opponentQueryResult.rows[0], true);
+            const opponentRank = await computePlayerRanking(opponentQueryResult.rows[0])
+            session.opponent = {
+                name: opponent.username,
+                ranking: opponentRank,
+                level: opponent.level,
+                drawn: opponent.drawn,
+                losses: opponent.losses,
+                winnings: opponent.winnings
+            }
+        } else {
+            console.error("Stale multiplayer session detected. Will be disabled. Id is " + session.id);
+            await dbPool.query("UPDATE multiplayer_sessions SET gamestate = gamestate || {\"isRunning\": false}' WHERE id=$1", [session.id]);
+        }
+        sessions.push(session);
+    }));
+    return sessions;
+}
+
 app.get('/multiplayer/sessions', async (req, res) => {
     try {
-        const sessions = [];
-        const sessionQueryResult = await dbPool.query("SELECT * FROM multiplayer_sessions where (player1=$1 OR player2=$1) AND gamestate->>'isRunning' = 'true'", [req.user.uid]);
-        await Promise.all(sessionQueryResult.rows.map(async (row) => {
-            const playerIndex = (row.gamestate.players[0].id === req.user.uid) ? 0 : 1;
-            let session = {
-                'id': row.id,
-                'players': [row.player1, row.player2],
-                'last_changed': row.last_updated.getTime(),
-                'last_notification': (typeof row.last_notification === 'undefined' || row.last_notification === null) ? 0 : row.last_notification.getTime(),
-                'created': row.created.getTime(),
-                'myTurn': row.gamestate.currentPlayerIndex === playerIndex,
-                'turns': row.turns,
-                'statistics': row.gamestate.players[playerIndex].statistics
-            };
-
-            const opponentId = (row.player1 === req.user.uid) ? row.player2 : row.player1;
-            const opponentQueryResult = await getPlayerFromId(opponentId);
-            if (opponentQueryResult.rows.length > 0) {
-                const opponent = await createPlayerStatsObject(opponentQueryResult.rows[0], true);
-                const opponentRank = await computePlayerRanking(opponentQueryResult.rows[0])
-                session.opponent = {
-                    name: opponent.username,
-                    ranking: opponentRank,
-                    level: opponent.level,
-                    drawn: opponent.drawn,
-                    losses: opponent.losses,
-                    winnings: opponent.winnings
-                }
-            } else {
-                console.error("Stale multiplayer session detected. Will be disabled. Id is " + session.id);
-                await dbPool.query("UPDATE multiplayer_sessions SET gamestate = gamestate || {\"isRunning\": false}' WHERE id=$1", [session.id]);
-            }
-            sessions.push(session);
-        }));
-        res.json({ sessions: sessions })
+        const sessions = await getAllActiveMultiplayerSessionsForPlayer(req.user.uid);
+        res.json({ sessions: sessions });
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: error });

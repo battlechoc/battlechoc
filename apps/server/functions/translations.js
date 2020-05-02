@@ -2,9 +2,9 @@
 const validLanguages = ['de', 'en', 'jp'];
 const languages = {
     en: {
-        NOTIFICATION_CHALLENGE_TITLE: ' is challenging you',
+        NOTIFICATION_CHALLENGE_TITLE: ' is challenging you!',
         NOTIFICATION_CHALLENGE_BODY: 'This could be a great fight!',
-        NOTIFICATION_TURN_FINISHED_TITLE: ' finished the turn',
+        NOTIFICATION_TURN_FINISHED_TITLE: ' finished the turn.',
         NOTIFICATION_TURN_FINISHED_BODY: 'Let\'s go. It\'s your move!',
         NOTIFICATION_REMEMBER_TURN_TITLE: ' is waiting!',
         NOTIFICATION_REMEMBER_TURN_BODY: 'Do your next move!',
@@ -18,9 +18,9 @@ const languages = {
         NOTIFICATION_GAME_LOST_BODY: 'You lost against '
     },
     de: {
-        NOTIFICATION_CHALLENGE_TITLE: ' fordert dich heraus',
+        NOTIFICATION_CHALLENGE_TITLE: ' fordert dich heraus!',
         NOTIFICATION_CHALLENGE_BODY: 'Das könnte ein episches Match werden!',
-        NOTIFICATION_TURN_FINISHED_TITLE: ' hat den Zug beendet',
+        NOTIFICATION_TURN_FINISHED_TITLE: ' hat den Zug beendet.',
         NOTIFICATION_TURN_FINISHED_BODY: 'Weiter gehts. Du bist dran!',
         NOTIFICATION_REMEMBER_TURN_TITLE: ' wartet!',
         NOTIFICATION_REMEMBER_TURN_BODY: 'Mach deinen nächsten Zug!',
