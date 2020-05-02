@@ -45,16 +45,19 @@ class Multiplayer {
         try {
             this.messaging = firebase.messaging();
             this.messaging.usePublicVapidKey("BJ6zc8pE57SS98ocjLmtHBuaGgDjIirTpAALyYIR_zywwBJbmssDWhbn78WPhoJfjN28htOBI4bwlVzjwHMCqak");
-            /*this.messaging.onMessage((payload) => {
-                console.log("payload fg");
+            this.messaging.onMessage((payload) => {
                 console.log(payload);
-            })*/
+                this.callbacks.showQuickMessage({ text: payload.data.title + ' ' + payload.data.text, variant: 'info' });
+            });
         } catch (error) {
             logger.info(error);
         }
     }
 
     shouldAskForNotificationPermission() {
+        console.log(firebase.auth().currentUser);
+        console.log('Notification' in window);
+        console.log(Notification.permission);
         return firebase.auth().currentUser && 'Notification' in window && Notification.permission === 'default';
     }
 
