@@ -86,6 +86,30 @@ const AttackType = Object.freeze({
     }
 });
 
+const NotificationReasonType = Object.freeze({
+    OPPONENT_FINISHED_TURN: 'OPPONENT_FINISHED_TURN',
+    OPPONENT_SURRENDERED_GAME: 'OPPONENT_SURRENDERED_GAME',
+    SESSION_TIMEOUT_GAME_WON: 'SESSION_TIMEOUT_GAME_WON',
+    SESSION_TIMEOUT_GAME_LOST: 'SESSION_TIMEOUT_GAME_LOST',
+    REMEMBER_TURN: 'REMEMBER_TURN',
+    CHALLENGED: 'CHALLENGED',
+    GAME_LOST: 'GAME_LOST',
+    isInstanceOf: function (reason) {
+        if (reason === NotificationReasonType.OPPONENT_FINISHED_TURN ||
+            reason === NotificationReasonType.OPPONENT_SURRENDERED_GAME ||
+            reason === NotificationReasonType.SESSION_TIMEOUT_GAME_WON ||
+            reason === NotificationReasonType.SESSION_TIMEOUT_GAME_LOST ||
+            reason === NotificationReasonType.REMEMBER_TURN ||
+            reason === NotificationReasonType.CHALLENGED ||
+            reason === NotificationReasonType.GAME_LOST) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+});
+
 const MultiplayerGameSessionState = Object.freeze({
     UNINITIALIZED: 'MultiplayerGameSessionState.Uninitialized',
     PENDING: 'MultiplayerGameSessionState.Pending',
@@ -1260,7 +1284,8 @@ module.exports.setRandomSeed = setRandomSeed;
 module.exports.getRandomNumber = getRandomNumber;
 module.exports.BoardCellTypes = BoardCellTypes;
 module.exports.EntityType = EntityType;
-module.exports.AttackType = AttackType
+module.exports.AttackType = AttackType;
+module.exports.NotificationReasonType = NotificationReasonType;
 module.exports.isDonut = isDonut;
 module.exports.createEntity = createEntity;
 module.exports.getEntityDescriptor = getEntityDescriptor;
