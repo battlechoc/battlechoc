@@ -627,7 +627,7 @@ const emitEndGameNotification = async (session, endGameAction) => {
         playerName + t.t[language].NOTIFICATION_GAME_LOST_TITLE,
         t.t[language].NOTIFICATION_GAME_LOST_BODY + winner.name,
         NotificationReasonType.GAME_LOST,
-        'https://battlechoc.com');
+        'https://battlechoc.com/');
 }
 
 const processEvents = (session, events, eventQueue) => {
@@ -1080,7 +1080,7 @@ app.post('/surrender', async (req, res) => {
             result.looser.name + t.t[language].NOTIFICATION_OPPONENT_SURENDERED_TITLE,
             t.t[language].NOTIFICATION_OPPONENT_SURENDERED_BODY,
             NotificationReasonType.OPPONENT_SURRENDERED_GAME,
-            'https://battlechoc.com');
+            'https://battlechoc.com/');
         res.status(200).end();
     } else {
         return res.status(500).json({ 'error': 'COULD NOT SURRENDER GAME' });
@@ -1629,7 +1629,8 @@ const sessionCleanupFunction = async (context) => {
         const sessions = [];
         const sessionQueryResult = await dbPool.query("SELECT * FROM multiplayer_sessions where last_action < NOW() - INTERVAL '1 day' AND gamestate->>'isRunning' = 'true'");
         await Promise.all(sessionQueryResult.rows.map(async (row) => {
-            const looserUid = row.game.players[row.game.currentPlayerIndex].id;
+            console.log("Trying to cleanup session: " + JSON.stringify(row));
+            const looserUid = row.gamestate.players[row.gamestate.currentPlayerIndex].id;
             const result = await surrenderGame(row.id, looserUid);
             if (result !== false) {
                 sessions.push({ id: row.id });
@@ -1650,7 +1651,7 @@ const sessionCleanupFunction = async (context) => {
                     t.t[winnerLanguage].NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE + result.looser.name,
                     result.looser.name + t.t[winnerLanguage].NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY,
                     NotificationReasonType.SESSION_TIMEOUT_GAME_WON,
-                    'https://battlechoc.com');
+                    'https://battlechoc.com/');
 
                 // notify the looser
                 const looserResult = await getPlayerFromName(result.looser.name);
@@ -1668,7 +1669,7 @@ const sessionCleanupFunction = async (context) => {
                     t.t[looserLanguage].NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE + result.winner.name,
                     t.t[looserLanguage].NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY,
                     NotificationReasonType.SESSION_TIMEOUT_GAME_LOST,
-                    'https://battlechoc.com');
+                    'https://battlechoc.com/');
             } else {
                 console.error("Could not surrender session " + row.id);
             }
