@@ -6,7 +6,7 @@ import Fab from '@material-ui/core/Fab';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import { Jukebox, translate as t, keys as tr, getCurrentLanguage } from '../misc';
 import Axios from 'axios';
-import { showQuickMessage } from '../UiActions';
+import { showQuickMessage, updateMultiplayerSessions } from '../UiActions';
 import { KeyboardArrowLeft as ArrowBackIcon, Refresh, PlayArrow, Email, ChevronRight, LastPage, FirstPage, ChevronLeft, HourglassEmpty, Cancel, AccountCircle, FormatListNumbered, Casino, People, Search, Share } from '@material-ui/icons';
 import { connect } from 'react-redux';
 import TimeAgo from 'javascript-time-ago';
@@ -20,7 +20,7 @@ import PlayerList from '../controls/PlayerList';
 import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
 
 const MultiplayerScreen = props => {
-    const { account, closeMultiplayerScreen, showQuickMessage, openAccountOverview, enterMultiplayerGame, multiplayerSessions, sessionRefreshActions, friends } = props;
+    const { account, closeMultiplayerScreen, showQuickMessage, updateMultiplayerSessions, openAccountOverview, enterMultiplayerGame, multiplayerSessions, sessionRefreshActions, friends } = props;
 
     const [searchingRandomOpponent, setSearchingRandomOpponent] = useState(false);
     const [showFriends, setShowFriends] = useState(false);
@@ -81,14 +81,15 @@ const MultiplayerScreen = props => {
     const showPlayerProfile = session => openAccountOverview(session.opponent);
 
     const canNotifyOpponent = session => {
-        console.log(session);
         const currentDateTime = (new Date()).getTime();
         const lastNotifiedTime = (typeof session.last_notification === 'undefined') ? 0 : session.last_notification;
         return (((currentDateTime - lastNotifiedTime) > 1000 * 60 * 60 * 4) && session.myTurn === false);
     }
 
     const notifyOpponent = session => {
-        ServerRequest('post', '/user/notify', { sessionId: session.id });
+        ServerRequest('post', '/user/notify', { sessionId: session.id }).then(response => {
+            updateMultiplayerSessions(response.data.sessions);
+        })
     }
 
     const removeFriend = async friend => {
@@ -200,7 +201,6 @@ const MultiplayerScreen = props => {
             setHighscoreLoading(false);
         }
     }
-
 
     const refreshSessions = () => {
         multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED) }));
@@ -453,7 +453,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = {
-    showQuickMessage
+    showQuickMessage,
+    updateMultiplayerSessions
 };
 
 const MultiplayerScreenContainer = connect(

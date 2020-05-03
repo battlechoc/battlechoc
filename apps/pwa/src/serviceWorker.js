@@ -1,3 +1,6 @@
+import firebase from '@firebase/app';
+import 'firebase/messaging';
+
 const isLocalhost = Boolean(
     window.location.hostname === 'localhost' ||
     // [::1] is the IPv6 localhost address.
@@ -9,9 +12,7 @@ const isLocalhost = Boolean(
 );
 
 export function register(config) {
-    console.log("register " + process.env.NODE_ENV);
     if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
-        console.log("registering");
         // The URL constructor is available in all browsers that support SW.
         const publicUrl = new URL(process.env.PUBLIC_URL, window.location.href);
         if (publicUrl.origin !== window.location.origin) {
@@ -49,6 +50,7 @@ function registerValidSW(swUrl, config) {
         .register(swUrl)
         .then(registration => {
             registration.onupdatefound = () => {
+                firebase.messaging().useServiceWorker(registration);
                 const installingWorker = registration.installing;
                 if (installingWorker == null) {
                     return;
@@ -76,12 +78,10 @@ function registerValidSW(swUrl, config) {
 
 function checkValidServiceWorker(swUrl, config) {
     // Check if the service worker can be found. If it can't reload the page.
-    console.log("check valid sw worker");
     fetch(swUrl)
         .then(response => {
             // Ensure service worker exists, and that we really are getting a JS file.
             const contentType = response.headers.get('content-type');
-            console.log(response);
             if (
                 response.status === 404 ||
                 (contentType != null && contentType.indexOf('javascript') === -1)

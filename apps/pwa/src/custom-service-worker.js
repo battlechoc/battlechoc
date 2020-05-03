@@ -1,3 +1,61 @@
+importScripts('https://www.gstatic.com/firebasejs/7.14.2/firebase-app.js');
+importScripts('https://www.gstatic.com/firebasejs/7.14.2/firebase-messaging.js');
+
+const firebaseConfig = {
+    apiKey: "***REMOVED***",
+    authDomain: "battlechoc.firebaseapp.com",
+    databaseURL: "https://battlechoc.firebaseio.com",
+    projectId: "battlechoc",
+    storageBucket: "battlechoc.appspot.com",
+    messagingSenderId: "618424349380",
+    appId: "1:618424349380:web:8880b60bbdd61aaf360f91"
+};
+
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+messaging.setBackgroundMessageHandler(function (payload) {
+    const notificationOptions = {
+        body: payload.data.text,
+        icon: 'images/battlechoc-notification-icon.png',
+        data: { reason: payload.data.reason, click_action: payload.data.click_action, session: payload.data.session }
+    };
+    return self.registration.showNotification(payload.data.title, notificationOptions);
+});
+
+self.addEventListener('notificationclick', function (event) {
+    // Android doesn't close the notification when you click on it  
+    // See: http://crbug.com/463146  
+    event.notification.close();
+    console.log(event);
+
+    const originalUrl = "https://battlechoc.com/";
+    const originalUrlDev = "https://battlechoc.dev/";
+
+    event.waitUntil(
+        clients.matchAll({
+            type: "window"
+        }).then(clientList => {
+            for (let i = 0; i < clientList.length; i++) {
+                const client = clientList[i];
+                console.log(client.url);
+                console.log(originalUrl);
+                if (client.url === originalUrl || client.url === originalUrlDev) {
+                    console.log("navigating and focusing");
+                    return client.navigate(event.notification.data.click_action)
+                        .then(client => client.focus());
+                }
+            }
+
+            console.log("did not find original url trying to open new window");
+            if (clients.openWindow) {
+                console.log("openwindow");
+                return clients.openWindow(event.notification.data.click_action);
+            }
+        })
+    );
+});
+
 workbox.core.skipWaiting();
 workbox.core.clientsClaim();
 

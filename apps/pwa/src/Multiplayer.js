@@ -34,6 +34,7 @@ class Multiplayer {
             showQuickMessage: () => logger.warn("calling showQuickMessage without beeing initialized"),
             detonateAtPosition: () => logger.warn("calling detonateAtPosition without beeing initialized"),
             showNotification: () => logger.warn("calling showNotification without beeing initialized"),
+            handlePushMessage: (payload) => logger.warn("calling handlePushMessage without beeing initialized for payload " + JSON.stringify(payload)),
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -45,22 +46,19 @@ class Multiplayer {
         try {
             this.messaging = firebase.messaging();
             this.messaging.usePublicVapidKey("BJ6zc8pE57SS98ocjLmtHBuaGgDjIirTpAALyYIR_zywwBJbmssDWhbn78WPhoJfjN28htOBI4bwlVzjwHMCqak");
-            /*this.messaging.onMessage((payload) => {
-                console.log("payload fg");
-                console.log(payload);
-            })*/
+            this.messaging.onMessage(payload => {
+                this.callbacks.handlePushMessage(payload);
+            });
         } catch (error) {
             logger.info(error);
         }
     }
 
     shouldAskForNotificationPermission() {
+        console.log(firebase.auth().currentUser);
+        console.log('Notification' in window);
+        console.log(Notification.permission);
         return firebase.auth().currentUser && 'Notification' in window && Notification.permission === 'default';
-    }
-
-    handlePushMessage(payload) {
-        console.log("handling push message");
-        console.log(payload);
     }
 
     askForNotificationPermission() {
