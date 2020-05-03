@@ -134,12 +134,12 @@ const Hud = props => {
     }
 
     const kickOffTutorial = async () => {
-        await multiplayer.tutorialStarted();
+        multiplayer.tutorialStarted();
         startTutorial();
     }
 
     const skipTutorial = async () => {
-        await multiplayer.tutorialSkipped();
+        multiplayer.tutorialSkipped();
     }
 
     const notifyUnlock = async (missingScore, feature) => {
