@@ -29,6 +29,7 @@ describe('browser', () => {
       await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
       await expect(page).toMatchElement('.titleMenu', { text: 'Start Tutorial' });
       await page.click('.titleMenu .menuButton:first-child');
+      await page.waitFor(2000);
       await expect(page).toMatchElement('h6', { text: 'Welcome to battlechoc' });
       await page.waitFor(1000);
       await page.click('#next-loop');
