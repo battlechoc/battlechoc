@@ -4,7 +4,7 @@ import './App.css';
 import { Jukebox, translate as t, keys as tr, setCurrentLanguage } from './ui/misc';
 import OfflineStore from './OfflineStore';
 import { multiplayer } from './Multiplayer';
-import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut } from 'battlechoc-shared-functions';
+import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, NotificationReasonType, isDonut } from 'battlechoc-shared-functions';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
 import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting, showNotification } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
@@ -49,6 +49,20 @@ class App extends Component {
         };
     }
 
+    handlePushMessage = (payload) => {
+        console.log("Push message received: " + JSON.stringify(payload));
+        if (payload.data.reason !== NotificationReasonType.OPPONENT_FINISHED_TURN || typeof this.props.game === 'undefined') {
+            this.props.showQuickMessage({ text: payload.data.title + ' ' + payload.data.text, variant: 'info' });
+        }
+
+        if ([NotificationReasonType.OPPONENT_SURRENDERED_GAME,
+        NotificationReasonType.GAME_LOST,
+        NotificationReasonType.SESSION_TIMEOUT_GAME_LOST,
+        NotificationReasonType.SESSION_TIMEOUT_GAME_WON].includes(payload.data.reason)) {
+            multiplayer.getMultiplayerSessions(() => this.props.showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED) }));
+        }
+    }
+
     detonateAtPosition = (row, col, playerField = true) => {
         try {
             const position = { row: row, col: col };
@@ -91,7 +105,8 @@ class App extends Component {
             startSessionRefresh: this.props.startSessionRefresh,
             showQuickMessage: this.props.showQuickMessage,
             detonateAtPosition: this.detonateAtPosition,
-            showNotification: this.props.showNotification
+            showNotification: this.props.showNotification,
+            handlePushMessage: this.handlePushMessage,
         });
 
         let browserLanguage = 'en';

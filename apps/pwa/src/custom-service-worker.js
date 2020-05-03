@@ -15,36 +15,45 @@ firebase.initializeApp(firebaseConfig);
 const messaging = firebase.messaging();
 
 messaging.setBackgroundMessageHandler(function (payload) {
-    console.log('[firebase-messaging-sw.js] Received background message ', payload);
     const notificationOptions = {
         body: payload.data.text,
-        icon: '/firebase-logo.png'
+        icon: 'images/battlechoc-notification-icon.png',
+        data: { reason: payload.data.reason, click_action: payload.data.click_action, session: payload.data.session }
     };
     return self.registration.showNotification(payload.data.title, notificationOptions);
 });
 
 self.addEventListener('notificationclick', function (event) {
-    console.log('On notification click: ', event.notification.tag);
     // Android doesn't close the notification when you click on it  
     // See: http://crbug.com/463146  
     event.notification.close();
+    console.log(event);
 
-    // This looks to see if the current is already open and focuses if it is  
-    /*event.waitUntil(
+    const originalUrl = "https://battlechoc.com/";
+    const originalUrlDev = "https://battlechoc.dev/";
+
+    event.waitUntil(
         clients.matchAll({
             type: "window"
+        }).then(clientList => {
+            for (let i = 0; i < clientList.length; i++) {
+                const client = clientList[i];
+                console.log(client.url);
+                console.log(originalUrl);
+                if (client.url === originalUrl || client.url === originalUrlDev) {
+                    console.log("navigating and focusing");
+                    return client.navigate(event.notification.data.click_action)
+                        .then(client => client.focus());
+                }
+            }
+
+            console.log("did not find original url trying to open new window");
+            if (clients.openWindow) {
+                console.log("openwindow");
+                return clients.openWindow(event.notification.data.click_action);
+            }
         })
-            .then(function (clientList) {
-                for (var i = 0; i < clientList.length; i++) {
-                    var client = clientList[i];
-                    if (client.url == '/' && 'focus' in client)
-                        return client.focus();
-                }
-                if (clients.openWindow) {
-                    return clients.openWindow('https://deanhume.github.io/typography');
-                }
-            })
-    );*/
+    );
 });
 
 workbox.core.skipWaiting();
