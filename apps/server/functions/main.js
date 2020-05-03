@@ -23,6 +23,7 @@ const finishTurnReduction = require('battlechoc-shared-functions').finishTurnRed
 const chooseStartReduction = require('battlechoc-shared-functions').chooseStartReduction;
 const chooseFieldReduction = require('battlechoc-shared-functions').chooseFieldReduction;
 const Board = require('battlechoc-shared-functions').Board;
+const NotificationReasonType = require('battlechoc-shared-functions').NotificationReasonType;
 const EntityDescriptors = require('battlechoc-shared-functions').EntityDescriptors;
 const finalLevel = require('battlechoc-shared-functions').finalLevel;
 
@@ -517,7 +518,7 @@ app.post('/user/notify', async (req, res) => {
                         req.body.sessionId,
                         playerName + t.t[language].NOTIFICATION_REMEMBER_TURN_TITLE,
                         t.t[language].NOTIFICATION_REMEMBER_TURN_BODY,
-                        'REMEMBER_TURN',
+                        NotificationReasonType.REMEMBER_TURN,
                         'https://battlechoc.com/session/' + req.body.sessionId);
                     const sessions = await getAllActiveMultiplayerSessionsForPlayer(req.user.uid);
                     res.json({ sessions: sessions });
@@ -594,7 +595,7 @@ app.post('/user/challenge', async (req, res) => {
                             databaseSession.id,
                             player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
                             t.t[language].NOTIFICATION_CHALLENGE_BODY,
-                            'CHALLENGED',
+                            NotificationReasonType.CHALLENGED,
                             'https://battlechoc.com/session/' + databaseSession.id);
 
                         res.json({ sessionId: databaseSession.id });
@@ -625,7 +626,7 @@ const emitEndGameNotification = async (session, endGameAction) => {
         session.id,
         playerName + t.t[language].NOTIFICATION_GAME_LOST_TITLE,
         t.t[language].NOTIFICATION_GAME_LOST_BODY + winner.name,
-        'GAME_LOST',
+        NotificationReasonType.GAME_LOST,
         'https://battlechoc.com');
 }
 
@@ -926,7 +927,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                         req.body.sessionId,
                         session.game.players[playerId].name + t.t[language].NOTIFICATION_TURN_FINISHED_TITLE,
                         t.t[language].NOTIFICATION_TURN_FINISHED_BODY,
-                        'OPPONENT_FINISHED_TURN',
+                        NotificationReasonType.OPPONENT_FINISHED_TURN,
                         'https://battlechoc.com/session/' + req.body.sessionId);
                 }
                 res.status(200).end();
@@ -1078,7 +1079,7 @@ app.post('/surrender', async (req, res) => {
             req.body.sessionId,
             result.looser.name + t.t[language].NOTIFICATION_OPPONENT_SURENDERED_TITLE,
             t.t[language].NOTIFICATION_OPPONENT_SURENDERED_BODY,
-            'OPPONENT_SURRENDERED_GAME',
+            NotificationReasonType.OPPONENT_SURRENDERED_GAME,
             'https://battlechoc.com');
         res.status(200).end();
     } else {
@@ -1648,7 +1649,7 @@ const sessionCleanupFunction = async (context) => {
                     row.id,
                     t.t[winnerLanguage].NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE + result.looser.name,
                     result.looser.name + t.t[winnerLanguage].NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY,
-                    'SESSION_TIMEOUT_GAME_WON',
+                    NotificationReasonType.SESSION_TIMEOUT_GAME_WON,
                     'https://battlechoc.com');
 
                 // notify the looser
@@ -1666,7 +1667,7 @@ const sessionCleanupFunction = async (context) => {
                     row.id,
                     t.t[looserLanguage].NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE + result.winner.name,
                     t.t[looserLanguage].NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY,
-                    'SESSION_TIMEOUT_GAME_LOST',
+                    NotificationReasonType.SESSION_TIMEOUT_GAME_LOST,
                     'https://battlechoc.com');
             } else {
                 console.error("Could not surrender session " + row.id);
