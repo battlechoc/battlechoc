@@ -260,7 +260,7 @@ const computeTrackRecordStats = async (player) => {
 
 const computePlayerRanking = async (player) => {
     try {
-        const queryResults = await dbPool.query(`SELECT COUNT(id) FROM players WHERE score > ${player.score}`);
+        const queryResults = await dbPool.query(`SELECT COUNT(id) FROM players WHERE name != 'Chocnonymous' AND score > ${player.score}`);
         return Number(queryResults.rows[0].count) + 1;
     } catch (err) {
         console.warn('Could not determine player track record stats.', err);
@@ -1229,7 +1229,7 @@ app.get('/highscore', async (req, res) => {
                 var page = Number(req.query.page);
             }
 
-            const playersCount = await approximatePlayersCount('score > 0');
+            const playersCount = await approximatePlayersCount("score > 0 AND name != 'Chocnonymous'");
             let lastPage = Math.ceil(playersCount / pageSize);
             const playersOnPageResult = await dbPool.query("SELECT * FROM players WHERE score > 0 AND name != 'Chocnonymous' ORDER BY score DESC OFFSET $1 LIMIT $2", [(page - 1) * pageSize, pageSize]);
             let highscore = await playersFromQuery(playersOnPageResult.rows);
