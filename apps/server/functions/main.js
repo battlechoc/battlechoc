@@ -133,6 +133,7 @@ class Reducer {
             case GameActionTypes.build: return buildReduction(state, action);
             case GameActionTypes.attack: return attackReduction(state, action);
             case GameActionTypes.endGame:
+                updateTrackRecord(state, action);
                 emitEndGameNotification(state, action);
                 return endGameReduction(state, action);
         }
@@ -609,6 +610,16 @@ app.post('/user/challenge', async (req, res) => {
     }
 });
 
+const updateTrackRecord = async (session, endGameAction) => {
+    const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0].id);
+    console.log("updating on endgame, winner: " + JSON.stringify(winner));
+    addTrackRecord(winner.id, winner.statistics);
+
+    const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0].id);
+    console.log("updating on endgame, looser: " + JSON.stringify(looser));
+    addTrackRecord(looser.id, looser.statistics);
+}
+
 const emitEndGameNotification = async (session, endGameAction) => {
     const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0].id);
     const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0].id);
@@ -1029,6 +1040,7 @@ const surrenderGame = async (sessionId, playerId) => {
         session.game.players.filter(player => player.id !== playerId)[0].statistics.lost = false;
         session.game.players.filter(player => player.id === playerId)[0].statistics.won = false;
         session.game.players.filter(player => player.id === playerId)[0].statistics.lost = true;
+        updateTrackRecord(session.game, event);
 
         try {
             const turns = (typeof eventQueue.player_0_events !== 'undefined') ? eventQueue.player_0_events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
