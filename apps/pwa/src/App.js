@@ -482,7 +482,6 @@ class App extends Component {
                         this.props.startGame(players).then(() => {
                             this.opponent.type = Augustus.randomizeType();
                             this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
-                            // TODO maybe adjust camera position based on boardsize (6/8/10)
                             const boardSize = (this.props.playerInfos.stats.score < 200) ? { rows: 6, cols: 6 } : (this.props.playerInfos.stats.score < 500) ? { rows: 8, cols: 8 } : { rows: 10, cols: 10 };
                             this.props.createBoard({
                                 boardSize: boardSize,
@@ -557,7 +556,9 @@ class App extends Component {
         this.props.gameResumeable(false);
         OfflineStore.gamestateStore.clear();
         const stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: this.props.game.winners, id: uuidv4() };
-        multiplayer.pushGameStats([stats]);
+        if (this.props.game.players[0].type !== PlayerType.HUMAN || this.props.game.players[0].type !== PlayerType.HUMAN) {
+            multiplayer.pushGameStats([stats]);
+        }
     }
 
     async reset() {
