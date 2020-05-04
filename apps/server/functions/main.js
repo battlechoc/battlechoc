@@ -611,18 +611,18 @@ app.post('/user/challenge', async (req, res) => {
 });
 
 const updateTrackRecord = async (session, endGameAction) => {
-    const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0].id);
+    const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0]);
     console.log("updating on endgame, winner: " + JSON.stringify(winner));
     addTrackRecord(winner.id, winner.statistics);
 
-    const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0].id);
+    const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0]);
     console.log("updating on endgame, looser: " + JSON.stringify(looser));
     addTrackRecord(looser.id, looser.statistics);
 }
 
 const emitEndGameNotification = async (session, endGameAction) => {
-    const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0].id);
-    const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0].id);
+    const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0]);
+    const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0]);
     const receiverResult = await getPlayerFromName(looser.name);
     if (receiverResult.rows.length === 0) {
         console.error("Could not emit notification");
@@ -1040,7 +1040,7 @@ const surrenderGame = async (sessionId, playerId) => {
         session.game.players.filter(player => player.id !== playerId)[0].statistics.lost = false;
         session.game.players.filter(player => player.id === playerId)[0].statistics.won = false;
         session.game.players.filter(player => player.id === playerId)[0].statistics.lost = true;
-        updateTrackRecord(session.game, event);
+        updateTrackRecord(session, event);
 
         try {
             const turns = (typeof eventQueue.player_0_events !== 'undefined') ? eventQueue.player_0_events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
