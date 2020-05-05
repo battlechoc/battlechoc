@@ -55,9 +55,6 @@ class Multiplayer {
     }
 
     shouldAskForNotificationPermission() {
-        console.log(firebase.auth().currentUser);
-        console.log('Notification' in window);
-        console.log(Notification.permission);
         return firebase.auth().currentUser && 'Notification' in window && Notification.permission === 'default';
     }
 

@@ -55,7 +55,8 @@ class App extends Component {
             this.props.showQuickMessage({ text: payload.data.title + ' ' + payload.data.text, variant: 'info' });
         }
 
-        if ([NotificationReasonType.OPPONENT_SURRENDERED_GAME,
+        if ([NotificationReasonType.CHALLENGED,
+        NotificationReasonType.OPPONENT_SURRENDERED_GAME,
         NotificationReasonType.GAME_LOST,
         NotificationReasonType.SESSION_TIMEOUT_GAME_LOST,
         NotificationReasonType.SESSION_TIMEOUT_GAME_WON].includes(payload.data.reason)) {
