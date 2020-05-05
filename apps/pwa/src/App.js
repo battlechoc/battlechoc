@@ -556,7 +556,7 @@ class App extends Component {
         this.props.gameResumeable(false);
         OfflineStore.gamestateStore.clear();
         const stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: this.props.game.winners, id: uuidv4() };
-        if (this.props.game.players[0].type !== PlayerType.HUMAN || this.props.game.players[0].type !== PlayerType.HUMAN) {
+        if (this.props.game.players[0].type !== PlayerType.HUMAN || this.props.game.players[1].type !== PlayerType.HUMAN) {
             multiplayer.pushGameStats([stats]);
         }
     }
