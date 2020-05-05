@@ -613,11 +613,11 @@ app.post('/user/challenge', async (req, res) => {
 const updateTrackRecord = async (session, endGameAction) => {
     const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0]);
     console.log("updating on endgame, winner: " + JSON.stringify(winner));
-    addTrackRecord(winner.id, winner.statistics);
+    addTrackRecord(winner.id, { ...winner.statistics, winners: [winner] });
 
     const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0]);
     console.log("updating on endgame, looser: " + JSON.stringify(looser));
-    addTrackRecord(looser.id, looser.statistics);
+    addTrackRecord(looser.id, { ...looser.statistics, winners: [winner] });
 }
 
 const emitEndGameNotification = async (session, endGameAction) => {
