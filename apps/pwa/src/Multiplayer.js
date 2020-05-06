@@ -502,12 +502,7 @@ class Multiplayer {
     }
 
     async surrenderGame(sessionId) {
-        try {
-            await ServerRequest('post', '/surrender', { sessionId: sessionId });
-        } catch (err) {
-            logger.error("Could not surrender");
-            logger.error(err);
-        }
+        return ServerRequest('post', '/surrender', { sessionId: sessionId });
     }
 
     signInAnonymouslyIfNotAlreadySignedIn() {

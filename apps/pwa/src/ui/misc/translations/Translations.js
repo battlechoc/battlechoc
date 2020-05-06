@@ -150,8 +150,8 @@ const translationPredicates = {
     WARNING_PLAYER_NOT_FOUND: function (strings, name) {
         return fmt(strings.WARNING_PLAYER_NOT_FOUND, { name: name });
     },
-    SURRENDER_GAME_TEXT: function (strings, name) {
-        return fmt(strings.SURRENDER_GAME_TEXT, { name: name })
+    SURRENDER_GAME_TEXT: function (strings, name, coins) {
+        return fmt(strings.SURRENDER_GAME_TEXT, { name: name, coins: coins })
     },
     UPDATE_LEVEL_FAILED: function (strings, upgrade) {
         return upgrade ? strings.UPDATE_LEVEL_FAILED_UPGRADE : strings.UPDATE_LEVEL_FAILED_DOWNGRADE;

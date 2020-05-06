@@ -17,7 +17,7 @@ import { ServerRequest } from '../../helper/settings';
 import logger from '../../helper/logger';
 import BattlechocDialog from '../dialogs/BattlechocDialog';
 import PlayerList from '../controls/PlayerList';
-import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
+import { NoHealthyInternetConnectionError, SurrenderCosts } from 'battlechoc-shared-functions';
 
 const MultiplayerScreen = props => {
     const { account, closeMultiplayerScreen, showQuickMessage, updateMultiplayerSessions, openAccountOverview, enterMultiplayerGame, multiplayerSessions, sessionRefreshActions, friends } = props;
@@ -117,8 +117,9 @@ const MultiplayerScreen = props => {
     }
 
     const surrenderGame = async sessionId => {
-        await multiplayer.surrenderGame(sessionId);
-        multiplayer.getMultiplayerSessions();
+        multiplayer.surrenderGame(sessionId).then(() => multiplayer.getMultiplayerSessions()).catch(err => {
+            showQuickMessage({ text: t(tr.NOTIFICATION_SURRENDER_NOT_POSSIBLE), variant: 'info' });
+        });
     }
 
     const sortByTimestamp = (a, b) => {
@@ -282,7 +283,7 @@ const MultiplayerScreen = props => {
                     close={() => setShowSurrenderDialog(false)}
                     title={t(tr.SURRENDER_GAME)}>
                     <div className="surrenderDialog">
-                        <p>{t(tr.SURRENDER_GAME_TEXT, surrenderOpponentName)}</p>
+                        <p>{t(tr.SURRENDER_GAME_TEXT, surrenderOpponentName, SurrenderCosts)}</p>
                         <div className="menuButton" onClick={() => {
                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                             setShowSurrenderDialog(false);
