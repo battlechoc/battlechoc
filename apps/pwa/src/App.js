@@ -543,12 +543,16 @@ class App extends Component {
     }
 
     surrender() {
-        const winners = []
-        winners.push(Object.assign({ idx: 1 - multiplayer.localPlayerIndex }, this.props.game.players[1 - multiplayer.localPlayerIndex]));
-        this.props.endGame({
-            winners: winners,
-            issuer: this.props.game.players[multiplayer.localPlayerIndex].id
-        });
+        if ([GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
+            this.endGame();
+        } else {
+            const winners = []
+            winners.push(Object.assign({ idx: 1 - multiplayer.localPlayerIndex }, this.props.game.players[1 - multiplayer.localPlayerIndex]));
+            this.props.endGame({
+                winners: winners,
+                issuer: this.props.game.players[multiplayer.localPlayerIndex].id
+            });
+        }
     }
 
     showOverview() {
