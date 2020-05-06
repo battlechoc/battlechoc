@@ -22,6 +22,7 @@ const finishBuildPhaseReduction = require('battlechoc-shared-functions').finishB
 const finishTurnReduction = require('battlechoc-shared-functions').finishTurnReduction;
 const chooseStartReduction = require('battlechoc-shared-functions').chooseStartReduction;
 const chooseFieldReduction = require('battlechoc-shared-functions').chooseFieldReduction;
+const SurrenderCosts = require('battlechoc-shared-functions').SurrenderCosts;
 const Board = require('battlechoc-shared-functions').Board;
 const NotificationReasonType = require('battlechoc-shared-functions').NotificationReasonType;
 const EntityDescriptors = require('battlechoc-shared-functions').EntityDescriptors;
@@ -52,6 +53,13 @@ const randomNameGeneratorConfig = {
     length: 3,
     style: 'capital'
 };
+
+const GameResultReason = Object.freeze({
+    NORMAL: 'normal',
+    SYSTEM: 'system',
+    SURRENDERED: 'surrendered',
+    TIMEOUT: 'timeout'
+});
 
 const whitelist = ['https://battlechoc.dev', 'https://battlechoc.com', 'http://localhost:3000', 'https://localhost:3000', 'https://battlechoc.firebaseapp.com', 'chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop'];
 const corsOptions = {
@@ -133,7 +141,7 @@ class Reducer {
             case GameActionTypes.build: return buildReduction(state, action);
             case GameActionTypes.attack: return attackReduction(state, action);
             case GameActionTypes.endGame:
-                updateTrackRecord(state, action);
+                updateTrackRecord(state, action, GameResultReason.NORMAL);
                 emitEndGameNotification(state, action);
                 return endGameReduction(state, action);
         }
@@ -610,14 +618,14 @@ app.post('/user/challenge', async (req, res) => {
     }
 });
 
-const updateTrackRecord = async (session, endGameAction) => {
+const updateTrackRecord = async (session, endGameAction, resultReason) => {
     const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0]);
     console.log("updating on endgame, winner: " + JSON.stringify(winner));
-    addTrackRecord(winner.id, { ...winner.statistics, winners: [winner] });
+    addTrackRecord(winner.id, { ...winner.statistics, winners: [winner] }, resultReason);
 
     const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0]);
     console.log("updating on endgame, looser: " + JSON.stringify(looser));
-    addTrackRecord(looser.id, { ...looser.statistics, winners: [winner] });
+    addTrackRecord(looser.id, { ...looser.statistics, winners: [winner] }, resultReason);
 }
 
 const emitEndGameNotification = async (session, endGameAction) => {
@@ -992,7 +1000,7 @@ const emitPlayerNotification = async (receiverId, sessionId, title, body, reason
     }
 }
 
-const surrenderGame = async (sessionId, playerId) => {
+const surrenderGame = async (sessionId, playerId, resultReason) => {
     try {
         var eventQueueDoc = await getEventQueue(sessionId);
     } catch (error) {
@@ -1040,7 +1048,7 @@ const surrenderGame = async (sessionId, playerId) => {
         session.game.players.filter(player => player.id !== playerId)[0].statistics.lost = false;
         session.game.players.filter(player => player.id === playerId)[0].statistics.won = false;
         session.game.players.filter(player => player.id === playerId)[0].statistics.lost = true;
-        updateTrackRecord(session, event);
+        updateTrackRecord(session, event, resultReason);
 
         try {
             const turns = (typeof eventQueue.player_0_events !== 'undefined') ? eventQueue.player_0_events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
@@ -1074,28 +1082,38 @@ const surrenderGame = async (sessionId, playerId) => {
 }
 
 app.post('/surrender', async (req, res) => {
-    const result = await surrenderGame(req.body.sessionId, req.user.uid);
-    if (result !== false) {
-        const receiverResult = await getPlayerFromName(result.winner.name);
-        if (receiverResult.rows.length === 0) {
-            console.error("Could not emit notification");
-            return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + result.winner.name + '" DOES NOT EXIST' });
-        }
+    const surrenderingPlayer = await getPlayerFromId(req.user.uid);
+    if (surrenderingPlayer.rows.length === 1) {
+        if (surrenderingPlayer.rows[0].coins >= SurrenderCosts) {
+            await dbPool.query('UPDATE players SET coins = $1 WHERE id = $2', [surrenderingPlayer.rows[0].coins - SurrenderCosts, req.user.uid]);
+            const result = await surrenderGame(req.body.sessionId, req.user.uid, GameResultReason.SURRENDERED);
+            if (result !== false) {
+                const receiverResult = await getPlayerFromName(result.winner.name);
+                if (receiverResult.rows.length === 0) {
+                    console.error("Could not emit notification");
+                    return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + result.winner.name + '" DOES NOT EXIST' });
+                }
 
-        let language = receiverResult.rows[0].language;
-        if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
-            language = t.getDefaultLanguage();
-        }
+                let language = receiverResult.rows[0].language;
+                if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
+                    language = t.getDefaultLanguage();
+                }
 
-        await emitPlayerNotification(result.winner.id,
-            req.body.sessionId,
-            result.looser.name + t.t[language].NOTIFICATION_OPPONENT_SURENDERED_TITLE,
-            t.t[language].NOTIFICATION_OPPONENT_SURENDERED_BODY,
-            NotificationReasonType.OPPONENT_SURRENDERED_GAME,
-            'https://battlechoc.com/');
-        res.status(200).end();
+                await emitPlayerNotification(result.winner.id,
+                    req.body.sessionId,
+                    result.looser.name + t.t[language].NOTIFICATION_OPPONENT_SURENDERED_TITLE,
+                    t.t[language].NOTIFICATION_OPPONENT_SURENDERED_BODY,
+                    NotificationReasonType.OPPONENT_SURRENDERED_GAME,
+                    'https://battlechoc.com/');
+                res.status(200).end();
+            } else {
+                return res.status(500).json({ 'error': 'COULD NOT SURRENDER GAME' });
+            }
+        } else {
+            return res.status(400).json({ 'error': 'NOT ALLOWED TO SURRENDER. TOO FEW COINS' });
+        }
     } else {
-        return res.status(500).json({ 'error': 'COULD NOT SURRENDER GAME' });
+        return res.status(404).json({ 'error': 'REQUESTING PLAYER DOES NOT EXIST' });
     }
 });
 
@@ -1368,7 +1386,7 @@ app.post('/user/permissions', async (req, res) => {
     }
 });
 
-const addTrackRecord = async (userId, record) => {
+const addTrackRecord = async (userId, record, reportedReason) => {
     let gameResult = 'draw';
     let winner;
     let winnerType;
@@ -1386,8 +1404,8 @@ const addTrackRecord = async (userId, record) => {
     }
 
     try {
-        const insertStatement = 'INSERT INTO track_records(id, player, winner, winner_type, result, entities_destroyed, entities_molten, entities_revealed, entities_built) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) ON CONFLICT DO NOTHING RETURNING id';
-        const queryResult = await await dbPool.query(insertStatement, [id, userId, winner, winnerType, gameResult, record.attacks, record.moltenFields, record.espionages, record.builtEntities]);
+        const insertStatement = 'INSERT INTO track_records(id, player, winner, winner_type, result, entities_destroyed, entities_molten, entities_revealed, entities_built, reported, resultreason) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT DO NOTHING RETURNING id';
+        const queryResult = await await dbPool.query(insertStatement, [id, userId, winner, winnerType, gameResult, record.attacks, record.moltenFields, record.espionages, record.builtEntities, new Date(), reportedReason]);
         return (queryResult.rows.length > 0);
     } catch (err) {
         console.warn(err);
@@ -1426,7 +1444,7 @@ const createOrUpdatePlayer = async (userId, player) => {
             const queryResult = await dbPool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', [userId, username, coins, score, language, level, tutorialStarted, tutorialSkipped, tutorialFinished]);
             if (queryResult.rows.length === 1) {
                 await Promise.all(player.trackRecord.map(async (record) => {
-                    await addTrackRecord(userId, record);
+                    await addTrackRecord(userId, record, GameResultReason.NORMAL);
                 }));
                 return await createPlayerStatsObject(queryResult.rows[0], true, true);
             } else {
@@ -1437,7 +1455,7 @@ const createOrUpdatePlayer = async (userId, player) => {
             const queryResult = await dbPool.query('UPDATE players SET name = $1, coins = $2, score = $3, language = $4, level = $5, tutorial_started = $6, tutorial_skipped = $7, tutorial_finished = $8 WHERE id = $9 RETURNING *', [username, coins, score, language, level, tutorialStarted, tutorialSkipped, tutorialFinished, userId]);
             if (queryResult.rows.length === 1) {
                 await Promise.all(player.trackRecord.map(async (record) => {
-                    await addTrackRecord(userId, record);
+                    await addTrackRecord(userId, record, GameResultReason.NORMAL);
                 }));
                 return await createPlayerStatsObject(queryResult.rows[0], true, true);
             } else {
@@ -1508,7 +1526,7 @@ app.post('/user/merge', async (req, res) => {
                 const existingTrackRecordIds = await getListOfTrackRecordIds(req.user.uid);
                 await Promise.all(req.body.playerInfo.trackRecord.map(async (record) => {
                     if (typeof record.id !== 'undefined' && !existingTrackRecordIds.includes(record.id)) {
-                        if ((await addTrackRecord(req.user.uid, record)) === true) {
+                        if ((await addTrackRecord(req.user.uid, record, GameResultReason.NORMAL)) === true) {
                             recordsAdded.push(record);
                         }
                     }
@@ -1528,7 +1546,7 @@ app.post('/user/trackrecords', async (req, res) => {
         if (typeof req.body.stats !== 'undefined') {
             let recordsAdded = [];
             await Promise.all(req.body.stats.map(async (record) => {
-                if ((await addTrackRecord(req.user.uid, record)) === true) {
+                if ((await addTrackRecord(req.user.uid, record, GameResultReason.NORMAL)) === true) {
                     recordsAdded.push(record);
                 }
             }));
@@ -1643,7 +1661,7 @@ const sessionCleanupFunction = async (context) => {
         await Promise.all(sessionQueryResult.rows.map(async (row) => {
             console.log("Trying to cleanup session: " + JSON.stringify(row));
             const looserUid = row.gamestate.players[row.gamestate.currentPlayerIndex].id;
-            const result = await surrenderGame(row.id, looserUid);
+            const result = await surrenderGame(row.id, looserUid, GameResultReason.TIMEOUT);
             if (result !== false) {
                 sessions.push({ id: row.id });
 
