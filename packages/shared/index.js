@@ -16,6 +16,8 @@ const BoardCellTypes = Object.freeze({
     BLACK: 'BoardCellTypes.BLACK'
 });
 
+const SurrenderCosts = 20;
+
 const EntityType = Object.freeze({
     CREAM: 'EntityType.CREAM',
     FACTORY: 'EntityType.FACTORY',
@@ -1419,3 +1421,4 @@ module.exports.NoAttacksLeftError = NoAttacksLeftError;
 module.exports.UnexpectedStateError = UnexpectedStateError;
 module.exports.InvalidActionIssuerError = InvalidActionIssuerError;
 module.exports.GameAlreadyEndedError = GameAlreadyEndedError;
+module.exports.SurrenderCosts = SurrenderCosts;
