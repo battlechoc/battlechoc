@@ -51,7 +51,10 @@ class App extends Component {
 
     handlePushMessage = (payload) => {
         console.log("Push message received: " + JSON.stringify(payload));
-        if (payload.data.reason !== NotificationReasonType.OPPONENT_FINISHED_TURN || typeof this.props.game === 'undefined') {
+
+        if (multiplayer.currentGameSession === undefined ||
+            multiplayer.currentGameSession !== payload.data.session ||
+            ![NotificationReasonType.OPPONENT_FINISHED_TURN, NotificationReasonType.GAME_LOST].includes(payload.data.reason)) {
             this.props.showQuickMessage({ text: payload.data.title + ' ' + payload.data.text, variant: 'info' });
         }
 
@@ -60,6 +63,7 @@ class App extends Component {
         NotificationReasonType.GAME_LOST,
         NotificationReasonType.SESSION_TIMEOUT_GAME_LOST,
         NotificationReasonType.SESSION_TIMEOUT_GAME_WON].includes(payload.data.reason)) {
+            console.log("updating multiplayer sessions");
             multiplayer.getMultiplayerSessions(() => this.props.showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED) }));
         }
     }
