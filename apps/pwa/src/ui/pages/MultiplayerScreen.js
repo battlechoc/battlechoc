@@ -117,7 +117,9 @@ const MultiplayerScreen = props => {
     }
 
     const surrenderGame = async sessionId => {
-        multiplayer.surrenderGame(sessionId).then(() => multiplayer.getMultiplayerSessions()).catch(err => {
+        multiplayer.surrenderGame(sessionId).then(() => multiplayer.getMultiplayerSessions()).then(() => {
+            multiplayer.fetchPlayerStats();
+        }).catch(err => {
             showQuickMessage({ text: t(tr.NOTIFICATION_SURRENDER_NOT_POSSIBLE), variant: 'info' });
         });
     }
