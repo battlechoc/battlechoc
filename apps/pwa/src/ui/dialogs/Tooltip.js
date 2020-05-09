@@ -2,40 +2,58 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import './Tooltip.css';
 import { GameStateTypes, getEntityDescriptor } from 'battlechoc-shared-functions';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import { translate as t, keys as tr } from '../misc';
-import { makeStyles } from '@material-ui/core/styles';
+import { createUseStyles } from 'react-jss';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = createUseStyles(theme => ({
+    tooltip: {
+        top: 0,
+        right: 0,
+        width: 260,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        position: 'absolute',
+        zIndex: 4,
+        marginRight: 5
+    },
     title: {
         display: 'flex',
         fontFamily: 'Bangers',
-        padding: 5,
+        padding: 6,
         justifyContent: 'space-between',
-        fontSize: '1.5rem'
+        fontSize: '1.5rem',
+        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased'
     },
     button: {
-        background: 'linear-gradient(0deg, #427F83, #13C894)',
-        padding: 5,
-        border: '3px solid #13C894',
-        margin: '5px 0 10px 0',
-        borderRadius: 10,
+        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+        padding: 6,
+        border: `3px solid ${theme.color.secondary.light}`,
+        margin: '6px 0 12px 0',
+        borderRadius: 12,
         color: 'white'
     },
     expanded: {
-        padding: 5,
+        padding: 6,
         '& p': {
-            margin: '5px 0'
+            margin: '6px 0'
         }
     },
     invisible: {
         display: 'none'
+    },
+    dropdown: {
+        width: 24,
+        height: 24,
+        marginLeft: 12,
+        background: `url(/images/dropdown.svg) no-repeat`, 
+        backgroundSize: '100% 100%'        
     }
 }));
 
 const Tooltip = props => {
     const classes = useStyles();
-    
     const [expanded, setExpanded] = useState(false);
     let title = null, message = null;
 
@@ -89,9 +107,9 @@ const Tooltip = props => {
     
     if (title) {
         return (
-            <div id="tooltipContainer">
+            <div className={classes.tooltip}>
                 <div className={classes.button} onClick={openTooltip}>
-                    <span className={classes.title}>{title} {message !== null ? <ExpandMoreIcon /> : null}</span>
+                    <span className={classes.title}>{title} {message !== null ? <span className={classes.dropdown} /> : null}</span>
                     <div className={(expanded && message !== null ? classes.expanded : classes.invisible)}><p>{message}</p></div>
                 </div>
                 { loadingAnimation }

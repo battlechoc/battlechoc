@@ -13,7 +13,7 @@ import logger from '../../helper/logger';
 import { Dialog } from '../dialogs';
 import { Progress, PlayerList, Button, Fab } from '../controls';
 import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
-import { createUseStyles } from 'react-jss'
+import { createUseStyles } from 'react-jss';
 
 const useStyles = createUseStyles(theme => ({
     page: {

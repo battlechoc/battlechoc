@@ -360,17 +360,6 @@ class Multiplayer {
         }).catch(error => logger.info("Error while sign out", error));
     }
 
-    async createChallengeMeLink() {
-        if (firebase.auth().currentUser) {
-            try {
-                let data = (await ServerRequest('get', '/user/name')).data;
-                return 'https://battlechoc.com/' + data.name;
-            } catch (error) {
-                logger.warn(error)
-            }
-        }
-    }
-
     async challengePlayer(playerName) {
         if (typeof playerName !== 'undefined' && firebase.auth().currentUser !== 'undefined') {
             try {

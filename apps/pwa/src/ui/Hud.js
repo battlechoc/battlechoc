@@ -64,6 +64,7 @@ const useStyles = createUseStyles(theme => ({
         flexDirection: 'column',
         position: 'absolute',
         top: '44%',
+        zIndex: 4,
         [theme.breakpoints.landscape.smartphone]: {
             height: 200,
             top: '48%'
@@ -277,13 +278,13 @@ const Hud = props => {
 
                     return (
                         <>
-                            <div className={classes.decoration} />
                             <div id="mainMenu">
                                 {typeof playerInfos.stats.coins !== 'undefined' ? <div id="chocolate-coins">
                                     <span>{playerInfos.stats.coins}</span>
                                     <div className="coins" />
                                 </div> : null}
                                 <div className={classes.logo}><div /><div /></div>
+                                <div className={classes.decoration} />
                                 <div className={classes.menu}>
                                     {assetsReady ? controls : null}
                                 </div>

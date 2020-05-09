@@ -3,16 +3,14 @@ import { updatePlayerStats, updateLevel, showQuickMessage } from '../UiActions';
 import { translate as t, keys as tr } from '../misc';
 import { connect } from 'react-redux';
 import { getEntityDescriptor, finalLevel, EntityType } from 'battlechoc-shared-functions';
-import { ChoclabPalette } from '../controls';
+import { ChoclabPalette, Button } from '../controls';
 import MeshPreview from '../../3d/MeshPreview';
-import { OptimizedImage } from '../../helper/compatibility';
-import { makeStyles } from '@material-ui/core/styles';
-import DoubleArrow from '@material-ui/icons/DoubleArrow';
+import { createUseStyles, useTheme } from 'react-jss';
 import { ServerRequest } from '../../helper/settings';
 import logger from '../../helper/logger';
 import OfflineStore from '../../OfflineStore';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = createUseStyles(theme => ({
     page: {
         display: 'flex',
         zIndex: 2,
@@ -20,25 +18,21 @@ const useStyles = makeStyles(theme => ({
         width: '100%',
         height: '100%',
         flexDirection: 'column',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        fontFamily: 'Bangers',
+        color: 'white',
+        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased'
     },
     entity: {
         display: 'flex',
         flexGrow: 1,
-        flexDirection: 'row',
+        flexDirection: 'column',
+        alignItems: 'center',
         '& > canvas': {
-            marginTop: 60,
-            width: '50vw',
-            height: 'calc(80vh - 60px)'
-        },
-        '@media screen and (max-width: 600px) and (orientation: portrait)': {
-            flexDirection: 'column',
-            alignItems: 'center',
-            '& > canvas': {
-                marginTop: 36,
-                width: '80vw',
-                height: 'calc(30vh - 36px)'
-            }
+            marginTop: 24,
+            width: '80vw',
+            height: 'calc(35vh - 24px)'
         }
     },
     coins: {
@@ -53,7 +47,6 @@ const useStyles = makeStyles(theme => ({
             color: '#fff',
             '-webkit-text-stroke': '1px #3C1C0C',
             '-webkit-font-smoothing': 'antialiased',
-            fontWeight: 'bold',
             fontFamily: 'Bangers',
             marginRight: 10
         },
@@ -64,189 +57,165 @@ const useStyles = makeStyles(theme => ({
         }
     },
     costs: {
-        justifyContent: 'flex-end',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        '& img': {
-            filter: 'drop-shadow(0px 5px 5px rgba(0,0,0,0.3))',
-            height: 32,
-            margin: '0 5px',
-            '@media screen and (max-width: 900px)': {
-                height: 28
-            }
+        '& > div > span': {
+            fontSize: '1.5rem !important',
         },
-        '& span': {
-            fontSize: '1.2rem',
-            color: '#5bb9bf',
-            fontWeight: 'bold',
-            '@media screen and (max-width: 900px)': {
-                fontSize: '1rem'
-            },
-            '@media screen and (max-width: 600px)': {
-                fontSize: '0.8rem',
-            }
+        '& > div > div': {
+            width: 43,
+            height: 29
+        },
+        '& > div': {
+            position: 'unset !important'
         }
     },
     cacao: {
-        '& img': { filter: 'brightness(1.5)' }
+        width: 38,
+        height: 26,
+        marginLeft: 6,
+        background: `url(/images/cacao.svg) no-repeat`, 
+        backgroundSize: '100% 100%'
+    },
+    section: {
+        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+        width: '100%',
+        display: 'flex',
+        flexGrow: 1,
+        justifyContent: 'center',
+        position: 'relative'
+    },
+    palette: {
+        position: 'absolute',
+        top: -36
+    },
+    decorationLeft: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '59%',
+        height: 108,
+        background: 'url(/images/choclab-decoration-left.svg) no-repeat' 
+    },
+    decorationRight: {
+        position: 'absolute', 
+        top: 0,
+        right: 0,
+        width: '39%',
+        height: 135,
+        background: 'url(/images/choclab-decoration-right.svg) no-repeat',
+        backgroundPosition: 'right',
     },
     attributes: {
-        flexGrow: 1,
-        padding: '20px',
-        paddingTop: '15vh',
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        boxShadow: '2px 2px 6px rgba(0,0,0,0.6)',
+        marginTop: 42,
+        width: '80%',
         display: 'flex',
-        flexDirection: 'column',
-        '& h3': { margin: '0', color: '#324D5C' },
-        '& h4': { margin: '0', color: '#324D5C' },
-        '@media screen and (max-width: 600px) and (orientation: portrait)': {
-            paddingTop: 5,
-            marginRight: 0,
-            marginTop: 0,
-            width: '100vw',
-            fontSize: '0.8rem',
-            '& > *': {
-                marginLeft: '22vw',
-                marginRight: '5vw',
-            },
-            '& h3': { margin: '0.5rem 5vw 0.5rem 22vw' },
-            '& h4': { margin: '0.5rem 5vw 0.5rem 22vw' }
-        },
-        '@media screen and (max-height: 400px) and (orientation: landscape)': {
-            '& h3': { fontSize: '1rem' },
-            '& h4': { fontSize: '0.9rem' },
-            '& > div > div > span': { fontSize: '0.9rem' }
-        }
+        flexDirection: 'column'
     },
     progress: {
         '& > div:first-child': {
-            paddingTop: 12
+            paddingTop: 6
         },
         '& > div:last-child': {
-            height: 28,
-            borderRadius: 3,
-            background: 'rgba(0,0,0, 0.1)',
-            position: 'relative'
+            height: 24,
+            border: `3px solid ${theme.color.secondary.dark}`,
+            borderRadius: 12,
+            background: 'linear-gradient(0deg, #3DA2CE 0%, #9DD5E9 80%)',
+            position: 'relative',
+            overflow: 'hidden'
         },
         '& div div': {
             position: 'absolute',
             height: '100%'
-        },
-        '@media screen and (max-height: 600px)': {
-            '& > div:first-child': {
-                paddingTop: 4
-            },
-            '& > div:last-child': {
-                height: 18,
-            }
-        },
-        '@media screen and (max-height: 400px)': {
-            '& > div:first-child': {
-                paddingTop: 2
-            }
         }
     },
-    hp: { backgroundColor: 'rgb(50, 77, 92)' },
-    buildingsPerTurn: { backgroundColor: 'rgb(69, 123, 130)' },
-    cacaoPerTurn: { backgroundColor: 'rgb(69, 123, 130)' },
-    area: { backgroundColor: 'rgb(69, 123, 130)' },
-    attack: { backgroundColor: 'rgb(91, 47, 25)' },
-    donutProbability: { backgroundColor: 'rgb(69, 123, 130)' },
-    donutTypes: { backgroundColor: 'rgb(91, 47, 25)' },
-    donutProbabilityForecast: { backgroundColor: 'rgba(69, 123, 130, 0.4)' },
-    donutTypesForecast: { backgroundColor: 'rgba(91, 47, 25, 0.4)' },
-    hpForecast: { backgroundColor: 'rgba(50, 77, 92, 0.4)' },
-    buildingsPerTurnForecast: { backgroundColor: 'rgba(69, 123, 130, 0.4)' },
-    cacaoPerTurnForecast: { backgroundColor: 'rgba(69, 123, 130, 0.4)' },
-    areaForecast: { backgroundColor: 'rgba(69, 123, 130, 0.4)' },
-    attackForecast: { backgroundColor: 'rgba(91, 47, 25, 0.4)' },
+    hp: { 
+        background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 70%)`,
+    },
+    buildingsPerTurn: { 
+        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+    },
+    cacaoPerTurn: { 
+        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+    },
+    area: { 
+        background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 70%)`,
+    },
+    attack: { 
+        background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 70%)`,
+    },
+    donutProbability: { 
+        background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 70%)`,
+    },
+    donutTypes: { 
+        background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 70%)`
+    },
+    forecast: { opacity: 0.4 },
     label: {
         display: 'flex',
-        alignItems: 'flex-end',
-        color: 'rgba(0,0,0,0.87)',
+        alignItems: 'center',
+        fontSize: '1.5rem',
         '& span:first-child': {
-            flexGrow: 1
-        },
-        '& span': {
-            color: '#324D5C'
+            marginLeft: 6,
+            marginRight: 6
         }
     },
     upgrade: {
         display: 'flex',
         alignItems: 'center',
-        '& svg': {
-            color: '#5bb9bf'
-        },
         '& span:last-child': {
             color: '#5bb9bf'
         }
     },
     container: {
         display: 'flex',
-        alignItems: 'baseline',
-        margin: '1rem 0',
-        justifyContent: 'flex-end',
-        '& svg': {
-            color: '#5bb9bf'
-        },
-        '@media screen and (max-width: 600px)': {
-            margin: '0.5rem 5vw 0.5rem 0'
-        }
+        marginTop: 12,
+        fontSize: '1.5rem'
     },
-    button: {
+    icon: {
+        width: 42,
+        height: 42,
+        marginLeft: -24,
+        marginTop: -6,
+        background: `url(/images/lab.svg) no-repeat`, 
+        backgroundSize: '100% 100%'
+    },
+    title: {
+        zIndex: 12,
+        marginTop: 6,
+        fontSize: '2rem',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    level: {
         display: 'flex',
         alignItems: 'center',
-        cursor: 'pointer',
-        fontSize: '1.2rem',
-        color: '#f3f7df',
-        marginTop: 15,
-        fontWeight: 'bold',
-        backgroundColor: 'rgb(69, 123, 130)',
-        padding: 12,
-        userSelect: 'none',
-        position: 'relative',
         justifyContent: 'center',
-        boxShadow: '1px 1px 6px #324D5C',
-        textShadow: '0px 2px 2px #324D5C',
-        '& > div': { position: 'absolute', right: 0 },
-        '& > span': { color: '#fff' },
-        '& > div > span': {
-            color: '#fff'
-        },
-        '@media screen and (max-width: 900px)': {
-            fontSize: '1rem',
-        },
-        '@media screen and (max-width: 800px)': {
-            justifyContent: 'flex-start',
-            '& > span': {
-                marginLeft: 15
-            }
-        },
-        '@media screen and (max-width: 600px)': {
-            fontSize: '0.8rem',
-        },
-        '@media screen and (max-height: 400px)': {
-            padding: 8,
-        }        
+        fontSize: '1.6rem',        
     },
-    downgrade: {
-        backgroundColor: 'rgb(50, 77, 92)'
-    },
-    inactive: {
-        backgroundColor: '#666',
-        cursor: 'unset',
-        textShadow: '0px 2px 2px #324D5C'
+    levelup: {
+        width: 32,
+        height: 32,
+        marginLeft: 12,
+        marginRight: 6,
+        background: `url(/images/level-up-icon.svg) no-repeat`, 
+        backgroundSize: '100% 100%'
     },
     actions: {
-        marginTop: '5vh',
-        '@media screen and (max-height: 400px) and (orientation: landscape)': {
-            marginTop: '2vh'
-        }
+        display: 'flex',
+        justifyContent: 'space-around',
+        margin: '5px 0'
+    },
+    button: {
+        width: 144,
+        height: 72
     }
 }));
 
 const Choclab = props => {
+    const theme = useTheme()
     const classes = useStyles();
     const [selectedEntity, setSelectedEntity] = useState(getEntityDescriptor(EntityType.FACTORY, props.level));
     const [updateRunning, setUpdateRunning] = useState(false)
@@ -255,7 +224,6 @@ const Choclab = props => {
     let currentEntity = getEntityDescriptor(entityType, props.level);
     let upgradePossible = props.level[entityType] < ( selectedEntity.hasOwnProperty('level') ? selectedEntity.level.max - 1 : finalLevel ); 
     let downgradePossible = props.level[entityType] > 0;
-    let nextLevelDescription = <h4 className={classes.upgrade}>{`Level ${props.level[entityType] + 1}`}</h4>
     let level = { [entityType]: finalLevel };
     let highlyDevelopedEntity = getEntityDescriptor(entityType, level);
     level[entityType] = props.level[entityType] + 1;
@@ -287,9 +255,6 @@ const Choclab = props => {
         }
     }
 
-    if (upgradePossible) {
-        nextLevelDescription = <h4 className={classes.upgrade}><span>{t(tr.CHOCLAB_LEVEL)} {props.level[entityType] + 1}</span><DoubleArrow /><span>{ props.level[entityType] + 2 }</span></h4>
-    }
     return (
         <div className={classes.page}>
             <div className={classes.coins}>
@@ -299,73 +264,84 @@ const Choclab = props => {
             <div className={classes.entity}> 
                 <MeshPreview selectedEntity={selectedEntity} />
 
-                <div className={classes.attributes}>
-                    <h3>{t(tr.TOOLTIP_BUILDING_TITLE, entityType)}</h3>
-                    { nextLevelDescription }
-                    { selectedEntity ? Object.keys(selectedEntity)
-                        .filter(field => ['hp','area','buildingsPerTurn','cacaoPerTurn','attack','donutProbability','donutTypes'].includes(field)).map(attribute => {
-                        let percentage = (currentEntity[attribute] / highlyDevelopedEntity[attribute]) * 100;
-                        let percentageForcast = (upgradedEntity[attribute] / highlyDevelopedEntity[attribute]) * 100;
-                        let attributeDescription = <span className={classes.upgrade}>{currentEntity[attribute]}</span>;
-
-                        if (upgradePossible) {
-                            attributeDescription = <span className={classes.upgrade}><span>{currentEntity[attribute]}</span><DoubleArrow /><span>{upgradedEntity[attribute]}</span></span>;
+                <div className={classes.section}>
+                    <div className={classes.decorationLeft} /><div className={classes.decorationRight} />
+                    <ChoclabPalette className={classes.palette} selectEntity={entity => setSelectedEntity(getEntityDescriptor(entity, props.level))} />
+                    <div className={classes.attributes}>
+                        <div className={classes.title}>
+                            <span className={classes.icon} />
+                            <span>{t(tr.TOOLTIP_BUILDING_TITLE, entityType)}</span>
+                        </div>
+                        { upgradePossible ? 
+                            <div className={classes.level}>
+                                <span>{t(tr.CHOCLAB_LEVEL)} {props.level[entityType] + 1}</span>
+                                <span className={classes.levelup} />
+                                <span>{ props.level[entityType] + 2 }</span>
+                            </div> : null
                         }
 
-                        return (
-                            <div className={classes.progress} key={attribute}>
-                                <div className={classes.label}><span>{ t(tr.ATTRIBUTE_NAME, attribute) }</span>{attributeDescription}</div>
-                                <div>
-                                    <div className={classes[attribute]} style={{ width: percentage + '%'}}></div>
-                                    { upgradePossible ? <div className={classes[attribute + 'Forecast']} style={{ width: percentageForcast + '%'}}></div> : null }
-                                </div>
-                            </div>
-                        )
-                    })  : null }
-                    { ![EntityType.FACTORY, EntityType.HOT_CHOCOLATE_BALLISTA].includes(entityType) ? <div className={classes.container}>
-                        <div className={`${classes.costs} ${classes.cacao}`}>
-                            <span>{ currentEntity.costs }</span>
-                            <img src="/images/cacao_no_background.png" alt="cacao costs" />
-                        </div> 
-                        { upgradePossible ? [<DoubleArrow key={1} />,
-                        <div key={2} className={`${classes.costs} ${classes.cacao}`}>
-                            <span>{ upgradedEntity.costs }</span>
-                            <img src="/images/cacao_no_background.png" alt="cacao costs" />
-                        </div>] : null }
-                    </div> : null }
-                    <div className={classes.actions}>
-                        { entityType !== EntityType.CREAM  && upgradePossible ? 
-                            <div className={`${classes.button} ${!upgradePossible || updateRunning || props.playerInfos.stats.coins < currentEntity.coins ? classes.inactive : null}`} onClick={() => {
-                                    if (upgradePossible && !updateRunning && props.playerInfos.stats.coins >= currentEntity.coins) {
-                                        updateLevel(entityType);
+                        <div className={classes.actions}>
+                            { upgradePossible ? 
+                                <Button className={classes.button} disabled={!upgradePossible || updateRunning || props.playerInfos.stats.coins < currentEntity.coins} onClick={() => {
+                                        if (upgradePossible && !updateRunning && props.playerInfos.stats.coins >= currentEntity.coins) {
+                                            updateLevel(entityType);
+                                        }
                                     }
-                                }
-                            }>
-                                <span>{t(tr.CHOCLAB_UPGRADE)}</span>
-                                <div className={classes.costs}>
-                                    <span>{ currentEntity.coins }</span>
-                                    <OptimizedImage src="/images/coins.png" alt="choco coins" />
-                                </div>
-                            </div> : null 
-                        }
+                                }><div className={classes.costs}>
+                                    <span style={{ '-webkit-text-stroke': `1px ${theme.color.primary.dark}`, }}>{t(tr.CHOCLAB_UPGRADE)}</span>
+                                    <div className={classes.coins}>
+                                        <span style={{ '-webkit-text-stroke': `1px ${theme.color.primary.dark}`, }}>{ currentEntity.coins }</span>
+                                        <div />
+                                    </div>
+                                </div></Button> : null 
+                            }
 
-                        { entityType !== EntityType.CREAM ?
-                            <div className={`${classes.button} ${classes.downgrade} ${!downgradePossible || updateRunning ? classes.inactive : null}`} onClick={() => {
+                            <Button className={classes.button} color="accent" disabled={!downgradePossible || updateRunning } onClick={() => {
                                 if (downgradePossible) {
                                     updateLevel(entityType, false)
                                 }
-                            }}>
-                                <span>{t(tr.CHOCLAB_DOWNGRADE)}</span>
-                                { downgradePossible ? <div className={classes.costs}>
-                                    <span>-{ Math.round(downgradedEntity.coins * 0.666) }</span>
-                                    <OptimizedImage src="/images/coins.png" alt="choco coins" />
+                            }}><div className={classes.costs}>
+                                <span style={{ '-webkit-text-stroke': `1px ${theme.color.accent.dark}`, }}>{t(tr.CHOCLAB_DOWNGRADE)}</span>
+                                { downgradePossible ? <div className={classes.coins}>
+                                    <span style={{ '-webkit-text-stroke': `1px ${theme.color.accent.dark}`, }}>-{ Math.round(downgradedEntity.coins * 0.666) }</span>
+                                    <div />
                                 </div> : null }
-                            </div> : null 
-                        }
+                            </div></Button>
+                        </div>
+
+                        { selectedEntity ? Object.keys(selectedEntity)
+                            .filter(field => ['hp','area','buildingsPerTurn','cacaoPerTurn','attack','donutProbability','donutTypes'].includes(field)).map(attribute => {
+                            let percentage = (currentEntity[attribute] / highlyDevelopedEntity[attribute]) * 100;
+                            let percentageForcast = (upgradedEntity[attribute] / highlyDevelopedEntity[attribute]) * 100;
+                            let attributeDescription = <span className={classes.upgrade}>{currentEntity[attribute]}</span>;
+
+                            if (upgradePossible) {
+                                attributeDescription = <><span style={{ flexGrow: 1 }}>{currentEntity[attribute]}</span><span className={classes.levelup} /><span>{upgradedEntity[attribute]}</span></>;
+                            }
+
+                            return (
+                                <div className={classes.progress} key={attribute}>
+                                    <div className={classes.label}><span>{ t(tr.ATTRIBUTE_NAME, attribute) }</span>{attributeDescription}</div>
+                                    <div>
+                                        <div className={classes[attribute]} style={{ width: percentage + '%'}}></div>
+                                        { upgradePossible ? <div className={`${classes[attribute]}  ${classes.forecast}`} style={{ width: percentageForcast + '%'}}></div> : null }
+                                    </div>
+                                </div>
+                            )
+                        })  : null }
+                        { ![EntityType.FACTORY, EntityType.HOT_CHOCOLATE_BALLISTA].includes(entityType) ? <div className={classes.container}>
+                                <span>{ currentEntity.costs }</span>
+                                <div className={classes.cacao} />
+                                { upgradePossible ? <>
+                                    <span style={{ flexGrow: 1 }} />
+                                    <span className={classes.levelup} />
+                                    <span>{ upgradedEntity.costs }</span>
+                                    <div className={classes.cacao} />
+                                </> : null }
+                        </div> : null }
                     </div>
                 </div>
             </div>
-            <ChoclabPalette selectEntity={entity => setSelectedEntity(getEntityDescriptor(entity, props.level))} />
         </div>
     );
 }

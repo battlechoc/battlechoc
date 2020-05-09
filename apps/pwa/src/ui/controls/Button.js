@@ -5,6 +5,8 @@ import { createUseStyles } from 'react-jss';
 const useStyles = createUseStyles(theme => ({
     button: {
       color: 'white',
+      '-webkit-text-stroke': props => `1px ${theme.color[props.color].dark}`,
+      '-webkit-font-smoothing': 'antialiased',
       width: 'calc(100% - 6px) !important',
       height: 'calc(100% - 6px) !important',
       clipPath: 'url(#menu-button-clip-path)',
@@ -62,6 +64,9 @@ const useStyles = createUseStyles(theme => ({
       fontSize: '1.5rem',
       width: 246,
       height: 62,
+    },
+    disabled: {
+      filter: 'grayscale(1)'
     }
   })
 )
@@ -70,13 +75,13 @@ const Button = props => {
   const classes = useStyles(props);
   if (props.icon) {
     return (
-      <div style={props.style} onClick={props.onClick} className={`${classes.iconButton} ${classes.background} ${props.className}`}>
+      <div style={props.style} onClick={props.onClick} className={`${classes.iconButton} ${classes.background} ${props.className} ${props.disabled ? classes.disabled : ''}`}>
         <div className={classes.icon} style={{ background: `url(/images/${ props.icon }.svg) no-repeat`, backgroundSize: '100% 100%', ...props.buttonStyle }} />
       </div>
     );
   } else {
     return (
-      <div style={props.style} onClick={props.onClick} className={`${classes.border} ${classes[props.size]} ${props.className}`}>
+      <div style={props.style} onClick={props.onClick} className={`${classes.border} ${classes[props.size]} ${props.className} ${props.disabled ? classes.disabled : ''}`}>
         <div style={props.buttonStyle} className={`${classes.background} ${classes[props.size]} ${classes.button}`}>{props.children}</div>
       </div>
     );
@@ -88,7 +93,8 @@ Button.defaultProps = {
   size: 'normal',
   style: {},
   buttonStyle: {},
-  className: ''
+  className: '',
+  disabled: false
 }
 
 Button.propTypes = { 
@@ -97,7 +103,8 @@ Button.propTypes = {
   className: PropTypes.string,
   style: PropTypes.object,
   buttonStyle: PropTypes.object,
-  size: PropTypes.oneOf(['huge', 'normal'])
+  size: PropTypes.oneOf(['huge', 'normal']),
+  disabled: PropTypes.bool
 }
 
 export default Button;

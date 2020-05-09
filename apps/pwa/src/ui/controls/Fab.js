@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { createUseStyles } from 'react-jss'
+import { createUseStyles } from 'react-jss';
 
 const useStyles = createUseStyles(theme => ({
     fab: {
@@ -13,14 +13,18 @@ const useStyles = createUseStyles(theme => ({
       borderRadius: '100%'
     },
     icon: props => {
-      return props.icon === 'trophy' ? {
-        width: '90%',
-        height: '90%',
-        marginTop: 3
-      } : {
+      const style = {
         width: '60%',
         height: '60%'
-      }        
+      } 
+
+      if (props.icon === 'trophy') {
+        style.width = '90%';
+        style.height = '90%';
+        style.marginTop = 3
+      }
+      
+      return style;
     },
     background: props => ({
       border: `3px solid ${theme.color[props.color].light}`,

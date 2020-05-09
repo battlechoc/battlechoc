@@ -142,7 +142,7 @@ const Actionbar = props => {
                     buttons.push([
                         <Fab
                             key="6"
-                            color="secondary"
+                            color="accent"
                             icon="forward"
                             onClick={() => {
                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -163,7 +163,7 @@ const Actionbar = props => {
                     buttons.push([
                         <Fab
                             key="7"
-                            color="secondary"
+                            color="accent"
                             icon="fast-forward"
                             onClick={() => {
                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -185,7 +185,7 @@ const Actionbar = props => {
                 buttons.push(
                     <Fab
                         key="8"
-                        color="secondary"
+                        color="accent"
                         icon="fast-forward"
                         onClick={() => {
                             Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
