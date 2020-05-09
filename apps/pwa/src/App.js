@@ -4,7 +4,7 @@ import './App.css';
 import { Jukebox, translate as t, keys as tr, setCurrentLanguage } from './ui/misc';
 import OfflineStore from './OfflineStore';
 import { multiplayer } from './Multiplayer';
-import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, NotificationReasonType, isDonut } from 'battlechoc-shared-functions';
+import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut } from 'battlechoc-shared-functions';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
 import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting, showNotification } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
@@ -47,25 +47,6 @@ class App extends Component {
             session: session,
             openInfo: openInfo
         };
-    }
-
-    handlePushMessage = (payload) => {
-        console.log("Push message received: " + JSON.stringify(payload));
-
-        if (multiplayer.currentGameSession === undefined ||
-            multiplayer.currentGameSession !== payload.data.session ||
-            ![NotificationReasonType.OPPONENT_FINISHED_TURN, NotificationReasonType.GAME_LOST].includes(payload.data.reason)) {
-            this.props.showQuickMessage({ text: payload.data.title + ' ' + payload.data.text, variant: 'info' });
-        }
-
-        if ([NotificationReasonType.CHALLENGED,
-        NotificationReasonType.OPPONENT_SURRENDERED_GAME,
-        NotificationReasonType.GAME_LOST,
-        NotificationReasonType.SESSION_TIMEOUT_GAME_LOST,
-        NotificationReasonType.SESSION_TIMEOUT_GAME_WON].includes(payload.data.reason)) {
-            console.log("updating multiplayer sessions");
-            multiplayer.getMultiplayerSessions(() => this.props.showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED) }));
-        }
     }
 
     detonateAtPosition = (row, col, playerField = true) => {
@@ -111,7 +92,6 @@ class App extends Component {
             showQuickMessage: this.props.showQuickMessage,
             detonateAtPosition: this.detonateAtPosition,
             showNotification: this.props.showNotification,
-            handlePushMessage: this.handlePushMessage,
         });
 
         let browserLanguage = 'en';

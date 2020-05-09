@@ -3,7 +3,7 @@ import '@firebase/auth';
 import '@firebase/firestore';
 import 'firebase/messaging';
 import OfflineStore from './OfflineStore';
-import { GameActionTypes, AttackType, EmptyPlayerStats } from 'battlechoc-shared-functions';
+import { GameActionTypes, AttackType, EmptyPlayerStats, NotificationReasonType } from 'battlechoc-shared-functions';
 import { Jukebox, translate as t, keys as tr } from './ui/misc';
 import { ServerRequest, generateNewAndroidMessagingToken, setAndroidDefaults } from './helper/settings';
 import logger from './helper/logger';
@@ -33,8 +33,7 @@ class Multiplayer {
             stopSessionRefresh: () => logger.warn("calling stopSessionRefresh without beeing initialized"),
             showQuickMessage: () => logger.warn("calling showQuickMessage without beeing initialized"),
             detonateAtPosition: () => logger.warn("calling detonateAtPosition without beeing initialized"),
-            showNotification: () => logger.warn("calling showNotification without beeing initialized"),
-            handlePushMessage: (payload) => logger.warn("calling handlePushMessage without beeing initialized for payload " + JSON.stringify(payload)),
+            showNotification: () => logger.warn("calling showNotification without beeing initialized")
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -47,7 +46,7 @@ class Multiplayer {
             this.messaging = firebase.messaging();
             this.messaging.usePublicVapidKey("BJ6zc8pE57SS98ocjLmtHBuaGgDjIirTpAALyYIR_zywwBJbmssDWhbn78WPhoJfjN28htOBI4bwlVzjwHMCqak");
             this.messaging.onMessage(payload => {
-                this.callbacks.handlePushMessage(payload);
+                this.handlePushMessage(payload);
             });
         } catch (error) {
             logger.info(error);
@@ -56,6 +55,25 @@ class Multiplayer {
 
     shouldAskForNotificationPermission() {
         return firebase.auth().currentUser && 'Notification' in window && Notification.permission === 'default';
+    }
+
+    handlePushMessage(payload) {
+        console.log("Push message received: " + JSON.stringify(payload));
+
+        if (this.currentGameSession === undefined ||
+            this.currentGameSession !== payload.data.session ||
+            ![NotificationReasonType.OPPONENT_FINISHED_TURN, NotificationReasonType.GAME_LOST].includes(payload.data.reason)) {
+            this.callbacks.showQuickMessage({ text: payload.data.title + ' ' + payload.data.text, variant: 'info' });
+        }
+
+        if ([NotificationReasonType.CHALLENGED,
+        NotificationReasonType.OPPONENT_SURRENDERED_GAME,
+        NotificationReasonType.GAME_LOST,
+        NotificationReasonType.SESSION_TIMEOUT_GAME_LOST,
+        NotificationReasonType.SESSION_TIMEOUT_GAME_WON].includes(payload.data.reason)) {
+            console.log("updating multiplayer sessions");
+            this.getMultiplayerSessions(() => this.callbacks.showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED) }));
+        }
     }
 
     askForNotificationPermission() {
