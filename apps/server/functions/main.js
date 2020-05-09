@@ -597,8 +597,8 @@ app.post('/user/challenge', async (req, res) => {
                             winners: [],
                             board: Board.generate({ rows: 10, cols: 10 }, Math.round(Math.random() * Math.pow(10, 8)))
                         };
-                        await dbPool.query('INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, turns) VALUES ($1, $2, $3, $4, $5, $6, $7)', [
-                            databaseSession.id, sessionEventQueue.playerIds[0], sessionEventQueue.playerIds[1], initialGameState, new Date(), new Date(), 0]);
+                        await dbPool.query('INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, last_action, turns) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [
+                            databaseSession.id, sessionEventQueue.playerIds[0], sessionEventQueue.playerIds[1], initialGameState, new Date(), new Date(), new Date(), 0]);
 
                         await emitPlayerNotification(opponent.id,
                             databaseSession.id,
