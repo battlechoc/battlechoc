@@ -320,7 +320,7 @@ class App extends Component {
             }
             if (this.props.game !== undefined && (this.props.game.state === GameStateTypes.BUILD_PHASE || this.props.game.state === GameStateTypes.ATTACK_PHASE)) {
                 const winners = Rules.determineWinner(this.props.game);
-                if (typeof winners !== 'undefined') {
+                if (typeof winners !== 'undefined' && (typeof multiplayer.currentGameSession === 'undefined' || this.props.game.players[multiplayer.localPlayerIndex].id === winners[0].id)) {
                     prevProps.endGame({
                         winners: winners,
                         issuer: this.props.game.players[multiplayer.localPlayerIndex].id
@@ -505,6 +505,7 @@ class App extends Component {
             setTimeout(() => {
                 this.props.finishGame();
                 this.props.resetUi();
+                multiplayer.fetchPlayerStats();
 
                 const isAndroidApp = typeof window.Android !== 'undefined';
                 const isAndroidDevice = /Android/i.test(navigator.userAgent);
@@ -543,19 +544,6 @@ class App extends Component {
                 }
                 multiplayer.getMultiplayerSessions();
             }, 1000);
-        }
-    }
-
-    surrender() {
-        if ([GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
-            this.endGame();
-        } else {
-            const winners = []
-            winners.push(Object.assign({ idx: 1 - multiplayer.localPlayerIndex }, this.props.game.players[1 - multiplayer.localPlayerIndex]));
-            this.props.endGame({
-                winners: winners,
-                issuer: this.props.game.players[multiplayer.localPlayerIndex].id
-            });
         }
     }
 
@@ -623,7 +611,6 @@ class App extends Component {
                     startTutorial={() => this.startTutorial()}
                     className={this.props.tutorial ? 'tutorial hud' : 'hud'}
                     endGame={coins => this.endGame(coins)}
-                    surrender={() => this.surrender()}
                     challengedPlayer={this.state.player}
                     openInfo={this.state.openInfo}
                     sessionId={this.state.session} />

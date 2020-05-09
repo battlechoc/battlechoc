@@ -242,18 +242,6 @@ const Settings = props => {
               }
             })()}
 
-            {typeof props.game !== 'undefined' && !props.tutorial ?
-              <div className={classes.menuButton} onClick={() => {
-                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                if (showAttentionText) {
-                  props.surrender();
-                  props.close();
-                  setShowAttentionText(false);
-                } else {
-                  setShowAttentionText(true);
-                }
-              }}>{t(tr.SETTINGS_QUIT)}</div> : null
-            }
             {
               showAttentionText && typeof props.game !== 'undefined' ?
                 <Typography color="error" className="attentionText">{t(tr.SETTINGS_ATTENTION_TEXT)}</Typography>
@@ -269,7 +257,6 @@ const Settings = props => {
 Settings.propTypes = {
   open: PropTypes.bool.isRequired,
   close: PropTypes.func.isRequired,
-  surrender: PropTypes.func.isRequired,
   startTutorial: PropTypes.func.isRequired
 }
 
