@@ -217,11 +217,9 @@ const getPlayerFromName = async (name) => {
 }
 
 const calculateCoinsFromTrackRecord = (trackRecord) => {
-    console.log("calculating coins " + JSON.stringify(trackRecord));
     if (typeof trackRecord !== 'undefined' && trackRecord.length > 0) {
         return trackRecord.reduce((currentCoins, gameStats) => {
             let coins = gameStats.attacks + gameStats.builtEntities * 2 + gameStats.espionages * 10 + gameStats.moltenFields * 50;
-            console.log("coins calculated: " + coins);
             if (typeof gameStats.winners === 'undefined' || gameStats.winners.length === 0 || (typeof gameStats.lost === 'undefined' && typeof gameStats.won === 'undefined')) {
                 // no coins for still running games or undefined stats data
                 coins = 0;
@@ -1033,7 +1031,7 @@ const surrenderGame = async (sessionId, playerId, resultReason) => {
             index: (playerIndex === 0) ? eventQueue.player_0_events.length : eventQueue.player_1_events.length,
             type: 'battlechoc/gameplay/endGame',
             payload: {
-                winners: { id: eventQueue.playerIds.filter(id => id !== playerId) },
+                winners: [{ id: eventQueue.playerIds.filter(id => id !== playerId)[0] }],
                 issuer: playerId
             },
             sessionId: sessionId
