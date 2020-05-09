@@ -4,13 +4,12 @@ import { connect } from 'react-redux';
 import { updatePlayerStats, hideQuickMessage, showQuickMessage } from '../UiActions';
 import { Jukebox, translate as t, keys as tr, setCurrentLanguage, getCurrentLanguage } from '../misc';
 import OfflineStore from '../../OfflineStore';
-import CircularProgress from '@material-ui/core/CircularProgress';
 import { ServerRequest } from '../../helper/settings';
 import PlayerNameInput from '../controls/PlayerNameInput';
 import logger from '../../helper/logger';
 import { createUseStyles } from 'react-jss';
 import Dialog from './Dialog';
-import { Button, Select } from '../controls';
+import { Button, Select, Progress } from '../controls';
 
 const useStyles = createUseStyles(theme => ({
   wrapper: {
@@ -210,7 +209,7 @@ const Settings = props => {
               />
               <label htmlFor="issue-device-information">{t(tr.REPORT_DEVICE_INFO)}</label>
             </div>
-            <Button color="accent" onClick={submitReport}>{sendingReport ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem' }} size={18} /> : t(tr.REPORT_PROBLEM)}</Button>
+            <Button color="accent" onClick={submitReport}>{sendingReport ? <Progress size={18} infiniteAnimation /> : t(tr.REPORT_PROBLEM)}</Button>
           </form>
           <p className={classes.reportInformation}>{t(tr.REPORT_INFORMATION)}</p>
         </div>

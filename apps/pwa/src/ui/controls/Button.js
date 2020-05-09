@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { createUseStyles } from 'react-jss';
+import { Jukebox } from '../misc';
 
 const useStyles = createUseStyles(theme => ({
     button: {
@@ -73,15 +74,20 @@ const useStyles = createUseStyles(theme => ({
 
 const Button = props => {
   const classes = useStyles(props);
+  const onClick = () => {
+    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+    props.onClick();
+  }
+
   if (props.icon) {
     return (
-      <div style={props.style} onClick={props.onClick} className={`${classes.iconButton} ${classes.background} ${props.className} ${props.disabled ? classes.disabled : ''}`}>
+      <div style={props.style} onClick={onClick} className={`${classes.iconButton} ${classes.background} ${props.className} ${props.disabled ? classes.disabled : ''}`}>
         <div className={classes.icon} style={{ background: `url(/images/${ props.icon }.svg) no-repeat`, backgroundSize: '100% 100%', ...props.buttonStyle }} />
       </div>
     );
   } else {
     return (
-      <div style={props.style} onClick={props.onClick} className={`${classes.border} ${classes[props.size]} ${props.className} ${props.disabled ? classes.disabled : ''}`}>
+      <div style={props.style} onClick={onClick} className={`${classes.border} ${classes[props.size]} ${props.className} ${props.disabled ? classes.disabled : ''}`}>
         <div style={props.buttonStyle} className={`${classes.background} ${classes[props.size]} ${classes.button}`}>{props.children}</div>
       </div>
     );

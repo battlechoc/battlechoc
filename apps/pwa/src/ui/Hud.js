@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { GameStateTypes } from 'battlechoc-shared-functions';
 import { showQuickMessage, showNotification, hideNotification } from './UiActions';
-import { Jukebox, translate as t, keys as tr } from './misc';
+import { translate as t, keys as tr } from './misc';
 import { Notification, Info, Tooltip, Settings, AccountOverview, Dialog, Highscore } from './dialogs';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
@@ -78,6 +78,9 @@ const useStyles = createUseStyles(theme => ({
         height: 294,
         background: 'url(/images/decoration.svg) no-repeat',
         zIndex: 3
+    },
+    resumeGameDialog: {
+        color: 'white'
     }
 }));
 
@@ -101,7 +104,6 @@ const Hud = props => {
     }
 
     const openAccountOverview = (account, stacked=false) => {
-        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         setOverviewStyleStacked(stacked);
         setShowAccountOverview(true);
         setPlayerAccount(account);
@@ -213,16 +215,13 @@ const Hud = props => {
             <Settings startTutorial={kickOffTutorial} surrender={surrender} open={openSettings} close={() => setOpenSettings(false)} />
             <AccountOverview
                 challengePlayer={async username => {
-                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     await multiplayer.challengePlayer(username);
                     multiplayer.getMultiplayerSessions();
                 }}
                 addFriend={async friend => {
-                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     await multiplayer.addFriend(friend);
                 }}
                 removeFriend={async friend => {
-                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     await multiplayer.removeFriend(friend);
                 }}
                 stackedStyle={overviewStyleStacked}
@@ -249,10 +248,7 @@ const Hud = props => {
                 } else if (stage === 'WAITING_ROOM') {
                     return null;
                 } else {
-                    return <Actionbar endGame={endGame} showSettings={() => {
-                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                        setOpenSettings(true);
-                    }} showSignInOrUp={openAccountOverview} />
+                    return <Actionbar endGame={endGame} showSettings={() => setOpenSettings(true)} showSignInOrUp={openAccountOverview} />
                 }
             })()}
 
@@ -278,6 +274,24 @@ const Hud = props => {
 
                     return (
                         <>
+                            <Dialog
+                                open={open}
+                                close={() => setOpen(false)}
+                                title={t(tr.HUD_RESUME_GAME)}>
+                                <div className={classes.resumeGameDialog}>
+                                    <p>{t(tr.HUD_ASK_NEW_OR_RESUME)}</p>
+                                    <div className="actions">
+                                        <Button style={{ width: '40%', maxWidth: 246}} onClick={() => {
+                                            setOpen(false);
+                                            prepareNewGameCallback(true);
+                                        }}>{t(tr.HUD_RESUME_GAME)}</Button>
+                                        <Button style={{ width: '40%', maxWidth: 246}} color="accent" onClick={() => {
+                                            setOpen(false);
+                                            prepareNewGameCallback(false);
+                                        }}>{t(tr.HUD_NEW_GAME)}</Button>
+                                    </div>
+                                </div>
+                            </Dialog>
                             <div id="mainMenu">
                                 {typeof playerInfos.stats.coins !== 'undefined' ? <div id="chocolate-coins">
                                     <span>{playerInfos.stats.coins}</span>
@@ -288,26 +302,6 @@ const Hud = props => {
                                 <div className={classes.menu}>
                                     {assetsReady ? controls : null}
                                 </div>
-                                <Dialog
-                                    open={open}
-                                    close={() => setOpen(false)}
-                                    title={t(tr.HUD_RESUME_GAME)}>
-                                    <div className="resumeGameDialog">
-                                        <p>{t(tr.HUD_ASK_NEW_OR_RESUME)}</p>
-                                        <div className="actions">
-                                            <div className="menuButton" onClick={() => {
-                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                setOpen(false);
-                                                prepareNewGameCallback(true);
-                                            }}>{t(tr.HUD_RESUME_GAME)}</div>
-                                            <div className="menuButton" onClick={() => {
-                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                setOpen(false);
-                                                prepareNewGameCallback(false);
-                                            }}>{t(tr.HUD_NEW_GAME)}</div>
-                                        </div>
-                                    </div>
-                                </Dialog>
                             </div>
                             <Highscore playername={playername} showPlayerProfile={session => openAccountOverview(session.opponent, true)} showQuickMessage={showQuickMessage} />
                             { notification.open ? <Notification message={notification.message} title={notification.title} close={() => hideNotification()} /> : <Info openInfo={openInfo} /> }

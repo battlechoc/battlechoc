@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { createUseStyles } from 'react-jss';
+import { Jukebox } from '../misc';
 
 const useStyles = createUseStyles(theme => ({
     fab: {
@@ -39,8 +40,12 @@ const useStyles = createUseStyles(theme => ({
 const Fab = props => {
   const color = (props.icon === 'facebook' || props.icon === 'instagram') ? props.icon : props.color;
   const classes = useStyles({ ...props, color: color });
+  const onClick = () => {
+    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+    props.onClick();
+  }
   return (
-    <div style={props.style} onClick={props.onClick} className={`${classes.fab} ${classes.background} ${props.className}`}>
+    <div style={props.style} onClick={onClick} className={`${classes.fab} ${classes.background} ${props.className}`}>
       <div className={classes.icon} style={{ background: `url(/images/${ props.icon }.svg) no-repeat`, backgroundSize: '100% 100%' , ...props.iconStyle}} />
     </div>
   );
