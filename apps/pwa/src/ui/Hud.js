@@ -305,7 +305,6 @@ Hud.propTypes = {
     enterMultiplayerGame: PropTypes.func.isRequired,
     startTutorial: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired,
-    surrender: PropTypes.func.isRequired,
     challengedPlayer: PropTypes.string,
     className: PropTypes.string.isRequired,
     sessionId: PropTypes.string
