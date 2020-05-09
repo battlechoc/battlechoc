@@ -217,9 +217,11 @@ const getPlayerFromName = async (name) => {
 }
 
 const calculateCoinsFromTrackRecord = (trackRecord) => {
+    console.log("calculating coins " + JSON.stringify(trackRecord));
     if (typeof trackRecord !== 'undefined' && trackRecord.length > 0) {
         return trackRecord.reduce((currentCoins, gameStats) => {
             let coins = gameStats.attacks + gameStats.builtEntities * 2 + gameStats.espionages * 10 + gameStats.moltenFields * 50;
+            console.log("coins calculated: " + coins);
             if (typeof gameStats.winners === 'undefined' || gameStats.winners.length === 0 || (typeof gameStats.lost === 'undefined' && typeof gameStats.won === 'undefined')) {
                 // no coins for still running games or undefined stats data
                 coins = 0;
@@ -619,18 +621,26 @@ app.post('/user/challenge', async (req, res) => {
 });
 
 const updateTrackRecord = async (session, endGameAction, resultReason) => {
-    const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0]);
-    console.log("updating on endgame, winner: " + JSON.stringify(winner));
-    addTrackRecord(winner.id, { ...winner.statistics, winners: [winner] }, resultReason);
+    const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0].id);
+    winner.statistics.won = true;
+    winner.statistics.lost = false;
+    let winnerRecords = [{ ...winner.statistics, winners: [winner] }];
+    if ((await addTrackRecord(winner.id, winnerRecords[0], resultReason)) === true) {
+        await updatePlayerStats(winner.id, winnerRecords);
+    }
 
-    const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0]);
-    console.log("updating on endgame, looser: " + JSON.stringify(looser));
-    addTrackRecord(looser.id, { ...looser.statistics, winners: [winner] }, resultReason);
+    const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0].id);
+    looser.statistics.won = false;
+    looser.statistics.lost = true;
+    let looserRecords = [{ ...looser.statistics, winners: [winner] }];
+    if ((await addTrackRecord(looser.id, looserRecords[0], resultReason)) === true) {
+        await updatePlayerStats(looser.id, looserRecords);
+    }
 }
 
 const emitEndGameNotification = async (session, endGameAction) => {
-    const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0]);
-    const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0]);
+    const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0].id);
+    const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0].id);
     const receiverResult = await getPlayerFromName(looser.name);
     if (receiverResult.rows.length === 0) {
         console.error("Could not emit notification");
@@ -643,7 +653,7 @@ const emitEndGameNotification = async (session, endGameAction) => {
 
     await emitPlayerNotification(looser.id,
         session.id,
-        playerName + t.t[language].NOTIFICATION_GAME_LOST_TITLE,
+        looser.name + t.t[language].NOTIFICATION_GAME_LOST_TITLE,
         t.t[language].NOTIFICATION_GAME_LOST_BODY + winner.name,
         NotificationReasonType.GAME_LOST,
         'https://battlechoc.com/');
@@ -1023,7 +1033,7 @@ const surrenderGame = async (sessionId, playerId, resultReason) => {
             index: (playerIndex === 0) ? eventQueue.player_0_events.length : eventQueue.player_1_events.length,
             type: 'battlechoc/gameplay/endGame',
             payload: {
-                winners: eventQueue.playerIds.filter(id => id !== playerId),
+                winners: { id: eventQueue.playerIds.filter(id => id !== playerId) },
                 issuer: playerId
             },
             sessionId: sessionId
@@ -1043,7 +1053,7 @@ const surrenderGame = async (sessionId, playerId, resultReason) => {
             return false;
         }
         session.game.isRunning = false;
-        session.game.winners = event.payload.winners;
+        session.game.winners = eventQueue.playerIds.filter(id => id !== playerId);
         session.game.players.filter(player => player.id !== playerId)[0].statistics.won = true;
         session.game.players.filter(player => player.id !== playerId)[0].statistics.lost = false;
         session.game.players.filter(player => player.id === playerId)[0].statistics.won = false;
