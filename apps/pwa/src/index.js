@@ -6,6 +6,7 @@ import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { translate as t, keys as tr } from './ui/misc';
 import rootReducer from './RootReducer';
+import { multiplayer } from './Multiplayer';
 import { showQuickMessage } from './ui/UiActions';
 import { gameplayLogger } from './gameplay/GamePlayLogger';
 import actionValidator from './gameplay/ActionValidator';
@@ -144,7 +145,7 @@ const theme = createMuiTheme({
     }
 });
 
-const store = configureStore({ 
+const store = configureStore({
     reducer: rootReducer,
     middleware: [...getDefaultMiddleware(), actionValidator, multiplayerActionRelay, gameplayLogger]
 });
@@ -160,7 +161,7 @@ ReactDOM.render(
 
 let config = {
     onUpdate: () => {
-        store.dispatch(showQuickMessage({ 
+        store.dispatch(showQuickMessage({
             text: t(tr.PWA_UPDATE_AVAILABLE),
             variant: 'info'
         }));
@@ -169,18 +170,25 @@ let config = {
 
 serviceWorker.register(config);
 
-window.addEventListener("offline", () => { 
-    store.dispatch(showQuickMessage({ 
+window.addEventListener("offline", () => {
+    store.dispatch(showQuickMessage({
         text: t(tr.PWA_OFFLINE_MODE),
         variant: 'info',
         type: 'PWA_OFFLINE_MESSAGE'
     }));
 });
 
-window.addEventListener("online", () => { 
-    store.dispatch(showQuickMessage({ 
+window.addEventListener("online", () => {
+    store.dispatch(showQuickMessage({
         text: t(tr.PWA_ONLINE_MODE),
         variant: 'info',
         type: 'PWA_ONLINE_MESSAGE'
     }));
 });
+
+if (typeof window.Android !== 'undefined') {
+    window.handleBattlechocPushMessage = (payload) => {
+        console.log("handleBattlechocPushMessage called " + JSON.stringify(payload));
+        multiplayer.handlePushMessage(payload);
+    }
+}
