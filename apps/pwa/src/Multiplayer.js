@@ -403,18 +403,96 @@ class Multiplayer {
             } else {
                 logger.warn("player notification callback is not a function");
             }
-        }).catch(error => logger.info("Error while sign out", error));
-    }
+            this.callbacks.updatePlayerStats(playerStats);
+        }).catch(err => logger.warn("could not retrieve offline player stats", err));
 
-    async createChallengeMeLink() {
         if (firebase.auth().currentUser) {
             try {
-                let data = (await ServerRequest('get', '/user/name')).data;
-                return 'https://battlechoc.com/' + data.name;
-            } catch (error) {
-                logger.warn(error)
+                const data = (await ServerRequest('post', '/user/tutorial/started')).data;
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player tutorial started state.");
+                logger.warn(err);
             }
         }
+    }
+
+    async tutorialSkipped() {
+        OfflineStore.playerStore.get('stats').then(playerStats => {
+            playerStats.tutorialStarted = false;
+            playerStats.tutorialSkipped = true;
+            try {
+                OfflineStore.playerStore.set('stats', playerStats)
+            } catch (error) {
+                logger.warn(error);
+            }
+            this.callbacks.updatePlayerStats(playerStats);
+        }).catch(err => logger.warn("could not retrieve offline player stats", err));
+
+        if (firebase.auth().currentUser) {
+            try {
+                const data = (await ServerRequest('post', '/user/tutorial/skipped')).data;
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player tutorial skipped state.");
+                logger.warn(err);
+            }
+        }
+    }
+
+    async tutorialFinished() {
+        OfflineStore.playerStore.get('stats').then(playerStats => {
+            playerStats.tutorialFinished = true;
+            try {
+                OfflineStore.playerStore.set('stats', playerStats)
+            } catch (error) {
+                logger.warn(error);
+            }
+            this.callbacks.updatePlayerStats(playerStats);
+        }).catch(err => logger.warn("could not retrieve offline player stats", err));
+
+        if (firebase.auth().currentUser) {
+            try {
+                const data = (await ServerRequest('post', '/user/tutorial/finished')).data;
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player tutorial finished state.");
+                logger.warn(err);
+            }
+        }
+    }
+
+    async updatePlayerTutorialInfos(playerInfos) {
+        try {
+            OfflineStore.playerStore.set('stats', playerInfos);
+        } catch (error) {
+            logger.warn(error);
+        }
+
+        if (firebase.auth().currentUser) {
+            try {
+                await ServerRequest('post', '/user/tutorialinfos', {
+                    infos: {
+                        tutorialStarted: playerInfos.tutorialStarted,
+                        tutorialFinished: playerInfos.tutorialFinished,
+                        tutorialSkipped: playerInfos.tutorialSkipped
+                    }
+                });
+            } catch (err) {
+                logger.warn("Could not update player tutorial infos");
+                logger.warn(err);
+            }
+        }
+    }
+
+    signOut(notifyPlayerSignedOut) {
+        firebase.auth().signOut().then(() => {
+            if (typeof notifyPlayerSignedOut === 'function') {
+                notifyPlayerSignedOut();
+            } else {
+                logger.warn("player notification callback is not a function");
+            }
+        }).catch(error => logger.info("Error while sign out", error));
     }
 
     async challengePlayer(playerName) {

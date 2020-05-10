@@ -4,25 +4,26 @@ import { connect } from 'react-redux';
 import { updatePlayerStats, hideQuickMessage, showQuickMessage } from '../UiActions';
 import { Jukebox, translate as t, keys as tr, setCurrentLanguage, getCurrentLanguage } from '../misc';
 import OfflineStore from '../../OfflineStore';
-import Typography from '@material-ui/core/Typography';
-import InputLabel from '@material-ui/core/InputLabel';
-import FormControl from '@material-ui/core/FormControl';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Select from '@material-ui/core/Select';
-import Checkbox from '@material-ui/core/Checkbox';
-import TextField from '@material-ui/core/TextField';
 import { ServerRequest } from '../../helper/settings';
 import PlayerNameInput from '../controls/PlayerNameInput';
 import logger from '../../helper/logger';
-import { makeStyles } from '@material-ui/core/styles';
-import Fab from '@material-ui/core/Fab';
-import { Edit, AccountCircle } from '@material-ui/icons';
-import BattlechocDialog from './BattlechocDialog';
+import { createUseStyles } from 'react-jss';
+import Dialog from './Dialog';
+import { Button, Select, Progress } from '../controls';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = createUseStyles(theme => ({
+  wrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  },
   userReport: {
-    margin: '20px 0 10px 0'
+    margin: '5px 0',
+    color: theme.color.secondary.dark,
+    border: `3px solid ${theme.color.secondary.dark}`,
+    borderRadius: 15,
+    padding: 10,
+    fontSize: '0.8rem'
   },
   username: {
     display: 'flex',
@@ -30,7 +31,6 @@ const useStyles = makeStyles(theme => ({
     alignItems: 'center',
     userSelect: 'none',
     fontSize: '5vw',
-    color: 'rgba(9, 63, 70, 0.8)',
     fontWeight: 'bolder',
     padding: '2vh'
   },
@@ -42,38 +42,43 @@ const useStyles = makeStyles(theme => ({
     width: '5vw',
     marginLeft: '1vw'
   },
-  logoutButton: {
-    color: '#f3f7df',
-    borderColor: '#f3f7df'
-  },
-  menuButton: {
-    cursor: 'pointer',
-    padding: '12px',
-    backgroundColor: '#5b2f19',
-    boxShadow: '1px 1px 6px #000',
-    fontSize: '1rem',
-    marginTop: '4vh',
-    textAlign: 'center',
-    color: '#f3f7df',
-    userSelect: 'none',
-    textShadow: '1px 1px 3px #000',
-    textTransform: 'uppercase'
-  },
-  inactiveButton: {
-    backgroundColor: '#555 !important',
-  },
-  dialogContent: {
-    [theme.breakpoints.up('sm')]: {
-      width: '70vw',
-      margin: '0 auto'
+  formular: {
+    display: 'flex',
+    flexDirection: 'column',
+    paddingRight: 10,
+    '& > label': {
+      marginLeft: 5
     }
   },
   reportInformation: {
-    marginTop: '4vh',
-    color: theme.palette.primary.main
+    marginTop: 15,
   },
-  primaryColor: {
-    color: theme.palette.primary.main
+  button: {
+    marginTop: 24,
+    [theme.breakpoints.landscape.smartphone]: {
+      marginTop: 12
+    }
+  },
+  checkbox: {
+    marginBottom: 10
+  },
+  select: {
+    background: 'white',
+    color: theme.color.secondary.dark,
+    padding: 10,
+    fontSize: '0.8rem'
+  },
+  playerName: {
+    marginTop: 24,
+    marginBottom: 12,
+    width: '100%',
+    [theme.breakpoints.landscape.smartphone]: {
+      marginTop: 12
+    }
+  },
+  actions: {
+    display: 'flex',
+    flexDirection: 'column'
   }
 }));
 
@@ -114,142 +119,154 @@ const Settings = props => {
     setEditPlayerName(false);
   }
 
+  const submitReport = async () => {
+    if (!sendingReport) {
+      setSendingReport(true);
+      Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+      try {
+        let gamestate = props.game;
+        console.log(gamestate);
+        const report = {
+          deviceInformation: withDeviceInformation ? navigator.userAgent : undefined,
+          gamestate: gamestate,
+          player: (typeof props.playerInfos.uid !== 'undefined') ? props.playerInfos.uid : props.playerInfos.stats.username,
+          message: additionalReportMessage,
+          logs: logger.summarize(),
+          reported: (new Date()).getTime()
+        };
+        await ServerRequest('post', '/debugging/gamestate', { report: report });
+        props.showQuickMessage({
+          text: t(tr.SUCCESSFULLY_SENDING_PROBLEM_REPORT),
+          variant: 'success'
+        });
+      } catch (error) {
+        logger.warn(error);
+        props.showQuickMessage({
+          text: t(tr.ERROR_SENDING_PROBLEM_REPORT),
+          variant: 'error'
+        });
+      } finally {
+        setAdditionalReportMessage('')
+        setWithDeviceInformation(false)
+        setShowErrorReport(false);
+        setSendingReport(false)
+        props.close();
+      }
+    }
+  } 
+
+  const options = [{
+    value: 'en',
+    label: t(tr.ENGLISH),
+    icon: 'en-flag.svg'
+  }, {
+    value: 'de',
+    label: t(tr.GERMAN),
+    icon: 'de-flag.svg'
+  }, {
+    value: 'jp',
+    label: t(tr.JAPANESE),
+    icon: 'jp-flag.svg'
+  }];
+
+  const changeLanguage = value => {
+    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+    setCurrentLanguage(value);
+    forceUpdate();
+  }
+
   return (
     <div>
-      <BattlechocDialog
+      <Dialog
         open={showErrorReport}
         close={() => {
           setAdditionalReportMessage('');
           setWithDeviceInformation(false);
           setShowErrorReport(false)
         }}
-        title={t(tr.REPORT_PROBLEM)}>
-        <div className={classes.dialogContent}>
-          <form noValidate autoComplete="off">
-            <TextField
-              label={t(tr.REPORT_CUSTOM_MESSAGE)}
+        title={t(tr.REPORT_PROBLEM)}
+        style="stacked">
+        <div>
+          <form className={classes.formular} noValidate autoComplete="off">
+            <label htmlFor="issue-message">{t(tr.REPORT_CUSTOM_MESSAGE)}</label>
+            <textarea
+              id="issue-message"
+              name="issue-message"
               placeholder={t(tr.REPORT_CUSTOM_MESSAGE_PLACEHOLDER)}
-              multiline
-              fullWidth
-              InputProps={{ style: { fontSize: '0.9rem' } }}
-              InputLabelProps={{
-                style: { color: '#457B82' },
-                shrink: true
-              }}
               className={`${classes.userReport}`}
-              inputProps={{ className: classes.primaryColor }}
-              variant="outlined"
               onChange={event => setAdditionalReportMessage(event.target.value)}
             />
-          </form>
-          <FormControlLabel
-            className={classes.primaryColor}
-            control={
-              <Checkbox
+            <div className={classes.checkbox}>
+              <input
+                id="issue-device-information"
+                name="issue-device-information"
+                type="checkbox"
                 checked={withDeviceInformation}
                 onChange={event => {
                   Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                   setWithDeviceInformation(event.target.checked);
                 }}
               />
-            }
-            label={t(tr.REPORT_DEVICE_INFO)}
-          />
-          <div className={`${classes.menuButton} ${sendingReport ? classes.inactiveButton : ''}`} onClick={async () => {
-            if (!sendingReport) {
-              setSendingReport(true);
-              Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-              try {
-                let gamestate = props.game;
-                console.log(gamestate);
-                const report = {
-                  deviceInformation: withDeviceInformation ? navigator.userAgent : undefined,
-                  gamestate: gamestate,
-                  player: (typeof props.playerInfos.uid !== 'undefined') ? props.playerInfos.uid : props.playerInfos.stats.username,
-                  message: additionalReportMessage,
-                  logs: logger.summarize(),
-                  reported: (new Date()).getTime()
-                };
-                await ServerRequest('post', '/debugging/gamestate', { report: report });
-                props.showQuickMessage({
-                  text: t(tr.SUCCESSFULLY_SENDING_PROBLEM_REPORT),
-                  variant: 'success'
-                });
-              } catch (error) {
-                logger.warn(error);
-                props.showQuickMessage({
-                  text: t(tr.ERROR_SENDING_PROBLEM_REPORT),
-                  variant: 'error'
-                });
-              } finally {
-                setAdditionalReportMessage('')
-                setWithDeviceInformation(false)
-                setShowErrorReport(false);
-                setSendingReport(false)
-                props.close();
-              }
-            }
-          }}>{sendingReport ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem' }} size={18} /> : t(tr.REPORT_PROBLEM)}</div>
-          <Typography className={classes.reportInformation}>{t(tr.REPORT_INFORMATION)}</Typography>
+              <label htmlFor="issue-device-information">{t(tr.REPORT_DEVICE_INFO)}</label>
+            </div>
+            <Button color="accent" onClick={submitReport}>{sendingReport ? <Progress size={18} infiniteAnimation /> : t(tr.REPORT_PROBLEM)}</Button>
+          </form>
+          <p className={classes.reportInformation}>{t(tr.REPORT_INFORMATION)}</p>
         </div>
-      </BattlechocDialog>
+      </Dialog>
 
-      <BattlechocDialog
+      <Dialog
         open={props.open}
         close={closeDialog}
+        icon="gears"
         title={t(tr.SETTINGS)}>
-        <div className={classes.dialogContent}>
+        <div className={classes.wrapper}>
           {
             (typeof props.playerInfos.stats.username !== 'undefined' && props.playerInfos.stats.username !== 'Chocnonymous') || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true ?
-              editPlayerName ? <PlayerNameInput setPlayerName={setPlayerName} startValue={props.playerInfos.stats.username} current={props.playerInfos.stats.username}/> :
-                <div className={classes.username}>
-                  <AccountCircle className={classes.accountCircle} /> {props.playerInfos.stats.username}
-                  <Fab onClick={() => setEditPlayerName(true)} className={classes.editUsername} size="small" color="primary"><Edit /></Fab>
-                </div> : null
+              <PlayerNameInput className={classes.playerName} onEditMode={() => setEditPlayerName(true)} editMode={editPlayerName} setPlayerName={setPlayerName} startValue={props.playerInfos.stats.username} current={props.playerInfos.stats.username}/> : null
           }
-          <FormControl style={{ width: '100%' }}>
-            <InputLabel htmlFor="lang-selection" style={{ color: 'rgb(48, 86, 91)' }}>{t(tr.LANGUAGE)}</InputLabel>
-            <Select
-              native
-              value={getCurrentLanguage()}
-              onChange={event => {
-                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                setCurrentLanguage(event.target.value);
-                forceUpdate();
-              }}
-              inputProps={{ name: 'language', id: 'lang-selection' }}>
-              <option value="en">{t(tr.ENGLISH)}</option>
-              <option value="de">{t(tr.GERMAN)}</option>
-              <option value="jp">{t(tr.JAPANESE)}</option>
-            </Select>
-            <div className={classes.menuButton} onClick={() => {
+          <Select onChange={changeLanguage} options={options} defaultSelected={getCurrentLanguage()} />
+          <div className={classes.actions}>
+            <Button className={classes.button} onClick={() => {
               Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
               setShowAttentionText(false);
               setShowErrorReport(true);
-            }}>{t(tr.REPORT_PROBLEM)}</div>
+            }}>{t(tr.REPORT_PROBLEM)}</Button>
             {(() => {
               if ((props.playerInfos.stats.username !== 'Chocnonymous' && typeof props.game === 'undefined') || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true) {
                 return (
                   <div>
-                    <div className={classes.menuButton} onClick={() => {
+                    <Button className={classes.button} color="accent" onClick={() => {
                       Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                       props.startTutorial();
                       props.close();
                       setShowAttentionText(false);
-                    }}>{t(tr.RESTART_TUTORIAL)}</div>
+                    }}>{t(tr.RESTART_TUTORIAL)}</Button>
                   </div>
                 )
               }
             })()}
 
+            {typeof props.game !== 'undefined' && !props.tutorial ?
+              <Button color="accent" className={classes.button} onClick={() => {
+                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                if (showAttentionText) {
+                  props.surrender();
+                  props.close();
+                  setShowAttentionText(false);
+                } else {
+                  setShowAttentionText(true);
+                }
+              }}>{t(tr.SETTINGS_QUIT)}</Button> : null
+            }
             {
               showAttentionText && typeof props.game !== 'undefined' ?
-                <Typography color="error" className="attentionText">{t(tr.SETTINGS_ATTENTION_TEXT)}</Typography>
+                <p color="error" className="attentionText">{t(tr.SETTINGS_ATTENTION_TEXT)}</p>
                 : null
             }
-          </FormControl>
+          </div>
         </div>
-      </BattlechocDialog>
+      </Dialog>
     </div>
   );
 }

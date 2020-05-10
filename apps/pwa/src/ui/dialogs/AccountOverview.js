@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import './AccountOverview.css';
 import PropTypes from 'prop-types';
+import { createUseStyles } from 'react-jss';
 import { connect } from 'react-redux';
 import { notifyPlayerSignedOut } from '../UiActions';
 import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
@@ -8,52 +8,19 @@ import * as firebaseui from 'firebaseui';
 import { multiplayer } from '../../Multiplayer';
 import firebase from 'firebase/app';
 import 'firebase/auth';
+import logger from '../../helper/logger';
 import { Jukebox, translate as t, keys as tr } from '../misc';
-import Button from '@material-ui/core/Button';
-import { AccountCircle, PlayArrow, HourglassEmpty, PersonAddDisabled, PersonAdd, EmojiEvents, ThumbUp, ThumbDown, ThumbsUpDown, PlusOne } from '@material-ui/icons';
-import { makeStyles } from '@material-ui/core/styles';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import BattlechocDialog from './BattlechocDialog';
-import useMediaQuery from '@material-ui/core/useMediaQuery';
+import { Button, Progress, Fab } from '../controls';
+import Dialog from './Dialog';
 import { EmptyPlayerStats } from 'battlechoc-shared-functions';
 
-const useStyles = makeStyles(theme => ({
-    logoutButton: {
-        color: '#f3f7df',
-        borderColor: '#f3f7df'
-    },
-    menuButton: {
-        cursor: 'pointer',
-        padding: '12px',
-        backgroundColor: '#5b2f19',
-        boxShadow: '1px 1px 6px #000',
-        margin: '1vh',
-        minWidth: '50vw',
-        textAlign: 'center',
-        color: '#f3f7df',
-        userSelect: 'none',
-        fontSize: '1rem',
-        textShadow: '1px 1px 3px #000',
-        textTransform: 'uppercase',
+const useStyles = createUseStyles(theme => ({
+    wrapper: {
         display: 'flex',
-        alignItems: 'center',
-        '@media screen and (max-width: 399px)': {
-            minWidth: '70vw',
-            fontSize: '0.8rem'
-        },
-        '@media screen and (min-width: 400px)': {
-            minWidth: '50vw',
-            fontSize: '0.8rem'
-        },
-        '@media screen and (min-width: 500px)': {
-            fontSize: '0.8rem'
-        },
-        '@media screen and (min-width: 600px)': {
-            minWidth: '40vw',
-            fontSize: '0.9rem'
-        },
-        '@media screen and (min-width: 900px)': {
-            minWidth: '30vw'
+        flexDirection: 'column',
+        marginTop: 16,
+        [theme.breakpoints.landscape.smartphone]: {
+            marginTop: 0
         }
     },
     pendingButton: {
@@ -62,9 +29,10 @@ const useStyles = makeStyles(theme => ({
     opponentActions: {
         display: 'flex',
         flexDirection: 'column',
-        '@media screen and (max-height: 400px) and (orientation: landscape)': {
-          marginTop: '5vh'
-        }
+        justifyContent: 'space-evenly',
+        alignItems: 'center',
+        height: 140,
+        marginBottom: 24
     },
     actionIcon: {
         padding: '0.5rem',
@@ -83,6 +51,134 @@ const useStyles = makeStyles(theme => ({
         textAlign: 'center',
         color: 'rgba(9, 63, 70, 0.8)',
         fontWeight: 'bolder'
+    },
+    icon: {
+        padding: 16,
+        backgroundSize: '100% 100%'
+    },
+    attributes: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        fontFamily: 'Bangers',
+        fontSize: '1.2rem'
+    },
+    attribute: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flexDirection: 'column',
+        padding: 6,
+        borderRadius: '100%',
+        width: 80,
+        height: 80,
+        margin: 2
+    },
+    gold: {
+        border: `3px solid ${theme.color.gold.light}`,
+        background: `linear-gradient(0deg, ${theme.color.gold.dark} 0%, ${theme.color.gold.light} 100%)`
+    },
+    primary: {
+        border: `3px solid ${theme.color.primary.light}`,
+        background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`
+    },
+    secondary: {
+        border: `3px solid ${theme.color.secondary.light}`,
+        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`
+    },
+    accent: {
+        border: `3px solid ${theme.color.accent.light}`,
+        background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 100%)`
+    },
+    signin: {
+        display: 'flex',
+        alignItems: 'center',
+        flexDirection: 'column',
+        fontFamily: 'Bangers',
+        '& p': {
+            fontSize: '0.8rem',
+            fontFamily: 'Montserrat',
+            width: '80%'
+        },
+        '& #firebaseui_container': {
+            width: '100%'
+        }
+    }, 
+    signout: {
+        display: 'flex',
+        alignItems: 'center',
+        flexDirection: 'column',
+        fontFamily: 'Bangers',
+        '& p': {
+            textAlign: 'center',
+            fontSize: '1.6rem',
+            '-webkit-text-stroke': '1px #1B4E69',
+            '-webkit-font-smoothing': 'antialiased',
+            [theme.breakpoints.landscape.smartphone]: {
+                margin: '16px 0'
+            }
+        }
+    }, 
+    firebaseUi: {
+        '& .firebaseui-container': {
+            background: 'unset',
+            boxShadow: 'none',
+            fontFamily: 'unset',
+            '& .firebaseui-card-header': {
+                border: 'none !important'
+            },
+            '& h1.firebaseui-title': {
+                color: 'white'
+            },
+            '& label.firebaseui-label': {
+                color: 'white'
+            },
+            '& input.firebaseui-input': {
+                borderColor: 'rgba(255,255,255,.5)',
+                color: 'white !important',
+                padding: 6,
+            },
+            '& .firebaseui-label:after': {
+                backgroundColor: 'rgba(255,255,255,0.5) !important'
+            },
+            '& button.mdl-button--primary': {
+                color: 'white',
+                borderRadius: '12.5%',
+                lineHeight: 'unset',
+                border: `3px solid ${theme.color.accent.light}`,
+                background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 100%)`
+            },
+            '& button.mdl-button--raised': {
+                borderRadius: '12.5%',
+                lineHeight: 'unset',
+                border: `3px solid ${theme.color.primary.light}`,
+                background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`
+            },
+            '& .firebaseui-link': {
+                color: theme.color.accent.light
+            },
+            '& .firebaseui-text': {
+                color: 'white'
+            }
+        },
+        '& .firebaseui-idp-button': {
+            clipPath: 'url(#menu-button-clip-path)',
+            fontFamily: 'Bangers',
+            border: 'none !important',
+            padding: 16,
+            '& .firebaseui-idp-text': {
+                fontSize: '1.2rem'
+            }
+        },
+        '& .firebaseui-idp-facebook': {
+            background: `linear-gradient(0deg, ${theme.color.facebook.dark} 0%, ${theme.color.facebook.light} 70%) !important`,
+        },
+        '& .firebaseui-idp-password': {
+            background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 70%) !important`,
+        },
+        '& .firebaseui-idp-google': {
+            background: `linear-gradient(0deg, #dedede 0%, #fff 70%) !important`
+        }
     }
 }));
 
@@ -123,9 +219,8 @@ const AccountOverview = props => {
     let level = 0;
     let winnings = 0;
     let losses = 0;
-    let drawn = 0;
     let loggedIn = false;
-    let playerName = 'Chocnonymous';
+    let playerName = EmptyPlayerStats.username;
     let ranking = 0;
 
     React.useEffect(() => {
@@ -150,7 +245,6 @@ const AccountOverview = props => {
 
         if (firebase.auth().currentUser) {
             winnings = props.playerInfos.stats.winnings;
-            drawn = props.playerInfos.stats.drawn;
             losses = props.playerInfos.stats.losses;
         }
 
@@ -167,57 +261,66 @@ const AccountOverview = props => {
 
         winnings = props.playerAccount.winnings;
         losses = props.playerAccount.losses;
-        drawn = props.playerAccount.drawn;
         ranking = props.playerAccount.ranking;
     }
 
+    const createProfileLink = () => {
+        const link = 'https://battlechoc.com/' + playerName;
+        if (navigator.share) {
+            navigator.share({
+                title: window.document.title,
+                text: t(tr.INVITATION),
+                url: link,
+            }).catch((error) => logger.info('error sharing multiplayer session', error));
+        } else {
+            let whatsappWindowRef = window.open();
+            whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t(tr.INVITATION) + ' - ' + link);
+        }
+    }
+
+    const share = playerName !== EmptyPlayerStats.username ? <Fab style={{ marginLeft: 12 }} icon="share" color="secondary" onClick={createProfileLink} /> : null;
+
     return (
-        <BattlechocDialog
+        <Dialog
             open={props.open}
+            icon="user"
             close={props.close}
+            style={props.dialogStyle}
             id="accountOverviewDialog"
-            title={useMediaQuery('screen and (max-height: 600px)') ? playerName : t(tr.ACCOUNTINFOS)}>
-            <div className={isPlayerAccount ? 'accountOverview' : 'opponent accountOverview'}>
-                <div className="accountAttribute"><AccountCircle /> { playerName }</div>
+            autoscale={true}
+            title={playerName.length > 15 ? `${playerName.slice(0, 14)}...` : playerName}
+            titleSlotAfter={share}>
+            <div className={classes.wrapper}>
                 {(() => {
                     if (typeof props.multiplayerSessions !== 'undefined' && !isPlayerAccount) {
-                        let actions = [];
-                        let gamesAgaistOpponent = props.multiplayerSessions.filter(session => session.opponent.name === playerName);
+                        const actions = [];
+                        const gamesAgaistOpponent = props.multiplayerSessions.filter(session => session.opponent.name === playerName);
                         if (props.playerInfos.stats.username !== EmptyPlayerStats.username) {
                             if (gamesAgaistOpponent.length === 0) {
-                                actions.push(<div key={0} className={classes.menuButton} onClick={() => {
+                                actions.push(<Button key={0} color="secondary" onClick={() => {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                     props.challengePlayer(playerName);
                                     props.close();
-                                }}>
-                                    <PlayArrow className={classes.actionIcon} />
-                                    <span className={classes.actionTitle}>{t(tr.START_GAME)}</span>
-                                </div>);
+                                }}>{t(tr.START_GAME)}</Button>);
                             } else {
-                                actions.push(<div key={1} className={classes.menuButton} onClick={() => {
+                                actions.push(<Button key={1} color="secondary" onClick={() => {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                     props.joinGame(gamesAgaistOpponent[0].id);
                                     props.close();
-                                }}>
-                                    {gamesAgaistOpponent[0].myTurn ? <PlayArrow className={classes.actionIcon} /> : <HourglassEmpty className={classes.actionIcon} />}
-                                    <span className={classes.actionTitle}>{t(tr.JOIN_GAME)}</span>
-                                </div>);
+                                }}>{t(tr.JOIN_GAME)}</Button>);
                             }
                     
                             if (!props.friends.map(friend => friend.name).includes(playerName)) {
-                                actions.push(<div key={3} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
+                                actions.push(<Button key={2} className={`${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
                                     if (!refreshFriend) {
                                         setRefreshFriend(true);
                                         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                         await props.addFriend(playerName);
                                         setRefreshFriend(false);
                                     }
-                                }}>
-                                    <PersonAdd className={classes.actionIcon} />
-                                    <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t(tr.ADD_FRIEND)}</span>
-                                </div>);
+                                }}>{refreshFriend ? <Progress infiniteAnimation size={24} /> : t(tr.ADD_FRIEND)}</Button>);
                             } else {
-                                actions.push(<div key={4} className={`${classes.menuButton} ${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
+                                actions.push(<Button key={3} color="accent" className={`${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
                                     if (!refreshFriend) {
                                         setRefreshFriend(true);
                                         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -225,12 +328,8 @@ const AccountOverview = props => {
                                         await props.addFriend(playerName);
                                         setRefreshFriend(false);
                                     }
-                                }}>
-                                    <PersonAddDisabled className={classes.actionIcon} />
-                                    <span className={classes.actionTitle}>{refreshFriend ? <CircularProgress style={{ filter: 'brightness(1.5)', height: '1rem'}} size={18} /> : t(tr.REMOVE_FRIEND)}</span>
-                                </div>);
+                                }}>{refreshFriend ? <Progress infiniteAnimation size={24} /> : t(tr.REMOVE_FRIEND)}</Button>);
                             }
-
                             return <div className={classes.opponentActions}>{actions}</div>;
                         } else {
                             return <div className={classes.noAccountInfo} >{t(tr.NO_ACCOUNT_INFO)}</div>;
@@ -238,41 +337,44 @@ const AccountOverview = props => {
                     }                        
                 })()}
 
-                <div className={'accountSubAttributes' + (loggedIn ? ' loggedIn' : '') + (isPlayerAccount ? '' : ' opponent')}>
-                    <div className="accountAttribute"><PlusOne />{t(tr.ACCOUNT_OVERVIEW_LEVEL)}<span className="attributeValue">{ level }</span></div>
-                    <div className="accountAttribute"><EmojiEvents />{t(tr.ACCOUNT_OVERVIEW_RANK)}<span className="attributeValue">{ ranking }</span></div>
-                    <div className="accountAttribute"><ThumbUp />{t(tr.ACCOUNT_OVERVIEW_WON)}<span className="attributeValue">{ winnings }</span></div>
-                    <div className="accountAttribute"><ThumbsUpDown />{t(tr.ACCOUNT_OVERVIEW_DRAWN)}<span className="attributeValue">{ drawn }</span></div>
-                    <div className="accountAttribute"><ThumbDown />{t(tr.ACCOUNT_OVERVIEW_LOST)}<span className="attributeValue">{losses }</span></div>
-                    { isPlayerAccount ? <div className="accountAttribute">
-                    <picture>
-                      <source srcSet="/images/coins.webp" type="image/webp" />
-                      <source srcSet="/images/coins.png" type="image/jpeg" /> 
-                      <img src="/images/coins.png" alt="choco coins" />
-                    </picture>
-                    {t(tr.ACCOUNT_OVERVIEW_COINS)}<span className="attributeValue">{ props.playerInfos.stats.coins }</span></div> : null }
+                <div className={classes.attributes}>
+                    <div className={`${classes.gold} ${classes.attribute}`}>
+                        <div className={ classes.icon } style={{ background: `url(/images/trophy.svg) no-repeat` }} />
+                        <div>{t(tr.ACCOUNT_OVERVIEW_RANK)}</div><div>{ ranking }</div>
+                    </div>
+                    <div className={`${classes.primary} ${classes.attribute}`}>
+                        <div className={ classes.icon } style={{ background: `url(/images/win.svg) no-repeat` }} />
+                        <div>{t(tr.ACCOUNT_OVERVIEW_WON)}</div><div>{ winnings }</div>
+                    </div>
+                    <div className={`${classes.accent} ${classes.attribute}`}>
+                        <div className={ classes.icon } style={{ background: `url(/images/lost.svg) no-repeat` }} />
+                        <div>{t(tr.ACCOUNT_OVERVIEW_LOST)}</div><div>{losses }</div>
+                    </div>
+                    <div className={`${classes.gold} ${classes.attribute}`}>
+                        <div className={ classes.icon } style={{ background: `url(/images/level.svg) no-repeat` }} />
+                        <div>{t(tr.ACCOUNT_OVERVIEW_LEVEL)}</div><div>{ level }</div>
+                    </div>
                 </div>
 
                 { isPlayerAccount ? loggedIn ?    
-                    <div className="infobox">
-                        <p className="loggedinInfo">{t(tr.ACCOUNT_OVERVIEW_ASSOCIATION)} {props.playerInfos.email}</p>
-                        <Button className={classes.logoutButton} variant="outlined" onClick={signOut}>
-                            {t(tr.SIGN_OUT)}
-                        </Button>
+                    <div className={classes.signout}>
+                        <p>{t(tr.ACCOUNT_OVERVIEW_ASSOCIATION)} {props.playerInfos.email}</p>
+                        <Button color="accent" onClick={signOut}>{t(tr.SIGN_OUT)}</Button>
                     </div> :
-                    <div className="infobox">
-                        <StyledFirebaseAuth uiConfig={FirebaseSigninUiConfig} firebaseAuth={firebase.auth()} />
+                    <div className={classes.signin}>
+                        <StyledFirebaseAuth className={classes.firebaseUi} uiConfig={FirebaseSigninUiConfig} firebaseAuth={firebase.auth()} />
                         <p>{t(tr.ACCOUNT_OVERVIEW_CREATE_INFO)}</p>
                     </div> : null                 
                 }
             </div>
-        </BattlechocDialog>
+        </Dialog>
     );
 };
 
 AccountOverview.propTypes = {
     close: PropTypes.func.isRequired,
-    open: PropTypes.bool.isRequired
+    open: PropTypes.bool.isRequired,
+    dialogStyle: PropTypes.string.isRequired
 }
 
 const mapStateToProps = state => ({

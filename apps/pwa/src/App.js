@@ -582,7 +582,6 @@ class App extends Component {
                     message={message.text}
                 />
                 )}
-                {typeof this.props.game === 'undefined' ? <div id="background"></div> : null}
                 <Suspense fallback={null}>
                     <Scene onRef={scene => this.scene = scene} />
                 </Suspense>

@@ -143,12 +143,6 @@ const uiReducer = createReducer({
     },
     [UiActions.hideNotification]: state => {
         state.notification = { title: null, message: null, open: false};
-    },
-    [UiActions.lockHudUi]: state => {
-        state.hudUiLocked = true;
-    },
-    [UiActions.unlockHudUi]: state => {
-        state.hudUiLocked = false;
     }
 });
 

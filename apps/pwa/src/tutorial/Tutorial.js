@@ -1,23 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import './Tutorial.css';
 import { connect } from 'react-redux';
-import { AppBar, Toolbar, IconButton } from '@material-ui/core';
-import { ArrowBackIos as ArrowBackIcon, ArrowForwardIos as ArrowForwardIcon, Done } from '@material-ui/icons';
 import { Jukebox, translate as t, keys as tr } from '../ui/misc';
 import { ServerRequest } from '../helper/settings';
 import { multiplayer } from '../Multiplayer';
 import OfflineStore from '../OfflineStore';
 import { updatePlayerStats, showNotification } from '../ui/UiActions';
-import PlayerNameInput from '../ui/controls/PlayerNameInput';
-import BattlechocDialog from '../ui/dialogs/BattlechocDialog';
+import { PlayerNameInput, Button } from '../ui/controls';
+import { Dialog } from '../ui/dialogs';
 import LoopAnimation from './LoopAnimation';
 import { manipulateGame } from '../gameplay/GameActions';
 import { ActionValidationError, EmptyPlayerStats } from 'battlechoc-shared-functions';
 import logger from '../helper/logger';
 import { BattlechocIntro, Factory, CacaoTree, RumTruffleCannon, Cream, TutorialSituations, FactoryExtension, EasterBunny, XmasFactory, HotChocolateBallista, ChocolateFountain, FruitCannon, DonutFactory, Donuts } from '../situations/tutorial/';
+import { createUseStyles } from 'react-jss';
+
+const useStyles = createUseStyles({
+    tutorial: {
+        zIndex: 1,
+        width: '100%',
+        height: '40%'
+    }
+});
 
 const Tutorial = props => {
+    const classes = useStyles();
     const [page, setPage] = useState(0);
     const [open, setOpen] = useState(false);
     const [initialUserName, setInitialUserName] = useState(props.playerInfos.stats.username);
@@ -119,8 +126,8 @@ const Tutorial = props => {
     }
 
 
-    let backIcon = <IconButton id="prev-loop" color="inherit" aria-label="back" onClick={back}><ArrowBackIcon /></IconButton>
-    let nextIcon = <IconButton id="next-loop" color="inherit" aria-label="next" onClick={next}><ArrowForwardIcon /></IconButton>
+    let backIcon = <Button color="accent" style={{ marginRight: 20 }} icon="backward" onClick={back} />
+    let nextIcon = <Button icon="forward" style={{ marginLeft: 20 }} onClick={next} />
     if (page === 0) {
         backIcon = null;
     }
@@ -128,7 +135,7 @@ const Tutorial = props => {
     const situation = getSituation(props.loopAnimations[page]);
 
     if (page >= props.loopAnimations.length - 1) {
-        nextIcon = <IconButton color="inherit" aria-label="close tutorial" onClick={async () => {
+        nextIcon = <Button icon="done" style={{ marginLeft: 20 }} onClick={async () => {
             if (playerHasName || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true) {
                 closeTutorial(false);
             } else {
@@ -137,13 +144,13 @@ const Tutorial = props => {
                 setInitialUserName(nameValue);
                 setOpen(true);
             }
-        }}><Done /></IconButton>
+        }}></Button>
     }
 
     let dialogTitle = t(tr.TUTORIAL_DIALOG_TITLE_BEFORE);
     let dialogContent = <div>
         <PlayerNameInput setPlayerName={setPlayerName} startValue={initialUserName} current={props.playerInfos.stats.username} />
-        <p style={{ color: '#324D5C' }}>{t(tr.TUTORIAL_CHOOSE_NAME_INFO)}</p>
+        <p>{t(tr.TUTORIAL_CHOOSE_NAME_INFO)}</p>
     </div>;
     let canClose = false;
 
@@ -151,33 +158,29 @@ const Tutorial = props => {
         dialogTitle = t(tr.TUTORIAL_DIALOG_TITLE);
         dialogContent = <div className="tutorial-finished">
             <p>{t(tr.TUTORIAL_DIALOG_MESSAGE)}<br />{t(tr.TUTORIAL_DIALOG_HINT)}</p>
-            <div className="menuButton" style={{ fontSize: '1.1rem' }} onClick={() => closeTutorial(true)}>
-                {t(tr.TUTORIAL_DIALOG_PLAY_GAME)}
-            </div>
+            <Button onClick={() => closeTutorial(true)}>{t(tr.TUTORIAL_DIALOG_PLAY_GAME)}</Button>
         </div>;
         canClose = true;
     }
 
     return (
-        <div id="tutorial">
-            <div>
-                <AppBar position="static" style={{ backgroundColor: '#5dbbc3' }} className="tutorialAppbar">
-                    <Toolbar>
-                        {backIcon}
-                        <h6 className="tutorial-headline">{situation.title}</h6>
-                        {nextIcon}
-                    </Toolbar>
-                </AppBar>
-                <div className="battlechoc-tutorial-info"><p>{situation.description}</p></div>
-            </div>
-            <BattlechocDialog
+        <div className={classes.tutorial}>
+            <Dialog
+                open={true}
+                closable={false}
+                style="notification"
+                title={situation.title}
+                titleSlotAfter={nextIcon}
+                titleSlotBefore={backIcon}>
+                <p>{situation.description}</p>
+            </Dialog>
+            <Dialog
                 open={open}
                 close={() => closeTutorial(false)}
-                closable={canClose}
-                autoHideTitle={true}
-                title={dialogTitle}>
-                {dialogContent}
-            </BattlechocDialog>
+                closable={ canClose }
+                title={ dialogTitle }>
+                { dialogContent }
+            </Dialog>
         </div>
     );
 

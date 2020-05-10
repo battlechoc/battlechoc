@@ -2,49 +2,58 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import './Tooltip.css';
 import { GameStateTypes, getEntityDescriptor } from 'battlechoc-shared-functions';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import { withStyles } from '@material-ui/core/styles';
-import ExpansionPanel from '@material-ui/core/ExpansionPanel';
-import MuiExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
-import MuiExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
-import Typography from '@material-ui/core/Typography';
 import { translate as t, keys as tr } from '../misc';
+import { createUseStyles } from 'react-jss';
 
-const ExpansionPanelSummary = withStyles(theme => ({
-    root: {
-        backgroundColor: 'rgba(69, 123, 130, 1)',
-        border: '1px solid rgba(69, 123, 130, 0.2)',
-        color: 'rgba(255, 255, 255, 1)',
-        marginBottom: -1,
-        marginLeft: -1,
-        minHeight: 32,
-        paddingLeft: theme.spacing(2),
-        paddingRight: theme.spacing(2),
-        '&$expanded': {
-            minHeight: 32,
-        },
+const useStyles = createUseStyles(theme => ({
+    tooltip: {
+        top: 0,
+        right: 0,
+        width: 260,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        position: 'absolute',
+        zIndex: 1,
+        marginRight: 5
     },
-    content: {
-        margin: '8px 0',
-        '&$expanded': {
-            margin: '8px 0',
+    title: {
+        display: 'flex',
+        fontFamily: 'Bangers',
+        padding: 6,
+        justifyContent: 'space-between',
+        fontSize: '1.5rem',
+        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased'
+    },
+    button: {
+        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+        padding: 6,
+        border: `3px solid ${theme.color.secondary.light}`,
+        margin: '6px 0 12px 0',
+        borderRadius: 12,
+        color: 'white'
+    },
+    expanded: {
+        padding: 6,
+        '& p': {
+            margin: '6px 0'
         }
     },
-    expanded: {},
-}))(props => <MuiExpansionPanelSummary {...props} />);
-
-ExpansionPanelSummary.muiName = 'ExpansionPanelSummary';
-
-const ExpansionPanelDetails = withStyles(theme => ({
-    root: {
-        paddingTop: theme.spacing(1),
-        paddingRight: theme.spacing(2),
-        paddingBottom: 0,
-        paddingLeft: theme.spacing(2)
+    invisible: {
+        display: 'none'
     },
-}))(MuiExpansionPanelDetails);
+    dropdown: {
+        width: 24,
+        height: 24,
+        marginLeft: 12,
+        background: `url(/images/dropdown.svg) no-repeat`, 
+        backgroundSize: '100% 100%'        
+    }
+}));
 
 const Tooltip = props => {
+    const classes = useStyles();
     const [expanded, setExpanded] = useState(false);
     let title = null, message = null;
 
@@ -89,22 +98,20 @@ const Tooltip = props => {
         }
     }
 
-    let loadingAnimation = !props.playerTurn ? <img className="loadingAnimation" src="/animations/loading.gif" alt="loading" /> : null;
+    const loadingAnimation = !props.playerTurn ? <img className="loadingAnimation" src="/animations/loading.gif" alt="loading" /> : null;
+    const openTooltip = () => {
+        if (message !== null) {
+            setExpanded(!expanded);
+        }
+    }
+    
     if (title) {
         return (
-            <div id="tooltipContainer">
-                <ExpansionPanel square id="tooltip" expanded={expanded && message !== null} onClick={() => {
-                    if (message !== null) {
-                        setExpanded(!expanded);
-                    }
-                }}>
-                    <ExpansionPanelSummary className="tooltipHeader" expandIcon={message !== null ? <ExpandMoreIcon /> : null}>
-                        <Typography variant="h6" color="textSecondary">{title}</Typography>
-                    </ExpansionPanelSummary>
-                    <ExpansionPanelDetails>
-                        <Typography paragraph={true}>{message}</Typography>
-                    </ExpansionPanelDetails>
-                </ExpansionPanel>
+            <div className={classes.tooltip}>
+                <div className={classes.button} onClick={openTooltip}>
+                    <span className={classes.title}>{title} {message !== null ? <span className={classes.dropdown} /> : null}</span>
+                    <div className={(expanded && message !== null ? classes.expanded : classes.invisible)}><p>{message}</p></div>
+                </div>
                 { loadingAnimation }
             </div>
         );
