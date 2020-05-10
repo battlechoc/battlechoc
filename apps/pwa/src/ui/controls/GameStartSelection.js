@@ -73,8 +73,7 @@ const useStyles = createUseStyles(theme => ({
         backgroundSize: '100% 100%',
         backgroundRepeat: 'no-repeat',
         backgroundImage: 'url(/images/cream.svg)',
-        transform: 'rotateY(-50deg)',
-        transform: 'rotateZ(-135deg)'
+        transform: 'rotateY(-50deg) rotateZ(-135deg)',
     }
 }));
 

@@ -168,7 +168,7 @@ const Tutorial = props => {
             <Dialog
                 open={true}
                 closable={false}
-                style="notification"
+                mode="notification"
                 title={situation.title}
                 titleSlotAfter={nextIcon}
                 titleSlotBefore={backIcon}>

@@ -242,7 +242,7 @@ const Hud = props => {
                 } else if (stage === 'MULTIPLAYER_SCREEN') {
                     return null;
                 } else if (stage === 'CHALLENGE_SCREEN') {
-                    return <div className="actionbar">
+                    return <div className={classes.actionbar}>
                         <Fab
                             color="secondary"
                             icon="back"
@@ -262,7 +262,7 @@ const Hud = props => {
                     const playername = playerInfos.stats.username;
                     const score = playerInfos.stats.score;
                     const firstPlayScreen = playerInfos.stats.tutorialFinished === false && playerInfos.stats.tutorialSkipped === false;
-                    const hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
+                    const locked = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
 
                     if (firstPlayScreen) {
                         controls.push(<Button key="0" size="huge" buttonStyle={{ fontSize: '2rem'}} onClick={() => kickOffTutorial()}>{t(tr.START_TUTORIAL)}</Button>);
@@ -270,13 +270,21 @@ const Hud = props => {
                         controls.push(<Button key="2" size="huge" color="secondary" buttonStyle={{ fontSize: '2rem'}} onClick={() => setShowAccountOverview(true)}>{t(tr.SIGNINORUP)}</Button>);
                     } else {
                         controls.push(<Button key="0" size="huge" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t(tr.NEW_GAME) : t(tr.MAIN_MENU_SINGLEPLAYER)}</Button>);
-                        if (!hideOptions) {
-                            controls.push(<Button key="1" size="huge" color="secondary" onClick={() => setShowMultiplayerScreen(true)}>{t(tr.MAIN_MENU_MULTIPLAYER)}</Button>);
-                            controls.push(<Button key="2" size="huge" color="accent" onClick={() => setChoclabScreen(true)}>{t(tr.MAIN_MENU_CHOCLAB)}</Button>);
-                        else {
-                            controls.push(<Button key="1" className={classes.locked} onClick={() => notifyUnlock(1000 - score, 'Multiplayer')}>{t(tr.MAIN_MENU_MULTIPLAYER)}</Button>);
-                            controls.push(<Button key="2" className={classes.locked} onClick={() => notifyUnlock(1000 - score, 'Choclab')}>{t(tr.MAIN_MENU_CHOCLAB)}</Button>);
-                        }
+                        controls.push(<Button key="1" size="huge" locked={locked} color="secondary" onClick={() => {
+                            if (locked) {
+                                notifyUnlock(1000 - score, 'Multiplayer');
+                            } else {
+                                setShowMultiplayerScreen(true);
+                            }
+                        }}>{t(tr.MAIN_MENU_MULTIPLAYER)}</Button>);
+                        
+                        controls.push(<Button key="2" size="huge" locked={locked} color="accent" onClick={() => { 
+                            if (locked) {
+                                notifyUnlock(1000 - score, 'Choclab');
+                            } else {
+                                setChoclabScreen(true);
+                            }
+                        }}>{t(tr.MAIN_MENU_CHOCLAB)}</Button>);
                     }
 
                     return (

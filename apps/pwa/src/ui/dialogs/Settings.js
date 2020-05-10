@@ -185,7 +185,7 @@ const Settings = props => {
           setShowErrorReport(false)
         }}
         title={t(tr.REPORT_PROBLEM)}
-        style="stacked">
+        mode="stacked">
         <div>
           <form className={classes.formular} noValidate autoComplete="off">
             <label htmlFor="issue-message">{t(tr.REPORT_CUSTOM_MESSAGE)}</label>

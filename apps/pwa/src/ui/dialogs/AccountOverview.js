@@ -285,7 +285,7 @@ const AccountOverview = props => {
             open={props.open}
             icon="user"
             close={props.close}
-            style={props.dialogStyle}
+            mode={props.dialogStyle}
             id="accountOverviewDialog"
             autoscale={true}
             title={playerName.length > 15 ? `${playerName.slice(0, 14)}...` : playerName}
