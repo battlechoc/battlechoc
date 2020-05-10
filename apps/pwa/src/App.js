@@ -6,7 +6,7 @@ import OfflineStore from './OfflineStore';
 import { multiplayer } from './Multiplayer';
 import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut } from 'battlechoc-shared-functions';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting } from './ui/UiActions';
+import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting, showNotification } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -90,7 +90,8 @@ class App extends Component {
             stopSessionRefresh: this.props.stopSessionRefresh,
             startSessionRefresh: this.props.startSessionRefresh,
             showQuickMessage: this.props.showQuickMessage,
-            detonateAtPosition: this.detonateAtPosition
+            detonateAtPosition: this.detonateAtPosition,
+            showNotification: this.props.showNotification,
         });
 
         let browserLanguage = 'en';
@@ -299,7 +300,7 @@ class App extends Component {
             }
             if (this.props.game !== undefined && (this.props.game.state === GameStateTypes.BUILD_PHASE || this.props.game.state === GameStateTypes.ATTACK_PHASE)) {
                 const winners = Rules.determineWinner(this.props.game);
-                if (typeof winners !== 'undefined') {
+                if (typeof winners !== 'undefined' && (typeof multiplayer.currentGameSession === 'undefined' || this.props.game.players[multiplayer.localPlayerIndex].id === winners[0].id)) {
                     prevProps.endGame({
                         winners: winners,
                         issuer: this.props.game.players[multiplayer.localPlayerIndex].id
@@ -466,7 +467,6 @@ class App extends Component {
                         this.props.startGame(players).then(() => {
                             this.opponent.type = Augustus.randomizeType();
                             this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
-                            // TODO maybe adjust camera position based on boardsize (6/8/10)
                             const boardSize = (this.props.playerInfos.stats.score < 200) ? { rows: 6, cols: 6 } : (this.props.playerInfos.stats.score < 500) ? { rows: 8, cols: 8 } : { rows: 10, cols: 10 };
                             this.props.createBoard({
                                 boardSize: boardSize,
@@ -485,6 +485,7 @@ class App extends Component {
             setTimeout(() => {
                 this.props.finishGame();
                 this.props.resetUi();
+                multiplayer.fetchPlayerStats();
 
                 const isAndroidApp = typeof window.Android !== 'undefined';
                 const isAndroidDevice = /Android/i.test(navigator.userAgent);
@@ -526,22 +527,15 @@ class App extends Component {
         }
     }
 
-    surrender() {
-        const winners = []
-        winners.push(Object.assign({ idx: 1 - multiplayer.localPlayerIndex }, this.props.game.players[1 - multiplayer.localPlayerIndex]));
-        this.props.endGame({
-            winners: winners,
-            issuer: this.props.game.players[multiplayer.localPlayerIndex].id
-        });
-    }
-
     showOverview() {
         Jukebox.stopMusic(true);
         this.props.showOverview();
         this.props.gameResumeable(false);
         OfflineStore.gamestateStore.clear();
         const stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: this.props.game.winners, id: uuidv4() };
-        multiplayer.pushGameStats([stats]);
+        if (this.props.game.players[0].type !== PlayerType.HUMAN || this.props.game.players[1].type !== PlayerType.HUMAN) {
+            multiplayer.pushGameStats([stats]);
+        }
     }
 
     async reset() {
@@ -596,7 +590,6 @@ class App extends Component {
                     startTutorial={() => this.startTutorial()}
                     className={this.props.tutorial ? 'tutorial hud' : 'hud'}
                     endGame={coins => this.endGame(coins)}
-                    surrender={() => this.surrender()}
                     challengedPlayer={this.state.player}
                     openInfo={this.state.openInfo}
                     sessionId={this.state.session} />
@@ -658,7 +651,8 @@ const mapDispatchToProps = {
     showQuickMessage,
     startSessionRefresh,
     stopSessionRefresh,
-    toggleDonutHighlighting
+    toggleDonutHighlighting,
+    showNotification
 };
 
 const AppContainer = connect(

@@ -209,6 +209,10 @@ const Hud = props => {
         await multiplayer.tutorialSkipped();
     }
 
+    const notifyUnlock = (missingScore, feature) => {
+        props.showNotification({ title: feature + ' not yet unlocked', message: 'You need to earn ' + missingScore + ' more coins to unlock the ' + feature + ' feature.' });
+    }
+
     const stage = estimateStage();
     return (
         <div className={showMultiplayerScreen ? 'scrollable ' + className : className}>
@@ -269,6 +273,9 @@ const Hud = props => {
                         if (!hideOptions) {
                             controls.push(<Button key="1" size="huge" color="secondary" onClick={() => setShowMultiplayerScreen(true)}>{t(tr.MAIN_MENU_MULTIPLAYER)}</Button>);
                             controls.push(<Button key="2" size="huge" color="accent" onClick={() => setChoclabScreen(true)}>{t(tr.MAIN_MENU_CHOCLAB)}</Button>);
+                        else {
+                            controls.push(<Button key="1" className={classes.locked} onClick={() => notifyUnlock(1000 - score, 'Multiplayer')}>{t(tr.MAIN_MENU_MULTIPLAYER)}</Button>);
+                            controls.push(<Button key="2" className={classes.locked} onClick={() => notifyUnlock(1000 - score, 'Choclab')}>{t(tr.MAIN_MENU_CHOCLAB)}</Button>);
                         }
                     }
 
@@ -357,7 +364,6 @@ Hud.propTypes = {
     enterMultiplayerGame: PropTypes.func.isRequired,
     startTutorial: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired,
-    surrender: PropTypes.func.isRequired,
     challengedPlayer: PropTypes.string,
     className: PropTypes.string.isRequired,
     sessionId: PropTypes.string

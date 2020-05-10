@@ -191,9 +191,10 @@ module.exports = {
     "TRY_TO_JOIN_GAME": "私たちはあなたをマルチプレイヤーゲームに直接接続しようとします。少々お待ちください。",
     "TRY_TO_SHOW_PLAYER_ACCOUNT": "プレーヤーアカウントを読み込んでいます。しばらくお待ちください",
     "NOTIFICATION_PERMISSION_INFO": "誰かがあなたに挑戦したり、対戦相手が彼のターンを終えて、あなたがプレーする準備ができている場合、私たちはあなたにあなたに通知する許可を求めます。",
+    "NOTIFICATION_SURRENDER_NOT_POSSIBLE": "コインが少なすぎて降伏できない",
     "NO_ACCOUNT_INFO": "現在ログインしていません。設定メニューにログインするか、メインページで新しいゲームを開始して新しいアカウントを作成します",
     "WARNING_PLAYER_NOT_FOUND": "{{name}} 見つかりません",
-    "SURRENDER_GAME_TEXT": "本当にゲームを放棄したいですか {{name}}",
+    "SURRENDER_GAME_TEXT": "本当にゲームを放棄したいですか {{name}}. 降伏は {{coins}} コインかかります",
     "UPDATE_LEVEL_FAILED_UPGRADE": "アップグレードを実行できませんでした。インターネット接続を確認してください。",
     "UPDATE_LEVEL_FAILED_DOWNGRADE": "ダウングレードを実行することはできませんでした。インターネット接続を確認してください。",
     "ATTRIBUTE_NAME_hp": "健康ポイント",
@@ -212,5 +213,7 @@ module.exports = {
     "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "収集する必要があります {{coins}} チョコレートファウンテンとフルーツキャノンのロックを解除するためのコインを増やす",
     "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "ドーナツトラップ、Muliplayer、およびChoclabは収集後にあなたのものになります {{coins}} より多くのコイン",
     "UNLOCK_CONGRATULATIONS_CHOCLAB": "おめでとう、Choclabのロックを解除しました。これは、エンティティをアップグレードする場所です！",
-    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "マルチプレイヤーモードのロックを解除しました。世界中の他のプレイヤーと対戦し、ハイスコアのトップに到達してください！"
+    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "マルチプレイヤーモードのロックを解除しました。世界中の他のプレイヤーと対戦し、ハイスコアのトップに到達してください！",
+    "PLAYER_NAME_GENERATED_TITLE": "ランダムなプレイヤー名が設定されています",
+    "PLAYER_NAME_GENERATED_BODY": "マルチプレイヤー機能を使用できるように、 {{name}} という名前を選択しました。この名前は、設定メニューでいつでも変更できます。"
 }

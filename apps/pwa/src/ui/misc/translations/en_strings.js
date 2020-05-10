@@ -191,9 +191,10 @@ module.exports = {
     "TRY_TO_JOIN_GAME": "We try to connect you directly to your multiplayer game. Please wait a moment.",
     "TRY_TO_SHOW_PLAYER_ACCOUNT": "Loading player account. Please wait a moment.",
     "NOTIFICATION_PERMISSION_INFO": "We will now request your permission to inform you if someone challenges you, or an opponent has finished his turn and you are up to play",
+    "NOTIFICATION_SURRENDER_NOT_POSSIBLE": "You cannot surrender because you got too few coins",
     "NO_ACCOUNT_INFO": "You are currently not logged in. Use the settings icon to login or just start a new game on the main page for creating a new one",
     "WARNING_PLAYER_NOT_FOUND": "Player {{name}} not found",
-    "SURRENDER_GAME_TEXT": "Do you really want to surrender the game against {{name}}?",
+    "SURRENDER_GAME_TEXT": "Do you really want to surrender the game against {{name}}? Surrendering costs {{coins}} coins.",
     "UPDATE_LEVEL_FAILED_UPGRADE": "It was not possible to perform the upgrade. Check your internet connection.",
     "UPDATE_LEVEL_FAILED_DOWNGRADE": "It was not possible to perform the downgrade. Check your internet connection.",
     "ATTRIBUTE_NAME_hp": "HP",
@@ -212,5 +213,7 @@ module.exports = {
     "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "You need to collect {{coins}} more coins to unlock the Chocolate Fountain and the Fruit Cannon",
     "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Donut Traps, Muliplayer and the Choclab will be yours after collecting {{coins}} more coins",
     "UNLOCK_CONGRATULATIONS_CHOCLAB": "Congratulations you've unlocked the Choclab. This is the place for upgrading your entities!",
-    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "You have unlocked the multiplayer mode. Play against other players worldwide and reach the top of the highscore!"
+    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "You have unlocked the multiplayer mode. Play against other players worldwide and reach the top of the highscore!",
+    "PLAYER_NAME_GENERATED_TITLE": "A random player name has been set for you",
+    "PLAYER_NAME_GENERATED_BODY": "We chose the name {{name}} for you to enable you for the multiplayer features. You can change this name at any time in the settings menu."
 }

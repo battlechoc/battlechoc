@@ -191,9 +191,10 @@ module.exports = {
     "TRY_TO_JOIN_GAME": "Bitte warte kurz. Wir versuchen dich direkt mit deinem Multiplayerspiel zu verbinden",
     "TRY_TO_SHOW_PLAYER_ACCOUNT": "Einen Augenblick bitte. Spielerinformationen werden geladen",
     "NOTIFICATION_PERMISSION_INFO": "Wir werden dich gleich um Erlaubnis fragen, dich informieren zu dürfen, falls jemand dich herausfordert, oder ein Gegner seinen Zug beendet hat und du an der Reihe bist",
+    "NOTIFICATION_SURRENDER_NOT_POSSIBLE": "Du kannst grad nicht aufgeben, weil du zu wenig Schokotaler hast",
     "NO_ACCOUNT_INFO": "Du bist zur Zeit nicht angemeldet. Melde dich im Einstellungsmenü an, oder starte einfach ein neues Spiel auf der Hauptseite, um einen neuen Account zu erstellen",
     "WARNING_PLAYER_NOT_FOUND": "Spieler {{name}} wurde nicht gefunden",
-    "SURRENDER_GAME_TEXT": "Möchtest du das Spiel gegen {{name}} wirklich aufgeben?",
+    "SURRENDER_GAME_TEXT": "Möchtest du das Spiel gegen {{name}} wirklich aufgeben? Aufgeben kostet {{coins}} Schokotaler.",
     "UPDATE_LEVEL_FAILED_UPGRADE": "Es war nicht möglich das Upgrade durchzuführen. Überprüfe deine Internetverbindung",
     "UPDATE_LEVEL_FAILED_DOWNGRADE": "Es war nicht möglich das Downgrade durchzuführen. Überprüfe deine Internetverbindung",
     "ATTRIBUTE_NAME_hp": "Lebenspunkte",
@@ -212,5 +213,7 @@ module.exports = {
     "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "Sammle noch {{coins}} Schokomünzen, um den Schokobrunnen und die Fruchtkanone freizuschalten.",
     "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Donut-Fallen, Multiplayer und das Choclab gehören dir, wenn du noch weitere {{coins}} Schokomünzen sammelst.",
     "UNLOCK_CONGRATULATIONS_CHOCLAB": "Herzlichen Glückwunsch! Du hast das Choclab freigeschaltet. Hier kannst du deine Einheiten verbessern!",
-    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "Du hast den Multiplayer-Modus freigeschaltet. Spiele gegen andere Spieler weltweit und erklimme den Highscore!"
+    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "Du hast den Multiplayer-Modus freigeschaltet. Spiele gegen andere Spieler weltweit und erklimme den Highscore!",
+    "PLAYER_NAME_GENERATED_TITLE": "Ein zufälliger Spielername wurde für dich ausgewählt",
+    "PLAYER_NAME_GENERATED_BODY": "Wir haben den Name {{name}} für dich ausgewählt, um dich für die Multiplayer-Funktionen freizuschalten. Du kannst den Namen jederzeit im Einstellungsmenü ändern."
 }

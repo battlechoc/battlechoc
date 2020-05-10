@@ -3,8 +3,8 @@ import '@firebase/auth';
 import '@firebase/firestore';
 import 'firebase/messaging';
 import OfflineStore from './OfflineStore';
-import { GameActionTypes, AttackType, EmptyPlayerStats } from 'battlechoc-shared-functions';
-import { Jukebox } from './ui/misc';
+import { GameActionTypes, AttackType, EmptyPlayerStats, NotificationReasonType } from 'battlechoc-shared-functions';
+import { Jukebox, translate as t, keys as tr } from './ui/misc';
 import { ServerRequest, generateNewAndroidMessagingToken, setAndroidDefaults } from './helper/settings';
 import logger from './helper/logger';
 import uuidv4 from 'uuid/v4';
@@ -32,7 +32,8 @@ class Multiplayer {
             startSessionRefresh: () => logger.warn("calling stopSessionRefresh without beeing initialized"),
             stopSessionRefresh: () => logger.warn("calling stopSessionRefresh without beeing initialized"),
             showQuickMessage: () => logger.warn("calling showQuickMessage without beeing initialized"),
-            detonateAtPosition: () => logger.warn("calling detonateAtPosition without beeing initialized")
+            detonateAtPosition: () => logger.warn("calling detonateAtPosition without beeing initialized"),
+            showNotification: () => logger.warn("calling showNotification without beeing initialized")
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -44,6 +45,9 @@ class Multiplayer {
         try {
             this.messaging = firebase.messaging();
             this.messaging.usePublicVapidKey("BJ6zc8pE57SS98ocjLmtHBuaGgDjIirTpAALyYIR_zywwBJbmssDWhbn78WPhoJfjN28htOBI4bwlVzjwHMCqak");
+            this.messaging.onMessage(payload => {
+                this.handlePushMessage(payload);
+            });
         } catch (error) {
             logger.info(error);
         }
@@ -51,6 +55,25 @@ class Multiplayer {
 
     shouldAskForNotificationPermission() {
         return firebase.auth().currentUser && 'Notification' in window && Notification.permission === 'default';
+    }
+
+    handlePushMessage(payload) {
+        console.log("Push message received: " + JSON.stringify(payload));
+
+        if (this.currentGameSession === undefined ||
+            this.currentGameSession !== payload.data.session ||
+            ![NotificationReasonType.OPPONENT_FINISHED_TURN, NotificationReasonType.GAME_LOST].includes(payload.data.reason)) {
+            this.callbacks.showQuickMessage({ text: payload.data.title + ' ' + payload.data.text, variant: 'info' });
+        }
+
+        if ([NotificationReasonType.CHALLENGED,
+        NotificationReasonType.OPPONENT_SURRENDERED_GAME,
+        NotificationReasonType.GAME_LOST,
+        NotificationReasonType.SESSION_TIMEOUT_GAME_LOST,
+        NotificationReasonType.SESSION_TIMEOUT_GAME_WON].includes(payload.data.reason)) {
+            console.log("updating multiplayer sessions");
+            this.getMultiplayerSessions(() => this.callbacks.showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED) }));
+        }
     }
 
     askForNotificationPermission() {
@@ -79,6 +102,19 @@ class Multiplayer {
         });
     }
 
+    async setRandomPlayerName() {
+        const generatedName = await this.fetchRandomName();
+        ServerRequest('post', '/user/username', { username: generatedName })
+            .then(async () => {
+                this.callbacks.showNotification({ title: t(tr.PLAYER_NAME_GENERATED_TITLE), message: t(tr.PLAYER_NAME_GENERATED_BODY, generatedName) });
+                this.callbacks.updatePlayerStats({ username: generatedName });
+                OfflineStore.playerStore.get('stats').then(playerStats => {
+                    playerStats.username = generatedName;
+                    OfflineStore.playerStore.set('stats', playerStats);
+                });
+            })
+            .catch(error => console.warn(error));
+    }
     async authStateChanged(user) {
         if (user) {
             if (typeof this.callbacks.notifyPlayerSignedIn !== 'undefined') {
@@ -94,7 +130,12 @@ class Multiplayer {
 
             try {
                 await ServerRequest('post', '/user');
-                this.mergePlayerStats();
+                const mergedStats = await this.mergePlayerStats();
+                if (typeof mergedStats !== 'undefined') {
+                    if (mergedStats.username === 'Chocnonymous' && (mergedStats.tutorialFinished === true || mergedStats.tutorialSkipped === true)) {
+                        await this.setRandomPlayerName();
+                    }
+                }
             } catch (err) {
                 logger.info("could not create player entry.", err);
             }
@@ -177,12 +218,13 @@ class Multiplayer {
             }
 
             if (typeof offlineAccount === 'undefined') {
-                this.fetchPlayerStats();
+                return this.fetchPlayerStats();
             } else {
                 try {
                     const data = (await ServerRequest('post', '/user/merge', { playerInfo: offlineAccount })).data;
                     OfflineStore.playerStore.set('stats', data.mergedPlayerInfo).catch(error => logger.warn("could not set new player stats in idb.", error));
                     this.callbacks.updatePlayerStats(data.mergedPlayerInfo);
+                    return data.mergedPlayerInfo;
                 } catch (err) {
                     logger.warn('Could not merge stats.', err);
                     return this.fetchPlayerStats();
@@ -267,6 +309,99 @@ class Multiplayer {
                 OfflineStore.playerStore.set('stats', playerStats)
             } catch (error) {
                 logger.warn(error);
+            }
+            this.callbacks.updatePlayerStats(playerStats);
+        }).catch(err => logger.warn("could not retrieve offline player stats", err));
+
+        if (firebase.auth().currentUser) {
+            try {
+                const data = (await ServerRequest('post', '/user/tutorial/started')).data;
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player tutorial started state.");
+                logger.warn(err);
+            }
+        }
+    }
+
+    async tutorialSkipped() {
+        OfflineStore.playerStore.get('stats').then(playerStats => {
+            playerStats.tutorialStarted = false;
+            playerStats.tutorialSkipped = true;
+            try {
+                OfflineStore.playerStore.set('stats', playerStats)
+            } catch (error) {
+                logger.warn(error);
+            }
+            this.callbacks.updatePlayerStats(playerStats);
+        }).catch(err => logger.warn("could not retrieve offline player stats", err));
+
+        if (firebase.auth().currentUser) {
+            try {
+                const data = (await ServerRequest('post', '/user/tutorial/skipped')).data;
+                console.log(data);
+                if (data.stats.username === 'Chocnonymous') {
+                    await this.setRandomPlayerName();
+                }
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player tutorial skipped state.");
+                logger.warn(err);
+            }
+        }
+    }
+
+    async tutorialFinished() {
+        OfflineStore.playerStore.get('stats').then(playerStats => {
+            playerStats.tutorialFinished = true;
+            try {
+                OfflineStore.playerStore.set('stats', playerStats)
+            } catch (error) {
+                logger.warn(error);
+            }
+            this.callbacks.updatePlayerStats(playerStats);
+        }).catch(err => logger.warn("could not retrieve offline player stats", err));
+
+        if (firebase.auth().currentUser) {
+            try {
+                const data = (await ServerRequest('post', '/user/tutorial/finished')).data;
+                this.callbacks.updatePlayerStats(data.stats);
+            } catch (err) {
+                logger.warn("Could not update player tutorial finished state.");
+                logger.warn(err);
+            }
+        }
+    }
+
+    async updatePlayerTutorialInfos(playerInfos) {
+        try {
+            OfflineStore.playerStore.set('stats', playerInfos);
+        } catch (error) {
+            logger.warn(error);
+        }
+
+        if (firebase.auth().currentUser) {
+            try {
+                await ServerRequest('post', '/user/tutorialinfos', {
+                    infos: {
+                        tutorialStarted: playerInfos.tutorialStarted,
+                        tutorialFinished: playerInfos.tutorialFinished,
+                        tutorialSkipped: playerInfos.tutorialSkipped
+                    }
+                });
+            } catch (err) {
+                logger.warn("Could not update player tutorial infos");
+                logger.warn(err);
+            }
+        }
+    }
+
+    signOut(notifyPlayerSignedOut) {
+        firebase.auth().signOut().then(() => {
+            if (typeof notifyPlayerSignedOut === 'function') {
+                notifyPlayerSignedOut();
+            } else {
+                logger.warn("player notification callback is not a function");
             }
             this.callbacks.updatePlayerStats(playerStats);
         }).catch(err => logger.warn("could not retrieve offline player stats", err));
@@ -463,12 +598,7 @@ class Multiplayer {
     }
 
     async surrenderGame(sessionId) {
-        try {
-            await ServerRequest('post', '/surrender', { sessionId: sessionId });
-        } catch (err) {
-            logger.error("Could not surrender");
-            logger.error(err);
-        }
+        return ServerRequest('post', '/surrender', { sessionId: sessionId });
     }
 
     signInAnonymouslyIfNotAlreadySignedIn() {

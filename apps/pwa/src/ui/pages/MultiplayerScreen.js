@@ -187,10 +187,10 @@ const MultiplayerScreen = props => {
     const classes = useStyles();
     const { closeMultiplayerScreen, showQuickMessage, openAccountOverview, enterMultiplayerGame, multiplayerSessions, sessionRefreshActions, friends } = props;
 
-    const [searchingRandomOpponent, setSearchingRandomOpponent] = useState(false);    
-    const [showFriends, setShowFriends] = useState(false);  
-    const [showSurrenderDialog, setShowSurrenderDialog] = useState(false);  
-    const [showSearch, setShowSearch] = useState(false);  
+    const [searchingRandomOpponent, setSearchingRandomOpponent] = useState(false);
+    const [showFriends, setShowFriends] = useState(false);
+    const [showSurrenderDialog, setShowSurrenderDialog] = useState(false);
+    const [showSearch, setShowSearch] = useState(false);
     const [userSearchText, setUserSearchText] = useState('');
     const [searchResults, setSearchResults] = useState([]);  
     const [waitForResponse, setWaitForResponse] = useState(false);  
@@ -203,7 +203,7 @@ const MultiplayerScreen = props => {
     const askForPermissionTimeout = useRef();
     const requestRunning = useRef(false);
     const source = useRef(Axios.CancelToken.source());
-    
+
     const inputRef = React.useRef();
     
     let timeAgo = new TimeAgo('en-US');
@@ -217,7 +217,7 @@ const MultiplayerScreen = props => {
         TimeAgo.addLocale(en);
         TimeAgo.addLocale(de);
 
-        multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED)}));
+        multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED) }));
         multiplayer.fetchFriendsList();
 
         shouldAskForPermissionTimeout.current = setTimeout(() => {
@@ -235,6 +235,18 @@ const MultiplayerScreen = props => {
 
     const showPlayerProfile = (session, stacked=true) => openAccountOverview(session.opponent, stacked);
 
+    const canNotifyOpponent = session => {
+        const currentDateTime = (new Date()).getTime();
+        const lastNotifiedTime = (typeof session.last_notification === 'undefined') ? 0 : session.last_notification;
+        return (((currentDateTime - lastNotifiedTime) > 1000 * 60 * 60 * 4) && session.myTurn === false);
+    }
+
+    const notifyOpponent = session => {
+        ServerRequest('post', '/user/notify', { sessionId: session.id }).then(response => {
+            updateMultiplayerSessions(response.data.sessions);
+        })
+    }
+
     const removeFriend = async friend => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         await multiplayer.removeFriend(friend);
@@ -242,15 +254,15 @@ const MultiplayerScreen = props => {
 
     const addFriend = async friend => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        await multiplayer.addFriend(friend);       
-    } 
+        await multiplayer.addFriend(friend);
+    }
 
     const challengePlayer = async username => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
         setShowFriends(false);
         setShowSearch(false)
         await multiplayer.challengePlayer(username);
-        multiplayer.getMultiplayerSessions();        
+        multiplayer.getMultiplayerSessions();
     }
 
     const askSurrenderGame = (sessionId, opponent) => {
@@ -260,24 +272,27 @@ const MultiplayerScreen = props => {
     }
 
     const surrenderGame = async sessionId => {
-        await multiplayer.surrenderGame(sessionId);
-        multiplayer.getMultiplayerSessions();
+        multiplayer.surrenderGame(sessionId).then(() => multiplayer.getMultiplayerSessions()).then(() => {
+            multiplayer.fetchPlayerStats();
+        }).catch(err => {
+            showQuickMessage({ text: t(tr.NOTIFICATION_SURRENDER_NOT_POSSIBLE), variant: 'info' });
+        });
     }
 
-    const sortByTimestamp = ( a, b ) => {
-      if ( a.last_changed < b.last_changed ){
-        return 1;
-      }
-      if ( a.last_changed > b.last_changed ){
-        return -1;
-      }
-      return 0;
+    const sortByTimestamp = (a, b) => {
+        if (a.last_changed < b.last_changed) {
+            return 1;
+        }
+        if (a.last_changed > b.last_changed) {
+            return -1;
+        }
+        return 0;
     }
 
     const searchRandomOpponent = async () => {
         if (!searchingRandomOpponent) {
             setSearchingRandomOpponent(true);
-            
+
             try {
                 const player = await multiplayer.findRandomPlayer();
                 openAccountOverview(player);
@@ -291,14 +306,14 @@ const MultiplayerScreen = props => {
 
     useEffect(() => {
         const searchUser = async () => {
-            if (userSearchText !== '') {             
+            if (userSearchText !== '') {
                 clearTimeout(requestTimeout.current);
                 if (requestRunning.current) {
                     source.current.cancel();
                 }
 
                 setSearchResults([]);
-                requestTimeout.current = (setTimeout( async () => {
+                requestTimeout.current = (setTimeout(async () => {
                     setWaitForResponse(true);
                     source.current = Axios.CancelToken.source();
                     requestRunning.current = true;
@@ -310,7 +325,7 @@ const MultiplayerScreen = props => {
                         if (window.innerHeight < 300) {
                             inputRef.current.blur();
                         }
-                    } catch(error) {
+                    } catch (error) {
                         if (error instanceof NoHealthyInternetConnectionError || error.code === 'auth/network-request-failed') {
                             setBadInternetConnection(true);
                         } else if (!Axios.isCancel(error)) {
@@ -328,7 +343,7 @@ const MultiplayerScreen = props => {
     }, [userSearchText]);
 
     const refreshSessions = () => {
-        multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED)}));
+        multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED) }));
     }
 
     return (
@@ -460,7 +475,8 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = {
-    showQuickMessage
+    showQuickMessage,
+    updateMultiplayerSessions
 };
 
 const MultiplayerScreenContainer = connect(

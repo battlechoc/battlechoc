@@ -233,7 +233,7 @@ const Settings = props => {
               setShowErrorReport(true);
             }}>{t(tr.REPORT_PROBLEM)}</Button>
             {(() => {
-              if (props.playerInfos.stats.username !== 'Chocnonymous' && typeof props.game === 'undefined') {
+              if ((props.playerInfos.stats.username !== 'Chocnonymous' && typeof props.game === 'undefined') || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true) {
                 return (
                   <div>
                     <Button className={classes.button} color="accent" onClick={() => {
@@ -274,7 +274,6 @@ const Settings = props => {
 Settings.propTypes = {
   open: PropTypes.bool.isRequired,
   close: PropTypes.func.isRequired,
-  surrender: PropTypes.func.isRequired,
   startTutorial: PropTypes.func.isRequired
 }
 

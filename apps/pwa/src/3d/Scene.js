@@ -53,6 +53,12 @@ class Scene extends Component {
         let height = 6.5;
         if (this.props.tutorial) {
             height = 5.25;
+        } else if (typeof this.props.game !== 'undefined') {
+            if (this.props.game.board.size.cols === 6) {
+                height = 5.5;
+            } else if (this.props.game.board.size.cols === 8) {
+                height = 6.1;
+            }
         }
 
         if (position === null) {
@@ -92,6 +98,12 @@ class Scene extends Component {
         let height = 6.5;
         if (this.props.tutorial) {
             height = 5.25;
+        } else if (typeof this.props.game !== 'undefined') {
+            if (this.props.game.board.size.cols === 6) {
+                height = 5.5;
+            } else if (this.props.game.board.size.cols === 8) {
+                height = 6.1;
+            }
         }
 
         if (typeof position === 'undefined') {
