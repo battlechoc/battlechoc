@@ -285,11 +285,11 @@ const AccountOverview = props => {
             open={props.open}
             icon="user"
             close={props.close}
-            stacked={props.stackedStyle}
+            style={props.dialogStyle}
             id="accountOverviewDialog"
             autoscale={true}
             title={playerName.length > 15 ? `${playerName.slice(0, 14)}...` : playerName}
-            titleSlot={share}>
+            titleSlotAfter={share}>
             <div className={classes.wrapper}>
                 {(() => {
                     if (typeof props.multiplayerSessions !== 'undefined' && !isPlayerAccount) {
@@ -374,7 +374,7 @@ const AccountOverview = props => {
 AccountOverview.propTypes = {
     close: PropTypes.func.isRequired,
     open: PropTypes.bool.isRequired,
-    stackedStyle: PropTypes.bool.isRequired
+    dialogStyle: PropTypes.string.isRequired
 }
 
 const mapStateToProps = state => ({

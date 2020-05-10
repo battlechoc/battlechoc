@@ -10,3 +10,4 @@ export {default as Fab} from './Fab';
 export {default as Select} from './Select';
 export {default as Progress} from './Progress';
 export {default as PlayerList} from './PlayerList';
+export {default as PlayerNameInput} from './PlayerNameInput';

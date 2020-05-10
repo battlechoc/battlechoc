@@ -30,14 +30,21 @@ const useStyles = createUseStyles(theme => ({
       border: `3px solid ${theme.color[props.color].light}`
     }),
     icon: props => {
-      return props.icon === 'trophy' ? {
-        width: '90%',
-        height: '90%',
-        marginTop: 3
-      } : {
+      const style = {
         width: '60%',
         height: '60%'
-      }        
+      }
+      if (props.icon === 'trophy') {
+        style.width = '90%';
+        style.height = '90%';
+        style.marginTop = 3;
+      }
+
+      if (props.icon === 'backward' && props.color === 'accent') {
+        style.filter = 'brightness(0.8) contrast(2) hue-rotate(190deg)'
+      }
+      
+      return style;
     },
     border: props => ({
       cursor: 'pointer',

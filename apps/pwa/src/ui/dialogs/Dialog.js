@@ -20,14 +20,26 @@ const useStyles = createUseStyles(theme => ({
         background: 'unset !important',
         zIndex: 20
     },
+    notification: {
+        background: 'unset !important',
+        position: 'relative',
+        '& > div > div ': {
+            left: 0,
+            bottom: 0,
+            top: 'unset',
+            padding: 12,
+            height: 'calc(100% - 32px)',
+            width: 'calc(100% - 24px)'
+        }
+    },
     dialog: {
-        width: '80%',
+        width: props => props.style === 'notification' ? '100%' : '80%',
         height: '90%',
         padding: 16,
         position: 'relative'
     },
     body: {
-        borderRadius: 20,
+        borderRadius: props => props.style === 'notification' ? 0 : 20,
         position: 'absolute',
         top: 12,
         right: 6,
@@ -41,7 +53,7 @@ const useStyles = createUseStyles(theme => ({
         '&:before': {
             content: '""',
             position: 'absolute',
-            borderRadius: 20,
+            borderRadius: props => props.style === 'notification' ? 0 : 20,
             top: 0,
             left: 0,
             zIndex: -1,
@@ -61,7 +73,7 @@ const useStyles = createUseStyles(theme => ({
     title: {
         zIndex: 12,
         fontFamily: 'Bangers',
-        fontSize: props => props.autoscale && props.title.length > 7 ? '1.7rem' : '2.5rem',
+        fontSize: props => (props.autoscale && props.title.length > 7) || props.style === 'notification' ? '1.7rem' : '2.5rem',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -120,6 +132,7 @@ const useStyles = createUseStyles(theme => ({
         background: 'url(/images/dialog-border-top.svg) no-repeat' 
     },
     left: {
+        display: props => props.style === 'notification' ? 'none' : 'block',
         bottom: 0,
         left: 0,
         width: 133,
@@ -150,17 +163,18 @@ const Dialog = props =>  {
     }
 
     return (
-        <div className={`${classes.overlay} ${props.stacked ? classes.stacked : ''}`} style={props.open ? { display: 'flex' } : { display: 'none' }}>
+        <div className={`${classes.overlay} ${classes[props.style]}`} style={props.open ? { display: 'flex' } : { display: 'none' }}>
             <div className={classes.dialog}>
-                { props.closable ? <Fab className={classes.close} color={ props.stacked ? 'secondary' : 'accent' } icon={ props.stacked ? 'back' : 'close' } onClick={closeDialog} /> : null }
+                { props.closable ? <Fab className={classes.close} color={ props.style === 'stacked' ? 'secondary' : 'accent' } icon={ props.style === 'stacked' ? 'back' : 'close' } onClick={closeDialog} /> : null }
                 <div className={classes.body}>
                     <div className={`${classes.border} ${classes.top}`} />
                     <div className={`${classes.border} ${classes.left}`} />
                     <div className={`${classes.border} ${classes.right}`} />
                     <span className={classes.title}>
+                        { props.titleSlotBefore }
                         { props.icon ? <span className={classes.icon} style={{ marginRight: 12, background: `url(/images/${ props.icon }.svg) no-repeat`, backgroundSize: '100% 100%' }} /> : null }
                         { props.title }
-                        { props.titleSlot }
+                        { props.titleSlotAfter }
                     </span>
                     { props.subtitle ? <span className={classes.subtitle}>{ props.subtitle }</span> : null }
                     <div className={classes.content}>{ props.children }</div>
@@ -172,14 +186,15 @@ const Dialog = props =>  {
 
 Dialog.propTypes = {
     open: PropTypes.bool.isRequired,
-    close: PropTypes.func.isRequired,
+    close: PropTypes.func,
     closable: PropTypes.bool,
     children: PropTypes.element.isRequired,
     title: PropTypes.string,
     icon: PropTypes.string,
-    titleSlot: PropTypes.element,
+    titleSlotBefore: PropTypes.element,
+    titleSlotAfter: PropTypes.element,
     subtitle: PropTypes.string,
-    stacked: PropTypes.bool,
+    style: PropTypes.oneOf(['default', 'stacked', 'notification']),
     autoscale: PropTypes.bool
 }
 
@@ -187,8 +202,9 @@ Dialog.defaultProps = {
     closable: true,
     subtitle: null,
     icon: null,
-    stacked: false,
-    titleSlot: null,
+    style: 'default',
+    titleSlotBefore: null,
+    titleSlotAfter: null,
     autoscale: false
 }
 

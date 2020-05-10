@@ -14,7 +14,7 @@ const useStyles = createUseStyles(theme => ({
         flexDirection: 'column',
         alignItems: 'flex-end',
         position: 'absolute',
-        zIndex: 4,
+        zIndex: 1,
         marginRight: 5
     },
     title: {

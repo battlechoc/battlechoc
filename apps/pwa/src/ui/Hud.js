@@ -91,7 +91,7 @@ const Hud = props => {
     const [open, setOpen] = useState(false);
     const [openSettings, setOpenSettings] = useState(false);
     const [showAccountOverview, setShowAccountOverview] = useState(false);
-    const [overviewStyleStacked, setOverviewStyleStacked] = useState(false);
+    const [dialogStyle, setDialogStyle] = useState('default');
     const [showMultiplayerScreen, setShowMultiplayerScreen] = useState(false);
     const [waitingRoom, setWaitingRoom] = useState(false);
     const [waitingRoomText, setWaitingRoomText] = useState(t(tr.TRY_TO_JOIN_GAME));
@@ -103,8 +103,8 @@ const Hud = props => {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    const openAccountOverview = (account, stacked=false) => {
-        setOverviewStyleStacked(stacked);
+    const openAccountOverview = (account, style='default') => {
+        setDialogStyle(style);
         setShowAccountOverview(true);
         setPlayerAccount(account);
     }
@@ -224,7 +224,7 @@ const Hud = props => {
                 removeFriend={async friend => {
                     await multiplayer.removeFriend(friend);
                 }}
-                stackedStyle={overviewStyleStacked}
+                dialogStyle={dialogStyle}
                 joinGame={joinGame} playerAccount={playerAccount} open={showAccountOverview} close={() => setShowAccountOverview(false)} />
             {(() => {
                 if (stage === 'CHOCLAB_SCREEN') {
@@ -303,7 +303,7 @@ const Hud = props => {
                                     {assetsReady ? controls : null}
                                 </div>
                             </div>
-                            <Highscore playername={playername} showPlayerProfile={session => openAccountOverview(session.opponent, true)} showQuickMessage={showQuickMessage} />
+                            <Highscore playername={playername} showPlayerProfile={session => openAccountOverview(session.opponent, 'stacked')} showQuickMessage={showQuickMessage} />
                             { notification.open ? <Notification message={notification.message} title={notification.title} close={() => hideNotification()} /> : <Info openInfo={openInfo} /> }
                         </>
                     );
