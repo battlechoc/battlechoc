@@ -163,9 +163,9 @@ const Dialog = props =>  {
     }
 
     return (
-        <div className={`${classes.overlay} ${classes[props.style]}`} style={props.open ? { display: 'flex' } : { display: 'none' }}>
+        <div className={`${classes.overlay} ${classes[props.mode]}`} style={props.open ? { display: 'flex' } : { display: 'none' }}>
             <div className={classes.dialog}>
-                { props.closable ? <Fab className={classes.close} color={ props.style === 'stacked' ? 'secondary' : 'accent' } icon={ props.style === 'stacked' ? 'back' : 'close' } onClick={closeDialog} /> : null }
+                { props.closable ? <Fab className={classes.close} color={ props.mode === 'stacked' ? 'secondary' : 'accent' } icon={ props.style === 'stacked' ? 'back' : 'close' } onClick={closeDialog} /> : null }
                 <div className={classes.body}>
                     <div className={`${classes.border} ${classes.top}`} />
                     <div className={`${classes.border} ${classes.left}`} />
@@ -194,7 +194,7 @@ Dialog.propTypes = {
     titleSlotBefore: PropTypes.element,
     titleSlotAfter: PropTypes.element,
     subtitle: PropTypes.string,
-    style: PropTypes.oneOf(['default', 'stacked', 'notification']),
+    mode: PropTypes.oneOf(['default', 'stacked', 'notification']),
     autoscale: PropTypes.bool
 }
 
@@ -202,7 +202,7 @@ Dialog.defaultProps = {
     closable: true,
     subtitle: null,
     icon: null,
-    style: 'default',
+    mode: 'default',
     titleSlotBefore: null,
     titleSlotAfter: null,
     autoscale: false

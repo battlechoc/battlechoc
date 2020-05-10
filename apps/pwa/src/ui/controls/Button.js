@@ -75,6 +75,16 @@ const useStyles = createUseStyles(theme => ({
     },
     disabled: {
       filter: 'grayscale(1)'
+    },
+    locked: {
+      position: 'absolute',
+      right: 24,
+      top: 5,
+      transform: 'rotate(-15deg)',
+      padding: 20,
+      backgroundSize: '100% 100%',
+      backgroundRepeat: 'no-repeat',
+      backgroundImage: 'url(/images/lock.svg)'
     }
   })
 )
@@ -94,8 +104,8 @@ const Button = props => {
     );
   } else {
     return (
-      <div style={props.style} onClick={onClick} className={`${classes.border} ${classes[props.size]} ${props.className} ${props.disabled ? classes.disabled : ''}`}>
-        <div style={props.buttonStyle} className={`${classes.background} ${classes[props.size]} ${classes.button}`}>{props.children}</div>
+      <div style={props.style} onClick={onClick} className={`${classes.border} ${classes[props.size]} ${props.className} ${props.disabled || props.locked ? classes.disabled : ''}`}>
+        <div style={props.buttonStyle} className={`${classes.background} ${classes[props.size]} ${classes.button}`}>{props.children} {props.locked ? <div className={classes.locked} /> : null}</div>
       </div>
     );
   }
@@ -107,6 +117,7 @@ Button.defaultProps = {
   style: {},
   buttonStyle: {},
   className: '',
+  locked: false,
   disabled: false
 }
 
@@ -117,7 +128,8 @@ Button.propTypes = {
   style: PropTypes.object,
   buttonStyle: PropTypes.object,
   size: PropTypes.oneOf(['huge', 'normal']),
-  disabled: PropTypes.bool
+  disabled: PropTypes.bool,
+  locked: PropTypes.bool
 }
 
 export default Button;

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Jukebox, translate as t, keys as tr, getCurrentLanguage } from '../misc';
 import Axios from 'axios';
-import { showQuickMessage } from '../UiActions';
+import { showQuickMessage, updateMultiplayerSessions } from '../UiActions';
 import { connect } from 'react-redux';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
@@ -185,7 +185,7 @@ const useStyles = createUseStyles(theme => ({
 
 const MultiplayerScreen = props => {
     const classes = useStyles();
-    const { closeMultiplayerScreen, showQuickMessage, openAccountOverview, enterMultiplayerGame, multiplayerSessions, sessionRefreshActions, friends } = props;
+    const { updateMultiplayerSessions, closeMultiplayerScreen, showQuickMessage, openAccountOverview, enterMultiplayerGame, multiplayerSessions, sessionRefreshActions, friends } = props;
 
     const [searchingRandomOpponent, setSearchingRandomOpponent] = useState(false);
     const [showFriends, setShowFriends] = useState(false);
