@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Jukebox } from '../misc';
-import { createUseStyles } from 'react-jss'
+import { createUseStyles } from 'react-jss';
 import Fab from '../controls/Fab';
 
 const useStyles = createUseStyles(theme => ({
@@ -32,19 +32,24 @@ const useStyles = createUseStyles(theme => ({
             width: 'calc(100% - 24px)'
         }
     },
+    info: {
+        '& > div > div ': {
+            position: 'relative'
+        }
+    },
     dialog: {
-        width: props => props.style === 'notification' ? '100%' : '80%',
+        width: props => props.mode === 'notification' ? '100%' : '80%',
         height: '90%',
         padding: 16,
         position: 'relative'
     },
     body: {
-        borderRadius: props => props.style === 'notification' ? 0 : 20,
+        borderRadius: props => props.mode === 'notification' ? 0 : 20,
         position: 'absolute',
         top: 12,
         right: 6,
         overflow: 'hidden',
-        height: 'calc(100% - 88px)', // 12px (top) + 2 * 32px (padding) = 88px 
+        height: props => props.mode === 'info' ? 'unset' : 'calc(100% - 88px)', // 12px (top) + 2 * 32px (padding) = 88px 
         width: 'calc(100% - 30px)', // 6px (left) + 2 * 12px (padding) = 30px
         padding: '32px 12px',
         display: 'flex',
@@ -53,7 +58,7 @@ const useStyles = createUseStyles(theme => ({
         '&:before': {
             content: '""',
             position: 'absolute',
-            borderRadius: props => props.style === 'notification' ? 0 : 20,
+            borderRadius: props => props.mode === 'notification' ? 0 : 20,
             top: 0,
             left: 0,
             zIndex: -1,
@@ -62,10 +67,7 @@ const useStyles = createUseStyles(theme => ({
             background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`
         },
         [theme.breakpoints.smartphone]: {
-            top: 12,
             right: 8,
-            overflow: 'hidden',
-            height: 'calc(100% - 88px)', // 12px (top) + 2 * 32px (padding) = 88px 
             width: 'calc(100% - 56px)',
             padding: '32px 24px'
         }
@@ -73,7 +75,7 @@ const useStyles = createUseStyles(theme => ({
     title: {
         zIndex: 12,
         fontFamily: 'Bangers',
-        fontSize: props => (props.autoscale && props.title.length > 7) || props.style === 'notification' ? '1.7rem' : '2.5rem',
+        fontSize: props => (props.autoscale && props.title.length > 7) || props.mode === 'notification' ? '1.7rem' : '2.5rem',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -132,7 +134,7 @@ const useStyles = createUseStyles(theme => ({
         background: 'url(/images/dialog-border-top.svg) no-repeat' 
     },
     left: {
-        display: props => props.style === 'notification' ? 'none' : 'block',
+        display: props => ['notification', 'info'].includes(props.mode) ? 'none' : 'block',
         bottom: 0,
         left: 0,
         width: 133,
@@ -165,7 +167,7 @@ const Dialog = props =>  {
     return (
         <div className={`${classes.overlay} ${classes[props.mode]}`} style={props.open ? { display: 'flex' } : { display: 'none' }}>
             <div className={classes.dialog}>
-                { props.closable ? <Fab className={classes.close} color={ props.mode === 'stacked' ? 'secondary' : 'accent' } icon={ props.style === 'stacked' ? 'back' : 'close' } onClick={closeDialog} /> : null }
+                { props.closable ? <Fab className={classes.close} color={ props.mode === 'stacked' ? 'secondary' : 'accent' } icon={ props.mode === 'stacked' ? 'back' : 'close' } onClick={closeDialog} /> : null }
                 <div className={classes.body}>
                     <div className={`${classes.border} ${classes.top}`} />
                     <div className={`${classes.border} ${classes.left}`} />
@@ -194,7 +196,7 @@ Dialog.propTypes = {
     titleSlotBefore: PropTypes.element,
     titleSlotAfter: PropTypes.element,
     subtitle: PropTypes.string,
-    mode: PropTypes.oneOf(['default', 'stacked', 'notification']),
+    mode: PropTypes.oneOf(['default', 'stacked', 'notification', 'info']),
     autoscale: PropTypes.bool
 }
 

@@ -73,6 +73,11 @@ const useStyles = createUseStyles(theme => ({
       width: 246,
       height: 62,
     },
+    small: {
+      fontSize: '1.5rem',
+      width: 140,
+      height: 50,
+    },
     disabled: {
       filter: 'grayscale(1)'
     },
@@ -127,7 +132,7 @@ Button.propTypes = {
   className: PropTypes.string,
   style: PropTypes.object,
   buttonStyle: PropTypes.object,
-  size: PropTypes.oneOf(['huge', 'normal']),
+  size: PropTypes.oneOf(['huge', 'normal', 'small']),
   disabled: PropTypes.bool,
   locked: PropTypes.bool
 }

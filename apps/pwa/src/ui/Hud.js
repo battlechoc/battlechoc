@@ -5,7 +5,7 @@ import { connect } from 'react-redux';
 import { GameStateTypes } from 'battlechoc-shared-functions';
 import { showQuickMessage, showNotification, hideNotification } from './UiActions';
 import { translate as t, keys as tr } from './misc';
-import { Notification, Info, Tooltip, Settings, AccountOverview, Dialog, Highscore } from './dialogs';
+import { Info, Tooltip, Settings, AccountOverview, Dialog, Highscore } from './dialogs';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
 import { multiplayer } from '../Multiplayer';
@@ -81,6 +81,15 @@ const useStyles = createUseStyles(theme => ({
     },
     resumeGameDialog: {
         color: 'white'
+    },
+    notification: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        fontSize: '1.6rem',
+        fontFamily: 'Bangers',
+        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
     }
 }));
 
@@ -319,7 +328,17 @@ const Hud = props => {
                                 </div>
                             </div>
                             <Highscore playername={playername} showPlayerProfile={session => openAccountOverview(session.opponent, 'stacked')} showQuickMessage={showQuickMessage} />
-                            { notification.open ? <Notification message={notification.message} title={notification.title} close={() => hideNotification()} /> : <Info openInfo={openInfo} /> }
+                            <Dialog
+                                open={notification.open}
+                                mode="info"
+                                closable={false}
+                                title={notification.title}>
+                                <div className={classes.notification}>
+                                    <p>{notification.message}</p>
+                                    <Button size="small" style={{ marginRight: 32 }} onClick={() => hideNotification()}>Ok</Button>
+                                </div>
+                            </Dialog>
+                            <Info openInfo={openInfo} />
                         </>
                     );
                 } else if (stage === 'CHOOSE_MENU') {
