@@ -54,37 +54,6 @@ section {
   left: 25%;
 }
 
-.overview #coins {
-  display: flex;
-  height: 100%;
-  width: 100%;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  z-index: 5;
-}
-
-.overview #coins img {
-  width: 40%;
-  bottom: 40%;
-  position: absolute;
-}
-
-.overview #coins span {
-  font-size: 3.5rem;
-  color: #5bb9bf;
-  text-shadow: 0px 2px 2px #324D5C;
-  font-weight: bold;
-  position: absolute;
-  z-index: 6;
-  bottom: 30%;
-}
-
-.overview #coins span.lost {
-  color: rgb(217, 43, 75);
-  text-shadow: 1px 3px 1px rgb(107, 13, 45);
-}
-
 .slice {
   position: absolute;
   width: 100%;
@@ -153,10 +122,6 @@ section {
     width: 250px;
   }
 
-  .overview #coins span {
-    font-size: 2rem;
-  }
-
   .slice {
     clip: rect(0px, 250px, 250px, 125px);
   }
@@ -187,10 +152,6 @@ section {
     width: 100px;
   }
 
-  .overview #coins span {
-    font-size: 1.8rem;
-  }
-
   .slice {
     clip: rect(0px, 100px, 100px, 50px);
   }
@@ -215,10 +176,6 @@ section {
     width: 150px;
   }
 
-  .overview #coins span {
-    font-size: 2em;
-  }
-
   .slice {
     clip: rect(0px, 150px, 150px, 75px);
   }
@@ -241,10 +198,6 @@ section {
   #pie {
     height: 200px;
     width: 200px;
-  }
-
-  .overview #coins span {
-    font-size: 2rem;
   }
 
   .slice {

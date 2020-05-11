@@ -1,46 +1,71 @@
 import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import './GameEndOverview.css';
-import { ArrowBack } from '@material-ui/icons';
-import Fab from '@material-ui/core/Fab';
+import Fab from './Fab';
 import { translate as t, keys as tr } from '../misc';
-import { OptimizedImage } from '../../helper/compatibility';
+import { createUseStyles } from 'react-jss';
+
+const useStyles = createUseStyles(theme => ({
+    coins: {
+        position: 'absolute',
+        height: '100%',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1,
+        '& span': {
+            fontSize: '2rem',
+            color: '#fff',
+            '-webkit-text-stroke': '1px #3C1C0C',
+            '-webkit-font-smoothing': 'antialiased',
+            fontFamily: 'Bangers',
+            marginRight: 10
+        },
+        '& > div': {
+            background: 'url(/images/coins.svg) no-repeat',
+            height: 31,
+            width: 46
+        }
+    }
+}));
 
 const useMountEffect = effect => useEffect(effect, [])
 
 const GameEndOverview = props => {
-    let sliceSize = (dataNum, dataTotal) => {
+    const classes = useStyles();
+    const sliceSize = (dataNum, dataTotal) => {
         return (dataNum / dataTotal) * 360;
     }
     
-    let addSlice = (sliceSize, offset, sliceID, color) => {
-        let pie = document.getElementById('pie');
-        let slice = document.createElement('div');
+    const addSlice = (sliceSize, offset, color) => {
+        const pie = document.getElementById('pie');
+        const slice = document.createElement('div');
         slice.className = 'slice';
-        let span = document.createElement('span');
+        const span = document.createElement('span');
         slice.appendChild(span);
         pie.appendChild(slice);
         
         offset = offset - 1;
-        let sizeRotation = -179 + sliceSize;
+        const sizeRotation = -179 + sliceSize;
         slice.style.transform = "rotate("+offset+"deg) translate3d(0,0,0)";
         span.style.transform = "rotate("+sizeRotation+"deg) translate3d(0,0,0)";
         span.style.backgroundColor = color;
     }
     
-    let iterateSlices = (sliceSize, offset, dataCount, sliceCount, color) => {
-        var sliceID = "s"+dataCount+"-"+sliceCount;
-        var maxSize = 179;
+    const iterateSlices = (sliceSize, offset, dataCount, color) => {
+        const maxSize = 179;
         if(sliceSize <= maxSize) {
-            addSlice(sliceSize, offset, sliceID, color);
+            addSlice(sliceSize, offset, color);
         } else {
-            addSlice(maxSize, offset, sliceID, color);
-            iterateSlices(sliceSize-maxSize, offset+maxSize, dataCount, sliceCount+1, color);
+            addSlice(maxSize, offset, color);
+            iterateSlices(sliceSize-maxSize, offset+maxSize, dataCount, color);
         }
     }
     
     useMountEffect(() => {
-        let statistics = props.player.statistics;
+        const statistics = props.player.statistics;
         const data = [statistics.attacks, 
                     statistics.builtEntities * 2, 
                     statistics.espionages * 10, 
@@ -52,18 +77,18 @@ const GameEndOverview = props => {
           "#F2BF27",
           "#F2E18D"
         ];
-        var offset = 0;
+        let offset = 0;
         for(let i = 0; i < data.length; i++) {
             if (data[i] > 0) {
                 let size = sliceSize(data[i], total);
-                iterateSlices(size, offset, i, 0, color[i]);
+                iterateSlices(size, offset, i, color[i]);
                 document.querySelector('.legend li:nth-child(' + (i+1) + ')').style.borderColor = color[i];
                 offset += size;
             }
         }
     });
     
-    let statistics = props.player.statistics;
+    const statistics = props.player.statistics;
     let coins = statistics.attacks + statistics.builtEntities * 2 + statistics.espionages * 10 + statistics.moltenFields * 50;
     let outcome = 'win';
 
@@ -109,22 +134,18 @@ const GameEndOverview = props => {
                     </li>
                 </ul>
                 <div id="pie">
-                    <div id="coins">
-                        <span className={ outcome }>{ coins }</span>
-                        <OptimizedImage src="/images/coins.png" alt="choco coins" />
+                    <div className={classes.coins}>
+                        <span>{ coins }</span>
+                        <div />
                     </div>
                 </div>
             </div>
 
             <div className="actions">
                 <Fab
-                    size="large"
-                    color="primary"
-                    aria-label="back"
-                    className="icon"
-                    onClick={() => props.finishGame(coins)}>
-                    <ArrowBack  />
-                </Fab>
+                    color="secondary"
+                    icon="back"
+                    onClick={() => props.finishGame(coins)} />
             </div>
         </div>
     );

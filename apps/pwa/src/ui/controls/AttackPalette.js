@@ -4,7 +4,6 @@ import { multiplayer } from '../../Multiplayer';
 import { selectAttack } from '../UiActions';
 import { GameStateTypes, BattlechocError, AttackType } from 'battlechoc-shared-functions';
 import { Jukebox } from '../misc';
-import LockIcon from '@material-ui/icons/Lock';
 import { createUseStyles } from 'react-jss';
 import { sharedPaletteStyles } from './BuildingPalette';
 
