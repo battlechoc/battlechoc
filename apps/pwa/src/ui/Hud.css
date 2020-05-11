@@ -113,18 +113,6 @@
     background-color: #140e09;
 }
 
-.six {
-    flex: 1 0 16.666%;
-}
-
-.eight {
-    flex: 1 0 12.5%;
-}
-
-.ten {
-    flex: 1 0 10%;
-}
-
 #mainMenu {
     position: relative;
     display: flex;

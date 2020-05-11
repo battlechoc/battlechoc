@@ -77,7 +77,7 @@ const AttackPalette = props => {
                         if (typeof whitelist !== 'undefined') {
                             if (!whitelist.includes(attack.type)) {
                                 if (!props.tutorial) {
-                                    return <div className="unlocked-entity preview" key={i}><LockIcon className="lock-icon" /></div>;
+                                    return <div className={`${classes.preview} ${classes.locked}`} key={i}><div /></div>;
                                 } else {
                                     return null
                                 }

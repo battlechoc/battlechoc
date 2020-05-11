@@ -69,16 +69,33 @@ const useStyles = createUseStyles(theme => ({
     },
     creamy: {
         position: 'absolute',
-        padding: 9,
         backgroundSize: '100% 100%',
         backgroundRepeat: 'no-repeat',
         backgroundImage: 'url(/images/cream.svg)',
-        transform: 'rotateY(-50deg) rotateZ(-135deg)',
+        transform: 'rotateZ(-135deg)',
+    },
+    six: {
+        flex: '1 0 16.666%',
+        '& $creamy': {
+            padding: 11
+        }
+    },
+    eight: {
+        flex: '1 0 12.5%',
+        '& $creamy': {
+            padding: 10
+        }
+    },
+    ten: {
+        flex: '1 0 10%',
+        '& $creamy': {
+            padding: 9
+        }
     }
 }));
 
 const GameStartSelection = props => {
-    const classes = useStyles();
+    const classes = useStyles(props);
     const { game, state, chooseStart, chooseField } = props;
     const unlocked = multiplayer.isLocalPlayer(game.currentPlayerIndex);
 
@@ -117,8 +134,8 @@ const GameStartSelection = props => {
     
     const drawCell = (cell, i) => {
         const creamy = cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM);
-        const sizeClassName = (game.board.size.cols === 6) ? "six" : (game.board.size.cols === 8) ? "eight" : "ten";
-        return <div key={i} className={cell.previewStyle + " " + sizeClassName}>
+        const sizeClassName = (game.board.size.cols === 6) ? classes.six : (game.board.size.cols === 8) ? classes.eight : classes.ten;
+        return <div key={i} className={`${cell.previewStyle} ${sizeClassName}`}>
             <div className={creamy ? classes.creamy : ''} />
         </div>
     };

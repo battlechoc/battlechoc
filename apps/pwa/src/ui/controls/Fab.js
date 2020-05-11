@@ -24,6 +24,10 @@ const useStyles = createUseStyles(theme => ({
         style.height = '90%';
         style.marginTop = 3
       }
+
+      if (props.icon === 'forward' && props.color === 'accent') {
+        style.filter = 'brightness(0.8) contrast(2) hue-rotate(190deg)'
+      }
       
       return style;
     },

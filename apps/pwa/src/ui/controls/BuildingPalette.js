@@ -6,7 +6,6 @@ import { GameStateTypes, EntityType, getEntityDescriptor } from 'battlechoc-shar
 import { Jukebox } from '../misc';
 import Fab from '@material-ui/core/Fab';
 import { Visibility, VisibilityOff } from '@material-ui/icons';
-import LockIcon from '@material-ui/icons/Lock';
 import { createUseStyles } from 'react-jss';
 
 const useStyles = createUseStyles(theme => ({
@@ -39,6 +38,18 @@ const useStyles = createUseStyles(theme => ({
             borderRadius: '100%',
             filter: 'brightness(120%)'
         }
+    },
+    locked: {
+        width: 48,
+        height: 48,
+        display: 'flex',
+        justifyContent: 'center',
+        border: `3px solid ${theme.color.accent.dark}`,
+        background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 80%)`,
+        '& > div': {
+            padding: 18,
+            backgroundImage: 'url(/images/lock.svg)'
+        }     
     }
 }));
 
@@ -58,13 +69,13 @@ const BuildingPalette = props => {
         image: 'truffle-cannon',
         costs: getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, player.level).costs
     }, {
-        type: EntityType.FACTORY_EXTENSION,
-        image: 'factory-extension',
-        costs: getEntityDescriptor(EntityType.FACTORY_EXTENSION, player.level).costs
-    }, {
         type: EntityType.CREAM,
         image: 'cream',
         costs: getEntityDescriptor(EntityType.CREAM, player.level).costs
+    }, {
+        type: EntityType.FACTORY_EXTENSION,
+        image: 'factory-extension',
+        costs: getEntityDescriptor(EntityType.FACTORY_EXTENSION, player.level).costs
     }, {
         type: EntityType.SPYING_EASTER_BUNNY,
         image: 'easter-bunny',
@@ -182,7 +193,7 @@ const BuildingPalette = props => {
                         if (typeof whitelist !== 'undefined') {
                             if (!whitelist.includes(building.type)) {
                                 if (!props.tutorial && props.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && props.game.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
-                                    return <div className="unlocked-entity preview" key={i}><LockIcon className="lock-icon" /></div>;
+                                    return <div className={`${classes.preview} ${classes.locked}`} key={i}><div /></div>;
                                 } else {
                                     return null
                                 }
