@@ -20,6 +20,12 @@ const useStyles = createUseStyles({
         zIndex: 1,
         width: '100%',
         height: '40%'
+    },
+    finished: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center'
     }
 });
 
@@ -156,7 +162,7 @@ const Tutorial = props => {
 
     if (playerHasName || props.playerInfos.stats.tutorialSkipped === true || props.playerInfos.stats.tutorialFinished === true) {
         dialogTitle = t(tr.TUTORIAL_DIALOG_TITLE);
-        dialogContent = <div className="tutorial-finished">
+        dialogContent = <div className={classes.finished}>
             <p>{t(tr.TUTORIAL_DIALOG_MESSAGE)}<br />{t(tr.TUTORIAL_DIALOG_HINT)}</p>
             <Button onClick={() => closeTutorial(true)}>{t(tr.TUTORIAL_DIALOG_PLAY_GAME)}</Button>
         </div>;

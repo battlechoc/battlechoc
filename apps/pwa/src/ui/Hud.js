@@ -47,13 +47,14 @@ const useStyles = createUseStyles(theme => ({
             height: 1600,
             width: 1600,
             top: -700,
-            marginLeft: -72,
+            marginLeft: -68,
             background: 'url(/images/stripes.svg) no-repeat',
             backgroundSize: 1600,
             zIndex: 0,
             animation: 'pulse 20s linear 0s infinite',
             [theme.breakpoints.landscape.smartphone]: {
-                top: -765
+                top: -765,
+                marginLeft: -56
             }
         },        
     },
@@ -86,10 +87,7 @@ const useStyles = createUseStyles(theme => ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-end',
-        fontSize: '1.6rem',
-        fontFamily: 'Bangers',
-        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
-        '-webkit-font-smoothing': 'antialiased',
+        fontSize: '1.5rem'
     }
 }));
 
@@ -210,7 +208,7 @@ const Hud = props => {
     }
 
     const kickOffTutorial = async () => {
-        await multiplayer.tutorialStarted();
+        multiplayer.tutorialStarted();
         startTutorial();
     }
 

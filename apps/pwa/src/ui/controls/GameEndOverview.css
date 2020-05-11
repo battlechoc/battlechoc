@@ -25,12 +25,6 @@
   margin-bottom: 40px;
 }
 
-.overview h1 {
-  font-size: 2.5rem;
-  text-transform: uppercase;
-  color: white;
-} 
-
 section {
   margin-top: 30px;
 }
@@ -130,20 +124,7 @@ section {
     clip: rect(0px, 250px, 250px, 125px);
   }
 
-  .overview h1 { font-size: 1.1rem; }
   .legend { font-size: 0.8rem; }
-}
-
-@media screen and (max-width: 380px) and (orientation: portrait) {
-  .overview h1 { font-size: 0.9rem !important; }
-}
-
-@media screen and (min-width: 381px) and (max-width: 600px) and (orientation: portrait) {
-  .overview h1 { font-size: 1.1rem !important; }
-}
-
-@media screen and (max-width: 901px) {
-  .overview h1 { font-size: 1.7rem; }
 }
 
 @media screen and (max-width: 600px) and (orientation: landscape) {
@@ -160,7 +141,6 @@ section {
     clip: rect(0px, 100px, 100px, 50px);
   }
 
-  .overview h1 { font-size: 1.7rem; }
   .legend { font-size: 0.7rem; }
 }
 
@@ -184,7 +164,6 @@ section {
     clip: rect(0px, 150px, 150px, 75px);
   }
 
-  .overview h1 { font-size: 1.4rem; }
   .legend { font-size: 0.8rem; }
 }
 
@@ -208,7 +187,6 @@ section {
     clip: rect(0px, 200px, 200px, 100px);
   }
 
-  .overview h1 { font-size: 1.7rem; }
   .legend { font-size: 0.8rem; }
 }
 

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import './GameEndOverview.css';
 import Fab from './Fab';
 import { translate as t, keys as tr } from '../misc';
-import { createUseStyles } from 'react-jss';
+import { createUseStyles, useTheme } from 'react-jss';
 
 const useStyles = createUseStyles(theme => ({
     coins: {
@@ -28,6 +28,13 @@ const useStyles = createUseStyles(theme => ({
             height: 31,
             width: 46
         }
+    },
+    headline: {
+        fontFamily: 'Bangers',
+        fontSize: '2rem',
+        color: 'white',
+        '-webkit-text-stroke': '1px #3C1C0C',
+        '-webkit-font-smoothing': 'antialiased',
     }
 }));
 
@@ -35,6 +42,7 @@ const useMountEffect = effect => useEffect(effect, [])
 
 const GameEndOverview = props => {
     const classes = useStyles();
+    const theme = useTheme();
     const sliceSize = (dataNum, dataTotal) => {
         return (dataNum / dataTotal) * 360;
     }
@@ -72,10 +80,10 @@ const GameEndOverview = props => {
                     statistics.moltenFields * 50];
         const total = data.reduce((a, b) => a + b, 0);
         const color = [
-          "#D92B4B", 
-          "#7EBFD9",
-          "#F2BF27",
-          "#F2E18D"
+          theme.color.accent.light,
+          theme.color.secondary.light,
+          theme.color.primary.light,
+          theme.color.brown.light
         ];
         let offset = 0;
         for(let i = 0; i < data.length; i++) {
@@ -113,7 +121,7 @@ const GameEndOverview = props => {
 
     return (
         <div className="overview">
-            <h1>{ headine }</h1>
+            <h1 className={classes.headline}>{ headine }</h1>
             <div className="statistics">                    
                 <ul className="legend">
                     <li>

@@ -93,8 +93,8 @@ const PlayerNameInput = props => {
 
     useEffect(() => {
         setEditMode(props.editMode);
+        updatePlayerName(typeof startValue === 'undefined' ? 'Chocnonymous' : startValue);
         if (!props.editMode) {
-            updatePlayerName(typeof startValue === 'undefined' ? 'Chocnonymous' : startValue);
             setPlayerNameAvailable(true);
             setPlayerNameValid(true);
             setLoading(false);
