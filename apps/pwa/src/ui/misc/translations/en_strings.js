@@ -158,8 +158,6 @@ module.exports = {
     "TUTORIAL_DIALOG_BACK": "Back to menu",
     "TUTORIAL_DIALOG_PLAY_GAME": "Start a match",
     "TUTORIAL_CHOOSE_NAME_INFO": "Earn your first 100 chocolate coins by choosing a cool name or pick the one we proposed! Friends could easily find you based on your name and foes will probably shiver when they hear that name. You can change that name at any time later in the settings menu.",
-    "TUTORIAL_FINISHED_NOTIFICATION_TITLE": "Congratulations!",
-    "TUTORIAL_FINISHED_NOTIFICATION_MESSAGE": "You just earned 100 coins by playing the tutorial and choosing a unique player name. Have fun!",
     "ACTIONS": "Actions",
     "OPPONENT": "Opponent",
     "TURNS": "Turns",

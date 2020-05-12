@@ -104,7 +104,7 @@ const Button = props => {
   if (props.icon) {
     return (
       <div style={props.style} onClick={onClick} className={`${classes.iconButton} ${classes.background} ${props.className} ${props.disabled ? classes.disabled : ''}`}>
-        <div className={classes.icon} style={{ background: `url(/images/${ props.icon }.svg) no-repeat`, backgroundSize: '100% 100%', ...props.buttonStyle }} />
+        <div className={classes.icon} style={{ backgroundImage: `url(/images/${ props.icon }.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%', ...props.buttonStyle }} />
       </div>
     );
   } else {

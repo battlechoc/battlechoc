@@ -107,6 +107,8 @@ const useStyles = createUseStyles(theme => ({
         zIndex: 16
     },
     content: {
+        position: 'relative',
+        zIndex: 16,
         overflowY: 'auto',
         overflowX: 'hidden',
         height: '75%',

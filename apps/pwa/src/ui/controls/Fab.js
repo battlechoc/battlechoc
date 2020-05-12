@@ -50,7 +50,7 @@ const Fab = props => {
   }
   return (
     <div style={props.style} onClick={onClick} className={`${classes.fab} ${classes.background} ${props.className}`}>
-      <div className={classes.icon} style={{ background: `url(/images/${ props.icon }.svg) no-repeat`, backgroundSize: '100% 100%' , ...props.iconStyle}} />
+      <div className={classes.icon} style={{ backgroundImage: `url(/images/${ props.icon }.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%' , ...props.iconStyle}} />
     </div>
   );
 };
