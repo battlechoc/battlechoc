@@ -215,5 +215,7 @@ module.exports = {
     "UNLOCK_CONGRATULATIONS_CHOCLAB": "Congratulations you've unlocked the Choclab. This is the place for upgrading your entities!",
     "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "You have unlocked the multiplayer mode. Play against other players worldwide and reach the top of the highscore!",
     "PLAYER_NAME_GENERATED_TITLE": "A random player name has been set for you",
-    "PLAYER_NAME_GENERATED_BODY": "We chose the name {{name}} for you to enable you for the multiplayer features. You can change this name at any time in the settings menu."
+    "PLAYER_NAME_GENERATED_BODY": "We chose the name {{name}} for you to enable you for the multiplayer features. You can change this name at any time in the settings menu.",
+    "COINS_FOR_NEXT_FEATURE_TITLE": "{{feature}} not yet unlocked",
+    "COINS_FOR_NEXT_FEATURE_BODY": "You need to earn {{missingScore}} more coins to unlock the {{feature}} feature."
 }

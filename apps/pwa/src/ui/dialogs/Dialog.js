@@ -77,6 +77,7 @@ const useStyles = createUseStyles(theme => ({
         fontFamily: 'Bangers',
         fontSize: props => (props.autoscale && props.title.length > 7) || props.mode === 'notification' ? '1.7rem' : '2.5rem',
         display: 'flex',
+        textAlign: props => props.mode === 'info' ? 'center' : 'unset',
         justifyContent: 'center',
         alignItems: 'center',
         color: 'white',

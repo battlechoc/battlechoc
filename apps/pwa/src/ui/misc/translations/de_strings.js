@@ -215,5 +215,7 @@ module.exports = {
     "UNLOCK_CONGRATULATIONS_CHOCLAB": "Herzlichen Glückwunsch! Du hast das Choclab freigeschaltet. Hier kannst du deine Einheiten verbessern!",
     "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "Du hast den Multiplayer-Modus freigeschaltet. Spiele gegen andere Spieler weltweit und erklimme den Highscore!",
     "PLAYER_NAME_GENERATED_TITLE": "Ein zufälliger Spielername wurde für dich ausgewählt",
-    "PLAYER_NAME_GENERATED_BODY": "Wir haben den Name {{name}} für dich ausgewählt, um dich für die Multiplayer-Funktionen freizuschalten. Du kannst den Namen jederzeit im Einstellungsmenü ändern."
+    "PLAYER_NAME_GENERATED_BODY": "Wir haben den Name {{name}} für dich ausgewählt, um dich für die Multiplayer-Funktionen freizuschalten. Du kannst den Namen jederzeit im Einstellungsmenü ändern.",
+    "COINS_FOR_NEXT_FEATURE_TITLE": "{{feature}} noch nicht freigeschaltet",
+    "COINS_FOR_NEXT_FEATURE_BODY": "Sammle noch {{missingScore}} Schokomünzen, um die {{feature}}-Erweiterung freizuschalten."
 }

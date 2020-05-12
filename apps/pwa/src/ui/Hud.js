@@ -87,7 +87,7 @@ const useStyles = createUseStyles(theme => ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-end',
-        fontSize: '1.5rem'
+        fontSize: '1.3rem'
     }
 }));
 
@@ -217,7 +217,7 @@ const Hud = props => {
     }
 
     const notifyUnlock = (missingScore, feature) => {
-        props.showNotification({ title: feature + ' not yet unlocked', message: 'You need to earn ' + missingScore + ' more coins to unlock the ' + feature + ' feature.' });
+        props.showNotification({ title: t(tr.COINS_FOR_NEXT_FEATURE_TITLE, feature), message: t(tr.COINS_FOR_NEXT_FEATURE_BODY, feature, missingScore) });
     }
 
     const stage = estimateStage();

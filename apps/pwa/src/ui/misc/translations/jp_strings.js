@@ -215,5 +215,7 @@ module.exports = {
     "UNLOCK_CONGRATULATIONS_CHOCLAB": "おめでとう、Choclabのロックを解除しました。これは、エンティティをアップグレードする場所です！",
     "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "マルチプレイヤーモードのロックを解除しました。世界中の他のプレイヤーと対戦し、ハイスコアのトップに到達してください！",
     "PLAYER_NAME_GENERATED_TITLE": "ランダムなプレイヤー名が設定されています",
-    "PLAYER_NAME_GENERATED_BODY": "マルチプレイヤー機能を使用できるように、 {{name}} という名前を選択しました。この名前は、設定メニューでいつでも変更できます。"
+    "PLAYER_NAME_GENERATED_BODY": "マルチプレイヤー機能を使用できるように、 {{name}} という名前を選択しました。この名前は、設定メニューでいつでも変更できます。",
+    "COINS_FOR_NEXT_FEATURE_TITLE": "{{feature}}まだアンロックされていない",
+    "COINS_FOR_NEXT_FEATURE_BODY": "チョコレートコインを{{missingScore}}枚以上集めて{{feature}}拡張のロックを解除します。"
 }
