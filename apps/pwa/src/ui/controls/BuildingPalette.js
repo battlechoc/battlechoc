@@ -4,8 +4,7 @@ import { multiplayer } from '../../Multiplayer';
 import { selectBuilding, tapBuilding, toggleDonutHighlighting } from '../UiActions';
 import { GameStateTypes, EntityType, getEntityDescriptor } from 'battlechoc-shared-functions';
 import { Jukebox } from '../misc';
-import Fab from '@material-ui/core/Fab';
-import { Visibility, VisibilityOff } from '@material-ui/icons';
+import Fab from './Fab';
 import { createUseStyles } from 'react-jss';
 
 const useStyles = createUseStyles(theme => ({
@@ -136,17 +135,17 @@ const BuildingPalette = props => {
         props.selectBuilding(buildingType);      
     }
 
-    const getDonutClass = donut => {
+    const getDonutImage = donut => {
         if (donut.type === EntityType.DONUT_PORTAL_BLUE || donut.type === EntityType.DONUT_PORTAL_RED) {
-            return ' portal donut';
+            return 'portal-donut';
         } else if (donut.type === EntityType.DONUT_SURPRISE_YELLOW) {
-            return ' surprise donut';
+            return 'surprise-donut';
         } else if (donut.type === EntityType.DONUT_HEALTH_GREEN) {
-            return ' health donut';
+            return 'health-donut';
         } else if (donut.type === EntityType.DONUT_STOP_PINK) {
-            return ' stop donut';
+            return 'stop-donut';
         } else if (donut.type === EntityType.DONUT_CREAM_WHITE) {
-            return ' cream donut';
+            return 'cream-donut';
         }
     } 
 
@@ -155,13 +154,13 @@ const BuildingPalette = props => {
     if (player.donuts.length > 0 || player.activeDonuts.length > 0) { 
         donutSelection = <div className={classes.palette} style={{ bottom: 59 }}>
             { player.activeDonuts.length > 0 ? <Fab
-                color="primary"
-                className="donut-visiblity icon"
-                onClick={() => props.toggleDonutHighlighting() }>
-                { props.donutHighlighting ? <VisibilityOff /> : <Visibility /> }                    
-            </Fab> : null }
-            { player.donuts.length > 0 ? <div className={props.selectedBuilding === player.donuts[0].type ? 'selected previewContainer' : 'canbuild previewContainer'}>
-                <div className={'enabled preview' + getDonutClass(player.donuts[0])}  onClick={() => {
+                color="secondary"
+                style={{ height: 50, width: 50, marginRight: 5 }}
+                icon={ props.donutHighlighting ? 'donuts-disabled' : 'donuts-enabled' }
+                onClick={() => props.toggleDonutHighlighting() } /> : null
+            }
+            { player.donuts.length > 0 ? <div className={`${classes.preview} ${props.selectedBuilding === player.donuts[0].type ? classes.selected : ''}`}>
+                <div style={{ backgroundImage: `url(/images/${getDonutImage(player.donuts[0])}-icon.svg)` }}  onClick={() => {
                     tapBuilding(player.donuts[0].type);
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     selectBuilding(player.donuts[0].type);
