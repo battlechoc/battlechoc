@@ -149,6 +149,10 @@ class App extends Component {
                 }
             });
         }
+
+        /*this.props.showQuickMessage({ text: t(tr.UNLOCK_CONGRATULATIONS_CHOCLAB), variant: 'info' });
+        this.props.showQuickMessage({ text: t(tr.UNLOCK_CONGRATULATIONS_MULTIPLAYER), variant: 'error' });
+        this.props.showQuickMessage({ text: 'kurze Warnung', variant: 'warning', autoHideDuration: 0 });*/
     }
 
     handleError = error => {
@@ -573,15 +577,28 @@ class App extends Component {
     render() {
         return (
             <div className="app">
-                {this.props.quickMessages.map((message, key) => <QuickMessage
-                    open={true}
-                    key={key}
-                    position={key}
-                    variant={message.variant}
-                    onClose={() => this.props.hideQuickMessage(message.id)}
-                    message={message.text}
-                />
-                )}
+                { this.props.quickMessages.length > 0 ? <div style={{
+                    position: 'absolute',
+                    flexDirection: 'column',
+                    display: 'flex',
+                    alignItems: 'center',
+                    zIndex: 100,
+                    top: 0,
+                    left: 0,
+                    width: '100%'
+                }}>
+                    {this.props.quickMessages.map(message => <QuickMessage
+                        open={true}
+                        key={message.id}
+                        variant={message.variant}
+                        onClose={() => {
+                            this.props.hideQuickMessage(message.id)
+                        }}
+                        message={message.text}
+                        autoHideDuration={message.autoHideDuration}
+                    />
+                    )}
+                </div> : null }
                 <Suspense fallback={null}>
                     <Scene onRef={scene => this.scene = scene} />
                 </Suspense>

@@ -5,7 +5,6 @@ import { assetsReady } from './ui/UiActions';
 import { EntityType, BoardCellTypes } from 'battlechoc-shared-functions';
 import { SceneLoader, StandardMaterial, Color3, Engine } from 'babylonjs';
 import 'babylonjs-loaders';
-import { features } from './helper/compatibility';
 
 class AssetLoader {
     constructor(){
@@ -33,17 +32,20 @@ class AssetLoader {
                 [EntityType.DONUT_CREAM_WHITE]: 'donutCreamWhite.glb',
                 [EntityType.DONUT_HEALTH_GREEN]: 'donutHealthGreen.glb'
             },
-            images: {
-                CACAO_NO_BACKGROUND: 'cacao_no_background.png',
-                CACAO_PER_TURN: 'cacaoPerTurn.png',
-                TOOLBAR_ICON_PALETTE: 'toolbar_icon_palette' + (features.isWebPSupported ? '.webp' : '.png'),
-                ATTACKS_PER_TUN: 'attacksPerTurn.png',
-                CREAM_PREVIEW: 'cream_preview.png',
-                BUILDINGS_PER_TURN: 'buildingsPerTurn.png',
-                SPY_ATTACKS_PER_TURN: 'spyAttacksPerTurn.png',
-                BUNNY_CAUGHT: 'bunnyCaught.png',
-                LOADING: '../animations/loading.gif'
-            }
+            images: [
+                'cacao_no_background.png',
+                'cacaoPerTurn.png',
+                'dialog-border-top.svg',
+                'dialog-border-left.svg',
+                'dialog-border-right.svg',
+                'attacksPerTurn.png',
+                'cream-icon.svg',
+                'cream.svg',
+                'buildingsPerTurn.png',
+                'spyAttacksPerTurn.png',
+                'bunnyCaught.png',
+                '../animations/loading.gif'
+            ]
         }
     }    
 }
@@ -58,7 +60,7 @@ class AssetLoadingView extends Component {
 
     componentDidMount() {
         this.props.onRef(this);
-        this.totalResources = Object.keys(assetLoader.assets.models).length + Object.keys(assetLoader.assets.images).length;
+        this.totalResources = Object.keys(assetLoader.assets.models).length + assetLoader.assets.images.length;
         this.loadedResources = 0;
     }
 
@@ -69,11 +71,11 @@ class AssetLoadingView extends Component {
                     if (Object.values(BoardCellTypes).includes(key) && mesh.name !== '__root__') {
                         let material = new StandardMaterial(key + '.material', scene);
                         if (key === BoardCellTypes.BROWN) {
-                            material.diffuseColor﻿ = Color3.FromHexString("#824529");
+                            material.diffuseColor = Color3.FromHexString("#824529");
                         } else if (key === BoardCellTypes.BLACK) {
-                            material.diffuseColor﻿ = Color3.FromHexString("#3E211B");
+                            material.diffuseColor = Color3.FromHexString("#3E211B");
                         } else {
-                            material.diffuseColor﻿ = Color3.FromHexString("#F8DBAF");
+                            material.diffuseColor = Color3.FromHexString("#F8DBAF");
                         }
                         mesh.material = material;
                     }
@@ -85,7 +87,7 @@ class AssetLoadingView extends Component {
                     if (key === EntityType.CHOCOLATE_FOUNTAIN && mesh.material !== null) {
                         if (mesh.material.name === 'Shield') {
                             let shieldMaterial = new StandardMaterial(key + '.Shield.material', scene);
-                            shieldMaterial.diffuseColor﻿ = Color3.FromHexString("#DE8731");
+                            shieldMaterial.diffuseColor = Color3.FromHexString("#DE8731");
                             shieldMaterial.alpha = 0.5;
                             shieldMaterial.alphaMode = Engine.ALPHA_COMBINE;
                             mesh.material = shieldMaterial;
@@ -97,8 +99,8 @@ class AssetLoadingView extends Component {
             });
         }
 
-        for (let i = 0; i < Object.keys(assetLoader.assets.images).length; i++) {
-            this.loadImage('/images/' + assetLoader.assets.images[Object.keys(assetLoader.assets.images)[i]]).then(() => this.updateProgress());
+        for (const image of assetLoader.assets.images) {
+            this.loadImage('/images/' + image).then(() => this.updateProgress());
         }                     
     }
 
@@ -117,6 +119,7 @@ class AssetLoadingView extends Component {
             xhr.open('GET', src);
             xhr.onload = () => {
               if (xhr.status >= 200 && xhr.status < 300) {
+                new Image().src = src;
                 resolve(xhr.response);
               } else {
                 reject({ status: xhr.status, statusText: xhr.statusText });

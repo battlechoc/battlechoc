@@ -27,7 +27,8 @@ const theme = {
         gold: { light: '#FAD25A', dark: '#AE8D0B'},
         facebook: { light: '#6589F4', dark: '#435DAC'},
         instagram: { light: '#FE5A93', dark: '#803FBB'},
-        brown: { light: '#56321E', dark: '#4D2C1B'}
+        brown: { light: '#56321E', dark: '#4D2C1B'},
+        warning: { light: '#FAD25A', dark: '#D28304' }
     },
     breakpoints: {
         desktop: '@media screen and (min-width: 1200px)',
