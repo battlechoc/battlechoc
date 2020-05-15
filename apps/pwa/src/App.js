@@ -144,15 +144,11 @@ class App extends Component {
         if (iOSDevice && !isFullscreen && !isPWA) {
             OfflineStore.settingsStore.get('iOSMessage').then(iOSMessage => {
                 if (typeof iOSMessage === 'undefined') {
-                    this.props.showQuickMessage({ text: t(tr.IOS_MESSAGE), variant: 'apple-pwa-hint' });
+                    this.props.showQuickMessage({ text: t(tr.IOS_MESSAGE), variant: 'apple-pwa-hint', autoHideDuration: 6000 });
                     OfflineStore.settingsStore.set("iOSMessage", "hide next time");
                 }
             });
         }
-
-        /*this.props.showQuickMessage({ text: t(tr.UNLOCK_CONGRATULATIONS_CHOCLAB), variant: 'info' });
-        this.props.showQuickMessage({ text: t(tr.UNLOCK_CONGRATULATIONS_MULTIPLAYER), variant: 'error' });
-        this.props.showQuickMessage({ text: 'kurze Warnung', variant: 'warning', autoHideDuration: 0 });*/
     }
 
     handleError = error => {

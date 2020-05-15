@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import AddBox from '@material-ui/icons/AddBox';
-import ScreenRotation from '@material-ui/icons/ScreenRotation';
-import SvgIcon from '@material-ui/core/SvgIcon';
 import { createUseStyles } from 'react-jss';
-import { Fab } from '../controls';
 
 const useStyles = createUseStyles(theme => ({
     message: {
@@ -19,14 +15,18 @@ const useStyles = createUseStyles(theme => ({
                 return `3px solid ${theme.color.accent.light}`;
             } else if (props.variant === 'warning') {
                 return `3px solid ${theme.color.warning.light}`;
-            } else {
+            } else if (props.variant === 'success') {
+                return `3px solid ${theme.color.primary.light}`;
+            }  else {
                 return `3px solid ${theme.color.secondary.light}`;
             }
         },
         background: props => {
             if (props.variant === 'error') {
                 return `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 100%)`;
-            } else if (props.variant === 'warning') {
+            } else if (props.variant === 'success') {
+                return `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`;
+            }  else if (props.variant === 'warning') {
                 return `linear-gradient(0deg, ${theme.color.warning.dark} 0%, ${theme.color.warning.light} 100%)`;
             } else {
                 return `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`;
@@ -55,6 +55,11 @@ const useStyles = createUseStyles(theme => ({
             background: `url(/images/warning-icon.svg) no-repeat`
         }
     },
+    success: {
+        '& > div': {
+            background: `url(/images/success-icon.svg) no-repeat`
+        }        
+    },
     actions: {
         margin: '12px 6px',
         padding: 6,
@@ -65,6 +70,8 @@ const useStyles = createUseStyles(theme => ({
                     return `url(/images/close.svg) no-repeat`;
                 } else if (props.variant === 'warning') {
                     return `url(/images/warning-close.svg) no-repeat`;
+                } else if (props.variant === 'success') {
+                    return `url(/images/primary-close.svg) no-repeat`;
                 } else {
                     return `url(/images/secondary-close.svg) no-repeat`;
                 }
@@ -82,6 +89,24 @@ const useStyles = createUseStyles(theme => ({
     },
     visible: {
         opacity: 1,
+    },
+    rotate: {
+        padding: 10,
+        margin: 4,
+        background: `url(/images/phone-rotation.svg) no-repeat`,
+        backgroundSize: '100% 100%',
+    },
+    share: {
+        padding: 8,
+        margin: 4,
+        background: `url(/images/apple-share-icon.svg) no-repeat`,
+        backgroundSize: '100% 100%',
+    },
+    add: {
+        padding: 10,
+        margin: 4,
+        background: `url(/images/add-icon.svg) no-repeat`,
+        backgroundSize: '100% 100%',
     }
 }));
 
@@ -92,14 +117,13 @@ const QuickMessage = props => {
 
     if (variant === 'apple-pwa-hint') {
         variant = 'info';
-        const share = <SvgIcon fontSize="small"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" enableBackground="new 0 0 50 50"><meta name="license" content="https://commons.wikimedia.org/wiki/Category:Expat/MIT_License" /><meta name="copyright" content="Copyright © 2014 Alexander Madyankin, Roman Shamin" /><path d="M30.3 13.7L25 8.4l-5.3 5.3-1.4-1.4L25 5.6l6.7 6.7z"/><path d="M24 7h2v21h-2z"/><path d="M35 40H15c-1.7 0-3-1.3-3-3V19c0-1.7 1.3-3 3-3h7v2h-7c-.6 0-1 .4-1 1v18c0 .6.4 1 1 1h20c.6 0 1-.4 1-1V19c0-.6-.4-1-1-1h-7v-2h7c1.7 0 3 1.3 3 3v18c0 1.7-1.3 3-3 3z"/></svg></SvgIcon>
         message = <span>
             {message.substring(0, message.indexOf('[0]'))}
-            <ScreenRotation />
+            <span className={classes.rotate} />
             {message.substring(message.indexOf('[0]') + 3, message.indexOf('[1]'))}
-            {share}
+            <span className={classes.share} />
             {message.substring(message.indexOf('[1]') + 3, message.indexOf('[2]'))}
-            <AddBox />
+            <span className={classes.add} />
             {message.substring(message.indexOf('[2]') + 3)}
         </span>;
     }
@@ -122,7 +146,7 @@ const QuickMessage = props => {
 
     return (
         <div className={`${visible ? classes.visible : classes.invisible} ${classes.message}`}>
-            <div className={`${classes[props.variant]} ${classes.icon}`}>
+            <div className={`${classes[variant]} ${classes.icon}`}>
                 <div />
             </div>    
             <div className={classes.text}>{message}</div>
