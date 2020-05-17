@@ -61,7 +61,7 @@ const GameResultReason = Object.freeze({
     TIMEOUT: 'timeout'
 });
 
-const whitelist = ['https://battlechoc.dev', 'https://battlechoc.com', 'http://localhost:3000', 'https://localhost:3000', 'https://battlechoc.firebaseapp.com', 'chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop'];
+const whitelist = ['https://battlechoc.dev', 'https://battlechoc.com', 'http://localhost:3000', 'https://localhost:3000', 'https://battlechoc.firebaseapp.com', 'https://192.168.178.56:3000', 'chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop'];
 const corsOptions = {
     origin: function (origin, callback) {
         if (!origin || whitelist.indexOf(origin) !== -1) {
@@ -973,6 +973,10 @@ const emitPlayerNotification = async (receiverId, sessionId, title, body, reason
     await Promise.all(permissions.map(async (permission) => {
         const payload = {
             to: permission.token,
+            notification: {
+                title: title,
+                body: body
+            },
             data: {
                 title: title,
                 text: body,
