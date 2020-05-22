@@ -84,7 +84,7 @@ const useStyles = createUseStyles(theme => ({
         padding: '12px 0',
         '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
         '-webkit-font-smoothing': 'antialiased',
-        [theme.breakpoints.landscape.smartphone]: {
+        [theme.breakpoints.landscape]: {
             padding: 0
         }
     },
@@ -96,7 +96,7 @@ const useStyles = createUseStyles(theme => ({
         margin: '-12px 0px 12px 0px',
         '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
         '-webkit-font-smoothing': 'antialiased',
-        [theme.breakpoints.landscape.smartphone]: {
+        [theme.breakpoints.landscape]: {
             margin: 0
         }
     },
@@ -120,7 +120,7 @@ const useStyles = createUseStyles(theme => ({
             width: '80%',
             paddingRight: '5'
         },
-        [theme.breakpoints.landscape.smartphone]: {
+        [theme.breakpoints.landscape]: {
             width: '90%',
             height: '90%'
         }

@@ -21,8 +21,14 @@ const useStyles = createUseStyles(theme => ({
         overflow: 'hidden',
         fontFamily: 'Bangers',
         color: 'white',
-        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
-        '-webkit-font-smoothing': 'antialiased'
+        WebkitTextStroke: `1px ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
+        [theme.breakpoints.orientation.portrait]: {
+            WebkitTextStroke: `0.15vh ${theme.color.secondary.dark}`
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            WebkitTextStroke: `0.15vw ${theme.color.secondary.dark}`
+        }
     },
     entity: {
         display: 'flex',
@@ -32,7 +38,7 @@ const useStyles = createUseStyles(theme => ({
         '& > canvas': {
             marginTop: 24,
             width: '80vw',
-            height: 'calc(35vh - 24px)'
+            height: 'calc(40vh - 24px)'
         }
     },
     coins: {
@@ -43,40 +49,44 @@ const useStyles = createUseStyles(theme => ({
         alignItems: 'center',
         zIndex: 1,
         '& span': {
-            fontSize: '2.5rem',
             color: '#fff',
-            '-webkit-text-stroke': '1px #3C1C0C',
             '-webkit-font-smoothing': 'antialiased',
             fontFamily: 'Bangers',
             marginRight: 10
         },
         '& > div': {
             background: 'url(/images/coins.svg) no-repeat',
-            height: 39,
-            width: 57
-        }
-    },
-    costs: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        '& > div > span': {
-            fontSize: '1.5rem !important',
         },
-        '& > div > div': {
-            width: 43,
-            height: 29
+        [theme.breakpoints.orientation.portrait]: {
+            '& span': {
+                fontSize: '6vh',
+                WebkitTextStroke: '0.15vh #3C1C0C'
+            },
+            '& > div': {
+                padding: '2.666vh 4vh'
+            }
         },
-        '& > div': {
-            position: 'unset !important'
+        [theme.breakpoints.orientation.landscape]: {
+            '& span': {
+                fontSize: '8vw',
+                WebkitTextStroke: '0.2vw #3C1C0C'
+            },
+            '& > div': {
+                padding: '2.666vw 4vw'
+            }
         }
     },
     cacao: {
-        width: 38,
-        height: 26,
-        marginLeft: 6,
         background: `url(/images/cacao.svg) no-repeat`, 
-        backgroundSize: '100% 100%'
+        backgroundSize: '100% 100%',
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '2vh 4vh',
+            marginRight: '-2vh',
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            padding: '3vh 6vh',
+            marginRight: '-3vh',
+        }
     },
     section: {
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
@@ -84,11 +94,30 @@ const useStyles = createUseStyles(theme => ({
         display: 'flex',
         flexGrow: 1,
         justifyContent: 'center',
-        position: 'relative'
+        position: 'relative',
+        [theme.breakpoints.orientation.landscape]: {
+            alignItems: 'flex-start',
+            paddingTop: '5vh'
+        }
     },
     palette: {
         position: 'absolute',
-        top: -36
+        [theme.breakpoints.orientation.landscape]: {
+            top: '-9vh',
+            '& > div:first-child, & > div:last-child': {
+                height: '7vh',
+                width: '7vh',
+                borderWidth: '0.5vh'
+            }
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            top: '-7vh',
+            '& > div:first-child, & > div:last-child': {
+                height: '7vh',
+                width: '7vh',
+                borderWidth: '0.5vh'
+            }
+        }
     },
     decorationLeft: {
         position: 'absolute',
@@ -105,22 +134,31 @@ const useStyles = createUseStyles(theme => ({
         width: '39%',
         height: 135,
         background: 'url(/images/choclab-decoration-right.svg) no-repeat',
-        backgroundPosition: 'right',
+        backgroundPositionY: 'top',
+        backgroundPositionX: 'right',
     },
     attributes: {
-        marginTop: 42,
-        width: '80%',
+        width: '95%',
+        position: 'relative',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        [theme.breakpoints.orientation.landscape]: {
+            justifyContent: 'center',
+            marginTop: 12
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            justifyContent: 'flex-start',
+            marginTop: 18,
+            '@media screen and (min-width: 360px)': {
+                width: '90%'
+            }
+        }
     },
     progress: {
         '& > div:first-child': {
             paddingTop: 6
         },
         '& > div:last-child': {
-            height: 24,
-            border: `3px solid ${theme.color.secondary.dark}`,
-            borderRadius: 12,
             background: 'linear-gradient(0deg, #3DA2CE 0%, #9DD5E9 80%)',
             position: 'relative',
             overflow: 'hidden'
@@ -128,6 +166,35 @@ const useStyles = createUseStyles(theme => ({
         '& div div': {
             position: 'absolute',
             height: '100%'
+        },
+        '@media screen and (min-height: 720px)': {
+               
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            width: '30%',
+            marginLeft: 6,
+            marginRight: 6,
+            '& > div:last-child': {
+                height: '5vh',
+                border: `3px solid ${theme.color.secondary.dark}`,
+                borderRadius: '2.5vh'
+            }
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            width: 'unset',
+            '& > div:last-child': {
+                height: 12,
+                border: `2px solid ${theme.color.secondary.dark}`,
+                borderRadius: 6
+            },
+            '@media screen and (min-height: 600px)': {
+                '& > div:last-child': {
+                    border: `3px solid ${theme.color.secondary.dark}`,
+                    height: '3vh',
+                    borderRadius: '1vh'
+
+                }
+            }
         }
     },
     hp: { 
@@ -154,11 +221,25 @@ const useStyles = createUseStyles(theme => ({
     forecast: { opacity: 0.4 },
     label: {
         display: 'flex',
-        alignItems: 'center',
-        fontSize: '1.5rem',
-        '& span:first-child': {
-            marginLeft: 6,
-            marginRight: 6
+        marginLeft: 6,
+        marginRight: 6,
+        '& > span:last-child': {
+            display: 'flex',
+            width: '100%'
+        },
+        '& > span:first-child': {
+            width: 'max-content'
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            '& > span:first-child': {
+                minWidth: 'max-content',
+                marginRight: 12
+            },
+            fontSize: '3.4vh'
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            flexDirection: 'column',
+            fontSize: '5vh'
         }
     },
     upgrade: {
@@ -170,47 +251,175 @@ const useStyles = createUseStyles(theme => ({
     },
     container: {
         display: 'flex',
-        marginTop: 12,
-        fontSize: '1.5rem'
+        marginTop: 8,
+        fontSize: '1.2rem',
+        justifyContent: 'center',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '3.4vh'
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            fontSize: '6vh'
+        }
     },
     icon: {
-        width: 42,
-        height: 42,
-        marginLeft: -24,
-        marginTop: -6,
-        background: `url(/images/lab.svg) no-repeat`, 
-        backgroundSize: '100% 100%'
+        background: `url(/images/lab.svg) no-repeat`,
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '3vh',
+            marginLeft: '-6vh'
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            padding: '4.5vh',
+            marginLeft: '-8vh',
+        }
+    },
+    header: {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%'
     },
     title: {
-        zIndex: 12,
-        marginTop: 6,
-        fontSize: '2rem',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
+        '& > span:last-child': {
+            width: 'max-content'
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            marginTop: '4vh',
+            fontSize: '5vh'
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            fontSize: '6vh',
+            marginLeft: '3vh',
+        }
+    },
+    subtitle: {
+        display: 'flex',
+        width: '100%',
+        justifyContent: 'center',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '4vh'
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            fontSize: '6vh',
+        }
     },
     level: {
         display: 'flex',
-        alignItems: 'center',
+        minWidth: 'max-content',
         justifyContent: 'center',
-        fontSize: '1.6rem',        
+        marginLeft: '1vw',
+        marginRight: '1vw', 
+        [theme.breakpoints.orientation.landscape]: {
+            alignItems: 'center',
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            alignItems: 'flex-start',
+            '@media screen and (min-width: 400px)': {
+                marginLeft: '5vw',
+                marginRight: '5vw'
+            }
+        }
     },
     levelup: {
-        width: 32,
-        height: 32,
         marginLeft: 12,
         marginRight: 6,
         background: `url(/images/level-up-icon.svg) no-repeat`, 
-        backgroundSize: '100% 100%'
+        backgroundSize: '100% 100%',
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '2vh'
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            padding: '3vh'
+        }
     },
     actions: {
         display: 'flex',
-        justifyContent: 'space-around',
-        margin: '5px 0'
+        justifyContent: 'space-between',
+        [theme.breakpoints.orientation.portrait]: {
+            marginTop: '-3vh',
+            '@media screen and (min-height: 560px)': {
+                marginTop: 6,
+                justifyContent: 'center'
+            }
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            marginTop: '-16vh',
+            padding: '3vh'
+        }
     },
     button: {
-        width: 144,
-        height: 72
+        [theme.breakpoints.orientation.landscape]: {
+            width: '25vw',
+            height: '20vh',
+            marginTop: -16
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            width: 96,
+            height: 68,
+            '@media screen and (min-height: 560px)': {
+                height: '10vh',
+                width: '30vw',
+                margin: '0 6vw'
+            }
+        }
+    },
+    costs: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        '& > div': {
+            display: 'flex',
+            alignItems: 'center',
+            '& span': {
+                color: '#fff',
+                WebkitTextStroke: '1px #3C1C0C',
+                '-webkit-font-smoothing': 'antialiased',
+                fontFamily: 'Bangers',
+            },
+            '& > div': {
+                backgroundImage: 'url(/images/coins.svg)',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                padding: '10px 20px',
+                marginRight: '-10px'
+            }
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            fontSize: '5vh',
+            '& > div': {
+                '& > div': {
+                    padding: '3vh 6vh !important',
+                    marginRight: '-3vh !important'
+                }    
+            }
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '4vh',
+            '& > div': {
+                '& > div': {
+                    padding: '2vh 4vh !important',
+                    marginRight: '-2vh !important'
+                }    
+            }
+        }
+    },
+    properties: {
+        display: 'flex',
+        [theme.breakpoints.orientation.landscape]: {
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'flex-end',
+            height: '20vh'
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
+            '@media screen and (min-width: 400px)': {
+                width: '90%',
+                alignSelf: 'center'
+            }
+        }
     }
 }));
 
@@ -268,72 +477,75 @@ const Choclab = props => {
                     <div className={classes.decorationLeft} /><div className={classes.decorationRight} />
                     <ChoclabPalette className={classes.palette} selectEntity={entity => setSelectedEntity(getEntityDescriptor(entity, props.level))} />
                     <div className={classes.attributes}>
-                        <div className={classes.title}>
-                            <span className={classes.icon} />
-                            <span>{t(tr.TOOLTIP_BUILDING_TITLE, entityType)}</span>
-                        </div>
-                        { upgradePossible ? 
-                            <div className={classes.level}>
-                                <span>{t(tr.CHOCLAB_LEVEL)} {props.level[entityType] + 1}</span>
-                                <span className={classes.levelup} />
-                                <span>{ props.level[entityType] + 2 }</span>
-                            </div> : null
-                        }
+                        <div className={classes.header}>
+                            <div className={classes.title}>
+                                <span className={classes.icon} />
+                                <span>{t(tr.TOOLTIP_BUILDING_TITLE, entityType)}</span>
+                            </div>
 
-                        <div className={classes.actions}>
-                            { upgradePossible ? 
+                            <div className={classes.subtitle}>
+                                { upgradePossible ? 
+                                <div className={classes.level}>
+                                    <span>{t(tr.CHOCLAB_LEVEL)} {props.level[entityType] + 1}</span>
+                                    <span className={classes.levelup} />
+                                    <span>{ props.level[entityType] + 2 }</span>
+                                </div> : null }
+                            </div>
+
+                            <div className={classes.actions}>
+                                <Button className={classes.button} color="accent" disabled={!downgradePossible || updateRunning } onClick={() => {
+                                    if (downgradePossible) {
+                                        updateLevel(entityType, false)
+                                    }
+                                }}><div className={classes.costs}>
+                                    <span style={{ WebkitTextStroke: `1px ${theme.color.accent.dark}`, }}>{t(tr.CHOCLAB_DOWNGRADE)}</span>
+                                    { downgradePossible ? <div>
+                                        <span style={{ WebkitTextStroke: `1px ${theme.color.accent.dark}`, }}>-{ Math.round(downgradedEntity.coins * 0.666) }</span>
+                                        <div />
+                                    </div> : null }
+                                </div></Button>
+                                { upgradePossible ? 
                                 <Button className={classes.button} disabled={!upgradePossible || updateRunning || props.playerInfos.stats.coins < currentEntity.coins} onClick={() => {
                                         if (upgradePossible && !updateRunning && props.playerInfos.stats.coins >= currentEntity.coins) {
                                             updateLevel(entityType);
                                         }
                                     }
                                 }><div className={classes.costs}>
-                                    <span style={{ '-webkit-text-stroke': `1px ${theme.color.primary.dark}`, }}>{t(tr.CHOCLAB_UPGRADE)}</span>
-                                    <div className={classes.coins}>
-                                        <span style={{ '-webkit-text-stroke': `1px ${theme.color.primary.dark}`, }}>{ currentEntity.coins }</span>
+                                    <span style={{ WebkitTextStroke: `1px ${theme.color.primary.dark}`, }}>{t(tr.CHOCLAB_UPGRADE)}</span>
+                                    <div>
+                                        <span style={{ WebkitTextStroke: `1px ${theme.color.primary.dark}`, }}>{ currentEntity.coins }</span>
                                         <div />
                                     </div>
-                                </div></Button> : null 
-                            }
-
-                            <Button className={classes.button} color="accent" disabled={!downgradePossible || updateRunning } onClick={() => {
-                                if (downgradePossible) {
-                                    updateLevel(entityType, false)
-                                }
-                            }}><div className={classes.costs}>
-                                <span style={{ '-webkit-text-stroke': `1px ${theme.color.accent.dark}`, }}>{t(tr.CHOCLAB_DOWNGRADE)}</span>
-                                { downgradePossible ? <div className={classes.coins}>
-                                    <span style={{ '-webkit-text-stroke': `1px ${theme.color.accent.dark}`, }}>-{ Math.round(downgradedEntity.coins * 0.666) }</span>
-                                    <div />
-                                </div> : null }
-                            </div></Button>
+                                </div></Button> : null }
+                            </div>
                         </div>
+                        <div className={classes.properties}>
+                            { selectedEntity ? Object.keys(selectedEntity)
+                                .filter(field => ['hp','area','buildingsPerTurn','cacaoPerTurn','attack','donutProbability','donutTypes'].includes(field)).map(attribute => {
+                                let percentage = (currentEntity[attribute] / highlyDevelopedEntity[attribute]) * 100;
+                                let percentageForcast = (upgradedEntity[attribute] / highlyDevelopedEntity[attribute]) * 100;
+                                let attributeDescription = <span className={classes.upgrade}>{currentEntity[attribute]}</span>;
 
-                        { selectedEntity ? Object.keys(selectedEntity)
-                            .filter(field => ['hp','area','buildingsPerTurn','cacaoPerTurn','attack','donutProbability','donutTypes'].includes(field)).map(attribute => {
-                            let percentage = (currentEntity[attribute] / highlyDevelopedEntity[attribute]) * 100;
-                            let percentageForcast = (upgradedEntity[attribute] / highlyDevelopedEntity[attribute]) * 100;
-                            let attributeDescription = <span className={classes.upgrade}>{currentEntity[attribute]}</span>;
+                                if (upgradePossible) {
+                                    attributeDescription = <span><span style={{ flexGrow: 1 }}>{currentEntity[attribute]}</span><span className={classes.levelup} /><span>{upgradedEntity[attribute]}</span></span>;
+                                }
 
-                            if (upgradePossible) {
-                                attributeDescription = <><span style={{ flexGrow: 1 }}>{currentEntity[attribute]}</span><span className={classes.levelup} /><span>{upgradedEntity[attribute]}</span></>;
-                            }
-
-                            return (
-                                <div className={classes.progress} key={attribute}>
-                                    <div className={classes.label}><span>{ t(tr.ATTRIBUTE_NAME, attribute) }</span>{attributeDescription}</div>
-                                    <div>
-                                        <div className={classes[attribute]} style={{ width: percentage + '%'}}></div>
-                                        { upgradePossible ? <div className={`${classes[attribute]}  ${classes.forecast}`} style={{ width: percentageForcast + '%'}}></div> : null }
+                                return (
+                                    <div className={classes.progress} key={attribute}>
+                                        <div className={classes.label}><span>{ t(tr.ATTRIBUTE_NAME, attribute) }</span>{attributeDescription}</div>
+                                        <div>
+                                            <div className={classes[attribute]} style={{ width: percentage + '%'}}></div>
+                                            { upgradePossible ? <div className={`${classes[attribute]}  ${classes.forecast}`} style={{ width: percentageForcast + '%'}}></div> : null }
+                                        </div>
                                     </div>
-                                </div>
-                            )
-                        })  : null }
+                                )
+                            })  : null }
+                            </div>
                         { ![EntityType.FACTORY, EntityType.HOT_CHOCOLATE_BALLISTA].includes(entityType) ? <div className={classes.container}>
                                 <span>{ currentEntity.costs }</span>
                                 <div className={classes.cacao} />
                                 { upgradePossible ? <>
-                                    <span style={{ flexGrow: 1 }} />
+                                    <span style={{ width: '20%' }} />
                                     <span className={classes.levelup} />
                                     <span>{ upgradedEntity.costs }</span>
                                     <div className={classes.cacao} />

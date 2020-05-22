@@ -3,7 +3,11 @@ import PropTypes from 'prop-types';
 import { createUseStyles } from 'react-jss';
 import { Jukebox } from '../misc';
 
-const useStyles = createUseStyles(theme => ({
+const useStyles = createUseStyles(theme => {
+  const width = 220;
+  const height = 56;
+
+  return {
     button: {
       color: 'white',
       '-webkit-text-stroke': props => `1px ${theme.color[props.color].dark}`,
@@ -59,19 +63,21 @@ const useStyles = createUseStyles(theme => ({
       }
     }),
     huge: {
-      fontSize: '2.5rem',
-      width: 252,
-      height: 68,
-      [theme.breakpoints.landscape.smartphone]: {
-        fontSize: '1.5rem',
-        width: 246,
-        height: 62,
-      }
+      [theme.breakpoints.orientation.portrait]: {
+        fontSize: '5vh',
+        width: '35vh',
+        height: '8.75vh',
+      },
+      [theme.breakpoints.orientation.landscape]: {
+        fontSize: '7.5vh',
+        width: '45vh',
+        height: '11.25vh',        
+      },
     },
     normal: {
       fontSize: '1.5rem',
-      width: 246,
-      height: 62,
+      width: width * 0.9,
+      height: height * 0.9,
     },
     small: {
       fontSize: '1.5rem',
@@ -91,8 +97,8 @@ const useStyles = createUseStyles(theme => ({
       backgroundRepeat: 'no-repeat',
       backgroundImage: 'url(/images/lock.svg)'
     }
-  })
-)
+  }
+});
 
 const Button = props => {
   const classes = useStyles(props);

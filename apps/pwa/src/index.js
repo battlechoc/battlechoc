@@ -34,15 +34,11 @@ const theme = {
         desktop: '@media screen and (min-width: 1200px)',
         laptop: '@media screen and (min-width: 992px)',
         tablet: '@media screen and (min-width: 768px)',
-        smartphone: '@media screen and (min-width: 576px)',
-        landscape: {
-            smartphone: '@media screen and (min-width: 576px) and (orientation: landscape)',
-            tablet: '@media screen and (min-width: 768px) and (orientation: landscape)'
-        },
-        portrait: {
-            smartphone: '@media screen and (min-width: 576px) and (orientation: portrait)',
-            tablet: '@media screen and (min-width: 768px) and (orientation: portrait)'
-        },      
+        smartphone: '@media screen and (min-width: 576px)',   
+        orientation: {
+            portrait: '@media screen and (orientation: portrait)',
+            landscape: '@media screen and (orientation: landscape)'
+        }  
     }
 }
 

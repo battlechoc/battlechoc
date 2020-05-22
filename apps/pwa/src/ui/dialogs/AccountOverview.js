@@ -19,7 +19,7 @@ const useStyles = createUseStyles(theme => ({
         display: 'flex',
         flexDirection: 'column',
         marginTop: 16,
-        [theme.breakpoints.landscape.smartphone]: {
+        [theme.breakpoints.landscape]: {
             marginTop: 0
         }
     },
@@ -114,7 +114,7 @@ const useStyles = createUseStyles(theme => ({
             fontSize: '1.6rem',
             '-webkit-text-stroke': '1px #1B4E69',
             '-webkit-font-smoothing': 'antialiased',
-            [theme.breakpoints.landscape.smartphone]: {
+            [theme.breakpoints.landscape]: {
                 margin: '16px 0'
             }
         }

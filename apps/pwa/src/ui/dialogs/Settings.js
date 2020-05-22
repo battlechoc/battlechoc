@@ -55,7 +55,7 @@ const useStyles = createUseStyles(theme => ({
   },
   button: {
     marginTop: 24,
-    [theme.breakpoints.landscape.smartphone]: {
+    [theme.breakpoints.landscape]: {
       marginTop: 12
     }
   },
@@ -72,7 +72,7 @@ const useStyles = createUseStyles(theme => ({
     marginTop: 24,
     marginBottom: 12,
     width: '100%',
-    [theme.breakpoints.landscape.smartphone]: {
+    [theme.breakpoints.landscape]: {
       marginTop: 12
     }
   },

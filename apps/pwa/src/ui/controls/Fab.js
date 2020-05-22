@@ -6,12 +6,20 @@ import { Jukebox } from '../misc';
 const useStyles = createUseStyles(theme => ({
     fab: {
       color: 'white',
-      width: 42,
-      height: 42,
+      width: 36,
+      height: 36,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: '100%'
+      borderRadius: '100%',
+      [theme.breakpoints.tablet]: {
+        width: 48,
+        height: 48,        
+      },
+      [theme.breakpoints.laptop]: {
+        width: 60,
+        height: 60
+      }
     },
     icon: props => {
       const style = {
