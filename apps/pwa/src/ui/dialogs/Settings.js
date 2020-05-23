@@ -167,6 +167,22 @@ const Settings = props => {
     value: 'jp',
     label: t(tr.JAPANESE),
     icon: 'jp-flag.svg'
+  }, {
+    value: 'es',
+    label: t(tr.SPANISH),
+    icon: 'jp-flag.svg'
+  }, {
+    value: 'fr',
+    label: t(tr.FRENCH),
+    icon: 'jp-flag.svg'
+  }, {
+    value: 'it',
+    label: t(tr.ITALIAN),
+    icon: 'jp-flag.svg'
+  }, {
+    value: 'pt',
+    label: t(tr.PORTUGUESE),
+    icon: 'jp-flag.svg'
   }];
 
   const changeLanguage = value => {
