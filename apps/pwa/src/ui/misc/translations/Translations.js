@@ -5,7 +5,11 @@ const referenceLanguage = 'en';
 const strings = {
     en: require('./en_strings.js'),
     de: require('./de_strings.js'),
-    jp: require('./jp_strings.js')
+    jp: require('./jp_strings.js'),
+    es: require('./es_strings.js'),
+    fr: require('./fr_strings.js'),
+    it: require('./it_strings.js'),
+    pt: require('./pt_strings.js')
 };
 
 const translationPredicates = {

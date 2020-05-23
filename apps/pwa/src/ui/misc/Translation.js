@@ -5,11 +5,12 @@ import logger from '../../helper/logger';
 
 class Translation {
     constructor() {
-        this.currentLanguage = window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en';
+        const localCode = window.location.pathname.substr(1, 2);
+        this.currentLanguage = ['en', 'de', 'jp', 'es', 'fr', 'it', 'pt'].includes(localCode) ? localCode : 'en';
     }
 
     isValid(language) {
-        return ['en', 'de', 'jp'].includes(language);
+        return ['en', 'de', 'jp', 'es', 'fr', 'it', 'pt'].includes(language);
     }
 }
 
