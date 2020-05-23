@@ -20,14 +20,7 @@ const MeshPreview = props => {
         const width = container.current.clientWidth;
         const height = container.current.clientHeight;
         const ratio = width / height;
-        
-        let distance = 2;
-
-        if (window.innerWidth < 600) {
-            distance = 1.5;
-        } else if (window.innerWidth < 800) {
-            distance = 2.5;
-        }
+        const distance = 1.5;
 
         camera.orthoTop = distance;
         camera.orthoBottom = - distance;

@@ -33,30 +33,6 @@
     display: flex;
 }
 
-#chocolate-coins {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  display: flex;
-  align-items: center;
-  z-index: 1;
-}
-
-#chocolate-coins span {
-  font-size: 2.5rem;
-  color: #fff;
-  -webkit-text-stroke: 1px #3C1C0C;
-  -webkit-font-smoothing: antialiased;
-  font-family: 'Bangers';
-  margin-right: 10px;
-}
-
-#chocolate-coins .coins {
-  background: url(/images/coins.svg) no-repeat;
-  height: 39px;
-  width: 57px;
-}
-
 .multiplayerNotification {
     position: absolute;
     width: 100%;
@@ -111,16 +87,6 @@
 
 .black {
     background-color: #140e09;
-}
-
-#mainMenu {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    z-index: 2;
-    height: 100vh;
 }
 
 .active:hover {

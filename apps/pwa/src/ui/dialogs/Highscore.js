@@ -12,7 +12,12 @@ const useStyles = createUseStyles(theme => ({
     position: 'absolute',
     top: 56,
     right: 5,
-    zIndex: 4
+    zIndex: 4,
+    [theme.breakpoints.orientation.portrait]: {
+      '@media screen and (min-height: 900px)': {
+        top: 84                
+      }
+    } 
   },
   paginator: {
     display: 'flex',

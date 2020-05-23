@@ -14,10 +14,10 @@ const useStyles = createUseStyles(() => ({
         bottom: 0,
         right: 0,
         marginBottom: 5,
-        marginRight: 5,
-        width: 160,
-        justifyContent: 'space-between',
-        display: 'flex'
+        display: 'flex',
+        '& > div': {
+            marginRight: 5
+        }
     },
     text: {
         '& *': { color: 'white' },

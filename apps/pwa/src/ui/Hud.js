@@ -16,80 +16,151 @@ import { Button, Fab, Progress, Actionbar, InfoPanel, BuildingPalette, AttackPal
 import { createUseStyles } from 'react-jss'
 
 const useStyles = createUseStyles(theme => ({
-    actionbar: {
-        position: 'absolute',
-        top: 5,
-        left: 5,
-        zIndex: 5
-    },
-    logo: {
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        justifyContent: 'center',
-        overflow: 'hidden',
-        '& > :first-child': {
+        actionbar: {
             position: 'absolute',
-            top: 70,
-            width: 290,
-            height: 222,
-            background: 'url(/images/logo.svg) no-repeat',
-            zIndex: 1,
-            [theme.breakpoints.landscape.smartphone]: {
-                top: 5,
-                width: 232,
-                height: 178
+            top: 5,
+            left: 5,
+            zIndex: 5
+        },
+        logo: {
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            '& > :first-child': {
+                position: 'absolute',
+                background: 'url(/images/logo.svg) no-repeat',
+                zIndex: 1,
+                [theme.breakpoints.orientation.landscape]: {
+                    top: '5vh',
+                    width: '50vh',
+                    height: '50vh',
+                },
+                [theme.breakpoints.orientation.portrait]: {
+                    top: '12vh',
+                    width: '40vh',
+                    height: '40vh',
+                }
+            },
+            '& > :last-child': {
+                position: 'absolute',
+                background: 'url(/images/stripes.svg) no-repeat',
+                backgroundSize: '100%',
+                zIndex: 0,
+                animation: 'pulse 20s linear 0s infinite',
+                [theme.breakpoints.orientation.landscape]: {
+                    top: '-160vh',
+                    height: '350vh',
+                    width: '350vh',
+                    marginLeft: '-12vh'
+                },
+                [theme.breakpoints.orientation.portrait]: {
+                    top: '-85vh',
+                    height: '200vh',
+                    width: '200vh',
+                    marginLeft: '-10vh'
+                }
+            },        
+        },
+        menu: {
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'absolute',
+            zIndex: 4,
+            '& > div': {
+                marginBottom: 6
+            },
+            [theme.breakpoints.orientation.portrait]: {
+                top: '48%'
+            },
+            [theme.breakpoints.orientation.landscape]: {
+                top: '55%',
+                '@media screen and (min-height: 340px)': {
+                    top: '48%'     
+                }
             }
         },
-        '& > :last-child': {
+        coins: {            
             position: 'absolute',
-            height: 1600,
-            width: 1600,
-            top: -700,
-            marginLeft: -68,
-            background: 'url(/images/stripes.svg) no-repeat',
-            backgroundSize: 1600,
-            zIndex: 0,
-            animation: 'pulse 20s linear 0s infinite',
-            [theme.breakpoints.landscape.smartphone]: {
-                top: -765,
-                marginLeft: -56
+            top: 10,
+            right: 5,
+            display: 'flex',
+            alignItems: 'center',
+            zIndex: 1,
+            [theme.breakpoints.smartphone]: {
+                top: 5
+            },
+            '& > span': {
+                fontSize: '2rem',
+                color: 'white',
+                '-webkit-text-stroke': '1px #3C1C0C',
+                '-webkit-font-smoothing': 'antialiased',
+                fontFamily: 'Bangers',
+                marginRight: 10,
+                [theme.breakpoints.smartphone]: {
+                    fontSize: '2.5rem'
+                },
+                [theme.breakpoints.orientation.portrait]: {
+                    '@media screen and (min-height: 900px)': {
+                        fontSize: '4rem'              
+                    }
+                }
+            },
+            '& > div': {
+                background: 'url(/images/coins.svg) no-repeat',
+                height: 31.2,
+                width: 45.6,
+                [theme.breakpoints.smartphone]: {
+                    height: 39,
+                    width: 57
+                },
+                [theme.breakpoints.orientation.portrait]: {
+                    '@media screen and (min-height: 900px)': {
+                        height: 58.5,
+                        width: 85.5       
+                    }
+                }
             }
-        },        
-    },
-    menu: {
-        display: 'flex',
-        height: 230,
-        justifyContent: 'space-between',
-        flexDirection: 'column',
-        position: 'absolute',
-        top: '44%',
-        zIndex: 4,
-        [theme.breakpoints.landscape.smartphone]: {
-            height: 200,
-            top: '48%'
+        },
+        decoration: {
+            position: 'fixed',
+            background: 'url(/images/decoration.svg) no-repeat',
+            zIndex: 3,
+            [theme.breakpoints.orientation.portrait]: {
+                bottom: '-20vh',
+                left: '-15vh',
+                width: '45vh',
+                height: '45vh',
+            },
+            [theme.breakpoints.orientation.landscape]: {
+                bottom: '-35vh',
+                left: '-25vh',
+                width: '70vh',
+                height: '70vh',
+            }
+        },
+        resumeGameDialog: {
+            color: 'white'
+        },
+        notification: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            fontSize: '1.3rem'
+        },
+        titleScreen: {
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            zIndex: 2,
+            height: '100vh'
         }
-    },
-    decoration: {
-        position: 'fixed',
-        bottom: -90,
-        left: -145,
-        width: 397,
-        height: 294,
-        background: 'url(/images/decoration.svg) no-repeat',
-        zIndex: 3
-    },
-    resumeGameDialog: {
-        color: 'white'
-    },
-    notification: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'flex-end',
-        fontSize: '1.3rem'
-    }
-}));
+    })
+);
 
 const Hud = props => {
     const classes = useStyles(props);
@@ -272,12 +343,12 @@ const Hud = props => {
                     const locked = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
 
                     if (firstPlayScreen) {
-                        controls.push(<Button key="0" size="huge" buttonStyle={{ fontSize: '2rem'}} onClick={() => kickOffTutorial()}>{t(tr.START_TUTORIAL)}</Button>);
-                        controls.push(<Button key="1" size="huge" color="accent" buttonStyle={{ fontSize: '1.6rem'}} onClick={() => skipTutorial()}>{t(tr.SKIP_TUTORIAL)}</Button>);
-                        controls.push(<Button key="2" size="huge" color="secondary" buttonStyle={{ fontSize: '2rem'}} onClick={() => setShowAccountOverview(true)}>{t(tr.SIGNINORUP)}</Button>);
+                        controls.push(<Button className={classes.menuButton} key="0" size="huge" buttonStyle={{ fontSize: '2rem'}} onClick={() => kickOffTutorial()}>{t(tr.START_TUTORIAL)}</Button>);
+                        controls.push(<Button className={classes.menuButton} key="1" size="huge" color="accent" buttonStyle={{ fontSize: '1.6rem'}} onClick={() => skipTutorial()}>{t(tr.SKIP_TUTORIAL)}</Button>);
+                        controls.push(<Button className={classes.menuButton} key="2" size="huge" color="secondary" buttonStyle={{ fontSize: '2rem'}} onClick={() => setShowAccountOverview(true)}>{t(tr.SIGNINORUP)}</Button>);
                     } else {
-                        controls.push(<Button key="0" size="huge" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t(tr.NEW_GAME) : t(tr.MAIN_MENU_SINGLEPLAYER)}</Button>);
-                        controls.push(<Button key="1" size="huge" locked={locked} color="secondary" onClick={() => {
+                        controls.push(<Button className={classes.menuButton} key="0" size="huge" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t(tr.NEW_GAME) : t(tr.MAIN_MENU_SINGLEPLAYER)}</Button>);
+                        controls.push(<Button className={classes.menuButton} key="1" size="huge" locked={locked} color="secondary" onClick={() => {
                             if (locked) {
                                 notifyUnlock(1000 - score, 'Multiplayer');
                             } else {
@@ -285,7 +356,7 @@ const Hud = props => {
                             }
                         }}>{t(tr.MAIN_MENU_MULTIPLAYER)}</Button>);
                         
-                        controls.push(<Button key="2" size="huge" locked={locked} color="accent" onClick={() => { 
+                        controls.push(<Button className={classes.menuButton} key="2" size="huge" locked={locked} color="accent" onClick={() => { 
                             if (locked) {
                                 notifyUnlock(1000 - score, 'Choclab');
                             } else {
@@ -314,10 +385,10 @@ const Hud = props => {
                                     </div>
                                 </div>
                             </Dialog>
-                            <div id="mainMenu">
-                                {typeof playerInfos.stats.coins !== 'undefined' ? <div id="chocolate-coins">
+                            <div className={classes.titleScreen}>
+                                {typeof playerInfos.stats.coins !== 'undefined' ? <div className={classes.coins}>
                                     <span>{playerInfos.stats.coins}</span>
-                                    <div className="coins" />
+                                    <div />
                                 </div> : null}
                                 <div className={classes.logo}><div /><div /></div>
                                 <div className={classes.decoration} />

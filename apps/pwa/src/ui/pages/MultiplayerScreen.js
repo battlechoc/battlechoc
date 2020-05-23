@@ -30,7 +30,7 @@ const useStyles = createUseStyles(theme => ({
         marginTop: 24,
         position: 'relative',
         zIndex: 1,
-        [theme.breakpoints.landscape.smartphone]: {
+        [theme.breakpoints.orientation.landscape]: {
             width: 'calc(100% - 3*60px)',
             position: 'absolute',
             top: 5,
@@ -69,7 +69,7 @@ const useStyles = createUseStyles(theme => ({
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
         borderRadius: '5%',
         position: 'relative',
-        [theme.breakpoints.landscape.smartphone]: {
+        [theme.breakpoints.orientation.landscape]: {
             margin: '20px 10px 0px 10px'
         }
     },

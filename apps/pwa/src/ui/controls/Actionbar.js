@@ -11,7 +11,7 @@ import OfflineStore from '../../OfflineStore';
 import logger from '../../helper/logger';
 import { createUseStyles } from 'react-jss';
 
-const useStyles = createUseStyles({
+const useStyles = createUseStyles(theme => ({
     actions: {
         position: 'absolute',
         zIndex: 4,
@@ -20,10 +20,13 @@ const useStyles = createUseStyles({
         left: 5,
         flexDirection: 'row',
         '& > div': {
-            marginRight: 10
+            marginRight: 5,
+            [theme.breakpoints.smartphone]: {
+                marginRight: 10
+            }
         }
     }
-});
+}));
 
 const Actionbar = props => {
     const classes = useStyles();
