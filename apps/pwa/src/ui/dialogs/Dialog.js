@@ -74,19 +74,16 @@ const useStyles = createUseStyles(theme => ({
     },
     title: {
         zIndex: 12,
+        marginTop: '2vh',
         fontFamily: 'Bangers',
-        fontSize: props => (props.autoscale && props.title.length > 7) || props.mode === 'notification' ? '1.7rem' : '2.5rem',
+        fontSize: props => (props.autoscale && props.title.length > 7) || props.mode === 'notification' ? '1.7rem' : '8vw',
         display: 'flex',
         textAlign: props => props.mode === 'info' ? 'center' : 'unset',
         justifyContent: 'center',
         alignItems: 'center',
         color: 'white',
-        padding: '12px 0',
-        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
-        '-webkit-font-smoothing': 'antialiased',
-        [theme.breakpoints.landscape]: {
-            padding: 0
-        }
+        '-webkit-text-stroke': `0.1vw ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased'
     },
     subtitle: {
         zIndex: 12,
@@ -132,29 +129,32 @@ const useStyles = createUseStyles(theme => ({
     top: { 
         top: 0,
         left: 0,
-        width: 267,
-        height: 107,
+        width: '100vw',
+        height: '40vh',
         background: 'url(/images/dialog-border-top.svg) no-repeat' 
     },
     left: {
         display: props => ['notification', 'info'].includes(props.mode) ? 'none' : 'block',
         bottom: 0,
         left: 0,
-        width: 133,
-        height: 135,
-        background: 'url(/images/dialog-border-left.svg) no-repeat' 
+        width: '20vw',
+        height: '40vh',
+        background: 'url(/images/dialog-border-left.svg) no-repeat',
+        backgroundPositionY: 'bottom'
     },
     right: { 
         bottom: 0,
         right: 0,
-        width: 133,
-        height: 71,
-        background: 'url(/images/dialog-border-right.svg) no-repeat' 
+        width: '30vw',
+        height: '40vh',
+        background: 'url(/images/dialog-border-right.svg) no-repeat',
+        backgroundPositionX: 'right',
+        backgroundPositionY: 'bottom'
     },
     icon: {
-        width: 42,
-        height: 42,
-        marginLeft: -12
+        padding: '4vw',
+        marginRight: '1vw',
+        marginLeft: '-4vw'
     }
 }));
 
@@ -177,7 +177,7 @@ const Dialog = props =>  {
                     <div className={`${classes.border} ${classes.right}`} />
                     <span className={classes.title}>
                         { props.titleSlotBefore }
-                        { props.icon ? <span className={classes.icon} style={{ marginRight: 12, background: `url(/images/${ props.icon }.svg) no-repeat`, backgroundSize: '100% 100%' }} /> : null }
+                        { props.icon ? <span className={classes.icon} style={{ background: `url(/images/${ props.icon }.svg) no-repeat`, backgroundSize: '100% 100%' }} /> : null }
                         { props.title }
                         { props.titleSlotAfter }
                     </span>

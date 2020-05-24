@@ -15,21 +15,21 @@ const useStyles = createUseStyles(theme => ({
         position: 'relative'
     },
     input: {
-        width: 'calc(100% - 48px)',
+        width: 'calc(100% - 10vh)',
         outline: 'none',
-        borderRadius: '12px 0 0 12px',
+        borderRadius: '2.857vh 0 0 2.857vh',
         color: theme.color.secondary.dark,
         fontFamily: 'Bangers',
         display: 'flex',
         justifyContent: 'flex-start',
         alignItems: 'center',
-        fontSize: '2rem',
-        height: 42,
+        fontSize: '7vh',
+        height: '11.428vh',
         background: 'white',
-        border: `3px solid ${theme.color.secondary.light}`,
+        border: `0.2vh solid ${theme.color.secondary.light}`,
     },
     error: {
-        border: `3px solid ${theme.color.accent.light} !important`,
+        border: `0.2vh solid ${theme.color.accent.light} !important`,
         color: `${theme.color.accent.dark} !important`
     },
     errorLabel: {
@@ -39,16 +39,14 @@ const useStyles = createUseStyles(theme => ({
         '-webkit-font-smoothing': 'antialiased'
     },
     icon: {
-        height: 25,
-        width: 42,
-        margin: '0 6px'
+        padding: '4vh 8vh'
     },
     actionButton: {
         border: `3px solid ${theme.color.secondary.light}`,
-        borderRadius: 12,
+        borderRadius: '2.857vh',
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
-        height: 44,
-        width: 42,
+        height: '10vh',
+        width: '10vh',
         position: 'absolute',
         top: 0,
         right: 0,
@@ -189,7 +187,7 @@ const PlayerNameInput = props => {
                     }}
                 /> : <div className={classes.input}>
                     <div className={`${classes.icon} ${classes.fixed}`} style={{ backgroundImage: 'url(/images/user.svg)', backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> 
-                    <div style={{ marginLeft: 6, fontSize: playerName.length > 7 ? '1.7rem' : '2rem' }}>{ playerName }</div>
+                    <div style={{ marginLeft: 6, fontSize: playerName.length > 7 ? '6vh' : '8vh' }}>{ playerName }</div>
                 </div> }
                 <div onClick={handleAction} className={`${classes.actionButton} ${buttonDisabled ? classes.disabled : null} ${buttonError ? classes.buttonError : null}`}>
                 { loading ? <Progress infiniteAnimation={true} size={24} /> : <div className={classes.actionIcon} style={{ backgroundImage: `url(/images/${actionIcon}.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> }

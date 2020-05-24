@@ -15,7 +15,8 @@ const useStyles = createUseStyles(theme => ({
   wrapper: {
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center'
+    alignItems: 'center',
+    width: '70vw'
   },
   userReport: {
     margin: '5px 0',
@@ -54,9 +55,18 @@ const useStyles = createUseStyles(theme => ({
     marginTop: 15,
   },
   button: {
-    marginTop: 24,
-    [theme.breakpoints.landscape]: {
-      marginTop: 12
+    marginTop: '2vh',
+    width: '30vw',
+    height: '10vw',
+    '& > div': {
+      fontSize: '4vw'
+    },
+    [theme.breakpoints.orientation.portrait]: {
+      width: '50vw',
+      height: '16vw',
+      '& > div': {
+        fontSize: '6vw'
+      }
     }
   },
   checkbox: {
@@ -69,16 +79,16 @@ const useStyles = createUseStyles(theme => ({
     fontSize: '0.8rem'
   },
   playerName: {
-    marginTop: 24,
-    marginBottom: 12,
-    width: '100%',
-    [theme.breakpoints.landscape]: {
-      marginTop: 12
-    }
+    marginTop: '2vh',
+    marginBottom: '2vh',
+    width: '100%'
   },
   actions: {
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    width: '100%',
+    justifyContent: 'space-evenly'
   }
 }));
 
