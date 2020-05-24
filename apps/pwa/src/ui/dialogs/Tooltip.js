@@ -20,35 +20,55 @@ const useStyles = createUseStyles(theme => ({
     title: {
         display: 'flex',
         fontFamily: 'Bangers',
-        padding: 6,
+        padding: '1vh',
+        width: 'max-content',
         justifyContent: 'space-between',
-        fontSize: '1.5rem',
-        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
-        '-webkit-font-smoothing': 'antialiased'
+        fontSize: '7vh',
+        '-webkit-text-stroke': `0.1vh ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '1vw',
+            fontSize: '7vw'       
+        }
     },
     button: {
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
-        padding: 6,
-        border: `3px solid ${theme.color.secondary.light}`,
-        margin: '6px 0 12px 0',
-        borderRadius: 12,
-        color: 'white'
+        padding: '1.5vh',
+        border: `0.5vh solid ${theme.color.secondary.light}`,
+        marginTop: 6,
+        borderRadius: '3vh',
+        color: 'white',
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '1.5vw',
+            border: `0.5vw solid ${theme.color.secondary.light}`,
+            borderRadius: '3vw',       
+        } 
     },
     expanded: {
-        padding: 6,
+        padding: '1vh',
+        fontSize: '3vh',
         '& p': {
             margin: '6px 0'
-        }
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '1vw',
+            fontSize: '3vw'       
+        } 
     },
     invisible: {
         display: 'none'
     },
     dropdown: {
-        width: 24,
-        height: 24,
-        marginLeft: 12,
+        width: '7vh',
+        height: '7vh',
+        marginLeft: '2vh',
         background: `url(/images/dropdown.svg) no-repeat`, 
-        backgroundSize: '100% 100%'        
+        backgroundSize: '100% 100%',
+        [theme.breakpoints.orientation.portrait]: {
+            width: '7vw',
+            height: '7vw',
+            marginLeft: '2vw',         
+        } 
     }
 }));
 
