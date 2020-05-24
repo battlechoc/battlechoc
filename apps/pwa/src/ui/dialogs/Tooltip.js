@@ -20,29 +20,30 @@ const useStyles = createUseStyles(theme => ({
     title: {
         display: 'flex',
         fontFamily: 'Bangers',
-        padding: '1vh',
         width: 'max-content',
         justifyContent: 'space-between',
         fontSize: '7vh',
-        '-webkit-text-stroke': `0.1vh ${theme.color.secondary.dark}`,
+        '-webkit-text-stroke': `0.25vh ${theme.color.secondary.dark}`,
         '-webkit-font-smoothing': 'antialiased',
         [theme.breakpoints.orientation.portrait]: {
-            padding: '1vw',
             fontSize: '7vw'       
+        },
+        [theme.breakpoints.orientation.square]: {
+            fontSize: '5vw'           
         }
     },
     button: {
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
-        padding: '1.5vh',
+        padding: '1vh',
         border: `0.5vh solid ${theme.color.secondary.light}`,
         marginTop: 6,
         borderRadius: '3vh',
         color: 'white',
         [theme.breakpoints.orientation.portrait]: {
-            padding: '1.5vw',
+            padding: '1vw',
             border: `0.5vw solid ${theme.color.secondary.light}`,
             borderRadius: '3vw',       
-        } 
+        }
     },
     expanded: {
         padding: '1vh',
@@ -67,8 +68,12 @@ const useStyles = createUseStyles(theme => ({
         [theme.breakpoints.orientation.portrait]: {
             width: '7vw',
             height: '7vw',
-            marginLeft: '2vw',         
-        } 
+            marginLeft: '2vw',  
+        },
+        [theme.breakpoints.orientation.square]: {
+            width: '5vw',
+            height: '5vw',            
+        }
     }
 }));
 

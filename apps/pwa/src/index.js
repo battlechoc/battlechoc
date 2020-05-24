@@ -37,7 +37,8 @@ const theme = {
         smartphone: '@media screen and (min-width: 576px)',   
         orientation: {
             portrait: '@media screen and (orientation: portrait)',
-            landscape: '@media screen and (orientation: landscape)'
+            landscape: '@media screen and (orientation: landscape)',
+            square: '@media screen and (min-aspect-ratio: 3/4) and (max-aspect-ratio: 4/3)'
         }  
     }
 }

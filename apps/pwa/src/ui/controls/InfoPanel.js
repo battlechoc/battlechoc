@@ -22,13 +22,13 @@ const useStyles = createUseStyles(theme => ({
         alignItems: 'center',
         marginTop: 5,
         '& p': {
-            fontSize: '1.5rem',
+            fontSize: '3.5vw',
             color: 'white',
             userSelect: 'none',
-            margin: '0 0 0 6px',
+            margin: '0 0 0 5px',
             fontFamily: 'Bangers',
             justifyContent: 'space-between',
-            '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
+            '-webkit-text-stroke': `0.18vw ${theme.color.secondary.dark}`,
             '-webkit-font-smoothing': 'antialiased'
         }
     },
@@ -39,11 +39,11 @@ const useStyles = createUseStyles(theme => ({
         backgroundImage: 'url(/images/buildings-icon.svg)'
     },
     icon: {
-        border: `3px solid ${theme.color.secondary.dark}`,
+        border: `0.4vw solid ${theme.color.secondary.dark}`,
         borderRadius: '50%',
         background: 'linear-gradient(0deg, #3DA2CE 0%, #9DD5E9 80%)',
         '& > div': {
-            padding: 24,
+            padding: '3.5vw',
             backgroundSize: '100% 100%',
             backgroundRepeat: 'no-repeat'
         }
