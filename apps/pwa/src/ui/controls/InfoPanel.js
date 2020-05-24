@@ -29,7 +29,13 @@ const useStyles = createUseStyles(theme => ({
             fontFamily: 'Bangers',
             justifyContent: 'space-between',
             '-webkit-text-stroke': `0.18vw ${theme.color.secondary.dark}`,
-            '-webkit-font-smoothing': 'antialiased'
+            '-webkit-font-smoothing': 'antialiased',
+            [theme.breakpoints.orientation.portrait]: {
+                fontSize: '6vw'
+            },
+            [theme.breakpoints.orientation.square]: {
+                fontSize: '3.5vw'
+            }
         }
     },
     cacao: {
@@ -45,7 +51,13 @@ const useStyles = createUseStyles(theme => ({
         '& > div': {
             padding: '3.5vw',
             backgroundSize: '100% 100%',
-            backgroundRepeat: 'no-repeat'
+            backgroundRepeat: 'no-repeat',
+            [theme.breakpoints.orientation.portrait]: {
+                padding: '6vw'
+            },
+            [theme.breakpoints.orientation.square]: {
+                padding: '3.5vw'
+            }
         }
     }
 }));

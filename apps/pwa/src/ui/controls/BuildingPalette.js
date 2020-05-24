@@ -15,7 +15,15 @@ const useStyles = createUseStyles(theme => ({
         zIndex: 1,
         marginBottom: 5,
         marginLeft: 5,
-        display: 'flex'
+        display: 'flex',
+        [theme.breakpoints.orientation.portrait]: {
+            width: '80vw',
+            flexWrap: 'wrap'
+        },
+        [theme.breakpoints.orientation.square]: {
+            width: 'unset',
+            flexWrap: 'unset'
+        }
     },
     preview: {
         marginRight: 5,
@@ -25,7 +33,13 @@ const useStyles = createUseStyles(theme => ({
         '& > div': {
             padding: '3.5vw',
             backgroundSize: '100% 100%',
-            backgroundRepeat: 'no-repeat'
+            backgroundRepeat: 'no-repeat',
+            [theme.breakpoints.orientation.portrait]: {
+                padding: '6vw'
+            },
+            [theme.breakpoints.orientation.square]: {
+                padding: '3.5vw'
+            }
         }
     },
     disabled: {
