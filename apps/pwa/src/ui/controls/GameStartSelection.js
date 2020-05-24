@@ -14,24 +14,24 @@ const useStyles = createUseStyles(theme => ({
         height: '100%',
         flexDirection: 'column',
         justifyContent: 'center',
-        [theme.breakpoints.landscape.smartphone]: {
+        [theme.breakpoints.orientation.landscape]: {
             flexDirection: 'row'
         }
     },
     start: {
-        padding: 84,
+        padding: '15vw',
         backgroundSize: '100% 100%',
         backgroundRepeat: 'no-repeat',
         backgroundImage: 'url(/images/first-turn.svg)',
-        [theme.breakpoints.landscape.smartphone]: {
-            padding: 108
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '13vh'           
         }
     },
     button: {
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
-        height: '25vh',
-        width: '25vh',
-        border: `3px solid ${theme.color.secondary.light}`,
+        height: '28vh',
+        width: '28vh',
+        border: `0.1vh solid ${theme.color.secondary.light}`,
         borderRadius: '50%',
         display: 'flex',
         position: 'relative',
@@ -40,31 +40,38 @@ const useStyles = createUseStyles(theme => ({
         margin: 10,
         justifyContent: 'center',
         cursor: 'pointer',
-        [theme.breakpoints.landscape.smartphone]: {
+        [theme.breakpoints.orientation.landscape]: {
             height: '30vw',
             width: '30vw',
+            border: `0.1vw solid ${theme.color.secondary.light}`,
         }
     },
     cream: {
         display: 'flex',
         justifyContent: 'center',
+        alignItems: 'center',
         position: 'absolute',
         top: 0,
         left: 0,
         '& > div': {
-            padding: 32,
+            padding: '4.5vw',
             backgroundSize: '100% 100%',
             backgroundRepeat: 'no-repeat',
-            backgroundImage: 'url(/images/cream.svg)'
+            backgroundImage: 'url(/images/cream.svg)',
+            [theme.breakpoints.orientation.portrait]: {
+                padding: '4.2vh'           
+            }
         },
         '& > p': {
             position: 'absolute',
-            top: 16,
-            '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
-            '-webkit-font-smoothing': 'antialiased',
             fontFamily: 'Bangers',
             margin: '0 0 0 -3px',
-            fontSize: '2rem'
+            textShadow: '0.1vw 0.1vw 0.3vw white',
+            color: theme.color.secondary.dark,
+            fontSize: '4vw',
+            [theme.breakpoints.orientation.portrait]: {
+                fontSize: '3.7vh'           
+            }
         }
     },
     creamy: {
@@ -77,20 +84,55 @@ const useStyles = createUseStyles(theme => ({
     six: {
         flex: '1 0 16.666%',
         '& $creamy': {
-            padding: 11
+            padding: '1.25vw',
+            [theme.breakpoints.orientation.portrait]: {
+                padding: '1.2vh'           
+            }
         }
     },
     eight: {
         flex: '1 0 12.5%',
         '& $creamy': {
-            padding: 10
+            padding: '1.2vw',
+            [theme.breakpoints.orientation.portrait]: {
+                padding: '1.1vh'           
+            }
         }
     },
     ten: {
         flex: '1 0 10%',
         '& $creamy': {
-            padding: 9
+            padding: '1.15vw',
+            [theme.breakpoints.orientation.portrait]: {
+                padding: '1vh'           
+            }
         }
+    },
+    fields: {
+        width: '20vw',
+        height: '20vw',
+        display: 'flex',
+        flexWrap: 'wrap',
+        transform: 'rotateZ(135deg)',
+        '& > div': {
+            borderRadius: '15%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            width: '18vh',
+            height: '18vh',            
+        }
+    },
+    white: {
+        backgroundColor: '#bdbd83'
+    },
+    brown: {
+        backgroundColor: '#523112'
+    },
+    black: {
+        backgroundColor: '#140e09'
     }
 }));
 
@@ -135,7 +177,7 @@ const GameStartSelection = props => {
     const drawCell = (cell, i) => {
         const creamy = cell.occupiedBy.map(entity => entity.type).includes(EntityType.CREAM);
         const sizeClassName = (game.board.size.cols === 6) ? classes.six : (game.board.size.cols === 8) ? classes.eight : classes.ten;
-        return <div key={i} className={`${cell.previewStyle} ${sizeClassName}`}>
+        return <div key={i} className={`${classes[cell.previewStyle]} ${sizeClassName}`}>
             <div className={creamy ? classes.creamy : ''} />
         </div>
     };
@@ -152,7 +194,7 @@ const GameStartSelection = props => {
                         </div>
                     }
                 })()}
-                <div className="fields">
+                <div className={classes.fields}>
                     {(() => {
                         if (typeof game.board !== 'undefined') {
                             return game.board.fields[0].grid.map(drawCell);
@@ -175,7 +217,7 @@ const GameStartSelection = props => {
                         </div>
                     }
                 })()}
-                <div className="fields">
+                <div className={classes.fields}>
                     {(() => {
                         if (typeof game.board !== 'undefined') {
                             return game.board.fields[1].grid.map(drawCell);

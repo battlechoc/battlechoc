@@ -52,28 +52,13 @@ const useStyles = createUseStyles(theme => ({
             color: '#fff',
             '-webkit-font-smoothing': 'antialiased',
             fontFamily: 'Bangers',
-            marginRight: 10
+            marginRight: '1.5vw',
+            fontSize: 'calc(3.5vh + 3.5vw)',
+            WebkitTextStroke: 'calc(0.08vh + 0.08vw) #3C1C0C'
         },
         '& > div': {
             background: 'url(/images/coins.svg) no-repeat',
-        },
-        [theme.breakpoints.orientation.portrait]: {
-            '& span': {
-                fontSize: '6vh',
-                WebkitTextStroke: '0.15vh #3C1C0C'
-            },
-            '& > div': {
-                padding: '2.666vh 4vh'
-            }
-        },
-        [theme.breakpoints.orientation.landscape]: {
-            '& span': {
-                fontSize: '8vw',
-                WebkitTextStroke: '0.2vw #3C1C0C'
-            },
-            '& > div': {
-                padding: '2.666vw 4vw'
-            }
+            padding: 'calc(2vh + 2vw) calc(3vh + 3vw)'
         }
     },
     cacao: {
@@ -350,8 +335,8 @@ const useStyles = createUseStyles(theme => ({
     },
     button: {
         [theme.breakpoints.orientation.landscape]: {
-            width: '25vw',
-            height: '20vh',
+            width: '20vw',
+            height: '15vh',
             marginTop: -16
         },
         [theme.breakpoints.orientation.portrait]: {
@@ -367,6 +352,7 @@ const useStyles = createUseStyles(theme => ({
     costs: {
         display: 'flex',
         flexDirection: 'column',
+        fontSize: 'calc(2vh + 2vw)',
         alignItems: 'center',
         '& > div': {
             display: 'flex',
@@ -386,7 +372,6 @@ const useStyles = createUseStyles(theme => ({
             }
         },
         [theme.breakpoints.orientation.landscape]: {
-            fontSize: '5vh',
             '& > div': {
                 '& > div': {
                     padding: '3vh 6vh !important',
@@ -395,7 +380,6 @@ const useStyles = createUseStyles(theme => ({
             }
         },
         [theme.breakpoints.orientation.portrait]: {
-            fontSize: '4vh',
             '& > div': {
                 '& > div': {
                     padding: '2vh 4vh !important',

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import './Tooltip.css';
 import { GameStateTypes, getEntityDescriptor } from 'battlechoc-shared-functions';
 import { translate as t, keys as tr } from '../misc';
 import { createUseStyles } from 'react-jss';
@@ -20,35 +19,95 @@ const useStyles = createUseStyles(theme => ({
     title: {
         display: 'flex',
         fontFamily: 'Bangers',
-        padding: 6,
+        width: 'max-content',
         justifyContent: 'space-between',
-        fontSize: '1.5rem',
-        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
-        '-webkit-font-smoothing': 'antialiased'
+        fontSize: '6.5vh',
+        '-webkit-text-stroke': `0.25vh ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '6.5vw'       
+        },
+        [theme.breakpoints.orientation.square]: {
+            fontSize: '4.5vw'           
+        }
     },
     button: {
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
-        padding: 6,
-        border: `3px solid ${theme.color.secondary.light}`,
-        margin: '6px 0 12px 0',
-        borderRadius: 12,
-        color: 'white'
+        padding: '1vh 2vh',
+        border: `0.5vh solid ${theme.color.secondary.light}`,
+        marginTop: 6,
+        borderRadius: '3vh',
+        color: 'white',
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '1vw 2vw',
+            border: `0.5vw solid ${theme.color.secondary.light}`,
+            borderRadius: '3vw',       
+        }
     },
     expanded: {
-        padding: 6,
+        padding: '1vh',
+        fontSize: '3vh',
+        textShadow: '1px 2px 2px #1B4E69',
         '& p': {
             margin: '6px 0'
-        }
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '1vw',
+            fontSize: '3vw'       
+        } 
     },
     invisible: {
         display: 'none'
     },
+    flipped: {
+        transform: 'rotate(180deg)'
+    },
     dropdown: {
-        width: 24,
-        height: 24,
-        marginLeft: 12,
+        width: '7vh',
+        height: '7vh',
+        marginLeft: '2vh',
         background: `url(/images/dropdown.svg) no-repeat`, 
-        backgroundSize: '100% 100%'        
+        backgroundSize: '100% 100%',
+        [theme.breakpoints.orientation.portrait]: {
+            width: '7vw',
+            height: '7vw',
+            marginLeft: '2vw',  
+        },
+        [theme.breakpoints.orientation.square]: {
+            width: '5vw',
+            height: '5vw',            
+        }
+    },
+    info: {
+        '& > span': {
+            display: 'block',
+            margin: 0,
+            padding: 0,
+        },
+        '& > span:nth-child(2)': {
+            marginTop: '1vh',
+            fontFamily: 'Bangers',
+            fontSize: '3vh',
+            color: theme.color.accent.light
+        },
+        '& > span:nth-child(3)': {
+            fontSize: '3vh',
+            fontFamily: 'Bangers',
+            color: theme.color.primary.light
+        }
+    },
+    animation: {
+        marginTop: '-2%',
+        width: '10vh',
+        height: '10vh',
+        [theme.breakpoints.orientation.portrait]: {
+            width: '10vw',
+            height: '10vw',
+        },
+        [theme.breakpoints.orientation.square]: {
+            width: '8vw',
+            height: '8vw',            
+        }
     }
 }));
 
@@ -79,7 +138,7 @@ const Tooltip = props => {
                 let building = getEntityDescriptor(props.tappedBuilding, props.level);
                 let { info, costs, advantages } = t(tr.TOOLTIP_BUILDING_INFO, props.tappedBuilding, building);
                 title = t(tr.TOOLTIP_BUILDING_TITLE, props.tappedBuilding);
-                message = <span className="tooltipBuildingInfo">
+                message = <span className={classes.info}>
                     <span>{info}</span>
                     {typeof costs !== 'undefined' ? <span>{costs}</span> : null}
                     {typeof advantages !== 'undefined' ? <span>{advantages}</span> : null}
@@ -98,7 +157,7 @@ const Tooltip = props => {
         }
     }
 
-    const loadingAnimation = !props.playerTurn ? <img className="loadingAnimation" src="/animations/loading.gif" alt="loading" /> : null;
+    const loadingAnimation = !props.playerTurn ? <img className={classes.animation} src="/animations/loading.gif" alt="loading" /> : null;
     const openTooltip = () => {
         if (message !== null) {
             setExpanded(!expanded);
@@ -109,7 +168,7 @@ const Tooltip = props => {
         return (
             <div className={classes.tooltip}>
                 <div className={classes.button} onClick={openTooltip}>
-                    <span className={classes.title}>{title} {message !== null ? <span className={classes.dropdown} /> : null}</span>
+                    <span className={classes.title}>{title} {message !== null ? <span className={`${expanded && message !== null ? classes.flipped : ''} ${classes.dropdown}`} /> : null}</span>
                     <div className={(expanded && message !== null ? classes.expanded : classes.invisible)}><p>{message}</p></div>
                 </div>
                 { loadingAnimation }

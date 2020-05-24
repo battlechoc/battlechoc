@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { EntityType } from 'battlechoc-shared-functions';
-import { createUseStyles } from 'react-jss';
+import { createUseStyles, useTheme } from 'react-jss';
 import Button from './Button';
 
 const useStyles = createUseStyles(theme => ({
@@ -51,6 +51,7 @@ const useStyles = createUseStyles(theme => ({
 
 const ChoclabPalette = props => {
     const classes = useStyles();
+    const theme = useTheme();
     const [selectedEntity, setSelectedEntity] = useState(0);
  
     const buildingsForSeclection = useMemo(() => [{
@@ -115,7 +116,7 @@ const ChoclabPalette = props => {
                 <div style={{ backgroundImage: `url(/images/${ previous.icon }-icon.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%' }}/>
             </div>
 
-            <div className={`${classes.huge} ${classes.container}`}>
+            <div className={`${classes.huge} ${classes.container}`} style={{ border: `0.5vh solid ${theme.color.gold.light}` }}>
                 <div style={{ backgroundImage: `url(/images/${ selected.icon }-icon.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%' }}/>
             </div>
 

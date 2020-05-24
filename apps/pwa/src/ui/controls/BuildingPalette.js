@@ -15,24 +15,38 @@ const useStyles = createUseStyles(theme => ({
         zIndex: 1,
         marginBottom: 5,
         marginLeft: 5,
-        display: 'flex'
+        display: 'flex',
+        [theme.breakpoints.orientation.portrait]: {
+            width: '80vw',
+            flexWrap: 'wrap'
+        },
+        [theme.breakpoints.orientation.square]: {
+            width: 'unset',
+            flexWrap: 'unset'
+        }
     },
     preview: {
         marginRight: 5,
-        border: `3px solid ${theme.color.secondary.dark}`,
+        border: `0.4vw solid ${theme.color.secondary.dark}`,
         borderRadius: '50%',
         background: 'linear-gradient(0deg, #3DA2CE 0%, #9DD5E9 80%)',
         '& > div': {
-            padding: 24,
+            padding: '3.5vw',
             backgroundSize: '100% 100%',
-            backgroundRepeat: 'no-repeat'
+            backgroundRepeat: 'no-repeat',
+            [theme.breakpoints.orientation.portrait]: {
+                padding: '6vw'
+            },
+            [theme.breakpoints.orientation.square]: {
+                padding: '3.5vw'
+            }
         }
     },
     disabled: {
         filter: 'brightness(20%)'
     },
     selected: {
-        border: `3px solid ${theme.color.gold.light}`,
+        border: `0.52vw solid ${theme.color.gold.light}`,
         '& > div': {
             borderRadius: '100%',
             filter: 'brightness(120%)'
