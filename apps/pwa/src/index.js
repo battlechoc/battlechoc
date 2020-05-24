@@ -7,7 +7,7 @@ import * as serviceWorker from './serviceWorker';
 import { translate as t, keys as tr } from './ui/misc';
 import rootReducer from './RootReducer';
 import { multiplayer } from './Multiplayer';
-import { showQuickMessage } from './ui/UiActions';
+import { showQuickMessage, injectMultiplayerSession } from './ui/UiActions';
 import { gameplayLogger } from './gameplay/GamePlayLogger';
 import actionValidator from './gameplay/ActionValidator';
 import multiplayerActionRelay from './gameplay/MultiplayerActionRelay';
@@ -21,24 +21,24 @@ const store = configureStore({
 
 const theme = {
     color: {
-        primary: { light: '#90D01B', dark: '#10A67B'},
-        secondary: { light: '#3190C3', dark: '#1B4E69'},
-        accent: { light: '#FF4E85', dark: '#772549'},
-        gold: { light: '#FAD25A', dark: '#AE8D0B'},
-        facebook: { light: '#6589F4', dark: '#435DAC'},
-        instagram: { light: '#FE5A93', dark: '#803FBB'},
-        brown: { light: '#56321E', dark: '#4D2C1B'},
+        primary: { light: '#90D01B', dark: '#10A67B' },
+        secondary: { light: '#3190C3', dark: '#1B4E69' },
+        accent: { light: '#FF4E85', dark: '#772549' },
+        gold: { light: '#FAD25A', dark: '#AE8D0B' },
+        facebook: { light: '#6589F4', dark: '#435DAC' },
+        instagram: { light: '#FE5A93', dark: '#803FBB' },
+        brown: { light: '#56321E', dark: '#4D2C1B' },
         warning: { light: '#FAD25A', dark: '#D28304' }
     },
     breakpoints: {
         desktop: '@media screen and (min-width: 1200px)',
         laptop: '@media screen and (min-width: 992px)',
         tablet: '@media screen and (min-width: 768px)',
-        smartphone: '@media screen and (min-width: 576px)',   
+        smartphone: '@media screen and (min-width: 576px)',
         orientation: {
             portrait: '@media screen and (orientation: portrait)',
             landscape: '@media screen and (orientation: landscape)'
-        }  
+        }
     }
 }
 
@@ -82,5 +82,12 @@ if (typeof window.Android !== 'undefined') {
     window.handleBattlechocPushMessage = (payload) => {
         console.log("handleBattlechocPushMessage called " + JSON.stringify(payload));
         multiplayer.handlePushMessage(payload);
+    }
+
+    window.enterSessionOnStartUp = (sessionId) => {
+        console.log("enterSessionOnStartUp called " + JSON.stringify(sessionId));
+        if (typeof sessionId !== 'undefined') {
+            store.dispatch(injectMultiplayerSession(sessionId));
+        }
     }
 }

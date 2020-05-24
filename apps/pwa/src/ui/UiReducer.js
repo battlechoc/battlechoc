@@ -143,6 +143,9 @@ const uiReducer = createReducer({
     },
     [UiActions.hideNotification]: state => {
         state.notification = { title: null, message: null, open: false};
+    },
+    [UiActions.injectMultiplayerSession]: (state, action) => {
+        state.injectedMultiplayerSessionId = action.payload;
     }
 });
 

@@ -164,7 +164,7 @@ const useStyles = createUseStyles(theme => ({
 
 const Hud = props => {
     const classes = useStyles(props);
-    const { resumeGamePossible, enterMultiplayerGame, sessionId, showQuickMessage, challengedPlayer, assetsReady, overviewVisible, selectedAttack, tappedBuilding, game, state, openInfo, prepareNewGameCallback, className, surrender, startTutorial, playerInfos, endGame, notification, hideNotification } = props;
+    const { resumeGamePossible, enterMultiplayerGame, showQuickMessage, challengedPlayer, assetsReady, overviewVisible, selectedAttack, tappedBuilding, game, state, openInfo, prepareNewGameCallback, className, surrender, startTutorial, playerInfos, endGame, notification, hideNotification, injectedMultiplayerSessionId } = props;
 
     const [open, setOpen] = useState(false);
     const [openSettings, setOpenSettings] = useState(false);
@@ -194,6 +194,7 @@ const Hud = props => {
     }, [enterMultiplayerGame]);
 
     useEffect(() => {
+        console.log("HUD USE EFFECT: " + injectedMultiplayerSessionId);
         const checkForWaitingRoom = async () => {
             if (typeof challengedPlayer !== 'undefined') {
                 setWaitingRoom(true);
@@ -218,7 +219,7 @@ const Hud = props => {
                 } finally {
                     setWaitingRoom(false);
                 }
-            } else if (typeof sessionId !== 'undefined') {
+            } else if (typeof injectedMultiplayerSessionId !== 'undefined') {
                 setWaitingRoom(true);
                 setWaitingRoomText(t(tr.TRY_TO_JOIN_GAME))
 
@@ -229,14 +230,14 @@ const Hud = props => {
                         if (retry) {
                             await sleep(250);
                         }
-                        sessions = await multiplayer.getMultiplayerSessions(null, sessionId);
+                        sessions = await multiplayer.getMultiplayerSessions(null, injectedMultiplayerSessionId);
                         retry = true;
                     }
 
                     if (sessions.length > 0) {
                         joinGame(sessions[0].id);
                     } else {
-                        logger.warn(`${sessionId} is not a session of this player`);
+                        logger.warn(`${injectedMultiplayerSessionId} is not a session of this player`);
                         showQuickMessage({ text: t(tr.WARNING_GAME_NOT_JOINABLE_VIA_URL) });
                     }
                 } catch (error) {
@@ -248,7 +249,7 @@ const Hud = props => {
             }
         }
         checkForWaitingRoom();
-    }, [challengedPlayer, joinGame, sessionId, showQuickMessage]);
+    }, [challengedPlayer, joinGame, injectedMultiplayerSessionId, showQuickMessage]);
 
     const estimateStage = () => {
         if (typeof state === 'undefined' && !showMultiplayerScreen && !choclabScreen && !challengedProfile && !waitingRoom) {
@@ -461,8 +462,7 @@ Hud.propTypes = {
     startTutorial: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired,
     challengedPlayer: PropTypes.string,
-    className: PropTypes.string.isRequired,
-    sessionId: PropTypes.string
+    className: PropTypes.string.isRequired
 }
 
 const mapStateToProps = state => ({
@@ -474,7 +474,8 @@ const mapStateToProps = state => ({
     notification: state.ui.notification,
     playerInfos: state.ui.playerInfos,
     tappedBuilding: state.ui.tappedBuilding,
-    selectedAttack: state.ui.selectedAttack
+    selectedAttack: state.ui.selectedAttack,
+    injectedMultiplayerSessionId: state.ui.injectedMultiplayerSessionId
 });
 
 const mapDispatchToProps = {
