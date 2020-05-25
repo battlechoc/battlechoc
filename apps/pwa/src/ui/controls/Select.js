@@ -11,56 +11,67 @@ const useStyles = createUseStyles(theme => ({
     input: {
       color: theme.color.secondary.dark,
       fontFamily: 'Bangers',
-      borderRadius: 12,
+      borderRadius: '2.857vh',
       width: '100%',
       display: 'flex',
       justifyContent: 'flex-start',
       alignItems: 'center',
-      fontSize: '2rem',
-      height: 42,
+      fontSize: '7vh',
+      height: '11.428vh',
       background: 'white',
-      border: `3px solid ${theme.color.secondary.light}`
+      border: `0.2vh solid ${theme.color.secondary.light}`,
+      [theme.breakpoints.orientation.portrait]: {
+        fontSize: '7vw',
+        borderRadius: '2.857vw',
+        height: '11.428vw',
+        border: `0.2vw solid ${theme.color.secondary.light}`,
+      }
     },
     dropdown: {
-      border: `3px solid ${theme.color.secondary.light}`,
-      borderRadius: 12,
+      border: `1vh solid ${theme.color.secondary.light}`,
+      borderRadius: '2.857vh',
       background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
-      height: 42,
-      width: 42,
+      height: '10vh',
+      width: '10vh',
       position: 'absolute',
       top: 0,
       right: 0,
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      [theme.breakpoints.orientation.portrait]: {
+        height: '10vw',
+        width: '10vw',
+        borderRadius: '2.857vw',
+        border: `1vw solid ${theme.color.secondary.light}`,
+      }
     },
     options: {
       position: 'absolute',
-      top: 48,
       zIndex: 15,
-      width: 'calc(100% - 6px)',
+      width: '100%',
       flexDirection: 'column',
-      border: `3px solid ${theme.color.secondary.light}`,
+      border: `0.2vh solid ${theme.color.secondary.light}`,
       background: 'white',
-      borderRadius: 12,
+      borderRadius: '2.857vh',
       fontFamily: 'Bangers',
       '& > div': {
-        padding: '12px 0',
-        borderBottom: `3px solid ${theme.color.secondary.light}`,
+        height: '11.428vh',
+        borderBottom: `0.2vh solid ${theme.color.secondary.light}`,
         display: 'flex',
         color: theme.color.secondary.dark,
         alignItems: 'center',
-        fontSize: '1.5rem',
+        fontSize: '7vh',
         justifyContent: 'flex-start'
       },
-      '& > div:last-child': {
-        border: '0px',
-        borderBottomLeftRadius: 6,
-        borderBottomRightRadius: 6
-      },
-      '& > div:first-child': {
-        borderTopLeftRadius: 6,
-        borderTopRightRadius: 6
+      [theme.breakpoints.orientation.portrait]: {
+        border: `0.2vw solid ${theme.color.secondary.light}`,
+        borderRadius: '2.857vw',
+        '& > div': {
+          height: '11.428vw',
+          borderBottom: `0.2vw solid ${theme.color.secondary.light}`,
+          fontSize: '7vw'
+        }
       }
     },
     icon: {
@@ -72,9 +83,10 @@ const useStyles = createUseStyles(theme => ({
       color: 'white !important'
     },
     optionIcon: {
-      height: 25,
-      width: 42,
-      margin: '0 6px'
+      padding: '4vh 8vh',
+      [theme.breakpoints.orientation.portrait]: {
+        padding: '4vw 8vw'
+      }
     }
   })
 );

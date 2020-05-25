@@ -57,6 +57,7 @@ const useStyles = createUseStyles(theme => ({
   button: {
     marginTop: '2vh',
     width: '30vw',
+    textAlign: 'center',
     height: '10vw',
     '& > div': {
       fontSize: '4vw'

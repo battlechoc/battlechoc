@@ -99,9 +99,16 @@ const useStyles = createUseStyles(theme => ({
     },
     close: {
         position: 'absolute',
-        right: 0,
+        width: '8vw',
+        height: '8vw',
+        right: '-2vw',
         top: 0,
-        zIndex: 16
+        zIndex: 16,
+        [theme.breakpoints.orientation.portrait]: {
+            width: '8vh',
+            height: '8vh',
+            right: '-2vh',            
+        }
     },
     content: {
         position: 'relative',

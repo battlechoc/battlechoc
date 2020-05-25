@@ -55,7 +55,7 @@ const useStyles = createUseStyles(theme => ({
         }
     },
     actionButton: {
-        border: `3px solid ${theme.color.secondary.light}`,
+        border: `1vh solid ${theme.color.secondary.light}`,
         borderRadius: '2.857vh',
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
         height: '10vh',
@@ -67,6 +67,7 @@ const useStyles = createUseStyles(theme => ({
         alignItems: 'center',
         justifyContent: 'center',
         [theme.breakpoints.orientation.portrait]: {
+            border: `1vw solid ${theme.color.secondary.light}`,
             borderRadius: '2.857vw',
             height: '10vw',
             width: '10vw'
