@@ -9,7 +9,8 @@ const strings = {
     es: require('./es_strings.js'),
     fr: require('./fr_strings.js'),
     it: require('./it_strings.js'),
-    pt: require('./pt_strings.js')
+    pt: require('./pt_strings.js'),
+    vn: require('./vn_strings.js')
 };
 
 const translationPredicates = {
