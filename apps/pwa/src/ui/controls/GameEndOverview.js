@@ -1,11 +1,104 @@
 import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import './GameEndOverview.css';
 import Fab from './Fab';
 import { translate as t, keys as tr } from '../misc';
 import { createUseStyles, useTheme } from 'react-jss';
 
 const useStyles = createUseStyles(theme => ({
+    overview: {
+        height: '100%',
+        width: '100%',
+        position: 'absolute',
+        zIndex: 100,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+    },
+    headline: {
+        fontFamily: 'Bangers',
+        fontSize: '5vw',
+        color: 'white',
+        '-webkit-text-stroke': '1px #3C1C0C',
+        '-webkit-font-smoothing': 'antialiased',
+    },
+    statistics: {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-evenly',
+        [theme.breakpoints.orientation.portrait]: {
+            flexDirection: 'column-reverse'
+        }
+    },
+    actions: {
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        marginBottom: '8vh'
+    },
+    pie: {
+        height: '30vw',
+        width: '30vw',
+        position: 'relative',
+        '&:before': {
+            content: '""',
+            display: 'block',
+            position: 'absolute',
+            zIndex: 1,
+            width: '50%',
+            height: '50%',
+            background: 'white',
+            borderRadius: '50%',
+            top: '25%',
+            left: '25%',
+        }
+    },
+    slice: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        clip: 'rect(0vw, 30vw, 30vw, 15vw)',
+        animation: 'bake-pie 1s',
+        '& > span': {
+            display: 'block',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            backgroundColor: 'black',
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            clip: 'rect(0vw, 30vw, 30vw, 15vw)',
+        }
+    },
+    legend: {
+        fontSize: '2vw',
+        background: 'white',
+        padding: '3vw',
+        display: 'flex',
+        flexDirection: 'column',
+        border: `0.5vw solid ${theme.color.secondary.light}`,
+        borderRadius: '2vw',
+        '& b': {
+            paddingLeft: '0.5vw',
+            color: theme.color.primary.light
+        },
+        '& li': {
+            display: 'flex',
+            marginBottom: '1.5vw',
+            paddingLeft: '1vw',
+            borderLeft: '2.5vw solid black'
+        },
+        '& em': {
+            fontStyle: 'normal',
+            flexGrow: 1
+        },
+        '& span': {
+            paddingLeft: '2vw'
+        }
+    },
     coins: {
         position: 'absolute',
         height: '100%',
@@ -16,25 +109,18 @@ const useStyles = createUseStyles(theme => ({
         justifyContent: 'center',
         zIndex: 1,
         '& span': {
-            fontSize: '2rem',
+            fontSize: '6vw',
             color: '#fff',
-            '-webkit-text-stroke': '1px #3C1C0C',
+            '-webkit-text-stroke': '0.1vw #3C1C0C',
             '-webkit-font-smoothing': 'antialiased',
             fontFamily: 'Bangers',
-            marginRight: 10
+            marginRight: '0.5vw'
         },
         '& > div': {
             background: 'url(/images/coins.svg) no-repeat',
-            height: 31,
-            width: 46
+            height: '4.717vw',
+            width: '7vw'
         }
-    },
-    headline: {
-        fontFamily: 'Bangers',
-        fontSize: '2rem',
-        color: 'white',
-        '-webkit-text-stroke': '1px #3C1C0C',
-        '-webkit-font-smoothing': 'antialiased',
     }
 }));
 
@@ -48,9 +134,9 @@ const GameEndOverview = props => {
     }
     
     const addSlice = (sliceSize, offset, color) => {
-        const pie = document.getElementById('pie');
+        const pie = document.getElementsByClassName(classes.pie)[0];
         const slice = document.createElement('div');
-        slice.className = 'slice';
+        slice.className = classes.slice;
         const span = document.createElement('span');
         slice.appendChild(span);
         pie.appendChild(slice);
@@ -90,7 +176,7 @@ const GameEndOverview = props => {
             if (data[i] > 0) {
                 let size = sliceSize(data[i], total);
                 iterateSlices(size, offset, i, color[i]);
-                document.querySelector('.legend li:nth-child(' + (i+1) + ')').style.borderColor = color[i];
+                document.querySelector(`.${classes.legend} li:nth-child(${i+1})`).style.borderColor = color[i];
                 offset += size;
             }
         }
@@ -120,28 +206,28 @@ const GameEndOverview = props => {
     }
 
     return (
-        <div className="overview">
+        <div className={classes.overview}>
             <h1 className={classes.headline}>{ headine }</h1>
-            <div className="statistics">                    
-                <ul className="legend">
+            <div className={classes.statistics}>                    
+                <ul className={classes.legend}>
                     <li>
                         <em>{t(tr.GAME_END_OVERVIEW_ATTACKS)}</em>
-                        <span className="amount">{ statistics.attacks }</span>
+                        <span>{ statistics.attacks }</span>
                     </li>
                     <li>
                         <em>{t(tr.GAME_END_OVERVIEW_ENTITIES)}</em>
-                        <span><span className="amount">{ statistics.builtEntities }</span><b>&times; 2</b></span>
+                        <span><span>{ statistics.builtEntities }</span><b>&times; 2</b></span>
                     </li>
                     <li>
                         <em>{t(tr.GAME_END_OVERVIEW_ESPIONAGES)}</em>
-                        <span><span className="amount">{ statistics.espionages }</span><b>&times; 10</b></span>
+                        <span><span>{ statistics.espionages }</span><b>&times; 10</b></span>
                     </li>
                     <li>
                         <em>{t(tr.GAME_END_OVERVIEW_MOLTEN_FIELDS)}</em>
-                        <span><span className="amount">{ statistics.moltenFields }</span><b>&times; 50</b></span>
+                        <span><span>{ statistics.moltenFields }</span><b>&times; 50</b></span>
                     </li>
                 </ul>
-                <div id="pie">
+                <div className={classes.pie}>
                     <div className={classes.coins}>
                         <span>{ coins }</span>
                         <div />
@@ -149,7 +235,7 @@ const GameEndOverview = props => {
                 </div>
             </div>
 
-            <div className="actions">
+            <div className={classes.actions}>
                 <Fab
                     color="secondary"
                     icon="back"
