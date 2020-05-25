@@ -193,6 +193,10 @@ const Settings = props => {
     value: 'pt',
     label: t(tr.PORTUGUESE),
     icon: 'pt-flag.svg'
+  }, {
+    value: 'vn',
+    label: t(tr.VIETNAMESE),
+    icon: 'vn-flag.svg'
   }];
 
   const changeLanguage = value => {

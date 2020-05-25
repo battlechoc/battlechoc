@@ -42,6 +42,7 @@ module.exports = {
     "FRENCH": "フランス語",
     "ITALIAN": "イタリアの",
     "PORTUGUESE": "ポルトガル語",
+    "VIETNAMESE": "ベトナム人",
     "LANGUAGE": "言語",
     "BUTTON_BACK": "バック",
     "INVITATION": "バトルチョックマルチプレイヤーゲームに参加しましょう！",

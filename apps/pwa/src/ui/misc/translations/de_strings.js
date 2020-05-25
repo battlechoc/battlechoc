@@ -42,6 +42,7 @@ module.exports = {
     "FRENCH": "Französisch",
     "ITALIAN": "Italienisch",
     "PORTUGUESE": "Portugiesisch",
+    "VIETNAMESE": "Vietnamesisch",
     "LANGUAGE": "Sprache",
     "BUTTON_BACK": "Zurück",
     "INVITATION": "Spiel mit mir battlechoc!",

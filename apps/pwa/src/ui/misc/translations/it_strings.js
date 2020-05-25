@@ -55,6 +55,7 @@ module.exports = {
     "FRENCH": "Francese",
     "ITALIAN": "Italiano",
     "PORTUGUESE": "Portoghese",
+    "VIETNAMESE": "Vietnamita",
     "JOIN_GAME": "Unisciti al gioco",
     "JOIN_MULTIPLAYER": "Unisciti al gioco multiplayer",
     "LANGUAGE": "linguaggio",
