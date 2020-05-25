@@ -194,7 +194,6 @@ const Hud = props => {
     }, [enterMultiplayerGame]);
 
     useEffect(() => {
-        console.log("HUD USE EFFECT: " + injectedMultiplayerSessionId);
         const checkForWaitingRoom = async () => {
             if (typeof challengedPlayer !== 'undefined') {
                 setWaitingRoom(true);
