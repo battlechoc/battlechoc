@@ -180,19 +180,19 @@ const Settings = props => {
   }, {
     value: 'es',
     label: t(tr.SPANISH),
-    icon: 'jp-flag.svg'
+    icon: 'es-flag.svg'
   }, {
     value: 'fr',
     label: t(tr.FRENCH),
-    icon: 'jp-flag.svg'
+    icon: 'fr-flag.svg'
   }, {
     value: 'it',
     label: t(tr.ITALIAN),
-    icon: 'jp-flag.svg'
+    icon: 'it-flag.svg'
   }, {
     value: 'pt',
     label: t(tr.PORTUGUESE),
-    icon: 'jp-flag.svg'
+    icon: 'pt-flag.svg'
   }];
 
   const changeLanguage = value => {
