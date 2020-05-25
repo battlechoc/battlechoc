@@ -1,5 +1,5 @@
 
-const validLanguages = ['de', 'en', 'jp', 'es', 'fr', 'it', 'pt'];
+const validLanguages = ['de', 'en', 'jp', 'es', 'fr', 'it', 'pt', 'vn'];
 const languages = {
     en: {
         NOTIFICATION_CHALLENGE_TITLE: ' is challenging you!',
@@ -112,6 +112,22 @@ const languages = {
         NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY: ' não agiu por mais de 24 horas.',
         NOTIFICATION_GAME_LOST_TITLE: 'Você perdeu a partida!',
         NOTIFICATION_GAME_LOST_BODY: 'Você perdeu contra o '
+    },
+    vn: {
+        NOTIFICATION_CHALLENGE_TITLE: ' đang thách thức bạn!',
+        NOTIFICATION_CHALLENGE_BODY: 'Đây có thể là một cuộc chiến tuyệt vời!',
+        NOTIFICATION_TURN_FINISHED_TITLE: ' kết thúc lượt chơi.',
+        NOTIFICATION_TURN_FINISHED_BODY: 'Đi nào. Đến lượt bạn!',
+        NOTIFICATION_REMEMBER_TURN_TITLE: ' đang đợi!',
+        NOTIFICATION_REMEMBER_TURN_BODY: 'Hãy thực hiện bước tiếp theo của bạn!',
+        NOTIFICATION_OPPONENT_SURENDERED_TITLE: ' đầu hàng!',
+        NOTIFICATION_OPPONENT_SURENDERED_BODY: 'Bạn đã thắng trận đấu này!',
+        NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE: 'Bạn thua một trận đấu với ',
+        NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY: 'Bạn đã không hành động trong hơn 24 giờ.',
+        NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE: 'Bạn đã thắng một trận đấu với ',
+        NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY: ' đã không hành động trong hơn 24 giờ.',
+        NOTIFICATION_GAME_LOST_TITLE: 'Bạn đã thua trận đấu của bạn!',
+        NOTIFICATION_GAME_LOST_BODY: 'Bạn thua '
     }
 }
 
