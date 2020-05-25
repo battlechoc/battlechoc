@@ -79,7 +79,7 @@ module.exports = {
     "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "Colete mais moedas de chocolate",
     "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Armadilhas de rosca, Muliplayer e Choclab serão seus depois de coletar {{missingScore}} mais moedas",
     "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "A última barreira",
-    "NO_ACCOUNT_INFO": "No momento, você não está logado. Use o ícone de configurações para fazer login ou apenas iniciar um novo jogo na página principal para criar um novo",
+    "NO_ACCOUNT_INFO": "Você precisa ganhar uma pontuação de pelo menos 1000 para desbloquear outros recursos multiplayer.",
     "NO_HEALTHY_INTERNET": "Você pode não ter uma conexão de internet saudável. Por favor, tente novamente mais tarde.",
     "OPPONENT": "Oponente",
     "PLAYERLIST_ACTIONS": "Ações",

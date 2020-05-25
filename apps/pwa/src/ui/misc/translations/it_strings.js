@@ -79,7 +79,7 @@ module.exports = {
     "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "Raccogli più monete di cioccolato",
     "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Donut Traps, Muliplayer e Choclab saranno tuoi dopo aver raccolto {{missingScore}} più monete",
     "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "L'ultima barriera",
-    "NO_ACCOUNT_INFO": "Attualmente non sei collegato. Usa l'icona delle impostazioni per accedere o semplicemente avvia un nuovo gioco nella pagina principale per crearne uno nuovo",
+    "NO_ACCOUNT_INFO": "È necessario guadagnare un punteggio di almeno 1000 per sbloccare ulteriori funzionalità multiplayer.",
     "NO_HEALTHY_INTERNET": "Potresti non avere una buona connessione a Internet. Per favore riprova più tardi.",
     "OPPONENT": "Avversario",
     "PLAYERLIST_ACTIONS": "Azioni",

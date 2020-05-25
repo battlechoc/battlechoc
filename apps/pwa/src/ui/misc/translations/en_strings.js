@@ -195,7 +195,7 @@ module.exports = {
     "TRY_TO_SHOW_PLAYER_ACCOUNT": "Loading player account. Please wait a moment.",
     "NOTIFICATION_PERMISSION_INFO": "We will now request your permission to inform you if someone challenges you, or an opponent has finished his turn and you are up to play",
     "NOTIFICATION_SURRENDER_NOT_POSSIBLE": "You cannot surrender because you got too few coins",
-    "NO_ACCOUNT_INFO": "You are currently not logged in. Use the settings icon to login or just start a new game on the main page for creating a new one",
+    "NO_ACCOUNT_INFO": "You need to earn a score of at least 1000 to unlock further multiplayer features.",
     "WARNING_PLAYER_NOT_FOUND": "Player {{name}} not found",
     "SURRENDER_GAME_TEXT": "Do you really want to surrender the game against {{name}}? Surrendering costs {{coins}} coins.",
     "UPDATE_LEVEL_FAILED_UPGRADE": "It was not possible to perform the upgrade. Check your internet connection.",

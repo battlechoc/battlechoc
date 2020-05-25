@@ -79,7 +79,7 @@ module.exports = {
     "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "Collectez plus de pièces en chocolat",
     "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Les pièges à beignets, Muliplayer et le Choclab seront à vous après avoir collecté {{missingScore}} plus de pièces",
     "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "La dernière barrière",
-    "NO_ACCOUNT_INFO": "Vous n'êtes actuellement pas connecté. Utilisez l'icône des paramètres pour vous connecter ou tout simplement démarrer un nouveau jeu sur la page principale pour en créer un nouveau",
+    "NO_ACCOUNT_INFO": "Vous devez gagner un score d'au moins 1000 pour débloquer d'autres fonctionnalités multijoueurs.",
     "NO_HEALTHY_INTERNET": "Vous ne disposez peut-être pas d'une connexion Internet saine. Veuillez réessayer plus tard.",
     "OPPONENT": "Adversaire",
     "PLAYERLIST_ACTIONS": "Actions",

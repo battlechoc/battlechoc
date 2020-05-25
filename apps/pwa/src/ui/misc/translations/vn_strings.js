@@ -76,7 +76,7 @@ module.exports = {
   "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "Thu thập thêm tiền sô cô la",
   "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Donut Traps, Muliplayer và Choclab sẽ là của bạn sau khi thu thập {{missingScore}} nhiều tiền hơn",
   "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "Rào cản cuối cùng",
-  "NO_ACCOUNT_INFO": "Bạn hiện chưa đăng nhập. Sử dụng biểu tượng cài đặt để đăng nhập hoặc chỉ bắt đầu một trò chơi mới trên trang chính để tạo một trò chơi mới",
+  "NO_ACCOUNT_INFO": "Bạn cần kiếm được ít nhất 1000 điểm để mở khóa thêm các tính năng nhiều người chơi.",
   "NO_HEALTHY_INTERNET": "Bạn có thể không có kết nối internet lành mạnh. Vui lòng thử lại sau.",
   "OPPONENT": "Phản đối",
   "PLAYERLIST_ACTIONS": "Hành động",

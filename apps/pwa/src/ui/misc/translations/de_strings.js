@@ -195,7 +195,7 @@ module.exports = {
     "TRY_TO_SHOW_PLAYER_ACCOUNT": "Einen Augenblick bitte. Spielerinformationen werden geladen",
     "NOTIFICATION_PERMISSION_INFO": "Wir werden dich gleich um Erlaubnis fragen, dich informieren zu dürfen, falls jemand dich herausfordert, oder ein Gegner seinen Zug beendet hat und du an der Reihe bist",
     "NOTIFICATION_SURRENDER_NOT_POSSIBLE": "Du kannst grad nicht aufgeben, weil du zu wenig Schokotaler hast",
-    "NO_ACCOUNT_INFO": "Du bist zur Zeit nicht angemeldet. Melde dich im Einstellungsmenü an, oder starte einfach ein neues Spiel auf der Hauptseite, um einen neuen Account zu erstellen",
+    "NO_ACCOUNT_INFO": "Du musst mindestens 1000 Punkte verdienen, um weitere Multiplayer-Funktionen freizuschalten.",
     "WARNING_PLAYER_NOT_FOUND": "Spieler {{name}} wurde nicht gefunden",
     "SURRENDER_GAME_TEXT": "Möchtest du das Spiel gegen {{name}} wirklich aufgeben? Aufgeben kostet {{coins}} Schokotaler.",
     "UPDATE_LEVEL_FAILED_UPGRADE": "Es war nicht möglich das Upgrade durchzuführen. Überprüfe deine Internetverbindung",

@@ -294,9 +294,9 @@ const AccountOverview = props => {
                 {(() => {
                     if (typeof props.multiplayerSessions !== 'undefined' && !isPlayerAccount) {
                         const actions = [];
-                        const gamesAgaistOpponent = props.multiplayerSessions.filter(session => session.opponent.name === playerName);
-                        if (props.playerInfos.stats.username !== EmptyPlayerStats.username) {
-                            if (gamesAgaistOpponent.length === 0) {
+                        const gamesAgainstOpponent = props.multiplayerSessions.filter(session => session.opponent.name === playerName);
+                        if (props.playerInfos.stats.score >= 1000 && props.playerInfos.stats.name !== EmptyPlayerStats.username) {
+                            if (gamesAgainstOpponent.length === 0) {
                                 actions.push(<Button key={0} color="secondary" onClick={() => {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                     props.challengePlayer(playerName);
@@ -305,7 +305,7 @@ const AccountOverview = props => {
                             } else {
                                 actions.push(<Button key={1} color="secondary" onClick={() => {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                    props.joinGame(gamesAgaistOpponent[0].id);
+                                    props.joinGame(gamesAgainstOpponent[0].id);
                                     props.close();
                                 }}>{t(tr.JOIN_GAME)}</Button>);
                             }

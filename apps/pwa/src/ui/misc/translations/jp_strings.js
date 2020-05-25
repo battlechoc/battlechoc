@@ -195,7 +195,7 @@ module.exports = {
     "TRY_TO_SHOW_PLAYER_ACCOUNT": "プレーヤーアカウントを読み込んでいます。しばらくお待ちください",
     "NOTIFICATION_PERMISSION_INFO": "誰かがあなたに挑戦したり、対戦相手が彼のターンを終えて、あなたがプレーする準備ができている場合、私たちはあなたにあなたに通知する許可を求めます。",
     "NOTIFICATION_SURRENDER_NOT_POSSIBLE": "コインが少なすぎて降伏できない",
-    "NO_ACCOUNT_INFO": "現在ログインしていません。設定メニューにログインするか、メインページで新しいゲームを開始して新しいアカウントを作成します",
+    "NO_ACCOUNT_INFO": "さらにマルチプレイヤー機能をロック解除するには、少なくとも1000のスコアを獲得する必要があります。",
     "WARNING_PLAYER_NOT_FOUND": "{{name}} 見つかりません",
     "SURRENDER_GAME_TEXT": "本当にゲームを放棄したいですか {{name}}. 降伏は {{coins}} コインかかります",
     "UPDATE_LEVEL_FAILED_UPGRADE": "アップグレードを実行できませんでした。インターネット接続を確認してください。",
