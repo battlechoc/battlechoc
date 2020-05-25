@@ -27,10 +27,20 @@ const useStyles = createUseStyles(theme => ({
         height: '11.428vh',
         background: 'white',
         border: `0.2vh solid ${theme.color.secondary.light}`,
+        [theme.breakpoints.orientation.portrait]: {
+            width: 'calc(100% - 10vw)',
+            borderRadius: '2.857vw 0 0 2.857vw',
+            border: `0.2vw solid ${theme.color.secondary.light}`,
+            height: '11.428vw',
+            fontSize: '7vw',
+        }
     },
     error: {
         border: `0.2vh solid ${theme.color.accent.light} !important`,
-        color: `${theme.color.accent.dark} !important`
+        color: `${theme.color.accent.dark} !important`,
+        [theme.breakpoints.orientation.portrait]: {
+            border: `0.2vw solid ${theme.color.accent.light} !important`
+        }
     },
     errorLabel: {
         color: theme.color.accent.light,
@@ -39,7 +49,10 @@ const useStyles = createUseStyles(theme => ({
         '-webkit-font-smoothing': 'antialiased'
     },
     icon: {
-        padding: '4vh 8vh'
+        padding: '4vh 8vh',
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '4vw 8vw'
+        }
     },
     actionButton: {
         border: `3px solid ${theme.color.secondary.light}`,
@@ -52,7 +65,12 @@ const useStyles = createUseStyles(theme => ({
         right: 0,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        [theme.breakpoints.orientation.portrait]: {
+            borderRadius: '2.857vw',
+            height: '10vw',
+            width: '10vw'
+        }
     },
     buttonError: {
         border: `3px solid ${theme.color.accent.light}`,
@@ -70,6 +88,18 @@ const useStyles = createUseStyles(theme => ({
         border: '3px solid #aaa',
         '& > div': {
             filter: 'grayscale(1)'
+        }
+    },
+    small: {
+        fontSize: '6vh',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '6vw'
+        }
+    },
+    normal: {  
+        fontSize: '8vh',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '8vw'
         }
     }
 }));
@@ -187,7 +217,7 @@ const PlayerNameInput = props => {
                     }}
                 /> : <div className={classes.input}>
                     <div className={`${classes.icon} ${classes.fixed}`} style={{ backgroundImage: 'url(/images/user.svg)', backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> 
-                    <div style={{ marginLeft: 6, fontSize: playerName.length > 7 ? '6vh' : '8vh' }}>{ playerName }</div>
+                    <div className={playerName.length > 7 ? classes.small : classes.normal}>{ playerName }</div>
                 </div> }
                 <div onClick={handleAction} className={`${classes.actionButton} ${buttonDisabled ? classes.disabled : null} ${buttonError ? classes.buttonError : null}`}>
                 { loading ? <Progress infiniteAnimation={true} size={24} /> : <div className={classes.actionIcon} style={{ backgroundImage: `url(/images/${actionIcon}.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> }
