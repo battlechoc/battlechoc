@@ -142,7 +142,23 @@ const useStyles = createUseStyles(theme => ({
             }
         },
         resumeGameDialog: {
-            color: 'white'
+            color: 'white',
+            fontSize: '5vw',
+            textAlign: 'center',
+            [theme.breakpoints.orientation.landscape]: {
+                fontSize: '3.4vw'
+            }
+        },
+        actions: {
+            display: 'flex',
+            justifyContent: 'space-evenly',
+            [theme.breakpoints.orientation.portrait]: {
+                justifyContent: 'unset',
+                flexDirection: 'column',
+                '& > div:last-child': {
+                    marginTop: '3vh'
+                }
+            }
         },
         notification: {
             display: 'flex',
@@ -373,12 +389,12 @@ const Hud = props => {
                                 title={t(tr.HUD_RESUME_GAME)}>
                                 <div className={classes.resumeGameDialog}>
                                     <p>{t(tr.HUD_ASK_NEW_OR_RESUME)}</p>
-                                    <div className="actions">
-                                        <Button style={{ width: '40%', maxWidth: 246}} onClick={() => {
+                                    <div className={classes.actions}>
+                                        <Button onClick={() => {
                                             setOpen(false);
                                             prepareNewGameCallback(true);
                                         }}>{t(tr.HUD_RESUME_GAME)}</Button>
-                                        <Button style={{ width: '40%', maxWidth: 246}} color="accent" onClick={() => {
+                                        <Button color="accent" onClick={() => {
                                             setOpen(false);
                                             prepareNewGameCallback(false);
                                         }}>{t(tr.HUD_NEW_GAME)}</Button>

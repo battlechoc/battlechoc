@@ -46,23 +46,37 @@ const useStyles = createUseStyles(theme => ({
         filter: 'brightness(20%)'
     },
     selected: {
-        border: `0.52vw solid ${theme.color.gold.light}`,
+        border: `0.4vw solid ${theme.color.gold.light}`,
         '& > div': {
             borderRadius: '100%',
             filter: 'brightness(120%)'
         }
     },
     locked: {
-        width: 48,
-        height: 48,
+        width: '7vw',
+        height: '7vw',
         display: 'flex',
         justifyContent: 'center',
-        border: `3px solid ${theme.color.accent.dark}`,
+        border: `0.4vw solid ${theme.color.accent.dark}`,
         background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 80%)`,
         '& > div': {
-            padding: 18,
-            backgroundImage: 'url(/images/lock.svg)'
-        }     
+            padding: '2.8vw',
+            backgroundImage: 'url(/images/lock.svg)',
+            [theme.breakpoints.orientation.portrait]: {
+                padding: '4.5vw'
+            },
+            [theme.breakpoints.orientation.square]: {
+                padding: '2.8vw'
+            }
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            width: '12vw',
+            height: '12vw',
+        },
+        [theme.breakpoints.orientation.square]: {
+            width: '7vw',
+            height: '7vw',
+        }
     }
 }));
 

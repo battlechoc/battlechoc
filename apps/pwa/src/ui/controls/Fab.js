@@ -6,15 +6,19 @@ import { Jukebox } from '../misc';
 const useStyles = createUseStyles(theme => ({
     fab: {
       color: 'white',
-      width: '7.4vw',
-      height: '7.4vw',
+      width: '7vw',
+      height: '7vw',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: '100%',
       [theme.breakpoints.orientation.portrait]: {
-        width: '7.4vh',
-        height: '7.4vh' 
+        width: '12vw',
+        height: '12vw',
+      },
+      [theme.breakpoints.orientation.square]: {
+          width: '7vw',
+          height: '7vw',
       }
     },
     icon: props => {
@@ -36,13 +40,10 @@ const useStyles = createUseStyles(theme => ({
       return style;
     },
     background: {
-      border: props => `0.6vw solid ${theme.color[props.color].light}`,
+      border: props => `0.4vw solid ${theme.color[props.color].light}`,
       background: props => `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${theme.color[props.color].light} 100%)`,
       '&:hover': {
         background: props => `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${theme.color[props.color].light} 150%)`
-      },
-      [theme.breakpoints.orientation.portrait]: {
-        border: props => `0.6vh solid ${theme.color[props.color].light}`
       }
     }
   })
