@@ -19,7 +19,7 @@ const useStyles = createUseStyles(theme => ({
         fontFamily: 'Bangers',
         fontSize: '5vw',
         color: 'white',
-        '-webkit-text-stroke': '1px #3C1C0C',
+        '-webkit-text-stroke': `0.05vw ${theme.color.secondary.dark}`,
         '-webkit-font-smoothing': 'antialiased',
     },
     statistics: {
@@ -53,6 +53,10 @@ const useStyles = createUseStyles(theme => ({
             borderRadius: '50%',
             top: '25%',
             left: '25%',
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            height: '50vw',
+            width: '50vw',
         }
     },
     slice: {
@@ -71,19 +75,34 @@ const useStyles = createUseStyles(theme => ({
             height: '100%',
             borderRadius: '50%',
             clip: 'rect(0vw, 30vw, 30vw, 15vw)',
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            clip: 'rect(0vw, 50vw, 50vw, 25vw)',
+            '& > span': {
+                clip: 'rect(0vw, 50vw, 50vw, 25vw)'
+            }
         }
     },
     legend: {
-        fontSize: '2vw',
-        background: 'white',
+        fontSize: '3vw',
+        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`,
+        color: 'white',
+        '-webkit-text-stroke': `0.05vw ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
+        fontFamily: 'Bangers',
         padding: '3vw',
         display: 'flex',
         flexDirection: 'column',
         border: `0.5vw solid ${theme.color.secondary.light}`,
         borderRadius: '2vw',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '5vw'
+        },
         '& b': {
             paddingLeft: '0.5vw',
-            color: theme.color.primary.light
+            color: theme.color.primary.light,
+            '-webkit-text-stroke': `0.05vw ${theme.color.primary.dark}`,
+            '-webkit-font-smoothing': 'antialiased'
         },
         '& li': {
             display: 'flex',
@@ -114,12 +133,19 @@ const useStyles = createUseStyles(theme => ({
             '-webkit-text-stroke': '0.1vw #3C1C0C',
             '-webkit-font-smoothing': 'antialiased',
             fontFamily: 'Bangers',
-            marginRight: '0.5vw'
+            marginRight: '0.5vw',
+            [theme.breakpoints.orientation.portrait]: {
+                fontSize: '9vw'
+            }
         },
         '& > div': {
             background: 'url(/images/coins.svg) no-repeat',
             height: '4.717vw',
-            width: '7vw'
+            width: '7vw',
+            [theme.breakpoints.orientation.portrait]: {
+                height: '7.41vw',
+                width: '11vw',
+            }
         }
     }
 }));
@@ -184,16 +210,16 @@ const GameEndOverview = props => {
     
     const statistics = props.player.statistics;
     let coins = statistics.attacks + statistics.builtEntities * 2 + statistics.espionages * 10 + statistics.moltenFields * 50;
-    let outcome = 'win';
+    //let outcome = 'win';
 
     if (props.winners.length === 1) {
         if (props.player.id !== props.winners[0].id) {
             coins = 0;
-            outcome = 'lost';
+            //outcome = 'lost';
         }
     } else if (props.winners.length === 2) {
         coins = Math.floor(coins / 2);
-        outcome = 'draw';
+        //outcome = 'draw';
     }
 
     let headine = t(tr.MESSAGE_WIN_GAME);

@@ -21,21 +21,20 @@ describe('browser', () => {
     });
 
     test('should show the titlepage without error', async () => {
-      await page.waitForSelector('.logo img', { timeout: timeout });
+      await page.waitForSelector('[class^=logo]', { timeout: timeout });
       await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test000.png' });
     }, timeout);
 
     test('should start the tutorial', async () => {
-      await page.waitForSelector('.titleMenu .menuButton:first-child', {timeout: timeout});
-      await expect(page).toMatchElement('.titleMenu', { text: 'Start Tutorial' });
-      await page.click('.titleMenu .menuButton:first-child');
+      await page.waitForSelector('div[class^=menu] > div:first-child', {timeout: timeout});
+      await expect(page).toMatchElement('div[class^=menu] > div:first-child', { text: 'Start Tutorial' });
+      await page.click('div[class^=menu] > div:first-child');
       await page.waitFor(2000);
-      await expect(page).toMatchElement('h6', { text: 'Welcome to battlechoc' });
+      await expect(page).toMatchElement('[class^=tutorial]:last-child [class^=title]', { text: 'Welcome to battlechoc' });
       await page.waitFor(1000);
-      await page.click('#next-loop');
+      await page.click('[class^=tutorial]:last-child [class^=title] [class^=iconButton]');
       await page.waitFor(1000);
-      await page.waitForSelector('#prev-loop', {timeout: timeout});
-      await expect(page).toMatchElement('h6', { text: 'The Chocolate Factory'});
+      await expect(page).toMatchElement('[class^=tutorial]:last-child [class^=title]', { text: 'The Chocolate Factory'});
       await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test002.png' })
     }, timeout);
   },

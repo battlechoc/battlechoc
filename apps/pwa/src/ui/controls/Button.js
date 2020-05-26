@@ -3,25 +3,27 @@ import PropTypes from 'prop-types';
 import { createUseStyles } from 'react-jss';
 import { Jukebox } from '../misc';
 
-const useStyles = createUseStyles(theme => {
-  const width = 220;
-  const height = 56;
-
-  return {
+const useStyles = createUseStyles(theme => ({
     button: {
       color: 'white',
       '-webkit-text-stroke': props => `1px ${theme.color[props.color].dark}`,
       '-webkit-font-smoothing': 'antialiased',
-      width: 'calc(100% - 6px) !important',
-      height: 'calc(100% - 6px) !important',
+      width: 'calc(100% - 1.2vw) !important',
+      height: 'calc(100% - 1.2vw) !important',
       clipPath: 'url(#menu-button-clip-path)',
       position: 'absolute',
-      top: 3,
-      left: 3,
+      top: '0.6vw',
+      left: '0.6vw',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontFamily: 'Bangers'
+      fontFamily: 'Bangers',
+      [theme.breakpoints.orientation.portrait]: {
+        top: '0.6vh',
+        left: '0.6vh',
+        width: 'calc(100% - 1.2vh) !important',
+        height: 'calc(100% - 1.2vh) !important',
+      }
     },
     iconButton: props => ({
       color: 'white',
@@ -75,9 +77,16 @@ const useStyles = createUseStyles(theme => {
       },
     },
     normal: {
-      fontSize: '1.5rem',
-      width: width * 0.9,
-      height: height * 0.9,
+      [theme.breakpoints.orientation.portrait]: {
+        fontSize: '4.5vh',
+        width: '31.5vh',
+        height: '7.875vh',
+      },
+      [theme.breakpoints.orientation.landscape]: {
+        fontSize: '6.75vh',
+        width: '40.5vh',
+        height: '10.125vh',        
+      },
     },
     small: {
       fontSize: '1.5rem',
@@ -97,8 +106,8 @@ const useStyles = createUseStyles(theme => {
       backgroundRepeat: 'no-repeat',
       backgroundImage: 'url(/images/lock.svg)'
     }
-  }
-});
+  })
+);
 
 const Button = props => {
   const classes = useStyles(props);

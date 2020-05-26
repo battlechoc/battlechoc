@@ -6,19 +6,15 @@ import { Jukebox } from '../misc';
 const useStyles = createUseStyles(theme => ({
     fab: {
       color: 'white',
-      width: 36,
-      height: 36,
+      width: '7.4vw',
+      height: '7.4vw',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: '100%',
-      [theme.breakpoints.tablet]: {
-        width: 48,
-        height: 48,        
-      },
-      [theme.breakpoints.laptop]: {
-        width: 60,
-        height: 60
+      [theme.breakpoints.orientation.portrait]: {
+        width: '7.4vh',
+        height: '7.4vh' 
       }
     },
     icon: props => {
@@ -39,13 +35,16 @@ const useStyles = createUseStyles(theme => ({
       
       return style;
     },
-    background: props => ({
-      border: `3px solid ${theme.color[props.color].light}`,
-      background: `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${theme.color[props.color].light} 100%)`,
+    background: {
+      border: props => `0.6vw solid ${theme.color[props.color].light}`,
+      background: props => `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${theme.color[props.color].light} 100%)`,
       '&:hover': {
-        background: `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${theme.color[props.color].light} 150%)`
+        background: props => `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${theme.color[props.color].light} 150%)`
+      },
+      [theme.breakpoints.orientation.portrait]: {
+        border: props => `0.6vh solid ${theme.color[props.color].light}`
       }
-    })
+    }
   })
 )
 

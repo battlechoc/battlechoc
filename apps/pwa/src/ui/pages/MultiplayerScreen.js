@@ -185,7 +185,7 @@ const useStyles = createUseStyles(theme => ({
 
 const MultiplayerScreen = props => {
     const classes = useStyles();
-    const { updateMultiplayerSessions, closeMultiplayerScreen, showQuickMessage, openAccountOverview, enterMultiplayerGame, multiplayerSessions, sessionRefreshActions, friends } = props;
+    const { /*updateMultiplayerSessions,*/ closeMultiplayerScreen, showQuickMessage, openAccountOverview, enterMultiplayerGame, multiplayerSessions, sessionRefreshActions, friends } = props;
 
     const [searchingRandomOpponent, setSearchingRandomOpponent] = useState(false);
     const [showFriends, setShowFriends] = useState(false);
@@ -235,7 +235,7 @@ const MultiplayerScreen = props => {
 
     const showPlayerProfile = (session, stacked=true) => openAccountOverview(session.opponent, stacked);
 
-    const canNotifyOpponent = session => {
+    /*const canNotifyOpponent = session => {
         const currentDateTime = (new Date()).getTime();
         const lastNotifiedTime = (typeof session.last_notification === 'undefined') ? 0 : session.last_notification;
         return (((currentDateTime - lastNotifiedTime) > 1000 * 60 * 60 * 4) && session.myTurn === false);
@@ -245,7 +245,7 @@ const MultiplayerScreen = props => {
         ServerRequest('post', '/user/notify', { sessionId: session.id }).then(response => {
             updateMultiplayerSessions(response.data.sessions);
         })
-    }
+    }*/
 
     const removeFriend = async friend => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
