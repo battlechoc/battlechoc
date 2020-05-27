@@ -94,17 +94,28 @@ const useStyles = createUseStyles(theme => ({
       height: 50,
     },
     disabled: {
-      filter: 'grayscale(1)'
+      filter: 'grayscale(1)',
+      ['& $huge']: {
+        fontSize: '4vh',
+        [theme.breakpoints.orientation.landscape]: {
+          fontSize: '6vh'
+        }
+      }
     },
     locked: {
       position: 'absolute',
-      right: 24,
-      top: 5,
+      right: '2vh',
+      top: '1.5vh',
       transform: 'rotate(-15deg)',
-      padding: 20,
+      padding: '2.2vh',
       backgroundSize: '100% 100%',
       backgroundRepeat: 'no-repeat',
-      backgroundImage: 'url(/images/lock.svg)'
+      backgroundImage: 'url(/images/lock.svg)',
+      [theme.breakpoints.orientation.landscape]: {
+        right: '3vh',
+        top: '2.5vh',
+        padding: '2.4vh'
+      }
     }
   })
 );
@@ -125,7 +136,8 @@ const Button = props => {
   } else {
     return (
       <div style={props.style} onClick={onClick} className={`${classes.border} ${classes[props.size]} ${props.className} ${props.disabled || props.locked ? classes.disabled : ''}`}>
-        <div style={props.buttonStyle} className={`${classes.background} ${classes[props.size]} ${classes.button}`}>{props.children} {props.locked ? <div className={classes.locked} /> : null}</div>
+        <div style={props.buttonStyle} className={`${classes.background} ${classes[props.size]} ${classes.button}`}>{props.children}</div>
+        {props.locked ? <div className={classes.locked} /> : null}
       </div>
     );
   }
