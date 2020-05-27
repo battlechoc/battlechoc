@@ -10,14 +10,9 @@ import logger from '../../helper/logger';
 const useStyles = createUseStyles(theme => ({
   fab: {
     position: 'absolute',
-    top: 56,
+    top: 'calc(4vh + 4vw + 10px)',
     right: 5,
-    zIndex: 4,
-    [theme.breakpoints.orientation.portrait]: {
-      '@media screen and (min-height: 900px)': {
-        top: 84                
-      }
-    } 
+    zIndex: 4
   },
   paginator: {
     display: 'flex',

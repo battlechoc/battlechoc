@@ -82,46 +82,24 @@ const useStyles = createUseStyles(theme => ({
                 }
             }
         },
-        coins: {            
+        coins: {
             position: 'absolute',
-            top: 10,
+            top: 5,
             right: 5,
             display: 'flex',
             alignItems: 'center',
             zIndex: 1,
-            [theme.breakpoints.smartphone]: {
-                top: 5
-            },
-            '& > span': {
-                fontSize: '2rem',
-                color: 'white',
-                '-webkit-text-stroke': '1px #3C1C0C',
+            '& span': {
+                color: '#fff',
                 '-webkit-font-smoothing': 'antialiased',
                 fontFamily: 'Bangers',
-                marginRight: 10,
-                [theme.breakpoints.smartphone]: {
-                    fontSize: '2.5rem'
-                },
-                [theme.breakpoints.orientation.portrait]: {
-                    '@media screen and (min-height: 900px)': {
-                        fontSize: '4rem'              
-                    }
-                }
+                marginRight: '1.5vw',
+                fontSize: 'calc(3.5vh + 3.5vw)',
+                WebkitTextStroke: 'calc(0.08vh + 0.08vw) #3C1C0C'
             },
             '& > div': {
                 background: 'url(/images/coins.svg) no-repeat',
-                height: 31.2,
-                width: 45.6,
-                [theme.breakpoints.smartphone]: {
-                    height: 39,
-                    width: 57
-                },
-                [theme.breakpoints.orientation.portrait]: {
-                    '@media screen and (min-height: 900px)': {
-                        height: 58.5,
-                        width: 85.5       
-                    }
-                }
+                padding: 'calc(2vh + 2vw) calc(3vh + 3vw)'
             }
         },
         decoration: {
@@ -359,9 +337,9 @@ const Hud = props => {
                     const locked = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
 
                     if (firstPlayScreen) {
-                        controls.push(<Button className={classes.menuButton} key="0" size="huge" buttonStyle={{ fontSize: '2rem'}} onClick={() => kickOffTutorial()}>{t(tr.START_TUTORIAL)}</Button>);
-                        controls.push(<Button className={classes.menuButton} key="1" size="huge" color="accent" buttonStyle={{ fontSize: '1.6rem'}} onClick={() => skipTutorial()}>{t(tr.SKIP_TUTORIAL)}</Button>);
-                        controls.push(<Button className={classes.menuButton} key="2" size="huge" color="secondary" buttonStyle={{ fontSize: '2rem'}} onClick={() => setShowAccountOverview(true)}>{t(tr.SIGNINORUP)}</Button>);
+                        controls.push(<Button className={classes.menuButton} key="0" size="huge" onClick={() => kickOffTutorial()}>{t(tr.START_TUTORIAL)}</Button>);
+                        controls.push(<Button className={classes.menuButton} key="1" size="huge" color="accent" onClick={() => skipTutorial()}>{t(tr.SKIP_TUTORIAL)}</Button>);
+                        controls.push(<Button className={classes.menuButton} key="2" size="huge" color="secondary" onClick={() => setShowAccountOverview(true)}>{t(tr.SIGNINORUP)}</Button>);
                     } else {
                         controls.push(<Button className={classes.menuButton} key="0" size="huge" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t(tr.NEW_GAME) : t(tr.MAIN_MENU_SINGLEPLAYER)}</Button>);
                         controls.push(<Button className={classes.menuButton} key="1" size="huge" locked={locked} color="secondary" onClick={() => {
