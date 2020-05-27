@@ -2,24 +2,29 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { createUseStyles } from 'react-jss';
 
-const useStyles = createUseStyles({
-  donut: props => ({
-    zIndex: 100,
-    '& div': {
-      height: props.size,
-      width: props.size
+const useStyles = createUseStyles(theme => ({
+    donut: {
+      zIndex: 100,
+      '& div': {
+        height: props => props.size || '10vw',
+        width: props => props.size || '10vw',
+        [theme.breakpoints.orientation.portrait]: {
+          height: props => props.size || '10vh',
+          width: props => props.size || '10vh',
+        }
+      }
+    },
+    invisible: {
+      display: 'none'
+    },
+    visible: {
+      display: 'block'
+    },
+    spinning: {
+      animation: 'rotate 1.5s linear infinite'
     }
-  }),
-  invisible: {
-    display: 'none'
-  },
-  visible: {
-    display: 'block'
-  },
-  spinning: {
-    animation: 'rotate 1.5s linear infinite'
-  }
-});
+  })
+);
 
 const Progress = props => {
   const classes = useStyles(props);
@@ -54,7 +59,6 @@ const Progress = props => {
 
 Progress.defaultProps = {
   className: '',
-  size: 64,
   style: {},
   infiniteAnimation: false,
   value: 0
@@ -64,7 +68,7 @@ Progress.propTypes = {
   infiniteAnimation: PropTypes.bool,
   value: PropTypes.number,
   style: PropTypes.object,
-  size: PropTypes.number,
+  size: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   className: PropTypes.string
 }
 

@@ -5,20 +5,22 @@ import { createUseStyles } from 'react-jss';
 const useStyles = createUseStyles(theme => ({
     message: {
         color: 'white',
-        margin: 12,
-        padding: 6,
+        margin: '1vh',
+        padding: '1vh',
         display: 'flex',
-        borderRadius: 12,
+        borderRadius: '2vh',
         alignItems: 'flex-start',
-        border: props => {
+        boderWidth: '0.4vh',
+        borderStyle: 'solid',
+        borderColor: props => {
             if (props.variant === 'error') {
-                return `3px solid ${theme.color.accent.light}`;
+                return theme.color.accent.light;
             } else if (props.variant === 'warning') {
-                return `3px solid ${theme.color.warning.light}`;
+                return theme.color.warning.light;
             } else if (props.variant === 'success') {
-                return `3px solid ${theme.color.primary.light}`;
+                return theme.color.primary.light;
             }  else {
-                return `3px solid ${theme.color.secondary.light}`;
+                return theme.color.secondary.light;
             }
         },
         background: props => {
@@ -31,14 +33,26 @@ const useStyles = createUseStyles(theme => ({
             } else {
                 return `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`;
             }
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            margin: '1vw',
+            padding: '1vw',   
+            borderRadius: '2vw',  
+            boderWidth: '0.4vw'      
         }
     },
     icon: {
-        margin: '12px 6px',
+        margin: '1vh',
         '& > div': {
-            padding: 18,
+            padding: '3vh',
             backgroundSize: '100% 100%',
-        } 
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            margin: '1vw',
+            '& > div': {
+                padding: '3vw'
+            }            
+        }
     },
     info: {
         '& > div': {
@@ -61,10 +75,10 @@ const useStyles = createUseStyles(theme => ({
         }        
     },
     actions: {
-        margin: '12px 6px',
-        padding: 6,
+        margin: '1vh',
+        padding: '0.5vh',
         '& > div': {
-            padding: 12,
+            padding: '1.5vh',
             background: props => {
                 if (props.variant === 'error') {
                     return `url(/images/close.svg) no-repeat`;
@@ -77,11 +91,23 @@ const useStyles = createUseStyles(theme => ({
                 }
             },
             backgroundSize: '100% 100%',
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            margin: '1vw',
+            padding: '0.5vw',
+            '& > div': {
+                padding: '1.5vw'
+            }
         }
     },
     text: {
-        margin: '12px 6px',
-        alignSelf: 'center'
+        margin: '1vh',
+        fontSize: '2vh',
+        alignSelf: 'center',
+        [theme.breakpoints.orientation.landscape]: {
+            margin: '1vw',
+            fontSize: '2vw'
+        }
     },
     invisible: {
         transition: 'opacity 1s ease-out',
@@ -91,22 +117,34 @@ const useStyles = createUseStyles(theme => ({
         opacity: 1,
     },
     rotate: {
-        padding: 10,
-        margin: 4,
+        padding: '1.5vh',
+        margin: '0.5vh',
         background: `url(/images/phone-rotation.svg) no-repeat`,
         backgroundSize: '100% 100%',
+        [theme.breakpoints.orientation.landscape]: {
+            padding: '1.5vw',
+            margin: '0.5vw'
+        }
     },
     share: {
-        padding: 8,
-        margin: 4,
+        padding: '1.1vh',
+        margin: '0.5vh',
         background: `url(/images/apple-share-icon.svg) no-repeat`,
         backgroundSize: '100% 100%',
+        [theme.breakpoints.orientation.landscape]: {
+            padding: '1.1vw',
+            margin: '0.5vw'
+        }
     },
     add: {
-        padding: 10,
-        margin: 4,
+        padding: '1.2vh',
+        margin: '0.5vh',
         background: `url(/images/add-icon.svg) no-repeat`,
         backgroundSize: '100% 100%',
+        [theme.breakpoints.orientation.landscape]: {
+            padding: '1.2vw',
+            margin: '0.5vw'
+        }
     }
 }));
 

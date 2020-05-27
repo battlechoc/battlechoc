@@ -66,12 +66,12 @@ const useStyles = createUseStyles(theme => ({
     }),
     huge: {
       [theme.breakpoints.orientation.portrait]: {
-        fontSize: '5vh',
+        fontSize: props => props.locked ? '4vh' : '5vh',
         width: '35vh',
         height: '8.75vh',
       },
       [theme.breakpoints.orientation.landscape]: {
-        fontSize: '7.5vh',
+        fontSize: props => props.locked ? '6vh' : '7.5vh',
         width: '45vh',
         height: '11.25vh',        
       },
@@ -94,13 +94,7 @@ const useStyles = createUseStyles(theme => ({
       height: 50,
     },
     disabled: {
-      filter: 'grayscale(1)',
-      ['& $huge']: {
-        fontSize: '4vh',
-        [theme.breakpoints.orientation.landscape]: {
-          fontSize: '6vh'
-        }
-      }
+      filter: 'grayscale(1)'
     },
     locked: {
       position: 'absolute',
