@@ -141,8 +141,7 @@ const useStyles = createUseStyles(theme => ({
         notification: {
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'flex-end',
-            fontSize: '1.3rem'
+            alignItems: 'flex-end'
         },
         titleScreen: {
             position: 'relative',

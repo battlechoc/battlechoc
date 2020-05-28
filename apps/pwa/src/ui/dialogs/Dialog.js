@@ -41,7 +41,8 @@ const useStyles = createUseStyles(theme => ({
         width: props => props.mode === 'notification' ? '100%' : '80%',
         height: '90%',
         padding: 16,
-        position: 'relative'
+        position: 'relative',
+        top: props => props.mode === 'info' ? '10vh' : 'unset'
     },
     body: {
         borderRadius: props => props.mode === 'notification' ? 0 : 20,
@@ -76,14 +77,17 @@ const useStyles = createUseStyles(theme => ({
         zIndex: 12,
         marginTop: '2vh',
         fontFamily: 'Bangers',
-        fontSize: props => (props.autoscale && props.title.length > 7) || props.mode === 'notification' ? '1.7rem' : '8vw',
+        fontSize: props => (props.autoscale && props.title.length > 7) || ['notification', 'info'].includes(props.mode) ? '5vw' : '8vw',
         display: 'flex',
         textAlign: props => props.mode === 'info' ? 'center' : 'unset',
         justifyContent: 'center',
         alignItems: 'center',
         color: 'white',
         '-webkit-text-stroke': `0.1vw ${theme.color.secondary.dark}`,
-        '-webkit-font-smoothing': 'antialiased'
+        '-webkit-font-smoothing': 'antialiased',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: props => (props.autoscale && props.title.length > 7) || ['notification', 'info'].includes(props.mode) ? '6vw' : '8vw',         
+        }
     },
     subtitle: {
         zIndex: 12,
@@ -116,13 +120,16 @@ const useStyles = createUseStyles(theme => ({
         color: 'white',
         display: 'flex',
         justifyContent: 'center',
+        fontSize: '3vh',
+        textAlign: 'center',
         [theme.breakpoints.smartphone]: {
             width: '80%',
             paddingRight: '5'
         },
-        [theme.breakpoints.landscape]: {
+        [theme.breakpoints.orientation.landscape]: {
             width: '90%',
-            height: '90%'
+            height: '90%',
+            fontSize: '3vw',
         }
     },
     border: {
@@ -132,8 +139,8 @@ const useStyles = createUseStyles(theme => ({
     top: { 
         top: 0,
         left: 0,
-        width: '100vw',
-        height: '40vh',
+        width: props => props.mode === 'info' ? '50vw' : '100vw',
+        height: props => props.mode === 'info' ? '20vh' : '40vh',
         background: 'url(/images/dialog-border-top.svg) no-repeat' 
     },
     left: {
@@ -148,8 +155,8 @@ const useStyles = createUseStyles(theme => ({
     right: { 
         bottom: 0,
         right: 0,
-        width: '30vw',
-        height: '40vh',
+        width: props => props.mode === 'info' ? '15vw' : '30vw',
+        height: props => props.mode === 'info' ? '20vh' : '40vh',
         background: 'url(/images/dialog-border-right.svg) no-repeat',
         backgroundPositionX: 'right',
         backgroundPositionY: 'bottom'

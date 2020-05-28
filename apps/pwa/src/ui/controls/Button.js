@@ -89,9 +89,14 @@ const useStyles = createUseStyles(theme => ({
       },
     },
     small: {
-      fontSize: '1.5rem',
-      width: 140,
-      height: 50,
+      fontSize: '4vh',
+      width: '18vh',
+      height: '6vh',
+      [theme.breakpoints.orientation.landscape]: {
+        fontSize: '4vw',
+        width: '18vw',
+        height: '6vw'        
+      }
     },
     disabled: {
       filter: 'grayscale(1)'
