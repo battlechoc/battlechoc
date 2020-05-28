@@ -53,7 +53,7 @@ const useStyles = createUseStyles(theme => ({
         fontWeight: 'bolder'
     },
     icon: {
-        padding: 16,
+        padding: '2.5vw',
         backgroundSize: '100% 100%'
     },
     attributes: {
@@ -61,34 +61,44 @@ const useStyles = createUseStyles(theme => ({
         flexWrap: 'wrap',
         justifyContent: 'center',
         fontFamily: 'Bangers',
-        fontSize: '1.2rem'
+        fontSize: '3vw'
     },
     attribute: {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         flexDirection: 'column',
-        padding: 6,
+        padding: '1vw',
         borderRadius: '100%',
-        width: 80,
-        height: 80,
-        margin: 2
+        width: '12vw',
+        height: '12vw',
+        margin: '0.5vw',
+        borderWidth: '0.6vw',
+        borderStyle: 'solid'
     },
     gold: {
-        border: `3px solid ${theme.color.gold.light}`,
-        background: `linear-gradient(0deg, ${theme.color.gold.dark} 0%, ${theme.color.gold.light} 100%)`
+        borderColor: theme.color.gold.light,
+        background: `linear-gradient(0deg, ${theme.color.gold.dark} 0%, ${theme.color.gold.light} 100%)`,
+        '-webkit-text-stroke': `0.1vh ${theme.color.gold.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
     },
     primary: {
-        border: `3px solid ${theme.color.primary.light}`,
-        background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`
+        borderColor: theme.color.primary.light,
+        background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`,
+        '-webkit-text-stroke': `0.1vh ${theme.color.primary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
     },
     secondary: {
-        border: `3px solid ${theme.color.secondary.light}`,
-        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`
+        borderColor: theme.color.secondary.light,
+        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`,
+        '-webkit-text-stroke': `0.1vh ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
     },
     accent: {
-        border: `3px solid ${theme.color.accent.light}`,
-        background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 100%)`
+        borderColor: theme.color.accent.light,
+        background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 100%)`,
+        '-webkit-text-stroke': `0.1vh ${theme.color.accent.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
     },
     signin: {
         display: 'flex',
@@ -96,9 +106,10 @@ const useStyles = createUseStyles(theme => ({
         flexDirection: 'column',
         fontFamily: 'Bangers',
         '& p': {
-            fontSize: '0.8rem',
+            fontSize: '2vw',
             fontFamily: 'Montserrat',
-            width: '80%'
+            width: '80%',
+            margin: 0
         },
         '& #firebaseui_container': {
             width: '100%'
@@ -124,6 +135,8 @@ const useStyles = createUseStyles(theme => ({
             background: 'unset',
             boxShadow: 'none',
             fontFamily: 'unset',
+            maxWidth: 'unset',
+            margin: 'unset',
             '& .firebaseui-card-header': {
                 border: 'none !important'
             },
@@ -165,10 +178,23 @@ const useStyles = createUseStyles(theme => ({
             clipPath: 'url(#menu-button-clip-path)',
             fontFamily: 'Bangers',
             border: 'none !important',
-            padding: 16,
+            padding: '2vw',
+            display: 'flex',
+            justifyContent: 'center',
+            maxWidth: 'unset',
+            width: '35vw',
             '& .firebaseui-idp-text': {
-                fontSize: '1.2rem'
+                fontSize: '3vw'
             }
+        },
+        '& .firebaseui-idp-icon': {
+            width: '3vw',
+            height: '3vw'
+        },
+        '& .firebaseui-idp-list': {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
         },
         '& .firebaseui-idp-facebook': {
             background: `linear-gradient(0deg, ${theme.color.facebook.dark} 0%, ${theme.color.facebook.light} 70%) !important`,
@@ -278,7 +304,7 @@ const AccountOverview = props => {
         }
     }
 
-    const share = playerName !== EmptyPlayerStats.username ? <Fab style={{ marginLeft: 12 }} icon="share" color="secondary" onClick={createProfileLink} /> : null;
+    const share = playerName !== EmptyPlayerStats.username ? <Fab style={{ marginLeft: '2vw', marginRight: '-7vw' }} icon="share" color="secondary" onClick={createProfileLink} /> : null;
 
     return (
         <Dialog
@@ -288,7 +314,7 @@ const AccountOverview = props => {
             mode={props.dialogStyle}
             id="accountOverviewDialog"
             autoscale={true}
-            title={playerName.length > 15 ? `${playerName.slice(0, 14)}...` : playerName}
+            title={playerName.length > 20 ? `${playerName.slice(0, 17)}...` : playerName}
             titleSlotAfter={share}>
             <div className={classes.wrapper}>
                 {(() => {
@@ -351,7 +377,7 @@ const AccountOverview = props => {
                         <div>{t(tr.ACCOUNT_OVERVIEW_LOST)}</div><div>{losses }</div>
                     </div>
                     <div className={`${classes.gold} ${classes.attribute}`}>
-                        <div className={ classes.icon } style={{ background: `url(/images/level.svg) no-repeat` }} />
+                        <div className={ classes.icon } style={{ background: `url(/images/level-up-icon.svg) no-repeat` }} />
                         <div>{t(tr.ACCOUNT_OVERVIEW_LEVEL)}</div><div>{ level }</div>
                     </div>
                 </div>

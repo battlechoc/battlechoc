@@ -92,13 +92,12 @@ const useStyles = createUseStyles(theme => ({
     subtitle: {
         zIndex: 12,
         fontFamily: 'Bangers',
-        fontSize: '1.2rem',
+        fontSize: '3.5vh',
         color: 'white',
-        margin: '-12px 0px 12px 0px',
         '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
         '-webkit-font-smoothing': 'antialiased',
-        [theme.breakpoints.landscape]: {
-            margin: 0
+        [theme.breakpoints.orientation.landscape]: {
+            fontSize: '3.5vw',
         }
     },
     close: {
@@ -139,24 +138,24 @@ const useStyles = createUseStyles(theme => ({
     top: { 
         top: 0,
         left: 0,
-        width: props => props.mode === 'info' ? '50vw' : '100vw',
-        height: props => props.mode === 'info' ? '20vh' : '40vh',
+        width: props => props.mode === 'info' ? '50vw' : '80vw',
+        height: props => props.mode === 'info' ? '20vh' : '32vh',
         background: 'url(/images/dialog-border-top.svg) no-repeat' 
     },
     left: {
         display: props => ['notification', 'info'].includes(props.mode) ? 'none' : 'block',
         bottom: 0,
         left: 0,
-        width: '20vw',
-        height: '40vh',
+        width: '16vw',
+        height: '32vh',
         background: 'url(/images/dialog-border-left.svg) no-repeat',
         backgroundPositionY: 'bottom'
     },
     right: { 
         bottom: 0,
         right: 0,
-        width: props => props.mode === 'info' ? '15vw' : '30vw',
-        height: props => props.mode === 'info' ? '20vh' : '40vh',
+        width: props => props.mode === 'info' ? '15vw' : '24vw',
+        height: props => props.mode === 'info' ? '20vh' : '32vh',
         background: 'url(/images/dialog-border-right.svg) no-repeat',
         backgroundPositionX: 'right',
         backgroundPositionY: 'bottom'

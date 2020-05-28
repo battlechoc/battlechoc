@@ -7,7 +7,7 @@ import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';
 import Dialog from './Dialog';
 
-const useStyles = createUseStyles(() => ({
+const useStyles = createUseStyles(theme => ({
     icons: {
         position: 'absolute',
         zIndex: 2,
@@ -21,15 +21,15 @@ const useStyles = createUseStyles(() => ({
     },
     text: {
         '& *': { color: 'white' },
-        '@media screen and (min-width: 960px)': {
-            width: '80vw',
-            margin: '0 auto'
-        },
-        '@media screen and (max-width: 600px)': {
-            '& p': { fontSize: '0.8rem', margin: '0.5rem' },
-            '& h2': { fontSize: '1.2rem', margin: '0.5rem' },
-            '& h3': { fontSize: '1rem', margin: '0.5rem' }
+        width: '70vw',
+        fontSize: '2vw',
+        textAlign: 'left',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '2vh',            
         }
+    },
+    header: {
+        textAlign: 'center'
     }
 }));
 
@@ -98,16 +98,18 @@ const Info = props => {
                 title="About battlechoc"
                 subtitle={`${version} - ${timeSinceUpdate}`}>
                 <div className={classes.text}>
-                    <h2>{t(tr.INFO_IMPRESS)}</h2>
-                    <p>
-                        battlechoc GbR<br />
-                        Triftweg 5<br />
-                        38550 Isenbüttel<br />
-                        {t(tr.INFO_IMPRESS_COUNTRY)}<br /><br />
-                        E-mail: info@battlechoc.com<br />
-                        {t(tr.INFO_IMPRESS_PHONE)}: + 49 151 65486876<br /><br />
-                        {t(tr.INFO_IMPRESS_EXECUTIVE_DIRECTORS)}: Dr. Sebastian Bode & Fabian Bormann
-                    </p>
+                    <div className={classes.header}>
+                        <h2>{t(tr.INFO_IMPRESS)}</h2>
+                        <p>
+                            battlechoc GbR<br />
+                            Triftweg 5<br />
+                            38550 Isenbüttel<br />
+                            {t(tr.INFO_IMPRESS_COUNTRY)}<br /><br />
+                            E-mail: info@battlechoc.com<br />
+                            {t(tr.INFO_IMPRESS_PHONE)}: + 49 151 65486876<br /><br />
+                            {t(tr.INFO_IMPRESS_EXECUTIVE_DIRECTORS)}: Dr. Sebastian Bode & Fabian Bormann
+                        </p>
+                    </div>
                     <h2>{t(tr.INFO_PRIVACY_POLICY)}</h2>
                     <p>{t(tr.INFO_PRIVACY_POLICY_TEXT)}</p>
                 </div>
