@@ -168,36 +168,36 @@ const Settings = props => {
 
   const options = [{
     value: 'en',
-    label: t(tr.ENGLISH),
-    icon: 'en-flag.svg'
+    label: t(tr.ENGLISH)
+    //icon: 'en-flag.svg'
   }, {
     value: 'de',
-    label: t(tr.GERMAN),
-    icon: 'de-flag.svg'
+    label: t(tr.GERMAN)
+    //icon: 'de-flag.svg'
   }, {
     value: 'jp',
-    label: t(tr.JAPANESE),
-    icon: 'jp-flag.svg'
+    label: t(tr.JAPANESE)
+    //icon: 'jp-flag.svg'
   }, {
     value: 'es',
-    label: t(tr.SPANISH),
-    icon: 'es-flag.svg'
+    label: t(tr.SPANISH)
+    //icon: 'es-flag.svg'
   }, {
     value: 'fr',
-    label: t(tr.FRENCH),
-    icon: 'fr-flag.svg'
+    label: t(tr.FRENCH)
+    //icon: 'fr-flag.svg'
   }, {
     value: 'it',
-    label: t(tr.ITALIAN),
-    icon: 'it-flag.svg'
+    label: t(tr.ITALIAN)
+    //icon: 'it-flag.svg'
   }, {
     value: 'pt',
-    label: t(tr.PORTUGUESE),
-    icon: 'pt-flag.svg'
+    label: t(tr.PORTUGUESE)
+    //icon: 'pt-flag.svg'
   }, {
     value: 'vn',
-    label: t(tr.VIETNAMESE),
-    icon: 'vn-flag.svg'
+    label: t(tr.VIETNAMESE)
+    //icon: 'vn-flag.svg'
   }];
 
   const changeLanguage = value => {
