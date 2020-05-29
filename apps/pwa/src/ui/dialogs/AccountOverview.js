@@ -19,9 +19,6 @@ const useStyles = createUseStyles(theme => ({
         display: 'flex',
         flexDirection: 'column',
         marginTop: 16,
-        [theme.breakpoints.landscape]: {
-            marginTop: 0
-        }
     },
     pendingButton: {
         backgroundColor: '#777'
@@ -61,7 +58,10 @@ const useStyles = createUseStyles(theme => ({
         flexWrap: 'wrap',
         justifyContent: 'center',
         fontFamily: 'Bangers',
-        fontSize: '3vw'
+        fontSize: '3vw',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '3vh'
+        }
     },
     attribute: {
         display: 'flex',
@@ -74,7 +74,14 @@ const useStyles = createUseStyles(theme => ({
         height: '12vw',
         margin: '0.5vw',
         borderWidth: '0.6vw',
-        borderStyle: 'solid'
+        borderStyle: 'solid',
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '1vh',
+            width: '12vh',
+            height: '12vh',
+            margin: '0.5vh',
+            borderWidth: '0.6vh',
+        }
     },
     gold: {
         borderColor: theme.color.gold.light,
@@ -119,14 +126,11 @@ const useStyles = createUseStyles(theme => ({
         display: 'flex',
         alignItems: 'center',
         flexDirection: 'column',
-        fontFamily: 'Bangers',
         '& p': {
             textAlign: 'center',
-            fontSize: '1.6rem',
-            '-webkit-text-stroke': '1px #1B4E69',
-            '-webkit-font-smoothing': 'antialiased',
-            [theme.breakpoints.landscape]: {
-                margin: '16px 0'
+            fontSize: '2.5vw',
+            [theme.breakpoints.orientation.portrait]: {
+                fontSize: '2.5vh'
             }
         }
     }, 

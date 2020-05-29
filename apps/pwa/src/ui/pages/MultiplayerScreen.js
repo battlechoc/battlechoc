@@ -24,11 +24,6 @@ const useStyles = createUseStyles(theme => ({
     },
     actions: {
         display: 'flex',
-        width: '100%',
-        justifyContent: 'space-around',
-        marginBottom: 24,
-        marginTop: 24,
-        position: 'relative',
         zIndex: 1,
         [theme.breakpoints.orientation.landscape]: {
             width: 'calc(100% - 3*60px)',
@@ -38,10 +33,23 @@ const useStyles = createUseStyles(theme => ({
             marginBottom: 0,
             left: 'calc(2 * 60px)',
             justifyContent: 'space-evenly'
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            width: '100%',
+            justifyContent: 'center',
+            position: 'relative',
+            '& > div': {
+                margin: '1vh'
+            }
         }
     },
     action: {
-        width: 200
+        '& > div': {
+            fontSize: '3.5vw',
+            [theme.breakpoints.orientation.portrait]: {
+                fontSize: '3.5vh'
+            }
+        }
     },
     actionbar: {
         margin: 5,
@@ -63,23 +71,33 @@ const useStyles = createUseStyles(theme => ({
         zIndex: 4,
     },
     session: {
-        width: 180,
-        margin: 10,
+        width: '30vw',
+        margin: '1vw',
         fontFamily: 'Bangers',
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
         borderRadius: '5%',
         position: 'relative',
-        [theme.breakpoints.orientation.landscape]: {
-            margin: '20px 10px 0px 10px'
+        [theme.breakpoints.orientation.portrait]: {
+            width: '30vh',
+            margin: '1vh',
         }
     },
     title: {
-        fontSize: '1rem',
+        fontSize: '3vw',
         textAlign: 'center',
-        position: 'relative'
+        position: 'relative',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '3vh'
+        } 
     },
     button: {
-        width: '45%'
+        width: '45%',
+        '& > div': {
+            fontSize: '3vw',
+            [theme.breakpoints.orientation.portrait]: {
+                fontSize: '3vh'
+            } 
+        }
     },
     buttons: {
         display: 'flex',
@@ -96,7 +114,7 @@ const useStyles = createUseStyles(theme => ({
         top: 0,
         left: 0,
         width: '100%',
-        height: 60,
+        height: '50%',
         background: 'url(/images/header.svg) no-repeat',
         backgroundSize: '100%'
     },
@@ -104,22 +122,27 @@ const useStyles = createUseStyles(theme => ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        fontSize: '3vw',
         '& h3': {
             margin: 5
-        }
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '3vh'
+        } 
     },
     coins: {
         display: 'flex',
         alignItems: 'center',
         '& span': {
-            fontSize: '1.2rem',
             fontFamily: 'Bangers',
             marginRight: 10
         }, 
         '& div': {
             background: 'url(/images/coins.svg) no-repeat',
-            height: 19,
-            width: 28
+            padding: '1.5vw 2vw',
+            [theme.breakpoints.orientation.portrait]: {
+                padding: '1.5vh 2vh',
+            } 
         }
     },
     surrenderDialog: {
@@ -130,19 +153,13 @@ const useStyles = createUseStyles(theme => ({
     },
     timeago: {
         fontFamily: 'Montserrat',
-        padding: 10,
-        textAlign: 'center'
-    },
-    message: {
-        padding: 10,
+        padding: '1vw',
+        fontSize: '2.5vw',
         textAlign: 'center',
-        fontFamily: 'Montserrat',
-        background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 100%)`,
-        borderRadius: 12,
-        border: `3px solid ${theme.color.accent.light}`,
-        position: 'relative',
-        zIndex: 3,
-        margin: '24px 10px 0 10px'
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '1vh', 
+            fontSize: '2.5vh',
+        }
     },
     search: {
         display: 'flex',
@@ -233,7 +250,7 @@ const MultiplayerScreen = props => {
         }
     }, [showQuickMessage]);
 
-    const showPlayerProfile = (session, stacked=true) => openAccountOverview(session.opponent, stacked);
+    const showPlayerProfile = (session, mode='stacked') => openAccountOverview(session.opponent, mode);
 
     /*const canNotifyOpponent = session => {
         const currentDateTime = (new Date()).getTime();
@@ -430,7 +447,7 @@ const MultiplayerScreen = props => {
             </Dialog>
 
             <div className={classes.actions}>
-                <Button className={classes.action} onClick={searchRandomOpponent} buttonStyle={{ fontSize: '1.2rem' }} color="accent">{t(tr.MULTIPLAYER_RANDOM_OPPONENT)}</Button>
+                <Button className={classes.action} onClick={searchRandomOpponent} color="accent">{t(tr.MULTIPLAYER_RANDOM_OPPONENT)}</Button>
                 <Button className={classes.action} onClick={() => setShowFriends(true)}>{t(tr.FRIENDS)}</Button>
             </div>
             
@@ -441,9 +458,9 @@ const MultiplayerScreen = props => {
                     <h2 className={classes.title}>{`you vs ${row.opponent.name}`}</h2>
                     <div className={classes.buttons}>
                         { row.myTurn ? 
-                        <Button buttonStyle={{ fontSize: '1.1rem' }} className={classes.button} onClick={() => enterMultiplayerGame(row.id)}>Play</Button> :
-                        <Button buttonStyle={{ fontSize: '1.1rem' }} className={classes.button} color="secondary" onClick={() => enterMultiplayerGame(row.id)}>Wait</Button> }
-                        <Button color="accent" buttonStyle={{ fontSize: '1.1rem' }} className={classes.button} onClick={() => askSurrenderGame(row.id, row.opponent.name)}>{t(tr.SURRENDER)}</Button>
+                        <Button className={classes.button} onClick={() => enterMultiplayerGame(row.id)}>Play</Button> :
+                        <Button className={classes.button} color="secondary" onClick={() => enterMultiplayerGame(row.id)}>Wait</Button> }
+                        <Button color="accent" className={classes.button} onClick={() => askSurrenderGame(row.id, row.opponent.name)}>{t(tr.SURRENDER)}</Button>
                     </div>
                     <div className={classes.timeago}>{`You are waiting for ${timeAgo.format(new Date(row.last_changed), 'time')}`}</div>
                     <div className={classes.info}>
@@ -454,7 +471,7 @@ const MultiplayerScreen = props => {
                                 <div />
                             </div>
                         </div>
-                        <Fab icon="user" onClick={() => showPlayerProfile(row, false)} />
+                        <Fab icon="user" onClick={() => showPlayerProfile(row, 'default')} />
                     </div>
                 </div>) }
             </div> : null }

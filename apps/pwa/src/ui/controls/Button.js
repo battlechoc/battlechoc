@@ -6,7 +6,7 @@ import { Jukebox } from '../misc';
 const useStyles = createUseStyles(theme => ({
     button: {
       color: 'white',
-      '-webkit-text-stroke': props => `1px ${theme.color[props.color].dark}`,
+      '-webkit-text-stroke': props => `0.15vw ${theme.color[props.color].dark}`,
       '-webkit-font-smoothing': 'antialiased',
       width: 'calc(100% - 1.2vw) !important',
       height: 'calc(100% - 1.2vw) !important',
@@ -23,6 +23,7 @@ const useStyles = createUseStyles(theme => ({
         left: '0.6vh',
         width: 'calc(100% - 1.2vh) !important',
         height: 'calc(100% - 1.2vh) !important',
+        '-webkit-text-stroke': props => `0.15vh ${theme.color[props.color].dark}`,
       }
     },
     iconButton: props => ({
