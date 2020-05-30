@@ -32,9 +32,13 @@ const useStyles = createUseStyles(theme => ({
   },
   rank: {
     fontFamily: 'Bangers',
-    fontSize: '2rem',
-    '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
+    fontSize: '5vw',
+    '-webkit-text-stroke': `0.1vw ${theme.color.secondary.dark}`,
     '-webkit-font-smoothing': 'antialiased'
+  },
+  [theme.breakpoints.orientation.portrait]: {
+    fontSize: '4vh',
+    '-webkit-text-stroke': `0.1vh ${theme.color.secondary.dark}`,    
   }
 }));
 

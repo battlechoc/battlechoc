@@ -12,7 +12,7 @@ const useStyles = createUseStyles(theme => ({
         zIndex: 10,
         top: 0,
         left: 0,
-        position: 'absolute',
+        position: 'fixed',
         justifyContent: 'center',
         alignItems: 'center'
     },

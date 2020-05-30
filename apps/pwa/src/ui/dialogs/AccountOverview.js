@@ -43,11 +43,14 @@ const useStyles = createUseStyles(theme => ({
         marginLeft: '-0.5rem'
     },
     noAccountInfo: {
-        width: '80vw',
-        fontSize: '1.1rem',
+        fontSize: '3vw',
         textAlign: 'center',
-        color: 'rgba(9, 63, 70, 0.8)',
-        fontWeight: 'bolder'
+        color: 'white',
+        marginBottom: '2vw',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '3vh',
+            marginBottom: '2vh'
+        }
     },
     icon: {
         padding: '2.5vw',
@@ -324,8 +327,9 @@ const AccountOverview = props => {
                 {(() => {
                     if (typeof props.multiplayerSessions !== 'undefined' && !isPlayerAccount) {
                         const actions = [];
+                        console.log(props.playerAccount.score)
                         const gamesAgainstOpponent = props.multiplayerSessions.filter(session => session.opponent.name === playerName);
-                        if (props.playerInfos.stats.score >= 1000 && props.playerInfos.stats.name !== EmptyPlayerStats.username) {
+                        if (props.playerInfos.stats.score >= 1000 && props.playerAccount.score >= 1000 && props.playerInfos.stats.name !== EmptyPlayerStats.username) {
                             if (gamesAgainstOpponent.length === 0) {
                                 actions.push(<Button key={0} color="secondary" onClick={() => {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -361,8 +365,10 @@ const AccountOverview = props => {
                                 }}>{refreshFriend ? <Progress infiniteAnimation size={24} /> : t(tr.REMOVE_FRIEND)}</Button>);
                             }
                             return <div className={classes.opponentActions}>{actions}</div>;
-                        } else {
+                        } else if (props.playerInfos.stats.score < 1000) {
                             return <div className={classes.noAccountInfo} >{t(tr.NO_ACCOUNT_INFO)}</div>;
+                        } else {
+                            return null;
                         }
                     }                        
                 })()}

@@ -3,6 +3,31 @@ import PropTypes from 'prop-types';
 import { createUseStyles } from 'react-jss';
 import { Jukebox } from '../misc';
 
+const calculateFontSize = (text, orientation, size) => {
+  const basics = {
+    landscape: {
+      huge: 7.5,
+      normal: 6.75,
+      small: 4
+    },
+    portrait: {
+      huge: 5,
+      normal: 4.5,
+      small: 4
+    }
+  } 
+
+  if (typeof text !== 'string' || text.length < 8) {
+    return `${basics[orientation][size]}vh`;
+  } else if (text.length < 12) {
+    return `${ basics[orientation][size] * 0.9 }vh`;
+  } else if (text.length < 16) {
+    return `${ basics[orientation][size] * 0.8 }vh`;
+  } else {
+    return `${ basics[orientation][size] * 0.7 }vh`;
+  }
+}
+
 const useStyles = createUseStyles(theme => ({
     button: {
       color: 'white',
@@ -26,16 +51,23 @@ const useStyles = createUseStyles(theme => ({
         '-webkit-text-stroke': props => `0.15vh ${theme.color[props.color].dark}`,
       }
     },
-    iconButton: props => ({
+    iconButton: {
       color: 'white',
-      width: 36,
-      height: 36,
+      width: '5vw',
+      height: '5vw',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: '12.5%',
-      border: `3px solid ${theme.color[props.color].light}`
-    }),
+      borderColor: props => theme.color[props.color].light,
+      borderWidth: '0.1vw',
+      borderStyle: 'solid',
+      [theme.breakpoints.orientation.portrait]: {
+        borderWidth: '0.1vh',
+        width: '5vh',
+        height: '5vh'
+      }
+    },
     icon: props => {
       const style = {
         width: '60%',
@@ -67,34 +99,34 @@ const useStyles = createUseStyles(theme => ({
     }),
     huge: {
       [theme.breakpoints.orientation.portrait]: {
-        fontSize: props => props.locked ? '4vh' : '5vh',
+        fontSize: props => props.locked ? '4vh' : calculateFontSize(props.children, 'portrait', 'huge'),
         width: '35vh',
         height: '8.75vh',
       },
       [theme.breakpoints.orientation.landscape]: {
-        fontSize: props => props.locked ? '6vh' : '7.5vh',
+        fontSize: props => props.locked ? '6vh' : calculateFontSize(props.children, 'landscape', 'huge'),
         width: '45vh',
         height: '11.25vh',        
       },
     },
     normal: {
       [theme.breakpoints.orientation.portrait]: {
-        fontSize: '4.5vh',
+        fontSize: props => calculateFontSize(props.children, 'portrait', 'normal'),
         width: '31.5vh',
         height: '7.875vh',
       },
       [theme.breakpoints.orientation.landscape]: {
-        fontSize: '6.75vh',
+        fontSize: props => calculateFontSize(props.children, 'landscape', 'normal'),
         width: '40.5vh',
         height: '10.125vh',        
       },
     },
     small: {
-      fontSize: '4vh',
+      fontSize: props => calculateFontSize(props.children, 'portrait', 'small'),
       width: '18vh',
       height: '6vh',
       [theme.breakpoints.orientation.landscape]: {
-        fontSize: '4vw',
+        fontSize: props => calculateFontSize(props.children, 'landscape', 'small'),
         width: '18vw',
         height: '6vw'        
       }

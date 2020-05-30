@@ -43,14 +43,6 @@ const useStyles = createUseStyles(theme => ({
             }
         }
     },
-    action: {
-        '& > div': {
-            fontSize: '3.5vw',
-            [theme.breakpoints.orientation.portrait]: {
-                fontSize: '3.5vh'
-            }
-        }
-    },
     actionbar: {
         margin: 5,
         display: 'flex',
@@ -166,28 +158,39 @@ const useStyles = createUseStyles(theme => ({
         alignItems: 'center'
     },
     label: {
-        fontSize: '1.6rem',
+        fontSize: '5vw',
         fontFamily: 'Bangers',
-        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
+        '-webkit-text-stroke': `0.1vw ${theme.color.secondary.dark}`,
         '-webkit-font-smoothing': 'antialiased',
-        marginRight: 6
+        marginRight: '2vw',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '5vh',
+            '-webkit-text-stroke': `0.1vh ${theme.color.secondary.dark}`,
+        }
     }, 
     input: {
         color: theme.color.secondary.dark,
-        border: `1px solid ${theme.color.secondary.dark}`,
+        border: `0.1vw solid ${theme.color.secondary.dark}`,
         fontFamily: 'Bangers',
-        padding: 6,
+        padding: '1.5vw',
         flexGrow: 1,
-        borderRadius: 6,
+        borderRadius: '1.5vw',
         outline: 'none',
-        fontSize: '1.2rem'
+        fontSize: '4.5vw',
+        margin: '2vw 0',
+        [theme.breakpoints.orientation.portrait]: {
+            border: `0.1vh solid ${theme.color.secondary.dark}`,
+            padding: '1.5vh',
+            borderRadius: '1.5vh',
+            fontSize: '4.5vh',
+            margin: '2vh 0',
+        }
     },
     dialog: {
         width: '90%'
     },
     playerList: {
         width: '100%',
-        marginTop: 24
     },
     progress: {
         position: 'absolute',
@@ -447,8 +450,8 @@ const MultiplayerScreen = props => {
             </Dialog>
 
             <div className={classes.actions}>
-                <Button className={classes.action} onClick={searchRandomOpponent} color="accent">{t(tr.MULTIPLAYER_RANDOM_OPPONENT)}</Button>
-                <Button className={classes.action} onClick={() => setShowFriends(true)}>{t(tr.FRIENDS)}</Button>
+                <Button onClick={searchRandomOpponent} color="accent">{t(tr.MULTIPLAYER_RANDOM_OPPONENT)}</Button>
+                <Button onClick={() => setShowFriends(true)}>{t(tr.FRIENDS)}</Button>
             </div>
             
             { multiplayerSessions.length > 0 && sessionRefreshActions === 0 ? <div className={classes.sessions}>

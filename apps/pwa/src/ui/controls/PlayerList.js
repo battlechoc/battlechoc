@@ -3,26 +3,25 @@ import PropTypes from 'prop-types';
 import { createUseStyles } from 'react-jss';
 
 const useStyles = createUseStyles(theme => ({
-    list: props => ({
-        marginTop: 8,
+    list: {
         fontFamily: 'Bangers',
-        fontSize: props.size === 'small' ? '1.2rem' : '1.6rem',
+        fontSize: props => props.size === 'small' ? '2.5vw' : '3vw',
+        '-webkit-text-stroke': `0.1vw ${theme.color.secondary.dark}`,
         '& > :nth-child(odd)': {
             backgroundColor: theme.color.secondary.dark
         },
         display: 'table',
-        [theme.breakpoints.smartphone]: {
-            fontSize: props.size === 'small' ? '1.4rem' : '1.8rem'
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: props => props.size === 'small' ? '3vh' : '3.5vh',
+            '-webkit-text-stroke': `0.1vh ${theme.color.secondary.dark}`,
         },
-        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
         '-webkit-font-smoothing': 'antialiased'
-    }),
-    row: props => ({
+    },
+    row: {
         cursor: 'pointer',
         userSelect: 'none',
-        padding: props.size === 'small' ? 5 : 8,
         display: 'table-row',
-    }),
+    },
     cell: {
         display: 'table-cell',
         borderTop: '4px solid transparent',
@@ -39,7 +38,10 @@ const useStyles = createUseStyles(theme => ({
         color: 'white'
     },
     icon: {
-        padding: 12
+        padding: '1vw',
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '1vh'
+        }
     }
 }));
 
@@ -65,12 +67,12 @@ const PlayerList = props => {
                         <div onClick={() => openPlayerProfile(player)} className={`${classes.cell} ${classes.name}`}>{player.name}</div>
                         { withScore ? <>
                             <div style={{ borderRight: '4px solid transparent'}} className={classes.cell}>{player.score}</div>
-                            <div className={`${classes.icon} ${classes.cell}`} style={{ background: `url(/images/score.svg) no-repeat`, backgroundSize: '100% 100%', borderRight: '12px solid transparent' }} />
+                            <div className={`${classes.icon} ${classes.cell}`} style={{ background: `url(/images/score.svg) no-repeat`, backgroundSize: '100% 100%', borderRight: '0.3vw solid transparent' }} />
                         </> : null }
 
                         { withScore ? <>
                             <div style={{ borderRight: '4px solid transparent'}} className={classes.cell}>{player.level}</div>
-                            <div className={`${classes.icon} ${classes.cell}`} style={{ background: `url(/images/level.svg) no-repeat`, backgroundSize: '100% 100%', borderRight: '4px solid transparent' }} />
+                            <div className={`${classes.icon} ${classes.cell}`} style={{ background: `url(/images/level.svg) no-repeat`, backgroundSize: '100% 100%', borderRight: '0.1vw solid transparent' }} />
                         </> : null }
                     </div>
                 })
