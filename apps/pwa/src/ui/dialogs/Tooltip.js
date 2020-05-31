@@ -8,18 +8,20 @@ const useStyles = createUseStyles(theme => ({
     tooltip: {
         top: 0,
         right: 0,
-        width: 260,
+        maxWidth: '60vw',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'flex-end',
         position: 'absolute',
         zIndex: 1,
-        marginRight: 5
+        marginRight: 5,
+        [theme.breakpoints.orientation.portrait]: {
+            maxWidth: '40vw',      
+        }
     },
     title: {
         display: 'flex',
         fontFamily: 'Bangers',
-        width: 'max-content',
         justifyContent: 'space-between',
         fontSize: '6.5vh',
         '-webkit-text-stroke': `0.25vh ${theme.color.secondary.dark}`,

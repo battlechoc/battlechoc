@@ -119,7 +119,7 @@ const useStyles = createUseStyles(theme => ({
         color: 'white',
         display: 'flex',
         justifyContent: 'center',
-        fontSize: '3vh',
+        fontSize: '5vw',
         textAlign: 'center',
         [theme.breakpoints.smartphone]: {
             width: '80%',
@@ -128,7 +128,7 @@ const useStyles = createUseStyles(theme => ({
         [theme.breakpoints.orientation.landscape]: {
             width: '90%',
             height: '90%',
-            fontSize: '3vw',
+            fontSize: '2.5vw',
         }
     },
     border: {
@@ -138,8 +138,8 @@ const useStyles = createUseStyles(theme => ({
     top: { 
         top: 0,
         left: 0,
-        width: props => props.mode === 'info' ? '50vw' : '80vw',
-        height: props => props.mode === 'info' ? '20vh' : '32vh',
+        width: props => ['notification', 'info'].includes(props.mode) ? '50vw' : '80vw',
+        height: props => ['notification', 'info'].includes(props.mode) ? '20vh' : '32vh',
         background: 'url(/images/dialog-border-top.svg) no-repeat' 
     },
     left: {
@@ -154,8 +154,8 @@ const useStyles = createUseStyles(theme => ({
     right: { 
         bottom: 0,
         right: 0,
-        width: props => props.mode === 'info' ? '15vw' : '24vw',
-        height: props => props.mode === 'info' ? '20vh' : '32vh',
+        width: props => ['notification', 'info'].includes(props.mode) ? '15vw' : '24vw',
+        height: props => ['notification', 'info'].includes(props.mode) ? '20vh' : '32vh',
         background: 'url(/images/dialog-border-right.svg) no-repeat',
         backgroundPositionX: 'right',
         backgroundPositionY: 'bottom'

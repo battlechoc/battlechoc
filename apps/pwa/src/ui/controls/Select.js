@@ -20,11 +20,17 @@ const useStyles = createUseStyles(theme => ({
       height: '11.428vh',
       background: 'white',
       border: `0.2vh solid ${theme.color.secondary.light}`,
+      '& > span': {
+        marginLeft: '2vh'
+      },
       [theme.breakpoints.orientation.portrait]: {
         fontSize: '7vw',
         borderRadius: '2.857vw',
         height: '11.428vw',
         border: `0.2vw solid ${theme.color.secondary.light}`,
+        '& > span': {
+          marginLeft: '2vw'
+        }
       }
     },
     dropdown: {
@@ -54,6 +60,7 @@ const useStyles = createUseStyles(theme => ({
       border: `0.2vh solid ${theme.color.secondary.light}`,
       background: 'white',
       borderRadius: '2.857vh',
+      overflow: 'hidden',
       fontFamily: 'Bangers',
       '& > div': {
         height: '11.428vh',
@@ -64,6 +71,9 @@ const useStyles = createUseStyles(theme => ({
         fontSize: '7vh',
         justifyContent: 'flex-start'
       },
+      '& > span': {
+        marginLeft: '2vh'
+      },
       [theme.breakpoints.orientation.portrait]: {
         border: `0.2vw solid ${theme.color.secondary.light}`,
         borderRadius: '2.857vw',
@@ -71,7 +81,10 @@ const useStyles = createUseStyles(theme => ({
           height: '11.428vw',
           borderBottom: `0.2vw solid ${theme.color.secondary.light}`,
           fontSize: '7vw'
-        }
+        },
+        '& span': {
+          marginLeft: '2vw'
+        },
       }
     },
     icon: {
@@ -127,7 +140,7 @@ const Select = props => {
     <div className={`${classes.wrapper} ${props.className}`}>
       <div className={classes.input}>
         { selected.icon ? <div className={classes.optionIcon} style={{ backgroundImage: `url(/images/${selected.icon})`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> : null }
-        <span style={ selected.icon ? { marginLeft: 6 } : null }>{ selected.label }</span>
+        <span>{ selected.label }</span>
       </div>
       <div onClick={() => setVisible(true)} className={classes.dropdown}>
         <div className={classes.icon} style={{ background: 'url(/images/arrow-down.svg) no-repeat', backgroundSize: '100% 100%'}}></div>
@@ -136,7 +149,7 @@ const Select = props => {
         { props.options.map(option => (
           <div className={selected.value === option.value ? classes.selected : null} key={ option.value } onClick={() => select(option)}>
             { option.icon ? <div className={classes.optionIcon} style={{ backgroundImage: `url(/images/${option.icon})`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> : null }
-            <span style={ option.icon ? { marginLeft: 12 } : null }>{ option.label }</span>
+            <span>{ option.label }</span>
           </div>)
         )}
       </div>

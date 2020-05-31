@@ -131,7 +131,7 @@ const Tutorial = props => {
     }
 
 
-    let backIcon = <Button color="accent" style={{ marginRight: 20 }} icon="backward" onClick={back} />
+    let backIcon = <Button color="accent" style={{ marginRight: 20 }} icon="backward-accent" onClick={back} />
     let nextIcon = <Button icon="forward" style={{ marginLeft: 20 }} onClick={next} />
     if (page === 0) {
         backIcon = null;
