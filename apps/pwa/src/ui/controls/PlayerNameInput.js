@@ -1,56 +1,134 @@
 import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { ServerRequest } from '../../helper/settings';
 import { translate as t, keys as tr } from '../misc';
 import Axios from 'axios';
-import { makeStyles } from '@material-ui/core/styles';
-import withWidth, { isWidthUp } from '@material-ui/core/withWidth';
-import { Send, HourglassFull } from '@material-ui/icons';
-import { Fab, TextField, CircularProgress } from '@material-ui/core';
+import { createUseStyles } from 'react-jss';
 import logger from '../../helper/logger';
 import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
+import Progress from './Progress';
 
-const useStyles = makeStyles(theme => ({
-  root: {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  wrapper: {
-    margin: theme.spacing(1),
-    position: 'relative',
-  },
-  buttonSuccess: {
-    backgroundColor: '#457B82',
-    '&:hover': {
-      backgroundColor: '#324D5C',
+const useStyles = createUseStyles(theme => ({
+    root: {
+        display: 'flex',
+        alignItems: 'center',
+        position: 'relative'
     },
-  },
-  fabProgress: {
-    color: '#324D5C',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    zIndex: 1,
-  },
-  playerNameInput: {
-    width: '100%'
-  }
+    input: {
+        width: 'calc(100% - 10vh)',
+        outline: 'none',
+        borderRadius: '2.857vh 0 0 2.857vh',
+        color: theme.color.secondary.dark,
+        fontFamily: 'Bangers',
+        display: 'flex',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        fontSize: '7vh',
+        height: '11.428vh',
+        background: 'white',
+        border: `0.2vh solid ${theme.color.secondary.light}`,
+        [theme.breakpoints.orientation.portrait]: {
+            width: 'calc(100% - 10vw)',
+            borderRadius: '2.857vw 0 0 2.857vw',
+            border: `0.2vw solid ${theme.color.secondary.light}`,
+            height: '11.428vw',
+            fontSize: '7vw',
+        }
+    },
+    error: {
+        border: `0.2vh solid ${theme.color.accent.light} !important`,
+        color: `${theme.color.accent.dark} !important`,
+        [theme.breakpoints.orientation.portrait]: {
+            border: `0.2vw solid ${theme.color.accent.light} !important`
+        }
+    },
+    errorLabel: {
+        color: theme.color.accent.light,
+        fontFamily: 'Bangers',
+        '-webkit-text-stroke': `1px ${theme.color.accent.dark}`,
+        '-webkit-font-smoothing': 'antialiased'
+    },
+    icon: {
+        padding: '4vh 8vh',
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '4vw 8vw'
+        }
+    },
+    actionButton: {
+        border: `1vh solid ${theme.color.secondary.light}`,
+        borderRadius: '2.857vh',
+        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+        height: '10vh',
+        width: '10vh',
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        [theme.breakpoints.orientation.portrait]: {
+            border: `1vw solid ${theme.color.secondary.light}`,
+            borderRadius: '2.857vw',
+            height: '10vw',
+            width: '10vw'
+        }
+    },
+    buttonError: {
+        border: `3px solid ${theme.color.accent.light}`,
+        background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 70%)`,
+        '& > div': {
+            filter: 'hue-rotate(120deg)'
+        }
+    },
+    actionIcon: {
+        width: '60%',
+        height: '60%'
+    },
+    disabled: {
+        background: 'linear-gradient(0deg, #666 0%, #aaa 70%)',
+        border: '3px solid #aaa',
+        '& > div': {
+            filter: 'grayscale(1)'
+        }
+    },
+    small: {
+        fontSize: '6vh',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '6vw'
+        }
+    },
+    normal: {  
+        fontSize: '8vh',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '8vw'
+        }
+    }
 }));
 
-export default withWidth()(props => {
+const PlayerNameInput = props => {
     const classes = useStyles();
-    const { setPlayerName, startValue, width, current } = props;
+    const { setPlayerName, startValue, current } = props;
     const [loading, setLoading] = useState(false);
-    const [playerNameValid, setPlayerNameValid] = useState(false);
-    const [playerNameAvailable, setPlayerNameAvailable] = useState(false);
+    const [playerNameValid, setPlayerNameValid] = useState(true);
+    const [playerNameAvailable, setPlayerNameAvailable] = useState(true);
     const [playerName, updatePlayerName] = useState(typeof startValue === 'undefined' ? 'Chocnonymous' : startValue);
     const [unchanged, setUnchanged] = useState(current === startValue);
     const [badInternetConnection, setBadInternetConnection] = useState(false);
-
-    const buttonClassname = playerNameAvailable ? classes.buttonSuccess : null;
+    const [editMode, setEditMode] = useState(props.editMode);
 
     const source = useRef(Axios.CancelToken.source());
     const [requestRunning, setRequestRunning] = useState(false);
     const [requestTimeout, setRequestTimeout] = useState(null);
+
+    useEffect(() => {
+        setEditMode(props.editMode);
+        updatePlayerName(typeof startValue === 'undefined' ? 'Chocnonymous' : startValue);
+        if (!props.editMode) {
+            setPlayerNameAvailable(true);
+            setPlayerNameValid(true);
+            setLoading(false);
+        }
+    }, [props.editMode, startValue]);
 
     useEffect(() => {
         setUnchanged(playerName === current)
@@ -92,12 +170,6 @@ export default withWidth()(props => {
         return regex.test(name) && name.toUpperCase() !== 'CHOCNONYMOUS';
     }
 
-    const handleButtonClick = () => {
-        if (playerNameAvailable && playerNameValid && !loading) {
-            setPlayerName(playerName);
-        }
-    };
-
     const getHelperText = () => {
         if (loading || unchanged) {
             return '';
@@ -112,34 +184,59 @@ export default withWidth()(props => {
         }
     }
 
+    const hasError = editMode && (!playerNameAvailable || !playerNameValid || badInternetConnection) && !unchanged;
+    const actionIcon = editMode ? 'send' : 'pen';
+    const handleAction = () => {
+        if (editMode) {
+            if (playerNameAvailable && playerNameValid && !loading) {
+                setPlayerName(playerName);
+            }
+        } else {
+            if (typeof props.onEditMode === 'function') {
+                props.onEditMode();
+            }
+            setEditMode(true);
+        }
+    }
+
+    const buttonError = editMode && ( !playerNameAvailable || !playerNameValid );
+    const buttonDisabled = !buttonError && editMode && ( loading || unchanged || badInternetConnection );
+
     return (
-        <div className={classes.root}>
-            <TextField
-                label="Name"
-                className={classes.playerNameInput}
-                error={(!playerNameAvailable || !playerNameValid || badInternetConnection) && !unchanged}
-                value={playerName}
-                helperText={getHelperText()}
-                inputProps={{ spellCheck: 'false', autoFocus: true, style: { color: '#324D5C'} }}
-                InputLabelProps={{ style: {color: 'rgb(48, 86, 91)'}}}
-                onChange={event => {
-                    updatePlayerName(event.target.value);
-                }}
-                margin="normal"
-            />    
-            <div className={classes.wrapper}>
-                <Fab
-                  disabled={loading || !playerNameAvailable || !playerNameValid || unchanged || badInternetConnection}
-                  aria-label="send"
-                  color="primary"
-                  size="small"
-                  className={buttonClassname}
-                  onClick={handleButtonClick}
-                >
-                  {loading ? <HourglassFull /> :  <Send />}
-                </Fab>
-                {loading && <CircularProgress size={isWidthUp('md', width) ? 48 : 40} className={classes.fabProgress} />}
+        <div className={props.className}>
+            {hasError ? <span className={classes.errorLabel}>{ getHelperText() }</span> : null}
+            <div className={classes.root}>
+                { editMode ? <input
+                    noValidate
+                    style={{ paddingLeft: 5 }}
+                    className={`${classes.input} ${hasError ? classes.error : ''}`}
+                    value={playerName}
+                    spellCheck={false} 
+                    autoFocus={true}
+                    onChange={event => {
+                        updatePlayerName(event.target.value);
+                    }}
+                /> : <div className={classes.input}>
+                    <div className={`${classes.icon} ${classes.fixed}`} style={{ backgroundImage: 'url(/images/user.svg)', backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> 
+                    <div className={playerName.length > 7 ? classes.small : classes.normal}>{ playerName }</div>
+                </div> }
+                <div onClick={handleAction} className={`${classes.actionButton} ${buttonDisabled ? classes.disabled : null} ${buttonError ? classes.buttonError : null}`}>
+                { loading ? <Progress infiniteAnimation={true} size={24} /> : <div className={classes.actionIcon} style={{ backgroundImage: `url(/images/${actionIcon}.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> }
+                </div>
             </div>
         </div>
     );
-});
+}
+
+PlayerNameInput.defaultProps = {
+    editMode: true,
+    className: ''
+}
+
+PlayerNameInput.propTypes = {
+    editMode: PropTypes.bool,
+    className: PropTypes.string,
+    onEditMode: PropTypes.func
+}
+
+export default PlayerNameInput;

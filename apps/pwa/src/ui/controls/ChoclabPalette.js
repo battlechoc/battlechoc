@@ -1,130 +1,145 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { EntityType } from 'battlechoc-shared-functions';
-import { Jukebox } from '../misc';
-import { makeStyles } from '@material-ui/core/styles';
+import { createUseStyles, useTheme } from 'react-jss';
+import Button from './Button';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = createUseStyles(theme => ({
     palette: {
-        width: '50vw',
-        position: 'absolute',
-        bottom: 0,
+        width: '100vw',
         display: 'flex',
-        flexWrap: 'wrap',
-        '@media screen and (max-width: 600px) and (orientation: portrait)': {
-            flexDirection: 'column',
-            bottom: 5,
-            width: 'unset',
-            maxWidth: 'unset',
-            flexWrap: 'unset'
+        alignItems: 'center',
+        justifyContent: 'center',
+        '& > *': {
+            margin: '0 6px'
         }
     },
-    preview: {
-        width: 'calc(10vw - 5px) !important',
-        height: 'calc(10vw - 5px) !important',
-        marginTop: 2,
-        backgroundSize: 'calc(4 * (10vw - 5px)) calc(3 * (10vw - 5px)) !important',
-        '@media screen and (min-width: 800px)': { 
-            width: '75px !important',
-            height: '75px !important',
-            backgroundSize: '300px 225px !important'
+    container: {
+        borderRadius: '50%',
+        border: `0.5vh solid ${theme.color.secondary.dark}`,
+        background: 'linear-gradient(0deg, #3DA2CE 0%, #9DD5E9 80%)',
+        '& > div': {
+            width: '100%',
+            height: '100%'
         },
-        '@media screen and (max-width: 600px) and (orientation: portrait)': {
-            width: 'calc(7.3vh - 5px) !important',
-            height: 'calc(7.3vh - 5px) !important',
-            backgroundSize: 'calc(4 * (7.3vh - 5px)) calc(3 * (7.3vh - 5px)) !important'
+    },
+    normal: {
+        [theme.breakpoints.orientation.landscape]: {
+            width: '12vh',
+            height: '12vh',
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            width: '10vh',
+            height: '10vh',
+            maxWidth: '15vw',
+            maxHeight: '15vw'
         }
     },
-    donutFactoryPreview: {
-        width: 'calc(10vw - 5px) !important',
-        height: 'calc(10vw - 5px) !important',
-        marginTop: 2,
-        backgroundSize: 'calc(6 * (10vw - 5px)) calc(10vw - 5px) !important',
-        '@media screen and (min-width: 800px)': { 
-            width: '75px !important',
-            height: '75px !important',
-            backgroundSize: '450px 75px !important'
+    huge: {
+        [theme.breakpoints.orientation.landscape]: {
+            width: '16vh',
+            height: '16vh',
         },
-        '@media screen and (max-width: 600px) and (orientation: portrait)': {
-            width: 'calc(7.3vh - 5px) !important',
-            height: 'calc(7.3vh - 5px) !important',
-            backgroundSize: 'calc(6 * (7.3vh - 5px)) calc(7.3vh - 5px) !important'
+        [theme.breakpoints.orientation.portrait]: {
+            width: '12vh',
+            height: '12vh',
+            maxWidth: '20vw',
+            maxHeight: '20vw'
         }
     }
 }));
 
-
 const ChoclabPalette = props => {
     const classes = useStyles();
-    const [selectedEntity, setSelectedEntity] = useState(EntityType.FACTORY);
+    const theme = useTheme();
+    const [selectedEntity, setSelectedEntity] = useState(0);
  
-    let buildingsForSeclection = [{
+    const buildingsForSeclection = useMemo(() => [{
         type: EntityType.FACTORY,
-        className: 'factory',
-        alt: 'factory preview',
+        icon: 'factory'
     }, {
         type: EntityType.CACAOTREE,
-        className: 'cacaotree',
-        alt: 'cacao tree preview',
+        icon: 'cacao-tree',
     }, {
         type: EntityType.RUM_TRUFFLE_CANNON,
-        className: 'cannon',
-        alt: 'cannon preview',
+        icon: 'truffle-cannon',
     }, {
         type: EntityType.FACTORY_EXTENSION,
-        className: 'factoryExtension',
-        alt: 'factory extension preview',
-    }, {
-        type: EntityType.CREAM,
-        className: 'cream',
-        alt: 'cream preview',
+        icon: 'factory-extension',
     }, {
         type: EntityType.SPYING_EASTER_BUNNY,
-        className: 'bunny',
-        alt: 'easter factory',
+        icon: 'easter-bunny',
     }, {
         type: EntityType.XMAS_FACTORY,
-        className: 'xmasFactory',
-        alt: 'xmas factory',
+        icon: 'xmas-factory',
     }, {
         type: EntityType.CHOCOLATE_FOUNTAIN,
-        className: 'fountain',
-        alt: 'chocolate fountain',
+        icon: 'fountain',
     }, {
         type: EntityType.FRUIT_CANNON,
-        className: 'fruitCannon',
-        alt: 'fruit cannon',
+        icon: 'fruit-cannon',
     }, {
         type: EntityType.HOT_CHOCOLATE_BALLISTA,
-        className: 'ballista',
-        alt: 'hot chocolate ballista',
+        icon: 'ballista',
     },{
         type: EntityType.DONUT_FACTORY,
-        className: 'donutFactory',
-        alt: 'donut factory'
-    }];
+        icon: 'donut-factory',
+    }], []);
 
-    const selectEntity = buildingType => {
-        setSelectedEntity(buildingType);
-        props.selectEntity(buildingType);      
+    const checkEntityBounds = entity => {
+        if (entity < 0) {
+            return buildingsForSeclection.length - 1;
+        } else if (entity >= buildingsForSeclection.length) {
+            return 0;
+        }
+        return entity;
     }
 
-    const isDonutFactory = building => building.type === EntityType.DONUT_FACTORY;
+    const selectEntity = entity => {
+        entity = checkEntityBounds(entity);
+        setSelectedEntity(entity);
+        props.selectEntity(buildingsForSeclection[entity].type);      
+    }
+
+    const previous = buildingsForSeclection[checkEntityBounds(selectedEntity - 1)];
+    const selected = buildingsForSeclection[selectedEntity];
+    const next = buildingsForSeclection[checkEntityBounds(selectedEntity + 1)];
 
     return (
-        <div className={classes.palette}>
-            {(() => buildingsForSeclection.map((building, i) => {
-                    let className = selectedEntity === building.type ? 'selected previewContainer' : 'canbuild previewContainer';
-                    return <div className={className} key={i}>
-                        <div className={`${building.className} enabled preview ${isDonutFactory(building) ? classes.donutFactoryPreview : classes.preview}`} 
-                             style={{ backgroundImage: isDonutFactory(building) ? 'url(/images/donut_icon_palette.png)' : 'url(/images/toolbar_icon_palette.png)' }} onClick={() => {
-                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                selectEntity(building.type);
-                        }} />
-                    </div>
-                })
-            )()}
+        <div style={props.style} className={`${classes.palette} ${props.className}`}>
+            <Button
+              icon="backward"
+              disabled={false}
+              onClick={() => selectEntity(selectedEntity - 1)}/>
+
+            <div onClick={() => selectEntity(selectedEntity - 1)} className={`${classes.normal} ${classes.container}`}>
+                <div style={{ backgroundImage: `url(/images/${ previous.icon }-icon.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%' }}/>
+            </div>
+
+            <div className={`${classes.huge} ${classes.container}`} style={{ border: `0.5vh solid ${theme.color.gold.light}` }}>
+                <div style={{ backgroundImage: `url(/images/${ selected.icon }-icon.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%' }}/>
+            </div>
+
+            <div onClick={() => selectEntity(selectedEntity + 1)} className={`${classes.normal} ${classes.container}`}>
+                <div style={{ backgroundImage: `url(/images/${ next.icon }-icon.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%' }}/>
+            </div>
+
+            <Button
+              icon="forward"
+              disabled={false}
+              onClick={() => selectEntity(selectedEntity + 1)}/>
         </div>
     );
+}
+
+ChoclabPalette.defaultProps = {
+    className: '',
+    style: {}
+}
+
+ChoclabPalette.propTypes = { 
+    className: PropTypes.string,
+    style: PropTypes.object
 }
 
 export default ChoclabPalette;

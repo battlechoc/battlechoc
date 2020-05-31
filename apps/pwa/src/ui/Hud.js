@@ -4,27 +4,165 @@ import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { GameStateTypes } from 'battlechoc-shared-functions';
 import { showQuickMessage, showNotification, hideNotification } from './UiActions';
-import { Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, SocialIcons, GameEndOverview } from './controls';
-import { Jukebox, translate as t, keys as tr } from './misc';
-import { Notification, Info, Tooltip, Settings, AccountOverview } from './dialogs';
-import BattlechocDialog from './dialogs/BattlechocDialog';
-import Fab from '@material-ui/core/Fab';
-import CircularProgress from '@material-ui/core/CircularProgress';
-import { KeyboardArrowLeft as ArrowBackIcon } from '@material-ui/icons';
+import { translate as t, keys as tr } from './misc';
+import { Info, Tooltip, Settings, AccountOverview, Dialog, Highscore } from './dialogs';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
 import { multiplayer } from '../Multiplayer';
 import { ServerRequest } from '../helper/settings';
 import logger from '../helper/logger';
 import firebase from '@firebase/app';
-import { OptimizedImage } from '../helper/compatibility';
+import { Button, Fab, Progress, Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, GameEndOverview } from './controls';
+import { createUseStyles } from 'react-jss'
+
+const useStyles = createUseStyles(theme => ({
+        actionbar: {
+            position: 'absolute',
+            top: 5,
+            left: 5,
+            zIndex: 5
+        },
+        logo: {
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            '& > :first-child': {
+                position: 'absolute',
+                background: 'url(/images/logo.svg) no-repeat',
+                zIndex: 1,
+                [theme.breakpoints.orientation.landscape]: {
+                    top: '5vh',
+                    width: '50vh',
+                    height: '50vh',
+                },
+                [theme.breakpoints.orientation.portrait]: {
+                    top: '12vh',
+                    width: '40vh',
+                    height: '40vh',
+                }
+            },
+            '& > :last-child': {
+                position: 'absolute',
+                background: 'url(/images/stripes.svg) no-repeat',
+                backgroundSize: '100%',
+                zIndex: 0,
+                animation: 'pulse 20s linear 0s infinite',
+                [theme.breakpoints.orientation.landscape]: {
+                    top: '-160vh',
+                    height: '350vh',
+                    width: '350vh',
+                    marginLeft: '-12vh'
+                },
+                [theme.breakpoints.orientation.portrait]: {
+                    top: '-85vh',
+                    height: '200vh',
+                    width: '200vh',
+                    marginLeft: '-10vh'
+                }
+            },        
+        },
+        menu: {
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'absolute',
+            zIndex: 4,
+            '& > div': {
+                marginBottom: 6
+            },
+            [theme.breakpoints.orientation.portrait]: {
+                top: '48%'
+            },
+            [theme.breakpoints.orientation.landscape]: {
+                top: '55%',
+                '@media screen and (min-height: 340px)': {
+                    top: '48%'     
+                }
+            }
+        },
+        coins: {
+            position: 'absolute',
+            top: 5,
+            right: 5,
+            display: 'flex',
+            alignItems: 'center',
+            zIndex: 1,
+            '& span': {
+                color: '#fff',
+                '-webkit-font-smoothing': 'antialiased',
+                fontFamily: 'Bangers',
+                marginRight: '1.5vw',
+                fontSize: 'calc(3.5vh + 3.5vw)',
+                WebkitTextStroke: 'calc(0.08vh + 0.08vw) #3C1C0C'
+            },
+            '& > div': {
+                background: 'url(/images/coins.svg) no-repeat',
+                padding: 'calc(2vh + 2vw) calc(3vh + 3vw)'
+            }
+        },
+        decoration: {
+            position: 'fixed',
+            background: 'url(/images/decoration.svg) no-repeat',
+            zIndex: 3,
+            [theme.breakpoints.orientation.portrait]: {
+                bottom: '-20vh',
+                left: '-15vh',
+                width: '45vh',
+                height: '45vh',
+            },
+            [theme.breakpoints.orientation.landscape]: {
+                bottom: '-35vh',
+                left: '-25vh',
+                width: '70vh',
+                height: '70vh',
+            }
+        },
+        resumeGameDialog: {
+            color: 'white',
+            fontSize: '5vw',
+            textAlign: 'center',
+            [theme.breakpoints.orientation.landscape]: {
+                fontSize: '3.4vw'
+            }
+        },
+        actions: {
+            display: 'flex',
+            justifyContent: 'space-evenly',
+            [theme.breakpoints.orientation.portrait]: {
+                justifyContent: 'unset',
+                flexDirection: 'column',
+                '& > div:last-child': {
+                    marginTop: '3vh'
+                }
+            }
+        },
+        notification: {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end'
+        },
+        titleScreen: {
+            position: 'relative',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            zIndex: 2,
+            height: '100vh'
+        }
+    })
+);
 
 const Hud = props => {
-    const { resumeGamePossible, enterMultiplayerGame, sessionId, showQuickMessage, challengedPlayer, assetsReady, overviewVisible, selectedAttack, tappedBuilding, game, state, openInfo, prepareNewGameCallback, className, surrender, startTutorial, playerInfos, endGame, notification, hideNotification } = props;
+    const classes = useStyles(props);
+    const { resumeGamePossible, enterMultiplayerGame, showQuickMessage, challengedPlayer, assetsReady, overviewVisible, selectedAttack, tappedBuilding, game, state, openInfo, prepareNewGameCallback, className, surrender, startTutorial, playerInfos, endGame, notification, hideNotification, injectedMultiplayerSessionId } = props;
 
     const [open, setOpen] = useState(false);
     const [openSettings, setOpenSettings] = useState(false);
     const [showAccountOverview, setShowAccountOverview] = useState(false);
+    const [dialogStyle, setDialogStyle] = useState('default');
     const [showMultiplayerScreen, setShowMultiplayerScreen] = useState(false);
     const [waitingRoom, setWaitingRoom] = useState(false);
     const [waitingRoomText, setWaitingRoomText] = useState(t(tr.TRY_TO_JOIN_GAME));
@@ -36,8 +174,8 @@ const Hud = props => {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    const openAccountOverview = account => {
-        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+    const openAccountOverview = (account, style='default') => {
+        setDialogStyle(style);
         setShowAccountOverview(true);
         setPlayerAccount(account);
     }
@@ -73,7 +211,7 @@ const Hud = props => {
                 } finally {
                     setWaitingRoom(false);
                 }
-            } else if (typeof sessionId !== 'undefined') {
+            } else if (typeof injectedMultiplayerSessionId !== 'undefined') {
                 setWaitingRoom(true);
                 setWaitingRoomText(t(tr.TRY_TO_JOIN_GAME))
 
@@ -84,14 +222,14 @@ const Hud = props => {
                         if (retry) {
                             await sleep(250);
                         }
-                        sessions = await multiplayer.getMultiplayerSessions(null, sessionId);
+                        sessions = await multiplayer.getMultiplayerSessions(null, injectedMultiplayerSessionId);
                         retry = true;
                     }
 
                     if (sessions.length > 0) {
                         joinGame(sessions[0].id);
                     } else {
-                        logger.warn(`${sessionId} is not a session of this player`);
+                        logger.warn(`${injectedMultiplayerSessionId} is not a session of this player`);
                         showQuickMessage({ text: t(tr.WARNING_GAME_NOT_JOINABLE_VIA_URL) });
                     }
                 } catch (error) {
@@ -103,7 +241,7 @@ const Hud = props => {
             }
         }
         checkForWaitingRoom();
-    }, [challengedPlayer, joinGame, sessionId, showQuickMessage]);
+    }, [challengedPlayer, joinGame, injectedMultiplayerSessionId, showQuickMessage]);
 
     const estimateStage = () => {
         if (typeof state === 'undefined' && !showMultiplayerScreen && !choclabScreen && !challengedProfile && !waitingRoom) {
@@ -139,11 +277,11 @@ const Hud = props => {
     }
 
     const skipTutorial = async () => {
-        multiplayer.tutorialSkipped();
+        await multiplayer.tutorialSkipped();
     }
 
-    const notifyUnlock = async (missingScore, feature) => {
-        props.showNotification({ title: feature + ' not yet unlocked', message: 'You need to earn ' + missingScore + ' more coins to unlock the ' + feature + ' feature.' });
+    const notifyUnlock = (missingScore, feature) => {
+        props.showNotification({ title: t(tr.COINS_FOR_NEXT_FEATURE_TITLE, feature), message: t(tr.COINS_FOR_NEXT_FEATURE_BODY, feature, missingScore) });
     }
 
     const stage = estimateStage();
@@ -152,49 +290,40 @@ const Hud = props => {
             <Settings startTutorial={kickOffTutorial} surrender={surrender} open={openSettings} close={() => setOpenSettings(false)} />
             <AccountOverview
                 challengePlayer={async username => {
-                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     await multiplayer.challengePlayer(username);
                     multiplayer.getMultiplayerSessions();
                 }}
                 addFriend={async friend => {
-                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     await multiplayer.addFriend(friend);
                 }}
                 removeFriend={async friend => {
-                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     await multiplayer.removeFriend(friend);
                 }}
+                dialogStyle={dialogStyle}
                 joinGame={joinGame} playerAccount={playerAccount} open={showAccountOverview} close={() => setShowAccountOverview(false)} />
             {(() => {
                 if (stage === 'CHOCLAB_SCREEN') {
-                    return <div className="actionbar">
+                    return <div className={classes.actionbar}>
                         <Fab
-                            size="small"
-                            color="primary"
-                            className="icon"
+                            color="secondary"
+                            icon="back"
                             onClick={() => setChoclabScreen(false)}>
-                            <ArrowBackIcon />
                         </Fab>
                     </div>
                 } else if (stage === 'MULTIPLAYER_SCREEN') {
                     return null;
                 } else if (stage === 'CHALLENGE_SCREEN') {
-                    return <div className="actionbar">
+                    return <div className={classes.actionbar}>
                         <Fab
-                            size="small"
-                            color="primary"
-                            className="icon"
+                            color="secondary"
+                            icon="back"
                             onClick={() => setChallengedProfile(undefined)}>
-                            <ArrowBackIcon />
                         </Fab>
                     </div>
                 } else if (stage === 'WAITING_ROOM') {
                     return null;
                 } else {
-                    return <Actionbar endGame={endGame} showSettings={() => {
-                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                        setOpenSettings(true);
-                    }} showSignInOrUp={openAccountOverview} />
+                    return <Actionbar endGame={endGame} showSettings={() => setOpenSettings(true)} showSignInOrUp={openAccountOverview} />
                 }
             })()}
 
@@ -204,59 +333,75 @@ const Hud = props => {
                     const playername = playerInfos.stats.username;
                     const score = playerInfos.stats.score;
                     const firstPlayScreen = playerInfos.stats.tutorialFinished === false && playerInfos.stats.tutorialSkipped === false;
-                    const hideOptions = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
+                    const locked = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
 
                     if (firstPlayScreen) {
-                        controls.push(<div key="0" className="menuButton" onClick={() => kickOffTutorial()}>{t(tr.START_TUTORIAL)}</div>);
-                        controls.push(<div key="1" className="menuButton" onClick={() => skipTutorial()}>{t(tr.SKIP_TUTORIAL)}</div>);
-                        controls.push(<div key="2" className="menuButton" onClick={() => setShowAccountOverview(true)}>{t(tr.SIGNINORUP)}</div>);
+                        controls.push(<Button className={classes.menuButton} key="0" size="huge" onClick={() => kickOffTutorial()}>{t(tr.START_TUTORIAL)}</Button>);
+                        controls.push(<Button className={classes.menuButton} key="1" size="huge" color="accent" onClick={() => skipTutorial()}>{t(tr.SKIP_TUTORIAL)}</Button>);
+                        controls.push(<Button className={classes.menuButton} key="2" size="huge" color="secondary" onClick={() => setShowAccountOverview(true)}>{t(tr.SIGNINORUP)}</Button>);
                     } else {
-                        controls.push(<div key="0" className="menuButton" onClick={() => resumeOrStartGame()}>{t(tr.NEW_GAME)}</div>);
-
-                        if (!hideOptions) {
-                            controls.push(<div key="1" className="menuButton" onClick={() => setShowMultiplayerScreen(true)}>{t(tr.MAIN_MENU_MULTIPLAYER)}</div>);
-                            controls.push(<div key="2" className="menuButton" onClick={() => setChoclabScreen(true)}>{t(tr.MAIN_MENU_CHOCLAB)}</div>);
-                        } else {
-                            controls.push(<div key="1" className="menuButton locked" onClick={() => notifyUnlock(1000 - score, 'Multiplayer')}>{t(tr.MAIN_MENU_MULTIPLAYER)}</div>);
-                            controls.push(<div key="2" className="menuButton locked" onClick={() => notifyUnlock(1000 - score, 'Choclab')}>{t(tr.MAIN_MENU_CHOCLAB)}</div>);
-                        }
+                        controls.push(<Button className={classes.menuButton} key="0" size="huge" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t(tr.NEW_GAME) : t(tr.MAIN_MENU_SINGLEPLAYER)}</Button>);
+                        controls.push(<Button className={classes.menuButton} key="1" size="huge" locked={locked} color="secondary" onClick={() => {
+                            if (locked) {
+                                notifyUnlock(1000 - score, 'Multiplayer');
+                            } else {
+                                setShowMultiplayerScreen(true);
+                            }
+                        }}>{t(tr.MAIN_MENU_MULTIPLAYER)}</Button>);
+                        
+                        controls.push(<Button className={classes.menuButton} key="2" size="huge" locked={locked} color="accent" onClick={() => { 
+                            if (locked) {
+                                notifyUnlock(1000 - score, 'Choclab');
+                            } else {
+                                setChoclabScreen(true);
+                            }
+                        }}>{t(tr.MAIN_MENU_CHOCLAB)}</Button>);
                     }
 
                     return (
-                        <div id="mainMenu">
-                            {typeof playerInfos.stats.coins !== 'undefined' ? <div id="chocolate-coins">
-                                <span>{playerInfos.stats.coins}</span>
-                                <OptimizedImage src="/images/coins.png" alt="choco coins" />
-                            </div> : null}
-                            <SocialIcons />
-                            <div className="logo">
-                                <OptimizedImage src="/images/logo.png" alt="battlechoc logo" />
-                            </div>
-                            <div className="titleMenu">
-                                {assetsReady ? controls : null}
-                                <BattlechocDialog
-                                    open={open}
-                                    close={() => setOpen(false)}
-                                    title={t(tr.HUD_RESUME_GAME)}>
-                                    <div className="resumeGameDialog">
-                                        <p>{t(tr.HUD_ASK_NEW_OR_RESUME)}</p>
-                                        <div className="actions">
-                                            <div className="menuButton" onClick={() => {
-                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                setOpen(false);
-                                                prepareNewGameCallback(true);
-                                            }}>{t(tr.HUD_RESUME_GAME)}</div>
-                                            <div className="menuButton" onClick={() => {
-                                                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                                setOpen(false);
-                                                prepareNewGameCallback(false);
-                                            }}>{t(tr.HUD_NEW_GAME)}</div>
-                                        </div>
+                        <>
+                            <Dialog
+                                open={open}
+                                close={() => setOpen(false)}
+                                title={t(tr.HUD_RESUME_GAME)}>
+                                <div className={classes.resumeGameDialog}>
+                                    <p>{t(tr.HUD_ASK_NEW_OR_RESUME)}</p>
+                                    <div className={classes.actions}>
+                                        <Button onClick={() => {
+                                            setOpen(false);
+                                            prepareNewGameCallback(true);
+                                        }}>{t(tr.HUD_RESUME_GAME)}</Button>
+                                        <Button color="accent" onClick={() => {
+                                            setOpen(false);
+                                            prepareNewGameCallback(false);
+                                        }}>{t(tr.HUD_NEW_GAME)}</Button>
                                     </div>
-                                </BattlechocDialog>
+                                </div>
+                            </Dialog>
+                            <div className={classes.titleScreen}>
+                                {typeof playerInfos.stats.coins !== 'undefined' ? <div className={classes.coins}>
+                                    <span>{playerInfos.stats.coins}</span>
+                                    <div />
+                                </div> : null}
+                                <div className={classes.logo}><div /><div /></div>
+                                <div className={classes.decoration} />
+                                <div className={classes.menu}>
+                                    {assetsReady ? controls : null}
+                                </div>
                             </div>
-                            {notification.open ? <Notification message={notification.message} title={notification.title} close={() => hideNotification()} /> : <Info openInfo={openInfo} />}
-                        </div>
+                            <Highscore playername={playername} showPlayerProfile={session => openAccountOverview(session.opponent, 'stacked')} showQuickMessage={showQuickMessage} />
+                            <Dialog
+                                open={notification.open}
+                                mode="info"
+                                closable={false}
+                                title={notification.title}>
+                                <div className={classes.notification}>
+                                    <p>{notification.message}</p>
+                                    <Button size="small" style={{ marginRight: 32 }} onClick={() => hideNotification()}>Ok</Button>
+                                </div>
+                            </Dialog>
+                            <Info openInfo={openInfo} />
+                        </>
                     );
                 } else if (stage === 'CHOOSE_MENU') {
                     return (
@@ -272,11 +417,14 @@ const Hud = props => {
                         </div>
                     );
                 } else if (stage === 'MULTIPLAYER_SCREEN') {
-                    return <MultiplayerScreen closeMultiplayerScreen={() => setShowMultiplayerScreen(false)} openAccountOverview={openAccountOverview} enterMultiplayerGame={joinGame} />
+                    return <>
+                        <div className={classes.decoration} />
+                        <MultiplayerScreen closeMultiplayerScreen={() => setShowMultiplayerScreen(false)} openAccountOverview={openAccountOverview} enterMultiplayerGame={joinGame} />
+                    </>;
                 } else if (stage === 'CHOCLAB_SCREEN') {
                     return <Choclab />
                 } else if (stage === 'WAITING_ROOM') {
-                    return <div className="waiting-room"><p>{waitingRoomText}</p><CircularProgress /></div>
+                    return <div className="waiting-room"><p>{waitingRoomText}</p><Progress infiniteAnimation /></div>
                 } else {
                     let player = game.players[multiplayer.localPlayerIndex];
                     return (
@@ -306,8 +454,7 @@ Hud.propTypes = {
     startTutorial: PropTypes.func.isRequired,
     endGame: PropTypes.func.isRequired,
     challengedPlayer: PropTypes.string,
-    className: PropTypes.string.isRequired,
-    sessionId: PropTypes.string
+    className: PropTypes.string.isRequired
 }
 
 const mapStateToProps = state => ({
@@ -319,7 +466,8 @@ const mapStateToProps = state => ({
     notification: state.ui.notification,
     playerInfos: state.ui.playerInfos,
     tappedBuilding: state.ui.tappedBuilding,
-    selectedAttack: state.ui.selectedAttack
+    selectedAttack: state.ui.selectedAttack,
+    injectedMultiplayerSessionId: state.ui.injectedMultiplayerSessionId
 });
 
 const mapDispatchToProps = {

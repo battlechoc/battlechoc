@@ -1,50 +1,120 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import './Tooltip.css';
 import { GameStateTypes, getEntityDescriptor } from 'battlechoc-shared-functions';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import { withStyles } from '@material-ui/core/styles';
-import ExpansionPanel from '@material-ui/core/ExpansionPanel';
-import MuiExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
-import MuiExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
-import Typography from '@material-ui/core/Typography';
 import { translate as t, keys as tr } from '../misc';
+import { createUseStyles } from 'react-jss';
 
-const ExpansionPanelSummary = withStyles(theme => ({
-    root: {
-        backgroundColor: 'rgba(69, 123, 130, 1)',
-        border: '1px solid rgba(69, 123, 130, 0.2)',
-        color: 'rgba(255, 255, 255, 1)',
-        marginBottom: -1,
-        marginLeft: -1,
-        minHeight: 32,
-        paddingLeft: theme.spacing(2),
-        paddingRight: theme.spacing(2),
-        '&$expanded': {
-            minHeight: 32,
-        },
-    },
-    content: {
-        margin: '8px 0',
-        '&$expanded': {
-            margin: '8px 0',
+const useStyles = createUseStyles(theme => ({
+    tooltip: {
+        top: 0,
+        right: 0,
+        maxWidth: '60vw',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        position: 'absolute',
+        zIndex: 1,
+        marginRight: 5,
+        [theme.breakpoints.orientation.portrait]: {
+            maxWidth: '40vw',      
         }
     },
-    expanded: {},
-}))(props => <MuiExpansionPanelSummary {...props} />);
-
-ExpansionPanelSummary.muiName = 'ExpansionPanelSummary';
-
-const ExpansionPanelDetails = withStyles(theme => ({
-    root: {
-        paddingTop: theme.spacing(1),
-        paddingRight: theme.spacing(2),
-        paddingBottom: 0,
-        paddingLeft: theme.spacing(2)
+    title: {
+        display: 'flex',
+        fontFamily: 'Bangers',
+        justifyContent: 'space-between',
+        fontSize: '6.5vh',
+        '-webkit-text-stroke': `0.25vh ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '6.5vw'       
+        },
+        [theme.breakpoints.orientation.square]: {
+            fontSize: '4.5vw'           
+        }
     },
-}))(MuiExpansionPanelDetails);
+    button: {
+        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+        padding: '1vh 2vh',
+        border: `0.5vh solid ${theme.color.secondary.light}`,
+        marginTop: 6,
+        borderRadius: '3vh',
+        color: 'white',
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '1vw 2vw',
+            border: `0.5vw solid ${theme.color.secondary.light}`,
+            borderRadius: '3vw',       
+        }
+    },
+    expanded: {
+        padding: '1vh',
+        fontSize: '3vh',
+        textShadow: '1px 2px 2px #1B4E69',
+        '& p': {
+            margin: '6px 0'
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '1vw',
+            fontSize: '3vw'       
+        } 
+    },
+    invisible: {
+        display: 'none'
+    },
+    flipped: {
+        transform: 'rotate(180deg)'
+    },
+    dropdown: {
+        width: '7vh',
+        height: '7vh',
+        marginLeft: '2vh',
+        background: `url(/images/dropdown.svg) no-repeat`, 
+        backgroundSize: '100% 100%',
+        [theme.breakpoints.orientation.portrait]: {
+            width: '7vw',
+            height: '7vw',
+            marginLeft: '2vw',  
+        },
+        [theme.breakpoints.orientation.square]: {
+            width: '5vw',
+            height: '5vw',            
+        }
+    },
+    info: {
+        '& > span': {
+            display: 'block',
+            margin: 0,
+            padding: 0,
+        },
+        '& > span:nth-child(2)': {
+            marginTop: '1vh',
+            fontFamily: 'Bangers',
+            fontSize: '3vh',
+            color: theme.color.accent.light
+        },
+        '& > span:nth-child(3)': {
+            fontSize: '3vh',
+            fontFamily: 'Bangers',
+            color: theme.color.primary.light
+        }
+    },
+    animation: {
+        marginTop: '-2%',
+        width: '10vh',
+        height: '10vh',
+        [theme.breakpoints.orientation.portrait]: {
+            width: '10vw',
+            height: '10vw',
+        },
+        [theme.breakpoints.orientation.square]: {
+            width: '8vw',
+            height: '8vw',            
+        }
+    }
+}));
 
 const Tooltip = props => {
+    const classes = useStyles();
     const [expanded, setExpanded] = useState(false);
     let title = null, message = null;
 
@@ -70,7 +140,7 @@ const Tooltip = props => {
                 let building = getEntityDescriptor(props.tappedBuilding, props.level);
                 let { info, costs, advantages } = t(tr.TOOLTIP_BUILDING_INFO, props.tappedBuilding, building);
                 title = t(tr.TOOLTIP_BUILDING_TITLE, props.tappedBuilding);
-                message = <span className="tooltipBuildingInfo">
+                message = <span className={classes.info}>
                     <span>{info}</span>
                     {typeof costs !== 'undefined' ? <span>{costs}</span> : null}
                     {typeof advantages !== 'undefined' ? <span>{advantages}</span> : null}
@@ -89,22 +159,20 @@ const Tooltip = props => {
         }
     }
 
-    let loadingAnimation = !props.playerTurn ? <img className="loadingAnimation" src="/animations/loading.gif" alt="loading" /> : null;
+    const loadingAnimation = !props.playerTurn ? <img className={classes.animation} src="/animations/loading.gif" alt="loading" /> : null;
+    const openTooltip = () => {
+        if (message !== null) {
+            setExpanded(!expanded);
+        }
+    }
+    
     if (title) {
         return (
-            <div id="tooltipContainer">
-                <ExpansionPanel square id="tooltip" expanded={expanded && message !== null} onClick={() => {
-                    if (message !== null) {
-                        setExpanded(!expanded);
-                    }
-                }}>
-                    <ExpansionPanelSummary className="tooltipHeader" expandIcon={message !== null ? <ExpandMoreIcon /> : null}>
-                        <Typography variant="h6" color="textSecondary">{title}</Typography>
-                    </ExpansionPanelSummary>
-                    <ExpansionPanelDetails>
-                        <Typography paragraph={true}>{message}</Typography>
-                    </ExpansionPanelDetails>
-                </ExpansionPanel>
+            <div className={classes.tooltip}>
+                <div className={classes.button} onClick={openTooltip}>
+                    <span className={classes.title}>{title} {message !== null ? <span className={`${expanded && message !== null ? classes.flipped : ''} ${classes.dropdown}`} /> : null}</span>
+                    <div className={(expanded && message !== null ? classes.expanded : classes.invisible)}><p>{message}</p></div>
+                </div>
                 { loadingAnimation }
             </div>
         );

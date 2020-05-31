@@ -7,154 +7,47 @@ import * as serviceWorker from './serviceWorker';
 import { translate as t, keys as tr } from './ui/misc';
 import rootReducer from './RootReducer';
 import { multiplayer } from './Multiplayer';
-import { showQuickMessage } from './ui/UiActions';
+import { showQuickMessage, injectMultiplayerSession } from './ui/UiActions';
 import { gameplayLogger } from './gameplay/GamePlayLogger';
 import actionValidator from './gameplay/ActionValidator';
 import multiplayerActionRelay from './gameplay/MultiplayerActionRelay';
-import { configureStore, getDefaultMiddleware } from 'redux-starter-kit'
-import { createMuiTheme, MuiThemeProvider } from '@material-ui/core/styles';
-import red from '@material-ui/core/colors/red';
-
-const defaultTheme = createMuiTheme({
-    palette: {
-        primary: { main: '#457B82' },
-        secondary: { main: '#324D5C' },
-        text: {
-            primary: 'rgba(0, 0, 0, 0.87)',
-            secondary: 'rgba(255, 255, 255, 0.87)',
-            error: red
-        }
-    },
-    typography: {
-        useNextVariants: true,
-        fontFamily: "'PT Serif', serif"
-    }
-});
-
-const { breakpoints } = defaultTheme
-
-const theme = createMuiTheme({
-    ...defaultTheme,
-    overrides: {
-        MuiTypography: {
-            h6: {
-                [breakpoints.down("sm")]: {
-                    fontSize: '0.8rem'
-                },
-                [breakpoints.up("sm")]: {
-                    fontSize: '1rem'
-                },
-                [breakpoints.up("md")]: {
-                    fontSize: '1.2rem',
-                    margin: 4
-                },
-                [breakpoints.up("lg")]: {
-                    fontSize: '1.4rem',
-                    margin: 4
-                }
-            },
-            paragraph: {
-                marginBottom: 8,
-                fontSize: '0.6rem',
-                [breakpoints.up("sm")]: {
-                    fontSize: '0.7rem'
-                },
-                [breakpoints.up("md")]: {
-                    fontSize: '0.9rem',
-                    marginBottom: 8,
-                    margin: 4
-                },
-                [breakpoints.up("lg")]: {
-                    fontSize: '1.1rem',
-                    marginBottom: 16,
-                    margin: 8
-                }
-            }
-        },
-        MuiTableCell: {
-            head: {
-                color: 'rgba(0,0,0,0.87)'
-            }
-        },
-        MuiFab: {
-            sizeSmall: {
-                width: 36,
-                height: 36,
-                [breakpoints.up("sm")]: {
-                    width: 40,
-                    height: 40
-                },
-                [breakpoints.up("md")]: {
-                    width: 48,
-                    height: 48
-                }
-            }
-        },
-        MuiSvgIcon: {
-            root: {
-                fontSize: 18,
-                [breakpoints.up("sm")]: {
-                    fontSize: 22
-                },
-                [breakpoints.up("md")]: {
-                    width: 28,
-                    height: 28
-                }
-            },
-            fontSizeLarge: {
-                width: 64,
-                height: 64,
-                [breakpoints.up("sm")]: {
-                    width: 102,
-                    height: 102
-                },
-                [breakpoints.up("md")]: {
-                    width: 192,
-                    height: 192
-                },
-                [breakpoints.up("lg")]: {
-                    width: 212,
-                    height: 212
-                }
-            }
-        },
-        MuiDialogContent: {
-            root: {
-                [breakpoints.up('md')]: {
-                    margin: '4px',
-                },
-                color: 'rgba(0,0,0,0.8)'
-            }
-        },
-        MuiButton: {
-            outlined: {
-                color: 'rgb(244, 67, 54)',
-                border: '1px solid rgba(244, 67, 54, 0.23);'
-            }
-        },
-        MuiCheckbox: {
-            root: {
-                color: 'rgba(64, 64, 64, 0.5)'
-            }
-        },
-        MuiDialogContentText: {
-            root: {
-                color: '#457B82'
-            }
-        }
-    }
-});
+import { configureStore, getDefaultMiddleware } from 'redux-starter-kit';
+import { ThemeProvider } from 'react-jss';
 
 const store = configureStore({
     reducer: rootReducer,
     middleware: [...getDefaultMiddleware(), actionValidator, multiplayerActionRelay, gameplayLogger]
 });
 
+const theme = {
+    color: {
+        primary: { light: '#90D01B', dark: '#10A67B' },
+        secondary: { light: '#3190C3', dark: '#1B4E69' },
+        accent: { light: '#FF4E85', dark: '#772549' },
+        gold: { light: '#FAD25A', dark: '#AE8D0B' },
+        facebook: { light: '#6589F4', dark: '#435DAC' },
+        instagram: { light: '#FE5A93', dark: '#803FBB' },
+        brown: { light: '#56321E', dark: '#4D2C1B' },
+        warning: { light: '#FAD25A', dark: '#D28304' }
+    },
+    breakpoints: {
+        desktop: '@media screen and (min-width: 1200px)',
+        laptop: '@media screen and (min-width: 992px)',
+        tablet: '@media screen and (min-width: 768px)',
+        smartphone: '@media screen and (min-width: 576px)',
+        orientation: {
+            portrait: '@media screen and (orientation: portrait)',
+            landscape: '@media screen and (orientation: landscape)',
+            square: '@media screen and (min-aspect-ratio: 3/4) and (max-aspect-ratio: 4/3)'
+        }  
+    }
+}
+
 ReactDOM.render(
     <Provider store={store}>
-        <MuiThemeProvider theme={theme}>
+        <ThemeProvider theme={theme}>
             <App />
-        </MuiThemeProvider>
+        </ThemeProvider>
     </Provider>,
     document.getElementById('root')
 );
@@ -190,5 +83,12 @@ if (typeof window.Android !== 'undefined') {
     window.handleBattlechocPushMessage = (payload) => {
         console.log("handleBattlechocPushMessage called " + JSON.stringify(payload));
         multiplayer.handlePushMessage(payload);
+    }
+
+    window.enterSessionOnStartUp = (sessionId) => {
+        console.log("enterSessionOnStartUp called " + JSON.stringify(sessionId));
+        if (typeof sessionId !== 'undefined') {
+            store.dispatch(injectMultiplayerSession(sessionId));
+        }
     }
 }

@@ -132,7 +132,7 @@ class Multiplayer {
                 await ServerRequest('post', '/user');
                 const mergedStats = await this.mergePlayerStats();
                 if (typeof mergedStats !== 'undefined') {
-                    if (mergedStats.username === 'Chocnonymous' && (mergedStats.tutorialFinished === true || mergedStats.tutorialSkipped === true)) {
+                    if (mergedStats.username === EmptyPlayerStats.username && (mergedStats.tutorialFinished === true || mergedStats.tutorialSkipped === true)) {
                         await this.setRandomPlayerName();
                     }
                 }
@@ -340,7 +340,7 @@ class Multiplayer {
             try {
                 const data = (await ServerRequest('post', '/user/tutorial/skipped')).data;
                 console.log(data);
-                if (data.stats.username === 'Chocnonymous') {
+                if (data.stats.username === EmptyPlayerStats.username) {
                     await this.setRandomPlayerName();
                 }
                 this.callbacks.updatePlayerStats(data.stats);
@@ -404,17 +404,6 @@ class Multiplayer {
                 logger.warn("player notification callback is not a function");
             }
         }).catch(error => logger.info("Error while sign out", error));
-    }
-
-    async createChallengeMeLink() {
-        if (firebase.auth().currentUser) {
-            try {
-                let data = (await ServerRequest('get', '/user/name')).data;
-                return 'https://battlechoc.com/' + data.name;
-            } catch (error) {
-                logger.warn(error)
-            }
-        }
     }
 
     async challengePlayer(playerName) {

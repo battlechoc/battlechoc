@@ -1,77 +1,139 @@
 import React from 'react';
-import './BuildingPalette.css';
 import { connect } from 'react-redux';
 import { multiplayer } from '../../Multiplayer';
 import { selectBuilding, tapBuilding, toggleDonutHighlighting } from '../UiActions';
 import { GameStateTypes, EntityType, getEntityDescriptor } from 'battlechoc-shared-functions';
 import { Jukebox } from '../misc';
-import Fab from '@material-ui/core/Fab';
-import { Visibility, VisibilityOff } from '@material-ui/icons';
-import LockIcon from '@material-ui/icons/Lock';
+import Fab from './Fab';
+import { createUseStyles } from 'react-jss';
+
+const useStyles = createUseStyles(theme => ({
+    palette: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        zIndex: 1,
+        marginBottom: 5,
+        marginLeft: 5,
+        display: 'flex',
+        [theme.breakpoints.orientation.portrait]: {
+            width: '80vw',
+            flexWrap: 'wrap'
+        },
+        [theme.breakpoints.orientation.square]: {
+            width: 'unset',
+            flexWrap: 'unset'
+        }
+    },
+    preview: {
+        marginRight: 5,
+        border: `0.4vw solid ${theme.color.secondary.dark}`,
+        borderRadius: '50%',
+        background: 'linear-gradient(0deg, #3DA2CE 0%, #9DD5E9 80%)',
+        '& > div': {
+            padding: '3.5vw',
+            backgroundSize: '100% 100%',
+            backgroundRepeat: 'no-repeat',
+            [theme.breakpoints.orientation.portrait]: {
+                padding: '6vw'
+            },
+            [theme.breakpoints.orientation.square]: {
+                padding: '3.5vw'
+            }
+        }
+    },
+    disabled: {
+        filter: 'brightness(20%)'
+    },
+    selected: {
+        border: `0.4vw solid ${theme.color.gold.light}`,
+        '& > div': {
+            borderRadius: '100%',
+            filter: 'brightness(120%)'
+        }
+    },
+    locked: {
+        width: '7vw',
+        height: '7vw',
+        display: 'flex',
+        justifyContent: 'center',
+        border: `0.4vw solid ${theme.color.accent.dark}`,
+        background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 80%)`,
+        '& > div': {
+            padding: '2.8vw',
+            backgroundImage: 'url(/images/lock.svg)',
+            [theme.breakpoints.orientation.portrait]: {
+                padding: '4.5vw'
+            },
+            [theme.breakpoints.orientation.square]: {
+                padding: '2.8vw'
+            }
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            width: '12vw',
+            height: '12vw',
+        },
+        [theme.breakpoints.orientation.square]: {
+            width: '7vw',
+            height: '7vw',
+        }
+    }
+}));
 
 const BuildingPalette = props => {
-    let player = props.game.players[multiplayer.localPlayerIndex];
-    let buildingsForSeclection = [{
+    const classes = useStyles();
+    const player = props.game.players[multiplayer.localPlayerIndex];
+    const buildingsForSeclection = [{
         type: EntityType.FACTORY,
-        className: 'factory',
-        alt: 'factory preview',
+        image: 'factory',
         costs: getEntityDescriptor(EntityType.FACTORY, player.level).costs
     }, {
         type: EntityType.CACAOTREE,
-        className: 'cacaotree',
-        alt: 'cacao tree preview',
+        image: 'cacao-tree',
         costs: getEntityDescriptor(EntityType.CACAOTREE, player.level).costs
     }, {
         type: EntityType.RUM_TRUFFLE_CANNON,
-        className: 'cannon',
-        alt: 'cannon preview',
+        image: 'truffle-cannon',
         costs: getEntityDescriptor(EntityType.RUM_TRUFFLE_CANNON, player.level).costs
     }, {
-        type: EntityType.FACTORY_EXTENSION,
-        className: 'factoryExtension',
-        alt: 'factory extension preview',
-        costs: getEntityDescriptor(EntityType.FACTORY_EXTENSION, player.level).costs
-    }, {
         type: EntityType.CREAM,
-        className: 'cream',
-        alt: 'cream preview',
+        image: 'cream',
         costs: getEntityDescriptor(EntityType.CREAM, player.level).costs
     }, {
+        type: EntityType.FACTORY_EXTENSION,
+        image: 'factory-extension',
+        costs: getEntityDescriptor(EntityType.FACTORY_EXTENSION, player.level).costs
+    }, {
         type: EntityType.SPYING_EASTER_BUNNY,
-        className: 'bunny',
-        alt: 'easter factory',
+        image: 'easter-bunny',
         costs: getEntityDescriptor(EntityType.SPYING_EASTER_BUNNY, player.level).costs
     }, {
         type: EntityType.XMAS_FACTORY,
-        className: 'xmasFactory',
-        alt: 'xmas factory',
+        image: 'xmas-factory',
         costs: getEntityDescriptor(EntityType.XMAS_FACTORY, player.level).costs
     }, {
         type: EntityType.CHOCOLATE_FOUNTAIN,
-        className: 'fountain',
-        alt: 'chocolate fountain',
+        image: 'fountain',
         costs: getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN, player.level).costs
     }, {
         type: EntityType.FRUIT_CANNON,
-        className: 'fruitCannon',
-        alt: 'fruit cannon', 
+        image: 'fruit-cannon', 
         costs: getEntityDescriptor(EntityType.FRUIT_CANNON, player.level).costs
     },{
         type: EntityType.DONUT_FACTORY,
-        className: 'donut factory',
-        alt: 'donut factory',
+        image: 'donut-factory',
         costs: getEntityDescriptor(EntityType.DONUT_FACTORY, player.level).costs
     }];
 
 
-    let buildingSelectionIsVisible = () => {
+    const buildingSelectionIsVisible = () => {
         return (props.game.state === GameStateTypes.BUILD_PHASE ||
             props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
             props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) &&
             multiplayer.isLocalPlayer(props.game.currentPlayerIndex);
     }
 
-    let playerCanBuild = building => {
+    const playerCanBuild = building => {
         const buildingDescriptor = getEntityDescriptor(building.type, player.level);
         const canBuild = player.buildingsPerTurn > 0 &&
             player.cacao >= buildingDescriptor.costs &&
@@ -93,40 +155,40 @@ const BuildingPalette = props => {
         }
     }
 
-    let tapBuilding = buildingType => {
+    const tapBuilding = buildingType => {
         props.tapBuilding(buildingType);
     }
 
-    let selectBuilding = buildingType => {
+    const selectBuilding = buildingType => {
         props.selectBuilding(buildingType);      
     }
 
-    let getDonutClass = donut => {
+    const getDonutImage = donut => {
         if (donut.type === EntityType.DONUT_PORTAL_BLUE || donut.type === EntityType.DONUT_PORTAL_RED) {
-            return ' portal donut';
+            return 'portal-donut';
         } else if (donut.type === EntityType.DONUT_SURPRISE_YELLOW) {
-            return ' surprise donut';
+            return 'surprise-donut';
         } else if (donut.type === EntityType.DONUT_HEALTH_GREEN) {
-            return ' health donut';
+            return 'health-donut';
         } else if (donut.type === EntityType.DONUT_STOP_PINK) {
-            return ' stop donut';
+            return 'stop-donut';
         } else if (donut.type === EntityType.DONUT_CREAM_WHITE) {
-            return ' cream donut';
+            return 'cream-donut';
         }
     } 
 
     let donutSelection = null;
     
     if (player.donuts.length > 0 || player.activeDonuts.length > 0) { 
-        donutSelection = <div id="donutSelection">
+        donutSelection = <div className={classes.palette} style={{ bottom: 59 }}>
             { player.activeDonuts.length > 0 ? <Fab
-                color="primary"
-                className="donut-visiblity icon"
-                onClick={() => props.toggleDonutHighlighting() }>
-                { props.donutHighlighting ? <VisibilityOff /> : <Visibility /> }                    
-            </Fab> : null }
-            { player.donuts.length > 0 ? <div className={props.selectedBuilding === player.donuts[0].type ? 'selected previewContainer' : 'canbuild previewContainer'}>
-                <div className={'enabled preview' + getDonutClass(player.donuts[0])}  onClick={() => {
+                color="secondary"
+                style={{ height: 50, width: 50, marginRight: 5 }}
+                icon={ props.donutHighlighting ? 'donuts-disabled' : 'donuts-enabled' }
+                onClick={() => props.toggleDonutHighlighting() } /> : null
+            }
+            { player.donuts.length > 0 ? <div className={`${classes.preview} ${props.selectedBuilding === player.donuts[0].type ? classes.selected : ''}`}>
+                <div style={{ backgroundImage: `url(/images/${getDonutImage(player.donuts[0])}-icon.svg)` }}  onClick={() => {
                     tapBuilding(player.donuts[0].type);
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     selectBuilding(player.donuts[0].type);
@@ -149,51 +211,49 @@ const BuildingPalette = props => {
     }
 
     return (
-        <div>
-            { buildingSelectionIsVisible() ? donutSelection : null }
-            <div id="buildingSelection">
-                {(() => {
-                    if (buildingSelectionIsVisible()) {
-                        return buildingsForSeclection.map((building, i) => {
-                            if (typeof whitelist !== 'undefined') {
-                                if (!whitelist.includes(building.type)) {
-                                    if (!props.tutorial && props.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && props.game.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
-                                        return <div className="unlocked-entity preview" key={i}><LockIcon className="lock-icon" /></div>;
-                                    } else {
-                                        return null
-                                    }
+        <>
+        { buildingSelectionIsVisible() ? donutSelection : null }
+        <div className={classes.palette}>
+            {(() => {
+                if (buildingSelectionIsVisible()) {
+                    return buildingsForSeclection.map((building, i) => {
+                        if (typeof whitelist !== 'undefined') {
+                            if (!whitelist.includes(building.type)) {
+                                if (!props.tutorial && props.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && props.game.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
+                                    return <div className={`${classes.preview} ${classes.locked}`} key={i}><div /></div>;
+                                } else {
+                                    return null
                                 }
                             }
-                            let canBuild = playerCanBuild(building);
+                        }
+                        let canBuild = playerCanBuild(building);
 
-                            if (building.type === EntityType.FACTORY) {
-                                canBuild = (props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-                                    props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) &&
-                                    !player.hasFactory;
-                            }
+                        if (building.type === EntityType.FACTORY) {
+                            canBuild = (props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
+                                props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) &&
+                                !player.hasFactory;
+                        }
 
-                            if ((building.type === EntityType.FACTORY && ((props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-                                props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) && !player.hasFactory)) ||
-                                (building.type !== EntityType.FACTORY && props.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && props.game.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT)) {
-                                let className = canBuild ? (props.selectedBuilding === building.type ? 'selected previewContainer' : 'canbuild previewContainer') : 'previewContainer';
-                                return <div className={className} key={i}>
-                                    <div className={building.className + (canBuild ? ' enabled preview' : ' disabled preview')} 
-                                         style={{ backgroundImage: 'url(/images/toolbar_icon_palette.png)' }} onClick={() => {
-                                        tapBuilding(building.type);
-                                        if (canBuild) {
-                                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                            selectBuilding(building.type);
-                                        }
-                                    }} />
-                                </div>
-                            } else {
-                                return null;
-                            }
-                        });
-                    }
-                })()}
-            </div>
+                        if ((building.type === EntityType.FACTORY && ((props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
+                            props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) && !player.hasFactory)) ||
+                            (building.type !== EntityType.FACTORY && props.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && props.game.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT)) {
+                            return <div className={`${classes.preview} ${props.selectedBuilding === building.type ? classes.selected : ''} ${canBuild ? '' : classes.disabled}`} key={i}>
+                                <div style={{ backgroundImage: `url(/images/${building.image}-icon.svg)` }} onClick={() => {
+                                    tapBuilding(building.type);
+                                    if (canBuild) {
+                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                        selectBuilding(building.type);
+                                    }
+                                }} />
+                            </div>
+                        } else {
+                            return null;
+                        }
+                    });
+                }
+            })()}
         </div>
+        </>
     );
 }
 
@@ -217,4 +277,4 @@ const BuildingPaletteContainer = connect(
     mapDispatchToProps
 )(BuildingPalette);
 
-export default BuildingPaletteContainer;
+export { BuildingPaletteContainer as BuildingPalette, useStyles as sharedPaletteStyles } ;

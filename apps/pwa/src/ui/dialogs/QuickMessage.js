@@ -1,123 +1,212 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import CheckCircleIcon from '@material-ui/icons/CheckCircle';
-import ErrorIcon from '@material-ui/icons/Error';
-import InfoIcon from '@material-ui/icons/Info';
-import CloseIcon from '@material-ui/icons/Close';
-import IconButton from '@material-ui/core/IconButton';
-import Snackbar from '@material-ui/core/Snackbar';
-import SnackbarContent from '@material-ui/core/SnackbarContent';
-import WarningIcon from '@material-ui/icons/Warning';
-import AddBox from '@material-ui/icons/AddBox';
-import ScreenRotation from '@material-ui/icons/ScreenRotation';
-import SvgIcon from '@material-ui/core/SvgIcon';
-import { makeStyles } from '@material-ui/core/styles';
+import { createUseStyles } from 'react-jss';
 
-const variantIcon = {
-    success: CheckCircleIcon,
-    warning: WarningIcon,
-    error: ErrorIcon,
-    info: InfoIcon,
-};
-
-function QuickMessage(props) {
-    const useStyles = makeStyles(theme => ({
-        icon: {
-            fontSize: 20
-        },
-        iconVariant: {
-            opacity: 0.9,
-            marginRight: theme.spacing(1)
-        },
-        message: {
-            display: 'flex',
-            alignItems: 'center',
-        },
-        anchorOriginTopCenter: {
-            [theme.breakpoints.down('sm')]: {
-                top: '8px',
-                left: '8px',
-                right: '8px',
-                transform: 'unset',
+const useStyles = createUseStyles(theme => ({
+    message: {
+        color: 'white',
+        margin: '1vh',
+        padding: '1vh',
+        display: 'flex',
+        borderRadius: '2vh',
+        alignItems: 'flex-start',
+        boderWidth: '0.4vh',
+        borderStyle: 'solid',
+        borderColor: props => {
+            if (props.variant === 'error') {
+                return theme.color.accent.light;
+            } else if (props.variant === 'warning') {
+                return theme.color.warning.light;
+            } else if (props.variant === 'success') {
+                return theme.color.primary.light;
+            }  else {
+                return theme.color.secondary.light;
             }
         },
-        root: {
-            backgroundColor: 'rgb(91,47,25)',
-            [theme.breakpoints.down('sm')]: {
-                flexGrow: 1,
-                fontSize: '0.8em',
-                padding: '6px 10px'
-            }    
+        background: props => {
+            if (props.variant === 'error') {
+                return `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 100%)`;
+            } else if (props.variant === 'success') {
+                return `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`;
+            }  else if (props.variant === 'warning') {
+                return `linear-gradient(0deg, ${theme.color.warning.dark} 0%, ${theme.color.warning.light} 100%)`;
+            } else {
+                return `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`;
+            }
         },
-        iosMessage: {
-            '& button': { paddingBottom: 0 },
-            '& span > span > svg': { marginBottom: -5 },
-            '@media screen and (orientation:landscape)': { display: 'none' }
+        [theme.breakpoints.orientation.landscape]: {
+            margin: '1vw',
+            padding: '1vw',   
+            borderRadius: '2vw',  
+            boderWidth: '0.4vw'      
         }
-    }));
+    },
+    icon: {
+        margin: '1vh',
+        '& > div': {
+            padding: '3vh',
+            backgroundSize: '100% 100%',
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            margin: '1vw',
+            '& > div': {
+                padding: '3vw'
+            }            
+        }
+    },
+    info: {
+        '& > div': {
+            background: `url(/images/info-icon.svg) no-repeat`
+        }
+    },
+    error: {
+        '& > div': {
+            background: `url(/images/error-icon.svg) no-repeat`
+        }
+    },
+    warning: {
+        '& > div': {
+            background: `url(/images/warning-icon.svg) no-repeat`
+        }
+    },
+    success: {
+        '& > div': {
+            background: `url(/images/success-icon.svg) no-repeat`
+        }        
+    },
+    actions: {
+        margin: '1vh',
+        padding: '0.5vh',
+        '& > div': {
+            padding: '1.5vh',
+            background: props => {
+                if (props.variant === 'error') {
+                    return `url(/images/close.svg) no-repeat`;
+                } else if (props.variant === 'warning') {
+                    return `url(/images/warning-close.svg) no-repeat`;
+                } else if (props.variant === 'success') {
+                    return `url(/images/primary-close.svg) no-repeat`;
+                } else {
+                    return `url(/images/secondary-close.svg) no-repeat`;
+                }
+            },
+            backgroundSize: '100% 100%',
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            margin: '1vw',
+            padding: '0.5vw',
+            '& > div': {
+                padding: '1.5vw'
+            }
+        }
+    },
+    text: {
+        margin: '1vh',
+        fontSize: '2vh',
+        alignSelf: 'center',
+        [theme.breakpoints.orientation.landscape]: {
+            margin: '1vw',
+            fontSize: '2vw'
+        }
+    },
+    invisible: {
+        transition: 'opacity 1s ease-out',
+        opacity: 0,
+    },
+    visible: {
+        opacity: 1,
+    },
+    rotate: {
+        padding: '1.5vh',
+        margin: '0.5vh',
+        background: `url(/images/phone-rotation.svg) no-repeat`,
+        backgroundSize: '100% 100%',
+        [theme.breakpoints.orientation.landscape]: {
+            padding: '1.5vw',
+            margin: '0.5vw'
+        }
+    },
+    share: {
+        padding: '1.1vh',
+        margin: '0.5vh',
+        background: `url(/images/apple-share-icon.svg) no-repeat`,
+        backgroundSize: '100% 100%',
+        [theme.breakpoints.orientation.landscape]: {
+            padding: '1.1vw',
+            margin: '0.5vw'
+        }
+    },
+    add: {
+        padding: '1.2vh',
+        margin: '0.5vh',
+        background: `url(/images/add-icon.svg) no-repeat`,
+        backgroundSize: '100% 100%',
+        [theme.breakpoints.orientation.landscape]: {
+            padding: '1.2vw',
+            margin: '0.5vw'
+        }
+    }
+}));
 
-    const classes = useStyles();
-    let { open, message, onClose, variant } = props;
-    let customStyle = '';
+const QuickMessage = props => {
+    const classes = useStyles(props);
+    const [visible, setVisible] = useState(true);
+    let { message, onClose, variant, autoHideDuration } = props;
 
     if (variant === 'apple-pwa-hint') {
         variant = 'info';
-        customStyle = classes.iosMessage;
-        const share = <SvgIcon fontSize="small"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" enableBackground="new 0 0 50 50"><meta name="license" content="https://commons.wikimedia.org/wiki/Category:Expat/MIT_License" /><meta name="copyright" content="Copyright © 2014 Alexander Madyankin, Roman Shamin" /><path d="M30.3 13.7L25 8.4l-5.3 5.3-1.4-1.4L25 5.6l6.7 6.7z"/><path d="M24 7h2v21h-2z"/><path d="M35 40H15c-1.7 0-3-1.3-3-3V19c0-1.7 1.3-3 3-3h7v2h-7c-.6 0-1 .4-1 1v18c0 .6.4 1 1 1h20c.6 0 1-.4 1-1V19c0-.6-.4-1-1-1h-7v-2h7c1.7 0 3 1.3 3 3v18c0 1.7-1.3 3-3 3z"/></svg></SvgIcon>
         message = <span>
             {message.substring(0, message.indexOf('[0]'))}
-            <ScreenRotation />
+            <span className={classes.rotate} />
             {message.substring(message.indexOf('[0]') + 3, message.indexOf('[1]'))}
-            {share}
+            <span className={classes.share} />
             {message.substring(message.indexOf('[1]') + 3, message.indexOf('[2]'))}
-            <AddBox />
+            <span className={classes.add} />
             {message.substring(message.indexOf('[2]') + 3)}
         </span>;
     }
 
-    const Icon = variantIcon[variant];
+    const close = useCallback(() => {
+        if (visible) {
+            setVisible(false);
+            setTimeout(onClose, 1000);
+        }
+    }, [onClose, visible])
+
+    useEffect(() => {
+        if (autoHideDuration > 0) {
+            const timeout = setTimeout(close, autoHideDuration);
+            return () => {
+                clearTimeout(timeout);
+            }
+        }
+    }, [autoHideDuration, close]);
 
     return (
-        <Snackbar
-           anchorOrigin={{
-              vertical: 'top',
-              horizontal: 'center',
-            }}
-            open={open}
-            style={{ marginTop: props.position * 64 }}
-            autoHideDuration={4000}
-            className={`${classes.anchorOriginTopCenter} ${customStyle}`}
-            onClose={onClose}
-        >
-            <SnackbarContent
-                className={classes.root}
-                aria-describedby="client-snackbar"
-                message={
-                  <span id="client-snackbar" className={classes.message}>
-                    <Icon className={`${classes.icon} ${classes.iconVariant}`} />
-                    {message}
-                  </span>
-                }
-                action={[
-                  <IconButton key="close" aria-label="close" color="inherit" onClick={onClose}>
-                    <CloseIcon className={classes.icon} />
-                  </IconButton>,
-                ]}
-            />
-        </Snackbar>
+        <div className={`${visible ? classes.visible : classes.invisible} ${classes.message}`}>
+            <div className={`${classes[variant]} ${classes.icon}`}>
+                <div />
+            </div>    
+            <div className={classes.text}>{message}</div>
+            <div className={classes.actions}>
+                <div onClick={close} />
+            </div>
+        </div>
     );
 }
 
 QuickMessage.propTypes = {
     open: PropTypes.bool.isRequired,
+    autoHideDuration: PropTypes.number,
     message: PropTypes.string,
-    position: PropTypes.number.isRequired,
     onClose: PropTypes.func.isRequired,
     variant: PropTypes.oneOf(['error', 'info', 'success', 'warning', 'apple-pwa-hint']),
 };
 
 QuickMessage.defaultProps = {
-    variant: 'warning'
+    variant: 'warning',
+    autoHideDuration: 4000,
+    messageId: 0
 }
 
 export default QuickMessage;

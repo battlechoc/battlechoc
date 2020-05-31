@@ -4,33 +4,44 @@ import { multiplayer } from '../../Multiplayer';
 import { selectAttack } from '../UiActions';
 import { GameStateTypes, BattlechocError, AttackType } from 'battlechoc-shared-functions';
 import { Jukebox } from '../misc';
-import LockIcon from '@material-ui/icons/Lock';
+import { createUseStyles } from 'react-jss';
+import { sharedPaletteStyles } from './BuildingPalette';
+
+const useStyles = createUseStyles(theme => ({
+    count: {
+        position: 'absolute',
+        fontSize: '2rem',
+        color: 'white',
+        textShadow: '2px 2px 1px #222',
+        fontFamily: 'Bangers',
+        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
+        marginLeft: 5,
+        zIndex: 10
+    }
+}));
+
+const attacksForSeclection = [{
+    type: AttackType.TRUFFLE,
+    image: 'truffle-cannon',
+}, {
+    type: AttackType.BUNNY,
+    image: 'easter-bunny',
+}, {
+    type: AttackType.FRUIT,
+    image: 'fruit-cannon',
+}, {
+    type: AttackType.HOT_CHOCOLATE,
+    image: 'ballista',
+}];
 
 const AttackPalette = props => {
-    const attacksForSeclection = [{
-        type: AttackType.TRUFFLE,
-        className: 'cannon',
-        alt: 'cannon preview'
-    }, {
-        type: AttackType.BUNNY,
-        className: 'bunny',
-        alt: 'easter factory'
-    }, {
-        type: AttackType.FRUIT,
-        className: 'fruitCannon',
-        alt: 'fruit cannon'
-    }, {
-        type: AttackType.HOT_CHOCOLATE,
-        className: 'ballista',
-        alt: 'hot chocolate ballista'
-    }];
-    
-
+    const classes = { ...useStyles(), ...sharedPaletteStyles() };
     const attackSelectionIsVisible = () => {
-        return props.state === GameStateTypes.ATTACK_PHASE && multiplayer.isLocalPlayer(props.game.currentPlayerIndex) === true;
+        return props.state === GameStateTypes.ATTACK_PHASE && multiplayer.isLocalPlayer(props.game.currentPlayerIndex);
     }
 
-    const playerCanAttack = type => {
+    const playerHasAttacksLeft = type => {
         return props.game.players[multiplayer.localPlayerIndex].attacks[type] > 0
     }
 
@@ -48,10 +59,6 @@ const AttackPalette = props => {
         });
     }
 
-    const isAttackSelected = attackType => {
-        return props.selectedAttack === attackType;
-    }
-
     let whitelist = props.whitelist;
     if (!props.tutorial) {
         if ( props.score < 200) {
@@ -62,32 +69,30 @@ const AttackPalette = props => {
     }
 
     return (
-        <div id="attackSelection">
+        <div className={classes.palette}>
             {(() => {
                 if (attackSelectionIsVisible() || typeof props.pseudoGame !== 'undefined') {
                     return attacksForSeclection.map((attack, i) => {
                         if (typeof whitelist !== 'undefined') {
                             if (!whitelist.includes(attack.type)) {
                                 if (!props.tutorial) {
-                                    return <div className="unlocked-entity preview" key={i}><LockIcon className="lock-icon" /></div>;
+                                    return <div className={`${classes.preview} ${classes.locked}`} key={i}><div /></div>;
                                 } else {
                                     return null
                                 }
                             }
                         }
 
-                        const canAttack = playerCanAttack(attack.type);
-                        const className = canAttack ? (isAttackSelected(attack.type) ? 'selected previewContainer' : 'canbuild previewContainer') : 'previewContainer';
+                        const attackPossible = playerHasAttacksLeft(attack.type);
                         return <div key={i}>
-                            <div className={className} onClick={() => {
-                                if (canAttack) {
+                            <div className={`${classes.preview} ${props.selectedAttack === attack.type ? classes.selected : ''} ${attackPossible ? '' : classes.disabled}`} onClick={() => {
+                                if (attackPossible) {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                     selectAttack(attack.type);
                                 }
                             }}>
-                                <div className="attackCount">{attacks(attack.type)}</div>
-                                <div style={{ backgroundImage: 'url(/images/toolbar_icon_palette.png)' }}
-                                    className={attack.className + (canAttack ? ' enabled preview' : ' disabled preview')} />
+                                <div className={classes.count}>{attacks(attack.type)}</div>
+                                <div style={{ backgroundImage: `url(/images/${attack.image}-icon.svg)` }} />
                             </div>
                         </div>
                     });

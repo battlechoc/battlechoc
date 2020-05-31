@@ -1,151 +1,82 @@
-import React, { useState } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
-import { makeStyles } from '@material-ui/core/styles';
-import { SportsEsports, PersonAddDisabled, PersonAdd } from '@material-ui/icons';
-import { Fab } from '@material-ui/core';
-import logger from '../../helper/logger';
-import { translate as t, keys as tr } from '../misc';
+import { createUseStyles } from 'react-jss';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = createUseStyles(theme => ({
     list: {
-        marginTop: '16px',
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        boxShadow: '2px 2px 6px rgba(0,0,0,0.6)',
-        '@media screen and (max-width: 450px)': {
-            fontSize: '0.8rem'
-        }
+        fontFamily: 'Bangers',
+        fontSize: props => props.size === 'small' ? '2.5vw' : '3vw',
+        '-webkit-text-stroke': `0.1vw ${theme.color.secondary.dark}`,
+        '& > :nth-child(odd)': {
+            backgroundColor: theme.color.secondary.dark
+        },
+        display: 'table',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: props => props.size === 'small' ? '3vh' : '3.5vh',
+            '-webkit-text-stroke': `0.1vh ${theme.color.secondary.dark}`,
+        },
+        '-webkit-font-smoothing': 'antialiased'
     },
     row: {
-        borderBottom: '1px solid rgba(224, 224, 224, 1)',
         cursor: 'pointer',
         userSelect: 'none',
-        display: 'flex',
-        justifyContent: 'center',
+        display: 'table-row',
     },
-    headline: {
-        color: 'white',
-        backgroundColor: '#324D5C',
-        boxShadow: '1px 1px 3px #000',
-        borderBottom: 0,
-        textShadow: '1px 1px 3px #000',
-        '& > div:last-child': {
-            padding: '15px'
-        }
-    },
-    button: {
-        margin: '0 5px'
-    },
-    property: {
-        padding: '15px',
-        display: 'flex',
-        justifyContent: 'flex-start',
-        width: '15%',
-        '@media screen and (min-width: 960px)': {
-            padding: '24px'
-        }
+    cell: {
+        display: 'table-cell',
+        borderTop: '4px solid transparent',
+        borderBottom: '4px solid transparent'
     },
     name: {
-        justifyContent: 'center',
-        flexGrow: 1,
-        padding: '15px',
-        display: 'flex',
-        '@media screen and (min-width: 960px)': {
-            padding: '24px'
-        }
-    },
-    actions: {
-        display: 'flex',
-        alignItems: 'center'
+        width: '100%',
+        textAlign: 'center',
+        borderLeft: '8px solid transparent',
+        borderRight: '8px solid transparent'
     },
     own: {
-        backgroundColor: '#5b2f19',
+        backgroundColor: `${theme.color.accent.light} !important`,
         color: 'white'
     },
-    placeholder: {
-        width: 100,
-        '@media screen and (min-width: 960px)': {
-            width: 116
-        },
-        '@media screen and (max-width: 600px)': {
-            width: 92
+    icon: {
+        padding: '1vw',
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '1vh'
         }
     }
 }));
 
 const PlayerList = props => {
-    const classes = useStyles();
-    const [pendingRequest, setPendingRequest] = useState(null)
+    const { username, players, showProfile, withScore } = props;
+    const classes = useStyles(props);
 
-    const canNotChallenge = player => {
-        return props.sessions.map(session => session.opponent.name).includes(player.name) ||
-            player.score < 1000;
-    }
-
-    let friends = props.players;
-    if (typeof props.friends !== 'undefined') {
-        friends = props.friends;
-    }
-
-    const isFriend = username => {
-        return friends.map(friend => friend.name).includes(username);
-    }
-
-    const addFriend = async username => {
-        if (!pendingRequest) {
-            setPendingRequest(username);
-            try {
-                await props.addFriend(username);
-            } catch (error) {
-                logger.warn(error);
-            } finally {
-                setPendingRequest(null);
-            }
-        }
-    }
-
-    const removeFriend = async username => {
-        if (!pendingRequest) {
-            setPendingRequest(username);
-            try {
-                await props.removeFriend(username);
-            } catch (error) {
-                logger.warn(error);
-            } finally {
-                setPendingRequest(null);
-            }
-        }
-    }
-
-    let openPlayerProfile = player => {
-        let isPlayer = props.username === player.name;
+    const openPlayerProfile = player => {
+        const isPlayer = username === player.name;
         if (!isPlayer) {
-            props.showProfile({ opponent: player });
+            showProfile({ opponent: player });
         }
     }
 
-    if (props.players.length > 0) {
+    if (players.length > 0) {
         return (
-            <div className={classes.list}>
-                {props.withScore ? <div className={`${classes.row} ${classes.headline}`}><div className={classes.property} style={{ width: '10%' }}>{t(tr.ACCOUNT_OVERVIEW_RANK)}</div><div className={classes.property}>{t(tr.PLAYERLIST_SCORE)}</div><div className={classes.name}>{t(tr.PLAYERLIST_NAME)}</div><div className={classes.actions}>{t(tr.PLAYERLIST_ACTIONS)}</div></div> : null}
-                {
-                    props.players.map((player, i) => {
-                        let isPlayer = props.username === player.name;
-                        return <div key={i} className={isPlayer ? `${classes.own} ${classes.row}` : classes.row}>
-                            {props.withScore ? <div onClick={() => openPlayerProfile(player)} className={classes.property} style={{ width: '10%' }}>{player.ranking}</div> : null}
-                            {props.withScore ? <div onClick={() => openPlayerProfile(player)} className={classes.property}>{player.score}</div> : null}
-                            <div onClick={() => openPlayerProfile(player)} className={classes.name}>{player.name}</div>
-                            {!isPlayer ? <div className={classes.actions}>
-                                <Fab className={classes.button} size="small" disabled={pendingRequest === player.name || canNotChallenge(player)} color="primary" onClick={() => props.challenge(player.name)}><SportsEsports /></Fab>
-                                {
-                                    isFriend(player.name) ?
-                                        <Fab className={classes.button} size="small" disabled={pendingRequest === player.name} color="primary" onClick={() => removeFriend(player.name)} ><PersonAddDisabled /></Fab>
-                                        : <Fab className={classes.button} size="small" disabled={pendingRequest === player.name} color="primary" onClick={() => addFriend(player.name)} ><PersonAdd /></Fab>
-                                }
+            <div style={props.style} className={`${classes.list} ${props.className}`}>
+            { 
+                players.map((player, i) => {
+                    const isPlayer = username === player.name;
+                    return <div key={i} className={isPlayer ? `${classes.own} ${classes.row}` : classes.row }>
+                        { withScore ? <div onClick={() => openPlayerProfile(player)} className={classes.ranking}>{`${player.ranking}.`}</div> : null }
+                        <div onClick={() => openPlayerProfile(player)} className={`${classes.cell} ${classes.name}`}>{player.name}</div>
+                        { withScore ? <>
+                            <div style={{ borderRight: '4px solid transparent'}} className={classes.cell}>{player.score}</div>
+                            <div className={`${classes.icon} ${classes.cell}`} style={{ background: `url(/images/score.svg) no-repeat`, backgroundSize: '100% 100%', borderRight: '0.3vw solid transparent' }} />
+                        </> : null }
 
-                            </div> : <div className={classes.placeholder} />}
-                        </div>
-                    })
-                }
+                        { withScore ? <>
+                            <div style={{ borderRight: '4px solid transparent'}} className={classes.cell}>{player.level}</div>
+                            <div className={`${classes.icon} ${classes.cell}`} style={{ background: `url(/images/level.svg) no-repeat`, backgroundSize: '100% 100%', borderRight: '0.1vw solid transparent' }} />
+                        </> : null }
+                    </div>
+                })
+            }
             </div>
         );
     } else {
@@ -153,21 +84,22 @@ const PlayerList = props => {
     }
 }
 
-PlayerList.propTypes = {
-    showProfile: PropTypes.func.isRequired,
-    withScore: PropTypes.bool,
-    username: PropTypes.string,
-    players: PropTypes.array.isRequired,
-    friends: PropTypes.array,
-    sessions: PropTypes.array.isRequired,
-    challenge: PropTypes.func.isRequired,
-    addFriend: PropTypes.func,
-    removeFriend: PropTypes.func.isRequired
-}
-
 PlayerList.defaultProps = {
     withScore: false,
-    username: ''
+    style: {},
+    className: '',
+    username: '',
+    size: 'small'
+}
+
+PlayerList.propTypes = {
+    showProfile: PropTypes.func.isRequired,
+    players: PropTypes.array.isRequired,
+    withScore: PropTypes.bool,
+    style: PropTypes.object,
+    username: PropTypes.string,
+    className: PropTypes.string,
+    size: PropTypes.oneOf(['small', 'medium'])
 }
 
 export default PlayerList;

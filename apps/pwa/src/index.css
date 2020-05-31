@@ -1,12 +1,12 @@
-@import url('https://fonts.googleapis.com/css?family=PT+Serif&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat&display=swap');
 
 body {
-  font-family: 'PT Serif', serif;
+  font-family: 'Montserrat', sans-serif;
   margin: 0px;
   padding: 0px;
   overflow: hidden;
-  background: rgb(235,235,235);
-  background: linear-gradient(0deg, rgba(235,235,235,1) 0%, rgba(232,218,198,1) 98%);
+  background: rgb(255,255,255);
+  background: linear-gradient(0deg, #3DA2CE 0%, #9DD5E9 80%);
 }
 
 code {

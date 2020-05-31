@@ -1,97 +1,89 @@
-import React, { Component } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { Scene as BabylonScene, SceneLoader, HemisphericLight, Engine, FlyCamera, Vector3, Color3, Color4, Camera, StandardMaterial } from 'babylonjs';
 import { assetLoader } from '../AssetLoader';
 import { BoardCellTypes, EntityType } from 'battlechoc-shared-functions';
 import 'babylonjs-loaders';
 
-class MeshPreview extends Component {
+const MeshPreview = props => {
+    const { selectedEntity } = props;
+    const engine = useRef();
+    const camera = useRef();
+    const scene = useRef();
+    const container = useRef();
+    const preview = useRef();
 
-    componentDidMount() {
-        this.engine = new Engine(this.container, true);
+    const rotate = useCallback(() => {
+        preview.current.forEach(mesh => mesh.rotation.y += 0.01);
+    }, []);
 
-        let createScene = () => {
-            let scene = new BabylonScene(this.engine);
+    const estimateOrthographicSize = camera => {
+        const width = container.current.clientWidth;
+        const height = container.current.clientHeight;
+        const ratio = width / height;
+        const distance = 1.5;
+
+        camera.orthoTop = distance;
+        camera.orthoBottom = - distance;
+        camera.orthoLeft = - distance * ratio;
+        camera.orthoRight = distance * ratio;
+    }
+
+    useEffect(() => {
+        engine.current = new Engine(container.current, true);
+
+        const createScene = () => {
+            const scene = new BabylonScene(engine.current);
             new HemisphericLight('light', new Vector3(0,1,0), scene);
             scene.clearColor = new Color4(0, 0, 0, 0);
-            this.camera = new FlyCamera("camera", new Vector3(30, 30, 30), scene);
-            this.camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
-            this.camera.minZ = 0;
-            this.camera.maxZ = 100;
+            camera.current = new FlyCamera("camera", new Vector3(30, 30, 30), scene);
+            camera.current.mode = Camera.ORTHOGRAPHIC_CAMERA;
+            camera.current.minZ = 0;
+            camera.current.maxZ = 100;
 
-			this.estimateOrthographicSize();
-            this.camera.setTarget(Vector3.Zero());			
+			estimateOrthographicSize(camera.current);
+            camera.current.setTarget(Vector3.Zero());			
     		return scene;
         }
 
-        this.scene = createScene();
-        this.engine.runRenderLoop(() => {
-		    this.scene.render();
+        scene.current = createScene();
+        engine.current.runRenderLoop(() => {
+		    scene.current.render();
 		});
 
-		SceneLoader.ImportMesh('', 'models/', assetLoader.assets.models[BoardCellTypes.BROWN], this.scene, group => {
-			let material = new StandardMaterial('brown.field.material', this.scene);
-            material.diffuseColor﻿ = Color3.FromHexString("#824529");
+		SceneLoader.ImportMesh('', 'models/', assetLoader.assets.models[BoardCellTypes.BROWN], scene.current, group => {
+			const material = new StandardMaterial('brown.field.material', scene.current);
+            material.diffuseColor = Color3.FromHexString("#824529");
             material.sideOrientation = 0;
             group[1].material = material;
             group[1].scaling = new Vector3(1.5, 1, 1.5);
-		});
-		window.addEventListener('resize', this.resize);
-        this.loadMesh(this.props.selectedEntity.type);
-    }
-
-    componentWillUnmount() {
-        window.removeEventListener('resize', this.resize);
-    }
-
-    componentDidUpdate(prevProps) {
-        if (prevProps.selectedEntity !== this.props.selectedEntity) {
-            this.loadMesh(this.props.selectedEntity.type);
-        }
-    }
-
-    estimateOrthographicSize() {
-        const width = this.container.clientWidth;
-        const height = this.container.clientHeight;
-        let ratio = width / height;
+        });
         
-        let distance = 2;
-
-        if (window.innerWidth < 600) {
-            distance = 1.5;
-        } else if (window.innerWidth < 800) {
-            distance = 2.5;
+        const resize = () => {
+            estimateOrthographicSize(camera.current);
+            engine.current.resize();
+            scene.current.render();
         }
 
-        this.camera.orthoTop = distance;
-        this.camera.orthoBottom = - distance;
-        this.camera.orthoLeft = - distance * ratio;
-        this.camera.orthoRight = distance * ratio;
-    }
+		window.addEventListener('resize', resize);
+        return () => {
+            window.removeEventListener('resize', resize);
+        }
+    }, []);
 
-    resize = () => {
-        this.estimateOrthographicSize();
-        this.engine.resize();
-        this.scene.render();
-    }
-
-    rotate = () => {
-        this.preview.forEach(mesh => mesh.rotation.y += 0.01);
-    }
-
-    loadMesh(entity) {
-    	SceneLoader.ImportMesh('', 'models/', assetLoader.assets.models[entity], this.scene, group => {
-    		if (typeof this.preview !== 'undefined') {
-    			this.scene.unregisterBeforeRender(this.rotate);
-    			this.preview.forEach(mesh => mesh.dispose());
+    useEffect(() => {
+    	SceneLoader.ImportMesh('', 'models/', assetLoader.assets.models[selectedEntity.type], scene.current, group => {
+    		if (typeof preview.current !== 'undefined') {
+    			scene.current.unregisterBeforeRender(rotate);
+    			preview.current.forEach(mesh => mesh.dispose());
     		}
 
-    		this.preview = group;
-        	this.preview[0].getChildren().forEach(mesh => {
+    		preview.current = group;
+        	preview.current[0].getChildren().forEach(mesh => {
         		mesh.scaling = new Vector3(1, 1, 1);
         	});
 
-        	if (entity === EntityType.CHOCOLATE_FOUNTAIN) {
-        		this.preview.forEach(mesh => {
+        	if (selectedEntity.type === EntityType.CHOCOLATE_FOUNTAIN) {
+        		preview.current.forEach(mesh => {
 	                if (mesh.material) {
 	                	if (mesh.material.name === 'Shield') {
 	                		mesh.visibility = 0;
@@ -100,13 +92,11 @@ class MeshPreview extends Component {
             	});
             }
 
-    		this.scene.registerBeforeRender(this.rotate);
-    	})
-    } 
+    		scene.current.registerBeforeRender(rotate);
+    	});
+    }, [selectedEntity, rotate])
 
-    render() {
-        return <canvas ref={container => { this.container = container }} />;
-    }
+    return <canvas ref={container} />
 }
 
 export default MeshPreview;

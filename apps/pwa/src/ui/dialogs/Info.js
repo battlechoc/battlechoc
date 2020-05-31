@@ -1,33 +1,35 @@
 import React, { useState } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import Fab from '@material-ui/core/Fab';
-import { InfoOutlined } from '@material-ui/icons';
+import { createUseStyles } from 'react-jss';
+import Fab from '../controls/Fab';
 import { Jukebox, translate as t, keys as tr, getCurrentLanguage } from '../misc';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';
-import BattlechocDialog from './BattlechocDialog';
+import Dialog from './Dialog';
 
-const useStyles = makeStyles(theme => ({
-    icon: {
+const useStyles = createUseStyles(theme => ({
+    icons: {
         position: 'absolute',
         zIndex: 2,
         bottom: 0,
         right: 0,
         marginBottom: 5,
-        marginRight: 5
+        display: 'flex',
+        '& > div': {
+            marginRight: 5
+        }
     },
     text: {
-        '& *': { color: '#324D5C' },
-        '@media screen and (min-width: 960px)': {
-            width: '80vw',
-            margin: '0 auto'
-        },
-        '@media screen and (max-width: 600px)': {
-            '& p': { fontSize: '0.8rem', margin: '0.5rem' },
-            '& h2': { fontSize: '1.2rem', margin: '0.5rem' },
-            '& h3': { fontSize: '1rem', margin: '0.5rem' }
+        '& *': { color: 'white' },
+        width: '70vw',
+        fontSize: '2vw',
+        textAlign: 'left',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '2vh',            
         }
+    },
+    header: {
+        textAlign: 'center'
     }
 }));
 
@@ -67,37 +69,52 @@ const Info = props => {
     }
 
     return (
-        <div className={classes.icon}>
-            <Fab
-                size="small"
-                color="primary"
-                aria-label="impress"
-                onClick={() => {
-                    setOpen(true);
-                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                }}>
-                <InfoOutlined />
-            </Fab>
-            <BattlechocDialog
+        <>
+            <div className={classes.icons}>
+                <Fab
+                    icon="instagram"
+                    onClick={() =>
+                        window.open("https://www.instagram.com/battlechoc/", "_blank")
+                    }>
+                </Fab>
+                <Fab
+                    icon="facebook"
+                    onClick={() =>
+                        window.open("https://fb.me/battlechoc", "_blank")
+                    }>
+                </Fab>
+                <Fab
+                    icon="info"
+                    color="primary"
+                    onClick={() => {
+                        setOpen(true);
+                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                    }}>
+                </Fab>
+            </div>
+            <Dialog
                 open={open}
                 close={handleClose}
-                title={`battlechoc - ${version} - ${timeSinceUpdate}`}>
+                title="About battlechoc"
+                subtitle={`${version} - ${timeSinceUpdate}`}>
                 <div className={classes.text}>
-                    <h2>{t(tr.INFO_IMPRESS)}</h2>
-                    <p>
-                        battlechoc GbR<br />
-                        Triftweg 5<br />
-                        38550 Isenbüttel<br />
-                        {t(tr.INFO_IMPRESS_COUNTRY)}<br /><br />
-                        E-mail: info@battlechoc.com<br />
-                        {t(tr.INFO_IMPRESS_PHONE)}: + 49 151 65486876<br /><br />
-                        {t(tr.INFO_IMPRESS_EXECUTIVE_DIRECTORS)}: Dr. Sebastian Bode & Fabian Bormann
-                    </p>
+                    <div className={classes.header}>
+                        <h2>{t(tr.INFO_IMPRESS)}</h2>
+                        <p>
+                            battlechoc GbR<br />
+                            Triftweg 5<br />
+                            38550 Isenbüttel<br />
+                            {t(tr.INFO_IMPRESS_COUNTRY)}<br /><br />
+                            E-mail: info@battlechoc.com<br />
+                            {t(tr.INFO_IMPRESS_PHONE)}: + 49 151 65486876<br /><br />
+                            {t(tr.INFO_IMPRESS_EXECUTIVE_DIRECTORS)}: Dr. Sebastian Bode & Fabian Bormann
+                        </p>
+                    </div>
                     <h2>{t(tr.INFO_PRIVACY_POLICY)}</h2>
                     <p>{t(tr.INFO_PRIVACY_POLICY_TEXT)}</p>
                 </div>
-            </BattlechocDialog>
-        </div>
+            </Dialog>
+        </>
     );
 }
 

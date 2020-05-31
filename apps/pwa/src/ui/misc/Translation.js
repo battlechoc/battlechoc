@@ -3,13 +3,16 @@ import OfflineStore from '../../OfflineStore';
 import { ServerRequest } from '../../helper/settings';
 import logger from '../../helper/logger';
 
+const validLanguages = ['de', 'en', 'jp', 'es', 'fr', 'it', 'pt', 'vn'];
+
 class Translation {
     constructor() {
-        this.currentLanguage = window.location.pathname.substr(1, 2) === 'de' ? 'de' : 'en';
+        const localCode = window.location.pathname.substr(1, 2);
+        this.currentLanguage = validLanguages.includes(localCode) ? localCode : 'en';
     }
 
     isValid(language) {
-        return ['en', 'de', 'jp'].includes(language);
+        return validLanguages.includes(language);
     }
 }
 

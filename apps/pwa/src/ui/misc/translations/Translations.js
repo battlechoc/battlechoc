@@ -5,7 +5,12 @@ const referenceLanguage = 'en';
 const strings = {
     en: require('./en_strings.js'),
     de: require('./de_strings.js'),
-    jp: require('./jp_strings.js')
+    jp: require('./jp_strings.js'),
+    es: require('./es_strings.js'),
+    fr: require('./fr_strings.js'),
+    it: require('./it_strings.js'),
+    pt: require('./pt_strings.js'),
+    vn: require('./vn_strings.js')
 };
 
 const translationPredicates = {
@@ -167,6 +172,12 @@ const translationPredicates = {
     },
     PLAYER_NAME_GENERATED_BODY: function (strings, name) {
         return fmt(strings.PLAYER_NAME_GENERATED_BODY, { name: name });
+    },
+    COINS_FOR_NEXT_FEATURE_TITLE: function (strings, feature) {
+        return fmt(strings.COINS_FOR_NEXT_FEATURE_TITLE, { feature: feature });
+    },
+    COINS_FOR_NEXT_FEATURE_BODY: function (strings, feature, missingScore) {
+        return fmt(strings.COINS_FOR_NEXT_FEATURE_BODY, { feature: feature, missingScore: missingScore });
     }
 };
 

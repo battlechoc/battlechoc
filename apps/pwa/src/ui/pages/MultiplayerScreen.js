@@ -1,13 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import './MultiplayerScreen.css';
-import TextField from '@material-ui/core/TextField';
-import Fab from '@material-ui/core/Fab';
-import CircularProgress from '@material-ui/core/CircularProgress';
 import { Jukebox, translate as t, keys as tr, getCurrentLanguage } from '../misc';
 import Axios from 'axios';
 import { showQuickMessage, updateMultiplayerSessions } from '../UiActions';
-import { KeyboardArrowLeft as ArrowBackIcon, Refresh, PlayArrow, Email, ChevronRight, LastPage, FirstPage, ChevronLeft, HourglassEmpty, Cancel, AccountCircle, FormatListNumbered, Casino, People, Search, Share } from '@material-ui/icons';
 import { connect } from 'react-redux';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
@@ -15,26 +10,211 @@ import de from 'javascript-time-ago/locale/de';
 import { multiplayer } from '../../Multiplayer';
 import { ServerRequest } from '../../helper/settings';
 import logger from '../../helper/logger';
-import BattlechocDialog from '../dialogs/BattlechocDialog';
-import PlayerList from '../controls/PlayerList';
-import { NoHealthyInternetConnectionError, SurrenderCosts } from 'battlechoc-shared-functions';
+import { Dialog } from '../dialogs';
+import { Progress, PlayerList, Button, Fab } from '../controls';
+import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
+import { createUseStyles } from 'react-jss';
+
+const useStyles = createUseStyles(theme => ({
+    page: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        color: 'white'
+    },
+    actions: {
+        display: 'flex',
+        zIndex: 1,
+        [theme.breakpoints.orientation.landscape]: {
+            width: 'calc(100% - 3*60px)',
+            position: 'absolute',
+            top: 5,
+            marginTop: 0,
+            marginBottom: 0,
+            left: 'calc(2 * 60px)',
+            justifyContent: 'space-evenly'
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            width: '100%',
+            justifyContent: 'center',
+            position: 'relative',
+            '& > div': {
+                margin: '1vh'
+            }
+        }
+    },
+    actionbar: {
+        margin: 5,
+        display: 'flex',
+        flexDirection: 'row',
+        width: 'calc(100% - 10px)',
+        position: 'relative',
+        zIndex: 1,
+        '& > :first-child': {
+            marginRight: 5
+        }
+    },
+    sessions: {
+        display: 'flex',
+        width: '100%',
+        justifyContent: 'center',
+        flexWrap: 'wrap',
+        position: 'relative',
+        zIndex: 4,
+    },
+    session: {
+        width: '30vw',
+        margin: '1vw',
+        fontFamily: 'Bangers',
+        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+        borderRadius: '5%',
+        position: 'relative',
+        [theme.breakpoints.orientation.portrait]: {
+            width: '30vh',
+            margin: '1vh',
+        }
+    },
+    title: {
+        fontSize: '3vw',
+        textAlign: 'center',
+        position: 'relative',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '3vh'
+        } 
+    },
+    button: {
+        width: '45%',
+        '& > div': {
+            fontSize: '3vw',
+            [theme.breakpoints.orientation.portrait]: {
+                fontSize: '3vh'
+            } 
+        }
+    },
+    buttons: {
+        display: 'flex',
+        justifyContent: 'space-around'
+    },
+    info: {
+        display: 'flex',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        margin: 10
+    },
+    header: { 
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '50%',
+        background: 'url(/images/header.svg) no-repeat',
+        backgroundSize: '100%'
+    },
+    statistics: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        fontSize: '3vw',
+        '& h3': {
+            margin: 5
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '3vh'
+        } 
+    },
+    coins: {
+        display: 'flex',
+        alignItems: 'center',
+        '& span': {
+            fontFamily: 'Bangers',
+            marginRight: 10
+        }, 
+        '& div': {
+            background: 'url(/images/coins.svg) no-repeat',
+            padding: '1.5vw 2vw',
+            [theme.breakpoints.orientation.portrait]: {
+                padding: '1.5vh 2vh',
+            } 
+        }
+    },
+    surrenderDialog: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center'  
+    },
+    timeago: {
+        fontFamily: 'Montserrat',
+        padding: '1vw',
+        fontSize: '2.5vw',
+        textAlign: 'center',
+        [theme.breakpoints.orientation.portrait]: {
+            padding: '1vh', 
+            fontSize: '2.5vh',
+        }
+    },
+    search: {
+        display: 'flex',
+        alignItems: 'center'
+    },
+    label: {
+        fontSize: '5vw',
+        fontFamily: 'Bangers',
+        '-webkit-text-stroke': `0.1vw ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
+        marginRight: '2vw',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '5vh',
+            '-webkit-text-stroke': `0.1vh ${theme.color.secondary.dark}`,
+        }
+    }, 
+    input: {
+        color: theme.color.secondary.dark,
+        border: `0.1vw solid ${theme.color.secondary.dark}`,
+        fontFamily: 'Bangers',
+        padding: '1.5vw',
+        flexGrow: 1,
+        borderRadius: '1.5vw',
+        outline: 'none',
+        fontSize: '4.5vw',
+        margin: '2vw 0',
+        [theme.breakpoints.orientation.portrait]: {
+            border: `0.1vh solid ${theme.color.secondary.dark}`,
+            padding: '1.5vh',
+            borderRadius: '1.5vh',
+            fontSize: '4.5vh',
+            margin: '2vh 0',
+        }
+    },
+    dialog: {
+        width: '90%'
+    },
+    playerList: {
+        width: '100%',
+    },
+    progress: {
+        position: 'absolute',
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 0
+    }
+}));
 
 const MultiplayerScreen = props => {
-    const { account, closeMultiplayerScreen, showQuickMessage, updateMultiplayerSessions, openAccountOverview, enterMultiplayerGame, multiplayerSessions, sessionRefreshActions, friends } = props;
+    const classes = useStyles();
+    const { /*updateMultiplayerSessions,*/ closeMultiplayerScreen, showQuickMessage, openAccountOverview, enterMultiplayerGame, multiplayerSessions, sessionRefreshActions, friends } = props;
 
     const [searchingRandomOpponent, setSearchingRandomOpponent] = useState(false);
     const [showFriends, setShowFriends] = useState(false);
     const [showSurrenderDialog, setShowSurrenderDialog] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
     const [userSearchText, setUserSearchText] = useState('');
-    const [searchResults, setSearchResults] = useState([]);
-    const [waitForResponse, setWaitForResponse] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);  
+    const [waitForResponse, setWaitForResponse] = useState(false);  
     const [badInternetConnection, setBadInternetConnection] = useState(false);
-    const [showHighscore, setShowHighscore] = useState(false);
-    const [highscoreLoading, setHighscoreLoading] = useState(false);
-    const [highscore, setHighscore] = useState([]);
-    const [highscoreLastPage, setHighscoreLastPage] = useState(1);
-    const [highscorePage, setHighscorePage] = useState(1);
     const [surrenderGameId, setSurrenderGameId] = useState(undefined);
     const [surrenderOpponentName, setSurrenderOpponentName] = useState(undefined);
 
@@ -45,6 +225,13 @@ const MultiplayerScreen = props => {
     const source = useRef(Axios.CancelToken.source());
 
     const inputRef = React.useRef();
+    
+    let timeAgo = new TimeAgo('en-US');
+    if (getCurrentLanguage() === 'de') {
+        timeAgo = new TimeAgo('de-DE');
+    } else if (getCurrentLanguage() === 'jp') {
+        timeAgo = new TimeAgo('ja');
+    }
 
     useEffect(() => {
         TimeAgo.addLocale(en);
@@ -66,21 +253,9 @@ const MultiplayerScreen = props => {
         }
     }, [showQuickMessage]);
 
-    const timeAgo = millis => {
-        let timeAgo = new TimeAgo('en-US');
-        if (getCurrentLanguage() === 'de') {
-            timeAgo = new TimeAgo('de-DE');
-        }
-        return timeAgo.format(millis);
-    }
+    const showPlayerProfile = (session, mode='stacked') => openAccountOverview(session.opponent, mode);
 
-    const toggleClassList = id => {
-        Array.from(document.getElementsByClassName(`row.${id}`)).forEach(div => div.classList.toggle('selected'));
-    }
-
-    const showPlayerProfile = session => openAccountOverview(session.opponent);
-
-    const canNotifyOpponent = session => {
+    /*const canNotifyOpponent = session => {
         const currentDateTime = (new Date()).getTime();
         const lastNotifiedTime = (typeof session.last_notification === 'undefined') ? 0 : session.last_notification;
         return (((currentDateTime - lastNotifiedTime) > 1000 * 60 * 60 * 4) && session.myTurn === false);
@@ -90,7 +265,7 @@ const MultiplayerScreen = props => {
         ServerRequest('post', '/user/notify', { sessionId: session.id }).then(response => {
             updateMultiplayerSessions(response.data.sessions);
         })
-    }
+    }*/
 
     const removeFriend = async friend => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -187,258 +362,123 @@ const MultiplayerScreen = props => {
         searchUser();
     }, [userSearchText]);
 
-    const openHighscorePage = async page => {
-        setShowHighscore(true);
-        setHighscoreLoading(true);
-        setHighscore([]);
-        try {
-            const highscore = await multiplayer.fetchHighscore(page);
-            setHighscoreLoading(false);
-            setHighscore(highscore.list);
-            setHighscorePage(highscore.page);
-            setHighscoreLastPage(highscore.lastPage);
-        } catch (error) {
-            logger.warn(error);
-            showQuickMessage({ text: t(tr.FETCH_HIGHSCORE_FAILED) });
-            setShowHighscore(false);
-            setHighscoreLoading(false);
-        }
-    }
-
     const refreshSessions = () => {
         multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED) }));
     }
 
-    const createProfileLink = () => {
-        multiplayer.createChallengeMeLink().then(link => {
-            if (navigator.share) {
-                navigator.share({
-                    title: window.document.title,
-                    text: t(tr.INVITATION),
-                    url: link,
-                }).catch((error) => logger.info('error sharing multiplayer session', error));
-            } else {
-                let whatsappWindowRef = window.open();
-                whatsappWindowRef.location = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(t(tr.INVITATION) + ' - ' + link);
-            }
-        });
-    }
-
     return (
         <>
-            <div className="actionbar" style={{ width: '100%', position: 'relative', marginBottom: '5vh' }}>
-                <Fab
-                    size="small"
-                    color="primary"
-                    className="icon"
-                    onClick={() => closeMultiplayerScreen()}>
-                    <ArrowBackIcon />
-                </Fab>
-                <Fab
-                    size="small"
-                    color="primary"
-                    className={sessionRefreshActions > 0 ? 'rotating icon' : 'icon'}
-                    onClick={() => refreshSessions()}>
-                    <Refresh />
-                </Fab>
-                <div style={{ flexGrow: 1 }} />
-                <Fab
-                    size="small"
-                    color="primary"
-                    className="icon"
-                    onClick={() => openHighscorePage()}>
-                    <FormatListNumbered />
-                </Fab>
-                <Fab
-                    size="small"
-                    color="primary"
-                    className="icon"
-                    onClick={() => searchRandomOpponent()}>
-                    {searchingRandomOpponent ? <CircularProgress style={{ color: 'white' }} size={18} /> : <Casino />}
-                </Fab>
-                <Fab
-                    size="small"
-                    color="primary"
-                    className="icon"
-                    onClick={() => setShowFriends(true)}>
-                    <People />
-                </Fab>
-                <Fab
-                    size="small"
-                    color="primary"
-                    className="icon"
-                    onClick={createProfileLink}>
-                    <Share />
-                </Fab>
-                <Fab
-                    size="small"
-                    color="primary"
-                    className="icon"
-                    style={{ marginRight: 5 }}
-                    onClick={() => setShowSearch(true)}>
-                    <Search />
-                </Fab>
-            </div>
-            <div id="multiplayer">
-                <BattlechocDialog
-                    open={showSurrenderDialog}
-                    close={() => setShowSurrenderDialog(false)}
-                    title={t(tr.SURRENDER_GAME)}>
-                    <div className="surrenderDialog">
-                        <p>{t(tr.SURRENDER_GAME_TEXT, surrenderOpponentName, SurrenderCosts)}</p>
-                        <div className="menuButton" onClick={() => {
-                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                            setShowSurrenderDialog(false);
-                            setSurrenderGameId(undefined);
-                            setSurrenderOpponentName(undefined);
-                            surrenderGame(surrenderGameId);
-                        }}>{t(tr.SURRENDER)}</div>
-                    </div>
-                </BattlechocDialog>
+        { sessionRefreshActions > 0 ? <Progress className={classes.progress} infiniteAnimation /> : null }
+        <div className={classes.actionbar}>
+            <Fab
+                color="secondary"
+                icon="back"
+                onClick={() => closeMultiplayerScreen() } />
+            <Fab
+                color="secondary"
+                iconStyle={ sessionRefreshActions > 0 ? { animation: 'spin 1.2s infinite linear' } : {} }
+                icon="refresh"
+                onClick={() => refreshSessions() } />
+            <div style={{ flexGrow: 1 }} />
+            <Fab
+                color="secondary"
+                icon="search"
+                onClick={() => setShowSearch(true)} />
+        </div>
+        <div className={classes.page}>
+            <Dialog
+                open={showSurrenderDialog}
+                close={() => setShowSurrenderDialog(false)}
+                title={t(tr.SURRENDER_GAME)}>
+                <div className={classes.surrenderDialog}>
+                    <p>{t(tr.SURRENDER_GAME_TEXT, surrenderOpponentName)}</p>
+                    <Button color="accent" onClick={() => {
+                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                        setShowSurrenderDialog(false);
+                        setSurrenderGameId(undefined);
+                        setSurrenderOpponentName(undefined);
+                        surrenderGame(surrenderGameId);
+                    }}>{t(tr.SURRENDER)}</Button>
+                </div>
+            </Dialog>
 
-                <BattlechocDialog
-                    open={showFriends}
-                    close={() => setShowFriends(false)}
-                    title={t(tr.FRIENDS)}>
+            <Dialog
+                open={showFriends}
+                close={() => setShowFriends(false)}
+                title={t(tr.FRIENDS)}>
+                <div className={classes.dialog}>
                     <PlayerList
+                        className={classes.playerList}
                         players={friends}
+                        size="medium"
                         removeFriend={removeFriend}
                         challenge={challengePlayer}
                         showProfile={showPlayerProfile}
                         sessions={multiplayerSessions} />
-                </BattlechocDialog>
+                </div>
+            </Dialog>
 
-                <BattlechocDialog
-                    open={showHighscore}
-                    close={() => setShowHighscore(false)}
-                    title="Highscore">
-                    <div className="highscore-page">
-                        <div className="highscore-paginator">
-                            <div>
-                                <Fab
-                                    size="small"
-                                    color="primary"
-                                    className="icon"
-                                    disabled={highscorePage === 1}
-                                    onClick={() => openHighscorePage(1)}>
-                                    <FirstPage />
-                                </Fab>
-                                <Fab
-                                    size="small"
-                                    color="primary"
-                                    className="icon"
-                                    disabled={highscorePage === 1}
-                                    onClick={() => openHighscorePage(Math.max(highscorePage - 1, 1))}>
-                                    <ChevronLeft />
-                                </Fab>
-                            </div>
-                            {highscoreLoading ? <CircularProgress size={22} /> : <span style={{ color: '#324D5C' }}>{t(tr.ACCOUNT_OVERVIEW_RANK)} {highscore.length > 0 ? `${highscore[0].ranking} - ${highscore[highscore.length - 1].ranking}` : '1 - 1'}</span>}
-                            <div>
-                                <Fab
-                                    size="small"
-                                    color="primary"
-                                    className="icon"
-                                    disabled={highscorePage === highscoreLastPage}
-                                    onClick={() => {
-                                        openHighscorePage(Math.min(highscorePage + 1, highscoreLastPage))
-                                    }
-                                    }>
-                                    <ChevronRight />
-                                </Fab>
-                                <Fab
-                                    size="small"
-                                    color="primary"
-                                    className="icon"
-                                    disabled={highscorePage === highscoreLastPage}
-                                    onClick={() => openHighscorePage(highscoreLastPage)}>
-                                    <LastPage />
-                                </Fab>
+            <Dialog
+                open={showSearch}
+                close={() => setShowSearch(false)}
+                title={t(tr.SEARCH_PLAYERS)}>
+                <div className={classes.dialog}>
+                    { badInternetConnection && !waitForResponse ? <span>{ t(tr.NO_HEALTHY_INTERNET) }</span> : null }
+                    <div className={classes.search}>
+                        <span className={classes.label}>Name</span>
+                        <input className={classes.input} ref={inputRef} value={userSearchText} spellCheck={false} autoFocus onChange={event => {
+                            setUserSearchText(event.target.value);
+                        }} />
+                    </div>
+                    { waitForResponse ? <Progress style={{
+                        alignItems: 'center',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        margin: 24
+                    }} infiniteAnimation /> : null }
+                    <PlayerList
+                        className={classes.playerList}
+                        size="medium"
+                        players={searchResults} 
+                        friends={friends}
+                        addFriend={addFriend}
+                        removeFriend={removeFriend}
+                        challenge={challengePlayer}
+                        showProfile={showPlayerProfile}
+                        sessions={multiplayerSessions} />
+                </div>
+            </Dialog>
+
+            <div className={classes.actions}>
+                <Button onClick={searchRandomOpponent} color="accent">{t(tr.MULTIPLAYER_RANDOM_OPPONENT)}</Button>
+                <Button onClick={() => setShowFriends(true)}>{t(tr.FRIENDS)}</Button>
+            </div>
+            
+            { multiplayerSessions.length > 0 && sessionRefreshActions === 0 ? <div className={classes.sessions}>
+                {  Object.assign([], multiplayerSessions).sort(sortByTimestamp).map((row, i) =>
+                <div className={classes.session} key={i}>
+                    <div className={classes.header} />
+                    <h2 className={classes.title}>{`you vs ${row.opponent.name}`}</h2>
+                    <div className={classes.buttons}>
+                        { row.myTurn ? 
+                        <Button className={classes.button} onClick={() => enterMultiplayerGame(row.id)}>Play</Button> :
+                        <Button className={classes.button} color="secondary" onClick={() => enterMultiplayerGame(row.id)}>Wait</Button> }
+                        <Button color="accent" className={classes.button} onClick={() => askSurrenderGame(row.id, row.opponent.name)}>{t(tr.SURRENDER)}</Button>
+                    </div>
+                    <div className={classes.timeago}>{`You are waiting for ${timeAgo.format(new Date(row.last_changed), 'time')}`}</div>
+                    <div className={classes.info}>
+                        <div className={classes.statistics}>
+                            <h3>{` Turn ${row.turns}`}</h3>
+                            <div className={classes.coins}>
+                                <span>{multiplayer.calculateCoinsFromTrackRecord([row.statistics], true)}</span>
+                                <div />
                             </div>
                         </div>
-                        {highscoreLoading ? null : <PlayerList
-                            withScore={true}
-                            username={account.username}
-                            players={highscore}
-                            friends={friends}
-                            removeFriend={removeFriend}
-                            addFriend={addFriend}
-                            challenge={challengePlayer}
-                            showProfile={showPlayerProfile}
-                            sessions={multiplayerSessions} />}
+                        <Fab icon="user" onClick={() => showPlayerProfile(row, 'default')} />
                     </div>
-                </BattlechocDialog>
-
-                <BattlechocDialog
-                    open={showSearch}
-                    close={() => setShowSearch(false)}
-                    title={t(tr.SEARCH_PLAYERS)}>
-                    <div className="playerSearchDialog">
-                        <TextField
-                            label="Name"
-                            value={userSearchText}
-                            error={badInternetConnection && !waitForResponse}
-                            helperText={badInternetConnection && !waitForResponse ? t(tr.NO_HEALTHY_INTERNET) : ''}
-                            style={{ display: 'flex' }}
-                            inputProps={{ spellCheck: 'false', autoFocus: true }}
-                            InputLabelProps={{ style: { color: 'rgba(69, 123, 130, 0.8)' } }}
-                            onChange={event => {
-                                setUserSearchText(event.target.value);
-                            }}
-                            margin="normal"
-                            InputProps={{
-                                endAdornment: waitForResponse ? <CircularProgress size={18} /> : null,
-                                inputRef: inputRef
-                            }}
-                        />
-                        <PlayerList
-                            players={searchResults}
-                            friends={friends}
-                            addFriend={addFriend}
-                            removeFriend={removeFriend}
-                            challenge={challengePlayer}
-                            showProfile={showPlayerProfile}
-                            sessions={multiplayerSessions} />
-                    </div>
-                </BattlechocDialog>
-
-                {sessionRefreshActions > 0 ? <CircularProgress style={{ marginTop: '25vh' }} /> : <div className={multiplayerSessions.length > 0 ? 'session-list' : 'empty-list'}>
-                    {multiplayerSessions.length > 0 ?
-                        <div className="openGames">
-                            <div className="gamestable">
-                                <div className="tableHead">{t(tr.ACTIONS)}</div>
-                                <div className="tableHead">{t(tr.OPPONENT)}</div>
-                                <div className="tableHead">{t(tr.TURNS)}</div>
-                                <div className="tableHead">{t(tr.LAST_ACTION)}</div>
-                                <div className="tableHead">{t(tr.POTENTIAL_COINS)}</div>
-
-                                {Object.assign([], multiplayerSessions).sort(sortByTimestamp).map((row, i) => {
-                                    let notifyIcon = canNotifyOpponent(row) ? <Email onClick={() => notifyOpponent(row)} /> : null;
-                                    let joinGameIcon = <HourglassEmpty onClick={() => enterMultiplayerGame(row.id)} />;
-                                    if (row.myTurn) {
-                                        joinGameIcon = <PlayArrow onClick={() => enterMultiplayerGame(row.id)} />;
-                                    }
-                                    return [
-                                        <div key={i} onMouseEnter={() => toggleClassList(i)} onMouseLeave={() => toggleClassList(i)} className={`row.${i} gameActions`}>{joinGameIcon}<Cancel onClick={() => askSurrenderGame(row.id, row.opponent.name)} /><AccountCircle onClick={() => showPlayerProfile(row)} />{notifyIcon}</div>,
-                                        <div key={i + 1} onClick={() => showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => toggleClassList(i)} onMouseLeave={() => toggleClassList(i)}><span className="gamelabel">player</span><span>{row.opponent.name}</span></div>,
-                                        <div key={i + 2} onClick={() => showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => toggleClassList(i)} onMouseLeave={() => toggleClassList(i)}><span className="gamelabel">turns</span><span>{row.turns}</span></div>,
-                                        <div key={i + 3} onClick={() => showPlayerProfile(row)} className={`row.${i}`} onMouseEnter={() => toggleClassList(i)} onMouseLeave={() => toggleClassList(i)}><span className="gamelabel">lastAction</span><span>{timeAgo(row.last_changed)}</span></div>,
-                                        <div onClick={() => showPlayerProfile(row)} onMouseEnter={() => toggleClassList(i)} onMouseLeave={() => toggleClassList(i)} className={`row.${i} tablefoot`} key={i + 4}><span className="gamelabel">potential coins</span><span>{multiplayer.calculateCoinsFromTrackRecord([row.statistics], true)}</span></div>
-                                    ]
-                                })}
-                            </div></div> :
-                        <div className="no-sessions-info">
-                            <h4>{t(tr.MULTIPLAYER_INFO_HEADER)}</h4>
-                            <p>{t(tr.MULTIPLAYER_INFO_HEADER2)}</p>
-                            <ul>
-                                <li><Casino />{t(tr.MULTIPLAYER_INFO_CASINO)}</li>
-                                <li><People />{t(tr.MULTIPLAYER_INFO_FRIENDS)}</li>
-                                <li><Share />{t(tr.MULTIPLAYER_INFO_SHARE)}</li>
-                                <li><Search />{t(tr.MULTIPLAYER_INFO_SEARCH)}</li>
-                                <li><FormatListNumbered />{t(tr.MULTIPLAYER_INFO_HIGHSCORE)}</li>
-                            </ul>
-                        </div>}
-                </div>}
-            </div>
+                </div>) }
+            </div> : null }
+        </div>
         </>
     );
 }
@@ -451,7 +491,6 @@ const mapStateToProps = state => ({
     game: state.gameplay.game,
     multiplayerSessions: state.ui.multiplayerSessions,
     friends: state.ui.friends,
-    account: state.ui.playerInfos.stats,
     sessionRefreshActions: state.ui.sessionRefreshActions
 });
 

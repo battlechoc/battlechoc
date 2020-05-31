@@ -1,5 +1,5 @@
 * {
-  -webkit-backface-visibility:  hidden;
+  -webkit-backface-visibility:  visible;
   -webkit-tap-highlight-color:  transparent;
 }
 
@@ -13,12 +13,20 @@ html, body, #root {
   flex-direction: column;
   height: 100%;
   width: 100%;
+  overflow: hidden;
 }
 
 .assetLoader {
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 57.5vh;
+  left: 50vw;
+  margin-left: -5vw;
+}
+
+@media screen and (orientation: portrait) {
+  .assetLoader {
+    margin-left: -5vh
+  }    
 }
 
 .gameCanvas {
@@ -28,19 +36,45 @@ html, body, #root {
   width: 100%;
 }
 
-#background {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  filter: blur(5px) opacity(0.4);
+@keyframes rotate {
+  to { transform: rotate(360deg); }
 }
 
-.no-webp-support #background {
-  background: url(/images/background.jpg) no-repeat center center fixed;
-  background-size: cover;
+@keyframes spin {
+  from {
+      transform: rotate(0deg);
+  }
+  to {
+      transform: rotate(359deg);
+  }
 }
 
-.webp-support #background {
-  background: url(/images/background.webp) no-repeat center center fixed;
-  background-size: cover;
+@keyframes bake-pie {
+  from {
+    transform: rotate(0deg) translate3d(0,0,0);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+      opacity: 0;
+  }
+  100% {
+      opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+      opacity: 1;
+  }
+  100% {
+      opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1) rotate(360deg); }
+  50% { transform: scale(0.5) rotate(180deg); }
+  100% { transform: scale(1) rotate(0deg); }
 }

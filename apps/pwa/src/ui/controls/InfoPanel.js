@@ -1,10 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { makeStyles } from '@material-ui/core/styles';
+import { createUseStyles } from 'react-jss';
 import { multiplayer } from '../../Multiplayer';
-import { features } from '../../helper/compatibility';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = createUseStyles(theme => ({
     panel: {
         position: 'absolute',
         whiteSpace: 'nowrap',
@@ -15,53 +14,51 @@ const useStyles = makeStyles(theme => ({
         zIndex: 1,
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'flex-start'
+        alignItems: 'flex-start',
+        userSelect: 'none'
     },
-    icon: {
+    info: {
         display: 'flex',
         alignItems: 'center',
         marginTop: 5,
         '& p': {
-            fontSize: '1rem',
-            color: '#324D5C',
+            fontSize: '3.5vw',
+            color: 'white',
             userSelect: 'none',
-            margin: '0 0 0 6px'
+            margin: '0 0 0 5px',
+            fontFamily: 'Bangers',
+            justifyContent: 'space-between',
+            '-webkit-text-stroke': `0.18vw ${theme.color.secondary.dark}`,
+            '-webkit-font-smoothing': 'antialiased',
+            [theme.breakpoints.orientation.portrait]: {
+                fontSize: '6vw'
+            },
+            [theme.breakpoints.orientation.square]: {
+                fontSize: '3.5vw'
+            }
         }
     },
     cacao: {
-        backgroundImage: 'url(/images/toolbar_icon_palette.png)',
-        backgroundPosition: '-200% -200%' 
+        backgroundImage: 'url(/images/cacao-icon.svg)'
     },
     buildings: {
-        backgroundImage: 'url(/images/toolbar_icon_palette.png)',
-        backgroundPosition: '-300% -200%' 
+        backgroundImage: 'url(/images/buildings-icon.svg)'
     },
-    webPCacao: {
-        backgroundImage: 'url(/images/toolbar_icon_palette.webp)',
-        backgroundPosition: '-200% -200%' 
-    },
-    webPBuildings: {
-        backgroundImage: 'url(/images/toolbar_icon_palette.webp)',
-        backgroundPosition: '-300% -200%' 
-    },
-    image: {
-        userSelect: 'none',
-        filter: 'brightness(130%)',
-        '@media screen and (min-width: 901px)': {
-            width: '54px',
-            height: '54px',
-            backgroundSize: '216px 162px'
-        },
-        '@media screen and (max-width: 900px)': {
-            width: '42px',
-            height: '42px',
-            backgroundSize: '168px 126px'
-        },
-        '@media screen and (max-width: 600px)': {
-            width: '30px',
-            height: '30px',
-            backgroundSize: '120px 90px'
-        },
+    icon: {
+        border: `0.4vw solid ${theme.color.secondary.dark}`,
+        borderRadius: '50%',
+        background: 'linear-gradient(0deg, #3DA2CE 0%, #9DD5E9 80%)',
+        '& > div': {
+            padding: '3.5vw',
+            backgroundSize: '100% 100%',
+            backgroundRepeat: 'no-repeat',
+            [theme.breakpoints.orientation.portrait]: {
+                padding: '6vw'
+            },
+            [theme.breakpoints.orientation.square]: {
+                padding: '3.5vw'
+            }
+        }
     }
 }));
 
@@ -69,17 +66,18 @@ const InfoPanel = props => {
     const classes = useStyles();
     let index = multiplayer.localPlayerIndex;
 
-    let cacaoClass = features.isWebPSupported ? classes.webPCacao : classes.cacao;
-    let buildingsClass = features.isWebPSupported ? classes.webPBuildings : classes.buildings;
-
     return (
         <div className={classes.panel}>
+            <div className={classes.info}>
             <div className={classes.icon}>
-                <div className={`${cacaoClass} ${classes.image}`}/>
+                    <div className={classes.cacao} />
+                </div>
                 <p>{props.players[index].cacao}</p>
             </div>
-            <div className={classes.icon}>
-                <div className={`${buildingsClass} ${classes.image}`}/>
+            <div className={classes.info}>
+                <div className={classes.icon}>
+                    <div className={classes.buildings} />
+                </div>
                 <p>{props.players[index].buildings + '/' + props.players[index].buildingsPerTurn}</p>
             </div>
         </div>

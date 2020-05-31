@@ -1,80 +1,225 @@
 import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import './GameEndOverview.css';
-import { ArrowBack } from '@material-ui/icons';
-import Fab from '@material-ui/core/Fab';
+import Fab from './Fab';
 import { translate as t, keys as tr } from '../misc';
-import { OptimizedImage } from '../../helper/compatibility';
+import { createUseStyles, useTheme } from 'react-jss';
+
+const useStyles = createUseStyles(theme => ({
+    overview: {
+        height: '100%',
+        width: '100%',
+        position: 'absolute',
+        zIndex: 100,
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+    },
+    headline: {
+        fontFamily: 'Bangers',
+        fontSize: '5vw',
+        color: 'white',
+        '-webkit-text-stroke': `0.05vw ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
+    },
+    statistics: {
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-evenly',
+        [theme.breakpoints.orientation.portrait]: {
+            flexDirection: 'column-reverse'
+        }
+    },
+    actions: {
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        marginBottom: '8vh'
+    },
+    pie: {
+        height: '30vw',
+        width: '30vw',
+        position: 'relative',
+        '&:before': {
+            content: '""',
+            display: 'block',
+            position: 'absolute',
+            zIndex: 1,
+            width: '50%',
+            height: '50%',
+            background: 'white',
+            borderRadius: '50%',
+            top: '25%',
+            left: '25%',
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            height: '50vw',
+            width: '50vw',
+        }
+    },
+    slice: {
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        clip: 'rect(0vw, 30vw, 30vw, 15vw)',
+        animation: 'bake-pie 1s',
+        '& > span': {
+            display: 'block',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            backgroundColor: 'black',
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            clip: 'rect(0vw, 30vw, 30vw, 15vw)',
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            clip: 'rect(0vw, 50vw, 50vw, 25vw)',
+            '& > span': {
+                clip: 'rect(0vw, 50vw, 50vw, 25vw)'
+            }
+        }
+    },
+    legend: {
+        fontSize: '3vw',
+        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`,
+        color: 'white',
+        '-webkit-text-stroke': `0.05vw ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
+        fontFamily: 'Bangers',
+        padding: '3vw',
+        display: 'flex',
+        flexDirection: 'column',
+        border: `0.5vw solid ${theme.color.secondary.light}`,
+        borderRadius: '2vw',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '5vw'
+        },
+        '& b': {
+            paddingLeft: '0.5vw',
+            color: theme.color.primary.light,
+            '-webkit-text-stroke': `0.05vw ${theme.color.primary.dark}`,
+            '-webkit-font-smoothing': 'antialiased'
+        },
+        '& li': {
+            display: 'flex',
+            marginBottom: '1.5vw',
+            paddingLeft: '1vw',
+            borderLeft: '2.5vw solid black'
+        },
+        '& em': {
+            fontStyle: 'normal',
+            flexGrow: 1
+        },
+        '& span': {
+            paddingLeft: '2vw'
+        }
+    },
+    coins: {
+        position: 'absolute',
+        height: '100%',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1,
+        '& span': {
+            fontSize: '6vw',
+            color: '#fff',
+            '-webkit-text-stroke': '0.1vw #3C1C0C',
+            '-webkit-font-smoothing': 'antialiased',
+            fontFamily: 'Bangers',
+            marginRight: '0.5vw',
+            [theme.breakpoints.orientation.portrait]: {
+                fontSize: '9vw'
+            }
+        },
+        '& > div': {
+            background: 'url(/images/coins.svg) no-repeat',
+            height: '4.717vw',
+            width: '7vw',
+            [theme.breakpoints.orientation.portrait]: {
+                height: '7.41vw',
+                width: '11vw',
+            }
+        }
+    }
+}));
 
 const useMountEffect = effect => useEffect(effect, [])
 
 const GameEndOverview = props => {
-    let sliceSize = (dataNum, dataTotal) => {
+    const classes = useStyles();
+    const theme = useTheme();
+    const sliceSize = (dataNum, dataTotal) => {
         return (dataNum / dataTotal) * 360;
     }
     
-    let addSlice = (sliceSize, offset, sliceID, color) => {
-        let pie = document.getElementById('pie');
-        let slice = document.createElement('div');
-        slice.className = 'slice';
-        let span = document.createElement('span');
+    const addSlice = (sliceSize, offset, color) => {
+        const pie = document.getElementsByClassName(classes.pie)[0];
+        const slice = document.createElement('div');
+        slice.className = classes.slice;
+        const span = document.createElement('span');
         slice.appendChild(span);
         pie.appendChild(slice);
         
         offset = offset - 1;
-        let sizeRotation = -179 + sliceSize;
+        const sizeRotation = -179 + sliceSize;
         slice.style.transform = "rotate("+offset+"deg) translate3d(0,0,0)";
         span.style.transform = "rotate("+sizeRotation+"deg) translate3d(0,0,0)";
         span.style.backgroundColor = color;
     }
     
-    let iterateSlices = (sliceSize, offset, dataCount, sliceCount, color) => {
-        var sliceID = "s"+dataCount+"-"+sliceCount;
-        var maxSize = 179;
+    const iterateSlices = (sliceSize, offset, dataCount, color) => {
+        const maxSize = 179;
         if(sliceSize <= maxSize) {
-            addSlice(sliceSize, offset, sliceID, color);
+            addSlice(sliceSize, offset, color);
         } else {
-            addSlice(maxSize, offset, sliceID, color);
-            iterateSlices(sliceSize-maxSize, offset+maxSize, dataCount, sliceCount+1, color);
+            addSlice(maxSize, offset, color);
+            iterateSlices(sliceSize-maxSize, offset+maxSize, dataCount, color);
         }
     }
     
     useMountEffect(() => {
-        let statistics = props.player.statistics;
+        const statistics = props.player.statistics;
         const data = [statistics.attacks, 
                     statistics.builtEntities * 2, 
                     statistics.espionages * 10, 
                     statistics.moltenFields * 50];
         const total = data.reduce((a, b) => a + b, 0);
         const color = [
-          "#D92B4B", 
-          "#7EBFD9",
-          "#F2BF27",
-          "#F2E18D"
+          theme.color.accent.light,
+          theme.color.secondary.light,
+          theme.color.primary.light,
+          theme.color.brown.light
         ];
-        var offset = 0;
+        let offset = 0;
         for(let i = 0; i < data.length; i++) {
             if (data[i] > 0) {
                 let size = sliceSize(data[i], total);
-                iterateSlices(size, offset, i, 0, color[i]);
-                document.querySelector('.legend li:nth-child(' + (i+1) + ')').style.borderColor = color[i];
+                iterateSlices(size, offset, i, color[i]);
+                document.querySelector(`.${classes.legend} li:nth-child(${i+1})`).style.borderColor = color[i];
                 offset += size;
             }
         }
     });
     
-    let statistics = props.player.statistics;
+    const statistics = props.player.statistics;
     let coins = statistics.attacks + statistics.builtEntities * 2 + statistics.espionages * 10 + statistics.moltenFields * 50;
-    let outcome = 'win';
+    //let outcome = 'win';
 
     if (props.winners.length === 1) {
         if (props.player.id !== props.winners[0].id) {
             coins = 0;
-            outcome = 'lost';
+            //outcome = 'lost';
         }
     } else if (props.winners.length === 2) {
         coins = Math.floor(coins / 2);
-        outcome = 'draw';
+        //outcome = 'draw';
     }
 
     let headine = t(tr.MESSAGE_WIN_GAME);
@@ -87,44 +232,40 @@ const GameEndOverview = props => {
     }
 
     return (
-        <div className="overview">
-            <h1>{ headine }</h1>
-            <div className="statistics">                    
-                <ul className="legend">
+        <div className={classes.overview}>
+            <h1 className={classes.headline}>{ headine }</h1>
+            <div className={classes.statistics}>                    
+                <ul className={classes.legend}>
                     <li>
                         <em>{t(tr.GAME_END_OVERVIEW_ATTACKS)}</em>
-                        <span className="amount">{ statistics.attacks }</span>
+                        <span>{ statistics.attacks }</span>
                     </li>
                     <li>
                         <em>{t(tr.GAME_END_OVERVIEW_ENTITIES)}</em>
-                        <span><span className="amount">{ statistics.builtEntities }</span><b>&times; 2</b></span>
+                        <span><span>{ statistics.builtEntities }</span><b>&times; 2</b></span>
                     </li>
                     <li>
                         <em>{t(tr.GAME_END_OVERVIEW_ESPIONAGES)}</em>
-                        <span><span className="amount">{ statistics.espionages }</span><b>&times; 10</b></span>
+                        <span><span>{ statistics.espionages }</span><b>&times; 10</b></span>
                     </li>
                     <li>
                         <em>{t(tr.GAME_END_OVERVIEW_MOLTEN_FIELDS)}</em>
-                        <span><span className="amount">{ statistics.moltenFields }</span><b>&times; 50</b></span>
+                        <span><span>{ statistics.moltenFields }</span><b>&times; 50</b></span>
                     </li>
                 </ul>
-                <div id="pie">
-                    <div id="coins">
-                        <span className={ outcome }>{ coins }</span>
-                        <OptimizedImage src="/images/coins.png" alt="choco coins" />
+                <div className={classes.pie}>
+                    <div className={classes.coins}>
+                        <span>{ coins }</span>
+                        <div />
                     </div>
                 </div>
             </div>
 
-            <div className="actions">
+            <div className={classes.actions}>
                 <Fab
-                    size="large"
-                    color="primary"
-                    aria-label="back"
-                    className="icon"
-                    onClick={() => props.finishGame(coins)}>
-                    <ArrowBack  />
-                </Fab>
+                    color="secondary"
+                    icon="back"
+                    onClick={() => props.finishGame(coins)} />
             </div>
         </div>
     );

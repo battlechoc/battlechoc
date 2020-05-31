@@ -113,7 +113,7 @@ const uiReducer = createReducer({
         if ((action.payload.type === 'PWA_ONLINE_MESSAGE' || action.payload.type === 'PWA_OFFLINE_MESSAGE')) {
             state.quickMessages = state.quickMessages.filter(message => message.type !== 'PWA_ONLINE_MESSAGE' && message.type !== 'PWA_OFFLINE_MESSAGE');
         }
-        state.quickMessages.push({ type: action.payload.type || 'GENERIC_MESSAGE', id: uuidv4(), text: action.payload.text || '', variant: action.payload.variant || 'warning' });
+        state.quickMessages.push({ autoHideDuration: typeof action.payload.autoHideDuration === 'undefined' ? 4000 : action.payload.autoHideDuration, id: uuidv4(), text: action.payload.text || '', variant: action.payload.variant || 'warning' });
     },
     [UiActions.hideQuickMessage]: (state, action) => {
         state.quickMessages = state.quickMessages.filter(message => message.id !== action.payload);
@@ -144,11 +144,8 @@ const uiReducer = createReducer({
     [UiActions.hideNotification]: state => {
         state.notification = { title: null, message: null, open: false};
     },
-    [UiActions.lockHudUi]: state => {
-        state.hudUiLocked = true;
-    },
-    [UiActions.unlockHudUi]: state => {
-        state.hudUiLocked = false;
+    [UiActions.injectMultiplayerSession]: (state, action) => {
+        state.injectedMultiplayerSessionId = action.payload;
     }
 });
 
