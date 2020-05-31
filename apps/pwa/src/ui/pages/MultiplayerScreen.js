@@ -164,7 +164,7 @@ const useStyles = createUseStyles(theme => ({
         '-webkit-font-smoothing': 'antialiased',
         marginRight: '2vw',
         [theme.breakpoints.orientation.portrait]: {
-            fontSize: '5vh',
+            fontSize: '6vh',
             '-webkit-text-stroke': `0.1vh ${theme.color.secondary.dark}`,
         }
     }, 
@@ -180,9 +180,9 @@ const useStyles = createUseStyles(theme => ({
         margin: '2vw 0',
         [theme.breakpoints.orientation.portrait]: {
             border: `0.1vh solid ${theme.color.secondary.dark}`,
-            padding: '1.5vh',
-            borderRadius: '1.5vh',
-            fontSize: '4.5vh',
+            padding: '1.5vw',
+            borderRadius: '2vw',
+            fontSize: '4.5vw',
             margin: '2vh 0',
         }
     },
@@ -455,28 +455,34 @@ const MultiplayerScreen = props => {
             </div>
             
             { multiplayerSessions.length > 0 && sessionRefreshActions === 0 ? <div className={classes.sessions}>
-                {  Object.assign([], multiplayerSessions).sort(sortByTimestamp).map((row, i) =>
-                <div className={classes.session} key={i}>
-                    <div className={classes.header} />
-                    <h2 className={classes.title}>{`you vs ${row.opponent.name}`}</h2>
-                    <div className={classes.buttons}>
-                        { row.myTurn ? 
-                        <Button className={classes.button} onClick={() => enterMultiplayerGame(row.id)}>Play</Button> :
-                        <Button className={classes.button} color="secondary" onClick={() => enterMultiplayerGame(row.id)}>Wait</Button> }
-                        <Button color="accent" className={classes.button} onClick={() => askSurrenderGame(row.id, row.opponent.name)}>{t(tr.SURRENDER)}</Button>
-                    </div>
-                    <div className={classes.timeago}>{`You are waiting for ${timeAgo.format(new Date(row.last_changed), 'time')}`}</div>
-                    <div className={classes.info}>
-                        <div className={classes.statistics}>
-                            <h3>{` Turn ${row.turns}`}</h3>
-                            <div className={classes.coins}>
-                                <span>{multiplayer.calculateCoinsFromTrackRecord([row.statistics], true)}</span>
-                                <div />
-                            </div>
+                {  Object.assign([], multiplayerSessions).sort(sortByTimestamp).map((row, i) => {
+                    const automaticallyEnding = new Date(row.last_changed).getTime() + (1000 * 60 * 60 * 24);
+                    const distance = automaticallyEnding - new Date().getTime();
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const info = row.myTurn ? t(tr.MULTIPLAYER_AUTOMATICALLY_LOSE, hours, minutes) : t(tr.MULTIPLAYER_AUTOMATICALLY_WIN, hours, minutes);
+                    return (<div className={classes.session} key={i}>
+                        <div className={classes.header} />
+                        <h2 className={classes.title}>{`${t(tr.YOU)} vs ${row.opponent.name}`}</h2>
+                        <div className={classes.buttons}>
+                            { row.myTurn ? 
+                            <Button className={classes.button} onClick={() => enterMultiplayerGame(row.id)}>{t(tr.PLAY)}</Button> :
+                            <Button className={classes.button} color="secondary" onClick={() => enterMultiplayerGame(row.id)}>{t(tr.WAIT)}</Button> }
+                            <Button color="accent" className={classes.button} onClick={() => askSurrenderGame(row.id, row.opponent.name)}>{t(tr.SURRENDER)}</Button>
                         </div>
-                        <Fab icon="user" onClick={() => showPlayerProfile(row, 'default')} />
-                    </div>
-                </div>) }
+                        <div className={classes.timeago}>{info}</div>
+                        <div className={classes.info}>
+                            <div className={classes.statistics}>
+                                <h3>{`${row.turns} ${t(tr.TURNS)}`}</h3>
+                                <div className={classes.coins}>
+                                    <span>{multiplayer.calculateCoinsFromTrackRecord([row.statistics], true)}</span>
+                                    <div />
+                                </div>
+                            </div>
+                            <Fab icon="user" onClick={() => showPlayerProfile(row, 'default')} />
+                        </div>
+                    </div>);
+                }) }
             </div> : null }
         </div>
         </>

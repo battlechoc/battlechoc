@@ -115,6 +115,9 @@ module.exports = {
   "START_TUTORIAL": "Bắt đầu hướng dẫn",
   "SUCCESSFULLY_SENDING_PROBLEM_REPORT": "Báo cáo vấn đề đã được gửi thành công!",
   "SURRENDER": "Đầu hàng",
+  "PLAY": "Chơi",
+  "WAIT": "đợi đã",
+  "YOU": "bạn",
   "SURRENDER_GAME": "Trò chơi đầu hàng",
   "SURRENDER_GAME_TEXT": "Bạn có thực sự muốn đầu hàng trò chơi chống lại {{missingScore}} không? Đầu hàng chi phí {{feature}} tiền.",
   "TOOLTIP_ATTACK_PHASE_MESSAGE": "Nhấp vào một tòa nhà của kẻ thù để phá hủy nó. Gợi ý: Kẻ thù thông minh che giấu các tòa nhà trong kem",
@@ -220,5 +223,7 @@ module.exports = {
   "UPDATE_LEVEL_FAILED_UPGRADE": "Không thể thực hiện nâng cấp. Kiểm tra kết nối Internet của bạn.",
   "WARNING_GAME_NOT_JOINABLE": "Trò chơi bạn muốn tham gia đã kết thúc",
   "WARNING_GAME_NOT_JOINABLE_VIA_URL": "Trò chơi đã chọn đã kết thúc hoặc không được liên kết với tài khoản của bạn.",
-  "WARNING_PLAYER_NOT_FOUND": "Không tìm thấy trình phát {{missingScore}}"
+  "WARNING_PLAYER_NOT_FOUND": "Không tìm thấy trình phát {{missingScore}}",
+  "MULTIPLAYER_AUTOMATICALLY_LOSE": 'Nếu bạn không chơi, bạn sẽ thua trong {{hours}} giờ {{minutes}} phút',
+  "MULTIPLAYER_AUTOMATICALLY_WIN": 'Nếu đối thủ của bạn không chơi, bạn thắng trong {{hours}} giờ {{minutes}} phút'
 }

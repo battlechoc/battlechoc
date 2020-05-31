@@ -115,6 +115,9 @@ module.exports = {
     "START_TUTORIAL": "Inizia il tutorial",
     "SUCCESSFULLY_SENDING_PROBLEM_REPORT": "La segnalazione del problema è stata inviata con successo!",
     "SURRENDER": "Resa",
+    "PLAY": "Gioca",
+    "WAIT": "Aspetta",
+    "YOU": "Tu",
     "SURRENDER_GAME": "Surrender Game",
     "SURRENDER_GAME_TEXT": "Vuoi davvero rinunciare al gioco contro {{missingScore}}? La resa costa {{feature}} monete.",
     "TOOLTIP_ATTACK_PHASE_MESSAGE": "Fai clic su un edificio nemico per distruggerlo. Suggerimento: i nemici intelligenti nascondono gli edifici all'interno della crema",
@@ -220,5 +223,7 @@ module.exports = {
     "UPDATE_LEVEL_FAILED_UPGRADE": "Non è stato possibile eseguire l'aggiornamento. Controlla la tua connessione Internet.",
     "WARNING_GAME_NOT_JOINABLE": "Il gioco a cui vuoi partecipare è già terminato",
     "WARNING_GAME_NOT_JOINABLE_VIA_URL": "Il gioco selezionato è già terminato o non associato al tuo account.",
-    "WARNING_PLAYER_NOT_FOUND": "Giocatore {{missingScore}} non trovato"
+    "WARNING_PLAYER_NOT_FOUND": "Giocatore {{missingScore}} non trovato",
+    "MULTIPLAYER_AUTOMATICALLY_LOSE": 'Se non giochi, in {{hours}} ore e {{minutes}} minuti perderai',
+    "MULTIPLAYER_AUTOMATICALLY_WIN": 'Se il tuo avversario non gioca vinci in {{hours}} ore e {{minutes}} minuti'
   }

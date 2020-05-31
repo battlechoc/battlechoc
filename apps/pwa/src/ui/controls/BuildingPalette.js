@@ -31,14 +31,21 @@ const useStyles = createUseStyles(theme => ({
         borderRadius: '50%',
         background: 'linear-gradient(0deg, #3DA2CE 0%, #9DD5E9 80%)',
         '& > div': {
-            padding: '3.5vw',
             backgroundSize: '100% 100%',
             backgroundRepeat: 'no-repeat',
             [theme.breakpoints.orientation.portrait]: {
-                padding: '6vw'
+                width: '12vw',
+                height: '12vw',
+            },
+            [theme.breakpoints.orientation.landscape]: {
+                width: '7vw',
+                height: '7vw',
+                maxWidth: '12vh',
+                maxHeight: '12vh'
             },
             [theme.breakpoints.orientation.square]: {
-                padding: '3.5vw'
+                  width: 'calc(3.5vh + 3.5vw)',
+                  height: 'calc(3.5vh + 3.5vw)',
             }
         }
     },
@@ -53,8 +60,6 @@ const useStyles = createUseStyles(theme => ({
         }
     },
     locked: {
-        width: '7vw',
-        height: '7vw',
         display: 'flex',
         justifyContent: 'center',
         border: `0.4vw solid ${theme.color.accent.dark}`,
@@ -73,9 +78,15 @@ const useStyles = createUseStyles(theme => ({
             width: '12vw',
             height: '12vw',
         },
-        [theme.breakpoints.orientation.square]: {
+        [theme.breakpoints.orientation.landscape]: {
             width: '7vw',
             height: '7vw',
+            maxWidth: '12vh',
+            maxHeight: '12vh'
+        },
+        [theme.breakpoints.orientation.square]: {
+              width: 'calc(3.5vh + 3.5vw)',
+              height: 'calc(3.5vh + 3.5vw)',
         }
     }
 }));

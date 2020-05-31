@@ -220,5 +220,7 @@ module.exports = {
     "PLAYER_NAME_GENERATED_TITLE": "ランダムなプレイヤー名が設定されています",
     "PLAYER_NAME_GENERATED_BODY": "マルチプレイヤー機能を使用できるように、 {{name}} という名前を選択しました。この名前は、設定メニューでいつでも変更できます。",
     "COINS_FOR_NEXT_FEATURE_TITLE": "{{feature}}まだアンロックされていない",
-    "COINS_FOR_NEXT_FEATURE_BODY": "チョコレートコインを{{missingScore}}枚以上集めて{{feature}}拡張のロックを解除します。"
+    "COINS_FOR_NEXT_FEATURE_BODY": "チョコレートコインを{{missingScore}}枚以上集めて{{feature}}拡張のロックを解除します。",
+    "MULTIPLAYER_AUTOMATICALLY_LOSE": 'プレイしないと{{hours}}時間{{minutes}}分で損する',
+    "MULTIPLAYER_AUTOMATICALLY_WIN": '相手がプレイしない場合は{{hours}}時間{{minutes}}分で勝利'
 }

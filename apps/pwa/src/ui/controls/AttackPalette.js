@@ -10,14 +10,28 @@ import { sharedPaletteStyles } from './BuildingPalette';
 const useStyles = createUseStyles(theme => ({
     count: {
         position: 'absolute',
-        fontSize: '2rem',
+        fontSize: '5vw',
         color: 'white',
-        textShadow: '2px 2px 1px #222',
+        textShadow: '0.4vw 0.4vw 0.2vw #222',
         fontFamily: 'Bangers',
-        '-webkit-text-stroke': `1px ${theme.color.secondary.dark}`,
+        '-webkit-text-stroke': `0.2vw ${theme.color.secondary.dark}`,
         '-webkit-font-smoothing': 'antialiased',
         marginLeft: 5,
-        zIndex: 10
+        zIndex: 10,
+        width: 'min-content !important',
+        height: 'min-content !important',
+        bottom: '-18%',
+        right: 0,
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '8vw',
+            textShadow: '0.5vw 0.5vw 0.2vw #222',
+            '-webkit-text-stroke': `0.3vw ${theme.color.secondary.dark}`,
+        },
+        [theme.breakpoints.orientation.square]: {
+            fontSize: '5.5vw',
+            textShadow: '0.3vw 0.3vw 0.15vw #222',
+            '-webkit-text-stroke': `0.2vw ${theme.color.secondary.dark}`
+        }
     }
 }));
 
@@ -85,7 +99,7 @@ const AttackPalette = props => {
 
                         const attackPossible = playerHasAttacksLeft(attack.type);
                         return <div key={i}>
-                            <div className={`${classes.preview} ${props.selectedAttack === attack.type ? classes.selected : ''} ${attackPossible ? '' : classes.disabled}`} onClick={() => {
+                            <div style={{ position: 'relative'}} className={`${classes.preview} ${props.selectedAttack === attack.type ? classes.selected : ''} ${attackPossible ? '' : classes.disabled}`} onClick={() => {
                                 if (attackPossible) {
                                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                     selectAttack(attack.type);
