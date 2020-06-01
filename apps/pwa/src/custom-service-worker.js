@@ -177,6 +177,7 @@ workbox.precaching.precacheAndRoute((self.__precacheManifest || []).concat([
     { url: '/images/decoration.svg', revision: '3' },
     { url: '/images/highscore.svg', revision: '3' },
     { url: '/images/progress-90.svg', revision: '3' },
+    { url: '/images/bell.svg', revision: '3' },
     { url: '/animations/loading.gif', revision: '3' }
 ]));
 
