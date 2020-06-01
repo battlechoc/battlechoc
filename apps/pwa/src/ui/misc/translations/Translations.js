@@ -178,6 +178,12 @@ const translationPredicates = {
     },
     COINS_FOR_NEXT_FEATURE_BODY: function (strings, feature, missingScore) {
         return fmt(strings.COINS_FOR_NEXT_FEATURE_BODY, { feature: feature, missingScore: missingScore });
+    },
+    MULTIPLAYER_AUTOMATICALLY_LOSE: function (strings, hours, minutes) {
+        return fmt(strings.MULTIPLAYER_AUTOMATICALLY_LOSE, { hours: hours, minutes: minutes });
+    },
+    MULTIPLAYER_AUTOMATICALLY_WIN: function (strings, hours, minutes) {
+        return fmt(strings.MULTIPLAYER_AUTOMATICALLY_WIN, { hours: hours, minutes: minutes });
     }
 };
 

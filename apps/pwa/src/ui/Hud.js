@@ -132,6 +132,7 @@ const useStyles = createUseStyles(theme => ({
             justifyContent: 'space-evenly',
             [theme.breakpoints.orientation.portrait]: {
                 justifyContent: 'unset',
+                alignItems: 'center',
                 flexDirection: 'column',
                 '& > div:last-child': {
                     marginTop: '3vh'

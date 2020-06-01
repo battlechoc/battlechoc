@@ -115,6 +115,9 @@ module.exports = {
     "START_TUTORIAL": "Comenzar tutorial",
     "SUCCESSFULLY_SENDING_PROBLEM_REPORT": "¡El informe del problema se envió con éxito!",
     "SURRENDER": "Rendición",
+    "PLAY": "Juega",
+    "WAIT": "Espera",
+    "YOU": "Tú",
     "SURRENDER_GAME": "Juego de rendición",
     "SURRENDER_GAME_TEXT": "¿Realmente quieres entregar el juego contra {{missingScore}}? La entrega cuesta {{feature}} monedas.",
     "TOOLTIP_ATTACK_PHASE_MESSAGE": "Haz clic en un edificio enemigo para destruirlo. Sugerencia: los enemigos inteligentes esconden edificios dentro de la crema",
@@ -220,5 +223,7 @@ module.exports = {
     "UPDATE_LEVEL_FAILED_UPGRADE": "No fue posible realizar la actualización. Comprueba tu conexión a Internet.",
     "WARNING_GAME_NOT_JOINABLE": "El juego al que quieres unirte ya ha terminado",
     "WARNING_GAME_NOT_JOINABLE_VIA_URL": "El juego seleccionado ya ha finalizado o no está asociado con tu cuenta.",
-    "WARNING_PLAYER_NOT_FOUND": "Jugador {{missingScore}} no encontrado"
+    "WARNING_PLAYER_NOT_FOUND": "Jugador {{missingScore}} no encontrado",
+    "MULTIPLAYER_AUTOMATICALLY_LOSE": 'Si no juegas, en {{hours}} horas y {{minutes}} minutos perderás',
+    "MULTIPLAYER_AUTOMATICALLY_WIN": 'Si tu oponente no juega, ganas en {{hours}} horas y {{minutes}} minutos'
   }

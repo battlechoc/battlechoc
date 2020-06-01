@@ -71,7 +71,7 @@ const useStyles = createUseStyles(theme => ({
         fontSize: '7vh',
         justifyContent: 'flex-start'
       },
-      '& > span': {
+      '& > div > span': {
         marginLeft: '2vh'
       },
       [theme.breakpoints.orientation.portrait]: {

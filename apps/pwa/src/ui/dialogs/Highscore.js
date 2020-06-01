@@ -34,11 +34,11 @@ const useStyles = createUseStyles(theme => ({
     fontFamily: 'Bangers',
     fontSize: '5vw',
     '-webkit-text-stroke': `0.1vw ${theme.color.secondary.dark}`,
-    '-webkit-font-smoothing': 'antialiased'
-  },
-  [theme.breakpoints.orientation.portrait]: {
-    fontSize: '4vh',
-    '-webkit-text-stroke': `0.1vh ${theme.color.secondary.dark}`,    
+    '-webkit-font-smoothing': 'antialiased',
+    [theme.breakpoints.orientation.portrait]: {
+      fontSize: '4vh',
+      '-webkit-text-stroke': `0.1vh ${theme.color.secondary.dark}`,    
+    }
   }
 }));
 

@@ -182,6 +182,9 @@ module.exports = {
     "CHOCLAB_INCREASED_BY": "increased by",
     "WARNING_GAME_NOT_JOINABLE": "The game you want to join has already ended",
     "SURRENDER": "Surrender",
+    "PLAY": "Play",
+    "WAIT": "Wait",
+    "YOU": "You",
     "SURRENDER_GAME": "Surrender Game",
     "PWA_UPDATE_AVAILABLE": "A new version is available and will be used as soon as you restart the pwa, or the browser",
     "PWA_OFFLINE_MODE": "You are running battlechoc without internet connection, so only the singleplayer mode is available.",
@@ -220,5 +223,7 @@ module.exports = {
     "PLAYER_NAME_GENERATED_TITLE": "A random player name has been set for you",
     "PLAYER_NAME_GENERATED_BODY": "We chose the name {{name}} for you to enable you for the multiplayer features. You can change this name at any time in the settings menu.",
     "COINS_FOR_NEXT_FEATURE_TITLE": "{{feature}} not yet unlocked",
-    "COINS_FOR_NEXT_FEATURE_BODY": "You need to earn {{missingScore}} more coins to unlock the {{feature}} feature."
+    "COINS_FOR_NEXT_FEATURE_BODY": "You need to earn {{missingScore}} more coins to unlock the {{feature}} feature.",
+    "MULTIPLAYER_AUTOMATICALLY_LOSE": 'If you don\'t play, you will lose in {{hours}} hours and {{minutes}} minutes',
+    "MULTIPLAYER_AUTOMATICALLY_WIN": 'If your opponent does not play you will win in {{hours}} hours and {{minutes}} minutes'
 }

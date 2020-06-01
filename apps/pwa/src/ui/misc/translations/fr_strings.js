@@ -115,6 +115,9 @@ module.exports = {
     "START_TUTORIAL": "Démarrer le didacticiel",
     "SUCCESSFULLY_SENDING_PROBLEM_REPORT": "Le rapport de problème a été envoyé avec succès!",
     "SURRENDER": "Abandon",
+    "PLAY": "Jouez",
+    "WAIT": "Attendez",
+    "YOU": "Vous",
     "SURRENDER_GAME": "Jeu de reddition",
     "SURRENDER_GAME_TEXT": "Voulez-vous vraiment abandonner le match contre {{missingScore}}? La remise coûte {{feature}} pièces.",
     "TOOLTIP_ATTACK_PHASE_MESSAGE": "Cliquez sur un bâtiment ennemi pour le détruire. Astuce: des ennemis intelligents cachent des bâtiments dans la crème",
@@ -220,5 +223,7 @@ module.exports = {
     "UPDATE_LEVEL_FAILED_UPGRADE": "Il n'a pas été possible d'effectuer la mise à niveau. Vérifiez votre connection internet.",
     "WARNING_GAME_NOT_JOINABLE": "Le jeu auquel vous souhaitez participer est déjà terminé",
     "WARNING_GAME_NOT_JOINABLE_VIA_URL": "Le jeu sélectionné est déjà terminé ou n'est pas associé à votre compte.",
-    "WARNING_PLAYER_NOT_FOUND": "Joueur {{missingScore}} introuvable"
+    "WARNING_PLAYER_NOT_FOUND": "Joueur {{missingScore}} introuvable",
+    "MULTIPLAYER_AUTOMATICALLY_LOSE": 'Si vous ne jouez pas, dans {{hours}} heures et {{minutes}} minutes, vous perdrez',
+    "MULTIPLAYER_AUTOMATICALLY_WIN": 'Si votre adversaire ne joue pas, vous gagnez dans {{hours}} heures et {{minutes}} minutes'
   }

@@ -6,8 +6,6 @@ import { Jukebox } from '../misc';
 const useStyles = createUseStyles(theme => ({
     fab: {
       color: 'white',
-      width: '7vw',
-      height: '7vw',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -16,9 +14,15 @@ const useStyles = createUseStyles(theme => ({
         width: '12vw',
         height: '12vw',
       },
+      [theme.breakpoints.orientation.landscape]: {
+        width: '7vw',
+        height: '7vw',
+        maxWidth: '12vh',
+        maxHeight: '12vh'
+      },
       [theme.breakpoints.orientation.square]: {
-          width: '7vw',
-          height: '7vw',
+          width: 'calc(3.5vh + 3.5vw)',
+          height: 'calc(3.5vh + 3.5vw)',
       }
     },
     icon: props => {
@@ -73,7 +77,7 @@ Fab.defaultProps = {
 
 Fab.propTypes = { 
   color: PropTypes.oneOf(['primary', 'secondary', 'accent', 'facebook', 'instagram', 'gold']),
-  icon: PropTypes.oneOf(['search', 'info', 'forward', 'backward', 'fast-forward', 'fast-backward', 'settings', 'mute', 'volume', 'facebook', 'instagram', 'fullscreen', 'user', 'close', 'trophy', 'back', 'share', 'refresh']),
+  icon: PropTypes.oneOf(['bell', 'search', 'info', 'forward', 'backward', 'fast-forward', 'fast-backward', 'settings', 'mute', 'volume', 'facebook', 'instagram', 'fullscreen', 'user', 'close', 'trophy', 'back', 'share', 'refresh']),
   iconStyle: PropTypes.object,
   className: PropTypes.string,
   onClick: PropTypes.func.isRequired,
