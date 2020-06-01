@@ -83,7 +83,7 @@ const AttackPalette = props => {
     }
 
     return (
-        <div className={classes.palette}>
+        <div className={`${classes.container} ${classes.palette}`}>
             {(() => {
                 if (attackSelectionIsVisible() || typeof props.pseudoGame !== 'undefined') {
                     return attacksForSeclection.map((attack, i) => {

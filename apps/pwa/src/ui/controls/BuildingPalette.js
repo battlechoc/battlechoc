@@ -8,11 +8,13 @@ import Fab from './Fab';
 import { createUseStyles } from 'react-jss';
 
 const useStyles = createUseStyles(theme => ({
-    palette: {
+    container: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         zIndex: 1,
+    },
+    palette: {
         marginBottom: 5,
         marginLeft: 5,
         display: 'flex',
@@ -47,6 +49,23 @@ const useStyles = createUseStyles(theme => ({
                   width: 'calc(3.5vh + 3.5vw)',
                   height: 'calc(3.5vh + 3.5vw)',
             }
+        }
+    },
+    donut: { 
+        marginRight: 5,
+        [theme.breakpoints.orientation.portrait]: {
+            width: '12vw',
+            height: '12vw',
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            width: '7vw',
+            height: '7vw',
+            maxWidth: '12vh',
+            maxHeight: '12vh'
+        },
+        [theme.breakpoints.orientation.square]: {
+              width: 'calc(3.5vh + 3.5vw)',
+              height: 'calc(3.5vh + 3.5vw)',
         }
     },
     disabled: {
@@ -191,10 +210,10 @@ const BuildingPalette = props => {
     let donutSelection = null;
     
     if (player.donuts.length > 0 || player.activeDonuts.length > 0) { 
-        donutSelection = <div className={classes.palette} style={{ bottom: 59 }}>
+        donutSelection = <div className={classes.palette}>
             { player.activeDonuts.length > 0 ? <Fab
                 color="secondary"
-                style={{ height: 50, width: 50, marginRight: 5 }}
+                className={classes.donut}
                 icon={ props.donutHighlighting ? 'donuts-disabled' : 'donuts-enabled' }
                 onClick={() => props.toggleDonutHighlighting() } /> : null
             }
@@ -222,49 +241,49 @@ const BuildingPalette = props => {
     }
 
     return (
-        <>
-        { buildingSelectionIsVisible() ? donutSelection : null }
-        <div className={classes.palette}>
-            {(() => {
-                if (buildingSelectionIsVisible()) {
-                    return buildingsForSeclection.map((building, i) => {
-                        if (typeof whitelist !== 'undefined') {
-                            if (!whitelist.includes(building.type)) {
-                                if (!props.tutorial && props.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && props.game.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
-                                    return <div className={`${classes.preview} ${classes.locked}`} key={i}><div /></div>;
-                                } else {
-                                    return null
+        <div className={classes.container}>
+            { buildingSelectionIsVisible() ? donutSelection : null }
+            <div className={classes.palette}>
+                {(() => {
+                    if (buildingSelectionIsVisible()) {
+                        return buildingsForSeclection.map((building, i) => {
+                            if (typeof whitelist !== 'undefined') {
+                                if (!whitelist.includes(building.type)) {
+                                    if (!props.tutorial && props.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && props.game.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) {
+                                        return <div className={`${classes.preview} ${classes.locked}`} key={i}><div /></div>;
+                                    } else {
+                                        return null
+                                    }
                                 }
                             }
-                        }
-                        let canBuild = playerCanBuild(building);
+                            let canBuild = playerCanBuild(building);
 
-                        if (building.type === EntityType.FACTORY) {
-                            canBuild = (props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-                                props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) &&
-                                !player.hasFactory;
-                        }
+                            if (building.type === EntityType.FACTORY) {
+                                canBuild = (props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
+                                    props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) &&
+                                    !player.hasFactory;
+                            }
 
-                        if ((building.type === EntityType.FACTORY && ((props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-                            props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) && !player.hasFactory)) ||
-                            (building.type !== EntityType.FACTORY && props.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && props.game.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT)) {
-                            return <div className={`${classes.preview} ${props.selectedBuilding === building.type ? classes.selected : ''} ${canBuild ? '' : classes.disabled}`} key={i}>
-                                <div style={{ backgroundImage: `url(/images/${building.image}-icon.svg)` }} onClick={() => {
-                                    tapBuilding(building.type);
-                                    if (canBuild) {
-                                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                                        selectBuilding(building.type);
-                                    }
-                                }} />
-                            </div>
-                        } else {
-                            return null;
-                        }
-                    });
-                }
-            })()}
+                            if ((building.type === EntityType.FACTORY && ((props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
+                                props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT) && !player.hasFactory)) ||
+                                (building.type !== EntityType.FACTORY && props.game.state !== GameStateTypes.PLAYER_1_INITIAL_PLACEMENT && props.game.state !== GameStateTypes.PLAYER_2_INITIAL_PLACEMENT)) {
+                                return <div className={`${classes.preview} ${props.selectedBuilding === building.type ? classes.selected : ''} ${canBuild ? '' : classes.disabled}`} key={i}>
+                                    <div style={{ backgroundImage: `url(/images/${building.image}-icon.svg)` }} onClick={() => {
+                                        tapBuilding(building.type);
+                                        if (canBuild) {
+                                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                                            selectBuilding(building.type);
+                                        }
+                                    }} />
+                                </div>
+                            } else {
+                                return null;
+                            }
+                        });
+                    }
+                })()}
+            </div>
         </div>
-        </>
     );
 }
 
