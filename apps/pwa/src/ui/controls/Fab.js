@@ -77,7 +77,7 @@ Fab.defaultProps = {
 
 Fab.propTypes = { 
   color: PropTypes.oneOf(['primary', 'secondary', 'accent', 'facebook', 'instagram', 'gold']),
-  icon: PropTypes.oneOf(['search', 'info', 'forward', 'backward', 'fast-forward', 'fast-backward', 'settings', 'mute', 'volume', 'facebook', 'instagram', 'fullscreen', 'user', 'close', 'trophy', 'back', 'share', 'refresh']),
+  icon: PropTypes.oneOf(['bell', 'search', 'info', 'forward', 'backward', 'fast-forward', 'fast-backward', 'settings', 'mute', 'volume', 'facebook', 'instagram', 'fullscreen', 'user', 'close', 'trophy', 'back', 'share', 'refresh']),
   iconStyle: PropTypes.object,
   className: PropTypes.string,
   onClick: PropTypes.func.isRequired,

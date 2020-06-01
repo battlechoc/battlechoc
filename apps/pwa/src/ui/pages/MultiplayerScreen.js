@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Jukebox, translate as t, keys as tr, getCurrentLanguage } from '../misc';
+import { Jukebox, translate as t, keys as tr } from '../misc';
 import Axios from 'axios';
 import { showQuickMessage, updateMultiplayerSessions } from '../UiActions';
 import { connect } from 'react-redux';
-import TimeAgo from 'javascript-time-ago';
-import en from 'javascript-time-ago/locale/en';
-import de from 'javascript-time-ago/locale/de';
 import { multiplayer } from '../../Multiplayer';
 import { ServerRequest } from '../../helper/settings';
 import logger from '../../helper/logger';
@@ -69,6 +66,8 @@ const useStyles = createUseStyles(theme => ({
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
         borderRadius: '5%',
         position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
         [theme.breakpoints.orientation.portrait]: {
             width: '30vh',
             margin: '1vh',
@@ -99,7 +98,8 @@ const useStyles = createUseStyles(theme => ({
         display: 'flex',
         justifyContent: 'space-around',
         alignItems: 'center',
-        margin: 10
+        margin: 10,
+        flexGrow: 1
     },
     header: { 
         position: 'absolute',
@@ -113,7 +113,6 @@ const useStyles = createUseStyles(theme => ({
     statistics: {
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
         fontSize: '3vw',
         '& h3': {
             margin: 5
@@ -131,7 +130,7 @@ const useStyles = createUseStyles(theme => ({
         }, 
         '& div': {
             background: 'url(/images/coins.svg) no-repeat',
-            padding: '1.5vw 2vw',
+            padding: '2vw 3vw',
             [theme.breakpoints.orientation.portrait]: {
                 padding: '1.5vh 2vh',
             } 
@@ -200,12 +199,19 @@ const useStyles = createUseStyles(theme => ({
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 0
+    },
+    opponentActions: {
+        display: 'flex',
+        flexDirection: 'column',
+        '& > div:last-child': {
+            marginTop: '1vh'
+        }
     }
 }));
 
 const MultiplayerScreen = props => {
     const classes = useStyles();
-    const { /*updateMultiplayerSessions,*/ closeMultiplayerScreen, showQuickMessage, openAccountOverview, enterMultiplayerGame, multiplayerSessions, sessionRefreshActions, friends } = props;
+    const { updateMultiplayerSessions, closeMultiplayerScreen, showQuickMessage, openAccountOverview, enterMultiplayerGame, multiplayerSessions, sessionRefreshActions, friends } = props;
 
     const [searchingRandomOpponent, setSearchingRandomOpponent] = useState(false);
     const [showFriends, setShowFriends] = useState(false);
@@ -226,17 +232,7 @@ const MultiplayerScreen = props => {
 
     const inputRef = React.useRef();
     
-    let timeAgo = new TimeAgo('en-US');
-    if (getCurrentLanguage() === 'de') {
-        timeAgo = new TimeAgo('de-DE');
-    } else if (getCurrentLanguage() === 'jp') {
-        timeAgo = new TimeAgo('ja');
-    }
-
     useEffect(() => {
-        TimeAgo.addLocale(en);
-        TimeAgo.addLocale(de);
-
         multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED) }));
         multiplayer.fetchFriendsList();
 
@@ -255,7 +251,7 @@ const MultiplayerScreen = props => {
 
     const showPlayerProfile = (session, mode='stacked') => openAccountOverview(session.opponent, mode);
 
-    /*const canNotifyOpponent = session => {
+    const canNotifyOpponent = session => {
         const currentDateTime = (new Date()).getTime();
         const lastNotifiedTime = (typeof session.last_notification === 'undefined') ? 0 : session.last_notification;
         return (((currentDateTime - lastNotifiedTime) > 1000 * 60 * 60 * 4) && session.myTurn === false);
@@ -265,7 +261,7 @@ const MultiplayerScreen = props => {
         ServerRequest('post', '/user/notify', { sessionId: session.id }).then(response => {
             updateMultiplayerSessions(response.data.sessions);
         })
-    }*/
+    }
 
     const removeFriend = async friend => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -473,13 +469,16 @@ const MultiplayerScreen = props => {
                         <div className={classes.timeago}>{info}</div>
                         <div className={classes.info}>
                             <div className={classes.statistics}>
-                                <h3>{`${row.turns} ${t(tr.TURNS)}`}</h3>
+                                <div style={{ marginBottom: '1.5vh'}}><span style={{marginRight: '3vh'}}>{row.turns}</span><span>{t(tr.TURNS)}</span></div>
                                 <div className={classes.coins}>
                                     <span>{multiplayer.calculateCoinsFromTrackRecord([row.statistics], true)}</span>
                                     <div />
                                 </div>
                             </div>
-                            <Fab icon="user" onClick={() => showPlayerProfile(row, 'default')} />
+                            <div className={classes.opponentActions}>
+                                <Fab icon="user" onClick={() => showPlayerProfile(row, 'default')} />
+                                { canNotifyOpponent(row) ? <Fab color="gold" icon="bell" onClick={() => notifyOpponent(row)} /> : null }
+                            </div>
                         </div>
                     </div>);
                 }) }
