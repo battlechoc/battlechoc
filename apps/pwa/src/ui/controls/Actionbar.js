@@ -146,7 +146,7 @@ const Actionbar = props => {
                         <Fab
                             key="6"
                             color="accent"
-                            icon="forward"
+                            icon="forward-accent"
                             onClick={() => {
                                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                                 props.finishBuildPhase({ issuer: props.game.players[multiplayer.localPlayerIndex].id }).then(() => {

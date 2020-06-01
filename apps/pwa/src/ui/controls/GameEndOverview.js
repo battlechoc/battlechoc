@@ -17,10 +17,14 @@ const useStyles = createUseStyles(theme => ({
     },
     headline: {
         fontFamily: 'Bangers',
-        fontSize: '5vw',
+        fontSize: '10vh',
+        textAlign: 'center',
         color: 'white',
-        '-webkit-text-stroke': `0.05vw ${theme.color.secondary.dark}`,
+        '-webkit-text-stroke': `0.05vh ${theme.color.secondary.dark}`,
         '-webkit-font-smoothing': 'antialiased',
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '5vh',
+        }
     },
     statistics: {
         width: '100%',
@@ -39,8 +43,8 @@ const useStyles = createUseStyles(theme => ({
         marginBottom: '8vh'
     },
     pie: {
-        height: '30vw',
-        width: '30vw',
+        height: '50vh',
+        width: '50vh',
         position: 'relative',
         '&:before': {
             content: '""',
@@ -55,15 +59,15 @@ const useStyles = createUseStyles(theme => ({
             left: '25%',
         },
         [theme.breakpoints.orientation.portrait]: {
-            height: '50vw',
-            width: '50vw',
+            height: '30vh',
+            width: '30vh',
         }
     },
     slice: {
         position: 'absolute',
         width: '100%',
         height: '100%',
-        clip: 'rect(0vw, 30vw, 30vw, 15vw)',
+        clip: 'rect(0vh, 50vh, 50vh, 25vh)',
         animation: 'bake-pie 1s',
         '& > span': {
             display: 'block',
@@ -74,48 +78,49 @@ const useStyles = createUseStyles(theme => ({
             width: '100%',
             height: '100%',
             borderRadius: '50%',
-            clip: 'rect(0vw, 30vw, 30vw, 15vw)',
+            clip: 'rect(0vh, 50vh, 50vh, 25vh)',
         },
         [theme.breakpoints.orientation.portrait]: {
-            clip: 'rect(0vw, 50vw, 50vw, 25vw)',
+            clip: 'rect(0vh, 30vh, 30vh, 15vh)',
             '& > span': {
-                clip: 'rect(0vw, 50vw, 50vw, 25vw)'
+                clip: 'rect(0vh, 30vh, 30vh, 15vh)'
             }
         }
     },
     legend: {
-        fontSize: '3vw',
+        fontSize: '5vh',
         background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`,
         color: 'white',
-        '-webkit-text-stroke': `0.05vw ${theme.color.secondary.dark}`,
+        '-webkit-text-stroke': `0.05vh ${theme.color.secondary.dark}`,
         '-webkit-font-smoothing': 'antialiased',
         fontFamily: 'Bangers',
-        padding: '3vw',
+        padding: '5vh',
         display: 'flex',
         flexDirection: 'column',
-        border: `0.5vw solid ${theme.color.secondary.light}`,
-        borderRadius: '2vw',
-        [theme.breakpoints.orientation.portrait]: {
-            fontSize: '5vw'
-        },
+        border: `0.5vh solid ${theme.color.secondary.light}`,
+        borderRadius: '2vh',
         '& b': {
-            paddingLeft: '0.5vw',
-            color: theme.color.primary.light,
-            '-webkit-text-stroke': `0.05vw ${theme.color.primary.dark}`,
-            '-webkit-font-smoothing': 'antialiased'
+            paddingLeft: '0.5vh',
+            color: theme.color.primary.light
         },
         '& li': {
             display: 'flex',
-            marginBottom: '1.5vw',
-            paddingLeft: '1vw',
-            borderLeft: '2.5vw solid black'
+            marginBottom: '1.5vh',
+            paddingLeft: '1vh',
+            borderLeft: '5vh solid black'
         },
         '& em': {
             fontStyle: 'normal',
             flexGrow: 1
         },
         '& span': {
-            paddingLeft: '2vw'
+            paddingLeft: '2vh'
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            fontSize: '2.5vh',
+            '& li': {
+                borderLeft: '3vh solid black'
+            },
         }
     },
     coins: {
@@ -128,23 +133,24 @@ const useStyles = createUseStyles(theme => ({
         justifyContent: 'center',
         zIndex: 1,
         '& span': {
-            fontSize: '6vw',
+            fontSize: '10vh',
             color: '#fff',
-            '-webkit-text-stroke': '0.1vw #3C1C0C',
+            '-webkit-text-stroke': '0.2vh #3C1C0C',
             '-webkit-font-smoothing': 'antialiased',
             fontFamily: 'Bangers',
-            marginRight: '0.5vw',
+            marginRight: '0.5vh',
             [theme.breakpoints.orientation.portrait]: {
-                fontSize: '9vw'
+                fontSize: '6.5vh'
             }
         },
         '& > div': {
             background: 'url(/images/coins.svg) no-repeat',
-            height: '4.717vw',
-            width: '7vw',
+            height: '7vh',
+            width: '10vh',
+            marginLeft: '1.5vh',
             [theme.breakpoints.orientation.portrait]: {
-                height: '7.41vw',
-                width: '11vw',
+                height: '5vh',
+                width: '7.5vh',
             }
         }
     }

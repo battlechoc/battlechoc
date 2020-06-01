@@ -36,10 +36,6 @@ const useStyles = createUseStyles(theme => ({
         style.height = '90%';
         style.marginTop = 3
       }
-
-      if (props.icon === 'forward' && props.color === 'accent') {
-        style.filter = 'brightness(0.8) contrast(2) hue-rotate(190deg)'
-      }
       
       return style;
     },
@@ -77,7 +73,7 @@ Fab.defaultProps = {
 
 Fab.propTypes = { 
   color: PropTypes.oneOf(['primary', 'secondary', 'accent', 'facebook', 'instagram', 'gold']),
-  icon: PropTypes.oneOf(['bell', 'search', 'info', 'forward', 'backward', 'fast-forward', 'fast-backward', 'settings', 'mute', 'volume', 'facebook', 'instagram', 'fullscreen', 'user', 'close', 'trophy', 'back', 'share', 'refresh']),
+  icon: PropTypes.oneOf(['bell', 'search', 'info', 'forward', 'forward-accent', 'backward', 'fast-forward', 'fast-backward', 'settings', 'mute', 'volume', 'facebook', 'instagram', 'fullscreen', 'user', 'close', 'trophy', 'back', 'share', 'refresh']),
   iconStyle: PropTypes.object,
   className: PropTypes.string,
   onClick: PropTypes.func.isRequired,

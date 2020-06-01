@@ -327,7 +327,6 @@ const AccountOverview = props => {
                 {(() => {
                     if (typeof props.multiplayerSessions !== 'undefined' && !isPlayerAccount) {
                         const actions = [];
-                        console.log(props.playerAccount.score)
                         const gamesAgainstOpponent = props.multiplayerSessions.filter(session => session.opponent.name === playerName);
                         if (props.playerInfos.stats.score >= 1000 && props.playerAccount.score >= 1000 && props.playerInfos.stats.name !== EmptyPlayerStats.username) {
                             if (gamesAgainstOpponent.length === 0) {
