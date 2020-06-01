@@ -100,6 +100,7 @@ class AssetLoader {
                 'truffle-cannon-icon.svg',
                 'choclab-decoration-left.svg',
                 'forward.svg',
+                'forward-accent.svg',
                 'progress-20.svg',
                 'user.svg',
                 'choclab-decoration-right.svg',

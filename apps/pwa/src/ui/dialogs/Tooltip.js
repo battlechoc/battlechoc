@@ -100,15 +100,15 @@ const useStyles = createUseStyles(theme => ({
     },
     animation: {
         marginTop: '-2%',
-        width: '10vh',
-        height: '10vh',
+        width: '12vw',
+        height: '12vw',
         [theme.breakpoints.orientation.portrait]: {
-            width: '10vw',
-            height: '10vw',
+            width: '12vh',
+            height: '12vh',
         },
         [theme.breakpoints.orientation.square]: {
-            width: '8vw',
-            height: '8vw',            
+            width: '10vw',
+            height: '10vw',            
         }
     }
 }));

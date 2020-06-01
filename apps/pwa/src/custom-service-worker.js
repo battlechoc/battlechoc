@@ -149,6 +149,7 @@ workbox.precaching.precacheAndRoute((self.__precacheManifest || []).concat([
     { url: '/images/truffle-cannon-icon.svg', revision: '3' },
     { url: '/images/choclab-decoration-left.svg', revision: '3' },
     { url: '/images/forward.svg', revision: '3' },
+    { url: '/images/forward-accent.svg', revision: '3' },
     { url: '/images/progress-20.svg', revision: '3' },
     { url: '/images/user.svg', revision: '3' },
     { url: '/images/choclab-decoration-right.svg', revision: '3' },

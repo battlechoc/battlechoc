@@ -74,11 +74,13 @@ const useStyles = createUseStyles(theme => ({
         }
     },
     title: {
-        fontSize: '3vw',
+        fontSize: '4vw',
         textAlign: 'center',
         position: 'relative',
+        '-webkit-text-stroke': `0.1vw ${theme.color.brown.dark}`,
+        '-webkit-font-smoothing': 'antialiased',
         [theme.breakpoints.orientation.portrait]: {
-            fontSize: '3vh'
+            fontSize: '4.5vw'
         } 
     },
     button: {
@@ -99,7 +101,9 @@ const useStyles = createUseStyles(theme => ({
         justifyContent: 'space-around',
         alignItems: 'center',
         margin: 10,
-        flexGrow: 1
+        flexGrow: 1,
+        '-webkit-text-stroke': `0.1vw ${theme.color.secondary.dark}`,
+        '-webkit-font-smoothing': 'antialiased'
     },
     header: { 
         position: 'absolute',
@@ -131,8 +135,10 @@ const useStyles = createUseStyles(theme => ({
         '& div': {
             background: 'url(/images/coins.svg) no-repeat',
             padding: '2vw 3vw',
+            marginLeft: '1.5vw',
             [theme.breakpoints.orientation.portrait]: {
-                padding: '1.5vh 2vh',
+                padding: '2vh 3vh',
+                marginLeft: '1.5vw'
             } 
         }
     },
@@ -205,6 +211,12 @@ const useStyles = createUseStyles(theme => ({
         flexDirection: 'column',
         '& > div:last-child': {
             marginTop: '1vh'
+        }
+    },
+    turns: {
+        marginRight: '3vh',
+        [theme.breakpoints.orientation.portrait]: {
+            marginRight: '3vw'
         }
     }
 }));
@@ -290,7 +302,7 @@ const MultiplayerScreen = props => {
     const surrenderGame = async sessionId => {
         multiplayer.surrenderGame(sessionId).then(() => multiplayer.getMultiplayerSessions()).then(() => {
             multiplayer.fetchPlayerStats();
-        }).catch(err => {
+        }).catch(() => {
             showQuickMessage({ text: t(tr.NOTIFICATION_SURRENDER_NOT_POSSIBLE), variant: 'info' });
         });
     }
@@ -469,7 +481,7 @@ const MultiplayerScreen = props => {
                         <div className={classes.timeago}>{info}</div>
                         <div className={classes.info}>
                             <div className={classes.statistics}>
-                                <div style={{ marginBottom: '1.5vh'}}><span style={{marginRight: '3vh'}}>{row.turns}</span><span>{t(tr.TURNS)}</span></div>
+                                <div style={{ marginBottom: '1.5vh'}}><span className={classes.turns}>{row.turns}</span><span>{t(tr.TURNS)}</span></div>
                                 <div className={classes.coins}>
                                     <span>{multiplayer.calculateCoinsFromTrackRecord([row.statistics], true)}</span>
                                     <div />
