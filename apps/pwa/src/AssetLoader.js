@@ -128,6 +128,7 @@ class AssetLoader {
                 'decoration.svg',
                 'highscore.svg',
                 'progress-90.svg',
+                'bell.svg',
                 '../animations/loading.gif'
             ]
         }
