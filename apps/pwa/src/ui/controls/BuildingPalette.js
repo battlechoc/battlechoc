@@ -8,13 +8,9 @@ import Fab from './Fab';
 import { createUseStyles } from 'react-jss';
 
 const useStyles = createUseStyles(theme => ({
-    container: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        zIndex: 1,
-    },
     palette: {
+        position: 'relative',
+        zIndex: 1,
         marginBottom: 5,
         marginLeft: 5,
         display: 'flex',
@@ -26,6 +22,11 @@ const useStyles = createUseStyles(theme => ({
             width: 'unset',
             flexWrap: 'unset'
         }
+    },
+    container: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0
     },
     preview: {
         marginRight: 5,
@@ -210,7 +211,7 @@ const BuildingPalette = props => {
     let donutSelection = null;
     
     if (player.donuts.length > 0 || player.activeDonuts.length > 0) { 
-        donutSelection = <div className={classes.palette}>
+        donutSelection = <div className={classes.palette} style={{width: 'fit-content'}}>
             { player.activeDonuts.length > 0 ? <Fab
                 color="secondary"
                 className={classes.donut}
