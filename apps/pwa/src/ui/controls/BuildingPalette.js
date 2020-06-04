@@ -85,13 +85,15 @@ const useStyles = createUseStyles(theme => ({
         border: `0.4vw solid ${theme.color.accent.dark}`,
         background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 80%)`,
         '& > div': {
-            padding: '2.8vw',
+            width: 'unset',
+            height: 'unset',
+            padding: '2.5vw',
             backgroundImage: 'url(/images/lock.svg)',
             [theme.breakpoints.orientation.portrait]: {
                 padding: '4.5vw'
             },
             [theme.breakpoints.orientation.square]: {
-                padding: '2.8vw'
+                padding: '2.5vw'
             }
         },
         [theme.breakpoints.orientation.portrait]: {
