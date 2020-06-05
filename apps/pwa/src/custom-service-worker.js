@@ -227,7 +227,7 @@ workbox.routing.registerRoute(
 );
 
 workbox.routing.registerRoute(
-    /https:.*images\/.*\.(png|webp)/,
+    /https:.*images\/.*\.(png|svg)/,
     new workbox.strategies.StaleWhileRevalidate({
         cacheName: 'image-cache',
         plugins: [
