@@ -3,7 +3,7 @@ import { Mesh, ParticleSystem, Vector3, Color4, ActionManager, ExecuteCodeAction
 import uuidv4 from 'uuid/v4';
 
 class Gamefield {
-    constructor(isPlayerGameField, position, getPlayerField, fieldIdx, size, scene, action, setRenderLoop) {
+    constructor(isPlayerGameField, position, playerField, fieldIdx, size, scene, action, setRenderLoop) {
         this.isPlayerGameField = isPlayerGameField;
         this.rows = size.rows;
         this.cols = size.cols;
@@ -11,24 +11,19 @@ class Gamefield {
         this.fieldIdx = fieldIdx;
         this.scene = scene;
         this.action = action;
-        this.getPlayerField = () => getPlayerField();
-        this.playerField = JSON.parse(JSON.stringify(this.getPlayerField()));
-        this.build();
-        this.animations = [];
-        this.setRenderLoop = setRenderLoop;
-    }
-
-    build() {
-        let playerField = this.getPlayerField();
-        playerField.grid.forEach((cell, i) => {
+        this.playerField = JSON.parse(JSON.stringify(playerField));
+    
+        playerField.grid.forEach(cell => {
             if (!cell.molten) {
                 if (!cell.occupiedBy.some(entity => isDonut(entity.type)) || !this.isPlayerGameField) {
                     this.createMeshInstance(cell.type, cell);
                 }
-                
                 this.renderEntities(cell);
             }
         });
+
+        this.animations = [];
+        this.setRenderLoop = setRenderLoop;
     }
 
     renderEntities(cell, remove=false) {
@@ -104,8 +99,7 @@ class Gamefield {
         });
     }
 
-    update() {
-        let playerField = this.getPlayerField();
+    update(playerField) {
         playerField.grid.filter((cell, i) => cell.molten !== this.playerField.grid[i].molten).forEach(cell => {
             let field = this.scene.getMeshByName(this.fieldIdx + '.' + cell.type + '.' + cell.row + '.' + cell.col);
             if (field) {
@@ -135,6 +129,7 @@ class Gamefield {
         };
 
         let changes = playerField.grid.map((cell, i) => JSON.stringify(cell.occupiedBy) === JSON.stringify(this.playerField.grid[i].occupiedBy) ? null : i);
+        console.log(changes);
         changes.filter(position => position !== null).forEach(position => {
             if (conatinsTrap(this.playerField, position) && !conatinsTrap(playerField, position) && !playerField.grid[position].molten) {
                 this.renderEntities(this.playerField.grid[position], true);

@@ -1,4 +1,4 @@
-import React, { Component, Suspense } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import './App.css';
 import { Jukebox, translate as t, keys as tr, setCurrentLanguage } from './ui/misc';
@@ -19,11 +19,12 @@ import Tutorial from './tutorial/Tutorial';
 import QuickMessage from './ui/dialogs/QuickMessage';
 import logger from './helper/logger';
 import { TutorialSituations } from './situations/tutorial/';
-const Scene = React.lazy(() => import('./3d/Scene'));
+import Scene from './3d/Scene';
 
 class App extends Component {
     constructor(props) {
         super(props);
+        this.scene = React.createRef();
         let path = window.location.pathname;
         let openInfo = false;
         if (path === '/privacy-policy') {
@@ -55,11 +56,11 @@ class App extends Component {
             let playerIndex = multiplayer.localPlayerIndex;
             if (!playerField) {
                 playerIndex = 1 - playerIndex;
-                position.row -= this.scene.opponentGameFieldDistance;
-                position.col += this.scene.opponentGameFieldDistance;
+                position.row -= this.scene.current.opponentGameFieldDistance;
+                position.col += this.scene.current.opponentGameFieldDistance;
             }
 
-            this.scene.detonateAtPosition(row, col, playerField);
+            this.scene.current.detonateAtPosition(row, col, playerField);
             const playerBoard = this.props.game.board.fields[this.props.game.players[playerIndex].fieldIndex]
             const selectedCell = playerBoard.grid[row * this.props.game.board.size.cols + col];
 
@@ -71,9 +72,9 @@ class App extends Component {
                     entity = entitiesWithHp[0];
                 }
 
-                this.scene.showEnergyBar(entity, position, playerField);
+                this.scene.current.showEnergyBar(entity, position, playerField);
             } else {
-                this.scene.hideEnergyBar(null, position);
+                this.scene.current.hideEnergyBar(null, position);
             }
         } catch (error) {
             logger.warn(error);
@@ -233,7 +234,7 @@ class App extends Component {
 
         if (typeof this.props.game !== 'undefined') {
             this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
-            this.scene.clear();
+            this.scene.current.clear();
             await this.props.finishGame();
             await this.props.resetUi();
         }
@@ -244,7 +245,7 @@ class App extends Component {
         await this.props.loadUiState(situation.ui);
         this.setState({ situation: undefined }, () => {
             if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
-                this.scene.startGame(this.props.game, false);
+                this.scene.current.startGame(this.props.game, false);
             }
         });
     }
@@ -275,12 +276,12 @@ class App extends Component {
             }
         }
 
-        if (typeof this.scene !== 'undefined') {
-            if (typeof this.scene.playerGameField !== 'undefined') {
+        if (typeof this.scene.current !== 'undefined') {
+            if (typeof this.scene.current.playerGameField !== 'undefined') {
                 if (this.props.selectedBuilding === EntityType.FRUIT_CANNON && prevProps.selectedBuilding !== EntityType.FRUIT_CANNON) {
-                    this.scene.highlightCannons();
+                    this.scene.current.highlightCannons();
                 } else if (this.props.selectedBuilding !== EntityType.FRUIT_CANNON && prevProps.selectedBuilding === EntityType.FRUIT_CANNON) {
-                    this.scene.highlightCannons(false);
+                    this.scene.current.highlightCannons(false);
                 }
             }
         }
@@ -312,17 +313,17 @@ class App extends Component {
 
             const opponentType = typeof prevProps.game !== 'undefined' ? prevProps.game.players[1 - multiplayer.localPlayerIndex].type : undefined;
 
-            if (prevProps.selectedBuilding === EntityType.FRUIT_CANNON && typeof this.scene !== 'undefined' && typeof this.scene.playerGameField !== 'undefined' && typeof this.props.game !== 'undefined' && (this.props.game.state !== GameStateTypes.BUILD_PHASE || !multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) ||
+            if (prevProps.selectedBuilding === EntityType.FRUIT_CANNON && typeof this.scene.current !== 'undefined' && typeof this.scene.current.playerGameField !== 'undefined' && typeof this.props.game !== 'undefined' && (this.props.game.state !== GameStateTypes.BUILD_PHASE || !multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) ||
                 this.props.game.players[multiplayer.localPlayerIndex].buildings === 0 || this.props.selectedBuilding !== EntityType.FRUIT_CANNON)) {
-                this.scene.highlightCannons(false);
+                this.scene.current.highlightCannons(false);
             }
 
             if (!prevProps.donutHighlighting && this.props.donutHighlighting) {
-                this.scene.highlightDonuts();
+                this.scene.current.highlightDonuts();
             }
 
             if (prevProps.donutHighlighting && !this.props.donutHighlighting) {
-                this.scene.highlightDonuts(false);
+                this.scene.current.highlightDonuts(false);
             }
 
             if (this.props.donutHighlighting &&
@@ -342,16 +343,16 @@ class App extends Component {
             } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START && opponentIsNpc) {
                 this.opponent.simulateChooseFieldDecision();
             } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
-                this.scene.startGame(this.props.game);
+                this.scene.current.startGame(this.props.game);
             } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
-                this.scene.startGame(this.props.game);
+                this.scene.current.startGame(this.props.game);
                 if (opponentIsNpc) {
                     this.opponent.simulateInitialPlacement();
                 }
             } else if (gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT && opponentIsNpc) {
                 this.opponent.simulateInitialPlacement();
             } else if (gameTransition === GameTransitions.PLAYER_BUILD_PHASE) {
-                this.scene.triggerCacaoInfo();
+                this.scene.current.triggerCacaoInfo();
             } else if (gameTransition === GameTransitions.PLAYER_ATTACK_PHASE) {
                 const attacks = [AttackType.BUNNY, AttackType.TRUFFLE, AttackType.HOT_CHOCOLATE, AttackType.FRUIT];
                 let availableAttackType = undefined;
@@ -371,7 +372,7 @@ class App extends Component {
                 }
             } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
                 if (opponentIsNpc || opponentType === PlayerType.VIOLET_BEAUREGARDE) {
-                    this.opponent.simulateAttackPhase(this.detonateAtPosition, donut => this.scene.triggerDonutInfo(donut));
+                    this.opponent.simulateAttackPhase(this.detonateAtPosition, donut => this.scene.current.triggerDonutInfo(donut));
                 }
             } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
                 let timeoutId = setTimeout(() => prevProps.finishTurn({ issuer: prevProps.game.players[multiplayer.localPlayerIndex].id }).catch(this.handleError), 3000);
@@ -429,13 +430,13 @@ class App extends Component {
                                 this.props.finishTurn({ issuer: this.props.game.players[this.props.game.currentPlayerIndex].id });
                             }
                         }
-                        this.scene.startGame(this.props.game, false);
+                        this.scene.current.startGame(this.props.game, false);
                     } else if (this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START && this.props.game.state !== GameStateTypes.CHOOSE_FIELD) {
                         if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
                             this.props.tapBuilding(EntityType.CACAOTREE);
                             this.props.selectBuilding(EntityType.CACAOTREE);
                         }
-                        this.scene.startGame(this.props.game, false);
+                        this.scene.current.startGame(this.props.game, false);
                     }
                 });
             } else {
@@ -454,7 +455,7 @@ class App extends Component {
                             this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
                             this.props.loadUiState(resumeableGame.ui).then(() => {
                                 if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
-                                    this.scene.startGame(this.props.game, false);
+                                    this.scene.current.startGame(this.props.game, false);
                                 }
                             });
                         });
@@ -499,7 +500,7 @@ class App extends Component {
                 }
 
                 multiplayer.reset();
-                this.scene.clear();
+                this.scene.current.clear();
 
                 const score = this.props.playerInfos.stats.score;
                 if (typeof coins !== 'undefined' && coins > 0) {
@@ -542,15 +543,15 @@ class App extends Component {
 
     async reset() {
         if (typeof this.props.game !== 'undefined') {
-            this.scene.stopAllAnimations();
-            this.scene.clear();
+            this.scene.current.stopAllAnimations();
+            this.scene.current.clear();
             await this.props.finishGame();
             await this.props.resetUi();
         }
     }
 
     setRenderLoop(run) {
-        this.scene.setRenderLoop(run);
+        this.scene.current.setRenderLoop(run);
     }
 
     closeTutorial = async startGame => {
@@ -597,9 +598,7 @@ class App extends Component {
                     />
                     )}
                 </div> : null}
-                <Suspense fallback={null}>
-                    <Scene onRef={scene => this.scene = scene} />
-                </Suspense>
+                <Scene customRef={this.scene} />
                 <Hud prepareNewGameCallback={this.prepareNewGame}
                     enterMultiplayerGame={this.enterMultiplayerGame}
                     startTutorial={() => this.startTutorial()}
@@ -608,7 +607,7 @@ class App extends Component {
                     challengedPlayer={this.state.player}
                     openInfo={this.state.openInfo} />
                 {this.props.tutorial ? <Tutorial
-                    spawnInfo={(messageType, position, amount, donutType) => this.scene.spawnInfo(messageType, position, amount, donutType)}
+                    spawnInfo={(messageType, position, amount, donutType) => this.scene.current.spawnInfo(messageType, position, amount, donutType)}
                     setRenderLoop={run => this.setRenderLoop(run)}
                     reset={async () => await this.reset()}
                     detonateAtPosition={this.detonateAtPosition}
