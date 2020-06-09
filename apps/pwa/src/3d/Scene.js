@@ -37,7 +37,7 @@ class Scene extends Component {
             light.diffuse = new Color3(1.0, 0.97, 0.93);
             let spot = new DirectionalLight('spot', new Vector3(0, -1, -1), scene);
             spot.intensity = 1;
-            spot.position = new Vector3(35, 35, 35)
+            spot.position = new Vector3(35, 35, 35);
             this.loadingView.current.loadAssets(scene)
             return scene;
         }
@@ -45,7 +45,7 @@ class Scene extends Component {
         this.animations = [];
         this.scene = createScene();
         this.energyBars = [];
-        this.highlightLayer = new HighlightLayer('highlightLayer', this.scene);
+        this.highlightLayer = new HighlightLayer('highlightLayer', this.scene, { camera: this.camera });
         this.animate = () => this.scene.render();
         window.addEventListener('resize', this.resize);
         this.playerGameField = null;
@@ -357,9 +357,8 @@ class Scene extends Component {
     }
 
     highlightCannons = (highlight = true) => {
-        let parent = this.scene.getMeshByName(EntityType.RUM_TRUFFLE_CANNON + '__root__');
-        let children = parent.getChildren()[0].getChildren().length > 0 ? parent.getChildren()[0].getChildren() : parent.getChildren();
-
+        const parent = this.scene.getMeshByName(EntityType.RUM_TRUFFLE_CANNON + '__root__');
+        const children = parent.getChildMeshes(false);
         children.forEach(child => {
             if (highlight) {
                 this.highlightLayer.addMesh(child, new Color3(1, 1, 0));
@@ -383,7 +382,7 @@ class Scene extends Component {
 
         for (let entity of highlights) {
             let parent = this.scene.getMeshByName(entity.type + '__root__');
-            let children = parent.getChildren()[0].getChildren().length > 0 ? parent.getChildren()[0].getChildren() : parent.getChildren();
+            let children = parent.getChildMeshes(false);
 
             for (let child of children) {
                 if (highlight) {
