@@ -21,7 +21,15 @@ const useStyles = createUseStyles(theme => ({
       display: 'block'
     },
     spinning: {
-      animation: 'rotate 1.5s linear infinite'
+      animationName: 'rotate',
+      animationTimingFunction: 'linear',
+      animationIterationCount: 'infinite'
+    },
+    normal: {
+      animationDuration: '1.5s'
+    },
+    slow: {
+      animationDuration: '3s'
     }
   })
 );
@@ -36,7 +44,7 @@ const Progress = props => {
 
   if (props.infiniteAnimation) {
     return (<div className={`${classes.donut} ${props.className}`} style={props.style}>
-      <div className={classes.spinning} style={{ backgroundImage: `url(/images/progress-100.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%', backgroundPosition: 'top left'}}></div>
+      <div className={`${classes[props.speed]} ${classes.spinning}`} style={{ backgroundImage: `url(/images/progress-100.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%', backgroundPosition: 'top left'}}></div>
     </div>)
   } else {
     // It's essential to create a div for each svg to load them all in parallel
@@ -61,7 +69,8 @@ Progress.defaultProps = {
   className: '',
   style: {},
   infiniteAnimation: false,
-  value: 0
+  value: 0,
+  speed: 'normal'
 }
 
 Progress.propTypes = {
@@ -69,7 +78,8 @@ Progress.propTypes = {
   value: PropTypes.number,
   style: PropTypes.object,
   size: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  className: PropTypes.string
+  className: PropTypes.string,
+  speed: PropTypes.oneOf(['normal', 'slow'])
 }
 
 export default Progress;
