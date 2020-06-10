@@ -2599,23 +2599,23 @@ babylon@^6.18.0:
   resolved "https://registry.yarnpkg.com/babylon/-/babylon-6.18.0.tgz#af2f3b88fa6f5c1e4c634d1a0f8eac4f55b395e3"
   integrity sha512-q/UEjfGJ2Cm3oKV71DJz9d25TPnq5rhBVL2Q4fA5wcC3jcrdn7+SssEybFIxwAvvP+YCsCYNKughoF33GxgycQ==
 
-babylonjs-gltf2interface@4.2.0-alpha.18:
-  version "4.2.0-alpha.18"
-  resolved "https://registry.yarnpkg.com/babylonjs-gltf2interface/-/babylonjs-gltf2interface-4.2.0-alpha.18.tgz#0d5365e0b4bd058868db1d929711e239fec9d5c6"
-  integrity sha512-U/sE890Ad+KqRek6EJfeIlrPmUlGJ5u76P0A401fCN8s8dKngpC9QSpva8StcUD/I8n5nsl7cn1wde9mOD2mBQ==
+babylonjs-gltf2interface@4.2.0-alpha.19:
+  version "4.2.0-alpha.19"
+  resolved "https://registry.yarnpkg.com/babylonjs-gltf2interface/-/babylonjs-gltf2interface-4.2.0-alpha.19.tgz#421eb1e630eec1937bd6e7324944738c58d6870c"
+  integrity sha512-1xbi9sKH5+SYX70ThbbPGUtDqezppDL8guf8Vt+m5fuNpruoEia9CkuP/HDG3Wi4JpH8qjGY+VfcrcDSCPHi/Q==
 
-babylonjs-loaders@^4.2:
-  version "4.2.0-alpha.18"
-  resolved "https://registry.yarnpkg.com/babylonjs-loaders/-/babylonjs-loaders-4.2.0-alpha.18.tgz#612faa93ba4e9b6569062bcf4791c34f2881c10d"
-  integrity sha512-LMD0BmAwtYiIZuMlMQNHQTFHt4kkd2/i1+st4zaxQxbdPSgimvVspOsrsQtFVn8Z4EXJecvFmfkZPNyu4MRoHw==
+babylonjs-loaders@^4.2.0-alpha.15:
+  version "4.2.0-alpha.19"
+  resolved "https://registry.yarnpkg.com/babylonjs-loaders/-/babylonjs-loaders-4.2.0-alpha.19.tgz#4716d02e7140701d1f1ec69a55184a8b7424369e"
+  integrity sha512-KP/17KnzfaxFmWkIrFFqGQMCIQGgxLOKhcHx0O3ZbgH+L7Gg9ueQDLvMVBS9mGE5s5krt+MhiYikRj8DuquHxQ==
   dependencies:
-    babylonjs "4.2.0-alpha.18"
-    babylonjs-gltf2interface "4.2.0-alpha.18"
+    babylonjs "4.2.0-alpha.19"
+    babylonjs-gltf2interface "4.2.0-alpha.19"
 
-babylonjs@4.2.0-alpha.18, babylonjs@^4.2:
-  version "4.2.0-alpha.18"
-  resolved "https://registry.yarnpkg.com/babylonjs/-/babylonjs-4.2.0-alpha.18.tgz#c3ea488fab5948390cbc1a9761c345571af2f1a1"
-  integrity sha512-/zTTYjByf5fH1+ylzqbMs/wqiXBVGrQ+cgS2VlZnshSVOz6lacTECzfRtstI8dVxBVRw9qnChzo9eVahbr/OgA==
+babylonjs@4.2.0-alpha.19, babylonjs@^4.2.0-alpha.15:
+  version "4.2.0-alpha.19"
+  resolved "https://registry.yarnpkg.com/babylonjs/-/babylonjs-4.2.0-alpha.19.tgz#d4ca7ebf3834359e7ca9853682f679e21a11df6d"
+  integrity sha512-XYfZApH0sPL/kQ0SjLwPj/0mbbu3D9RXdewVZ82MYe2W60z0adGtulZSqIKH5D819MSN0EkjJ2Mqp3pdKfqY8g==
 
 balanced-match@^1.0.0:
   version "1.0.0"

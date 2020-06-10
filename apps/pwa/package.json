@@ -5,8 +5,8 @@
   "license": "UNLICENSED",
   "dependencies": {
     "axios": "^0.19.0",
-    "babylonjs": "^4.2",
-    "babylonjs-loaders": "^4.2",
+    "babylonjs": "^4.2.0-alpha.15",
+    "babylonjs-loaders": "^4.2.0-alpha.15",
     "battlechoc-shared-functions": "https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git",
     "firebase": "^7.6.0",
     "idb": "^4.0.3",
