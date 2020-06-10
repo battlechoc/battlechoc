@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { GameStateTypes, getEntityDescriptor } from 'battlechoc-shared-functions';
 import { translate as t, keys as tr } from '../misc';
 import { createUseStyles } from 'react-jss';
+import { Progress } from '../controls';
 
 const useStyles = createUseStyles(theme => ({
     tooltip: {
@@ -98,18 +99,9 @@ const useStyles = createUseStyles(theme => ({
             color: theme.color.primary.light
         }
     },
-    animation: {
-        marginTop: '-2%',
-        width: '12vw',
-        height: '12vw',
-        [theme.breakpoints.orientation.portrait]: {
-            width: '12vh',
-            height: '12vh',
-        },
-        [theme.breakpoints.orientation.square]: {
-            width: '10vw',
-            height: '10vw',            
-        }
+    progress: {
+        marginTop: 6,
+        marginRight: 5
     }
 }));
 
@@ -159,7 +151,7 @@ const Tooltip = props => {
         }
     }
 
-    const loadingAnimation = !props.playerTurn ? <img className={classes.animation} src="/animations/loading.gif" alt="loading" /> : null;
+    const loadingAnimation = !props.playerTurn ? <Progress className={classes.progress} infiniteAnimation speed="slow" /> : null;
     const openTooltip = () => {
         if (message !== null) {
             setExpanded(!expanded);

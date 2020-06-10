@@ -129,6 +129,7 @@ const useStyles = createUseStyles(theme => ({
         },
         actions: {
             display: 'flex',
+            flexWrap: 'wrap',
             justifyContent: 'space-evenly',
             [theme.breakpoints.orientation.portrait]: {
                 justifyContent: 'unset',

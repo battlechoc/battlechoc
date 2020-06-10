@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useRef, useImperativeHandle } from 'react';
 import { Progress } from './ui/controls';
 import { connect } from 'react-redux';
 import { assetsReady } from './ui/UiActions';
@@ -44,8 +44,7 @@ class AssetLoader {
                 'arrow-down.svg',
                 'dialog-border-top.svg',
                 'instagram.svg',
-                ' score.svg',
-                'attacksPerTurn.png',
+                'score.svg',
                 'done.svg',
                 'search.svg',
                 'back.svg',
@@ -53,7 +52,6 @@ class AssetLoader {
                 'lab.svg',
                 'secondary-close.svg',
                 'backward-accent.svg',
-                'donut_icon_palette.png',
                 'level-up-icon.svg',
                 'send.svg',
                 'backward.svg',
@@ -67,16 +65,13 @@ class AssetLoader {
                 'battlechoc_notification_icon.png',
                 'dropdown.svg',
                 'logo.svg',
-                'spyAttacksPerTurn.png',
                 'buildings-icon.svg',
                 'easter-bunny-icon.svg',
                 'lost.svg',
                 'stop-donut-icon.svg',
-                'buildingsPerTurn.png',
                 'error-icon.svg',
                 'mute.svg',
                 'stripes.svg',
-                'bunnyCaught.png',
                 'facebook.svg',
                 'pen.svg',
                 'success-icon.svg',
@@ -90,11 +85,9 @@ class AssetLoader {
                 'cacao.svg',
                 'fast-backward.svg',
                 'primary-close.svg',
-                'cacaoPerTurn.png',
                 'fast-forward.svg',
                 'progress-10.svg',
                 'trophy.svg',
-                'cacao_no_background.png',
                 'first-turn.svg',
                 'progress-100.svg',
                 'truffle-cannon-icon.svg',
@@ -130,7 +123,12 @@ class AssetLoader {
                 'highscore.svg',
                 'progress-90.svg',
                 'bell.svg',
-                '../animations/loading.gif'
+                'attacks-per-turn.svg',
+                'buildings-per-turn.svg',
+                'bunny-caught.svg',
+                'cacao-per-turn.svg',
+                'fruit-attacks-per-turn.svg',
+                'spy-attacks-per-turn.svg'
             ]
         }
     }    
@@ -138,70 +136,67 @@ class AssetLoader {
 
 const assetLoader = new AssetLoader();
 
-class AssetLoadingView extends Component {
-    constructor(props) {
-        super(props);
-        this.state = { loadingProgress: 0 }
-    }
+const AssetLoadingView = props => {
+    const [loadingProgress, setLoadingProgress] = useState(0);
+    const totalResources = useRef(Object.keys(assetLoader.assets.models).length + assetLoader.assets.images.length);
+    const loadedResources = useRef(0);
 
-    componentDidMount() {
-        this.props.onRef(this);
-        this.totalResources = Object.keys(assetLoader.assets.models).length + assetLoader.assets.images.length;
-        this.loadedResources = 0;
-    }
-
-    loadAssets(scene) {
-        for (let key in assetLoader.assets.models) {
-            SceneLoader.ImportMesh('', '/models/', assetLoader.assets.models[key], scene, group => {
-                group.forEach((mesh, i) => {
-                    if (Object.values(BoardCellTypes).includes(key) && mesh.name !== '__root__') {
-                        let material = new StandardMaterial(key + '.material', scene);
-                        if (key === BoardCellTypes.BROWN) {
-                            material.diffuseColor = Color3.FromHexString("#824529");
-                        } else if (key === BoardCellTypes.BLACK) {
-                            material.diffuseColor = Color3.FromHexString("#3E211B");
-                        } else {
-                            material.diffuseColor = Color3.FromHexString("#F8DBAF");
+    const { customRef } = props;
+    
+    useImperativeHandle(customRef, () => ({
+        loadAssets(scene) {
+            for (const key in assetLoader.assets.models) {
+                SceneLoader.ImportMesh('', '/models/', assetLoader.assets.models[key], scene, group => {
+                    group.forEach((mesh, i) => {
+                        if (Object.values(BoardCellTypes).includes(key) && mesh.name !== '__root__') {
+                            let material = new StandardMaterial(key + '.material', scene);
+                            if (key === BoardCellTypes.BROWN) {
+                                material.diffuseColor = Color3.FromHexString("#824529");
+                            } else if (key === BoardCellTypes.BLACK) {
+                                material.diffuseColor = Color3.FromHexString("#3E211B");
+                            } else {
+                                material.diffuseColor = Color3.FromHexString("#F8DBAF");
+                            }
+                            mesh.material = material;
                         }
-                        mesh.material = material;
-                    }
-                    mesh.name = key + (mesh.name === '__root__' ? '__root__' : i);
-                    if (mesh.material) {
-                        mesh.material.sideOrientation = 1;
-                    }
-                    mesh.setEnabled(false);
-                    if (key === EntityType.CHOCOLATE_FOUNTAIN && mesh.material !== null) {
-                        if (mesh.material.name === 'Shield') {
-                            let shieldMaterial = new StandardMaterial(key + '.Shield.material', scene);
-                            shieldMaterial.diffuseColor = Color3.FromHexString("#DE8731");
-                            shieldMaterial.alpha = 0.5;
-                            shieldMaterial.alphaMode = Engine.ALPHA_COMBINE;
-                            mesh.material = shieldMaterial;
-                            mesh.visibility = 0.6;
+                        mesh.name = key + (mesh.name === '__root__' ? '__root__' : i);
+                        if (mesh.material) {
+                            mesh.material.sideOrientation = 1;
                         }
-                    }
+                        mesh.setEnabled(false);
+                        if (key === EntityType.CHOCOLATE_FOUNTAIN && mesh.material !== null) {
+                            if (mesh.material.name === 'Shield') {
+                                let shieldMaterial = new StandardMaterial(key + '.Shield.material', scene);
+                                shieldMaterial.diffuseColor = Color3.FromHexString("#DE8731");
+                                shieldMaterial.alpha = 0.5;
+                                shieldMaterial.alphaMode = Engine.ALPHA_COMBINE;
+                                mesh.material = shieldMaterial;
+                                mesh.visibility = 0.6;
+                            }
+                        }
+                    });
+                    updateProgress();
                 });
-                this.updateProgress();
-            });
+            }
+
+            for (const image of assetLoader.assets.images) {
+                loadImage('/images/' + image).then(() => updateProgress());
+            }                     
         }
+    }));
 
-        for (const image of assetLoader.assets.images) {
-            this.loadImage('/images/' + image).then(() => this.updateProgress());
-        }                     
-    }
-
-    updateProgress() {
-        this.loadedResources += 1;
-        if (this.loadedResources === this.totalResources) {
-            this.props.assetsReady();
+    const updateProgress = () => {
+        loadedResources.current += 1;
+        if (loadedResources.current === totalResources.current) {
+            props.assetsReady();
         } else {
-            this.setState({ loadingProgress: Math.round((this.loadedResources / (this.totalResources - 1)) * 100) });
+            setLoadingProgress(Math.round((loadedResources.current / (totalResources.current - 1)) * 100));
         }
     }
 
-    loadImage(src) {
+    const loadImage = src => {
         return new Promise((resolve, reject) => {
-            let xhr = new XMLHttpRequest();
+            const xhr = new XMLHttpRequest();
             xhr.open('GET', src);
             xhr.onload = () => {
               if (xhr.status >= 200 && xhr.status < 300) {
@@ -217,10 +212,8 @@ class AssetLoadingView extends Component {
         });
     }
 
-    render() {
-        return <Progress className="assetLoader" value={this.state.loadingProgress} />
-    }
-}
+    return <Progress className="assetLoader" value={loadingProgress} />    
+};
 
 const mapStateToProps = state => ({ game: state.gameplay.game });
 const mapDispatchToProps = { assetsReady };

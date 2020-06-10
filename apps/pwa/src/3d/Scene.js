@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, createRef } from 'react';
 import { connect } from 'react-redux';
 import { multiplayer } from '../Multiplayer';
 import { deselectBuildings, selectAttack, deselectAttack, selectBuilding, tapBuilding } from '../ui/UiActions';
@@ -11,8 +11,13 @@ import { AssetLoadingViewContainer as AssetLoadingView } from '../AssetLoader';
 import 'babylonjs-loaders';
 import logger from '../helper/logger';
 import uuidv4 from 'uuid/v4';
+import { withTheme } from 'react-jss';
 
 class Scene extends Component {
+    constructor(props) {
+        super(props);
+        this.loadingView = createRef();
+    }
 
     componentDidMount() {
         this.props.onRef(this);
@@ -32,15 +37,15 @@ class Scene extends Component {
             light.diffuse = new Color3(1.0, 0.97, 0.93);
             let spot = new DirectionalLight('spot', new Vector3(0, -1, -1), scene);
             spot.intensity = 1;
-            spot.position = new Vector3(35, 35, 35)
-            this.loadingView.loadAssets(scene)
+            spot.position = new Vector3(35, 35, 35);
+            this.loadingView.current.loadAssets(scene)
             return scene;
         }
 
         this.animations = [];
         this.scene = createScene();
         this.energyBars = [];
-        this.highlightLayer = new HighlightLayer('highlightLayer', this.scene);
+        this.highlightLayer = new HighlightLayer('highlightLayer', this.scene, { camera: this.camera });
         this.animate = () => this.scene.render();
         window.addEventListener('resize', this.resize);
         this.playerGameField = null;
@@ -189,49 +194,50 @@ class Scene extends Component {
             position = new Vector3(position.row, 6.5, position.col);
         }
 
-        let id = Date.now();
-        let info = MeshBuilder.CreatePlane('info_' + id, { width: 1.65, height: 1.65 }, this.scene);
+        const id = Date.now();
+        const info = MeshBuilder.CreatePlane('info_' + id, { width: 1.65, height: 1.65 }, this.scene);
         info.isPickable = false;
         info.position = position;
         info.position.y = this.props.tutorial ? 4 : 6;
         info.billboardMode = Mesh.BILLBOARDMODE_ALL;
 
-        let texture = new DynamicTexture('info_texture_' + id, 208, this.scene);
-        let context = texture.getContext();
-        let material = new StandardMaterial('info_material_' + id, this.scene);
+        const texture = new DynamicTexture('info_texture_' + id, 208, this.scene);
+        const context = texture.getContext();
+        const material = new StandardMaterial('info_material_' + id, this.scene);
         material.emissiveTexture = texture;
         material.ambientTexture = texture;
         material.opacityTexture = texture;
 
         info.material = material;
-
-        let drawInfo = (filename, color, text, donut = false, offsetLeft = 0) => {
-            let image = new Image();
+ 
+        const drawInfo = (filename, color, text) => {
+            const image = new Image();
             image.src = filename;
             image.onload = () => {
                 this.setRenderLoop();
-
-                if (donut) {
-                    context.drawImage(image, offsetLeft, 0, 120, 120, 45, 45, 120, 120);
+                let top = 120;
+                let left = 70;
+                if (filename === '/images/cacao.svg') {
+                    context.drawImage(image, 0, 0, image.width * 0.5, image.height * 0.5);
+                    top = 100;
+                    left = 56;
                 } else {
-                    context.drawImage(image, 0, 0);
+                    context.drawImage(image, 0, 0, image.width * 0.8, image.height * 0.8);
                 }
+                
                 texture.update();
 
+                const darken = (color, amount) => '#' + color.replace(/^#/, '').replace(/../g, color => ('0'+Math.min(255, Math.max(0, parseInt(color, 16) + amount)).toString(16)).substr(-2));
+                
                 if (typeof text !== 'undefined') {
-                    let shadowColor = '#7b0000';
-                    if (color === '#70bf31') {
-                        shadowColor = '#44741e';
-                    }
-
-                    texture.drawText(text, 48, 102, 'bold 48px PT Serif', shadowColor, null, true, true);
-                    texture.drawText(text, 46, 100, 'bold 48px PT Serif', color, null, true, true);
+                    texture.drawText(text, left + 2, top + 2, 'bold 68px Bangers', darken(color, -128), null, true, true);
+                    texture.drawText(text, left, top, 'bold 68px Bangers', color, null, true, true);
                 }
 
-                let flyaway = new Animation('flyaway_' + id, "position.y", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
-                let fade = new Animation("fade", "visibility", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+                const flyaway = new Animation('flyaway_' + id, "position.y", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CYCLE);
+                const fade = new Animation("fade", "visibility", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
                 fade.setKeys([{ frame: 0, value: 1.0 }, { frame: 100, value: .8 }, { frame: 120, value: 0.0 }]);
-                let keyframes = [{ frame: 0, value: info.position.y }, { frame: 120, value: info.position.y + 2.5 }];
+                const keyframes = [{ frame: 0, value: info.position.y }, { frame: 120, value: info.position.y + 2.5 }];
                 flyaway.setKeys(keyframes);
                 info.animations = [flyaway, fade];
                 const uuid = uuidv4();
@@ -253,31 +259,33 @@ class Scene extends Component {
         }
 
         if (messageType === InfoType.CACAO_HARVESTED) {
-            drawInfo('/images/cacao_no_background.png', '#70bf31', '+' + amount);
+            drawInfo('/images/cacao.svg', this.props.theme.color.primary.light, '+' + amount);
         } else if (messageType === InfoType.CACAO_CONSUMED) {
-            drawInfo('/images/cacao_no_background.png', '#c70000', '-' + amount);
+            drawInfo('/images/cacao.svg', this.props.theme.color.accent.light, '-' + amount);
         } else if (messageType === InfoType.INCREASE_CACAO_PER_TURN) {
-            drawInfo('/images/cacaoPerTurn.png', '#70bf31', '+' + amount);
+            drawInfo('/images/cacao-per-turn.svg', this.props.theme.color.primary.light, '+' + amount);
         } else if (messageType === InfoType.INCREASE_BUILDINGS_PER_TURN) {
-            drawInfo('/images/buildingsPerTurn.png', '#70bf31', '+' + amount);
+            drawInfo('/images/buildings-per-turn.svg', this.props.theme.color.primary.light, '+' + amount);
         } else if (messageType === InfoType.INCREASE_ATTACKS_PER_TURN) {
-            drawInfo('/images/attacksPerTurn.png', '#70bf31', '+' + amount);
+            drawInfo('/images/attacks-per-turn.svg', this.props.theme.color.primary.light, '+' + amount);
         } else if (messageType === InfoType.INCREASE_SPY_ATTACKS_PER_TURN) {
-            drawInfo('/images/spyAttacksPerTurn.png', '#70bf31', '+' + amount);
+            drawInfo('/images/spy-attacks-per-turn.svg', this.props.theme.color.primary.light, '+' + amount);
+        } else if (messageType === InfoType.INCREASE_FRUIT_ATTACKS_PER_TURN) {
+            drawInfo('/images/fruit-attacks-per-turn.svg', this.props.theme.color.primary.light, '+' + amount);
         } else if (messageType === InfoType.BUNNY_CAUGHT) {
-            drawInfo('/images/bunnyCaught.png');
+            drawInfo('/images/bunny-caught.svg');
         } else if (messageType === InfoType.DONUT_TRAP) {
-            let offsetLeft = 120;
+            let donutImage = '/images/stop-donut-icon.svg';
             if (donutType === EntityType.DONUT_PORTAL_BLUE) {
-                offsetLeft = 240;
+                donutImage = '/images/portal-donut-icon.svg';
             } else if (donutType === EntityType.DONUT_HEALTH_GREEN) {
-                offsetLeft = 480;
+                donutImage = '/images/health-donut-icon.svg';
             } else if (donutType === EntityType.DONUT_CREAM_WHITE) {
-                offsetLeft = 600;
+                donutImage = '/images/cream-donut-icon.svg';
             } else if (donutType === EntityType.DONUT_SURPRISE_YELLOW) {
-                offsetLeft = 360;
+                donutImage = '/images/surprise-donut-icon.svg';
             }
-            drawInfo('/images/donut_icon_palette.png', undefined, undefined, true, offsetLeft);
+            drawInfo(donutImage, undefined, undefined, true);
         }
     }
 
@@ -349,9 +357,8 @@ class Scene extends Component {
     }
 
     highlightCannons = (highlight = true) => {
-        let parent = this.scene.getMeshByName(EntityType.RUM_TRUFFLE_CANNON + '__root__');
-        let children = parent.getChildren()[0].getChildren().length > 0 ? parent.getChildren()[0].getChildren() : parent.getChildren();
-
+        const parent = this.scene.getMeshByName(EntityType.RUM_TRUFFLE_CANNON + '__root__');
+        const children = parent.getChildMeshes(false);
         children.forEach(child => {
             if (highlight) {
                 this.highlightLayer.addMesh(child, new Color3(1, 1, 0));
@@ -375,7 +382,7 @@ class Scene extends Component {
 
         for (let entity of highlights) {
             let parent = this.scene.getMeshByName(entity.type + '__root__');
-            let children = parent.getChildren()[0].getChildren().length > 0 ? parent.getChildren()[0].getChildren() : parent.getChildren();
+            let children = parent.getChildMeshes(false);
 
             for (let child of children) {
                 if (highlight) {
@@ -511,6 +518,8 @@ class Scene extends Component {
                                 this.spawnInfo(InfoType.INCREASE_BUILDINGS_PER_TURN, position.clone(), buildingsDelta);
                             } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
                                 this.spawnInfo(InfoType.INCREASE_SPY_ATTACKS_PER_TURN, position.clone(), 1);
+                            } else if (building.type === EntityType.FRUIT_CANNON) {
+                                this.spawnInfo(InfoType.INCREASE_FRUIT_ATTACKS_PER_TURN, position.clone(), 1);
                             }
                             setTimeout(() => {
                                 if (typeof this.props.game !== 'undefined') {
@@ -693,7 +702,7 @@ class Scene extends Component {
     render() {
         return (
             <div>
-                {this.props.assetsReady ? null : <AssetLoadingView onRef={loadingView => this.loadingView = loadingView} />}
+                {this.props.assetsReady ? null : <AssetLoadingView customRef={this.loadingView} />}
                 <canvas className="gameCanvas" ref={container => { this.container = container }} />
             </div>
         );
@@ -726,4 +735,4 @@ const SceneContainer = connect(
     mapDispatchToProps
 )(Scene);
 
-export default SceneContainer;
+export default withTheme(SceneContainer);

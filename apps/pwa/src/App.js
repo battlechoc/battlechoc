@@ -6,7 +6,7 @@ import OfflineStore from './OfflineStore';
 import { multiplayer } from './Multiplayer';
 import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut } from 'battlechoc-shared-functions';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
-import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting, showNotification, injectMultiplayerSession } from './ui/UiActions';
+import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting, showNotification } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
@@ -44,7 +44,7 @@ class App extends Component {
         this.state = {
             player: player,
             situation: situation,
-            injectedMultiplayerSessionId: session,
+            session: session,
             openInfo: openInfo
         };
     }
@@ -149,8 +149,6 @@ class App extends Component {
                 }
             });
         }
-
-        this.props.injectMultiplayerSession(this.state.injectedMultiplayerSessionId);
     }
 
     handleError = error => {
@@ -575,7 +573,7 @@ class App extends Component {
     render() {
         return (
             <div className="app">
-                {this.props.quickMessages.length > 0 ? <div style={{
+                { this.props.quickMessages.length > 0 ? <div style={{
                     position: 'absolute',
                     flexDirection: 'column',
                     display: 'flex',
@@ -596,7 +594,7 @@ class App extends Component {
                         autoHideDuration={message.autoHideDuration}
                     />
                     )}
-                </div> : null}
+                </div> : null }
                 <Suspense fallback={null}>
                     <Scene onRef={scene => this.scene = scene} />
                 </Suspense>
@@ -606,7 +604,8 @@ class App extends Component {
                     className={this.props.tutorial ? 'tutorial hud' : 'hud'}
                     endGame={coins => this.endGame(coins)}
                     challengedPlayer={this.state.player}
-                    openInfo={this.state.openInfo} />
+                    openInfo={this.state.openInfo}
+                    sessionId={this.state.session} />
                 {this.props.tutorial ? <Tutorial
                     spawnInfo={(messageType, position, amount, donutType) => this.scene.spawnInfo(messageType, position, amount, donutType)}
                     setRenderLoop={run => this.setRenderLoop(run)}
@@ -666,8 +665,7 @@ const mapDispatchToProps = {
     startSessionRefresh,
     stopSessionRefresh,
     toggleDonutHighlighting,
-    showNotification,
-    injectMultiplayerSession
+    showNotification
 };
 
 const AppContainer = connect(
