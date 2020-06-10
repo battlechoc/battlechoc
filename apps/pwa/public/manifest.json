@@ -40,6 +40,6 @@
   "start_url": "./index.html?app_runs_as=pwa&app_version=1",
   "display": "fullscreen",
   "orientation":  "any",
-  "theme_color": "#457B82",
-  "background_color": "#457B82"
+  "theme_color": "#3190C3",
+  "background_color": "#3DA2CE"
 }
