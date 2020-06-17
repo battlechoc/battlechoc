@@ -598,7 +598,7 @@ app.post('/user/challenge', async (req, res) => {
                             board: Board.generate({ rows: 10, cols: 10 }, Math.round(Math.random() * Math.pow(10, 8)))
                         };
                         await dbPool.query('INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, last_action, turns) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [
-                            databaseSession.id, sessionEventQueue.playerIds[0], sessionEventQueue.playerIds[1], initialGameState, new Date(), new Date(), new Date(), 0]);
+                            databaseSession.id, sessionEventQueue.playerIds[0], sessionEventQueue.playerIds[1], initialGameState, new Date(Date.now()), new Date(Date.now()), new Date(Date.now()), 0]);
 
                         await emitPlayerNotification(opponent.id,
                             databaseSession.id,
@@ -905,7 +905,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
             try {
                 console.log(req.body.sessionId + ": Trying to schedule event for execution.");
                 await enqueueEvent(req.body.sessionId, req.body.event, playerIndex);
-                await updateLastChanged(new Date(), req.body.sessionId);
+                await updateLastChanged(new Date(Date.now()), req.body.sessionId);
                 console.log("Event scheduled for execution.");
             } catch (error) {
                 console.error(`Failed to push event ${req.body.event.toString()} to the event list of player ${playerIndex} due to ${error}`);
@@ -935,7 +935,7 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                 const turns = (typeof eventQueue.player_0_events !== 'undefined') ? eventQueue.player_0_events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
                 console.log("Finished turns of player 0: " + turns);
                 console.log("Persisting sessions game state: " + JSON.stringify(session));
-                await updateSessionGameState(session.id, session.game, turns, new Date());
+                await updateSessionGameState(session.id, session.game, turns, new Date(Date.now()));
                 await updateEventQueue(eventQueue, req.body.sessionId);
                 let updatedPlayerId = session.game.currentPlayerIndex;
                 if (playerId !== updatedPlayerId) {
@@ -1064,7 +1064,7 @@ const surrenderGame = async (sessionId, playerId, resultReason) => {
 
         try {
             const turns = (typeof eventQueue.player_0_events !== 'undefined') ? eventQueue.player_0_events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
-            await updateSessionGameState(session.id, session.game, turns, new Date());
+            await updateSessionGameState(session.id, session.game, turns, new Date(Date.now()));
             await updateEventQueue(eventQueue, sessionId);
             const looserId = playerId;
             const winnerId = eventQueue.playerIds.filter(id => id !== playerId)[0];
