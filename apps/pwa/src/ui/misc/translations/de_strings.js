@@ -9,7 +9,7 @@ module.exports = {
     "ACCOUNTINFOS": "Account Informationen",
     "ACCOUNTINFOS_PREVIEW": "Hier findest du bald Infos über deinen Account und Spieler-Statistiken.",
     "ACCOUNT_OVERVIEW_ASSOCIATION": "Dein Account ist verbunden mit",
-    "ACCOUNT_OVERVIEW_CREATE_INFO": "Um auf deinen Account von mehreren Geräten aus zugriefen zu können oder um deinen Spielfortschritt wieder herstellen zu können, wenn eines deiner Geräte verloren geht, ist es möglich ihn an eine dieser Optionen zu binden.",
+    "ACCOUNT_OVERVIEW_CREATE_INFO": "Um auf deinen Account von mehreren Geräten aus zugreifen zu können oder um deinen Spielfortschritt wieder herstellen zu können, wenn eines deiner Geräte verloren geht, ist es möglich ihn an eine dieser Optionen zu binden.",
     "ACCOUNT_OVERVIEW_LEVEL": "Level",
     "ACCOUNT_OVERVIEW_RANK": "Rang",
     "ACCOUNT_OVERVIEW_WON": "Siege",

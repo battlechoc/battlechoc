@@ -520,7 +520,7 @@ class Multiplayer {
             } else {
                 logger.info("not signed in. trying to sign in anonymously");
                 firebase.auth().signInAnonymously().then(signInResult => {
-                    logger.info("done signing in. logged in anonymously. " + firebase.auth().currentUser.uid);
+                    logger.info("done signing in. logged in anonymously.");
                     logger.info(signInResult);
                     this.callbacks.notifyPlayerSignedIn({
                         uid: signInResult.uid,

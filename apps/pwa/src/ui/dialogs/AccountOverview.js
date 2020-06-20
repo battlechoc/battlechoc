@@ -124,7 +124,7 @@ const useStyles = createUseStyles(theme => ({
         '& #firebaseui_container': {
             width: '100%'
         }
-    }, 
+    },
     signout: {
         display: 'flex',
         alignItems: 'center',
@@ -136,7 +136,7 @@ const useStyles = createUseStyles(theme => ({
                 fontSize: '2.5vh'
             }
         }
-    }, 
+    },
     firebaseUi: {
         '& .firebaseui-container': {
             background: 'unset',
@@ -234,20 +234,27 @@ const FirebaseSigninUiConfig = {
             }
         }
     },
-    signInOptions: [
-        firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-        firebase.auth.FacebookAuthProvider.PROVIDER_ID, {
-            provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
-            requireDisplayName: false
-        }
-    ]
+    signInOptions: (navigator.userAgent.toLowerCase().indexOf(' electron/') === -1) ?
+        [
+            firebase.auth.GoogleAuthProvider.PROVIDER_ID,
+            firebase.auth.FacebookAuthProvider.PROVIDER_ID, {
+                provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
+                requireDisplayName: false
+            }
+        ] :
+        [
+            {
+                provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
+                requireDisplayName: false
+            }
+        ]
 };
 
 const AccountOverview = props => {
     const classes = useStyles();
     const [refreshFriend, setRefreshFriend] = useState(false);
 
-    const isPlayerAccount = typeof props.playerAccount === 'undefined'; 
+    const isPlayerAccount = typeof props.playerAccount === 'undefined';
 
     let level = 0;
     let winnings = 0;
@@ -273,7 +280,7 @@ const AccountOverview = props => {
 
         if (typeof props.playerInfos.stats.level !== 'undefined') {
             level = Object.values(props.playerInfos.stats.level)
-            .reduce((value, prev) => value + prev, 1);
+                .reduce((value, prev) => value + prev, 1);
         }
 
         if (firebase.auth().currentUser) {
@@ -342,7 +349,7 @@ const AccountOverview = props => {
                                     props.close();
                                 }}>{t(tr.JOIN_GAME)}</Button>);
                             }
-                    
+
                             if (!props.friends.map(friend => friend.name).includes(playerName)) {
                                 actions.push(<Button key={2} className={`${refreshFriend ? classes.pendingButton : ''}`} onClick={async () => {
                                     if (!refreshFriend) {
@@ -369,29 +376,29 @@ const AccountOverview = props => {
                         } else {
                             return null;
                         }
-                    }                        
+                    }
                 })()}
 
                 <div className={classes.attributes}>
                     <div className={`${classes.gold} ${classes.attribute}`}>
-                        <div className={ classes.icon } style={{ background: `url(/images/trophy.svg) no-repeat` }} />
-                        <div>{t(tr.ACCOUNT_OVERVIEW_RANK)}</div><div>{ ranking }</div>
+                        <div className={classes.icon} style={{ background: `url(/images/trophy.svg) no-repeat` }} />
+                        <div>{t(tr.ACCOUNT_OVERVIEW_RANK)}</div><div>{ranking}</div>
                     </div>
                     <div className={`${classes.primary} ${classes.attribute}`}>
-                        <div className={ classes.icon } style={{ background: `url(/images/win.svg) no-repeat` }} />
-                        <div>{t(tr.ACCOUNT_OVERVIEW_WON)}</div><div>{ winnings }</div>
+                        <div className={classes.icon} style={{ background: `url(/images/win.svg) no-repeat` }} />
+                        <div>{t(tr.ACCOUNT_OVERVIEW_WON)}</div><div>{winnings}</div>
                     </div>
                     <div className={`${classes.accent} ${classes.attribute}`}>
-                        <div className={ classes.icon } style={{ background: `url(/images/lost.svg) no-repeat` }} />
-                        <div>{t(tr.ACCOUNT_OVERVIEW_LOST)}</div><div>{losses }</div>
+                        <div className={classes.icon} style={{ background: `url(/images/lost.svg) no-repeat` }} />
+                        <div>{t(tr.ACCOUNT_OVERVIEW_LOST)}</div><div>{losses}</div>
                     </div>
                     <div className={`${classes.gold} ${classes.attribute}`}>
-                        <div className={ classes.icon } style={{ background: `url(/images/level-up-icon.svg) no-repeat` }} />
-                        <div>{t(tr.ACCOUNT_OVERVIEW_LEVEL)}</div><div>{ level }</div>
+                        <div className={classes.icon} style={{ background: `url(/images/level-up-icon.svg) no-repeat` }} />
+                        <div>{t(tr.ACCOUNT_OVERVIEW_LEVEL)}</div><div>{level}</div>
                     </div>
                 </div>
 
-                { isPlayerAccount ? loggedIn ?    
+                {isPlayerAccount ? loggedIn ?
                     <div className={classes.signout}>
                         <p>{t(tr.ACCOUNT_OVERVIEW_ASSOCIATION)} {props.playerInfos.email}</p>
                         <Button color="accent" onClick={signOut}>{t(tr.SIGN_OUT)}</Button>
@@ -399,7 +406,7 @@ const AccountOverview = props => {
                     <div className={classes.signin}>
                         <StyledFirebaseAuth className={classes.firebaseUi} uiConfig={FirebaseSigninUiConfig} firebaseAuth={firebase.auth()} />
                         <p>{t(tr.ACCOUNT_OVERVIEW_CREATE_INFO)}</p>
-                    </div> : null                 
+                    </div> : null
                 }
             </div>
         </Dialog>
