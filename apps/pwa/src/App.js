@@ -290,8 +290,8 @@ class App extends Component {
                 const isSingleplayerGame = this.props.game.players.filter(player => player.type === PlayerType.AUGUSTUS_GLOOP).length > 0;
 
                 if (!prevProps.tutorial && isSingleplayerGame) {
-                    let resumeableGame = {};
-                    resumeableGame.gameplay = this.props.game;
+                    const resumeableGame = {};
+                    resumeableGame.gameplay = this.props.gameplay;
                     resumeableGame.ui = this.props.ui;
                     OfflineStore.saveCurrentGame(resumeableGame).then(() => {
                         prevProps.gameResumeable(true).catch(this.handleError);
@@ -448,7 +448,7 @@ class App extends Component {
                     }, this.calculateHandicap(this.props.playerInfos.stats.score));
                     if (typeof resumeableGame !== 'undefined' && resumeGame) {
                         this.props.resumeGame(resumeableGame.gameplay).then(() => {
-                            this.opponent.player = resumeableGame.gameplay.players[1];
+                            this.opponent.player = resumeableGame.gameplay.game.players[1];
                             this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
                             this.props.loadUiState(resumeableGame.ui).then(() => {
                                 if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
@@ -622,6 +622,7 @@ class App extends Component {
 }
 
 const mapStateToProps = state => ({
+    gameplay: state.gameplay,
     game: state.gameplay.game,
     language: state.ui.language,
     selectedBuilding: state.ui.selectedBuilding,

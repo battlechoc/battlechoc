@@ -28,17 +28,7 @@ export default class FactoryExtensionTest extends Situation {
         this.modifyBoard({col: 6, row: 7, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.DONUT_FACTORY, game.players[0].level)] });
         this.modifyBoard({col: 2, row: 0, cellType: BoardCellTypes.WHITE});
 
-        let blueDonut = createEntity(EntityType.DONUT_PORTAL_BLUE);
-        let redDonut = createEntity(EntityType.DONUT_PORTAL_RED);
-
-        let assignment = uuidv4();
-        blueDonut.assignment = assignment;
-        redDonut.assignment = assignment;
-
-        this.modifyBoard({col: 0, row: 0, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [blueDonut, createEntity(EntityType.FACTORY), createEntity(EntityType.CREAM)]});
-        this.modifyBoard({col: 0, row: 1, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.FACTORY_EXTENSION)]});
-        this.modifyBoard({col: 2, row: 4, playerIndex: 1, buildings: [createEntity(EntityType.CREAM), createEntity(EntityType.FRUIT_CANNON)]});
-        this.modifyBoard({col: 9, row: 9, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [redDonut]});
+        this.modifyBoard({col: 0, row: 0, playerIndex: 1, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.FACTORY)]});
 
         game.players[0].fieldIndex = 0;
         game.players[0].cacao = 2000;
@@ -56,13 +46,8 @@ export default class FactoryExtensionTest extends Situation {
         game.players[1].fieldIndex = 1;
         game.players[1].cacao = 1000;
         game.players[1].hasFactory = true;
-        game.players[1].activeDonuts = [redDonut, blueDonut];
-        game.players[1].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[1].level).buildingsPerTurn + getEntityDescriptor(EntityType.FACTORY_EXTENSION, game.players[1].level).buildingsPerTurn + 1;
+        game.players[1].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[1].level).buildingsPerTurn + 1;
         game.players[1].buildings = game.players[1].buildingsPerTurn;
-        game.players[1].attacksPerTurn[AttackType.FRUIT] = 1;
-        game.players[1].attacksPerTurn[AttackType.TRUFFLE] = 1;
-        game.players[1].attacks[AttackType.FRUIT] = 1;
-        game.players[1].attacks[AttackType.TRUFFLE] = 1;
     }
 
     static get ui() {

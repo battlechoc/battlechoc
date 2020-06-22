@@ -93,39 +93,32 @@ const useStyles = createUseStyles(theme => ({
   }
 }));
 
-function useForceUpdate() {
-  const [value, setValue] = useState(0);
-  console.debug(value);
-  return () => setValue(value => ++value);
-}
-
 const Settings = props => {
   const [showErrorReport, setShowErrorReport] = useState(false);
   const [withDeviceInformation, setWithDeviceInformation] = useState(false);
-  const [showAttentionText, setShowAttentionText] = useState(false);
   const [additionalReportMessage, setAdditionalReportMessage] = useState(false);
   const [sendingReport, setSendingReport] = useState(false);
   const [editPlayerName, setEditPlayerName] = useState(false);
+  const [forceUpdate, setForceUpdate] = useState(0);
 
   const classes = useStyles();
-  const forceUpdate = useForceUpdate();
 
-  const setPlayerName = playerName => {
-    ServerRequest('post', '/user/username', { username: playerName })
-      .then(response => {
-        props.updatePlayerStats({ username: playerName });
-        OfflineStore.playerStore.get('stats').then(playerStats => {
-          playerStats.username = playerName;
-          OfflineStore.playerStore.set('stats', playerStats);
-          setEditPlayerName(false);
-        })
-      }).catch(error => console.warn(error));
+  const setPlayerName = async playerName => {
+    try {
+      await ServerRequest('post', '/user/username', { username: playerName })
+      props.updatePlayerStats({ username: playerName });
+      const playerStats = await OfflineStore.playerStore.get('stats')
+      playerStats.username = playerName;
+      OfflineStore.playerStore.set('stats', playerStats);
+      setEditPlayerName(false);
+    } catch(error) {
+      logger.warn(error)
+    }
   }
 
-  function closeDialog() {
+  const closeDialog = () => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     props.close();
-    setShowAttentionText(false);
     setShowErrorReport(false);
     setEditPlayerName(false);
   }
@@ -195,7 +188,7 @@ const Settings = props => {
   const changeLanguage = value => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     setCurrentLanguage(value);
-    forceUpdate();
+    setForceUpdate(1 - forceUpdate);
   }
 
   return (
@@ -252,7 +245,6 @@ const Settings = props => {
           <div className={classes.actions}>
             <Button className={classes.button} onClick={() => {
               Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-              setShowAttentionText(false);
               setShowErrorReport(true);
             }}>{t(tr.REPORT_PROBLEM)}</Button>
             {(() => {
@@ -263,30 +255,11 @@ const Settings = props => {
                       Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                       props.startTutorial();
                       props.close();
-                      setShowAttentionText(false);
                     }}>{t(tr.RESTART_TUTORIAL)}</Button>
                   </div>
                 )
               }
             })()}
-
-            {typeof props.game !== 'undefined' && !props.tutorial ?
-              <Button color="accent" className={classes.button} onClick={() => {
-                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                if (showAttentionText) {
-                  props.surrender();
-                  props.close();
-                  setShowAttentionText(false);
-                } else {
-                  setShowAttentionText(true);
-                }
-              }}>{t(tr.SETTINGS_QUIT)}</Button> : null
-            }
-            {
-              showAttentionText && typeof props.game !== 'undefined' ?
-                <p color="error" className="attentionText">{t(tr.SETTINGS_ATTENTION_TEXT)}</p>
-                : null
-            }
           </div>
         </div>
       </Dialog>
