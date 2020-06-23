@@ -1,19 +1,19 @@
 import Situation from '../Situation';
 import { EmptyPlayerStats, createEntity, getEntityDescriptor, BoardCellTypes, EntityType, AttackType } from 'battlechoc-shared-functions';
-import uuidv4 from 'uuid/v4';
 
 export default class FactoryExtensionTest extends Situation {
     constructor() {
-        let size = 10;
+        const size = 10;
         super(size);
 
-        let game = this.game.gameplay.game;
+        const game = this.game.gameplay.game;
         game.currentPlayerIndex = 0;
 
         game.players[0].level = EmptyPlayerStats.level;
         game.players[0].level[EntityType.DONUT_FACTORY] = 20;
 
-        let yellowDonut = createEntity(EntityType.DONUT_SURPRISE_YELLOW);
+        const yellowDonut = createEntity(EntityType.DONUT_SURPRISE_YELLOW);
+        this.game.gameplay.events = [{"type":"battlechoc/gameplay/build","payload":{"issuer":game.players[0].id,"building":{"id":"40d734d5-42e2-48e4-8db0-b1bd5d110db4","type":"EntityType.FACTORY","max":{"hp":340},"hp":340,"cacaoPerTurn":130,"buildingsPerTurn":3,"costs":0,"coins":4366,"position":{"row":8,"col":6}},"target":{"type":"BoardCellTypes.BLACK","previewStyle":"black","row":8,"col":6,"occupiedBy":[{"id":"401dddc3-2222-4001-a273-6cdf523d4607","type":"EntityType.CREAM","max":{"hp":1},"level":{"max":1},"hp":1,"area":1,"costs":10,"position":{"col":6,"row":8}}],"molten":false,"shielded":false}}}];
 
         this.modifyBoard({col: 0, row: 0, buildings: [yellowDonut, createEntity(EntityType.XMAS_FACTORY)]});
         this.modifyBoard({col: 4, row: 3, cellType: BoardCellTypes.BLACK });
@@ -55,6 +55,6 @@ export default class FactoryExtensionTest extends Situation {
     }
 
     static get gameplay() {
-        return (new FactoryExtensionTest()).game.gameplay.game;
+        return (new FactoryExtensionTest()).game.gameplay;
     }
 }

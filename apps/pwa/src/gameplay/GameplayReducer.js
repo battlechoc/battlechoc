@@ -8,7 +8,7 @@ const logAndApply = (state, action, reduction) => {
     } else if (action.type === GameActionTypes.build) {
         action.payload.target = state.game.board.fields[state.game.players[state.game.currentPlayerIndex ].fieldIndex].grid[action.payload.building.position.row * state.game.board.size.cols + action.payload.building.position.col]
     }
-
+    
     if (typeof state.events === 'undefined') {
         state.events = [JSON.parse(JSON.stringify(action))];
     } else {
@@ -21,6 +21,9 @@ const logAndApply = (state, action, reduction) => {
 const gameplayReducer = createReducer({}, {
     [GameActionTypes.startGame]: (state, action) => logAndApply(state, action, startGameReduction),
     [GameActionTypes.resumeGame]: (state, action) => {
+        console.log(JSON.stringify(state, undefined, 2))
+        console.log(JSON.stringify(action, undefined, 2))
+
         state.events = action.payload.events;
         logAndApply(state, { ...action, payload: action.payload.game}, resumeGameReduction);
     },

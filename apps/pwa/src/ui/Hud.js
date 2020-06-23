@@ -14,6 +14,7 @@ import logger from '../helper/logger';
 import firebase from '@firebase/app';
 import { Button, Fab, Progress, Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, GameEndOverview } from './controls';
 import { createUseStyles } from 'react-jss'
+import computeAwards from './misc/Awards';
 
 const useStyles = createUseStyles(theme => ({
         actionbar: {
@@ -159,7 +160,7 @@ const useStyles = createUseStyles(theme => ({
 
 const Hud = props => {
     const classes = useStyles(props);
-    const { resumeGamePossible, enterMultiplayerGame, showQuickMessage, challengedPlayer, assetsReady, overviewVisible, selectedAttack, tappedBuilding, game, state, openInfo, prepareNewGameCallback, className, surrender, startTutorial, playerInfos, endGame, notification, hideNotification, injectedMultiplayerSessionId } = props;
+    const { resumeGamePossible, enterMultiplayerGame, showQuickMessage, challengedPlayer, assetsReady, overviewVisible, selectedAttack, tappedBuilding, game, actions, state, openInfo, prepareNewGameCallback, className, surrender, startTutorial, playerInfos, endGame, notification, hideNotification, injectedMultiplayerSessionId } = props;
 
     const [open, setOpen] = useState(false);
     const [openSettings, setOpenSettings] = useState(false);
@@ -441,7 +442,7 @@ const Hud = props => {
                             <AttackPalette />
                             <BuildingPalette />
                             <InfoPanel players={game.players} />
-                            {overviewVisible ? <GameEndOverview player={player} winners={game.winners} finishGame={coins => endGame(coins)} /> : null}
+                            {overviewVisible ? <GameEndOverview awards={computeAwards(game, multiplayer.localPlayerIndex, actions)} outcome={game.winners.some(winner => winner.id === game.players[multiplayer.localPlayerIndex].id) ? 'won' : 'lost'} finishGame={coins => endGame(coins)} /> : null}
                         </div>
                     )
                 }
@@ -461,6 +462,7 @@ Hud.propTypes = {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
+    actions: state.gameplay.events,
     state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
     overviewVisible: state.ui.overviewVisible,
     resumeGamePossible: state.ui.resumeGamePossible,

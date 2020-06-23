@@ -1,5 +1,4 @@
 import { EntityType, BoardCellTypes, AttackType, GameActionTypes } from "battlechoc-shared-functions";
-import { attack } from "../../gameplay/GameActions";
 
 const playerGameField = (game, playerIndex) => game.board.fields[game.players[playerIndex].fieldIndex].grid;
 const containsEntity = (cell, entityType) => {
@@ -85,23 +84,7 @@ const awards = [
       const buildActions = actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.build);
       return buildActions.filter(action => action.payload.building.type === EntityType.SPYING_EASTER_BUNNY).length >= 8;
     } 
-  },
-  /*{ 
-    title: 'Easy come, easy go', 
-    subtitle: 'Your brand-new ballista was destroyed before you could use it', 
-    coins: 300,
-    isFulfilled: (game, playerIndex, actions) => {
-      return TODO: NEED TO LOG BUNNY CAUGHT EVENTS
-    }
-  },*/
-  //{ title: 'Benefactor', subtitle: '5 or more cannons were unused when the attack phase was skipped', coins: 300 },
-  //{ title: 'Christmas elf', subtitle: 'Caught at least 4 bunnies', coins: 400 },
-  //{ title: 'Best christmas elf', subtitle: 'Caught at least 8 bunnies', coins: 800 },
-  //{ title: 'It\'s gettin hot in here', subtitle: 'Owned at least one ballista', coins: 200 },
-  //{ title: 'So hot', subtitle: 'Owned at least 4 ballista', coins: 600 },
-  //{ title: 'Take off all your clothes', subtitle: 'Owned at least 8 ballista', coins: 1000 },
-  //{ title: 'Easter egg', subtitle: 'You applied the bunny to a creamless area', coins: 250 }, 
-  { 
+  }, { 
     title: 'First come, first served', 
     subtitle: 'First move chosen and first attack made', 
     coins: 200,
@@ -119,9 +102,9 @@ const awards = [
     coins: 1000,
     isFulfilled: (game, playerIndex, actions) => {
       const player = game.players[playerIndex];
-      const lastAttack = actions.map(action => action.payload.issuer === player.id && action.type === GameActionTypes.attack).findIndex(true);
+      const lastAttack = actions.map(action => action.payload.issuer === player.id && action.type === GameActionTypes.attack).lastIndexOf(true);
       if (lastAttack !== -1) {
-        const entities = actions[lastAttack].payload.target.occupiedBy(entity => entity.type);
+        const entities = actions[lastAttack].payload.target.occupiedBy.map(entity => entity.type);
         return entities.includes(EntityType.CREAM) && entities.includes(EntityType.FACTORY);
       } else {
         return false;
@@ -133,7 +116,7 @@ const awards = [
     coins: 300,
     isFulfilled: (game, playerIndex, actions) => {
       const player = game.players[playerIndex];
-      const chocolateAttacks = actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.attack && attack.payload.attackType === AttackType.HOT_CHOCOLATE);
+      const chocolateAttacks = actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.attack && action.payload.attackType === AttackType.HOT_CHOCOLATE);
       if (chocolateAttacks.length > 0) {
         return chocolateAttacks.some(attack => attack.payload.target.occupiedBy.filter(entity => entity.type !== EntityType.CREAM).length > 0)
       } else {
@@ -144,17 +127,66 @@ const awards = [
     title: 'OMG', 
     subtitle: '30 or more fields were melted down', 
     coins: 2000,
-    isFulfilled: (game, playerIndex, actions) => {
+    isFulfilled: (game, playerIndex) => {
       const board = playerGameField(game, 1 - playerIndex);
       return board.filter(cell => cell.molten).length >= 30; 
     }
   },
-  { title: 'Horcruxes', subtitle: 'Own more than 4 factory extensions', coins: 1200 },
-  { title: 'Picky', subtitle: 'You have chosen a game field', coins: 5 },
-  { title: 'First!', subtitle: 'You chose the first turn', coins: 5 },
-  { title: 'Greedy', subtitle: 'You built the factory on a black field', coins: 10 },
-  { title: 'Strategist', subtitle: 'You didn\'t built the factory on a black field', coins: 10 },
-  { title: 'Winner', subtitle: 'You won the game', coins: 25 },
+  { 
+    title: 'Horcruxes', 
+    subtitle: 'Own more than 4 factory extensions', 
+    coins: 1200,
+    isFulfilled: (game, playerIndex) => {
+      const board = playerGameField(game, playerIndex);
+      return board.filter(cell => containsEntity(cell, EntityType.FACTORY_EXTENSION)).length >= 4; 
+    }
+  },
+  { 
+    title: 'Picky', 
+    subtitle: 'You have chosen a game field', 
+    coins: 5,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const chooseAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.chooseField);
+      return typeof chooseAction !== 'undefined';
+    } 
+  },
+  { 
+    title: 'First!', 
+    subtitle: 'You chose the first turn', 
+    coins: 5,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const chooseAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.chooseStart);
+      return typeof chooseAction !== 'undefined';
+    } 
+  },
+  { 
+    title: 'Greedy', 
+    subtitle: 'You built the factory on a black field', 
+    coins: 10,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const buildAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.FACTORY);
+      return buildAction.payload.target.type === BoardCellTypes.BLACK;
+    }
+  },
+  { 
+    title: 'Strategist', 
+    subtitle: 'You didn\'t built the factory on a black field', 
+    coins: 10,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const buildAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.FACTORY);
+      return buildAction.payload.target.type !== BoardCellTypes.BLACK;
+    }
+  },
+  { 
+    title: 'Winner', 
+    subtitle: 'You won the game', 
+    coins: 25,
+    isFulfilled: () => true
+  }/*,
   { title: 'Cornered', subtitle: 'Your opponent has surrendered', coins: 20 },
   { title: 'Easy Goal', subtitle: 'Your opponent has surrendered or waited too long without making a move', coins: 1 },
   { title: 'Random', subtitle: 'The opponent was allowed to choose', coins: 5 },
@@ -176,7 +208,37 @@ const awards = [
   { title: 'Refilled', subtitle: 'Built at least one cream', coins: 30 },
   { title: 'Improved', subtitle: 'Won with more cream than you started', coins: 400},
   { title: 'Unchanged', subtitle: 'Finished with the same amount of cream as you started', coins: 30},
-  { title: 'Personal concern', subtitle: 'The entire game field is filled with cream', coins: 1000}
+  { title: 'Personal concern', subtitle: 'The entire game field is filled with cream', coins: 1000},
+  { 
+    title: 'Easy come, easy go', 
+    subtitle: 'Your brand-new ballista was destroyed before you could use it', 
+    coins: 300,
+    isFulfilled: (game, playerIndex, actions) => {
+      return TODO: NEED TO LOG BUNNY CAUGHT EVENTS
+    }
+  },
+  { title: 'Benefactor', subtitle: '5 or more cannons were unused when the attack phase was skipped', coins: 300 },
+  { title: 'Christmas elf', subtitle: 'Caught at least 4 bunnies', coins: 400 },
+  { title: 'Best christmas elf', subtitle: 'Caught at least 8 bunnies', coins: 800 },
+  { title: 'It\'s gettin hot in here', subtitle: 'Owned at least one ballista', coins: 200 },
+  { title: 'So hot', subtitle: 'Owned at least 4 ballista', coins: 600 },
+  { title: 'Take off all your clothes', subtitle: 'Owned at least 8 ballista', coins: 1000 },
+  { title: 'Easter egg', subtitle: 'You applied the bunny to a creamless area', coins: 250 },*/
 ]
 
-export default Awards;
+const computeAwards = (game, playerIndex, actions) => {
+  const sortByCoinsAsc = (a, b) => a.coins < b.coins ? -1 : 1;
+  const sortByCoinsDesc = (a, b) => a.coins < b.coins ? 1 : -1;
+  const player = game.players[playerIndex];
+  if (game.winners.some(winner => winner.id === player.id)) {
+    let fulfilled = awards.filter(award => award.isFulfilled(game, playerIndex, actions));
+    console.log(fulfilled)
+    fulfilled = fulfilled.sort(sortByCoinsDesc).splice(0, 5).sort(sortByCoinsAsc);
+    console.log(fulfilled)
+    return fulfilled;
+  } else {
+    return [];
+  }
+}
+
+export default computeAwards;

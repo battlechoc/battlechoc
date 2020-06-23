@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Fab from './Fab';
 import { translate as t, keys as tr } from '../misc';
@@ -100,35 +100,28 @@ const useStyles = createUseStyles(theme => ({
 
 const GameEndOverview = props => {
     const classes = useStyles();
-    const outcome = 'win' //props.outcome;
-    const awards = useMemo(() => [    
-        { title: 'Streber', subtitle: 'Alle Bäume auf weiße Felder gebaut', coins: 20},
-        { title: 'Haben ist besser als brauchen', subtitle: 'Kein Spionage Hase eingesetzt aber einen gebaut', coins: 50},
-        { title: 'Rushhour', subtitle: 'Innerhalb von 5 Zügen gewonnen', coins: 100 },
-        { title: 'Minimalist', subtitle: 'Mit nur einer Kanone gewonnen', coins: 150},
-        { title: 'One-Hit-Wonder', subtitle: 'Erster Treffer war die verdeckte Fabrik', coins: 300 },
-    ], []); //props.awards;
+    const { outcome, awards } = props;
     
     const pointer = useRef(0);
     const confetti = useRef();
     const highlight = useRef();
     const [award, setAward] = useState(pointer.current);
     const counter = useRef();
-    const count = useRef(awards[0].coins);
+    const count = useRef(awards.length > 0 ? awards[0].coins : 0);
     let headline = t(tr.MESSAGE_WIN_GAME);
-    if (outcome !== 'win') {
+    if (outcome !== 'won') {
         headline = t(tr.MESSAGE_LOST_GAME);
     }
 
     React.useEffect(() => {
-        if (outcome === 'win') {
+        if (outcome === 'won') {
             const confettiSettings = { target: confetti.current };
             const confettiGenerator = new ConfettiGenerator(confettiSettings);
             confettiGenerator.render();
         
             return () => confettiGenerator.clear();
         }
-      }, []);
+      }, [outcome]);
 
     const coins = awards.reduce((previous, current) => current.coins + previous, 0);
     
@@ -173,7 +166,7 @@ const GameEndOverview = props => {
                 <div className={classes.table}>
                     {awards.map((entry, index) => <div key={index} style={index < award ? null : {visibility: 'hidden'}}><div>{entry.title}</div><div>{`+${entry.coins}`}</div></div>)}
                 </div>
-                <div ref={highlight} style={award < awards.length ? {opacity: 0} : {opacity: 0, visibility: 'hidden'}} className={classes.award}>
+                <div ref={highlight} style={award < awards.length ? {opacity: 1} : {opacity: 0, visibility: 'hidden'}} className={classes.award}>
                     <div>{title}</div>
                     <div>{subtitle}</div>
                 </div>
@@ -197,8 +190,8 @@ const GameEndOverview = props => {
 
 GameEndOverview.propTypes = {
     finishGame: PropTypes.func.isRequired,
-    winners: PropTypes.array.isRequired,
-    player: PropTypes.object.isRequired
+    outcome: PropTypes.string.isRequired,
+    awards: PropTypes.array.isRequired
 };
 
 export default GameEndOverview;
