@@ -392,13 +392,14 @@ class App extends Component {
 
     prepareNewGame = (resumeGame, joinMultiplayer, multiplayerGameState) => {
         const isAndroidApp = typeof window.Android !== 'undefined';
+        const isElectronApp = navigator.userAgent.toLowerCase().indexOf(' electron/') > -1;
         const isAndroidDevice = /Android/i.test(navigator.userAgent);
         const isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
         const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
 
         if (isAndroidApp) {
             window.Android.setScreenOrientationLandscape();
-        } else if (!isFullscreen && !isiOS) {
+        } else if (!isFullscreen && !isiOS && !isElectronApp) {
             if (typeof document.documentElement.requestFullscreen === 'function') {
                 document.documentElement.requestFullscreen().then(() => {
                     if (isAndroidDevice) {
