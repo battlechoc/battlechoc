@@ -1,4 +1,4 @@
-import { EntityType, BoardCellTypes, AttackType, GameActionTypes } from "battlechoc-shared-functions";
+import { EntityType, BoardCellTypes, AttackType, GameActionTypes, PlayerType, NoAttacksLeftError } from "battlechoc-shared-functions";
 
 const playerGameField = (game, playerIndex) => game.board.fields[game.players[playerIndex].fieldIndex].grid;
 const containsEntity = (cell, entityType) => {
@@ -186,23 +186,136 @@ const awards = [
     subtitle: 'You won the game', 
     coins: 25,
     isFulfilled: () => true
+  }, { 
+    title: 'Random', 
+    subtitle: 'The opponent was allowed to choose', 
+    coins: 5,
+    isFulfilled: (game, playerIndex, actions) => {
+      const opponent = game.players[1 - playerIndex];
+      const chooseAction = actions.find(action => action.payload.issuer === opponent.id && [GameActionTypes.chooseStart, GameActionTypes.chooseField].includes(action.type));
+      return typeof chooseAction !== 'undefined';
+    }    
+  }, { 
+    title: 'Multiplayer bonus', 
+    subtitle: 'It was a multiplayer game', 
+    coins: 5,
+    isFulfilled: (game, playerIndex) => {
+      const opponent = game.players[1 - playerIndex];
+      return opponent.type === PlayerType.HUMAN;
+    }    
+  }, { 
+    title: 'Golden multiplayer bonus', 
+    subtitle: 'It was a multiplayer game with at least 5 turns', 
+    coins: 200,
+    isFulfilled: (game, playerIndex) => {
+      const opponent = game.players[1 - playerIndex];
+      const player = game.players[playerIndex];
+      return opponent.type === PlayerType.HUMAN && actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.finishTurn).length >= 5;
+    }
+  }, { 
+    title: 'Diamond multiplayer bonus', 
+    subtitle: 'It was a multiplayer game with at least 15 turns', 
+    coins: 500,
+    isFulfilled: (game, playerIndex) => {
+      const opponent = game.players[1 - playerIndex];
+      const player = game.players[playerIndex];
+      return opponent.type === PlayerType.HUMAN && actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.finishTurn).length >= 15;
+    } 
+  }, { 
+    title: 'Concrete jungle', 
+    subtitle: 'Won without building a tree just cannons', 
+    coins: 600,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const buildAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.CACAOTREE);
+      return typeof buildAction === 'undefined';
+    } 
+  }, { 
+    title: 'A green spot', 
+    subtitle: 'Won with building at least 1 tree', 
+    coins: 20,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const buildActions = actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.CACAOTREE);
+      return buildActions.length >= 1;
+    } 
+  }, { 
+    title: 'Random forest', 
+    subtitle: 'Won with building at least 5 trees', 
+    coins: 50,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const buildActions = actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.CACAOTREE);
+      return buildActions.length >= 5;
+    } 
+  }, { 
+    title: 'Rainforest', 
+    subtitle: 'Won with building at least 15 trees', 
+    coins: 1000,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const buildActions = actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.CACAOTREE);
+      return buildActions.length >= 15;
+    } 
+  }, { 
+    title: 'Small Offensive', 
+    subtitle: 'Won with building at least 2 cannons', 
+    coins: 30,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const buildActions = actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.RUM_TRUFFLE_CANNON);
+      return buildActions.length >= 2;
+    } 
+  }, { 
+    title: 'Offensive', 
+    subtitle: 'Won with building at least 5 cannons', 
+    coins: 70,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const buildActions = actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.RUM_TRUFFLE_CANNON);
+      return buildActions.length >= 5;
+    } 
+  }, { 
+    title: 'Major offensive', 
+    subtitle: 'Won with building at least 20 cannons', 
+    coins: 1500,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const buildActions = actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.RUM_TRUFFLE_CANNON);
+      return buildActions.length >= 20;
+    }
+  }, { 
+    title: 'Unbreakable', 
+    subtitle: 'No entity lost', 
+    coins: 200,
+    isFulfilled: (game, playerIndex) => {
+      const opponent = game.players[1 - playerIndex];
+      const attacks = actions.filter(action => action.payload.issuer === opponent.id && action.type === GameActionTypes.attack)
+      return !attacks.some(attack => attack.payload.target.occupiedBy.some(entity => entity.type !== EntityType.CREAM && entity.hp < attack.payload.damage ));
+    } 
+  }, { 
+    title: 'Mr. Glass', 
+    subtitle: 'You\'ve lost more than 20 entities', 
+    coins: 600,
+    isFulfilled: (game, playerIndex) => {
+      const opponent = game.players[1 - playerIndex];
+      const attacks = actions.filter(action => action.payload.issuer === opponent.id && action.type === GameActionTypes.attack)
+      return attacks.filter(attack => attack.payload.target.occupiedBy.some(entity => entity.type !== EntityType.CREAM && entity.hp < attack.payload.damage )).length >= 20;
+    } 
+  }, { 
+    title: 'Cards on the table', 
+    subtitle: 'The factory was built on a field without cream', 
+    coins: 800,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const buildAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.FACTORY);
+      if (typeof buildAction !== 'undefined') {
+        return !containsEntity(buildAction.payload.target, EntityType.CREAM);
+      } else {
+        return false;
+      }
+    }
   }/*,
-  { title: 'Cornered', subtitle: 'Your opponent has surrendered', coins: 20 },
-  { title: 'Easy Goal', subtitle: 'Your opponent has surrendered or waited too long without making a move', coins: 1 },
-  { title: 'Random', subtitle: 'The opponent was allowed to choose', coins: 5 },
-  { title: 'Multiplayer bonus', subtitle: 'It was a multiplayer game', coins: 5 },
-  { title: 'Golden multiplayer bonus', subtitle: 'It was a multiplayer game with at least 5 turns', coins: 200 },
-  { title: 'Diamond multiplayer bonus', subtitle: 'It was a multiplayer game with at least 15 turns', coins: 500 },
-  { title: 'Concrete jungle', subtitle: 'Won without building a tree just cannons', coins: 600 },
-  { title: 'A green spot', subtitle: 'Won with building at least 1 tree', coins: 20 },
-  { title: 'Random forest', subtitle: 'Won with building at least 5 trees', coins: 50 },
-  { title: 'Rainforest', subtitle: 'Won with building at least 15 trees', coins: 1000 },
-  { title: 'Small Offensive', subtitle: 'Won with building at least 2 cannons', coins: 30 },
-  { title: 'Offensive', subtitle: 'Won with building at least 5 cannons', coins: 70 },
-  { title: 'Major offensive', subtitle: 'Won with building at least 20 cannons', coins: 1500 },
-  { title: 'Unbreakable', subtitle: 'No entity lost', coins: 200 },
-  { title: 'Mr. Glass', subtitle: 'You\'ve lost more than 20 entities', coins: 600},
-  { title: 'Cards on the table', subtitle: 'The factory was built on a field without cream', coins: 800 },
   { title: 'Settler', subtitle: 'Built a factory, a tree and a cannon', coins: 50 },
   { title: 'Upgrade', subtitle: 'Built at least one fruit cannon', coins: 50 },
   { title: 'Refilled', subtitle: 'Built at least one cream', coins: 30 },
@@ -217,6 +330,8 @@ const awards = [
       return TODO: NEED TO LOG BUNNY CAUGHT EVENTS
     }
   },
+  { title: 'Cornered', subtitle: 'Your opponent has surrendered', coins: 20 },
+  { title: 'Easy Goal', subtitle: 'Your opponent has surrendered or waited too long without making a move', coins: 1 },
   { title: 'Benefactor', subtitle: '5 or more cannons were unused when the attack phase was skipped', coins: 300 },
   { title: 'Christmas elf', subtitle: 'Caught at least 4 bunnies', coins: 400 },
   { title: 'Best christmas elf', subtitle: 'Caught at least 8 bunnies', coins: 800 },

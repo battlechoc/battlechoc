@@ -8,7 +8,9 @@ const logAndApply = (state, action, reduction) => {
     } else if (action.type === GameActionTypes.build) {
         action.payload.target = state.game.board.fields[state.game.players[state.game.currentPlayerIndex ].fieldIndex].grid[action.payload.building.position.row * state.game.board.size.cols + action.payload.building.position.col]
     }
-    
+
+    console.log(JSON.parse(JSON.stringify(action)))
+
     if (typeof state.events === 'undefined') {
         state.events = [JSON.parse(JSON.stringify(action))];
     } else {
