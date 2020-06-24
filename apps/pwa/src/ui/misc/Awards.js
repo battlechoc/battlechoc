@@ -105,7 +105,7 @@ const awards = [
       const lastAttack = actions.map(action => action.payload.issuer === player.id && action.type === GameActionTypes.attack).lastIndexOf(true);
       if (lastAttack !== -1) {
         const entities = actions[lastAttack].payload.target.occupiedBy.map(entity => entity.type);
-        return entities.includes(EntityType.CREAM) && entities.includes(EntityType.FACTORY);
+        return entities.includes(EntityType.CREAM) && entities.includes(EntityType.FACTORY) && !playerGameField(game, 1 - playerIndex).some(cell => containsEntity(cell, EntityType.CREAM));
       } else {
         return false;
       }
@@ -207,7 +207,7 @@ const awards = [
     title: 'Golden multiplayer bonus', 
     subtitle: 'It was a multiplayer game with at least 5 turns', 
     coins: 200,
-    isFulfilled: (game, playerIndex) => {
+    isFulfilled: (game, playerIndex, actions) => {
       const opponent = game.players[1 - playerIndex];
       const player = game.players[playerIndex];
       return opponent.type === PlayerType.HUMAN && actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.finishTurn).length >= 5;
@@ -216,7 +216,7 @@ const awards = [
     title: 'Diamond multiplayer bonus', 
     subtitle: 'It was a multiplayer game with at least 15 turns', 
     coins: 500,
-    isFulfilled: (game, playerIndex) => {
+    isFulfilled: (game, playerIndex, actions) => {
       const opponent = game.players[1 - playerIndex];
       const player = game.players[playerIndex];
       return opponent.type === PlayerType.HUMAN && actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.finishTurn).length >= 15;
@@ -288,7 +288,7 @@ const awards = [
     title: 'Unbreakable', 
     subtitle: 'No entity lost', 
     coins: 200,
-    isFulfilled: (game, playerIndex) => {
+    isFulfilled: (game, playerIndex, actions) => {
       const opponent = game.players[1 - playerIndex];
       const attacks = actions.filter(action => action.payload.issuer === opponent.id && action.type === GameActionTypes.attack)
       return !attacks.some(attack => attack.payload.target.occupiedBy.some(entity => entity.type !== EntityType.CREAM && entity.hp < attack.payload.damage ));
@@ -297,7 +297,7 @@ const awards = [
     title: 'Mr. Glass', 
     subtitle: 'You\'ve lost more than 20 entities', 
     coins: 600,
-    isFulfilled: (game, playerIndex) => {
+    isFulfilled: (game, playerIndex, actions) => {
       const opponent = game.players[1 - playerIndex];
       const attacks = actions.filter(action => action.payload.issuer === opponent.id && action.type === GameActionTypes.attack)
       return attacks.filter(attack => attack.payload.target.occupiedBy.some(entity => entity.type !== EntityType.CREAM && entity.hp < attack.payload.damage )).length >= 20;
