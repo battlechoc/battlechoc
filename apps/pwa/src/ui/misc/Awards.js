@@ -315,13 +315,56 @@ const awards = [
         return false;
       }
     }
-  }/*,
-  { title: 'Settler', subtitle: 'Built a factory, a tree and a cannon', coins: 50 },
-  { title: 'Upgrade', subtitle: 'Built at least one fruit cannon', coins: 50 },
-  { title: 'Refilled', subtitle: 'Built at least one cream', coins: 30 },
-  { title: 'Improved', subtitle: 'Won with more cream than you started', coins: 400},
-  { title: 'Unchanged', subtitle: 'Finished with the same amount of cream as you started', coins: 30},
-  { title: 'Personal concern', subtitle: 'The entire game field is filled with cream', coins: 1000},
+  }, { 
+    title: 'Settler', 
+    subtitle: 'Built a factory, a tree and a cannon', 
+    coins: 50,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const factoryBuildAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.FACTORY);
+      const treeBuildAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.CACAOTREE);
+      const cannonBuildAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.RUM_TRUFFLE_CANNON);
+      return typeof factoryBuildAction !== 'undefined' && typeof treeBuildAction !== 'undefined' && typeof cannonBuildAction !== 'undefined';
+    }
+  }, { 
+    title: 'Upgrade', 
+    subtitle: 'Built at least one fruit cannon', 
+    coins: 50,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const fruitCannonBuildAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.FRUIT_CANNON);
+      return typeof fruitCannonBuildAction !== 'undefined';
+    }
+  }, { 
+    title: 'Refilled', 
+    subtitle: 'Built at least one cream', 
+    coins: 30,
+    isFulfilled: (game, playerIndex, actions) => {
+      const player = game.players[playerIndex];
+      const creamBuildAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.CREAM);
+      return typeof creamBuildAction !== 'undefined';
+    }
+  }, { 
+    title: 'Personal concern', 
+    subtitle: 'The entire game field is filled with cream', 
+    coins: 1500,
+    isFulfilled: (game, playerIndex) => {
+      const board = playerGameField(game, playerIndex);
+      return board.every(cell => containsEntity(cell, EntityType.CREAM));
+    }
+  },/* { 
+    title: 'Easter egg', 
+    subtitle: 'You applied the bunny to a creamless area', 
+    coins: 250,
+    isFulfilled: (game, playerIndex, actions) => {
+      const attacks = actions.filter(action => action.payload.issuer === opponent.id && action.type === GameActionTypes.attack && action.payload.attackType === AttackType.BUNNY);
+      if (attacks.length > 0) {
+        return attacks.some(attack => //TODO NEED TO LOG AREA FOR BUNNY ATTACK)
+      } else {
+        return false;
+      }
+    }
+  }
   { 
     title: 'Easy come, easy go', 
     subtitle: 'Your brand-new ballista was destroyed before you could use it', 
@@ -337,8 +380,7 @@ const awards = [
   { title: 'Best christmas elf', subtitle: 'Caught at least 8 bunnies', coins: 800 },
   { title: 'It\'s gettin hot in here', subtitle: 'Owned at least one ballista', coins: 200 },
   { title: 'So hot', subtitle: 'Owned at least 4 ballista', coins: 600 },
-  { title: 'Take off all your clothes', subtitle: 'Owned at least 8 ballista', coins: 1000 },
-  { title: 'Easter egg', subtitle: 'You applied the bunny to a creamless area', coins: 250 },*/
+  { title: 'Take off all your clothes', subtitle: 'Owned at least 8 ballista', coins: 1000 },*/
 ]
 
 const computeAwards = (game, playerIndex, actions) => {
