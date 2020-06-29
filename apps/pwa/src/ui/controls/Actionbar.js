@@ -44,11 +44,12 @@ const Actionbar = props => {
 
         const fullscreenchange = () => {
             const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            const isElectronApp = navigator.userAgent.toLowerCase().indexOf(' electron/') > -1;
             const isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
             const isPWA = window.matchMedia('(display-mode: fullscreen)').matches && /iPad|iPhone|iPod|Android/.test(userAgent);
             const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
             const isAndroidApp = typeof window.Android !== 'undefined';
-            setActiveFullscreenButton(!isFullscreen && !isiOS && !isPWA && !isAndroidApp);
+            setActiveFullscreenButton(!isFullscreen && !isiOS && !isPWA && !isAndroidApp && !isElectronApp);
         }
 
         document.addEventListener("fullscreenchange", fullscreenchange, false);
