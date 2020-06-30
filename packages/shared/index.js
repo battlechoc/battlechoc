@@ -391,7 +391,8 @@ class Board {
 const PlayerType = Object.freeze({
     HUMAN: 'PlayerType.HUMAN',
     AUGUSTUS_GLOOP: 'PlayerType.AUGUSTUS_GLOOP',
-    VIOLET_BEAUREGARDE: 'PlayerType.VIOLET_BEAUREGARDE'
+    VIOLET_BEAUREGARDE: 'PlayerType.VIOLET_BEAUREGARDE',
+    DONALD_TRUMP: 'PlayerType.DONALD_TRUMP',
 });
 
 function createPlayer(name, type, level, id) {
@@ -665,7 +666,7 @@ function calculateBuildingsPerTurn(building, cellColor) {
 
 const startGameReduction = (state, action) => {
     let coinToss = Math.round(Math.random());
-    if (action.payload[1].type === PlayerType.AUGUSTUS_GLOOP) {
+    if (action.payload[1].type === PlayerType.AUGUSTUS_GLOOP || action.payload[1].type === PlayerType.DONALD_TRUMP) {
         coinToss = 0;
     }
     state.game = {
