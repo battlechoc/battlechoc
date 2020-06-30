@@ -268,8 +268,6 @@ module.exports = {
     "AWARDS_RANDOM_SUBTITLE": "The opponent was allowed to choose",
     "AWARDS_MULTIPLAYERBONUS_TITLE": "Multiplayer bonus",
     "AWARDS_MULTIPLAYERBONUS_SUBTITLE": "It was a multiplayer game",
-    "AWARDS_GOLDENMULTIPLAYERBONUS_TITLE": "Golden Multiplayer bonus",
-    "AWARDS_GOLDENMULTIPLAYERBONUS_SUBTITLE": "It was a multiplayer game with at least 5 turns",
     "AWARDS_GOLDENMULTIPLAYERBONUS_TITLE": " Golden Multiplayer bonus",
     "AWARDS_GOLDENMULTIPLAYERBONUS_SUBTITLE": "It was a multiplayer game with at least 5 turns",
     "AWARDS_DIAMONDMULTIPLAYERBONUS_TITLE": "Diamond Multiplayer bonus",

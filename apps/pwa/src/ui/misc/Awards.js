@@ -1,4 +1,4 @@
-import { EntityType, BoardCellTypes, AttackType, GameActionTypes, PlayerType, NoAttacksLeftError } from "battlechoc-shared-functions";
+import { EntityType, BoardCellTypes, AttackType, GameActionTypes, PlayerType } from "battlechoc-shared-functions";
 import { translate as t, keys as tr } from '../misc';
 
 const playerGameField = (game, playerIndex) => game.board.fields[game.players[playerIndex].fieldIndex].grid;
