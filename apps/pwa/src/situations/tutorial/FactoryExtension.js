@@ -1,6 +1,5 @@
 import Situation from '../Situation';
-import { GameStateTypes, PlayerType, BoardCellTypes, EntityType, createEntity } from 'battlechoc-shared-functions';
-import { translate as t, keys as tr } from '../../ui/misc';
+import { GameStateTypes, PlayerType, BoardCellTypes, EntityType, createEntity, translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 
 export default class FactoryExtension extends Situation {
     constructor() {

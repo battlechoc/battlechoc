@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import { updatePlayerStats, hideQuickMessage, showQuickMessage } from '../UiActions';
-import { Jukebox, translate as t, keys as tr, setCurrentLanguage, getCurrentLanguage } from '../misc';
+import { Jukebox } from '../misc';
+import { translate as t, translationKeys as tr, setCurrentLanguage, getCurrentLanguage } from 'battlechoc-shared-functions';
 import OfflineStore from '../../OfflineStore';
 import { ServerRequest } from '../../helper/settings';
 import PlayerNameInput from '../controls/PlayerNameInput';
@@ -187,7 +188,15 @@ const Settings = props => {
 
   const changeLanguage = value => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-    setCurrentLanguage(value);
+    setCurrentLanguage(value, () => {
+        ServerRequest('post', '/user/language', { language: value })
+            .catch(error => {
+                if (!error instanceof ReferenceError) {
+                    console.warn(error);
+                }
+            })
+            .finally(() => OfflineStore.settingsStore.set("language", value));
+    });
     setForceUpdate(1 - forceUpdate);
   }
 

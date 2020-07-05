@@ -1,12 +1,11 @@
-import { EntityType, BoardCellTypes, AttackType, GameActionTypes, PlayerType } from "battlechoc-shared-functions";
-import { translate as t, keys as tr } from '../misc';
+import { EntityType, BoardCellTypes, AttackType, GameActionTypes, PlayerType, translate as t, translationKeys as tr } from "battlechoc-shared-functions";
 
 const playerGameField = (game, playerIndex) => game.board.fields[game.players[playerIndex].fieldIndex].grid;
 const containsEntity = (cell, entityType) => {
     return cell.occupiedBy.map(entity => entity.type).includes(entityType)
 }
 
-const awards = [
+const ui_awards = [
     {
         title: t(tr.AWARDS_NERD_TITLE),
         subtitle: t(tr.AWARDS_NERD_SUBTITLE),
@@ -389,7 +388,7 @@ const computeAwards = (game, playerIndex, actions) => {
     const sortByCoinsDesc = (a, b) => a.coins < b.coins ? 1 : -1;
     const player = game.players[playerIndex];
     if (game.winners.some(winner => winner.id === player.id)) {
-        let fulfilled = awards.filter(award => award.isFulfilled(game, playerIndex, actions));
+        let fulfilled = ui_awards.filter(award => award.isFulfilled(game, playerIndex, actions));
         console.log(fulfilled)
         fulfilled = fulfilled.sort(sortByCoinsDesc).splice(0, 5).sort(sortByCoinsAsc);
         console.log(fulfilled)

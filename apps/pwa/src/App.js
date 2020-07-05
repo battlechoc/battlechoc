@@ -1,10 +1,11 @@
 import React, { Component, Suspense } from 'react';
 import { connect } from 'react-redux';
 import './App.css';
-import { Jukebox, translate as t, keys as tr, setCurrentLanguage } from './ui/misc';
+import { Jukebox } from './ui/misc';
 import OfflineStore from './OfflineStore';
+import { ServerRequest } from './helper/settings';
 import { multiplayer } from './Multiplayer';
-import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut } from 'battlechoc-shared-functions';
+import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut, translate as t, keys as tr, setCurrentLanguage } from 'battlechoc-shared-functions';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
 import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting, showNotification } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
@@ -103,13 +104,17 @@ class App extends Component {
         }
 
         OfflineStore.settingsStore.get('language').then(language => {
-            if (typeof language !== 'undefined') {
-                setCurrentLanguage(language);
-                this.forceUpdate();
-            } else {
-                setCurrentLanguage(browserLanguage);
-                this.forceUpdate();
-            }
+            const languageValue = (typeof language !== 'undefined') ? language : browserLanguage;
+            setCurrentLanguage(languageValue, () => {
+                ServerRequest('post', '/user/language', { language: languageValue })
+                    .catch(error => {
+                        if (!error instanceof ReferenceError) {
+                            console.warn(error);
+                        }
+                    })
+                    .finally(() => OfflineStore.settingsStore.set("language", languageValue));
+            });
+            this.forceUpdate();
         });
 
         OfflineStore.playerStore.get('multiplayerSessions').then(multiplayerSessions => {
@@ -456,7 +461,7 @@ class App extends Component {
                             finishBuildPhase: this.props.finishBuildPhase
                         }, this.calculateHandicap(this.props.playerInfos.stats.score));
                     }
-                    
+
                     if (typeof resumeableGame !== 'undefined' && resumeGame) {
                         this.props.resumeGame(resumeableGame.gameplay).then(() => {
                             this.opponent.player = resumeableGame.gameplay.game.players[1];
@@ -590,7 +595,7 @@ class App extends Component {
     render() {
         return (
             <div className="app">
-                { this.props.quickMessages.length > 0 ? <div style={{
+                {this.props.quickMessages.length > 0 ? <div style={{
                     position: 'absolute',
                     flexDirection: 'column',
                     display: 'flex',
@@ -611,7 +616,7 @@ class App extends Component {
                         autoHideDuration={message.autoHideDuration}
                     />
                     )}
-                </div> : null }
+                </div> : null}
                 <Suspense fallback={null}>
                     <Scene onRef={scene => this.scene = scene} />
                 </Suspense>

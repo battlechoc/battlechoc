@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Fab from './Fab';
-import { translate as t, keys as tr } from '../misc';
+import { translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 import { createUseStyles } from 'react-jss';
 import ConfettiGenerator from "confetti-js";
 import CountUp from 'react-countup';

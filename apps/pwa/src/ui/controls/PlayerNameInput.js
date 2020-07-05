@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { ServerRequest } from '../../helper/settings';
-import { translate as t, keys as tr } from '../misc';
 import Axios from 'axios';
 import { createUseStyles } from 'react-jss';
 import logger from '../../helper/logger';
-import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
+import { NoHealthyInternetConnectionError, translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 import Progress from './Progress';
 
 const useStyles = createUseStyles(theme => ({
@@ -97,7 +96,7 @@ const useStyles = createUseStyles(theme => ({
             fontSize: '6vw'
         }
     },
-    normal: {  
+    normal: {
         fontSize: '8vh',
         [theme.breakpoints.orientation.portrait]: {
             fontSize: '8vw'
@@ -140,17 +139,17 @@ const PlayerNameInput = props => {
             if (requestRunning) {
                 source.current.cancel();
             }
-        
+
             setLoading(true);
-            setRequestTimeout(setTimeout( async () => {
+            setRequestTimeout(setTimeout(async () => {
                 source.current = Axios.CancelToken.source()
-                
+
                 try {
                     setRequestRunning(true);
                     let response = await ServerRequest('get', '/check/available/' + playerName, source.current.token);
                     setPlayerNameAvailable(response.data.available);
                     setBadInternetConnection(false);
-                } catch(error) {
+                } catch (error) {
                     if (error instanceof NoHealthyInternetConnectionError || error.code === 'auth/network-request-failed') {
                         setBadInternetConnection(true);
                     } else if (!Axios.isCancel(error)) {
@@ -199,29 +198,29 @@ const PlayerNameInput = props => {
         }
     }
 
-    const buttonError = editMode && ( !playerNameAvailable || !playerNameValid );
-    const buttonDisabled = !buttonError && editMode && ( loading || unchanged || badInternetConnection );
+    const buttonError = editMode && (!playerNameAvailable || !playerNameValid);
+    const buttonDisabled = !buttonError && editMode && (loading || unchanged || badInternetConnection);
 
     return (
         <div className={props.className}>
-            {hasError ? <span className={classes.errorLabel}>{ getHelperText() }</span> : null}
+            {hasError ? <span className={classes.errorLabel}>{getHelperText()}</span> : null}
             <div className={classes.root}>
-                { editMode ? <input
+                {editMode ? <input
                     noValidate
                     style={{ paddingLeft: 5 }}
                     className={`${classes.input} ${hasError ? classes.error : ''}`}
                     value={playerName}
-                    spellCheck={false} 
+                    spellCheck={false}
                     autoFocus={true}
                     onChange={event => {
                         updatePlayerName(event.target.value);
                     }}
                 /> : <div className={classes.input}>
-                    <div className={`${classes.icon} ${classes.fixed}`} style={{ backgroundImage: 'url(/images/user.svg)', backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> 
-                    <div className={playerName.length > 7 ? classes.small : classes.normal}>{ playerName }</div>
-                </div> }
+                        <div className={`${classes.icon} ${classes.fixed}`} style={{ backgroundImage: 'url(/images/user.svg)', backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%' }}></div>
+                        <div className={playerName.length > 7 ? classes.small : classes.normal}>{playerName}</div>
+                    </div>}
                 <div onClick={handleAction} className={`${classes.actionButton} ${buttonDisabled ? classes.disabled : null} ${buttonError ? classes.buttonError : null}`}>
-                { loading ? <Progress infiniteAnimation={true} size={24} /> : <div className={classes.actionIcon} style={{ backgroundImage: `url(/images/${actionIcon}.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%'}}></div> }
+                    {loading ? <Progress infiniteAnimation={true} size={24} /> : <div className={classes.actionIcon} style={{ backgroundImage: `url(/images/${actionIcon}.svg)`, backgroundRepeat: 'no-repeat', backgroundSize: '100% 100%' }}></div>}
                 </div>
             </div>
         </div>
