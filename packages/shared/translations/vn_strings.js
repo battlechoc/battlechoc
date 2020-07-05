@@ -299,5 +299,19 @@ module.exports = {
     "WARNING_GAME_NOT_JOINABLE": "Trò chơi bạn muốn tham gia đã kết thúc",
     "WARNING_GAME_NOT_JOINABLE_VIA_URL": "Trò chơi đã chọn đã kết thúc hoặc không được liên kết với tài khoản của bạn.",
     "WARNING_PLAYER_NOT_FOUND": "Không tìm thấy người chơi {{name}}",
-    "YOU": "Bạn"
-  }
+    "YOU": "Bạn",
+    "SERVER_NOTIFICATION_CHALLENGE_BODY": "Đây có thể là một cuộc chiến tuyệt vời!",
+    "SERVER_NOTIFICATION_CHALLENGE_TITLE": "{{name}} đang thách thức bạn!",
+    "SERVER_NOTIFICATION_GAME_LOST_BODY": "Bạn đã thua {{name}}",
+    "SERVER_NOTIFICATION_GAME_LOST_TITLE": "Bạn thua trận đấu của bạn!",
+    "SERVER_NOTIFICATION_OPPONENT_SURENDERED_BODY": "Bạn đã thắng trận đấu này!",
+    "SERVER_NOTIFICATION_OPPONENT_SURENDERED_TITLE": "{{name}} đã đầu hàng!",
+    "SERVER_NOTIFICATION_REMEMBER_TURN_BODY": "Hãy thực hiện bước tiếp theo của bạn!",
+    "SERVER_NOTIFICATION_REMEMBER_TURN_TITLE": "{{name}} đang chờ!",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY": "Bạn đã không hành động trong hơn 24 giờ.",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE": "Bạn đã thua một trận đấu với {{name}}",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY": "{{name}} đã không hành động trong hơn 24 giờ.",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE": "Bạn đã thắng một trận đấu với {{name}}",
+    "SERVER_NOTIFICATION_TURN_FINISHED_BODY": "Đi nào. Đến lượt bạn!",
+    "SERVER_NOTIFICATION_TURN_FINISHED_TITLE": "{{name}} kết thúc lượt chơi."
+}

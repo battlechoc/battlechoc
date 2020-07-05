@@ -299,5 +299,19 @@ module.exports = {
     "WARNING_GAME_NOT_JOINABLE": "参加したいゲームはすでに終了しています",
     "WARNING_GAME_NOT_JOINABLE_VIA_URL": "選択したゲームは既に終了しているか、アカウントに関連付けられていません。",
     "WARNING_PLAYER_NOT_FOUND": "プレーヤー{{name}}が見つかりません",
-    "YOU": "君は"
-  }
+    "YOU": "君は",
+    "SERVER_NOTIFICATION_CHALLENGE_BODY": "これは素晴らしい戦いになるかもしれません！",
+    "SERVER_NOTIFICATION_CHALLENGE_TITLE": "{{name}}があなたに挑戦しています！",
+    "SERVER_NOTIFICATION_GAME_LOST_BODY": "{{name}}に負けました",
+    "SERVER_NOTIFICATION_GAME_LOST_TITLE": "負けました！",
+    "SERVER_NOTIFICATION_OPPONENT_SURENDERED_BODY": "この試合に勝ちました！",
+    "SERVER_NOTIFICATION_OPPONENT_SURENDERED_TITLE": "{{name}}降伏！",
+    "SERVER_NOTIFICATION_REMEMBER_TURN_BODY": "次の動きを作ろう！",
+    "SERVER_NOTIFICATION_REMEMBER_TURN_TITLE": "{{name}}が待っています！",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY": "24時間以上アクションを実行しなかった。",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE": "{{name}}との試合に負けました",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY": "{{name}}は24時間以上アクションを起こしませんでした。",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE": "{{name}}との試合に勝利しました",
+    "SERVER_NOTIFICATION_TURN_FINISHED_BODY": "行こう。あなたの番です！",
+    "SERVER_NOTIFICATION_TURN_FINISHED_TITLE": "{{name}}がターンを終了しました。"
+}

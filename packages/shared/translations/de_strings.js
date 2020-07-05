@@ -299,5 +299,19 @@ module.exports = {
     "COINS_FOR_NEXT_FEATURE_TITLE": "{{feature}} noch nicht freigeschaltet",
     "COINS_FOR_NEXT_FEATURE_BODY": "Sammle noch {{missingScore}} Schokomünzen, um die {{feature}}-Erweiterung freizuschalten.",
     "MULTIPLAYER_AUTOMATICALLY_LOSE": "Wenn du nicht spielst verlierst du in {{hours}} Stunden und {{minutes}} Minuten",
-    "MULTIPLAYER_AUTOMATICALLY_WIN": "Wenn dein Gegner nicht spielt gewinnst du in {{hours}} Stunden und {{minutes}} Minuten"
+    "MULTIPLAYER_AUTOMATICALLY_WIN": "Wenn dein Gegner nicht spielt gewinnst du in {{hours}} Stunden und {{minutes}} Minuten",
+    "SERVER_NOTIFICATION_CHALLENGE_BODY": "Dies könnte ein großartiger Kampf sein!",
+    "SERVER_NOTIFICATION_CHALLENGE_TITLE": "{{name}} fordert dich heraus!",
+    "SERVER_NOTIFICATION_GAME_LOST_BODY": "Du hast gegen {{name}} verloren",
+    "SERVER_NOTIFICATION_GAME_LOST_TITLE": "Du hast dein Match verloren!",
+    "SERVER_NOTIFICATION_OPPONENT_SURENDERED_BODY": "Du hast dieses Match gewonnen!",
+    "SERVER_NOTIFICATION_OPPONENT_SURENDERED_TITLE": "{{name}} hat sich ergeben!",
+    "SERVER_NOTIFICATION_REMEMBER_TURN_BODY": "Mach Deinen nächsten Zug!",
+    "SERVER_NOTIFICATION_REMEMBER_TURN_TITLE": "{{name}} wartet!",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY": "Du hast länger als 24 Stunden keinen Zug gemacht.",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE": "Du hast ein Match gegen {{name}} verloren",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY": "{{name}} hat länger als 24 Stunden keinen Zug gemacht.",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE": "Du hast ein Match gegen {{name}} gewonnen",
+    "SERVER_NOTIFICATION_TURN_FINISHED_BODY": "Du bist dran!",
+    "SERVER_NOTIFICATION_TURN_FINISHED_TITLE": "{{name}} hat den Zug beendet."
 }

@@ -299,5 +299,19 @@ module.exports = {
     "WARNING_GAME_NOT_JOINABLE": "Il gioco a cui vuoi partecipare è già terminato",
     "WARNING_GAME_NOT_JOINABLE_VIA_URL": "Il gioco selezionato è già terminato o non associato al tuo account.",
     "WARNING_PLAYER_NOT_FOUND": "Giocatore {{name}} non trovato",
-    "YOU": "tu"
-  }
+    "YOU": "tu",
+    "SERVER_NOTIFICATION_CHALLENGE_BODY": "Questa potrebbe essere una grande lotta!",
+    "SERVER_NOTIFICATION_CHALLENGE_TITLE": "{{name}} ti sta sfidando!",
+    "SERVER_NOTIFICATION_GAME_LOST_BODY": "Hai perso contro {{name}}",
+    "SERVER_NOTIFICATION_GAME_LOST_TITLE": "Hai perso la partita!",
+    "SERVER_NOTIFICATION_OPPONENT_SURENDERED_BODY": "Hai vinto questa partita!",
+    "SERVER_NOTIFICATION_OPPONENT_SURENDERED_TITLE": "{{name}} si è arreso!",
+    "SERVER_NOTIFICATION_REMEMBER_TURN_BODY": "Fai la tua prossima mossa!",
+    "SERVER_NOTIFICATION_REMEMBER_TURN_TITLE": "{{name}} sta aspettando!",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY": "Non hai agito per più di 24 ore.",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE": "Hai perso una partita contro {{name}}",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY": "{{name}} non ha preso provvedimenti per più di 24 ore.",
+    "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE": "Hai vinto una partita contro {{name}}",
+    "SERVER_NOTIFICATION_TURN_FINISHED_BODY": "Andiamo. È il tuo turno!",
+    "SERVER_NOTIFICATION_TURN_FINISHED_TITLE": "{{name}} ha terminato il turno."
+}

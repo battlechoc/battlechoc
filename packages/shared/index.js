@@ -1616,7 +1616,31 @@ const translationPredicates = {
     },
     MULTIPLAYER_AUTOMATICALLY_WIN: function (strings, hours, minutes) {
         return fmt(strings.MULTIPLAYER_AUTOMATICALLY_WIN, { hours: hours, minutes: minutes });
-    }
+    },
+    SERVER_NOTIFICATION_REMEMBER_TURN_TITLE: function (strings, name) {
+        return fmt(strings.SERVER_NOTIFICATION_REMEMBER_TURN_TITLE, { name: name });
+    },
+    SERVER_NOTIFICATION_CHALLENGE_TITLE: function (strings, name) {
+        return fmt(strings.SERVER_NOTIFICATION_CHALLENGE_TITLE, { name: name });
+    },
+    SERVER_NOTIFICATION_GAME_LOST_BODY: function (strings, name) {
+        return fmt(strings.SERVER_NOTIFICATION_GAME_LOST_BODY, { name: name });
+    },
+    SERVER_NOTIFICATION_TURN_FINISHED_TITLE: function (strings, name) {
+        return fmt(strings.SERVER_NOTIFICATION_TURN_FINISHED_TITLE, { name: name });
+    },
+    SERVER_NOTIFICATION_OPPONENT_SURENDERED_TITLE: function (strings, name) {
+        return fmt(strings.SERVER_NOTIFICATION_OPPONENT_SURENDERED_TITLE, { name: name });
+    },
+    SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE: function (strings, name) {
+        return fmt(strings.SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE, { name: name });
+    },
+    SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY: function (strings, name) {
+        return fmt(strings.SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY, { name: name });
+    },
+    SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE: function (strings, name) {
+        return fmt(strings.SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE, { name: name });
+    },
 };
 
 const predicateNames = Object.freeze(Object.keys(translationPredicates));
@@ -1691,6 +1715,8 @@ function translate(key) {
 
 module.exports.setCurrentLanguage = setCurrentLanguage;
 module.exports.getCurrentLanguage = getCurrentLanguage;
+module.exports.isValidLanguage = (language) => { return validLanguages.includes(language); }
+module.exports.getDefaultLanguage = () => { return referenceLanguage; }
 module.exports.translate = translate;
 module.exports.translationKeys = translationRefKeys;
 
