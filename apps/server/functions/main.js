@@ -3,7 +3,6 @@ const cors = require('cors');
 const app = express();
 const bodyParser = require('body-parser');
 const admin = require('firebase-admin');
-const t = require('./translations.js');
 const uuidv4 = require('uuid/v4');
 const { Pool } = require('pg')
 const axios = require('axios');
@@ -27,6 +26,11 @@ const Board = require('battlechoc-shared-functions').Board;
 const NotificationReasonType = require('battlechoc-shared-functions').NotificationReasonType;
 const EntityDescriptors = require('battlechoc-shared-functions').EntityDescriptors;
 const finalLevel = require('battlechoc-shared-functions').finalLevel;
+const translate = require('battlechoc-shared-functions').translate;
+const setCurrentLanguage = require('battlechoc-shared-functions').setCurrentLanguage;
+const isValidLanguage = require('battlechoc-shared-functions').isValidLanguage;
+const getDefaultLanguage = require('battlechoc-shared-functions').getDefaultLanguage;
+const translationKeys =  require('battlechoc-shared-functions').translationKeys;
 
 let dbHost = '/cloudsql/battlechoc:europe-west2:battlechoc-prod-psql';
 let dbUser = 'battlechoc-service-account';
@@ -518,15 +522,15 @@ app.post('/user/notify', async (req, res) => {
                         console.error("Could not emit notification");
                         return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + session.game.players[session.game.currentPlayerIndex].name + '" DOES NOT EXIST' });
                     }
-                    let language = receiverResult.rows[0].language;
-                    if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
-                        language = t.getDefaultLanguage();
+
+                    if (typeof receiverResult.rows[0].language !== 'undefined') {
+                        setCurrentLanguage(receiverResult.rows[0].language);
                     }
 
                     await emitPlayerNotification(session.game.players[session.game.currentPlayerIndex].id,
                         req.body.sessionId,
-                        playerName + t.t[language].NOTIFICATION_REMEMBER_TURN_TITLE,
-                        t.t[language].NOTIFICATION_REMEMBER_TURN_BODY,
+                        translate(translationKeys.SERVER_NOTIFICATION_REMEMBER_TURN_TITLE, playerName),
+                        translate(translationKeys.SERVER_NOTIFICATION_REMEMBER_TURN_BODY),
                         NotificationReasonType.REMEMBER_TURN,
                         'https://battlechoc.com/session/' + req.body.sessionId);
                     const sessions = await getAllActiveMultiplayerSessionsForPlayer(req.user.uid);
@@ -556,10 +560,10 @@ app.post('/user/challenge', async (req, res) => {
             console.error("Challenged player\'s score is too low to be challenged. " + opponent.score);
             res.status(400).json({ error: 'CHALLENGED OPPONENT HAS A SCORE THAT IS TOO LOW. ' + opponent.score });
         } else {
-            let language = opponentResult.rows[0].language;
-            if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
-                language = t.getDefaultLanguage();
+            if (typeof opponentResult.rows[0].language !== 'undefined') {
+                setCurrentLanguage(opponentResult.rows[0].language);
             }
+
             if (opponent.id === req.user.uid) {
                 res.status(400).json({ error: 'CANNOT CREATE A GAME CHALLENGING YOURSELF' });
             } else {
@@ -602,8 +606,8 @@ app.post('/user/challenge', async (req, res) => {
 
                         await emitPlayerNotification(opponent.id,
                             databaseSession.id,
-                            player.username + t.t[language].NOTIFICATION_CHALLENGE_TITLE,
-                            t.t[language].NOTIFICATION_CHALLENGE_BODY,
+                            translate(translationKeys.SERVER_NOTIFICATION_CHALLENGE_TITLE, player.username),
+                            translate(translationKeys.SERVER_NOTIFICATION_CHALLENGE_BODY),
                             NotificationReasonType.CHALLENGED,
                             'https://battlechoc.com/session/' + databaseSession.id);
 
@@ -644,15 +648,15 @@ const emitEndGameNotification = async (session, endGameAction) => {
         console.error("Could not emit notification");
         return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + looser.name + '" DOES NOT EXIST' });
     }
-    let language = receiverResult.rows[0].language;
-    if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
-        language = t.getDefaultLanguage();
+
+    if (typeof receiverResult.rows[0].language !== 'undefined') {
+        setCurrentLanguage(receiverResult.rows[0].language);
     }
 
     await emitPlayerNotification(looser.id,
         session.id,
-        looser.name + t.t[language].NOTIFICATION_GAME_LOST_TITLE,
-        t.t[language].NOTIFICATION_GAME_LOST_BODY + winner.name,
+        translate(translationKeys.SERVER_NOTIFICATION_GAME_LOST_TITLE),
+        translate(translationKeys.SERVER_NOTIFICATION_GAME_LOST_BODY, winner.name),
         NotificationReasonType.GAME_LOST,
         'https://battlechoc.com/');
 }
@@ -945,15 +949,14 @@ app.post('/multiplayer/relay/action', async (req, res) => {
                         return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + session.game.players[1 - playerId].name + '" DOES NOT EXIST' });
                     }
 
-                    let language = receiverResult.rows[0].language;
-                    if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
-                        language = t.getDefaultLanguage();
+                    if (typeof receiverResult.rows[0].language !== 'undefined') {
+                        setCurrentLanguage(receiverResult.rows[0].language);
                     }
 
                     await emitPlayerNotification(session.game.players[1 - playerId].id,
                         req.body.sessionId,
-                        session.game.players[playerId].name + t.t[language].NOTIFICATION_TURN_FINISHED_TITLE,
-                        t.t[language].NOTIFICATION_TURN_FINISHED_BODY,
+                        translate(translationKeys.SERVER_NOTIFICATION_TURN_FINISHED_TITLE, session.game.players[playerId].name),
+                        translate(translationKeys.SERVER_NOTIFICATION_TURN_FINISHED_BODY),
                         NotificationReasonType.OPPONENT_FINISHED_TURN,
                         'https://battlechoc.com/session/' + req.body.sessionId);
                 }
@@ -1106,15 +1109,14 @@ app.post('/surrender', async (req, res) => {
                     return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + result.winner.name + '" DOES NOT EXIST' });
                 }
 
-                let language = receiverResult.rows[0].language;
-                if (typeof language === 'undefined' || !t.isValidLanguage(language)) {
-                    language = t.getDefaultLanguage();
+                if (typeof receiverResult.rows[0].language !== 'undefined') {
+                    setCurrentLanguage(receiverResult.rows[0].language);
                 }
 
                 await emitPlayerNotification(result.winner.id,
                     req.body.sessionId,
-                    result.looser.name + t.t[language].NOTIFICATION_OPPONENT_SURENDERED_TITLE,
-                    t.t[language].NOTIFICATION_OPPONENT_SURENDERED_BODY,
+                    translate(translationKeys.SERVER_NOTIFICATION_OPPONENT_SURENDERED_TITLE, result.looser.name),
+                    translate(translationKeys.SERVER_NOTIFICATION_OPPONENT_SURENDERED_BODY),
                     NotificationReasonType.OPPONENT_SURRENDERED_GAME,
                     'https://battlechoc.com/');
                 res.status(200).end();
@@ -1446,7 +1448,7 @@ const createOrUpdatePlayer = async (userId, player) => {
         const username = (typeof player.username === 'undefined' || player.username === '') ? EmptyPlayerStats.username : player.username;
         const coins = (typeof player.coins === 'number' && !isNaN(player.coins)) ? player.coins : 0;
         const score = (typeof player.score === 'number' && !isNaN(player.score)) ? player.score : 0;
-        const language = (typeof player.language !== 'undefined' && t.isValidLanguage(player.language)) ? player.language : t.getDefaultLanguage();
+        const language = (typeof player.language !== 'undefined' && isValidLanguage(player.language)) ? player.language : getDefaultLanguage();
         const level = typeof player.level !== 'undefined' ? player.level : EmptyPlayerStats.level;
         const tutorialStarted = typeof player.tutorialStarted !== 'undefined' ? player.tutorialStarted : false;
         const tutorialSkipped = typeof player.tutorialSkipped !== 'undefined' ? player.tutorialSkipped : false;
@@ -1488,7 +1490,7 @@ const createNewPlayer = async (userId) => {
             const coins = 0;
             const score = 0;
             const username = EmptyPlayerStats.username;
-            const language = t.getDefaultLanguage();
+            const language = getDefaultLanguage();
             const level = EmptyPlayerStats.level;
             const queryResult = await dbPool.query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', [userId, username, coins, score, language, level, false, false, false]);
             if (queryResult.rows.length === 1) {
@@ -1648,8 +1650,9 @@ app.post('/user/username', async (req, res) => {
 });
 
 app.post('/user/language', async (req, res) => {
-    if (t.isValidLanguage(req.body.language)) {
+    if (isValidLanguage(req.body.language)) {
         try {
+            setCurrentLanguage(req.body.language);
             const queryResult = await dbPool.query('UPDATE players SET language = $1 WHERE id = $2 RETURNING id', [req.body.language, req.user.uid]);
             if (queryResult.rows.length > 0) {
                 res.json({ language: req.body.language });
@@ -1683,15 +1686,14 @@ const sessionCleanupFunction = async (context) => {
                     console.error('NOTIFICATION RECEIVER "' + result.winner.name + '" DOES NOT EXIST');
                 }
 
-                let winnerLanguage = winnerResult.rows[0].language;
-                if (typeof winnerLanguage === 'undefined' || !t.isValidLanguage(winnerLanguage)) {
-                    winnerLanguage = t.getDefaultLanguage();
+                if (typeof winnerResult.rows[0].language !== 'undefined') {
+                    setCurrentLanguage(winnerResult.rows[0].language);
                 }
 
                 await emitPlayerNotification(result.winner.id,
                     row.id,
-                    t.t[winnerLanguage].NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE + result.looser.name,
-                    result.looser.name + t.t[winnerLanguage].NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY,
+                    translate(translationKeys.SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE, result.looser.name),
+                    translate(translationKeys.SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY, result.looser.name),
                     NotificationReasonType.SESSION_TIMEOUT_GAME_WON,
                     'https://battlechoc.com/');
 
@@ -1701,15 +1703,14 @@ const sessionCleanupFunction = async (context) => {
                     console.error('NOTIFICATION RECEIVER "' + result.looser.name + '" DOES NOT EXIST');
                 }
 
-                let looserLanguage = looserResult.rows[0].language;
-                if (typeof looserLanguage === 'undefined' || !t.isValidLanguage(looserLanguage)) {
-                    looserLanguage = t.getDefaultLanguage();
+                if (typeof looserResult.rows[0].language === 'undefined') {
+                    setCurrentLanguage(looserResult.rows[0].language);
                 }
 
                 await emitPlayerNotification(result.looser.id,
                     row.id,
-                    t.t[looserLanguage].NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE + result.winner.name,
-                    t.t[looserLanguage].NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY,
+                    translate(translationKeys.SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE, result.winner.name),
+                    translate(translationKeys.SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY),
                     NotificationReasonType.SESSION_TIMEOUT_GAME_LOST,
                     'https://battlechoc.com/');
             } else {
