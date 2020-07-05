@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './Hud.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { GameStateTypes, translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
+import { GameStateTypes, translate as t, translationKeys as tr, computeAwards } from 'battlechoc-shared-functions';
 import { showQuickMessage, showNotification, hideNotification } from './UiActions';
 import { Info, Tooltip, Settings, AccountOverview, Dialog, Highscore } from './dialogs';
 import MultiplayerScreen from './pages/MultiplayerScreen';
@@ -13,7 +13,6 @@ import logger from '../helper/logger';
 import firebase from '@firebase/app';
 import { Button, Fab, Progress, Actionbar, InfoPanel, BuildingPalette, AttackPalette, GameStartSelection, GameEndOverview } from './controls';
 import { createUseStyles } from 'react-jss'
-import computeAwards from './misc/Awards';
 
 const useStyles = createUseStyles(theme => ({
         actionbar: {

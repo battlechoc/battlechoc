@@ -238,7 +238,7 @@ class App extends Component {
         if (typeof this.props.game !== 'undefined') {
             this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
             this.scene.clear();
-            await this.props.finishGame();
+            await this.props.finishGame({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
             await this.props.resetUi();
         }
 
@@ -505,7 +505,7 @@ class App extends Component {
         if (!this.props.tutorial) {
             Jukebox.stopMusic(true);
             setTimeout(() => {
-                this.props.finishGame();
+                this.props.finishGame({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
                 this.props.resetUi();
                 multiplayer.fetchPlayerStats();
 
@@ -564,7 +564,7 @@ class App extends Component {
         if (typeof this.props.game !== 'undefined') {
             this.scene.stopAllAnimations();
             this.scene.clear();
-            await this.props.finishGame();
+            await this.props.finishGame({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
             await this.props.resetUi();
         }
     }
