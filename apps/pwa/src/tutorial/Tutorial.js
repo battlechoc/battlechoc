@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { Jukebox, translate as t, keys as tr } from '../ui/misc';
+import { Jukebox } from '../ui/misc';
 import { ServerRequest } from '../helper/settings';
 import { multiplayer } from '../Multiplayer';
 import OfflineStore from '../OfflineStore';
@@ -10,7 +10,7 @@ import { PlayerNameInput, Button } from '../ui/controls';
 import { Dialog } from '../ui/dialogs';
 import LoopAnimation from './LoopAnimation';
 import { manipulateGame } from '../gameplay/GameActions';
-import { ActionValidationError, EmptyPlayerStats } from 'battlechoc-shared-functions';
+import { ActionValidationError, EmptyPlayerStats, translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 import logger from '../helper/logger';
 import { BattlechocIntro, Factory, CacaoTree, RumTruffleCannon, Cream, TutorialSituations, FactoryExtension, EasterBunny, XmasFactory, HotChocolateBallista, ChocolateFountain, FruitCannon, DonutFactory, Donuts } from '../situations/tutorial/';
 import { createUseStyles } from 'react-jss';

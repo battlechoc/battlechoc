@@ -9,10 +9,10 @@ import { multiplayer } from '../../Multiplayer';
 import firebase from 'firebase/app';
 import 'firebase/auth';
 import logger from '../../helper/logger';
-import { Jukebox, translate as t, keys as tr } from '../misc';
+import { Jukebox } from '../misc';
 import { Button, Progress, Fab } from '../controls';
 import Dialog from './Dialog';
-import { EmptyPlayerStats } from 'battlechoc-shared-functions';
+import { EmptyPlayerStats, translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 
 const useStyles = createUseStyles(theme => ({
     wrapper: {

@@ -8,10 +8,12 @@
     "babylonjs": "^4.2.0-alpha.15",
     "babylonjs-loaders": "^4.2.0-alpha.15",
     "battlechoc-shared-functions": "https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git",
+    "confetti-js": "^0.0.18",
     "firebase": "^7.6.0",
     "idb": "^4.0.3",
     "javascript-time-ago": "^2.0.1",
     "react": "^16.7.0",
+    "react-countup": "^4.3.3",
     "react-dom": "^16.7.0",
     "react-firebaseui": "^4.0.0",
     "react-jss": "^10.1.1",
@@ -32,9 +34,6 @@
   },
   "eslintConfig": {
     "extends": "react-app"
-  },
-  "resolutions": {
-    "caniuse-lite": "1.0.30000960"
   },
   "browserslist": [
     ">0.2%",

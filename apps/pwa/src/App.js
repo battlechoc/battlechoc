@@ -1,13 +1,15 @@
 import React, { Component, Suspense } from 'react';
 import { connect } from 'react-redux';
 import './App.css';
-import { Jukebox, translate as t, keys as tr, setCurrentLanguage } from './ui/misc';
+import { Jukebox } from './ui/misc';
 import OfflineStore from './OfflineStore';
+import { ServerRequest } from './helper/settings';
 import { multiplayer } from './Multiplayer';
-import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut } from 'battlechoc-shared-functions';
+import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut, translate as t, keys as tr, setCurrentLanguage } from 'battlechoc-shared-functions';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
 import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting, showNotification } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
+import Donald from './gameplay/Donald';
 import Violet from './gameplay/Violet';
 import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 import { gameplayLog } from './gameplay/GamePlayLogger';
@@ -102,13 +104,17 @@ class App extends Component {
         }
 
         OfflineStore.settingsStore.get('language').then(language => {
-            if (typeof language !== 'undefined') {
-                setCurrentLanguage(language);
-                this.forceUpdate();
-            } else {
-                setCurrentLanguage(browserLanguage);
-                this.forceUpdate();
-            }
+            const languageValue = (typeof language !== 'undefined') ? language : browserLanguage;
+            setCurrentLanguage(languageValue, () => {
+                ServerRequest('post', '/user/language', { language: languageValue })
+                    .catch(error => {
+                        if (!error instanceof ReferenceError) {
+                            console.warn(error);
+                        }
+                    })
+                    .finally(() => OfflineStore.settingsStore.set("language", languageValue));
+            });
+            this.forceUpdate();
         });
 
         OfflineStore.playerStore.get('multiplayerSessions').then(multiplayerSessions => {
@@ -232,7 +238,7 @@ class App extends Component {
         if (typeof this.props.game !== 'undefined') {
             this.timeouts.forEach(timeoutId => clearTimeout(timeoutId));
             this.scene.clear();
-            await this.props.finishGame();
+            await this.props.finishGame({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
             await this.props.resetUi();
         }
 
@@ -287,11 +293,11 @@ class App extends Component {
             if (typeof prevProps.game !== 'undefined' && typeof this.props.game !== 'undefined' && typeof OfflineStore.gamestateStore !== 'undefined' &&
                 (this.props.game.state === GameStateTypes.BUILD_PHASE || this.props.game.state === GameStateTypes.ATTACK_PHASE) && (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex))) {
 
-                const isSingleplayerGame = this.props.game.players.filter(player => player.type === PlayerType.AUGUSTUS_GLOOP).length > 0;
+                const isSingleplayerGame = this.props.game.players.filter(player => player.type === PlayerType.AUGUSTUS_GLOOP || player.type === PlayerType.DONALD_TRUMP).length > 0;
 
                 if (!prevProps.tutorial && isSingleplayerGame) {
-                    let resumeableGame = {};
-                    resumeableGame.gameplay = this.props.game;
+                    const resumeableGame = {};
+                    resumeableGame.gameplay = this.props.gameplay;
                     resumeableGame.ui = this.props.ui;
                     OfflineStore.saveCurrentGame(resumeableGame).then(() => {
                         prevProps.gameResumeable(true).catch(this.handleError);
@@ -333,11 +339,9 @@ class App extends Component {
                 return;
             }
 
-            const opponentIsNpc = opponentType === PlayerType.AUGUSTUS_GLOOP;
+            const opponentIsNpc = opponentType === PlayerType.AUGUSTUS_GLOOP || opponentType === PlayerType.DONALD_TRUMP;
 
-            if (gameTransition === GameTransitions.OPPONENT_STARTS_GAME && opponentIsNpc) {
-                this.opponent.simulateChooseFieldOrStartDecision();
-            } else if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START && opponentIsNpc) {
+            if (gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START && opponentIsNpc) {
                 this.opponent.simulateChooseFieldDecision();
             } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
                 this.scene.startGame(this.props.game);
@@ -439,17 +443,29 @@ class App extends Component {
                 });
             } else {
                 OfflineStore.getResumeableGame().then(resumeableGame => {
-                    this.opponent = new Augustus({
-                        chooseStart: this.props.chooseStart,
-                        chooseField: this.props.chooseField,
-                        build: this.props.build,
-                        attack: this.props.attack,
-                        finishTurn: this.props.finishTurn,
-                        finishBuildPhase: this.props.finishBuildPhase
-                    }, this.calculateHandicap(this.props.playerInfos.stats.score));
+                    if (this.props.playerInfos.stats.score < 800) {
+                        this.opponent = new Donald({
+                            chooseStart: this.props.chooseStart,
+                            chooseField: this.props.chooseField,
+                            build: this.props.build,
+                            attack: this.props.attack,
+                            finishTurn: this.props.finishTurn,
+                            finishBuildPhase: this.props.finishBuildPhase
+                        });
+                    } else {
+                        this.opponent = new Augustus({
+                            chooseStart: this.props.chooseStart,
+                            chooseField: this.props.chooseField,
+                            build: this.props.build,
+                            attack: this.props.attack,
+                            finishTurn: this.props.finishTurn,
+                            finishBuildPhase: this.props.finishBuildPhase
+                        }, this.calculateHandicap(this.props.playerInfos.stats.score));
+                    }
+
                     if (typeof resumeableGame !== 'undefined' && resumeGame) {
                         this.props.resumeGame(resumeableGame.gameplay).then(() => {
-                            this.opponent.player = resumeableGame.gameplay.players[1];
+                            this.opponent.player = resumeableGame.gameplay.game.players[1];
                             this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
                             this.props.loadUiState(resumeableGame.ui).then(() => {
                                 if (![GameStateTypes.START, GameStateTypes.CHOOSE_FIELD_OR_START, GameStateTypes.CHOOSE_FIELD].includes(this.props.game.state)) {
@@ -460,13 +476,19 @@ class App extends Component {
                     } else {
                         this.props.gameResumeable(false);
                         OfflineStore.gamestateStore.clear();
-                        let players = [
-                            createPlayer("Charlie Bucket", PlayerType.HUMAN, this.props.playerInfos.stats.level),
-                            createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP, this.props.playerInfos.stats.level)
+                        const players = [
+                            createPlayer("Charlie Bucket", PlayerType.HUMAN, this.props.playerInfos.stats.level)
                         ];
+                        if (this.props.playerInfos.stats.score < 800) {
+                            players.push(createPlayer("Donald John", PlayerType.DONALD_TRUMP, this.props.playerInfos.stats.level))
+                        } else {
+                            players.push(createPlayer("Augustus Gloop", PlayerType.AUGUSTUS_GLOOP, this.props.playerInfos.stats.level))
+                        }
 
                         this.props.startGame(players).then(() => {
-                            this.opponent.type = Augustus.randomizeType();
+                            if (this.props.playerInfos.stats.score >= 800) {
+                                this.opponent.type = Augustus.randomizeType();
+                            }
                             this.opponent.connectGamestate(() => this.props.game, timeout => this.timeouts.push(timeout));
                             const boardSize = (this.props.playerInfos.stats.score < 200) ? { rows: 6, cols: 6 } : (this.props.playerInfos.stats.score < 500) ? { rows: 8, cols: 8 } : { rows: 10, cols: 10 };
                             this.props.createBoard({
@@ -484,7 +506,7 @@ class App extends Component {
         if (!this.props.tutorial) {
             Jukebox.stopMusic(true);
             setTimeout(() => {
-                this.props.finishGame();
+                this.props.finishGame({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
                 this.props.resetUi();
                 multiplayer.fetchPlayerStats();
 
@@ -543,7 +565,7 @@ class App extends Component {
         if (typeof this.props.game !== 'undefined') {
             this.scene.stopAllAnimations();
             this.scene.clear();
-            await this.props.finishGame();
+            await this.props.finishGame({ issuer: this.props.game.players[multiplayer.localPlayerIndex].id });
             await this.props.resetUi();
         }
     }
@@ -574,7 +596,7 @@ class App extends Component {
     render() {
         return (
             <div className="app">
-                { this.props.quickMessages.length > 0 ? <div style={{
+                {this.props.quickMessages.length > 0 ? <div style={{
                     position: 'absolute',
                     flexDirection: 'column',
                     display: 'flex',
@@ -595,7 +617,7 @@ class App extends Component {
                         autoHideDuration={message.autoHideDuration}
                     />
                     )}
-                </div> : null }
+                </div> : null}
                 <Suspense fallback={null}>
                     <Scene onRef={scene => this.scene = scene} />
                 </Suspense>
@@ -623,6 +645,7 @@ class App extends Component {
 }
 
 const mapStateToProps = state => ({
+    gameplay: state.gameplay,
     game: state.gameplay.game,
     language: state.ui.language,
     selectedBuilding: state.ui.selectedBuilding,

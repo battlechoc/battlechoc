@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { Jukebox, translate as t, keys as tr } from '../misc';
+import { Jukebox } from '../misc';
 import Axios from 'axios';
 import { showQuickMessage, updateMultiplayerSessions } from '../UiActions';
 import { connect } from 'react-redux';
 import { multiplayer } from '../../Multiplayer';
 import { ServerRequest } from '../../helper/settings';
 import logger from '../../helper/logger';
-import { Dialog } from '../dialogs';
+import { Dialog } from '../dialogs';
 import { Progress, PlayerList, Button, Fab } from '../controls';
-import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
+import { NoHealthyInternetConnectionError, SurrenderCosts, translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 import { createUseStyles } from 'react-jss';
 
 const useStyles = createUseStyles(theme => ({
@@ -81,7 +81,7 @@ const useStyles = createUseStyles(theme => ({
         '-webkit-font-smoothing': 'antialiased',
         [theme.breakpoints.orientation.portrait]: {
             fontSize: '4.5vw'
-        } 
+        }
     },
     button: {
         width: '45%',
@@ -89,7 +89,7 @@ const useStyles = createUseStyles(theme => ({
             fontSize: '3vw',
             [theme.breakpoints.orientation.portrait]: {
                 fontSize: '3vh'
-            } 
+            }
         }
     },
     buttons: {
@@ -105,7 +105,7 @@ const useStyles = createUseStyles(theme => ({
         '-webkit-text-stroke': `0.1vw ${theme.color.secondary.dark}`,
         '-webkit-font-smoothing': 'antialiased'
     },
-    header: { 
+    header: {
         position: 'absolute',
         top: 0,
         left: 0,
@@ -123,7 +123,7 @@ const useStyles = createUseStyles(theme => ({
         },
         [theme.breakpoints.orientation.portrait]: {
             fontSize: '3vh'
-        } 
+        }
     },
     coins: {
         display: 'flex',
@@ -131,7 +131,7 @@ const useStyles = createUseStyles(theme => ({
         '& span': {
             fontFamily: 'Bangers',
             marginRight: 10
-        }, 
+        },
         '& div': {
             background: 'url(/images/coins.svg) no-repeat',
             padding: '2vw 3vw',
@@ -139,14 +139,14 @@ const useStyles = createUseStyles(theme => ({
             [theme.breakpoints.orientation.portrait]: {
                 padding: '2vh 3vh',
                 marginLeft: '1.5vw'
-            } 
+            }
         }
     },
     surrenderDialog: {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        textAlign: 'center'  
+        textAlign: 'center'
     },
     timeago: {
         fontFamily: 'Montserrat',
@@ -154,7 +154,7 @@ const useStyles = createUseStyles(theme => ({
         fontSize: '2.5vw',
         textAlign: 'center',
         [theme.breakpoints.orientation.portrait]: {
-            padding: '1vh', 
+            padding: '1vh',
             fontSize: '2.5vh',
         }
     },
@@ -172,7 +172,7 @@ const useStyles = createUseStyles(theme => ({
             fontSize: '6vh',
             '-webkit-text-stroke': `0.1vh ${theme.color.secondary.dark}`,
         }
-    }, 
+    },
     input: {
         color: theme.color.secondary.dark,
         border: `0.1vw solid ${theme.color.secondary.dark}`,
@@ -230,8 +230,8 @@ const MultiplayerScreen = props => {
     const [showSurrenderDialog, setShowSurrenderDialog] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
     const [userSearchText, setUserSearchText] = useState('');
-    const [searchResults, setSearchResults] = useState([]);  
-    const [waitForResponse, setWaitForResponse] = useState(false);  
+    const [searchResults, setSearchResults] = useState([]);
+    const [waitForResponse, setWaitForResponse] = useState(false);
     const [badInternetConnection, setBadInternetConnection] = useState(false);
     const [surrenderGameId, setSurrenderGameId] = useState(undefined);
     const [surrenderOpponentName, setSurrenderOpponentName] = useState(undefined);
@@ -243,7 +243,7 @@ const MultiplayerScreen = props => {
     const source = useRef(Axios.CancelToken.source());
 
     const inputRef = React.useRef();
-    
+
     useEffect(() => {
         multiplayer.getMultiplayerSessions(() => showQuickMessage({ text: t(tr.SESSION_REFRESH_FAILED) }));
         multiplayer.fetchFriendsList();
@@ -261,7 +261,7 @@ const MultiplayerScreen = props => {
         }
     }, [showQuickMessage]);
 
-    const showPlayerProfile = (session, mode='stacked') => openAccountOverview(session.opponent, mode);
+    const showPlayerProfile = (session, mode = 'stacked') => openAccountOverview(session.opponent, mode);
 
     const canNotifyOpponent = session => {
         const currentDateTime = (new Date()).getTime();
@@ -376,126 +376,126 @@ const MultiplayerScreen = props => {
 
     return (
         <>
-        { sessionRefreshActions > 0 ? <Progress className={classes.progress} infiniteAnimation /> : null }
-        <div className={classes.actionbar}>
-            <Fab
-                color="secondary"
-                icon="back"
-                onClick={() => closeMultiplayerScreen() } />
-            <Fab
-                color="secondary"
-                iconStyle={ sessionRefreshActions > 0 ? { animation: 'spin 1.2s infinite linear' } : {} }
-                icon="refresh"
-                onClick={() => refreshSessions() } />
-            <div style={{ flexGrow: 1 }} />
-            <Fab
-                color="secondary"
-                icon="search"
-                onClick={() => setShowSearch(true)} />
-        </div>
-        <div className={classes.page}>
-            <Dialog
-                open={showSurrenderDialog}
-                close={() => setShowSurrenderDialog(false)}
-                title={t(tr.SURRENDER_GAME)}>
-                <div className={classes.surrenderDialog}>
-                    <p>{t(tr.SURRENDER_GAME_TEXT, surrenderOpponentName)}</p>
-                    <Button color="accent" onClick={() => {
-                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                        setShowSurrenderDialog(false);
-                        setSurrenderGameId(undefined);
-                        setSurrenderOpponentName(undefined);
-                        surrenderGame(surrenderGameId);
-                    }}>{t(tr.SURRENDER)}</Button>
-                </div>
-            </Dialog>
-
-            <Dialog
-                open={showFriends}
-                close={() => setShowFriends(false)}
-                title={t(tr.FRIENDS)}>
-                <div className={classes.dialog}>
-                    <PlayerList
-                        className={classes.playerList}
-                        players={friends}
-                        size="medium"
-                        removeFriend={removeFriend}
-                        challenge={challengePlayer}
-                        showProfile={showPlayerProfile}
-                        sessions={multiplayerSessions} />
-                </div>
-            </Dialog>
-
-            <Dialog
-                open={showSearch}
-                close={() => setShowSearch(false)}
-                title={t(tr.SEARCH_PLAYERS)}>
-                <div className={classes.dialog}>
-                    { badInternetConnection && !waitForResponse ? <span>{ t(tr.NO_HEALTHY_INTERNET) }</span> : null }
-                    <div className={classes.search}>
-                        <span className={classes.label}>Name</span>
-                        <input className={classes.input} ref={inputRef} value={userSearchText} spellCheck={false} autoFocus onChange={event => {
-                            setUserSearchText(event.target.value);
-                        }} />
-                    </div>
-                    { waitForResponse ? <Progress style={{
-                        alignItems: 'center',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        margin: 24
-                    }} infiniteAnimation /> : null }
-                    <PlayerList
-                        className={classes.playerList}
-                        size="medium"
-                        players={searchResults} 
-                        friends={friends}
-                        addFriend={addFriend}
-                        removeFriend={removeFriend}
-                        challenge={challengePlayer}
-                        showProfile={showPlayerProfile}
-                        sessions={multiplayerSessions} />
-                </div>
-            </Dialog>
-
-            <div className={classes.actions}>
-                <Button onClick={searchRandomOpponent} color="accent">{t(tr.MULTIPLAYER_RANDOM_OPPONENT)}</Button>
-                <Button onClick={() => setShowFriends(true)}>{t(tr.FRIENDS)}</Button>
+            {sessionRefreshActions > 0 ? <Progress className={classes.progress} infiniteAnimation /> : null}
+            <div className={classes.actionbar}>
+                <Fab
+                    color="secondary"
+                    icon="back"
+                    onClick={() => closeMultiplayerScreen()} />
+                <Fab
+                    color="secondary"
+                    iconStyle={sessionRefreshActions > 0 ? { animation: 'spin 1.2s infinite linear' } : {}}
+                    icon="refresh"
+                    onClick={() => refreshSessions()} />
+                <div style={{ flexGrow: 1 }} />
+                <Fab
+                    color="secondary"
+                    icon="search"
+                    onClick={() => setShowSearch(true)} />
             </div>
-            
-            { multiplayerSessions.length > 0 && sessionRefreshActions === 0 ? <div className={classes.sessions}>
-                {  Object.assign([], multiplayerSessions).sort(sortByTimestamp).map((row, i) => {
-                    const automaticallyEnding = new Date(row.last_changed).getTime() + (1000 * 60 * 60 * 24);
-                    const distance = automaticallyEnding - new Date().getTime();
-                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                    const info = row.myTurn ? t(tr.MULTIPLAYER_AUTOMATICALLY_LOSE, hours, minutes) : t(tr.MULTIPLAYER_AUTOMATICALLY_WIN, hours, minutes);
-                    return (<div className={classes.session} key={i}>
-                        <div className={classes.header} />
-                        <h2 className={classes.title}>{`${t(tr.YOU)} vs ${row.opponent.name}`}</h2>
-                        <div className={classes.buttons}>
-                            { row.myTurn ? 
-                            <Button className={classes.button} onClick={() => enterMultiplayerGame(row.id)}>{t(tr.PLAY)}</Button> :
-                            <Button className={classes.button} color="secondary" onClick={() => enterMultiplayerGame(row.id)}>{t(tr.WAIT)}</Button> }
-                            <Button color="accent" className={classes.button} onClick={() => askSurrenderGame(row.id, row.opponent.name)}>{t(tr.SURRENDER)}</Button>
+            <div className={classes.page}>
+                <Dialog
+                    open={showSurrenderDialog}
+                    close={() => setShowSurrenderDialog(false)}
+                    title={t(tr.SURRENDER_GAME)}>
+                    <div className={classes.surrenderDialog}>
+                        <p>{t(tr.SURRENDER_GAME_TEXT, surrenderOpponentName, SurrenderCosts)}</p>
+                        <Button color="accent" onClick={() => {
+                            Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                            setShowSurrenderDialog(false);
+                            setSurrenderGameId(undefined);
+                            setSurrenderOpponentName(undefined);
+                            surrenderGame(surrenderGameId);
+                        }}>{t(tr.SURRENDER)}</Button>
+                    </div>
+                </Dialog>
+
+                <Dialog
+                    open={showFriends}
+                    close={() => setShowFriends(false)}
+                    title={t(tr.FRIENDS)}>
+                    <div className={classes.dialog}>
+                        <PlayerList
+                            className={classes.playerList}
+                            players={friends}
+                            size="medium"
+                            removeFriend={removeFriend}
+                            challenge={challengePlayer}
+                            showProfile={showPlayerProfile}
+                            sessions={multiplayerSessions} />
+                    </div>
+                </Dialog>
+
+                <Dialog
+                    open={showSearch}
+                    close={() => setShowSearch(false)}
+                    title={t(tr.SEARCH_PLAYERS)}>
+                    <div className={classes.dialog}>
+                        {badInternetConnection && !waitForResponse ? <span>{t(tr.NO_HEALTHY_INTERNET)}</span> : null}
+                        <div className={classes.search}>
+                            <span className={classes.label}>Name</span>
+                            <input className={classes.input} ref={inputRef} value={userSearchText} spellCheck={false} autoFocus onChange={event => {
+                                setUserSearchText(event.target.value);
+                            }} />
                         </div>
-                        <div className={classes.timeago}>{info}</div>
-                        <div className={classes.info}>
-                            <div className={classes.statistics}>
-                                <div style={{ marginBottom: '1.5vh'}}><span className={classes.turns}>{row.turns}</span><span>{t(tr.TURNS)}</span></div>
-                                <div className={classes.coins}>
-                                    <span>{multiplayer.calculateCoinsFromTrackRecord([row.statistics], true)}</span>
-                                    <div />
+                        {waitForResponse ? <Progress style={{
+                            alignItems: 'center',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            margin: 24
+                        }} infiniteAnimation /> : null}
+                        <PlayerList
+                            className={classes.playerList}
+                            size="medium"
+                            players={searchResults}
+                            friends={friends}
+                            addFriend={addFriend}
+                            removeFriend={removeFriend}
+                            challenge={challengePlayer}
+                            showProfile={showPlayerProfile}
+                            sessions={multiplayerSessions} />
+                    </div>
+                </Dialog>
+
+                <div className={classes.actions}>
+                    <Button onClick={searchRandomOpponent} color="accent">{t(tr.MULTIPLAYER_RANDOM_OPPONENT)}</Button>
+                    <Button onClick={() => setShowFriends(true)}>{t(tr.FRIENDS)}</Button>
+                </div>
+
+                {multiplayerSessions.length > 0 && sessionRefreshActions === 0 ? <div className={classes.sessions}>
+                    {Object.assign([], multiplayerSessions).sort(sortByTimestamp).map((row, i) => {
+                        const automaticallyEnding = new Date(row.last_changed).getTime() + (1000 * 60 * 60 * 24);
+                        const distance = automaticallyEnding - new Date().getTime();
+                        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        const info = row.myTurn ? t(tr.MULTIPLAYER_AUTOMATICALLY_LOSE, hours, minutes) : t(tr.MULTIPLAYER_AUTOMATICALLY_WIN, hours, minutes);
+                        return (<div className={classes.session} key={i}>
+                            <div className={classes.header} />
+                            <h2 className={classes.title}>{`${t(tr.YOU)} vs ${row.opponent.name}`}</h2>
+                            <div className={classes.buttons}>
+                                {row.myTurn ?
+                                    <Button className={classes.button} onClick={() => enterMultiplayerGame(row.id)}>{t(tr.PLAY)}</Button> :
+                                    <Button className={classes.button} color="secondary" onClick={() => enterMultiplayerGame(row.id)}>{t(tr.WAIT)}</Button>}
+                                <Button color="accent" className={classes.button} onClick={() => askSurrenderGame(row.id, row.opponent.name)}>{t(tr.SURRENDER)}</Button>
+                            </div>
+                            <div className={classes.timeago}>{info}</div>
+                            <div className={classes.info}>
+                                <div className={classes.statistics}>
+                                    <div style={{ marginBottom: '1.5vh' }}><span className={classes.turns}>{row.turns}</span><span>{t(tr.TURNS)}</span></div>
+                                    <div className={classes.coins}>
+                                        <span>{multiplayer.calculateCoinsFromTrackRecord([row.statistics], true)}</span>
+                                        <div />
+                                    </div>
+                                </div>
+                                <div className={classes.opponentActions}>
+                                    <Fab icon="user" onClick={() => showPlayerProfile(row, 'default')} />
+                                    {canNotifyOpponent(row) ? <Fab color="gold" icon="bell" onClick={() => notifyOpponent(row)} /> : null}
                                 </div>
                             </div>
-                            <div className={classes.opponentActions}>
-                                <Fab icon="user" onClick={() => showPlayerProfile(row, 'default')} />
-                                { canNotifyOpponent(row) ? <Fab color="gold" icon="bell" onClick={() => notifyOpponent(row)} /> : null }
-                            </div>
-                        </div>
-                    </div>);
-                }) }
-            </div> : null }
-        </div>
+                        </div>);
+                    })}
+                </div> : null}
+            </div>
         </>
     );
 }

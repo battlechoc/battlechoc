@@ -1,6 +1,5 @@
 import Situation from '../Situation';
-import { GameStateTypes, PlayerType, BoardCellTypes, EntityType, AttackType, createEntity, getEntityDescriptor } from 'battlechoc-shared-functions';
-import { translate as t, keys as tr } from '../../ui/misc';
+import { GameStateTypes, PlayerType, BoardCellTypes, EntityType, AttackType, createEntity, getEntityDescriptor, translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 
 export default class ChocolateFountain extends Situation {
     constructor() {

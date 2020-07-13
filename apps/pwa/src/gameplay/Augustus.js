@@ -33,21 +33,6 @@ export default class Augustus extends NonPlayerCharacter {
         this.gamefields[1].grid.filter(cell => this.containsEntity(cell, EntityType.CREAM)).length];
     }
 
-    async simulateChooseFieldOrStartDecision() {
-        await this.simulateThinking(1500);
-        this.refreshGameState();
-        if (this.gameIsRunning) {
-            const scores = this.scoreFields();
-            if (scores[0] === scores[1]) {
-                this.actions.chooseStart({ issuer: this.player.id });
-            } else if (scores[0] > scores[1]) {
-                this.actions.chooseField({ fieldIdx: 0, issuer: this.player.id });
-            } else {
-                this.actions.chooseField({ fieldIdx: 1, issuer: this.player.id });
-            }
-        }
-    }
-
     async simulateChooseFieldDecision() {
         await this.simulateThinking(1500);
         this.refreshGameState();

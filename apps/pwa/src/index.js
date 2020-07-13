@@ -4,7 +4,7 @@ import { Provider } from 'react-redux';
 import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
-import { translate as t, keys as tr } from './ui/misc';
+import { translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 import rootReducer from './RootReducer';
 import { multiplayer } from './Multiplayer';
 import { showQuickMessage, injectMultiplayerSession } from './ui/UiActions';

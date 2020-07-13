@@ -1,7 +1,6 @@
 import Situation from '../Situation';
-import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType } from 'battlechoc-shared-functions';
+import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType, translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 import { InfoType } from '../../gameplay/GameActions';
-import { translate as t, keys as tr } from '../../ui/misc';
 
 export default class XmasFactory extends Situation {
     constructor() {

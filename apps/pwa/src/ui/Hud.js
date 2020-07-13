@@ -2,9 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import './Hud.css';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-import { GameStateTypes } from 'battlechoc-shared-functions';
+import { GameStateTypes, translate as t, translationKeys as tr, computeAwards } from 'battlechoc-shared-functions';
 import { showQuickMessage, showNotification, hideNotification } from './UiActions';
-import { translate as t, keys as tr } from './misc';
 import { Info, Tooltip, Settings, AccountOverview, Dialog, Highscore } from './dialogs';
 import MultiplayerScreen from './pages/MultiplayerScreen';
 import Choclab from './pages/Choclab';
@@ -159,7 +158,7 @@ const useStyles = createUseStyles(theme => ({
 
 const Hud = props => {
     const classes = useStyles(props);
-    const { resumeGamePossible, enterMultiplayerGame, showQuickMessage, challengedPlayer, assetsReady, overviewVisible, selectedAttack, tappedBuilding, game, state, openInfo, prepareNewGameCallback, className, surrender, startTutorial, playerInfos, endGame, notification, hideNotification, injectedMultiplayerSessionId } = props;
+    const { resumeGamePossible, enterMultiplayerGame, showQuickMessage, challengedPlayer, assetsReady, overviewVisible, selectedAttack, tappedBuilding, game, actions, state, openInfo, prepareNewGameCallback, className, surrender, startTutorial, playerInfos, endGame, notification, hideNotification, injectedMultiplayerSessionId } = props;
 
     const [open, setOpen] = useState(false);
     const [openSettings, setOpenSettings] = useState(false);
@@ -441,7 +440,7 @@ const Hud = props => {
                             <AttackPalette />
                             <BuildingPalette />
                             <InfoPanel players={game.players} />
-                            {overviewVisible ? <GameEndOverview player={player} winners={game.winners} finishGame={coins => endGame(coins)} /> : null}
+                            {overviewVisible ? <GameEndOverview awards={computeAwards(game, multiplayer.localPlayerIndex, actions)} outcome={game.winners.some(winner => winner.id === game.players[multiplayer.localPlayerIndex].id) ? 'won' : 'lost'} finishGame={coins => endGame(coins)} /> : null}
                         </div>
                     )
                 }
@@ -461,6 +460,7 @@ Hud.propTypes = {
 
 const mapStateToProps = state => ({
     game: state.gameplay.game,
+    actions: state.gameplay.events,
     state: typeof state.gameplay.game === 'undefined' ? undefined : state.gameplay.game.state,
     overviewVisible: state.ui.overviewVisible,
     resumeGamePossible: state.ui.resumeGamePossible,
