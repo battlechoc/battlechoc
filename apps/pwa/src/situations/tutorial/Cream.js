@@ -34,7 +34,7 @@ export default class Cream extends Situation {
     }
 
     static get gameplay() {
-        return (new Cream()).game.gameplay.game;
+        return (new Cream()).game.gameplay;
     }
 
     static get title() {

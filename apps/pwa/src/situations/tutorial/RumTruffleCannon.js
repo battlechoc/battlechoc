@@ -33,7 +33,7 @@ export default class RumTruffleCannon extends Situation {
     }
 
     static get gameplay() {
-        return (new RumTruffleCannon()).game.gameplay.game;
+        return (new RumTruffleCannon()).game.gameplay;
     }
 
     static get title() {

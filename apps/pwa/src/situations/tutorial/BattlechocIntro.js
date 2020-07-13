@@ -34,7 +34,7 @@ export default class BattlechocIntro extends Situation {
     }
 
     static get gameplay() {
-        return (new BattlechocIntro()).game.gameplay.game;
+        return (new BattlechocIntro()).game.gameplay;
     }
 
     static get title() {

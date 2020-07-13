@@ -26,7 +26,7 @@ export default class FactoryExtension extends Situation {
     }
 
     static get gameplay() {
-        return (new FactoryExtension()).game.gameplay.game;
+        return (new FactoryExtension()).game.gameplay;
     }
 
     static get title() {

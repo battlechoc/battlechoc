@@ -37,7 +37,7 @@ export default class ChocolateFountain extends Situation {
     }
 
     static get gameplay() {
-        return (new ChocolateFountain()).game.gameplay.game;
+        return (new ChocolateFountain()).game.gameplay;
     }
 
     static get title() {

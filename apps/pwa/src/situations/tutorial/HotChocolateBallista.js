@@ -34,7 +34,7 @@ export default class HotChocolateBallista extends Situation {
     }
 
     static get gameplay() {
-        return (new HotChocolateBallista()).game.gameplay.game;
+        return (new HotChocolateBallista()).game.gameplay;
     }
 
     static get title() {

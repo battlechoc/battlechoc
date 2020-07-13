@@ -35,7 +35,7 @@ export default class XmasFactory extends Situation {
     }
 
     static get gameplay() {
-        return (new XmasFactory()).game.gameplay.game;
+        return (new XmasFactory()).game.gameplay;
     }
 
     static get title() {

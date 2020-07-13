@@ -31,7 +31,7 @@ export default class Donuts extends Situation {
     }
 
     static get gameplay() {
-        return (new Donuts()).game.gameplay.game;
+        return (new Donuts()).game.gameplay;
     }
 
     static get title() {

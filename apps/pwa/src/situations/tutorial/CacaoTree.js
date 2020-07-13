@@ -28,7 +28,7 @@ export default class CacaoTree extends Situation {
     }
 
     static get gameplay() {
-        return (new CacaoTree()).game.gameplay.game;
+        return (new CacaoTree()).game.gameplay;
     }
 
     static get title() {

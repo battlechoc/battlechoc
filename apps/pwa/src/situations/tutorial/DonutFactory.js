@@ -26,7 +26,7 @@ export default class DonutFactory extends Situation {
     }
 
     static get gameplay() {
-        return (new DonutFactory()).game.gameplay.game;
+        return (new DonutFactory()).game.gameplay;
     }
 
     static get title() {

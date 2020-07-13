@@ -41,7 +41,7 @@ export default class FruitCannon extends Situation {
     }
 
     static get gameplay() {
-        return (new FruitCannon()).game.gameplay.game;
+        return (new FruitCannon()).game.gameplay;
     }
 
     static get title() {

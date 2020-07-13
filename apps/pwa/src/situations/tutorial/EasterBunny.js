@@ -36,7 +36,7 @@ export default class EasterBunny extends Situation {
     }
 
     static get gameplay() {
-        return (new EasterBunny()).game.gameplay.game;
+        return (new EasterBunny()).game.gameplay;
     }
 
     static get title() {
