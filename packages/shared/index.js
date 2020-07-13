@@ -126,6 +126,7 @@ const EmptyPlayerStats = Object.freeze({
     tutorialSkipped: false,
     tutorialFinished: false,
     coins: 0,
+    awards: [],
     score: 0,
     winnings: 0,
     drawn: 0,
