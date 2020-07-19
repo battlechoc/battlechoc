@@ -30,7 +30,8 @@ const translate = require('battlechoc-shared-functions').translate;
 const setCurrentLanguage = require('battlechoc-shared-functions').setCurrentLanguage;
 const isValidLanguage = require('battlechoc-shared-functions').isValidLanguage;
 const getDefaultLanguage = require('battlechoc-shared-functions').getDefaultLanguage;
-const translationKeys =  require('battlechoc-shared-functions').translationKeys;
+const translationKeys = require('battlechoc-shared-functions').translationKeys;
+const computeAwards = require('battlechoc-shared-functions').computeAwards;
 
 let dbHost = '/cloudsql/battlechoc:europe-west2:battlechoc-prod-psql';
 let dbUser = 'battlechoc-service-account';
@@ -133,7 +134,7 @@ app.use(async (req, res, next) => {
 });
 
 class Reducer {
-    static updateState(state, action) {
+    static updateState(state, action, orderedEvents) {
         console.log(action.type);
         switch (action.type) {
             case GameActionTypes.chooseField: return chooseFieldReduction(state, action);
@@ -145,7 +146,7 @@ class Reducer {
             case GameActionTypes.build: return buildReduction(state, action);
             case GameActionTypes.attack: return attackReduction(state, action);
             case GameActionTypes.endGame:
-                updateTrackRecord(state, action, GameResultReason.NORMAL);
+                updateTrackRecord(state, action, GameResultReason.NORMAL, orderedEvents);
                 emitEndGameNotification(state, action);
                 return endGameReduction(state, action);
         }
@@ -224,6 +225,12 @@ const calculateCoinsFromTrackRecord = (trackRecord) => {
     if (typeof trackRecord !== 'undefined' && trackRecord.length > 0) {
         return trackRecord.reduce((currentCoins, gameStats) => {
             let coins = gameStats.attacks + gameStats.builtEntities * 2 + gameStats.espionages * 10 + gameStats.moltenFields * 50;
+            if (typeof gameStats.awards !== "undefined") {
+                console.log("AWARDS: " + JSON.stringify(gameStats.awards));
+                let coins = gameStats.awards.reduce((previous, current) => current.coins + previous, 0);
+                console.log("COINS computed: " + coins);
+            }
+
             if (typeof gameStats.winners === 'undefined' || gameStats.winners.length === 0 || (typeof gameStats.lost === 'undefined' && typeof gameStats.won === 'undefined')) {
                 // no coins for still running games or undefined stats data
                 coins = 0;
@@ -306,6 +313,7 @@ const trackRecordObjectFromRecord = async (playerRecord) => {
             gameStats.builtEntities = trackRecordRow.entities_built;
             gameStats.espionages = trackRecordRow.entities_revealed;
             gameStats.moltenFields = trackRecordRow.entities_molten;
+            gameStats.awards = trackRecordRow.awards.awards;
             gameStats.lost = trackRecordRow.result === 'lost';
             gameStats.won = trackRecordRow.result === 'won';
             gameStats.winners = [];
@@ -622,12 +630,14 @@ app.post('/user/challenge', async (req, res) => {
     }
 });
 
-const updateTrackRecord = async (session, endGameAction, resultReason) => {
+const updateTrackRecord = async (session, endGameAction, resultReason, orderedEvents) => {
     const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0].id);
+    const winnerIndex = session.game.players.indexOf(winner);
     winner.statistics.won = true;
     winner.statistics.lost = false;
     let winnerRecords = [{ ...winner.statistics, winners: [winner] }];
     if ((await addTrackRecord(winner.id, winnerRecords[0], resultReason)) === true) {
+        //const awards = computeAwards(session.game, winnerIndex, orderedEvents);
         await updatePlayerStats(winner.id, winnerRecords);
     }
 
@@ -676,7 +686,7 @@ const processEvents = (session, events, eventQueue) => {
                         if (validityCheckResult === true) {
                             console.log("Event valid: " + JSON.stringify(event));
                             updateLastAction(session.id, new Date());
-                            Reducer.updateState(session, event);
+                            Reducer.updateState(session, event, events);
                             eventQueue.lastProcessedEvent[0] += 1;
                             processedEvents += 1;
                             event.processed = true;
@@ -702,7 +712,7 @@ const processEvents = (session, events, eventQueue) => {
                         if (validityCheckResult === true) {
                             console.log("Event valid: " + JSON.stringify(event));
                             updateLastAction(session.id, new Date());
-                            Reducer.updateState(session, event);
+                            Reducer.updateState(session, event, events);
                             eventQueue.lastProcessedEvent[1] += 1;
                             processedEvents += 1;
                             event.processed = true;
@@ -733,24 +743,7 @@ const processEvents = (session, events, eventQueue) => {
 }
 
 const processEventsInOrder = (session, eventQueue) => {
-    let events = eventQueue.player_0_events;
-    events = events.concat(eventQueue.player_1_events);
-    events.sort((a, b) => {
-        if (typeof a.emitted === 'undefined') {
-            return -1;
-        } else if (typeof b.emitted === 'undefined') {
-            return 1;
-        } else {
-            if (a.emitted.seconds > b.emitted.seconds) {
-                return 1;
-            } else if (a.emitted.seconds < b.emitted.seconds) {
-                return -1;
-            } else {
-                return (a.emitted.nanoseconds > b.emitted.nanoseconds) ? 1 : -1
-            }
-        }
-    });
-
+    let events = orderedEventsFromQueue(eventQueue);
     const timeout = new Date().getTime() + 10000;
 
     var { unprocessedEvents, processedEvents, faildValidityChecks } = processEvents(session, events, eventQueue);
@@ -1015,6 +1008,27 @@ const emitPlayerNotification = async (receiverId, sessionId, title, body, reason
     }
 }
 
+const orderedEventsFromQueue = (eventQueue) => {
+    let events = eventQueue.player_0_events;
+    events = events.concat(eventQueue.player_1_events);
+    events.sort((a, b) => {
+        if (typeof a.emitted === 'undefined') {
+            return -1;
+        } else if (typeof b.emitted === 'undefined') {
+            return 1;
+        } else {
+            if (a.emitted.seconds > b.emitted.seconds) {
+                return 1;
+            } else if (a.emitted.seconds < b.emitted.seconds) {
+                return -1;
+            } else {
+                return (a.emitted.nanoseconds > b.emitted.nanoseconds) ? 1 : -1
+            }
+        }
+    });
+    return events;
+}
+
 const surrenderGame = async (sessionId, playerId, resultReason) => {
     try {
         var eventQueueDoc = await getEventQueue(sessionId);
@@ -1034,7 +1048,7 @@ const surrenderGame = async (sessionId, playerId, resultReason) => {
         }
 
         let playerIndex = eventQueue.playerIds.findIndex(id => id === playerId);
-        let event = {
+        let endGameEvent = {
             index: (playerIndex === 0) ? eventQueue.player_0_events.length : eventQueue.player_1_events.length,
             type: 'battlechoc/gameplay/endGame',
             payload: {
@@ -1045,10 +1059,10 @@ const surrenderGame = async (sessionId, playerId, resultReason) => {
         }
 
         try {
-            await enqueueEvent(sessionId, event, playerIndex);
+            await enqueueEvent(sessionId, endGameEvent, playerIndex);
             eventQueue.lastProcessedEvent[playerIndex] += 1;
         } catch (error) {
-            console.warn('Failed to push event ' + event.toString() + ' to the event list of player ' + playerIndex);
+            console.warn('Failed to push event ' + endGameEvent.toString() + ' to the event list of player ' + playerIndex);
             return false;
         }
 
@@ -1063,7 +1077,7 @@ const surrenderGame = async (sessionId, playerId, resultReason) => {
         session.game.players.filter(player => player.id !== playerId)[0].statistics.lost = false;
         session.game.players.filter(player => player.id === playerId)[0].statistics.won = false;
         session.game.players.filter(player => player.id === playerId)[0].statistics.lost = true;
-        updateTrackRecord(session, event, resultReason);
+        updateTrackRecord(session, endGameEvent, resultReason, orderedEventsFromQueue(eventQueue));
 
         try {
             const turns = (typeof eventQueue.player_0_events !== 'undefined') ? eventQueue.player_0_events.filter(event => event.type === 'battlechoc/gameplay/finishTurn').length : 0;
@@ -1418,8 +1432,9 @@ const addTrackRecord = async (userId, record, reportedReason) => {
     }
 
     try {
-        const insertStatement = 'INSERT INTO track_records(id, player, winner, winner_type, result, entities_destroyed, entities_molten, entities_revealed, entities_built, reported, resultreason) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT DO NOTHING RETURNING id';
-        const queryResult = await await dbPool.query(insertStatement, [id, userId, winner, winnerType, gameResult, record.attacks, record.moltenFields, record.espionages, record.builtEntities, new Date(), reportedReason]);
+        const awards = record.awards || null;
+        const insertStatement = 'INSERT INTO track_records(id, player, winner, winner_type, result, entities_destroyed, entities_molten, entities_revealed, entities_built, reported, resultreason, awards) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT DO NOTHING RETURNING id';
+        const queryResult = await await dbPool.query(insertStatement, [id, userId, winner, winnerType, gameResult, record.attacks, record.moltenFields, record.espionages, record.builtEntities, new Date(), reportedReason, { awards: awards }]);
         return (queryResult.rows.length > 0);
     } catch (err) {
         console.warn(err);

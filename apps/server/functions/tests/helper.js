@@ -55,6 +55,7 @@ const setupDatabasePlayground = async () => {
         id uuid NOT NULL,
         reported timestamp without time zone,
         resultreason gameresultreason,
+        awards json,
         CONSTRAINT track_records_pkey PRIMARY KEY (id, player)
     )`);
 
