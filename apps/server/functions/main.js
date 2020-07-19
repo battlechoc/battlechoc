@@ -30,8 +30,8 @@ const translate = require('battlechoc-shared-functions').translate;
 const setCurrentLanguage = require('battlechoc-shared-functions').setCurrentLanguage;
 const isValidLanguage = require('battlechoc-shared-functions').isValidLanguage;
 const getDefaultLanguage = require('battlechoc-shared-functions').getDefaultLanguage;
-const translationKeys =  require('battlechoc-shared-functions').translationKeys;
-const computeAwards =  require('battlechoc-shared-functions').computeAwards;
+const translationKeys = require('battlechoc-shared-functions').translationKeys;
+const computeAwards = require('battlechoc-shared-functions').computeAwards;
 
 let dbHost = '/cloudsql/battlechoc:europe-west2:battlechoc-prod-psql';
 let dbUser = 'battlechoc-service-account';
@@ -221,14 +221,16 @@ const getPlayerFromName = async (name) => {
     return await dbPool.query("SELECT * FROM players WHERE name = $1", [name]);
 }
 
-const calculateCoinsFromTrackRecord = (trackRecord, awards) => {
+const calculateCoinsFromTrackRecord = (trackRecord) => {
     if (typeof trackRecord !== 'undefined' && trackRecord.length > 0) {
         return trackRecord.reduce((currentCoins, gameStats) => {
             let coins = gameStats.attacks + gameStats.builtEntities * 2 + gameStats.espionages * 10 + gameStats.moltenFields * 50;
-            // TODO add coins to awards
-            // TODO howto handle merge addtrackrecord stuff and other calls to addTrackRecord
-            // TODO compare pwa and server side input data structures
-            // TODO select correct number of awards and increase coins from the first 5
+            if (typeof gameStats.awards !== "undefined") {
+                console.log("AWARDS: " + JSON.stringify(gameStats.awards));
+                let coins = gameStats.awards.reduce((previous, current) => current.coins + previous, 0);
+                console.log("COINS computed: " + coins);
+            }
+
             if (typeof gameStats.winners === 'undefined' || gameStats.winners.length === 0 || (typeof gameStats.lost === 'undefined' && typeof gameStats.won === 'undefined')) {
                 // no coins for still running games or undefined stats data
                 coins = 0;
@@ -311,6 +313,7 @@ const trackRecordObjectFromRecord = async (playerRecord) => {
             gameStats.builtEntities = trackRecordRow.entities_built;
             gameStats.espionages = trackRecordRow.entities_revealed;
             gameStats.moltenFields = trackRecordRow.entities_molten;
+            gameStats.awards = trackRecordRow.awards.awards;
             gameStats.lost = trackRecordRow.result === 'lost';
             gameStats.won = trackRecordRow.result === 'won';
             gameStats.winners = [];
@@ -634,8 +637,8 @@ const updateTrackRecord = async (session, endGameAction, resultReason, orderedEv
     winner.statistics.lost = false;
     let winnerRecords = [{ ...winner.statistics, winners: [winner] }];
     if ((await addTrackRecord(winner.id, winnerRecords[0], resultReason)) === true) {
-        const awards = computeAwards(session.game, winnerIndex, orderedEvents);
-        await updatePlayerStats(winner.id, winnerRecords, awards);
+        //const awards = computeAwards(session.game, winnerIndex, orderedEvents);
+        await updatePlayerStats(winner.id, winnerRecords);
     }
 
     const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0].id);
@@ -1429,8 +1432,9 @@ const addTrackRecord = async (userId, record, reportedReason) => {
     }
 
     try {
-        const insertStatement = 'INSERT INTO track_records(id, player, winner, winner_type, result, entities_destroyed, entities_molten, entities_revealed, entities_built, reported, resultreason) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT DO NOTHING RETURNING id';
-        const queryResult = await await dbPool.query(insertStatement, [id, userId, winner, winnerType, gameResult, record.attacks, record.moltenFields, record.espionages, record.builtEntities, new Date(), reportedReason]);
+        const awards = record.awards || null;
+        const insertStatement = 'INSERT INTO track_records(id, player, winner, winner_type, result, entities_destroyed, entities_molten, entities_revealed, entities_built, reported, resultreason, awards) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT DO NOTHING RETURNING id';
+        const queryResult = await await dbPool.query(insertStatement, [id, userId, winner, winnerType, gameResult, record.attacks, record.moltenFields, record.espionages, record.builtEntities, new Date(), reportedReason, { awards: awards }]);
         return (queryResult.rows.length > 0);
     } catch (err) {
         console.warn(err);
@@ -1519,10 +1523,10 @@ const createNewPlayer = async (userId) => {
     }
 }
 
-const updatePlayerStats = async (userId, stats, awards) => {
+const updatePlayerStats = async (userId, stats) => {
     try {
         if (typeof stats !== 'undefined') {
-            const coins = calculateCoinsFromTrackRecord(stats, awards);
+            const coins = calculateCoinsFromTrackRecord(stats);
             const updatePlayerCoinsAndScoreResult = await dbPool.query("UPDATE players SET coins = coins + $1, score = score + $1 WHERE id = $2 RETURNING *", [coins, userId]);
             if (updatePlayerCoinsAndScoreResult.rows.length === 1) {
                 return (await createPlayerStatsObject(updatePlayerCoinsAndScoreResult.rows[0], true, true));
