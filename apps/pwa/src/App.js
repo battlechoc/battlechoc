@@ -5,7 +5,7 @@ import { Jukebox } from './ui/misc';
 import OfflineStore from './OfflineStore';
 import { ServerRequest } from './helper/settings';
 import { multiplayer } from './Multiplayer';
-import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut, translate as t, keys as tr, setCurrentLanguage, computeAwards } from 'battlechoc-shared-functions';
+import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut, translate as t, translationKeys as tr, setCurrentLanguage, computeAwards } from 'battlechoc-shared-functions';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
 import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting, showNotification } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
