@@ -226,9 +226,7 @@ const calculateCoinsFromTrackRecord = (trackRecord) => {
         return trackRecord.reduce((currentCoins, gameStats) => {
             let coins = gameStats.attacks + gameStats.builtEntities * 2 + gameStats.espionages * 10 + gameStats.moltenFields * 50;
             if (typeof gameStats.awards !== "undefined") {
-                console.log("AWARDS: " + JSON.stringify(gameStats.awards));
-                let coins = gameStats.awards.reduce((previous, current) => current.coins + previous, 0);
-                console.log("COINS computed: " + coins);
+                coins = gameStats.awards.reduce((previous, current) => current.coins + previous, 0);
             }
 
             if (typeof gameStats.winners === 'undefined' || gameStats.winners.length === 0 || (typeof gameStats.lost === 'undefined' && typeof gameStats.won === 'undefined')) {
@@ -313,7 +311,7 @@ const trackRecordObjectFromRecord = async (playerRecord) => {
             gameStats.builtEntities = trackRecordRow.entities_built;
             gameStats.espionages = trackRecordRow.entities_revealed;
             gameStats.moltenFields = trackRecordRow.entities_molten;
-            gameStats.awards = trackRecordRow.awards.awards;
+            gameStats.awards = trackRecordRow.awards;
             gameStats.lost = trackRecordRow.result === 'lost';
             gameStats.won = trackRecordRow.result === 'won';
             gameStats.winners = [];
