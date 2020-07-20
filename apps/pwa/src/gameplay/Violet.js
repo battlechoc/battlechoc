@@ -9,7 +9,6 @@ export default class Violet extends NonPlayerCharacter {
         }
     }
 
-    async simulateChooseFieldOrStartDecision() { }
     async simulateChooseFieldDecision() { }
     async simulateInitialPlacement() { }
     async simulateAttackPhase() {

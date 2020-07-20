@@ -17,6 +17,6 @@ export default class BuildFactoryTest extends Situation {
     }
 
     static get gameplay() {
-        return (new BuildFactoryTest()).game.gameplay.game;
+        return (new BuildFactoryTest()).game.gameplay;
     }
 }

@@ -1,6 +1,5 @@
 import Situation from '../Situation';
-import { GameStateTypes, PlayerType, BoardCellTypes, EntityType } from 'battlechoc-shared-functions';
-import { translate as t, keys as tr } from '../../ui/misc';
+import { GameStateTypes, PlayerType, BoardCellTypes, EntityType, translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 
 export default class Factory extends Situation {
     constructor() {
@@ -18,7 +17,7 @@ export default class Factory extends Situation {
     }
 
     static get gameplay() {
-        return (new Factory()).game.gameplay.game;
+        return (new Factory()).game.gameplay;
     }
 
     static get title() {

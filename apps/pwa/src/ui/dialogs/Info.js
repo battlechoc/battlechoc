@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { createUseStyles } from 'react-jss';
 import Fab from '../controls/Fab';
-import { Jukebox, translate as t, keys as tr, getCurrentLanguage } from '../misc';
+import { Jukebox } from '../misc';
+import { translate as t, translationKeys as tr, getCurrentLanguage } from 'battlechoc-shared-functions';
 import TimeAgo from 'javascript-time-ago';
 import en from 'javascript-time-ago/locale/en';
 import de from 'javascript-time-ago/locale/de';

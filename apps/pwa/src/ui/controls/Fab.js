@@ -73,7 +73,7 @@ Fab.defaultProps = {
 
 Fab.propTypes = { 
   color: PropTypes.oneOf(['primary', 'secondary', 'accent', 'facebook', 'instagram', 'gold']),
-  icon: PropTypes.oneOf(['donuts-enabled', 'bell', 'search', 'info', 'forward', 'forward-accent', 'backward', 'fast-forward', 'fast-backward', 'settings', 'mute', 'volume', 'facebook', 'instagram', 'fullscreen', 'user', 'close', 'trophy', 'back', 'share', 'refresh']),
+  icon: PropTypes.oneOf(['donuts-enabled', 'done', 'bell', 'search', 'info', 'forward', 'forward-accent', 'backward', 'fast-forward', 'fast-backward', 'settings', 'mute', 'volume', 'facebook', 'instagram', 'fullscreen', 'user', 'close', 'trophy', 'back', 'share', 'refresh']),
   iconStyle: PropTypes.object,
   className: PropTypes.string,
   onClick: PropTypes.func.isRequired,

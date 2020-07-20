@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { updatePlayerStats, updateLevel, showQuickMessage } from '../UiActions';
-import { translate as t, keys as tr } from '../misc';
 import { connect } from 'react-redux';
-import { getEntityDescriptor, finalLevel, EntityType } from 'battlechoc-shared-functions';
+import { getEntityDescriptor, finalLevel, EntityType, translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 import { ChoclabPalette, Button } from '../controls';
 import MeshPreview from '../../3d/MeshPreview';
 import { createUseStyles, useTheme } from 'react-jss';

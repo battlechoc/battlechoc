@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { GameStateTypes, getEntityDescriptor } from 'battlechoc-shared-functions';
-import { translate as t, keys as tr } from '../misc';
+import { GameStateTypes, getEntityDescriptor, translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 import { createUseStyles } from 'react-jss';
 import { Progress } from '../controls';
 

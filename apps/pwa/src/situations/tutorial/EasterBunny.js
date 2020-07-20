@@ -1,6 +1,5 @@
 import Situation from '../Situation';
-import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType, AttackType } from 'battlechoc-shared-functions';
-import { translate as t, keys as tr } from '../../ui/misc';
+import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType, AttackType, translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 
 export default class EasterBunny extends Situation {
     constructor() {
@@ -37,7 +36,7 @@ export default class EasterBunny extends Situation {
     }
 
     static get gameplay() {
-        return (new EasterBunny()).game.gameplay.game;
+        return (new EasterBunny()).game.gameplay;
     }
 
     static get title() {

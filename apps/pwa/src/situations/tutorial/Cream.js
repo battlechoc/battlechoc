@@ -1,6 +1,5 @@
 import Situation from '../Situation';
-import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType } from 'battlechoc-shared-functions';
-import { translate as t, keys as tr } from '../../ui/misc';
+import { GameStateTypes, PlayerType, BoardCellTypes, createEntity, EntityType, translate as t, translationKeys as tr } from 'battlechoc-shared-functions';
 
 export default class Cream extends Situation {
     constructor() {
@@ -35,7 +34,7 @@ export default class Cream extends Situation {
     }
 
     static get gameplay() {
-        return (new Cream()).game.gameplay.game;
+        return (new Cream()).game.gameplay;
     }
 
     static get title() {
