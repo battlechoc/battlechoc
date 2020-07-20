@@ -5,7 +5,7 @@ import { Jukebox } from './ui/misc';
 import OfflineStore from './OfflineStore';
 import { ServerRequest } from './helper/settings';
 import { multiplayer } from './Multiplayer';
-import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut, translate as t, keys as tr, setCurrentLanguage } from 'battlechoc-shared-functions';
+import { Rules, GameStateTypes, createPlayer, PlayerType, BattlechocError, AttackType, EntityType, isDonut, translate as t, keys as tr, setCurrentLanguage, computeAwards } from 'battlechoc-shared-functions';
 import { build, attack, finishBuildPhase, chooseStart, chooseField, startGame, resumeGame, joinGame, finishGame, createBoard, finishTurn, endGame } from './gameplay/GameActions';
 import { stopSessionRefresh, startSessionRefresh, hideQuickMessage, showQuickMessage, startTutorial, stopTutorial, showOverview, resetUi, selectAttack, gameResumeable, loadUiState, updatePlayerStats, updateMultiplayerSessions, loadFriendsList, setPlayerRank, notifyPlayerSignedIn, tapBuilding, selectBuilding, toggleDonutHighlighting, showNotification } from './ui/UiActions';
 import Augustus from './gameplay/Augustus';
@@ -555,7 +555,8 @@ class App extends Component {
         this.props.showOverview();
         this.props.gameResumeable(false);
         OfflineStore.gamestateStore.clear();
-        const stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: this.props.game.winners, id: uuidv4() };
+        const awards = computeAwards(this.props.game, multiplayer.localPlayerIndex, this.props.actions);
+        const stats = { ...this.props.game.players[multiplayer.localPlayerIndex].statistics, winners: this.props.game.winners, awards: awards, id: uuidv4() };
         if (this.props.game.players[0].type !== PlayerType.HUMAN || this.props.game.players[1].type !== PlayerType.HUMAN) {
             multiplayer.pushGameStats([stats]);
         }
@@ -647,6 +648,7 @@ class App extends Component {
 const mapStateToProps = state => ({
     gameplay: state.gameplay,
     game: state.gameplay.game,
+    actions: state.gameplay.events,
     language: state.ui.language,
     selectedBuilding: state.ui.selectedBuilding,
     donutHighlighting: state.ui.donutHighlighting,
