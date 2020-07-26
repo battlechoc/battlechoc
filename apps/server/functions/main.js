@@ -635,7 +635,9 @@ const updateTrackRecord = async (session, endGameAction, resultReason, orderedEv
     winner.statistics.lost = false;
     let winnerRecords = [{ ...winner.statistics, winners: [winner] }];
     if ((await addTrackRecord(winner.id, winnerRecords[0], resultReason)) === true) {
-        //const awards = computeAwards(session.game, winnerIndex, orderedEvents);
+        /*console.log("computing awards");
+        const awards = computeAwards(session.game, winnerIndex, orderedEvents);
+        console.log(awards);*/
         await updatePlayerStats(winner.id, winnerRecords);
     }
 
