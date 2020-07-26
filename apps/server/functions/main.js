@@ -7,6 +7,7 @@ const uuidv4 = require('uuid/v4');
 const { Pool } = require('pg')
 const axios = require('axios');
 const { uniqueNamesGenerator, adjectives, animals, names } = require('unique-names-generator');
+const { PlayerType } = require('battlechoc-shared-functions');
 admin.initializeApp();
 const db = admin.firestore();
 
@@ -633,12 +634,11 @@ const updateTrackRecord = async (session, endGameAction, resultReason, orderedEv
     const winnerIndex = session.game.players.indexOf(winner);
     winner.statistics.won = true;
     winner.statistics.lost = false;
-    let winnerRecords = [{ ...winner.statistics, winners: [winner] }];
+    const awards = computeAwards(session.game, winnerIndex, orderedEvents);
+    console.log(JSON.stringify(awards));
+    let winnerRecords = [{ ...winner.statistics, winners: [winner], awards: awards }];
     if ((await addTrackRecord(winner.id, winnerRecords[0], resultReason)) === true) {
-        /*console.log("computing awards");
-        const awards = computeAwards(session.game, winnerIndex, orderedEvents);
-        console.log(awards);*/
-        await updatePlayerStats(winner.id, winnerRecords);
+        await updatePlayerStats(winner.id, winnerRecords, awards);
     }
 
     const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0].id);
@@ -1072,7 +1072,8 @@ const surrenderGame = async (sessionId, playerId, resultReason) => {
             return false;
         }
         session.game.isRunning = false;
-        session.game.winners = eventQueue.playerIds.filter(id => id !== playerId);
+        session.game.winners = [];
+        session.game.winners.push({ id: eventQueue.playerIds.filter(id => id !== playerId)[0], type: PlayerType.HUMAN });
         session.game.players.filter(player => player.id !== playerId)[0].statistics.won = true;
         session.game.players.filter(player => player.id !== playerId)[0].statistics.lost = false;
         session.game.players.filter(player => player.id === playerId)[0].statistics.won = false;

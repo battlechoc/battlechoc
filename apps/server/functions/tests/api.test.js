@@ -317,7 +317,7 @@ it('should fetch the highscore', async done => {
 it('should return players rank', async done => {
     const response = await request(app).get('/rank');
     expect(response.status).toBe(200);
-    expect(response.body.ranking).toBe(1);
+    expect(response.body.ranking).toBe(2);
     done();
 });
 
