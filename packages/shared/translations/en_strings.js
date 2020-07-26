@@ -287,7 +287,7 @@ module.exports = {
     "AWARDS_DIAMONDMULTIPLAYERBONUS_TITLE": "Diamond Multiplayer bonus",
     "AWARDS_DIAMONDMULTIPLAYERBONUS_SUBTITLE": "It was a multiplayer game with at least 15 turns",
     "AWARDS_CONCRETEJUNGLE_TITLE": "Concrete jungle",
-    "AWARDS_CONCRETEJUNGLE_SUBTITLE": "Won without building a tree just cannons",
+    "AWARDS_CONCRETEJUNGLE_SUBTITLE": "Won without building a single tree",
     "AWARDS_GREENSPOT_TITLE": "A green spot",
     "AWARDS_GREENSPOT_SUBTITLE": "Won with building at least 1 tree",
     "AWARDS_RANDOMFOREST_TITLE": "Random forest",

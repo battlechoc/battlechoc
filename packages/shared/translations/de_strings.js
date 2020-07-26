@@ -1,6 +1,6 @@
 /* eslint-disable no-template-curly-in-string */
 module.exports = {
-    "AWARDS_CONCRETEJUNGLE_SUBTITLE": "Gewonnen, ohne einen Baum zu bauen, nur Kanonen",
+    "AWARDS_CONCRETEJUNGLE_SUBTITLE": "Gewonnen, ohne einen einzigen Baum zu bauen",
     "AWARDS_CONCRETEJUNGLE_TITLE": "Beton-Dschungel",
     "AWARDS_DIAMONDMULTIPLAYERBONUS_SUBTITLE": "Es war ein Multiplayer-Spiel mit mindestens 15 Runden",
     "AWARDS_DIAMONDMULTIPLAYERBONUS_TITLE": "Platin Multiplayer-Bonus",

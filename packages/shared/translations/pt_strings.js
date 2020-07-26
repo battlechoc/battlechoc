@@ -21,7 +21,7 @@ module.exports = {
     "ATTRIBUTE_NAME_donutTypes": "Tipos de rosquinha",
     "ATTRIBUTE_NAME_fortune": "Fortuna",
     "ATTRIBUTE_NAME_hp": "HP",
-    "AWARDS_CONCRETEJUNGLE_SUBTITLE": "Ganhou sem construir uma árvore apenas canhões",
+    "AWARDS_CONCRETEJUNGLE_SUBTITLE": "Ganhou sem construir uma árvore",
     "AWARDS_CONCRETEJUNGLE_TITLE": "Selva de concreto",
     "AWARDS_DIAMONDMULTIPLAYERBONUS_SUBTITLE": "Era um jogo multiplayer com pelo menos 15 turnos",
     "AWARDS_DIAMONDMULTIPLAYERBONUS_TITLE": "Bônus Diamond Multiplayer",

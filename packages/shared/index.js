@@ -1732,9 +1732,11 @@ const ui_awards = [
         title: translate(translationRefKeys.AWARDS_NERD_TITLE),
         subtitle: translate(translationRefKeys.AWARDS_NERD_SUBTITLE),
         coins: 50,
-        isFulfilled: (game, playerIndex) => playerGameField(game, playerIndex)
-            .filter(cell => containsEntity(cell, EntityType.CACAOTREE))
-            .every(cell => cell.type === BoardCellTypes.WHITE)
+        isFulfilled: (game, playerIndex) => {
+            const trees = playerGameField(game, playerIndex)
+                .filter(cell => containsEntity(cell, EntityType.CACAOTREE));
+            return trees.length > 0 && trees.every(cell => cell.type === BoardCellTypes.WHITE);
+        }
     }, {
         title: translate(translationRefKeys.AWARDS_UNUSED_TITLE),
         subtitle: translate(translationRefKeys.AWARDS_UNUSED_SUBTITLE),
@@ -1960,8 +1962,8 @@ const ui_awards = [
         coins: 600,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
-            const buildAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.CACAOTREE);
-            return typeof buildAction === 'undefined';
+            const buildTreeAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.CACAOTREE);
+            return typeof buildTreeAction === 'undefined';
         }
     }, {
         title: translate(translationRefKeys.AWARDS_GREENSPOT_TITLE),

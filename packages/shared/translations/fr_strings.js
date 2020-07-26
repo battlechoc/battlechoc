@@ -21,7 +21,7 @@ module.exports = {
     "ATTRIBUTE_NAME_donutTypes": "Types de beignets",
     "ATTRIBUTE_NAME_fortune": "Fortune",
     "ATTRIBUTE_NAME_hp": "HP",
-    "AWARDS_CONCRETEJUNGLE_SUBTITLE": "A gagné sans construire un arbre juste des canons",
+    "AWARDS_CONCRETEJUNGLE_SUBTITLE": "A gagné sans construire un arbre",
     "AWARDS_CONCRETEJUNGLE_TITLE": "Jungle de béton",
     "AWARDS_DIAMONDMULTIPLAYERBONUS_SUBTITLE": "C'était un jeu multijoueur avec au moins 15 tours",
     "AWARDS_DIAMONDMULTIPLAYERBONUS_TITLE": "Bonus multijoueur Diamond",

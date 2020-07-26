@@ -21,7 +21,7 @@ module.exports = {
     "ATTRIBUTE_NAME_donutTypes": "Tipos de donas",
     "ATTRIBUTE_NAME_fortune": "Fortuna",
     "ATTRIBUTE_NAME_hp": "HP",
-    "AWARDS_CONCRETEJUNGLE_SUBTITLE": "Ganó sin construir un árbol solo cañones",
+    "AWARDS_CONCRETEJUNGLE_SUBTITLE": "Ganó sin construir un árbol",
     "AWARDS_CONCRETEJUNGLE_TITLE": "Jungla de concreto",
     "AWARDS_DIAMONDMULTIPLAYERBONUS_SUBTITLE": "Era un juego multijugador con al menos 15 turnos.",
     "AWARDS_DIAMONDMULTIPLAYERBONUS_TITLE": "Bonificación multijugador de diamantes",

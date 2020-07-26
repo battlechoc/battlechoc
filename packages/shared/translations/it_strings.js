@@ -21,7 +21,7 @@ module.exports = {
     "ATTRIBUTE_NAME_donutTypes": "Tipi di ciambella",
     "ATTRIBUTE_NAME_fortune": "Fortuna",
     "ATTRIBUTE_NAME_hp": "HP",
-    "AWARDS_CONCRETEJUNGLE_SUBTITLE": "Vinto senza costruire un albero solo cannoni",
+    "AWARDS_CONCRETEJUNGLE_SUBTITLE": "Vinto senza costruire un albero",
     "AWARDS_CONCRETEJUNGLE_TITLE": "Giungla di cemento",
     "AWARDS_DIAMONDMULTIPLAYERBONUS_SUBTITLE": "Era una partita multiplayer con almeno 15 turni",
     "AWARDS_DIAMONDMULTIPLAYERBONUS_TITLE": "Bonus multiplayer Diamond",
