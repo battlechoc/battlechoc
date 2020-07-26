@@ -1766,8 +1766,11 @@ const ui_awards = [
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
             const attack = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.attack);
-            const entities = attack.payload.target.occupiedBy.map(entity => entity.type);
-            return entities.includes(EntityType.FACTORY) && entities.includes(EntityType.CREAM);
+            if (typeof attack !== 'undefined') {
+                const entities = attack.payload.target.occupiedBy.map(entity => entity.type);
+                return entities.includes(EntityType.FACTORY) && entities.includes(EntityType.CREAM);
+            }
+            return false;
         }
     }, {
         title: translate(translationRefKeys.AWARDS_SPY_TITLE),
@@ -1889,7 +1892,11 @@ const ui_awards = [
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
             const buildAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.FACTORY);
-            return buildAction.payload.target.type === BoardCellTypes.BLACK;
+            if (typeof buildAction !== 'undefined') {
+                return buildAction.payload.target.type === BoardCellTypes.BLACK;
+            } else {
+                return false;
+            }
         }
     },
     {
@@ -1899,7 +1906,11 @@ const ui_awards = [
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
             const buildAction = actions.find(action => action.payload.issuer === player.id && action.type === GameActionTypes.build && action.payload.building.type === EntityType.FACTORY);
-            return buildAction.payload.target.type !== BoardCellTypes.BLACK;
+            if (typeof buildAction !== 'undefined') {
+                return buildAction.payload.target.type !== BoardCellTypes.BLACK;
+            } else {
+                return false;
+            }
         }
     },
     {
