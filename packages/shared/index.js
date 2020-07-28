@@ -2124,9 +2124,7 @@ const computeAwards = (game, playerIndex, actions) => {
     const player = game.players[playerIndex];
     if (game.winners.some(winner => winner.id === player.id)) {
         let fulfilled = ui_awards.filter(award => award.isFulfilled(game, playerIndex, actions));
-        console.log(fulfilled)
         fulfilled = fulfilled.sort(sortByCoinsDesc).splice(0, 5).sort(sortByCoinsAsc);
-        console.log(fulfilled)
         return fulfilled;
     } else {
         return [];
