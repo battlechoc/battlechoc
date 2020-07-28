@@ -634,6 +634,9 @@ const updateTrackRecord = async (session, endGameAction, resultReason, orderedEv
     const winnerIndex = session.game.players.indexOf(winner);
     winner.statistics.won = true;
     winner.statistics.lost = false;
+    if (typeof session.game.winners === 'undefined') {
+        session.game.winners = endGameAction.payload.winners;    
+    }
     const awards = computeAwards(session.game, winnerIndex, orderedEvents);
     console.log(JSON.stringify(awards));
     let winnerRecords = [{ ...winner.statistics, winners: [winner], awards: awards }];
