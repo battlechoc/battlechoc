@@ -1688,7 +1688,7 @@ const sessionCleanupFunction = async (context) => {
     console.log('Cleaning up stale multiplayer sessions ...');
     try {
         const sessions = [];
-        const sessionQueryResult = await dbPool.query("SELECT * FROM multiplayer_sessions WHERE last_action < $1 AND gamestate->>'isRunning' = 'true'", new Date(Date.now() - (24 * 60 * 60 * 1000)));
+        const sessionQueryResult = await dbPool.query("SELECT * FROM multiplayer_sessions WHERE last_action < $1 AND gamestate->>'isRunning' = 'true'", [new Date(Date.now() - (24 * 60 * 60 * 1000))]);
         await Promise.all(sessionQueryResult.rows.map(async (row) => {
             console.log("Trying to cleanup session: " + JSON.stringify(row));
             const looserUid = row.gamestate.players[row.gamestate.currentPlayerIndex].id;
