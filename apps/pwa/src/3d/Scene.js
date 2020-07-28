@@ -472,7 +472,8 @@ class Scene extends Component {
             building.position = { row: row, col: col };
             let playerCacaoPerTurnBefore = player.cacaoPerTurn;
             let buildingsPerTurnBefore = player.buildingsPerTurn;
-            this.props.build({ issuer: player.id, building: building }).then(() => {
+            const target = this.props.game.board.fields[this.props.game.players[this.props.game.currentPlayerIndex].fieldIndex].grid[row * this.props.game.board.size.cols + col];
+            this.props.build({ issuer: player.id, building: building, target: target }).then(() => {
                 player = this.props.game.players[multiplayer.localPlayerIndex]
                 Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
                 if (building.type === EntityType.DONUT_PORTAL_BLUE) {
@@ -585,7 +586,8 @@ class Scene extends Component {
                 attackType: this.props.selectedAttack,
                 damage: damage,
                 row: row,
-                col: col
+                col: col,
+                target: this.props.game.board.fields[this.props.game.players[1 - this.props.game.currentPlayerIndex].fieldIndex].grid[row * this.props.game.board.size.cols + col]
             };
 
             let cellAt = (board, field, row, col) => board.fields[field].grid[row * board.size.cols + col];

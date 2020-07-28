@@ -4,11 +4,6 @@ import { manipulateGameAction } from './GameActions';
 
 const logAndApply = (state, action, reduction) => {
     let unwrappedAction = JSON.parse(JSON.stringify(action));
-    if (unwrappedAction.type === GameActionTypes.attack) {
-        unwrappedAction.payload.target = state.game.board.fields[state.game.players[1 - state.game.currentPlayerIndex].fieldIndex].grid[unwrappedAction.payload.row * state.game.board.size.cols + unwrappedAction.payload.col]
-    } else if (action.type === GameActionTypes.build) {
-        unwrappedAction.payload.target = state.game.board.fields[state.game.players[state.game.currentPlayerIndex].fieldIndex].grid[unwrappedAction.payload.building.position.row * state.game.board.size.cols + unwrappedAction.payload.building.position.col]
-    }
     console.log(unwrappedAction)
 
     if (typeof state.events === 'undefined') {
