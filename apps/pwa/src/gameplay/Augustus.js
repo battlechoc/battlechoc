@@ -202,7 +202,8 @@ export default class Augustus extends NonPlayerCharacter {
                 attackType: attackType,
                 damage: damage,
                 row: target.row,
-                col: target.col
+                col: target.col,
+                target: selectedCell
             });
         } catch(error) {
             return this.handleAttackError(error)
@@ -438,7 +439,7 @@ export default class Augustus extends NonPlayerCharacter {
 
             building.position = { row: target.row, col: target.col }
             try {
-                await this.actions.build({ issuer: this.player.id, building: building });
+                await this.actions.build({ issuer: this.player.id, building: building, target: target });
             } catch (error) {
                 logger.warn(error);
             } finally {
