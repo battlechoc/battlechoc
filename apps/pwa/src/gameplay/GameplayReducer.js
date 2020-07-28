@@ -3,18 +3,18 @@ import { GameActionTypes, startGameReduction, finishGameReduction, endGameReduct
 import { manipulateGameAction } from './GameActions';
 
 const logAndApply = (state, action, reduction) => {
-    if (action.type === GameActionTypes.attack) {
-        action.payload.target = state.game.board.fields[state.game.players[ 1 - state.game.currentPlayerIndex ].fieldIndex].grid[action.payload.row * state.game.board.size.cols + action.payload.col]
+    let unwrappedAction = JSON.parse(JSON.stringify(action));
+    if (unwrappedAction.type === GameActionTypes.attack) {
+        unwrappedAction.payload.target = state.game.board.fields[state.game.players[1 - state.game.currentPlayerIndex].fieldIndex].grid[unwrappedAction.payload.row * state.game.board.size.cols + unwrappedAction.payload.col]
     } else if (action.type === GameActionTypes.build) {
-        action.payload.target = state.game.board.fields[state.game.players[state.game.currentPlayerIndex ].fieldIndex].grid[action.payload.building.position.row * state.game.board.size.cols + action.payload.building.position.col]
+        unwrappedAction.payload.target = state.game.board.fields[state.game.players[state.game.currentPlayerIndex].fieldIndex].grid[unwrappedAction.payload.building.position.row * state.game.board.size.cols + unwrappedAction.payload.building.position.col]
     }
-
-    console.log(JSON.parse(JSON.stringify(action)))
+    console.log(unwrappedAction)
 
     if (typeof state.events === 'undefined') {
-        state.events = [JSON.parse(JSON.stringify(action))];
+        state.events = [unwrappedAction];
     } else {
-        state.events.push(JSON.parse(JSON.stringify(action)));
+        state.events.push(unwrappedAction);
     }
 
     reduction(state, action);
@@ -27,7 +27,7 @@ const gameplayReducer = createReducer({}, {
         console.log(JSON.stringify(action, undefined, 2))
 
         state.events = action.payload.events;
-        logAndApply(state, { ...action, payload: action.payload.game}, resumeGameReduction);
+        logAndApply(state, { ...action, payload: action.payload.game }, resumeGameReduction);
     },
     [GameActionTypes.joinGame]: (state, action) => logAndApply(state, action, joinGameReduction),
     [GameActionTypes.createBoard]: (state, action) => logAndApply(state, action, createGameReduction),
