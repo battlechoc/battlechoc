@@ -2640,8 +2640,8 @@ batch@0.6.1:
   integrity sha1-3DQxT05nkxgJP8dgJyUl+UvyXBY=
 
 "battlechoc-shared-functions@https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git":
-  version "1.3.21"
-  resolved "https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git#bf640a48b2fa2deedebde65d77d39a64143766cc"
+  version "1.3.22"
+  resolved "https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git#8234bea816d5e494d10f4d76d08196d2e7dd961f"
   dependencies:
     uuid "^3.4.0"
 
