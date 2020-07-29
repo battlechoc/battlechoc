@@ -151,8 +151,8 @@ const GameEndOverview = props => {
     let title = '';
     let subtitle = '';
     if (award < awards.length) {
-        title = `${awards[award].title} +${awards[award].coins}`;
-        subtitle = awards[award].subtitle;
+        title = `${awards[award].title()} +${awards[award].coins}`;
+        subtitle = awards[award].subtitle();
     }
 
     const counterView = <CountUp duration={2.5} useEasing={false} ref={counter} end={count.current} onEnd={() => showNextAward(false)} preserveValue={true} />;
@@ -164,7 +164,7 @@ const GameEndOverview = props => {
             <div className={classes.total}>
                 <div className={classes.coins}><span>{ award < awards.length ? counterView : coins }</span><div /></div>
                 <div className={classes.table}>
-                    {awards.map((entry, index) => <div key={index} style={index < award ? null : {visibility: 'hidden'}}><div>{entry.title}</div><div>{`+${entry.coins}`}</div></div>)}
+                    {awards.map((entry, index) => <div key={index} style={index < award ? null : {visibility: 'hidden'}}><div>{entry.title()}</div><div>{`+${entry.coins}`}</div></div>)}
                 </div>
                 <div ref={highlight} style={award < awards.length ? {opacity: 1} : {opacity: 0, visibility: 'hidden'}} className={classes.award}>
                     <div>{title}</div>

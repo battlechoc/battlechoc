@@ -206,6 +206,7 @@ export default class Augustus extends NonPlayerCharacter {
                 target: selectedCell
             });
         } catch(error) {
+            console.warn("Error during attack phase of NPC", error);
             return this.handleAttackError(error)
         }
 
@@ -248,6 +249,7 @@ export default class Augustus extends NonPlayerCharacter {
         try {
             this.simulateAttackPhase(detonateAtPosition, triggerDonutInfo);
         } catch(error) {
+            console.warn("Error during recursive call to simulateAttackPhase of NPC", error);
             return this.handleAttackError(error)
         }
     }
