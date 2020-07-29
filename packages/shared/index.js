@@ -1729,8 +1729,8 @@ const playerGameField = (game, playerIndex) => game.board.fields[game.players[pl
 
 const ui_awards = [
     {
-        title: translate(translationRefKeys.AWARDS_NERD_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_NERD_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_NERD_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_NERD_SUBTITLE),
         coins: 50,
         isFulfilled: (game, playerIndex) => {
             const trees = playerGameField(game, playerIndex)
@@ -1738,24 +1738,24 @@ const ui_awards = [
             return trees.length > 0 && trees.every(cell => cell.type === BoardCellTypes.WHITE);
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_UNUSED_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_UNUSED_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_UNUSED_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_UNUSED_SUBTITLE),
         coins: 50,
         isFulfilled: (game, playerIndex) => {
             const player = game.players[playerIndex];
             return player.attacksPerTurn[AttackType.BUNNY] > 0 && player.statistics.espionages === 0;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_RUSHHOUR_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_RUSHHOUR_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_RUSHHOUR_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_RUSHHOUR_SUBTITLE),
         coins: 100,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
             return actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.finishTurn).length <= 5;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_MINIMALIST_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_MINIMALIST_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_MINIMALIST_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_MINIMALIST_SUBTITLE),
         coins: 150,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1763,8 +1763,8 @@ const ui_awards = [
             return buildActions.filter(action => action.payload.building.type === EntityType.RUM_TRUFFLE_CANNON).length === 1;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_ONEHITWONDER_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_ONEHITWONDER_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_ONEHITWONDER_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_ONEHITWONDER_SUBTITLE),
         coins: 1800,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1776,8 +1776,8 @@ const ui_awards = [
             return false;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_SPY_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_SPY_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_SPY_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_SPY_SUBTITLE),
         coins: 50,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1785,8 +1785,8 @@ const ui_awards = [
             return attacks.length >= 4;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_SECRETAGENT_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_SECRETAGENT_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_SECRETAGENT_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_SECRETAGENT_SUBTITLE),
         coins: 500,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1794,8 +1794,8 @@ const ui_awards = [
             return attacks.length >= 8;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_GROUNDHOGDAY_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_GROUNDHOGDAY_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_GROUNDHOGDAY_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_GROUNDHOGDAY_SUBTITLE),
         coins: 100,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1803,8 +1803,8 @@ const ui_awards = [
             return buildActions.filter(action => action.payload.building.type === EntityType.SPYING_EASTER_BUNNY).length >= 4;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_REPEATOFFENDER_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_REPEATOFFENDER_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_REPEATOFFENDER_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_REPEATOFFENDER_SUBTITLE),
         coins: 800,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1812,8 +1812,8 @@ const ui_awards = [
             return buildActions.filter(action => action.payload.building.type === EntityType.SPYING_EASTER_BUNNY).length >= 8;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_FIRSTCOMEFIRSTSERVED_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_FIRSTCOMEFIRSTSERVED_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_FIRSTCOMEFIRSTSERVED_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_FIRSTCOMEFIRSTSERVED_SUBTITLE),
         coins: 200,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1824,8 +1824,8 @@ const ui_awards = [
             return (opponentAttack === -1 || playerAttack < opponentAttack) && typeof firstMove !== 'undefined';
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_HINDSIGHT_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_HINDSIGHT_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_HINDSIGHT_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_HINDSIGHT_SUBTITLE),
         coins: 1000,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1838,8 +1838,8 @@ const ui_awards = [
             }
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_MOLTEN_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_MOLTEN_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_MOLTEN_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_MOLTEN_SUBTITLE),
         coins: 300,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1851,8 +1851,8 @@ const ui_awards = [
             }
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_OMG_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_OMG_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_OMG_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_OMG_SUBTITLE),
         coins: 2000,
         isFulfilled: (game, playerIndex) => {
             const board = playerGameField(game, 1 - playerIndex);
@@ -1860,8 +1860,8 @@ const ui_awards = [
         }
     },
     {
-        title: translate(translationRefKeys.AWARDS_HORCRUXES_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_HORCRUXES_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_HORCRUXES_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_HORCRUXES_SUBTITLE),
         coins: 1200,
         isFulfilled: (game, playerIndex) => {
             const board = playerGameField(game, playerIndex);
@@ -1869,8 +1869,8 @@ const ui_awards = [
         }
     },
     {
-        title: translate(translationRefKeys.AWARDS_PICKY_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_PICKY_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_PICKY_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_PICKY_SUBTITLE),
         coins: 5,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1879,8 +1879,8 @@ const ui_awards = [
         }
     },
     {
-        title: translate(translationRefKeys.AWARDS_FIRST_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_FIRST_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_FIRST_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_FIRST_SUBTITLE),
         coins: 5,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1889,8 +1889,8 @@ const ui_awards = [
         }
     },
     {
-        title: translate(translationRefKeys.AWARDS_GREEDY_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_GREEDY_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_GREEDY_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_GREEDY_SUBTITLE),
         coins: 10,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1903,8 +1903,8 @@ const ui_awards = [
         }
     },
     {
-        title: translate(translationRefKeys.AWARDS_STRATEGIST_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_STRATEGIST_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_STRATEGIST_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_STRATEGIST_SUBTITLE),
         coins: 10,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1917,13 +1917,13 @@ const ui_awards = [
         }
     },
     {
-        title: translate(translationRefKeys.AWARDS_WINNER_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_WINNER_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_WINNER_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_WINNER_SUBTITLE),
         coins: 25,
         isFulfilled: () => true
     }, {
-        title: translate(translationRefKeys.AWARDS_RANDOM_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_RANDOM_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_RANDOM_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_RANDOM_SUBTITLE),
         coins: 5,
         isFulfilled: (game, playerIndex, actions) => {
             const opponent = game.players[1 - playerIndex];
@@ -1931,16 +1931,16 @@ const ui_awards = [
             return typeof chooseAction !== 'undefined';
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_MULTIPLAYERBONUS_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_MULTIPLAYERBONUS_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_MULTIPLAYERBONUS_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_MULTIPLAYERBONUS_SUBTITLE),
         coins: 5,
         isFulfilled: (game, playerIndex) => {
             const opponent = game.players[1 - playerIndex];
             return opponent.type === PlayerType.HUMAN;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_GOLDENMULTIPLAYERBONUS_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_GOLDENMULTIPLAYERBONUS_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_GOLDENMULTIPLAYERBONUS_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_GOLDENMULTIPLAYERBONUS_SUBTITLE),
         coins: 200,
         isFulfilled: (game, playerIndex, actions) => {
             const opponent = game.players[1 - playerIndex];
@@ -1948,8 +1948,8 @@ const ui_awards = [
             return opponent.type === PlayerType.HUMAN && actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.finishTurn).length >= 5;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_DIAMONDMULTIPLAYERBONUS_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_DIAMONDMULTIPLAYERBONUS_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_DIAMONDMULTIPLAYERBONUS_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_DIAMONDMULTIPLAYERBONUS_SUBTITLE),
         coins: 500,
         isFulfilled: (game, playerIndex, actions) => {
             const opponent = game.players[1 - playerIndex];
@@ -1957,8 +1957,8 @@ const ui_awards = [
             return opponent.type === PlayerType.HUMAN && actions.filter(action => action.payload.issuer === player.id && action.type === GameActionTypes.finishTurn).length >= 15;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_CONCRETEJUNGLE_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_CONCRETEJUNGLE_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_CONCRETEJUNGLE_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_CONCRETEJUNGLE_SUBTITLE),
         coins: 600,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1966,8 +1966,8 @@ const ui_awards = [
             return typeof buildTreeAction === 'undefined';
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_GREENSPOT_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_GREENSPOT_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_GREENSPOT_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_GREENSPOT_SUBTITLE),
         coins: 20,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1975,8 +1975,8 @@ const ui_awards = [
             return buildActions.length >= 1;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_RANDOMFOREST_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_RANDOMFOREST_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_RANDOMFOREST_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_RANDOMFOREST_SUBTITLE),
         coins: 50,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1984,8 +1984,8 @@ const ui_awards = [
             return buildActions.length >= 5;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_RAINFOREST_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_RAINFOREST_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_RAINFOREST_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_RAINFOREST_SUBTITLE),
         coins: 1000,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -1993,8 +1993,8 @@ const ui_awards = [
             return buildActions.length >= 15;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_SMALLOFFENSIVE_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_SMALLOFFENSIVE_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_SMALLOFFENSIVE_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_SMALLOFFENSIVE_SUBTITLE),
         coins: 30,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -2002,8 +2002,8 @@ const ui_awards = [
             return buildActions.length >= 2;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_OFFENSIVE_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_OFFENSIVE_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_OFFENSIVE_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_OFFENSIVE_SUBTITLE),
         coins: 70,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -2011,8 +2011,8 @@ const ui_awards = [
             return buildActions.length >= 5;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_MAJOROFFENSIVE_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_MAJOROFFENSIVE_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_MAJOROFFENSIVE_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_MAJOROFFENSIVE_SUBTITLE),
         coins: 1500,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -2020,8 +2020,8 @@ const ui_awards = [
             return buildActions.length >= 20;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_UNBREAKABLE_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_UNBREAKABLE_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_UNBREAKABLE_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_UNBREAKABLE_SUBTITLE),
         coins: 200,
         isFulfilled: (game, playerIndex, actions) => {
             const opponent = game.players[1 - playerIndex];
@@ -2029,8 +2029,8 @@ const ui_awards = [
             return !attacks.some(attack => attack.payload.target.occupiedBy.some(entity => entity.type !== EntityType.CREAM && entity.hp < attack.payload.damage));
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_MRGLASS_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_MRGLASS_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_MRGLASS_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_MRGLASS_SUBTITLE),
         coins: 600,
         isFulfilled: (game, playerIndex, actions) => {
             const opponent = game.players[1 - playerIndex];
@@ -2038,8 +2038,8 @@ const ui_awards = [
             return attacks.filter(attack => attack.payload.target.occupiedBy.some(entity => entity.type !== EntityType.CREAM && entity.hp < attack.payload.damage)).length >= 20;
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_OUVERT_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_OUVERT_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_OUVERT_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_OUVERT_SUBTITLE),
         coins: 800,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -2051,8 +2051,8 @@ const ui_awards = [
             }
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_SETTLER_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_SETTLER_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_SETTLER_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_SETTLER_SUBTITLE),
         coins: 50,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -2062,8 +2062,8 @@ const ui_awards = [
             return typeof factoryBuildAction !== 'undefined' && typeof treeBuildAction !== 'undefined' && typeof cannonBuildAction !== 'undefined';
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_UPGRADE_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_UPGRADE_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_UPGRADE_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_UPGRADE_SUBTITLE),
         coins: 50,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -2071,8 +2071,8 @@ const ui_awards = [
             return typeof fruitCannonBuildAction !== 'undefined';
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_REFILLED_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_REFILLED_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_REFILLED_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_REFILLED_SUBTITLE),
         coins: 30,
         isFulfilled: (game, playerIndex, actions) => {
             const player = game.players[playerIndex];
@@ -2080,8 +2080,8 @@ const ui_awards = [
             return typeof creamBuildAction !== 'undefined';
         }
     }, {
-        title: translate(translationRefKeys.AWARDS_PERSONALCONCERN_TITLE),
-        subtitle: translate(translationRefKeys.AWARDS_PERSONALCONCERN_SUBTITLE),
+        title: () => translate(translationRefKeys.AWARDS_PERSONALCONCERN_TITLE),
+        subtitle: () => translate(translationRefKeys.AWARDS_PERSONALCONCERN_SUBTITLE),
         coins: 1500,
         isFulfilled: (game, playerIndex) => {
             const board = playerGameField(game, playerIndex);
