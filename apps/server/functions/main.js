@@ -226,7 +226,7 @@ const calculateCoinsFromTrackRecord = (trackRecord) => {
     if (typeof trackRecord !== 'undefined' && trackRecord.length > 0) {
         return trackRecord.reduce((currentCoins, gameStats) => {
             let coins = gameStats.attacks + gameStats.builtEntities * 2 + gameStats.espionages * 10 + gameStats.moltenFields * 50;
-            if (typeof gameStats.awards !== "undefined") {
+            if (typeof gameStats.awards !== 'undefined') {
                 coins = gameStats.awards.reduce((previous, current) => current.coins + previous, 0);
             }
 
@@ -234,6 +234,10 @@ const calculateCoinsFromTrackRecord = (trackRecord) => {
                 // no coins for still running games or undefined stats data
                 coins = 0;
             } else {
+                if (gameStats.attacks < 2) {
+                    coins = SurrenderCosts;
+                }
+
                 if (gameStats.lost === true && gameStats.won !== true) {
                     // no coins for lost games
                     coins = 0;
