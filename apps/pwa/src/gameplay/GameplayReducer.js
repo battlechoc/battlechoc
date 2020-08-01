@@ -4,7 +4,6 @@ import { manipulateGameAction } from './GameActions';
 
 const logAndApply = (state, action, reduction) => {
     let unwrappedAction = JSON.parse(JSON.stringify(action));
-    console.log(unwrappedAction)
 
     if (typeof state.events === 'undefined') {
         state.events = [unwrappedAction];
@@ -18,9 +17,6 @@ const logAndApply = (state, action, reduction) => {
 const gameplayReducer = createReducer({}, {
     [GameActionTypes.startGame]: (state, action) => logAndApply(state, action, startGameReduction),
     [GameActionTypes.resumeGame]: (state, action) => {
-        console.log(JSON.stringify(state, undefined, 2))
-        console.log(JSON.stringify(action, undefined, 2))
-
         state.events = action.payload.events;
         logAndApply(state, { ...action, payload: action.payload.game }, resumeGameReduction);
     },

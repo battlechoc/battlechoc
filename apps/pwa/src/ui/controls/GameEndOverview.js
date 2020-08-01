@@ -113,19 +113,30 @@ const GameEndOverview = props => {
         headline = t(tr.MESSAGE_LOST_GAME);
     }
 
-    React.useEffect(() => {
+    const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+    
+    useEffect(() => {
+        const startGettingAwards = async () => {
+            await sleep(2200);
+            highlight.current.style.opacity = 0;
+            await sleep(300);
+            showNextAward();
+        };
+
         if (outcome === 'won') {
             const confettiSettings = { target: confetti.current };
             const confettiGenerator = new ConfettiGenerator(confettiSettings);
             confettiGenerator.render();
-        
+            startGettingAwards();
+
             return () => confettiGenerator.clear();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [outcome]);
 
     const coins = awards.reduce((previous, current) => current.coins + previous, 0);
     
-    const showNextAward = skip => {
+    const showNextAward = (skip=false) => {
         pointer.current++;
         if (skip) {
             pointer.current = awards.length;
@@ -136,9 +147,12 @@ const GameEndOverview = props => {
     }
 
     useEffect(() => {
-        const opacity = highlight.current.style.opacity;
-        highlight.current.style.opacity = 1 - opacity;
-        const timeout = setTimeout(() => highlight.current.style.opacity = opacity, 2200);
+        highlight.current.style.opacity = 1;
+        const timeout = setTimeout(async () => {
+            highlight.current.style.opacity = 0;
+            await sleep(300);
+            showNextAward();
+        }, 2200);
 
         if (award > 0 && award < awards.length) {
             count.current += awards[award].coins;           
@@ -146,6 +160,7 @@ const GameEndOverview = props => {
         }
 
         return () => clearTimeout(timeout);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [award, awards]);
 
     let title = '';
@@ -155,7 +170,7 @@ const GameEndOverview = props => {
         subtitle = awards[award].subtitle();
     }
 
-    const counterView = <CountUp duration={2.5} useEasing={false} ref={counter} end={count.current} onEnd={() => showNextAward(false)} preserveValue={true} />;
+    const counterView = <CountUp duration={2.5} useEasing={false} ref={counter} end={count.current} preserveValue={true} />;
 
     return (
         <div className={classes.overview}>
