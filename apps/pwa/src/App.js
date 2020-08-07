@@ -525,25 +525,42 @@ class App extends Component {
 
                     const score = this.props.playerInfos.stats.score;
                     if (typeof coins !== 'undefined' && coins > 0) {
-                        if (score - coins === 0) {
-                            this.props.startTutorial({
-                                loops: [TutorialSituations.FACTORY_EXTENSION],
-                                notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_EXTENSION_TITLE), message: t(tr.NOTIFICATION_UNLOCK_EXTENSION_MESSAGE, 200 - score) }
-                            });
-                        } else if ((score - coins) < 200 && score > 200) {
-                            this.props.startTutorial({
-                                loops: [TutorialSituations.EASTER_BUNNY, TutorialSituations.XMAS_FACTORY, TutorialSituations.HOT_CHOCOLATE_BALLISTA],
-                                notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_BUNNY_TITLE), message: t(tr.NOTIFICATION_UNLOCK_BUNNY_MESSAGE, 500 - score) }
-                            });
-                        } else if ((score - coins) < 500 && score > 500) {
-                            this.props.startTutorial({
-                                loops: [TutorialSituations.CHOCOLATE_FOUNTAIN, TutorialSituations.FRUIT_CANNON],
-                                notificationOnLoopsEnd: { title: t(tr.NOTIFICATION_UNLOCK_FOUNTAIN_TITLE), message: t(tr.NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE, 1000 - score) }
-                            });
-                        } else if ((score - coins) < 1000 && score > 1000) {
-                            this.props.showQuickMessage({ text: t(tr.UNLOCK_CONGRATULATIONS_CHOCLAB), variant: 'success' });
-                            this.props.showQuickMessage({ text: t(tr.UNLOCK_CONGRATULATIONS_MULTIPLAYER), variant: 'success' });
-                            this.props.startTutorial({ loops: [TutorialSituations.DONUT_FACTORY, TutorialSituations.DONUTS] });
+                        let loops = [];
+                        let notificationOnLoopsEnd = undefined;
+                        if (score - coins < 1000) {
+                            if (score - coins === 0) {
+                                loops.push(TutorialSituations.FACTORY_EXTENSION);
+                                if (score < 200) {
+                                    notificationOnLoopsEnd = { title: t(tr.NOTIFICATION_UNLOCK_EXTENSION_TITLE), message: t(tr.NOTIFICATION_UNLOCK_EXTENSION_MESSAGE, 200 - score) };
+                                }
+                            }
+
+                            if ((score - coins) < 200 && score > 200) {
+                                loops.push(TutorialSituations.EASTER_BUNNY, TutorialSituations.XMAS_FACTORY, TutorialSituations.HOT_CHOCOLATE_BALLISTA);
+                                if (score < 500) {
+                                    notificationOnLoopsEnd = { title: t(tr.NOTIFICATION_UNLOCK_BUNNY_TITLE), message: t(tr.NOTIFICATION_UNLOCK_BUNNY_MESSAGE, 500 - score) };
+                                }
+                            }
+
+                            if ((score - coins) < 500 && score > 500) {
+                                loops.push(TutorialSituations.CHOCOLATE_FOUNTAIN, TutorialSituations.FRUIT_CANNON);
+                                if (score < 1000) {
+                                    notificationOnLoopsEnd = { title: t(tr.NOTIFICATION_UNLOCK_FOUNTAIN_TITLE), message: t(tr.NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE, 1000 - score) };
+                                }
+                            }
+
+                            if ((score - coins) < 1000 && score > 1000) {
+                                loops.push(TutorialSituations.DONUT_FACTORY, TutorialSituations.DONUTS);
+                            }
+
+                            if (score > 1000) {
+                                this.props.showQuickMessage({ text: t(tr.UNLOCK_CONGRATULATIONS_CHOCLAB), variant: 'success' });
+                                this.props.showQuickMessage({ text: t(tr.UNLOCK_CONGRATULATIONS_MULTIPLAYER), variant: 'success' });
+                            }
+
+                            if (loops.length > 0) {
+                                this.props.startTutorial({ loops: loops, notificationOnLoopsEnd: notificationOnLoopsEnd });
+                            }
                         }
                     }
                     multiplayer.getMultiplayerSessions();
