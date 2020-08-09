@@ -234,7 +234,7 @@ const calculateCoinsFromTrackRecord = (trackRecord) => {
                 // no coins for still running games or undefined stats data
                 coins = 0;
             } else {
-                if (gameStats.builtEntities > 0) {
+                if (gameStats.builtEntities === 0) {
                     console.log("adding surrender costs only");
                     coins = SurrenderCosts;
                 }
