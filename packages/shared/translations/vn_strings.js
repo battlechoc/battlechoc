@@ -179,7 +179,7 @@ module.exports = {
     "SESSION_REFRESH_FAILED": "Làm mới phiên nhiều người chơi không thành công. Xin vui lòng kiểm tra kết nối Internet của bạn.",
     "SETTINGS": "Cài đặt",
     "SETTINGS_ATTENTION_TEXT": "Chú ý, nếu bạn nhấn nút ở trên một lần nữa, bạn sẽ từ bỏ trò chơi hiện tại và đối thủ của bạn thắng",
-    "SETTINGS_PLAYER_NAME_INVALID": "Tên người dùng không hợp lệ (3-15 ký tự hoặc chữ số, ký hiệu đầu tiên phải là ký tự)",
+    "SETTINGS_PLAYER_NAME_INVALID": "Tên người dùng không hợp lệ (3-24 ký tự hoặc chữ số, ký hiệu đầu tiên phải là ký tự)",
     "SETTINGS_PLAYER_NAME_IN_USE": "tên người dùng này đã có người sử dụng",
     "SETTINGS_QUIT": "Thoát khỏi trò chơi",
     "SHARE_LINK": "Chia sẻ liên kết của bạn",

@@ -179,7 +179,7 @@ module.exports = {
     "SESSION_REFRESH_FAILED": "L'actualisation de la session multijoueur a échoué. S'il vous plait, vérifiez votre connexion internet.",
     "SETTINGS": "Paramètres",
     "SETTINGS_ATTENTION_TEXT": "Attention, si vous appuyez à nouveau sur le bouton ci-dessus, vous abandonnez la partie en cours et votre adversaire gagne",
-    "SETTINGS_PLAYER_NAME_INVALID": "nom d'utilisateur non valide (3 à 15 caractères ou chiffres, le premier signe doit être un caractère)",
+    "SETTINGS_PLAYER_NAME_INVALID": "nom d'utilisateur non valide (3 à 24 caractères ou chiffres, le premier signe doit être un caractère)",
     "SETTINGS_PLAYER_NAME_IN_USE": "Nom d'utilisateur déjà utilisé",
     "SETTINGS_QUIT": "Quitter le jeu",
     "SHARE_LINK": "Partagez votre lien",

@@ -179,7 +179,7 @@ module.exports = {
     "SESSION_REFRESH_FAILED": "Aggiornamento sessione multiplayer non riuscito. Per favore controlla la tua connessione Internet.",
     "SETTINGS": "impostazioni",
     "SETTINGS_ATTENTION_TEXT": "Attenzione, se premi di nuovo il pulsante in alto, rinunci alla partita in corso e il tuo avversario vince",
-    "SETTINGS_PLAYER_NAME_INVALID": "nome utente non valido (3-15 caratteri o cifre, il primo segno dovrebbe essere un carattere)",
+    "SETTINGS_PLAYER_NAME_INVALID": "nome utente non valido (3-24 caratteri o cifre, il primo segno dovrebbe essere un carattere)",
     "SETTINGS_PLAYER_NAME_IN_USE": "User name già usato",
     "SETTINGS_QUIT": "Abbandonare il gioco",
     "SHARE_LINK": "Condividi il tuo link",

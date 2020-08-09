@@ -27,7 +27,7 @@ module.exports = {
     "MULTIPLAYER_RANDOM_OPPONENT": "Random Opponent",
     "SETTINGS_QUIT": "Quit Game",
     "SETTINGS_PLAYER_NAME_IN_USE": "username already in use",
-    "SETTINGS_PLAYER_NAME_INVALID": "username not valid (3-15 chars or digits, first sign should be a char)",
+    "SETTINGS_PLAYER_NAME_INVALID": "username not valid (3-24 chars or digits, first sign should be a char)",
     "HUD_RESUME_GAME": "Resume Game",
     "HUD_ASK_NEW_OR_RESUME": "Do you want to start a new game or resume your last one?",
     "HUD_NEW_GAME": "New game",
