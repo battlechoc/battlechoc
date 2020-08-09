@@ -234,7 +234,8 @@ const calculateCoinsFromTrackRecord = (trackRecord) => {
                 // no coins for still running games or undefined stats data
                 coins = 0;
             } else {
-                if (gameStats.attacks < 2) {
+                if (gameStats.builtEntities > 0) {
+                    console.log("adding surrender costs only");
                     coins = SurrenderCosts;
                 }
 
@@ -639,7 +640,7 @@ const updateTrackRecord = async (session, endGameAction, resultReason, orderedEv
     winner.statistics.won = true;
     winner.statistics.lost = false;
     if (typeof session.game.winners === 'undefined') {
-        session.game.winners = endGameAction.payload.winners;    
+        session.game.winners = endGameAction.payload.winners;
     }
     const awards = computeAwards(session.game, winnerIndex, orderedEvents);
     console.log(JSON.stringify(awards));
@@ -1618,12 +1619,15 @@ app.get('/generaterandomname', async (req, res) => {
         const maxTries = 20;
         let generatedName;
         let nameFound = false;
+        let regex = /^([a-zA-Z][a-zA-Z0-9_]{2,24})$/;
         for (let tries = 0; tries < maxTries; tries++) {
             generatedName = uniqueNamesGenerator(randomNameGeneratorConfig);
-            const queryResult = await dbPool.query("SELECT * FROM players WHERE name = $1", [generatedName]);
-            if (queryResult.rows.length === 0) {
-                nameFound = true;
-                break;
+            if (regex.test(generatedName) && generatedName.toUpperCase() !== 'CHOCNONYMOUS') {
+                const queryResult = await dbPool.query("SELECT * FROM players WHERE name = $1", [generatedName]);
+                if (queryResult.rows.length === 0) {
+                    nameFound = true;
+                    break;
+                }
             }
         }
         res.status(200).json({ username: (nameFound) ? generatedName : 'Chocnonymous' });
