@@ -34,7 +34,7 @@ export default class Donald extends NonPlayerCharacter {
         if (this.gameIsRunning) {
             try {
                 await this.buildEntity(EntityType.FACTORY);
-                await this.simulateThinking(3000);
+                await this.simulateThinking(2000);
                 await this.actions.finishTurn({ issuer: this.player.id });
             } catch (error) {
                 if (error instanceof BattlechocError) {
@@ -135,7 +135,7 @@ export default class Donald extends NonPlayerCharacter {
       const freeCells = cells.filter(cell => this.countEntities(cell) === 0);
       const creamedCells = cells.filter(cell => this.containsEntity(cell, EntityType.CREAM) && this.countEntities(cell) === 1);
 
-      const matches = freeCells.length > 0 ? freeCells : creamedCells;
+      const matches = creamedCells.length > 0 ? creamedCells : freeCells;
 
       if (matches.length > 0) {
         let target = matches[Math.floor(Math.random() * matches.length)];
