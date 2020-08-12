@@ -314,13 +314,22 @@ class Multiplayer {
         }).catch(err => logger.warn("could not retrieve offline player stats", err));
 
         if (firebase.auth().currentUser) {
-            try {
-                const data = (await ServerRequest('post', '/user/tutorial/started')).data;
-                this.callbacks.updatePlayerStats(data.stats);
-            } catch (err) {
-                logger.warn("Could not update player tutorial started state.");
-                logger.warn(err);
-            }
+            let retryCounter = 0;
+            const intervalId = setInterval(async () => {
+                try {
+                    const data = (await ServerRequest('post', '/user/tutorial/started')).data;
+                    clearInterval(intervalId);
+                    this.callbacks.updatePlayerStats(data.stats);
+                } catch (err) {
+                    retryCounter++;
+                    logger.info("Could not update player tutorial started state. Retry " + retryCounter);
+                    logger.info(err);
+                    if (retryCounter >= 3) {
+                        logger.warn("Updating tutorial state did not work even with 3 retries.")
+                        clearInterval(intervalId);
+                    }
+                }
+            }, 2000);
         }
     }
 
@@ -337,17 +346,26 @@ class Multiplayer {
         }).catch(err => logger.warn("could not retrieve offline player stats", err));
 
         if (firebase.auth().currentUser) {
-            try {
-                const data = (await ServerRequest('post', '/user/tutorial/skipped')).data;
-                console.log(data);
-                if (data.stats.username === EmptyPlayerStats.username) {
-                    await this.setRandomPlayerName();
+            let retryCounter = 0;
+            const intervalId = setInterval(async () => {
+                try {
+                    const data = (await ServerRequest('post', '/user/tutorial/skipped')).data;
+                    clearInterval(intervalId);
+                    console.log(data);
+                    if (data.stats.username === EmptyPlayerStats.username) {
+                        await this.setRandomPlayerName();
+                    }
+                    this.callbacks.updatePlayerStats(data.stats);
+                } catch (err) {
+                    retryCounter++;
+                    logger.info("Could not update player tutorial skipped state. Retry " + retryCounter);
+                    logger.info(err);
+                    if (retryCounter >= 3) {
+                        logger.warn("Updating tutorial state did not work even with 3 retries.")
+                        clearInterval(intervalId);
+                    }
                 }
-                this.callbacks.updatePlayerStats(data.stats);
-            } catch (err) {
-                logger.warn("Could not update player tutorial skipped state.");
-                logger.warn(err);
-            }
+            }, 2000);
         }
     }
 
