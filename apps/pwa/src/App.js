@@ -15,6 +15,7 @@ import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 import { gameplayLog } from './gameplay/GamePlayLogger';
 import BuildFactoryTestSituation from './situations/tests/BuildFactoryTest';
 import FactoryExtensionTest from './situations/tests/FactoryExtensionTest';
+import FirstGame from './situations/FirstGame';
 import Hud from './ui/Hud';
 import uuidv4 from 'uuid/v4';
 import Tutorial from './tutorial/Tutorial';
@@ -443,7 +444,9 @@ class App extends Component {
                 });
             } else {
                 OfflineStore.getResumeableGame().then(resumeableGame => {
-                    if (this.props.playerInfos.stats.score < 800) {
+                    if (this.props.playerInfos.stats.score === 0) {
+                        this.loadSituation(FirstGame);
+                    } else if (this.props.playerInfos.stats.score < 800) {
                         this.opponent = new Donald({
                             chooseStart: this.props.chooseStart,
                             chooseField: this.props.chooseField,
