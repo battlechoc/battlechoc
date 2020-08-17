@@ -444,9 +444,7 @@ class App extends Component {
                 });
             } else {
                 OfflineStore.getResumeableGame().then(resumeableGame => {
-                    if (this.props.playerInfos.stats.score === 0) {
-                        this.loadSituation(FirstGame);
-                    } else if (this.props.playerInfos.stats.score < 800) {
+                    if (this.props.playerInfos.stats.score < 800) {
                         this.opponent = new Donald({
                             chooseStart: this.props.chooseStart,
                             chooseField: this.props.chooseField,
@@ -477,6 +475,11 @@ class App extends Component {
                             });
                         });
                     } else {
+                        if (this.props.playerInfos.stats.score <= 100) {
+                            this.loadSituation(FirstGame);
+                            return;
+                        } 
+
                         this.props.gameResumeable(false);
                         OfflineStore.gamestateStore.clear();
                         const players = [

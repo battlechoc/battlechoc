@@ -10,7 +10,7 @@ export default class FirstGame extends Situation {
         this.modifyBoard({row: 1, col: 4, cellType: BoardCellTypes.BLACK, buildings: [createEntity(EntityType.CACAOTREE), createEntity(EntityType.CREAM)] });
         this.modifyBoard({row: 5, col: 5, cellType: BoardCellTypes.BROWN, buildings: [createEntity(EntityType.CACAOTREE)] });
         
-        this.modifyBoard({col: 0, row: 3, playerIndex: 1, cellType: BoardCellTypes.BROWN, buildings: [createEntity(EntityType.FACTORY, createEntity(EntityType.CREAM))]});
+        this.modifyBoard({col: 0, row: 3, playerIndex: 1, cellType: BoardCellTypes.BROWN, buildings: [createEntity(EntityType.FACTORY), createEntity(EntityType.CREAM)]});
 
         const game = this.game.gameplay.game;
 
@@ -28,6 +28,10 @@ export default class FirstGame extends Situation {
 
         game.players[0].cacaoPerTurn = 2 * getEntityDescriptor(EntityType.CACAOTREE, game.players[0].level).cacaoPerTurn;
 
+
+        this.game.ui.selectedBuilding = EntityType.CACAOTREE;
+        this.game.ui.tapBuilding = EntityType.CACAOTREE;
+        
         game.players[1].level = EmptyPlayerStats.level;
         game.players[1].cacao = 50;
         game.players[1].buildingsPerTurn = getEntityDescriptor(EntityType.FACTORY, game.players[1].level).buildingsPerTurn;
