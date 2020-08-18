@@ -77,16 +77,16 @@ const useStyles = createUseStyles(theme => ({
         zIndex: 12,
         marginTop: '2vh',
         fontFamily: 'Bangers',
-        fontSize: props => (props.autoscale && props.title.length > 7) || ['notification', 'info'].includes(props.mode) ? '5vw' : '8vw',
+        fontSize: props => (props.autoscale && props.title.length > 7) || ['notification', 'info'].includes(props.mode) ? '4vw' : '8vw',
         display: 'flex',
-        textAlign: props => props.mode === 'info' ? 'center' : 'unset',
+        textAlign: props => ['notification', 'info'].includes(props.mode) ? 'center' : 'unset',
         justifyContent: 'center',
         alignItems: 'center',
         color: 'white',
         '-webkit-text-stroke': `0.1vw ${theme.color.secondary.dark}`,
         '-webkit-font-smoothing': 'antialiased',
         [theme.breakpoints.orientation.portrait]: {
-            fontSize: props => (props.autoscale && props.title.length > 7) || ['notification', 'info'].includes(props.mode) ? '6vw' : '8vw',         
+            fontSize: props => (props.autoscale && props.title.length > 7) || ['notification', 'info'].includes(props.mode) ? '5vw' : '8vw',         
         }
     },
     subtitle: {

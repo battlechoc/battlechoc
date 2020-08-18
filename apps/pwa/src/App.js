@@ -15,6 +15,7 @@ import { GameTransitions, getGameTransition } from './gameplay/GameTransitions';
 import { gameplayLog } from './gameplay/GamePlayLogger';
 import BuildFactoryTestSituation from './situations/tests/BuildFactoryTest';
 import FactoryExtensionTest from './situations/tests/FactoryExtensionTest';
+import FirstGame from './situations/FirstGame';
 import Hud from './ui/Hud';
 import uuidv4 from 'uuid/v4';
 import Tutorial from './tutorial/Tutorial';
@@ -474,6 +475,11 @@ class App extends Component {
                             });
                         });
                     } else {
+                        if (this.props.playerInfos.stats.score <= 100) {
+                            this.loadSituation(FirstGame);
+                            return;
+                        } 
+
                         this.props.gameResumeable(false);
                         OfflineStore.gamestateStore.clear();
                         const players = [
