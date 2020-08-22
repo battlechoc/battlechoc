@@ -15,145 +15,145 @@ import { Button, Fab, Progress, Actionbar, InfoPanel, BuildingPalette, AttackPal
 import { createUseStyles } from 'react-jss'
 
 const useStyles = createUseStyles(theme => ({
-        actionbar: {
+    actionbar: {
+        position: 'absolute',
+        top: 5,
+        left: 5,
+        zIndex: 5
+    },
+    logo: {
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        '& > :first-child': {
             position: 'absolute',
-            top: 5,
-            left: 5,
-            zIndex: 5
-        },
-        logo: {
-            position: 'relative',
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            justifyContent: 'center',
-            overflow: 'hidden',
-            '& > :first-child': {
-                position: 'absolute',
-                background: 'url(/images/logo.svg) no-repeat',
-                zIndex: 1,
-                [theme.breakpoints.orientation.landscape]: {
-                    top: '5vh',
-                    width: '50vh',
-                    height: '50vh',
-                },
-                [theme.breakpoints.orientation.portrait]: {
-                    top: '12vh',
-                    width: '40vh',
-                    height: '40vh',
-                }
-            },
-            '& > :last-child': {
-                position: 'absolute',
-                background: 'url(/images/stripes.svg) no-repeat',
-                backgroundSize: '100%',
-                zIndex: 0,
-                animation: 'pulse 20s linear 0s infinite',
-                [theme.breakpoints.orientation.landscape]: {
-                    top: '-160vh',
-                    height: '350vh',
-                    width: '350vh',
-                    marginLeft: '-12vh'
-                },
-                [theme.breakpoints.orientation.portrait]: {
-                    top: '-85vh',
-                    height: '200vh',
-                    width: '200vh',
-                    marginLeft: '-10vh'
-                }
-            },        
-        },
-        menu: {
-            display: 'flex',
-            flexDirection: 'column',
-            position: 'absolute',
-            zIndex: 4,
-            '& > div': {
-                marginBottom: 6
-            },
-            [theme.breakpoints.orientation.portrait]: {
-                top: '48%'
-            },
-            [theme.breakpoints.orientation.landscape]: {
-                top: '55%',
-                '@media screen and (min-height: 340px)': {
-                    top: '48%'     
-                }
-            }
-        },
-        coins: {
-            position: 'absolute',
-            top: 5,
-            right: 5,
-            display: 'flex',
-            alignItems: 'center',
+            background: 'url(/images/logo.svg) no-repeat',
             zIndex: 1,
-            '& span': {
-                color: '#fff',
-                '-webkit-font-smoothing': 'antialiased',
-                fontFamily: 'Bangers',
-                marginRight: '1.5vw',
-                fontSize: 'calc(3.5vh + 3.5vw)',
-                WebkitTextStroke: 'calc(0.08vh + 0.08vw) #3C1C0C'
-            },
-            '& > div': {
-                background: 'url(/images/coins.svg) no-repeat',
-                padding: 'calc(2vh + 2vw) calc(3vh + 3vw)'
-            }
-        },
-        decoration: {
-            position: 'fixed',
-            background: 'url(/images/decoration.svg) no-repeat',
-            zIndex: 3,
-            [theme.breakpoints.orientation.portrait]: {
-                bottom: '-20vh',
-                left: '-15vh',
-                width: '45vh',
-                height: '45vh',
-            },
             [theme.breakpoints.orientation.landscape]: {
-                bottom: '-35vh',
-                left: '-25vh',
-                width: '70vh',
-                height: '70vh',
-            }
-        },
-        resumeGameDialog: {
-            color: 'white',
-            fontSize: '5vw',
-            textAlign: 'center',
-            [theme.breakpoints.orientation.landscape]: {
-                fontSize: '3.4vw'
-            }
-        },
-        actions: {
-            display: 'flex',
-            flexWrap: 'wrap',
-            justifyContent: 'space-evenly',
+                top: '5vh',
+                width: '50vh',
+                height: '50vh',
+            },
             [theme.breakpoints.orientation.portrait]: {
-                justifyContent: 'unset',
-                alignItems: 'center',
-                flexDirection: 'column',
-                '& > div:last-child': {
-                    marginTop: '3vh'
-                }
+                top: '12vh',
+                width: '40vh',
+                height: '40vh',
             }
         },
-        notification: {
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end'
+        '& > :last-child': {
+            position: 'absolute',
+            background: 'url(/images/stripes.svg) no-repeat',
+            backgroundSize: '100%',
+            zIndex: 0,
+            animation: 'pulse 20s linear 0s infinite',
+            [theme.breakpoints.orientation.landscape]: {
+                top: '-160vh',
+                height: '350vh',
+                width: '350vh',
+                marginLeft: '-12vh'
+            },
+            [theme.breakpoints.orientation.portrait]: {
+                top: '-85vh',
+                height: '200vh',
+                width: '200vh',
+                marginLeft: '-10vh'
+            }
         },
-        titleScreen: {
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexDirection: 'column',
-            zIndex: 2,
-            height: '100vh'
+    },
+    menu: {
+        display: 'flex',
+        flexDirection: 'column',
+        position: 'absolute',
+        zIndex: 4,
+        '& > div': {
+            marginBottom: 6
+        },
+        [theme.breakpoints.orientation.portrait]: {
+            top: '48%'
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            top: '55%',
+            '@media screen and (min-height: 340px)': {
+                top: '48%'
+            }
         }
-    })
+    },
+    coins: {
+        position: 'absolute',
+        top: 5,
+        right: 5,
+        display: 'flex',
+        alignItems: 'center',
+        zIndex: 1,
+        '& span': {
+            color: '#fff',
+            '-webkit-font-smoothing': 'antialiased',
+            fontFamily: 'Bangers',
+            marginRight: '1.5vw',
+            fontSize: 'calc(3.5vh + 3.5vw)',
+            WebkitTextStroke: 'calc(0.08vh + 0.08vw) #3C1C0C'
+        },
+        '& > div': {
+            background: 'url(/images/coins.svg) no-repeat',
+            padding: 'calc(2vh + 2vw) calc(3vh + 3vw)'
+        }
+    },
+    decoration: {
+        position: 'fixed',
+        background: 'url(/images/decoration.svg) no-repeat',
+        zIndex: 3,
+        [theme.breakpoints.orientation.portrait]: {
+            bottom: '-20vh',
+            left: '-15vh',
+            width: '45vh',
+            height: '45vh',
+        },
+        [theme.breakpoints.orientation.landscape]: {
+            bottom: '-35vh',
+            left: '-25vh',
+            width: '70vh',
+            height: '70vh',
+        }
+    },
+    resumeGameDialog: {
+        color: 'white',
+        fontSize: '5vw',
+        textAlign: 'center',
+        [theme.breakpoints.orientation.landscape]: {
+            fontSize: '3.4vw'
+        }
+    },
+    actions: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'space-evenly',
+        [theme.breakpoints.orientation.portrait]: {
+            justifyContent: 'unset',
+            alignItems: 'center',
+            flexDirection: 'column',
+            '& > div:last-child': {
+                marginTop: '3vh'
+            }
+        }
+    },
+    notification: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end'
+    },
+    titleScreen: {
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        zIndex: 2,
+        height: '100vh'
+    }
+})
 );
 
 const Hud = props => {
@@ -175,7 +175,7 @@ const Hud = props => {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
-    const openAccountOverview = (account, style='default') => {
+    const openAccountOverview = (account, style = 'default') => {
         setDialogStyle(style);
         setShowAccountOverview(true);
         setPlayerAccount(account);
@@ -281,9 +281,9 @@ const Hud = props => {
         await multiplayer.tutorialSkipped();
     }
 
-    const notifyUnlock = (missingScore, feature) => {
+    /*const notifyUnlock = (missingScore, feature) => {
         props.showNotification({ title: t(tr.COINS_FOR_NEXT_FEATURE_TITLE, feature), message: t(tr.COINS_FOR_NEXT_FEATURE_BODY, feature, missingScore) });
-    }
+    }*/
 
     const stage = estimateStage();
     return (
@@ -334,7 +334,7 @@ const Hud = props => {
                     const playername = playerInfos.stats.username;
                     const score = playerInfos.stats.score;
                     const firstPlayScreen = playerInfos.stats.tutorialFinished === false && playerInfos.stats.tutorialSkipped === false;
-                    const locked = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1000;
+                    const locked = typeof playername === 'undefined' || playername === 'Chocnonymous' || score < 1;
 
                     if (firstPlayScreen) {
                         controls.push(<Button className={classes.menuButton} key="0" size="huge" onClick={() => kickOffTutorial()}>{t(tr.START_TUTORIAL)}</Button>);
@@ -343,19 +343,11 @@ const Hud = props => {
                     } else {
                         controls.push(<Button className={classes.menuButton} key="0" size="huge" onClick={() => resumeOrStartGame()}>{typeof playername === 'undefined' || playername === 'Chocnonymous' ? t(tr.NEW_GAME) : t(tr.MAIN_MENU_SINGLEPLAYER)}</Button>);
                         controls.push(<Button className={classes.menuButton} key="1" size="huge" locked={locked} color="secondary" onClick={() => {
-                            if (locked) {
-                                notifyUnlock(1000 - score, 'Multiplayer');
-                            } else {
-                                setShowMultiplayerScreen(true);
-                            }
+                            setShowMultiplayerScreen(true);
                         }}>{t(tr.MAIN_MENU_MULTIPLAYER)}</Button>);
-                        
-                        controls.push(<Button className={classes.menuButton} key="2" size="huge" locked={locked} color="accent" onClick={() => { 
-                            if (locked) {
-                                notifyUnlock(1000 - score, 'Choclab');
-                            } else {
-                                setChoclabScreen(true);
-                            }
+
+                        controls.push(<Button className={classes.menuButton} key="2" size="huge" locked={locked} color="accent" onClick={() => {
+                            setChoclabScreen(true);
                         }}>{t(tr.MAIN_MENU_CHOCLAB)}</Button>);
                     }
 
