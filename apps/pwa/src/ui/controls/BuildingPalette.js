@@ -47,12 +47,12 @@ const useStyles = createUseStyles(theme => ({
                 maxHeight: '12vh'
             },
             [theme.breakpoints.orientation.square]: {
-                  width: 'calc(3.5vh + 3.5vw)',
-                  height: 'calc(3.5vh + 3.5vw)',
+                width: 'calc(3.5vh + 3.5vw)',
+                height: 'calc(3.5vh + 3.5vw)',
             }
         }
     },
-    donut: { 
+    donut: {
         marginRight: 5,
         [theme.breakpoints.orientation.portrait]: {
             width: '12vw',
@@ -65,8 +65,8 @@ const useStyles = createUseStyles(theme => ({
             maxHeight: '12vh'
         },
         [theme.breakpoints.orientation.square]: {
-              width: 'calc(3.5vh + 3.5vw)',
-              height: 'calc(3.5vh + 3.5vw)',
+            width: 'calc(3.5vh + 3.5vw)',
+            height: 'calc(3.5vh + 3.5vw)',
         }
     },
     disabled: {
@@ -107,8 +107,8 @@ const useStyles = createUseStyles(theme => ({
             maxHeight: '12vh'
         },
         [theme.breakpoints.orientation.square]: {
-              width: 'calc(3.5vh + 3.5vw)',
-              height: 'calc(3.5vh + 3.5vw)',
+            width: 'calc(3.5vh + 3.5vw)',
+            height: 'calc(3.5vh + 3.5vw)',
         }
     }
 }));
@@ -150,9 +150,9 @@ const BuildingPalette = props => {
         costs: getEntityDescriptor(EntityType.CHOCOLATE_FOUNTAIN, player.level).costs
     }, {
         type: EntityType.FRUIT_CANNON,
-        image: 'fruit-cannon', 
+        image: 'fruit-cannon',
         costs: getEntityDescriptor(EntityType.FRUIT_CANNON, player.level).costs
-    },{
+    }, {
         type: EntityType.DONUT_FACTORY,
         image: 'donut-factory',
         costs: getEntityDescriptor(EntityType.DONUT_FACTORY, player.level).costs
@@ -193,7 +193,7 @@ const BuildingPalette = props => {
     }
 
     const selectBuilding = buildingType => {
-        props.selectBuilding(buildingType);      
+        props.selectBuilding(buildingType);
     }
 
     const getDonutImage = donut => {
@@ -208,44 +208,40 @@ const BuildingPalette = props => {
         } else if (donut.type === EntityType.DONUT_CREAM_WHITE) {
             return 'cream-donut';
         }
-    } 
+    }
 
     let donutSelection = null;
-    
-    if (player.donuts.length > 0 || player.activeDonuts.length > 0) { 
-        donutSelection = <div className={classes.palette} style={{width: 'fit-content'}}>
-            { player.activeDonuts.length > 0 ? <Fab
+
+    if (player.donuts.length > 0 || player.activeDonuts.length > 0) {
+        donutSelection = <div className={classes.palette} style={{ width: 'fit-content' }}>
+            {player.activeDonuts.length > 0 ? <Fab
                 color="secondary"
                 className={classes.donut}
-                icon={ props.donutHighlighting ? 'donuts-disabled' : 'donuts-enabled' }
-                onClick={() => props.toggleDonutHighlighting() } /> : null
+                icon={props.donutHighlighting ? 'donuts-disabled' : 'donuts-enabled'}
+                onClick={() => props.toggleDonutHighlighting()} /> : null
             }
-            { player.donuts.length > 0 ? <div className={`${classes.preview} ${props.selectedBuilding === player.donuts[0].type ? classes.selected : ''}`}>
-                <div style={{ backgroundImage: `url(/images/${getDonutImage(player.donuts[0])}-icon.svg)` }}  onClick={() => {
+            {player.donuts.length > 0 ? <div className={`${classes.preview} ${props.selectedBuilding === player.donuts[0].type ? classes.selected : ''}`}>
+                <div style={{ backgroundImage: `url(/images/${getDonutImage(player.donuts[0])}-icon.svg)` }} onClick={() => {
                     tapBuilding(player.donuts[0].type);
                     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                     selectBuilding(player.donuts[0].type);
                 }} />
-            </div> : null }
+            </div> : null}
         </div>
     }
 
     let whitelist = props.whitelist;
     if (!props.tutorial) {
-        if ( props.score < 1) {
+        if (props.score < 1) {
             whitelist = [EntityType.FACTORY, EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM];
-        } else if (props.score < 200) {
-            whitelist = [EntityType.FACTORY, EntityType.FACTORY_EXTENSION, EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM];
-        } else if (props.score < 500) {
-            whitelist = [EntityType.FACTORY, EntityType.FACTORY_EXTENSION, EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY, EntityType.XMAS_FACTORY];
-        } else if (props.score < 1000) {
-            whitelist = [EntityType.FACTORY, EntityType.FACTORY_EXTENSION, EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY, EntityType.XMAS_FACTORY, EntityType.FRUIT_CANNON, EntityType.CHOCOLATE_FOUNTAIN];
+        } else {
+            whitelist = [EntityType.FACTORY, EntityType.FACTORY_EXTENSION, EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM, EntityType.SPYING_EASTER_BUNNY, EntityType.XMAS_FACTORY, EntityType.FRUIT_CANNON, EntityType.CHOCOLATE_FOUNTAIN, EntityType.DONUT_FACTORY];
         }
     }
 
     return (
         <div className={classes.container}>
-            { buildingSelectionIsVisible() ? donutSelection : null }
+            {buildingSelectionIsVisible() ? donutSelection : null}
             <div className={classes.palette}>
                 {(() => {
                     if (buildingSelectionIsVisible()) {
@@ -310,4 +306,4 @@ const BuildingPaletteContainer = connect(
     mapDispatchToProps
 )(BuildingPalette);
 
-export { BuildingPaletteContainer as BuildingPalette, useStyles as sharedPaletteStyles } ;
+export { BuildingPaletteContainer as BuildingPalette, useStyles as sharedPaletteStyles };
