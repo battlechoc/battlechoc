@@ -1725,7 +1725,10 @@ module.exports.translationKeys = translationRefKeys;
 
 // Awards begin
 
-const playerGameField = (game, playerIndex) => game.board.fields[game.players[playerIndex].fieldIndex].grid;
+const playerGameField = (game, playerIndex) => (typeof game === 'undefined' || typeof game.board === 'undefined' ||
+    typeof game.players === 'undefined' || typeof game.players[playerIndex] === 'undefined' ||
+    typeof ame.board.fields[game.players[playerIndex].fieldIndex] === 'undefined' ||
+    typeof game.board.fields[game.players[playerIndex].fieldIndex].grid === 'undefined') ? [] : game.board.fields[game.players[playerIndex].fieldIndex].grid;
 
 const ui_awards = [
     {
