@@ -179,7 +179,7 @@ module.exports = {
     "SESSION_REFRESH_FAILED": "マルチプレーヤーセッションの更新に失敗しました。インターネット接続を確認してください。",
     "SETTINGS": "設定",
     "SETTINGS_ATTENTION_TEXT": "注意、上のボタンをもう一度押すと、現在のゲームをあきらめ、対戦相手が勝ちます",
-    "SETTINGS_PLAYER_NAME_INVALID": "ユーザー名が無効です（3-15文字または数字、最初の符号は文字でなければなりません）",
+    "SETTINGS_PLAYER_NAME_INVALID": "ユーザー名が無効です（3-24 文字または数字、最初の符号は文字でなければなりません）",
     "SETTINGS_PLAYER_NAME_IN_USE": "すでに使用中のユーザー名",
     "SETTINGS_QUIT": "ゲームをやめる",
     "SHARE_LINK": "リンクを共有する",
