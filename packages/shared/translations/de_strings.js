@@ -5,7 +5,7 @@ module.exports = {
     "AWARDS_DIAMONDMULTIPLAYERBONUS_SUBTITLE": "Es war ein Multiplayer-Spiel mit mindestens 15 Runden",
     "AWARDS_DIAMONDMULTIPLAYERBONUS_TITLE": "Platin Multiplayer-Bonus",
     "AWARDS_FIRSTCOMEFIRSTSERVED_SUBTITLE": "Erster Spielzug gewählt und den ersten Angriff ausgeführt",
-    "AWARDS_FIRSTCOMEFIRSTSERVED_TITLE": "Wer zuerst kommt, malt zuerst",
+    "AWARDS_FIRSTCOMEFIRSTSERVED_TITLE": "Wer zuerst kommt, mahlt zuerst",
     "AWARDS_FIRST_SUBTITLE": "Du hast die erste Runde gewählt",
     "AWARDS_FIRST_TITLE": "Zuerst!",
     "AWARDS_GOLDENMULTIPLAYERBONUS_SUBTITLE": "Es war ein Multiplayer-Spiel mit mindestens 5 Runden",
