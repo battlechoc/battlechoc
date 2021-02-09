@@ -7,9 +7,11 @@
     "test": "jest tests --coverage"
   },
   "repository": "git@gitlab.com:battlechoc/battlechoc-shared-functions.git",
+  "publishConfig": {
+    "registry": "https://battlechoc.jfrog.io/artifactory/api/npm/battlechoc/"
+  },
   "author": "battlechoc <info@battlechoc.dev>",
   "license": "UNLICENSED",
-  "private": true,
   "dependencies": {
     "uuid": "^3.4.0"
   },

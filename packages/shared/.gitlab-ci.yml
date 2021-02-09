@@ -6,7 +6,25 @@ stages:
 test:
   stage: test
   before_script:
-    - yarn
+    - npm i
   script:
-    - yarn test
+    - npm run test
   coverage: /All\sfiles.*?\s+(\d+.\d+)/
+  artifacts:
+    expire_in: 20 mins
+    paths:
+     - node_modules/
+
+deploy:
+  stage: deployment
+  before_script:
+    - curl -fL https://getcli.jfrog.io | sh
+    - ./jfrog rt config --url=$ARTIFACTORY_URL --user=$ARTIFACTORY_USER --password=$ARTIFACTORY_PASSWORD
+    - ./jfrog rt c show
+  script:
+    - ./jfrog rt npmi $ARTIFACTORY_NPM_REPOSITORY --build-name=gitlabci-npm-artifactory --build-number=$CI_JOB_ID
+    - ./jfrog rt bce gitlabci-npm-artifactory $CI_JOB_ID
+    - ./jfrog rt npmp $ARTIFACTORY_NPM_REPOSITORY --build-name=gitlabci-npm-artifactory --build-number=$CI_JOB_ID
+    - ./jfrog rt bp gitlabci-npm-artifactory $CI_JOB_ID
+  only:
+    - master
