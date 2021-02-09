@@ -21,12 +21,12 @@ deploy:
   before_script:
     - apk add curl
     - curl -fL https://getcli.jfrog.io | sh
-    - ./jfrog rt config --url=$ARTIFACTORY_URL --user=$ARTIFACTORY_USER --password=$ARTIFACTORY_PASSWORD
+    - ./jfrog rt config --url=$ARTIFACTORY_URL --user=$ARTIFACTORY_USER --password=$ARTIFACTORY_PASSWORD --interactive=false
     - ./jfrog rt c show
   script:
-    - ./jfrog rt npmi --build-name=gitlabci-npm-artifactory --build-number=$CI_JOB_ID
+    - ./jfrog rt npmi $ARTIFACTORY_NPM_REPOSITORY --build-name=gitlabci-npm-artifactory --build-number=$CI_JOB_ID
     - ./jfrog rt bce gitlabci-npm-artifactory $CI_JOB_ID
-    - ./jfrog rt npmp --build-name=gitlabci-npm-artifactory --build-number=$CI_JOB_ID
+    - ./jfrog rt npmp $ARTIFACTORY_NPM_REPOSITORY --build-name=gitlabci-npm-artifactory --build-number=$CI_JOB_ID
     - ./jfrog rt bp gitlabci-npm-artifactory $CI_JOB_ID
   only:
     - master
