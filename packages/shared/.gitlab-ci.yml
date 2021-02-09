@@ -2,6 +2,7 @@ image: node:alpine
 
 stages:
  - test
+ - deploy
  
 test:
   stage: test
