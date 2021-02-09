@@ -19,6 +19,7 @@ test:
 deploy:
   stage: deploy
   before_script:
+    - apk add curl
     - curl -fL https://getcli.jfrog.io | sh
     - ./jfrog rt config --url=$ARTIFACTORY_URL --user=$ARTIFACTORY_USER --password=$ARTIFACTORY_PASSWORD
     - ./jfrog rt c show
