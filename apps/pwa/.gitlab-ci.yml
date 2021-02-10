@@ -16,17 +16,20 @@ build:
     CI: "true"
   before_script:
     - export CI_JOB_TIMESTAMP=$(date --utc -Iseconds)
-    - yarn config set cache-folder .yarn
     - apt-get update && apt-get install -y git
     - git clone https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git
-    - yarn install 
+    - npm config set registry $ARTIFACTORY_URL
+    - npm config set email $ARTIFACTORY_EMAIL
+    - npm config set _auth $ARTIFACTORY_CREDENTIALS
+    - npm config set always-auth true
+    - npm install 
   script:
     - sed -i "s/LOCAL_VERSION/$CI_COMMIT_SHORT_SHA/g" src/ui/dialogs/Info.js
     - sed -i "s/LOCAL_DATETIME/$CI_JOB_TIMESTAMP/g" src/ui/dialogs/Info.js
     - sed -i "s/LOCAL_VERSION/$CI_COMMIT_SHORT_SHA/g" src/helper/settings.js
     - sed -i "s/LOCAL_DATETIME/$CI_JOB_TIMESTAMP/g" src/helper/settings.js
     - sed -i "s/NEXT_REVISION/$CI_PIPELINE_ID/g" src/custom-service-worker.js
-    - yarn build
+    - npm run build
   artifacts:
     expire_in: 20 mins
     paths:
@@ -41,11 +44,10 @@ test:
   variables:
     CI: "true"
   before_script: 
-    - yarn config set cache-folder .yarn
-    - yarn global add serve
+    - npm i -g serve
     - nohup serve -s build/ &
   script:
-    - yarn test
+    - npm run test
   artifacts:
     expire_in: 2 days
     when: always
@@ -58,7 +60,7 @@ test:
 deploy:
   stage: deploy
   script:
-    - npm install -g firebase-tools
+    - npm i -g firebase-tools
     - firebase use battlechoc --token $FIREBASE_TOKEN
     - firebase deploy
   only:
