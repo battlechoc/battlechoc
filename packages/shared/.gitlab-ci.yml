@@ -20,8 +20,8 @@ deploy:
   stage: deploy
   script:
     - npm config set registry $ARTIFACTORY_URL
-    - npm config set _auth $ARTIFACTORY_CREDENTIALS
     - npm config set email $ARTIFACTORY_EMAIL
+    - npm config set _auth $ARTIFACTORY_CREDENTIALS
     - npm config set always-auth true
     - npm publish
   only:
