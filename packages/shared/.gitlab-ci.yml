@@ -18,15 +18,11 @@ test:
 
 deploy:
   stage: deploy
-  before_script:
-    - apk add curl
-    - curl -fL https://getcli.jfrog.io | sh
-    - ./jfrog rt config --url=$ARTIFACTORY_URL --user=$ARTIFACTORY_USER --password=$ARTIFACTORY_PASSWORD --interactive=false
-    - ./jfrog rt c show
   script:
-    - ./jfrog rt npmi $ARTIFACTORY_NPM_REPOSITORY --build-name=gitlabci-npm-artifactory --build-number=$CI_JOB_ID
-    - ./jfrog rt bce gitlabci-npm-artifactory $CI_JOB_ID
-    - ./jfrog rt npmp $ARTIFACTORY_NPM_REPOSITORY --build-name=gitlabci-npm-artifactory --build-number=$CI_JOB_ID
-    - ./jfrog rt bp gitlabci-npm-artifactory $CI_JOB_ID
+    - npm config set registry $ARTIFACTORY_URL
+    - npm config set _auth $ARTIFACTORY_CREDENTIALS
+    - npm config set email $ARTIFACTORY_EMAIL
+    - npm config set always-auth true
+    - npm publish
   only:
     - master
