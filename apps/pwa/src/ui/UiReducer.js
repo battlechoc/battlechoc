@@ -1,8 +1,8 @@
-import { createReducer } from 'redux-starter-kit';
+import { createReducer } from '@reduxjs/toolkit';
 import * as UiActions from './UiActions';
 import { EmptyPlayerStats, EntityType } from 'battlechoc-shared-functions';
 import OfflineStore from '../OfflineStore';
-import uuidv4 from 'uuid/v4';
+import { v4 as uuidv4 } from 'uuid';
 
 const uiReducer = createReducer({
     selectedBuilding: EntityType.FACTORY,

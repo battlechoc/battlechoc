@@ -5,8 +5,9 @@
       webpack: function(config, env) {
         config.plugins.push(
           new InjectManifest({
-            swSrc: path.join('src', 'custom-service-worker.js'),
-            swDest: 'service-worker.js'
+            swSrc: path.join(__dirname, 'src', 'custom-service-worker.js'),
+            swDest: 'service-worker.js',
+            maximumFileSizeToCacheInBytes: 20971520
           })
         );
 

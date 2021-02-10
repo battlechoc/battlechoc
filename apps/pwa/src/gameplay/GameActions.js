@@ -1,4 +1,4 @@
-import { createAction } from 'redux-starter-kit';
+import { createAction } from '@reduxjs/toolkit';
 import { GameActionTypes } from 'battlechoc-shared-functions';
 
 const startGame = createAction(GameActionTypes.startGame);

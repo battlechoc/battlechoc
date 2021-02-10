@@ -60,7 +60,7 @@ workbox.core.skipWaiting();
 workbox.core.clientsClaim();
 
 // NEXT REVISION will replaced by $CI_PIPELINE_ID within the GitLab build process
-workbox.precaching.precacheAndRoute((self.__precacheManifest || []).concat([
+workbox.precaching.precacheAndRoute((self.__WB_MANIFEST || []).concat([
     { url: '/', revision: 'NEXT_REVISION' },
     { url: '/index.html?app_runs_as=pwa&app_version=1', revision: 'NEXT_REVISION' },
     { url: '/manifest.json', revision: 'NEXT_REVISION' },

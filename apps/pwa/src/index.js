@@ -11,7 +11,7 @@ import { showQuickMessage, injectMultiplayerSession } from './ui/UiActions';
 import { gameplayLogger } from './gameplay/GamePlayLogger';
 import actionValidator from './gameplay/ActionValidator';
 import multiplayerActionRelay from './gameplay/MultiplayerActionRelay';
-import { configureStore, getDefaultMiddleware } from 'redux-starter-kit';
+import { configureStore, getDefaultMiddleware } from '@reduxjs/toolkit';
 import { ThemeProvider } from 'react-jss';
 
 const store = configureStore({

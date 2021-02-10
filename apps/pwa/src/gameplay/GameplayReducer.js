@@ -1,4 +1,4 @@
-import { createReducer } from 'redux-starter-kit';
+import { createReducer } from '@reduxjs/toolkit';
 import { GameActionTypes, startGameReduction, finishGameReduction, endGameReduction, attackReduction, buildReduction, finishBuildPhaseReduction, finishTurnReduction, chooseStartReduction, resumeGameReduction, joinGameReduction, createGameReduction, chooseFieldReduction } from 'battlechoc-shared-functions';
 import { manipulateGameAction } from './GameActions';
 

@@ -1,4 +1,4 @@
-import { createAction } from 'redux-starter-kit';
+import { createAction } from '@reduxjs/toolkit';
 
 const UiActionTypes = Object.freeze({
     selectBuilding: 'battlechoc/ui/selectBuilding',
