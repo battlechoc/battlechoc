@@ -39,7 +39,7 @@ const Info = props => {
     const [open, setOpen] = useState(props.openInfo);
     // GitLab CI is going to override these variables
     let date = 'LOCAL_DATETIME';
-    let version = 'LOCAL_VERSION';
+    let version = process.env.REACT_APP_VERSION;
 
     if (date.startsWith('LOCAL')) {
         date = new Date().getTime();
@@ -49,10 +49,6 @@ const Info = props => {
 
     TimeAgo.addLocale(en);
     TimeAgo.addLocale(de);
-
-    if (version.startsWith('LOCAL')) {
-        version = 'latest-dev'
-    }
     
     const handleClose = () => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -97,7 +93,7 @@ const Info = props => {
                 open={open}
                 close={handleClose}
                 title="About battlechoc"
-                subtitle={`${version} - ${timeSinceUpdate}`}>
+                subtitle={<div style={{ textAlign: 'center' }}>version {version} <br /> {timeSinceUpdate}</div>}>
                 <div className={classes.text}>
                     <div className={classes.header}>
                         <h2>{t(tr.INFO_IMPRESS)}</h2>
@@ -111,8 +107,8 @@ const Info = props => {
                             {t(tr.INFO_IMPRESS_EXECUTIVE_DIRECTORS)}: Dr. Sebastian Bode & Fabian Bormann
                         </p>
                     </div>
-                    <h2>{t(tr.INFO_PRIVACY_POLICY)}</h2>
-                    <p>{t(tr.INFO_PRIVACY_POLICY_TEXT)}</p>
+                    <h2 style={{ textAlign: 'center' }}>{t(tr.INFO_PRIVACY_POLICY)}</h2>
+                    <p style={{ textAlign: 'justify' }} >{t(tr.INFO_PRIVACY_POLICY_TEXT)}</p>
                 </div>
             </Dialog>
         </>
