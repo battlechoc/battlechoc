@@ -6,16 +6,12 @@ import { NoHealthyInternetConnectionError } from 'battlechoc-shared-functions';
 
 const baseUrl = 'https://europe-west2-battlechoc.cloudfunctions.net/api';
 let date = 'LOCAL_DATETIME';
-let version = 'LOCAL_VERSION';
+let version = process.env.REACT_APP_VERSION;
 
 if (date.startsWith('LOCAL')) {
     date = new Date().getTime();
 } else {
     date = new Date(date).getTime();
-}
-
-if (version.startsWith('LOCAL')) {
-    version = 'latest-dev'
 }
 
 const setAndroidDefaults = async () => {

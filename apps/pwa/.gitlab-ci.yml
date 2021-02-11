@@ -22,9 +22,7 @@ build:
     - npm config set always-auth true
     - npm install
   script:
-    - sed -i "s/LOCAL_VERSION/$CI_COMMIT_SHORT_SHA/g" src/ui/dialogs/Info.js
     - sed -i "s/LOCAL_DATETIME/$CI_JOB_TIMESTAMP/g" src/ui/dialogs/Info.js
-    - sed -i "s/LOCAL_VERSION/$CI_COMMIT_SHORT_SHA/g" src/helper/settings.js
     - sed -i "s/LOCAL_DATETIME/$CI_JOB_TIMESTAMP/g" src/helper/settings.js
     - sed -i "s/NEXT_REVISION/$CI_PIPELINE_ID/g" src/custom-service-worker.js
     - npm run build
