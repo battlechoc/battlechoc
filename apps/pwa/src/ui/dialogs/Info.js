@@ -103,8 +103,8 @@ const Info = props => {
                         <h2>{t(tr.INFO_IMPRESS)}</h2>
                         <p>
                             battlechoc GbR<br />
-                            Triftweg 5<br />
-                            38550 Isenbüttel<br />
+                            Ludwig-Jahn-Str. 15<br />
+                            38551 Ribbesbüttel<br />
                             {t(tr.INFO_IMPRESS_COUNTRY)}<br /><br />
                             E-mail: info@battlechoc.com<br />
                             {t(tr.INFO_IMPRESS_PHONE)}: + 49 151 65486876<br /><br />

@@ -7,7 +7,7 @@ import { GameActionTypes, AttackType, EmptyPlayerStats, NotificationReasonType, 
 import { Jukebox } from './ui/misc';
 import { ServerRequest, generateNewAndroidMessagingToken, setAndroidDefaults } from './helper/settings';
 import logger from './helper/logger';
-import uuidv4 from 'uuid/v4';
+import { v4 as uuidv4 } from 'uuid';
 
 let signinOnAppStart = true;
 class Multiplayer {

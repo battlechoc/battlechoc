@@ -17,7 +17,7 @@ import BuildFactoryTestSituation from './situations/tests/BuildFactoryTest';
 import FactoryExtensionTest from './situations/tests/FactoryExtensionTest';
 import FirstGame from './situations/FirstGame';
 import Hud from './ui/Hud';
-import uuidv4 from 'uuid/v4';
+import { v4 as uuidv4 } from 'uuid';
 import Tutorial from './tutorial/Tutorial';
 import QuickMessage from './ui/dialogs/QuickMessage';
 import logger from './helper/logger';

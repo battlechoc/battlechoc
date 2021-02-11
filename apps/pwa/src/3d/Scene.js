@@ -10,7 +10,7 @@ import { Scene as BabylonScene, DynamicTexture, Mesh, StandardMaterial, Directio
 import { AssetLoadingViewContainer as AssetLoadingView } from '../AssetLoader';
 import 'babylonjs-loaders';
 import logger from '../helper/logger';
-import uuidv4 from 'uuid/v4';
+import { v4 as uuidv4 } from 'uuid';
 import { withTheme } from 'react-jss';
 
 class Scene extends Component {

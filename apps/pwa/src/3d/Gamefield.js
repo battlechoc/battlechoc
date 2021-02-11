@@ -1,6 +1,6 @@
 import { EntityType, isDonut } from 'battlechoc-shared-functions';
 import { Mesh, ParticleSystem, Vector3, Color4, ActionManager, ExecuteCodeAction, SolidParticleSystem, Texture } from 'babylonjs';
-import uuidv4 from 'uuid/v4';
+import { v4 as uuidv4 } from 'uuid';
 
 class Gamefield {
     constructor(isPlayerGameField, position, getPlayerField, fieldIdx, size, scene, action, setRenderLoop) {
