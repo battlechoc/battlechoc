@@ -28,9 +28,8 @@ export default class FirstGame extends Situation {
 
         game.players[0].cacaoPerTurn = 2 * getEntityDescriptor(EntityType.CACAOTREE, game.players[0].level).cacaoPerTurn;
 
-
         this.game.ui.selectedBuilding = EntityType.CACAOTREE;
-        this.game.ui.tapBuilding = EntityType.CACAOTREE;
+        this.game.ui.tappedBuilding = EntityType.CACAOTREE; 
         
         game.players[1].level = EmptyPlayerStats.level;
         game.players[1].cacao = 50;
