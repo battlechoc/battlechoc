@@ -1,6 +1,6 @@
 {
   "name": "battlechoc-shared-functions",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "battlechoc definitions and functions used in server and pwa",
   "main": "index.js",
   "scripts": {
