@@ -150,7 +150,8 @@ const EmptyPlayerStats = Object.freeze({
 
 const finalLevel = 20;
 const calculateDivisor = (start, end) => (finalLevel * Math.log2(2)) / Math.log2((end - finalLevel) / start);
-const growFunction = (level, start, end) => Math.round(level + start * Math.pow(2, level / calculateDivisor(start, end)));
+const linearGrowFunction = ((end - start) / (finalLevel - 1)) * level + start
+const exponentialGrowFunction = (level, start, end) => Math.round(level + start * Math.pow(2, level / calculateDivisor(start, end)));
 
 const EntityDescriptors = Object.freeze(new Map([
     [EntityType.CREAM, () => ({
@@ -160,120 +161,104 @@ const EntityDescriptors = Object.freeze(new Map([
         costs: 10
     })],
     [EntityType.FACTORY, level => ({
-        hp: growFunction(level, 48, 1204),
-        cacaoPerTurn: growFunction(level, 15, 490),
+        hp: linearGrowFunction(level, 11, 52),
+        cacaoPerTurn: linearGrowFunction(level, 15, 35),
         buildingsPerTurn: (() => {
-            if (level > 19) {
-                return 5;
-            } else if (level > 14) {
+            if (level > 14) {
                 return 4;
-            } else if (level > 9) {
+            } else if (level > 6) {
                 return 3;
-            } else if (level > 4) {
-                return 2;
             } else {
-                return 1;
+                return 2;
             }
         })(),
         costs: 0,
-        coins: growFunction(level, 102, 53201)
+        coins: exponentialGrowFunction(level, 102, 13002)
     })],
     [EntityType.FACTORY_EXTENSION, level => ({
-        hp: growFunction(level, 48, 1204),
+        hp: linearGrowFunction(level, 11, 52),
         buildingsPerTurn: (() => {
-            if (level > 19) {
-                return 5;
-            } else if (level > 14) {
+            if (level > 14) {
                 return 4;
-            } else if (level > 9) {
+            } else if (level > 6) {
                 return 3;
-            } else if (level > 4) {
-                return 2;
             } else {
-                return 1;
+                return 2;
             }
         })(),
-        costs: growFunction(level, 120, 2300),
-        coins: growFunction(level, 71, 36201)
+        costs: 120,
+        coins: exponentialGrowFunction(level, 71, 12201)
     })],
     [EntityType.CACAOTREE, level => ({
-        hp: growFunction(level, 12, 502),
-        cacaoPerTurn: growFunction(level, 30, 980),
-        costs: growFunction(level, 20, 306),
-        coins: growFunction(level, 24, 12404)
+        hp: linearGrowFunction(level, 5, 19),
+        cacaoPerTurn: linearGrowFunction(level, 30, 52),
+        costs: 20,
+        coins: exponentialGrowFunction(level, 24, 8650)
     })],
     [EntityType.RUM_TRUFFLE_CANNON, level => ({
-        hp: growFunction(level, 33, 840),
-        attack: growFunction(level, 27, 926),
-        costs: growFunction(level, 40, 1012),
-        coins: growFunction(level, 55, 27043),
+        hp: linearGrowFunction(level, 12, 42),
+        attack: linearGrowFunction(level, 9, 53),
+        costs: 40,
+        coins: exponentialGrowFunction(level, 55, 11203),
         attackType: AttackType.TRUFFLE,
         attacksPerTurn: 1
     })],
     [EntityType.FRUIT_CANNON, level => ({
-        hp: growFunction(level, 33, 560),
-        attack: growFunction(level, 27, 1486),
-        costs: growFunction(level, 40, 755),
-        coins: growFunction(level, 55, 27043),
+        hp: linearGrowFunction(level, 12, 42),
+        attack: linearGrowFunction(level, 9, 53),
+        costs: 40,
+        coins: exponentialGrowFunction(level, 55, 11203),
         attackType: AttackType.FRUIT,
         attacksPerTurn: 1
     })],
     [EntityType.SPYING_EASTER_BUNNY, level => ({
-        hp: growFunction(level, 46, 2198),
+        hp: linearGrowFunction(level, 7, 23),
         area: 3,
-        costs: growFunction(level, 120, 3604),
-        coins: growFunction(level, 43, 19024),
+        costs: 120,
+        coins: exponentialGrowFunction(level, 43, 9120),
         attackType: AttackType.BUNNY,
         attacksPerTurn: 1
     })],
     [EntityType.XMAS_FACTORY, level => ({
-        hp: growFunction(level, 46, 5012),
+        hp: linearGrowFunction(level, 11, 45),
         area: 3,
-        costs: growFunction(level, 80, 2663),
-        coins: growFunction(level, 32, 16950)
+        costs: 80,
+        coins: exponentialGrowFunction(level, 32, 8267)
     })],
     [EntityType.HOT_CHOCOLATE_BALLISTA, level => ({
-        hp: growFunction(level, 124, 4320),
+        hp: linearGrowFunction(level, 8, 46),
         costs: 0,
-        coins: growFunction(level, 68, 32244),
+        coins: exponentialGrowFunction(level, 68, 10020),
         attackType: AttackType.HOT_CHOCOLATE,
         attacksPerTurn: 1
     })],
     [EntityType.CHOCOLATE_FOUNTAIN, level => ({
-        hp: growFunction(level, 230, 32012),
-        costs: growFunction(level, 120, 3306),
-        coins: growFunction(level, 46, 20244)
+        hp: linearGrowFunction(level, 18, 78),
+        costs: 120,
+        coins: exponentialGrowFunction(level, 46, 8402)
     })],
     [EntityType.DONUT_FACTORY, level => ({
-        hp: growFunction(level, 32, 4201),
+        hp: linearGrowFunction(level, 8, 31),
         donutProbability: (() => {
-            if (level > 19) {
-                return 0.9;
-            } else if (level > 14) {
-                return 0.7;
-            } else if (level > 9) {
-                return 0.5;
-            } else if (level > 4) {
-                return 0.4;
+            if (level > 14) {
+                return 0.999;
+            } else if (level > 6) {
+                return 0.75;
             } else {
-                return 0.3;
+                return 0.666;
             }
         })(),
         donutTypes: (() => {
-            if (level > 19) {
+            if (level > 16) {
                 return 5;
-            } else if (level > 14) {
+            } else if (level > 12) {
                 return 4;
-            } else if (level > 9) {
-                return 3;
-            } else if (level > 4) {
-                return 2;
             } else {
-                return 1;
+                return 3;
             }
         })(),
-        costs: growFunction(level, 240, 7208),
-        coins: growFunction(level, 44, 20100)
+        costs: 240,
+        coins: exponentialGrowFunction(level, 44, 10050)
     })]
 ]));
 
