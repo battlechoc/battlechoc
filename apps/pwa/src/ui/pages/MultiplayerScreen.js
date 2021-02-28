@@ -471,7 +471,7 @@ const MultiplayerScreen = props => {
                         const info = row.myTurn ? t(tr.MULTIPLAYER_AUTOMATICALLY_LOSE, hours, minutes) : t(tr.MULTIPLAYER_AUTOMATICALLY_WIN, hours, minutes);
                         return (<div className={classes.session} key={i}>
                             <div className={classes.header} />
-                            <h2 className={classes.title}>{`${t(tr.YOU)} vs ${row.opponent.name}`}</h2>
+                            <h2 className={classes.title}>{`${t(tr.YOU)} vs. ${row.opponent.name}`}</h2>
                             <div className={classes.buttons}>
                                 {row.myTurn ?
                                     <Button className={classes.button} onClick={() => enterMultiplayerGame(row.id)}>{t(tr.PLAY)}</Button> :
