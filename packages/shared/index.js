@@ -150,7 +150,7 @@ const EmptyPlayerStats = Object.freeze({
 
 const finalLevel = 20;
 const calculateDivisor = (start, end) => (finalLevel * Math.log2(2)) / Math.log2((end - finalLevel) / start);
-const linearGrowFunction = (level, start, end) => ((end - start) / (finalLevel - 1)) * level + start
+const linearGrowFunction = (level, start, end) => Math.round(((end - start) / (finalLevel - 1)) * level + start);
 const exponentialGrowFunction = (level, start, end) => Math.round(level + start * Math.pow(2, level / calculateDivisor(start, end)));
 
 const EntityDescriptors = Object.freeze(new Map([
