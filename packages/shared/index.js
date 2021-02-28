@@ -226,7 +226,7 @@ const EntityDescriptors = Object.freeze(new Map([
         coins: exponentialGrowFunction(level, 32, 8267)
     })],
     [EntityType.HOT_CHOCOLATE_BALLISTA, level => ({
-        hp: linearGrowFunction(level, 8, 46),
+        hp: linearGrowFunction(level, 11, 46),
         costs: 0,
         coins: exponentialGrowFunction(level, 68, 10020),
         attackType: AttackType.HOT_CHOCOLATE,
@@ -861,7 +861,6 @@ const attackReduction = (state, action) => {
             attackedCell.occupiedBy = attackedCell.occupiedBy.filter(entity => entity.type !== EntityType.DONUT_SURPRISE_YELLOW);
             otherPlayer(state.game).activeDonuts = otherPlayer(state.game).activeDonuts.filter(donut => donut.id !== yellowDonut.id);
             let donutType = Math.round(Math.random() * 4)
-
             if (donutType === 0) {
                 prepareBuildPhase(state);
             } else if (donutType === 1) {

@@ -166,9 +166,14 @@ test('should test the yellow donut', () => {
         }
     }
 
+    console.log(event);
+    console.log(gameplay.game.board.fields[1].grid[position.row * gameplay.game.board.size.cols + position.col]);
+
     expect(Rules.isActionValid(game, event)).toBe(true);
     setRandomSeed(42);
     attackReduction(gameplay, event);
+
+    console.log(gameplay.game.board.fields[1].grid[position.row * gameplay.game.board.size.cols + position.col]);
 
     let field = gameplay.game.board.fields[1].grid[position.row * gameplay.game.board.size.cols + position.col];
     expect(field.occupiedBy.map(entity => entity.type)).toContain(EntityType.HOT_CHOCOLATE_BALLISTA);
