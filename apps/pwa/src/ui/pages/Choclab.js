@@ -319,7 +319,7 @@ const useStyles = createUseStyles(theme => ({
     },
     actions: {
         display: 'flex',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-end',
         [theme.breakpoints.orientation.portrait]: {
             marginTop: '-3vh',
             '@media screen and (min-height: 560px)': {
@@ -426,10 +426,10 @@ const Choclab = props => {
         downgradedEntity = getEntityDescriptor(entityType, level);
     }
 
-    let updateLevel = (entityType, upgrade=true) => {
+    let updateLevel = (entityType) => {
         if (!updateRunning) {
             setUpdateRunning(true);
-            ServerRequest('post', '/update/level', { entityType: entityType, upgrade: upgrade })
+            ServerRequest('post', '/update/level', { entityType: entityType, upgrade: true })
             .then(response => {
                 props.updateLevel(response.data.level).then(() => {
                     props.updatePlayerStats({ 'coins': response.data.coins });
@@ -441,7 +441,7 @@ const Choclab = props => {
             })
             .catch(error => {
                 logger.warn(error);
-                props.showQuickMessage({ text: t(tr.UPDATE_LEVEL_FAILED, upgrade) });
+                props.showQuickMessage({ text: t(tr.UPDATE_LEVEL_FAILED, true) });
             })
             .finally(() => setUpdateRunning(false));
         }
@@ -476,17 +476,6 @@ const Choclab = props => {
                             </div>
 
                             <div className={classes.actions}>
-                                <Button className={classes.button} color="accent" disabled={!downgradePossible || updateRunning } onClick={() => {
-                                    if (downgradePossible) {
-                                        updateLevel(entityType, false)
-                                    }
-                                }}><div className={classes.costs}>
-                                    <span style={{ WebkitTextStroke: `1px ${theme.color.accent.dark}`, }}>{t(tr.CHOCLAB_DOWNGRADE)}</span>
-                                    { downgradePossible ? <div>
-                                        <span style={{ WebkitTextStroke: `1px ${theme.color.accent.dark}`, }}>-{ Math.round(downgradedEntity.coins * 0.666) }</span>
-                                        <div />
-                                    </div> : null }
-                                </div></Button>
                                 { upgradePossible ? 
                                 <Button className={classes.button} disabled={!upgradePossible || updateRunning || props.playerInfos.stats.coins < currentEntity.coins} onClick={() => {
                                         if (upgradePossible && !updateRunning && props.playerInfos.stats.coins >= currentEntity.coins) {
@@ -527,12 +516,6 @@ const Choclab = props => {
                         { ![EntityType.FACTORY, EntityType.HOT_CHOCOLATE_BALLISTA].includes(entityType) ? <div className={classes.container}>
                                 <span>{ currentEntity.costs }</span>
                                 <div className={classes.cacao} />
-                                { upgradePossible ? <>
-                                    <span style={{ width: '20%' }} />
-                                    <span className={classes.levelup} />
-                                    <span>{ upgradedEntity.costs }</span>
-                                    <div className={classes.cacao} />
-                                </> : null }
                         </div> : null }
                     </div>
                 </div>

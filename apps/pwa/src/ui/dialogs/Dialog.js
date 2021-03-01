@@ -207,7 +207,7 @@ Dialog.propTypes = {
     icon: PropTypes.string,
     titleSlotBefore: PropTypes.element,
     titleSlotAfter: PropTypes.element,
-    subtitle: PropTypes.string,
+    subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
     mode: PropTypes.oneOf(['default', 'stacked', 'notification', 'info']),
     autoscale: PropTypes.bool
 }
