@@ -15,7 +15,7 @@
     "@google-cloud/functions": "^1.1.2",
     "@google-cloud/secret-manager": "^3.4.0",
     "axios": "^0.21.1",
-    "battlechoc-shared-functions": "https://chocnonymous:R1kARoNw7xmF8eAvuk6s@gitlab.com/battlechoc/battlechoc-shared-functions.git",
+    "battlechoc-shared-functions": "^2.0.1",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
