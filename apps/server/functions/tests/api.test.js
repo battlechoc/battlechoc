@@ -104,7 +104,7 @@ it('should update tutorial skipped', async done => {
 });
 
 it('should update tutorial finished', async done => {
-    const playerBeforeFinish = (await dbPool.query("SELECT * FROM players WHERE id='1337-1337-1337-1337'")).rows[0];
+    const playerBeforeFinish = (await (await dbPool()).query("SELECT * FROM players WHERE id='1337-1337-1337-1337'")).rows[0];
     const coinsBeforeFinish = playerBeforeFinish.coins;
     const scoreBeforeFinish = playerBeforeFinish.score;
 
@@ -230,7 +230,7 @@ it('should choose a field', async done => {
 });
 
 it('should not surrender the game because too few coins', async done => {
-    await dbPool.query("UPDATE players SET coins = 19 WHERE name='Basti'")
+    await (await dbPool()).query("UPDATE players SET coins = 19 WHERE name='Basti'")
 
     let response = await request(app).get('/multiplayer/sessions');
     const multiplayerSessionId = response.body.sessions[0].id;
@@ -250,7 +250,7 @@ it('should not surrender the game because too few coins', async done => {
 });
 
 it('should surrender the game', async done => {
-    await dbPool.query("UPDATE players SET coins = 20 WHERE name='Basti'")
+    await (await dbPool()).query("UPDATE players SET coins = 20 WHERE name='Basti'")
 
     let response = await request(app).get('/multiplayer/sessions');
     const multiplayerSessionId = response.body.sessions[0].id;
@@ -270,15 +270,15 @@ it('should surrender the game', async done => {
 });
 
 it('should not upgrade the tree', async done => {
-    await dbPool.query("UPDATE players SET coins = 10 WHERE name='Basti'")
+    await (await dbPool()).query("UPDATE players SET coins = 10 WHERE name='Basti'")
 
-    let player = (await dbPool.query("SELECT * FROM players WHERE name='Basti'")).rows[0];
+    let player = (await (await dbPool()).query("SELECT * FROM players WHERE name='Basti'")).rows[0];
     expect(player.level[EntityType.CACAOTREE]).toBe(0);
 
     let response = await request(app).post('/update/level').send({ entityType: EntityType.CACAOTREE, upgrade: true });
     expect(response.status).toBe(400);
 
-    player = (await dbPool.query("SELECT * FROM players WHERE name='Basti'")).rows[0];
+    player = (await (await dbPool()).query("SELECT * FROM players WHERE name='Basti'")).rows[0];
     expect(player.level[EntityType.CACAOTREE]).toBe(0);
     expect(player.coins).toBe(10);
 
@@ -286,22 +286,22 @@ it('should not upgrade the tree', async done => {
 });
 
 it('should upgrade the tree', async done => {
-    await dbPool.query("UPDATE players SET coins = 200 WHERE name='Basti'")
+    await (await dbPool()).query("UPDATE players SET coins = 200 WHERE name='Basti'")
 
-    let player = (await dbPool.query("SELECT * FROM players WHERE name='Basti'")).rows[0];
+    let player = (await (await dbPool()).query("SELECT * FROM players WHERE name='Basti'")).rows[0];
     expect(player.level[EntityType.CACAOTREE]).toBe(0);
 
     let response = await request(app).post('/update/level').send({ entityType: EntityType.CACAOTREE, upgrade: true });
     expect(response.status).toBe(200);
 
-    player = (await dbPool.query("SELECT * FROM players WHERE name='Basti'")).rows[0];
+    player = (await (await dbPool()).query("SELECT * FROM players WHERE name='Basti'")).rows[0];
     expect(player.level[EntityType.CACAOTREE]).toBe(1);
     expect(player.coins).toBeLessThan(200);
 
     response = await request(app).post('/update/level').send({ entityType: EntityType.CACAOTREE, upgrade: false });
     expect(response.status).toBe(200);
 
-    player = (await dbPool.query("SELECT * FROM players WHERE name='Basti'")).rows[0];
+    player = (await (await dbPool()).query("SELECT * FROM players WHERE name='Basti'")).rows[0];
     expect(player.level[EntityType.CACAOTREE]).toBe(0);
 
     done();
@@ -399,4 +399,4 @@ it('should not change to invalid language', async done => {
     done();
 });
 
-afterAll(async () => await dbPool.end());
+afterAll(async () => await (await dbPool()).end());
