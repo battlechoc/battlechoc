@@ -1,5 +1,5 @@
 const request = require('supertest');
-const uuidv4 = require('uuid/v4');
+const { v4: uuidv4 } = require('uuid');
 const app = require('../main').app;
 const dbPool = require('../main').dbPool;
 const helper = require('./helper');
