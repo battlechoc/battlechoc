@@ -36,6 +36,10 @@ deploy:
   stage: deploy
   script:
     - apk add --update nodejs npm
+    - npm config set registry $ARTIFACTORY_URL
+    - npm config set email $ARTIFACTORY_EMAIL
+    - npm config set _auth $ARTIFACTORY_CREDENTIALS
+    - npm config set always-auth true
     - npm install -g firebase-tools
     - cd functions && firebase functions:delete -f --token "1/EiwBklB7W-Cdt5XSy5omXsxSI-KfKai36k4FuNOJEng" api && firebase deploy --only functions:api --token "1/EiwBklB7W-Cdt5XSy5omXsxSI-KfKai36k4FuNOJEng"
   only:
