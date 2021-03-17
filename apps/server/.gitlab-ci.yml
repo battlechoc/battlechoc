@@ -13,7 +13,7 @@ test:
     - docker run --name battlechoc-test-postgres --net=host -e POSTGRES_PASSWORD=hackersdontcare -d postgres
     - apk update && apk upgrade && apk add --no-cache bash git openssh
     - apk add --update nodejs npm
-    - npm config set registry $ARTIFACTORY_URL
+    - npm config set @battlechoc-shared-functions:registry $ARTIFACTORY_URL
     - npm config set email $ARTIFACTORY_EMAIL
     - npm config set _auth $ARTIFACTORY_CREDENTIALS
     - npm config set always-auth true
