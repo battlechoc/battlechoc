@@ -11,7 +11,7 @@ service cloud.firestore {
       allow read: if true;
     }
 
-    match /multiplayerGameSessions/{session} {
+    match /multiplayerSessions/{session} {
     	allow create: if true;
       allow update: if true;
       allow read: if true;
@@ -23,6 +23,24 @@ service cloud.firestore {
       allow read: if true;
     }
     
+    match /trackRecords/{player} {
+    	allow create: if true;
+      allow update: if true;
+      allow read: if true;
+    }
+
+    match /permissions/{player} {
+    	allow create: if true;
+      allow update: if true;
+      allow read: if true;
+    }
+
+    match /errorReports/{report} {
+    	allow create: if true;
+      allow update: if true;
+      allow read: if true;
+    }
+
     match /status/{status} {
     	allow read, write: if true;
     }
