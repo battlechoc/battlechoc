@@ -398,7 +398,7 @@ app.get('/user/friends', async (req, res) => {
     const playerObject = await db.collection('players').doc(req.user.uid).get();
     if (playerObject) {
       const friends = [];
-      await db.collection('players').where(firebase.firestore.FieldPath.documentId(), 'in', playerObject.data().friends).get().forEach(async friendDoc => {
+      await db.collection('players').where(admin.firestore.FieldPath.documentId(), 'in', playerObject.data().friends).get().forEach(async friendDoc => {
         friends.push(await createPlayerInfoObject(friendDoc));
       });
     }
