@@ -37,6 +37,7 @@ const getDefaultLanguage = require('battlechoc-shared-functions').getDefaultLang
 const translationKeys = require('battlechoc-shared-functions').translationKeys;
 const computeAwards = require('battlechoc-shared-functions').computeAwards;
 const parseConnectionString = require('pg-connection-string').parse;
+const { TOOLTIP_ATTACK_PHASE_TITLE_BY_ATTACK_TYPE_FRUIT } = require('battlechoc-shared-functions/translations/en_strings');
 
 initDatabaseConnection = async () => {
   if (process.env.NODE_ENV === 'development') {
@@ -183,68 +184,11 @@ class Reducer {
   }
 }
 
-app.post('/debugging/gamestate', async (req, res) => {
-  let report = req.body.report;
-  if (typeof report === 'undefined' || typeof report.reported === 'undefined') {
-    console.warn("Invalid report element given.", report);
-    return res.status(403).json({ error: 'Invalid or malformed argument.' });
-  } else {
-    try {
-      const insertStatement = 'INSERT INTO reports(message, player, date, gamestate, deviceinformation) VALUES ($1, $2, $3, $4, $5) RETURNING id';
-      queryResult = await (await dbPool()).query(insertStatement, [report.message, report.player, new Date(report.reported), report.gamestate, report.deviceInformation]);
-      if (queryResult.rows.length === 1 && typeof queryResult.rows[0].id !== 'undefined') {
-        console.log("Error report inserted with id " + queryResult.rows[0].id);
-        if (typeof report.logs !== 'undefined') {
-          if (typeof report.logs.errors !== 'undefined' && report.logs.errors.length > 0) {
-            let content = '';
-            let time;
-            report.logs.errors.forEach(async entry => {
-              content = content + (new Date(entry.time)).toString() + ': ' + entry.message + '\n';
-              time = entry.time;
-            });
-            const insertLogStatement = 'INSERT INTO report_logs(message, date, level, report_id) VALUES ($1, $2, $3, $4)';
-            await (await dbPool()).query(insertLogStatement, [content, new Date(time), 'error', queryResult.rows[0].id]);
-          }
-
-          if (typeof report.logs.warnings !== 'undefined' && report.logs.warnings.length > 0) {
-            let content = '';
-            let time;
-            report.logs.warnings.forEach(async entry => {
-              content = content + (new Date(entry.time)).toString() + ': ' + entry.message + '\n';
-              time = entry.time;
-            });
-            const insertLogStatement = 'INSERT INTO report_logs(message, date, level, report_id) VALUES ($1, $2, $3, $4)';
-            await (await dbPool()).query(insertLogStatement, [content, new Date(time), 'warning', queryResult.rows[0].id]);
-          }
-
-          if (typeof report.logs.infos !== 'undefined' && report.logs.infos.length > 0) {
-            let content = '';
-            let time;
-            report.logs.infos.forEach(async entry => {
-              content = content + (new Date(entry.time)).toString() + ': ' + entry.message + '\n';
-              time = entry.time;
-            });
-            const insertLogStatement = 'INSERT INTO report_logs(message, date, level, report_id) VALUES ($1, $2, $3, $4)';
-            await (await dbPool()).query(insertLogStatement, [content, new Date(time), 'info', queryResult.rows[0].id]);
-          }
-        }
-        res.json({ result: 'error report inserted with id ' + queryResult.rows[0].id });
-      } else {
-        console.error("Could not insert error report from client because no id of new db row returned from insert query.");
-        return res.status(500).json({ error: 'Could not persist error report.' });
-      }
-    } catch (err) {
-      console.error("Could not insert error report from client.", err);
-      return res.status(500).json({ error: 'Could not persist error report.' });
-    }
-  }
-});
-
 const getPlayerMessagingPermissionTokens = async (userId) => {
   const tokens = [];
   try {
-    const tokenQueryResult = await (await dbPool()).query("SELECT token FROM permissions WHERE player = $1", [userId]);
-    for (const permission of tokenQueryResult.rows) {
+    playerPermissions = await db.collection('permissions').doc(userId).get();
+    for (const permission of playerPermissions.data().permissions) {
       if (typeof permission.token !== 'undefined') {
         tokens.push(permission);
       }
@@ -256,11 +200,24 @@ const getPlayerMessagingPermissionTokens = async (userId) => {
 }
 
 const getPlayerFromId = async (userId) => {
-  return await (await dbPool()).query("SELECT * FROM players WHERE id = $1", [userId]);
+  const result = await db.collection('players').doc(userId).get();
+  if (result.exists) {
+    return result.data();
+  } else {
+    return undefined;
+  }
 }
 
 const getPlayerFromName = async (name) => {
-  return await (await dbPool()).query("SELECT * FROM players WHERE name = $1", [name]);
+  const result = await db.collection('players').where('name', '==', name).get();
+  if (result.empty) {
+    return undefined;
+  } else {
+    for (let player of result.docs) {
+      return player.data();
+    }
+    return undefined;
+  }
 }
 
 const calculateCoinsFromTrackRecord = (trackRecord) => {
@@ -298,48 +255,45 @@ const computePlayerLevel = (player) => {
   return Object.values(player.level).reduce((level, current) => level + current, 0);
 }
 
-const computeTrackRecordStats = async (player) => {
-  let stats = {
-    losses: 0,
-    winnings: 0,
-    drawn: 0
-  };
+const computeTrackRecordStatsFromId = async (playerId) => {
+  const stats = { losses: 0, winnings: 0, drawn: 0 };
   try {
-    const wonResults = await (await dbPool()).query("SELECT COUNT(id) from track_records WHERE player = $1 AND result = 'won'", [player.id]);
-    if (wonResults.rows.length > 0) {
-      stats.winnings = wonResults.rows[0].count;
+    const trackRecord = await db.collection('trackRecords').doc(playerId).get();
+    if (trackRecord.exists) {
+      for (record of trackRecord.data().records) {
+        if (record.result == 'won') {
+          stats.winnings = stats.winnings + 1;
+        } else if (record.result == 'lost') {
+          stats.losses = stats.losses + 1;
+        } else if (record.result == 'drawn') {
+          stats.drawn = stats.drawn + 1;
+        }
+      }
     }
-    const lostResults = await (await dbPool()).query("SELECT COUNT(id) from track_records WHERE player = $1 AND result = 'lost'", [player.id]);
-    if (lostResults.rows.length > 0) {
-      stats.losses = lostResults.rows[0].count;
-    }
-    const drawResults = await (await dbPool()).query("SELECT COUNT(id) from track_records WHERE player = $1 AND result = 'draw'", [player.id]);
-    if (drawResults.rows.length > 0) {
-      stats.drawn = drawResults.rows[0].count;
-    }
-    return stats;
+  } catch (err) {
+    console.warn('Could not determine player track record stats.', err);
+  }
+  return stats;
+}
+
+const computeRankFromScore = async (score) => {
+  try {
+    const ranks = await db.collection('players').where('score', '>', score).get();
+    const ranksAnonymous = await db.collection('players').where('score', '>', score).where('name', '==', 'Chocnonymous').get();
+    return ranks.size - ranksAnonymous.size + 1;
   } catch (err) {
     console.warn('Could not determine player track record stats.', err);
   }
 }
 
-const computePlayerRanking = async (player) => {
-  try {
-    const queryResults = await (await dbPool()).query(`SELECT COUNT(id) FROM players WHERE name != 'Chocnonymous' AND score > ${player.score}`);
-    return Number(queryResults.rows[0].count) + 1;
-  } catch (err) {
-    console.warn('Could not determine player track record stats.', err);
-  }
-}
-
-const getListOfTrackRecordIds = async (userId) => {
+const getListOfTrackRecordIds = async (playerId) => {
   let existingTrackRecordIds = [];
   try {
-    const queryResult = await (await dbPool()).query("SELECT id FROM track_records WHERE player = $1", [userId]);
-    if (queryResult.rows.count > 0) {
-      queryResult.rows.forEach(row => {
-        existingTrackRecordIds.push(row.id);
-      });
+    const trackRecord = await db.collection('trackRecords').doc(playerId).get();
+    if (trackRecord.exists) {
+      for (record of trackRecord.data().records) {
+        existingTrackRecordIds.push(record.recordId);
+      }
     }
   } catch (err) {
     console.warn('Could not retrieve list of already existing track records for ' + userId);
@@ -348,108 +302,134 @@ const getListOfTrackRecordIds = async (userId) => {
   return existingTrackRecordIds;
 }
 
-const trackRecordObjectFromRecord = async (playerRecord) => {
-  let trackRecord = [];
+const createTrackRecordObjectFromPlayerId = async (playerId) => {
+  const trackRecords = [];
   try {
-    const results = await (await dbPool()).query("SELECT * from track_records WHERE player = $1", [playerRecord.id]);
-    results.rows.forEach(trackRecordRow => {
-      let gameStats = {};
-      gameStats.attacks = trackRecordRow.entities_destroyed;
-      gameStats.builtEntities = trackRecordRow.entities_built;
-      gameStats.espionages = trackRecordRow.entities_revealed;
-      gameStats.moltenFields = trackRecordRow.entities_molten;
-      gameStats.awards = trackRecordRow.awards;
-      gameStats.lost = trackRecordRow.result === 'lost';
-      gameStats.won = trackRecordRow.result === 'won';
-      gameStats.winners = [];
-      if (trackRecordRow.result !== 'open' && typeof trackRecordRow.winner !== 'undefined') {
-        const winnerType = (trackRecordRow.winner_type === 'npc') ? 'PlayerType.AUGUSTUS_GLOOP' : 'PlayerType.HUMAN';
-        gameStats.winners.push({ id: trackRecordRow.winner, type: winnerType });
+    const trackRecord = await db.collection('trackRecords').doc(playerId).get();
+    if (trackRecord.exists) {
+      for (record of trackRecord.data().records) {
+        trackRecords.push({
+          attacks: record.stats.entitiesDestroyed,
+          builtEntities: record.stats.entitiesBuilt,
+          espionages: record.stats.entitiesRevealed,
+          moltenFields: record.stats.entitiesMolten,
+          awards: record.awards,
+          lost: record.result === 'lost',
+          won: record.result === 'won',
+          winners: (record.result !== 'open' && typeof record.winner !== 'undefined') ?
+            [{ id: record.winner, type: (record.winner_type === 'npc') ? 'PlayerType.AUGUSTUS_GLOOP' : 'PlayerType.HUMAN' }] :
+            []
+        });
       }
-      trackRecord.push(gameStats);
-    });
+    }
   } catch (err) {
-    console.error('Cannot create trackRecord json from db record.', err);
+    console.error('Cannot create trackRecord json from firestore objects.', err);
   }
-  return trackRecord;
+  return trackRecords;
 }
 
-const createPlayerStatsObject = async (playerRecord, withId = false, withTrackRecord = false) => {
+const createPlayerStatsObject = async (playerDoc, withId = false, withTrackRecord = false) => {
   try {
-    let player = {};
-
+    const player = {};
     if (withId === true) {
-      player.id = playerRecord.id;
+      player.id = playerDoc.id;
     }
     if (withTrackRecord === true) {
-      player.trackRecord = await trackRecordObjectFromRecord(playerRecord);
+      player.trackRecord = await createTrackRecordObjectFromPlayerId(playerDoc.id);
     }
-    const trackStats = await computeTrackRecordStats(playerRecord);
+    const playerData = player.data();
+    const trackStats = await computeTrackRecordStatsFromId(playerDoc.id);
     player.losses = trackStats.losses;
     player.winnings = trackStats.winnings;
     player.drawn = trackStats.drawn;
-    player.username = playerRecord.name;
-    player.coins = playerRecord.coins;
-    player.score = playerRecord.score;
-    player.level = playerRecord.level;
-    player.tutorialStarted = playerRecord.tutorial_started;
-    player.tutorialSkipped = playerRecord.tutorial_skipped;
-    player.tutorialFinished = playerRecord.tutorial_finished;
+    player.username = playerData.name;
+    player.coins = playerData.coins;
+    player.score = playerData.score;
+    player.level = playerData.level;
+    player.tutorialStarted = playerData.tutorial.started;
+    player.tutorialSkipped = playerData.tutorial.skipped;
+    player.tutorialFinished = playerData.tutorial.finished;
     return player;
   } catch (err) {
-    console.error('Could not create player stats object from given user id.', err);
+    console.error('Could not create player stats object from given firestore document.', err);
     return undefined;
   }
 }
 
-const playerFromDBRow = async (row) => {
-  let player = {};
-  player.level = computePlayerLevel(row);
-  const trackStats = await computeTrackRecordStats(row);
-  player.losses = trackStats.losses;
-  player.winnings = trackStats.winnings;
-  player.drawn = trackStats.drawn;
-  player.name = row.name;
-  player.score = row.score;
-  player.trackRecord = undefined;
-  player.coins = undefined;
-  player.ranking = await computePlayerRanking(row);
-  return player;
+const createPlayerInfoObject = async (playerDoc) => {
+  player = playerDoc.data();
+  const stats = await computeTrackRecordStatsFromId(player.id);
+  return {
+    name: player.name,
+    score: player.score,
+    level: computePlayerLevel(player),
+    losses: stats.losses,
+    winnings: stats.winnings,
+    drawn: stats.drawn,
+    rank: await computeRankFromScore(player.score)
+  };
 }
 
-const playersFromQuery = async (rows) => {
+const createPlayerInfoObjects = async (playerDocs) => {
   let players = [];
-  await Promise.all(rows.map(async (row) => {
-    players.push(await playerFromDBRow(row));
+  await Promise.all(playerDocs.map(async (playerDoc) => {
+    players.push(await createPlayerInfoObject(playerDoc));
   }));
   return players;
 }
 
+app.post('/debugging/gamestate', async (req, res) => {
+  let report = req.body.report;
+  if (typeof report === 'undefined' || typeof report.reported === 'undefined') {
+    console.warn("Invalid report element given.", report);
+    return res.status(403).json({ error: 'Invalid or malformed argument.' });
+  } else {
+    try {
+      await db.collection('reports').add(report);
+    } catch (err) {
+      console.error("Could not insert error report from client.", err);
+      return res.status(500).json({ error: 'Could not persist error report.' });
+    }
+  }
+});
+
 app.get('/user/friends', async (req, res) => {
   try {
-    const queryStatement = 'SELECT * from players INNER JOIN (SELECT friend FROM friends WHERE player = $1) fr ON fr.friend = players.id';
-    const queryResult = await (await dbPool()).query(queryStatement, [req.user.uid]);
-    if (queryResult.rows.length > 0) {
-      res.json(await playersFromQuery(queryResult.rows));
-    } else {
-      res.json([]);
+    const playerObject = await db.collection('players').doc(req.user.uid).get();
+    if (playerObject) {
+      const friends = [];
+      await db.collection('players').where(firebase.firestore.FieldPath.documentId(), 'in', playerObject.data().friends).get().forEach(async friendDoc => {
+        friends.push(await createPlayerInfoObject(friendDoc));
+      });
     }
+    res.json(friends);
   } catch (err) {
     console.warn('Could not retrieve friends list.', err);
-    res.status(500).json({ error: 'COULD NOT RETRIEVE FRIENDS LIST' });
+    res.status(500).json({ error: 'Could not retrieve friends list.' });
   }
 });
 
 app.post('/user/friend', async (req, res) => {
   try {
-    const queryResults = await (await dbPool()).query("SELECT id from players WHERE name = $1", [req.body.friend]);
-    if (queryResults.rows.length === 1) {
-      const insertStatement = 'INSERT INTO friends(player, friend) VALUES ($1, $2)';
-      await (await dbPool()).query(insertStatement, [req.user.uid, queryResults.rows[0].id]);
-      res.status(200).end();
+    const friendDocs = await db.collection('players').where('name', '==', req.body.friend).get();
+    if (!friendDocs.empty) {
+      const playerObject = await db.collection('players').doc(req.user.uid).get();
+      if (playerObject.exists) {
+        const friendsList = playerObject.data().friends;
+        for (let friend of friendDocs.docs) {
+          if (!friendsList.includes(friend.id)) {
+            friendsList.push(friend.id);
+          }
+        }
+        await db.collection('players').doc(req.user.uid).update({ friends: friendsList });
+        res.status(200).end();
+      } else {
+        console.error('Request from unknown player "' + req.user.uid);
+        res.status(404).json({ error: 'Request from unknown player "' + req.user.uid });
+      }
     } else {
-      console.error('PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST');
-      res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST' });
+      console.error('Player with name "' + req.body.friend + '" does not exist');
+      res.status(404).json({ error: 'Player with name "' + req.body.friend + '" does not exist' });
     }
   } catch (err) {
     console.warn('Could not insert player to friendslist.', err);
@@ -459,13 +439,25 @@ app.post('/user/friend', async (req, res) => {
 
 app.delete('/user/friend', async (req, res) => {
   try {
-    const queryResults = await (await dbPool()).query("SELECT id from players WHERE name = $1", [req.body.friend]);
-    if (queryResults.rows.length === 1) {
-      await (await dbPool()).query("DELETE FROM friends WHERE player = $1 AND friend = $2", [req.user.uid, queryResults.rows[0].id]);
-      res.status(200).end();
+    const friendDocs = await db.collection('players').where('name', '==', req.body.friend).get();
+    if (!friendDocs.empty) {
+      const playerObject = await db.collection('players').doc(req.user.uid).get();
+      if (playerObject.exists) {
+        let friendsList = playerObject.data().friends;
+        for (let friend of friendDocs.docs) {
+          friendsList = friendsList.filter((value, index, array) => {
+            return value != friend.id;
+          });
+        }
+        await db.collection('players').doc(req.user.uid).update({ friends: friendsList });
+        res.status(200).end();
+      } else {
+        console.error('Request from unknown player "' + req.user.uid);
+        res.status(404).json({ error: 'Request from unknown player "' + req.user.uid });
+      }
     } else {
-      console.error('PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST');
-      res.status(404).json({ error: 'PLAYERNAME "' + req.body.friend + '" DOES NOT EXIST' });
+      console.error('Player with name "' + req.body.friend + '" does not exist');
+      res.status(404).json({ error: 'Player with name "' + req.body.friend + '" does not exist' });
     }
   } catch (err) {
     console.warn('Could not remove player from friendslist.', err);
@@ -475,17 +467,22 @@ app.delete('/user/friend', async (req, res) => {
 
 app.get('/query/user/:name', async (req, res) => {
   try {
-    const nameSanitized = '%' + req.params.name.toLocaleLowerCase() + '%';
-    const queryStatement = "SELECT * FROM players WHERE LOWER(name) LIKE $1 LIMIT 10";
-    const queryResult = await (await dbPool()).query(queryStatement, [nameSanitized]);
-    if (queryResult.rows.length > 0) {
-      res.json(await playersFromQuery(queryResult.rows));
-    } else {
-      res.json([]);
+    const requestedName = req.params.name;
+    const requestedNameLowercase = requestedName.toLocaleLowerCase();
+    const requestedNameUppercase = 'AAAAA' + requestedName.toLocaleUpperCase();
+    const playerDocs = await db.collection('players').where('name', '>=', requestedNameUppercase).where('name', '<=', requestedNameLowercase).get();
+    const matchingPlayers = [];
+    if (!playerDocs.empty) {
+      for (let playerDoc of playerDocs.docs) {
+        if (playerDoc.data().name.toLocaleLowerCase().includes(requestedNameLowercase)) {
+          matchingPlayers.push(await createPlayerInfoObject(playerDoc));
+        }
+      }
     }
+    res.json(matchingPlayers);
   } catch (err) {
     console.warn('Could not search for player', err);
-    res.status(500).json({ error: 'COULD NOT SEARCH FOR PLAYERS WITH CERTAIN NAME' });
+    res.status(500).json({ error: 'Could not search for player with given name.' });
   }
 });
 
@@ -501,16 +498,15 @@ const addEventQueue = async eventQueue => {
 
 app.post('/user/tutorial/started', async (req, res) => {
   try {
-    const queryResult = await (await dbPool()).query('SELECT id FROM players WHERE id = $1', [req.user.uid]);
-    if (queryResult.rows.length === 1) {
-      const updateQueryResult = await (await dbPool()).query('UPDATE players SET tutorial_started = $1, tutorial_skipped = $2 WHERE id = $3 RETURNING *', [true, false, req.user.uid]);
-      if (updateQueryResult.rows.length === 1) {
-        res.status(200).json({ stats: await createPlayerStatsObject(updateQueryResult.rows[0], true, true) });
-      } else {
-        res.status(500).json({ error: 'COULD NOT UPDATE PLAYER TUTORIAL STARTED STATUS' });
-      }
+    const playerDoc = await db.collection('players').doc(req.user.uid).get();
+    if (playerDoc.exists) {
+      player = playerDoc.data();
+      player.tutorial.started = true;
+      player.tutorial.skipped = false;
+      await db.collection('players').doc(req.user.uid).update({ tutorial: player.tutorial });
+      res.status(200).json({ stats: await createPlayerStatsObject(playerDoc, true, true) });
     } else {
-      res.status(404).json({ error: 'PLAYER WITH UID "' + req.user.uid + '" DOES NOT EXIST' });
+      res.status(404).json({ error: 'Player with uid "' + req.user.uid + '" does not exist' });
     }
   } catch (err) {
     console.warn('Could not update tutorial started state of player.', err);
@@ -520,16 +516,15 @@ app.post('/user/tutorial/started', async (req, res) => {
 
 app.post('/user/tutorial/skipped', async (req, res) => {
   try {
-    const queryResult = await (await dbPool()).query('SELECT id FROM players WHERE id = $1', [req.user.uid]);
-    if (queryResult.rows.length === 1) {
-      const updateQueryResult = await (await dbPool()).query('UPDATE players SET tutorial_started = $1, tutorial_skipped = $2 WHERE id = $3 RETURNING *', [false, true, req.user.uid]);
-      if (updateQueryResult.rows.length === 1) {
-        res.status(200).json({ stats: await createPlayerStatsObject(updateQueryResult.rows[0], true, true) });
-      } else {
-        res.status(500).json({ error: 'COULD NOT UPDATE PLAYER TUTORIAL SKIPPED STATUS' });
-      }
+    const playerDoc = await db.collection('players').doc(req.user.uid).get();
+    if (playerDoc.exists) {
+      player = playerDoc.data();
+      player.tutorial.started = false;
+      player.tutorial.skipped = true;
+      await db.collection('players').doc(req.user.uid).update({ tutorial: player.tutorial });
+      res.status(200).json({ stats: await createPlayerStatsObject(playerDoc, true, true) });
     } else {
-      res.status(404).json({ error: 'PLAYER WITH UID "' + req.user.uid + '" DOES NOT EXIST' });
+      res.status(404).json({ error: 'Player with uid "' + req.user.uid + '" does not exist' });
     }
   } catch (err) {
     console.warn('Could not update tutorial skipped state of player.', err);
@@ -539,19 +534,20 @@ app.post('/user/tutorial/skipped', async (req, res) => {
 
 app.post('/user/tutorial/finished', async (req, res) => {
   try {
-    const queryResult = await (await dbPool()).query('SELECT id, tutorial_finished, coins, score FROM players WHERE id = $1', [req.user.uid]);
-    if (queryResult.rows.length === 1) {
-      const coins = queryResult.rows[0].coins + ((queryResult.rows[0].tutorial_finished === true) ? 0 : 100);
-      const score = queryResult.rows[0].score + ((queryResult.rows[0].tutorial_finished === true) ? 0 : 100);
-      const updateQueryResult = await (await dbPool()).query('UPDATE players SET tutorial_started = $1, tutorial_finished = $2, tutorial_skipped = $3, coins = $4, score = $5 WHERE id = $6 RETURNING *', [true, true, false, coins, score, req.user.uid]);
-      if (updateQueryResult.rows.length === 1) {
-        res.status(200).json({ stats: await createPlayerStatsObject(updateQueryResult.rows[0], true, true) });
-      } else {
-        res.status(500).json({ error: 'COULD NOT UPDATE PLAYER TUTORIAL FINISHED STATUS' });
+    const playerDoc = await db.collection('players').doc(req.user.uid).get();
+    if (playerDoc.exists) {
+      player = playerDoc.data();
+      if (!player.tutorial.finished) {
+        player.coins = player.coins + 100;
+        player.score = player.score + 100;
       }
-      res.status(200).end();
+      player.tutorial.started = true;
+      player.tutorial.skipped = false;
+      player.tutorial.finished = true;
+      await db.collection('players').doc(req.user.uid).update({ tutorial: player.tutorial, coins: player.coins, score: player.score });
+      res.status(200).json({ stats: await createPlayerStatsObject(playerDoc, true, true) });
     } else {
-      res.status(404).json({ error: 'PLAYER WITH UID "' + req.user.uid + '" DOES NOT EXIST' });
+      res.status(404).json({ error: 'Player with uid "' + req.user.uid + '" does not exist' });
     }
   } catch (err) {
     console.warn('Could not update tutorial finished state of player.', err);
@@ -568,16 +564,17 @@ app.post('/user/notify', async (req, res) => {
       if ((currentDateTime - lastNotifiedTime) > 1000 * 60 * 60 * 4) {
         if (session.game.players[session.game.currentPlayerIndex].id !== req.user.uid) {
           updateLastNotification(req.body.sessionId, new Date());
-          const playerName = (await getPlayerFromId(req.user.uid)).rows[0].name;
+          const playerName = (await getPlayerFromId(req.user.uid)).name;
 
-          const receiverResult = await getPlayerFromName(session.game.players[session.game.currentPlayerIndex].name);
-          if (receiverResult.rows.length === 0) {
+          const receiverPlayerDoc = await getPlayerFromName(session.game.players[session.game.currentPlayerIndex].name);
+          if (typeof receiverPlayerDoc === 'undefined' || !receiverPlayerDoc.exists) {
             console.error("Could not emit notification");
             return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + session.game.players[session.game.currentPlayerIndex].name + '" DOES NOT EXIST' });
           }
 
-          if (typeof receiverResult.rows[0].language !== 'undefined') {
-            setCurrentLanguage(receiverResult.rows[0].language);
+          const receiverPlayer = receiverPlayerDoc.data();
+          if (typeof receiverPlayer.language !== 'undefined') {
+            setCurrentLanguage(receiverPlayer.language);
           }
 
           await emitPlayerNotification(session.game.players[session.game.currentPlayerIndex].id,
@@ -604,27 +601,28 @@ app.post('/user/notify', async (req, res) => {
 });
 
 app.post('/user/challenge', async (req, res) => {
-  const opponentResult = await getPlayerFromName(req.body.opponent);
-  if (opponentResult.rows.length === 0) {
+  const opponentPlayerDoc = await getPlayerFromName(req.body.opponent);
+  if (typeof opponentPlayerDoc === 'undefined' || !opponentPlayerDoc.exists) {
     res.status(404).json({ error: 'OPPONENT "' + req.body.opponent + '" DOES NOT EXIST' });
   } else {
-    const opponent = await createPlayerStatsObject(opponentResult.rows[0], true);
+    const opponentPlayer = opponentPlayerDoc.data();
+    const opponent = await createPlayerStatsObject(opponentPlayerDoc, true);
     if (opponent.score < 1000) {
       console.error("Challenged player\'s score is too low to be challenged. " + opponent.score);
       res.status(400).json({ error: 'CHALLENGED OPPONENT HAS A SCORE THAT IS TOO LOW. ' + opponent.score });
     } else {
-      if (typeof opponentResult.rows[0].language !== 'undefined') {
-        setCurrentLanguage(opponentResult.rows[0].language);
+      if (typeof opponentPlayer.language !== 'undefined') {
+        setCurrentLanguage(opponentPlayer.language);
       }
 
       if (opponent.id === req.user.uid) {
         res.status(400).json({ error: 'CANNOT CREATE A GAME CHALLENGING YOURSELF' });
       } else {
-        const playerResult = await getPlayerFromId(req.user.uid);
-        if (playerResult.rows.length === 0) {
+        const playerDoc = await getPlayerFromId(req.user.uid);
+        if (typeof playerDoc === 'undefined' || !playerDoc.exists) {
           res.status(404).json({ error: 'PLAYER NOT FOUND' });
         } else {
-          const player = await createPlayerStatsObject(playerResult.rows[0], true);
+          const player = await createPlayerStatsObject(playerDoc, true);
           const coinToss = Math.round(Math.random());
 
           let opponentLevel = opponent.level;
@@ -654,9 +652,15 @@ app.post('/user/challenge', async (req, res) => {
               winners: [],
               board: Board.generate({ rows: 10, cols: 10 }, Math.round(Math.random() * Math.pow(10, 8)))
             };
-            await (await dbPool()).query('INSERT INTO multiplayer_sessions(id, player1, player2, gamestate, created, last_updated, last_action, turns) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [
-              databaseSession.id, sessionEventQueue.playerIds[0], sessionEventQueue.playerIds[1], initialGameState, new Date(Date.now()), new Date(Date.now()), new Date(Date.now()), 0]);
-
+            db.collection('multiplayerSessions').doc(databaseSession.id).set({
+              player1: sessionEventQueue.playerIds[0],
+              player2: sessionEventQueue.playerIds[1],
+              gamestate: initialGameState,
+              created: new Date(Date.now()),
+              updated: new Date(Date.now()),
+              lastAction: new Date(Date.now()),
+              turns: 0
+            });
             await emitPlayerNotification(opponent.id,
               databaseSession.id,
               translate(translationKeys.SERVER_NOTIFICATION_CHALLENGE_TITLE, player.username),
@@ -702,14 +706,15 @@ const updateTrackRecord = async (session, endGameAction, resultReason, orderedEv
 const emitEndGameNotification = async (session, endGameAction) => {
   const winner = session.game.players.find(player => player.id === endGameAction.payload.winners[0].id);
   const looser = session.game.players.find(player => player.id !== endGameAction.payload.winners[0].id);
-  const receiverResult = await getPlayerFromName(looser.name);
-  if (receiverResult.rows.length === 0) {
+  const receiverPlayerDoc = await getPlayerFromName(looser.name);
+  if (typeof receiverPlayerDoc === 'undefined' || !receiverPlayerDoc.exists) {
     console.error("Could not emit notification");
     return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + looser.name + '" DOES NOT EXIST' });
   }
 
-  if (typeof receiverResult.rows[0].language !== 'undefined') {
-    setCurrentLanguage(receiverResult.rows[0].language);
+  const receiverPlayer = receiverPlayerDoc.data();
+  if (typeof receiverPlayer.language !== 'undefined') {
+    setCurrentLanguage(receiverPlayer.language);
   }
 
   await emitPlayerNotification(looser.id,
@@ -818,24 +823,24 @@ const processEventsInOrder = (session, eventQueue) => {
 }
 
 const updateLastChanged = async (date, sessionId) => {
-  await (await dbPool()).query('UPDATE multiplayer_sessions SET last_updated = $1 WHERE id = $2', [date, sessionId]);
+  await db.collection('multiplayerSessions').doc(sessionId).update({ updated: date });
 }
 
 const getSessionData = async (sessionId) => {
   try {
-    const sessionQueryResult = await (await dbPool()).query("SELECT * from multiplayer_sessions WHERE id = $1", [sessionId]);
-    if (sessionQueryResult.rows.length > 0) {
-      let session = {
-        id: sessionQueryResult.rows[0].id,
-        game: sessionQueryResult.rows[0].gamestate,
-        created: sessionQueryResult.rows[0].created,
-        last_changed: sessionQueryResult.rows[0].last_updated,
-        last_action: sessionQueryResult.rows[0].last_action,
-        last_notification: sessionQueryResult.rows[0].last_notification,
-        players: [sessionQueryResult.rows[0].player1, sessionQueryResult.rows[0].player2],
-        turns: sessionQueryResult.rows[0].turns
+    const sessionDoc = await db.collection('multiplayerSessions').doc(sessionId).get();
+    if (sessionDoc.exists) {
+      const sessionData = sessionDoc.data();
+      return {
+        id: sessionDoc.id,
+        game: sessionData.gamestate,
+        created: sessionData.created,
+        last_changed: sessionData.updated,
+        last_action: sessionData.lastAction,
+        last_notification: sessionData.notified,
+        players: [sessionData.player1, sessionData.player2],
+        turns: sessionData.turns
       };
-      return session;
     } else {
       console.warn("Trying to fetch data for non existing session with id " + sessionId);
       return undefined;
@@ -848,8 +853,7 @@ const getSessionData = async (sessionId) => {
 
 const updateLastNotification = async (id, notificationTimestamp) => {
   try {
-    await (await dbPool()).query("UPDATE multiplayer_sessions SET last_notification = $1 WHERE id = $2",
-      [notificationTimestamp, id]);
+    await db.collection('multiplayerSessions').doc(id).update({ notified: notificationTimestamp });
   } catch (err) {
     console.error(err);
   }
@@ -857,8 +861,7 @@ const updateLastNotification = async (id, notificationTimestamp) => {
 
 const updateLastAction = async (id, actionProcessedTimestamp) => {
   try {
-    await (await dbPool()).query("UPDATE multiplayer_sessions SET last_action = $1 WHERE id = $2",
-      [actionProcessedTimestamp, id]);
+    await db.collection('multiplayerSessions').doc(id).update({ lastAction: actionProcessedTimestamp });
   } catch (err) {
     console.error(err);
   }
@@ -866,8 +869,7 @@ const updateLastAction = async (id, actionProcessedTimestamp) => {
 
 const updateSessionGameState = async (id, gameState, turns, lastChanged) => {
   try {
-    await (await dbPool()).query("UPDATE multiplayer_sessions SET gamestate = $1, last_updated = $2, turns = $3 WHERE id = $4",
-      [gameState, lastChanged, turns, id]);
+    await db.collection('multiplayerSessions').doc(id).update({ gamestate: gameState, updated: lastChanges, turns: turns });
   } catch (err) {
     console.error(err);
   }
@@ -985,14 +987,15 @@ app.post('/multiplayer/relay/action', async (req, res) => {
         await updateEventQueue(eventQueue, req.body.sessionId);
         let updatedPlayerId = session.game.currentPlayerIndex;
         if (playerId !== updatedPlayerId) {
-          const receiverResult = await getPlayerFromName(session.game.players[1 - playerId].name);
-          if (receiverResult.rows.length === 0) {
+          const receiverPlayerDoc = await getPlayerFromName(session.game.players[1 - playerId].name);
+          if (typeof receiverPlayerDoc === 'undefined' || !receiverPlayerDoc.exists) {
             console.error("Could not emit notification");
             return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + session.game.players[1 - playerId].name + '" DOES NOT EXIST' });
           }
 
-          if (typeof receiverResult.rows[0].language !== 'undefined') {
-            setCurrentLanguage(receiverResult.rows[0].language);
+          const receiverPlayer = receiverPlayerDoc.data();
+          if (typeof receiverPlayer.language !== 'undefined') {
+            setCurrentLanguage(receiverPlayer.language);
           }
 
           await emitPlayerNotification(session.game.players[1 - playerId].id,
@@ -1051,9 +1054,15 @@ const emitPlayerNotification = async (receiverId, sessionId, title, body, reason
     console.log('No token update needed. All tokens are still valid')
   } else {
     console.log('Updating user tokens because some of them were invalid. Deleted tokens: ' + expiredTokens.toString());
-    await Promise.all(expiredTokens.map(async (expiredToken) => {
-      await (await dbPool()).query("DELETE FROM permissions WHERE token = $1 AND player = $2", [expiredToken, receiverId]);
-    }));
+    playerPermissions = await db.collection('permissions').doc(receiverId).get();
+    expiredTokens.map(expiredToken => {
+      updatedPermissions = playerPermissions.data();
+      const index = updatedPermissions.permissions.findIndex(permission => permission.token === expiredToken);
+      if (index > -1) {
+        updatedPermissions.permissions.splice(index, 1);
+      }
+    });
+    await db.collection('permissions').doc(receiverId).set(updatedPermissions);
   }
 }
 
@@ -1136,14 +1145,14 @@ const surrenderGame = async (sessionId, playerId, resultReason) => {
       const looserId = playerId;
       const winnerId = eventQueue.playerIds.filter(id => id !== playerId)[0];
       let looserName = '';
-      const looserQueryResult = await (await dbPool()).query("SELECT name FROM players WHERE id = $1", [looserId]);
-      if (looserQueryResult.rows.length > 0) {
-        looserName = looserQueryResult.rows[0].name;
+      let looserDoc = await db.collection('players').doc(looserId).get();
+      if (looserDoc.existingPlayer) {
+        looserName = looserDoc.data().name;
       }
       let winnerName = '';
-      const winnerQueryResult = await (await dbPool()).query("SELECT name FROM players WHERE id = $1", [winnerId]);
-      if (winnerQueryResult.rows.length > 0) {
-        winnerName = winnerQueryResult.rows[0].name;
+      let winnerDoc = await db.collection('players').doc(winnerId).get();
+      if (winnerDoc.existingPlayer) {
+        winnerName = winnerDoc.data().name;
       }
       return {
         winner: {
@@ -1162,19 +1171,20 @@ const surrenderGame = async (sessionId, playerId, resultReason) => {
 
 app.post('/surrender', async (req, res) => {
   const surrenderingPlayer = await getPlayerFromId(req.user.uid);
-  if (surrenderingPlayer.rows.length === 1) {
-    if (surrenderingPlayer.rows[0].coins >= SurrenderCosts) {
-      await (await dbPool()).query('UPDATE players SET coins = $1 WHERE id = $2', [surrenderingPlayer.rows[0].coins - SurrenderCosts, req.user.uid]);
+  if (surrenderingPlayer) {
+    if (surrenderingPlayer.coins >= SurrenderCosts) {
+      await db.collection('players').doc(req.user.uid).update({ coins: admin.firestore.FieldValue.increment(-SurrenderCosts) });
       const result = await surrenderGame(req.body.sessionId, req.user.uid, GameResultReason.SURRENDERED);
       if (result !== false) {
-        const receiverResult = await getPlayerFromName(result.winner.name);
-        if (receiverResult.rows.length === 0) {
+        const receiverPlayerDoc = await getPlayerFromName(result.winner.name);
+        if (typeof receiverPlayerDoc === 'undefined' || !receiverPlayerDoc.exists) {
           console.error("Could not emit notification");
           return res.status(404).json({ error: 'NOTIFICATION RECEIVER "' + result.winner.name + '" DOES NOT EXIST' });
         }
 
-        if (typeof receiverResult.rows[0].language !== 'undefined') {
-          setCurrentLanguage(receiverResult.rows[0].language);
+        const receiverPlayer = receiverPlayerDoc.data();
+        if (typeof receiverPlayer.language !== 'undefined') {
+          setCurrentLanguage(receiverPlayer.language);
         }
 
         await emitPlayerNotification(result.winner.id,
@@ -1197,28 +1207,30 @@ app.post('/surrender', async (req, res) => {
 
 const getAllActiveMultiplayerSessionsForPlayer = async (playerId) => {
   const sessions = [];
-  const sessionQueryResult = await (await dbPool()).query("SELECT * FROM multiplayer_sessions where (player1=$1 OR player2=$1) AND gamestate->>'isRunning' = 'true'", [playerId]);
-  await Promise.all(sessionQueryResult.rows.map(async (row) => {
-    const playerIndex = (row.gamestate.players[0].id === playerId) ? 0 : 1;
-    let session = {
-      'id': row.id,
-      'players': [row.player1, row.player2],
-      'last_changed': row.last_updated.getTime(),
-      'last_notification': (typeof row.last_notification === 'undefined' || row.last_notification === null) ? 0 : row.last_notification.getTime(),
-      'created': row.created.getTime(),
-      'myTurn': row.gamestate.currentPlayerIndex === playerIndex,
-      'turns': row.turns,
-      'statistics': row.gamestate.players[playerIndex].statistics
+  const player1Res = await db.collection('multiplayerSessions').where('player1', '==', playerId).where('gamestate.isRunning', '==', true).get();
+  const player2Res = await db.collection('multiplayerSessions').where('player2', '==', playerId).where('gamestate.isRunning', '==', true).get();
+  const allSessionDocs = player1Res.docs.concat(player2Res.docs);
+  await Promise.all(allSessionDocs.map(async (sessionDoc) => {
+    const sessionData = sessionDoc.data();
+    const playerIndex = (sessionData.gamestate.players[0].id === playerId) ? 0 : 1;
+    const session = {
+      'id': sessionDoc.id,
+      'players': [sessionData.player1, sessionData.player2],
+      'last_changed': sessionData.updated.getTime(),
+      'last_notification': (typeof sessionData.notified === 'undefined' || sessionData.notified === null) ? 0 : sessionData.notified.getTime(),
+      'created': sessionData.created.getTime(),
+      'myTurn': sessionData.gamestate.currentPlayerIndex === playerIndex,
+      'turns': sessionData.turns,
+      'statistics': sessionData.gamestate.players[playerIndex].statistics
     };
 
-    const opponentId = (row.player1 === playerId) ? row.player2 : row.player1;
-    const opponentQueryResult = await getPlayerFromId(opponentId);
-    if (opponentQueryResult.rows.length > 0) {
-      const opponent = await createPlayerStatsObject(opponentQueryResult.rows[0], true);
-      const opponentRank = await computePlayerRanking(opponentQueryResult.rows[0])
+    const opponentId = (sessionData.player1 === playerId) ? sessionData.player2 : sessionData.player1;
+    const opponentPlayerDoc = await getPlayerFromId(opponentId);
+    if (opponentPlayerDoc.exists) {
+      const opponent = await createPlayerStatsObject(opponentPlayerDoc, true);
       session.opponent = {
         name: opponent.username,
-        ranking: opponentRank,
+        ranking: await computeRankFromScore(opponent.score),
         level: opponent.level,
         drawn: opponent.drawn,
         losses: opponent.losses,
@@ -1226,7 +1238,7 @@ const getAllActiveMultiplayerSessionsForPlayer = async (playerId) => {
       }
     } else {
       console.error("Stale multiplayer session detected. Will be disabled. Id is " + session.id);
-      await (await dbPool()).query("UPDATE multiplayer_sessions SET gamestate = gamestate || {\"isRunning\": false}' WHERE id=$1", [session.id]);
+      await db.collection('multiplayerSessions').doc(session.id).update({ 'gamestate.isRunning': false });
     }
     sessions.push(session);
   }));
@@ -1262,9 +1274,8 @@ const getMaximumLevel = (entityType, level) => {
 
 app.post('/update/level', async (req, res) => {
   try {
-    const playerQueryResult = await getPlayerFromId(req.user.uid);
-    if (playerQueryResult.rows.length > 0) {
-      const player = playerQueryResult.rows[0];
+    const player = await getPlayerFromId(req.user.uid);
+    if (player) {
       if (typeof player.coins !== 'undefined') {
         let level = EmptyPlayerStats.level;
         if (typeof player.level !== 'undefined') {
@@ -1282,19 +1293,22 @@ app.post('/update/level', async (req, res) => {
             res.status(400).json({ error: 'LEVEL LIMIT REACHED' });
           } else {
             level[req.body.entityType] = level[req.body.entityType] + 1;
-            await (await dbPool()).query(`UPDATE players SET coins = ${player.coins - costs}, level = $1 WHERE id = $2`, [level, req.user.uid]);
+            await db.collection('players').doc(req.user.uid).update({
+              coins: admin.firestore.FieldValue.increment(-costs),
+              level: level
+            });
             res.json({ coins: player.coins - costs, level: level });
-
           }
         } else {
           if (level[req.body.entityType] > 0) {
             const previous = { level, [req.body.entityType]: level[req.body.entityType] - 1 };
             const costs = calculateCosts(req.body.entityType, previous);
             const coinBackGuarantee = Math.round(0.666 * costs);
-
             level[req.body.entityType] = level[req.body.entityType] - 1;
-
-            await (await dbPool()).query(`UPDATE players SET coins = ${player.coins + coinBackGuarantee}, level = $1 WHERE id = $2`, [level, req.user.uid]);
+            await db.collection('players').doc(req.user.uid).update({
+              coins: admin.firestore.FieldValue.increment(coinBackGuarantee),
+              level: level
+            });
             res.json({ coins: player.coins + coinBackGuarantee, level: level });
           } else {
             res.status(400).json({ error: 'ENTITY LEVEL IS ALREADY ZERO' });
@@ -1313,34 +1327,26 @@ app.post('/update/level', async (req, res) => {
   }
 });
 
-const approximatePlayersCount = async (statement) => {
-  try {
-    const result = await (await dbPool()).query("SELECT count(id) FROM players WHERE " + statement);
-    if (result.rows.length > 0) {
-      return result.rows[0].count;
-    }
-  } catch (err) {
-    console.error('Could not count players.', err);
-    return 0;
-  }
-}
-
 app.get('/highscore', async (req, res) => {
   try {
-    const queryResult = await getPlayerFromId(req.user.uid);
-    const pageSize = 10;
-    if (queryResult.rows.length === 1) {
+    const playerDoc = await db.collection('players').doc(req.user.uid).get();
+    if (playerDoc.exists) {
+      const pageSize = 10;
+      let page = 1;
       if (typeof req.query.page === 'undefined') {
-        var rank = await computePlayerRanking(queryResult.rows[0]);
-        var page = Math.ceil(rank / pageSize);
+        const rank = await computeRankFromScore(playerDoc.data().score);
+        page = Math.ceil(rank / pageSize);
       } else {
-        var page = Number(req.query.page);
+        page = Number(req.query.page);
       }
 
-      const playersCount = await approximatePlayersCount("score > 0 AND name != 'Chocnonymous'");
+      const playersCount = await db.collection('players').where('score', '>', 0).get();
       let lastPage = Math.ceil(playersCount / pageSize);
-      const playersOnPageResult = await (await dbPool()).query("SELECT * FROM players WHERE score > 0 AND name != 'Chocnonymous' ORDER BY score DESC OFFSET $1 LIMIT $2", [(page - 1) * pageSize, pageSize]);
-      let highscore = await playersFromQuery(playersOnPageResult.rows);
+      let playersOnPageFiltered = await db.collection('players').where('score', '>', 0).orderBy('score', 'desc').limit(pageSize).get();
+      for (let p = 1; p < page; ++p) {
+        playersOnPageFiltered = await db.collection('players').where('score', '>', 0).orderBy('score', 'desc').startAfter(playersOnPageFiltered.docs[playersOnPageFiltered.size - 1]).limit(pageSize).get();
+      }
+      const highscore = await createPlayerInfoObjects(playersOnPageFiltered.docs);
       highscore.sort((a, b) => {
         if (a.ranking > b.ranking) {
           return 1;
@@ -1356,8 +1362,8 @@ app.get('/highscore', async (req, res) => {
         list: highscore
       });
     } else {
-      console.warn('Given player seems not to exist.', queryResult.rows.length);
-      res.status(404).json({ error: 'PLAYER NOT FOUND' })
+      console.warn('Given player seems not to exist.', req.user.uid);
+      res.status(404).json({ error: 'Player not found.' })
     }
   } catch (err) {
     console.warn('Could not determine rank of player', err);
@@ -1367,15 +1373,15 @@ app.get('/highscore', async (req, res) => {
 
 app.get('/rank', async (req, res) => {
   try {
-    const queryResult = await getPlayerFromId(req.user.uid);
-    if (queryResult.rows.length === 1) {
-      res.json({ ranking: await computePlayerRanking(queryResult.rows[0]) });
+    const playerDoc = await db.collection('players').doc(req.user.uid).get();
+    if (playerDoc.exists) {
+      res.json({ ranking: await computeRankFromScore(playerDoc.data().score) });
     } else {
-      console.warn('Given player seems not to exist.', queryResult.rows.length);
-      res.status(404).json({ error: 'PLAYER NOT FOUND' })
+      console.warn('Given player seems not to exist.', req.user.uid);
+      res.status(404).json({ error: 'Player not found.' })
     }
   } catch (err) {
-    console.warn('Could not determine rank of player', err);
+    console.warn('Could not determine rank of player.', err);
     res.status(500).json({ error: err.toString() })
   }
 });
@@ -1383,11 +1389,11 @@ app.get('/rank', async (req, res) => {
 app.get('/check/available/:username', async (req, res) => {
   if (typeof req.params.username === 'undefined' ||
     req.params.username === '') {
-    res.status(400).json({ error: 'USERNAME EMPTY' });
+    res.status(400).json({ error: 'Username empty' });
   } else {
     try {
-      const queryResult = await (await dbPool()).query("SELECT id FROM players WHERE name = $1", [req.params.username]);
-      res.json({ name: req.params.username, available: queryResult.rows.length === 0 && req.params.username.toUpperCase() !== 'CHOCNONYMOUS' })
+      const playerDocs = await db.collection('players').where('name', '==', req.params.name).get();
+      res.json({ name: req.params.username, available: playerDocs.empty && req.params.username.toUpperCase() !== 'CHOCNONYMOUS' })
     } catch (err) {
       console.warn('Could not check availability of player name.', err);
       res.status(500).json({ error: err.toString() })
@@ -1397,25 +1403,25 @@ app.get('/check/available/:username', async (req, res) => {
 
 app.get('/user/name', async (req, res) => {
   try {
-    const queryResult = await (await dbPool()).query("SELECT name FROM players WHERE id = $1", [req.user.uid]);
-    if (queryResult.rows.length > 0) {
-      res.json({ name: queryResult.rows[0].name });
+    const playerObject = await db.collection('players').doc(req.user.uid).get();
+    if (playerObject.exists) {
+      res.json({ name: playerObject.data().name });
     } else {
-      res.status(404).json({ error: 'PLAYER DOES NOT EXIST' });
+      res.status(404).json({ error: 'Player does not exist' });
     }
   } catch (err) {
     console.warn('Could not look up playername', err);
-    res.status(500).json({ error: "COULD NOT LOOK UP PLAYERNAME" })
+    res.status(500).json({ error: 'Could not look up playername' })
   }
 });
 
 app.get('/user/:name', async (req, res) => {
   try {
-    const queryResult = await (await dbPool()).query("SELECT * FROM players WHERE name = $1", [req.params.name]);
-    if (queryResult.rows.length > 0) {
-      res.json(await playersFromQuery(queryResult.rows));
+    const playerDocs = await db.collection('players').where('name', '==', req.params.name).get();
+    if (!playerDocs.empty) {
+      res.json(await createPlayerInfoObjects(playerDocs.docs));
     } else {
-      res.status(404).json({ error: 'PLAYER DOES NOT EXIST' });
+      res.status(404).json({ error: 'Player does not exist' });
     }
   } catch (err) {
     console.warn('Could not lookup player', err);
@@ -1426,38 +1432,60 @@ app.get('/user/:name', async (req, res) => {
 app.get('/random/opponent', async (req, res) => {
   try {
     invalidOpponentIds = [req.user.uid];
-    const sessionQueryResult = await (await dbPool()).query("SELECT * FROM multiplayer_sessions where (player1=$1 OR player2=$1) AND gamestate->>'isRunning' = 'true'", [req.user.uid]);
-    await Promise.all(sessionQueryResult.rows.map(async (row) => {
-      invalidOpponentIds.push((row.player1 === req.user.uid) ? row.player2 : row.player1);
+    const player1Res = await db.collection('multiplayerSessions').where('player1', '==', req.user.uid).where('gamestate.isRunning', '==', true).get();
+    const player2Res = await db.collection('multiplayerSessions').where('player2', '==', req.user.uid).where('gamestate.isRunning', '==', true).get();
+    const allSessionDocs = player1Res.docs.concat(player2Res.docs);
+    await Promise.all(allSessionDocs.docs.map(async (sessionDoc) => {
+      const sessionData = sessionDoc.data();
+      invalidOpponentIds.push((sessionData.player1 === req.user.uid) ? sessionData.player2 : sessionData.player1);
     }));
-    const statement = "SELECT * FROM players WHERE score > 0 AND NOT (name='') IS NOT FALSE AND NOT(id = ANY('{" + invalidOpponentIds.join() + "}'::text[]))";
-    const queryResult = await (await dbPool()).query(statement);
-    if (queryResult.rows.length > 0) {
-      res.json(await playerFromDBRow(queryResult.rows[Math.floor(Math.random() * queryResult.rows.length)]));
+    let opponent = undefined;
+    const eventualOpponentDocs = await db.collection('players').where('score', '>', 0).limit(5000).get();
+    if (!eventualOpponentDocs.empty) {
+      let tries = Math.floor(Math.random() * eventualOpponentDocs.size);
+      for (let eventualOpponent of eventualOpponentDocs.docs) {
+        if (!invalidOpponentIds.includes(eventualOpponent.id)) {
+          opponent = eventualOpponent;
+          tries = tries - 1;
+          if (tries === 0) {
+            break;
+          }
+        }
+      }
+    }
+    if (typeof opponent !== 'undefined') {
+      res.json(createPlayerInfoObject(eventualOpponent));
     } else {
       console.warn('Could not find a matching player for ', req.user.uid);
       res.status(404).json({ error: 'NO MATCHING PLAYER FOUND' });
     }
   } catch (err) {
-    console.error("Failed to determine random opponent", err);
+    console.error('Failed to determine random opponent', err);
     res.status(500).json({ error: 'CANNONT DETERMINE RANDOM OPPONENT' });
   }
 });
 
 app.post('/user/permissions', async (req, res) => {
   try {
-    const existingTokenResult = await (await dbPool()).query("SELECT * FROM permissions WHERE player = $1 and token = $2", [req.user.uid, req.body.token]);
-    if (existingTokenResult.rows.length === 0) {
-      let tokenType = 'messaging';
-      if (req.battlechocAndroidVersion > 0) {
-        tokenType = 'android-messaging';
-      }
-
-      await (await dbPool()).query("INSERT INTO permissions(player, token, type) VALUES ($1, $2, $3)", [req.user.uid, req.body.token, tokenType]);
-      res.status(200).end();
-    } else {
-      res.status(400).json({ error: 'WON\'T INSERT DUPLICATE TOKEN ENTRIES' });
+    let tokenType = 'messaging';
+    if (req.battlechocAndroidVersion > 0) {
+      tokenType = 'android-messaging';
     }
+
+    const playerPermissions = await db.collection('permissions').doc(req.user.uid).get();
+    if (!playerPermissions.exists) {
+      await db.collection('permissions').doc(req.user.uid).set({ permissions: [{ token: req.body.token, type: tokenType }] });
+    } else {
+      const updatedPermissions = playerPermissions.data();
+      const index = updatedPermissions.permissions.findIndex(permission => permission.token === expiredToken);
+      if (index == -1) {
+        updatedPermissions.permissions.push({ token: req.body.token, type: tokenType });
+        await db.collection('permissions').doc(req.user.uid).set(updatedPermissions);
+      } else {
+        res.status(400).json({ error: 'WON\'T INSERT DUPLICATE TOKEN ENTRIES' });
+      }
+    }
+    res.status(200).end();
   } catch (err) {
     console.warn('Could not add new permission token for player.', err);
     res.status(500).json({ error: 'COULD NOT ADD PERMISSION TOKEN' })
@@ -1483,9 +1511,32 @@ const addTrackRecord = async (userId, record, reportedReason) => {
 
   try {
     const awards = record.awards || null;
-    const insertStatement = 'INSERT INTO track_records(id, player, winner, winner_type, result, entities_destroyed, entities_molten, entities_revealed, entities_built, reported, resultreason, awards) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) ON CONFLICT DO NOTHING RETURNING id';
-    const queryResult = await await (await dbPool()).query(insertStatement, [id, userId, winner, winnerType, gameResult, record.attacks, record.moltenFields, record.espionages, record.builtEntities, new Date(), reportedReason, { awards: awards }]);
-    return (queryResult.rows.length > 0);
+    const trackRecordObject = {
+      winnerType: winnerType,
+      winner: winner,
+      stats: {
+        entitiesBuilt: record.builtEntities,
+        entitiesDestroyed: record.attacks,
+        entitiesMolten: record.moltenFields,
+        entitiesRevealed: record.espionages
+      },
+      resultReason: reportedReason,
+      result: gameResult,
+      reported: new Date(),
+      recordId: id,
+      awards: { awards: awards }
+    };
+    const playerTrackRecordsDoc = await db.collection('trackRecords').doc(userId).get();
+    if (playerTrackRecordsDoc.exists) {
+      await db.collection('trackRecords').doc(userId).update({
+        records: admin.firestore.FieldValue.arrayUnion(trackRecordObject)
+      });
+    } else {
+      await db.collection('trackRecords').doc(userId).set({
+        records: [trackRecordObject]
+      });
+    }
+    return true;
   } catch (err) {
     console.warn(err);
     return false;
@@ -1495,9 +1546,9 @@ const addTrackRecord = async (userId, record, reportedReason) => {
 
 const fetchPlayerStats = async (userId) => {
   try {
-    const queryResult = await getPlayerFromId(userId);
-    if (queryResult.rows.length === 1) {
-      return await createPlayerStatsObject(queryResult.rows[0], true, true);
+    const playerDoc = await getPlayerFromId(userId);
+    if (playerDoc.exists) {
+      return await createPlayerStatsObject(playerDoc, true, true);
     } else {
       console.error('Could not retrieve player stats.');
       return undefined;
@@ -1518,28 +1569,56 @@ const createOrUpdatePlayer = async (userId, player) => {
     const tutorialStarted = typeof player.tutorialStarted !== 'undefined' ? player.tutorialStarted : false;
     const tutorialSkipped = typeof player.tutorialSkipped !== 'undefined' ? player.tutorialSkipped : false;
     const tutorialFinished = typeof player.tutorialFinished !== 'undefined' ? player.tutorialFinished : false;
-    const existsCheckResult = await getPlayerFromId(userId);
-    if (existsCheckResult.rows.length === 0) {
-      const queryResult = await (await dbPool()).query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', [userId, username, coins, score, language, level, tutorialStarted, tutorialSkipped, tutorialFinished]);
-      if (queryResult.rows.length === 1) {
+    const existingPlayerDoc = await getPlayerFromId(userId);
+    if (typeof existingPlayerDoc === 'undefined' || !existingPlayerDoc.exists) {
+      const playerDocRef = db.collection('players').doc(userId);
+      await playerDocRef.set({
+        coins: coins,
+        created: new Date(),
+        friends: [],
+        language: language,
+        level: level,
+        name: username,
+        score: score,
+        tutorial: {
+          finished: tutorialFinished,
+          skipped: tutorialSkipped,
+          started: tutorialStarted
+        }
+      });
+      const playerDoc = await playerDocRef.get();
+      if (playerDoc.exists) {
         await Promise.all(player.trackRecord.map(async (record) => {
           await addTrackRecord(userId, record, GameResultReason.NORMAL);
         }));
-        return await createPlayerStatsObject(queryResult.rows[0], true, true);
+        return await createPlayerStatsObject(playerDoc, true, true);
       } else {
         console.error('Could not create a new player.');
         return undefined;
       }
     } else {
-      const queryResult = await (await dbPool()).query('UPDATE players SET name = $1, coins = $2, score = $3, language = $4, level = $5, tutorial_started = $6, tutorial_skipped = $7, tutorial_finished = $8 WHERE id = $9 RETURNING *', [username, coins, score, language, level, tutorialStarted, tutorialSkipped, tutorialFinished, userId]);
-      if (queryResult.rows.length === 1) {
+      const playerDocRef = db.collection('players').doc(userId);
+      await playerDocRef.update({
+        name: username,
+        coins: coins,
+        score: score,
+        language: language,
+        level: level,
+        tutorial: {
+          started: tutorialStarted,
+          skipped: tutorialSkipped,
+          finished: tutorialFinished
+        }
+      });
+      const playerDoc = await playerDocRef.get();
+      if (playerDoc.exists) {
         await Promise.all(player.trackRecord.map(async (record) => {
           await addTrackRecord(userId, record, GameResultReason.NORMAL);
         }));
-        return await createPlayerStatsObject(queryResult.rows[0], true, true);
+        return await createPlayerStatsObject(playerDoc, true, true);
       } else {
         console.error('Could not create a new player.');
-        return await createPlayerStatsObject(existsCheckResult.rows[0], true, true);
+        return await createPlayerStatsObject(existingPlayerDoc, true, true);
       }
     }
   } catch (err) {
@@ -1550,22 +1629,37 @@ const createOrUpdatePlayer = async (userId, player) => {
 
 const createNewPlayer = async (userId) => {
   try {
-    const existsCheckResult = await getPlayerFromId(userId);
-    if (existsCheckResult.rows.length === 0) {
+    const existingPlayerDoc = await getPlayerFromId(userId);
+    if (typeof existingPlayerDoc === 'undefined' || !existingPlayerDoc.exists) {
       const coins = 0;
       const score = 0;
       const username = EmptyPlayerStats.username;
       const language = getDefaultLanguage();
       const level = EmptyPlayerStats.level;
-      const queryResult = await (await dbPool()).query('INSERT INTO players(id, name, coins, score, language, level, tutorial_started, tutorial_skipped, tutorial_finished) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *', [userId, username, coins, score, language, level, false, false, false]);
-      if (queryResult.rows.length === 1) {
-        return await createPlayerStatsObject(queryResult.rows[0]);
+      const playerDocRef = db.collection('players').doc(userId);
+      await playerDocRef.set({
+        coins: coins,
+        created: new Date(),
+        friends: [],
+        language: language,
+        level: level,
+        name: username,
+        score: score,
+        tutorial: {
+          finished: false,
+          skipped: false,
+          started: false
+        }
+      });
+      const playerDoc = await playerDocRef.get();
+      if (playerDoc.exists) {
+        return await createPlayerStatsObject(playerDoc);
       } else {
         console.error('Could not create a new player.');
         return undefined;
       }
     } else {
-      return await createPlayerStatsObject(existsCheckResult.rows[0], true, true);
+      return await createPlayerStatsObject(existingPlayerDoc, true, true);
     }
   } catch (err) {
     console.error('Could not create a new player.', err);
@@ -1577,9 +1671,14 @@ const updatePlayerStats = async (userId, stats) => {
   try {
     if (typeof stats !== 'undefined') {
       const coins = calculateCoinsFromTrackRecord(stats);
-      const updatePlayerCoinsAndScoreResult = await (await dbPool()).query("UPDATE players SET coins = coins + $1, score = score + $1 WHERE id = $2 RETURNING *", [coins, userId]);
-      if (updatePlayerCoinsAndScoreResult.rows.length === 1) {
-        return (await createPlayerStatsObject(updatePlayerCoinsAndScoreResult.rows[0], true, true));
+      const playerDocRef = db.collection('players').doc(userId);
+      await playerDocRef.update({
+        coins: admin.firestore.FieldValue.increment(coins),
+        score: admin.firestore.FieldValue.increment(coins)
+      });
+      const playerDoc = await playerDocRef.get();
+      if (playerDoc.exists) {
+        return (await createPlayerStatsObject(playerDoc, true, true));
       } else {
         console.error('Could not update player stats. Coins lost!');
         return undefined;
@@ -1595,8 +1694,8 @@ const updatePlayerStats = async (userId, stats) => {
 
 app.post('/user/merge', async (req, res) => {
   try {
-    const existsQueryResult = await getPlayerFromId(req.user.uid);
-    if (existsQueryResult.rows.length === 0) {
+    const existingPlayer = await getPlayerFromId(req.user.uid);
+    if (typeof existingPlayer === 'undefined') {
       const mergedData = await createOrUpdatePlayer(req.user.uid, req.body.playerInfo);
       res.status(200).json({ mergedPlayerInfo: mergedData });
     } else {
@@ -1664,8 +1763,7 @@ app.get('/generaterandomname', async (req, res) => {
     for (let tries = 0; tries < maxTries; tries++) {
       generatedName = uniqueNamesGenerator(randomNameGeneratorConfig);
       if (regex.test(generatedName) && generatedName.toUpperCase() !== 'CHOCNONYMOUS') {
-        const queryResult = await (await dbPool()).query("SELECT * FROM players WHERE name = $1", [generatedName]);
-        if (queryResult.rows.length === 0) {
+        if (typeof (await getPlayerFromName(generatedName)) === 'undefined') {
           nameFound = true;
           break;
         }
@@ -1690,26 +1788,18 @@ app.post('/user', async (req, res) => {
 
 app.post('/user/username', async (req, res) => {
   try {
-    const queryResult = await (await dbPool()).query("SELECT * FROM players WHERE name = $1", [req.body.username]);
-    if (queryResult.rows.length === 0) {
-      let regex = /^([a-zA-Z][a-zA-Z0-9_]{2,24})$/;
-      if (regex.test(req.body.username) && req.body.username.toUpperCase() !== 'CHOCNONYMOUS') {
-        const existingPlayerResult = await (await dbPool()).query("SELECT * FROM players WHERE id = $1", [req.user.uid]);
-        if (existingPlayerResult.rows.length > 0) {
-          const updatePlayerNameResult = await (await dbPool()).query("UPDATE players SET name = $1 WHERE id = $2 RETURNING id", [req.body.username, req.user.uid]);
-          if (updatePlayerNameResult.rows.length === 1) {
-            res.end();
-          } else {
-            res.status(500).json({ error: error });
-          }
-        } else {
-          res.status(404).json({ error: 'PLAYER DOES NOT EXIST' });
-        }
+    let regex = /^([a-zA-Z][a-zA-Z0-9_]{2,24})$/;
+    if (regex.test(req.body.username) && req.body.username.toUpperCase() !== 'CHOCNONYMOUS') {
+      if ((await db.collection('players').where('name', '==', req.body.username).limit(1).get()).empty) {
+        await db.collection('players').doc(req.user.uid).update({
+          name: req.body.username
+        });
+        res.end();
       } else {
-        res.status(400).json({ error: 'USERNAME NOT VALID' });
+        res.status(400).json({ error: 'PLAYER WITH GIVEN NAME DOES ALREADY EXIST' });
       }
     } else {
-      res.status(400).json({ error: 'PLAYER WITH GIVEN NAME DOES ALREADY EXIST' });
+      res.status(400).json({ error: 'USERNAME NOT VALID' });
     }
   } catch (err) {
     console.warn('Could not create a new player with given name or update the name of an already existing player.', err);
@@ -1721,12 +1811,10 @@ app.post('/user/language', async (req, res) => {
   if (isValidLanguage(req.body.language)) {
     try {
       setCurrentLanguage(req.body.language);
-      const queryResult = await (await dbPool()).query('UPDATE players SET language = $1 WHERE id = $2 RETURNING id', [req.body.language, req.user.uid]);
-      if (queryResult.rows.length > 0) {
-        res.json({ language: req.body.language });
-      } else {
-        res.status(404).json({ error: 'PLAYER DOES NOT EXIST' });
-      }
+      await db.collection('players').doc(req.user.uid).update({
+        language: req.body.language
+      });
+      res.json({ language: req.body.language });
     } catch (err) {
       console.warn('Could not update players language.', err);
       res.status(500).json({ error: err.toString() })
@@ -1766,50 +1854,53 @@ const sessionCleanupFunction = async (context) => {
   try {
     const sessions = [];
     console.log("executing query to cleamup");
-    const sessionQueryResult = await (await dbPool()).query("SELECT * FROM multiplayer_sessions WHERE last_action < $1 AND gamestate->>'isRunning' = 'true'", [new Date(Date.now() - (24 * 60 * 60 * 1000))]);
+    const sessionDocs = await db.collection('multiplayerSessions').where('gamestate.isRunning', '==', true).where('lastAction', '<=', new Date(Date.now() - (24 * 60 * 60 * 1000))).get();
     console.log("executed query to cleanup");
-    await Promise.all(sessionQueryResult.rows.map(async (row) => {
-      console.log("Trying to cleanup session: " + JSON.stringify(row));
-      const looserUid = row.gamestate.players[row.gamestate.currentPlayerIndex].id;
-      const result = await surrenderGame(row.id, looserUid, GameResultReason.TIMEOUT);
+    await Promise.all(sessionDocs.docs.map(async (sessionDoc) => {
+      const sessionData = sessionDoc.data();
+      console.log("Trying to cleanup session: " + JSON.stringify(sessionData));
+      const looserUid = sessionData.gamestate.players[sessionData.gamestate.currentPlayerIndex].id;
+      const result = await surrenderGame(sessionDoc.id, looserUid, GameResultReason.TIMEOUT);
       if (result !== false) {
-        sessions.push({ id: row.id });
+        sessions.push({ id: sessionDoc.id });
 
         // notify the winner
-        const winnerResult = await getPlayerFromName(result.winner.name);
-        if (winnerResult.rows.length === 0) {
+        const winnerPlayerDoc = await getPlayerFromName(result.winner.name);
+        if (typeof winnerPlayerDoc === 'undefined' || !winnerPlayerDoc.exists) {
           console.error('NOTIFICATION RECEIVER "' + result.winner.name + '" DOES NOT EXIST');
         }
 
-        if (typeof winnerResult.rows[0].language !== 'undefined') {
-          setCurrentLanguage(winnerResult.rows[0].language);
+        const winnerPlayer = winnerPlayerDoc.data();
+        if (typeof winnerPlayer.language !== 'undefined') {
+          setCurrentLanguage(winnerPlayer.language);
         }
 
         await emitPlayerNotification(result.winner.id,
-          row.id,
+          sessionDoc.id,
           translate(translationKeys.SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE, result.looser.name),
           translate(translationKeys.SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY, result.looser.name),
           NotificationReasonType.SESSION_TIMEOUT_GAME_WON,
           'https://battlechoc.com/');
 
         // notify the looser
-        const looserResult = await getPlayerFromName(result.looser.name);
-        if (looserResult.rows.length === 0) {
+        const looserPlayerDoc = await getPlayerFromName(result.looser.name);
+        if (typeof looserPlayerDoc === 'undefined' || !looserPlayerDoc.exists) {
           console.error('NOTIFICATION RECEIVER "' + result.looser.name + '" DOES NOT EXIST');
         }
 
-        if (typeof looserResult.rows[0].language === 'undefined') {
-          setCurrentLanguage(looserResult.rows[0].language);
+        const looserPlayer = looserPlayerDoc.data();
+        if (typeof looserPlayer.language === 'undefined') {
+          setCurrentLanguage(looserPlayer.language);
         }
 
         await emitPlayerNotification(result.looser.id,
-          row.id,
+          sessionDoc.id,
           translate(translationKeys.SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE, result.winner.name),
           translate(translationKeys.SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_BODY),
           NotificationReasonType.SESSION_TIMEOUT_GAME_LOST,
           'https://battlechoc.com/');
       } else {
-        console.error("Could not surrender session " + row.id);
+        console.error("Could not surrender session " + sessionDoc.id);
       }
     }));
     console.log("Cleaned up session: " + JSON.stringify(sessions));
