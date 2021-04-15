@@ -36,6 +36,7 @@ services:
 deploy:
   stage: deploy
   script:
+    - apk update && apk upgrade && apk add --no-cache bash git openssh
     - apk add --update nodejs npm
     - npm config set @battlechoc-shared-functions:registry=$ARTIFACTORY_URL
     - npm config set $ARTIFACTORY_SCOPE_PREFIX:email=$ARTIFACTORY_EMAIL
@@ -43,7 +44,8 @@ deploy:
     - npm config set $ARTIFACTORY_SCOPE_PREFIX:username=$ARTIFACTORY_USERNAME
     - npm config set $ARTIFACTORY_SCOPE_PREFIX:always-auth=true
     - npm install -g firebase-tools
-    - cd functions && firebase functions:delete -f --token "$FIREBASE_TOKEN" api && firebase deploy --only functions --token "$FIREBASE_TOKEN"
+    - cd functions && npm install
+    - firebase functions:delete -f --token "$FIREBASE_TOKEN" api && firebase deploy --only functions --token "$FIREBASE_TOKEN"
   only:
     - master
 
