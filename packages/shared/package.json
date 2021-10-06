@@ -7,9 +7,6 @@
     "test": "jest tests --coverage"
   },
   "repository": "git@gitlab.com:battlechoc/battlechoc-shared-functions.git",
-  "publishConfig": {
-    "@battlechoc-shared-functions:registry": "https://gitlab.com/api/v4/projects/16792493/packages/npm/"
-  },
   "author": "battlechoc <info@battlechoc.dev>",
   "license": "UNLICENSED",
   "dependencies": {
