@@ -19,6 +19,7 @@ test:
 deploy:
   stage: deploy
   script:
+    - npm login
     - npm publish
   only:
     - master
