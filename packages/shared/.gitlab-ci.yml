@@ -1,4 +1,4 @@
-image: node:14-buster
+image: node:latest
 
 stages:
   - test
@@ -18,10 +18,8 @@ test:
 
 deploy:
   stage: deploy
-  before_script:
-    - echo "//gitlab.com/api/v4/projects/16792493/packages/npm/:_authToken=${CI_JOB_TOKEN}">.npmrc
   script:
-    - npm version --no-git-tag-version ${CI_COMMIT_TAG}
+    - echo "//${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=${CI_JOB_TOKEN}">.npmrc
     - npm publish
   only:
     - master
