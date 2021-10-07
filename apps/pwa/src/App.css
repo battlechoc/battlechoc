@@ -1,9 +1,12 @@
 * {
-  -webkit-backface-visibility:  visible;
-  -webkit-tap-highlight-color:  transparent;
+  backface-visibility: visible;
+  -webkit-backface-visibility: visible;
+  -webkit-tap-highlight-color: transparent;
 }
 
-html, body, #root { 
+html,
+body,
+#root {
   height: 100%;
   width: 100%;
 }
@@ -25,8 +28,8 @@ html, body, #root {
 
 @media screen and (orientation: portrait) {
   .assetLoader {
-    margin-left: -5vh
-  }    
+    margin-left: -5vh;
+  }
 }
 
 .gameCanvas {
@@ -37,44 +40,52 @@ html, body, #root {
 }
 
 @keyframes rotate {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes spin {
   from {
-      transform: rotate(0deg);
+    transform: rotate(0deg);
   }
   to {
-      transform: rotate(359deg);
+    transform: rotate(359deg);
   }
 }
 
 @keyframes bake-pie {
   from {
-    transform: rotate(0deg) translate3d(0,0,0);
+    transform: rotate(0deg) translate3d(0, 0, 0);
   }
 }
 
 @keyframes fadeIn {
   0% {
-      opacity: 0;
+    opacity: 0;
   }
   100% {
-      opacity: 1;
+    opacity: 1;
   }
 }
 
 @keyframes fadeOut {
   0% {
-      opacity: 1;
+    opacity: 1;
   }
   100% {
-      opacity: 0;
+    opacity: 0;
   }
 }
 
 @keyframes pulse {
-  0% { transform: scale(1) rotate(360deg); }
-  50% { transform: scale(0.5) rotate(180deg); }
-  100% { transform: scale(1) rotate(0deg); }
+  0% {
+    transform: scale(1) rotate(360deg);
+  }
+  50% {
+    transform: scale(0.5) rotate(180deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
 }

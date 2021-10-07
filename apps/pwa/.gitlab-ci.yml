@@ -1,14 +1,14 @@
 image: buildkite/puppeteer
 
 stages:
- - build
- - test
- - deploy
+  - build
+  - test
+  - deploy
 
 cache:
   paths:
-   - node_modules/
-   - .yarn
+    - node_modules/
+    - .yarn
 
 build:
   stage: build
@@ -16,11 +16,8 @@ build:
     CI: "true"
   before_script:
     - export CI_JOB_TIMESTAMP=$(date --utc -Iseconds)
-    - npm config set registry $ARTIFACTORY_URL
-    - npm config set email $ARTIFACTORY_EMAIL
-    - npm config set _auth $ARTIFACTORY_CREDENTIALS
-    - npm config set always-auth true
-    - npm install
+    - export BATTLECHOC_NPM_TOKEN=$CI_JOB_TOKEN
+    - npm i
   script:
     - sed -i "s/LOCAL_DATETIME/$CI_JOB_TIMESTAMP/g" src/ui/dialogs/Info.js
     - sed -i "s/LOCAL_DATETIME/$CI_JOB_TIMESTAMP/g" src/helper/settings.js
@@ -29,8 +26,8 @@ build:
   artifacts:
     expire_in: 20 mins
     paths:
-     - build/
-     - node_modules/
+      - build/
+      - node_modules/
   only:
     - master
     - develop
@@ -39,7 +36,7 @@ test:
   stage: test
   variables:
     CI: "true"
-  before_script: 
+  before_script:
     - npm i -g serve
     - nohup serve -s build/ &
   script:
@@ -48,7 +45,7 @@ test:
     expire_in: 2 days
     when: always
     paths:
-     - test/output/
+      - test/output/
   only:
     - master
     - develop

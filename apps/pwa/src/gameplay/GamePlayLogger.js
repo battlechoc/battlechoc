@@ -1,24 +1,26 @@
-import { Rules } from 'battlechoc-shared-functions';
+import { Rules } from "@battlechoc/battlechoc-shared-functions";
 
 class GameplayLog {
-    constructor() {
-        this.clear();
-    }
+  constructor() {
+    this.clear();
+  }
 
-    clear() {
-        this.turns = [];
-    }
+  clear() {
+    this.turns = [];
+  }
 }
 
 const gameplayLog = new GameplayLog();
 
 function gameplayLoggerMiddleware() {
-    return ({ dispatch, getState }) => next => action => {
-        if (Rules.isGameAction(action)) {
-            gameplayLog.turns.push(action);
-        }
-        return next(action);
-    }
+  return ({ dispatch, getState }) =>
+    (next) =>
+    (action) => {
+      if (Rules.isGameAction(action)) {
+        gameplayLog.turns.push(action);
+      }
+      return next(action);
+    };
 }
 
 const gameplayLogger = gameplayLoggerMiddleware();

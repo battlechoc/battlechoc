@@ -1,14 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Bangers&family=Montserrat&display=swap");
 
 body {
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
   margin: 0px;
   padding: 0px;
   overflow: hidden;
-  background: rgb(255,255,255);
-  background: linear-gradient(0deg, #3DA2CE 0%, #9DD5E9 80%);
+  background: rgb(255, 255, 255);
+  background: linear-gradient(0deg, #3da2ce 0%, #9dd5e9 80%);
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
 }
