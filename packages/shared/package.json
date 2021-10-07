@@ -9,7 +9,7 @@
   "repository": "git@gitlab.com:battlechoc/battlechoc-shared-functions.git",
   "author": "battlechoc <info@battlechoc.dev>",
   "publishConfig": {
-    "@battlechoc/battlechoc-shared-functions:registry": " https://gitlab.com/api/v4/projects/16792493/packages/npm/"
+    "@battlechoc:registry": " https://gitlab.com/api/v4/projects/16792493/packages/npm/"
   },
   "license": "UNLICENSED",
   "dependencies": {
