@@ -8,7 +8,6 @@ stages:
 cache:
   paths:
     - node_modules/
-    - .yarn
 
 build:
   stage: build
@@ -37,6 +36,7 @@ test:
   variables:
     CI: "true"
   before_script:
+    - export BATTLECHOC_NPM_TOKEN=$CI_JOB_TOKEN
     - npm i -g serve
     - nohup serve -s build/ &
   script:
@@ -52,6 +52,8 @@ test:
 
 deploy:
   stage: deploy
+  before_script:
+    - export BATTLECHOC_NPM_TOKEN=$CI_JOB_TOKEN
   script:
     - npm i -g firebase-tools
     - firebase use battlechoc --token $FIREBASE_TOKEN
