@@ -208,6 +208,10 @@ const getPlayerFromId = async (userId) => {
   }
 }
 
+const getPlayerDocFromId = async (userId) => {
+  return await db.collection('players').doc(userId).get();
+}
+
 const getPlayerFromName = async (name) => {
   const result = await db.collection('players').where('name', '==', name).get();
   if (result.empty) {
@@ -337,7 +341,7 @@ const createPlayerStatsObject = async (playerDoc, withId = false, withTrackRecor
     if (withTrackRecord === true) {
       player.trackRecord = await createTrackRecordObjectFromPlayerId(playerDoc.id);
     }
-    const playerData = player.data();
+    const playerData = playerDoc.data();
     const trackStats = await computeTrackRecordStatsFromId(playerDoc.id);
     player.losses = trackStats.losses;
     player.winnings = trackStats.winnings;
@@ -358,7 +362,7 @@ const createPlayerStatsObject = async (playerDoc, withId = false, withTrackRecor
 
 const createPlayerInfoObject = async (playerDoc) => {
   player = playerDoc.data();
-  const stats = await computeTrackRecordStatsFromId(player.id);
+  const stats = await computeTrackRecordStatsFromId(playerDoc.id);
   return {
     name: player.name,
     score: player.score,
@@ -366,15 +370,15 @@ const createPlayerInfoObject = async (playerDoc) => {
     losses: stats.losses,
     winnings: stats.winnings,
     drawn: stats.drawn,
-    rank: await computeRankFromScore(player.score)
+    ranking: await computeRankFromScore(player.score)
   };
 }
 
 const createPlayerInfoObjects = async (playerDocs) => {
   let players = [];
-  await Promise.all(playerDocs.map(async (playerDoc) => {
+  for (let playerDoc of playerDocs) {
     players.push(await createPlayerInfoObject(playerDoc));
-  }));
+  }
   return players;
 }
 
@@ -395,14 +399,21 @@ app.post('/debugging/gamestate', async (req, res) => {
 
 app.get('/user/friends', async (req, res) => {
   try {
-    const playerObject = await db.collection('players').doc(req.user.uid).get();
-    if (playerObject) {
+    const playerDoc = await db.collection('players').doc(req.user.uid).get();
+    if (playerDoc.exists) {
       const friends = [];
-      await db.collection('players').where(admin.firestore.FieldPath.documentId(), 'in', playerObject.data().friends).get().forEach(async friendDoc => {
-        friends.push(await createPlayerInfoObject(friendDoc));
-      });
+      console.log(playerDoc.data().friends.length);
+      if (playerDoc.data().friends.length > 0) {
+        res.json(await createPlayerInfoObjects(
+          (await db.collection('players').where(admin.firestore.FieldPath.documentId(), 'in', playerDoc.data().friends).get()).docs
+        ));
+      } else {
+        res.json([]);
+      }
+      res.json(friends);
+    } else {
+      return res.status(404).json({ 'error': 'REQUESTING PLAYER DOES NOT EXIST' });
     }
-    res.json(friends);
   } catch (err) {
     console.warn('Could not retrieve friends list.', err);
     res.status(500).json({ error: 'Could not retrieve friends list.' });
@@ -618,7 +629,7 @@ app.post('/user/challenge', async (req, res) => {
       if (opponent.id === req.user.uid) {
         res.status(400).json({ error: 'CANNOT CREATE A GAME CHALLENGING YOURSELF' });
       } else {
-        const playerDoc = await getPlayerFromId(req.user.uid);
+        const playerDoc = await getPlayerDocFromId(req.user.uid);
         if (typeof playerDoc === 'undefined' || !playerDoc.exists) {
           res.status(404).json({ error: 'PLAYER NOT FOUND' });
         } else {
@@ -1225,7 +1236,7 @@ const getAllActiveMultiplayerSessionsForPlayer = async (playerId) => {
     };
 
     const opponentId = (sessionData.player1 === playerId) ? sessionData.player2 : sessionData.player1;
-    const opponentPlayerDoc = await getPlayerFromId(opponentId);
+    const opponentPlayerDoc = await getPlayerDocFromId(opponentId);
     if (opponentPlayerDoc.exists) {
       const opponent = await createPlayerStatsObject(opponentPlayerDoc, true);
       session.opponent = {
@@ -1340,13 +1351,11 @@ app.get('/highscore', async (req, res) => {
         page = Number(req.query.page);
       }
 
-      const playersCount = await db.collection('players').where('score', '>', 0).get();
+      const playersCount = (await db.collection('players').where('score', '>', 0).get()).size;
       let lastPage = Math.ceil(playersCount / pageSize);
-      let playersOnPageFiltered = await db.collection('players').where('score', '>', 0).orderBy('score', 'desc').limit(pageSize).get();
-      for (let p = 1; p < page; ++p) {
-        playersOnPageFiltered = await db.collection('players').where('score', '>', 0).orderBy('score', 'desc').startAfter(playersOnPageFiltered.docs[playersOnPageFiltered.size - 1]).limit(pageSize).get();
-      }
-      const highscore = await createPlayerInfoObjects(playersOnPageFiltered.docs);
+      let playersOnPageFiltered = await db.collection('players').where('score', '>', 0).orderBy('score', 'desc').limit(pageSize * page).get();
+      pageDocs = playersOnPageFiltered.docs.slice((page - 1) * pageSize);
+      const highscore = await createPlayerInfoObjects(pageDocs);
       highscore.sort((a, b) => {
         if (a.ranking > b.ranking) {
           return 1;
@@ -1435,10 +1444,10 @@ app.get('/random/opponent', async (req, res) => {
     const player1Res = await db.collection('multiplayerSessions').where('player1', '==', req.user.uid).where('gamestate.isRunning', '==', true).get();
     const player2Res = await db.collection('multiplayerSessions').where('player2', '==', req.user.uid).where('gamestate.isRunning', '==', true).get();
     const allSessionDocs = player1Res.docs.concat(player2Res.docs);
-    await Promise.all(allSessionDocs.docs.map(async (sessionDoc) => {
+    for (sessionDoc of allSessionDocs) {
       const sessionData = sessionDoc.data();
       invalidOpponentIds.push((sessionData.player1 === req.user.uid) ? sessionData.player2 : sessionData.player1);
-    }));
+    }
     let opponent = undefined;
     const eventualOpponentDocs = await db.collection('players').where('score', '>', 0).limit(5000).get();
     if (!eventualOpponentDocs.empty) {
@@ -1454,7 +1463,7 @@ app.get('/random/opponent', async (req, res) => {
       }
     }
     if (typeof opponent !== 'undefined') {
-      res.json(createPlayerInfoObject(eventualOpponent));
+      res.json(await createPlayerInfoObject(opponent));
     } else {
       console.warn('Could not find a matching player for ', req.user.uid);
       res.status(404).json({ error: 'NO MATCHING PLAYER FOUND' });
@@ -1546,7 +1555,7 @@ const addTrackRecord = async (userId, record, reportedReason) => {
 
 const fetchPlayerStats = async (userId) => {
   try {
-    const playerDoc = await getPlayerFromId(userId);
+    const playerDoc = await getPlayerDocFromId(userId);
     if (playerDoc.exists) {
       return await createPlayerStatsObject(playerDoc, true, true);
     } else {
@@ -1569,7 +1578,7 @@ const createOrUpdatePlayer = async (userId, player) => {
     const tutorialStarted = typeof player.tutorialStarted !== 'undefined' ? player.tutorialStarted : false;
     const tutorialSkipped = typeof player.tutorialSkipped !== 'undefined' ? player.tutorialSkipped : false;
     const tutorialFinished = typeof player.tutorialFinished !== 'undefined' ? player.tutorialFinished : false;
-    const existingPlayerDoc = await getPlayerFromId(userId);
+    const existingPlayerDoc = await getPlayerDocFromId(userId);
     if (typeof existingPlayerDoc === 'undefined' || !existingPlayerDoc.exists) {
       const playerDocRef = db.collection('players').doc(userId);
       await playerDocRef.set({
@@ -1629,7 +1638,7 @@ const createOrUpdatePlayer = async (userId, player) => {
 
 const createNewPlayer = async (userId) => {
   try {
-    const existingPlayerDoc = await getPlayerFromId(userId);
+    const existingPlayerDoc = await getPlayerDocFromId(userId);
     if (typeof existingPlayerDoc === 'undefined' || !existingPlayerDoc.exists) {
       const coins = 0;
       const score = 0;
@@ -1684,7 +1693,7 @@ const updatePlayerStats = async (userId, stats) => {
         return undefined;
       }
     } else {
-      return (await createPlayerStatsObject(await getPlayerFromId(userId), true, true));
+      return (await createPlayerStatsObject(await getPlayerDocFromId(userId), true, true));
     }
   } catch (err) {
     console.error('Could not update player stats. Coins lost!', err);
@@ -1694,8 +1703,8 @@ const updatePlayerStats = async (userId, stats) => {
 
 app.post('/user/merge', async (req, res) => {
   try {
-    const existingPlayer = await getPlayerFromId(req.user.uid);
-    if (typeof existingPlayer === 'undefined') {
+    const existingPlayerDoc = await getPlayerDocFromId(req.user.uid);
+    if (!existingPlayerDoc.exists) {
       const mergedData = await createOrUpdatePlayer(req.user.uid, req.body.playerInfo);
       res.status(200).json({ mergedPlayerInfo: mergedData });
     } else {
