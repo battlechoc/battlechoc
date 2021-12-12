@@ -247,7 +247,7 @@ const getPlayerFromName = async (name) => {
     return undefined;
   } else {
     for (let player of result.docs) {
-      return player.data();
+      return player;
     }
     return undefined;
   }
