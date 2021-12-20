@@ -27,6 +27,7 @@ const {
   endGameReduction,
   attackReduction,
   buildReduction,
+  chooseFieldReduction,
   finishBuildPhaseReduction,
   finishTurnReduction,
   chooseStartReduction,
@@ -217,9 +218,11 @@ const getPlayerMessagingPermissionTokens = async (userId) => {
   const tokens = [];
   try {
     playerPermissions = await db.collection("permissions").doc(userId).get();
-    for (const permission of playerPermissions.data().permissions) {
-      if (typeof permission.token !== "undefined") {
-        tokens.push(permission);
+    if (playerPermissions.exists) {
+      for (const permission of playerPermissions.data().permissions) {
+        if (typeof permission.token !== "undefined") {
+          tokens.push(permission);
+        }
       }
     }
   } catch (err) {
@@ -475,16 +478,13 @@ app.get("/user/friends", async (req, res) => {
   try {
     const playerDoc = await db.collection('players').doc(req.user.uid).get();
     if (playerDoc.exists) {
-      const friends = [];
-      console.log(playerDoc.data().friends.length);
-      if (playerDoc.data().friends.length > 0) {
+      if (playerDoc.data().friends && playerDoc.data().friends.length > 0) {
         res.json(await createPlayerInfoObjects(
           (await db.collection('players').where(admin.firestore.FieldPath.documentId(), 'in', playerDoc.data().friends).get()).docs
         ));
       } else {
         res.json([]);
       }
-      res.json(friends);
     } else {
       return res.status(404).json({ 'error': 'REQUESTING PLAYER DOES NOT EXIST' });
     }
@@ -717,7 +717,7 @@ app.post("/user/notify", async (req, res) => {
         typeof session.last_notification === "undefined" ||
         session.last_notification === null
           ? 0
-          : session.last_notification.getTime();
+          : session.last_notification.toMillis();
       if (currentDateTime - lastNotifiedTime > 1000 * 60 * 60 * 4) {
         if (
           session.game.players[session.game.currentPlayerIndex].id !==
@@ -1156,7 +1156,7 @@ const updateSessionGameState = async (id, gameState, turns, lastChanged) => {
     await db
       .collection("multiplayerSessions")
       .doc(id)
-      .update({ gamestate: gameState, updated: lastChanges, turns: turns });
+      .update({ gamestate: gameState, updated: lastChanged, turns: turns });
   } catch (err) {
     console.error(err);
   }
@@ -1678,16 +1678,17 @@ const getAllActiveMultiplayerSessionsForPlayer = async (playerId) => {
       const sessionData = sessionDoc.data();
       const playerIndex =
         sessionData.gamestate.players[0].id === playerId ? 0 : 1;
+      console.warn("sessiodata update is ", sessionData.updated, typeof sessionData.updated)
       const session = {
         id: sessionDoc.id,
         players: [sessionData.player1, sessionData.player2],
-        last_changed: sessionData.updated.getTime(),
+        last_changed: sessionData.updated.toMillis(),
         last_notification:
           typeof sessionData.notified === "undefined" ||
           sessionData.notified === null
             ? 0
-            : sessionData.notified.getTime(),
-        created: sessionData.created.getTime(),
+            : sessionData.notified.toMillis(),
+        created: sessionData.created.toMillis(),
         myTurn: sessionData.gamestate.currentPlayerIndex === playerIndex,
         turns: sessionData.turns,
         statistics: sessionData.gamestate.players[playerIndex].statistics,
