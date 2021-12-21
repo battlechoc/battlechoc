@@ -39,14 +39,16 @@ deploy:
     - apk update && apk upgrade && apk add --no-cache bash git openssh
     - apk add --update nodejs npm
     - npm install -g firebase-tools
+    - pwd
+    - ls
     - sed -i "s/localhost/docker/g" tests/helper.js
     - envsubst < functions/.npmrc > temp_npmrc
     - cat temp_npmrc
     - cat temp_npmrc > functions/.npmrc
     - cat functions/.npmrc
-    - cd functions && npm install
-    - cd ..
-    - firebase deploy --token "$FIREBASE_TOKEN" --only functions
+    #- cd functions && npm install
+    #- cd ..
+    #- firebase deploy --token "$FIREBASE_TOKEN" --only functions
   only:
     - master
 
