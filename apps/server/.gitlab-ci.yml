@@ -44,9 +44,9 @@ deploy:
     - cat temp_npmrc
     - cat temp_npmrc > functions/.npmrc
     - cat functions/.npmrc
-#    - cd functions && npm install
-#    - cd ..
-#    - firebase deploy --token "$FIREBASE_TOKEN" --only functions
+    - cd functions && npm install
+    - cd ..
+    - firebase deploy --token "$FIREBASE_TOKEN" --only functions
   only:
     - master
 
