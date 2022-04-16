@@ -1,9 +1,9 @@
-import { gameplayReducer } from './gameplay/GameplayReducer';
-import uiReducer from './ui/UiReducer';
+import { gameplayReducer } from "./gameplay/GameplayReducer";
+import uiReducer from "./ui/UiReducer";
 
 const rootReducer = {
-    gameplay: gameplayReducer,
-    ui: uiReducer
-}
+  gameplay: gameplayReducer,
+  ui: uiReducer,
+};
 
-export default rootReducer
+export default rootReducer;
