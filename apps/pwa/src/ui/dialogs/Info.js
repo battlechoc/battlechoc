@@ -103,24 +103,12 @@ const Info = (props) => {
       >
         <div className={classes.text}>
           <div className={classes.header}>
-            <h2>{t(tr.INFO_IMPRESS)}</h2>
             <p>
-              battlechoc GbR
+              battlechoc made with ❤️
               <br />
-              Ludwig-Jahn-Str. 15
+              by Sebastian Bode & Fabian Bormann
               <br />
-              38551 Ribbesbüttel
-              <br />
-              {t(tr.INFO_IMPRESS_COUNTRY)}
-              <br />
-              <br />
-              E-mail: info@battlechoc.com
-              <br />
-              {t(tr.INFO_IMPRESS_PHONE)}: + 49 151 65486876
-              <br />
-              <br />
-              {t(tr.INFO_IMPRESS_EXECUTIVE_DIRECTORS)}: Dr. Sebastian Bode &
-              Fabian Bormann
+              E-mail: contact@battlechoc.com
             </p>
           </div>
           <h2 style={{ textAlign: "center" }}>{t(tr.INFO_PRIVACY_POLICY)}</h2>
