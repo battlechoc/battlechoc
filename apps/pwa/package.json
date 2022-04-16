@@ -28,7 +28,7 @@
   "scripts": {
     "start": "react-app-rewired start",
     "build": "react-app-rewired --max_old_space_size=4096 build",
-    "test": "jest -c test/jest.config.js --port=5000 --headless=true",
+    "test": "jest -c test/jest.config.js --port=3000 --headless=true",
     "live-testing": "jest -c test/jest.config.js --port=3000 --headless=false",
     "eject": "react-scripts eject",
     "analyze": "source-map-explorer 'build/static/js/*.js'"
