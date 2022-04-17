@@ -56,7 +56,6 @@ deploy:
     - export BATTLECHOC_NPM_TOKEN=$CI_JOB_TOKEN
   script:
     - npm i -g firebase-tools
-    - firebase use battlechoc --token $FIREBASE_TOKEN
-    - firebase deploy
+    - firebase deploy --token $FIREBASE_TOKEN
   only:
     - master
