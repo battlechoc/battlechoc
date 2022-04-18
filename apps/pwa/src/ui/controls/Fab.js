@@ -7,6 +7,7 @@ const useStyles = createUseStyles((theme) => ({
   fab: {
     color: "white",
     display: "flex",
+    cursor: "pointer",
     alignItems: "center",
     justifyContent: "center",
     borderRadius: "100%",
@@ -56,7 +57,7 @@ const useStyles = createUseStyles((theme) => ({
 
 const Fab = (props) => {
   const color =
-    props.icon === "facebook" || props.icon === "instagram"
+    props.icon === "discord" || props.icon === "instagram"
       ? props.icon
       : props.color;
   const classes = useStyles({ ...props, color: color });
