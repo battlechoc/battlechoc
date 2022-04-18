@@ -34,6 +34,7 @@ const theme = {
     accent: { light: "#FF4E85", dark: "#772549" },
     gold: { light: "#FAD25A", dark: "#AE8D0B" },
     facebook: { light: "#6589F4", dark: "#435DAC" },
+    discord: { light: "#5865f2", dark: "#404EED" },
     instagram: { light: "#FE5A93", dark: "#803FBB" },
     brown: { light: "#56321E", dark: "#4D2C1B" },
     warning: { light: "#FAD25A", dark: "#D28304" },

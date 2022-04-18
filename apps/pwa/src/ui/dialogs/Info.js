@@ -79,8 +79,8 @@ const Info = (props) => {
           }
         ></Fab>
         <Fab
-          icon="facebook"
-          onClick={() => window.open("https://fb.me/battlechoc", "_blank")}
+          icon="discord"
+          onClick={() => window.open("https://discord.gg/XekFHYXNmu", "_blank")}
         ></Fab>
         <Fab
           icon="info"
