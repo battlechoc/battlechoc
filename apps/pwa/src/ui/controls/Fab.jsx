@@ -124,6 +124,7 @@ Fab.propTypes = {
     "back",
     "share",
     "refresh",
+    "discord",
   ]),
   iconStyle: PropTypes.object,
   className: PropTypes.string,

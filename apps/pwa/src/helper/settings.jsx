@@ -1,12 +1,10 @@
 import axios from "axios";
 import firebase from "@firebase/app";
-import * as http from "http";
-import * as https from "https";
 import { NoHealthyInternetConnectionError } from "@battlechoc/battlechoc-shared-functions";
 
 const baseUrl = "https://europe-west2-battlechoc.cloudfunctions.net/api";
 let date = "LOCAL_DATETIME";
-let version = process.env.REACT_APP_VERSION;
+let version = import.meta.env.VITE_VERSION;
 
 if (date.startsWith("LOCAL")) {
   date = new Date().getTime();
@@ -46,9 +44,7 @@ const generateNewAndroidMessagingToken = async () => {
 };
 
 const instance = axios.create({
-  baseURL: baseUrl,
-  httpAgent: new http.Agent({ keepAlive: true }),
-  httpsAgent: new https.Agent({ keepAlive: true }),
+  baseURL: baseUrl
 });
 
 const ServerRequest = async (method, url, body) => {

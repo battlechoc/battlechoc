@@ -170,7 +170,7 @@ class App extends Component {
       setCurrentLanguage(languageValue, () => {
         ServerRequest("post", "/user/language", { language: languageValue })
           .catch((error) => {
-            if (!error instanceof ReferenceError) {
+            if (!(error instanceof ReferenceError)) {
               console.warn(error);
             }
           })

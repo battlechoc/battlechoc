@@ -43,7 +43,7 @@ const Info = (props) => {
   const [open, setOpen] = useState(props.openInfo);
   // GitLab CI is going to override these variables
   let date = "LOCAL_DATETIME";
-  let version = process.env.REACT_APP_VERSION;
+  let version = import.meta.env.VITE_VERSION;
 
   if (date.startsWith("LOCAL")) {
     date = new Date().getTime();

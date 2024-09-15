@@ -65,3 +65,5 @@ typings/
 # blender
 cache_fluid
 *.blend1
+
+.secret

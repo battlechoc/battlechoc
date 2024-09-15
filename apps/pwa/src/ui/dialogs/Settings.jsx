@@ -214,7 +214,7 @@ const Settings = (props) => {
     setCurrentLanguage(value, () => {
       ServerRequest("post", "/user/language", { language: value })
         .catch((error) => {
-          if (!error instanceof ReferenceError) {
+          if (!(error instanceof ReferenceError)) {
             console.warn(error);
           }
         })
