@@ -49,10 +49,7 @@ const parseConnectionString = require("pg-connection-string").parse;
 initDatabaseConnection = async () => {
   if (process.env.NODE_ENV === "development") {
     return new Pool({
-      host: "34.89.31.252",
-      user: "battlechoc-service-account",
-      password: "***REMOVED***",
-      database: "battlechoc",
+      // connection settings come from the standard PGHOST, PGUSER, PGPASSWORD and PGDATABASE variables
       max: 1,
     });
   } else if (process.env.NODE_ENV === "test") {
@@ -1407,7 +1404,7 @@ const emitPlayerNotification = async (
           {
             headers: {
               Authorization:
-                "key=***REMOVED***",
+                `key=${process.env.FCM_SERVER_KEY}`,
             },
           }
         );
