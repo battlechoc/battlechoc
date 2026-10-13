@@ -15,8 +15,23 @@ class Agent {
      */
     constructor({ playerIndex, seed, reactionTimeMs = 1000 }) {
         this.playerIndex = playerIndex;
+        this.seed = seed;
         this.reactionTimeMs = reactionTimeMs;
         this.random = { rng: rng.seedFrom(seed) };
+    }
+
+    /** Seeded random number in [0, 1) from the agent's own generator. */
+    nextRandom() {
+        return rng.next(this.random);
+    }
+
+    pick(list) {
+        return rng.pick(this.random, list);
+    }
+
+    /** Match time until the next decision; override for varying reaction times. */
+    nextReactionTime() {
+        return this.reactionTimeMs;
     }
 
     /** Returns { type, payload } or null. Override in subclasses. */
@@ -120,7 +135,7 @@ const playMatch = (engine, getPlayerView, match, agents, { maxTime } = {}) => {
                 stats.rejected += 1;
             }
         }
-        wakeAt[index] = t + agents[index].reactionTimeMs;
+        wakeAt[index] = t + agents[index].nextReactionTime();
     }
     return { match, stats };
 };
