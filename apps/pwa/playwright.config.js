@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const port = Number(process.env.PORT || 3000);
 // the local API for the online tests (in-memory database, short live timings)
 const apiPort = Number(process.env.API_PORT || 8091);
+const devPort = Number(process.env.DEV_PORT || 3001);
 
 // The tests run against the production build (`npm run build` first), served by vite preview.
 // They never leave the machine: every host except 127.0.0.1/localhost resolves to nothing, so
@@ -50,6 +51,13 @@ export default defineConfig({
       // --open false: vite preview inherits server.open and would open a tab in the default browser
       command: `vite preview --host 127.0.0.1 --port ${port} --strictPort --open false`,
       url: `http://127.0.0.1:${port}`,
+      reuseExistingServer: true,
+      timeout: 60000,
+    },
+    {
+      // the dev server too: it serves the linked shared package differently than the build
+      command: `vite --host 127.0.0.1 --port ${devPort} --strictPort --open false`,
+      url: `http://127.0.0.1:${devPort}`,
       reuseExistingServer: true,
       timeout: 60000,
     },
