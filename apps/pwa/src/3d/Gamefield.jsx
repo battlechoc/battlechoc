@@ -245,11 +245,12 @@ class Gamefield {
       this.explode(mesh);
     };
 
+    // only entities appearing, disappearing or changing type need new meshes; hp and the
+    // timers of real-time entities change constantly and are not rendered by meshes
+    const signature = (cell) =>
+      cell.occupiedBy.map((entity) => `${entity.id}:${entity.type}`).join("|");
     let changes = playerField.grid.map((cell, i) =>
-      JSON.stringify(cell.occupiedBy) ===
-      JSON.stringify(this.playerField.grid[i].occupiedBy)
-        ? null
-        : i
+      signature(cell) === signature(this.playerField.grid[i]) ? null : i
     );
     changes
       .filter((position) => position !== null)

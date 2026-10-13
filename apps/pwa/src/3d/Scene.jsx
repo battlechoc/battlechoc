@@ -7,7 +7,11 @@ import {
   deselectAttack,
   selectBuilding,
   tapBuilding,
+  showQuickMessage,
 } from "../ui/UiActions";
+import { selectActiveGame, selectIsRealtime } from "../match/matchSlice";
+import { matchSession } from "../match/LocalMatchHost";
+import { submit, ignoreRuleErrors } from "../ui/match/submit";
 import {
   InfoType,
   build,
@@ -27,6 +31,9 @@ import {
   getEntityDescriptor,
   getCheapest,
   isDonut,
+  engine,
+  translate as t,
+  translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import { Jukebox } from "../ui/misc";
 import {
@@ -101,6 +108,8 @@ class Scene extends Component {
     this.opponentGameField = null;
     this.renderLoopRepetitions = 0;
     this.opponentGameFieldDistance = 12;
+    this.weaponIndicators = new Map();
+    this.weaponIndicatorInterval = setInterval(() => this.updateWeaponIndicators(), 250);
   }
 
   hideEnergyBar = (position, field) => {
@@ -185,7 +194,8 @@ class Scene extends Component {
     this.hideEnergyBar(position);
     this.energyBars.push(name);
 
-    const energy = entity.hp / entity.max.hp;
+    const maxHp = typeof entity.maxHp === "number" ? entity.maxHp : entity.max.hp;
+    const energy = Math.max(0, Math.min(1, entity.hp / maxHp));
     const bar = MeshBuilder.CreatePlane(
       "energy.bar." + name,
       { width: energy, height: 0.15 },
@@ -252,9 +262,14 @@ class Scene extends Component {
 
   componentWillUnmount() {
     window.removeEventListener("resize", this.resize);
+    clearInterval(this.weaponIndicatorInterval);
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps) {
+    if (this.props.realtime) {
+      this.realtimeUpdate(prevProps);
+      return;
+    }
     if (
       typeof this.props.game !== "undefined" &&
       typeof this.lookAtOpponent !== "undefined"
@@ -566,6 +581,11 @@ class Scene extends Component {
   };
 
   clear() {
+    this.weaponIndicators.forEach((indicator) => {
+      indicator.mesh.dispose();
+      indicator.material.dispose();
+    });
+    this.weaponIndicators.clear();
     const instances = this.scene.meshes.filter((mesh) => mesh.isAnInstance);
     for (const instance of instances) {
       instance.dispose();
@@ -701,6 +721,10 @@ class Scene extends Component {
 
   playerFieldClick(row, col, position) {
     if (this.props.tutorial) {
+      return;
+    }
+    if (this.props.realtime) {
+      this.realtimePlayerFieldClick(row, col, position);
       return;
     }
 
@@ -872,6 +896,10 @@ class Scene extends Component {
     if (this.props.tutorial) {
       return;
     }
+    if (this.props.realtime) {
+      this.realtimeOpponentFieldClick(row, col, position);
+      return;
+    }
 
     if (
       multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) &&
@@ -1018,6 +1046,229 @@ class Scene extends Component {
     }
   }
 
+  /* ---------- real-time match ---------- */
+
+  // position of a cell on the own or the opponent's board in scene coordinates
+  boardPosition(row, col, ownBoard) {
+    return ownBoard
+      ? new Vector3(row, 0, col)
+      : new Vector3(
+          row - this.opponentGameFieldDistance,
+          0,
+          col + this.opponentGameFieldDistance
+        );
+  }
+
+  setLookAtOpponent(lookAtOpponent) {
+    if (this.lookAtOpponent !== lookAtOpponent) {
+      this.lookAtOpponent = lookAtOpponent;
+      this.performCameraFlight();
+    }
+  }
+
+  realtimeUpdate(prevProps) {
+    if (this.playerGameField === null) {
+      return;
+    }
+    if (prevProps.boardViewToggles !== this.props.boardViewToggles) {
+      this.setLookAtOpponent(!this.lookAtOpponent);
+    } else if (
+      typeof this.props.selectedAttack !== "undefined" &&
+      prevProps.selectedAttack !== this.props.selectedAttack
+    ) {
+      this.setLookAtOpponent(true);
+    } else if (
+      typeof this.props.selectedBuilding !== "undefined" &&
+      prevProps.selectedBuilding !== this.props.selectedBuilding
+    ) {
+      this.setLookAtOpponent(false);
+    }
+
+    this.opponentGameField.update();
+    this.playerGameField.update();
+    this.syncWeaponIndicators();
+    if (prevProps.matchEvents !== this.props.matchEvents) {
+      this.playMatchEvents(this.props.matchEvents);
+    }
+    this.scene.render();
+  }
+
+  realtimePlayerFieldClick(row, col, position) {
+    const view = this.props.game;
+    const { MatchPhase, MatchActionTypes } = engine;
+    if (view.phase === MatchPhase.PLACEMENT) {
+      submit(MatchActionTypes.placeFactory, { row, col })
+        .then(() => Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD))
+        .catch(ignoreRuleErrors);
+      return;
+    }
+    const type = this.props.selectedBuilding;
+    if (view.phase !== MatchPhase.RUNNING || typeof type === "undefined") {
+      return;
+    }
+    if (isDonut(type)) {
+      submit(MatchActionTypes.placeDonut, { donutType: type, row, col })
+        .then(() => {
+          Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
+          if (type === EntityType.DONUT_PORTAL_BLUE) {
+            this.props.selectBuilding(EntityType.DONUT_PORTAL_RED);
+            this.props.tapBuilding(EntityType.DONUT_PORTAL_RED);
+          } else {
+            this.props.deselectBuildings();
+          }
+        })
+        .catch(ignoreRuleErrors);
+      return;
+    }
+    const costs = (view.balance.entities[type] || {}).costs || 0;
+    submit(MatchActionTypes.build, { entityType: type, row, col })
+      .then(() => {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
+        if (costs > 0) {
+          this.spawnInfo(InfoType.CACAO_CONSUMED, position.clone(), costs);
+        }
+      })
+      .catch(ignoreRuleErrors);
+  }
+
+  realtimeOpponentFieldClick(row, col) {
+    const view = this.props.game;
+    const attackType = this.props.selectedAttack;
+    if (view.phase !== engine.MatchPhase.RUNNING || typeof attackType === "undefined") {
+      return;
+    }
+    submit(engine.MatchActionTypes.attack, { attackType, row, col, allowRush: true }).catch((error) => {
+      const name = error && error.constructor ? error.constructor.name : "";
+      if (name === "TargetEmptyError") {
+        this.props.showQuickMessage({ text: t(tr.MATCH_TARGET_GONE), autoHideDuration: 2000 });
+      } else if (name === "WeaponNotReadyError") {
+        this.props.showQuickMessage({ text: t(tr.MATCH_NOT_READY), autoHideDuration: 2000 });
+      } else if (name === "StunnedError") {
+        this.props.showQuickMessage({ text: t(tr.MATCH_STUNNED), autoHideDuration: 2000 });
+      }
+      return ignoreRuleErrors(error);
+    });
+  }
+
+  // explosions, trap icons and sounds for attacks of both players, driven by match events
+  playMatchEvents(events) {
+    const view = this.props.game;
+    const trapDonuts = {
+      "DonutEffect.PORTAL": EntityType.DONUT_PORTAL_BLUE,
+      "DonutEffect.GREEN": EntityType.DONUT_HEALTH_GREEN,
+      "DonutEffect.WHITE": EntityType.DONUT_CREAM_WHITE,
+      "DonutEffect.PINK": EntityType.DONUT_STOP_PINK,
+      "DonutEffect.XMAS_TO_BALLISTA": EntityType.DONUT_SURPRISE_YELLOW,
+      "DonutEffect.XMAS_TO_FOUNTAIN": EntityType.DONUT_SURPRISE_YELLOW,
+    };
+    events.forEach((event) => {
+      if (event.type === "attack") {
+        const mine = event.player === view.viewer;
+        const { row, col, attackType, result } = event.data;
+        const ownBoard = !mine;
+        const position = this.boardPosition(row, col, ownBoard);
+        if (attackType === AttackType.BUNNY) {
+          if (result.caught) {
+            Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
+            if (mine) {
+              this.spawnInfo(InfoType.BUNNY_CAUGHT, position.clone());
+            }
+          } else {
+            Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
+          }
+          return;
+        }
+        Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
+        this.detonateAtPosition(row, col, ownBoard);
+        result.traps.forEach((trap) => {
+          this.spawnInfo(InfoType.DONUT_TRAP, position.clone(), undefined, trapDonuts[trap]);
+        });
+        const owner = mine ? 1 - view.viewer : view.viewer;
+        const cell = view.board.fields[view.players[owner].fieldIndex].grid[row * view.board.size.cols + col];
+        const survivor = cell.occupiedBy.find(
+          (entity) => entity.type !== EntityType.CREAM && !isDonut(entity.type)
+        );
+        if (survivor) {
+          this.showEnergyBar(survivor, position.clone());
+        }
+      } else if (event.type === "donutsSpawned") {
+        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+        this.props.showQuickMessage({ text: t(tr.MATCH_NEW_DONUTS), autoHideDuration: 3000 });
+      }
+    });
+  }
+
+  // a small disc above each own weapon: grey while charging, blue when it can rush, green when ready
+  syncWeaponIndicators() {
+    const view = this.props.game;
+    if (!this.props.realtime || this.playerGameField === null || view.phase !== engine.MatchPhase.RUNNING) {
+      return;
+    }
+    const grid = view.board.fields[view.players[view.viewer].fieldIndex].grid;
+    const present = new Set();
+    let height = 6.5;
+    if (view.board.size.cols === 6) {
+      height = 5.5;
+    } else if (view.board.size.cols === 8) {
+      height = 6.1;
+    }
+    grid.forEach((cell) =>
+      cell.occupiedBy
+        .filter((entity) => Array.isArray(entity.weapons))
+        .forEach((entity) => {
+          present.add(entity.id);
+          let indicator = this.weaponIndicators.get(entity.id);
+          if (!indicator) {
+            const mesh = MeshBuilder.CreateDisc("weapon.indicator." + entity.id, { radius: 0.16, tessellation: 24 }, this.scene);
+            const material = new StandardMaterial("weapon.indicator.material." + entity.id, this.scene);
+            material.disableLighting = true;
+            mesh.material = material;
+            mesh.billboardMode = Mesh.BILLBOARDMODE_ALL;
+            mesh.isPickable = false;
+            indicator = { mesh, material, state: undefined };
+            this.weaponIndicators.set(entity.id, indicator);
+          }
+          indicator.weapons = entity.weapons;
+          indicator.mesh.position = new Vector3(cell.row - 0.25, height - 0.7, cell.col + 0.25);
+        })
+    );
+    this.weaponIndicators.forEach((indicator, id) => {
+      if (!present.has(id)) {
+        indicator.mesh.dispose();
+        indicator.material.dispose();
+        this.weaponIndicators.delete(id);
+      }
+    });
+    this.updateWeaponIndicators(false);
+  }
+
+  updateWeaponIndicators(render = true) {
+    if (!this.props.realtime || typeof matchSession.host === "undefined" || this.weaponIndicators.size === 0) {
+      return;
+    }
+    const view = this.props.game;
+    const now = matchSession.host.now();
+    const colors = {
+      ready: Color3.FromHexString("#90D01B"),
+      rushable: Color3.FromHexString("#3190C3"),
+      charging: Color3.FromHexString("#8a7b72"),
+    };
+    let changed = false;
+    this.weaponIndicators.forEach((indicator) => {
+      const states = indicator.weapons.map((weapon) => engine.weaponStatus(view, weapon, now).state);
+      const state = states.includes("ready") ? "ready" : states.includes("rushable") ? "rushable" : "charging";
+      if (state !== indicator.state) {
+        indicator.state = state;
+        indicator.material.emissiveColor = colors[state];
+        indicator.material.diffuseColor = colors[state];
+        changed = true;
+      }
+    });
+    if (changed && render) {
+      this.scene.render();
+    }
+  }
+
   setRenderLoop(run = true) {
     if (run) {
       if (this.renderLoopRepetitions === 0) {
@@ -1066,7 +1317,11 @@ class Scene extends Component {
       game.players[multiplayer.localPlayerIndex].fieldIndex;
     const opponentFieldIndex =
       game.players[1 - multiplayer.localPlayerIndex].fieldIndex;
-    if (
+    if (typeof game.phase !== "undefined") {
+      // real-time: start on the own board, the player switches views freely
+      this.lookAtOpponent = false;
+      this.camera.position = new Vector3(30, 30, 30);
+    } else if (
       (multiplayer.isLocalPlayer(game.currentPlayerIndex) &&
         game.state !== GameStateTypes.ATTACK_PHASE) ||
       (!multiplayer.isLocalPlayer(game.currentPlayerIndex) &&
@@ -1120,6 +1375,9 @@ class Scene extends Component {
       this.props.deselectBuildings();
     }
     this.resize();
+    // new instances only show up once their materials are compiled; render again then,
+    // because a real-time match has no camera flight that would keep rendering
+    this.scene.executeWhenReady(() => this.scene.render());
   };
 
   render() {
@@ -1140,7 +1398,10 @@ class Scene extends Component {
 }
 
 const mapStateToProps = (state) => ({
-  game: state.gameplay.game,
+  game: selectActiveGame(state),
+  realtime: selectIsRealtime(state),
+  matchEvents: state.match.events,
+  boardViewToggles: state.ui.boardViewToggles,
   level: state.ui.playerInfos.stats.level,
   selectedBuilding: state.ui.selectedBuilding,
   selectedAttack: state.ui.selectedAttack,
@@ -1158,6 +1419,7 @@ const mapDispatchToProps = {
   tapBuilding,
   deselectAttack,
   finishBuildPhase,
+  showQuickMessage,
 };
 
 const SceneContainer = connect(mapStateToProps, mapDispatchToProps)(Scene);

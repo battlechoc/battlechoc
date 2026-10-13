@@ -18,7 +18,11 @@ import {
   translationKeys as tr,
   setCurrentLanguage,
   computeAwards,
+  engine,
 } from "@battlechoc/battlechoc-shared-functions";
+import { LocalMatchHost, matchSession } from "./match/LocalMatchHost";
+import { MatchClock, ManualClock } from "./match/clock";
+import { matchCleared } from "./match/matchSlice";
 import {
   build,
   attack,
@@ -54,9 +58,10 @@ import {
   selectBuilding,
   toggleDonutHighlighting,
   showNotification,
+  deselectBuildings,
+  deselectAttack,
 } from "./ui/UiActions";
 import GustavGanache from "./gameplay/GustavGanache";
-import TomToffee from "./gameplay/TomToffee";
 import MimiMarzipan from "./gameplay/MimiMarzipan";
 import { GameTransitions, getGameTransition } from "./gameplay/GameTransitions";
 import { gameplayLog } from "./gameplay/GamePlayLogger";
@@ -91,6 +96,8 @@ class App extends Component {
     }
 
     this.timeouts = [];
+    // ?testclock replaces the real-time match clock with a manual one (e2e tests)
+    this.testClock = new URLSearchParams(window.location.search).has("testclock");
     this.state = {
       player: player,
       situation: situation,
@@ -354,6 +361,16 @@ class App extends Component {
       }
     }
 
+    // a real-time match renders its boards as soon as the fields are assigned
+    if (
+      typeof this.props.matchView !== "undefined" &&
+      typeof this.scene !== "undefined" &&
+      this.scene.playerGameField === null &&
+      this.props.matchView.phase !== engine.MatchPhase.FIELD_CHOICE
+    ) {
+      this.scene.startGame(this.props.matchView);
+    }
+
     multiplayer.refreshGameState(this.props.game);
     const gameTransition = getGameTransition(prevProps.game, this.props.game);
 
@@ -394,30 +411,6 @@ class App extends Component {
     }
 
     if (!gameStopped) {
-      if (
-        typeof prevProps.game !== "undefined" &&
-        typeof this.props.game !== "undefined" &&
-        typeof OfflineStore.gamestateStore !== "undefined" &&
-        (this.props.game.state === GameStateTypes.BUILD_PHASE ||
-          this.props.game.state === GameStateTypes.ATTACK_PHASE) &&
-        multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)
-      ) {
-        const isSingleplayerGame =
-          this.props.game.players.filter(
-            (player) =>
-              player.type === PlayerType.AI_STRONG ||
-              player.type === PlayerType.AI_EASY
-          ).length > 0;
-
-        if (!prevProps.tutorial && isSingleplayerGame) {
-          const resumeableGame = {};
-          resumeableGame.gameplay = this.props.gameplay;
-          resumeableGame.ui = this.props.ui;
-          OfflineStore.saveCurrentGame(resumeableGame).then(() => {
-            prevProps.gameResumeable(true).catch(this.handleError);
-          });
-        }
-      }
       if (
         this.props.game !== undefined &&
         (this.props.game.state === GameStateTypes.BUILD_PHASE ||
@@ -659,115 +652,123 @@ class App extends Component {
           }
         });
       } else {
-        OfflineStore.getResumeableGame().then((resumeableGame) => {
-          if (this.props.playerInfos.stats.score < 800) {
-            this.opponent = new TomToffee({
-              chooseStart: this.props.chooseStart,
-              chooseField: this.props.chooseField,
-              build: this.props.build,
-              attack: this.props.attack,
-              finishTurn: this.props.finishTurn,
-              finishBuildPhase: this.props.finishBuildPhase,
-            });
-          } else {
-            this.opponent = new GustavGanache(
-              {
-                chooseStart: this.props.chooseStart,
-                chooseField: this.props.chooseField,
-                build: this.props.build,
-                attack: this.props.attack,
-                finishTurn: this.props.finishTurn,
-                finishBuildPhase: this.props.finishBuildPhase,
-              },
-              this.calculateHandicap(this.props.playerInfos.stats.score)
-            );
-          }
-
-          if (typeof resumeableGame !== "undefined" && resumeGame) {
-            this.props.resumeGame(resumeableGame.gameplay).then(() => {
-              this.opponent.player = resumeableGame.gameplay.game.players[1];
-              this.opponent.connectGamestate(
-                () => this.props.game,
-                (timeout) => this.timeouts.push(timeout)
-              );
-              this.props.loadUiState(resumeableGame.ui).then(() => {
-                if (
-                  ![
-                    GameStateTypes.START,
-                    GameStateTypes.CHOOSE_FIELD_OR_START,
-                    GameStateTypes.CHOOSE_FIELD,
-                  ].includes(this.props.game.state)
-                ) {
-                  this.scene.startGame(this.props.game, false);
-                }
-              });
-            });
-          } else {
-            if (this.props.playerInfos.stats.score <= 100) {
-              this.loadSituation(FirstGame);
-              return;
-            }
-
-            this.props.gameResumeable(false);
-            OfflineStore.gamestateStore.clear();
-            const players = [
-              createPlayer(
-                "Carolin Cacao",
-                PlayerType.HUMAN,
-                this.props.playerInfos.stats.level
-              ),
-            ];
-            if (this.props.playerInfos.stats.score < 800) {
-              players.push(
-                createPlayer(
-                  "Tom Toffee",
-                  PlayerType.AI_EASY,
-                  this.props.playerInfos.stats.level
-                )
-              );
-            } else {
-              players.push(
-                createPlayer(
-                  "Gustav Ganache",
-                  PlayerType.AI_STRONG,
-                  this.props.playerInfos.stats.level
-                )
-              );
-            }
-
-            this.props.startGame(players).then(() => {
-              if (this.props.playerInfos.stats.score >= 800) {
-                this.opponent.type = GustavGanache.randomizeType();
-              }
-              this.opponent.connectGamestate(
-                () => this.props.game,
-                (timeout) => this.timeouts.push(timeout)
-              );
-              const boardSize =
-                this.props.playerInfos.stats.score < 200
-                  ? { rows: 6, cols: 6 }
-                  : this.props.playerInfos.stats.score < 500
-                  ? { rows: 8, cols: 8 }
-                  : { rows: 10, cols: 10 };
-              this.props.createBoard({
-                boardSize: boardSize,
-                boardSeed: Math.floor(Math.random * 1000000),
-              });
-            });
-          }
-        });
+        if (resumeGame) {
+          OfflineStore.getRealtimeMatch().then((saved) => {
+            this.startRealtimeMatch(saved);
+          });
+          return;
+        }
+        if (this.props.playerInfos.stats.score <= 100) {
+          this.loadSituation(FirstGame);
+          return;
+        }
+        this.props.gameResumeable(false);
+        OfflineStore.clearRealtimeMatch();
+        this.startRealtimeMatch();
       }
     }
   };
+
+  // starts (or resumes) a real-time single player match hosted on this device
+  startRealtimeMatch = (saved) => {
+    const stats = this.props.playerInfos.stats;
+    if (typeof matchSession.host !== "undefined") {
+      matchSession.host.stop();
+    }
+    const host = new LocalMatchHost({
+      dispatch: matchSession.dispatch,
+      clock: this.testClock ? new ManualClock() : new MatchClock(),
+      save: (data) =>
+        typeof data === "undefined"
+          ? OfflineStore.clearRealtimeMatch()
+          : OfflineStore.saveRealtimeMatch(data),
+      onEnded: (result) => {
+        const timeoutId = setTimeout(() => this.showRealtimeOverview(result), 2000);
+        this.timeouts.push(timeoutId);
+      },
+    });
+    matchSession.host = host;
+    window.__battlechoc = { host, engine };
+    this.props.resetUi();
+    this.props.deselectBuildings();
+    this.props.deselectAttack();
+
+    if (typeof saved !== "undefined") {
+      try {
+        host.restore(saved);
+        return;
+      } catch (error) {
+        logger.warn("could not resume the saved match", error);
+      }
+    }
+    const boardSize =
+      stats.score < 200
+        ? { rows: 6, cols: 6 }
+        : stats.score < 500
+        ? { rows: 8, cols: 8 }
+        : { rows: 10, cols: 10 };
+    const seed = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    host.startNew({
+      players: [
+        {
+          id: this.props.playerInfos.uid || "local-player",
+          name: "Carolin Cacao",
+          type: PlayerType.HUMAN,
+          level: stats.level,
+        },
+        {
+          id: "ai-tom-toffee",
+          name: "Tom Toffee",
+          type: PlayerType.AI_EASY,
+          level: stats.level,
+        },
+      ],
+      boardSize,
+      seed,
+      agents: [
+        { kind: "TomToffee", playerIndex: 1, seed: `${seed}-ai`, reactionTimeMs: 3000 },
+      ],
+    });
+  };
+
+  showRealtimeOverview(result) {
+    Jukebox.stopMusic(true);
+    this.props.showOverview();
+    this.props.gameResumeable(false);
+    multiplayer.pushGameStats([
+      {
+        ...result.statistics,
+        winners: result.winners.map((winner) => ({
+          id: winner.id,
+          name: winner.name,
+          type: winner.type,
+          idx: winner.idx,
+        })),
+        awards: result.awards,
+        id: uuidv4(),
+      },
+    ]);
+  }
 
   endGame(coins) {
     if (!this.props.tutorial) {
       Jukebox.stopMusic(true);
       setTimeout(() => {
-        if (typeof this.props.game !== "undefined") {
-          this.props.finishGame({
-            issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
-          });
+        const realtime = typeof matchSession.host !== "undefined";
+        if (typeof this.props.game !== "undefined" || realtime) {
+          if (realtime) {
+            matchSession.host.persist(true);
+            matchSession.host.stop();
+            matchSession.host = undefined;
+            matchSession.dispatch(matchCleared());
+            OfflineStore.hasGameToResume().then((resumeable) =>
+              this.props.gameResumeable(resumeable)
+            );
+          } else {
+            this.props.finishGame({
+              issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
+            });
+          }
           this.props.resetUi();
           multiplayer.fetchPlayerStats();
 
@@ -946,6 +947,7 @@ class App extends Component {
 }
 
 const mapStateToProps = (state) => ({
+  matchView: state.match.view,
   gameplay: state.gameplay,
   game: state.gameplay.game,
   actions: state.gameplay.events,
@@ -992,6 +994,8 @@ const mapDispatchToProps = {
   stopSessionRefresh,
   toggleDonutHighlighting,
   showNotification,
+  deselectBuildings,
+  deselectAttack,
 };
 
 const AppContainer = connect(mapStateToProps, mapDispatchToProps)(App);
