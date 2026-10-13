@@ -1,10 +1,12 @@
-// Entry point of the battlechoc backend (see deploy/docker-compose.yml for the environment).
+// Entry point of the battlechoc backend: REST API and the live match WebSocket (/live) on one
+// HTTP server (see deploy/docker-compose.yml for the environment).
 
 const http = require('http');
 const { createPool, migrate } = require('./db');
 const { createAuth } = require('./auth');
 const { createPush } = require('./push');
 const { createApp } = require('./app');
+const { createLive } = require('./live');
 
 const main = async () => {
     const pool = createPool();
@@ -19,10 +21,17 @@ const main = async () => {
     const corsOrigins = (process.env.CORS_ORIGINS || '').split(',').map(origin => origin.trim()).filter(Boolean);
     const app = createApp({ pool, auth, push, corsOrigins });
     const server = http.createServer(app);
+    const live = createLive({ server, pool, auth, push, origins: corsOrigins });
+    const recovered = await live.recover();
+    if (recovered > 0) {
+        console.log(`recovered ${recovered} running matches`);
+    }
     const port = Number(process.env.PORT || 8080);
     server.listen(port, () => console.log(`battlechoc api listening on ${port}`));
 
-    const shutdown = () => {
+    // running matches are saved and resume after the restart (clients reconnect)
+    const shutdown = async () => {
+        await live.close();
         server.close(() => pool.end().then(() => process.exit(0)));
     };
     process.on('SIGTERM', shutdown);
