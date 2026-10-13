@@ -1,0 +1,25 @@
+# Findings in the imported GitLab history (2019-2026). Each one is either public by design
+# (Firebase web API key, Brave Rewards verification token) or a credential that has to be revoked
+# before the repository is published (service-account key, Cloud SQL password, debug endpoint
+# password). New findings are not ignored.
+1fddd2c1156a65294d1364ce2cfc5fef011bc4a4:apps/pwa/src/custom-service-worker.js:gcp-api-key:14
+2304c906f5ba8093c94d38b1b2fd5dbd4d657700:apps/pwa/public/firebase-messaging-sw.js:gcp-api-key:11
+2304c906f5ba8093c94d38b1b2fd5dbd4d657700:apps/pwa/src/firebaseConfig.js:gcp-api-key:3
+2ce421038e39241aad3c4b274e221290803e6ad1:apps/pwa/src/Multiplayer.js:gcp-api-key:27
+42c1bd7c76b27f555569c8e153d72b02f2b1104a:apps/pwa/build/static/js/main.c2ff877d.chunk.js:gcp-api-key:1
+55344a629f63f8ce5d30e70c28a0bfb9b92a7a64:apps/pwa/build/static/js/main.c2ff877d.chunk.js:gcp-api-key:1
+5a5b284d4e58c96d16d29b1ec4e0aed9346d4dc0:apps/pwa/build/static/js/main.c2ff877d.chunk.js:gcp-api-key:1
+5cda068cfb796b9adde73efcb9f831a009c62668:apps/pwa/src/App.js:generic-api-key:720
+5d1606c076738182bf61f4ac0ee9cd9e902309b1:apps/pwa/public/index.html:gcp-api-key:19
+60fc005922137443045a66db5dc998c137ecd9e9:apps/server/functions/main.js:generic-api-key:46
+6a1437b2d0cc4d8bbb2ffafa1d2a14993f10f620:apps/pwa/src/custom-service-worker.js:gcp-api-key:5
+7af8df8b512f46575f30f8ba9b6c625c684eadfe:apps/pwa/src/ui/dialogs/Settings.js:generic-api-key:153
+7d9dc0bc29ba0a3f1bed3083025b22376d731d7a:apps/pwa/src/App.js:generic-api-key:720
+87966e395abba7018a252c355e83ad0faa9a1714:apps/pwa/build/static/js/main.ff6ce170.chunk.js:gcp-api-key:1
+934fb531df8d18624b605770814bbb2b0d198ecf:apps/pwa/public/.well-known/brave-rewards-verification.txt:generic-api-key:4
+96879e85029ef0dfced2f1bae547e26dc87a4ebf:apps/server/functions/battlechoc-service-account.json:private-key:5
+99b936c49d9d527c7827c7ac06c5633c16de646a:apps/pwa/src/ui/dialogs/Settings.js:generic-api-key:172
+9ad23ac4b73796006e67fc85ddb826bc6ef9044f:apps/server/functions/index.js:generic-api-key:20
+b856ad5cc04312317ac5b5c9a9d71d0e53a6c87d:apps/pwa/src/Multiplayer.js:gcp-api-key:13
+fedbd2f6411067ba6f17e7590d85dfb70307b6a4:apps/server/functions/main.js:generic-api-key:30
+fef1599e49dff5d7c1c12c02efe2b457cd16a283:apps/server/functions/main.js:generic-api-key:53
