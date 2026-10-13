@@ -363,7 +363,7 @@ module.exports = {
     "TUTORIAL_CHARGE_TITLE": "The cannon loads",
     "TUTORIAL_CHARGE_MESSAGE": "A cannon reloads in 20 seconds. From halfway its button at the bottom right turns blue: you can fire early for 10 cacao. Green means the shot is free.",
     "TUTORIAL_FIRE_TITLE": "Fire!",
-    "TUTORIAL_FIRE_MESSAGE": "Tap the cannon button at the bottom right to look at Mimi's board, then tap her tree or her factory. Without a factory nobody can build anymore, and that player loses.",
+    "TUTORIAL_FIRE_MESSAGE": "Tap the cannon button at the bottom right to look at Mimi's board, then tap her tree or her factory. Mimi has no cannons, so without her factory she can't build anymore and loses.",
     "TUTORIAL_WIN_TITLE": "Win the match",
     "TUTORIAL_WIN_MESSAGE": "Destroy Mimi's factory. Your cannon reloads, and more cannons make you faster.",
     "TUTORIAL_SHOW_BUILDINGS": "Show the buildings"

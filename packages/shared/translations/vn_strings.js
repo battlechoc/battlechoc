@@ -363,7 +363,7 @@ module.exports = {
     "TUTORIAL_CHARGE_TITLE": "Pháo đang nạp",
     "TUTORIAL_CHARGE_MESSAGE": "Một khẩu pháo nạp lại trong 20 giây. Từ nửa chừng, nút của nó ở góc dưới bên phải chuyển sang xanh dương: bạn có thể bắn sớm với 10 ca cao. Màu xanh lá nghĩa là phát bắn miễn phí.",
     "TUTORIAL_FIRE_TITLE": "Bắn!",
-    "TUTORIAL_FIRE_MESSAGE": "Chạm vào nút pháo ở góc dưới bên phải để xem bàn của Mimi, rồi chạm vào cây hoặc nhà máy của cô ấy. Không còn nhà máy thì không thể xây nữa và sẽ thua.",
+    "TUTORIAL_FIRE_MESSAGE": "Chạm vào nút pháo ở góc dưới bên phải để xem bàn của Mimi, rồi chạm vào cây hoặc nhà máy của cô ấy. Mimi không có pháo, nên mất nhà máy là cô ấy không thể xây nữa và thua.",
     "TUTORIAL_WIN_TITLE": "Thắng trận đấu",
     "TUTORIAL_WIN_MESSAGE": "Phá hủy nhà máy của Mimi. Pháo của bạn sẽ nạp lại, và thêm pháo giúp bạn nhanh hơn.",
     "TUTORIAL_SHOW_BUILDINGS": "Xem các công trình"

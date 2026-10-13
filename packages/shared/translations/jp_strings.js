@@ -363,7 +363,7 @@ module.exports = {
     "TUTORIAL_CHARGE_TITLE": "キャノンを装填中",
     "TUTORIAL_CHARGE_MESSAGE": "キャノンの装填には20秒かかります。半分を過ぎると右下のボタンが青になり、カカオ10で早撃ちできます。緑なら無料で撃てます。",
     "TUTORIAL_FIRE_TITLE": "撃て!",
-    "TUTORIAL_FIRE_MESSAGE": "右下のキャノンボタンをタップしてミミの盤を見て、彼女の木か工場をタップしましょう。工場がなくなると建設できなくなり、負けです。",
+    "TUTORIAL_FIRE_MESSAGE": "右下のキャノンボタンをタップしてミミの盤を見て、彼女の木か工場をタップしましょう。ミミにはキャノンがないので、工場がなくなると建設できなくなり負けです。",
     "TUTORIAL_WIN_TITLE": "勝利をつかもう",
     "TUTORIAL_WIN_MESSAGE": "ミミの工場を壊しましょう。キャノンは再装填され、キャノンを増やせばもっと速く攻められます。",
     "TUTORIAL_SHOW_BUILDINGS": "建物を見る"

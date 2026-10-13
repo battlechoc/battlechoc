@@ -363,7 +363,7 @@ module.exports = {
     "TUTORIAL_CHARGE_TITLE": "O canhão carrega",
     "TUTORIAL_CHARGE_MESSAGE": "Um canhão recarrega em 20 segundos. A partir da metade, seu botão no canto inferior direito fica azul: você pode atirar antes por 10 de cacau. Verde significa que o tiro é grátis.",
     "TUTORIAL_FIRE_TITLE": "Fogo!",
-    "TUTORIAL_FIRE_MESSAGE": "Toque no botão do canhão no canto inferior direito para ver o tabuleiro da Mimi e depois toque na árvore ou na fábrica dela. Sem fábrica não dá mais para construir, e quem fica sem ela perde.",
+    "TUTORIAL_FIRE_MESSAGE": "Toque no botão do canhão no canto inferior direito para ver o tabuleiro da Mimi e depois toque na árvore ou na fábrica dela. Mimi não tem canhões: sem a fábrica ela não pode mais construir e perde.",
     "TUTORIAL_WIN_TITLE": "Vença a partida",
     "TUTORIAL_WIN_MESSAGE": "Destrua a fábrica da Mimi. Seu canhão recarrega, e com mais canhões você vai mais rápido.",
     "TUTORIAL_SHOW_BUILDINGS": "Ver os edifícios"

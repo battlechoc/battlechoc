@@ -363,7 +363,7 @@ module.exports = {
     "TUTORIAL_CHARGE_TITLE": "Il cannone si carica",
     "TUTORIAL_CHARGE_MESSAGE": "Un cannone si ricarica in 20 secondi. Da metà carica il suo pulsante in basso a destra diventa blu: puoi sparare prima per 10 di cacao. Verde vuol dire che il colpo è gratis.",
     "TUTORIAL_FIRE_TITLE": "Fuoco!",
-    "TUTORIAL_FIRE_MESSAGE": "Tocca il pulsante del cannone in basso a destra per vedere il tabellone di Mimi, poi tocca il suo albero o la sua fabbrica. Senza fabbrica non si può più costruire e si perde.",
+    "TUTORIAL_FIRE_MESSAGE": "Tocca il pulsante del cannone in basso a destra per vedere il tabellone di Mimi, poi tocca il suo albero o la sua fabbrica. Mimi non ha cannoni: senza la fabbrica non può più costruire e perde.",
     "TUTORIAL_WIN_TITLE": "Vinci la partita",
     "TUTORIAL_WIN_MESSAGE": "Distruggi la fabbrica di Mimi. Il tuo cannone si ricarica e con più cannoni farai prima.",
     "TUTORIAL_SHOW_BUILDINGS": "Mostra gli edifici"

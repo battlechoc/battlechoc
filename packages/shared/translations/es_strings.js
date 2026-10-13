@@ -363,7 +363,7 @@ module.exports = {
     "TUTORIAL_CHARGE_TITLE": "El cañón carga",
     "TUTORIAL_CHARGE_MESSAGE": "Un cañón recarga en 20 segundos. Desde la mitad, su botón abajo a la derecha se vuelve azul: puedes disparar antes por 10 de cacao. Verde significa que el disparo es gratis.",
     "TUTORIAL_FIRE_TITLE": "¡Fuego!",
-    "TUTORIAL_FIRE_MESSAGE": "Toca el botón del cañón abajo a la derecha para ver el tablero de Mimi y después toca su árbol o su fábrica. Sin fábrica ya no se puede construir y se pierde.",
+    "TUTORIAL_FIRE_MESSAGE": "Toca el botón del cañón abajo a la derecha para ver el tablero de Mimi y después toca su árbol o su fábrica. Mimi no tiene cañones: sin su fábrica ya no puede construir y pierde.",
     "TUTORIAL_WIN_TITLE": "Gana la partida",
     "TUTORIAL_WIN_MESSAGE": "Destruye la fábrica de Mimi. Tu cañón recarga y con más cañones irás más rápido.",
     "TUTORIAL_SHOW_BUILDINGS": "Ver los edificios"

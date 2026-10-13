@@ -363,7 +363,7 @@ module.exports = {
     "TUTORIAL_CHARGE_TITLE": "Die Kanone lädt",
     "TUTORIAL_CHARGE_MESSAGE": "Eine Kanone lädt 20 Sekunden nach. Ab der Hälfte wird ihr Knopf unten rechts blau: Dann kannst du für 10 Kakao früher feuern. Grün heißt, der Schuss ist kostenlos.",
     "TUTORIAL_FIRE_TITLE": "Feuer!",
-    "TUTORIAL_FIRE_MESSAGE": "Tippe unten rechts auf den Kanonenknopf, um Mimis Spielbrett zu sehen, und dann auf ihren Baum oder ihre Fabrik. Wer keine Fabrik mehr hat, kann nicht mehr bauen und verliert.",
+    "TUTORIAL_FIRE_MESSAGE": "Tippe unten rechts auf den Kanonenknopf, um Mimis Spielbrett zu sehen, und dann auf ihren Baum oder ihre Fabrik. Mimi hat keine Kanonen: Ohne Fabrik kann sie nichts mehr bauen und verliert.",
     "TUTORIAL_WIN_TITLE": "Gewinne die Partie",
     "TUTORIAL_WIN_MESSAGE": "Zerstöre Mimis Fabrik. Deine Kanone lädt nach, und mit weiteren Kanonen geht es schneller.",
     "TUTORIAL_SHOW_BUILDINGS": "Gebäude ansehen"
