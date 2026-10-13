@@ -1963,6 +1963,10 @@ const { Agent, RandomBot, playMatch } = require('./engine/agents');
 const { TomToffee } = require('./engine/ai/tomToffee');
 const { GustavGanache, Personality } = require('./engine/ai/gustavGanache');
 const { DefaultBalance, valueAt } = require('./balance');
+const hosting = require('./engine/hosting');
+const setup = require('./engine/setup');
+const protocol = require('./live/protocol');
+const { ClockSync } = require('./live/clockSync');
 
 module.exports.engine = {
     ...realtimeEngine,
@@ -1973,7 +1977,10 @@ module.exports.engine = {
     RandomBot,
     playMatch,
     ai: { TomToffee, GustavGanache, Personality },
+    ...hosting,
+    ...setup,
 };
+module.exports.live = { ...protocol, ClockSync };
 module.exports.DefaultBalance = DefaultBalance;
 module.exports.valueAt = valueAt;
 module.exports.WeaponNotReadyError = require('./errors').WeaponNotReadyError;
