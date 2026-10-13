@@ -67,3 +67,6 @@ cache_fluid
 *.blend1
 
 .secret
+# playwright
+test/results/
+playwright-report/

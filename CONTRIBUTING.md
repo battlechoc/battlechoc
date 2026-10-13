@@ -31,8 +31,10 @@ Thank you for your interest in contributing to battlechoc! Please follow these g
    ```bash
    npm install
    npm test            # shared rules engine unit tests
+   npm run test:api    # API tests (in-memory Postgres)
    npm run build       # PWA production build
-   npm run test:e2e    # end-to-end tests against the build
+   npx playwright install chromium   # once, for the end-to-end tests
+   npm run test:e2e    # Playwright end-to-end tests against the build
    ```
 
 ## Licensing of contributions
