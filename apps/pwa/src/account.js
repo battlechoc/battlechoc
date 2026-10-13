@@ -6,7 +6,17 @@ import logger from "./helper/logger";
 // which stays in IndexedDB. Short-lived access tokens are fetched with it when needed. Without
 // a connection the game keeps working offline; the account is created on a later start.
 
-const apiUrl = import.meta.env.VITE_API_URL || "https://api.battlechoc.com";
+// localStorage "battlechoc.apiUrl" points a build at another API (e2e tests, local servers)
+const storedApiUrl = (() => {
+  try {
+    return window.localStorage.getItem("battlechoc.apiUrl");
+  } catch {
+    return null;
+  }
+})();
+const apiUrl =
+  storedApiUrl || import.meta.env.VITE_API_URL || "https://api.battlechoc.com";
+const liveUrl = apiUrl.replace(/^http/, "ws").replace(/\/$/, "") + "/live";
 const ACCOUNT_KEY = "account";
 const EXPIRY_MARGIN_MS = 30000;
 
@@ -87,4 +97,4 @@ class Account {
 
 const account = new Account();
 
-export { account, apiUrl };
+export { account, apiUrl, liveUrl };

@@ -1,10 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const port = Number(process.env.PORT || 3000);
+// the local API for the online tests (in-memory database, short live timings)
+const apiPort = Number(process.env.API_PORT || 8091);
 
 // The tests run against the production build (`npm run build` first), served by vite preview.
-// They never leave the machine: every host except the preview server resolves to nothing, so
-// the app runs as it does offline (no account, no API).
+// They never leave the machine: every host except 127.0.0.1/localhost resolves to nothing, so
+// the app runs as it does offline (no account, no API). The online tests point the app at the
+// local API below through localStorage "battlechoc.apiUrl".
 export default defineConfig({
   testDir: "./test",
   outputDir: "./test/results",
@@ -42,11 +45,27 @@ export default defineConfig({
       use: { ...devices["iPhone 6 landscape"], browserName: "chromium" },
     },
   ],
-  webServer: {
-    // --open false: vite preview inherits server.open and would open a tab in the default browser
-    command: `vite preview --host 127.0.0.1 --port ${port} --strictPort --open false`,
-    url: `http://127.0.0.1:${port}`,
-    reuseExistingServer: true,
-    timeout: 60000,
-  },
+  webServer: [
+    {
+      // --open false: vite preview inherits server.open and would open a tab in the default browser
+      command: `vite preview --host 127.0.0.1 --port ${port} --strictPort --open false`,
+      url: `http://127.0.0.1:${port}`,
+      reuseExistingServer: true,
+      timeout: 60000,
+    },
+    {
+      command: "node ../api/src/server.js",
+      url: `http://127.0.0.1:${apiPort}/health`,
+      reuseExistingServer: true,
+      timeout: 30000,
+      env: {
+        PORT: String(apiPort),
+        DATABASE_URL: "memory",
+        JWT_SECRET: "e2e-only-secret-e2e-only-secret-e2e",
+        CORS_ORIGINS: `http://127.0.0.1:${port},http://localhost:${port}`,
+        LIVE_DISCONNECT_GRACE_MS: "6000",
+        LIVE_AI_FALLBACK_MS: "3000",
+      },
+    },
+  ],
 });

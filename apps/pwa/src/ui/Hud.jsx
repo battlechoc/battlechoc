@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import "./Hud.css";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import {
-  GameStateTypes,
   engine,
   translate as t,
   translationKeys as tr,
-  computeAwards,
 } from "@battlechoc/battlechoc-shared-functions";
 import {
   showQuickMessage,
@@ -22,7 +20,8 @@ import {
   Dialog,
   Highscore,
 } from "./dialogs";
-import MultiplayerScreen from "./pages/MultiplayerScreen";
+import OnlineLobby from "./dialogs/OnlineLobby";
+import { liveLobby } from "../match/liveLobby";
 import Choclab from "./pages/Choclab";
 import { multiplayer } from "../Multiplayer";
 import { ServerRequest } from "../helper/settings";
@@ -194,7 +193,6 @@ const Hud = (props) => {
   const classes = useStyles(props);
   const {
     resumeGamePossible,
-    enterMultiplayerGame,
     showQuickMessage,
     challengedPlayer,
     assetsReady,
@@ -202,18 +200,15 @@ const Hud = (props) => {
     selectedAttack,
     tappedBuilding,
     game,
-    actions,
     state,
     openInfo,
     prepareNewGameCallback,
     className,
-    surrender,
     startTutorial,
     playerInfos,
     endGame,
     notification,
     hideNotification,
-    injectedMultiplayerSessionId,
     realtime,
     matchAwards,
   } = props;
@@ -222,7 +217,7 @@ const Hud = (props) => {
   const [openSettings, setOpenSettings] = useState(false);
   const [showAccountOverview, setShowAccountOverview] = useState(false);
   const [dialogStyle, setDialogStyle] = useState("default");
-  const [showMultiplayerScreen, setShowMultiplayerScreen] = useState(false);
+  const [showOnlineLobby, setShowOnlineLobby] = useState(false);
   const [waitingRoom, setWaitingRoom] = useState(false);
   const [waitingRoomText, setWaitingRoomText] = useState(
     t(tr.TRY_TO_JOIN_GAME)
@@ -240,15 +235,6 @@ const Hud = (props) => {
     setShowAccountOverview(true);
     setPlayerAccount(account);
   };
-
-  const joinGame = useCallback(
-    (session) => {
-      setShowMultiplayerScreen(false);
-      setChoclabScreen(false);
-      enterMultiplayerGame(session);
-    },
-    [enterMultiplayerGame]
-  );
 
   useEffect(() => {
     const checkForWaitingRoom = async () => {
@@ -280,66 +266,21 @@ const Hud = (props) => {
         } finally {
           setWaitingRoom(false);
         }
-      } else if (typeof injectedMultiplayerSessionId !== "undefined") {
-        setWaitingRoom(true);
-        setWaitingRoomText(t(tr.TRY_TO_JOIN_GAME));
-
-        try {
-          let sessions = undefined;
-          let retry = false;
-          while (typeof sessions === "undefined") {
-            if (retry) {
-              await sleep(250);
-            }
-            sessions = await multiplayer.getMultiplayerSessions(
-              null,
-              injectedMultiplayerSessionId
-            );
-            retry = true;
-          }
-
-          if (sessions.length > 0) {
-            joinGame(sessions[0].id);
-          } else {
-            logger.warn(
-              `${injectedMultiplayerSessionId} is not a session of this player`
-            );
-            showQuickMessage({ text: t(tr.WARNING_GAME_NOT_JOINABLE_VIA_URL) });
-          }
-        } catch (error) {
-          logger.warn(error);
-          showQuickMessage({ text: t(tr.ERROR_GAME_NOT_JOINABLE_VIA_URL) });
-        } finally {
-          setWaitingRoom(false);
-        }
       }
     };
     checkForWaitingRoom();
-  }, [
-    challengedPlayer,
-    joinGame,
-    injectedMultiplayerSessionId,
-    showQuickMessage,
-  ]);
+  }, [challengedPlayer, showQuickMessage]);
 
   const estimateStage = () => {
     if (
       typeof state === "undefined" &&
-      !showMultiplayerScreen &&
       !choclabScreen &&
       !challengedProfile &&
       !waitingRoom
     ) {
       return "TITLE_SCREEN";
-    } else if (
-      state === GameStateTypes.START ||
-      state === GameStateTypes.CHOOSE_FIELD_OR_START ||
-      state === GameStateTypes.CHOOSE_FIELD ||
-      state === engine.MatchPhase.FIELD_CHOICE
-    ) {
+    } else if (state === engine.MatchPhase.FIELD_CHOICE) {
       return "CHOOSE_MENU";
-    } else if (showMultiplayerScreen) {
-      return "MULTIPLAYER_SCREEN";
     } else if (choclabScreen) {
       return "CHOCLAB_SCREEN";
     } else if (challengedProfile) {
@@ -374,19 +315,17 @@ const Hud = (props) => {
 
   const stage = estimateStage();
   return (
-    <div
-      className={showMultiplayerScreen ? "scrollable " + className : className}
-    >
+    <div className={className}>
       <Settings
         startTutorial={kickOffTutorial}
-        surrender={surrender}
         open={openSettings}
         close={() => setOpenSettings(false)}
       />
       <AccountOverview
-        challengePlayer={async (username) => {
-          await multiplayer.challengePlayer(username);
-          multiplayer.getMultiplayerSessions();
+        challengePlayer={(username) => {
+          setShowAccountOverview(false);
+          setShowOnlineLobby(true);
+          liveLobby.invite(username);
         }}
         addFriend={async (friend) => {
           await multiplayer.addFriend(friend);
@@ -395,7 +334,6 @@ const Hud = (props) => {
           await multiplayer.removeFriend(friend);
         }}
         dialogStyle={dialogStyle}
-        joinGame={joinGame}
         playerAccount={playerAccount}
         open={showAccountOverview}
         close={() => setShowAccountOverview(false)}
@@ -411,8 +349,6 @@ const Hud = (props) => {
               ></Fab>
             </div>
           );
-        } else if (stage === "MULTIPLAYER_SCREEN") {
-          return null;
         } else if (stage === "CHALLENGE_SCREEN") {
           return (
             <div className={classes.actionbar}>
@@ -494,6 +430,18 @@ const Hud = (props) => {
                 playername === "Chocnonymous"
                   ? t(tr.NEW_GAME)
                   : t(tr.MAIN_MENU_SINGLEPLAYER)}
+              </Button>
+            );
+            controls.push(
+              <Button
+                className={classes.menuButton}
+                key="1"
+                size="huge"
+                locked={locked}
+                color="secondary"
+                onClick={() => setShowOnlineLobby(true)}
+              >
+                {t(tr.ONLINE_TITLE)}
               </Button>
             );
             controls.push(
@@ -583,6 +531,10 @@ const Hud = (props) => {
                 </div>
               </Dialog>
               <Info openInfo={openInfo} />
+              <OnlineLobby
+                open={showOnlineLobby}
+                close={() => setShowOnlineLobby(false)}
+              />
             </>
           );
         } else if (stage === "CHOOSE_MENU") {
@@ -600,17 +552,6 @@ const Hud = (props) => {
               />
               <GameStartSelection />
             </div>
-          );
-        } else if (stage === "MULTIPLAYER_SCREEN") {
-          return (
-            <>
-              <div className={classes.decoration} />
-              <MultiplayerScreen
-                closeMultiplayerScreen={() => setShowMultiplayerScreen(false)}
-                openAccountOverview={openAccountOverview}
-                enterMultiplayerGame={joinGame}
-              />
-            </>
           );
         } else if (stage === "CHOCLAB_SCREEN") {
           return <Choclab />;
@@ -664,25 +605,6 @@ const Hud = (props) => {
               <AttackPalette />
               <BuildingPalette />
               <InfoPanel players={game.players} />
-              {overviewVisible ? (
-                <GameEndOverview
-                  awards={computeAwards(
-                    game,
-                    multiplayer.localPlayerIndex,
-                    actions
-                  )}
-                  outcome={
-                    game.winners.some(
-                      (winner) =>
-                        winner.id ===
-                        game.players[multiplayer.localPlayerIndex].id
-                    )
-                      ? "won"
-                      : "lost"
-                  }
-                  finishGame={(coins) => endGame(coins)}
-                />
-              ) : null}
             </div>
           );
         }
@@ -693,7 +615,6 @@ const Hud = (props) => {
 
 Hud.propTypes = {
   prepareNewGameCallback: PropTypes.func.isRequired,
-  enterMultiplayerGame: PropTypes.func.isRequired,
   startTutorial: PropTypes.func.isRequired,
   endGame: PropTypes.func.isRequired,
   challengedPlayer: PropTypes.string,
@@ -702,7 +623,6 @@ Hud.propTypes = {
 
 const mapStateToProps = (state) => ({
   game: selectActiveGame(state),
-  actions: state.gameplay.events,
   realtime: selectIsRealtime(state),
   matchAwards: state.match.awards,
   state:
@@ -716,7 +636,6 @@ const mapStateToProps = (state) => ({
   playerInfos: state.ui.playerInfos,
   tappedBuilding: state.ui.tappedBuilding,
   selectedAttack: state.ui.selectedAttack,
-  injectedMultiplayerSessionId: state.ui.injectedMultiplayerSessionId,
 });
 
 const mapDispatchToProps = {

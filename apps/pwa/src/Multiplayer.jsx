@@ -9,8 +9,7 @@ import { account } from "./account";
 import logger from "./helper/logger";
 
 // Player profile and social features against the battlechoc API (device account), plus the
-// local player index used by the scene. The turn-based online sessions were removed together
-// with Firebase; live online matches replace them.
+// local player index used by the tutorial. Online matches are live (match/liveLobby.js).
 
 const urlBase64ToUint8Array = (base64) => {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -26,13 +25,9 @@ class Multiplayer {
     this.callbacks = {
       updatePlayerStats: notInitialized("updatePlayerStats"),
       notifyPlayerSignedIn: notInitialized("notifyPlayerSignedIn"),
-      updateMultiplayerSessions: notInitialized("updateMultiplayerSessions"),
       loadFriendsList: notInitialized("loadFriendsList"),
       setPlayerRank: notInitialized("setPlayerRank"),
-      startSessionRefresh: notInitialized("startSessionRefresh"),
-      stopSessionRefresh: notInitialized("stopSessionRefresh"),
       showQuickMessage: notInitialized("showQuickMessage"),
-      detonateAtPosition: notInitialized("detonateAtPosition"),
       showNotification: notInitialized("showNotification"),
     };
 
@@ -359,10 +354,6 @@ class Multiplayer {
     ).data;
   }
 
-  async findRandomPlayer() {
-    return (await ServerRequest("get", "/random/opponent")).data;
-  }
-
   async fetchRandomName() {
     try {
       return (await ServerRequest("get", "/generaterandomname")).data.username;
@@ -370,32 +361,6 @@ class Multiplayer {
       logger.warn("Could not create a random player name.", error);
       return EmptyPlayerStats.username;
     }
-  }
-
-  /* ---------- online sessions (replaced by live matches) ---------- */
-
-  async getMultiplayerSessions() {
-    this.callbacks.updateMultiplayerSessions([]);
-    return [];
-  }
-
-  async challengePlayer() {
-    logger.info("online challenges come back with live matches");
-  }
-
-  async enterGameSession() {
-    throw new ReferenceError("turn-based online sessions are no longer supported");
-  }
-
-  relayAction() {}
-
-  refreshGameState(gameState) {
-    this.gameState = gameState;
-  }
-
-  reset() {
-    this.localPlayerIndex = 0;
-    this.currentGameSession = undefined;
   }
 }
 

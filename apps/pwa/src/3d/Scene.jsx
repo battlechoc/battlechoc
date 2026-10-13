@@ -3,8 +3,6 @@ import { connect } from "react-redux";
 import { multiplayer } from "../Multiplayer";
 import {
   deselectBuildings,
-  selectAttack,
-  deselectAttack,
   selectBuilding,
   tapBuilding,
   showQuickMessage,
@@ -12,24 +10,13 @@ import {
 import { selectActiveGame, selectIsRealtime } from "../match/matchSlice";
 import { matchSession } from "../match/LocalMatchHost";
 import { submit, ignoreRuleErrors } from "../ui/match/submit";
-import {
-  InfoType,
-  build,
-  attack,
-  finishTurn,
-  finishBuildPhase,
-} from "../gameplay/GameActions";
+import { InfoType } from "../gameplay/GameActions";
 import Gamefield from "./Gamefield";
 import {
   GameStateTypes,
-  playerHasAttacks,
-  BattlechocError,
   EntityType,
   AttackType,
   BoardCellTypes,
-  createEntity,
-  getEntityDescriptor,
-  getCheapest,
   isDonut,
   engine,
   translate as t,
@@ -491,67 +478,6 @@ class Scene extends Component {
     }
   }
 
-  triggerDonutInfo(donut, position) {
-    if (typeof position === "undefined") {
-      position = new Vector3(donut.position.row, 6.5, donut.position.col);
-    } else {
-      position.y = 6.5;
-    }
-    this.spawnInfo(InfoType.DONUT_TRAP, position, undefined, donut.type);
-  }
-
-  triggerCacaoInfo() {
-    let cells =
-      this.props.game.board.fields[
-        this.props.game.players[multiplayer.localPlayerIndex].fieldIndex
-      ].grid;
-
-    let entities = cells.filter(
-      (cell) =>
-        cell.occupiedBy.filter((entity) => entity.type !== EntityType.CREAM)
-          .length > 0
-    );
-    entities.forEach((cell) =>
-      this.showEnergyBar(
-        cell.occupiedBy.filter((entity) => entity.type !== EntityType.CREAM)[0],
-        new Vector3(cell.row, 0, cell.col)
-      )
-    );
-
-    let trees = cells.filter((cell) =>
-      cell.occupiedBy
-        .map((entity) => entity.type)
-        .includes(EntityType.CACAOTREE)
-    );
-    let description = getEntityDescriptor(
-      EntityType.CACAOTREE,
-      this.props.game.players[multiplayer.localPlayerIndex].level
-    );
-    trees.forEach((cell) => {
-      this.spawnInfo(
-        InfoType.CACAO_HARVESTED,
-        new Vector3(cell.row, 0, cell.col),
-        cell.type === BoardCellTypes.WHITE
-          ? Math.round(description.cacaoPerTurn * 1.5)
-          : description.cacaoPerTurn
-      );
-    });
-    let factory = cells.filter((cell) =>
-      cell.occupiedBy.map((entity) => entity.type).includes(EntityType.FACTORY)
-    );
-    description = getEntityDescriptor(
-      EntityType.FACTORY,
-      this.props.game.players[multiplayer.localPlayerIndex].level
-    );
-    factory.forEach((cell) => {
-      this.spawnInfo(
-        InfoType.CACAO_HARVESTED,
-        new Vector3(cell.row, 0, cell.col),
-        description.cacaoPerTurn
-      );
-    });
-  }
-
   estimateOrthographicSize() {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
@@ -719,336 +645,19 @@ class Scene extends Component {
     }
   }
 
+  // the tutorial board is not interactive; real-time matches handle clicks below
   playerFieldClick(row, col, position) {
-    if (this.props.tutorial) {
-      return;
-    }
-    if (this.props.realtime) {
+    if (!this.props.tutorial && this.props.realtime) {
       this.realtimePlayerFieldClick(row, col, position);
-      return;
-    }
-
-    let player = this.props.game.players[multiplayer.localPlayerIndex];
-    let buildingSelected = this.props.selectedBuilding;
-    let initialPlacement =
-      this.props.game.state === GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-      this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT;
-
-    if (
-      buildingSelected ||
-      (initialPlacement && player.buildingsPerTurn === 0)
-    ) {
-      let building;
-      if (initialPlacement) {
-        building = createEntity(EntityType.FACTORY, player.level);
-      } else {
-        building = createEntity(this.props.selectedBuilding, player.level);
-      }
-      building.position = { row: row, col: col };
-      let playerCacaoPerTurnBefore = player.cacaoPerTurn;
-      let buildingsPerTurnBefore = player.buildingsPerTurn;
-      const target =
-        this.props.game.board.fields[
-          this.props.game.players[this.props.game.currentPlayerIndex].fieldIndex
-        ].grid[row * this.props.game.board.size.cols + col];
-      this.props
-        .build({ issuer: player.id, building: building, target: target })
-        .then(() => {
-          player = this.props.game.players[multiplayer.localPlayerIndex];
-          Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
-          if (building.type === EntityType.DONUT_PORTAL_BLUE) {
-            this.props.selectBuilding(EntityType.DONUT_PORTAL_RED);
-            this.props.tapBuilding(EntityType.DONUT_PORTAL_RED);
-          } else if (isDonut(building.type)) {
-            this.props.deselectBuildings();
-          }
-
-          if (building.type !== EntityType.CREAM) {
-            this.showEnergyBar(building);
-          }
-          if (initialPlacement) {
-            this.spawnInfo(
-              InfoType.INCREASE_BUILDINGS_PER_TURN,
-              position.clone(),
-              player.buildingsPerTurn
-            );
-            this.props.deselectBuildings();
-            this.props.deselectAttack();
-            let playerId = player.id;
-            setTimeout(() => {
-              let description = getEntityDescriptor(
-                EntityType.FACTORY,
-                player.level
-              );
-              this.spawnInfo(
-                InfoType.INCREASE_CACAO_PER_TURN,
-                position.clone(),
-                description.cacaoPerTurn
-              );
-            }, 1000);
-            setTimeout(() => {
-              if (playerId === player.id) {
-                this.props.finishTurn({ issuer: player.id });
-                this.props.deselectBuildings();
-                this.props.deselectAttack();
-              }
-            }, 3000);
-          } else {
-            let description = getEntityDescriptor(building.type, player.level);
-            if (!isDonut(building.type)) {
-              this.spawnInfo(
-                InfoType.CACAO_CONSUMED,
-                position.clone(),
-                description.costs
-              );
-            }
-            let cacaoDelta = player.cacaoPerTurn - playerCacaoPerTurnBefore;
-            let buildingsDelta =
-              player.buildingsPerTurn - buildingsPerTurnBefore;
-            setTimeout(() => {
-              if (typeof this.props.game !== "undefined") {
-                if (building.type === EntityType.CACAOTREE) {
-                  this.spawnInfo(
-                    InfoType.INCREASE_CACAO_PER_TURN,
-                    position.clone(),
-                    cacaoDelta
-                  );
-                } else if (building.type === EntityType.RUM_TRUFFLE_CANNON) {
-                  this.spawnInfo(
-                    InfoType.INCREASE_ATTACKS_PER_TURN,
-                    position.clone(),
-                    1
-                  );
-                } else if (building.type === EntityType.FACTORY_EXTENSION) {
-                  this.spawnInfo(
-                    InfoType.INCREASE_BUILDINGS_PER_TURN,
-                    position.clone(),
-                    buildingsDelta
-                  );
-                } else if (building.type === EntityType.SPYING_EASTER_BUNNY) {
-                  this.spawnInfo(
-                    InfoType.INCREASE_SPY_ATTACKS_PER_TURN,
-                    position.clone(),
-                    1
-                  );
-                } else if (building.type === EntityType.FRUIT_CANNON) {
-                  this.spawnInfo(
-                    InfoType.INCREASE_FRUIT_ATTACKS_PER_TURN,
-                    position.clone(),
-                    1
-                  );
-                }
-                setTimeout(() => {
-                  if (typeof this.props.game !== "undefined") {
-                    player =
-                      this.props.game.players[multiplayer.localPlayerIndex];
-                    if (
-                      player.donuts.length === 0 &&
-                      (player.buildings === 0 ||
-                        player.cacao < getCheapest().costs)
-                    ) {
-                      if (playerHasAttacks(player) === true) {
-                        this.props
-                          .finishBuildPhase({ issuer: player.id })
-                          .then(() => {
-                            this.props.deselectBuildings();
-                          })
-                          .catch((error) => {
-                            if (error instanceof BattlechocError) {
-                              logger.warn(error);
-                            } else {
-                              throw error;
-                            }
-                          });
-                      } else {
-                        this.props
-                          .finishTurn({ issuer: player.id })
-                          .then(() => {
-                            this.props.deselectBuildings();
-                            this.props.deselectAttack();
-                          })
-                          .catch((error) => {
-                            if (error instanceof BattlechocError) {
-                              logger.warn(error);
-                            } else {
-                              throw error;
-                            }
-                          });
-                      }
-                    }
-                  }
-                }, 2000);
-              }
-            }, 1000);
-          }
-        })
-        .catch((error) => {
-          if (error instanceof BattlechocError) {
-            logger.warn(error);
-          } else {
-            throw error;
-          }
-        });
     }
   }
 
   opponentFieldClick(row, col, position) {
-    if (this.props.tutorial) {
-      return;
-    }
-    if (this.props.realtime) {
+    if (!this.props.tutorial && this.props.realtime) {
       this.realtimeOpponentFieldClick(row, col, position);
-      return;
-    }
-
-    if (
-      multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) &&
-      this.props.game.state === GameStateTypes.ATTACK_PHASE
-    ) {
-      let attack = 0;
-      if (this.props.selectedAttack === AttackType.TRUFFLE) {
-        let description = getEntityDescriptor(
-          EntityType.RUM_TRUFFLE_CANNON,
-          this.props.game.players[multiplayer.localPlayerIndex].level
-        );
-        attack = description.attack;
-      } else if (this.props.selectedAttack === AttackType.FRUIT) {
-        let description = getEntityDescriptor(
-          EntityType.FRUIT_CANNON,
-          this.props.game.players[multiplayer.localPlayerIndex].level
-        );
-        attack = description.attack;
-      }
-
-      let damage = (1 + (Math.random() * 0.4 - 0.2)) * attack;
-
-      const attackParams = {
-        issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
-        attackType: this.props.selectedAttack,
-        damage: damage,
-        row: row,
-        col: col,
-        target:
-          this.props.game.board.fields[
-            this.props.game.players[1 - this.props.game.currentPlayerIndex]
-              .fieldIndex
-          ].grid[row * this.props.game.board.size.cols + col],
-      };
-
-      let cellAt = (board, field, row, col) =>
-        board.fields[field].grid[row * board.size.cols + col];
-      let selectedCell = cellAt(
-        this.props.game.board,
-        this.props.game.players[1 - multiplayer.localPlayerIndex].fieldIndex,
-        row,
-        col
-      );
-      let cellContainsDonut = selectedCell.occupiedBy.some((entity) =>
-        isDonut(entity.type)
-      );
-      let donut = cellContainsDonut
-        ? selectedCell.occupiedBy.filter((entity) => isDonut(entity.type))[0]
-        : null;
-      this.props
-        .attack(attackParams)
-        .then(() => {
-          selectedCell = cellAt(
-            this.props.game.board,
-            this.props.game.players[1 - multiplayer.localPlayerIndex]
-              .fieldIndex,
-            row,
-            col
-          );
-          if (
-            cellContainsDonut &&
-            !selectedCell.occupiedBy.some((entity) => isDonut(entity.type))
-          ) {
-            this.triggerDonutInfo(donut, position.clone());
-          }
-
-          if (attackParams.attackType === AttackType.BUNNY) {
-            if (
-              this.props.game.players[multiplayer.localPlayerIndex]
-                .attacksPerTurn[AttackType.BUNNY] > 0
-            ) {
-              Jukebox.playSound(Jukebox.SOUNDS.ATTACK_BUNNY);
-            } else {
-              Jukebox.playSound(Jukebox.SOUNDS.BUNNY_CAUGHT);
-              this.spawnInfo(InfoType.BUNNY_CAUGHT, position.clone());
-            }
-          } else if (typeof attackParams.attackType !== "undefined") {
-            Jukebox.playSound(Jukebox.SOUNDS.ATTACK_EXPLOSION);
-            this.detonateAtPosition(row, col);
-            if (
-              selectedCell.occupiedBy.filter(
-                (entity) => entity.type !== EntityType.CREAM
-              ).length > 0
-            ) {
-              if (selectedCell.shielded) {
-                this.showEnergyBar(
-                  this.getFountain(
-                    row,
-                    col,
-                    this.props.game.board,
-                    this.props.game.players[1 - multiplayer.localPlayerIndex]
-                      .fieldIndex
-                  ),
-                  position.clone()
-                );
-              } else {
-                this.showEnergyBar(
-                  selectedCell.occupiedBy.filter(
-                    (entity) => entity.type !== EntityType.CREAM
-                  )[0],
-                  position.clone()
-                );
-              }
-            } else {
-              this.hideEnergyBar(position.clone());
-            }
-          }
-
-          if (
-            this.props.game.players[multiplayer.localPlayerIndex].attacks[
-              attackParams.attackType
-            ] === 0
-          ) {
-            const attackTypes = [
-              AttackType.TRUFFLE,
-              AttackType.FRUIT,
-              AttackType.HOT_CHOCOLATE,
-              AttackType.BUNNY,
-            ];
-            let undepletedAttack = attackTypes.filter(
-              (attackType) =>
-                this.props.game.players[multiplayer.localPlayerIndex].attacks[
-                  attackType
-                ] > 0
-            );
-            if (undepletedAttack.length > 0) {
-              this.props.selectAttack(undepletedAttack[0]).catch((error) => {
-                if (error instanceof BattlechocError) {
-                  logger.warn(error);
-                } else {
-                  throw error;
-                }
-              });
-            }
-          }
-        })
-        .catch((error) => {
-          if (error instanceof BattlechocError) {
-            logger.warn(error);
-          } else {
-            throw error;
-          }
-        });
     }
   }
 
-  /* ---------- real-time match ---------- */
-
-  // position of a cell on the own or the opponent's board in scene coordinates
   boardPosition(row, col, ownBoard) {
     return ownBoard
       ? new Vector3(row, 0, col)
@@ -1410,15 +1019,9 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = {
-  finishTurn,
-  build,
-  attack,
   deselectBuildings,
-  selectAttack,
   selectBuilding,
   tapBuilding,
-  deselectAttack,
-  finishBuildPhase,
   showQuickMessage,
 };
 

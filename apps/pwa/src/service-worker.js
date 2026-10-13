@@ -4,7 +4,8 @@ import { clientsClaim } from "workbox-core";
 import { precacheAndRoute } from "workbox-precaching";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { RangeRequestsPlugin } from "workbox-range-requests";
-// Web Push without Firebase: the API sends JSON payloads { title, text, click_action }.
+// Web Push without Firebase: the API sends JSON payloads { title, text, url, ... }, e.g. a
+// live invite with url "/?invite=<id>".
 // A notification is always shown (required for userVisibleOnly subscriptions); open app
 // windows also get the payload to show it in-game.
 self.addEventListener("push", (event) => {
@@ -22,45 +23,26 @@ self.addEventListener("push", (event) => {
         body: payload.text,
         icon: "images/battlechoc_notification_icon.png",
         tag: payload.topic,
-        data: { click_action: payload.click_action || "/" },
+        data: { url: payload.url || "/" },
       });
     })()
   );
 });
 
-self.addEventListener("notificationclick", function (event) {
-  // Android doesn't close the notification when you click on it
-  // See: http://crbug.com/463146
+// a click opens the app at the notification's url, in an open window if there is one
+self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  console.log(event);
-
-  const originalUrl = "https://battlechoc.com/";
-  const originalUrlDev = "https://battlechoc.dev/";
-
+  const url = new URL((event.notification.data && event.notification.data.url) || "/", self.location.origin).href;
   event.waitUntil(
-    clients
-      .matchAll({
-        type: "window",
-      })
-      .then((clientList) => {
-        for (let i = 0; i < clientList.length; i++) {
-          const client = clientList[i];
-          console.log(client.url);
-          console.log(originalUrl);
-          if (client.url === originalUrl || client.url === originalUrlDev) {
-            console.log("navigating and focusing");
-            return client
-              .navigate(event.notification.data.click_action)
-              .then((client) => client.focus());
-          }
-        }
-
-        console.log("did not find original url trying to open new window");
-        if (clients.openWindow) {
-          console.log("openwindow");
-          return clients.openWindow(event.notification.data.click_action);
-        }
-      })
+    (async () => {
+      const windows = await clients.matchAll({ type: "window", includeUncontrolled: true });
+      const app = windows.find((client) => new URL(client.url).origin === self.location.origin);
+      if (app) {
+        const navigated = await app.navigate(url);
+        return (navigated || app).focus();
+      }
+      return clients.openWindow ? clients.openWindow(url) : undefined;
+    })()
   );
 });
 
@@ -152,7 +134,6 @@ precacheAndRoute(
     { url: "/images/fast-forward.svg", revision: "4" },
     { url: "/images/progress-10.svg", revision: "4" },
     { url: "/images/trophy.svg", revision: "4" },
-    { url: "/images/first-turn.svg", revision: "4" },
     { url: "/images/progress-100.svg", revision: "4" },
     { url: "/images/truffle-cannon-icon.svg", revision: "4" },
     { url: "/images/choclab-decoration-left.svg", revision: "4" },
@@ -186,7 +167,6 @@ precacheAndRoute(
     { url: "/images/decoration.svg", revision: "4" },
     { url: "/images/highscore.svg", revision: "4" },
     { url: "/images/progress-90.svg", revision: "4" },
-    { url: "/images/bell.svg", revision: "4" },
     { url: "/images/attacks-per-turn.svg", revision: "4" },
     { url: "/images/buildings-per-turn.svg", revision: "4" },
     { url: "/images/bunny-caught.svg", revision: "4" },

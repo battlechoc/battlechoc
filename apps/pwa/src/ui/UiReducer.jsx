@@ -17,12 +17,10 @@ const uiReducer = createReducer(
     tutorial: false,
     friends: [],
     ranking: "Offline",
-    multiplayerSessions: [],
     playerInfos: { stats: EmptyPlayerStats, isSignedIn: false },
     language: window.location.pathname.substr(1, 2) === "de" ? "de" : "en",
     quickMessages: [],
     notification: { title: null, message: null, open: false },
-    sessionRefreshActions: 0,
     donutHighlighting: false,
     boardViewToggles: 0,
     hudUiLocked: false,
@@ -78,20 +76,6 @@ const uiReducer = createReducer(
         state.playerInfos.uid = action.payload.uid;
         state.playerInfos.name = action.payload.name;
       })
-      .addCase(UiActions.notifyPlayerSignedOut, (state, action) => {
-        state.playerInfos.isSignedIn = false;
-        state.playerInfos.isAnonymous = true;
-        state.playerInfos.email = undefined;
-        state.playerInfos.name = undefined;
-        state.playerInfos.uid = undefined;
-        state.playerInfos.stats = EmptyPlayerStats;
-        state.ranking = "Offline";
-        OfflineStore.playerStore.set("stats", EmptyPlayerStats);
-        OfflineStore.playerStore.set("friends", undefined);
-        OfflineStore.playerStore.set("multiplayerSessions", undefined);
-        state.resumeGamePossible = false;
-        OfflineStore.gamestateStore.clear();
-      })
       .addCase(UiActions.stopTutorial, (state, action) => {
         state.tutorial = false;
         state.notificationOnLoopsEnd = null;
@@ -105,10 +89,6 @@ const uiReducer = createReducer(
       })
       .addCase(UiActions.updatePlayerStats, (state, action) => {
         Object.assign(state.playerInfos.stats, action.payload);
-      })
-      .addCase(UiActions.updateMultiplayerSessions, (state, action) => {
-        state.multiplayerSessions = action.payload;
-        OfflineStore.playerStore.set("multiplayerSessions", action.payload);
       })
       .addCase(UiActions.loadFriendsList, (state, action) => {
         state.friends = action.payload;
@@ -146,14 +126,6 @@ const uiReducer = createReducer(
           (message) => message.id !== action.payload
         );
       })
-      .addCase(UiActions.startSessionRefresh, (state, action) => {
-        state.sessionRefreshActions += 1;
-      })
-      .addCase(UiActions.stopSessionRefresh, (state, action) => {
-        if (state.sessionRefreshActions > 0) {
-          state.sessionRefreshActions -= 1;
-        }
-      })
       .addCase(UiActions.toggleDonutHighlighting, (state, action) => {
         if (typeof action.payload !== "undefined") {
           state.donutHighlighting = action.payload;
@@ -172,9 +144,7 @@ const uiReducer = createReducer(
       .addCase(UiActions.hideNotification, (state) => {
         state.notification = { title: null, message: null, open: false };
       })
-      .addCase(UiActions.injectMultiplayerSession, (state, action) => {
-        state.injectedMultiplayerSessionId = action.payload;
-      })
+
 );
 
 export default uiReducer;

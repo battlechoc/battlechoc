@@ -1,14 +1,11 @@
 import React from "react";
 import { connect } from "react-redux";
-import { chooseField, chooseStart } from "../../gameplay/GameActions";
 import {
-  GameStateTypes,
   EntityType,
   engine,
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
-import { multiplayer } from "../../Multiplayer";
 import { selectActiveGame } from "../../match/matchSlice";
 import { submit, ignoreRuleErrors } from "../match/submit";
 import useMatchTime from "../match/useMatchTime";
@@ -35,15 +32,6 @@ const useStyles = createUseStyles((theme) => ({
     justifyContent: "center",
     [theme.breakpoints.orientation.landscape]: {
       flexDirection: "row",
-    },
-  },
-  start: {
-    padding: "15vw",
-    backgroundSize: "100% 100%",
-    backgroundRepeat: "no-repeat",
-    backgroundImage: "url(/images/first-turn.svg)",
-    [theme.breakpoints.orientation.portrait]: {
-      padding: "13vh",
     },
   },
   button: {
@@ -157,57 +145,15 @@ const useStyles = createUseStyles((theme) => ({
 
 const GameStartSelection = (props) => {
   const classes = useStyles(props);
-  const { game, state, chooseStart, chooseField } = props;
+  const { game } = props;
   const now = useMatchTime(4);
-  // real-time matches only offer the field choice; "first move" does not exist anymore
-  const realtime = typeof game.phase !== "undefined";
-  const unlocked = realtime
-    ? game.fieldChooser === game.viewer
-    : multiplayer.isLocalPlayer(game.currentPlayerIndex);
+  const unlocked = game.fieldChooser === game.viewer;
 
-  const choose = (option) => {
+  const choose = (fieldIndex) => {
     if (unlocked) {
       Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-      if (realtime) {
-        if (option !== "START") {
-          submit(engine.MatchActionTypes.chooseField, {
-            fieldIndex: option === "LEFT_GAMEFIELD" ? 0 : 1,
-          }).catch(ignoreRuleErrors);
-        }
-      } else if (option === "START") {
-        chooseStart({ issuer: game.players[multiplayer.localPlayerIndex].id });
-      } else if (option === "LEFT_GAMEFIELD") {
-        chooseField({
-          fieldIdx: 0,
-          issuer: game.players[multiplayer.localPlayerIndex].id,
-        });
-      } else if (option === "RIGHT_GAMEFIELD") {
-        chooseField({
-          fieldIdx: 1,
-          issuer: game.players[multiplayer.localPlayerIndex].id,
-        });
-      }
+      submit(engine.MatchActionTypes.chooseField, { fieldIndex }).catch(ignoreRuleErrors);
     }
-  };
-
-  const estimateButtonClasses = () => {
-    let classNames = classes.button;
-    if (unlocked && state === GameStateTypes.CHOOSE_FIELD_OR_START) {
-      classNames += " active";
-    } else if (state === GameStateTypes.CHOOSE_FIELD) {
-      if (multiplayer.isLocalPlayer(game.currentPlayerIndex)) {
-        classNames += " inactive";
-      } else {
-        if (unlocked) {
-          classNames += " selectedByPlayer";
-        } else {
-          classNames += " inactiveSelected";
-        }
-      }
-    } else {
-      classNames += " inactive";
-    }
-    return classNames;
   };
 
   const drawCell = (cell, i) => {
@@ -231,7 +177,7 @@ const GameStartSelection = (props) => {
     <div className={classes.page}>
       <div
         className={(unlocked ? "active " : "inactive ") + classes.button}
-        onClick={() => choose("LEFT_GAMEFIELD")}
+        onClick={() => choose(0)}
       >
         {(() => {
           if (typeof game.board !== "undefined") {
@@ -257,20 +203,14 @@ const GameStartSelection = (props) => {
         </div>
       </div>
 
-      {realtime ? (
-        <div className={classes.realtimeHint}>
-          <p>{unlocked ? t(tr.MATCH_CHOOSE_FIELD) : t(tr.MATCH_OPPONENT_CHOOSES_FIELD)}</p>
-          <p>{Math.max(0, Math.ceil((game.phaseEndsAt - now) / 1000))}</p>
-        </div>
-      ) : (
-        <div className={estimateButtonClasses()} onClick={() => choose("START")}>
-          <div className={classes.start} />
-        </div>
-      )}
+      <div className={classes.realtimeHint}>
+        <p>{unlocked ? t(tr.MATCH_CHOOSE_FIELD) : t(tr.MATCH_OPPONENT_CHOOSES_FIELD)}</p>
+        <p>{Math.max(0, Math.ceil((game.phaseEndsAt - now) / 1000))}</p>
+      </div>
 
       <div
         className={(unlocked ? "active " : "inactive ") + classes.button}
-        onClick={() => choose("RIGHT_GAMEFIELD")}
+        onClick={() => choose(1)}
       >
         {(() => {
           if (typeof game.board !== "undefined") {
@@ -301,20 +241,8 @@ const GameStartSelection = (props) => {
 
 const mapStateToProps = (state) => ({
   game: selectActiveGame(state),
-  state:
-    typeof selectActiveGame(state) === "undefined"
-      ? undefined
-      : selectActiveGame(state).state,
 });
 
-const mapDispatchToProps = {
-  chooseField,
-  chooseStart,
-};
-
-const GameStartSelectionContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(GameStartSelection);
+const GameStartSelectionContainer = connect(mapStateToProps)(GameStartSelection);
 
 export default GameStartSelectionContainer;

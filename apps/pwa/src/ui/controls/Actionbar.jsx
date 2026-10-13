@@ -2,34 +2,33 @@ import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import {
-  build,
-  attack,
-  chooseStart,
-  chooseField,
-  finishTurn,
-  finishBuildPhase,
-} from "../../gameplay/GameActions";
-import {
-  GameStateTypes,
-  playerHasAttacksPerTurn,
-  BattlechocError,
   engine,
+  translate as t,
+  translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
-import {
-  deselectBuildings,
-  deselectAttack,
-  toggleBoardView,
-} from "../UiActions";
+import { toggleBoardView } from "../UiActions";
 import { selectActiveGame } from "../../match/matchSlice";
 import { matchSession } from "../../match/LocalMatchHost";
-import { multiplayer } from "../../Multiplayer";
 import Fab from "./Fab";
+import Button from "./Button";
+import Dialog from "../dialogs/Dialog";
 import { Jukebox } from "../misc";
 import OfflineStore from "../../OfflineStore";
 import logger from "../../helper/logger";
 import { createUseStyles } from "react-jss";
 
 const useStyles = createUseStyles((theme) => ({
+  confirm: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "2vh",
+    fontFamily: "Bangers",
+    fontSize: "4vh",
+    color: theme.color.secondary.dark,
+    "& p": { margin: 0, textAlign: "center" },
+    "& > div": { display: "flex", gap: "2vw" },
+  },
   actions: {
     position: "absolute",
     zIndex: 4,
@@ -50,6 +49,7 @@ const Actionbar = (props) => {
   const classes = useStyles();
   const [activeMusicButton, setActiveMusicButton] = useState(!Jukebox.isMuted);
   const [activeFullscreenButton, setActiveFullscreenButton] = useState(true);
+  const [confirmLeave, setConfirmLeave] = useState(false);
 
   useEffect(() => {
     const fetchAudioState = async () => {
@@ -73,9 +73,8 @@ const Actionbar = (props) => {
         document.webkitFullscreenElement ||
         document.mozFullScreenElement ||
         document.msFullscreenElement;
-      const isAndroidApp = typeof window.Android !== "undefined";
       setActiveFullscreenButton(
-        !isFullscreen && !isiOS && !isPWA && !isAndroidApp && !isElectronApp
+        !isFullscreen && !isiOS && !isPWA && !isElectronApp
       );
     };
 
@@ -112,7 +111,14 @@ const Actionbar = (props) => {
         key="0"
         color="secondary"
         icon="back"
-        onClick={() => props.endGame()}
+        onClick={() => {
+          // leaving a running online match gives it up: ask first
+          if (props.online && props.game.phase !== engine.MatchPhase.ENDED) {
+            setConfirmLeave(true);
+          } else {
+            props.endGame();
+          }
+        }}
       ></Fab>
     );
   }
@@ -158,95 +164,6 @@ const Actionbar = (props) => {
     );
   }
 
-  if (typeof props.game !== "undefined") {
-    if (multiplayer.isLocalPlayer(props.game.currentPlayerIndex)) {
-      if (props.game.state === GameStateTypes.BUILD_PHASE) {
-        if (
-          playerHasAttacksPerTurn(
-            props.game.players[multiplayer.localPlayerIndex]
-          )
-        ) {
-          buttons.push([
-            <Fab
-              key="6"
-              color="accent"
-              icon="forward-accent"
-              onClick={() => {
-                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                props
-                  .finishBuildPhase({
-                    issuer: props.game.players[multiplayer.localPlayerIndex].id,
-                  })
-                  .then(() => {
-                    props.deselectBuildings();
-                    props.deselectAttack();
-                  })
-                  .catch((error) => {
-                    if (error instanceof BattlechocError) {
-                      console.warn(error);
-                    } else {
-                      throw error;
-                    }
-                  });
-              }}
-            ></Fab>,
-          ]);
-        } else {
-          buttons.push([
-            <Fab
-              key="7"
-              color="accent"
-              icon="fast-forward"
-              onClick={() => {
-                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                props
-                  .finishTurn({
-                    issuer: props.game.players[multiplayer.localPlayerIndex].id,
-                  })
-                  .then(() => {
-                    props.deselectBuildings();
-                    props.deselectAttack();
-                  })
-                  .catch((error) => {
-                    if (error instanceof BattlechocError) {
-                      console.warn(error);
-                    } else {
-                      throw error;
-                    }
-                  });
-              }}
-            ></Fab>,
-          ]);
-        }
-      } else if (props.game.state === GameStateTypes.ATTACK_PHASE) {
-        buttons.push(
-          <Fab
-            key="8"
-            color="accent"
-            icon="fast-forward"
-            onClick={() => {
-              Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-              props
-                .finishTurn({
-                  issuer: props.game.players[multiplayer.localPlayerIndex].id,
-                })
-                .then(() => {
-                  props.deselectBuildings();
-                  props.deselectAttack();
-                })
-                .catch((error) => {
-                  if (error instanceof BattlechocError) {
-                    console.warn(error);
-                  } else {
-                    throw error;
-                  }
-                });
-            }}
-          ></Fab>
-        );
-      }
-    }
-  }
   // real-time match: pause and switch between the own and the opponent's board
   if (
     typeof props.game !== "undefined" &&
@@ -264,7 +181,8 @@ const Actionbar = (props) => {
         }}
       ></Fab>
     );
-    buttons.push(
+    // online matches cannot be paused
+    if (!props.online) buttons.push(
       <Fab
         key="realtime-pause"
         color="secondary"
@@ -282,7 +200,36 @@ const Actionbar = (props) => {
       ></Fab>
     );
   }
-  return <div className={classes.actions}> {buttons} </div>;
+  return (
+    <>
+      <div className={classes.actions}> {buttons} </div>
+      <Dialog
+        open={confirmLeave}
+        close={() => setConfirmLeave(false)}
+        mode="info"
+        title={t(tr.SURRENDER)}
+      >
+        <div className={classes.confirm} data-testid="confirm-leave">
+          <p>{t(tr.MATCH_LEAVE_ONLINE)}</p>
+          <div>
+            <Button
+              size="small"
+              color="accent"
+              onClick={() => {
+                setConfirmLeave(false);
+                props.endGame();
+              }}
+            >
+              {t(tr.SURRENDER)}
+            </Button>
+            <Button size="small" onClick={() => setConfirmLeave(false)}>
+              {t(tr.ONLINE_CANCEL)}
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+    </>
+  );
 };
 
 Actionbar.propTypes = {
@@ -293,20 +240,13 @@ Actionbar.propTypes = {
 const mapStateToProps = (state) => ({
   game: selectActiveGame(state),
   paused: state.match.paused,
+  online: state.match.online,
   players: state.players,
   language: state.ui.language,
   tutorial: state.ui.tutorial,
 });
 
 const mapDispatchToProps = {
-  finishBuildPhase,
-  finishTurn,
-  deselectBuildings,
-  deselectAttack,
-  build,
-  attack,
-  chooseStart,
-  chooseField,
   toggleBoardView,
 };
 

@@ -204,48 +204,23 @@ const AccountOverview = (props) => {
     >
       <div className={classes.wrapper}>
         {(() => {
-          if (
-            typeof props.multiplayerSessions !== "undefined" &&
-            !isPlayerAccount
-          ) {
+          if (!isPlayerAccount) {
             const actions = [];
-            const gamesAgainstOpponent = props.multiplayerSessions.filter(
-              (session) => session.opponent.name === playerName
-            );
-            if (
-              props.playerInfos.stats.score >= 1000 &&
-              props.playerAccount.score >= 1000 &&
-              props.playerInfos.stats.username !== EmptyPlayerStats.username
-            ) {
-              if (gamesAgainstOpponent.length === 0) {
-                actions.push(
-                  <Button
-                    key={0}
-                    color="secondary"
-                    onClick={() => {
-                      Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                      props.challengePlayer(playerName);
-                      props.close();
-                    }}
-                  >
-                    {t(tr.START_GAME)}
-                  </Button>
-                );
-              } else {
-                actions.push(
-                  <Button
-                    key={1}
-                    color="secondary"
-                    onClick={() => {
-                      Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                      props.joinGame(gamesAgainstOpponent[0].id);
-                      props.close();
-                    }}
-                  >
-                    {t(tr.JOIN_GAME)}
-                  </Button>
-                );
-              }
+            if (props.playerInfos.stats.username !== EmptyPlayerStats.username) {
+              // a live match: invite the player (in-app when online, else by push)
+              actions.push(
+                <Button
+                  key={0}
+                  color="secondary"
+                  onClick={() => {
+                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                    props.challengePlayer(playerName);
+                    props.close();
+                  }}
+                >
+                  {t(tr.ONLINE_INVITE_SEND)}
+                </Button>
+              );
 
               if (
                 !props.friends.map((friend) => friend.name).includes(playerName)
@@ -356,7 +331,6 @@ AccountOverview.propTypes = {
 const mapStateToProps = (state) => ({
   playerInfos: state.ui.playerInfos,
   ranking: state.ui.ranking,
-  multiplayerSessions: state.ui.multiplayerSessions,
   friends: state.ui.friends,
 });
 

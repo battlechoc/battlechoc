@@ -3,6 +3,7 @@ import { openDB } from "idb";
 const dbVersion = 6;
 const dbName = "battlechoc";
 const gamestateStoreName = "gamestate";
+// created by version 1 for the turn-based game, unused since
 const turnHistoryStoreName = "turn-history";
 const settingsStoreName = "settings";
 const playerStoreName = "player";
@@ -24,10 +25,6 @@ class OfflineStore {
 
     this.gamestateStore = OfflineStore.wrapObjectStore(
       gamestateStoreName,
-      dbPromise
-    );
-    this.turnHistoryStore = OfflineStore.wrapObjectStore(
-      turnHistoryStoreName,
       dbPromise
     );
     this.settingsStore = OfflineStore.wrapObjectStore(
@@ -57,13 +54,8 @@ class OfflineStore {
     };
   }
 
-  // only real-time matches can be resumed; saves of the turn-based game are discarded
   async hasGameToResume() {
-    const keys = await this.gamestateStore.keys();
-    if (keys.includes("gamestate")) {
-      await this.gamestateStore.delete("gamestate");
-    }
-    return keys.includes("realtime-match");
+    return (await this.gamestateStore.keys()).includes("realtime-match");
   }
 
   async getRealtimeMatch() {
@@ -76,14 +68,6 @@ class OfflineStore {
 
   async clearRealtimeMatch() {
     return await this.gamestateStore.delete("realtime-match");
-  }
-
-  async getResumeableGame() {
-    return await this.gamestateStore.get("gamestate");
-  }
-
-  async saveCurrentGame(gamestate) {
-    return await this.gamestateStore.set("gamestate", gamestate);
   }
 }
 

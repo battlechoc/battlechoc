@@ -8,38 +8,23 @@ import { multiplayer } from "./Multiplayer";
 import {
   Rules,
   GameStateTypes,
-  createPlayer,
   PlayerType,
-  BattlechocError,
-  AttackType,
   EntityType,
   isDonut,
   translate as t,
   translationKeys as tr,
   setCurrentLanguage,
-  computeAwards,
   engine,
 } from "@battlechoc/battlechoc-shared-functions";
 import { LocalMatchHost, matchSession } from "./match/LocalMatchHost";
+import { RemoteMatchHost } from "./match/RemoteMatchHost";
+import { liveConnection } from "./match/liveConnection";
+import { liveLobby } from "./match/liveLobby";
+import { account } from "./account";
 import { MatchClock, ManualClock } from "./match/clock";
 import { matchCleared } from "./match/matchSlice";
+import { resumeGame, finishGame, endGame } from "./gameplay/GameActions";
 import {
-  build,
-  attack,
-  finishBuildPhase,
-  chooseStart,
-  chooseField,
-  startGame,
-  resumeGame,
-  joinGame,
-  finishGame,
-  createBoard,
-  finishTurn,
-  endGame,
-} from "./gameplay/GameActions";
-import {
-  stopSessionRefresh,
-  startSessionRefresh,
   hideQuickMessage,
   showQuickMessage,
   startTutorial,
@@ -50,7 +35,6 @@ import {
   gameResumeable,
   loadUiState,
   updatePlayerStats,
-  updateMultiplayerSessions,
   loadFriendsList,
   setPlayerRank,
   notifyPlayerSignedIn,
@@ -61,12 +45,10 @@ import {
   deselectBuildings,
   deselectAttack,
 } from "./ui/UiActions";
-import MimiMarzipan from "./gameplay/MimiMarzipan";
-import { GameTransitions, getGameTransition } from "./gameplay/GameTransitions";
-import { gameplayLog } from "./gameplay/GamePlayLogger";
 import { scenarios, debugScenarios } from "./situations/scenarios";
 import Hud from "./ui/Hud";
 import { v4 as uuidv4 } from "uuid";
+import IncomingInvite from "./ui/dialogs/IncomingInvite";
 import Tutorial from "./tutorial/Tutorial";
 import QuickMessage from "./ui/dialogs/QuickMessage";
 import logger from "./helper/logger";
@@ -78,7 +60,10 @@ class App extends Component {
     super(props);
     // ?testclock replaces the real-time match clock with a manual one (e2e tests); read it
     // before the path is reset below
-    this.testClock = new URLSearchParams(window.location.search).has("testclock");
+    const query = new URLSearchParams(window.location.search);
+    this.testClock = query.has("testclock");
+    // an invite to a live match, opened from its push notification
+    this.inviteId = query.get("invite") || undefined;
     let path = window.location.pathname;
     let openInfo = false;
     if (path === "/privacy-policy") {
@@ -87,11 +72,9 @@ class App extends Component {
       var player = path.slice(1);
     } else if (path.startsWith("/situation/")) {
       var situation = path.replace("/situation/", "").slice(0, 32);
-    } else if (path.startsWith("/session/")) {
-      var session = path.replace("/session/", "").slice(0, 20);
     }
 
-    if (path !== "/") {
+    if (path !== "/" || query.has("invite")) {
       window.history.pushState({}, null, window.location.origin);
     }
 
@@ -99,7 +82,6 @@ class App extends Component {
     this.state = {
       player: player,
       situation: situation,
-      session: session,
       openInfo: openInfo,
     };
   }
@@ -151,14 +133,10 @@ class App extends Component {
   componentDidMount() {
     multiplayer.registerCallbacks({
       updatePlayerStats: this.props.updatePlayerStats,
-      updateMultiplayerSessions: this.props.updateMultiplayerSessions,
       loadFriendsList: this.props.loadFriendsList,
       setPlayerRank: this.props.setPlayerRank,
       notifyPlayerSignedIn: this.props.notifyPlayerSignedIn,
-      stopSessionRefresh: this.props.stopSessionRefresh,
-      startSessionRefresh: this.props.startSessionRefresh,
       showQuickMessage: this.props.showQuickMessage,
-      detonateAtPosition: this.detonateAtPosition,
       showNotification: this.props.showNotification,
     });
 
@@ -186,13 +164,7 @@ class App extends Component {
       this.forceUpdate();
     });
 
-    OfflineStore.playerStore
-      .get("multiplayerSessions")
-      .then((multiplayerSessions) => {
-        if (typeof multiplayerSessions !== "undefined") {
-          this.props.updateMultiplayerSessions(multiplayerSessions);
-        }
-      });
+    this.connectLive();
 
     OfflineStore.playerStore.get("friends").then((friends) => {
       if (typeof friends !== "undefined") {
@@ -240,14 +212,6 @@ class App extends Component {
     }
   }
 
-  handleError = (error) => {
-    if (error instanceof BattlechocError) {
-      logger.warn(error);
-    } else {
-      throw error;
-    }
-  };
-
   availableTutorials = () => {
     const tutorials = [
       TutorialSituations.BATTLECHOC_INTRO,
@@ -288,12 +252,6 @@ class App extends Component {
 
   // loads a scripted tutorial loop; real matches and debug boards are real-time scenarios
   async loadSituation(situation) {
-    this.opponent = new MimiMarzipan({
-      finishTurn: this.props.finishTurn,
-      finishBuildPhase: this.props.finishBuildPhase,
-      attack: this.props.attack,
-    });
-
     if (typeof this.props.game !== "undefined") {
       this.timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
       this.scene.clear();
@@ -304,22 +262,9 @@ class App extends Component {
     }
 
     await this.props.resumeGame(situation.gameplay);
-    this.opponent.player = this.props.game.players[1];
-    this.opponent.connectGamestate(
-      () => this.props.game,
-      (timeout) => this.timeouts.push(timeout)
-    );
     await this.props.loadUiState(situation.ui);
     this.setState({ situation: undefined }, () => {
-      if (
-        ![
-          GameStateTypes.START,
-          GameStateTypes.CHOOSE_FIELD_OR_START,
-          GameStateTypes.CHOOSE_FIELD,
-        ].includes(this.props.game.state)
-      ) {
-        this.scene.startGame(this.props.game, false);
-      }
+      this.scene.startGame(this.props.game, false);
     });
   }
 
@@ -342,9 +287,6 @@ class App extends Component {
       this.scene.startGame(this.props.matchView);
     }
 
-    multiplayer.refreshGameState(this.props.game);
-    const gameTransition = getGameTransition(prevProps.game, this.props.game);
-
     let gameStopped =
       typeof this.props.game !== "undefined"
         ? !this.props.game.isRunning
@@ -355,13 +297,8 @@ class App extends Component {
     ) {
       if (prevProps.game.isRunning && !this.props.game.isRunning) {
         gameStopped = true;
-        if (!this.props.tutorial) {
-          let timeoutId = setTimeout(() => this.showOverview(), 2000);
-          this.timeouts.push(timeoutId);
-        } else {
-          let timeoutId = setTimeout(() => this.endGame(), 2000);
-          this.timeouts.push(timeoutId);
-        }
+        let timeoutId = setTimeout(() => this.endGame(), 2000);
+        this.timeouts.push(timeoutId);
       }
     }
 
@@ -388,23 +325,13 @@ class App extends Component {
           this.props.game.state === GameStateTypes.ATTACK_PHASE)
       ) {
         const winners = Rules.determineWinner(this.props.game);
-        if (
-          typeof winners !== "undefined" &&
-          (typeof multiplayer.currentGameSession === "undefined" ||
-            this.props.game.players[multiplayer.localPlayerIndex].id ===
-              winners[0].id)
-        ) {
+        if (typeof winners !== "undefined") {
           prevProps.endGame({
             winners: winners,
             issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
           });
         }
       }
-
-      const opponentType =
-        typeof prevProps.game !== "undefined"
-          ? prevProps.game.players[1 - multiplayer.localPlayerIndex].type
-          : undefined;
 
       if (
         prevProps.selectedBuilding === EntityType.FRUIT_CANNON &&
@@ -437,112 +364,10 @@ class App extends Component {
       ) {
         this.props.toggleDonutHighlighting(false);
       }
-
-      if (this.props.tutorial) {
-        return;
-      }
-
-      const opponentIsNpc =
-        opponentType === PlayerType.AI_STRONG ||
-        opponentType === PlayerType.AI_EASY;
-
-      if (
-        gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START &&
-        opponentIsNpc
-      ) {
-        this.opponent.simulateChooseFieldDecision();
-      } else if (gameTransition === GameTransitions.PLAYER_INITAL_PLACEMENT) {
-        this.scene.startGame(this.props.game);
-      } else if (gameTransition === GameTransitions.OPPONENT_INITAL_PLACEMENT) {
-        this.scene.startGame(this.props.game);
-        if (opponentIsNpc) {
-          this.opponent.simulateInitialPlacement();
-        }
-      } else if (
-        gameTransition === GameTransitions.PLAYER_FINISHED_INITIAL_PLACEMENT &&
-        opponentIsNpc
-      ) {
-        this.opponent.simulateInitialPlacement();
-      } else if (gameTransition === GameTransitions.PLAYER_BUILD_PHASE) {
-        this.scene.triggerCacaoInfo();
-      } else if (gameTransition === GameTransitions.PLAYER_ATTACK_PHASE) {
-        const attacks = [
-          AttackType.BUNNY,
-          AttackType.TRUFFLE,
-          AttackType.HOT_CHOCOLATE,
-          AttackType.FRUIT,
-        ];
-        let availableAttackType = undefined;
-        for (var attackType in attacks) {
-          if (
-            this.props.game.players[multiplayer.localPlayerIndex].attacks[
-              attacks[attackType]
-            ] > 0
-          ) {
-            availableAttackType = attacks[attackType];
-            break;
-          }
-        }
-        if (typeof availableAttackType !== "undefined") {
-          let timeoutId = setTimeout(
-            () =>
-              prevProps
-                .selectAttack(attacks[attackType])
-                .catch(this.handleError),
-            200
-          );
-          this.timeouts.push(timeoutId);
-        }
-      } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
-        if (opponentIsNpc || opponentType === PlayerType.AI_TUTORIAL) {
-          this.opponent.simulateBuildPhase();
-        }
-      } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
-        if (opponentIsNpc || opponentType === PlayerType.AI_TUTORIAL) {
-          this.opponent.simulateAttackPhase(this.detonateAtPosition, (donut) =>
-            this.scene.triggerDonutInfo(donut)
-          );
-        }
-      } else if (gameTransition === GameTransitions.ATTACKS_DEPLETED) {
-        let timeoutId = setTimeout(
-          () =>
-            prevProps
-              .finishTurn({
-                issuer: prevProps.game.players[multiplayer.localPlayerIndex].id,
-              })
-              .catch(this.handleError),
-          3000
-        );
-        this.timeouts.push(timeoutId);
-      }
     }
   }
 
-  enterMultiplayerGame = (sessionId) => {
-    multiplayer
-      .enterGameSession(sessionId, {
-        build: this.props.build,
-        attack: this.props.attack,
-        finishTurn: this.props.finishTurn,
-        finishBuildPhase: this.props.finishBuildPhase,
-        chooseStart: this.props.chooseStart,
-        chooseField: this.props.chooseField,
-        endGame: this.props.endGame,
-      })
-      .then((session) => {
-        this.prepareNewGame(true, true, session.game);
-      })
-      .catch((error) => {
-        if (error instanceof ReferenceError) {
-          this.props.showQuickMessage({
-            text: t(tr.WARNING_GAME_NOT_JOINABLE),
-          });
-        }
-      });
-  };
-
-  prepareNewGame = (resumeGame, joinMultiplayer, multiplayerGameState) => {
-    const isAndroidApp = typeof window.Android !== "undefined";
+  prepareNewGame = (resumeGame) => {
     const isElectronApp =
       navigator.userAgent.toLowerCase().indexOf(" electron/") > -1;
     const isAndroidDevice = /Android/i.test(navigator.userAgent);
@@ -553,9 +378,7 @@ class App extends Component {
       document.mozFullScreenElement ||
       document.msFullscreenElement;
 
-    if (isAndroidApp) {
-      window.Android.setScreenOrientationLandscape();
-    } else if (!isFullscreen && !isiOS && !isElectronApp) {
+    if (!isFullscreen && !isiOS && !isElectronApp) {
       if (typeof document.documentElement.requestFullscreen === "function") {
         document.documentElement
           .requestFullscreen()
@@ -582,62 +405,88 @@ class App extends Component {
     } else {
       Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
       Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-      gameplayLog.clear();
 
-      if (
-        joinMultiplayer === true &&
-        typeof multiplayerGameState !== "undefined"
-      ) {
-        this.props.joinGame(multiplayerGameState).then(() => {
-          this.opponent = { player: this.props.game.players[0] };
-          if (
-            this.props.game.state ===
-              GameStateTypes.PLAYER_1_INITIAL_PLACEMENT ||
-            this.props.game.state === GameStateTypes.PLAYER_2_INITIAL_PLACEMENT
-          ) {
-            if (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex)) {
-              if (
-                this.props.game.players[this.props.game.currentPlayerIndex]
-                  .hasFactory === true
-              ) {
-                console.log(
-                  "player already built its factory, but did not kick off finishturn event."
-                );
-                this.props.finishTurn({
-                  issuer:
-                    this.props.game.players[this.props.game.currentPlayerIndex]
-                      .id,
-                });
-              }
-            }
-            this.scene.startGame(this.props.game, false);
-          } else if (
-            this.props.game.state !== GameStateTypes.CHOOSE_FIELD_OR_START &&
-            this.props.game.state !== GameStateTypes.CHOOSE_FIELD
-          ) {
-            if (this.props.game.state === GameStateTypes.BUILD_PHASE) {
-              this.props.tapBuilding(EntityType.CACAOTREE);
-              this.props.selectBuilding(EntityType.CACAOTREE);
-            }
-            this.scene.startGame(this.props.game, false);
-          }
+      if (resumeGame) {
+        OfflineStore.getRealtimeMatch().then((saved) => {
+          this.startRealtimeMatch(saved);
         });
-      } else {
-        if (resumeGame) {
-          OfflineStore.getRealtimeMatch().then((saved) => {
-            this.startRealtimeMatch(saved);
-          });
-          return;
-        }
-        this.props.gameResumeable(false);
-        OfflineStore.clearRealtimeMatch();
-        // new players start with a prepared board
-        this.startRealtimeMatch(
-          undefined,
-          this.props.playerInfos.stats.score <= 100 ? scenarios.firstGame : undefined
-        );
+        return;
       }
+      this.props.gameResumeable(false);
+      OfflineStore.clearRealtimeMatch();
+      // new players start with a prepared board
+      this.startRealtimeMatch(
+        undefined,
+        this.props.playerInfos.stats.score <= 100 ? scenarios.firstGame : undefined
+      );
     }
+  };
+
+  // keeps the live connection while the app is visible: invites arrive, and a running online
+  // match (reload, other device) is resumed
+  connectLive() {
+    liveLobby.init({
+      dispatch: matchSession.dispatch,
+      onMatch: (message) => this.startOnlineMatch(message),
+    });
+    liveLobby.onMatchGone = () => {
+      if (matchSession.host && matchSession.host.online) {
+        this.endGame();
+      }
+    };
+    const enter = () =>
+      account
+        .token()
+        .then(() => liveLobby.enter())
+        .then(() => {
+          if (typeof this.inviteId !== "undefined") {
+            liveLobby.acceptInvite(this.inviteId);
+            this.inviteId = undefined;
+          }
+        })
+        .catch((error) => logger.info("live service not reachable", error));
+    document.addEventListener("visibilitychange", () => {
+      const inOnlineMatch = matchSession.host && matchSession.host.online;
+      if (document.visibilityState === "hidden" && !inOnlineMatch) {
+        liveLobby.leave();
+      } else if (document.visibilityState === "visible") {
+        enter();
+      }
+    });
+    enter();
+  }
+
+  // plays an online match hosted by the server (from the queue, an invite or a resume)
+  startOnlineMatch = ({ matchId, playerIndex, epoch }) => {
+    if (typeof matchSession.host !== "undefined") {
+      matchSession.host.persist(true);
+      matchSession.host.stop();
+    }
+    if (this.props.tutorial) {
+      this.props.stopTutorial();
+    }
+    const host = new RemoteMatchHost({
+      dispatch: matchSession.dispatch,
+      connection: liveConnection,
+      matchId,
+      playerIndex,
+      epoch,
+      onEnded: (result) => {
+        const timeoutId = setTimeout(() => this.showRealtimeOverview(result), 2000);
+        this.timeouts.push(timeoutId);
+      },
+    });
+    matchSession.host = host;
+    window.__battlechoc = {
+      host,
+      engine,
+      live: liveConnection,
+      view: () => this.props.matchView,
+    };
+    this.props.resetUi();
+    this.props.deselectBuildings();
+    this.props.deselectAttack();
+    Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
   };
 
   // starts (or resumes) a real-time single player match hosted on this device
@@ -708,6 +557,11 @@ class App extends Component {
   showRealtimeOverview(result) {
     Jukebox.stopMusic(true);
     this.props.showOverview();
+    if (result.online) {
+      // the server credited the match already
+      multiplayer.fetchPlayerStats();
+      return;
+    }
     this.props.gameResumeable(false);
     multiplayer.pushGameStats([
       {
@@ -728,34 +582,29 @@ class App extends Component {
     if (!this.props.tutorial) {
       Jukebox.stopMusic(true);
       setTimeout(() => {
-        const realtime = typeof matchSession.host !== "undefined";
-        if (typeof this.props.game !== "undefined" || realtime) {
-          if (realtime) {
-            matchSession.host.persist(true);
-            matchSession.host.stop();
-            matchSession.host = undefined;
-            matchSession.dispatch(matchCleared());
-            OfflineStore.hasGameToResume().then((resumeable) =>
-              this.props.gameResumeable(resumeable)
-            );
-          } else {
-            this.props.finishGame({
-              issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
-            });
+        const host = matchSession.host;
+        if (typeof host !== "undefined") {
+          if (host.online) {
+            // leaving a running online match gives it up; the server keeps finished ones
+            if (this.props.matchView && this.props.matchView.phase !== engine.MatchPhase.ENDED) {
+              host.surrender().catch((error) => logger.info("surrender failed", error));
+            }
+            liveLobby.matchLeft();
           }
+          host.persist(true);
+          host.stop();
+          matchSession.host = undefined;
+          matchSession.dispatch(matchCleared());
+          OfflineStore.hasGameToResume().then((resumeable) =>
+            this.props.gameResumeable(resumeable)
+          );
           this.props.resetUi();
           multiplayer.fetchPlayerStats();
 
-          const isAndroidApp = typeof window.Android !== "undefined";
-          const isAndroidDevice = /Android/i.test(navigator.userAgent);
-
-          if (isAndroidApp) {
-            window.Android.setScreenOrientationAny();
-          } else if (isAndroidDevice) {
+          if (/Android/i.test(navigator.userAgent) && window.screen.orientation) {
             window.screen.orientation.unlock();
           }
 
-          multiplayer.reset();
           this.scene.clear();
 
           const score = this.props.playerInfos.stats.score;
@@ -791,33 +640,8 @@ class App extends Component {
               });
             }
           }
-          multiplayer.getMultiplayerSessions();
         }
       }, 1000);
-    }
-  }
-
-  showOverview() {
-    Jukebox.stopMusic(true);
-    this.props.showOverview();
-    this.props.gameResumeable(false);
-    OfflineStore.gamestateStore.clear();
-    const awards = computeAwards(
-      this.props.game,
-      multiplayer.localPlayerIndex,
-      this.props.actions
-    );
-    const stats = {
-      ...this.props.game.players[multiplayer.localPlayerIndex].statistics,
-      winners: this.props.game.winners,
-      awards: awards,
-      id: uuidv4(),
-    };
-    if (
-      this.props.game.players[0].type !== PlayerType.HUMAN ||
-      this.props.game.players[1].type !== PlayerType.HUMAN
-    ) {
-      multiplayer.pushGameStats([stats]);
     }
   }
 
@@ -890,14 +714,13 @@ class App extends Component {
         </Suspense>
         <Hud
           prepareNewGameCallback={this.prepareNewGame}
-          enterMultiplayerGame={this.enterMultiplayerGame}
           startTutorial={() => this.startTutorial()}
           className={this.props.tutorial ? "tutorial hud" : "hud"}
           endGame={(coins) => this.endGame(coins)}
           challengedPlayer={this.state.player}
           openInfo={this.state.openInfo}
-          sessionId={this.state.session}
         />
+        <IncomingInvite />
         {this.props.tutorial ? (
           <Tutorial
             spawnInfo={(messageType, position, amount, donutType) =>
@@ -924,7 +747,6 @@ const mapStateToProps = (state) => ({
   matchView: state.match.view,
   gameplay: state.gameplay,
   game: state.gameplay.game,
-  actions: state.gameplay.events,
   language: state.ui.language,
   selectedBuilding: state.ui.selectedBuilding,
   donutHighlighting: state.ui.donutHighlighting,
@@ -936,17 +758,8 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = {
-  chooseStart,
-  chooseField,
-  startGame,
   endGame,
-  joinGame,
-  build,
-  attack,
   resumeGame,
-  createBoard,
-  finishTurn,
-  finishBuildPhase,
   finishGame,
   selectAttack,
   gameResumeable,
@@ -956,7 +769,6 @@ const mapDispatchToProps = {
   startTutorial,
   stopTutorial,
   updatePlayerStats,
-  updateMultiplayerSessions,
   loadFriendsList,
   setPlayerRank,
   notifyPlayerSignedIn,
@@ -964,8 +776,6 @@ const mapDispatchToProps = {
   tapBuilding,
   hideQuickMessage,
   showQuickMessage,
-  startSessionRefresh,
-  stopSessionRefresh,
   toggleDonutHighlighting,
   showNotification,
   deselectBuildings,

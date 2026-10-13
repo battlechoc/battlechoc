@@ -72,6 +72,7 @@ const Fab = (componentProps) => {
       style={props.style}
       onClick={onClick}
       className={`${classes.fab} ${classes.background} ${props.className}`}
+      data-icon={props.icon}
     >
       <div
         className={classes.icon}
@@ -106,7 +107,6 @@ Fab.propTypes = {
   icon: PropTypes.oneOf([
     "donuts-enabled",
     "done",
-    "bell",
     "search",
     "info",
     "forward",

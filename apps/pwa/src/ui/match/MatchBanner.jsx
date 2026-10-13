@@ -8,6 +8,7 @@ import {
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import { matchSession } from "../../match/LocalMatchHost";
+import { liveConnection } from "../../match/liveConnection";
 import useMatchTime from "./useMatchTime";
 
 const { MatchPhase, OutcomeReason } = engine;
@@ -71,7 +72,7 @@ const clockText = (ms) => {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 };
 
-const MatchBanner = ({ view, paused }) => {
+const MatchBanner = ({ view, paused, online, presence, liveStatus, pending }) => {
   const classes = useStyles();
   const now = useMatchTime(4);
   if (typeof view === "undefined") {
@@ -94,10 +95,25 @@ const MatchBanner = ({ view, paused }) => {
   } else if (view.phase === MatchPhase.ENDED && view.outcome && view.outcome.reason === OutcomeReason.TIME_LIMIT) {
     message = <p>{t(tr.MATCH_TIME_UP)}</p>;
   }
+  // online: our own connection first, then the opponent's
+  if (online && view.phase !== MatchPhase.ENDED) {
+    if (liveStatus !== "online") {
+      message = <p className="warning" data-testid="reconnecting">{t(tr.MATCH_RECONNECTING)}</p>;
+    } else if (presence && presence.online === false && presence.forfeitAt) {
+      const left = presence.forfeitAt - liveConnection.clock.serverNow();
+      message = (
+        <p className="warning" data-testid="opponent-left">
+          {t(tr.MATCH_OPPONENT_LEFT)} {seconds(left)}
+        </p>
+      );
+    }
+  }
 
   return (
     <>
-      <div className={classes.banner} data-testid="match-banner">{banner}</div>
+      <div className={classes.banner} data-testid="match-banner" data-pending={pending}>
+        {banner}
+      </div>
       {message ? <div className={`${classes.banner} ${classes.message}`}>{message}</div> : null}
       {view.phase === MatchPhase.COUNTDOWN ? (
         <div className={classes.countdown}>{seconds(view.phaseEndsAt - now) || t(tr.MATCH_GO)}</div>
@@ -116,6 +132,13 @@ const MatchBanner = ({ view, paused }) => {
   );
 };
 
-const mapStateToProps = (state) => ({ view: state.match.view, paused: state.match.paused });
+const mapStateToProps = (state) => ({
+  view: state.match.view,
+  paused: state.match.paused,
+  online: state.match.online,
+  pending: state.match.pending,
+  presence: state.live.opponentPresence,
+  liveStatus: state.live.status,
+});
 
 export default connect(mapStateToProps)(MatchBanner);

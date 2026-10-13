@@ -1,18 +1,10 @@
 import { createAction } from "@reduxjs/toolkit";
 import { GameActionTypes } from "@battlechoc/battlechoc-shared-functions";
 
-const startGame = createAction(GameActionTypes.startGame);
+// the turn-shaped state of the scripted tutorial loops (see GameplayReducer)
 const resumeGame = createAction(GameActionTypes.resumeGame);
 const finishGame = createAction(GameActionTypes.finishGame);
-const chooseField = createAction(GameActionTypes.chooseField);
-const chooseStart = createAction(GameActionTypes.chooseStart);
-const createBoard = createAction(GameActionTypes.createBoard);
-const finishTurn = createAction(GameActionTypes.finishTurn);
-const finishBuildPhase = createAction(GameActionTypes.finishBuildPhase);
-const build = createAction(GameActionTypes.build);
-const attack = createAction(GameActionTypes.attack);
 const endGame = createAction(GameActionTypes.endGame);
-const joinGame = createAction(GameActionTypes.joinGame);
 
 const manipulateGameAction = "battlechoc/gameplay/manipulateGame";
 const manipulateGame = createAction(manipulateGameAction);
@@ -33,16 +25,7 @@ export {
   InfoType,
   manipulateGameAction,
   manipulateGame,
-  startGame,
   resumeGame,
   finishGame,
-  chooseField,
-  chooseStart,
-  createBoard,
-  finishTurn,
-  finishBuildPhase,
-  build,
-  attack,
   endGame,
-  joinGame,
 };

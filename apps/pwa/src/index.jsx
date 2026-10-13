@@ -11,8 +11,7 @@ import {
 import rootReducer from "./RootReducer";
 import { matchSession } from "./match/LocalMatchHost";
 import { multiplayer } from "./Multiplayer";
-import { showQuickMessage, injectMultiplayerSession } from "./ui/UiActions";
-import { gameplayLogger } from "./gameplay/GamePlayLogger";
+import { showQuickMessage } from "./ui/UiActions";
 import actionValidator from "./gameplay/ActionValidator";
 import { configureStore } from "@reduxjs/toolkit";
 import { ThemeProvider } from "react-jss";
@@ -20,10 +19,7 @@ import { ThemeProvider } from "react-jss";
 const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(
-      actionValidator,
-      gameplayLogger
-    ),
+    getDefaultMiddleware().concat(actionValidator),
 });
 matchSession.dispatch = store.dispatch;
 
@@ -101,20 +97,4 @@ if ("serviceWorker" in navigator) {
       multiplayer.handlePushMessage(event.data.payload);
     }
   });
-}
-
-if (typeof window.Android !== "undefined") {
-  window.handleBattlechocPushMessage = (payload) => {
-    console.log(
-      "handleBattlechocPushMessage called " + JSON.stringify(payload)
-    );
-    multiplayer.handlePushMessage(payload);
-  };
-
-  window.enterSessionOnStartUp = (sessionId) => {
-    console.log("enterSessionOnStartUp called " + JSON.stringify(sessionId));
-    if (typeof sessionId !== "undefined") {
-      store.dispatch(injectMultiplayerSession(sessionId));
-    }
-  };
 }
