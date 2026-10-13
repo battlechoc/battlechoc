@@ -1,4 +1,4 @@
-image: buildkite/puppeteer
+image: node:22
 
 stages:
   - build
@@ -13,6 +13,7 @@ build:
   stage: build
   variables:
     CI: "true"
+    PUPPETEER_SKIP_DOWNLOAD: "true"
   before_script:
     - export CI_JOB_TIMESTAMP=$(date --utc -Iseconds)
     - export BATTLECHOC_NPM_TOKEN=$CI_JOB_TOKEN
@@ -37,9 +38,9 @@ test:
     CI: "true"
   before_script:
     - export BATTLECHOC_NPM_TOKEN=$CI_JOB_TOKEN
-    - npm i -g serve
-    - nohup serve -s build/ &
+    - npx puppeteer browsers install chrome --install-deps
   script:
+    # jest-puppeteer serves the build artifact via vite preview
     - npm run test
   artifacts:
     expire_in: 2 days
