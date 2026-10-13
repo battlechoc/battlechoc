@@ -8,6 +8,13 @@ const { createPush } = require('./push');
 const { createApp } = require('./app');
 const { createLive } = require('./live');
 
+// optional overrides of the live timings (LiveDefaults), e.g. short ones for browser tests
+const liveConfig = env => Object.fromEntries([
+    ['disconnectGraceMs', 'LIVE_DISCONNECT_GRACE_MS'],
+    ['aiFallbackMs', 'LIVE_AI_FALLBACK_MS'],
+    ['inviteTtlMs', 'LIVE_INVITE_TTL_MS'],
+].filter(([, name]) => Number(env[name]) > 0).map(([key, name]) => [key, Number(env[name])]));
+
 const main = async () => {
     const pool = createPool();
     await migrate(pool);
@@ -21,7 +28,7 @@ const main = async () => {
     const corsOrigins = (process.env.CORS_ORIGINS || '').split(',').map(origin => origin.trim()).filter(Boolean);
     const app = createApp({ pool, auth, push, corsOrigins });
     const server = http.createServer(app);
-    const live = createLive({ server, pool, auth, push, origins: corsOrigins });
+    const live = createLive({ server, pool, auth, push, origins: corsOrigins, config: liveConfig(process.env) });
     const recovered = await live.recover();
     if (recovered > 0) {
         console.log(`recovered ${recovered} running matches`);

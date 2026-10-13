@@ -384,6 +384,9 @@ describe('live: matches', () => {
         expect(env.pushed).toHaveLength(1);
         expect(env.pushed[0]).toMatchObject({ kind: 'invite', from: 'Dora', title: 'Dora is challenging you!' });
 
+        dora.send({ type: ClientMessage.PRESENCE_QUERY, usernames: ['anna', 'Carla', 'Nobody', 42] });
+        expect((await dora.next(ServerMessage.PRESENCE_LIST)).online).toEqual(['Anna']);
+
         dora.send({ type: ClientMessage.INVITE, username: 'Nobody' });
         expect((await dora.next(ServerMessage.ERROR)).code).toBe(LiveError.PLAYER_NOT_FOUND);
     });

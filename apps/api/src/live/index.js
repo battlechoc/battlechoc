@@ -52,6 +52,7 @@ const createLive = ({ server, pool, auth, push, clock = systemClock, config = {}
         [ClientMessage.INVITE_CANCEL]: (connection, message) => lobby.answerInvite(connection, message.inviteId, InviteClosedReason.CANCELLED),
         [ClientMessage.MATCH_JOIN]: (connection, message) => lobby.join(connection, message.matchId, message.lastSeq),
         [ClientMessage.INTENT]: (connection, message) => lobby.intent(connection, message),
+        [ClientMessage.PRESENCE_QUERY]: (connection, message) => lobby.presence(connection, message.usernames),
     };
 
     const hello = async (connection, message) => {

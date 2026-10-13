@@ -91,6 +91,18 @@ class Lobby {
         return this.connections.has(playerId);
     }
 
+    /** Answers which of the given usernames (e.g. the friends list) are online. */
+    async presence(connection, usernames) {
+        const names = (Array.isArray(usernames) ? usernames : [])
+            .filter(name => typeof name === 'string' && name.length <= 64)
+            .slice(0, 100)
+            .map(name => name.toLowerCase());
+        const rows = names.length > 0
+            ? (await this.pool.query(`SELECT id, username FROM players WHERE username_lower IN (${names.map((_, i) => `$${i + 1}`).join(', ')})`, names)).rows
+            : [];
+        connection.send({ type: ServerMessage.PRESENCE_LIST, online: rows.filter(row => this.online(row.id)).map(row => row.username) });
+    }
+
     busy(playerId) {
         return this.activeMatch.has(playerId) || this.starting.has(playerId);
     }
