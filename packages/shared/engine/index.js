@@ -600,12 +600,13 @@ const nextTimerAt = match => {
  * @param {0|1} [scenario.fieldIndex] field of the field chooser
  * @param {boolean} [scenario.clear] remove all initial cream first
  * @param {Array<{player, row, col, type, cream, entities}>} [scenario.cells] cell overrides;
- *        `entities` is a list of entity types (factory, buildings, placed donuts)
+ *        `entities` lists entity types (factory, buildings, single donuts) or { type, hp }
+ * @param {Array<Array<string>>} [scenario.donuts] unplaced donuts per player (a set, e.g. the portal pair)
  * @param {Array<object>} [scenario.levels] Choclab level overrides per player
  * @param {Array<number>} [scenario.cacao] cacao per player
  * @param {string} [scenario.phase] MatchPhase.PLACEMENT (default) or MatchPhase.RUNNING
  */
-const prepareScenario = (match, { fieldIndex = 0, clear = false, cells = [], levels = [], cacao, phase = MatchPhase.PLACEMENT } = {}) => {
+const prepareScenario = (match, { fieldIndex = 0, clear = false, cells = [], levels = [], cacao, donuts, phase = MatchPhase.PLACEMENT } = {}) => {
     requirePhase(match, MatchPhase.FIELD_CHOICE);
     const events = [];
     levels.forEach((level, index) => {
@@ -632,11 +633,26 @@ const prepareScenario = (match, { fieldIndex = 0, clear = false, cells = [], lev
             if (creamed) {
                 cell.occupiedBy.push(createEntity(match, player, EntityType.CREAM, cell));
             }
-            (entities || []).forEach(entityType => cell.occupiedBy.push(createEntity(match, player, entityType, cell)));
+            // an entity is its type, or { type, hp } for a damaged one (tutorial boards)
+            (entities || []).forEach(entry => {
+                const entity = createEntity(match, player, typeof entry === 'string' ? entry : entry.type, cell);
+                if (typeof entry === 'object' && Number.isFinite(entry.hp)) {
+                    entity.hp = Math.max(1, Math.min(entity.maxHp, entry.hp));
+                }
+                cell.occupiedBy.push(entity);
+            });
         }
     });
     if (Array.isArray(cacao)) {
         cacao.forEach((value, index) => { match.players[index].cacao = value; });
+    }
+    if (Array.isArray(donuts)) {
+        donuts.forEach((set, index) => {
+            const pairId = set && set.length > 1 ? newId(match) : undefined;
+            match.players[index].donuts = (set || []).map(type => ({
+                id: newId(match), type, hp: 1, maxHp: 1, position: null, ...(pairId ? { pairId } : {}),
+            }));
+        });
     }
     const bothFactories = [0, 1].every(index => ownFactory(match, index));
     if (phase === MatchPhase.RUNNING) {

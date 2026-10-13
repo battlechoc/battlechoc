@@ -7,8 +7,9 @@ const { getPlayerView } = require('./view');
 const { RandomBot } = require('./agents');
 const { TomToffee } = require('./ai/tomToffee');
 const { GustavGanache } = require('./ai/gustavGanache');
+const { ScriptedAgent } = require('./ai/scripted');
 
-const agentKinds = { RandomBot, TomToffee, GustavGanache };
+const agentKinds = { RandomBot, TomToffee, GustavGanache, ScriptedAgent };
 
 /**
  * @param {object} descriptor
