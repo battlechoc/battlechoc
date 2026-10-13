@@ -123,7 +123,7 @@ const PlayerNameInput = (componentProps) => {
   const [badInternetConnection, setBadInternetConnection] = useState(false);
   const [editMode, setEditMode] = useState(props.editMode);
 
-  const source = useRef(Axios.CancelToken.source());
+  const abortController = useRef(new AbortController());
   const [requestRunning, setRequestRunning] = useState(false);
   const [requestTimeout, setRequestTimeout] = useState(null);
 
@@ -147,20 +147,20 @@ const PlayerNameInput = (componentProps) => {
 
       clearTimeout(requestTimeout);
       if (requestRunning) {
-        source.current.cancel();
+        abortController.current.abort();
       }
 
       setLoading(true);
       setRequestTimeout(
         setTimeout(async () => {
-          source.current = Axios.CancelToken.source();
+          abortController.current = new AbortController();
 
           try {
             setRequestRunning(true);
             let response = await ServerRequest(
               "get",
               "/check/available/" + playerName,
-              source.current.token
+              abortController.current.signal
             );
             setPlayerNameAvailable(response.data.available);
             setBadInternetConnection(false);

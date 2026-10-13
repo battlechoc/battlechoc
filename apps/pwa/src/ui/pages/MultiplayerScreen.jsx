@@ -254,7 +254,7 @@ const MultiplayerScreen = (props) => {
   const shouldAskForPermissionTimeout = useRef();
   const askForPermissionTimeout = useRef();
   const requestRunning = useRef(false);
-  const source = useRef(Axios.CancelToken.source());
+  const abortController = useRef(new AbortController());
 
   const inputRef = React.useRef();
 
@@ -375,20 +375,20 @@ const MultiplayerScreen = (props) => {
       if (userSearchText !== "") {
         clearTimeout(requestTimeout.current);
         if (requestRunning.current) {
-          source.current.cancel();
+          abortController.current.abort();
         }
 
         setSearchResults([]);
         requestTimeout.current = setTimeout(async () => {
           setWaitForResponse(true);
-          source.current = Axios.CancelToken.source();
+          abortController.current = new AbortController();
           requestRunning.current = true;
 
           try {
             const response = await ServerRequest(
               "get",
               "/query/user/" + userSearchText,
-              source.current.token
+              abortController.current.signal
             );
             setBadInternetConnection(false);
             setSearchResults(response.data);

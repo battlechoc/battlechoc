@@ -65,7 +65,7 @@ const ServerRequest = async (method, url, body) => {
       return instance.delete(url, config);
     } else {
       if (typeof body !== "undefined") {
-        config.cancelToken = body;
+        config.signal = body;
       }
       return instance.get(url, config);
     }

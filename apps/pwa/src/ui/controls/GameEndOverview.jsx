@@ -6,7 +6,7 @@ import {
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import { createUseStyles } from "react-jss";
-import ConfettiGenerator from "confetti-js";
+import confetti from "canvas-confetti";
 import CountUpModule from "react-countup";
 
 // the default import of this CommonJS module is its module.exports object
@@ -101,6 +101,8 @@ const useStyles = createUseStyles((theme) => ({
   confetti: {
     position: "absolute",
     zIndex: -1,
+    width: "100%",
+    height: "100%",
   },
 }));
 
@@ -109,11 +111,10 @@ const GameEndOverview = (props) => {
   const { outcome, awards } = props;
 
   const pointer = useRef(0);
-  const confetti = useRef();
+  const confettiCanvas = useRef();
   const highlight = useRef();
   const [award, setAward] = useState(pointer.current);
-  const counter = useRef();
-  const count = useRef(awards.length > 0 ? awards[0].coins : 0);
+  const [count, setCount] = useState(awards.length > 0 ? awards[0].coins : 0);
   let headline = t(tr.MESSAGE_WIN_GAME);
   if (outcome !== "won") {
     headline = t(tr.MESSAGE_LOST_GAME);
@@ -130,12 +131,27 @@ const GameEndOverview = (props) => {
     };
 
     if (outcome === "won") {
-      const confettiSettings = { target: confetti.current };
-      const confettiGenerator = new ConfettiGenerator(confettiSettings);
-      confettiGenerator.render();
+      const shootConfetti = confetti.create(confettiCanvas.current, {
+        resize: true,
+      });
+      // let it rain confetti until the overview is closed
+      const interval = setInterval(
+        () =>
+          shootConfetti({
+            particleCount: 2,
+            startVelocity: 0,
+            gravity: 0.6,
+            ticks: 400,
+            origin: { x: Math.random(), y: -0.1 },
+          }),
+        100
+      );
       startGettingAwards();
 
-      return () => confettiGenerator.clear();
+      return () => {
+        clearInterval(interval);
+        shootConfetti.reset();
+      };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [outcome]);
@@ -164,8 +180,7 @@ const GameEndOverview = (props) => {
     }, 2200);
 
     if (award > 0 && award < awards.length) {
-      count.current += awards[award].coins;
-      counter.current.update(count.current);
+      setCount((current) => current + awards[award].coins);
     }
 
     return () => clearTimeout(timeout);
@@ -183,15 +198,14 @@ const GameEndOverview = (props) => {
     <CountUp
       duration={2.5}
       useEasing={false}
-      ref={counter}
-      end={count.current}
+      end={count}
       preserveValue={true}
     />
   );
 
   return (
     <div className={classes.overview}>
-      <canvas className={classes.confetti} ref={confetti} />
+      <canvas className={classes.confetti} ref={confettiCanvas} />
       <div className={classes.headline}>{headline}</div>
       <div className={classes.total}>
         <div className={classes.coins}>
