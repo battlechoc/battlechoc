@@ -19,6 +19,8 @@ jobs:
       - run: npm ci
       - name: Shared rules engine unit tests
         run: npm test
+      - name: API tests (in-memory Postgres)
+        run: npm run test:api
       - name: PWA production build
         run: npm run build
       - uses: actions/upload-artifact@v7
