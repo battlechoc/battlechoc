@@ -1,7 +1,6 @@
 {
   "short_name": "battlechoc",
   "name": "battlechoc",
-  "gcm_sender_id": "618424349380",
   "icons": [
     {
       "src": "icon-144x144.png",
@@ -39,7 +38,8 @@
   ],
   "start_url": "./index.html?app_runs_as=pwa&app_version=1",
   "display": "fullscreen",
-  "orientation":  "any",
+  "orientation": "any",
   "theme_color": "#3190C3",
-  "background_color": "#3DA2CE"
+  "background_color": "#3DA2CE",
+  "id": "/"
 }
