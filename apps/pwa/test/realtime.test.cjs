@@ -59,9 +59,15 @@ const reachRunningPhase = async (page) => {
 
 describe('real-time match', () => {
   let page;
+  let context;
 
   beforeAll(async () => {
-    page = await browser.newPage();
+    // own browser context: the seeded profile and saved matches must not leak into the
+    // title screen tests, which run in parallel against the same origin
+    context = await browser.createBrowserContext();
+    page = await context.newPage();
+    // the e2e tests do not cover the service worker; bypass it to keep page loads deterministic
+    await page.setBypassServiceWorker(true);
     await page.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, 'language', { get: () => 'en-US' });
     });
@@ -73,6 +79,7 @@ describe('real-time match', () => {
 
   afterAll(async () => {
     await page.close();
+    await context.close();
   });
 
   test('walks through field choice, simultaneous placement and countdown', async () => {
@@ -128,7 +135,7 @@ describe('real-time match', () => {
     });
     await sleep(300);
     expect(await host(page, () => window.__battlechoc.host.clock.running)).toBe(false);
-    await expect(page).toMatchElement('[data-testid=paused-overlay]');
+    await page.waitForSelector('[data-testid=paused-overlay]', { timeout: 5000 });
     const savedAt = await host(page, () => window.__battlechoc.host.match.t);
     await sleep(1000);
 

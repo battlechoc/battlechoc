@@ -13,6 +13,8 @@ describe('browser', () => {
 
     beforeAll(async () => {
       page = await browser.newPage();
+      // the e2e tests do not cover the service worker; bypass it to keep page loads deterministic
+      await page.setBypassServiceWorker(true);
       await page.evaluateOnNewDocument(() => {
         Object.defineProperty(navigator, 'language', { get: () => 'en-US' });
       });
@@ -52,6 +54,8 @@ describe('iPhone', () => {
 
   beforeAll(async () => {
     page = await browser.newPage();
+    // the e2e tests do not cover the service worker; bypass it to keep page loads deterministic
+    await page.setBypassServiceWorker(true);
     await page.emulate(iPhone);
     await page.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, 'platform', { get: () => 'iPhone' });
