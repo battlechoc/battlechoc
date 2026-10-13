@@ -4,25 +4,27 @@ import { clientsClaim } from "workbox-core";
 import { precacheAndRoute } from "workbox-precaching";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { RangeRequestsPlugin } from "workbox-range-requests";
-import { initializeApp } from "firebase/app";
-import { getMessaging, onBackgroundMessage } from "firebase/messaging/sw";
-import firebaseConfig from "./firebaseConfig";
-
-const messaging = getMessaging(initializeApp(firebaseConfig));
-
-onBackgroundMessage(messaging, function (payload) {
-  const notificationOptions = {
-    body: payload.data.text,
-    icon: "images/battlechoc-notification-icon.png",
-    data: {
-      reason: payload.data.reason,
-      click_action: payload.data.click_action,
-      session: payload.data.session,
-    },
-  };
-  return self.registration.showNotification(
-    payload.data.title,
-    notificationOptions
+// Web Push without Firebase: the API sends JSON payloads { title, text, click_action }.
+// A notification is always shown (required for userVisibleOnly subscriptions); open app
+// windows also get the payload to show it in-game.
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (error) {
+    payload = { title: "battlechoc", text: event.data ? event.data.text() : "" };
+  }
+  event.waitUntil(
+    (async () => {
+      const windows = await clients.matchAll({ type: "window", includeUncontrolled: true });
+      windows.forEach((client) => client.postMessage({ type: "battlechoc-push", payload }));
+      await self.registration.showNotification(payload.title || "battlechoc", {
+        body: payload.text,
+        icon: "images/battlechoc_notification_icon.png",
+        tag: payload.topic,
+        data: { click_action: payload.click_action || "/" },
+      });
+    })()
   );
 });
 
@@ -106,7 +108,7 @@ precacheAndRoute(
     { url: "/images/arrow-down.svg", revision: "4" },
     { url: "/images/dialog-border-top.svg", revision: "4" },
     { url: "/images/instagram.svg", revision: "4" },
-    { url: "/images/ score.svg", revision: "4" },
+    { url: "/images/score.svg", revision: "4" },
     { url: "/images/done.svg", revision: "4" },
     { url: "/images/search.svg", revision: "4" },
     { url: "/images/back.svg", revision: "4" },

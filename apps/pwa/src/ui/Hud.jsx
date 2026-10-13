@@ -27,7 +27,7 @@ import Choclab from "./pages/Choclab";
 import { multiplayer } from "../Multiplayer";
 import { ServerRequest } from "../helper/settings";
 import logger from "../helper/logger";
-import { auth } from "../firebase";
+import { account } from "../account";
 import {
   Button,
   Fab,
@@ -257,7 +257,7 @@ const Hud = (props) => {
         setWaitingRoomText(t(tr.TRY_TO_SHOW_PLAYER_ACCOUNT));
 
         try {
-          while (!auth.currentUser) {
+          while (!account.isReady()) {
             await sleep(100);
           }
           const response = await ServerRequest(
@@ -496,21 +496,6 @@ const Hud = (props) => {
                   : t(tr.MAIN_MENU_SINGLEPLAYER)}
               </Button>
             );
-            controls.push(
-              <Button
-                className={classes.menuButton}
-                key="1"
-                size="huge"
-                locked={locked}
-                color="secondary"
-                onClick={() => {
-                  setShowMultiplayerScreen(true);
-                }}
-              >
-                {t(tr.MAIN_MENU_MULTIPLAYER)}
-              </Button>
-            );
-
             controls.push(
               <Button
                 className={classes.menuButton}

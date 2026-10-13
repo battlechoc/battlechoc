@@ -14,7 +14,6 @@ import { multiplayer } from "./Multiplayer";
 import { showQuickMessage, injectMultiplayerSession } from "./ui/UiActions";
 import { gameplayLogger } from "./gameplay/GamePlayLogger";
 import actionValidator from "./gameplay/ActionValidator";
-import multiplayerActionRelay from "./gameplay/MultiplayerActionRelay";
 import { configureStore } from "@reduxjs/toolkit";
 import { ThemeProvider } from "react-jss";
 
@@ -23,7 +22,6 @@ const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
       actionValidator,
-      multiplayerActionRelay,
       gameplayLogger
     ),
 });
@@ -95,6 +93,15 @@ window.addEventListener("online", () => {
     })
   );
 });
+
+// push messages forwarded by the service worker while the app is open
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "battlechoc-push") {
+      multiplayer.handlePushMessage(event.data.payload);
+    }
+  });
+}
 
 if (typeof window.Android !== "undefined") {
   window.handleBattlechocPushMessage = (payload) => {
