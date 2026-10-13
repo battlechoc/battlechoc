@@ -1955,3 +1955,24 @@ const computeAwards = (game, playerIndex, actions) => {
 module.exports.computeAwards = computeAwards;
 
 // Awards end
+// Real-time engine (replaces the turn-based reductions above once the PWA has switched)
+const realtimeEngine = require('./engine');
+const { getPlayerView } = require('./engine/view');
+const { computeMatchAwards, matchAwards } = require('./engine/awards');
+const { Agent, RandomBot, playMatch } = require('./engine/agents');
+const { DefaultBalance, valueAt } = require('./balance');
+
+module.exports.engine = {
+    ...realtimeEngine,
+    getPlayerView,
+    computeMatchAwards,
+    matchAwards,
+    Agent,
+    RandomBot,
+    playMatch,
+};
+module.exports.DefaultBalance = DefaultBalance;
+module.exports.valueAt = valueAt;
+module.exports.WeaponNotReadyError = require('./errors').WeaponNotReadyError;
+module.exports.StunnedError = require('./errors').StunnedError;
+module.exports.InvalidTimeError = require('./errors').InvalidTimeError;

@@ -86,6 +86,27 @@ class NoHealthyInternetConnectionError extends BattlechocError {
     }
 }
 
+class WeaponNotReadyError extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'No weapon of this type is ready yet';
+    }
+}
+
+class StunnedError extends BattlechocError {
+    constructor(...args) {
+        super(...args);
+        this.message = 'Attacks are blocked by a stop donut for a moment';
+    }
+}
+
+class InvalidTimeError extends BattlechocError {
+    constructor(t, matchT, ...args) {
+        super(...args);
+        this.message = 'Action time ' + t + ' lies before the current match time ' + matchT;
+    }
+}
+
 module.exports = {
     BattlechocError,
     ActionValidationError,
@@ -100,4 +121,7 @@ module.exports = {
     GameNotRunningError,
     AlreadyMolten,
     NoHealthyInternetConnectionError,
+    WeaponNotReadyError,
+    StunnedError,
+    InvalidTimeError,
 };
