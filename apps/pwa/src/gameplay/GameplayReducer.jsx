@@ -28,43 +28,52 @@ const logAndApply = (state, action, reduction) => {
   reduction(state, action);
 };
 
-const gameplayReducer = createReducer(
-  {},
-  {
-    [GameActionTypes.startGame]: (state, action) =>
-      logAndApply(state, action, startGameReduction),
-    [GameActionTypes.resumeGame]: (state, action) => {
+const gameplayReducer = createReducer({}, (builder) =>
+  builder
+    .addCase(GameActionTypes.startGame, (state, action) =>
+      logAndApply(state, action, startGameReduction)
+    )
+    .addCase(GameActionTypes.resumeGame, (state, action) => {
       state.events = action.payload.events;
       logAndApply(
         state,
         { ...action, payload: action.payload.game },
         resumeGameReduction
       );
-    },
-    [GameActionTypes.joinGame]: (state, action) =>
-      logAndApply(state, action, joinGameReduction),
-    [GameActionTypes.createBoard]: (state, action) =>
-      logAndApply(state, action, createGameReduction),
-    [GameActionTypes.chooseField]: (state, action) =>
-      logAndApply(state, action, chooseFieldReduction),
-    [GameActionTypes.chooseStart]: (state, action) =>
-      logAndApply(state, action, chooseStartReduction),
-    [GameActionTypes.finishTurn]: (state, action) =>
-      logAndApply(state, action, finishTurnReduction),
-    [GameActionTypes.finishBuildPhase]: (state, action) =>
-      logAndApply(state, action, finishBuildPhaseReduction),
-    [GameActionTypes.build]: (state, action) =>
-      logAndApply(state, action, buildReduction),
-    [GameActionTypes.attack]: (state, action) =>
-      logAndApply(state, action, attackReduction),
-    [GameActionTypes.endGame]: (state, action) =>
-      logAndApply(state, action, endGameReduction),
-    [GameActionTypes.finishGame]: (state, action) =>
-      logAndApply(state, action, finishGameReduction),
-    [manipulateGameAction]: (state, action) => {
+    })
+    .addCase(GameActionTypes.joinGame, (state, action) =>
+      logAndApply(state, action, joinGameReduction)
+    )
+    .addCase(GameActionTypes.createBoard, (state, action) =>
+      logAndApply(state, action, createGameReduction)
+    )
+    .addCase(GameActionTypes.chooseField, (state, action) =>
+      logAndApply(state, action, chooseFieldReduction)
+    )
+    .addCase(GameActionTypes.chooseStart, (state, action) =>
+      logAndApply(state, action, chooseStartReduction)
+    )
+    .addCase(GameActionTypes.finishTurn, (state, action) =>
+      logAndApply(state, action, finishTurnReduction)
+    )
+    .addCase(GameActionTypes.finishBuildPhase, (state, action) =>
+      logAndApply(state, action, finishBuildPhaseReduction)
+    )
+    .addCase(GameActionTypes.build, (state, action) =>
+      logAndApply(state, action, buildReduction)
+    )
+    .addCase(GameActionTypes.attack, (state, action) =>
+      logAndApply(state, action, attackReduction)
+    )
+    .addCase(GameActionTypes.endGame, (state, action) =>
+      logAndApply(state, action, endGameReduction)
+    )
+    .addCase(GameActionTypes.finishGame, (state, action) =>
+      logAndApply(state, action, finishGameReduction)
+    )
+    .addCase(manipulateGameAction, (state, action) => {
       state.game = action.payload;
-    },
-  }
+    })
 );
 
 export { gameplayReducer };

@@ -27,150 +27,150 @@ const uiReducer = createReducer(
     hudUiLocked: false,
     onLoopsEnd: null,
   },
-  {
-    [UiActions.resetUi]: (state, action) => {
-      state.whitelistBuildings = undefined;
-      state.whitelistAttacks = undefined;
-      state.tappedBuilding = EntityType.FACTORY;
-      state.selectedBuilding = EntityType.FACTORY;
-      state.selectedAttack = undefined;
-      state.overviewVisible = false;
-    },
-    [UiActions.selectBuilding]: (state, action) => {
-      state.selectedBuilding = action.payload;
-    },
-    [UiActions.tapBuilding]: (state, action) => {
-      state.tappedBuilding = action.payload;
-    },
-    [UiActions.selectAttack]: (state, action) => {
-      state.selectedAttack = action.payload;
-    },
-    [UiActions.deselectAttack]: (state, action) => {
-      state.selectedAttack = undefined;
-    },
-    [UiActions.deselectBuildings]: (state, action) => {
-      state.selectedBuilding = undefined;
-      state.tappedBuilding = undefined;
-    },
-    [UiActions.gameResumeable]: (state, action) => {
-      state.resumeGamePossible = action.payload;
-    },
-    [UiActions.assetsReady]: (state, action) => {
-      state.assetsReady = true;
-    },
-    [UiActions.loadUiState]: (state, action) => {
-      for (let property in action.payload) {
-        state[property] = action.payload[property];
-      }
-    },
-    [UiActions.showOverview]: (state, action) => {
-      state.overviewVisible = true;
-    },
-    [UiActions.notifyPlayerSignedIn]: (state, action) => {
-      state.playerInfos.isSignedIn = true;
-      state.playerInfos.isAnonymous = action.payload.isAnonymous;
-      state.playerInfos.email = action.payload.email;
-      state.playerInfos.uid = action.payload.uid;
-      state.playerInfos.name = action.payload.name;
-    },
-    [UiActions.notifyPlayerSignedOut]: (state, action) => {
-      state.playerInfos.isSignedIn = false;
-      state.playerInfos.isAnonymous = true;
-      state.playerInfos.email = undefined;
-      state.playerInfos.name = undefined;
-      state.playerInfos.uid = undefined;
-      state.playerInfos.stats = EmptyPlayerStats;
-      state.ranking = "Offline";
-      OfflineStore.playerStore.set("stats", EmptyPlayerStats);
-      OfflineStore.playerStore.set("friends", undefined);
-      OfflineStore.playerStore.set("multiplayerSessions", undefined);
-      state.resumeGamePossible = false;
-      OfflineStore.gamestateStore.clear();
-    },
-    [UiActions.stopTutorial]: (state, action) => {
-      state.tutorial = false;
-      state.notificationOnLoopsEnd = null;
-      OfflineStore.settingsStore.set("tutorialAlreadySeen", true);
-    },
-    [UiActions.startTutorial]: (state, action) => {
-      state.tutorial = true;
-      state.loopAnimations = action.payload.loops;
-      state.notificationOnLoopsEnd =
-        action.payload.notificationOnLoopsEnd || null;
-    },
-    [UiActions.updatePlayerStats]: (state, action) => {
-      Object.assign(state.playerInfos.stats, action.payload);
-    },
-    [UiActions.updateMultiplayerSessions]: (state, action) => {
-      state.multiplayerSessions = action.payload;
-      OfflineStore.playerStore.set("multiplayerSessions", action.payload);
-    },
-    [UiActions.loadFriendsList]: (state, action) => {
-      state.friends = action.payload;
-      OfflineStore.playerStore.set("friends", action.payload);
-    },
-    [UiActions.setPlayerRank]: (state, action) => {
-      state.ranking = action.payload;
-    },
-    [UiActions.updateLevel]: (state, action) => {
-      state.playerInfos.stats.level = action.payload;
-    },
-    [UiActions.showQuickMessage]: (state, action) => {
-      if (
-        action.payload.type === "PWA_ONLINE_MESSAGE" ||
-        action.payload.type === "PWA_OFFLINE_MESSAGE"
-      ) {
+  (builder) =>
+    builder
+      .addCase(UiActions.resetUi, (state, action) => {
+        state.whitelistBuildings = undefined;
+        state.whitelistAttacks = undefined;
+        state.tappedBuilding = EntityType.FACTORY;
+        state.selectedBuilding = EntityType.FACTORY;
+        state.selectedAttack = undefined;
+        state.overviewVisible = false;
+      })
+      .addCase(UiActions.selectBuilding, (state, action) => {
+        state.selectedBuilding = action.payload;
+      })
+      .addCase(UiActions.tapBuilding, (state, action) => {
+        state.tappedBuilding = action.payload;
+      })
+      .addCase(UiActions.selectAttack, (state, action) => {
+        state.selectedAttack = action.payload;
+      })
+      .addCase(UiActions.deselectAttack, (state, action) => {
+        state.selectedAttack = undefined;
+      })
+      .addCase(UiActions.deselectBuildings, (state, action) => {
+        state.selectedBuilding = undefined;
+        state.tappedBuilding = undefined;
+      })
+      .addCase(UiActions.gameResumeable, (state, action) => {
+        state.resumeGamePossible = action.payload;
+      })
+      .addCase(UiActions.assetsReady, (state, action) => {
+        state.assetsReady = true;
+      })
+      .addCase(UiActions.loadUiState, (state, action) => {
+        for (let property in action.payload) {
+          state[property] = action.payload[property];
+        }
+      })
+      .addCase(UiActions.showOverview, (state, action) => {
+        state.overviewVisible = true;
+      })
+      .addCase(UiActions.notifyPlayerSignedIn, (state, action) => {
+        state.playerInfos.isSignedIn = true;
+        state.playerInfos.isAnonymous = action.payload.isAnonymous;
+        state.playerInfos.email = action.payload.email;
+        state.playerInfos.uid = action.payload.uid;
+        state.playerInfos.name = action.payload.name;
+      })
+      .addCase(UiActions.notifyPlayerSignedOut, (state, action) => {
+        state.playerInfos.isSignedIn = false;
+        state.playerInfos.isAnonymous = true;
+        state.playerInfos.email = undefined;
+        state.playerInfos.name = undefined;
+        state.playerInfos.uid = undefined;
+        state.playerInfos.stats = EmptyPlayerStats;
+        state.ranking = "Offline";
+        OfflineStore.playerStore.set("stats", EmptyPlayerStats);
+        OfflineStore.playerStore.set("friends", undefined);
+        OfflineStore.playerStore.set("multiplayerSessions", undefined);
+        state.resumeGamePossible = false;
+        OfflineStore.gamestateStore.clear();
+      })
+      .addCase(UiActions.stopTutorial, (state, action) => {
+        state.tutorial = false;
+        state.notificationOnLoopsEnd = null;
+        OfflineStore.settingsStore.set("tutorialAlreadySeen", true);
+      })
+      .addCase(UiActions.startTutorial, (state, action) => {
+        state.tutorial = true;
+        state.loopAnimations = action.payload.loops;
+        state.notificationOnLoopsEnd =
+          action.payload.notificationOnLoopsEnd || null;
+      })
+      .addCase(UiActions.updatePlayerStats, (state, action) => {
+        Object.assign(state.playerInfos.stats, action.payload);
+      })
+      .addCase(UiActions.updateMultiplayerSessions, (state, action) => {
+        state.multiplayerSessions = action.payload;
+        OfflineStore.playerStore.set("multiplayerSessions", action.payload);
+      })
+      .addCase(UiActions.loadFriendsList, (state, action) => {
+        state.friends = action.payload;
+        OfflineStore.playerStore.set("friends", action.payload);
+      })
+      .addCase(UiActions.setPlayerRank, (state, action) => {
+        state.ranking = action.payload;
+      })
+      .addCase(UiActions.updateLevel, (state, action) => {
+        state.playerInfos.stats.level = action.payload;
+      })
+      .addCase(UiActions.showQuickMessage, (state, action) => {
+        if (
+          action.payload.type === "PWA_ONLINE_MESSAGE" ||
+          action.payload.type === "PWA_OFFLINE_MESSAGE"
+        ) {
+          state.quickMessages = state.quickMessages.filter(
+            (message) =>
+              message.type !== "PWA_ONLINE_MESSAGE" &&
+              message.type !== "PWA_OFFLINE_MESSAGE"
+          );
+        }
+        state.quickMessages.push({
+          autoHideDuration:
+            typeof action.payload.autoHideDuration === "undefined"
+              ? 4000
+              : action.payload.autoHideDuration,
+          id: uuidv4(),
+          text: action.payload.text || "",
+          variant: action.payload.variant || "warning",
+        });
+      })
+      .addCase(UiActions.hideQuickMessage, (state, action) => {
         state.quickMessages = state.quickMessages.filter(
-          (message) =>
-            message.type !== "PWA_ONLINE_MESSAGE" &&
-            message.type !== "PWA_OFFLINE_MESSAGE"
+          (message) => message.id !== action.payload
         );
-      }
-      state.quickMessages.push({
-        autoHideDuration:
-          typeof action.payload.autoHideDuration === "undefined"
-            ? 4000
-            : action.payload.autoHideDuration,
-        id: uuidv4(),
-        text: action.payload.text || "",
-        variant: action.payload.variant || "warning",
-      });
-    },
-    [UiActions.hideQuickMessage]: (state, action) => {
-      state.quickMessages = state.quickMessages.filter(
-        (message) => message.id !== action.payload
-      );
-    },
-    [UiActions.startSessionRefresh]: (state, action) => {
-      state.sessionRefreshActions += 1;
-    },
-    [UiActions.stopSessionRefresh]: (state, action) => {
-      if (state.sessionRefreshActions > 0) {
-        state.sessionRefreshActions -= 1;
-      }
-    },
-    [UiActions.toggleDonutHighlighting]: (state, action) => {
-      if (typeof action.payload !== "undefined") {
-        state.donutHighlighting = action.payload;
-      } else {
-        state.donutHighlighting = !state.donutHighlighting;
-      }
-    },
-    [UiActions.showNotification]: (state, action) => {
-      const { title, message } = action.payload;
-      state.notification = {
-        title: title,
-        message: message,
-        open: true,
-      };
-    },
-    [UiActions.hideNotification]: (state) => {
-      state.notification = { title: null, message: null, open: false };
-    },
-    [UiActions.injectMultiplayerSession]: (state, action) => {
-      state.injectedMultiplayerSessionId = action.payload;
-    },
-  }
+      })
+      .addCase(UiActions.startSessionRefresh, (state, action) => {
+        state.sessionRefreshActions += 1;
+      })
+      .addCase(UiActions.stopSessionRefresh, (state, action) => {
+        if (state.sessionRefreshActions > 0) {
+          state.sessionRefreshActions -= 1;
+        }
+      })
+      .addCase(UiActions.toggleDonutHighlighting, (state, action) => {
+        if (typeof action.payload !== "undefined") {
+          state.donutHighlighting = action.payload;
+        } else {
+          state.donutHighlighting = !state.donutHighlighting;
+        }
+      })
+      .addCase(UiActions.showNotification, (state, action) => {
+        const { title, message } = action.payload;
+        state.notification = {
+          title: title,
+          message: message,
+          open: true,
+        };
+      })
+      .addCase(UiActions.hideNotification, (state) => {
+        state.notification = { title: null, message: null, open: false };
+      })
+      .addCase(UiActions.injectMultiplayerSession, (state, action) => {
+        state.injectedMultiplayerSessionId = action.payload;
+      })
 );
 
 export default uiReducer;

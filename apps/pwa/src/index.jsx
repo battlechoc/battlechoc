@@ -14,17 +14,17 @@ import { showQuickMessage, injectMultiplayerSession } from "./ui/UiActions";
 import { gameplayLogger } from "./gameplay/GamePlayLogger";
 import actionValidator from "./gameplay/ActionValidator";
 import multiplayerActionRelay from "./gameplay/MultiplayerActionRelay";
-import { configureStore, getDefaultMiddleware } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
 import { ThemeProvider } from "react-jss";
 
 const store = configureStore({
   reducer: rootReducer,
-  middleware: [
-    ...getDefaultMiddleware(),
-    actionValidator,
-    multiplayerActionRelay,
-    gameplayLogger,
-  ],
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(
+      actionValidator,
+      multiplayerActionRelay,
+      gameplayLogger
+    ),
 });
 
 const theme = {
