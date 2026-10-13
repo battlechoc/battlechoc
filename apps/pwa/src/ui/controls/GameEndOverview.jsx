@@ -7,7 +7,10 @@ import {
 } from "@battlechoc/battlechoc-shared-functions";
 import { createUseStyles } from "react-jss";
 import ConfettiGenerator from "confetti-js";
-import CountUp from "react-countup";
+import CountUpModule from "react-countup";
+
+// the default import of this CommonJS module is its module.exports object
+const CountUp = CountUpModule.default ?? CountUpModule;
 
 const useStyles = createUseStyles((theme) => ({
   overview: {

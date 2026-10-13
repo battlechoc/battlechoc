@@ -3,7 +3,7 @@ import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import { connect } from "react-redux";
 import { notifyPlayerSignedOut } from "../UiActions";
-import StyledFirebaseAuth from "react-firebaseui/StyledFirebaseAuth";
+import StyledFirebaseAuthModule from "react-firebaseui/StyledFirebaseAuth";
 import * as firebaseui from "firebaseui";
 import { multiplayer } from "../../Multiplayer";
 import firebase from "firebase/app";
@@ -17,6 +17,10 @@ import {
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
+
+// rolldown hands the CommonJS module object to default imports of this transpiled module
+const StyledFirebaseAuth =
+  StyledFirebaseAuthModule.default ?? StyledFirebaseAuthModule;
 
 const useStyles = createUseStyles((theme) => ({
   wrapper: {

@@ -1,6 +1,6 @@
 import { registerRoute } from "workbox-routing";
 import { StaleWhileRevalidate, NetworkFirst } from "workbox-strategies";
-import { skipWaiting, clientsClaim } from "workbox-core";
+import { clientsClaim } from "workbox-core";
 import { precacheAndRoute } from "workbox-precaching";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { RangeRequestsPlugin } from "workbox-range-requests";
@@ -75,7 +75,7 @@ self.addEventListener("notificationclick", function (event) {
   );
 });
 
-skipWaiting();
+self.skipWaiting();
 clientsClaim();
 
 // NEXT REVISION will replaced by $CI_PIPELINE_ID within the GitLab build process
