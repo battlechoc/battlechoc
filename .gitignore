@@ -1,0 +1,19 @@
+# dependencies and build output
+node_modules/
+coverage/
+build/
+dist/
+
+# local environment
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Claude Code files stay local
+CLAUDE.md
+.claude/
+docs/realtime-migration-plan.md
