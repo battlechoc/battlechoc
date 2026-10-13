@@ -11,7 +11,7 @@ const TargetEmptyError = require('../index').TargetEmptyError;
 const attackReduction = require('../index').attackReduction;
 const setRandomSeed = require('../index').setRandomSeed;
 const getRandomNumber = require('../index').getRandomNumber;
-const uuidv4 = require('uuid/v4');
+const uuidv4 = () => crypto.randomUUID();
 
 class AttackTest extends Situation {
     constructor() {

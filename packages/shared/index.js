@@ -1,4 +1,15 @@
-const uuidv4 = require('uuid/v4');
+// randomUUID is only exposed in secure contexts, so fall back to getRandomValues (e.g. dev builds served over plain http on a LAN)
+const uuidv4 = () => {
+    if (typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+};
 
 const setRandomSeed = seed => {
     const seedableRandom = function (s) {

@@ -1,6 +1,6 @@
 {
   "name": "@battlechoc/battlechoc-shared-functions",
-  "version": "2.0.4",
+  "version": "3.0.0",
   "description": "battlechoc definitions and functions used in server and pwa",
   "main": "index.js",
   "scripts": {
@@ -12,8 +12,8 @@
     "@battlechoc:registry": " https://gitlab.com/api/v4/projects/16792493/packages/npm/"
   },
   "license": "UNLICENSED",
-  "dependencies": {
-    "uuid": "^3.4.0"
+  "engines": {
+    "node": ">=20"
   },
   "devDependencies": {
     "jest": "^30.5.2"

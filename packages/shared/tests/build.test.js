@@ -11,7 +11,7 @@ const NoBuildingsLeftError = require('../index').NoBuildingsLeftError;
 const finishTurnReduction = require('../index').finishTurnReduction;
 const NoCacaoLeftError = require('../index').NoCacaoLeftError;
 const InvalidActionIssuerError = require('../index').InvalidActionIssuerError;
-const uuidv4 = require('uuid/v4');
+const uuidv4 = () => crypto.randomUUID();
 
 class BuildTest extends Situation {
     constructor() {
