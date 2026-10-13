@@ -1,13 +1,31 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import { connect } from "react-redux";
 import { notifyPlayerSignedOut } from "../UiActions";
-import * as firebaseui from "firebaseui";
-import "firebaseui/dist/firebaseui.css";
+import {
+  FacebookAuthProvider,
+  GoogleAuthProvider,
+  OAuthProvider,
+  signInWithCredential,
+} from "firebase/auth";
+import {
+  autoUpgradeAnonymousUsers,
+  getTranslation,
+  initializeUI,
+} from "@firebase-oss/ui-core";
+import {
+  FacebookSignInButton,
+  FirebaseUIProvider,
+  ForgotPasswordAuthScreen,
+  GoogleSignInButton,
+  SignInAuthScreen,
+  SignUpAuthScreen,
+  useUI,
+} from "@firebase-oss/ui-react";
+import "@firebase-oss/ui-styles/dist.min.css";
 import { multiplayer } from "../../Multiplayer";
-import firebase from "firebase/app";
-import "firebase/auth";
+import { app, auth } from "../../firebase";
 import logger from "../../helper/logger";
 import { Jukebox } from "../misc";
 import { Button, Progress, Fab } from "../controls";
@@ -125,9 +143,6 @@ const useStyles = createUseStyles((theme) => ({
       width: "80%",
       margin: 0,
     },
-    "& #firebaseui_container": {
-      width: "100%",
-    },
   },
   signout: {
     display: "flex",
@@ -142,141 +157,221 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   firebaseUi: {
-    "& .firebaseui-container": {
-      background: "unset",
-      boxShadow: "none",
-      fontFamily: "unset",
-      maxWidth: "unset",
-      margin: "unset",
-      "& .firebaseui-card-header": {
-        border: "none !important",
-      },
-      "& h1.firebaseui-title": {
-        color: "white",
-      },
-      "& label.firebaseui-label": {
-        color: "white",
-      },
-      "& input.firebaseui-input": {
-        borderColor: "rgba(255,255,255,.5)",
-        color: "white !important",
-        padding: 6,
-      },
-      "& .firebaseui-label:after": {
-        backgroundColor: "rgba(255,255,255,0.5) !important",
-      },
-      "& button.mdl-button--primary": {
-        color: "white",
-        borderRadius: "12.5%",
-        lineHeight: "unset",
-        border: `3px solid ${theme.color.accent.light}`,
-        background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 100%)`,
-      },
-      "& button.mdl-button--raised": {
-        borderRadius: "12.5%",
-        lineHeight: "unset",
-        border: `3px solid ${theme.color.primary.light}`,
-        background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`,
-      },
-      "& .firebaseui-link": {
-        color: theme.color.accent.light,
-      },
-      "& .firebaseui-text": {
-        color: "white",
-      },
-    },
-    "& .firebaseui-idp-button": {
+    "--fui-primary": theme.color.primary.light,
+    "--fui-primary-hover": theme.color.primary.dark,
+    "--fui-primary-surface": "white",
+    "--fui-text": "white",
+    "--fui-text-muted": "rgba(255,255,255,.8)",
+    "--fui-background": "transparent",
+    "--fui-border": "rgba(255,255,255,.5)",
+    "--fui-input": "rgba(255,255,255,.5)",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    width: "100%",
+    "& .fui-provider__button, & .signin-email": {
       clipPath: "url(#menu-button-clip-path)",
       fontFamily: "Bangers",
-      border: "none !important",
+      fontSize: "3vw",
+      border: "none",
       padding: "2vw",
+      marginBottom: 15,
       display: "flex",
+      alignItems: "center",
       justifyContent: "center",
-      maxWidth: "unset",
+      gap: "1vw",
       width: "35vw",
-      "& .firebaseui-idp-text": {
-        fontSize: "3vw",
+      cursor: "pointer",
+      color: "white",
+      "& svg": {
+        width: "3vw",
+        height: "3vw",
       },
     },
-    "& .firebaseui-idp-icon": {
-      width: "3vw",
-      height: "3vw",
+    "& .fui-provider__button[data-provider='google.com']": {
+      color: "#757575",
+      background: `linear-gradient(0deg, #dedede 0%, #fff 70%)`,
     },
-    "& .firebaseui-idp-list": {
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
+    "& .fui-provider__button[data-provider='facebook.com']": {
+      background: `linear-gradient(0deg, ${theme.color.facebook.dark} 0%, ${theme.color.facebook.light} 70%)`,
     },
-    "& .firebaseui-idp-facebook": {
-      background: `linear-gradient(0deg, ${theme.color.facebook.dark} 0%, ${theme.color.facebook.light} 70%) !important`,
+    "& .signin-email": {
+      background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 70%)`,
     },
-    "& .firebaseui-idp-password": {
-      background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 70%) !important`,
+    "& .signin-back": {
+      alignSelf: "flex-start",
     },
-    "& .firebaseui-idp-google": {
-      background: `linear-gradient(0deg, #dedede 0%, #fff 70%) !important`,
+    "& .fui-card": {
+      background: "unset",
+      boxShadow: "none",
+      border: "none",
+      fontFamily: "Montserrat",
+      width: "100%",
+      maxWidth: "unset",
+    },
+    "& .fui-card__title": {
+      fontFamily: "Bangers",
+      fontSize: "3vw",
+      color: "white",
+    },
+    "& .fui-card__subtitle, & label": {
+      color: "white",
+    },
+    "& fieldset": {
+      border: "none",
+      margin: 0,
+      padding: 0,
+    },
+    "& input": {
+      borderColor: "rgba(255,255,255,.5)",
+      color: "white",
+      background: "transparent",
+      padding: 6,
+    },
+    "& button.fui-button:not(.fui-provider__button)": {
+      fontFamily: "Bangers",
+      fontSize: "2.5vw",
+      color: "white",
+      borderRadius: "12.5%",
+      border: `3px solid ${theme.color.primary.light}`,
+      background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`,
+    },
+    "& .fui-form__action": {
+      color: theme.color.accent.light,
+      background: "none",
+      border: "none",
+      cursor: "pointer",
     },
   },
 }));
 
-const FirebaseSigninUiConfig = {
-  signInFlow: "popup",
-  autoUpgradeAnonymousUsers: true,
-  credentialHelper: firebaseui.auth.CredentialHelper.NONE,
-  callbacks: {
-    signInSuccessWithAuthResult: (authResult) => {
-      multiplayer.authStateChanged(authResult.user);
-      return false;
-    },
-    signInFailure: (err) => {
-      if (err.code === "firebaseui/anonymous-upgrade-merge-conflict") {
-        firebase
-          .auth()
-          .signInWithCredential(err.credential)
-          .then(() => {
-            multiplayer.mergePlayerStats();
-          })
-          .catch((signInErr) => {
-            console.log(
-              "could not sign in with credentials after merge conflict during anonymous account upgrade. ",
-              signInErr
-            );
-          });
-      }
-    },
-  },
-  signInOptions:
-    navigator.userAgent.toLowerCase().indexOf(" electron/") === -1
-      ? [
-          firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-          firebase.auth.FacebookAuthProvider.PROVIDER_ID,
-          {
-            provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
-            requireDisplayName: false,
-          },
-        ]
-      : [
-          {
-            provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
-            requireDisplayName: false,
-          },
-        ],
+const recoverCredential = (error, credential, provider) => {
+  if (typeof credential !== "undefined") {
+    return credential;
+  } else if (provider?.providerId === GoogleAuthProvider.PROVIDER_ID) {
+    return GoogleAuthProvider.credentialFromError(error);
+  } else if (provider?.providerId === FacebookAuthProvider.PROVIDER_ID) {
+    return FacebookAuthProvider.credentialFromError(error);
+  }
+  return OAuthProvider.credentialFromError(error);
 };
 
-const FirebaseAuthUi = ({ uiConfig, firebaseAuth, className }) => {
-  const container = useRef();
+const firebaseUi = initializeUI({
+  app,
+  auth,
+  behaviors: [
+    autoUpgradeAnonymousUsers({
+      // the account already exists: switch to it and merge the anonymous player stats into it
+      onUpgradeFailure: async ({ error, credential, provider }) => {
+        if (
+          ![
+            "auth/credential-already-in-use",
+            "auth/email-already-in-use",
+          ].includes(error?.code)
+        ) {
+          return;
+        }
 
-  useEffect(() => {
-    const ui =
-      firebaseui.auth.AuthUI.getInstance() ||
-      new firebaseui.auth.AuthUI(firebaseAuth);
-    ui.start(container.current, uiConfig);
-    return () => {
-      ui.reset();
-    };
-  }, [uiConfig, firebaseAuth]);
+        const existingCredential = recoverCredential(
+          error,
+          credential,
+          provider
+        );
+        if (!existingCredential) {
+          return;
+        }
 
-  return <div className={className} ref={container} />;
+        try {
+          await signInWithCredential(auth, existingCredential);
+          multiplayer.mergePlayerStats();
+          return "handled";
+        } catch (signInErr) {
+          console.log(
+            "could not sign in with credentials after merge conflict during anonymous account upgrade. ",
+            signInErr
+          );
+        }
+      },
+    }),
+  ],
+});
+
+const isElectron =
+  navigator.userAgent.toLowerCase().indexOf(" electron/") !== -1;
+
+const SignInOptions = ({ className }) => {
+  const ui = useUI();
+  const [screen, setScreen] = useState("providers");
+
+  // linking an anonymous account keeps the uid, so onAuthStateChanged does not fire
+  const signedIn = (user) => {
+    if (user) {
+      multiplayer.authStateChanged(user);
+    }
+  };
+
+  const back = (
+    <Fab
+      icon="back"
+      color="secondary"
+      className="signin-back"
+      onClick={() => setScreen("providers")}
+    />
+  );
+
+  if (screen === "signIn") {
+    return (
+      <div className={className}>
+        {back}
+        <SignInAuthScreen
+          onSignIn={signedIn}
+          onSignUpClick={() => setScreen("signUp")}
+          onForgotPasswordClick={() => setScreen("forgotPassword")}
+        />
+      </div>
+    );
+  } else if (screen === "signUp") {
+    return (
+      <div className={className}>
+        {back}
+        <SignUpAuthScreen
+          onSignUp={signedIn}
+          onSignInClick={() => setScreen("signIn")}
+        />
+      </div>
+    );
+  } else if (screen === "forgotPassword") {
+    return (
+      <div className={className}>
+        {back}
+        <ForgotPasswordAuthScreen
+          onBackToSignInClick={() => setScreen("signIn")}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={className}>
+      {isElectron ? null : (
+        <>
+          <GoogleSignInButton
+            onSignIn={(credential) => signedIn(credential?.user)}
+          />
+          <FacebookSignInButton
+            onSignIn={(credential) => signedIn(credential?.user)}
+          />
+        </>
+      )}
+      <button
+        type="button"
+        className="signin-email"
+        onClick={() => setScreen("signIn")}
+      >
+        {getTranslation(ui, "labels", "signInWithEmail")}
+      </button>
+    </div>
+  );
 };
 
 const AccountOverview = (props) => {
@@ -314,15 +409,12 @@ const AccountOverview = (props) => {
       );
     }
 
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       winnings = props.playerInfos.stats.winnings;
       losses = props.playerInfos.stats.losses;
     }
 
-    if (
-      firebase.auth().currentUser &&
-      !firebase.auth().currentUser.isAnonymous
-    ) {
+    if (auth.currentUser && !auth.currentUser.isAnonymous) {
       loggedIn = true;
     }
   } else {
@@ -533,11 +625,9 @@ const AccountOverview = (props) => {
             </div>
           ) : (
             <div className={classes.signin}>
-              <FirebaseAuthUi
-                className={classes.firebaseUi}
-                uiConfig={FirebaseSigninUiConfig}
-                firebaseAuth={firebase.auth()}
-              />
+              <FirebaseUIProvider ui={firebaseUi}>
+                <SignInOptions className={classes.firebaseUi} />
+              </FirebaseUIProvider>
               <p>{t(tr.ACCOUNT_OVERVIEW_CREATE_INFO)}</p>
             </div>
           )

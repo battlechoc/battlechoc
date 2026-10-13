@@ -4,26 +4,13 @@ import { clientsClaim } from "workbox-core";
 import { precacheAndRoute } from "workbox-precaching";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 import { RangeRequestsPlugin } from "workbox-range-requests";
+import { initializeApp } from "firebase/app";
+import { getMessaging, onBackgroundMessage } from "firebase/messaging/sw";
+import firebaseConfig from "./firebaseConfig";
 
-importScripts("https://www.gstatic.com/firebasejs/7.13.1/firebase-app.js");
-importScripts(
-  "https://www.gstatic.com/firebasejs/7.13.1/firebase-messaging.js"
-);
+const messaging = getMessaging(initializeApp(firebaseConfig));
 
-const firebaseConfig = {
-  apiKey: "***REMOVED***",
-  authDomain: "battlechoc.firebaseapp.com",
-  databaseURL: "https://battlechoc.firebaseio.com",
-  projectId: "battlechoc",
-  storageBucket: "battlechoc.appspot.com",
-  messagingSenderId: "618424349380",
-  appId: "1:618424349380:web:8880b60bbdd61aaf360f91",
-};
-
-firebase.initializeApp(firebaseConfig);
-const messaging = firebase.messaging();
-
-messaging.setBackgroundMessageHandler(function (payload) {
+onBackgroundMessage(messaging, function (payload) {
   const notificationOptions = {
     body: payload.data.text,
     icon: "images/battlechoc-notification-icon.png",

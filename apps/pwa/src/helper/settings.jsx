@@ -1,5 +1,5 @@
 import axios from "axios";
-import firebase from "@firebase/app";
+import { auth } from "../firebase";
 import { NoHealthyInternetConnectionError } from "@battlechoc/battlechoc-shared-functions";
 
 const baseUrl = "https://europe-west2-battlechoc.cloudfunctions.net/api";
@@ -13,8 +13,8 @@ if (date.startsWith("LOCAL")) {
 }
 
 const setAndroidDefaults = async () => {
-  if (firebase.auth().currentUser) {
-    const token = await firebase.auth().currentUser.getIdToken(true);
+  if (auth.currentUser) {
+    const token = await auth.currentUser.getIdToken(true);
     if (
       typeof window.Android !== "undefined" &&
       typeof window.Android.getAndroidVersionCode === "function"
@@ -29,8 +29,8 @@ const setAndroidDefaults = async () => {
 };
 
 const generateNewAndroidMessagingToken = async () => {
-  if (firebase.auth().currentUser) {
-    const token = await firebase.auth().currentUser.getIdToken(true);
+  if (auth.currentUser) {
+    const token = await auth.currentUser.getIdToken(true);
     if (
       typeof window.Android !== "undefined" &&
       typeof window.Android.getAndroidVersionCode === "function"
@@ -48,8 +48,8 @@ const instance = axios.create({
 });
 
 const ServerRequest = async (method, url, body) => {
-  if (firebase.auth().currentUser) {
-    const token = await firebase.auth().currentUser.getIdToken(true);
+  if (auth.currentUser) {
+    const token = await auth.currentUser.getIdToken(true);
     let config = {
       headers: {
         Authorization: `Bearer ${token}`,

@@ -26,7 +26,7 @@ import Choclab from "./pages/Choclab";
 import { multiplayer } from "../Multiplayer";
 import { ServerRequest } from "../helper/settings";
 import logger from "../helper/logger";
-import firebase from "@firebase/app";
+import { auth } from "../firebase";
 import {
   Button,
   Fab,
@@ -246,7 +246,7 @@ const Hud = (props) => {
         setWaitingRoomText(t(tr.TRY_TO_SHOW_PLAYER_ACCOUNT));
 
         try {
-          while (!firebase.auth().currentUser) {
+          while (!auth.currentUser) {
             await sleep(100);
           }
           const response = await ServerRequest(

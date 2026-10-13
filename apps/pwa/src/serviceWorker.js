@@ -1,6 +1,3 @@
-import firebase from "@firebase/app";
-import "firebase/messaging";
-
 const isLocalhost = Boolean(
   window.location.hostname === "localhost" ||
     // [::1] is the IPv6 localhost address.
@@ -50,7 +47,6 @@ function registerValidSW(swUrl, config) {
     .register(swUrl)
     .then((registration) => {
       registration.onupdatefound = () => {
-        firebase.messaging().useServiceWorker(registration);
         const installingWorker = registration.installing;
         if (installingWorker == null) {
           return;

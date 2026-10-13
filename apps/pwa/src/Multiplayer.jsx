@@ -1,7 +1,16 @@
-import firebase from "@firebase/app";
-import "@firebase/auth";
-import "@firebase/firestore";
-import "firebase/messaging";
+import {
+  onAuthStateChanged,
+  signInAnonymously,
+  signOut as firebaseSignOut,
+} from "firebase/auth";
+import { doc, getDoc, onSnapshot, Timestamp } from "firebase/firestore";
+import {
+  getMessaging,
+  getToken,
+  isSupported,
+  onMessage,
+} from "firebase/messaging";
+import { app, auth, firestore } from "./firebase";
 import OfflineStore from "./OfflineStore";
 import {
   GameActionTypes,
@@ -23,16 +32,6 @@ import { v4 as uuidv4 } from "uuid";
 let signinOnAppStart = true;
 class Multiplayer {
   constructor() {
-    const firebaseConfig = {
-      apiKey: "***REMOVED***",
-      authDomain: "battlechoc.firebaseapp.com",
-      databaseURL: "https://battlechoc.firebaseio.com",
-      projectId: "battlechoc",
-      storageBucket: "battlechoc.appspot.com",
-      messagingSenderId: "618424349380",
-      appId: "1:618424349380:web:8880b60bbdd61aaf360f91",
-    };
-
     this.localPlayerIndex = 0;
     this.callbacks = {
       updatePlayerStats: () =>
@@ -59,28 +58,25 @@ class Multiplayer {
         logger.warn("calling showNotification without beeing initialized"),
     };
 
-    firebase.initializeApp(firebaseConfig);
-
-    firebase.auth().onAuthStateChanged((user) => {
+    onAuthStateChanged(auth, (user) => {
       this.authStateChanged(user);
     });
 
-    try {
-      this.messaging = firebase.messaging();
-      this.messaging.usePublicVapidKey(
-        "BJ6zc8pE57SS98ocjLmtHBuaGgDjIirTpAALyYIR_zywwBJbmssDWhbn78WPhoJfjN28htOBI4bwlVzjwHMCqak"
-      );
-      this.messaging.onMessage((payload) => {
-        this.handlePushMessage(payload);
-      });
-    } catch (error) {
-      logger.info(error);
-    }
+    isSupported()
+      .then((supported) => {
+        if (supported) {
+          this.messaging = getMessaging(app);
+          onMessage(this.messaging, (payload) => {
+            this.handlePushMessage(payload);
+          });
+        }
+      })
+      .catch((error) => logger.info(error));
   }
 
   shouldAskForNotificationPermission() {
     return (
-      firebase.auth().currentUser &&
+      auth.currentUser &&
       "Notification" in window &&
       Notification.permission === "default"
     );
@@ -120,10 +116,19 @@ class Multiplayer {
   }
 
   askForNotificationPermission() {
-    Notification.requestPermission().then((permission) => {
-      if (permission === "granted") {
-        this.messaging
-          .getToken()
+    Notification.requestPermission().then(async (permission) => {
+      if (permission === "granted" && typeof this.messaging !== "undefined") {
+        // the app's own service worker handles background messages, firebase
+        // falls back to /firebase-messaging-sw.js when none is registered (dev)
+        const serviceWorkerRegistration =
+          "serviceWorker" in navigator
+            ? await navigator.serviceWorker.getRegistration()
+            : undefined;
+        getToken(this.messaging, {
+          vapidKey:
+            "BJ6zc8pE57SS98ocjLmtHBuaGgDjIirTpAALyYIR_zywwBJbmssDWhbn78WPhoJfjN28htOBI4bwlVzjwHMCqak",
+          serviceWorkerRegistration,
+        })
           .then(async (currentToken) => {
             if (currentToken) {
               await ServerRequest("post", "/user/permissions", {
@@ -138,19 +143,6 @@ class Multiplayer {
           .catch((error) => {
             logger.info("An error occurred while retrieving token. ", error);
           });
-
-        this.messaging.onTokenRefresh(() => {
-          this.messaging
-            .getToken()
-            .then(async (refreshedToken) => {
-              await ServerRequest("post", "/user/permissions", {
-                token: refreshedToken,
-              });
-            })
-            .catch((err) => {
-              logger.info("Unable to retrieve refreshed token ", err);
-            });
-        });
       } else {
         logger.info("Unable to get permission to notify.");
       }
@@ -229,7 +221,7 @@ class Multiplayer {
   }
 
   computeTrackRecordStats(trackRecord) {
-    if (typeof trackRecord !== "undefined" && firebase.auth().currentUser) {
+    if (typeof trackRecord !== "undefined" && auth.currentUser) {
       let finishedGames = trackRecord.filter(
         (record) => typeof record.winners !== "undefined"
       );
@@ -237,7 +229,7 @@ class Multiplayer {
         (record) =>
           record.winners.filter(
             (winner) =>
-              winner.id === firebase.auth().currentUser.uid ||
+              winner.id === auth.currentUser.uid ||
               winner.name === "Charlie Bucket"
           ).length === 1
       ).length;
@@ -256,7 +248,7 @@ class Multiplayer {
   }
 
   async pushGameStats(gameStats) {
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       try {
         const data = (
           await ServerRequest("post", "/user/trackrecords", {
@@ -301,7 +293,7 @@ class Multiplayer {
   }
 
   async mergePlayerStats() {
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       try {
         var offlineAccount = await OfflineStore.playerStore.get("stats");
       } catch (err) {
@@ -334,7 +326,7 @@ class Multiplayer {
   }
 
   async fetchPlayerStats() {
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       let data;
       try {
         data = (await ServerRequest("get", "/user")).data;
@@ -424,7 +416,7 @@ class Multiplayer {
         logger.warn("could not retrieve offline player stats", err)
       );
 
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       let retryCounter = 0;
       const intervalId = setInterval(async () => {
         try {
@@ -467,7 +459,7 @@ class Multiplayer {
         logger.warn("could not retrieve offline player stats", err)
       );
 
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       let retryCounter = 0;
       const intervalId = setInterval(async () => {
         try {
@@ -513,7 +505,7 @@ class Multiplayer {
         logger.warn("could not retrieve offline player stats", err)
       );
 
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       try {
         const data = (await ServerRequest("post", "/user/tutorial/finished"))
           .data;
@@ -532,7 +524,7 @@ class Multiplayer {
       logger.warn(error);
     }
 
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       try {
         await ServerRequest("post", "/user/tutorialinfos", {
           infos: {
@@ -549,9 +541,7 @@ class Multiplayer {
   }
 
   signOut(notifyPlayerSignedOut) {
-    firebase
-      .auth()
-      .signOut()
+    firebaseSignOut(auth)
       .then(() => {
         if (typeof notifyPlayerSignedOut === "function") {
           notifyPlayerSignedOut();
@@ -563,10 +553,7 @@ class Multiplayer {
   }
 
   async challengePlayer(playerName) {
-    if (
-      typeof playerName !== "undefined" &&
-      firebase.auth().currentUser !== "undefined"
-    ) {
+    if (typeof playerName !== "undefined" && auth.currentUser !== "undefined") {
       try {
         await ServerRequest("post", "/user/challenge", {
           opponent: playerName,
@@ -578,7 +565,7 @@ class Multiplayer {
   }
 
   async getMultiplayerSessions(errorHandler = null, returnSession = null) {
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       this.callbacks.startSessionRefresh();
       try {
         let response = await ServerRequest("get", "/multiplayer/sessions");
@@ -602,7 +589,7 @@ class Multiplayer {
   }
 
   async fetchFriendsList() {
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       try {
         let response = await ServerRequest("get", "/user/friends");
         this.callbacks.loadFriendsList(response.data);
@@ -616,7 +603,7 @@ class Multiplayer {
   }
 
   async computeRank() {
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       try {
         let data = (await ServerRequest("get", "/rank")).data;
         this.callbacks.setPlayerRank(data.ranking);
@@ -629,7 +616,7 @@ class Multiplayer {
   }
 
   async removeFriend(friend) {
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       try {
         await ServerRequest("delete", "/user/friend", { friend: friend });
         await this.fetchFriendsList();
@@ -642,7 +629,7 @@ class Multiplayer {
   }
 
   async addFriend(friend) {
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       try {
         await ServerRequest("post", "/user/friend/", { friend: friend });
         await this.fetchFriendsList();
@@ -655,7 +642,7 @@ class Multiplayer {
   }
 
   async fetchHighscore(page) {
-    if (firebase.auth().currentUser) {
+    if (auth.currentUser) {
       try {
         return (
           await ServerRequest(
@@ -682,20 +669,18 @@ class Multiplayer {
 
   signInAnonymouslyIfNotAlreadySignedIn() {
     return new Promise((resolve, reject) => {
-      if (firebase.auth().currentUser) {
+      if (auth.currentUser) {
         logger.info("already signed in. will not sign in again as anonymous");
-        resolve(firebase.auth().currentUser);
+        resolve(auth.currentUser);
       } else {
         logger.info("not signed in. trying to sign in anonymously");
-        firebase
-          .auth()
-          .signInAnonymously()
+        signInAnonymously(auth)
           .then((signInResult) => {
             logger.info("done signing in. logged in anonymously.");
             logger.info(signInResult);
             this.callbacks.notifyPlayerSignedIn({
-              uid: signInResult.uid,
-              isAnonymous: signInResult.isAnonymous,
+              uid: signInResult.user.uid,
+              isAnonymous: signInResult.user.isAnonymous,
             });
             resolve(signInResult.user);
           })
@@ -709,13 +694,10 @@ class Multiplayer {
   signIn() {
     return new Promise((resolve, reject) => {
       if (typeof this.localPlayer === "undefined") {
-        firebase
-          .auth()
-          .signInAnonymously()
-          .catch(function (error) {
-            reject(error);
-          });
-        firebase.auth().onAuthStateChanged((user) => {
+        signInAnonymously(auth).catch(function (error) {
+          reject(error);
+        });
+        onAuthStateChanged(auth, (user) => {
           if (user) {
             resolve(user);
           }
@@ -874,7 +856,7 @@ class Multiplayer {
       action.index = this.playerEventIndex;
       action.uid = uuidv4();
       this.playerEventIndex += 1;
-      action.emitted = firebase.firestore.Timestamp.fromDate(new Date());
+      action.emitted = Timestamp.fromDate(new Date());
       this.validActions.set(action.uid, { action: action, valid: false });
 
       ServerRequest("post", "/multiplayer/relay/action", {
@@ -907,12 +889,13 @@ class Multiplayer {
   }
 
   async enterGameSession(sessionId, gameActions) {
-    const sessionEventQueueReference = firebase
-      .firestore()
-      .collection("multiplayerEventQueues")
-      .doc(sessionId);
+    const sessionEventQueueReference = doc(
+      firestore,
+      "multiplayerEventQueues",
+      sessionId
+    );
     try {
-      var sessionEventQueueDoc = await sessionEventQueueReference.get();
+      var sessionEventQueueDoc = await getDoc(sessionEventQueueReference);
       var session = (
         await ServerRequest("get", "/multiplayer/session/" + sessionId)
       ).data;
@@ -928,18 +911,19 @@ class Multiplayer {
       return;
     }
 
-    if (!sessionEventQueueDoc.exists) {
+    if (!sessionEventQueueDoc.exists()) {
       return;
     } else {
       this.gameActions = gameActions;
       const sessionEventQueue = sessionEventQueueDoc.data();
       if (session.game.isRunning) {
         this.localPlayerIndex = session.game.players.findIndex(
-          (player) => player.id === firebase.auth().currentUser.uid
+          (player) => player.id === auth.currentUser.uid
         );
-        this.unsubscribeGameSession = sessionEventQueueReference.onSnapshot(
-          (doc) => {
-            const eventQueue = doc.data();
+        this.unsubscribeGameSession = onSnapshot(
+          sessionEventQueueReference,
+          (snapshot) => {
+            const eventQueue = snapshot.data();
             this.processEvents(
               1 - this.localPlayerIndex === 0
                 ? eventQueue.player_0_events
@@ -1004,7 +988,7 @@ class Multiplayer {
           }
         }
         this.currentGameSession = session.id;
-        this.localPlayerId = firebase.auth().currentUser.uid;
+        this.localPlayerId = auth.currentUser.uid;
         return session;
       } else {
         throw ReferenceError("session is not running anymore");
