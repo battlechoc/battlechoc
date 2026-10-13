@@ -1,0 +1,19 @@
+{
+  "name": "battlechoc-monorepo",
+  "private": true,
+  "description": "battlechoc: a chocolate-themed two-player strategy game",
+  "license": "AGPL-3.0-or-later",
+  "workspaces": [
+    "packages/shared",
+    "apps/pwa"
+  ],
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "dev": "npm run dev -w apps/pwa",
+    "build": "npm run build -w apps/pwa",
+    "test": "npm test -w packages/shared",
+    "test:e2e": "npm test -w apps/pwa"
+  }
+}

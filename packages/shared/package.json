@@ -6,16 +6,13 @@
   "scripts": {
     "test": "jest tests --coverage"
   },
-  "repository": "git@gitlab.com:battlechoc/battlechoc-shared-functions.git",
   "author": "battlechoc <info@battlechoc.dev>",
-  "publishConfig": {
-    "@battlechoc:registry": " https://gitlab.com/api/v4/projects/16792493/packages/npm/"
-  },
-  "license": "UNLICENSED",
+  "license": "AGPL-3.0-or-later",
   "engines": {
     "node": ">=20"
   },
   "devDependencies": {
     "jest": "^30.5.2"
-  }
+  },
+  "private": true
 }
