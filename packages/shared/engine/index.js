@@ -256,6 +256,12 @@ const startTimers = (match, playerIndex, entity, t) => {
             source: entity.type,
             chargedAt: ws.startReady ? t - ws.cooldownMs : t,
         }));
+        // a fruit cannon that did not replace a truffle cannon (scenarios) still has both weapons
+        if (entity.type === EntityType.FRUIT_CANNON && entitySpec.keepsTruffleWeapon) {
+            entity.weapons.unshift(...spec(match, EntityType.RUM_TRUFFLE_CANNON).weapons.map(ws => ({
+                attackType: ws.attackType, source: EntityType.RUM_TRUFFLE_CANNON, chargedAt: t,
+            })));
+        }
     }
 };
 
@@ -581,6 +587,68 @@ const advanceTo = (match, t) => {
 const nextTimerAt = match => {
     const timer = nextTimer(match);
     return timer ? timer.at : null;
+};
+
+/* ---------- scenarios ---------- */
+
+/**
+ * Prepares a freshly created match from a scenario, for the first game of new players,
+ * debug boards and tests. Assigns the fields, rewrites cells, then either stays in the
+ * placement phase (until both factories stand) or starts the running phase right away.
+ *
+ * @param {object} scenario
+ * @param {0|1} [scenario.fieldIndex] field of the field chooser
+ * @param {boolean} [scenario.clear] remove all initial cream first
+ * @param {Array<{player, row, col, type, cream, entities}>} [scenario.cells] cell overrides;
+ *        `entities` is a list of entity types (factory, buildings, placed donuts)
+ * @param {Array<object>} [scenario.levels] Choclab level overrides per player
+ * @param {Array<number>} [scenario.cacao] cacao per player
+ * @param {string} [scenario.phase] MatchPhase.PLACEMENT (default) or MatchPhase.RUNNING
+ */
+const prepareScenario = (match, { fieldIndex = 0, clear = false, cells = [], levels = [], cacao, phase = MatchPhase.PLACEMENT } = {}) => {
+    requirePhase(match, MatchPhase.FIELD_CHOICE);
+    const events = [];
+    levels.forEach((level, index) => {
+        if (level) {
+            match.players[index].level = { ...match.players[index].level, ...level };
+        }
+    });
+    enterPlacement(match, events, fieldIndex);
+    if (clear) {
+        [0, 1].forEach(playerIndex => field(match, playerIndex).grid.forEach(cell => { cell.occupiedBy = []; }));
+    }
+    cells.forEach(({ player = 0, row, col, type, cream, entities }) => {
+        const cell = cellAt(match, player, row, col);
+        if (!cell) {
+            throw new Error(`Scenario cell ${row}/${col} is outside the board`);
+        }
+        if (type) {
+            cell.type = type;
+            cell.previewStyle = type.replace('BoardCellTypes.', '').toLowerCase();
+        }
+        if (typeof cream === 'boolean' || Array.isArray(entities)) {
+            const creamed = typeof cream === 'boolean' ? cream : contains(cell, EntityType.CREAM);
+            cell.occupiedBy = [];
+            if (creamed) {
+                cell.occupiedBy.push(createEntity(match, player, EntityType.CREAM, cell));
+            }
+            (entities || []).forEach(entityType => cell.occupiedBy.push(createEntity(match, player, entityType, cell)));
+        }
+    });
+    if (Array.isArray(cacao)) {
+        cacao.forEach((value, index) => { match.players[index].cacao = value; });
+    }
+    const bothFactories = [0, 1].every(index => ownFactory(match, index));
+    if (phase === MatchPhase.RUNNING) {
+        if (!bothFactories) {
+            autoPlaceFactories(match, events);
+        }
+        startRunning(match, events);
+    } else if (bothFactories) {
+        match.phase = MatchPhase.COUNTDOWN;
+        match.phaseEndsAt = match.t + match.balance.match.countdownMs;
+    }
+    return events;
 };
 
 /* ---------- actions ---------- */
@@ -1044,6 +1112,7 @@ module.exports = {
     WeaponState,
     BUILDABLE,
     createMatch,
+    prepareScenario,
     advanceTo,
     applyAction,
     validateAction,
