@@ -45,9 +45,8 @@ import {
   Color4,
   Animation,
   MeshBuilder,
-} from "babylonjs";
+} from "@babylonjs/core";
 import { AssetLoadingViewContainer as AssetLoadingView } from "../AssetLoader";
-import "babylonjs-loaders";
 import logger from "../helper/logger";
 import { v4 as uuidv4 } from "uuid";
 import { withTheme } from "react-jss";

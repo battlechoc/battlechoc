@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useCallback } from "react";
 import {
   Scene as BabylonScene,
-  SceneLoader,
+  ImportMeshAsync,
   HemisphericLight,
   Engine,
   FlyCamera,
@@ -10,13 +10,12 @@ import {
   Color4,
   Camera,
   StandardMaterial,
-} from "babylonjs";
+} from "@babylonjs/core";
 import { assetLoader } from "../AssetLoader";
 import {
   BoardCellTypes,
   EntityType,
 } from "@battlechoc/battlechoc-shared-functions";
-import "babylonjs-loaders";
 
 const MeshPreview = (props) => {
   const { selectedEntity } = props;
@@ -64,12 +63,11 @@ const MeshPreview = (props) => {
       scene.current.render();
     });
 
-    SceneLoader.ImportMesh(
-      "",
-      "models/",
-      assetLoader.assets.models[BoardCellTypes.BROWN],
-      scene.current,
-      (group) => {
+    ImportMeshAsync(
+      "models/" + assetLoader.assets.models[BoardCellTypes.BROWN],
+      scene.current
+    )
+      .then(({ meshes: group }) => {
         const material = new StandardMaterial(
           "brown.field.material",
           scene.current
@@ -78,8 +76,8 @@ const MeshPreview = (props) => {
         material.sideOrientation = 0;
         group[1].material = material;
         group[1].scaling = new Vector3(1.5, 1, 1.5);
-      }
-    );
+      })
+      .catch((error) => console.error(error));
 
     const resize = () => {
       estimateOrthographicSize(camera.current);
@@ -94,12 +92,11 @@ const MeshPreview = (props) => {
   }, []);
 
   useEffect(() => {
-    SceneLoader.ImportMesh(
-      "",
-      "models/",
-      assetLoader.assets.models[selectedEntity.type],
-      scene.current,
-      (group) => {
+    ImportMeshAsync(
+      "models/" + assetLoader.assets.models[selectedEntity.type],
+      scene.current
+    )
+      .then(({ meshes: group }) => {
         if (typeof preview.current !== "undefined") {
           scene.current.unregisterBeforeRender(rotate);
           preview.current.forEach((mesh) => mesh.dispose());
@@ -121,8 +118,8 @@ const MeshPreview = (props) => {
         }
 
         scene.current.registerBeforeRender(rotate);
-      }
-    );
+      })
+      .catch((error) => console.error(error));
   }, [selectedEntity, rotate]);
 
   return <canvas ref={container} />;

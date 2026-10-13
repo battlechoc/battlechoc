@@ -6,8 +6,15 @@ import {
   EntityType,
   BoardCellTypes,
 } from "@battlechoc/battlechoc-shared-functions";
-import { SceneLoader, StandardMaterial, Color3, Engine } from "babylonjs";
-import "babylonjs-loaders";
+import {
+  ImportMeshAsync,
+  StandardMaterial,
+  Color3,
+  Engine,
+} from "@babylonjs/core";
+import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
+
+registerBuiltInLoaders();
 
 class AssetLoader {
   constructor() {
@@ -152,12 +159,8 @@ const AssetLoadingView = (props) => {
   useImperativeHandle(customRef, () => ({
     loadAssets(scene) {
       for (const key in assetLoader.assets.models) {
-        SceneLoader.ImportMesh(
-          "",
-          "/models/",
-          assetLoader.assets.models[key],
-          scene,
-          (group) => {
+        ImportMeshAsync("/models/" + assetLoader.assets.models[key], scene)
+          .then(({ meshes: group }) => {
             group.forEach((mesh, i) => {
               if (
                 Object.values(BoardCellTypes).includes(key) &&
@@ -174,9 +177,6 @@ const AssetLoadingView = (props) => {
                 mesh.material = material;
               }
               mesh.name = key + (mesh.name === "__root__" ? "__root__" : i);
-              if (mesh.material) {
-                mesh.material.sideOrientation = 1;
-              }
               mesh.setEnabled(false);
               if (
                 key === EntityType.CHOCOLATE_FOUNTAIN &&
@@ -196,8 +196,8 @@ const AssetLoadingView = (props) => {
               }
             });
             updateProgress();
-          }
-        );
+          })
+          .catch((error) => console.error(error));
       }
 
       for (const image of assetLoader.assets.images) {

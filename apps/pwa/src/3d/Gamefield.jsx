@@ -8,7 +8,8 @@ import {
   ExecuteCodeAction,
   SolidParticleSystem,
   Texture,
-} from "babylonjs";
+  MeshBuilder,
+} from "@babylonjs/core";
 import { v4 as uuidv4 } from "uuid";
 
 class Gamefield {
@@ -125,6 +126,9 @@ class Gamefield {
 
     children.forEach((pivot, i) => {
       let mesh = pivot.createInstance(meshId);
+      // instances inherit the parent of their source since babylon 5, but the
+      // templates live below a disabled root node
+      mesh.parent = null;
       mesh.id = meshId;
       mesh.position = this.position.add(new Vector3(cell.row, 0, cell.col));
       if (pivot.material.name !== phenotype + ".Shield.material") {
@@ -405,7 +409,7 @@ class Gamefield {
 
   animateHotChocolate(field) {
     this.setRenderLoop();
-    let fountain = Mesh.CreateBox("foutain", 1.0, this.scene);
+    let fountain = MeshBuilder.CreateBox("foutain", { size: 1.0 }, this.scene);
     fountain.position.addInPlace(field.position);
     fountain.isVisible = false;
     if (this.isPlayerGameField) {
