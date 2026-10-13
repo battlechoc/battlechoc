@@ -46,6 +46,7 @@ import {
   WeaponPalette,
   ResourcePanel,
   MatchBanner,
+  InfoCard,
 } from "./match";
 
 const useStyles = createUseStyles((theme) => ({
@@ -640,6 +641,7 @@ const Hud = (props) => {
           return (
             <div>
               <MatchBanner />
+              <InfoCard />
               <ResourcePanel />
               <BuildPalette />
               <WeaponPalette />

@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { updatePlayerStats, updateLevel, showQuickMessage } from "../UiActions";
 import { connect } from "react-redux";
 import {
-  getEntityDescriptor,
+  getEntityDescriptor as getTurnBasedDescriptor,
   finalLevel,
   EntityType,
   translate as t,
   translationKeys as tr,
+  DefaultBalance,
+  valueAt,
 } from "@battlechoc/battlechoc-shared-functions";
 import { ChoclabPalette, Button } from "../controls";
 import MeshPreview from "../../3d/MeshPreview";
@@ -408,6 +410,20 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
 }));
+
+// entity stats as shown in the Choclab: cocoa and build storage come from the real-time balance
+const getEntityDescriptor = (entityType, level) => {
+  const descriptor = getTurnBasedDescriptor(entityType, level);
+  const spec = DefaultBalance.entities[entityType] || {};
+  const entityLevel = (level || {})[entityType] || 0;
+  if (spec.cacao) {
+    descriptor.cacaoPerTurn = valueAt(spec.cacao.amount, entityLevel);
+  }
+  if (spec.build) {
+    descriptor.buildingsPerTurn = valueAt(spec.build.capacity, entityLevel);
+  }
+  return descriptor;
+};
 
 const Choclab = (props) => {
   const theme = useTheme();
