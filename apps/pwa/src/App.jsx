@@ -65,9 +65,7 @@ import GustavGanache from "./gameplay/GustavGanache";
 import MimiMarzipan from "./gameplay/MimiMarzipan";
 import { GameTransitions, getGameTransition } from "./gameplay/GameTransitions";
 import { gameplayLog } from "./gameplay/GamePlayLogger";
-import BuildFactoryTestSituation from "./situations/tests/BuildFactoryTest";
-import FactoryExtensionTest from "./situations/tests/FactoryExtensionTest";
-import FirstGame from "./situations/FirstGame";
+import { scenarios, debugScenarios } from "./situations/scenarios";
 import Hud from "./ui/Hud";
 import { v4 as uuidv4 } from "uuid";
 import Tutorial from "./tutorial/Tutorial";
@@ -79,6 +77,9 @@ const Scene = React.lazy(() => import("./3d/Scene"));
 class App extends Component {
   constructor(props) {
     super(props);
+    // ?testclock replaces the real-time match clock with a manual one (e2e tests); read it
+    // before the path is reset below
+    this.testClock = new URLSearchParams(window.location.search).has("testclock");
     let path = window.location.pathname;
     let openInfo = false;
     if (path === "/privacy-policy") {
@@ -96,8 +97,6 @@ class App extends Component {
     }
 
     this.timeouts = [];
-    // ?testclock replaces the real-time match clock with a manual one (e2e tests)
-    this.testClock = new URLSearchParams(window.location.search).has("testclock");
     this.state = {
       player: player,
       situation: situation,
@@ -354,10 +353,10 @@ class App extends Component {
 
   componentDidUpdate(prevProps) {
     if (!prevProps.assetsReady && this.props.assetsReady) {
-      if (this.state.situation === "d41d8cd98f00b204e9800998ecf8427e") {
-        this.loadSituation(BuildFactoryTestSituation);
-      } else if (this.state.situation === "2042050de74e855affdb312da85badbf") {
-        this.loadSituation(FactoryExtensionTest);
+      const debugScenario = debugScenarios[this.state.situation];
+      if (typeof debugScenario !== "undefined") {
+        this.setState({ situation: undefined });
+        this.startRealtimeMatch(undefined, debugScenario);
       }
     }
 
@@ -658,19 +657,19 @@ class App extends Component {
           });
           return;
         }
-        if (this.props.playerInfos.stats.score <= 100) {
-          this.loadSituation(FirstGame);
-          return;
-        }
         this.props.gameResumeable(false);
         OfflineStore.clearRealtimeMatch();
-        this.startRealtimeMatch();
+        // new players start with a prepared board
+        this.startRealtimeMatch(
+          undefined,
+          this.props.playerInfos.stats.score <= 100 ? scenarios.firstGame : undefined
+        );
       }
     }
   };
 
   // starts (or resumes) a real-time single player match hosted on this device
-  startRealtimeMatch = (saved) => {
+  startRealtimeMatch = (saved, scenario) => {
     const stats = this.props.playerInfos.stats;
     if (typeof matchSession.host !== "undefined") {
       matchSession.host.stop();
@@ -701,7 +700,7 @@ class App extends Component {
         logger.warn("could not resume the saved match", error);
       }
     }
-    const boardSize =
+    let boardSize =
       stats.score < 200
         ? { rows: 6, cols: 6 }
         : stats.score < 500
@@ -709,7 +708,12 @@ class App extends Component {
         : { rows: 10, cols: 10 };
     const seed = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
     // below a score of 800 the easy Tom Toffee, afterwards Gustav Ganache with a handicap by score
-    const strong = stats.score >= 800;
+    const strong =
+      stats.score >= 800 &&
+      (typeof scenario === "undefined" || scenario.opponent !== "TomToffee");
+    if (typeof scenario !== "undefined") {
+      boardSize = scenario.boardSize;
+    }
     const opponent = strong
       ? {
           id: "ai-gustav-ganache",
@@ -746,6 +750,7 @@ class App extends Component {
       agents: [
         { ...opponent.agent, playerIndex: 1, seed: `${seed}-ai`, reactionTimeMs: 1000 },
       ],
+      scenario: typeof scenario !== "undefined" ? scenario.scenario : undefined,
     });
   };
 

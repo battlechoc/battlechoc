@@ -59,8 +59,11 @@ class LocalMatchHost {
     return agent;
   }
 
-  startNew({ players, boardSize, seed, agents }) {
+  startNew({ players, boardSize, seed, agents, scenario }) {
     this.match = engine.createMatch({ players, boardSize, seed, fieldChooser: LOCAL_PLAYER });
+    if (typeof scenario !== "undefined") {
+      engine.prepareScenario(this.match, scenario);
+    }
     this.agents = agents.map((descriptor) => LocalMatchHost.createAgent(descriptor));
     this.clock.start(0);
     this.publish();

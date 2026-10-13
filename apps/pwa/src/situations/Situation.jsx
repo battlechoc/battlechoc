@@ -8,6 +8,8 @@ import {
   createEntity,
   getEntityDescriptor,
   AttackType,
+  DefaultBalance,
+  valueAt,
 } from "@battlechoc/battlechoc-shared-functions";
 import { InfoType } from "../gameplay/GameActions";
 
@@ -57,13 +59,33 @@ export default class Situation {
     ];
   }
 
+  // the tutorial animations fake the effects of a build; amounts follow the real-time balance
   async build(entityType, position, pseudoGame, spawnInfo, manipulate) {
-    this.getFieldAt(pseudoGame.board, position).occupiedBy.push(
-      createEntity(entityType)
-    );
+    if (entityType === EntityType.CREAM) {
+      const { rows, cols } = pseudoGame.board.size;
+      const size = DefaultBalance.entities[EntityType.CREAM].footprint;
+      const top = Math.max(0, Math.min(position.row, rows - size));
+      const left = Math.max(0, Math.min(position.col, cols - size));
+      for (let row = top; row < top + size; row++) {
+        for (let col = left; col < left + size; col++) {
+          const cell = this.getFieldAt(pseudoGame.board, { row, col });
+          if (!cell.molten && !cell.occupiedBy.some((entity) => entity.type === EntityType.CREAM)) {
+            const cream = createEntity(EntityType.CREAM);
+            cream.position = { row, col };
+            cell.occupiedBy.push(cream);
+          }
+        }
+      }
+      pseudoGame.players[0].buildings -= 1;
+      return await manipulate(pseudoGame);
+    }
+    const built = createEntity(entityType);
+    built.position = { row: position.row, col: position.col };
+    this.getFieldAt(pseudoGame.board, position).occupiedBy.push(built);
     const descriptor = getEntityDescriptor(entityType);
+    const balance = DefaultBalance.entities[entityType] || {};
     if (entityType === EntityType.CACAOTREE) {
-      let cacaoPerTurn = descriptor.cacaoPerTurn;
+      let cacaoPerTurn = valueAt(balance.cacao.amount, 0);
       if (
         this.getFieldAt(pseudoGame.board, position).type ===
         BoardCellTypes.WHITE
@@ -90,7 +112,7 @@ export default class Situation {
       entityType === EntityType.FACTORY ||
       entityType === EntityType.FACTORY_EXTENSION
     ) {
-      let buildingsPerTurn = descriptor.buildingsPerTurn;
+      let buildingsPerTurn = valueAt(balance.build.capacity, 0);
       if (
         this.getFieldAt(pseudoGame.board, position).type ===
         BoardCellTypes.BLACK
@@ -126,7 +148,6 @@ export default class Situation {
       pseudoGame.players[0].cacao -= descriptor.costs;
     } else if (
       [
-        EntityType.CREAM,
         EntityType.XMAS_FACTORY,
         EntityType.CHOCOLATE_FOUNTAIN,
         EntityType.DONUT_FACTORY,

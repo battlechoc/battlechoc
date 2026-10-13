@@ -68,48 +68,51 @@ describe('iPhone', () => {
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test003.png' })
   }, timeout);
 
-  test('should build a factory on a black field', async () => {
-    await page.goto(baseUrl + '/situation/d41d8cd98f00b204e9800998ecf8427e');
-    await page.waitForSelector('[class^=preview]', {timeout: timeout});
+  // the debug board is a real-time scenario in the placement phase; ?testclock lets the test
+  // fast-forward to the running phase, where the build slots show up in the resource panel
+  const situation = baseUrl + '/situation/d41d8cd98f00b204e9800998ecf8427e?testclock';
+  const placeFactoryAt = async (x, y) => {
+    await page.goto(situation);
+    await page.waitForFunction(() => window.__battlechoc && window.__battlechoc.host.match, { timeout });
     await sleep(3000);
+    await page.mouse.click(x, y);
+    await sleep(500);
+    await page.evaluate(() => window.__battlechoc.host.clock.advance(23000));
+    await sleep(500);
+  };
+
+  test('should build a factory on a black field', async () => {
+    await placeFactoryAt(336, 241);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test005.png' });
-    await page.mouse.click(336, 241);
-    await expect(page).toMatchElement('p', {text: '0/3', timeout: timeout});
+    await expect(page).toMatchElement('[data-testid=build-tokens]', { text: '3/3', timeout: timeout });
   }, timeout);
 
   test('should build a factory on a brown field', async () => {
-    await page.goto(baseUrl + '/situation/d41d8cd98f00b204e9800998ecf8427e');
-    await page.waitForSelector('[class^=preview]', {timeout: timeout});
-    await sleep(3000);
-    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test005.png' });
-    await page.mouse.click(388, 209);
-    await expect(page).toMatchElement('p', {text: '0/2', timeout: timeout});
+    await placeFactoryAt(388, 209);
+    await expect(page).toMatchElement('[data-testid=build-tokens]', { text: '2/2', timeout: timeout });
   }, timeout);
 
   test('should build a factory on a white field', async () => {
-    await page.goto(baseUrl + '/situation/d41d8cd98f00b204e9800998ecf8427e');
-    await page.waitForSelector('[class^=preview]', {timeout: timeout});
-    await sleep(3000);
+    await placeFactoryAt(363, 223);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test006.png' });
-    await page.mouse.click(363, 223);
-    await expect(page).toMatchElement('p', {text: '0/2', timeout: timeout});
+    await expect(page).toMatchElement('[data-testid=build-tokens]', { text: '2/2', timeout: timeout });
   }, timeout);
 
-  test('should move to opponent turn and back after building the factory', async () => {
-    await page.goto(baseUrl + '/situation/d41d8cd98f00b204e9800998ecf8427e');
-    await page.waitForSelector('[class^=preview]', {timeout: timeout});
+  test('should count down and start the match after both factories are placed', async () => {
+    await page.goto(situation);
+    await page.waitForFunction(() => window.__battlechoc && window.__battlechoc.host.match, { timeout });
     await sleep(3000);
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_0.png' });
     await page.mouse.click(335, 238);
-    await expect(page).toMatchElement('p', {text: '0/3', timeout: timeout});
+    await sleep(500);
+    const phase = () => page.evaluate(() => window.__battlechoc.host.match.phase);
+    expect(await phase()).toBe('MatchPhase.PLACEMENT');
+    await page.evaluate(() => window.__battlechoc.host.clock.advance(20000));
+    expect(await phase()).toBe('MatchPhase.COUNTDOWN');
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_1.png' });
-    await page.waitForSelector('[class^=slow]', {timeout: timeout});
-    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2_2.png' });
-    await page.waitForSelector('[class^=preview]', {timeout: timeout});
-    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2_1.png' });
-    await sleep(3000);
-    await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2_0.png' });
-    await expect(page).toMatchElement('p', {text: '3/3', timeout: timeout});
+    await page.evaluate(() => window.__battlechoc.host.clock.advance(3000));
+    expect(await phase()).toBe('MatchPhase.RUNNING');
+    await expect(page).toMatchElement('[data-testid=build-tokens]', { text: '3/3', timeout: timeout });
     await page.screenshot({ fullPage: true, path: 'test/output/screenshot_test004_2.png' });
   }, timeout);
 }, timeout);

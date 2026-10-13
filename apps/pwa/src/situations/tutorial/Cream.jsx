@@ -104,14 +104,7 @@ export default class Cream extends Situation {
 
   async play({ game, manipulate, spawnInfo, sleep }) {
     let pseudoGame = JSON.parse(JSON.stringify(game));
-    pseudoGame = await this.build(
-      EntityType.CREAM,
-      { row: 2, col: 0 },
-      pseudoGame,
-      spawnInfo,
-      manipulate
-    );
-    await sleep(800);
+    // each cream covers 2x2 fields, the last one hides the factory
     pseudoGame = await this.build(
       EntityType.CREAM,
       { row: 1, col: 1 },
@@ -119,7 +112,7 @@ export default class Cream extends Situation {
       spawnInfo,
       manipulate
     );
-    await sleep(800);
+    await sleep(1200);
     await this.build(
       EntityType.CREAM,
       { row: 0, col: 0 },
