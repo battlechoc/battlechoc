@@ -43,7 +43,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `vite preview --host 127.0.0.1 --port ${port} --strictPort`,
+    // --open false: vite preview inherits server.open and would open a tab in the default browser
+    command: `vite preview --host 127.0.0.1 --port ${port} --strictPort --open false`,
     url: `http://127.0.0.1:${port}`,
     reuseExistingServer: true,
     timeout: 60000,
