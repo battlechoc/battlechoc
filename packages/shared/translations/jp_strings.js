@@ -313,5 +313,18 @@ module.exports = {
     "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY": "{{name}}は24時間以上アクションを起こしませんでした。",
     "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE": "{{name}}との試合に勝利しました",
     "SERVER_NOTIFICATION_TURN_FINISHED_BODY": "行こう。あなたの番です！",
-    "SERVER_NOTIFICATION_TURN_FINISHED_TITLE": "{{name}}がターンを終了しました。"
+    "SERVER_NOTIFICATION_TURN_FINISHED_TITLE": "{{name}}がターンを終了しました。",
+    "MATCH_CHOOSE_FIELD": "フィールドを選んでください",
+    "MATCH_OPPONENT_CHOOSES_FIELD": "相手がフィールドを選んでいます",
+    "MATCH_PLACE_FACTORY": "チョコレート工場を配置してください",
+    "MATCH_WAIT_FOR_OPPONENT": "相手を待っています",
+    "MATCH_GO": "スタート！",
+    "MATCH_PAUSED": "一時停止中",
+    "MATCH_RESUME": "タップして再開",
+    "MATCH_STUNNED": "ストップドーナツで動けない！",
+    "MATCH_TARGET_GONE": "そこにはもう何もありません",
+    "MATCH_NOT_READY": "まだ準備ができていません",
+    "MATCH_NEW_DONUTS": "新しいドーナツを配置できます",
+    "MATCH_TIME_UP": "時間切れ！",
+    "MATCH_UNDER_ATTACK": "フィールドが攻撃されています！"
 }

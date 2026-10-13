@@ -313,5 +313,18 @@ module.exports = {
     "AWARDS_REFILLED_TITLE": "Refilled",
     "AWARDS_REFILLED_SUBTITLE": "You built at least one cream",
     "AWARDS_PERSONALCONCERN_TITLE": "Personal concern",
-    "AWARDS_PERSONALCONCERN_SUBTITLE": "The entire game field is filled with cream"
+    "AWARDS_PERSONALCONCERN_SUBTITLE": "The entire game field is filled with cream",
+    "MATCH_CHOOSE_FIELD": "Choose your field",
+    "MATCH_OPPONENT_CHOOSES_FIELD": "Your opponent chooses a field",
+    "MATCH_PLACE_FACTORY": "Place your chocolate factory",
+    "MATCH_WAIT_FOR_OPPONENT": "Waiting for your opponent",
+    "MATCH_GO": "Go!",
+    "MATCH_PAUSED": "Paused",
+    "MATCH_RESUME": "Tap to continue",
+    "MATCH_STUNNED": "Stunned by a stop donut!",
+    "MATCH_TARGET_GONE": "Nothing to hit there anymore",
+    "MATCH_NOT_READY": "Not ready yet",
+    "MATCH_NEW_DONUTS": "New donuts are ready to place",
+    "MATCH_TIME_UP": "Time is up!",
+    "MATCH_UNDER_ATTACK": "Your field is under attack!"
 }

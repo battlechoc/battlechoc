@@ -313,5 +313,18 @@ module.exports = {
     "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY": "{{name}} hat länger als 24 Stunden keinen Zug gemacht.",
     "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE": "Du hast ein Match gegen {{name}} gewonnen",
     "SERVER_NOTIFICATION_TURN_FINISHED_BODY": "Du bist dran!",
-    "SERVER_NOTIFICATION_TURN_FINISHED_TITLE": "{{name}} hat den Zug beendet."
+    "SERVER_NOTIFICATION_TURN_FINISHED_TITLE": "{{name}} hat den Zug beendet.",
+    "MATCH_CHOOSE_FIELD": "Wähle dein Spielfeld",
+    "MATCH_OPPONENT_CHOOSES_FIELD": "Dein Gegner wählt ein Spielfeld",
+    "MATCH_PLACE_FACTORY": "Platziere deine Schokoladenfabrik",
+    "MATCH_WAIT_FOR_OPPONENT": "Warte auf deinen Gegner",
+    "MATCH_GO": "Los!",
+    "MATCH_PAUSED": "Pausiert",
+    "MATCH_RESUME": "Tippen zum Fortsetzen",
+    "MATCH_STUNNED": "Von einem Stopp-Donut betäubt!",
+    "MATCH_TARGET_GONE": "Dort gibt es nichts mehr zu treffen",
+    "MATCH_NOT_READY": "Noch nicht bereit",
+    "MATCH_NEW_DONUTS": "Neue Donuts können platziert werden",
+    "MATCH_TIME_UP": "Die Zeit ist um!",
+    "MATCH_UNDER_ATTACK": "Dein Spielfeld wird angegriffen!"
 }

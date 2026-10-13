@@ -313,5 +313,18 @@ module.exports = {
     "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY": "{{name}} n'a pris aucune mesure pendant plus de 24 heures.",
     "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE": "Vous avez gagné un match contre {{name}}",
     "SERVER_NOTIFICATION_TURN_FINISHED_BODY": "Allons-y. C'est ton tour!",
-    "SERVER_NOTIFICATION_TURN_FINISHED_TITLE": "{{name}} a terminé le tour."
+    "SERVER_NOTIFICATION_TURN_FINISHED_TITLE": "{{name}} a terminé le tour.",
+    "MATCH_CHOOSE_FIELD": "Choisis ton terrain",
+    "MATCH_OPPONENT_CHOOSES_FIELD": "Ton adversaire choisit un terrain",
+    "MATCH_PLACE_FACTORY": "Place ta chocolaterie",
+    "MATCH_WAIT_FOR_OPPONENT": "En attente de ton adversaire",
+    "MATCH_GO": "C'est parti !",
+    "MATCH_PAUSED": "En pause",
+    "MATCH_RESUME": "Touche pour continuer",
+    "MATCH_STUNNED": "Étourdi par un donut stop !",
+    "MATCH_TARGET_GONE": "Il n'y a plus rien à toucher ici",
+    "MATCH_NOT_READY": "Pas encore prêt",
+    "MATCH_NEW_DONUTS": "De nouveaux donuts sont prêts à être placés",
+    "MATCH_TIME_UP": "Le temps est écoulé !",
+    "MATCH_UNDER_ATTACK": "Ton terrain est attaqué !"
 }

@@ -313,5 +313,18 @@ module.exports = {
     "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY": "{{name}} đã không hành động trong hơn 24 giờ.",
     "SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE": "Bạn đã thắng một trận đấu với {{name}}",
     "SERVER_NOTIFICATION_TURN_FINISHED_BODY": "Đi nào. Đến lượt bạn!",
-    "SERVER_NOTIFICATION_TURN_FINISHED_TITLE": "{{name}} kết thúc lượt chơi."
+    "SERVER_NOTIFICATION_TURN_FINISHED_TITLE": "{{name}} kết thúc lượt chơi.",
+    "MATCH_CHOOSE_FIELD": "Chọn sân của bạn",
+    "MATCH_OPPONENT_CHOOSES_FIELD": "Đối thủ đang chọn sân",
+    "MATCH_PLACE_FACTORY": "Đặt nhà máy sô-cô-la của bạn",
+    "MATCH_WAIT_FOR_OPPONENT": "Đang chờ đối thủ",
+    "MATCH_GO": "Bắt đầu!",
+    "MATCH_PAUSED": "Tạm dừng",
+    "MATCH_RESUME": "Chạm để tiếp tục",
+    "MATCH_STUNNED": "Bị bánh donut dừng làm choáng!",
+    "MATCH_TARGET_GONE": "Không còn gì để bắn ở đó",
+    "MATCH_NOT_READY": "Chưa sẵn sàng",
+    "MATCH_NEW_DONUTS": "Có bánh donut mới để đặt",
+    "MATCH_TIME_UP": "Hết giờ!",
+    "MATCH_UNDER_ATTACK": "Sân của bạn đang bị tấn công!"
 }
