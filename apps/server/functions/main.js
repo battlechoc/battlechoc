@@ -383,7 +383,7 @@ const createTrackRecordObjectFromPlayerId = async (playerId) => {
                     id: record.winner,
                     type:
                       record.winner_type === "npc"
-                        ? "PlayerType.AUGUSTUS_GLOOP"
+                        ? "PlayerType.AI_STRONG"
                         : "PlayerType.HUMAN",
                   },
                 ]

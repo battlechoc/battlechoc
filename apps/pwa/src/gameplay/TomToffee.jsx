@@ -10,7 +10,7 @@ import {
 import { Jukebox } from "../ui/misc";
 import logger from "../helper/logger";
 
-export default class Donald extends NonPlayerCharacter {
+export default class TomToffee extends NonPlayerCharacter {
   scoreFields() {
     return [
       this.gamefields[0].grid.filter((cell) =>

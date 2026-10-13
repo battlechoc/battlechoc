@@ -55,9 +55,9 @@ import {
   toggleDonutHighlighting,
   showNotification,
 } from "./ui/UiActions";
-import Augustus from "./gameplay/Augustus";
-import Donald from "./gameplay/Donald";
-import Violet from "./gameplay/Violet";
+import GustavGanache from "./gameplay/GustavGanache";
+import TomToffee from "./gameplay/TomToffee";
+import MimiMarzipan from "./gameplay/MimiMarzipan";
 import { GameTransitions, getGameTransition } from "./gameplay/GameTransitions";
 import { gameplayLog } from "./gameplay/GamePlayLogger";
 import BuildFactoryTestSituation from "./situations/tests/BuildFactoryTest";
@@ -297,13 +297,13 @@ class App extends Component {
 
   async loadSituation(situation) {
     if (this.props.tutorial) {
-      this.opponent = new Violet({
+      this.opponent = new MimiMarzipan({
         finishTurn: this.props.finishTurn,
         finishBuildPhase: this.props.finishBuildPhase,
         attack: this.props.attack,
       });
     } else {
-      this.opponent = new Augustus(
+      this.opponent = new GustavGanache(
         {
           chooseStart: this.props.chooseStart,
           chooseField: this.props.chooseField,
@@ -405,8 +405,8 @@ class App extends Component {
         const isSingleplayerGame =
           this.props.game.players.filter(
             (player) =>
-              player.type === PlayerType.AUGUSTUS_GLOOP ||
-              player.type === PlayerType.DONALD_TRUMP
+              player.type === PlayerType.AI_STRONG ||
+              player.type === PlayerType.AI_EASY
           ).length > 0;
 
         if (!prevProps.tutorial && isSingleplayerGame) {
@@ -479,8 +479,8 @@ class App extends Component {
       }
 
       const opponentIsNpc =
-        opponentType === PlayerType.AUGUSTUS_GLOOP ||
-        opponentType === PlayerType.DONALD_TRUMP;
+        opponentType === PlayerType.AI_STRONG ||
+        opponentType === PlayerType.AI_EASY;
 
       if (
         gameTransition === GameTransitions.PLAYER_HAS_CHOSEN_START &&
@@ -530,11 +530,11 @@ class App extends Component {
           this.timeouts.push(timeoutId);
         }
       } else if (gameTransition === GameTransitions.OPPONENT_BUILD_PHASE) {
-        if (opponentIsNpc || opponentType === PlayerType.VIOLET_BEAUREGARDE) {
+        if (opponentIsNpc || opponentType === PlayerType.AI_TUTORIAL) {
           this.opponent.simulateBuildPhase();
         }
       } else if (gameTransition === GameTransitions.OPPONENT_ATTACK_PHASE) {
-        if (opponentIsNpc || opponentType === PlayerType.VIOLET_BEAUREGARDE) {
+        if (opponentIsNpc || opponentType === PlayerType.AI_TUTORIAL) {
           this.opponent.simulateAttackPhase(this.detonateAtPosition, (donut) =>
             this.scene.triggerDonutInfo(donut)
           );
@@ -661,7 +661,7 @@ class App extends Component {
       } else {
         OfflineStore.getResumeableGame().then((resumeableGame) => {
           if (this.props.playerInfos.stats.score < 800) {
-            this.opponent = new Donald({
+            this.opponent = new TomToffee({
               chooseStart: this.props.chooseStart,
               chooseField: this.props.chooseField,
               build: this.props.build,
@@ -670,7 +670,7 @@ class App extends Component {
               finishBuildPhase: this.props.finishBuildPhase,
             });
           } else {
-            this.opponent = new Augustus(
+            this.opponent = new GustavGanache(
               {
                 chooseStart: this.props.chooseStart,
                 chooseField: this.props.chooseField,
@@ -712,7 +712,7 @@ class App extends Component {
             OfflineStore.gamestateStore.clear();
             const players = [
               createPlayer(
-                "Charlie Bucket",
+                "Carolin Cacao",
                 PlayerType.HUMAN,
                 this.props.playerInfos.stats.level
               ),
@@ -720,16 +720,16 @@ class App extends Component {
             if (this.props.playerInfos.stats.score < 800) {
               players.push(
                 createPlayer(
-                  "Donald John",
-                  PlayerType.DONALD_TRUMP,
+                  "Tom Toffee",
+                  PlayerType.AI_EASY,
                   this.props.playerInfos.stats.level
                 )
               );
             } else {
               players.push(
                 createPlayer(
-                  "Augustus Gloop",
-                  PlayerType.AUGUSTUS_GLOOP,
+                  "Gustav Ganache",
+                  PlayerType.AI_STRONG,
                   this.props.playerInfos.stats.level
                 )
               );
@@ -737,7 +737,7 @@ class App extends Component {
 
             this.props.startGame(players).then(() => {
               if (this.props.playerInfos.stats.score >= 800) {
-                this.opponent.type = Augustus.randomizeType();
+                this.opponent.type = GustavGanache.randomizeType();
               }
               this.opponent.connectGamestate(
                 () => this.props.game,

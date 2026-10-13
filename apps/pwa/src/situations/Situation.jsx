@@ -14,15 +14,15 @@ import { InfoType } from "../gameplay/GameActions";
 export default class Situation {
   constructor(
     boardSize,
-    opponentName = "Augustus Gloop",
-    playerType = PlayerType.AUGUSTUS_GLOOP,
+    opponentName = "Gustav Ganache",
+    playerType = PlayerType.AI_STRONG,
     seed = 42
   ) {
     this.boardSize = boardSize;
     this.seed = seed;
 
     let players = [
-      createPlayer("Charlie Bucket", PlayerType.HUMAN),
+      createPlayer("Carolin Cacao", PlayerType.HUMAN),
       createPlayer(opponentName, playerType),
     ];
 

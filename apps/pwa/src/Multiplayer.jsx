@@ -230,7 +230,7 @@ class Multiplayer {
           record.winners.filter(
             (winner) =>
               winner.id === auth.currentUser.uid ||
-              winner.name === "Charlie Bucket"
+              winner.name === "Carolin Cacao"
           ).length === 1
       ).length;
       const drawn = finishedGames.filter(

@@ -12,7 +12,7 @@ import {
 
 export default class HotChocolateBallista extends Situation {
   constructor() {
-    super(3, "Violet Beauregarde", PlayerType.VIOLET_BEAUREGARDE, 12);
+    super(3, "Mimi Marzipan", PlayerType.AI_TUTORIAL, 12);
     const game = this.game.gameplay.game;
     game.players[0].fieldIndex = 0;
     game.players[1].fieldIndex = 1;

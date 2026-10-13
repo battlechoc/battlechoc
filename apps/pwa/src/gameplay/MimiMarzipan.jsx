@@ -5,7 +5,7 @@ import {
   AttackType,
 } from "@battlechoc/battlechoc-shared-functions";
 
-export default class Violet extends NonPlayerCharacter {
+export default class MimiMarzipan extends NonPlayerCharacter {
   handleError = (error) => {
     if (error instanceof BattlechocError) {
       console.warn(error);

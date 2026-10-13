@@ -7,11 +7,11 @@ const BoardCellTypes = require('../index.js').BoardCellTypes;
 const createEntity = require('../index.js').createEntity;
 
 module.exports.Situation = class Situation {
-    constructor(boardSize, opponentName="Augustus Gloop", playerType=PlayerType.AUGUSTUS_GLOOP) {
+    constructor(boardSize, opponentName="Gustav Ganache", playerType=PlayerType.AI_STRONG) {
         this.boardSize = boardSize;
 
         let players = [
-            createPlayer("Charlie Bucket", PlayerType.HUMAN),
+            createPlayer("Carolin Cacao", PlayerType.HUMAN),
             createPlayer(opponentName, playerType)
         ];
 

@@ -498,7 +498,7 @@ it("should add player track record", async (done) => {
           winners: [
             {
               idx: 0,
-              name: "Charlie Bucket",
+              name: "Carolin Cacao",
               level: {
                 "EntityType.CREAM": 0,
                 "EntityType.FACTORY": 15,

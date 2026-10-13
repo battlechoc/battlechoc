@@ -11,17 +11,17 @@ import {
 import { Jukebox } from "../ui/misc";
 import logger from "../helper/logger";
 
-const AugustusType = Object.freeze({
-  DEFENSIVE: "AugustusType.DEFENSIVE",
-  AGGRESSIVE: "AugustusType.AGGRESSIVE",
-  BALANCED: "AugustusType.BALANCED",
+const GustavGanacheType = Object.freeze({
+  DEFENSIVE: "GustavGanacheType.DEFENSIVE",
+  AGGRESSIVE: "GustavGanacheType.AGGRESSIVE",
+  BALANCED: "GustavGanacheType.BALANCED",
 });
 
-export default class Augustus extends NonPlayerCharacter {
+export default class GustavGanache extends NonPlayerCharacter {
   constructor(actions, handicap = 0) {
     super(actions);
     this.handicap = handicap;
-    this.type = AugustusType.BALANCED;
+    this.type = GustavGanacheType.BALANCED;
     this.discoveredShieldedCells = [];
     this.discoveredUnveiledCells = [];
   }
@@ -29,11 +29,11 @@ export default class Augustus extends NonPlayerCharacter {
   static randomizeType() {
     let opponentType = Math.floor(Math.random() * 3);
     if (opponentType === 0) {
-      return AugustusType.DEFENSIVE;
+      return GustavGanacheType.DEFENSIVE;
     } else if (opponentType === 1) {
-      return AugustusType.AGGRESSIVE;
+      return GustavGanacheType.AGGRESSIVE;
     } else {
-      return AugustusType.BALANCED;
+      return GustavGanacheType.BALANCED;
     }
   }
 
@@ -746,9 +746,9 @@ export default class Augustus extends NonPlayerCharacter {
     }
 
     let rage = Math.random();
-    if (this.type === AugustusType.AGGRESSIVE) {
+    if (this.type === GustavGanacheType.AGGRESSIVE) {
       rage += Math.random() * 0.5;
-    } else if (this.type === AugustusType.DEFENSIVE) {
+    } else if (this.type === GustavGanacheType.DEFENSIVE) {
       rage -= Math.random() * 0.5;
     }
 
