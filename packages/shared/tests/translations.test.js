@@ -26,3 +26,11 @@ test('should translate to german', () => {
 test('should not translate', () => {
     expect(translate(keys.MESSAGE_DRAW_GAME_NOT_EXISTING)).toBe('');
 });
+test('every language has every key of the reference language', () => {
+    const reference = Object.keys(require('../translations/en_strings.js'));
+    ['de', 'jp', 'es', 'fr', 'it', 'pt', 'vn'].forEach(language => {
+        const strings = require(`../translations/${language}_strings.js`);
+        const missing = reference.filter(key => typeof strings[key] !== 'string' || strings[key].length === 0);
+        expect({ language, missing }).toEqual({ language, missing: [] });
+    });
+});
