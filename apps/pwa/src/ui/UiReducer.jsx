@@ -24,6 +24,7 @@ const uiReducer = createReducer(
     notification: { title: null, message: null, open: false },
     sessionRefreshActions: 0,
     donutHighlighting: false,
+    boardViewToggles: 0,
     hudUiLocked: false,
     onLoopsEnd: null,
   },
@@ -36,6 +37,9 @@ const uiReducer = createReducer(
         state.selectedBuilding = EntityType.FACTORY;
         state.selectedAttack = undefined;
         state.overviewVisible = false;
+      })
+      .addCase(UiActions.toggleBoardView, (state) => {
+        state.boardViewToggles += 1;
       })
       .addCase(UiActions.selectBuilding, (state, action) => {
         state.selectedBuilding = action.payload;

@@ -30,6 +30,7 @@ const UiActionTypes = Object.freeze({
   lockHudUi: "battlechoc/ui/lockHudUi",
   unlockHudUi: "battlechoc/ui/unlockHudUi",
   injectMultiplayerSession: "battlechoc/ui/injectMultiplayerSession",
+  toggleBoardView: "battlechoc/ui/toggleBoardView",
 });
 
 const selectBuilding = createAction(UiActionTypes.selectBuilding);
@@ -61,12 +62,14 @@ const toggleDonutHighlighting = createAction(
   UiActionTypes.toggleDonutHighlighting
 );
 const showNotification = createAction(UiActionTypes.showNotification);
+const toggleBoardView = createAction(UiActionTypes.toggleBoardView);
 const hideNotification = createAction(UiActionTypes.hideNotification);
 const injectMultiplayerSession = createAction(
   UiActionTypes.injectMultiplayerSession
 );
 
 export {
+  toggleBoardView,
   showNotification,
   hideNotification,
   toggleDonutHighlighting,

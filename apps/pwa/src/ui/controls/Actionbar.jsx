@@ -13,8 +13,15 @@ import {
   GameStateTypes,
   playerHasAttacksPerTurn,
   BattlechocError,
+  engine,
 } from "@battlechoc/battlechoc-shared-functions";
-import { deselectBuildings, deselectAttack } from "../UiActions";
+import {
+  deselectBuildings,
+  deselectAttack,
+  toggleBoardView,
+} from "../UiActions";
+import { selectActiveGame } from "../../match/matchSlice";
+import { matchSession } from "../../match/LocalMatchHost";
 import { multiplayer } from "../../Multiplayer";
 import Fab from "./Fab";
 import { Jukebox } from "../misc";
@@ -240,6 +247,41 @@ const Actionbar = (props) => {
       }
     }
   }
+  // real-time match: pause and switch between the own and the opponent's board
+  if (
+    typeof props.game !== "undefined" &&
+    typeof props.game.phase !== "undefined" &&
+    props.game.phase !== engine.MatchPhase.FIELD_CHOICE
+  ) {
+    buttons.push(
+      <Fab
+        key="realtime-view"
+        color="secondary"
+        icon="swap-view"
+        onClick={() => {
+          Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+          props.toggleBoardView();
+        }}
+      ></Fab>
+    );
+    buttons.push(
+      <Fab
+        key="realtime-pause"
+        color="secondary"
+        icon={props.paused ? "play" : "pause"}
+        onClick={() => {
+          Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+          if (matchSession.host) {
+            if (props.paused) {
+              matchSession.host.resume();
+            } else {
+              matchSession.host.pause();
+            }
+          }
+        }}
+      ></Fab>
+    );
+  }
   return <div className={classes.actions}> {buttons} </div>;
 };
 
@@ -249,7 +291,8 @@ Actionbar.propTypes = {
 };
 
 const mapStateToProps = (state) => ({
-  game: state.gameplay.game,
+  game: selectActiveGame(state),
+  paused: state.match.paused,
   players: state.players,
   language: state.ui.language,
   tutorial: state.ui.tutorial,
@@ -264,6 +307,7 @@ const mapDispatchToProps = {
   attack,
   chooseStart,
   chooseField,
+  toggleBoardView,
 };
 
 const ActionbarContainer = connect(

@@ -4,12 +4,28 @@ import { chooseField, chooseStart } from "../../gameplay/GameActions";
 import {
   GameStateTypes,
   EntityType,
+  engine,
+  translate as t,
+  translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import { multiplayer } from "../../Multiplayer";
+import { selectActiveGame } from "../../match/matchSlice";
+import { submit, ignoreRuleErrors } from "../match/submit";
+import useMatchTime from "../match/useMatchTime";
 import { Jukebox } from "../misc";
 import { createUseStyles } from "react-jss";
 
 const useStyles = createUseStyles((theme) => ({
+  realtimeHint: {
+    alignSelf: "center",
+    textAlign: "center",
+    margin: "0 3vw",
+    fontFamily: "Bangers",
+    fontSize: "3vw",
+    "-webkit-text-stroke": `0.15vw ${theme.color.secondary.dark}`,
+    "& p": { margin: "0.3em 0" },
+    [theme.breakpoints.orientation.portrait]: { fontSize: "6vw" },
+  },
   page: {
     marginTop: 20,
     display: "flex",
@@ -142,12 +158,23 @@ const useStyles = createUseStyles((theme) => ({
 const GameStartSelection = (props) => {
   const classes = useStyles(props);
   const { game, state, chooseStart, chooseField } = props;
-  const unlocked = multiplayer.isLocalPlayer(game.currentPlayerIndex);
+  const now = useMatchTime(4);
+  // real-time matches only offer the field choice; "first move" does not exist anymore
+  const realtime = typeof game.phase !== "undefined";
+  const unlocked = realtime
+    ? game.fieldChooser === game.viewer
+    : multiplayer.isLocalPlayer(game.currentPlayerIndex);
 
   const choose = (option) => {
     if (unlocked) {
       Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-      if (option === "START") {
+      if (realtime) {
+        if (option !== "START") {
+          submit(engine.MatchActionTypes.chooseField, {
+            fieldIndex: option === "LEFT_GAMEFIELD" ? 0 : 1,
+          }).catch(ignoreRuleErrors);
+        }
+      } else if (option === "START") {
         chooseStart({ issuer: game.players[multiplayer.localPlayerIndex].id });
       } else if (option === "LEFT_GAMEFIELD") {
         chooseField({
@@ -230,9 +257,16 @@ const GameStartSelection = (props) => {
         </div>
       </div>
 
-      <div className={estimateButtonClasses()} onClick={() => choose("START")}>
-        <div className={classes.start} />
-      </div>
+      {realtime ? (
+        <div className={classes.realtimeHint}>
+          <p>{unlocked ? t(tr.MATCH_CHOOSE_FIELD) : t(tr.MATCH_OPPONENT_CHOOSES_FIELD)}</p>
+          <p>{Math.max(0, Math.ceil((game.phaseEndsAt - now) / 1000))}</p>
+        </div>
+      ) : (
+        <div className={estimateButtonClasses()} onClick={() => choose("START")}>
+          <div className={classes.start} />
+        </div>
+      )}
 
       <div
         className={(unlocked ? "active " : "inactive ") + classes.button}
@@ -266,11 +300,11 @@ const GameStartSelection = (props) => {
 };
 
 const mapStateToProps = (state) => ({
-  game: state.gameplay.game,
+  game: selectActiveGame(state),
   state:
-    typeof state.gameplay.game === "undefined"
+    typeof selectActiveGame(state) === "undefined"
       ? undefined
-      : state.gameplay.game.state,
+      : selectActiveGame(state).state,
 });
 
 const mapDispatchToProps = {

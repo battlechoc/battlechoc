@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import {
   GameStateTypes,
+  engine,
   translate as t,
   translationKeys as tr,
   computeAwards,
@@ -39,6 +40,13 @@ import {
   GameEndOverview,
 } from "./controls";
 import { createUseStyles } from "react-jss";
+import { selectActiveGame, selectIsRealtime } from "../match/matchSlice";
+import {
+  BuildPalette,
+  WeaponPalette,
+  ResourcePanel,
+  MatchBanner,
+} from "./match";
 
 const useStyles = createUseStyles((theme) => ({
   actionbar: {
@@ -205,6 +213,8 @@ const Hud = (props) => {
     notification,
     hideNotification,
     injectedMultiplayerSessionId,
+    realtime,
+    matchAwards,
   } = props;
 
   const [open, setOpen] = useState(false);
@@ -323,7 +333,8 @@ const Hud = (props) => {
     } else if (
       state === GameStateTypes.START ||
       state === GameStateTypes.CHOOSE_FIELD_OR_START ||
-      state === GameStateTypes.CHOOSE_FIELD
+      state === GameStateTypes.CHOOSE_FIELD ||
+      state === engine.MatchPhase.FIELD_CHOICE
     ) {
       return "CHOOSE_MENU";
     } else if (showMultiplayerScreen) {
@@ -624,6 +635,33 @@ const Hud = (props) => {
               <Progress infiniteAnimation />
             </div>
           );
+        } else if (realtime) {
+          const result = game.outcome;
+          return (
+            <div>
+              <MatchBanner />
+              <ResourcePanel />
+              <BuildPalette />
+              <WeaponPalette />
+              {overviewVisible && result ? (
+                <GameEndOverview
+                  awards={(matchAwards || []).map((award) => ({
+                    ...engine.matchAwards.find(
+                      (candidate) => candidate.key === award.key
+                    ),
+                    coins: award.coins,
+                  }))}
+                  outcome={
+                    result.winners.length === 1 &&
+                    result.winners[0] === game.viewer
+                      ? "won"
+                      : "lost"
+                  }
+                  finishGame={(coins) => endGame(coins)}
+                />
+              ) : null}
+            </div>
+          );
         } else {
           let player = game.players[multiplayer.localPlayerIndex];
           return (
@@ -676,12 +714,14 @@ Hud.propTypes = {
 };
 
 const mapStateToProps = (state) => ({
-  game: state.gameplay.game,
+  game: selectActiveGame(state),
   actions: state.gameplay.events,
+  realtime: selectIsRealtime(state),
+  matchAwards: state.match.awards,
   state:
-    typeof state.gameplay.game === "undefined"
+    typeof selectActiveGame(state) === "undefined"
       ? undefined
-      : state.gameplay.game.state,
+      : selectActiveGame(state).state || selectActiveGame(state).phase,
   overviewVisible: state.ui.overviewVisible,
   resumeGamePossible: state.ui.resumeGamePossible,
   assetsReady: state.ui.assetsReady,
