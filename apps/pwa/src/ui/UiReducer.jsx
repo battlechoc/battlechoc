@@ -21,16 +21,15 @@ const uiReducer = createReducer(
     language: window.location.pathname.substr(1, 2) === "de" ? "de" : "en",
     quickMessages: [],
     notification: { title: null, message: null, open: false },
-    donutHighlighting: false,
     boardViewToggles: 0,
-    hudUiLocked: false,
-    onLoopsEnd: null,
+    // the tutorial lesson lets the player act; whitelistBuildings limits the build palette
+    tutorialInteractive: false,
+    whitelistBuildings: undefined,
   },
   (builder) =>
     builder
       .addCase(UiActions.resetUi, (state, action) => {
         state.whitelistBuildings = undefined;
-        state.whitelistAttacks = undefined;
         state.tappedBuilding = EntityType.FACTORY;
         state.selectedBuilding = EntityType.FACTORY;
         state.selectedAttack = undefined;
@@ -78,6 +77,8 @@ const uiReducer = createReducer(
       })
       .addCase(UiActions.stopTutorial, (state, action) => {
         state.tutorial = false;
+        state.tutorialInteractive = false;
+        state.whitelistBuildings = undefined;
         state.notificationOnLoopsEnd = null;
         OfflineStore.settingsStore.set("tutorialAlreadySeen", true);
       })
@@ -125,13 +126,6 @@ const uiReducer = createReducer(
         state.quickMessages = state.quickMessages.filter(
           (message) => message.id !== action.payload
         );
-      })
-      .addCase(UiActions.toggleDonutHighlighting, (state, action) => {
-        if (typeof action.payload !== "undefined") {
-          state.donutHighlighting = action.payload;
-        } else {
-          state.donutHighlighting = !state.donutHighlighting;
-        }
       })
       .addCase(UiActions.showNotification, (state, action) => {
         const { title, message } = action.payload;

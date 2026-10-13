@@ -81,6 +81,16 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   disabled: { filter: "brightness(35%)" },
+  // the tutorial points at the building the current step asks for
+  "@keyframes hintPulse": {
+    "0%": { transform: "scale(1)" },
+    "50%": { transform: "scale(1.12)" },
+    "100%": { transform: "scale(1)" },
+  },
+  hint: {
+    border: `0.4vw solid ${theme.color.gold.light}`,
+    animation: "$hintPulse 1.2s ease-in-out infinite",
+  },
   selected: {
     border: `0.4vw solid ${theme.color.gold.light}`,
     "& > .icon": { filter: "brightness(120%)" },
@@ -113,7 +123,7 @@ const countOnOwnField = (grid, entityType) =>
     cell.occupiedBy.some((entity) => entity.type === entityType)
   ).length;
 
-const BuildPalette = ({ view, score, selectedBuilding, select }) => {
+const BuildPalette = ({ view, score, selectedBuilding, select, whitelist }) => {
   const classes = useStyles();
   if (
     typeof view === "undefined" ||
@@ -126,6 +136,9 @@ const BuildPalette = ({ view, score, selectedBuilding, select }) => {
   const unlocked = (type) => score >= 1 || unlockedWithoutScore.includes(type);
 
   const canBuild = (type) => {
+    if (Array.isArray(whitelist) && !whitelist.includes(type)) {
+      return false;
+    }
     const entitySpec = view.balance.entities[type];
     if (me.buildTokens < 1 || me.cacao < (entitySpec.costs || 0)) {
       return false;
@@ -183,8 +196,14 @@ const BuildPalette = ({ view, score, selectedBuilding, select }) => {
               data-testid={`build-${building.image}`}
               className={`${classes.item} ${
                 selectedBuilding === building.type ? classes.selected : ""
-              } ${possible ? "" : classes.disabled}`}
+              } ${possible ? "" : classes.disabled} ${
+                possible && Array.isArray(whitelist) && selectedBuilding !== building.type ? classes.hint : ""
+              }`}
               onClick={() => {
+                // the tutorial only lets the player pick what the current step asks for
+                if (Array.isArray(whitelist) && !whitelist.includes(building.type)) {
+                  return;
+                }
                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                 select(building.type);
               }}
@@ -206,6 +225,7 @@ const mapStateToProps = (state) => ({
   view: state.match.view,
   score: state.ui.playerInfos.stats.score,
   selectedBuilding: state.ui.selectedBuilding,
+  whitelist: state.ui.whitelistBuildings,
 });
 
 const mapDispatchToProps = (dispatch) => ({

@@ -72,7 +72,7 @@ const clockText = (ms) => {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 };
 
-const MatchBanner = ({ view, paused, online, presence, liveStatus, pending }) => {
+const MatchBanner = ({ view, paused, online, presence, liveStatus, pending, tutorial }) => {
   const classes = useStyles();
   const now = useMatchTime(4);
   if (typeof view === "undefined") {
@@ -109,6 +109,12 @@ const MatchBanner = ({ view, paused, online, presence, liveStatus, pending }) =>
     }
   }
 
+  // the tutorial has no deadlines; its coach card explains what to do
+  if (tutorial) {
+    banner = null;
+    message = null;
+  }
+
   return (
     <>
       <div className={classes.banner} data-testid="match-banner" data-pending={pending}>
@@ -139,6 +145,7 @@ const mapStateToProps = (state) => ({
   pending: state.match.pending,
   presence: state.live.opponentPresence,
   liveStatus: state.live.status,
+  tutorial: state.ui.tutorial,
 });
 
 export default connect(mapStateToProps)(MatchBanner);

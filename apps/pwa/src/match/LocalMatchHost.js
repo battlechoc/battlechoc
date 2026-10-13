@@ -38,8 +38,8 @@ class LocalMatchHost {
     }
   }
 
-  startNew({ players, boardSize, seed, agents, scenario }) {
-    this.match = engine.createMatch({ players, boardSize, seed, fieldChooser: LOCAL_PLAYER });
+  startNew({ players, boardSize, seed, agents, scenario, balance }) {
+    this.match = engine.createMatch({ players, boardSize, seed, balance, fieldChooser: LOCAL_PLAYER });
     if (typeof scenario !== "undefined") {
       engine.prepareScenario(this.match, scenario);
     }

@@ -1,19 +1,17 @@
 import React, { Component, createRef } from "react";
 import { connect } from "react-redux";
-import { multiplayer } from "../Multiplayer";
 import {
   deselectBuildings,
   selectBuilding,
   tapBuilding,
   showQuickMessage,
 } from "../ui/UiActions";
-import { selectActiveGame, selectIsRealtime } from "../match/matchSlice";
+import { selectActiveGame } from "../match/matchSlice";
 import { matchSession } from "../match/LocalMatchHost";
 import { submit, ignoreRuleErrors } from "../ui/match/submit";
-import { InfoType } from "../gameplay/GameActions";
+import { InfoType } from "./InfoType";
 import Gamefield from "./Gamefield";
 import {
-  GameStateTypes,
   EntityType,
   AttackType,
   BoardCellTypes,
@@ -101,9 +99,7 @@ class Scene extends Component {
 
   hideEnergyBar = (position, field) => {
     let height = 6.5;
-    if (this.props.tutorial) {
-      height = 5.25;
-    } else if (typeof this.props.game !== "undefined") {
+    if (typeof this.props.game !== "undefined") {
       if (this.props.game.board.size.cols === 6) {
         height = 5.5;
       } else if (this.props.game.board.size.cols === 8) {
@@ -142,7 +138,7 @@ class Scene extends Component {
         board.fields[field].grid[row * board.size.cols + col];
       const selectedCell = cellAt(
         this.props.game.board,
-        this.props.game.players[multiplayer.localPlayerIndex].fieldIndex,
+        this.props.game.players[this.props.game.viewer].fieldIndex,
         entity.position.row,
         entity.position.col
       );
@@ -152,16 +148,14 @@ class Scene extends Component {
             entity.position.row,
             entity.position.col,
             this.props.game.board,
-            this.props.game.players[multiplayer.localPlayerIndex].fieldIndex
+            this.props.game.players[this.props.game.viewer].fieldIndex
           )
         );
       }
     }
 
     let height = 6.5;
-    if (this.props.tutorial) {
-      height = 5.25;
-    } else if (typeof this.props.game !== "undefined") {
+    if (typeof this.props.game !== "undefined") {
       if (this.props.game.board.size.cols === 6) {
         height = 5.5;
       } else if (this.props.game.board.size.cols === 8) {
@@ -253,39 +247,8 @@ class Scene extends Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (this.props.realtime) {
+    if (typeof this.props.game !== "undefined") {
       this.realtimeUpdate(prevProps);
-      return;
-    }
-    if (
-      typeof this.props.game !== "undefined" &&
-      typeof this.lookAtOpponent !== "undefined"
-    ) {
-      if (
-        !this.lookAtOpponent &&
-        ((!multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) &&
-          this.props.game.state !== GameStateTypes.ATTACK_PHASE) ||
-          (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) &&
-            this.props.game.state === GameStateTypes.ATTACK_PHASE))
-      ) {
-        this.lookAtOpponent = true;
-        this.performCameraFlight();
-      } else if (
-        this.lookAtOpponent &&
-        ((!multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) &&
-          this.props.game.state === GameStateTypes.ATTACK_PHASE) ||
-          (multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) &&
-            this.props.game.state !== GameStateTypes.ATTACK_PHASE))
-      ) {
-        this.lookAtOpponent = false;
-        this.performCameraFlight();
-      }
-
-      if (this.playerGameField !== null) {
-        this.opponentGameField.update();
-        this.playerGameField.update();
-        this.scene.render();
-      }
     }
   }
 
@@ -302,7 +265,7 @@ class Scene extends Component {
     );
     info.isPickable = false;
     info.position = position;
-    info.position.y = this.props.tutorial ? 4 : 6;
+    info.position.y = 6;
     info.billboardMode = Mesh.BILLBOARDMODE_ALL;
 
     const texture = new DynamicTexture("info_texture_" + id, 208, this.scene);
@@ -484,9 +447,7 @@ class Scene extends Component {
     let ratio = width / height;
     let distance = Math.max(7.5 / ratio, 5);
 
-    if (this.props.tutorial) {
-      distance = Math.max(3 / ratio, 5);
-    } else if (typeof this.props.game !== "undefined") {
+    if (typeof this.props.game !== "undefined") {
       if (this.props.game.board.size.cols === 6) {
         distance = Math.max(4.5 / ratio, 5);
       } else if (this.props.game.board.size.cols === 8) {
@@ -539,65 +500,6 @@ class Scene extends Component {
     this.scene.render();
   };
 
-  highlightDonuts = (highlight = true) => {
-    let highlights = [
-      { type: EntityType.DONUT_PORTAL_BLUE, color: new Color3(0.3, 0.3, 1) },
-      { type: EntityType.DONUT_PORTAL_RED, color: new Color3(1, 0.3, 0.3) },
-      { type: EntityType.DONUT_CREAM_WHITE, color: new Color3(0.9, 0.9, 0.9) },
-      { type: EntityType.DONUT_SURPRISE_YELLOW, color: new Color3(1, 1, 0.3) },
-      { type: EntityType.DONUT_HEALTH_GREEN, color: new Color3(0.3, 1, 0.3) },
-      { type: EntityType.DONUT_STOP_PINK, color: new Color3(1, 0.41, 0.7) },
-    ];
-
-    for (let entity of highlights) {
-      let parent = this.scene.getMeshByName(entity.type + "__root__");
-      let children = parent.getChildMeshes(false);
-
-      for (let child of children) {
-        if (highlight) {
-          this.highlightLayer.addMesh(child, entity.color);
-        } else {
-          this.highlightLayer.removeMesh(child);
-        }
-      }
-    }
-
-    let entities = [
-      EntityType.CREAM,
-      EntityType.FACTORY,
-      EntityType.FACTORY_EXTENSION,
-      EntityType.CACAOTREE,
-      EntityType.RUM_TRUFFLE_CANNON,
-      EntityType.FRUIT_CANNON,
-      EntityType.SPYING_EASTER_BUNNY,
-      EntityType.XMAS_FACTORY,
-      EntityType.HOT_CHOCOLATE_BALLISTA,
-      EntityType.CHOCOLATE_FOUNTAIN,
-      EntityType.DONUT_FACTORY,
-    ];
-
-    for (let entityType of [
-      ...entities,
-      EntityType.CREAM + ".AROUND.BUILDING",
-    ]) {
-      let parent = this.scene.getMeshByName(entityType + "__root__");
-      let children =
-        parent.getChildren()[0].getChildren().length > 0
-          ? parent.getChildren()[0].getChildren()
-          : parent.getChildren();
-
-      children.forEach((child) => {
-        if (highlight) {
-          child.visibility = 0;
-        } else {
-          child.visibility = 1;
-        }
-      });
-    }
-
-    this.scene.render();
-  };
-
   detonateAtPosition(row, col, playerField = false) {
     let truffle = MeshBuilder.CreateTorus(
       "knot",
@@ -645,15 +547,15 @@ class Scene extends Component {
     }
   }
 
-  // the tutorial board is not interactive; real-time matches handle clicks below
+  // the board takes clicks in matches and in the tutorial lesson, not in the demos
   playerFieldClick(row, col, position) {
-    if (!this.props.tutorial && this.props.realtime) {
+    if (!this.props.tutorial || this.props.tutorialInteractive) {
       this.realtimePlayerFieldClick(row, col, position);
     }
   }
 
   opponentFieldClick(row, col, position) {
-    if (!this.props.tutorial && this.props.realtime) {
+    if (!this.props.tutorial || this.props.tutorialInteractive) {
       this.realtimeOpponentFieldClick(row, col, position);
     }
   }
@@ -802,7 +704,10 @@ class Scene extends Component {
         }
       } else if (event.type === "donutsSpawned") {
         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-        this.props.showQuickMessage({ text: t(tr.MATCH_NEW_DONUTS), autoHideDuration: 3000 });
+        // the tutorial's coach card explains donuts itself
+        if (!this.props.tutorial) {
+          this.props.showQuickMessage({ text: t(tr.MATCH_NEW_DONUTS), autoHideDuration: 3000 });
+        }
       }
     });
   }
@@ -810,7 +715,7 @@ class Scene extends Component {
   // a small disc above each own weapon: grey while charging, blue when it can rush, green when ready
   syncWeaponIndicators() {
     const view = this.props.game;
-    if (!this.props.realtime || this.playerGameField === null || view.phase !== engine.MatchPhase.RUNNING) {
+    if (typeof view === "undefined" || this.playerGameField === null || view.phase !== engine.MatchPhase.RUNNING) {
       return;
     }
     const grid = view.board.fields[view.players[view.viewer].fieldIndex].grid;
@@ -852,7 +757,7 @@ class Scene extends Component {
   }
 
   updateWeaponIndicators(render = true) {
-    if (!this.props.realtime || typeof matchSession.host === "undefined" || this.weaponIndicators.size === 0) {
+    if (typeof this.props.game === "undefined" || typeof matchSession.host === "undefined" || this.weaponIndicators.size === 0) {
       return;
     }
     const view = this.props.game;
@@ -921,36 +826,18 @@ class Scene extends Component {
     );
   };
 
-  startGame = (game, overrideUiState = false) => {
-    const playerFieldIndex =
-      game.players[multiplayer.localPlayerIndex].fieldIndex;
-    const opponentFieldIndex =
-      game.players[1 - multiplayer.localPlayerIndex].fieldIndex;
-    if (typeof game.phase !== "undefined") {
-      // real-time: start on the own board, the player switches views freely
-      this.lookAtOpponent = false;
-      this.camera.position = new Vector3(30, 30, 30);
-    } else if (
-      (multiplayer.isLocalPlayer(game.currentPlayerIndex) &&
-        game.state !== GameStateTypes.ATTACK_PHASE) ||
-      (!multiplayer.isLocalPlayer(game.currentPlayerIndex) &&
-        game.state === GameStateTypes.ATTACK_PHASE)
-    ) {
-      this.lookAtOpponent = false;
-    } else {
-      this.lookAtOpponent = true;
-      this.performCameraFlight();
-    }
+  startGame = (game) => {
+    // the viewer's board is in front, the opponent's behind it; the player switches freely
+    const playerFieldIndex = game.players[game.viewer].fieldIndex;
+    const opponentFieldIndex = game.players[1 - game.viewer].fieldIndex;
+    this.lookAtOpponent = false;
+    this.camera.position = new Vector3(30, 30, 30);
 
     let gamefieldHeight = 5;
-    if (this.props.tutorial) {
-      gamefieldHeight = 3.5;
-    } else if (typeof this.props.game !== "undefined") {
-      if (this.props.game.board.size.cols === 6) {
-        gamefieldHeight = 4;
-      } else if (this.props.game.board.size.cols === 8) {
-        gamefieldHeight = 4.5;
-      }
+    if (game.board.size.cols === 6) {
+      gamefieldHeight = 4;
+    } else if (game.board.size.cols === 8) {
+      gamefieldHeight = 4.5;
     }
 
     this.playerGameField = new Gamefield(
@@ -980,9 +867,6 @@ class Scene extends Component {
       (run) => this.setRenderLoop(run)
     );
 
-    if (overrideUiState) {
-      this.props.deselectBuildings();
-    }
     this.resize();
     // new instances only show up once their materials are compiled; render again then,
     // because a real-time match has no camera flight that would keep rendering
@@ -1008,7 +892,7 @@ class Scene extends Component {
 
 const mapStateToProps = (state) => ({
   game: selectActiveGame(state),
-  realtime: selectIsRealtime(state),
+  tutorialInteractive: state.ui.tutorialInteractive,
   matchEvents: state.match.events,
   boardViewToggles: state.ui.boardViewToggles,
   level: state.ui.playerInfos.stats.level,

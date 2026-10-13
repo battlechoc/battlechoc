@@ -54,12 +54,8 @@ export const {
 } = matchSlice.actions;
 export const matchReducer = matchSlice.reducer;
 
-// the game the scene and HUD render: a real-time match view, or the turn-based state that
-// the tutorial and the debug situations still use
-export const selectActiveGame = (state) =>
-  typeof state.match.view !== "undefined"
-    ? state.match.view
-    : state.gameplay.game;
+// the match view the scene and the HUD render (matches, the tutorial lesson and demos)
+export const selectActiveGame = (state) => state.match.view;
 
 export const selectIsRealtime = (state) =>
   typeof state.match.view !== "undefined";

@@ -239,7 +239,7 @@ const AssetLoadingView = (props) => {
   return <Progress className="assetLoader" value={loadingProgress} />;
 };
 
-const mapStateToProps = (state) => ({ game: state.gameplay.game });
+const mapStateToProps = () => ({});
 const mapDispatchToProps = { assetsReady };
 const AssetLoadingViewContainer = connect(
   mapStateToProps,

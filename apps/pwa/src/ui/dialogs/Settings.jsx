@@ -138,8 +138,8 @@ const Settings = (props) => {
       setSendingReport(true);
       Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
       try {
-        let gamestate = props.game;
-        console.log(gamestate);
+        // the local player's view of the running match, if any
+        const gamestate = props.game;
         const report = {
           deviceInformation: withDeviceInformation
             ? navigator.userAgent
@@ -312,11 +312,12 @@ const Settings = (props) => {
               {t(tr.REPORT_PROBLEM)}
             </Button>
             {(() => {
+              // not during a match: the tutorial runs its own
               if (
-                (props.playerInfos.stats.username !== "Chocnonymous" &&
-                  typeof props.game === "undefined") ||
-                props.playerInfos.stats.tutorialSkipped === true ||
-                props.playerInfos.stats.tutorialFinished === true
+                typeof props.game === "undefined" &&
+                (props.playerInfos.stats.username !== "Chocnonymous" ||
+                  props.playerInfos.stats.tutorialSkipped === true ||
+                  props.playerInfos.stats.tutorialFinished === true)
               ) {
                 return (
                   <div>
@@ -331,6 +332,18 @@ const Settings = (props) => {
                     >
                       {t(tr.RESTART_TUTORIAL)}
                     </Button>
+                    {props.playerInfos.stats.score >= 1 && props.showBuildingDemos ? (
+                      <Button
+                        className={classes.button}
+                        color="secondary"
+                        onClick={() => {
+                          props.showBuildingDemos();
+                          props.close();
+                        }}
+                      >
+                        {t(tr.TUTORIAL_SHOW_BUILDINGS)}
+                      </Button>
+                    ) : null}
                   </div>
                 );
               }
@@ -346,10 +359,11 @@ Settings.propTypes = {
   open: PropTypes.bool.isRequired,
   close: PropTypes.func.isRequired,
   startTutorial: PropTypes.func.isRequired,
+  showBuildingDemos: PropTypes.func,
 };
 
 const mapStateToProps = (state) => ({
-  game: state.gameplay.game,
+  game: state.match.view,
   playerInfos: state.ui.playerInfos,
   tutorial: state.ui.tutorial,
 });

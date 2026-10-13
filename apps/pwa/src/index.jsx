@@ -12,14 +12,14 @@ import rootReducer from "./RootReducer";
 import { matchSession } from "./match/LocalMatchHost";
 import { multiplayer } from "./Multiplayer";
 import { showQuickMessage } from "./ui/UiActions";
-import actionValidator from "./gameplay/ActionValidator";
+import promiseDispatch from "./helper/promiseDispatch";
 import { configureStore } from "@reduxjs/toolkit";
 import { ThemeProvider } from "react-jss";
 
 const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(actionValidator),
+    getDefaultMiddleware().concat(promiseDispatch),
 });
 matchSession.dispatch = store.dispatch;
 

@@ -35,7 +35,8 @@
     "dev": "vite",
     "build": "vite build",
     "test": "playwright test",
-    "live-testing": "playwright test --headed"
+    "live-testing": "playwright test --headed",
+    "test:unit": "node --test \"test/unit/*.test.js\""
   },
   "browserslist": [
     ">0.2%",

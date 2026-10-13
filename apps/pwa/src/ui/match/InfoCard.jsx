@@ -109,7 +109,7 @@ const buildingLines = (view, type) => {
   return lines;
 };
 
-const InfoCard = ({ view, tappedBuilding, selectedAttack }) => {
+const InfoCard = ({ view, tappedBuilding, selectedAttack, tutorial }) => {
   const classes = useStyles();
   const [subject, setSubject] = useState(undefined);
 
@@ -132,7 +132,9 @@ const InfoCard = ({ view, tappedBuilding, selectedAttack }) => {
     return () => clearTimeout(timeout);
   }, [subject]);
 
+  // the tutorial's coach card takes this place and explains the buildings itself
   if (
+    tutorial ||
     typeof view === "undefined" ||
     view.phase !== engine.MatchPhase.RUNNING ||
     typeof subject === "undefined"
@@ -172,6 +174,7 @@ const mapStateToProps = (state) => ({
   view: state.match.view,
   tappedBuilding: state.ui.tappedBuilding,
   selectedAttack: state.ui.selectedAttack,
+  tutorial: state.ui.tutorial,
 });
 
 export default connect(mapStateToProps)(InfoCard);

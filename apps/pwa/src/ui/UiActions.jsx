@@ -20,11 +20,8 @@ const UiActionTypes = Object.freeze({
   updateLevel: "battlechoc/ui/updateLevel",
   showQuickMessage: "battlechoc/ui/showQuickMessage",
   hideQuickMessage: "battlechoc/ui/hideQuickMessage",
-  toggleDonutHighlighting: "battlechoc/ui/toggleDonutHighlighting",
   showNotification: "battlechoc/ui/showNotification",
   hideNotification: "battlechoc/ui/hideNotification",
-  lockHudUi: "battlechoc/ui/lockHudUi",
-  unlockHudUi: "battlechoc/ui/unlockHudUi",
   toggleBoardView: "battlechoc/ui/toggleBoardView",
 });
 
@@ -47,9 +44,6 @@ const setPlayerRank = createAction(UiActionTypes.setPlayerRank);
 const updateLevel = createAction(UiActionTypes.updateLevel);
 const showQuickMessage = createAction(UiActionTypes.showQuickMessage);
 const hideQuickMessage = createAction(UiActionTypes.hideQuickMessage);
-const toggleDonutHighlighting = createAction(
-  UiActionTypes.toggleDonutHighlighting
-);
 const showNotification = createAction(UiActionTypes.showNotification);
 const toggleBoardView = createAction(UiActionTypes.toggleBoardView);
 const hideNotification = createAction(UiActionTypes.hideNotification);
@@ -58,7 +52,6 @@ export {
   toggleBoardView,
   showNotification,
   hideNotification,
-  toggleDonutHighlighting,
   showQuickMessage,
   hideQuickMessage,
   updateLevel,

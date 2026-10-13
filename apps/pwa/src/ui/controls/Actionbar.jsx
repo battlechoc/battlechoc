@@ -86,7 +86,8 @@ const Actionbar = (props) => {
     };
   }, []);
 
-  if (props.tutorial) {
+  // the demos show no controls; the lesson keeps the view and sound buttons
+  if (props.tutorial && !props.tutorialInteractive) {
     return null;
   }
 
@@ -105,7 +106,7 @@ const Actionbar = (props) => {
 
   const buttons = [];
 
-  if (typeof props.game !== "undefined") {
+  if (typeof props.game !== "undefined" && !props.tutorial) {
     buttons.push(
       <Fab
         key="0"
@@ -181,8 +182,8 @@ const Actionbar = (props) => {
         }}
       ></Fab>
     );
-    // online matches cannot be paused
-    if (!props.online) buttons.push(
+    // online matches cannot be paused, the lesson has no deadlines to pause
+    if (!props.online && !props.tutorial) buttons.push(
       <Fab
         key="realtime-pause"
         color="secondary"
@@ -244,6 +245,7 @@ const mapStateToProps = (state) => ({
   players: state.players,
   language: state.ui.language,
   tutorial: state.ui.tutorial,
+  tutorialInteractive: state.ui.tutorialInteractive,
 });
 
 const mapDispatchToProps = {

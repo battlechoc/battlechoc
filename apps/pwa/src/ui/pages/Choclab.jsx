@@ -632,7 +632,6 @@ const Choclab = (props) => {
 };
 
 const mapStateToProps = (state) => ({
-  game: state.gameplay.game,
   level: state.ui.playerInfos.stats.level,
   playerInfos: state.ui.playerInfos,
 });

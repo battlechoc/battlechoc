@@ -14,7 +14,6 @@ import {
 } from "./UiActions";
 import {
   Info,
-  Tooltip,
   Settings,
   AccountOverview,
   Dialog,
@@ -32,14 +31,11 @@ import {
   Fab,
   Progress,
   Actionbar,
-  InfoPanel,
-  BuildingPalette,
-  AttackPalette,
   GameStartSelection,
   GameEndOverview,
 } from "./controls";
 import { createUseStyles } from "react-jss";
-import { selectActiveGame, selectIsRealtime } from "../match/matchSlice";
+import { selectActiveGame } from "../match/matchSlice";
 import {
   BuildPalette,
   WeaponPalette,
@@ -197,8 +193,6 @@ const Hud = (props) => {
     challengedPlayer,
     assetsReady,
     overviewVisible,
-    selectedAttack,
-    tappedBuilding,
     game,
     state,
     openInfo,
@@ -209,7 +203,6 @@ const Hud = (props) => {
     endGame,
     notification,
     hideNotification,
-    realtime,
     matchAwards,
   } = props;
 
@@ -318,6 +311,7 @@ const Hud = (props) => {
     <div className={className}>
       <Settings
         startTutorial={kickOffTutorial}
+        showBuildingDemos={props.showBuildingDemos}
         open={openSettings}
         close={() => setOpenSettings(false)}
       />
@@ -540,16 +534,6 @@ const Hud = (props) => {
         } else if (stage === "CHOOSE_MENU") {
           return (
             <div className="chooseStage">
-              <Tooltip
-                state={state}
-                currentPlayerName={
-                  game.players[multiplayer.localPlayerIndex].name
-                }
-                tappedBuilding={tappedBuilding}
-                selectedAttack={selectedAttack}
-                level={game.players[multiplayer.localPlayerIndex].level}
-                playerTurn={multiplayer.isLocalPlayer(game.currentPlayerIndex)}
-              />
               <GameStartSelection />
             </div>
           );
@@ -562,7 +546,7 @@ const Hud = (props) => {
               <Progress infiniteAnimation />
             </div>
           );
-        } else if (realtime) {
+        } else {
           const result = game.outcome;
           return (
             <div>
@@ -590,23 +574,6 @@ const Hud = (props) => {
               ) : null}
             </div>
           );
-        } else {
-          let player = game.players[multiplayer.localPlayerIndex];
-          return (
-            <div>
-              <Tooltip
-                state={state}
-                currentPlayerName={player.name}
-                tappedBuilding={tappedBuilding}
-                selectedAttack={selectedAttack}
-                level={player.level}
-                playerTurn={multiplayer.isLocalPlayer(game.currentPlayerIndex)}
-              />
-              <AttackPalette />
-              <BuildingPalette />
-              <InfoPanel players={game.players} />
-            </div>
-          );
         }
       })()}
     </div>
@@ -623,7 +590,6 @@ Hud.propTypes = {
 
 const mapStateToProps = (state) => ({
   game: selectActiveGame(state),
-  realtime: selectIsRealtime(state),
   matchAwards: state.match.awards,
   state:
     typeof selectActiveGame(state) === "undefined"
@@ -634,8 +600,6 @@ const mapStateToProps = (state) => ({
   assetsReady: state.ui.assetsReady,
   notification: state.ui.notification,
   playerInfos: state.ui.playerInfos,
-  tappedBuilding: state.ui.tappedBuilding,
-  selectedAttack: state.ui.selectedAttack,
 });
 
 const mapDispatchToProps = {

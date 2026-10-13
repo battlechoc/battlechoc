@@ -8,8 +8,8 @@ import { ServerRequest } from "./helper/settings";
 import { account } from "./account";
 import logger from "./helper/logger";
 
-// Player profile and social features against the battlechoc API (device account), plus the
-// local player index used by the tutorial. Online matches are live (match/liveLobby.js).
+// Player profile and social features against the battlechoc API (device account). Online
+// matches are live (match/liveLobby.js).
 
 const urlBase64ToUint8Array = (base64) => {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -19,7 +19,6 @@ const urlBase64ToUint8Array = (base64) => {
 
 class Multiplayer {
   constructor() {
-    this.localPlayerIndex = 0;
     const notInitialized = (name) => () =>
       logger.warn(`calling ${name} without being initialized`);
     this.callbacks = {
@@ -138,10 +137,6 @@ class Multiplayer {
 
   registerCallbacks(callbacks) {
     this.callbacks = { ...this.callbacks, ...callbacks };
-  }
-
-  isLocalPlayer(playerIdx) {
-    return playerIdx === this.localPlayerIndex;
   }
 
   computeTrackRecordStats(trackRecord) {

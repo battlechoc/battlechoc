@@ -6,11 +6,8 @@ import OfflineStore from "./OfflineStore";
 import { ServerRequest } from "./helper/settings";
 import { multiplayer } from "./Multiplayer";
 import {
-  Rules,
-  GameStateTypes,
   PlayerType,
   EntityType,
-  isDonut,
   translate as t,
   translationKeys as tr,
   setCurrentLanguage,
@@ -23,7 +20,6 @@ import { liveLobby } from "./match/liveLobby";
 import { account } from "./account";
 import { MatchClock, ManualClock } from "./match/clock";
 import { matchCleared } from "./match/matchSlice";
-import { resumeGame, finishGame, endGame } from "./gameplay/GameActions";
 import {
   hideQuickMessage,
   showQuickMessage,
@@ -31,16 +27,11 @@ import {
   stopTutorial,
   showOverview,
   resetUi,
-  selectAttack,
   gameResumeable,
-  loadUiState,
   updatePlayerStats,
   loadFriendsList,
   setPlayerRank,
   notifyPlayerSignedIn,
-  tapBuilding,
-  selectBuilding,
-  toggleDonutHighlighting,
   showNotification,
   deselectBuildings,
   deselectAttack,
@@ -52,7 +43,8 @@ import IncomingInvite from "./ui/dialogs/IncomingInvite";
 import Tutorial from "./tutorial/Tutorial";
 import QuickMessage from "./ui/dialogs/QuickMessage";
 import logger from "./helper/logger";
-import { TutorialSituations } from "./situations/tutorial/";
+import { LESSON } from "./tutorial/lesson";
+import { allDemos } from "./tutorial/demos";
 const Scene = React.lazy(() => import("./3d/Scene"));
 
 class App extends Component {
@@ -85,50 +77,6 @@ class App extends Component {
       openInfo: openInfo,
     };
   }
-
-  detonateAtPosition = (row, col, playerField = true) => {
-    try {
-      const position = { row: row, col: col };
-      let playerIndex = multiplayer.localPlayerIndex;
-      if (!playerField) {
-        playerIndex = 1 - playerIndex;
-        position.row -= this.scene.opponentGameFieldDistance;
-        position.col += this.scene.opponentGameFieldDistance;
-      }
-
-      this.scene.detonateAtPosition(row, col, playerField);
-      const playerBoard =
-        this.props.game.board.fields[
-          this.props.game.players[playerIndex].fieldIndex
-        ];
-      const selectedCell =
-        playerBoard.grid[row * this.props.game.board.size.cols + col];
-
-      if (
-        selectedCell.occupiedBy.filter(
-          (entity) => entity.type !== EntityType.CREAM && !isDonut(entity.type)
-        ).length > 0 ||
-        selectedCell.shielded
-      ) {
-        let entity = selectedCell.occupiedBy.filter(
-          (entity) => !isDonut(entity.type)
-        )[0];
-
-        const entitiesWithHp = selectedCell.occupiedBy.filter(
-          (entity) => entity.type !== EntityType.CREAM && !isDonut(entity.type)
-        );
-        if (entitiesWithHp.length > 0) {
-          entity = entitiesWithHp[0];
-        }
-
-        this.scene.showEnergyBar(entity, position, playerField);
-      } else {
-        this.scene.hideEnergyBar(null, position);
-      }
-    } catch (error) {
-      logger.warn(error);
-    }
-  };
 
   componentDidMount() {
     multiplayer.registerCallbacks({
@@ -212,62 +160,6 @@ class App extends Component {
     }
   }
 
-  availableTutorials = () => {
-    const tutorials = [
-      TutorialSituations.BATTLECHOC_INTRO,
-      TutorialSituations.FACTORY,
-      TutorialSituations.CACAO_TREE,
-      TutorialSituations.RUM_TRUFFLE_CANNON,
-      TutorialSituations.CREAM,
-    ];
-
-    const score = this.props.playerInfos.stats.score;
-    if (score > 1000) {
-      tutorials.push(TutorialSituations.FACTORY_EXTENSION);
-      tutorials.push(TutorialSituations.EASTER_BUNNY);
-      tutorials.push(TutorialSituations.XMAS_FACTORY);
-      tutorials.push(TutorialSituations.HOT_CHOCOLATE_BALLISTA);
-      tutorials.push(TutorialSituations.CHOCOLATE_FOUNTAIN);
-      tutorials.push(TutorialSituations.FRUIT_CANNON);
-      tutorials.push(TutorialSituations.DONUT_FACTORY);
-      tutorials.push(TutorialSituations.DONUTS);
-    } else if (score > 500) {
-      tutorials.push(TutorialSituations.FACTORY_EXTENSION);
-      tutorials.push(TutorialSituations.EASTER_BUNNY);
-      tutorials.push(TutorialSituations.XMAS_FACTORY);
-      tutorials.push(TutorialSituations.HOT_CHOCOLATE_BALLISTA);
-      tutorials.push(TutorialSituations.CHOCOLATE_FOUNTAIN);
-      tutorials.push(TutorialSituations.FRUIT_CANNON);
-    } else if (score > 200) {
-      tutorials.push(TutorialSituations.FACTORY_EXTENSION);
-      tutorials.push(TutorialSituations.EASTER_BUNNY);
-      tutorials.push(TutorialSituations.XMAS_FACTORY);
-      tutorials.push(TutorialSituations.HOT_CHOCOLATE_BALLISTA);
-    } else if (score > 0) {
-      tutorials.push(TutorialSituations.FACTORY_EXTENSION);
-    }
-
-    return tutorials;
-  };
-
-  // loads a scripted tutorial loop; real matches and debug boards are real-time scenarios
-  async loadSituation(situation) {
-    if (typeof this.props.game !== "undefined") {
-      this.timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
-      this.scene.clear();
-      await this.props.finishGame({
-        issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
-      });
-      await this.props.resetUi();
-    }
-
-    await this.props.resumeGame(situation.gameplay);
-    await this.props.loadUiState(situation.ui);
-    this.setState({ situation: undefined }, () => {
-      this.scene.startGame(this.props.game, false);
-    });
-  }
-
   componentDidUpdate(prevProps) {
     if (!prevProps.assetsReady && this.props.assetsReady) {
       const debugScenario = debugScenarios[this.state.situation];
@@ -287,82 +179,18 @@ class App extends Component {
       this.scene.startGame(this.props.matchView);
     }
 
-    let gameStopped =
-      typeof this.props.game !== "undefined"
-        ? !this.props.game.isRunning
-        : false;
-    if (
-      typeof this.props.game !== "undefined" &&
-      typeof prevProps.game !== "undefined"
-    ) {
-      if (prevProps.game.isRunning && !this.props.game.isRunning) {
-        gameStopped = true;
-        let timeoutId = setTimeout(() => this.endGame(), 2000);
-        this.timeouts.push(timeoutId);
-      }
-    }
-
-    if (typeof this.scene !== "undefined") {
-      if (typeof this.scene.playerGameField !== "undefined") {
-        if (
-          this.props.selectedBuilding === EntityType.FRUIT_CANNON &&
-          prevProps.selectedBuilding !== EntityType.FRUIT_CANNON
-        ) {
-          this.scene.highlightCannons();
-        } else if (
-          this.props.selectedBuilding !== EntityType.FRUIT_CANNON &&
-          prevProps.selectedBuilding === EntityType.FRUIT_CANNON
-        ) {
-          this.scene.highlightCannons(false);
-        }
-      }
-    }
-
-    if (!gameStopped) {
+    // a selected fruit cannon highlights the truffle cannons it can replace
+    if (typeof this.scene !== "undefined" && this.scene.playerGameField) {
       if (
-        this.props.game !== undefined &&
-        (this.props.game.state === GameStateTypes.BUILD_PHASE ||
-          this.props.game.state === GameStateTypes.ATTACK_PHASE)
+        this.props.selectedBuilding === EntityType.FRUIT_CANNON &&
+        prevProps.selectedBuilding !== EntityType.FRUIT_CANNON
       ) {
-        const winners = Rules.determineWinner(this.props.game);
-        if (typeof winners !== "undefined") {
-          prevProps.endGame({
-            winners: winners,
-            issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
-          });
-        }
-      }
-
-      if (
-        prevProps.selectedBuilding === EntityType.FRUIT_CANNON &&
-        typeof this.scene !== "undefined" &&
-        typeof this.scene.playerGameField !== "undefined" &&
-        typeof this.props.game !== "undefined" &&
-        (this.props.game.state !== GameStateTypes.BUILD_PHASE ||
-          !multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) ||
-          this.props.game.players[multiplayer.localPlayerIndex].buildings ===
-            0 ||
-          this.props.selectedBuilding !== EntityType.FRUIT_CANNON)
+        this.scene.highlightCannons();
+      } else if (
+        this.props.selectedBuilding !== EntityType.FRUIT_CANNON &&
+        prevProps.selectedBuilding === EntityType.FRUIT_CANNON
       ) {
         this.scene.highlightCannons(false);
-      }
-
-      if (!prevProps.donutHighlighting && this.props.donutHighlighting) {
-        this.scene.highlightDonuts();
-      }
-
-      if (prevProps.donutHighlighting && !this.props.donutHighlighting) {
-        this.scene.highlightDonuts(false);
-      }
-
-      if (
-        this.props.donutHighlighting &&
-        (multiplayer.isLocalPlayer(prevProps.game.currentPlayerIndex) !==
-          multiplayer.isLocalPlayer(this.props.game.currentPlayerIndex) ||
-          (prevProps.game.state === GameStateTypes.BUILD_PHASE &&
-            this.props.game.state === GameStateTypes.ATTACK_PHASE))
-      ) {
-        this.props.toggleDonutHighlighting(false);
       }
     }
   }
@@ -609,23 +437,8 @@ class App extends Component {
 
           const score = this.props.playerInfos.stats.score;
           if (typeof coins !== "undefined" && coins > 0) {
-            let loops = [];
-            let notificationOnLoopsEnd = undefined;
+            // the first coins unlock every building: show them
             if (score - coins === 0) {
-              loops.push(TutorialSituations.FACTORY_EXTENSION);
-              loops.push(
-                TutorialSituations.EASTER_BUNNY,
-                TutorialSituations.XMAS_FACTORY,
-                TutorialSituations.HOT_CHOCOLATE_BALLISTA
-              );
-              loops.push(
-                TutorialSituations.CHOCOLATE_FOUNTAIN,
-                TutorialSituations.FRUIT_CANNON
-              );
-              loops.push(
-                TutorialSituations.DONUT_FACTORY,
-                TutorialSituations.DONUTS
-              );
               this.props.showQuickMessage({
                 text: t(tr.UNLOCK_CONGRATULATIONS_CHOCLAB),
                 variant: "success",
@@ -635,8 +448,7 @@ class App extends Component {
                 variant: "success",
               });
               this.props.startTutorial({
-                loops: loops,
-                notificationOnLoopsEnd: notificationOnLoopsEnd,
+                loops: allDemos,
               });
             }
           }
@@ -645,38 +457,30 @@ class App extends Component {
     }
   }
 
-  async reset() {
-    if (typeof this.props.game !== "undefined") {
-      this.scene.stopAllAnimations();
-      this.scene.clear();
-      await this.props.finishGame({
-        issuer: this.props.game.players[multiplayer.localPlayerIndex].id,
-      });
-      await this.props.resetUi();
-    }
-  }
-
-  setRenderLoop(run) {
-    this.scene.setRenderLoop(run);
-  }
-
   closeTutorial = async (startGame) => {
     this.timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
 
     Jukebox.stopMusic(true);
-    console.log("stopping tutorial");
     this.props.stopTutorial();
-    await this.reset();
+    this.props.resetUi();
 
     if (startGame) {
       this.prepareNewGame(false);
     }
   };
 
+  // the interactive first lesson
   startTutorial() {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
-    this.props.startTutorial({ loops: this.availableTutorials() });
+    this.props.startTutorial({ loops: [LESSON] });
+  }
+
+  // the demos of the buildings unlocked after the first win
+  showBuildingDemos() {
+    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+    Jukebox.startMusic(Jukebox.SONGS.MAIN_THEME);
+    this.props.startTutorial({ loops: allDemos });
   }
 
   render() {
@@ -715,6 +519,7 @@ class App extends Component {
         <Hud
           prepareNewGameCallback={this.prepareNewGame}
           startTutorial={() => this.startTutorial()}
+          showBuildingDemos={() => this.showBuildingDemos()}
           className={this.props.tutorial ? "tutorial hud" : "hud"}
           endGame={(coins) => this.endGame(coins)}
           challengedPlayer={this.state.player}
@@ -723,19 +528,9 @@ class App extends Component {
         <IncomingInvite />
         {this.props.tutorial ? (
           <Tutorial
-            spawnInfo={(messageType, position, amount, donutType) =>
-              this.scene.spawnInfo(messageType, position, amount, donutType)
-            }
-            setRenderLoop={(run) => this.setRenderLoop(run)}
-            reset={async () => await this.reset()}
-            detonateAtPosition={this.detonateAtPosition}
-            selectBuilding={this.props.selectBuilding}
-            tapBuilding={this.props.tapBuilding}
-            selectAttack={this.props.selectAttack}
-            loadSituation={async (situation) =>
-              await this.loadSituation(situation)
-            }
             closeTutorial={this.closeTutorial}
+            clearScene={() => this.scene && this.scene.clear()}
+            testClock={this.testClock}
           />
         ) : null}
       </div>
@@ -745,11 +540,8 @@ class App extends Component {
 
 const mapStateToProps = (state) => ({
   matchView: state.match.view,
-  gameplay: state.gameplay,
-  game: state.gameplay.game,
   language: state.ui.language,
   selectedBuilding: state.ui.selectedBuilding,
-  donutHighlighting: state.ui.donutHighlighting,
   ui: state.ui,
   tutorial: state.ui.tutorial,
   assetsReady: state.ui.assetsReady,
@@ -758,12 +550,7 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = {
-  endGame,
-  resumeGame,
-  finishGame,
-  selectAttack,
   gameResumeable,
-  loadUiState,
   resetUi,
   showOverview,
   startTutorial,
@@ -772,11 +559,8 @@ const mapDispatchToProps = {
   loadFriendsList,
   setPlayerRank,
   notifyPlayerSignedIn,
-  selectBuilding,
-  tapBuilding,
   hideQuickMessage,
   showQuickMessage,
-  toggleDonutHighlighting,
   showNotification,
   deselectBuildings,
   deselectAttack,
