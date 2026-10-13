@@ -61,7 +61,6 @@ import {
   deselectBuildings,
   deselectAttack,
 } from "./ui/UiActions";
-import GustavGanache from "./gameplay/GustavGanache";
 import MimiMarzipan from "./gameplay/MimiMarzipan";
 import { GameTransitions, getGameTransition } from "./gameplay/GameTransitions";
 import { gameplayLog } from "./gameplay/GamePlayLogger";
@@ -301,26 +300,13 @@ class App extends Component {
     return tutorials;
   };
 
+  // loads a scripted tutorial loop; real matches and debug boards are real-time scenarios
   async loadSituation(situation) {
-    if (this.props.tutorial) {
-      this.opponent = new MimiMarzipan({
-        finishTurn: this.props.finishTurn,
-        finishBuildPhase: this.props.finishBuildPhase,
-        attack: this.props.attack,
-      });
-    } else {
-      this.opponent = new GustavGanache(
-        {
-          chooseStart: this.props.chooseStart,
-          chooseField: this.props.chooseField,
-          build: this.props.build,
-          attack: this.props.attack,
-          finishTurn: this.props.finishTurn,
-          finishBuildPhase: this.props.finishBuildPhase,
-        },
-        this.calculateHandicap(this.props.playerInfos.stats.score)
-      );
-    }
+    this.opponent = new MimiMarzipan({
+      finishTurn: this.props.finishTurn,
+      finishBuildPhase: this.props.finishBuildPhase,
+      attack: this.props.attack,
+    });
 
     if (typeof this.props.game !== "undefined") {
       this.timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
