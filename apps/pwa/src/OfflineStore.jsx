@@ -57,8 +57,25 @@ class OfflineStore {
     };
   }
 
+  // only real-time matches can be resumed; saves of the turn-based game are discarded
   async hasGameToResume() {
-    return (await this.gamestateStore.keys()).includes("gamestate");
+    const keys = await this.gamestateStore.keys();
+    if (keys.includes("gamestate")) {
+      await this.gamestateStore.delete("gamestate");
+    }
+    return keys.includes("realtime-match");
+  }
+
+  async getRealtimeMatch() {
+    return await this.gamestateStore.get("realtime-match");
+  }
+
+  async saveRealtimeMatch(saved) {
+    return await this.gamestateStore.set("realtime-match", saved);
+  }
+
+  async clearRealtimeMatch() {
+    return await this.gamestateStore.delete("realtime-match");
   }
 
   async getResumeableGame() {

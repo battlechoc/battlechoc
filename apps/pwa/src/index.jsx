@@ -9,6 +9,7 @@ import {
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import rootReducer from "./RootReducer";
+import { matchSession } from "./match/LocalMatchHost";
 import { multiplayer } from "./Multiplayer";
 import { showQuickMessage, injectMultiplayerSession } from "./ui/UiActions";
 import { gameplayLogger } from "./gameplay/GamePlayLogger";
@@ -26,6 +27,7 @@ const store = configureStore({
       gameplayLogger
     ),
 });
+matchSession.dispatch = store.dispatch;
 
 const theme = {
   color: {
