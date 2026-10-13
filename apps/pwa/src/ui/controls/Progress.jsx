@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
+import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
   donut: {
@@ -33,7 +34,8 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-const Progress = (props) => {
+const Progress = (componentProps) => {
+  const props = withDefaultProps(componentProps, defaultProps);
   const classes = useStyles(props);
   const [state, setState] = useState(
     Math.max(0, Math.min(100, Math.floor(props.value / 10) * 10))
@@ -162,7 +164,7 @@ const Progress = (props) => {
   }
 };
 
-Progress.defaultProps = {
+const defaultProps = {
   className: "",
   style: {},
   infiniteAnimation: false,

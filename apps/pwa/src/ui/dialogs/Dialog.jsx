@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { Jukebox } from "../misc";
 import { createUseStyles } from "react-jss";
 import Fab from "../controls/Fab";
+import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
   overlay: {
@@ -181,7 +182,8 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-const Dialog = (props) => {
+const Dialog = (componentProps) => {
+  const props = withDefaultProps(componentProps, defaultProps);
   const classes = useStyles(props);
   const closeDialog = () => {
     if (props.closable) {
@@ -246,7 +248,7 @@ Dialog.propTypes = {
   autoscale: PropTypes.bool,
 };
 
-Dialog.defaultProps = {
+const defaultProps = {
   closable: true,
   subtitle: null,
   icon: null,

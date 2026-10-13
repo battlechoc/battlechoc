@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
+import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
   message: {
@@ -148,7 +149,8 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-const QuickMessage = (props) => {
+const QuickMessage = (componentProps) => {
+  const props = withDefaultProps(componentProps, defaultProps);
   const classes = useStyles(props);
   const [visible, setVisible] = useState(true);
   let { message, onClose, variant, autoHideDuration } = props;
@@ -215,7 +217,7 @@ QuickMessage.propTypes = {
   ]),
 };
 
-QuickMessage.defaultProps = {
+const defaultProps = {
   variant: "warning",
   autoHideDuration: 4000,
   messageId: 0,

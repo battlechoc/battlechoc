@@ -2,6 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import { Jukebox } from "../misc";
+import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
   fab: {
@@ -55,7 +56,8 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-const Fab = (props) => {
+const Fab = (componentProps) => {
+  const props = withDefaultProps(componentProps, defaultProps);
   const color =
     props.icon === "discord" || props.icon === "instagram"
       ? props.icon
@@ -84,7 +86,7 @@ const Fab = (props) => {
   );
 };
 
-Fab.defaultProps = {
+const defaultProps = {
   color: "primary",
   style: {},
   iconStyle: {},

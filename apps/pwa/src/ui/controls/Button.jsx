@@ -2,6 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import { Jukebox } from "../misc";
+import withDefaultProps from "../../helper/defaultProps";
 
 const calculateFontSize = (text, orientation, size) => {
   const basics = {
@@ -161,7 +162,8 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-const Button = (props) => {
+const Button = (componentProps) => {
+  const props = withDefaultProps(componentProps, defaultProps);
   const classes = useStyles(props);
   const onClick = () => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -211,7 +213,7 @@ const Button = (props) => {
   }
 };
 
-Button.defaultProps = {
+const defaultProps = {
   color: "primary",
   size: "normal",
   style: {},

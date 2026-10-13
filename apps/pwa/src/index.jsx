@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import "./index.css";
 import App from "./App";
@@ -53,13 +53,12 @@ const theme = {
   },
 };
 
-ReactDOM.render(
+createRoot(document.getElementById("root")).render(
   <Provider store={store}>
     <ThemeProvider theme={theme}>
       <App />
     </ThemeProvider>
-  </Provider>,
-  document.getElementById("root")
+  </Provider>
 );
 
 let config = {

@@ -9,6 +9,7 @@ import {
 } from "@battlechoc/battlechoc-shared-functions";
 import { multiplayer } from "../../Multiplayer";
 import logger from "../../helper/logger";
+import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
   fab: {
@@ -45,7 +46,8 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-const Highscore = (props) => {
+const Highscore = (componentProps) => {
+  const props = withDefaultProps(componentProps, defaultProps);
   const classes = useStyles(props);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -164,7 +166,7 @@ const Highscore = (props) => {
   );
 };
 
-Highscore.defaultProps = {
+const defaultProps = {
   style: {},
   className: "",
 };

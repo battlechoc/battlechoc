@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
+import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
   wrapper: {
@@ -103,7 +104,8 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-const Select = (props) => {
+const Select = (componentProps) => {
+  const props = withDefaultProps(componentProps, defaultProps);
   const [selected, setSelected] = useState(props.options[0]);
   const [visible, setVisible] = useState(false);
   const classes = useStyles(props);
@@ -192,7 +194,7 @@ const Select = (props) => {
   );
 };
 
-Select.defaultProps = {
+const defaultProps = {
   className: "",
   defaultSelected: null,
 };

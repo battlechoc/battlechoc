@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { EntityType } from "@battlechoc/battlechoc-shared-functions";
 import { createUseStyles, useTheme } from "react-jss";
 import Button from "./Button";
+import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
   palette: {
@@ -49,7 +50,8 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-const ChoclabPalette = (props) => {
+const ChoclabPalette = (componentProps) => {
+  const props = withDefaultProps(componentProps, defaultProps);
   const classes = useStyles();
   const theme = useTheme();
   const [selectedEntity, setSelectedEntity] = useState(0);
@@ -179,7 +181,7 @@ const ChoclabPalette = (props) => {
   );
 };
 
-ChoclabPalette.defaultProps = {
+const defaultProps = {
   className: "",
   style: {},
 };

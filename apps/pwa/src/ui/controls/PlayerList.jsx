@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
+import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
   list: {
@@ -45,7 +46,8 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-const PlayerList = (props) => {
+const PlayerList = (componentProps) => {
+  const props = withDefaultProps(componentProps, defaultProps);
   const { username, players, showProfile, withScore } = props;
   const classes = useStyles(props);
 
@@ -127,7 +129,7 @@ const PlayerList = (props) => {
   }
 };
 
-PlayerList.defaultProps = {
+const defaultProps = {
   withScore: false,
   style: {},
   className: "",

@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import { connect } from "react-redux";
 import { notifyPlayerSignedOut } from "../UiActions";
-import StyledFirebaseAuthModule from "react-firebaseui/StyledFirebaseAuth";
 import * as firebaseui from "firebaseui";
+import "firebaseui/dist/firebaseui.css";
 import { multiplayer } from "../../Multiplayer";
 import firebase from "firebase/app";
 import "firebase/auth";
@@ -17,10 +17,6 @@ import {
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
-
-// rolldown hands the CommonJS module object to default imports of this transpiled module
-const StyledFirebaseAuth =
-  StyledFirebaseAuthModule.default ?? StyledFirebaseAuthModule;
 
 const useStyles = createUseStyles((theme) => ({
   wrapper: {
@@ -265,6 +261,22 @@ const FirebaseSigninUiConfig = {
             requireDisplayName: false,
           },
         ],
+};
+
+const FirebaseAuthUi = ({ uiConfig, firebaseAuth, className }) => {
+  const container = useRef();
+
+  useEffect(() => {
+    const ui =
+      firebaseui.auth.AuthUI.getInstance() ||
+      new firebaseui.auth.AuthUI(firebaseAuth);
+    ui.start(container.current, uiConfig);
+    return () => {
+      ui.reset();
+    };
+  }, [uiConfig, firebaseAuth]);
+
+  return <div className={className} ref={container} />;
 };
 
 const AccountOverview = (props) => {
@@ -521,7 +533,7 @@ const AccountOverview = (props) => {
             </div>
           ) : (
             <div className={classes.signin}>
-              <StyledFirebaseAuth
+              <FirebaseAuthUi
                 className={classes.firebaseUi}
                 uiConfig={FirebaseSigninUiConfig}
                 firebaseAuth={firebase.auth()}

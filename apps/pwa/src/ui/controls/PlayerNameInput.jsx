@@ -10,6 +10,7 @@ import {
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import Progress from "./Progress";
+import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
   root: {
@@ -108,7 +109,8 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-const PlayerNameInput = (props) => {
+const PlayerNameInput = (componentProps) => {
+  const props = withDefaultProps(componentProps, defaultProps);
   const classes = useStyles();
   const { setPlayerName, startValue, current } = props;
   const [loading, setLoading] = useState(false);
@@ -281,7 +283,7 @@ const PlayerNameInput = (props) => {
   );
 };
 
-PlayerNameInput.defaultProps = {
+const defaultProps = {
   editMode: true,
   className: "",
 };
