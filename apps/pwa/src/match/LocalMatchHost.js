@@ -1,14 +1,17 @@
 import { engine } from "@battlechoc/battlechoc-shared-functions";
 import { MatchClock } from "./clock";
 import { matchUpdated, matchPaused, matchAwarded } from "./matchSlice";
-import TomToffee from "../gameplay/TomToffee";
 import logger from "../helper/logger";
 
 const LOCAL_PLAYER = 0;
 const SAVE_FORMAT = 1;
 const SAVE_THROTTLE_MS = 5000;
 
-const agentKinds = { TomToffee };
+// AIs live in the shared package so the server and the simulations use the same ones
+const agentKinds = {
+  TomToffee: engine.ai.TomToffee,
+  GustavGanache: engine.ai.GustavGanache,
+};
 
 /**
  * Hosts a real-time match on this device: it owns the full engine state, the match clock
@@ -41,13 +44,16 @@ class LocalMatchHost {
     }
   }
 
-  static createAgent({ kind, playerIndex, seed, reactionTimeMs, rng, wakeAt, options }) {
+  static createAgent({ kind, playerIndex, seed, reactionTimeMs, rng, wakeAt, options, state }) {
     const AgentClass = agentKinds[kind];
     const agent = new AgentClass({ playerIndex, seed, reactionTimeMs, ...(options || {}) });
     agent.kind = kind;
     agent.options = options;
     if (typeof rng === "number") {
       agent.random.rng = rng;
+    }
+    if (typeof state !== "undefined") {
+      agent.importState(state);
     }
     agent.wakeAt = typeof wakeAt === "number" ? wakeAt : reactionTimeMs;
     return agent;
@@ -86,6 +92,7 @@ class LocalMatchHost {
         rng: agent.random.rng,
         wakeAt: agent.wakeAt,
         options: agent.options,
+        state: structuredClone(agent.exportState()),
       })),
     };
   }

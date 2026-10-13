@@ -708,6 +708,24 @@ class App extends Component {
         ? { rows: 8, cols: 8 }
         : { rows: 10, cols: 10 };
     const seed = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    // below a score of 800 the easy Tom Toffee, afterwards Gustav Ganache with a handicap by score
+    const strong = stats.score >= 800;
+    const opponent = strong
+      ? {
+          id: "ai-gustav-ganache",
+          name: "Gustav Ganache",
+          type: PlayerType.AI_STRONG,
+          agent: {
+            kind: "GustavGanache",
+            options: { handicap: this.calculateHandicap(stats.score) },
+          },
+        }
+      : {
+          id: "ai-tom-toffee",
+          name: "Tom Toffee",
+          type: PlayerType.AI_EASY,
+          agent: { kind: "TomToffee" },
+        };
     host.startNew({
       players: [
         {
@@ -717,16 +735,16 @@ class App extends Component {
           level: stats.level,
         },
         {
-          id: "ai-tom-toffee",
-          name: "Tom Toffee",
-          type: PlayerType.AI_EASY,
+          id: opponent.id,
+          name: opponent.name,
+          type: opponent.type,
           level: stats.level,
         },
       ],
       boardSize,
       seed,
       agents: [
-        { kind: "TomToffee", playerIndex: 1, seed: `${seed}-ai`, reactionTimeMs: 3000 },
+        { ...opponent.agent, playerIndex: 1, seed: `${seed}-ai`, reactionTimeMs: 1000 },
       ],
     });
   };
