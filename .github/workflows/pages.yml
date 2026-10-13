@@ -1,0 +1,58 @@
+name: Deploy PWA to GitHub Pages
+
+# Manual until the real-time cut-over switches battlechoc.com from Firebase
+# Hosting to GitHub Pages (see the migration plan, phase 8).
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Stamp build time and service worker revision
+        working-directory: apps/pwa
+        run: |
+          TIMESTAMP=$(date --utc -Iseconds)
+          sed -i "s/LOCAL_DATETIME/$TIMESTAMP/g" src/ui/dialogs/Info.jsx src/helper/settings.jsx
+          sed -i "s/NEXT_REVISION/${GITHUB_RUN_NUMBER}/g" src/service-worker.js
+      - run: npm run build
+      - name: Prepare GitHub Pages output
+        working-directory: apps/pwa/build
+        env:
+          PAGES_DOMAIN: ${{ vars.PAGES_DOMAIN }}
+        run: |
+          # GitHub Pages has no rewrites: serve the SPA for deep links via 404.html
+          cp index.html 404.html
+          # keep dot-folders such as .well-known (Digital Asset Links)
+          touch .nojekyll
+          if [ -n "$PAGES_DOMAIN" ]; then echo "$PAGES_DOMAIN" > CNAME; fi
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: apps/pwa/build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
