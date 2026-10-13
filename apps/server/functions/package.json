@@ -1,0 +1,37 @@
+{
+  "name": "battlechoc-functions",
+  "description": "Cloud Functions for battlechoc",
+  "scripts": {
+    "serve": "NODE_ENV=development firebase serve --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "pretest": "docker run --name battlechoc-test-postgres -p 5432:5432 -e POSTGRES_PASSWORD=hackersdontcare -d postgres",
+    "test": "NODE_ENV=test jest tests --coverage",
+    "posttest": "docker stop battlechoc-test-postgres && docker container rm battlechoc-test-postgres",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "@battlechoc/battlechoc-shared-functions": "^2.0.4",
+    "@google-cloud/functions": "^1.1.2",
+    "@google-cloud/secret-manager": "^3.4.0",
+    "axios": "^0.21.1",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "firebase-admin": "^9.5.0",
+    "firebase-functions": "^3.13.2",
+    "heroku-client": "^3.1.0",
+    "pg": "^8.5.1",
+    "unique-names-generator": "^4.3.1",
+    "update": "^0.7.4",
+    "uuid": "^8.3.2"
+  },
+  "engines": {
+    "node": "12"
+  },
+  "private": true,
+  "devDependencies": {
+    "jest": "^25.1.0",
+    "supertest": "^4.0.2"
+  }
+}

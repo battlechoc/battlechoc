@@ -1,0 +1,50 @@
+image: docker:19.03.1
+
+stages:
+# - test
+ - deploy
+ 
+services:
+ - docker:dind
+
+#test:
+#  stage: test
+#  before_script:
+#    - docker run --name battlechoc-test-postgres --net=host -e POSTGRES_PASSWORD=hackersdontcare -d postgres
+#    - apk update && apk upgrade && apk add --no-cache bash git openssh
+#    - apk add --update nodejs npm
+#    - npm config set @battlechoc-shared-functions:registry=$ARTIFACTORY_URL
+#    - npm config set $ARTIFACTORY_SCOPE_PREFIX:email=$ARTIFACTORY_EMAIL
+#    - npm config set $ARTIFACTORY_SCOPE_PREFIX:_password=$ARTIFACTORY_PASSWORD
+#    - npm config set $ARTIFACTORY_SCOPE_PREFIX:username=$ARTIFACTORY_USERNAME
+#    - npm config set $ARTIFACTORY_SCOPE_PREFIX:always-auth=true
+#    - npm install
+#    - cd functions && npm install
+#    - sed -i "s/localhost/docker/g" tests/helper.js
+#    - sed -i "s/localhost/docker/g" main.js
+#    - npm install -g jest
+#  artifacts:
+#    expire_in: 5 mins
+#    paths:
+#     - functions/node_modules/
+#  script:
+#    - NODE_ENV=test jest tests --coverage
+#    - docker stop battlechoc-test-postgres && docker container rm battlechoc-test-postgres
+#    - sed -i "s/docker/localhost/g" main.js
+#  coverage: /All\sfiles.*?\s+(\d+.\d+)/
+  
+deploy:
+  stage: deploy
+  script:
+    - apk update && apk upgrade && apk add --no-cache bash git openssh gettext
+    - apk add --update python2 nodejs npm
+    - npm install -g firebase-tools
+    - pwd
+    - sed -i "s/localhost/docker/g" functions/tests/helper.js
+    - envsubst < functions/.npmrc > temp_npmrc
+    - cat temp_npmrc > functions/.npmrc
+    - cd functions && npm install
+    - cd ..
+    - firebase deploy --token "$FIREBASE_TOKEN" --only functions
+  only:
+    - master

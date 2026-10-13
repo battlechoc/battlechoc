@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /reports/{report} {
+      allow create: if true;
+    }
+    
+    match /multiplayerEventQueues/{session} {
+    	allow create: if true;
+      allow update: if true;
+      allow read: if true;
+    }
+
+    match /multiplayerSessions/{session} {
+    	allow create: if true;
+      allow update: if true;
+      allow read: if true;
+    }
+
+    match /players/{player} {
+    	allow create: if true;
+      allow update: if true;
+      allow read: if true;
+    }
+    
+    match /trackRecords/{player} {
+    	allow create: if true;
+      allow update: if true;
+      allow read: if true;
+    }
+
+    match /permissions/{player} {
+    	allow create: if true;
+      allow update: if true;
+      allow read: if true;
+    }
+
+    match /errorReports/{report} {
+    	allow create: if true;
+      allow update: if true;
+      allow read: if true;
+    }
+
+    match /status/{status} {
+    	allow read, write: if true;
+    }
+  }
+}
