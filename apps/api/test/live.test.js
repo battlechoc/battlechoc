@@ -10,7 +10,9 @@ const { createPush } = require('../src/push');
 const { createLive } = require('../src/live');
 const { ManualClock } = require('../src/live/clock');
 const { LiveClient, AgentPlayer } = require('../src/live/client');
-const { createTestPool, JWT_SECRET } = require('./helper');
+const { createTestPool, closeTestPools, JWT_SECRET } = require('./helper');
+
+afterAll(closeTestPools);
 
 const { MatchActionTypes, MatchPhase } = engine;
 const { ServerMessage, ClientMessage, LiveError, CloseCode } = live;

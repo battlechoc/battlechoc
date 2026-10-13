@@ -3,7 +3,9 @@ const { EntityType } = require('@battlechoc/battlechoc-shared-functions');
 const { createApp } = require('../src/app');
 const { createAuth } = require('../src/auth');
 const { createPush } = require('../src/push');
-const { createTestPool, JWT_SECRET } = require('./helper');
+const { createTestPool, closeTestPools, JWT_SECRET } = require('./helper');
+
+afterAll(closeTestPools);
 
 const setup = async ({ now } = {}) => {
     const pool = await createTestPool();
@@ -160,7 +162,7 @@ describe('progress', () => {
         expect((await player.post('/user/language', { language: 'de' }).expect(200)).body.language).toBe('de');
         await player.post('/user/language', { language: 'xx' }).expect(400);
         await player.post('/debugging/gamestate', { report: { message: 'hi', reported: Date.now() } }).expect(201);
-        expect((await pool.query('SELECT COUNT(*) AS n FROM reports')).rows[0].n).toBe(1);
+        expect(Number((await pool.query('SELECT COUNT(*) AS n FROM reports')).rows[0].n)).toBe(1);
     });
 });
 
@@ -222,7 +224,7 @@ describe('web push and transport', () => {
         const gone = createPush({ pool, publicKey: 'p', privateKey: 'q', sender: { setVapidDetails: () => {}, sendNotification: async () => { const error = new Error('gone'); error.statusCode = 410; throw error; } } });
         await gone.subscribe(player.playerId, { endpoint: 'https://push.example/gone', keys: { p256dh: 'a', auth: 'b' } });
         expect(await gone.sendToPlayer(player.playerId, {})).toBe(0);
-        expect((await pool.query('SELECT COUNT(*) AS n FROM push_subscriptions')).rows[0].n).toBe(0);
+        expect(Number((await pool.query('SELECT COUNT(*) AS n FROM push_subscriptions')).rows[0].n)).toBe(0);
     });
 
     test('CORS answers the PWA origin only', async () => {
