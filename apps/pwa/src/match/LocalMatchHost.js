@@ -7,12 +7,6 @@ const LOCAL_PLAYER = 0;
 const SAVE_FORMAT = 1;
 const SAVE_THROTTLE_MS = 5000;
 
-// AIs live in the shared package so the server and the simulations use the same ones
-const agentKinds = {
-  TomToffee: engine.ai.TomToffee,
-  GustavGanache: engine.ai.GustavGanache,
-};
-
 /**
  * Hosts a real-time match on this device: it owns the full engine state, the match clock
  * and the AI agents, wakes up when the next timer or agent decision is due, and publishes
@@ -44,27 +38,12 @@ class LocalMatchHost {
     }
   }
 
-  static createAgent({ kind, playerIndex, seed, reactionTimeMs, rng, wakeAt, options, state }) {
-    const AgentClass = agentKinds[kind];
-    const agent = new AgentClass({ playerIndex, seed, reactionTimeMs, ...(options || {}) });
-    agent.kind = kind;
-    agent.options = options;
-    if (typeof rng === "number") {
-      agent.random.rng = rng;
-    }
-    if (typeof state !== "undefined") {
-      agent.importState(state);
-    }
-    agent.wakeAt = typeof wakeAt === "number" ? wakeAt : reactionTimeMs;
-    return agent;
-  }
-
   startNew({ players, boardSize, seed, agents, scenario }) {
     this.match = engine.createMatch({ players, boardSize, seed, fieldChooser: LOCAL_PLAYER });
     if (typeof scenario !== "undefined") {
       engine.prepareScenario(this.match, scenario);
     }
-    this.agents = agents.map((descriptor) => LocalMatchHost.createAgent(descriptor));
+    this.agents = agents.map((descriptor) => engine.createAgent(descriptor));
     this.clock.start(0);
     this.publish();
     this.schedule();
@@ -75,7 +54,7 @@ class LocalMatchHost {
       throw new Error("Unsupported saved match");
     }
     this.match = saved.match;
-    this.agents = saved.agents.map((descriptor) => LocalMatchHost.createAgent(descriptor));
+    this.agents = saved.agents.map((descriptor) => engine.createAgent(descriptor));
     this.clock.start(this.match.t);
     this.lastSeq = -1;
     this.publish();
@@ -87,16 +66,7 @@ class LocalMatchHost {
       format: SAVE_FORMAT,
       savedAt: Date.now(),
       match: structuredClone(this.match),
-      agents: this.agents.map((agent) => ({
-        kind: agent.kind,
-        playerIndex: agent.playerIndex,
-        seed: agent.seed,
-        reactionTimeMs: agent.reactionTimeMs,
-        rng: agent.random.rng,
-        wakeAt: agent.wakeAt,
-        options: agent.options,
-        state: structuredClone(agent.exportState()),
-      })),
+      agents: this.agents.map((agent) => engine.serializeAgent(agent)),
     };
   }
 
@@ -120,25 +90,9 @@ class LocalMatchHost {
   }
 
   runAgents() {
-    const t = this.match.t;
-    this.agents
-      .filter((agent) => agent.wakeAt <= t)
-      .forEach((agent) => {
-        if (this.match.phase !== engine.MatchPhase.ENDED) {
-          try {
-            const decision = agent.decide(engine.getPlayerView(this.match, agent.playerIndex), t);
-            if (decision) {
-              const result = engine.applyAction(this.match, { ...decision, player: agent.playerIndex, t });
-              if (!result.ok) {
-                logger.info("agent action rejected", result.error.message);
-              }
-            }
-          } catch (error) {
-            logger.warn(error);
-          }
-        }
-        agent.wakeAt = t + agent.nextReactionTime();
-      });
+    engine.runDueAgents(this.match, this.agents, {
+      onRejected: (error) => logger.info("agent action rejected", error.message),
+    });
   }
 
   tick() {
@@ -153,12 +107,10 @@ class LocalMatchHost {
 
   schedule() {
     clearTimeout(this.timeout);
-    if (this.stopped || !this.clock.running || this.match.phase === engine.MatchPhase.ENDED) {
+    const next = engine.nextWakeAt(this.match, this.agents);
+    if (this.stopped || !this.clock.running || next === null) {
       return;
     }
-    const candidates = [engine.nextTimerAt(this.match), ...this.agents.map((agent) => agent.wakeAt)]
-      .filter((value) => typeof value === "number");
-    const next = Math.min(...candidates);
     const delay = Math.max(0, next - this.clock.now());
     // a ManualClock only moves on advance(), which ticks the host itself
     if (this.clock instanceof MatchClock) {

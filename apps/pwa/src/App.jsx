@@ -248,20 +248,6 @@ class App extends Component {
     }
   };
 
-  calculateHandicap = (score) => {
-    if (score < 1) {
-      return 4;
-    } else if (score < 200) {
-      return 3;
-    } else if (score < 500) {
-      return 2;
-    } else if (score < 1000) {
-      return 1;
-    } else {
-      return 0;
-    }
-  };
-
   availableTutorials = () => {
     const tutorials = [
       TutorialSituations.BATTLECHOC_INTRO,
@@ -686,36 +672,15 @@ class App extends Component {
         logger.warn("could not resume the saved match", error);
       }
     }
-    let boardSize =
-      stats.score < 200
-        ? { rows: 6, cols: 6 }
-        : stats.score < 500
-        ? { rows: 8, cols: 8 }
-        : { rows: 10, cols: 10 };
+    const boardSize =
+      typeof scenario !== "undefined"
+        ? scenario.boardSize
+        : engine.boardSizeForScore(stats.score);
     const seed = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
     // below a score of 800 the easy Tom Toffee, afterwards Gustav Ganache with a handicap by score
-    const strong =
-      stats.score >= 800 &&
-      (typeof scenario === "undefined" || scenario.opponent !== "TomToffee");
-    if (typeof scenario !== "undefined") {
-      boardSize = scenario.boardSize;
-    }
-    const opponent = strong
-      ? {
-          id: "ai-gustav-ganache",
-          name: "Gustav Ganache",
-          type: PlayerType.AI_STRONG,
-          agent: {
-            kind: "GustavGanache",
-            options: { handicap: this.calculateHandicap(stats.score) },
-          },
-        }
-      : {
-          id: "ai-tom-toffee",
-          name: "Tom Toffee",
-          type: PlayerType.AI_EASY,
-          agent: { kind: "TomToffee" },
-        };
+    const opponent = engine.aiOpponentForScore(stats.score, {
+      forceEasy: typeof scenario !== "undefined" && scenario.opponent === "TomToffee",
+    });
     host.startNew({
       players: [
         {
