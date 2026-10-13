@@ -1960,6 +1960,8 @@ const realtimeEngine = require('./engine');
 const { getPlayerView } = require('./engine/view');
 const { computeMatchAwards, matchAwards } = require('./engine/awards');
 const { Agent, RandomBot, playMatch } = require('./engine/agents');
+const { TomToffee } = require('./engine/ai/tomToffee');
+const { GustavGanache, Personality } = require('./engine/ai/gustavGanache');
 const { DefaultBalance, valueAt } = require('./balance');
 
 module.exports.engine = {
@@ -1970,6 +1972,7 @@ module.exports.engine = {
     Agent,
     RandomBot,
     playMatch,
+    ai: { TomToffee, GustavGanache, Personality },
 };
 module.exports.DefaultBalance = DefaultBalance;
 module.exports.valueAt = valueAt;

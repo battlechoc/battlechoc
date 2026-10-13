@@ -34,6 +34,13 @@ class Agent {
         return this.reactionTimeMs;
     }
 
+    /** Plain data the agent needs to continue after a save (memory, moods); override when stateful. */
+    exportState() {
+        return {};
+    }
+
+    importState() {}
+
     /** Returns { type, payload } or null. Override in subclasses. */
     decide() {
         return null;
