@@ -12,6 +12,7 @@
 //   invite.decline { inviteId }
 //   invite.cancel  { inviteId }
 //   match.join     { matchId, lastSeq? }         (re)join a running match, e.g. after a reload
+//   presence.query { usernames }                 which of these players are online (friends list)
 //   intent         { matchId, uid, action: { type, payload } }  a match action (MatchActionTypes)
 //
 // Server → client
@@ -27,6 +28,7 @@
 //   ack            { matchId, uid, ok, error? }             answer to an intent
 //   presence       { matchId, player, online, forfeitAt }   the opponent left or came back
 //   result         { matchId, result }                      own outcome, awards and coins
+//   presence.list  { online }                               usernames of presence.query that are online
 //   error          { code, message, uid? }                  see LiveError
 
 const LIVE_PROTOCOL_VERSION = 1;
@@ -42,6 +44,7 @@ const ClientMessage = Object.freeze({
     INVITE_CANCEL: 'invite.cancel',
     MATCH_JOIN: 'match.join',
     INTENT: 'intent',
+    PRESENCE_QUERY: 'presence.query',
 });
 
 const ServerMessage = Object.freeze({
@@ -57,6 +60,7 @@ const ServerMessage = Object.freeze({
     ACK: 'ack',
     PRESENCE: 'presence',
     RESULT: 'result',
+    PRESENCE_LIST: 'presence.list',
     ERROR: 'error',
 });
 
