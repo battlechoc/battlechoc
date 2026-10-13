@@ -21,83 +21,34 @@ const setRandomSeed = seed => {
 
 const getRandomNumber = () => Math.random();
 
-const BoardCellTypes = Object.freeze({
-    WHITE: 'BoardCellTypes.WHITE',
-    BROWN: 'BoardCellTypes.BROWN',
-    BLACK: 'BoardCellTypes.BLACK'
-});
+const {
+    BoardCellTypes,
+    EntityType,
+    isDonut,
+    AttackType,
+    PlayerType,
+    EmptyPlayerStats,
+    finalLevel,
+    linearGrowFunction,
+    exponentialGrowFunction,
+} = require('./constants');
+const {
+    BattlechocError,
+    ActionValidationError,
+    InvalidActionIssuerError,
+    NoBuildingsLeftError,
+    NoCacaoLeftError,
+    BuildNotPossibleError,
+    NoAttacksLeftError,
+    TargetEmptyError,
+    UnexpectedStateError,
+    GameAlreadyEndedError,
+    GameNotRunningError,
+    AlreadyMolten,
+    NoHealthyInternetConnectionError,
+} = require('./errors');
 
 const SurrenderCosts = 20;
-
-const EntityType = Object.freeze({
-    CREAM: 'EntityType.CREAM',
-    FACTORY: 'EntityType.FACTORY',
-    FACTORY_EXTENSION: 'EntityType.FACTORY_EXTENSION',
-    CACAOTREE: 'EntityType.CACAOTREE',
-    RUM_TRUFFLE_CANNON: 'EntityType.RUM_TRUFFLE_CANNON',
-    FRUIT_CANNON: 'EntityType.FRUIT_CANNON',
-    SPYING_EASTER_BUNNY: 'EntityType.SPYING_EASTER_BUNNY',
-    XMAS_FACTORY: 'EntityType.XMAS_FACTORY',
-    HOT_CHOCOLATE_BALLISTA: 'EntityType.HOT_CHOCOLATE_BALLISTA',
-    CHOCOLATE_FOUNTAIN: 'EntityType.CHOCOLATE_FOUNTAIN',
-    DONUT_FACTORY: 'EntityType.DONUT_FACTORY',
-    DONUT_PORTAL_BLUE: 'EntityType.DONUT_PORTAL_BLUE',
-    DONUT_PORTAL_RED: 'EntityType.DONUT_PORTAL_RED',
-    DONUT_SURPRISE_YELLOW: 'EntityType.DONUT_SURPRISE_YELLOW',
-    DONUT_HEALTH_GREEN: 'EntityType.DONUT_HEALTH_GREEN',
-    DONUT_STOP_PINK: 'EntityType.DONUT_STOP_PINK',
-    DONUT_CREAM_WHITE: 'EntityType.DONUT_CREAM_WHITE',
-    isInstanceOf: function (entityType) {
-        if (entityType === EntityType.CREAM ||
-            entityType === EntityType.FACTORY ||
-            entityType === EntityType.CACAOTREE ||
-            entityType === EntityType.RUM_TRUFFLE_CANNON ||
-            entityType === EntityType.FACTORY_EXTENSION ||
-            entityType === EntityType.SPYING_EASTER_BUNNY ||
-            entityType === EntityType.XMAS_FACTORY ||
-            entityType === EntityType.HOT_CHOCOLATE_BALLISTA ||
-            entityType === EntityType.CHOCOLATE_FOUNTAIN ||
-            entityType === EntityType.FRUIT_CANNON ||
-            entityType === EntityType.DONUT_FACTORY ||
-            entityType === EntityType.DONUT_PORTAL_RED ||
-            entityType === EntityType.DONUT_PORTAL_BLUE ||
-            entityType === EntityType.DONUT_SURPRISE_YELLOW ||
-            entityType === EntityType.DONUT_HEALTH_GREEN ||
-            entityType === EntityType.DONUT_STOP_PINK ||
-            entityType === EntityType.DONUT_CREAM_WHITE) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-});
-
-const isDonut = entityType => [
-    EntityType.DONUT_HEALTH_GREEN,
-    EntityType.DONUT_STOP_PINK,
-    EntityType.DONUT_CREAM_WHITE,
-    EntityType.DONUT_PORTAL_RED,
-    EntityType.DONUT_PORTAL_BLUE,
-    EntityType.DONUT_SURPRISE_YELLOW
-].includes(entityType)
-
-const AttackType = Object.freeze({
-    TRUFFLE: 'AttackType.TRUFFLE',
-    FRUIT: 'AttackType.FRUIT',
-    HOT_CHOCOLATE: 'AttackType.HOT_CHOCOLATE',
-    BUNNY: 'AttackType.BUNNY',
-    isInstanceOf: function (attackType) {
-        if (attackType === AttackType.TRUFFLE ||
-            attackType === AttackType.FRUIT ||
-            attackType === AttackType.HOT_CHOCOLATE ||
-            attackType === AttackType.BUNNY) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-});
 
 const NotificationReasonType = Object.freeze({
     OPPONENT_FINISHED_TURN: 'OPPONENT_FINISHED_TURN',
@@ -130,39 +81,6 @@ const MultiplayerGameSessionState = Object.freeze({
     RUNNING: 'MultiplayerGameSessionState.Running',
     FINISHED: 'MultiplayerGameSessionState.Finished'
 });
-
-const EmptyPlayerStats = Object.freeze({
-    username: 'Chocnonymous',
-    tutorialStarted: false,
-    tutorialSkipped: false,
-    tutorialFinished: false,
-    coins: 0,
-    awards: [],
-    score: 0,
-    winnings: 0,
-    drawn: 0,
-    losses: 0,
-    trackRecord: [],
-    level: {
-        'EntityType.CREAM': 0,
-        'EntityType.FACTORY': 0,
-        'EntityType.FACTORY_EXTENSION': 0,
-        'EntityType.CACAOTREE': 0,
-        'EntityType.RUM_TRUFFLE_CANNON': 0,
-        'EntityType.FRUIT_CANNON': 0,
-        'EntityType.SPYING_EASTER_BUNNY': 0,
-        'EntityType.XMAS_FACTORY': 0,
-        'EntityType.HOT_CHOCOLATE_BALLISTA': 0,
-        'EntityType.CHOCOLATE_FOUNTAIN': 0,
-        'EntityType.DONUT_FACTORY': 0
-    }
-});
-
-
-const finalLevel = 20;
-const calculateDivisor = (start, end) => (finalLevel * Math.log2(2)) / Math.log2((end - finalLevel) / start);
-const linearGrowFunction = (level, start, end) => Math.round(((end - start) / (finalLevel - 1)) * level + start);
-const exponentialGrowFunction = (level, start, end) => Math.round(level + start * Math.pow(2, level / calculateDivisor(start, end)));
 
 const EntityDescriptors = Object.freeze(new Map([
     [EntityType.CREAM, () => ({
@@ -384,13 +302,6 @@ class Board {
         return { fields: playerFields, size: size, seed: seed };
     }
 }
-
-const PlayerType = Object.freeze({
-    HUMAN: 'PlayerType.HUMAN',
-    AI_STRONG: 'PlayerType.AI_STRONG',
-    AI_TUTORIAL: 'PlayerType.AI_TUTORIAL',
-    AI_EASY: 'PlayerType.AI_EASY',
-});
 
 function createPlayer(name, type, level, id) {
     if (typeof level === 'undefined') {
@@ -1316,94 +1227,6 @@ module.exports.attackReduction = attackReduction;
 module.exports.endGameReduction = endGameReduction;
 module.exports.finishGameReduction = finishGameReduction;
 module.exports.Rules = Rules
-
-/* errors */
-
-class BattlechocError extends Error { };
-
-class ActionValidationError extends BattlechocError {
-    constructor(action, ...args) {
-        super(...args);
-        this.message = action.type + ' is not a valid action';
-    }
-}
-
-class InvalidActionIssuerError extends BattlechocError {
-    constructor(action, issuerId, currentPlayerId, ...args) {
-        super(...args);
-        this.message = action.type + ' issued by ' + issuerId + ' cannot be issued by this issuer because it is not her turn. Current player is ' + currentPlayerId;
-    }
-}
-
-class NoBuildingsLeftError extends BattlechocError {
-    constructor(...args) {
-        super(...args);
-        this.message = 'No more buildings can be built';
-    }
-}
-
-class NoCacaoLeftError extends BattlechocError {
-    constructor(...args) {
-        super(...args);
-        this.message = 'Not enough cacao left';
-    }
-}
-
-class BuildNotPossibleError extends BattlechocError {
-    constructor(message, ...args) {
-        super(...args);
-        this.message = message;
-    }
-}
-
-class NoAttacksLeftError extends BattlechocError {
-    constructor(...args) {
-        super(...args);
-        this.message = 'No attacks left';
-    }
-}
-
-class TargetEmptyError extends BattlechocError {
-    constructor(...args) {
-        super(...args);
-        this.message = 'The target field is empty';
-    }
-}
-
-class UnexpectedStateError extends BattlechocError {
-    constructor(state, ...args) {
-        super(...args);
-        this.message = 'Unexpected state for action: ' + state;
-    }
-}
-
-class GameAlreadyEndedError extends BattlechocError {
-    constructor(action, ...args) {
-        super(...args);
-        this.message = 'Action ' + action.type + ' cannot be executed, because the game has already ended!';
-    }
-}
-
-class GameNotRunningError extends BattlechocError {
-    constructor(...args) {
-        super(...args);
-        this.message = 'There is currently no running game to access its gamestate!';
-    }
-}
-
-class AlreadyMolten extends BattlechocError {
-    constructor(...args) {
-        super(...args);
-        this.message = 'This field is already molten';
-    }
-}
-
-class NoHealthyInternetConnectionError extends BattlechocError {
-    constructor(...args) {
-        super(...args);
-        this.message = 'You may not have a healthy internet connection at the moment. Please try again later'
-    }
-}
 
 module.exports.BattlechocError = BattlechocError;
 module.exports.NoHealthyInternetConnectionError = NoHealthyInternetConnectionError;
