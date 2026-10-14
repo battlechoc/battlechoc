@@ -76,10 +76,12 @@ const clockText = (ms) => {
 
 const MatchBanner = ({ view, paused, online, presence, liveStatus, pending, tutorial }) => {
   const classes = useStyles();
-  const now = useMatchTime(4);
+  const ticked = useMatchTime(4);
   if (typeof view === "undefined") {
     return null;
   }
+  // the ticking time can lag behind a fresh view by up to a tick: never show older than the view
+  const now = Math.max(ticked, view.t);
   const me = view.players[view.viewer];
 
   let banner = null;
@@ -125,7 +127,9 @@ const MatchBanner = ({ view, paused, online, presence, liveStatus, pending, tuto
       </div>
       {message ? <div className={`${classes.banner} ${classes.message}`}>{message}</div> : null}
       {view.phase === MatchPhase.COUNTDOWN ? (
-        <div className={classes.countdown}>{seconds(view.phaseEndsAt - now) || t(tr.MATCH_GO)}</div>
+        <div className={classes.countdown} data-testid="countdown">
+          {Math.min(seconds(view.phaseEndsAt - now), seconds(view.balance.match.countdownMs)) || t(tr.MATCH_GO)}
+        </div>
       ) : null}
       {paused && view.phase !== MatchPhase.ENDED ? (
         <div

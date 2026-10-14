@@ -9,6 +9,9 @@ const InfoType = Object.freeze({
   INCREASE_FRUIT_ATTACKS_PER_TURN: "InfoType.INCREASE_FRUIT_ATTACKS_PER_TURN",
   BUNNY_CAUGHT: "InfoType.BUNNY_CAUGHT",
   DONUT_TRAP: "InfoType.DONUT_TRAP",
+  // something just became available (no recurring arrows): a building slot, a shot
+  BUILDING_READY: "InfoType.BUILDING_READY",
+  SHOT_READY: "InfoType.SHOT_READY",
 });
 
 export { InfoType };

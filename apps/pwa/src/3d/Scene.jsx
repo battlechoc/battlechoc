@@ -288,14 +288,19 @@ class Scene extends Component {
 
     info.material = material;
 
-    const drawInfo = (filename, color, text) => {
+    const drawInfo = (filename, color, text, plain = false) => {
       const image = new Image();
       image.src = filename;
       image.onload = () => {
         this.setRenderLoop();
         let top = 120;
         let left = 70;
-        if (filename === "/images/cacao.svg") {
+        if (plain) {
+          // palette icons come in different sizes: draw them into a fixed box
+          context.drawImage(image, 0, 0, 130, 130);
+          top = 130;
+          left = 90;
+        } else if (filename === "/images/cacao.svg") {
           context.drawImage(image, 0, 0, image.width * 0.5, image.height * 0.5);
           top = 100;
           left = 56;
@@ -435,6 +440,16 @@ class Scene extends Component {
         this.props.theme.color.primary.light,
         "+" + amount
       );
+    } else if (messageType === InfoType.BUILDING_READY) {
+      drawInfo("/images/buildings-icon.svg", this.props.theme.color.primary.light, "+" + amount, true);
+    } else if (messageType === InfoType.SHOT_READY) {
+      const images = {
+        [AttackType.TRUFFLE]: "truffle-cannon-icon",
+        [AttackType.FRUIT]: "fruit-cannon-icon",
+        [AttackType.BUNNY]: "easter-bunny-icon",
+        [AttackType.HOT_CHOCOLATE]: "ballista-icon",
+      };
+      drawInfo(`/images/${images[donutType] || images[AttackType.TRUFFLE]}.svg`, this.props.theme.color.primary.light, "+" + amount, true);
     } else if (messageType === InfoType.BUNNY_CAUGHT) {
       drawInfo("/images/bunny-caught.svg");
     } else if (messageType === InfoType.DONUT_TRAP) {
@@ -696,6 +711,16 @@ class Scene extends Component {
           this.spawnInfo(InfoType.DONUT_TRAP, position.clone(), undefined, trapDonuts[trap]);
         });
         const owner = mine ? 1 - view.viewer : view.viewer;
+        if (result.shielded && !result.fountainDestroyed) {
+          // the shield took the hit: the cell is coated in chocolate for a moment and the
+          // fountain shows what is left of its shield
+          this.chocolateFlash(position.clone());
+          const fountain = this.visibleFountain(view, owner, row, col);
+          if (fountain) {
+            this.showEnergyBar(fountain, this.boardPosition(fountain.position.row, fountain.position.col, ownBoard));
+          }
+          return;
+        }
         const cell = view.board.fields[view.players[owner].fieldIndex].grid[row * view.board.size.cols + col];
         const survivor = cell.occupiedBy.find(
           (entity) => entity.type !== EntityType.CREAM && !isDonut(entity.type)
@@ -815,11 +840,19 @@ class Scene extends Component {
     donuts.forEach(({ progress, state }, index) => {
       const step = progress <= 0 ? 0 : Math.max(1, Math.min(10, Math.round(progress * 10)));
       const x = index * 128 + 8;
-      // a faint whole donut shows how much is still missing
-      const ghost = this.donutImages[9];
-      if (ghost.complete && ghost.naturalWidth > 0) {
-        context.globalAlpha = 0.25;
-        context.drawImage(ghost, x, 8, 112, 112);
+      // a grey whole donut shows how much is still missing
+      const whole = this.donutImages[9];
+      if (whole.complete && whole.naturalWidth > 0) {
+        const grey = document.createElement("canvas");
+        grey.width = 112;
+        grey.height = 112;
+        const greyContext = grey.getContext("2d");
+        greyContext.drawImage(whole, 0, 0, 112, 112);
+        greyContext.globalCompositeOperation = "source-atop";
+        greyContext.fillStyle = "rgba(118, 112, 108, 0.88)";
+        greyContext.fillRect(0, 0, 112, 112);
+        context.globalAlpha = 0.92;
+        context.drawImage(grey, x, 8);
         context.globalAlpha = 1;
       }
       const image = step > 0 ? this.donutImages[step - 1] : undefined;
@@ -869,8 +902,54 @@ class Scene extends Component {
       if (newSlots > 0 && typeof entity.buildAt === "number" && typeof old.buildAt === "number" && entity.buildAt > old.buildAt) {
         newSlots -= 1;
         // a little to the side, the factory may have harvested cacao at the same moment
-        this.spawnInfo(InfoType.INCREASE_BUILDINGS_PER_TURN, { row: entity.position.row + 0.6, col: entity.position.col - 0.6 }, 1);
+        this.spawnInfo(InfoType.BUILDING_READY, { row: entity.position.row + 0.6, col: entity.position.col - 0.6 }, 1);
       }
+    });
+  }
+
+  // a visible fountain of `owner` whose 3x3 shield covers the cell, if any
+  visibleFountain(view, owner, row, col) {
+    const grid = view.board.fields[view.players[owner].fieldIndex].grid;
+    const { rows, cols } = view.board.size;
+    for (let r = row - 1; r <= row + 1; r++) {
+      for (let c = col - 1; c <= col + 1; c++) {
+        if (r >= 0 && c >= 0 && r < rows && c < cols) {
+          const fountain = grid[r * cols + c].occupiedBy.find((entity) => entity.type === EntityType.CHOCOLATE_FOUNTAIN);
+          if (fountain) {
+            return fountain;
+          }
+        }
+      }
+    }
+    return undefined;
+  }
+
+  // a brown chocolate dome over a cell that fades out: the shield absorbed the shot
+  chocolateFlash(position) {
+    const size = this.props.game ? this.props.game.board.size.cols : 10;
+    const top = size === 6 ? 4.6 : size === 8 ? 5.1 : 5.6;
+    const dome = MeshBuilder.CreateSphere("chocolate.flash." + Date.now(), { diameter: 1.05, segments: 16 }, this.scene);
+    dome.scaling = new Vector3(1, 0.75, 1);
+    dome.position = new Vector3(position.x, top, position.z);
+    dome.isPickable = false;
+    dome.renderingGroupId = 1;
+    const material = new StandardMaterial("chocolate.flash.material." + Date.now(), this.scene);
+    material.diffuseColor = Color3.FromHexString("#5A2E16");
+    material.emissiveColor = Color3.FromHexString("#3E1E0E");
+    material.specularColor = new Color3(0.4, 0.3, 0.25);
+    material.alpha = 0.85;
+    dome.material = material;
+    const fade = new Animation("chocolate.flash.fade", "alpha", 60, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+    fade.setKeys([
+      { frame: 0, value: 0.85 },
+      { frame: 30, value: 0.75 },
+      { frame: 60, value: 0 },
+    ]);
+    this.setRenderLoop(true);
+    this.scene.beginDirectAnimation(material, [fade], 0, 60, false, 1, () => {
+      dome.dispose();
+      material.dispose();
+      this.setRenderLoop(false);
     });
   }
 
@@ -912,14 +991,10 @@ class Scene extends Component {
           this.hopIndicator(indicator);
         }
         if (becameReady && Array.isArray(indicator.entity.weapons)) {
-          const icons = {
-            [AttackType.FRUIT]: InfoType.INCREASE_FRUIT_ATTACKS_PER_TURN,
-            [AttackType.BUNNY]: InfoType.INCREASE_SPY_ATTACKS_PER_TURN,
-          };
           donuts.forEach((donut, index) => {
-            if (donut.state === "ready" && indicator.states.length && indicator.previousStates[index] !== "ready") {
+            if (donut.state === "ready" && indicator.previousStates[index] && indicator.previousStates[index] !== "ready") {
               const attackType = indicator.entity.weapons[index].attackType;
-              this.spawnInfo(icons[attackType] || InfoType.INCREASE_ATTACKS_PER_TURN, indicator.entity.position, 1);
+              this.spawnInfo(InfoType.SHOT_READY, indicator.entity.position, 1, attackType);
             }
           });
         }
