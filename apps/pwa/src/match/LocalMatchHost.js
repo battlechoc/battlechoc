@@ -99,7 +99,15 @@ class LocalMatchHost {
     if (this.stopped || !this.match || !this.clock.running) {
       return;
     }
-    engine.advanceTo(this.match, this.now());
+    // every timer and agent decision at its own time, also after a long jump of the clock
+    const now = this.now();
+    let next = engine.nextWakeAt(this.match, this.agents);
+    while (next !== null && next <= now) {
+      engine.advanceTo(this.match, next);
+      this.runAgents();
+      next = engine.nextWakeAt(this.match, this.agents);
+    }
+    engine.advanceTo(this.match, now);
     this.runAgents();
     this.publish();
     this.schedule();

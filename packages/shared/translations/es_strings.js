@@ -366,5 +366,9 @@ module.exports = {
     "TUTORIAL_FIRE_MESSAGE": "Toca el botón del cañón abajo a la derecha para ver el tablero de Mimi y después toca su árbol o su fábrica. Mimi no tiene cañones: sin su fábrica ya no puede construir y pierde.",
     "TUTORIAL_WIN_TITLE": "Gana la partida",
     "TUTORIAL_WIN_MESSAGE": "Destruye la fábrica de Mimi. Tu cañón recarga y con más cañones irás más rápido.",
-    "TUTORIAL_SHOW_BUILDINGS": "Ver los edificios"
+    "TUTORIAL_SHOW_BUILDINGS": "Ver los edificios",
+    "MATCH_FIELD_HINT": "Más crema esconde tus edificios. Las casillas oscuras aceleran la fábrica, las blancas dan más cacao.",
+    "TIPS_HIDE": "Ocultar consejos",
+    "SETTINGS_TIPS_ON": "Consejos: sí",
+    "SETTINGS_TIPS_OFF": "Consejos: no"
 }

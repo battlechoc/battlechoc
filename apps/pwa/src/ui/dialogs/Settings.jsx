@@ -5,6 +5,7 @@ import {
   updatePlayerStats,
   hideQuickMessage,
   showQuickMessage,
+  loadUiState,
 } from "../UiActions";
 import { Jukebox } from "../misc";
 import {
@@ -304,6 +305,18 @@ const Settings = (props) => {
           <div className={classes.actions}>
             <Button
               className={classes.button}
+              color="secondary"
+              onClick={() => {
+                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                const enabled = !props.tipsEnabled;
+                props.loadUiState({ tipsEnabled: enabled });
+                OfflineStore.settingsStore.set("tips", enabled);
+              }}
+            >
+              {props.tipsEnabled ? t(tr.SETTINGS_TIPS_ON) : t(tr.SETTINGS_TIPS_OFF)}
+            </Button>
+            <Button
+              className={classes.button}
               onClick={() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                 setShowErrorReport(true);
@@ -366,9 +379,11 @@ const mapStateToProps = (state) => ({
   game: state.match.view,
   playerInfos: state.ui.playerInfos,
   tutorial: state.ui.tutorial,
+  tipsEnabled: state.ui.tipsEnabled,
 });
 
 const mapDispatchToProps = {
+  loadUiState,
   updatePlayerStats,
   hideQuickMessage,
   showQuickMessage,

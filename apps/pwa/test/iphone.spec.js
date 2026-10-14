@@ -57,7 +57,10 @@ test("counts down and starts the match after both factories are placed", async (
   await page.mouse.click(335, 238);
   await page.waitForTimeout(500);
   expect(await phase(page)).toBe("MatchPhase.PLACEMENT");
-  await advance(page, 20000);
+  // the AI places its factory within a few seconds, then the countdown starts
+  for (let i = 0; i < 10 && (await phase(page)) === "MatchPhase.PLACEMENT"; i++) {
+    await advance(page, 1000);
+  }
   expect(await phase(page)).toBe("MatchPhase.COUNTDOWN");
   await page.screenshot({ fullPage: true, path: "test/output/screenshot_test004_1.png" });
   await advance(page, 3000);

@@ -366,5 +366,9 @@ module.exports = {
     "TUTORIAL_FIRE_MESSAGE": "Tap the cannon button at the bottom right to look at Mimi's board, then tap her tree or her factory. Mimi has no cannons, so without her factory she can't build anymore and loses.",
     "TUTORIAL_WIN_TITLE": "Win the match",
     "TUTORIAL_WIN_MESSAGE": "Destroy Mimi's factory. Your cannon reloads, and more cannons make you faster.",
-    "TUTORIAL_SHOW_BUILDINGS": "Show the buildings"
+    "TUTORIAL_SHOW_BUILDINGS": "Show the buildings",
+    "MATCH_FIELD_HINT": "More cream hides your buildings. Dark fields make the factory faster, white fields grow more cacao.",
+    "TIPS_HIDE": "Hide tips",
+    "SETTINGS_TIPS_ON": "Tips: on",
+    "SETTINGS_TIPS_OFF": "Tips: off"
 }

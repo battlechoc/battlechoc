@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { connect } from "react-redux";
+import { loadUiState } from "../UiActions";
+import OfflineStore from "../../OfflineStore";
 import { createUseStyles } from "react-jss";
 import {
   engine,
@@ -14,35 +16,47 @@ import {
 const VISIBLE_MS = 6000;
 
 const useStyles = createUseStyles((theme) => ({
+  // small, just above the build palette, so it does not cover the boards
   card: {
     position: "absolute",
-    top: "calc(10px + 8vw)",
+    bottom: "calc(min(6vw, 11vh) + 2vw + 16px)",
     left: 5,
     zIndex: 4,
-    maxWidth: "34vw",
-    padding: "0.6em 0.9em",
-    borderRadius: "1em",
-    background: "rgba(27, 78, 105, 0.92)",
-    border: `0.25vw solid ${theme.color.secondary.light}`,
+    maxWidth: "24vw",
+    padding: "0.45em 0.7em",
+    borderRadius: "0.8em",
+    background: "rgba(27, 78, 105, 0.85)",
+    border: `0.18vw solid ${theme.color.secondary.light}`,
     color: "white",
-    fontSize: "1.4vw",
+    fontSize: "1.05vw",
     cursor: "pointer",
     userSelect: "none",
     [theme.breakpoints.orientation.portrait]: {
-      top: "calc(10px + 16vw)",
-      maxWidth: "80vw",
-      fontSize: "3.4vw",
+      bottom: "calc(12vw + 4vw + 16px)",
+      maxWidth: "70vw",
+      fontSize: "2.8vw",
     },
     "& h3": {
-      margin: "0 0 0.3em 0",
+      margin: "0 0 0.2em 0",
       fontFamily: "Bangers",
       fontWeight: "normal",
-      fontSize: "160%",
+      fontSize: "140%",
       color: theme.color.gold.light,
     },
     "& p": { margin: "0 0 0.4em 0" },
     "& ul": { margin: 0, paddingLeft: "1.1em" },
     "& li": { color: theme.color.primary.light, fontWeight: "bold" },
+  },
+  hide: {
+    marginTop: "0.4em",
+    padding: 0,
+    background: "none",
+    border: "none",
+    color: "white",
+    opacity: 0.75,
+    textDecoration: "underline",
+    cursor: "pointer",
+    fontSize: "85%",
   },
 }));
 
@@ -109,7 +123,7 @@ const buildingLines = (view, type) => {
   return lines;
 };
 
-const InfoCard = ({ view, tappedBuilding, selectedAttack, tutorial }) => {
+const InfoCard = ({ view, tappedBuilding, selectedAttack, tutorial, tipsEnabled, hideTips }) => {
   const classes = useStyles();
   const [subject, setSubject] = useState(undefined);
 
@@ -135,6 +149,7 @@ const InfoCard = ({ view, tappedBuilding, selectedAttack, tutorial }) => {
   // the tutorial's coach card takes this place and explains the buildings itself
   if (
     tutorial ||
+    !tipsEnabled ||
     typeof view === "undefined" ||
     view.phase !== engine.MatchPhase.RUNNING ||
     typeof subject === "undefined"
@@ -166,6 +181,16 @@ const InfoCard = ({ view, tappedBuilding, selectedAttack, tutorial }) => {
           ))}
         </ul>
       ) : null}
+      <button
+        type="button"
+        className={classes.hide}
+        onClick={(event) => {
+          event.stopPropagation();
+          hideTips();
+        }}
+      >
+        {t(tr.TIPS_HIDE)}
+      </button>
     </div>
   );
 };
@@ -175,6 +200,15 @@ const mapStateToProps = (state) => ({
   tappedBuilding: state.ui.tappedBuilding,
   selectedAttack: state.ui.selectedAttack,
   tutorial: state.ui.tutorial,
+  tipsEnabled: state.ui.tipsEnabled,
 });
 
-export default connect(mapStateToProps)(InfoCard);
+// the tips can be switched off here and back on in the settings
+const mapDispatchToProps = (dispatch) => ({
+  hideTips: () => {
+    dispatch(loadUiState({ tipsEnabled: false }));
+    OfflineStore.settingsStore.set("tips", false);
+  },
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(InfoCard);

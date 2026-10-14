@@ -12,6 +12,7 @@ import {
   translationKeys as tr,
   setCurrentLanguage,
   engine,
+  DefaultBalance,
 } from "@battlechoc/battlechoc-shared-functions";
 import { LocalMatchHost, matchSession } from "./match/LocalMatchHost";
 import { RemoteMatchHost } from "./match/RemoteMatchHost";
@@ -27,6 +28,7 @@ import {
   stopTutorial,
   showOverview,
   resetUi,
+  loadUiState,
   gameResumeable,
   updatePlayerStats,
   loadFriendsList,
@@ -113,6 +115,12 @@ class App extends Component {
     });
 
     this.connectLive();
+
+    OfflineStore.settingsStore.get("tips").then((tips) => {
+      if (tips === false) {
+        this.props.loadUiState({ tipsEnabled: false });
+      }
+    });
 
     OfflineStore.playerStore.get("friends").then((friends) => {
       if (typeof friends !== "undefined") {
@@ -358,7 +366,12 @@ class App extends Component {
     const opponent = engine.aiOpponentForScore(stats.score, {
       forceEasy: typeof scenario !== "undefined" && scenario.opponent === "TomToffee",
     });
+    // against the AI nobody has to hurry: field choice and placement wait for the player
+    const balance = JSON.parse(JSON.stringify(DefaultBalance));
+    balance.match.fieldChoiceTimeoutMs = 60 * 60 * 1000;
+    balance.match.placementTimeoutMs = 60 * 60 * 1000;
     host.startNew({
+      balance,
       players: [
         {
           id: this.props.playerInfos.uid || "local-player",
@@ -550,6 +563,7 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = {
+  loadUiState,
   gameResumeable,
   resetUi,
   showOverview,

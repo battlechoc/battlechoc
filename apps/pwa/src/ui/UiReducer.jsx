@@ -22,6 +22,8 @@ const uiReducer = createReducer(
     quickMessages: [],
     notification: { title: null, message: null, open: false },
     boardViewToggles: 0,
+    // the building and attack tips above the palette (settings: "tips")
+    tipsEnabled: true,
     boardFocus: { target: "own", seq: 0 },
     deniedAttack: { type: undefined, seq: 0 },
     // the tutorial lesson lets the player act; whitelistBuildings limits the build palette

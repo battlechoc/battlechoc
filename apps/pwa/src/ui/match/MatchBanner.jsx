@@ -67,6 +67,8 @@ const useStyles = createUseStyles((theme) => ({
 }));
 
 const seconds = (ms) => Math.max(0, Math.ceil(ms / 1000));
+// deadlines further away than this are no deadlines (single player, tutorial)
+const NO_DEADLINE_MS = 5 * 60 * 1000;
 const clockText = (ms) => {
   const total = seconds(ms);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
@@ -85,7 +87,8 @@ const MatchBanner = ({ view, paused, online, presence, liveStatus, pending, tuto
   if (view.phase === MatchPhase.PLACEMENT) {
     const grid = view.board.fields[me.fieldIndex].grid;
     const placed = grid.some((cell) => cell.occupiedBy.some((entity) => entity.type === EntityType.FACTORY));
-    banner = <p className="timer">{seconds(view.phaseEndsAt - now)}</p>;
+    // a countdown only for real deadlines (online); single player waits for the player
+    banner = view.phaseEndsAt - now < NO_DEADLINE_MS ? <p className="timer">{seconds(view.phaseEndsAt - now)}</p> : null;
     message = <p>{placed ? t(tr.MATCH_WAIT_FOR_OPPONENT) : t(tr.MATCH_PLACE_FACTORY)}</p>;
   } else if (view.phase === MatchPhase.RUNNING) {
     const stunned = now < me.stunnedUntil;

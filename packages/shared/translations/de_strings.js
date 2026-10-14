@@ -366,5 +366,9 @@ module.exports = {
     "TUTORIAL_FIRE_MESSAGE": "Tippe unten rechts auf den Kanonenknopf, um Mimis Spielbrett zu sehen, und dann auf ihren Baum oder ihre Fabrik. Mimi hat keine Kanonen: Ohne Fabrik kann sie nichts mehr bauen und verliert.",
     "TUTORIAL_WIN_TITLE": "Gewinne die Partie",
     "TUTORIAL_WIN_MESSAGE": "Zerstöre Mimis Fabrik. Deine Kanone lädt nach, und mit weiteren Kanonen geht es schneller.",
-    "TUTORIAL_SHOW_BUILDINGS": "Gebäude ansehen"
+    "TUTORIAL_SHOW_BUILDINGS": "Gebäude ansehen",
+    "MATCH_FIELD_HINT": "Mehr Sahne versteckt deine Gebäude. Dunkle Felder machen die Fabrik schneller, weiße Felder bringen mehr Kakao.",
+    "TIPS_HIDE": "Tipps ausblenden",
+    "SETTINGS_TIPS_ON": "Tipps: an",
+    "SETTINGS_TIPS_OFF": "Tipps: aus"
 }

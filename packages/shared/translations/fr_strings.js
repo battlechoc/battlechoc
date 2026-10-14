@@ -366,5 +366,9 @@ module.exports = {
     "TUTORIAL_FIRE_MESSAGE": "Touche le bouton du canon en bas à droite pour voir le plateau de Mimi, puis touche son arbre ou sa chocolaterie. Mimi n'a pas de canon : sans sa chocolaterie, elle ne peut plus construire et perd.",
     "TUTORIAL_WIN_TITLE": "Gagne la partie",
     "TUTORIAL_WIN_MESSAGE": "Détruis la chocolaterie de Mimi. Ton canon se recharge, et avec plus de canons tu iras plus vite.",
-    "TUTORIAL_SHOW_BUILDINGS": "Voir les bâtiments"
+    "TUTORIAL_SHOW_BUILDINGS": "Voir les bâtiments",
+    "MATCH_FIELD_HINT": "Plus de crème cache tes bâtiments. Les cases foncées accélèrent la chocolaterie, les blanches donnent plus de cacao.",
+    "TIPS_HIDE": "Masquer les astuces",
+    "SETTINGS_TIPS_ON": "Astuces : oui",
+    "SETTINGS_TIPS_OFF": "Astuces : non"
 }

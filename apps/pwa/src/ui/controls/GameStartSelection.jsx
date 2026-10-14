@@ -2,6 +2,7 @@ import React from "react";
 import { connect } from "react-redux";
 import {
   EntityType,
+  BoardCellTypes,
   engine,
   translate as t,
   translationKeys as tr,
@@ -80,6 +81,36 @@ const useStyles = createUseStyles((theme) => ({
         fontSize: "3.7vh",
       },
     },
+  },
+  // dark and white cells of a field: what the choice is about
+  cells: {
+    position: "absolute",
+    bottom: "4%",
+    right: "4%",
+    display: "flex",
+    gap: "0.6vw",
+    fontFamily: "Bangers",
+    fontSize: "2.2vw",
+    color: "white",
+    textShadow: "0.1vw 0.1vw 0.3vw black",
+    [theme.breakpoints.orientation.portrait]: { fontSize: "2.6vh", gap: "0.8vh" },
+    "& span": { display: "flex", alignItems: "center", gap: "0.3vw" },
+    "& i": {
+      display: "inline-block",
+      width: "1.6vw",
+      height: "1.6vw",
+      borderRadius: "0.3vw",
+      border: "0.15vw solid white",
+      [theme.breakpoints.orientation.portrait]: { width: "2vh", height: "2vh" },
+    },
+  },
+  fieldHint: {
+    fontSize: "1.5vw",
+    maxWidth: "26vw",
+    fontFamily: "inherit",
+    "-webkit-text-stroke": 0,
+    textShadow: "0.1vw 0.1vw 0.2vw rgba(0, 0, 0, 0.6)",
+    [theme.breakpoints.orientation.portrait]: { fontSize: "3.6vw", maxWidth: "80vw" },
   },
   creamy: {
     position: "absolute",
@@ -186,11 +217,25 @@ const GameStartSelection = (props) => {
                 .map((entity) => entity.type)
                 .includes(EntityType.CREAM)
             );
+            const count = (type) =>
+              game.board.fields[0].grid.filter((cell) => cell.type === type).length;
             return (
-              <div className={classes.cream}>
-                <div />
-                <p>{creamedCells.length}</p>
-              </div>
+              <>
+                <div className={classes.cream}>
+                  <div />
+                  <p>{creamedCells.length}</p>
+                </div>
+                <div className={classes.cells}>
+                  <span>
+                    <i style={{ background: "#3E211B" }} />
+                    {count(BoardCellTypes.BLACK)}
+                  </span>
+                  <span>
+                    <i style={{ background: "#F8DBAF" }} />
+                    {count(BoardCellTypes.WHITE)}
+                  </span>
+                </div>
+              </>
             );
           }
         })()}
@@ -205,7 +250,10 @@ const GameStartSelection = (props) => {
 
       <div className={classes.realtimeHint}>
         <p>{unlocked ? t(tr.MATCH_CHOOSE_FIELD) : t(tr.MATCH_OPPONENT_CHOOSES_FIELD)}</p>
-        <p>{Math.max(0, Math.ceil((game.phaseEndsAt - now) / 1000))}</p>
+        <p className={classes.fieldHint}>{t(tr.MATCH_FIELD_HINT)}</p>
+        {game.phaseEndsAt - now < 5 * 60 * 1000 ? (
+          <p>{Math.max(0, Math.ceil((game.phaseEndsAt - now) / 1000))}</p>
+        ) : null}
       </div>
 
       <div
@@ -219,11 +267,25 @@ const GameStartSelection = (props) => {
                 .map((entity) => entity.type)
                 .includes(EntityType.CREAM)
             );
+            const count = (type) =>
+              game.board.fields[1].grid.filter((cell) => cell.type === type).length;
             return (
-              <div className={classes.cream}>
-                <div />
-                <p>{creamedCells.length}</p>
-              </div>
+              <>
+                <div className={classes.cream}>
+                  <div />
+                  <p>{creamedCells.length}</p>
+                </div>
+                <div className={classes.cells}>
+                  <span>
+                    <i style={{ background: "#3E211B" }} />
+                    {count(BoardCellTypes.BLACK)}
+                  </span>
+                  <span>
+                    <i style={{ background: "#F8DBAF" }} />
+                    {count(BoardCellTypes.WHITE)}
+                  </span>
+                </div>
+              </>
             );
           }
         })()}

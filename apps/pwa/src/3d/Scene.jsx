@@ -268,12 +268,15 @@ class Scene extends Component {
     const id = Date.now();
     const info = MeshBuilder.CreatePlane(
       "info_" + id,
-      { width: 1.65, height: 1.65 },
+      { width: 1.15, height: 1.15 },
       this.scene
     );
     info.isPickable = false;
+    info.renderingGroupId = 1;
     info.position = position;
-    info.position.y = 6;
+    // starts right above the units of the board (boards sit lower the smaller they are)
+    const size = this.props.game ? this.props.game.board.size.cols : 10;
+    info.position.y = size === 6 ? 5 : size === 8 ? 5.5 : 6;
     info.billboardMode = Mesh.BILLBOARDMODE_ALL;
 
     const texture = new DynamicTexture("info_texture_" + id, 208, this.scene);
@@ -360,7 +363,7 @@ class Scene extends Component {
         ]);
         const keyframes = [
           { frame: 0, value: info.position.y },
-          { frame: 120, value: info.position.y + 2.5 },
+          { frame: 120, value: info.position.y + 1.4 },
         ];
         flyaway.setKeys(keyframes);
         info.animations = [flyaway, fade];
@@ -595,6 +598,9 @@ class Scene extends Component {
     this.opponentGameField.update();
     this.playerGameField.update();
     this.syncWeaponIndicators();
+    if (prevProps.game !== this.props.game) {
+      this.showProduction(prevProps.game, this.props.game);
+    }
     if (prevProps.matchEvents !== this.props.matchEvents) {
       this.playMatchEvents(this.props.matchEvents);
     }
@@ -759,11 +765,15 @@ class Scene extends Component {
             mesh.material = material;
             mesh.billboardMode = Mesh.BILLBOARDMODE_ALL;
             mesh.isPickable = false;
+            // drawn after the boards, so trees and buildings never cover it
+            mesh.renderingGroupId = 1;
             indicator = { mesh, material, texture, donuts, key: undefined, states: [], progress: [] };
             this.weaponIndicators.set(entity.id, indicator);
           }
           indicator.entity = entity;
-          indicator.mesh.position = new Vector3(cell.row, height - 0.3, cell.col);
+          // the factory models are taller than the cannons
+          const lift = producers.includes(entity.type) ? 0.35 : 0;
+          indicator.mesh.position = new Vector3(cell.row, height - 0.3 + lift, cell.col);
         })
     );
     this.weaponIndicators.forEach((indicator, id) => {
@@ -832,6 +842,38 @@ class Scene extends Component {
     texture.update();
   }
 
+  // floating +cacao over every producer that just harvested, +1 building over a factory or
+  // extension that just added a building slot (only when the storage was not full)
+  showProduction(before, view) {
+    if (!before || !view || before.phase !== engine.MatchPhase.RUNNING || view.phase !== engine.MatchPhase.RUNNING) {
+      return;
+    }
+    const viewer = view.viewer;
+    const entitiesById = (match) => {
+      const grid = match.board.fields[match.players[viewer].fieldIndex].grid;
+      const entities = new Map();
+      grid.forEach((cell) => cell.occupiedBy.forEach((entity) => entities.set(entity.id, entity)));
+      return entities;
+    };
+    const previous = entitiesById(before);
+    let newSlots = Math.max(0, view.players[viewer].buildTokens - before.players[viewer].buildTokens);
+    entitiesById(view).forEach((entity, id) => {
+      const old = previous.get(id);
+      if (!old) {
+        return;
+      }
+      if (typeof entity.cacaoAt === "number" && typeof old.cacaoAt === "number" && entity.cacaoAt > old.cacaoAt) {
+        const amount = engine.producerStats(view, viewer, entity).amount;
+        this.spawnInfo(InfoType.CACAO_HARVESTED, entity.position, amount);
+      }
+      if (newSlots > 0 && typeof entity.buildAt === "number" && typeof old.buildAt === "number" && entity.buildAt > old.buildAt) {
+        newSlots -= 1;
+        // a little to the side, the factory may have harvested cacao at the same moment
+        this.spawnInfo(InfoType.INCREASE_BUILDINGS_PER_TURN, { row: entity.position.row + 0.6, col: entity.position.col - 0.6 }, 1);
+      }
+    });
+  }
+
   // a short hop when a donut becomes ready
   hopIndicator(indicator) {
     const hop = new Animation("weapon.indicator.hop", "scaling", 60, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CONSTANT);
@@ -859,6 +901,7 @@ class Scene extends Component {
       const key = `${loaded}:` + donuts.map((donut) => `${donut.state}:${Math.round(donut.progress * 10)}`).join("|");
       if (key !== indicator.key) {
         const becameReady = donuts.some((donut, index) => donut.state === "ready" && indicator.states[index] && indicator.states[index] !== "ready");
+        indicator.previousStates = indicator.states;
         // a factory that just produced a building slot starts a new donut
         const slotArrived = donuts.some((donut, index) => (indicator.progress[index] || 0) > 0.8 && donut.progress < 0.2);
         indicator.key = key;
@@ -867,6 +910,18 @@ class Scene extends Component {
         this.drawDonuts(indicator.texture, donuts);
         if (becameReady || slotArrived) {
           this.hopIndicator(indicator);
+        }
+        if (becameReady && Array.isArray(indicator.entity.weapons)) {
+          const icons = {
+            [AttackType.FRUIT]: InfoType.INCREASE_FRUIT_ATTACKS_PER_TURN,
+            [AttackType.BUNNY]: InfoType.INCREASE_SPY_ATTACKS_PER_TURN,
+          };
+          donuts.forEach((donut, index) => {
+            if (donut.state === "ready" && indicator.states.length && indicator.previousStates[index] !== "ready") {
+              const attackType = indicator.entity.weapons[index].attackType;
+              this.spawnInfo(icons[attackType] || InfoType.INCREASE_ATTACKS_PER_TURN, indicator.entity.position, 1);
+            }
+          });
         }
         changed = true;
       }

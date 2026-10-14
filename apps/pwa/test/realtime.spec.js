@@ -88,12 +88,22 @@ test("walks through field choice, simultaneous placement and countdown", async (
   await startMatch(page);
   expect(await phase(page)).toBe("MatchPhase.FIELD_CHOICE");
   await expect(page.getByText("Choose your field").first()).toBeVisible();
+  // against the AI nothing has a deadline: the match waits for the player
+  await advance(page, 60000);
+  expect(await phase(page)).toBe("MatchPhase.FIELD_CHOICE");
   await chooseField(page);
   expect(await phase(page)).toBe("MatchPhase.PLACEMENT");
   await expect(page.getByTestId("match-banner")).toBeAttached();
   await expect(page.getByText("Place your chocolate factory").first()).toBeVisible();
-  // the AI places its factory at the deadline, then the countdown starts
-  await advance(page, 20000);
+  await advance(page, 60000);
+  expect(await phase(page)).toBe("MatchPhase.PLACEMENT");
+  await page.evaluate(() => {
+    const h = window.__battlechoc.host;
+    const grid = h.match.board.fields[h.match.players[0].fieldIndex].grid;
+    const cell = grid.find((c) => c.occupiedBy.every((e) => e.type === "EntityType.CREAM"));
+    return h.submit("battlechoc/match/placeFactory", { row: cell.row, col: cell.col });
+  });
+  // the AI has placed its factory by now, so the countdown starts right away
   expect(await phase(page)).toBe("MatchPhase.COUNTDOWN");
   await advance(page, 3000);
   expect(await phase(page)).toBe("MatchPhase.RUNNING");
@@ -141,7 +151,8 @@ test("pauses when the tab is hidden and resumes after a reload", async ({ page }
   await openAsPlayer(page);
   await startMatch(page);
   await reachRunningPhase(page);
-  await advance(page, 30000);
+  // short: the AI plays along and could end the match of a passive player
+  await advance(page, 5000);
   await page.evaluate(() => {
     Object.defineProperty(document, "visibilityState", {
       configurable: true,
@@ -184,13 +195,17 @@ test("plays against Gustav Ganache on a 10x10 board with a high score", async ({
   await page.screenshot({ path: "test/output/screenshot_realtime_gustav.png" });
 });
 
-test("ends at the time limit and shows the overview", async ({ page }) => {
+test("a passive player's match ends within the time limit and shows the overview", async ({ page }) => {
   await openAsPlayer(page);
   await startMatch(page);
   await reachRunningPhase(page);
+  // the AI plays all along; it may win before the time limit
   await advance(page, 11 * 60 * 1000);
   expect(await phase(page)).toBe("MatchPhase.ENDED");
-  await expect(page.getByText("Time is up!").first()).toBeVisible();
+  const reason = await page.evaluate(() => window.__battlechoc.host.match.outcome.reason);
+  if (reason === "OutcomeReason.TIME_LIMIT") {
+    await expect(page.getByText("Time is up!").first()).toBeVisible();
+  }
   await expect(page.getByText(/You won|You lost/i).first()).toBeVisible();
   await page.screenshot({ path: "test/output/screenshot_realtime_ended.png" });
 });

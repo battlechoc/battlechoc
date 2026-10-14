@@ -366,5 +366,9 @@ module.exports = {
     "TUTORIAL_FIRE_MESSAGE": "右下のキャノンボタンをタップしてミミの盤を見て、彼女の木か工場をタップしましょう。ミミにはキャノンがないので、工場がなくなると建設できなくなり負けです。",
     "TUTORIAL_WIN_TITLE": "勝利をつかもう",
     "TUTORIAL_WIN_MESSAGE": "ミミの工場を壊しましょう。キャノンは再装填され、キャノンを増やせばもっと速く攻められます。",
-    "TUTORIAL_SHOW_BUILDINGS": "建物を見る"
+    "TUTORIAL_SHOW_BUILDINGS": "建物を見る",
+    "MATCH_FIELD_HINT": "クリームが多いほど建物を隠せます。ダークのマスは工場を速くし、ホワイトのマスはカカオを増やします。",
+    "TIPS_HIDE": "ヒントを隠す",
+    "SETTINGS_TIPS_ON": "ヒント: オン",
+    "SETTINGS_TIPS_OFF": "ヒント: オフ"
 }

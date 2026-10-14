@@ -366,5 +366,9 @@ module.exports = {
     "TUTORIAL_FIRE_MESSAGE": "Chạm vào nút pháo ở góc dưới bên phải để xem bàn của Mimi, rồi chạm vào cây hoặc nhà máy của cô ấy. Mimi không có pháo, nên mất nhà máy là cô ấy không thể xây nữa và thua.",
     "TUTORIAL_WIN_TITLE": "Thắng trận đấu",
     "TUTORIAL_WIN_MESSAGE": "Phá hủy nhà máy của Mimi. Pháo của bạn sẽ nạp lại, và thêm pháo giúp bạn nhanh hơn.",
-    "TUTORIAL_SHOW_BUILDINGS": "Xem các công trình"
+    "TUTORIAL_SHOW_BUILDINGS": "Xem các công trình",
+    "MATCH_FIELD_HINT": "Nhiều kem hơn giúp giấu công trình. Ô sẫm màu làm nhà máy nhanh hơn, ô trắng cho nhiều ca cao hơn.",
+    "TIPS_HIDE": "Ẩn mẹo",
+    "SETTINGS_TIPS_ON": "Mẹo: bật",
+    "SETTINGS_TIPS_OFF": "Mẹo: tắt"
 }

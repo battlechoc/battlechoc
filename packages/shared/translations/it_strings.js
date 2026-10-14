@@ -366,5 +366,9 @@ module.exports = {
     "TUTORIAL_FIRE_MESSAGE": "Tocca il pulsante del cannone in basso a destra per vedere il tabellone di Mimi, poi tocca il suo albero o la sua fabbrica. Mimi non ha cannoni: senza la fabbrica non può più costruire e perde.",
     "TUTORIAL_WIN_TITLE": "Vinci la partita",
     "TUTORIAL_WIN_MESSAGE": "Distruggi la fabbrica di Mimi. Il tuo cannone si ricarica e con più cannoni farai prima.",
-    "TUTORIAL_SHOW_BUILDINGS": "Mostra gli edifici"
+    "TUTORIAL_SHOW_BUILDINGS": "Mostra gli edifici",
+    "MATCH_FIELD_HINT": "Più crema nasconde i tuoi edifici. Le caselle scure velocizzano la fabbrica, quelle bianche danno più cacao.",
+    "TIPS_HIDE": "Nascondi i suggerimenti",
+    "SETTINGS_TIPS_ON": "Suggerimenti: sì",
+    "SETTINGS_TIPS_OFF": "Suggerimenti: no"
 }
