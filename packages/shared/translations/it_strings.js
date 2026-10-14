@@ -371,5 +371,5 @@ module.exports = {
     "TIPS_HIDE": "Nascondi i suggerimenti",
     "SETTINGS_TIPS_ON": "Suggerimenti: sì",
     "SETTINGS_TIPS_OFF": "Suggerimenti: no",
-    "UNLOCK_NEEDS_NAME": "Prima scegli un nome giocatore nelle impostazioni."
+    "UNLOCK_NEEDS_NAME": "Per giocare online serve un nome giocatore. Ne ricevi uno appena battlechoc raggiunge il suo server, oppure lo scegli nelle impostazioni."
 }

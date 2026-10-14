@@ -371,5 +371,5 @@ module.exports = {
     "TIPS_HIDE": "Tipps ausblenden",
     "SETTINGS_TIPS_ON": "Tipps: an",
     "SETTINGS_TIPS_OFF": "Tipps: aus",
-    "UNLOCK_NEEDS_NAME": "Wähle zuerst in den Einstellungen einen Spielernamen."
+    "UNLOCK_NEEDS_NAME": "Online-Partien brauchen einen Spielernamen. Du bekommst einen, sobald battlechoc seinen Server erreicht, oder wählst einen in den Einstellungen."
 }

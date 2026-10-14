@@ -371,5 +371,5 @@ module.exports = {
     "TIPS_HIDE": "Ẩn mẹo",
     "SETTINGS_TIPS_ON": "Mẹo: bật",
     "SETTINGS_TIPS_OFF": "Mẹo: tắt",
-    "UNLOCK_NEEDS_NAME": "Hãy chọn tên người chơi trong phần cài đặt trước."
+    "UNLOCK_NEEDS_NAME": "Chơi trực tuyến cần tên người chơi. Bạn sẽ nhận được tên ngay khi battlechoc kết nối tới máy chủ, hoặc tự chọn trong phần cài đặt."
 }

@@ -371,5 +371,5 @@ module.exports = {
     "TIPS_HIDE": "ヒントを隠す",
     "SETTINGS_TIPS_ON": "ヒント: オン",
     "SETTINGS_TIPS_OFF": "ヒント: オフ",
-    "UNLOCK_NEEDS_NAME": "まず設定でプレイヤー名を決めてください。"
+    "UNLOCK_NEEDS_NAME": "オンライン対戦にはプレイヤー名が必要です。battlechocがサーバーにつながるとすぐに付与されます。設定で自分で決めることもできます。"
 }

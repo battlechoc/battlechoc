@@ -379,10 +379,11 @@ const Hud = (props) => {
           const firstPlayScreen =
             playerInfos.stats.tutorialFinished === false &&
             playerInfos.stats.tutorialSkipped === false;
-          const locked =
-            typeof playername === "undefined" ||
-            playername === "Chocnonymous" ||
-            score < 1;
+          // the first coins unlock the Choclab; online play also needs a player name, under
+          // which others find and invite you (the server assigns one once it is reachable)
+          const unnamed = typeof playername === "undefined" || playername === "Chocnonymous";
+          const lockedChoclab = score < 1;
+          const lockedOnline = unnamed || score < 1;
 
           if (firstPlayScreen) {
             controls.push(
@@ -436,7 +437,7 @@ const Hud = (props) => {
                 className={classes.menuButton}
                 key="1"
                 size="huge"
-                locked={locked}
+                locked={lockedOnline}
                 onLockedClick={() => notifyLocked(t(tr.ONLINE_TITLE))}
                 color="secondary"
                 onClick={() => setShowOnlineLobby(true)}
@@ -449,7 +450,7 @@ const Hud = (props) => {
                 className={classes.menuButton}
                 key="2"
                 size="huge"
-                locked={locked}
+                locked={lockedChoclab}
                 onLockedClick={() => notifyLocked(t(tr.MAIN_MENU_CHOCLAB))}
                 color="accent"
                 onClick={() => {

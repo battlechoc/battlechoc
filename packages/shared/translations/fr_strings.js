@@ -371,5 +371,5 @@ module.exports = {
     "TIPS_HIDE": "Masquer les astuces",
     "SETTINGS_TIPS_ON": "Astuces : oui",
     "SETTINGS_TIPS_OFF": "Astuces : non",
-    "UNLOCK_NEEDS_NAME": "Choisis d'abord un nom de joueur dans les paramètres."
+    "UNLOCK_NEEDS_NAME": "Les parties en ligne demandent un nom de joueur. Tu en reçois un dès que battlechoc atteint son serveur, ou tu en choisis un dans les paramètres."
 }
