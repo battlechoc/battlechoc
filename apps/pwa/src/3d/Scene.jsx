@@ -95,6 +95,13 @@ class Scene extends Component {
     this.renderLoopRepetitions = 0;
     this.opponentGameFieldDistance = 12;
     this.weaponIndicators = new Map();
+    // the loading donut in ten steps doubles as the progress indicator above the units
+    this.donutImages = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((percent) => {
+      const image = new Image();
+      image.onload = () => this.updateWeaponIndicators();
+      image.src = `/images/progress-${percent}.svg`;
+      return image;
+    });
     this.weaponIndicatorInterval = setInterval(() => this.updateWeaponIndicators(), 250);
   }
 
@@ -469,12 +476,7 @@ class Scene extends Component {
   };
 
   clear() {
-    this.weaponIndicators.forEach((indicator) => {
-      indicator.mesh.dispose();
-      indicator.texture.dispose();
-      indicator.material.dispose();
-    });
-    this.weaponIndicators.clear();
+    this.weaponIndicators.forEach((indicator, id) => this.disposeIndicator(id, indicator));
     const instances = this.scene.meshes.filter((mesh) => mesh.isAnInstance);
     for (const instance of instances) {
       instance.dispose();
@@ -705,8 +707,10 @@ class Scene extends Component {
     });
   }
 
-  // a ring above each own weapon unit that fills up while it reloads: light while charging,
-  // blue once it can fire early (rush), green when the shot is free; one ring per weapon
+  // A donut above every weapon unit, factory and extension that grows while it reloads or
+  // produces the next building slot. Its glaze shows the state: plain while charging, blue
+  // when the weapon can fire early, green when the shot is free or the building storage is
+  // full. It hops when it gets ready. A fruit cannon shows one donut per weapon.
   syncWeaponIndicators() {
     const view = this.props.game;
     if (typeof view === "undefined" || this.playerGameField === null || view.phase !== engine.MatchPhase.RUNNING) {
@@ -720,15 +724,31 @@ class Scene extends Component {
     } else if (view.board.size.cols === 8) {
       height = 6.1;
     }
+    const producers = [EntityType.FACTORY, EntityType.FACTORY_EXTENSION];
     grid.forEach((cell) =>
       cell.occupiedBy
-        .filter((entity) => Array.isArray(entity.weapons))
+        .filter((entity) => Array.isArray(entity.weapons) || producers.includes(entity.type))
         .forEach((entity) => {
           present.add(entity.id);
+          const donuts = Array.isArray(entity.weapons) ? Math.min(2, entity.weapons.length) : 1;
           let indicator = this.weaponIndicators.get(entity.id);
+          if (indicator && indicator.donuts !== donuts) {
+            this.disposeIndicator(entity.id, indicator);
+            indicator = undefined;
+          }
           if (!indicator) {
-            const mesh = MeshBuilder.CreatePlane("weapon.indicator." + entity.id, { size: 0.85 }, this.scene);
-            const texture = new DynamicTexture("weapon.indicator.texture." + entity.id, { width: 128, height: 128 }, this.scene, true);
+            const size = 0.8;
+            const mesh = MeshBuilder.CreatePlane(
+              "weapon.indicator." + entity.id,
+              { width: size * donuts, height: size },
+              this.scene
+            );
+            const texture = new DynamicTexture(
+              "weapon.indicator.texture." + entity.id,
+              { width: 128 * donuts, height: 128 },
+              this.scene,
+              true
+            );
             texture.hasAlpha = true;
             const material = new StandardMaterial("weapon.indicator.material." + entity.id, this.scene);
             material.diffuseTexture = texture;
@@ -739,45 +759,90 @@ class Scene extends Component {
             mesh.material = material;
             mesh.billboardMode = Mesh.BILLBOARDMODE_ALL;
             mesh.isPickable = false;
-            indicator = { mesh, material, texture, key: undefined };
+            indicator = { mesh, material, texture, donuts, key: undefined, states: [], progress: [] };
             this.weaponIndicators.set(entity.id, indicator);
           }
-          indicator.weapons = entity.weapons;
-          indicator.mesh.position = new Vector3(cell.row, height - 0.35, cell.col);
+          indicator.entity = entity;
+          indicator.mesh.position = new Vector3(cell.row, height - 0.3, cell.col);
         })
     );
     this.weaponIndicators.forEach((indicator, id) => {
       if (!present.has(id)) {
-        indicator.mesh.dispose();
-        indicator.texture.dispose();
-        indicator.material.dispose();
-        this.weaponIndicators.delete(id);
+        this.disposeIndicator(id, indicator);
       }
     });
     this.updateWeaponIndicators(false);
   }
 
-  drawWeaponRings(texture, rings) {
-    const colors = { ready: "#90D01B", rushable: "#3190C3", charging: "#F4ECE4" };
+  disposeIndicator(id, indicator) {
+    indicator.mesh.dispose();
+    indicator.texture.dispose();
+    indicator.material.dispose();
+    this.weaponIndicators.delete(id);
+  }
+
+  // progress and state of each donut of an indicator
+  indicatorDonuts(view, entity, now) {
+    if (Array.isArray(entity.weapons)) {
+      return entity.weapons.slice(0, 2).map((weapon) => {
+        const status = engine.weaponStatus(view, weapon, now);
+        return { progress: status.progress, state: status.state };
+      });
+    }
+    const me = view.players[view.viewer];
+    if (me.buildTokens >= engine.buildCapacity(view, view.viewer)) {
+      return [{ progress: 1, state: "ready" }];
+    }
+    const intervalMs = engine.generatorStats(view, view.viewer, entity).intervalMs;
+    const progress = typeof entity.buildAt === "number" ? 1 - (entity.buildAt - now) / intervalMs : 0;
+    return [{ progress: Math.max(0, Math.min(1, progress)), state: "charging" }];
+  }
+
+  drawDonuts(texture, donuts) {
+    const tints = { ready: "rgba(144, 208, 27, 0.55)", rushable: "rgba(49, 144, 195, 0.6)" };
     const context = texture.getContext();
-    context.clearRect(0, 0, 128, 128);
-    rings.forEach(({ progress, state }, index) => {
-      const radius = 52 - index * 18;
-      context.beginPath();
-      context.arc(64, 64, radius, 0, 2 * Math.PI);
-      context.strokeStyle = "rgba(45, 25, 15, 0.6)";
-      context.lineWidth = 16;
-      context.stroke();
-      if (progress > 0) {
-        context.beginPath();
-        context.arc(64, 64, radius, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * progress);
-        context.strokeStyle = colors[state];
-        context.lineWidth = 12;
-        context.lineCap = "round";
-        context.stroke();
+    context.clearRect(0, 0, 128 * donuts.length, 128);
+    donuts.forEach(({ progress, state }, index) => {
+      const step = progress <= 0 ? 0 : Math.max(1, Math.min(10, Math.round(progress * 10)));
+      const x = index * 128 + 8;
+      // a faint whole donut shows how much is still missing
+      const ghost = this.donutImages[9];
+      if (ghost.complete && ghost.naturalWidth > 0) {
+        context.globalAlpha = 0.25;
+        context.drawImage(ghost, x, 8, 112, 112);
+        context.globalAlpha = 1;
       }
+      const image = step > 0 ? this.donutImages[step - 1] : undefined;
+      if (!image || !image.complete || image.naturalWidth === 0) {
+        return;
+      }
+      // tint the glaze on a scratch canvas, then copy it into the texture
+      const scratch = document.createElement("canvas");
+      scratch.width = 112;
+      scratch.height = 112;
+      const scratchContext = scratch.getContext("2d");
+      scratchContext.drawImage(image, 0, 0, 112, 112);
+      if (tints[state]) {
+        scratchContext.globalCompositeOperation = "source-atop";
+        scratchContext.fillStyle = tints[state];
+        scratchContext.fillRect(0, 0, 112, 112);
+      }
+      context.drawImage(scratch, x, 8);
     });
     texture.update();
+  }
+
+  // a short hop when a donut becomes ready
+  hopIndicator(indicator) {
+    const hop = new Animation("weapon.indicator.hop", "scaling", 60, Animation.ANIMATIONTYPE_VECTOR3, Animation.ANIMATIONLOOPMODE_CONSTANT);
+    hop.setKeys([
+      { frame: 0, value: new Vector3(1, 1, 1) },
+      { frame: 7, value: new Vector3(1.4, 1.4, 1.4) },
+      { frame: 14, value: new Vector3(0.9, 0.9, 0.9) },
+      { frame: 20, value: new Vector3(1, 1, 1) },
+    ]);
+    this.setRenderLoop(true);
+    this.scene.beginDirectAnimation(indicator.mesh, [hop], 0, 20, false, 1, () => this.setRenderLoop(false));
   }
 
   updateWeaponIndicators(render = true) {
@@ -786,17 +851,23 @@ class Scene extends Component {
     }
     const view = this.props.game;
     const now = matchSession.host.now();
+    const loaded = this.donutImages.filter((image) => image.complete).length;
     let changed = false;
     this.weaponIndicators.forEach((indicator) => {
-      const rings = indicator.weapons.slice(0, 2).map((weapon) => {
-        const status = engine.weaponStatus(view, weapon, now);
-        return { progress: status.progress, state: status.state };
-      });
-      // redraw only when a ring visibly moved
-      const key = rings.map((ring) => `${ring.state}:${Math.round(ring.progress * 48)}`).join("|");
+      const donuts = this.indicatorDonuts(view, indicator.entity, now);
+      // redraw only when a donut grew a piece or changed its glaze
+      const key = `${loaded}:` + donuts.map((donut) => `${donut.state}:${Math.round(donut.progress * 10)}`).join("|");
       if (key !== indicator.key) {
+        const becameReady = donuts.some((donut, index) => donut.state === "ready" && indicator.states[index] && indicator.states[index] !== "ready");
+        // a factory that just produced a building slot starts a new donut
+        const slotArrived = donuts.some((donut, index) => (indicator.progress[index] || 0) > 0.8 && donut.progress < 0.2);
         indicator.key = key;
-        this.drawWeaponRings(indicator.texture, rings);
+        indicator.states = donuts.map((donut) => donut.state);
+        indicator.progress = donuts.map((donut) => donut.progress);
+        this.drawDonuts(indicator.texture, donuts);
+        if (becameReady || slotArrived) {
+          this.hopIndicator(indicator);
+        }
         changed = true;
       }
     });
