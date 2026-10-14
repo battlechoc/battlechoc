@@ -297,7 +297,7 @@ module.exports = {
     "PLAYER_NAME_GENERATED_TITLE": "Ein zufälliger Spielername wurde für dich ausgewählt",
     "PLAYER_NAME_GENERATED_BODY": "Wir haben den Name {{name}} für dich ausgewählt, um dich für die Multiplayer-Funktionen freizuschalten. Du kannst den Namen jederzeit im Einstellungsmenü ändern.",
     "COINS_FOR_NEXT_FEATURE_TITLE": "{{feature}} noch nicht freigeschaltet",
-    "COINS_FOR_NEXT_FEATURE_BODY": "Sammle noch {{missingScore}} Schokomünzen, um die {{feature}}-Erweiterung freizuschalten.",
+    "COINS_FOR_NEXT_FEATURE_BODY": "Gewinne eine Partie, um deine ersten Schokomünzen zu verdienen und „{{feature}}“ freizuschalten.",
     "MULTIPLAYER_AUTOMATICALLY_LOSE": "Wenn du nicht spielst verlierst du in {{hours}} Stunden und {{minutes}} Minuten",
     "MULTIPLAYER_AUTOMATICALLY_WIN": "Wenn dein Gegner nicht spielt, gewinnst du in {{hours}} Stunden und {{minutes}} Minuten",
     "SERVER_NOTIFICATION_CHALLENGE_BODY": "Dies könnte ein großartiger Kampf sein!",
@@ -370,5 +370,6 @@ module.exports = {
     "MATCH_FIELD_HINT": "Mehr Sahne versteckt deine Gebäude. Dunkle Felder machen die Fabrik schneller, weiße Felder bringen mehr Kakao.",
     "TIPS_HIDE": "Tipps ausblenden",
     "SETTINGS_TIPS_ON": "Tipps: an",
-    "SETTINGS_TIPS_OFF": "Tipps: aus"
+    "SETTINGS_TIPS_OFF": "Tipps: aus",
+    "UNLOCK_NEEDS_NAME": "Wähle zuerst in den Einstellungen einen Spielernamen."
 }

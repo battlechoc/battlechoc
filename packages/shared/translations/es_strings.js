@@ -100,7 +100,7 @@ module.exports = {
     "CHOCLAB_INCREASED_BY": "incrementado por",
     "CHOCLAB_LEVEL": "Nivel",
     "CHOCLAB_UPGRADE": "Potenciar",
-    "COINS_FOR_NEXT_FEATURE_BODY": "Debes ganar {{missingScore}} monedas más para desbloquear la función {{feature}}.",
+    "COINS_FOR_NEXT_FEATURE_BODY": "Gana una partida para conseguir tus primeras monedas de chocolate y desbloquear «{{feature}}».",
     "COINS_FOR_NEXT_FEATURE_TITLE": "{{feature}} aún no desbloqueado",
     "ENGLISH": "English",
     "ERROR_GAME_NOT_JOINABLE_VIA_URL": "No se pudo iniciar el juego. Por favor revise su conexion a internet.",
@@ -370,5 +370,6 @@ module.exports = {
     "MATCH_FIELD_HINT": "Más crema esconde tus edificios. Las casillas oscuras aceleran la fábrica, las blancas dan más cacao.",
     "TIPS_HIDE": "Ocultar consejos",
     "SETTINGS_TIPS_ON": "Consejos: sí",
-    "SETTINGS_TIPS_OFF": "Consejos: no"
+    "SETTINGS_TIPS_OFF": "Consejos: no",
+    "UNLOCK_NEEDS_NAME": "Primero elige un nombre de jugador en los ajustes."
 }

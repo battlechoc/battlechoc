@@ -237,7 +237,7 @@ module.exports = {
     "PLAYER_NAME_GENERATED_TITLE": "A random player name has been set for you",
     "PLAYER_NAME_GENERATED_BODY": "We chose the name {{name}} for you to enable you for the multiplayer features. You can change this name at any time in the settings menu.",
     "COINS_FOR_NEXT_FEATURE_TITLE": "{{feature}} not yet unlocked",
-    "COINS_FOR_NEXT_FEATURE_BODY": "You need to earn {{missingScore}} more coins to unlock the {{feature}} feature.",
+    "COINS_FOR_NEXT_FEATURE_BODY": "Win a match to earn your first chocolate coins and unlock “{{feature}}”.",
     "MULTIPLAYER_AUTOMATICALLY_LOSE": "If you don't play, you will lose in {{hours}} hours and {{minutes}} minutes",
     "MULTIPLAYER_AUTOMATICALLY_WIN": "If your opponent does not play you will win in {{hours}} hours and {{minutes}} minutes",
     "AWARDS_NERD_TITLE": "Nerd",
@@ -370,5 +370,6 @@ module.exports = {
     "MATCH_FIELD_HINT": "More cream hides your buildings. Dark fields make the factory faster, white fields grow more cacao.",
     "TIPS_HIDE": "Hide tips",
     "SETTINGS_TIPS_ON": "Tips: on",
-    "SETTINGS_TIPS_OFF": "Tips: off"
+    "SETTINGS_TIPS_OFF": "Tips: off",
+    "UNLOCK_NEEDS_NAME": "Choose a player name in the settings first."
 }

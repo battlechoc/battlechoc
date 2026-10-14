@@ -100,7 +100,7 @@ module.exports = {
     "CHOCLAB_INCREASED_BY": "増加した",
     "CHOCLAB_LEVEL": "レベル",
     "CHOCLAB_UPGRADE": "アップグレードする",
-    "COINS_FOR_NEXT_FEATURE_BODY": "{{missingScore}}機能のロックを解除するには、さらに{{feature}}コインを獲得する必要があります。",
+    "COINS_FOR_NEXT_FEATURE_BODY": "対戦に勝って最初のチョココインを手に入れると「{{feature}}」が解放されます。",
     "COINS_FOR_NEXT_FEATURE_TITLE": "{{feature}}はまだロック解除されていません",
     "ENGLISH": "English",
     "ERROR_GAME_NOT_JOINABLE_VIA_URL": "ゲームの開始に失敗しました。インターネット接続を確認してください。",
@@ -370,5 +370,6 @@ module.exports = {
     "MATCH_FIELD_HINT": "クリームが多いほど建物を隠せます。ダークのマスは工場を速くし、ホワイトのマスはカカオを増やします。",
     "TIPS_HIDE": "ヒントを隠す",
     "SETTINGS_TIPS_ON": "ヒント: オン",
-    "SETTINGS_TIPS_OFF": "ヒント: オフ"
+    "SETTINGS_TIPS_OFF": "ヒント: オフ",
+    "UNLOCK_NEEDS_NAME": "まず設定でプレイヤー名を決めてください。"
 }

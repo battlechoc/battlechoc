@@ -302,9 +302,14 @@ const Hud = (props) => {
     await multiplayer.tutorialSkipped();
   };
 
-  /*const notifyUnlock = (missingScore, feature) => {
-        props.showNotification({ title: t(tr.COINS_FOR_NEXT_FEATURE_TITLE, feature), message: t(tr.COINS_FOR_NEXT_FEATURE_BODY, feature, missingScore) });
-    }*/
+  // what is missing to unlock a menu entry: a first win (a coin) or a player name
+  const notifyLocked = (feature) => {
+    const score = playerInfos.stats.score || 0;
+    props.showNotification({
+      title: t(tr.COINS_FOR_NEXT_FEATURE_TITLE, feature),
+      message: score < 1 ? t(tr.COINS_FOR_NEXT_FEATURE_BODY, feature, 1 - score) : t(tr.UNLOCK_NEEDS_NAME),
+    });
+  };
 
   const stage = estimateStage();
   return (
@@ -432,6 +437,7 @@ const Hud = (props) => {
                 key="1"
                 size="huge"
                 locked={locked}
+                onLockedClick={() => notifyLocked(t(tr.ONLINE_TITLE))}
                 color="secondary"
                 onClick={() => setShowOnlineLobby(true)}
               >
@@ -444,6 +450,7 @@ const Hud = (props) => {
                 key="2"
                 size="huge"
                 locked={locked}
+                onLockedClick={() => notifyLocked(t(tr.MAIN_MENU_CHOCLAB))}
                 color="accent"
                 onClick={() => {
                   setChoclabScreen(true);

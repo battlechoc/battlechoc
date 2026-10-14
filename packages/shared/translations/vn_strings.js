@@ -100,7 +100,7 @@ module.exports = {
     "CHOCLAB_INCREASED_BY": "tăng lên",
     "CHOCLAB_LEVEL": "Cấp độ",
     "CHOCLAB_UPGRADE": "Nâng cấp",
-    "COINS_FOR_NEXT_FEATURE_BODY": "Bạn cần kiếm thêm {{missingScore}} nhiều tiền hơn để mở khóa tính năng {{feature}}.",
+    "COINS_FOR_NEXT_FEATURE_BODY": "Hãy thắng một trận để nhận những đồng xu sô cô la đầu tiên và mở khóa “{{feature}}”.",
     "COINS_FOR_NEXT_FEATURE_TITLE": "{{feature}} chưa được mở khóa",
     "ENGLISH": "English",
     "ERROR_GAME_NOT_JOINABLE_VIA_URL": "Không thể bắt đầu trò chơi. Xin vui lòng kiểm tra kết nối Internet của bạn.",
@@ -370,5 +370,6 @@ module.exports = {
     "MATCH_FIELD_HINT": "Nhiều kem hơn giúp giấu công trình. Ô sẫm màu làm nhà máy nhanh hơn, ô trắng cho nhiều ca cao hơn.",
     "TIPS_HIDE": "Ẩn mẹo",
     "SETTINGS_TIPS_ON": "Mẹo: bật",
-    "SETTINGS_TIPS_OFF": "Mẹo: tắt"
+    "SETTINGS_TIPS_OFF": "Mẹo: tắt",
+    "UNLOCK_NEEDS_NAME": "Hãy chọn tên người chơi trong phần cài đặt trước."
 }

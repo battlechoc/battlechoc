@@ -165,7 +165,17 @@ const useStyles = createUseStyles((theme) => ({
 const Button = (componentProps) => {
   const props = withDefaultProps(componentProps, defaultProps);
   const classes = useStyles(props);
+  // a disabled button does nothing; a locked one may explain how to unlock it
   const onClick = () => {
+    if (props.locked) {
+      if (typeof props.onLockedClick === "function") {
+        props.onLockedClick();
+      }
+      return;
+    }
+    if (props.disabled) {
+      return;
+    }
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     props.onClick();
   };
@@ -232,6 +242,7 @@ Button.propTypes = {
   size: PropTypes.oneOf(["huge", "normal", "small"]),
   disabled: PropTypes.bool,
   locked: PropTypes.bool,
+  onLockedClick: PropTypes.func,
 };
 
 export default Button;
