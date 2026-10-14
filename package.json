@@ -18,6 +18,8 @@
     "test:e2e": "npm test -w apps/pwa",
     "test:api": "npm test -w apps/api",
     "start:api": "npm start -w apps/api",
-    "test:unit": "npm run test:unit -w apps/pwa"
+    "test:unit": "npm run test:unit -w apps/pwa",
+    "whitepaper:simulate": "node whitepaper/simulator/run.js",
+    "test:whitepaper": "node --test 'whitepaper/simulator/test/*.test.js'"
   }
 }

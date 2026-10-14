@@ -31,6 +31,8 @@ jobs:
         run: npm test
       - name: Tutorial scenarios on the engine
         run: npm run test:unit
+      - name: Whitepaper economy simulator tests
+        run: npm run test:whitepaper
       - name: API tests (in-memory Postgres)
         run: npm run test:api
       - name: API tests (Postgres 17)

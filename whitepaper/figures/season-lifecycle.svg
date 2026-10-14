@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 330" width="980" height="330" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" role="img" aria-label="The life of a season">
+<style>
+  .t { fill: #3b2418; }
+  .m { fill: #7d6658; }
+  @media (prefers-reduced-motion: reduce) { .moving { display: none; } }
+</style>
+<rect width="980" height="330" rx="10" fill="#fffaf5"/>
+<text x="20" y="30" font-size="17" font-weight="700" class="t">The life of a season</text>
+<text x="20" y="50" font-size="12.5" class="m">One season per calendar month. While one season's prizes are being claimed, the next season is already running.</text>
+
+<!-- timeline segments -->
+<rect x="30" y="100" width="120" height="34" rx="8" fill="#4b5fb3"/>
+<rect x="154" y="100" width="420" height="34" rx="8" fill="#d9822b"/>
+<rect x="578" y="100" width="110" height="34" rx="8" fill="#4b5fb3"/>
+<rect x="692" y="100" width="110" height="34" rx="8" fill="#b23a5b"/>
+<rect x="806" y="100" width="144" height="34" rx="8" fill="#2f7f6f"/>
+<text x="90" y="122" font-size="13" font-weight="700" text-anchor="middle" fill="#fff">Opening</text>
+<text x="364" y="122" font-size="13" font-weight="700" text-anchor="middle" fill="#fff">Play: the whole month</text>
+<text x="633" y="122" font-size="13" font-weight="700" text-anchor="middle" fill="#fff">Closing</text>
+<text x="747" y="122" font-size="13" font-weight="700" text-anchor="middle" fill="#fff">Disputes</text>
+<text x="878" y="122" font-size="13" font-weight="700" text-anchor="middle" fill="#fff">Claims</text>
+<text x="90" y="88" font-size="11" text-anchor="middle" class="m">day 1</text>
+<text x="364" y="88" font-size="11" text-anchor="middle" class="m">ranked matches, rating updates</text>
+<text x="633" y="88" font-size="11" text-anchor="middle" class="m">last day</text>
+<text x="747" y="88" font-size="11" text-anchor="middle" class="m">72 hours</text>
+<text x="878" y="88" font-size="11" text-anchor="middle" class="m">24 months</text>
+
+<!-- moving marker -->
+<g class="moving">
+  <line x1="30" y1="94" x2="30" y2="140" stroke="#3b2418" stroke-width="2">
+    <animate attributeName="x1" values="30;950;950" keyTimes="0;0.92;1" dur="12s" repeatCount="indefinite"/>
+    <animate attributeName="x2" values="30;950;950" keyTimes="0;0.92;1" dur="12s" repeatCount="indefinite"/>
+  </line>
+  <circle cx="30" cy="94" r="5" fill="#3b2418">
+    <animate attributeName="cx" values="30;950;950" keyTimes="0;0.92;1" dur="12s" repeatCount="indefinite"/>
+  </circle>
+</g>
+
+<!-- descriptions -->
+<g font-size="11.5" class="m">
+  <text x="30" y="165"><tspan class="t" font-weight="600">On-chain:</tspan></text>
+  <text x="30" y="182">season coins</text>
+  <text x="30" y="198">minted into the pot;</text>
+  <text x="30" y="214">recipe commitment</text>
+  <text x="30" y="230">published</text>
+
+  <text x="154" y="165"><tspan class="t" font-weight="600">Everyone with a linked wallet and a credential</tspan></text>
+  <text x="154" y="182">registers (free while less than half the supply is issued,</text>
+  <text x="154" y="198">then 20 CHOC). Only server-hosted matches count.</text>
+  <text x="154" y="214">At least 20 matches against 10 different opponents</text>
+  <text x="154" y="230">make a player eligible for prizes.</text>
+
+  <text x="578" y="165"><tspan class="t" font-weight="600">Final ratings</tspan></text>
+  <text x="578" y="182">decide the ranks;</text>
+  <text x="578" y="198">results and payouts</text>
+  <text x="578" y="214">go on-chain as one</text>
+  <text x="578" y="230">Merkle root</text>
+
+  <text x="692" y="165"><tspan class="t" font-weight="600">Anyone can</tspan></text>
+  <text x="692" y="182">check the published</text>
+  <text x="692" y="198">results and report</text>
+  <text x="692" y="214">errors before claims</text>
+  <text x="692" y="230">open</text>
+
+  <text x="806" y="165"><tspan class="t" font-weight="600">Players claim</tspan></text>
+  <text x="806" y="182">with a proof, or spend</text>
+  <text x="806" y="198">the prize in the game;</text>
+  <text x="806" y="214">what is left after 24</text>
+  <text x="806" y="230">months returns to a pot</text>
+</g>
+<text x="20" y="300" font-size="11" class="m">Times are the initial values from the parameter table. A match interrupted by a server failure is resumed or void; ratings are never adjusted by hand.</text>
+</svg>

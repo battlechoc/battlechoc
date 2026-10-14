@@ -9,6 +9,7 @@ A chocolate-themed two-player strategy game. Each player owns a board of chocola
 | `apps/pwa` | The game client: React, Redux Toolkit, Babylon.js, Vite, Workbox |
 | `packages/shared` | Rules engine shared by client and server (entities, board, reducers, validation, awards, translations) |
 | `apps/server` | Legacy Firebase Cloud Functions backend (to be replaced by a Node.js service) |
+| `whitepaper` | Draft whitepaper for the planned competitive layer, with the economy simulator behind its numbers |
 
 ## Development
 

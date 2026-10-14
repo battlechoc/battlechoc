@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 540" width="980" height="540" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" role="img" aria-label="battlechoc architecture: player, game server and Cardano">
+<style>
+  .t { fill: #3b2418; }
+  .m { fill: #7d6658; }
+  .col { fill: #ffffff; stroke: #eadfd6; stroke-width: 1.5; }
+  .box { fill: #ffffff; stroke: #7b4a2e; stroke-width: 1.3; }
+  .chain { fill: #f3ecff; stroke: #4b5fb3; stroke-width: 1.3; }
+  .arrow { stroke: #a07a63; stroke-width: 2; fill: none; marker-end: url(#a); }
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#a07a63"/></marker></defs>
+<rect width="980" height="540" rx="10" fill="#fffaf5"/>
+<text x="20" y="30" font-size="17" font-weight="700" class="t">Who does what</text>
+<text x="20" y="50" font-size="12.5" class="m">The server runs the matches; Cardano holds the coins and items and enforces the rules that matter for money. Players sign their own transactions.</text>
+
+<!-- columns -->
+<rect x="20" y="70" width="230" height="420" rx="12" class="col"/>
+<text x="135" y="94" font-size="14" font-weight="700" text-anchor="middle" class="t">Player</text>
+<rect x="290" y="70" width="300" height="420" rx="12" class="col"/>
+<text x="440" y="94" font-size="14" font-weight="700" text-anchor="middle" class="t">battlechoc server (open source)</text>
+<rect x="630" y="70" width="330" height="420" rx="12" class="col"/>
+<text x="795" y="94" font-size="14" font-weight="700" text-anchor="middle" class="t">Cardano (verified Aiken code)</text>
+
+<!-- player -->
+<rect x="40" y="112" width="190" height="70" rx="10" class="box"/>
+<text x="135" y="136" font-size="13" font-weight="700" text-anchor="middle" class="t">Game app (PWA)</text>
+<text x="135" y="155" font-size="11" text-anchor="middle" class="m">plays offline without crypto;</text>
+<text x="135" y="170" font-size="11" text-anchor="middle" class="m">online through the server</text>
+<rect x="40" y="200" width="190" height="70" rx="10" class="box"/>
+<text x="135" y="224" font-size="13" font-weight="700" text-anchor="middle" class="t">Own wallet (CIP-30)</text>
+<text x="135" y="243" font-size="11" text-anchor="middle" class="m">holds CHOC and items;</text>
+<text x="135" y="258" font-size="11" text-anchor="middle" class="m">signs and pays network fees</text>
+<rect x="40" y="290" width="190" height="62" rx="10" class="box"/>
+<text x="135" y="314" font-size="13" font-weight="700" text-anchor="middle" class="t">Credential (KERI/ACDC)</text>
+<text x="135" y="332" font-size="11" text-anchor="middle" class="m">proves one person, 18+, country</text>
+<text x="135" y="390" font-size="11" text-anchor="middle" class="m">No name, email or</text>
+<text x="135" y="405" font-size="11" text-anchor="middle" class="m">document is ever sent</text>
+<text x="135" y="420" font-size="11" text-anchor="middle" class="m">to battlechoc.</text>
+
+<!-- server -->
+<rect x="310" y="112" width="260" height="70" rx="10" class="box"/>
+<text x="440" y="136" font-size="13" font-weight="700" text-anchor="middle" class="t">Match rooms</text>
+<text x="440" y="155" font-size="11" text-anchor="middle" class="m">authoritative rules engine, secret seed,</text>
+<text x="440" y="170" font-size="11" text-anchor="middle" class="m">replayable from seed and actions</text>
+<rect x="310" y="196" width="260" height="56" rx="10" class="box"/>
+<text x="440" y="219" font-size="13" font-weight="700" text-anchor="middle" class="t">Ratings and season results</text>
+<text x="440" y="238" font-size="11" text-anchor="middle" class="m">Glicko-2, eligibility, payouts</text>
+<rect x="310" y="266" width="260" height="56" rx="10" class="box"/>
+<text x="440" y="289" font-size="13" font-weight="700" text-anchor="middle" class="t">Ingredients and the kitchen</text>
+<text x="440" y="308" font-size="11" text-anchor="middle" class="m">drops, shelf lives, recipe table</text>
+<rect x="310" y="336" width="260" height="56" rx="10" class="box"/>
+<text x="440" y="359" font-size="13" font-weight="700" text-anchor="middle" class="t">Merkle Patricia Forestry</text>
+<text x="440" y="378" font-size="11" text-anchor="middle" class="m">one root over all of the above</text>
+<rect x="310" y="406" width="260" height="66" rx="10" class="box"/>
+<text x="440" y="429" font-size="13" font-weight="700" text-anchor="middle" class="t">Server key</text>
+<text x="440" y="448" font-size="11" text-anchor="middle" class="m">co-signs crafting and roots;</text>
+<text x="440" y="463" font-size="11" text-anchor="middle" class="m">cannot move coins or mint CHOC</text>
+
+<!-- chain -->
+<rect x="650" y="112" width="290" height="50" rx="10" class="chain"/>
+<text x="795" y="133" font-size="13" font-weight="700" text-anchor="middle" class="t">CHOC minting policy</text>
+<text x="795" y="151" font-size="11" text-anchor="middle" class="m">10,000,000 max, season schedule, no admin key</text>
+<rect x="650" y="172" width="290" height="50" rx="10" class="chain"/>
+<text x="795" y="193" font-size="13" font-weight="700" text-anchor="middle" class="t">Tournament pot</text>
+<text x="795" y="211" font-size="11" text-anchor="middle" class="m">pays only against the season's results root</text>
+<rect x="650" y="232" width="290" height="50" rx="10" class="chain"/>
+<text x="795" y="253" font-size="13" font-weight="700" text-anchor="middle" class="t">Prize claims (pantry)</text>
+<text x="795" y="271" font-size="11" text-anchor="middle" class="m">claim, spend in game, or return after 24 months</text>
+<rect x="650" y="292" width="290" height="50" rx="10" class="chain"/>
+<text x="795" y="313" font-size="13" font-weight="700" text-anchor="middle" class="t">Equipment policy (CIP-68)</text>
+<text x="795" y="331" font-size="11" text-anchor="middle" class="m">mint with fee + server co-signature; burn always</text>
+<rect x="650" y="352" width="290" height="50" rx="10" class="chain"/>
+<text x="795" y="373" font-size="13" font-weight="700" text-anchor="middle" class="t">State anchor</text>
+<text x="795" y="391" font-size="11" text-anchor="middle" class="m">MPF root twice a week, recipe commitments</text>
+<rect x="650" y="412" width="290" height="60" rx="10" class="chain"/>
+<text x="795" y="434" font-size="13" font-weight="700" text-anchor="middle" class="t">Team multisig, 2 of 3</text>
+<text x="795" y="452" font-size="11" text-anchor="middle" class="m">roots, seasonal item effects, team share;</text>
+<text x="795" y="466" font-size="11" text-anchor="middle" class="m">never mints CHOC or touches player wallets</text>
+
+<!-- arrows -->
+<path class="arrow" d="M230,140 L310,140"/>
+<path class="arrow" d="M310,155 L230,155"/>
+<text x="270" y="132" font-size="10.5" text-anchor="middle" class="m">actions</text>
+<text x="270" y="170" font-size="10.5" text-anchor="middle" class="m">views</text>
+<path class="arrow" d="M230,250 C278,250 262,510 320,510 L612,510 C642,510 630,262 650,258"/>
+<text x="440" y="526" font-size="10.5" text-anchor="middle" class="m">the player signs: claims, registration, crafting, salvage</text>
+<path class="arrow" d="M570,364 L650,375"/>
+<path class="arrow" d="M570,224 L650,200"/>
+<path class="arrow" d="M570,430 L650,318"/>
+<path class="arrow" d="M230,320 C272,320 270,232 310,228"/>
+</svg>
