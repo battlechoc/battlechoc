@@ -5,7 +5,7 @@ import {
   engine,
   EntityType,
 } from "@battlechoc/battlechoc-shared-functions";
-import { selectBuilding, tapBuilding } from "../UiActions";
+import { selectBuilding, tapBuilding, focusBoard } from "../UiActions";
 import { Jukebox } from "../misc";
 
 const buildings = [
@@ -229,9 +229,11 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = (dispatch) => ({
+  // picking something to build always turns the camera to the own board
   select: (type) => {
     dispatch(tapBuilding(type));
     dispatch(selectBuilding(type));
+    dispatch(focusBoard("own"));
   },
 });
 

@@ -5,6 +5,7 @@ import {
   selectBuilding,
   tapBuilding,
   showQuickMessage,
+  attackDenied,
 } from "../ui/UiActions";
 import { selectActiveGame } from "../match/matchSlice";
 import { matchSession } from "../match/LocalMatchHost";
@@ -470,6 +471,7 @@ class Scene extends Component {
   clear() {
     this.weaponIndicators.forEach((indicator) => {
       indicator.mesh.dispose();
+      indicator.texture.dispose();
       indicator.material.dispose();
     });
     this.weaponIndicators.clear();
@@ -581,18 +583,11 @@ class Scene extends Component {
     if (this.playerGameField === null) {
       return;
     }
+    // the swap button toggles; picking an attack or a building focuses its board every time
     if (prevProps.boardViewToggles !== this.props.boardViewToggles) {
       this.setLookAtOpponent(!this.lookAtOpponent);
-    } else if (
-      typeof this.props.selectedAttack !== "undefined" &&
-      prevProps.selectedAttack !== this.props.selectedAttack
-    ) {
-      this.setLookAtOpponent(true);
-    } else if (
-      typeof this.props.selectedBuilding !== "undefined" &&
-      prevProps.selectedBuilding !== this.props.selectedBuilding
-    ) {
-      this.setLookAtOpponent(false);
+    } else if (prevProps.boardFocus.seq !== this.props.boardFocus.seq) {
+      this.setLookAtOpponent(this.props.boardFocus.target === "opponent");
     }
 
     this.opponentGameField.update();
@@ -649,13 +644,11 @@ class Scene extends Component {
       return;
     }
     submit(engine.MatchActionTypes.attack, { attackType, row, col, allowRush: true }).catch((error) => {
-      const name = error && error.constructor ? error.constructor.name : "";
-      if (name === "TargetEmptyError") {
-        this.props.showQuickMessage({ text: t(tr.MATCH_TARGET_GONE), autoHideDuration: 2000 });
-      } else if (name === "WeaponNotReadyError") {
-        this.props.showQuickMessage({ text: t(tr.MATCH_NOT_READY), autoHideDuration: 2000 });
-      } else if (name === "StunnedError") {
-        this.props.showQuickMessage({ text: t(tr.MATCH_STUNNED), autoHideDuration: 2000 });
+      // online the engine's error name travels as ruleName
+      const name = (error && (error.ruleName || (error.constructor && error.constructor.name))) || "";
+      // nothing to hit there: just nothing happens; no shot available: the button flashes
+      if (["WeaponNotReadyError", "NoCacaoLeftError", "NoAttacksLeftError", "StunnedError"].includes(name)) {
+        this.props.attackDenied(attackType);
       }
       return ignoreRuleErrors(error);
     });
@@ -712,7 +705,8 @@ class Scene extends Component {
     });
   }
 
-  // a small disc above each own weapon: grey while charging, blue when it can rush, green when ready
+  // a ring above each own weapon unit that fills up while it reloads: light while charging,
+  // blue once it can fire early (rush), green when the shot is free; one ring per weapon
   syncWeaponIndicators() {
     const view = this.props.game;
     if (typeof view === "undefined" || this.playerGameField === null || view.phase !== engine.MatchPhase.RUNNING) {
@@ -733,27 +727,57 @@ class Scene extends Component {
           present.add(entity.id);
           let indicator = this.weaponIndicators.get(entity.id);
           if (!indicator) {
-            const mesh = MeshBuilder.CreateDisc("weapon.indicator." + entity.id, { radius: 0.16, tessellation: 24 }, this.scene);
+            const mesh = MeshBuilder.CreatePlane("weapon.indicator." + entity.id, { size: 0.85 }, this.scene);
+            const texture = new DynamicTexture("weapon.indicator.texture." + entity.id, { width: 128, height: 128 }, this.scene, true);
+            texture.hasAlpha = true;
             const material = new StandardMaterial("weapon.indicator.material." + entity.id, this.scene);
+            material.diffuseTexture = texture;
+            material.emissiveTexture = texture;
+            material.useAlphaFromDiffuseTexture = true;
             material.disableLighting = true;
+            material.backFaceCulling = false;
             mesh.material = material;
             mesh.billboardMode = Mesh.BILLBOARDMODE_ALL;
             mesh.isPickable = false;
-            indicator = { mesh, material, state: undefined };
+            indicator = { mesh, material, texture, key: undefined };
             this.weaponIndicators.set(entity.id, indicator);
           }
           indicator.weapons = entity.weapons;
-          indicator.mesh.position = new Vector3(cell.row - 0.25, height - 0.7, cell.col + 0.25);
+          indicator.mesh.position = new Vector3(cell.row, height - 0.35, cell.col);
         })
     );
     this.weaponIndicators.forEach((indicator, id) => {
       if (!present.has(id)) {
         indicator.mesh.dispose();
+        indicator.texture.dispose();
         indicator.material.dispose();
         this.weaponIndicators.delete(id);
       }
     });
     this.updateWeaponIndicators(false);
+  }
+
+  drawWeaponRings(texture, rings) {
+    const colors = { ready: "#90D01B", rushable: "#3190C3", charging: "#F4ECE4" };
+    const context = texture.getContext();
+    context.clearRect(0, 0, 128, 128);
+    rings.forEach(({ progress, state }, index) => {
+      const radius = 52 - index * 18;
+      context.beginPath();
+      context.arc(64, 64, radius, 0, 2 * Math.PI);
+      context.strokeStyle = "rgba(45, 25, 15, 0.6)";
+      context.lineWidth = 16;
+      context.stroke();
+      if (progress > 0) {
+        context.beginPath();
+        context.arc(64, 64, radius, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * progress);
+        context.strokeStyle = colors[state];
+        context.lineWidth = 12;
+        context.lineCap = "round";
+        context.stroke();
+      }
+    });
+    texture.update();
   }
 
   updateWeaponIndicators(render = true) {
@@ -762,19 +786,17 @@ class Scene extends Component {
     }
     const view = this.props.game;
     const now = matchSession.host.now();
-    const colors = {
-      ready: Color3.FromHexString("#90D01B"),
-      rushable: Color3.FromHexString("#3190C3"),
-      charging: Color3.FromHexString("#8a7b72"),
-    };
     let changed = false;
     this.weaponIndicators.forEach((indicator) => {
-      const states = indicator.weapons.map((weapon) => engine.weaponStatus(view, weapon, now).state);
-      const state = states.includes("ready") ? "ready" : states.includes("rushable") ? "rushable" : "charging";
-      if (state !== indicator.state) {
-        indicator.state = state;
-        indicator.material.emissiveColor = colors[state];
-        indicator.material.diffuseColor = colors[state];
+      const rings = indicator.weapons.slice(0, 2).map((weapon) => {
+        const status = engine.weaponStatus(view, weapon, now);
+        return { progress: status.progress, state: status.state };
+      });
+      // redraw only when a ring visibly moved
+      const key = rings.map((ring) => `${ring.state}:${Math.round(ring.progress * 48)}`).join("|");
+      if (key !== indicator.key) {
+        indicator.key = key;
+        this.drawWeaponRings(indicator.texture, rings);
         changed = true;
       }
     });
@@ -900,6 +922,7 @@ const mapStateToProps = (state) => ({
   selectedAttack: state.ui.selectedAttack,
   assetsReady: state.ui.assetsReady,
   tutorial: state.ui.tutorial,
+  boardFocus: state.ui.boardFocus,
 });
 
 const mapDispatchToProps = {
@@ -907,6 +930,7 @@ const mapDispatchToProps = {
   selectBuilding,
   tapBuilding,
   showQuickMessage,
+  attackDenied,
 };
 
 const SceneContainer = connect(mapStateToProps, mapDispatchToProps)(Scene);

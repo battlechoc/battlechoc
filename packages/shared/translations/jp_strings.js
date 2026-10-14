@@ -361,7 +361,7 @@ module.exports = {
     "TUTORIAL_CACAO_TITLE": "カカオが届く",
     "TUTORIAL_CACAO_MESSAGE": "工場と木は10秒ごとに収穫します。右上のカカオカウンターを見てみましょう。",
     "TUTORIAL_CHARGE_TITLE": "キャノンを装填中",
-    "TUTORIAL_CHARGE_MESSAGE": "キャノンの装填には20秒かかります。半分を過ぎると右下のボタンが青になり、カカオ10で早撃ちできます。緑なら無料で撃てます。",
+    "TUTORIAL_CHARGE_MESSAGE": "キャノンの装填には20秒かかり、その間に上のリングが満ちていきます。半分を過ぎると青になり、カカオ10で早撃ちできます。緑なら無料で撃てます。右下のボタンには撃てる回数が表示されます。",
     "TUTORIAL_FIRE_TITLE": "撃て!",
     "TUTORIAL_FIRE_MESSAGE": "右下のキャノンボタンをタップしてミミの盤を見て、彼女の木か工場をタップしましょう。ミミにはキャノンがないので、工場がなくなると建設できなくなり負けです。",
     "TUTORIAL_WIN_TITLE": "勝利をつかもう",

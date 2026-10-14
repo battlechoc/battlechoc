@@ -361,7 +361,7 @@ module.exports = {
     "TUTORIAL_CACAO_TITLE": "Ca cao đang đến",
     "TUTORIAL_CACAO_MESSAGE": "Nhà máy và cây của bạn thu hoạch mỗi 10 giây. Hãy để ý bộ đếm ca cao ở góc trên bên phải.",
     "TUTORIAL_CHARGE_TITLE": "Pháo đang nạp",
-    "TUTORIAL_CHARGE_MESSAGE": "Một khẩu pháo nạp lại trong 20 giây. Từ nửa chừng, nút của nó ở góc dưới bên phải chuyển sang xanh dương: bạn có thể bắn sớm với 10 ca cao. Màu xanh lá nghĩa là phát bắn miễn phí.",
+    "TUTORIAL_CHARGE_MESSAGE": "Một khẩu pháo nạp lại trong 20 giây, trong lúc đó vòng tròn phía trên nó đầy dần. Từ nửa chừng vòng chuyển sang xanh dương: bạn có thể bắn sớm với 10 ca cao. Màu xanh lá nghĩa là phát bắn miễn phí. Nút ở góc dưới bên phải đếm số phát bắn của bạn.",
     "TUTORIAL_FIRE_TITLE": "Bắn!",
     "TUTORIAL_FIRE_MESSAGE": "Chạm vào nút pháo ở góc dưới bên phải để xem bàn của Mimi, rồi chạm vào cây hoặc nhà máy của cô ấy. Mimi không có pháo, nên mất nhà máy là cô ấy không thể xây nữa và thua.",
     "TUTORIAL_WIN_TITLE": "Thắng trận đấu",

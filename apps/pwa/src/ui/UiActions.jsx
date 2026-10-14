@@ -23,6 +23,8 @@ const UiActionTypes = Object.freeze({
   showNotification: "battlechoc/ui/showNotification",
   hideNotification: "battlechoc/ui/hideNotification",
   toggleBoardView: "battlechoc/ui/toggleBoardView",
+  focusBoard: "battlechoc/ui/focusBoard",
+  attackDenied: "battlechoc/ui/attackDenied",
 });
 
 const selectBuilding = createAction(UiActionTypes.selectBuilding);
@@ -46,10 +48,16 @@ const showQuickMessage = createAction(UiActionTypes.showQuickMessage);
 const hideQuickMessage = createAction(UiActionTypes.hideQuickMessage);
 const showNotification = createAction(UiActionTypes.showNotification);
 const toggleBoardView = createAction(UiActionTypes.toggleBoardView);
+// "opponent" or "own": turns the camera to that board, on every call
+const focusBoard = createAction(UiActionTypes.focusBoard);
+// an attack that could not be fired right now: its palette button flashes
+const attackDenied = createAction(UiActionTypes.attackDenied);
 const hideNotification = createAction(UiActionTypes.hideNotification);
 
 export {
   toggleBoardView,
+  focusBoard,
+  attackDenied,
   showNotification,
   hideNotification,
   showQuickMessage,

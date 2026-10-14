@@ -122,13 +122,18 @@ test("builds a cannon that turns blue after 10 s and green after 20 s", async ({
       );
   });
   expect(result).toBe("ok");
+  // the button counts the shots that can be fired now: none, one for cacao, one for free
   const cannon = page.getByTestId("weapon-truffle-cannon");
   await expect(cannon).toHaveAttribute("data-state", "charging");
+  await expect(cannon).toHaveAttribute("data-available", "0");
   await advance(page, 10000);
   await expect(cannon).toHaveAttribute("data-state", "rushable");
+  await expect(cannon).toHaveAttribute("data-available", "1");
   await expect(cannon).toContainText("-10");
   await advance(page, 10000);
   await expect(cannon).toHaveAttribute("data-state", "ready");
+  await expect(cannon).toHaveAttribute("data-available", "1");
+  await expect(cannon).not.toContainText("-10");
   await page.screenshot({ path: "test/output/screenshot_realtime_weapon_ready.png" });
 });
 

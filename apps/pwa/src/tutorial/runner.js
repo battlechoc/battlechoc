@@ -2,7 +2,7 @@ import { engine } from "@battlechoc/battlechoc-shared-functions";
 import { LocalMatchHost, matchSession } from "../match/LocalMatchHost";
 import { MatchClock, ManualClock } from "../match/clock";
 import { matchCleared } from "../match/matchSlice";
-import { selectAttack, selectBuilding, deselectAttack, deselectBuildings } from "../ui/UiActions";
+import { selectAttack, selectBuilding, deselectAttack, deselectBuildings, focusBoard } from "../ui/UiActions";
 import { lessonMatch } from "./lesson";
 import { demos, demoMatch } from "./demos";
 
@@ -64,6 +64,7 @@ class TutorialRunner {
       while (cue < demo.cues.length && demo.cues[cue].at <= clock.now()) {
         const { attack, building } = demo.cues[cue];
         this.dispatch(attack ? selectAttack(attack) : selectBuilding(building));
+        this.dispatch(focusBoard(attack ? "opponent" : "own"));
         cue += 1;
       }
       if (clock.now() >= demo.duration) {

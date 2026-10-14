@@ -22,6 +22,8 @@ const uiReducer = createReducer(
     quickMessages: [],
     notification: { title: null, message: null, open: false },
     boardViewToggles: 0,
+    boardFocus: { target: "own", seq: 0 },
+    deniedAttack: { type: undefined, seq: 0 },
     // the tutorial lesson lets the player act; whitelistBuildings limits the build palette
     tutorialInteractive: false,
     whitelistBuildings: undefined,
@@ -37,6 +39,12 @@ const uiReducer = createReducer(
       })
       .addCase(UiActions.toggleBoardView, (state) => {
         state.boardViewToggles += 1;
+      })
+      .addCase(UiActions.focusBoard, (state, action) => {
+        state.boardFocus = { target: action.payload, seq: state.boardFocus.seq + 1 };
+      })
+      .addCase(UiActions.attackDenied, (state, action) => {
+        state.deniedAttack = { type: action.payload, seq: state.deniedAttack.seq + 1 };
       })
       .addCase(UiActions.selectBuilding, (state, action) => {
         state.selectedBuilding = action.payload;

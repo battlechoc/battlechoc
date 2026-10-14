@@ -361,7 +361,7 @@ module.exports = {
     "TUTORIAL_CACAO_TITLE": "Le cacao arrive",
     "TUTORIAL_CACAO_MESSAGE": "Ta chocolaterie et tes arbres récoltent toutes les 10 secondes. Surveille le compteur de cacao en haut à droite.",
     "TUTORIAL_CHARGE_TITLE": "Le canon se charge",
-    "TUTORIAL_CHARGE_MESSAGE": "Un canon se recharge en 20 secondes. À partir de la moitié, son bouton en bas à droite devient bleu : tu peux tirer plus tôt pour 10 cacao. Vert signifie que le tir est gratuit.",
+    "TUTORIAL_CHARGE_MESSAGE": "Un canon se recharge en 20 secondes pendant que l'anneau au-dessus se remplit. À partir de la moitié, il devient bleu : tu peux tirer plus tôt pour 10 cacao. Vert signifie que le tir est gratuit. Le bouton en bas à droite compte tes tirs.",
     "TUTORIAL_FIRE_TITLE": "Feu !",
     "TUTORIAL_FIRE_MESSAGE": "Touche le bouton du canon en bas à droite pour voir le plateau de Mimi, puis touche son arbre ou sa chocolaterie. Mimi n'a pas de canon : sans sa chocolaterie, elle ne peut plus construire et perd.",
     "TUTORIAL_WIN_TITLE": "Gagne la partie",

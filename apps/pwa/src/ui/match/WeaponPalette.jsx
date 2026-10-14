@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { connect } from "react-redux";
 import { createUseStyles, useTheme } from "react-jss";
 import {
   engine,
   AttackType,
 } from "@battlechoc/battlechoc-shared-functions";
-import { selectAttack } from "../UiActions";
+import { selectAttack, focusBoard } from "../UiActions";
 import { Jukebox } from "../misc";
 import useMatchTime from "./useMatchTime";
 
@@ -61,7 +61,14 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   selected: { boxShadow: `0 0 0 0.4vw ${theme.color.gold.light}` },
-  disabled: { filter: "brightness(40%)", cursor: "default" },
+  // nothing to fire right now; the button stays clickable to aim
+  empty: { "& > div:first-child": { filter: "grayscale(60%) brightness(60%)" } },
+  "@keyframes deniedFlash": {
+    "0%, 100%": { transform: "scale(1)", boxShadow: "0 0 0 0 rgba(255, 78, 133, 0)" },
+    "25%, 75%": { transform: "scale(1.12)", boxShadow: `0 0 0 0.6vw ${theme.color.accent.light}` },
+    "50%": { transform: "scale(0.95)", boxShadow: "0 0 0 0 rgba(255, 78, 133, 0)" },
+  },
+  denied: { animation: "$deniedFlash 0.6s ease-in-out" },
   badge: {
     position: "absolute",
     bottom: "-6%",
@@ -76,19 +83,25 @@ const useStyles = createUseStyles((theme) => ({
     border: "0.2vw solid white",
     [theme.breakpoints.orientation.portrait]: { fontSize: "3.4vw" },
   },
+  // how many shots of this type can be fired now
   count: {
     position: "absolute",
-    top: "-6%",
-    left: "-6%",
+    top: "-8%",
+    right: "-8%",
+    minWidth: "1.4em",
+    height: "1.4em",
+    lineHeight: "1.4em",
+    borderRadius: "50%",
     color: "white",
     fontFamily: "Bangers",
-    fontSize: "2vw",
-    textShadow: "0.2vw 0.2vw 0.1vw #222",
-    [theme.breakpoints.orientation.portrait]: { fontSize: "4vw" },
+    fontSize: "2.2vw",
+    textAlign: "center",
+    border: "0.2vw solid white",
+    [theme.breakpoints.orientation.portrait]: { fontSize: "4.4vw" },
   },
 }));
 
-// best weapon of each attack type: the one closest to being ready
+// per attack type: how many weapons are ready, how many could fire early, the rush price
 const weaponOverview = (view, t) => {
   const me = view.players[view.viewer];
   const grid = view.board.fields[me.fieldIndex].grid;
@@ -97,26 +110,37 @@ const weaponOverview = (view, t) => {
     cell.occupiedBy.forEach((entity) =>
       (entity.weapons || []).forEach((weapon) => {
         const status = engine.weaponStatus(view, weapon, t);
-        const current = overview[weapon.attackType];
-        if (!current) {
-          overview[weapon.attackType] = { ...status, count: 1, ready: status.state === WeaponState.READY ? 1 : 0 };
-        } else {
-          current.count += 1;
-          current.ready += status.state === WeaponState.READY ? 1 : 0;
-          if (status.progress > current.progress) {
-            Object.assign(current, { ...status, count: current.count, ready: current.ready });
-          }
+        const entry = overview[weapon.attackType] || { total: 0, ready: 0, rushable: 0, rushCost: 0 };
+        entry.total += 1;
+        if (status.state === WeaponState.READY) {
+          entry.ready += 1;
+        } else if (status.state === WeaponState.RUSHABLE) {
+          entry.rushable += 1;
+          entry.rushCost = status.rushCost;
         }
+        overview[weapon.attackType] = entry;
       })
     )
   );
   return overview;
 };
 
-const WeaponPalette = ({ view, selectedAttack, select }) => {
+// the attack buttons: no timers here (the rings above the units show those), only how many
+// shots are available: green = free, blue = early for cacao; a denied shot flashes the button
+const WeaponPalette = ({ view, selectedAttack, deniedAttack, select }) => {
   const classes = useStyles();
   const theme = useTheme();
-  const t = useMatchTime(5);
+  const t = useMatchTime(4);
+  const [flashing, setFlashing] = useState(undefined);
+  useEffect(() => {
+    if (deniedAttack.seq === 0) {
+      return undefined;
+    }
+    setFlashing({ type: deniedAttack.type, seq: deniedAttack.seq });
+    const timeout = setTimeout(() => setFlashing(undefined), 650);
+    return () => clearTimeout(timeout);
+  }, [deniedAttack]);
+
   if (typeof view === "undefined" || view.phase !== engine.MatchPhase.RUNNING) {
     return null;
   }
@@ -130,39 +154,36 @@ const WeaponPalette = ({ view, selectedAttack, select }) => {
       {weapons
         .filter((weapon) => overview[weapon.type])
         .map((weapon) => {
-          const status = overview[weapon.type];
-          const color = stunned ? "#d05531" : colors[status.state];
-          const degrees = Math.round(status.progress * 360);
-          const affordable = status.state !== WeaponState.RUSHABLE || me.cacao >= status.rushCost;
-          let badge = null;
-          if (status.state === WeaponState.READY) {
-            badge = <div className={classes.badge} style={{ background: color }}>✓</div>;
-          } else if (status.state === WeaponState.RUSHABLE) {
-            badge = (
-              <div className={classes.badge} style={{ background: affordable ? color : "#772549" }}>
-                {`-${status.rushCost}`}
-              </div>
-            );
-          }
+          const entry = overview[weapon.type];
+          const affordableRushes = me.cacao >= entry.rushCost ? entry.rushable : 0;
+          const available = stunned ? 0 : entry.ready + affordableRushes;
+          const state = entry.ready > 0 ? WeaponState.READY : entry.rushable > 0 ? WeaponState.RUSHABLE : WeaponState.CHARGING;
+          const free = !stunned && entry.ready > 0;
+          const color = available === 0 ? colors[WeaponState.CHARGING] : free ? colors[WeaponState.READY] : colors[WeaponState.RUSHABLE];
+          const flash = flashing && flashing.type === weapon.type;
           return (
             <div
-              key={weapon.type}
+              key={flash ? `${weapon.type}-${flashing.seq}` : weapon.type}
               data-testid={`weapon-${weapon.image}`}
-              data-state={status.state}
+              data-state={state}
+              data-available={available}
               className={`${classes.item} ${selectedAttack === weapon.type ? classes.selected : ""} ${
-                status.state === WeaponState.CHARGING || !affordable || stunned ? classes.disabled : ""
-              }`}
-              style={{
-                background: `conic-gradient(${color} ${degrees}deg, rgba(0,0,0,0.35) ${degrees}deg)`,
-              }}
+                available === 0 ? classes.empty : ""
+              } ${flash ? classes.denied : ""}`}
               onClick={() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
                 select(weapon.type);
               }}
             >
               <div className={classes.icon} style={{ backgroundImage: `url(/images/${weapon.image}-icon.svg)` }} />
-              {status.count > 1 ? <div className={classes.count}>{`${status.ready}/${status.count}`}</div> : null}
-              {badge}
+              <div className={classes.count} style={{ background: color }}>
+                {available}
+              </div>
+              {!free && available > 0 ? (
+                <div className={classes.badge} style={{ background: color }}>
+                  {`-${entry.rushCost}`}
+                </div>
+              ) : null}
             </div>
           );
         })}
@@ -173,10 +194,15 @@ const WeaponPalette = ({ view, selectedAttack, select }) => {
 const mapStateToProps = (state) => ({
   view: state.match.view,
   selectedAttack: state.ui.selectedAttack,
+  deniedAttack: state.ui.deniedAttack,
 });
 
 const mapDispatchToProps = (dispatch) => ({
-  select: (type) => dispatch(selectAttack(type)),
+  // picking an attack always turns the camera to the opponent's board
+  select: (type) => {
+    dispatch(selectAttack(type));
+    dispatch(focusBoard("opponent"));
+  },
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(WeaponPalette);
