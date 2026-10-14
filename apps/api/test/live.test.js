@@ -222,8 +222,11 @@ describe('live: matches', () => {
         const r = room(env, matchId);
         const cell = freeCell(a.view(matchId), a.index);
         expect((await a.act(matchId, MatchActionTypes.build, { entityType: EntityType.RUM_TRUFFLE_CANNON, row: cell.row, col: cell.col })).ok).toBe(true);
-        const target = { row: 0, col: 0 };
-        const shoot = allowRush => a.act(matchId, MatchActionTypes.attack, { attackType: AttackType.TRUFFLE, ...target, allowRush });
+        // targets with nothing but cream: a hit on b's factory could end the match (random damage)
+        const creamOnly = r.match.board.fields[r.match.players[b.index].fieldIndex].grid
+            .filter(target => target.occupiedBy.length > 0 && target.occupiedBy.every(entity => entity.type === EntityType.CREAM));
+        let target = creamOnly[0];
+        const shoot = allowRush => a.act(matchId, MatchActionTypes.attack, { attackType: AttackType.TRUFFLE, row: target.row, col: target.col, allowRush });
 
         expect((await shoot(true)).error.name).toBe('WeaponNotReadyError');
         env.clock.advance(10000);
@@ -234,6 +237,8 @@ describe('live: matches', () => {
         expect(r.match.players[a.index].cacao).toBeLessThanOrEqual(cacao - 10);
 
         // the cannon is charging again: a shot 100 ms early is applied when it is ready
+        // (the first target's cream is gone, so aim at another one)
+        target = creamOnly[1];
         const { weapon } = engine.weaponsOf(r.match, a.index, AttackType.TRUFFLE)[0];
         const readyAt = engine.weaponStatus(r.match, weapon, r.match.t).readyAt;
         env.clock.advance(readyAt - r.now() - 1000);
