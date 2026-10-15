@@ -404,6 +404,17 @@ describe('live: matches', () => {
         expect(await totals()).toEqual(before);
     });
 
+    test('a match between two players that never ran changes no rating', async () => {
+        const env = await start();
+        const { a, b, matchId } = await queueMatch(env);
+        expect((await a.act(matchId, MatchActionTypes.surrender, {})).ok).toBe(true);
+        await Promise.all([a, b].map(client => client.next(ServerMessage.RESULT)));
+        await room(env, matchId).writes;
+        const { rows } = await env.pool.query('SELECT rated_matches, rating FROM players');
+        rows.forEach(row => expect(row).toMatchObject({ rated_matches: 0, rating: 1500 }));
+        expect(Number((await env.pool.query('SELECT COUNT(*) AS n FROM rated_matches')).rows[0].n)).toBe(0);
+    });
+
     test('invites: live, declined, expired and by push to an offline player', async () => {
         const env = await start();
         const anna = await player(env, { username: 'Anna' });

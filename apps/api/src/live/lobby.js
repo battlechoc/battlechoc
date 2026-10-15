@@ -218,7 +218,9 @@ class Lobby {
         room.write(async () => {
             const { winners } = room.match.outcome;
             let ratings = {};
-            if (humans.length === 2) {
+            // only a match that ran is rated (an instant surrender must not move the public rating)
+            const ran = room.match.startedAt !== null && typeof room.match.startedAt !== 'undefined';
+            if (humans.length === 2 && ran) {
                 const scoreA = winners.length === 2 ? 0.5 : winners[0] === 0 ? 1 : 0;
                 ratings = (await rewards.rateMatch(this.pool, room.id, room.playerIds, scoreA)) || {};
             }
