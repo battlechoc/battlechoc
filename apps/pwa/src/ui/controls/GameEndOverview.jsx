@@ -136,12 +136,32 @@ const GameEndOverview = (props) => {
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+  // the award animation waits between steps; once the overview is closed it must stop
+  const closed = useRef(false);
+  useEffect(() => {
+    // set again on mount: StrictMode in development unmounts and mounts once more
+    closed.current = false;
+    return () => {
+      closed.current = true;
+    };
+  }, []);
+  const fadeHighlight = (opacity) => {
+    if (highlight.current) {
+      highlight.current.style.opacity = opacity;
+    }
+  };
+
   useEffect(() => {
     const startGettingAwards = async () => {
       await sleep(2200);
-      highlight.current.style.opacity = 0;
+      if (closed.current) {
+        return;
+      }
+      fadeHighlight(0);
       await sleep(300);
-      showNextAward();
+      if (!closed.current) {
+        showNextAward();
+      }
     };
 
     if (outcome === "won") {
@@ -186,11 +206,13 @@ const GameEndOverview = (props) => {
   };
 
   useEffect(() => {
-    highlight.current.style.opacity = 1;
+    fadeHighlight(1);
     const timeout = setTimeout(async () => {
-      highlight.current.style.opacity = 0;
+      fadeHighlight(0);
       await sleep(300);
-      showNextAward();
+      if (!closed.current) {
+        showNextAward();
+      }
     }, 2200);
 
     if (award > 0 && award < awards.length) {
