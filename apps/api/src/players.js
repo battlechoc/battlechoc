@@ -2,7 +2,8 @@
 
 const crypto = require('crypto');
 const { EmptyPlayerStats } = require('@battlechoc/battlechoc-shared-functions');
-const { resultOf, coinsOf } = require('./coins');
+const { resultOf, xpOf } = require('./xp');
+const pantry = require('./pantry');
 
 const count = async (pool, sql, params) => Number((await pool.query(sql, params)).rows[0].n);
 
@@ -32,11 +33,19 @@ const stats = async (pool, playerId) => {
     if (!player) {
         return undefined;
     }
+    const now = Date.now();
+    const pantryTotals = await pantry.totals(pool, playerId, now);
     return {
         id: player.id,
         username: player.username || EmptyPlayerStats.username,
-        coins: player.coins,
-        score: player.score,
+        // score is the XP (private progress); coins is the cocoa, for clients from before the pantry
+        coins: pantryTotals.COCOA || 0,
+        score: player.xp,
+        xp: player.xp,
+        rating: Math.round(player.rating),
+        ratedMatches: player.rated_matches,
+        pantry: pantryTotals,
+        spoiling: await pantry.spoiling(pool, playerId, now),
         level: levelOf(player),
         tutorialStarted: player.tutorial_started,
         tutorialSkipped: player.tutorial_skipped,
@@ -47,19 +56,21 @@ const stats = async (pool, playerId) => {
     };
 };
 
-// rank among named players; ties share a rank
-const ranking = async (pool, score) => 1 + await count(pool,
-    'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL AND score > $1', [score]);
+// rank by rating among named players with at least one rated match; ties share a rank
+const ranking = async (pool, rating) => 1 + await count(pool,
+    'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL AND rated_matches > 0 AND rating > $1', [rating]);
 
 const playerInfo = async (pool, player) => ({
     name: player.username || EmptyPlayerStats.username,
-    score: player.score,
+    score: player.xp,
+    rating: Math.round(player.rating),
     level: Object.values(levelOf(player)).reduce((sum, value) => sum + value, 0),
     ...(await results(pool, player.id)),
-    ranking: await ranking(pool, player.score),
+    ranking: await ranking(pool, player.rating),
 });
 
-// stores finished matches once (by record id) and credits the coins computed on the server
+// stores finished offline matches once (by record id) and credits the XP computed on the server;
+// they never give ingredients and never change the rating
 const addTrackRecords = async (pool, playerId, records) => {
     let credited = 0;
     for (const record of records) {
@@ -72,13 +83,13 @@ const addTrackRecords = async (pool, playerId, records) => {
             continue;
         }
         const result = resultOf(record);
-        const coins = coinsOf(record, result);
-        await pool.query('INSERT INTO track_records (id, player_id, record, result, coins) VALUES ($1, $2, $3, $4, $5)',
-            [`${playerId}:${id}`, playerId, JSON.stringify(record), result, coins]);
-        credited += coins;
+        const xp = xpOf(record, result);
+        await pool.query('INSERT INTO track_records (id, player_id, record, result, coins, xp) VALUES ($1, $2, $3, $4, 0, $5)',
+            [`${playerId}:${id}`, playerId, JSON.stringify(record), result, xp]);
+        credited += xp;
     }
     if (credited > 0) {
-        await pool.query('UPDATE players SET coins = coins + $1, score = score + $1 WHERE id = $2', [credited, playerId]);
+        await pool.query('UPDATE players SET xp = xp + $1 WHERE id = $2', [credited, playerId]);
     }
     return credited;
 };

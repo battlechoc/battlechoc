@@ -9,8 +9,11 @@ const {
     getEntityDescriptor,
     finalLevel,
     isValidLanguage,
+    choclabCost,
 } = require('@battlechoc/battlechoc-shared-functions');
 const players = require('./players');
+const pantry = require('./pantry');
+const { withTransaction } = require('./db');
 const { isValidUsername, randomName } = require('./names');
 const { AuthError } = require('./auth');
 
@@ -92,7 +95,7 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10 
     app.get('/user', ...user, handle(async (req, res) => sendStats(res, req.playerId)));
 
     // imports the offline profile of this device once (track records are deduplicated by id;
-    // coins are always computed on the server, never taken from the client)
+    // XP is always computed on the server; coins from the client are ignored)
     app.post('/user/merge', ...user, handle(async (req, res) => {
         const info = (req.body && req.body.playerInfo) || {};
         if (!req.player.username && isValidUsername(info.username) && !(await players.findPlayerByName(pool, info.username))) {
@@ -125,8 +128,12 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10 
         } else if (step === 'skipped') {
             await pool.query('UPDATE players SET tutorial_started = FALSE, tutorial_skipped = TRUE WHERE id = $1', [req.playerId]);
         } else if (step === 'finished') {
-            // the 100 coins for finishing the tutorial are credited once
-            await pool.query('UPDATE players SET coins = coins + 100, score = score + 100 WHERE id = $1 AND tutorial_finished = FALSE', [req.playerId]);
+            // finishing the tutorial gives 100 XP and 100 cocoa, once
+            const { rows } = await pool.query(
+                'UPDATE players SET xp = xp + 100 WHERE id = $1 AND tutorial_finished = FALSE RETURNING id', [req.playerId]);
+            if (rows.length > 0) {
+                await pantry.add(pool, req.playerId, [{ ingredient: 'COCOA', amount: 100 }], Date.now());
+            }
             await pool.query('UPDATE players SET tutorial_started = TRUE, tutorial_skipped = FALSE, tutorial_finished = TRUE WHERE id = $1', [req.playerId]);
         } else {
             res.status(404).json({ error: 'UNKNOWN TUTORIAL STEP' });
@@ -198,6 +205,25 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10 
 
     /* ---------- Choclab ---------- */
 
+    // Choclab upgrades run one at a time per player (one API process), each in a transaction
+    const upgradeQueues = new Map();
+    const oneAtATime = (playerId, task) => {
+        const previous = upgradeQueues.get(playerId) || Promise.resolve();
+        const next = previous.catch(() => {}).then(task);
+        upgradeQueues.set(playerId, next);
+        next.catch(() => {}).finally(() => {
+            if (upgradeQueues.get(playerId) === next) {
+                upgradeQueues.delete(playerId);
+            }
+        });
+        return next;
+    };
+
+    app.get('/user/pantry', ...user, handle(async (req, res) => {
+        const now = Date.now();
+        res.json({ pantry: await pantry.totals(pool, req.playerId, now), spoiling: await pantry.spoiling(pool, req.playerId, now) });
+    }));
+
     app.post('/update/level', ...user, handle(async (req, res) => {
         const { entityType, upgrade } = req.body || {};
         if (!EntityType.isInstanceOf(entityType) || !(entityType in EmptyPlayerStats.level)) {
@@ -208,24 +234,38 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10 
             res.status(400).json({ error: 'ONLY UPGRADES ARE SUPPORTED' });
             return;
         }
-        const level = players.levelOf(req.player);
-        const descriptor = getEntityDescriptor(entityType, level);
-        const limit = descriptor.level ? descriptor.level.max - 1 : finalLevel;
-        if (level[entityType] + 1 > limit) {
-            res.status(400).json({ error: 'LEVEL LIMIT REACHED' });
+        let outcome;
+        try {
+            outcome = await oneAtATime(req.playerId, () => withTransaction(pool, async client => {
+                const level = players.levelOf(await players.findPlayer(client, req.playerId));
+                const descriptor = getEntityDescriptor(entityType, level);
+                const limit = descriptor.level ? descriptor.level.max - 1 : finalLevel;
+                if (level[entityType] + 1 > limit) {
+                    return { error: 'LEVEL LIMIT REACHED' };
+                }
+                const cost = choclabCost(entityType, level[entityType]);
+                await pantry.spend(client, req.playerId, { COCOA: cost.cocoa, ...cost.ingredients }, Date.now());
+                const nextLevel = { ...level, [entityType]: level[entityType] + 1 };
+                await client.query('UPDATE players SET level = $1 WHERE id = $2', [JSON.stringify(nextLevel), req.playerId]);
+                return { level: nextLevel };
+            }));
+        } catch (error) {
+            if (error instanceof pantry.NotEnoughIngredientsError) {
+                res.status(400).json({ error: 'NOT ENOUGH INGREDIENTS' });
+                return;
+            }
+            throw error;
+        }
+        if (outcome.error) {
+            res.status(400).json({ error: outcome.error });
             return;
         }
-        const costs = descriptor.coins;
-        const nextLevel = { ...level, [entityType]: level[entityType] + 1 };
-        // written as an addition of a negative amount (pg-mem, used in the tests, mis-evaluates `coins - $1`)
-        const { rows } = await pool.query(
-            'UPDATE players SET coins = coins + $1, level = $2 WHERE id = $3 AND coins >= $4 RETURNING coins, level',
-            [-costs, JSON.stringify(nextLevel), req.playerId, costs]);
-        if (rows.length === 0) {
-            res.status(400).json({ error: 'NOT ENOUGH COINS' });
-            return;
-        }
-        res.json({ coins: rows[0].coins, level: rows[0].level });
+        const now = Date.now();
+        res.json({
+            level: outcome.level,
+            pantry: await pantry.totals(pool, req.playerId, now),
+            spoiling: await pantry.spoiling(pool, req.playerId, now),
+        });
     }));
 
     /* ---------- friends, ranking, lookup ---------- */
@@ -260,19 +300,19 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10 
     }));
 
     app.get('/rank', ...user, handle(async (req, res) => {
-        res.json({ ranking: await players.ranking(pool, req.player.score) });
+        res.json({ ranking: await players.ranking(pool, req.player.rating) });
     }));
 
     app.get('/highscore', ...user, handle(async (req, res) => {
-        const total = await players.count(pool, 'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL AND score > 0', []);
+        const total = await players.count(pool, 'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL AND rated_matches > 0', []);
         const lastPage = Math.max(1, Math.ceil(total / HIGHSCORE_PAGE_SIZE));
         let page = Number.parseInt(req.query.page, 10);
         if (!Number.isInteger(page)) {
-            page = Math.ceil((await players.ranking(pool, req.player.score)) / HIGHSCORE_PAGE_SIZE);
+            page = Math.ceil((await players.ranking(pool, req.player.rating)) / HIGHSCORE_PAGE_SIZE);
         }
         page = Math.min(Math.max(1, page), lastPage);
         const { rows } = await pool.query(
-            'SELECT * FROM players WHERE username IS NOT NULL AND score > 0 ORDER BY score DESC, username_lower ASC LIMIT $1 OFFSET $2',
+            'SELECT * FROM players WHERE username IS NOT NULL AND rated_matches > 0 ORDER BY rating DESC, username_lower ASC LIMIT $1 OFFSET $2',
             [HIGHSCORE_PAGE_SIZE, (page - 1) * HIGHSCORE_PAGE_SIZE]);
         const list = [];
         for (const row of rows) {
@@ -288,18 +328,18 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10 
             return;
         }
         const { rows } = await pool.query(
-            'SELECT * FROM players WHERE username_lower LIKE $1 ORDER BY score DESC LIMIT $2', [`%${text}%`, MAX_QUERY_RESULTS]);
+            'SELECT * FROM players WHERE username_lower LIKE $1 ORDER BY rating DESC LIMIT $2', [`%${text}%`, MAX_QUERY_RESULTS]);
         res.json(await Promise.all(rows.map(row => players.playerInfo(pool, row))));
     }));
 
     app.get('/random/opponent', ...user, handle(async (req, res) => {
-        const total = await players.count(pool, 'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL AND score > 0 AND id <> $1', [req.playerId]);
+        const total = await players.count(pool, 'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL AND xp > 0 AND id <> $1', [req.playerId]);
         if (total === 0) {
             res.status(404).json({ error: 'NO MATCHING PLAYER FOUND' });
             return;
         }
         const { rows } = await pool.query(
-            'SELECT * FROM players WHERE username IS NOT NULL AND score > 0 AND id <> $1 ORDER BY id LIMIT 1 OFFSET $2',
+            'SELECT * FROM players WHERE username IS NOT NULL AND xp > 0 AND id <> $1 ORDER BY id LIMIT 1 OFFSET $2',
             [req.playerId, crypto.randomInt(total)]);
         res.json(await players.playerInfo(pool, rows[0]));
     }));

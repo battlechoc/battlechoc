@@ -1,5 +1,6 @@
 const request = require('supertest');
-const { EntityType } = require('@battlechoc/battlechoc-shared-functions');
+const { EntityType, choclabCost } = require('@battlechoc/battlechoc-shared-functions');
+const pantry = require('../src/pantry');
 const { createApp } = require('../src/app');
 const { createAuth } = require('../src/auth');
 const { createPush } = require('../src/push');
@@ -39,7 +40,7 @@ const named = async (app, username) => {
     return player;
 };
 
-const winRecord = (id, awards = [{ key: 'WINNER', coins: 9999 }]) => ({
+const winRecord = (id, awards = [{ key: 'WINNER', xp: 9999 }]) => ({
     id, won: true, lost: false, builtEntities: 4, attacks: 3, espionages: 0, moltenFields: 0,
     winners: [{ id: 'p', name: 'Carolin Cacao', type: 'PlayerType.HUMAN', idx: 0 }], awards,
 });
@@ -105,28 +106,30 @@ describe('names', () => {
 });
 
 describe('progress', () => {
-    test('finishing the tutorial gives 100 coins once and returns the updated stats', async () => {
+    test('finishing the tutorial gives 100 xp and 100 cocoa once and returns the updated stats', async () => {
         const { app } = await setup();
         const player = await account(app);
         expect((await player.post('/user/tutorial/started')).body.stats.tutorialStarted).toBe(true);
         const finished = await player.post('/user/tutorial/finished').expect(200);
-        expect(finished.body.stats).toMatchObject({ tutorialFinished: true, coins: 100, score: 100 });
-        expect((await player.post('/user/tutorial/finished')).body.stats.coins).toBe(100);
+        expect(finished.body.stats).toMatchObject({ tutorialFinished: true, xp: 100, score: 100, coins: 100, pantry: { COCOA: 100 } });
+        const again = await player.post('/user/tutorial/finished');
+        expect(again.body.stats).toMatchObject({ xp: 100, pantry: { COCOA: 100 } });
     });
 
-    test('match results credit server-computed coins once per record', async () => {
+    test('offline match records credit server-computed xp once per record, never ingredients', async () => {
         const { app } = await setup();
         const player = await account(app);
-        const win = winRecord('match-1', [{ key: 'WINNER', coins: 9999 }, { key: 'GREENSPOT' }, 'SETTLER', { key: 'UNKNOWN' }]);
+        const win = winRecord('match-1', [{ key: 'WINNER', xp: 9999 }, { key: 'GREENSPOT' }, 'SETTLER', { key: 'UNKNOWN' }]);
         const first = await player.post('/user/trackrecords', { stats: [win] }).expect(200);
-        // WINNER 25 + GREENSPOT 20 + SETTLER 50, the client's coin values are ignored
-        expect(first.body.stats).toMatchObject({ coins: 95, score: 95, winnings: 1 });
+        // WINNER 25 + GREENSPOT 20 + SETTLER 50, the client's xp values are ignored
+        expect(first.body.stats).toMatchObject({ xp: 95, score: 95, winnings: 1, pantry: {} });
         const again = await player.post('/user/trackrecords', { stats: [win] }).expect(200);
-        expect(again.body.stats.coins).toBe(95);
-        const loss = { id: 'match-2', won: false, lost: true, winners: [{ id: 'ai' }], awards: [] };
+        expect(again.body.stats.xp).toBe(95);
+        // losers get half (NERD 50 → 25), a draw counts like a win
+        const loss = { id: 'match-2', won: false, lost: true, winners: [{ id: 'ai' }], awards: ['NERD'] };
         const draw = { id: 'match-3', won: false, lost: false, builtEntities: 3, winners: [{ id: 'a' }, { id: 'b' }], awards: ['WINNER'] };
         const after = await player.post('/user/trackrecords', { stats: [loss, draw] }).expect(200);
-        expect(after.body.stats).toMatchObject({ coins: 95 + 12, losses: 1, drawn: 1, winnings: 1 });
+        expect(after.body.stats).toMatchObject({ xp: 95 + 25 + 25, losses: 1, drawn: 1, winnings: 1, pantry: {} });
         await player.post('/user/trackrecords', {}).expect(400);
     });
 
@@ -138,22 +141,49 @@ describe('progress', () => {
             trackRecord: [winRecord('offline-1')],
         };
         const merged = await player.post('/user/merge', { playerInfo }).expect(200);
-        expect(merged.body.mergedPlayerInfo).toMatchObject({ username: 'OfflineHero', coins: 25, tutorialFinished: true });
+        expect(merged.body.mergedPlayerInfo).toMatchObject({ username: 'OfflineHero', xp: 25, coins: 0, pantry: {}, tutorialFinished: true });
         const again = await player.post('/user/merge', { playerInfo }).expect(200);
-        expect(again.body.mergedPlayerInfo.coins).toBe(25);
+        expect(again.body.mergedPlayerInfo.xp).toBe(25);
     });
 
-    test('the Choclab upgrades levels for coins and enforces limits', async () => {
+    test('the Choclab charges cocoa and milestone ingredients and enforces limits', async () => {
         const { app, pool } = await setup();
         const player = await account(app);
-        await player.post('/update/level', { entityType: EntityType.FACTORY, upgrade: true }).expect(400);
-        await pool.query('UPDATE players SET coins = 500 WHERE id = $1', [player.playerId]);
-        const upgraded = await player.post('/update/level', { entityType: EntityType.FACTORY, upgrade: true }).expect(200);
-        expect(upgraded.body.coins).toBe(500 - 102);
-        expect(upgraded.body.level[EntityType.FACTORY]).toBe(1);
-        await player.post('/update/level', { entityType: EntityType.CREAM, upgrade: true }).expect(400);
+        const up = entityType => player.post('/update/level', { entityType, upgrade: true });
+        expect((await up(EntityType.RUM_TRUFFLE_CANNON).expect(400)).body.error).toBe('NOT ENOUGH INGREDIENTS');
+        await pantry.add(pool, player.playerId, [{ ingredient: 'COCOA', amount: 1000 }], Date.now());
+        for (let level = 1; level <= 4; level++) {
+            expect((await up(EntityType.RUM_TRUFFLE_CANNON).expect(200)).body.level[EntityType.RUM_TRUFFLE_CANNON]).toBe(level);
+        }
+        // the 5th level also needs 5 rum
+        expect((await up(EntityType.RUM_TRUFFLE_CANNON).expect(400)).body.error).toBe('NOT ENOUGH INGREDIENTS');
+        await pantry.add(pool, player.playerId, [{ ingredient: 'RUM', amount: 5 }], Date.now());
+        const upgraded = await up(EntityType.RUM_TRUFFLE_CANNON).expect(200);
+        expect(upgraded.body.level[EntityType.RUM_TRUFFLE_CANNON]).toBe(5);
+        expect(upgraded.body.pantry.RUM).toBeUndefined();
+        const spent = [0, 1, 2, 3, 4].reduce((sum, level) => sum + choclabCost(EntityType.RUM_TRUFFLE_CANNON, level).cocoa, 0);
+        expect(upgraded.body.pantry.COCOA).toBe(1000 - spent);
         await player.post('/update/level', { entityType: 'EntityType.NOPE', upgrade: true }).expect(400);
         await player.post('/update/level', { entityType: EntityType.FACTORY, upgrade: false }).expect(400);
+    });
+
+    test('two upgrades at once with ingredients for one: exactly one succeeds', async () => {
+        const { app, pool } = await setup();
+        const player = await account(app);
+        await pantry.add(pool, player.playerId, [{ ingredient: 'COCOA', amount: choclabCost(EntityType.FACTORY, 0).cocoa }], Date.now());
+        const up = () => player.post('/update/level', { entityType: EntityType.FACTORY, upgrade: true });
+        const statuses = (await Promise.all([up(), up()])).map(response => response.status).sort();
+        expect(statuses).toEqual([200, 400]);
+        expect((await player.get('/user')).body.stats.level[EntityType.FACTORY]).toBe(1);
+    });
+
+    test('the pantry endpoint lists totals and spoiling batches', async () => {
+        const { app, pool } = await setup();
+        const player = await account(app);
+        await pantry.add(pool, player.playerId, [{ ingredient: 'VANILLA', amount: 2 }, { ingredient: 'SUGAR', amount: 4 }], Date.now());
+        const response = await player.get('/user/pantry').expect(200);
+        expect(response.body.pantry).toEqual({ VANILLA: 2, SUGAR: 4 });
+        expect(response.body.spoiling).toEqual([expect.objectContaining({ ingredient: 'VANILLA', amount: 2 })]);
     });
 
     test('language and reports', async () => {
@@ -181,23 +211,30 @@ describe('players', () => {
         expect((await me.get('/user/friends')).body).toEqual([]);
     });
 
-    test('ranks, highscore pages, lookups and random opponents', async () => {
+    test('ranks and highscore come from the rating of rated players; lookups and random opponents', async () => {
         const { app, pool } = await setup();
         const names = ['Anna', 'Bert', 'Cleo', 'Dora'];
+        // Anna never played a rated match; the others did
+        const ratings = [null, 1550, 1600, 1700];
         const accounts = [];
         for (const [index, name] of names.entries()) {
             const player = await named(app, name);
-            await pool.query('UPDATE players SET score = $1 WHERE id = $2', [(index + 1) * 100, player.playerId]);
+            await pool.query('UPDATE players SET xp = $1 WHERE id = $2', [(index + 1) * 100, player.playerId]);
+            if (ratings[index] !== null) {
+                await pool.query('UPDATE players SET rating = $1, rated_matches = 1 WHERE id = $2', [ratings[index], player.playerId]);
+            }
             accounts.push(player);
         }
         expect((await accounts[3].get('/rank')).body.ranking).toBe(1);
-        expect((await accounts[0].get('/rank')).body.ranking).toBe(4);
+        expect((await accounts[1].get('/rank')).body.ranking).toBe(3);
         const highscore = await accounts[0].get('/highscore').expect(200);
         expect(highscore.body).toMatchObject({ page: 1, lastPage: 1 });
-        expect(highscore.body.list.map(entry => [entry.name, entry.ranking])).toEqual([['Dora', 1], ['Cleo', 2], ['Bert', 3], ['Anna', 4]]);
-        expect((await accounts[0].get('/user/cleo').expect(200)).body[0]).toMatchObject({ name: 'Cleo', score: 300, ranking: 2 });
+        expect(highscore.body.list.map(entry => [entry.name, entry.ranking, entry.rating])).toEqual([
+            ['Dora', 1, 1700], ['Cleo', 2, 1600], ['Bert', 3, 1550],
+        ]);
+        expect((await accounts[0].get('/user/cleo').expect(200)).body[0]).toMatchObject({ name: 'Cleo', score: 300, rating: 1600, ranking: 2 });
         await accounts[0].get('/user/nobody').expect(404);
-        expect((await accounts[0].get('/query/user/e')).body.map(entry => entry.name).sort()).toEqual(['Bert', 'Cleo']);
+        expect((await accounts[0].get('/query/user/e')).body.map(entry => entry.name)).toEqual(['Cleo', 'Bert']);
         const opponent = await accounts[0].get('/random/opponent').expect(200);
         expect(['Bert', 'Cleo', 'Dora']).toContain(opponent.body.name);
     });
