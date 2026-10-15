@@ -29,8 +29,6 @@ const award = (key, xp, who, isFulfilled) => ({
     subtitle: tr(`AWARDS_${key}_SUBTITLE`),
     xp,
     who,
-    // the former name of the value; removed once every consumer reads xp
-    coins: xp,
     isFulfilled,
 });
 
