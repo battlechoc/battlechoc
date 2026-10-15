@@ -44,3 +44,93 @@ describe('choclabCost', () => {
         });
     });
 });
+
+const { rollDrops, achievementXp, DropTables, engine } = require('../index');
+
+// a random source that returns the given values in order, and fails the test when asked for more
+const sequence = (...values) => () => {
+    if (values.length === 0) {
+        throw new Error('rolled more often than expected');
+    }
+    return values.shift();
+};
+const base = { isWinner: true, opponentIsAi: false, verifiedMatchesToday: 1, freshBatch: false };
+
+describe('achievementXp', () => {
+    test('losers get half, rounded down', () => {
+        const achievements = [{ key: 'A', xp: 25 }, { key: 'B', xp: 50 }];
+        expect(achievementXp(achievements, true)).toBe(75);
+        expect(achievementXp(achievements, false)).toBe(37);
+    });
+});
+
+describe('rollDrops', () => {
+    test('a hit gives the special ingredient, a miss the cocoa fallback', () => {
+        const winner = [{ key: 'WINNER', xp: 25 }];
+        expect(rollDrops({ ...base, achievements: winner, random: sequence(0.05) }))
+            .toEqual([{ ingredient: 'SUGAR', amount: 3, achievement: 'WINNER' }]);
+        expect(rollDrops({ ...base, achievements: winner, random: sequence(0.5) }))
+            .toEqual([{ ingredient: 'COCOA', amount: 25, achievement: 'WINNER' }]);
+    });
+
+    test('an else entry is only rolled when the one before missed', () => {
+        const one = [{ key: 'ONEHITWONDER', xp: 1800 }];
+        expect(rollDrops({ ...base, achievements: one, random: sequence(0.1) }))
+            .toEqual([{ ingredient: 'GOLDLEAF', amount: 1, achievement: 'ONEHITWONDER' }]);
+        expect(rollDrops({ ...base, achievements: one, random: sequence(0.9, 0.2) }))
+            .toEqual([{ ingredient: 'VANILLA', amount: 1, achievement: 'ONEHITWONDER' }]);
+    });
+
+    test('entries without else are rolled independently', () => {
+        const rain = [{ key: 'RAINFOREST', xp: 1000 }];
+        expect(rollDrops({ ...base, achievements: rain, random: sequence(0.1, 0.1) })).toEqual([
+            { ingredient: 'SUGAR', amount: 5, achievement: 'RAINFOREST' },
+            { ingredient: 'VANILLA', amount: 1, achievement: 'RAINFOREST' },
+        ]);
+    });
+
+    test('losers and AI opponents halve the chances; losers halve the cocoa', () => {
+        const winner = [{ key: 'WINNER', xp: 25 }];
+        // 0.08 hits 10 % but not 5 % (loser); 0.04 hits 5 % (AI); 0.03 misses 2.5 % (loser against the AI)
+        expect(rollDrops({ ...base, isWinner: false, achievements: winner, random: sequence(0.08) }))
+            .toEqual([{ ingredient: 'COCOA', amount: 12, achievement: 'WINNER' }]);
+        expect(rollDrops({ ...base, opponentIsAi: true, achievements: winner, random: sequence(0.04) }))
+            .toEqual([{ ingredient: 'SUGAR', amount: 3, achievement: 'WINNER' }]);
+        expect(rollDrops({ ...base, opponentIsAi: true, isWinner: false, achievements: winner, random: sequence(0.03) }))
+            .toEqual([{ ingredient: 'COCOA', amount: 12, achievement: 'WINNER' }]);
+    });
+
+    test('daily tiers: full, then half chances, then only half the cocoa', () => {
+        const winner = [{ key: 'WINNER', xp: 25 }];
+        expect(rollDrops({ ...base, verifiedMatchesToday: 6, achievements: winner, random: sequence(0.07) }))
+            .toEqual([{ ingredient: 'COCOA', amount: 25, achievement: 'WINNER' }]);
+        expect(rollDrops({ ...base, verifiedMatchesToday: 15, achievements: winner, random: sequence(0.04) }))
+            .toEqual([{ ingredient: 'SUGAR', amount: 3, achievement: 'WINNER' }]);
+        expect(rollDrops({ ...base, verifiedMatchesToday: 16, achievements: winner, random: sequence() }))
+            .toEqual([{ ingredient: 'COCOA', amount: 12, achievement: 'WINNER' }]);
+    });
+
+    test('the first verified match of the day adds a fresh batch of cocoa', () => {
+        expect(rollDrops({ ...base, freshBatch: true, achievements: [], random: sequence() }))
+            .toEqual([{ ingredient: 'COCOA', amount: 100, achievement: 'FRESHBATCH' }]);
+    });
+
+    test('achievements without a table give only cocoa; amounts below 1 give nothing', () => {
+        expect(rollDrops({ ...base, achievements: [{ key: 'PICKY', xp: 5 }], random: sequence() }))
+            .toEqual([{ ingredient: 'COCOA', amount: 5, achievement: 'PICKY' }]);
+        expect(rollDrops({ ...base, isWinner: false, achievements: [{ key: 'PICKY', xp: 1 }], random: sequence() })).toEqual([]);
+    });
+
+    test('every table belongs to an achievement and references known ingredients and sane chances', () => {
+        const keys = engine.matchAwards.map(award => award.key);
+        Object.entries(DropTables).forEach(([key, table]) => {
+            expect(keys).toContain(key);
+            table.forEach(entry => {
+                expect(Ingredients[entry.ingredient]).toBeDefined();
+                expect(entry.chance).toBeGreaterThan(0);
+                expect(entry.chance).toBeLessThanOrEqual(1);
+                expect(Number.isInteger(entry.amount)).toBe(true);
+            });
+        });
+    });
+});

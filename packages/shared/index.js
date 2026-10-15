@@ -181,6 +181,10 @@ module.exports.Ingredients = ingredients.Ingredients;
 module.exports.SpecialIngredient = progression.SpecialIngredient;
 module.exports.ChoclabMilestones = progression.ChoclabMilestones;
 module.exports.choclabCost = progression.choclabCost;
+module.exports.DropTables = progression.DropTables;
+module.exports.DropRules = progression.DropRules;
+module.exports.achievementXp = progression.achievementXp;
+module.exports.rollDrops = progression.rollDrops;
 module.exports.EmptyPlayerStats = EmptyPlayerStats;
 module.exports.PlayerType = PlayerType;
 
