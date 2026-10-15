@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="14 14 222 222" width="100%" height="100%">
+  <defs>
+    <linearGradient id="pod" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6b4224"/>
+      <stop offset="0.5" stop-color="#3a2010"/>
+      <stop offset="1" stop-color="#1c0e05"/>
+    </linearGradient>
+    <radialGradient id="petal" cx="40%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#fffbe6"/>
+      <stop offset="0.6" stop-color="#f7e7a6"/>
+      <stop offset="1" stop-color="#d9bf62"/>
+    </radialGradient>
+    <radialGradient id="heart" cx="50%" cy="40%" r="60%">
+      <stop offset="0" stop-color="#fff3a0"/>
+      <stop offset="1" stop-color="#f0b429"/>
+    </radialGradient>
+    <radialGradient id="shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#000" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="125" cy="212" rx="100" ry="14" fill="url(#shadow)"/>
+  <!-- two vanilla pods -->
+  <path d="M30 190 C 70 150, 150 100, 220 70 C 224 76, 222 80, 216 84 C 150 116, 76 166, 38 198 C 32 200, 28 196, 30 190 Z" fill="url(#pod)"/>
+  <path d="M40 206 C 90 176, 160 150, 226 132 C 228 138, 226 142, 220 145 C 160 162, 92 190, 46 214 C 40 216, 36 210, 40 206 Z" fill="url(#pod)"/>
+  <path d="M50 186 C 100 150, 160 110, 212 82" fill="none" stroke="#a37450" stroke-width="2.5" opacity="0.6"/>
+  <path d="M56 204 C 110 180, 170 156, 216 142" fill="none" stroke="#a37450" stroke-width="2.5" opacity="0.6"/>
+  <!-- orchid -->
+  <g transform="translate(92 92)">
+    <ellipse cx="0" cy="-34" rx="16" ry="30" fill="url(#petal)"/>
+    <ellipse cx="0" cy="-34" rx="16" ry="30" fill="url(#petal)" transform="rotate(72)"/>
+    <ellipse cx="0" cy="-34" rx="16" ry="30" fill="url(#petal)" transform="rotate(144)"/>
+    <ellipse cx="0" cy="-34" rx="16" ry="30" fill="url(#petal)" transform="rotate(216)"/>
+    <ellipse cx="0" cy="-34" rx="16" ry="30" fill="url(#petal)" transform="rotate(288)"/>
+    <circle cx="0" cy="0" r="16" fill="url(#heart)"/>
+    <circle cx="-4" cy="-4" r="5" fill="#ffffff" opacity="0.6"/>
+  </g>
+</svg>

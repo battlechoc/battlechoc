@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="14 14 222 222" width="100%" height="100%">
+  <defs>
+    <radialGradient id="cherry" cx="35%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#ff6b6b"/>
+      <stop offset="0.5" stop-color="#d0102a"/>
+      <stop offset="1" stop-color="#6e0613"/>
+    </radialGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9be15d"/>
+      <stop offset="1" stop-color="#2e8b3a"/>
+    </linearGradient>
+    <radialGradient id="shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#000" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="125" cy="214" rx="96" ry="14" fill="url(#shadow)"/>
+  <!-- stems -->
+  <path d="M84 150 C 92 100, 120 60, 150 34" fill="none" stroke="#5b7a1f" stroke-width="7" stroke-linecap="round"/>
+  <path d="M168 156 C 166 110, 160 70, 150 34" fill="none" stroke="#5b7a1f" stroke-width="7" stroke-linecap="round"/>
+  <path d="M150 34 C 176 18, 210 26, 222 52 C 196 62, 166 56, 150 34 Z" fill="url(#leaf)"/>
+  <path d="M154 36 C 176 40, 196 46, 216 52" fill="none" stroke="#1f6b2a" stroke-width="2" opacity="0.6"/>
+  <!-- cherries -->
+  <circle cx="82" cy="164" r="44" fill="url(#cherry)"/>
+  <circle cx="170" cy="168" r="42" fill="url(#cherry)"/>
+  <ellipse cx="66" cy="146" rx="12" ry="8" fill="#ffffff" opacity="0.6" transform="rotate(-30 66 146)"/>
+  <ellipse cx="155" cy="150" rx="11" ry="7" fill="#ffffff" opacity="0.6" transform="rotate(-30 155 150)"/>
+  <path d="M80 124 C 84 128, 84 132, 82 134" fill="none" stroke="#4a0410" stroke-width="3" stroke-linecap="round"/>
+  <path d="M168 130 C 172 134, 172 138, 170 140" fill="none" stroke="#4a0410" stroke-width="3" stroke-linecap="round"/>
+</svg>

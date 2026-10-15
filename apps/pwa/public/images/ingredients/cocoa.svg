@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="14 14 222 222" width="100%" height="100%">
+  <defs>
+    <radialGradient id="pod" cx="35%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#ff8a3d"/>
+      <stop offset="0.45" stop-color="#d9361b"/>
+      <stop offset="1" stop-color="#7a1508"/>
+    </radialGradient>
+    <radialGradient id="inside" cx="50%" cy="40%" r="70%">
+      <stop offset="0" stop-color="#fff6d8"/>
+      <stop offset="1" stop-color="#e3c98e"/>
+    </radialGradient>
+    <radialGradient id="seed" cx="35%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#fff3b8"/>
+      <stop offset="0.6" stop-color="#e9c75a"/>
+      <stop offset="1" stop-color="#b38a22"/>
+    </radialGradient>
+    <radialGradient id="bean" cx="35%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#a8653c"/>
+      <stop offset="0.55" stop-color="#6b3a1e"/>
+      <stop offset="1" stop-color="#3a1c0c"/>
+    </radialGradient>
+    <radialGradient id="shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#000" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="125" cy="205" rx="95" ry="16" fill="url(#shadow)"/>
+  <!-- the open pod -->
+  <path d="M28 120 C 30 70, 95 45, 150 52 C 205 58, 232 95, 222 128 C 210 165, 150 185, 95 178 C 50 172, 26 150, 28 120 Z" fill="url(#pod)"/>
+  <path d="M48 118 C 52 85, 100 68, 148 72 C 192 76, 210 100, 204 124 C 196 152, 150 164, 104 160 C 66 157, 46 140, 48 118 Z" fill="url(#inside)"/>
+  <!-- ridges on the rim -->
+  <path d="M40 98 C 70 70, 120 58, 168 62" fill="none" stroke="#ffb27a" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+  <!-- seeds -->
+  <g>
+    <ellipse cx="82" cy="112" rx="17" ry="12" fill="url(#seed)" transform="rotate(-18 82 112)"/>
+    <ellipse cx="114" cy="102" rx="17" ry="12" fill="url(#seed)" transform="rotate(-8 114 102)"/>
+    <ellipse cx="148" cy="100" rx="17" ry="12" fill="url(#seed)" transform="rotate(6 148 100)"/>
+    <ellipse cx="179" cy="108" rx="15" ry="11" fill="url(#seed)" transform="rotate(16 179 108)"/>
+    <ellipse cx="98" cy="134" rx="17" ry="12" fill="url(#seed)" transform="rotate(-10 98 134)"/>
+    <ellipse cx="132" cy="130" rx="17" ry="12" fill="url(#seed)" transform="rotate(2 132 130)"/>
+    <ellipse cx="166" cy="132" rx="16" ry="11" fill="url(#seed)" transform="rotate(12 166 132)"/>
+  </g>
+  <!-- roasted beans in front -->
+  <g>
+    <ellipse cx="78" cy="186" rx="26" ry="17" fill="url(#bean)" transform="rotate(-12 78 186)"/>
+    <path d="M58 190 C 70 182, 88 180, 99 182" fill="none" stroke="#2a1206" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="128" cy="196" rx="27" ry="17" fill="url(#bean)" transform="rotate(6 128 196)"/>
+    <path d="M106 194 C 120 190, 138 192, 150 198" fill="none" stroke="#2a1206" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="178" cy="186" rx="24" ry="16" fill="url(#bean)" transform="rotate(18 178 186)"/>
+    <path d="M160 180 C 172 182, 186 188, 195 196" fill="none" stroke="#2a1206" stroke-width="3" stroke-linecap="round"/>
+    <ellipse cx="70" cy="180" rx="8" ry="4" fill="#fff" opacity="0.35" transform="rotate(-12 70 180)"/>
+    <ellipse cx="120" cy="190" rx="8" ry="4" fill="#fff" opacity="0.35"/>
+    <ellipse cx="170" cy="179" rx="7" ry="4" fill="#fff" opacity="0.35" transform="rotate(18 170 179)"/>
+  </g>
+</svg>

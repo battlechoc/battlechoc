@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="14 14 222 222" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bark" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d78b4e"/>
+      <stop offset="0.45" stop-color="#a65a26"/>
+      <stop offset="1" stop-color="#5e2c0c"/>
+    </linearGradient>
+    <radialGradient id="end" cx="50%" cy="50%" r="60%">
+      <stop offset="0" stop-color="#7a3c14"/>
+      <stop offset="1" stop-color="#c47a3c"/>
+    </radialGradient>
+    <radialGradient id="shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#000" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <g id="stick">
+      <rect x="-90" y="-17" width="180" height="34" rx="10" fill="url(#bark)"/>
+      <path d="M-80 -6 L 80 -6" stroke="#f0b47a" stroke-width="3" opacity="0.6"/>
+      <path d="M-70 8 L 70 8" stroke="#4a2008" stroke-width="2" opacity="0.4"/>
+      <ellipse cx="90" cy="0" rx="9" ry="17" fill="url(#end)"/>
+      <path d="M90 -10 C 98 -6, 96 8, 88 8 C 82 8, 82 -2, 89 -2" fill="none" stroke="#4a2008" stroke-width="2.5"/>
+    </g>
+  </defs>
+  <ellipse cx="125" cy="200" rx="100" ry="15" fill="url(#shadow)"/>
+  <use href="#stick" transform="translate(120 140) rotate(-22)"/>
+  <use href="#stick" transform="translate(128 160) rotate(14)"/>
+</svg>

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="14 14 222 222" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bowl" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2f86c5"/>
+      <stop offset="0.35" stop-color="#7cc4f2"/>
+      <stop offset="1" stop-color="#1d5f93"/>
+    </linearGradient>
+    <radialGradient id="heap" cx="45%" cy="25%" r="80%">
+      <stop offset="0" stop-color="#fff2e0"/>
+      <stop offset="1" stop-color="#e7c9a1"/>
+    </radialGradient>
+    <radialGradient id="shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#000" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="125" cy="214" rx="86" ry="12" fill="url(#shadow)"/>
+  <!-- heap of sprinkles above the bowl -->
+  <path d="M46 150 C 54 104, 92 70, 125 70 C 158 70, 196 104, 204 150 Z" fill="url(#heap)"/>
+  <g stroke-linecap="round" stroke-width="9">
+    <path d="M84 120 l 14 -6" stroke="#ff4f8b"/><path d="M112 96 l 10 10" stroke="#ffd23f"/><path d="M138 104 l 14 -4" stroke="#3ec1f3"/>
+    <path d="M160 126 l 8 12" stroke="#7bd36a"/><path d="M98 140 l 14 2" stroke="#9b6bff"/><path d="M128 130 l -4 14" stroke="#ff8a3d"/>
+    <path d="M150 146 l 14 -2" stroke="#ff4f8b"/><path d="M70 142 l 10 -10" stroke="#3ec1f3"/><path d="M118 80 l 12 6" stroke="#7bd36a"/>
+    <path d="M176 140 l 10 6" stroke="#ffd23f"/><path d="M104 116 l 4 -12" stroke="#ff8a3d"/><path d="M142 84 l 6 12" stroke="#9b6bff"/>
+    <path d="M60 132 l 8 -12" stroke="#ff8a3d"/><path d="M186 132 l -6 -10" stroke="#ff4f8b"/>
+  </g>
+  <!-- bowl -->
+  <path d="M40 146 L 210 146 C 206 190, 172 214, 125 214 C 78 214, 44 190, 40 146 Z" fill="url(#bowl)"/>
+  <ellipse cx="125" cy="146" rx="85" ry="9" fill="#1a5585" opacity="0.5"/>
+  <path d="M60 160 C 70 186, 92 200, 118 204" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
+</svg>

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="14 14 222 222" width="100%" height="100%">
+  <defs>
+    <radialGradient id="pig" cx="35%" cy="30%" r="80%">
+      <stop offset="0" stop-color="#ffd3df"/>
+      <stop offset="0.55" stop-color="#f48fb1"/>
+      <stop offset="1" stop-color="#c2577c"/>
+    </radialGradient>
+    <radialGradient id="snout" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#ffc1d2"/>
+      <stop offset="1" stop-color="#e0708f"/>
+    </radialGradient>
+    <radialGradient id="shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#000" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="125" cy="210" rx="92" ry="14" fill="url(#shadow)"/>
+  <!-- legs -->
+  <rect x="78" y="176" width="22" height="30" rx="10" fill="#d9708f"/>
+  <rect x="150" y="176" width="22" height="30" rx="10" fill="#d9708f"/>
+  <!-- body -->
+  <ellipse cx="125" cy="150" rx="82" ry="58" fill="url(#pig)"/>
+  <!-- curly tail -->
+  <path d="M205 140 C 222 132, 222 112, 210 114 C 200 116, 204 130, 214 124" fill="none" stroke="#e0708f" stroke-width="6" stroke-linecap="round"/>
+  <!-- ears -->
+  <path d="M70 92 L 82 62 L 100 96 Z" fill="#e88aa8"/>
+  <path d="M120 88 L 140 60 L 146 98 Z" fill="#e88aa8"/>
+  <!-- head -->
+  <circle cx="102" cy="122" r="44" fill="url(#pig)"/>
+  <!-- snout -->
+  <ellipse cx="84" cy="136" rx="20" ry="15" fill="url(#snout)"/>
+  <ellipse cx="78" cy="136" rx="4" ry="6" fill="#a8405f"/>
+  <ellipse cx="91" cy="136" rx="4" ry="6" fill="#a8405f"/>
+  <!-- eyes -->
+  <circle cx="92" cy="108" r="5" fill="#3a1a22"/>
+  <circle cx="118" cy="108" r="5" fill="#3a1a22"/>
+  <circle cx="93.5" cy="106.5" r="1.6" fill="#ffffff"/>
+  <circle cx="119.5" cy="106.5" r="1.6" fill="#ffffff"/>
+  <!-- a little shine and sugar dust -->
+  <ellipse cx="150" cy="118" rx="22" ry="10" fill="#ffffff" opacity="0.35" transform="rotate(-12 150 118)"/>
+  <g fill="#ffffff" opacity="0.7"><circle cx="160" cy="160" r="2"/><circle cx="176" cy="150" r="1.6"/><circle cx="140" cy="176" r="1.6"/></g>
+</svg>
