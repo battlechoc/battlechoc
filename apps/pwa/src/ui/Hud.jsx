@@ -289,7 +289,7 @@ const Hud = (props) => {
     if (resumeGamePossible) {
       setOpen(true);
     } else {
-      prepareNewGameCallback(false);
+      props.startGameCallback();
     }
   };
 
@@ -379,11 +379,11 @@ const Hud = (props) => {
           const firstPlayScreen =
             playerInfos.stats.tutorialFinished === false &&
             playerInfos.stats.tutorialSkipped === false;
-          // the first coins unlock the Choclab; online play also needs a player name, under
-          // which others find and invite you (the server assigns one once it is reachable)
+          // a first win unlocks the Choclab; friends also need a player name, under which
+          // others find and invite you (the server assigns one once it is reachable)
           const unnamed = typeof playername === "undefined" || playername === "Chocnonymous";
           const lockedChoclab = score < 1;
-          const lockedOnline = unnamed || score < 1;
+          const lockedFriends = unnamed || score < 1;
 
           if (firstPlayScreen) {
             controls.push(
@@ -426,23 +426,7 @@ const Hud = (props) => {
                 size="huge"
                 onClick={() => resumeOrStartGame()}
               >
-                {typeof playername === "undefined" ||
-                playername === "Chocnonymous"
-                  ? t(tr.NEW_GAME)
-                  : t(tr.MAIN_MENU_SINGLEPLAYER)}
-              </Button>
-            );
-            controls.push(
-              <Button
-                className={classes.menuButton}
-                key="1"
-                size="huge"
-                locked={lockedOnline}
-                onLockedClick={() => notifyLocked(t(tr.ONLINE_TITLE))}
-                color="secondary"
-                onClick={() => setShowOnlineLobby(true)}
-              >
-                {t(tr.ONLINE_TITLE)}
+                {t(tr.START_GAME)}
               </Button>
             );
             controls.push(
@@ -458,6 +442,20 @@ const Hud = (props) => {
                 }}
               >
                 {t(tr.MAIN_MENU_CHOCLAB)}
+              </Button>
+            );
+            // friends: invites and the lobby; others find you by your name
+            controls.push(
+              <Button
+                className={classes.menuButton}
+                key="3"
+                size="small"
+                color="secondary"
+                locked={lockedFriends}
+                onLockedClick={() => notifyLocked(t(tr.FRIENDS))}
+                onClick={() => setShowOnlineLobby(true)}
+              >
+                {t(tr.FRIENDS)}
               </Button>
             );
           }
@@ -484,7 +482,7 @@ const Hud = (props) => {
                       color="accent"
                       onClick={() => {
                         setOpen(false);
-                        prepareNewGameCallback(false);
+                        props.startGameCallback();
                       }}
                     >
                       {t(tr.HUD_NEW_GAME)}
@@ -590,6 +588,7 @@ const Hud = (props) => {
 
 Hud.propTypes = {
   prepareNewGameCallback: PropTypes.func.isRequired,
+  startGameCallback: PropTypes.func.isRequired,
   startTutorial: PropTypes.func.isRequired,
   endGame: PropTypes.func.isRequired,
   challengedPlayer: PropTypes.string,

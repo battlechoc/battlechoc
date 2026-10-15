@@ -60,8 +60,8 @@ const waitForMatch = (page) =>
   });
 
 const startMatch = async (page) => {
-  await page.waitForFunction(() => document.body.innerText.includes("Singleplayer"));
-  await clickText(page, "Singleplayer");
+  await page.waitForFunction(() => document.body.innerText.includes("Start Game"));
+  await clickText(page, "Start Game");
   await waitForMatch(page);
 };
 
@@ -169,8 +169,8 @@ test("pauses when the tab is hidden and resumes after a reload", async ({ page }
   await page.waitForTimeout(1000);
 
   await page.goto(url, { waitUntil: "networkidle" });
-  await page.waitForFunction(() => document.body.innerText.includes("Singleplayer"));
-  await clickText(page, "Singleplayer");
+  await page.waitForFunction(() => document.body.innerText.includes("Start Game"));
+  await clickText(page, "Start Game");
   await expect(page.getByText("Resume Game").first()).toBeVisible();
   await clickText(page, "Resume Game");
   await waitForMatch(page);

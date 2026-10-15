@@ -42,6 +42,7 @@ import { scenarios, debugScenarios } from "./situations/scenarios";
 import Hud from "./ui/Hud";
 import { v4 as uuidv4 } from "uuid";
 import IncomingInvite from "./ui/dialogs/IncomingInvite";
+import Matchmaking from "./ui/dialogs/Matchmaking";
 import Tutorial from "./tutorial/Tutorial";
 import QuickMessage from "./ui/dialogs/QuickMessage";
 import logger from "./helper/logger";
@@ -77,7 +78,10 @@ class App extends Component {
       player: player,
       situation: situation,
       openInfo: openInfo,
+      matchmaking: false,
     };
+    // each Start counts up; a late answer of an earlier Start is ignored
+    this.startAttempt = 0;
   }
 
   componentDidMount() {
@@ -258,6 +262,39 @@ class App extends Component {
     }
   };
 
+  // Start: an online match when the live service answers within 3 s (a human from the queue or
+  // the server AI), otherwise the local AI. New players keep the tutorial and the prepared first
+  // match, which run locally.
+  startGame = () => {
+    const stats = this.props.playerInfos.stats;
+    const newPlayer = !stats.tutorialFinished && !stats.tutorialSkipped;
+    if (newPlayer || (stats.score || 0) <= 100 || !navigator.onLine) {
+      this.prepareNewGame(false);
+      return;
+    }
+    const attempt = ++this.startAttempt;
+    const timeout = new Promise((resolve) => setTimeout(() => resolve(false), 3000));
+    Promise.race([liveLobby.enter().then(() => true), timeout])
+      .catch(() => false)
+      .then((connected) => {
+        if (attempt !== this.startAttempt) {
+          return;
+        }
+        if (connected) {
+          this.setState({ matchmaking: true });
+          liveLobby.joinQueue().catch((error) => logger.info("queue failed", error));
+        } else {
+          this.prepareNewGame(false);
+        }
+      });
+  };
+
+  cancelMatchmaking = () => {
+    this.startAttempt++;
+    this.setState({ matchmaking: false });
+    liveLobby.leaveQueue().catch((error) => logger.info("leaving the queue failed", error));
+  };
+
   // keeps the live connection while the app is visible: invites arrive, and a running online
   // match (reload, other device) is resumed
   connectLive() {
@@ -294,6 +331,8 @@ class App extends Component {
 
   // plays an online match hosted by the server (from the queue, an invite or a resume)
   startOnlineMatch = ({ matchId, playerIndex, epoch }) => {
+    this.startAttempt++;
+    this.setState({ matchmaking: false });
     if (typeof matchSession.host !== "undefined") {
       matchSession.host.persist(true);
       matchSession.host.stop();
@@ -531,6 +570,7 @@ class App extends Component {
         </Suspense>
         <Hud
           prepareNewGameCallback={this.prepareNewGame}
+          startGameCallback={this.startGame}
           startTutorial={() => this.startTutorial()}
           showBuildingDemos={() => this.showBuildingDemos()}
           className={this.props.tutorial ? "tutorial hud" : "hud"}
@@ -539,6 +579,13 @@ class App extends Component {
           openInfo={this.state.openInfo}
         />
         <IncomingInvite />
+        <Matchmaking
+          open={this.state.matchmaking}
+          cancel={this.cancelMatchmaking}
+          playAiNow={() =>
+            liveLobby.playAiNow().catch((error) => logger.info("AI match failed", error))
+          }
+        />
         {this.props.tutorial ? (
           <Tutorial
             closeTutorial={this.closeTutorial}

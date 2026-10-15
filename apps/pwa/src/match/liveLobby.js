@@ -106,6 +106,11 @@ class LiveLobby {
     return this.send({ type: ClientMessage.QUEUE_LEAVE });
   }
 
+  // play against the server AI right away (from the matchmaking dialog)
+  playAiNow() {
+    return this.send({ type: ClientMessage.QUEUE_AI });
+  }
+
   invite(username) {
     return this.send({ type: ClientMessage.INVITE, username });
   }

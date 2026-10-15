@@ -40,16 +40,17 @@ const createPlayer = async (browser, request, username) => {
     won: true,
     builtEntities: 3,
     winners: [{ idx: 0, name: username }],
-    awards: [{ key: "WINNER" }],
+    // more than 100 XP: Start plays online instead of the prepared first match
+    awards: [{ key: "WINNER" }, { key: "OUVERT" }],
   };
   expect((await request.post(`${api}/user/trackrecords`, { headers, data: { stats: [win] } })).ok()).toBe(true);
   await page.goto("/", { waitUntil: "networkidle" });
-  await expect(page.getByText("Play online", { exact: true }).first()).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText("Start Game", { exact: true }).first()).toBeVisible({ timeout: 15000 });
   return { context, page, username };
 };
 
 const openLobby = async (page) => {
-  await page.getByText("Play online", { exact: true }).first().click();
+  await page.getByText("Friends", { exact: true }).first().click();
   await expect(page.getByTestId("online-lobby")).toBeVisible();
   await expect(page.getByTestId("online-unavailable")).toHaveCount(0, { timeout: 10000 });
 };
@@ -166,7 +167,20 @@ test.describe("online", () => {
     await emil.page.getByText("Random opponent", { exact: true }).click();
     await inOnlineMatch(emil.page);
     const opponent = await host(emil.page, () => window.__battlechoc.view().players.find((p, i) => i !== window.__battlechoc.view().viewer).name);
-    expect(opponent).toBe("Tom Toffee");
+    // the test players have 825 XP: from 800 on the server AI is Gustav Ganache
+    expect(opponent).toBe("Gustav Ganache");
     await emil.context.close();
+  });
+});
+
+test.describe("the Start button", () => {
+  test("queues, and 'Play the AI now' starts a match the server hosts", async ({ browser, request }) => {
+    const fiona = await createPlayer(browser, request, "Fiona");
+    await fiona.page.getByText("Start Game", { exact: true }).first().click();
+    await expect(fiona.page.getByTestId("matchmaking")).toBeVisible({ timeout: 10000 });
+    await fiona.page.getByText("Play the AI now", { exact: true }).click();
+    await inOnlineMatch(fiona.page);
+    await expect(fiona.page.getByTestId("matchmaking")).toBeHidden();
+    await fiona.context.close();
   });
 });
