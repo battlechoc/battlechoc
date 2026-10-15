@@ -8,6 +8,7 @@ import {
 import { selectAttack, focusBoard } from "../UiActions";
 import { Jukebox } from "../misc";
 import useMatchTime from "./useMatchTime";
+import ProgressRing from "./ProgressRing";
 
 const { WeaponState } = engine;
 
@@ -37,6 +38,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   item: {
     position: "relative",
+    "& > div:first-child": { position: "relative" },
     marginLeft: 5,
     borderRadius: "50%",
     padding: "0.5vw",
@@ -69,21 +71,32 @@ const useStyles = createUseStyles((theme) => ({
     "50%": { transform: "scale(0.95)", boxShadow: "0 0 0 0 rgba(255, 78, 133, 0)" },
   },
   denied: { animation: "$deniedFlash 0.6s ease-in-out" },
-  badge: {
+  // price of an early shot, in cacao
+  price: {
     position: "absolute",
-    bottom: "-6%",
-    right: "-6%",
-    minWidth: "2.2em",
-    padding: "0 0.3em",
+    bottom: "-10%",
+    left: "50%",
+    transform: "translateX(-50%)",
+    display: "flex",
+    alignItems: "center",
+    padding: "0 0.35em 0 0.2em",
     borderRadius: "1em",
     color: "white",
     fontFamily: "Bangers",
     fontSize: "1.8vw",
-    textAlign: "center",
+    whiteSpace: "nowrap",
     border: "0.2vw solid white",
     [theme.breakpoints.orientation.portrait]: { fontSize: "3.4vw" },
+    "& i": {
+      display: "inline-block",
+      width: "1.15em",
+      height: "1.15em",
+      marginRight: "0.15em",
+      background: "url(/images/cacao-icon.svg) no-repeat",
+      backgroundSize: "100% 100%",
+    },
   },
-  // how many shots of this type can be fired now
+  // how many shots of this type can be fired now, when more than one
   count: {
     position: "absolute",
     top: "-8%",
@@ -91,7 +104,8 @@ const useStyles = createUseStyles((theme) => ({
     minWidth: "1.4em",
     height: "1.4em",
     lineHeight: "1.4em",
-    borderRadius: "50%",
+    padding: "0 0.25em",
+    borderRadius: "1em",
     color: "white",
     fontFamily: "Bangers",
     fontSize: "2.2vw",
@@ -101,7 +115,8 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-// per attack type: how many weapons are ready, how many could fire early, the rush price
+// per attack type: how many weapons are ready, how many could fire early, the rush price,
+// and how far the readiest weapon has charged
 const weaponOverview = (view, t) => {
   const me = view.players[view.viewer];
   const grid = view.board.fields[me.fieldIndex].grid;
@@ -110,8 +125,9 @@ const weaponOverview = (view, t) => {
     cell.occupiedBy.forEach((entity) =>
       (entity.weapons || []).forEach((weapon) => {
         const status = engine.weaponStatus(view, weapon, t);
-        const entry = overview[weapon.attackType] || { total: 0, ready: 0, rushable: 0, rushCost: 0 };
+        const entry = overview[weapon.attackType] || { total: 0, ready: 0, rushable: 0, rushCost: 0, progress: 0 };
         entry.total += 1;
+        entry.progress = Math.max(entry.progress, status.progress);
         if (status.state === WeaponState.READY) {
           entry.ready += 1;
         } else if (status.state === WeaponState.RUSHABLE) {
@@ -125,8 +141,9 @@ const weaponOverview = (view, t) => {
   return overview;
 };
 
-// the attack buttons: no timers here (the rings above the units show those), only how many
-// shots are available: green = free, blue = early for cacao; a denied shot flashes the button
+// the attack buttons: a ring shows how far the readiest weapon has charged, green when a shot
+// is free, "×N" when several can fire, and a cacao price tag when a shot can only be fired early
+// (red when the cacao is not enough); a denied shot flashes the button
 const WeaponPalette = ({ view, selectedAttack, deniedAttack, select }) => {
   const classes = useStyles();
   const theme = useTheme();
@@ -160,6 +177,8 @@ const WeaponPalette = ({ view, selectedAttack, deniedAttack, select }) => {
           const state = entry.ready > 0 ? WeaponState.READY : entry.rushable > 0 ? WeaponState.RUSHABLE : WeaponState.CHARGING;
           const free = !stunned && entry.ready > 0;
           const color = available === 0 ? colors[WeaponState.CHARGING] : free ? colors[WeaponState.READY] : colors[WeaponState.RUSHABLE];
+          const showPrice = !free && !stunned && entry.rushable > 0;
+          const affordable = me.cacao >= entry.rushCost;
           const flash = flashing && flashing.type === weapon.type;
           return (
             <div
@@ -175,13 +194,27 @@ const WeaponPalette = ({ view, selectedAttack, deniedAttack, select }) => {
                 select(weapon.type);
               }}
             >
-              <div className={classes.icon} style={{ backgroundImage: `url(/images/${weapon.image}-icon.svg)` }} />
-              <div className={classes.count} style={{ background: color }}>
-                {available}
+              <div className={classes.icon} style={{ backgroundImage: `url(/images/${weapon.image}-icon.svg)` }}>
+                <ProgressRing
+                  progress={stunned ? 0 : entry.progress}
+                  color={free ? colors[WeaponState.READY] : "white"}
+                  width={7}
+                  outset={4}
+                />
               </div>
-              {!free && available > 0 ? (
-                <div className={classes.badge} style={{ background: color }}>
-                  {`-${entry.rushCost}`}
+              {available > 1 ? (
+                <div className={classes.count} style={{ background: color }}>
+                  {`×${available}`}
+                </div>
+              ) : null}
+              {showPrice ? (
+                <div
+                  className={classes.price}
+                  data-testid="rush-price"
+                  style={{ background: affordable ? colors[WeaponState.RUSHABLE] : theme.color.accent.light }}
+                >
+                  <i />
+                  {entry.rushCost}
                 </div>
               ) : null}
             </div>
