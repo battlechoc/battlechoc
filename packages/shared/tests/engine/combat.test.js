@@ -229,13 +229,15 @@ describe('outcome', () => {
         expect(engine.nextTimerAt(match)).toBeNull();
     });
 
-    test('the winner gets awards, the loser none', () => {
+    test('the winner gets winner-only awards, the loser only those open to both', () => {
         const match = runningMatch();
         expectOk(act(match, 1, 'surrender', {}));
         const awards = engine.computeMatchAwards(match, 0);
-        expect(awards.map(award => award.key)).toContain('WINNER');
+        expect(awards.map(award => award.key)).toContain('OUVERT');
         expect(awards.length).toBeLessThanOrEqual(5);
         expect(typeof awards[0].title()).toBe('string');
-        expect(engine.computeMatchAwards(match, 1)).toEqual([]);
+        const loser = engine.computeMatchAwards(match, 1);
+        expect(loser.length).toBeGreaterThan(0);
+        loser.forEach(award => expect(award.who).toBe('B'));
     });
 });

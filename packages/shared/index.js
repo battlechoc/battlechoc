@@ -500,7 +500,7 @@ module.exports.translationKeys = translationRefKeys;
 // Real-time engine
 const realtimeEngine = require('./engine');
 const { getPlayerView } = require('./engine/view');
-const { computeMatchAwards, matchAwards } = require('./engine/awards');
+const { computeMatchAwards, matchAwards, isMatchWinner } = require('./engine/awards');
 const { Agent, RandomBot, playMatch } = require('./engine/agents');
 const { TomToffee } = require('./engine/ai/tomToffee');
 const { GustavGanache, Personality } = require('./engine/ai/gustavGanache');
@@ -515,6 +515,7 @@ module.exports.engine = {
     getPlayerView,
     computeMatchAwards,
     matchAwards,
+    isMatchWinner,
     Agent,
     RandomBot,
     playMatch,
