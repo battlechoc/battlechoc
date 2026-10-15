@@ -2,13 +2,13 @@ const { engine, PlayerType, BoardCellTypes, EntityType } = require('../../index'
 
 const { MatchActionTypes, MatchPhase } = engine;
 
-const players = (typeA = PlayerType.HUMAN, typeB = PlayerType.AI_STRONG) => [
-    { id: 'p0', name: 'Carolin Cacao', type: typeA },
-    { id: 'p1', name: 'Gustav Ganache', type: typeB },
+const players = (typeA = PlayerType.HUMAN, typeB = PlayerType.AI_STRONG, loadouts = []) => [
+    { id: 'p0', name: 'Carolin Cacao', type: typeA, ...(loadouts[0] ? { loadout: loadouts[0] } : {}) },
+    { id: 'p1', name: 'Gustav Ganache', type: typeB, ...(loadouts[1] ? { loadout: loadouts[1] } : {}) },
 ];
 
-const newMatch = ({ seed = 'test', size = 6, balance } = {}) => engine.createMatch({
-    players: players(),
+const newMatch = ({ seed = 'test', size = 6, balance, loadouts } = {}) => engine.createMatch({
+    players: players(undefined, undefined, loadouts),
     boardSize: { rows: size, cols: size },
     seed,
     fieldChooser: 0,
@@ -32,8 +32,8 @@ const cellOf = (match, player, row, col) => engine.cellAt(match, player, row, co
  * unless `cells` overrides single cells: { 'player:row:col': BoardCellTypes.X }.
  * Factories stand at (0,0) for both players. Running starts at t = countdown end.
  */
-const runningMatch = ({ size = 6, seed = 'test', factories = [{ row: 0, col: 0 }, { row: 0, col: 0 }], cells = {}, balance } = {}) => {
-    const match = newMatch({ seed, size, balance });
+const runningMatch = ({ size = 6, seed = 'test', factories = [{ row: 0, col: 0 }, { row: 0, col: 0 }], cells = {}, balance, loadouts } = {}) => {
+    const match = newMatch({ seed, size, balance, loadouts });
     expectOk(act(match, 0, 'chooseField', { fieldIndex: 0 }, 0));
     [0, 1].forEach(player => fieldOf(match, player).grid.forEach(cell => {
         cell.occupiedBy = [];

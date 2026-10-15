@@ -66,7 +66,6 @@ const publicPlayer = (match, player) => {
         id: player.id,
         name: player.name,
         type: player.type,
-        level: player.level,
         fieldIndex: player.fieldIndex,
     };
     if (match.phase === MatchPhase.ENDED) {

@@ -45,7 +45,7 @@ const scenarios = {
     opponent: "TomToffee",
     scenario: {
       phase: MatchPhase.RUNNING,
-      levels: [{ [EntityType.DONUT_FACTORY]: 20 }],
+      loadouts: [{ [EntityType.DONUT_FACTORY]: ["GLAZED_OVEN", "SPRINKLE_SORTER"] }],
       cacao: [2000, 1000],
       cells: [
         { row: 0, col: 0, type: BROWN, cream: false, entities: [EntityType.DONUT_SURPRISE_YELLOW, EntityType.XMAS_FACTORY] },

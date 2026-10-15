@@ -9,7 +9,7 @@
 // Functions mutate the match they receive (like reducers on an Immer draft) and return the
 // events they produced. The host (local engine or server) is the only writer of a match.
 
-const { BoardCellTypes, EntityType, isDonut, AttackType, PlayerType, EmptyPlayerStats } = require('../constants');
+const { BoardCellTypes, EntityType, isDonut, AttackType, PlayerType } = require('../constants');
 const {
     BattlechocError,
     ActionValidationError,
@@ -27,6 +27,7 @@ const {
     InvalidTimeError,
 } = require('../errors');
 const { DefaultBalance, valueAt } = require('../balance');
+const { applyStat, sanitizeLoadout } = require('../equipment');
 const rng = require('./rng');
 
 const MatchPhase = Object.freeze({
@@ -87,7 +88,8 @@ const entityOrder = entity => parseInt(entity.id.slice(1), 10);
 const byEntityOrder = (a, b) => entityOrder(a) - entityOrder(b);
 const isAi = type => type !== PlayerType.HUMAN;
 const spec = (match, entityType) => match.balance.entities[entityType] || {};
-const levelOf = (player, entityType) => (player.level && player.level[entityType]) || 0;
+// a building value of a player: the base value (balance) changed by the player's equipment
+const stat = (match, playerIndex, entityType, name, base) => applyStat(match.players[playerIndex].loadout, entityType, name, base);
 
 const field = (match, playerIndex) => match.board.fields[match.players[playerIndex].fieldIndex];
 
@@ -137,25 +139,24 @@ const shieldingFountains = (match, playerIndex, row, col) => {
 const isShielded = (match, playerIndex, row, col) => shieldingFountains(match, playerIndex, row, col).length > 0;
 
 const generatorStats = (match, playerIndex, entity) => {
-    const player = match.players[playerIndex];
     const buildSpec = spec(match, entity.type).build;
     const black = cellOfEntity(match, playerIndex, entity).type === BoardCellTypes.BLACK;
     const blackSpec = match.balance.cells.black;
-    const level = levelOf(player, entity.type);
+    const capacity = stat(match, playerIndex, entity.type, 'buildCapacity', valueAt(buildSpec.capacity));
+    const intervalMs = stat(match, playerIndex, entity.type, 'buildIntervalMs', valueAt(buildSpec.intervalMs));
     return {
-        capacity: valueAt(buildSpec.capacity, level) + (black ? blackSpec.buildCapacityBonus : 0),
-        intervalMs: Math.round(valueAt(buildSpec.intervalMs, level) * (black ? blackSpec.buildIntervalFactor : 1)),
+        capacity: capacity + (black ? blackSpec.buildCapacityBonus : 0),
+        intervalMs: Math.round(intervalMs * (black ? blackSpec.buildIntervalFactor : 1)),
     };
 };
 
 const producerStats = (match, playerIndex, entity) => {
-    const player = match.players[playerIndex];
     const cacaoSpec = spec(match, entity.type).cacao;
     const white = cellOfEntity(match, playerIndex, entity).type === BoardCellTypes.WHITE;
-    const level = levelOf(player, entity.type);
+    const amount = stat(match, playerIndex, entity.type, 'cacaoAmount', valueAt(cacaoSpec.amount));
     return {
-        amount: Math.round(valueAt(cacaoSpec.amount, level) * (white ? match.balance.cells.white.cacaoFactor : 1)),
-        intervalMs: valueAt(cacaoSpec.intervalMs, level),
+        amount: Math.round(amount * (white ? match.balance.cells.white.cacaoFactor : 1)),
+        intervalMs: valueAt(cacaoSpec.intervalMs),
     };
 };
 
@@ -173,6 +174,28 @@ const cacaoPerSecond = (match, playerIndex) => entitiesOf(match, playerIndex)
 
 const weaponSpec = (match, weapon) => spec(match, weapon.source).weapons.find(w => w.attackType === weapon.attackType);
 
+// a new weapon of `source` (an entity type) with the values of its owner's equipment; weapons
+// keep them for the whole match (saved matches from before equipment fall back to the balance)
+const createWeapon = (match, playerIndex, source, ws, t) => {
+    const rush = ws.rush || {};
+    const cooldownMs = stat(match, playerIndex, source, 'cooldownMs', ws.cooldownMs);
+    const weapon = {
+        attackType: ws.attackType,
+        source,
+        chargedAt: ws.startReady ? t - cooldownMs : t,
+        cooldownMs,
+        damageFactor: stat(match, playerIndex, source, 'damage', 1),
+    };
+    if (typeof ws.entityFactor === 'number') {
+        weapon.entityFactor = stat(match, playerIndex, source, 'entityFactor', ws.entityFactor);
+    }
+    if (rush.enabled) {
+        weapon.rushCost = stat(match, playerIndex, source, 'rushCost', rush.cost);
+        weapon.rushFrom = stat(match, playerIndex, source, 'rushFrom', rush.fromProgress);
+    }
+    return weapon;
+};
+
 const weaponsOf = (match, playerIndex, attackType) => entitiesOf(match, playerIndex)
     .filter(entity => Array.isArray(entity.weapons))
     .flatMap(entity => entity.weapons
@@ -184,20 +207,23 @@ const WeaponState = Object.freeze({ CHARGING: 'charging', RUSHABLE: 'rushable', 
 // progress, state, ready time and rush price of a weapon at time t
 const weaponStatus = (match, weapon, t) => {
     const ws = weaponSpec(match, weapon);
-    const progress = Math.min(1, Math.max(0, (t - weapon.chargedAt) / ws.cooldownMs));
+    const cooldownMs = typeof weapon.cooldownMs === 'number' ? weapon.cooldownMs : ws.cooldownMs;
     const rush = ws.rush || {};
+    const rushFrom = typeof weapon.rushFrom === 'number' ? weapon.rushFrom : rush.fromProgress;
+    const rushCost = typeof weapon.rushCost === 'number' ? weapon.rushCost : rush.cost;
+    const progress = Math.min(1, Math.max(0, (t - weapon.chargedAt) / cooldownMs));
     let state = WeaponState.CHARGING;
     if (progress >= 1) {
         state = WeaponState.READY;
-    } else if (rush.enabled && progress >= rush.fromProgress) {
+    } else if (rush.enabled && progress >= rushFrom) {
         state = WeaponState.RUSHABLE;
     }
     return {
         progress,
         state,
-        readyAt: weapon.chargedAt + ws.cooldownMs,
-        rushableAt: rush.enabled ? weapon.chargedAt + Math.ceil(ws.cooldownMs * rush.fromProgress) : null,
-        rushCost: rush.enabled ? rush.cost : null,
+        readyAt: weapon.chargedAt + cooldownMs,
+        rushableAt: rush.enabled ? weapon.chargedAt + Math.ceil(cooldownMs * rushFrom) : null,
+        rushCost: rush.enabled ? rushCost : null,
     };
 };
 
@@ -225,14 +251,13 @@ const pushEvent = (match, events, type, player, visibleTo, data = {}, secret = u
 const newId = match => 'e' + match.nextId++;
 
 const createEntity = (match, playerIndex, entityType, position) => {
-    const player = match.players[playerIndex];
     const entity = { id: newId(match), type: entityType, position: { row: position.row, col: position.col } };
     if (isDonut(entityType)) {
         entity.hp = 1;
         entity.maxHp = 1;
         return entity;
     }
-    const hp = valueAt(spec(match, entityType).hp, levelOf(player, entityType));
+    const hp = stat(match, playerIndex, entityType, 'hp', valueAt(spec(match, entityType).hp));
     entity.hp = hp;
     entity.maxHp = hp;
     return entity;
@@ -248,19 +273,14 @@ const startTimers = (match, playerIndex, entity, t) => {
         entity.buildAt = t + generatorStats(match, playerIndex, entity).intervalMs;
     }
     if (entitySpec.donuts) {
-        entity.donutAt = t + valueAt(entitySpec.donuts.intervalMs, levelOf(match.players[playerIndex], entity.type));
+        entity.donutAt = t + donutInterval(match, playerIndex);
     }
     if (entitySpec.weapons && !entity.weapons) {
-        entity.weapons = entitySpec.weapons.map(ws => ({
-            attackType: ws.attackType,
-            source: entity.type,
-            chargedAt: ws.startReady ? t - ws.cooldownMs : t,
-        }));
+        entity.weapons = entitySpec.weapons.map(ws => createWeapon(match, playerIndex, entity.type, ws, t));
         // a fruit cannon that did not replace a truffle cannon (scenarios) still has both weapons
         if (entity.type === EntityType.FRUIT_CANNON && entitySpec.keepsTruffleWeapon) {
-            entity.weapons.unshift(...spec(match, EntityType.RUM_TRUFFLE_CANNON).weapons.map(ws => ({
-                attackType: ws.attackType, source: EntityType.RUM_TRUFFLE_CANNON, chargedAt: t,
-            })));
+            entity.weapons.unshift(...spec(match, EntityType.RUM_TRUFFLE_CANNON).weapons
+                .map(ws => ({ ...createWeapon(match, playerIndex, EntityType.RUM_TRUFFLE_CANNON, ws, t), chargedAt: t })));
         }
     }
 };
@@ -306,7 +326,7 @@ const generateBoard = (match, size) => {
  * Creates a new match in the FIELD_CHOICE phase at match time 0.
  *
  * @param {object} options
- * @param {Array<{id, name, type, level}>} options.players exactly two players
+ * @param {Array<{id, name, type, loadout}>} options.players exactly two players (loadout: equipment)
  * @param {{rows, cols}} options.boardSize
  * @param {string|number} options.seed seed of the board and of every random decision
  * @param {object} [options.balance] balance config, snapshotted into the match
@@ -335,7 +355,7 @@ const createMatch = ({ players, boardSize, seed, balance = DefaultBalance, field
             id: player.id,
             name: player.name,
             type: player.type,
-            level: player.level || EmptyPlayerStats.level,
+            loadout: sanitizeLoadout(player.loadout),
             fieldIndex: null,
             cacao: snapshot.match.startCacao,
             buildTokens: 0,
@@ -518,12 +538,18 @@ const nextTimer = match => {
     return timers.reduce((earliest, timer) => (timerOrder(timer, earliest) < 0 ? timer : earliest));
 };
 
+const donutInterval = (match, playerIndex) =>
+    stat(match, playerIndex, EntityType.DONUT_FACTORY, 'donutIntervalMs', valueAt(spec(match, EntityType.DONUT_FACTORY).donuts.intervalMs));
+
+/** The chance of a donut factory of this player to make a set of donuts on each roll. */
+const donutChance = (match, playerIndex) =>
+    stat(match, playerIndex, EntityType.DONUT_FACTORY, 'donutProbability', valueAt(spec(match, EntityType.DONUT_FACTORY).donuts.probability));
+
 const spawnDonuts = (match, events, playerIndex, factory) => {
     const player = match.players[playerIndex];
     const donutSpec = spec(match, EntityType.DONUT_FACTORY).donuts;
-    const level = levelOf(player, EntityType.DONUT_FACTORY);
-    if (player.donuts.length === 0 && rng.next(match) < valueAt(donutSpec.probability, level)) {
-        const set = DONUT_SETS[rng.nextInt(match, valueAt(donutSpec.types, level))];
+    if (player.donuts.length === 0 && rng.next(match) < donutChance(match, playerIndex)) {
+        const set = DONUT_SETS[rng.nextInt(match, valueAt(donutSpec.types))];
         const pairId = set.length > 1 ? newId(match) : undefined;
         player.donuts = set.map(type => {
             const donut = { id: newId(match), type, hp: 1, maxHp: 1, position: null };
@@ -551,7 +577,7 @@ const processTimer = (match, events, timer) => {
         entity.buildAt += generatorStats(match, playerIndex, entity).intervalMs;
     } else if (timer.kind === TimerKind.DONUT) {
         spawnDonuts(match, events, playerIndex, entity);
-        entity.donutAt += valueAt(spec(match, EntityType.DONUT_FACTORY).donuts.intervalMs, levelOf(player, EntityType.DONUT_FACTORY));
+        entity.donutAt += donutInterval(match, playerIndex);
     } else if (match.phase === MatchPhase.FIELD_CHOICE) {
         enterPlacement(match, events, rng.nextInt(match, 2), true);
     } else if (match.phase === MatchPhase.PLACEMENT) {
@@ -602,16 +628,16 @@ const nextTimerAt = match => {
  * @param {Array<{player, row, col, type, cream, entities}>} [scenario.cells] cell overrides;
  *        `entities` lists entity types (factory, buildings, single donuts) or { type, hp }
  * @param {Array<Array<string>>} [scenario.donuts] unplaced donuts per player (a set, e.g. the portal pair)
- * @param {Array<object>} [scenario.levels] Choclab level overrides per player
+ * @param {Array<object>} [scenario.loadouts] equipment per player
  * @param {Array<number>} [scenario.cacao] cacao per player
  * @param {string} [scenario.phase] MatchPhase.PLACEMENT (default) or MatchPhase.RUNNING
  */
-const prepareScenario = (match, { fieldIndex = 0, clear = false, cells = [], levels = [], cacao, donuts, phase = MatchPhase.PLACEMENT } = {}) => {
+const prepareScenario = (match, { fieldIndex = 0, clear = false, cells = [], loadouts = [], cacao, donuts, phase = MatchPhase.PLACEMENT } = {}) => {
     requirePhase(match, MatchPhase.FIELD_CHOICE);
     const events = [];
-    levels.forEach((level, index) => {
-        if (level) {
-            match.players[index].level = { ...match.players[index].level, ...level };
+    loadouts.forEach((loadout, index) => {
+        if (loadout) {
+            match.players[index].loadout = sanitizeLoadout(loadout);
         }
     });
     enterPlacement(match, events, fieldIndex);
@@ -735,7 +761,7 @@ const build = (match, events, action) => {
     if (player.buildTokens < 1) {
         throw new NoBuildingsLeftError();
     }
-    const costs = spec(match, entityType).costs || 0;
+    const costs = stat(match, playerIndex, entityType, 'costs', spec(match, entityType).costs || 0);
     if (player.cacao < costs) {
         throw new NoCacaoLeftError();
     }
@@ -776,9 +802,8 @@ const build = (match, events, action) => {
         if (replacedCannon) {
             if (spec(match, EntityType.FRUIT_CANNON).keepsTruffleWeapon) {
                 entity.weapons = replacedCannon.weapons.map(weapon => ({ ...weapon }));
-                entity.weapons.push(...spec(match, EntityType.FRUIT_CANNON).weapons.map(ws => ({
-                    attackType: ws.attackType, source: EntityType.FRUIT_CANNON, chargedAt: match.t,
-                })));
+                entity.weapons.push(...spec(match, EntityType.FRUIT_CANNON).weapons
+                    .map(ws => createWeapon(match, playerIndex, EntityType.FRUIT_CANNON, ws, match.t)));
             }
             cell.occupiedBy = cell.occupiedBy.filter(other => other.id !== replacedCannon.id);
         }
@@ -825,7 +850,7 @@ const placeDonut = (match, events, action) => {
 
 const rollDamage = (match, attacker, weapon) => {
     const ws = weaponSpec(match, weapon);
-    const base = valueAt(ws.damage, levelOf(attacker, weapon.source));
+    const base = valueAt(ws.damage) * (typeof weapon.damageFactor === 'number' ? weapon.damageFactor : 1);
     const spread = ws.spread || 0;
     return base * (1 + spread * (2 * rng.next(match) - 1));
 };
@@ -965,13 +990,17 @@ const resolveHotChocolate = (match, attackerIndex, defenderIndex, cell, result) 
     });
 };
 
+/** How much of a truffle hit a shielding fountain of this player takes. */
+const shieldFactor = (match, playerIndex) =>
+    stat(match, playerIndex, EntityType.CHOCOLATE_FOUNTAIN, 'shieldFactor', spec(match, EntityType.CHOCOLATE_FOUNTAIN).truffleFactor);
+
 const resolveProjectile = (match, attackerIndex, defenderIndex, cell, weapon, result) => {
     const damage = rollDamage(match, match.players[attackerIndex], weapon);
     const ws = weaponSpec(match, weapon);
     const fountains = shieldingFountains(match, defenderIndex, cell.row, cell.col);
     if (fountains.length > 0) {
         const fountain = fountains[0];
-        const factor = weapon.attackType === AttackType.TRUFFLE ? spec(match, EntityType.CHOCOLATE_FOUNTAIN).truffleFactor : 1;
+        const factor = weapon.attackType === AttackType.TRUFFLE ? shieldFactor(match, defenderIndex) : 1;
         fountain.hp = Math.round(fountain.hp - damage * factor);
         result.shielded = true;
         const known = match.players[attackerIndex].knownShields;
@@ -985,7 +1014,8 @@ const resolveProjectile = (match, attackerIndex, defenderIndex, cell, weapon, re
         return;
     }
     triggerTraps(match, attackerIndex, defenderIndex, cell, false, result);
-    const factor = weapon.attackType === AttackType.FRUIT ? (ws.entityFactor || 1) : 1;
+    const entityFactor = typeof weapon.entityFactor === 'number' ? weapon.entityFactor : ws.entityFactor;
+    const factor = weapon.attackType === AttackType.FRUIT ? (entityFactor || 1) : 1;
     nonDonuts(cell).forEach(entity => {
         const before = entity.hp;
         entity.hp = Math.round(entity.hp - damage * factor);
@@ -1141,6 +1171,8 @@ module.exports = {
     cacaoPerSecond,
     producerStats,
     generatorStats,
+    donutChance,
+    shieldFactor,
     weaponsOf,
     weaponStatus,
     hasHarmfulWeapon,
