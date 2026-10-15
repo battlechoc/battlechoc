@@ -473,6 +473,7 @@ module.exports = {
     "LAB_TRY": "試す",
     "LAB_CRAFT": "作る",
     "LAB_TABLE_HINT": "{{ingredient}}に材料を2つ加えよう",
+    "LAB_NEEDS_SPECIAL": "この建物には{{ingredient}}が必要です。対戦に勝って手に入れよう。",
     "LAB_RESULT_FOUND": "レシピ発見！",
     "LAB_RESULT_FIRST": "あなたが最初の発見者です！",
     "LAB_RESULT_SMELL": "何かが起きている…2つの材料のうち1つが正解です。",

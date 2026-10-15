@@ -144,7 +144,8 @@ const InventoryPicker = ({
             reason = t(tr.LAB_ALREADY_EQUIPPED);
           } else if (
             !isCurrent &&
-            budgetUsed - freed + definition.points > LOADOUT_BUDGET
+            budgetUsed - freed + definition.points > LOADOUT_BUDGET &&
+            budgetUsed - freed + definition.points > budgetUsed
           ) {
             reason = t(tr.LAB_OVER_BUDGET);
           }

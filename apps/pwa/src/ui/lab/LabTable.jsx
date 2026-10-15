@@ -146,6 +146,8 @@ const useStyles = createUseStyles((theme) => ({
       transform: "translateX(-50%)",
     },
   },
+  // the special ingredient is not on the shelf: show it as a faded outline
+  lacking: { "& > img": { opacity: 0.35, filter: "grayscale(1)" } },
   fixed: {
     position: "absolute",
     right: "-0.3em",
@@ -261,6 +263,7 @@ const useStyles = createUseStyles((theme) => ({
 }));
 
 const RESULT_TEXT = {
+  missing: "LAB_MISSING",
   smell: "LAB_RESULT_SMELL",
   nothing: "LAB_RESULT_NOTHING",
   limit: "LAB_TOO_MANY_TRIES",
@@ -289,6 +292,9 @@ const LabTable = ({
   const classes = useStyles();
   const [special] = bowls;
   const full = bowls.every(Boolean);
+  // trying needs the building's special ingredient on the shelf (it goes into the first bowl)
+  const hasSpecial = (pantry[special] || 0) > 0;
+  const specialName = t(tr[`INGREDIENT_${special}`]);
   const owned = Object.keys(Ingredients).filter((id) => (pantry[id] || 0) > 0);
   const missing = (ingredient, amount) => (pantry[ingredient] || 0) < amount;
   const cost = recipe
@@ -301,6 +307,8 @@ const LabTable = ({
   let message = "";
   if (!online) {
     message = t(tr.LAB_NEEDS_CONNECTION);
+  } else if (!hasSpecial && !crafted) {
+    message = t(tr.LAB_NEEDS_SPECIAL, specialName);
   } else if (crafted) {
     message = t(tr.LAB_CRAFTED);
   } else if (result && result.status === "found") {
@@ -312,7 +320,7 @@ const LabTable = ({
   } else if (recipe && !affordable) {
     message = t(tr.LAB_MISSING);
   } else if (!full) {
-    message = t(tr.LAB_TABLE_HINT, t(tr[`INGREDIENT_${special}`]));
+    message = t(tr.LAB_TABLE_HINT, specialName);
   }
 
   return (
@@ -326,7 +334,7 @@ const LabTable = ({
               key={id}
               className={classes.jar}
               onClick={() => onAdd(id)}
-              disabled={full || busy}
+              disabled={full || busy || !hasSpecial}
               aria-label={`${t(tr[`INGREDIENT_${id}`])} (${pantry[id]})`}
               data-ingredient={id}
             >
@@ -351,7 +359,9 @@ const LabTable = ({
             <button
               type="button"
               key={index}
-              className={classes.bowl}
+              className={`${classes.bowl} ${
+                index === 0 && !hasSpecial ? classes.lacking : ""
+              }`}
               disabled={index === 0 || !ingredient || busy}
               onClick={() => onClear(index)}
               aria-label={
@@ -360,6 +370,7 @@ const LabTable = ({
                   : t(tr.LAB_EMPTY_BOWL)
               }
               data-ingredient={ingredient || ""}
+              data-missing={index === 0 && !hasSpecial ? "true" : "false"}
             >
               {ingredient ? (
                 <IngredientIcon id={ingredient} size="2.6em" />
@@ -404,7 +415,7 @@ const LabTable = ({
               type="button"
               className={`${classes.action} ${classes.try}`}
               onClick={onTry}
-              disabled={!online || busy || !full}
+              disabled={!online || busy || !full || !hasSpecial}
               data-testid="lab-try"
               aria-label={`${t(tr.LAB_TRY)} (${buildingName})`}
             >

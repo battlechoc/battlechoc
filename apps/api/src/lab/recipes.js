@@ -79,6 +79,13 @@ const createRecipeBook = recipes => {
     };
 };
 
-const loadRecipes = (file = process.env.RECIPES_FILE || SAMPLE) => createRecipeBook(JSON.parse(fs.readFileSync(file, 'utf8')).recipes);
+// The recipe table is the secret of the lab: production reads it from RECIPES_FILE (outside the
+// repository) and refuses to start without it; everywhere else the public sample stands in.
+const loadRecipes = (file = process.env.RECIPES_FILE, env = process.env.NODE_ENV) => {
+    if (!file && env === 'production') {
+        throw new Error('RECIPES_FILE must point to the private recipe table in production');
+    }
+    return createRecipeBook(JSON.parse(fs.readFileSync(file || SAMPLE, 'utf8')).recipes);
+};
 
 module.exports = { createRecipeBook, loadRecipes, SAMPLE };

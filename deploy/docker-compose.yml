@@ -29,6 +29,10 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
       VAPID_SUBJECT: ${VAPID_SUBJECT}
+      # the secret recipe table, mounted read-only (never in the repository)
+      RECIPES_FILE: /run/secrets/recipes.json
+    volumes:
+      - ${RECIPES_PATH:?set RECIPES_PATH in .env}:/run/secrets/recipes.json:ro
     depends_on:
       postgres:
         condition: service_healthy

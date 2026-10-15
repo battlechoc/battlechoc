@@ -401,6 +401,9 @@ const translationPredicates = {
     LAB_TABLE_HINT: function (strings, ingredient) {
         return fmt(strings.LAB_TABLE_HINT, { ingredient: ingredient });
     },
+    LAB_NEEDS_SPECIAL: function (strings, ingredient) {
+        return fmt(strings.LAB_NEEDS_SPECIAL, { ingredient: ingredient });
+    },
     LAB_DISCOVERED_BY: function (strings, name) {
         return fmt(strings.LAB_DISCOVERED_BY, { name: name });
     },

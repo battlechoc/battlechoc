@@ -43,6 +43,13 @@ const useStyles = createUseStyles((theme) => ({
     "@media (prefers-reduced-motion: reduce)": { transition: "none" },
   },
   filled: { border: "none", background: "none" },
+  // equipped but left out of matches: over the budget after a balance change
+  inactive: { opacity: 0.45, filter: "grayscale(0.8)" },
+  warning: {
+    fontFamily: "system-ui, -apple-system, sans-serif",
+    fontSize: "0.8em",
+    color: "#ffe08a",
+  },
   plus: { fontFamily: "Bangers", fontSize: "2.4em", lineHeight: 1 },
   label: {
     fontFamily: "Bangers",
@@ -54,9 +61,10 @@ const useStyles = createUseStyles((theme) => ({
 }));
 
 // One of the two equipment slots of a building: "+" when empty, the item when filled.
-const EquipmentSlot = ({ index, item, onClick, disabled }) => {
+const EquipmentSlot = ({ index, item, inactive, onClick, disabled }) => {
   const classes = useStyles();
-  const label = item ? itemName(item) : t(tr.LAB_SLOT_EMPTY);
+  const name = item ? itemName(item) : t(tr.LAB_SLOT_EMPTY);
+  const label = inactive ? `${name} (${t(tr.LAB_OVER_BUDGET)})` : name;
   return (
     <button
       type="button"
@@ -66,15 +74,23 @@ const EquipmentSlot = ({ index, item, onClick, disabled }) => {
       aria-label={`${t(tr.LAB_SLOT_LABEL, index + 1)}: ${label}`}
       data-testid={`equipment-slot-${index}`}
       data-item={item || ""}
+      data-inactive={inactive ? "true" : "false"}
     >
-      <span className={`${classes.ring} ${item ? classes.filled : ""}`}>
+      <span
+        className={`${classes.ring} ${item ? classes.filled : ""} ${
+          inactive ? classes.inactive : ""
+        }`}
+      >
         {item ? (
           <ItemIcon item={item} size="4.6em" />
         ) : (
           <span className={classes.plus}>+</span>
         )}
       </span>
-      <span className={classes.label}>{label}</span>
+      <span className={classes.label}>{name}</span>
+      {inactive ? (
+        <span className={classes.warning}>{t(tr.LAB_OVER_BUDGET)}</span>
+      ) : null}
     </button>
   );
 };

@@ -4,7 +4,6 @@ import { createUseStyles } from "react-jss";
 import {
   Items,
   SpecialIngredient,
-  loadoutPoints,
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
@@ -285,13 +284,47 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       })
       .catch((error) => {
         const status = error.response && error.response.status;
+        const reason =
+          error.response && error.response.data && error.response.data.error;
+        let kind = "error";
+        if (status === 429) {
+          kind = "limit";
+        } else if (reason === "MISSING INGREDIENTS") {
+          // the pantry changed elsewhere (spoiled, used on another device): show what is there now
+          kind = "missing";
+          refreshStats();
+        }
         setResult({
-          status: status === 429 ? "limit" : "error",
+          status: kind,
           seq: Date.now(),
         });
       })
       .finally(() => setBusy(false));
   };
+
+  // reloads what the server knows about the player's pantry and items
+  const refreshStats = () =>
+    ServerRequest("get", "/user")
+      .then((response) => {
+        const {
+          pantry: fresh,
+          spoiling,
+          items: owned,
+          equipment: equipped,
+          loadout: active,
+        } = response.data.stats;
+        const changes = {
+          pantry: fresh,
+          spoiling,
+          coins: (fresh && fresh.COCOA) || 0,
+          items: owned,
+          equipment: equipped,
+          loadout: active,
+        };
+        updateStats(changes);
+        persist(changes);
+      })
+      .catch((error) => logger.info("could not reload the stats", error));
 
   const craft = () => {
     setBusy(true);
@@ -359,6 +392,19 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
     return entry ? entry.item : undefined;
   };
   const equippedKeys = loadout[entityType] || [];
+  // what the server counts: every equipped item, also when a balance change pushed it over the
+  // budget (the match then leaves out what does not fit, see sanitizeLoadout)
+  const equippedPoints = Object.values(equipment)
+    .flat()
+    .filter(Boolean)
+    .reduce((sum, id) => {
+      const entry = items.find((candidate) => candidate.id === id);
+      return sum + (entry && Items[entry.item] ? Items[entry.item].points : 0);
+    }, 0);
+  const inactive = (index) => {
+    const key = slotItem(index);
+    return Boolean(key) && !equippedKeys.includes(key);
+  };
 
   return (
     <div className={classes.page} data-testid="lab">
@@ -394,6 +440,7 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
           <EquipmentSlot
             index={0}
             item={slotItem(0)}
+            inactive={inactive(0)}
             onClick={() => setPickerSlot(0)}
             disabled={!online}
           />
@@ -403,6 +450,7 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
           <EquipmentSlot
             index={1}
             item={slotItem(1)}
+            inactive={inactive(1)}
             onClick={() => setPickerSlot(1)}
             disabled={!online}
           />
@@ -428,7 +476,7 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
             ))
           )}
         </div>
-        <BudgetBar used={loadoutPoints(loadout)} />
+        <BudgetBar used={equippedPoints} />
       </div>
 
       <div className={classes.table}>
@@ -457,7 +505,7 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
         slot={pickerSlot || 0}
         items={items}
         equipment={equipment}
-        budgetUsed={loadoutPoints(loadout)}
+        budgetUsed={equippedPoints}
         onEquip={equip}
         busy={busy}
       />

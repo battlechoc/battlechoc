@@ -473,6 +473,7 @@ module.exports = {
     "LAB_TRY": "Ausprobieren",
     "LAB_CRAFT": "Herstellen",
     "LAB_TABLE_HINT": "Gib zwei Zutaten zu {{ingredient}}",
+    "LAB_NEEDS_SPECIAL": "Für dieses Gebäude brauchst du {{ingredient}}. Gewinne Partien, um welche zu finden.",
     "LAB_RESULT_FOUND": "Rezept entdeckt!",
     "LAB_RESULT_FIRST": "Du hast es als Erste*r entdeckt!",
     "LAB_RESULT_SMELL": "Es tut sich etwas … eine deiner zwei Zutaten stimmt.",

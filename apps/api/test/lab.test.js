@@ -5,7 +5,7 @@ const { createAuth } = require('../src/auth');
 const { migrate } = require('../src/db');
 const pantry = require('../src/pantry');
 const players = require('../src/players');
-const { createRecipeBook } = require('../src/lab/recipes');
+const { createRecipeBook, loadRecipes, SAMPLE } = require('../src/lab/recipes');
 const { createTestPool, closeTestPools, JWT_SECRET } = require('./helper');
 
 afterAll(closeTestPools);
@@ -43,6 +43,14 @@ const account = async (app, { starter = true, name } = {}) => {
 };
 
 const tryRecipe = (client, entityType, ingredients) => client.post('/lab/try', { entityType, ingredients });
+
+describe('recipe table', () => {
+    test('production never falls back to the public sample', () => {
+        expect(() => loadRecipes(undefined, 'production')).toThrow(/RECIPES_FILE/);
+        expect(loadRecipes(SAMPLE, 'production').entries.length).toBeGreaterThan(0);
+        expect(loadRecipes(undefined, 'test').entries.length).toBeGreaterThan(0);
+    });
+});
 
 describe('starter kit', () => {
     test('finishing the tutorial gives cocoa and the ingredients of the starter recipe, once', async () => {
@@ -171,6 +179,31 @@ describe('equipment', () => {
         const stats = (await player.get('/user')).body.stats;
         expect(stats.loadout).toEqual({ [T.RUM_TRUFFLE_CANNON]: ['LIGHT_BARREL'], [T.CHOCOLATE_FOUNTAIN]: ['WIDE_SPRAY'] });
         expect(stats.items).toHaveLength(5);
+    });
+
+    test('stored equipment over the budget (after a balance change) can still be emptied slot by slot', async () => {
+        const { app, pool } = await setup();
+        const player = await account(app);
+        const ids = {
+            turbo: await giveItem(pool, player.playerId, 'TURBO_CONVEYOR'),
+            walls: await giveItem(pool, player.playerId, 'DARK_WALLS'),
+            heavy: await giveItem(pool, player.playerId, 'HEAVY_BARREL'),
+            light: await giveItem(pool, player.playerId, 'LIGHT_BARREL'),
+        };
+        // 5 + 3 + 3 + 2 = 13 points, as stored before the budget shrank
+        const stored = { [T.FACTORY]: [ids.turbo, ids.walls], [T.RUM_TRUFFLE_CANNON]: [ids.heavy, ids.light] };
+        await pool.query('UPDATE players SET equipment = $1 WHERE id = $2', [JSON.stringify(stored), player.playerId]);
+        const equip = (entityType, slot, itemId) => player.post('/user/equipment', { entityType, slot, itemId });
+
+        // removing lowers the total (13 → 11, still over 10): allowed
+        const removed = (await equip(T.RUM_TRUFFLE_CANNON, 1, null).expect(200)).body;
+        expect(removed.equipment[T.RUM_TRUFFLE_CANNON]).toEqual([ids.heavy, null]);
+        // adding while over the budget is still refused
+        expect((await equip(T.RUM_TRUFFLE_CANNON, 1, ids.light).expect(400)).body.error).toBe('OVER BUDGET');
+        await equip(T.FACTORY, 1, null).expect(200);
+        expect((await player.get('/user')).body.stats.loadout).toEqual({
+            [T.FACTORY]: ['TURBO_CONVEYOR'], [T.RUM_TRUFFLE_CANNON]: ['HEAVY_BARREL'],
+        });
     });
 });
 

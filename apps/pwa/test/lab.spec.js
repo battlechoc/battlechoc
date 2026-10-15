@@ -155,6 +155,24 @@ test("discover, craft and equip the starter item; a local match uses it", async 
   await context.close();
 });
 
+test("without the building's special ingredient the lab says what is missing", async ({
+  browser,
+  request,
+}) => {
+  const { context, page } = await newPlayer(browser, request, "Nora");
+  await page.getByText("Choclab", { exact: true }).first().click();
+  // the starter kit has no hazelnuts, the factory extension's special ingredient
+  await chooseBuilding(page, "Factory extension");
+  await expect(page.getByTestId("lab-message")).toContainText(
+    "You need Hazelnuts"
+  );
+  await expect(page.getByTestId("lab-try")).toBeDisabled();
+  await expect(
+    page.locator("[data-testid=bowls] button").first()
+  ).toHaveAttribute("data-missing", "true");
+  await context.close();
+});
+
 test("the lab on a phone in portrait", async ({ browser, request }) => {
   const { context, page } = await newPlayer(browser, request, "Mona", {
     width: 390,

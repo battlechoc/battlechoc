@@ -473,6 +473,7 @@ module.exports = {
     "LAB_TRY": "Thử",
     "LAB_CRAFT": "Chế tạo",
     "LAB_TABLE_HINT": "Thêm hai nguyên liệu vào {{ingredient}}",
+    "LAB_NEEDS_SPECIAL": "Bạn cần {{ingredient}} cho công trình này. Thắng trận để tìm thêm.",
     "LAB_RESULT_FOUND": "Đã khám phá công thức!",
     "LAB_RESULT_FIRST": "Bạn là người đầu tiên khám phá!",
     "LAB_RESULT_SMELL": "Có gì đó đang xảy ra… một trong hai nguyên liệu của bạn là đúng.",

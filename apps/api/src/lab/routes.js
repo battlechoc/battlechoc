@@ -177,6 +177,11 @@ const registerLabRoutes = (app, { pool, user, handle, recipes, oneAtATime, tries
                 const player = await players.findPlayer(client, req.playerId);
                 const items = await players.itemsOf(client, req.playerId);
                 const equipment = JSON.parse(JSON.stringify(players.equipmentOf(player)));
+                // points of all equipped items (stored equipment may be over the budget after a balance change)
+                const pointsOf = stored => Object.values(stored).flat()
+                    .filter(id => id !== null)
+                    .reduce((sum, id) => sum + Items[items.find(entry => entry.id === id).item].points, 0);
+                const pointsBefore = pointsOf(equipment);
                 const slots = Array.from({ length: SLOTS_PER_BUILDING }, (_, i) => (equipment[entityType] || [])[i] || null);
                 if (itemId !== null) {
                     const owned = items.find(entry => entry.id === itemId);
@@ -204,12 +209,9 @@ const registerLabRoutes = (app, { pool, user, handle, recipes, oneAtATime, tries
                     delete equipment[entityType];
                 }
                 const wanted = players.loadoutOf({ equipment: { ...equipment } }, items);
-                const raw = {};
-                Object.entries(equipment).forEach(([type, ids]) => {
-                    raw[type] = ids.filter(id => id !== null).map(id => items.find(entry => entry.id === id).item);
-                });
-                const points = Object.values(raw).flat().reduce((sum, key) => sum + Items[key].points, 0);
-                if (points > LOADOUT_BUDGET) {
+                // over the budget only refuses changes that add points, so too much can be taken off step by step
+                const points = pointsOf(equipment);
+                if (points > LOADOUT_BUDGET && points > pointsBefore) {
                     throw new LabError(400, 'OVER BUDGET');
                 }
                 await client.query('UPDATE players SET equipment = $1 WHERE id = $2', [JSON.stringify(equipment), req.playerId]);
