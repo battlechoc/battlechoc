@@ -123,11 +123,12 @@ const awards = [
 const isMatchWinner = (match, playerIndex) => Boolean(match.outcome) && match.outcome.winners.includes(playerIndex);
 
 /**
- * The achievements of player `playerIndex` in an ended match: the five most valuable ones the
- * player earned (winner-only ones need a win or a draw), sorted ascending by xp.
+ * The achievements of player `playerIndex` in an ended match that ran: the five most valuable ones
+ * the player earned (winner-only ones need a win or a draw), sorted ascending by xp.
  */
 const computeMatchAwards = (match, playerIndex) => {
-    if (match.phase !== MatchPhase.ENDED || !match.outcome) {
+    // a match that ended before it ran (a surrender during field choice) earns nothing
+    if (match.phase !== MatchPhase.ENDED || !match.outcome || match.startedAt === null || typeof match.startedAt === 'undefined') {
         return [];
     }
     const winner = isMatchWinner(match, playerIndex);

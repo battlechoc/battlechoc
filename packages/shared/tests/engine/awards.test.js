@@ -53,6 +53,14 @@ describe('achievements', () => {
         expect(engine.isMatchWinner(match, 0)).toBe(true);
     });
 
+    test('a match that never started running gives no achievements', () => {
+        const { newMatch } = require('./helper');
+        const match = newMatch();
+        end(match, [1], engine.OutcomeReason.SURRENDER);
+        expect(engine.computeMatchAwards(match, 0)).toEqual([]);
+        expect(engine.computeMatchAwards(match, 1)).toEqual([]);
+    });
+
     test('a player who surrendered is no good sport', () => {
         const match = runningMatch();
         end(match, [0], engine.OutcomeReason.SURRENDER);

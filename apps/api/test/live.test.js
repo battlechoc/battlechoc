@@ -56,7 +56,8 @@ const account = async (env, { username, score } = {}) => {
         await request(env.app).post('/user/username').set('Authorization', `Bearer ${created.accessToken}`).send({ username }).expect(200);
     }
     if (typeof score === 'number') {
-        await env.pool.query('UPDATE players SET score = $1 WHERE id = $2', [score, created.playerId]);
+        // the score of a player is their XP (board size and AI strength follow it)
+        await env.pool.query('UPDATE players SET xp = $1 WHERE id = $2', [score, created.playerId]);
     }
     return created;
 };
@@ -275,12 +276,19 @@ describe('live: matches', () => {
         });
         await r.writes;
 
-        const records = (await env.pool.query('SELECT player_id, result, coins FROM track_records ORDER BY player_id')).rows;
+        const records = (await env.pool.query('SELECT player_id, result, xp, verified FROM track_records ORDER BY player_id')).rows;
         expect(records).toHaveLength(2);
+        records.forEach(record => expect(record.verified).toBe(true));
         const winner = results.find(message => message.result.won);
         if (winner) {
-            expect(winner.result.coins).toBeGreaterThan(0);
+            expect(winner.result.xp).toBeGreaterThan(0);
         }
+        // verified: the first match of the day brings a fresh batch; two humans are rated
+        results.forEach(message => {
+            expect(message.result.drops).toEqual(expect.arrayContaining([{ ingredient: 'COCOA', amount: 100, achievement: 'FRESHBATCH' }]));
+            expect(message.result.rating).toEqual({ before: 1500, after: expect.any(Number) });
+            message.result.awards.forEach(award => expect(award).toEqual({ key: expect.any(String), xp: expect.any(Number) }));
+        });
         const row = (await env.pool.query('SELECT status, snapshot, outcome FROM matches WHERE id = $1', [matchId])).rows[0];
         expect(row.status).toBe('ended');
         expect(row.outcome).toEqual(outcome);
@@ -352,6 +360,48 @@ describe('live: matches', () => {
         }
         expect(r.match.events.some(event => event.player === 1 && event.type !== undefined)).toBe(true);
         expect(r.seq).toBeGreaterThan(2);
+    });
+
+    test('queue.ai starts a match against the server AI right away, queued or not', async () => {
+        const env = await start();
+        const waiting = await player(env, { score: 150 });
+        waiting.send({ type: ClientMessage.QUEUE_JOIN });
+        await waiting.next(ServerMessage.QUEUED);
+        waiting.send({ type: ClientMessage.QUEUE_AI });
+        const first = await waiting.next(ServerMessage.MATCH);
+        expect(room(env, first.matchId).kind).toBe('ai');
+        expect(env.live.lobby.queue.size).toBe(0);
+
+        const direct = await player(env, { score: 150 });
+        direct.send({ type: ClientMessage.QUEUE_AI });
+        const second = await direct.next(ServerMessage.MATCH);
+        expect(room(env, second.matchId).kind).toBe('ai');
+        direct.send({ type: ClientMessage.QUEUE_AI });
+        expect((await direct.next(ServerMessage.ERROR)).code).toBe(LiveError.ALREADY_IN_MATCH);
+    });
+
+    test('a verified match against the AI gives xp and drops, credited only once', async () => {
+        const env = await start();
+        const lonely = await player(env, { score: 150 });
+        lonely.send({ type: ClientMessage.QUEUE_AI });
+        const { matchId } = await lonely.next(ServerMessage.MATCH);
+        const r = room(env, matchId);
+        // surrendering during field choice: the match never ran, so no achievements, but it is the
+        // first verified match of the day
+        expect((await lonely.act(matchId, MatchActionTypes.surrender, {})).ok).toBe(true);
+        const { result } = await lonely.next(ServerMessage.RESULT);
+        expect(result.lost).toBe(true);
+        expect(result.drops).toEqual(expect.arrayContaining([{ ingredient: 'COCOA', amount: 100, achievement: 'FRESHBATCH' }]));
+        expect(result.rating).toBeUndefined();
+        await r.writes;
+        const totals = async () => (await request(env.app).get('/user/pantry')
+            .set('Authorization', `Bearer ${lonely.account.accessToken}`)).body.pantry;
+        const before = await totals();
+        expect(before.COCOA).toBeGreaterThanOrEqual(100);
+        // the end of the match is processed again (as after a restart): nothing more is credited
+        env.live.lobby.matchEnded(r);
+        await r.writes;
+        expect(await totals()).toEqual(before);
     });
 
     test('invites: live, declined, expired and by push to an offline player', async () => {

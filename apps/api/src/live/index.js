@@ -22,10 +22,10 @@ const { ClientMessage, ServerMessage, LiveError, CloseCode, InviteClosedReason, 
  * @param {object} [options.config] overrides of LiveDefaults
  * @param {string[]} [options.origins] allowed browser origins (no Origin header: allowed)
  */
-const createLive = ({ server, pool, auth, push, clock = systemClock, config = {}, origins = [], log = console }) => {
+const createLive = ({ server, pool, auth, push, clock = systemClock, config = {}, origins = [], log = console, random }) => {
     const settings = { ...LiveDefaults, ...config };
     const store = createMatchStore(pool);
-    const lobby = new Lobby({ pool, push, store, clock, config: settings, log });
+    const lobby = new Lobby({ pool, push, store, clock, config: settings, log, random });
     const connections = new Set();
 
     const wss = new WebSocketServer({
@@ -44,6 +44,7 @@ const createLive = ({ server, pool, auth, push, clock = systemClock, config = {}
         }),
         [ClientMessage.QUEUE_JOIN]: connection => lobby.joinQueue(connection),
         [ClientMessage.QUEUE_LEAVE]: connection => lobby.leaveQueue(connection.playerId),
+        [ClientMessage.QUEUE_AI]: connection => lobby.playAiNow(connection),
         [ClientMessage.INVITE]: (connection, message) => (typeof message.username === 'string'
             ? lobby.invite(connection, message.username)
             : connection.sendError(LiveError.BAD_MESSAGE)),

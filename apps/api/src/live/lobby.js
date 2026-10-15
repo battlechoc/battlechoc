@@ -13,6 +13,7 @@ const {
     getCurrentLanguage,
 } = require('@battlechoc/battlechoc-shared-functions');
 const players = require('../players');
+const rewards = require('../rewards');
 const { MatchRoom } = require('./room');
 
 const { ServerMessage, LiveError, InviteClosedReason, CloseCode } = live;
@@ -34,8 +35,10 @@ const textFor = (language, key, ...args) => {
 };
 
 class Lobby {
-    constructor({ pool, push, store, clock, config, log }) {
+    constructor({ pool, push, store, clock, config, log, random }) {
         this.pool = pool;
+        // random source of the ingredient drops (tests pass a fixed one; default: crypto)
+        this.random = random;
         this.push = push;
         this.store = store;
         this.clock = clock;
@@ -119,7 +122,7 @@ class Lobby {
             name: row.username || EmptyPlayerStats.username,
             type: PlayerType.HUMAN,
             level: players.levelOf(row),
-            score: row.score,
+            score: row.xp,
             language: row.language,
         };
     }
@@ -202,18 +205,40 @@ class Lobby {
         room.submit(index, connection, message);
     }
 
+    // credits a verified match: drops and XP per human player, a rating change between two humans;
+    // safe to run twice for the same room (after a restart), each part is credited once
     matchEnded(room) {
-        room.humanIndexes().forEach(index => {
+        const humans = room.humanIndexes();
+        humans.forEach(index => {
             const playerId = room.playerIds[index];
             if (this.activeMatch.get(playerId) === room.id) {
                 this.activeMatch.delete(playerId);
             }
-            const { record, ...result } = room.resultFor(index);
-            // credited once per match and player (the record id is the match id)
-            room.write(async () => {
-                const coins = await players.addTrackRecords(this.pool, playerId, [record]);
-                room.sendTo(index, { type: ServerMessage.RESULT, matchId: room.id, result: { ...result, coins } });
-            });
+        });
+        room.write(async () => {
+            const { winners } = room.match.outcome;
+            let ratings = {};
+            if (humans.length === 2) {
+                const scoreA = winners.length === 2 ? 0.5 : winners[0] === 0 ? 1 : 0;
+                ratings = (await rewards.rateMatch(this.pool, room.id, room.playerIds, scoreA)) || {};
+            }
+            for (const index of humans) {
+                const playerId = room.playerIds[index];
+                const { record, ...result } = room.resultFor(index);
+                const credit = await rewards.creditVerifiedMatch(this.pool, {
+                    playerId,
+                    record,
+                    isWinner: winners.includes(index),
+                    opponentIsAi: record.opponent.ai,
+                    now: this.clock.now(),
+                    random: this.random,
+                });
+                room.sendTo(index, {
+                    type: ServerMessage.RESULT,
+                    matchId: room.id,
+                    result: { ...result, xp: credit ? credit.xp : 0, drops: credit ? credit.drops : [], rating: ratings[playerId] },
+                });
+            }
         });
         this.clock.setTimer(() => {
             if (this.rooms.get(room.id) === room) {
@@ -273,12 +298,29 @@ class Lobby {
         if (!entry) {
             return;
         }
-        this.clock.clearTimer(entry.timer);
+        if (entry.timer !== null) {
+            this.clock.clearTimer(entry.timer);
+        }
         this.queue.delete(playerId);
         const connection = this.connections.get(playerId);
         if (notify && connection) {
             connection.send({ type: ServerMessage.QUEUE_LEFT });
         }
+    }
+
+    /** Play against the server AI right away, whether queued or not (Start → "Play the AI now"). */
+    async playAiNow(connection) {
+        const { playerId } = connection;
+        if (this.queue.has(playerId)) {
+            await this.aiFallback(playerId);
+            return;
+        }
+        if (this.busy(playerId)) {
+            connection.sendError(LiveError.ALREADY_IN_MATCH);
+            return;
+        }
+        this.queue.set(playerId, { since: this.clock.now(), timer: null });
+        await this.aiFallback(playerId);
     }
 
     async aiFallback(playerId) {

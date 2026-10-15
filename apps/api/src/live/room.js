@@ -375,7 +375,7 @@ class MatchRoom {
         const opponent = this.match.players[1 - index];
         const won = outcome.winners.length === 1 && outcome.winners[0] === index;
         const draw = outcome.winners.length === 2;
-        const awards = engine.computeMatchAwards(this.match, index).map(award => ({ key: award.key, coins: award.coins }));
+        const awards = engine.computeMatchAwards(this.match, index).map(award => ({ key: award.key, xp: award.xp }));
         return {
             won,
             draw,
