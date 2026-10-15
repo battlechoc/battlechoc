@@ -7,6 +7,7 @@ const { createAuth } = require('./auth');
 const { createPush } = require('./push');
 const { createApp } = require('./app');
 const { createLive } = require('./live');
+const pantry = require('./pantry');
 
 // optional overrides of the live timings (LiveDefaults), e.g. short ones for browser tests
 const liveConfig = env => Object.fromEntries([
@@ -33,11 +34,14 @@ const main = async () => {
     if (recovered > 0) {
         console.log(`recovered ${recovered} running matches`);
     }
+    // spoiled and used-up ingredient batches are deleted once an hour
+    const stopCleanup = pantry.scheduleCleanup(pool);
     const port = Number(process.env.PORT || 8080);
     server.listen(port, () => console.log(`battlechoc api listening on ${port}`));
 
     // running matches are saved and resume after the restart (clients reconnect)
     const shutdown = async () => {
+        stopCleanup();
         await live.close();
         server.close(() => pool.end().then(() => process.exit(0)));
     };

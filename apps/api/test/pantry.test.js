@@ -71,3 +71,14 @@ test('the migration converts coins into cocoa and score into xp', async () => {
     expect(await pantry.totals(old, id, NOW)).toEqual({ COCOA: 300 });
     await old.end();
 });
+
+test('the scheduled cleanup runs right away and then periodically, until stopped', async () => {
+    await pantry.add(pool, playerId, [{ ingredient: 'GOLDLEAF', amount: 1 }], Date.now() - 4 * DAY);
+    const stop = pantry.scheduleCleanup(pool, { intervalMs: 30 });
+    await new Promise(resolve => setTimeout(resolve, 20));
+    expect(Number((await pool.query('SELECT COUNT(*) AS n FROM pantry')).rows[0].n)).toBe(0);
+    await pantry.add(pool, playerId, [{ ingredient: 'GOLDLEAF', amount: 1 }], Date.now() - 4 * DAY);
+    await new Promise(resolve => setTimeout(resolve, 60));
+    expect(Number((await pool.query('SELECT COUNT(*) AS n FROM pantry')).rows[0].n)).toBe(0);
+    stop();
+});
