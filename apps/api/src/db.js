@@ -19,10 +19,19 @@ const createPool = (config = {}) => {
     return new Pool({ connectionString: url, max: config.maxConnections || 10 });
 };
 
-const migrate = async pool => {
-    await pool.query('CREATE TABLE IF NOT EXISTS schema_migrations (name TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW())');
-    const applied = new Set((await pool.query('SELECT name FROM schema_migrations')).rows.map(row => row.name));
-    const files = fs.readdirSync(MIGRATIONS).filter(file => file.endsWith('.sql')).sort();
+// `upTo` (a file name) stops after that migration; tests use it to build an older schema
+const migrate = async (pool, { upTo } = {}) => {
+    let applied;
+    try {
+        applied = new Set((await pool.query('SELECT name FROM schema_migrations')).rows.map(row => row.name));
+    } catch (error) {
+        // first run (pg-mem rejects a repeated CREATE TABLE IF NOT EXISTS, so create it only when missing)
+        await pool.query('CREATE TABLE schema_migrations (name TEXT PRIMARY KEY, applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW())');
+        applied = new Set();
+    }
+    const files = fs.readdirSync(MIGRATIONS)
+        .filter(file => file.endsWith('.sql') && (typeof upTo === 'undefined' || file <= upTo))
+        .sort();
     for (const file of files) {
         if (!applied.has(file)) {
             const sql = fs.readFileSync(path.join(MIGRATIONS, file), 'utf8');
@@ -32,4 +41,20 @@ const migrate = async pool => {
     }
 };
 
-module.exports = { createPool, migrate };
+/** Runs fn(client) in a transaction; rolls back and rethrows when fn throws. */
+const withTransaction = async (pool, fn) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const result = await fn(client);
+        await client.query('COMMIT');
+        return result;
+    } catch (error) {
+        await client.query('ROLLBACK').catch(() => {});
+        throw error;
+    } finally {
+        client.release();
+    }
+};
+
+module.exports = { createPool, migrate, withTransaction };

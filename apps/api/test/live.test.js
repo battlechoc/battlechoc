@@ -331,12 +331,12 @@ describe('live: matches', () => {
         expect(result.result.won).toBe(true);
     });
 
-    test('matchmaking falls back to an AI after 30 s', async () => {
+    test('matchmaking falls back to an AI after 15 s', async () => {
         const env = await start();
         const lonely = await player(env, { score: 900 });
         lonely.send({ type: ClientMessage.QUEUE_JOIN });
         await lonely.next(ServerMessage.QUEUED);
-        env.clock.advance(29000);
+        env.clock.advance(14000);
         await sleep(20);
         expect(lonely.matches.size).toBe(0);
         env.clock.advance(1000);
