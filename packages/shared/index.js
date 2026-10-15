@@ -185,6 +185,8 @@ module.exports.DropTables = progression.DropTables;
 module.exports.DropRules = progression.DropRules;
 module.exports.achievementXp = progression.achievementXp;
 module.exports.rollDrops = progression.rollDrops;
+module.exports.levelRefund = progression.levelRefund;
+module.exports.StarterKit = progression.StarterKit;
 const equipment = require('./equipment');
 module.exports.Items = equipment.Items;
 module.exports.Tier = equipment.Tier;
@@ -395,6 +397,24 @@ const translationPredicates = {
     },
     PLAYER_NAME_GENERATED_BODY: function (strings, name) {
         return fmt(strings.PLAYER_NAME_GENERATED_BODY, { name: name });
+    },
+    LAB_INVENTORY_TITLE: function (strings, building) {
+        return fmt(strings.LAB_INVENTORY_TITLE, { building: building });
+    },
+    LAB_TABLE_HINT: function (strings, ingredient) {
+        return fmt(strings.LAB_TABLE_HINT, { ingredient: ingredient });
+    },
+    LAB_DISCOVERED_BY: function (strings, name) {
+        return fmt(strings.LAB_DISCOVERED_BY, { name: name });
+    },
+    LAB_UNDISCOVERED: function (strings, count) {
+        return fmt(strings.LAB_UNDISCOVERED, { count: count });
+    },
+    LAB_POINTS: function (strings, points) {
+        return fmt(strings.LAB_POINTS, { points: points });
+    },
+    LAB_SLOT_LABEL: function (strings, slot) {
+        return fmt(strings.LAB_SLOT_LABEL, { slot: slot });
     },
     END_BAG_FROM: function (strings, achievement) {
         return fmt(strings.END_BAG_FROM, { achievement: achievement });

@@ -134,3 +134,23 @@ describe('rollDrops', () => {
         });
     });
 });
+
+describe('levelRefund', () => {
+    const { levelRefund, StarterKit } = require('../index');
+
+    test('gives back what every level cost, cocoa and milestone ingredients', () => {
+        const levels = { ...EmptyPlayerStats.level, [EntityType.RUM_TRUFFLE_CANNON]: 5, [EntityType.FACTORY]: 1 };
+        const cannon = [0, 1, 2, 3, 4].reduce((sum, level) => sum + choclabCost(EntityType.RUM_TRUFFLE_CANNON, level).cocoa, 0);
+        expect(levelRefund(levels)).toEqual({ COCOA: cannon + choclabCost(EntityType.FACTORY, 0).cocoa, RUM: 5 });
+    });
+
+    test('no levels, nothing to give back; nonsense is ignored', () => {
+        expect(levelRefund(EmptyPlayerStats.level)).toEqual({});
+        expect(levelRefund(undefined)).toEqual({});
+        expect(levelRefund({ 'EntityType.NOPE': 3, [EntityType.FACTORY]: -2 })).toEqual({});
+    });
+
+    test('the starter kit holds the starter recipe ingredients', () => {
+        expect(StarterKit).toEqual({ COCOA: 100, RUM: 4, SUGAR: 4, MILK: 2 });
+    });
+});

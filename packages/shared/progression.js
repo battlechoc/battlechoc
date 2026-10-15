@@ -154,4 +154,31 @@ const rollDrops = ({ achievements, isWinner, opponentIsAi, verifiedMatchesToday,
     return drops;
 };
 
-module.exports = { SpecialIngredient, ChoclabMilestones, choclabCost, DropTables, DropRules, achievementXp, rollDrops };
+/**
+ * What the building levels of a player cost in the Choclab (cocoa and milestone ingredients);
+ * given back once when equipment replaced the levels (2026-10).
+ */
+const levelRefund = levels => {
+    const refund = {};
+    Object.entries(levels && typeof levels === 'object' ? levels : {}).forEach(([entityType, level]) => {
+        if (!SpecialIngredient[entityType] || !Number.isInteger(level)) {
+            return;
+        }
+        for (let l = 0; l < level; l++) {
+            const cost = choclabCost(entityType, l);
+            Object.entries({ COCOA: cost.cocoa, ...cost.ingredients }).forEach(([id, amount]) => {
+                if (amount > 0) {
+                    refund[id] = (refund[id] || 0) + amount;
+                }
+            });
+        }
+    });
+    return refund;
+};
+
+// finishing the tutorial: cocoa and the ingredients of the starter recipe (Light barrel)
+const StarterKit = Object.freeze({ COCOA: 100, RUM: 4, SUGAR: 4, MILK: 2 });
+
+module.exports = {
+    SpecialIngredient, ChoclabMilestones, choclabCost, DropTables, DropRules, achievementXp, rollDrops, levelRefund, StarterKit,
+};
