@@ -448,7 +448,7 @@ const Hud = (props) => {
               <Button
                 className={classes.menuButton}
                 key="3"
-                size="small"
+                size="huge"
                 color="secondary"
                 locked={lockedFriends}
                 onLockedClick={() => notifyLocked(t(tr.FRIENDS))}
