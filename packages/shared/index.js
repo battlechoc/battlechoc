@@ -398,9 +398,6 @@ const translationPredicates = {
     PLAYER_NAME_GENERATED_BODY: function (strings, name) {
         return fmt(strings.PLAYER_NAME_GENERATED_BODY, { name: name });
     },
-    LAB_INVENTORY_TITLE: function (strings, building) {
-        return fmt(strings.LAB_INVENTORY_TITLE, { building: building });
-    },
     LAB_TABLE_HINT: function (strings, ingredient) {
         return fmt(strings.LAB_TABLE_HINT, { ingredient: ingredient });
     },

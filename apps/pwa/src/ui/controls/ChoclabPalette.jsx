@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import PropTypes from "prop-types";
 import { EntityType } from "@battlechoc/battlechoc-shared-functions";
 import { createUseStyles, useTheme } from "react-jss";
@@ -116,6 +116,20 @@ const ChoclabPalette = (componentProps) => {
     setSelectedEntity(entity);
     props.selectEntity(buildingsForSeclection[entity].type);
   };
+
+  // follow a building chosen elsewhere (e.g. the recipe book of the lab)
+  useEffect(() => {
+    if (typeof props.selected === "undefined") {
+      return;
+    }
+    const index = buildingsForSeclection.findIndex(
+      (entry) => entry.type === props.selected
+    );
+    if (index >= 0 && index !== selectedEntity) {
+      setSelectedEntity(index);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.selected]);
 
   const previous =
     buildingsForSeclection[checkEntityBounds(selectedEntity - 1)];

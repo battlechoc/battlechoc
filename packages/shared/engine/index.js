@@ -90,6 +90,8 @@ const isAi = type => type !== PlayerType.HUMAN;
 const spec = (match, entityType) => match.balance.entities[entityType] || {};
 // a building value of a player: the base value (balance) changed by the player's equipment
 const stat = (match, playerIndex, entityType, name, base) => applyStat(match.players[playerIndex].loadout, entityType, name, base);
+// what building `entityType` costs `playerIndex` with its equipment (also on the player's own view)
+const buildCosts = (match, playerIndex, entityType) => stat(match, playerIndex, entityType, 'costs', spec(match, entityType).costs || 0);
 
 const field = (match, playerIndex) => match.board.fields[match.players[playerIndex].fieldIndex];
 
@@ -761,7 +763,7 @@ const build = (match, events, action) => {
     if (player.buildTokens < 1) {
         throw new NoBuildingsLeftError();
     }
-    const costs = stat(match, playerIndex, entityType, 'costs', spec(match, entityType).costs || 0);
+    const costs = buildCosts(match, playerIndex, entityType);
     if (player.cacao < costs) {
         throw new NoCacaoLeftError();
     }
@@ -1166,6 +1168,8 @@ module.exports = {
     // derived selectors
     cellAt,
     entitiesOf,
+    equippedStat: stat,
+    buildCosts,
     isShielded,
     buildCapacity,
     cacaoPerSecond,

@@ -140,3 +140,15 @@ describe('equipment in a match', () => {
         expect(newMatch().players[0].loadout).toEqual({});
     });
 });
+
+describe('equipped values for the interface', () => {
+    test('buildCosts and equippedStat give what the engine charges, also on the own view', () => {
+        const match = withItems({ [T.FACTORY_EXTENSION]: ['NUT_BRICKS'] });
+        const base = match.balance.entities[T.FACTORY_EXTENSION].costs;
+        expect(engine.buildCosts(match, 0, T.FACTORY_EXTENSION)).toBe(Math.round(base * 1.2));
+        expect(engine.buildCosts(match, 1, T.FACTORY_EXTENSION)).toBe(base);
+        const view = engine.getPlayerView(match, 0);
+        expect(engine.buildCosts(view, view.viewer, T.FACTORY_EXTENSION)).toBe(Math.round(base * 1.2));
+        expect(engine.equippedStat(view, view.viewer, T.FACTORY_EXTENSION, 'hp', 100)).toBe(125);
+    });
+});

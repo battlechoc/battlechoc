@@ -467,7 +467,6 @@ module.exports = {
     "LAB_SLOT_EMPTY": "Ô trống",
     "LAB_REMOVE": "Gỡ ra",
     "LAB_BUDGET": "Ngân sách",
-    "LAB_INVENTORY_TITLE": "Trang bị cho {{building}}",
     "LAB_NO_ITEMS": "Chưa có vật phẩm cho công trình này. Hãy chế tạo ở bàn thí nghiệm.",
     "LAB_OVER_BUDGET": "Vượt ngân sách",
     "LAB_ALREADY_EQUIPPED": "Đã gắn trên công trình này",

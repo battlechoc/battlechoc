@@ -128,9 +128,10 @@ const lessonSteps = [
   },
 ];
 
-const lessonMatch = ({ playerName, level }) => ({
+// the lesson runs without equipment, so every player sees the same values
+const lessonMatch = ({ playerName }) => ({
   players: [
-    { id: "player", name: playerName, type: PlayerType.HUMAN, level },
+    { id: "player", name: playerName, type: PlayerType.HUMAN },
     { id: "ai-mimi-marzipan", name: "Mimi Marzipan", type: PlayerType.AI_TUTORIAL },
   ],
   boardSize: BOARD_SIZE,

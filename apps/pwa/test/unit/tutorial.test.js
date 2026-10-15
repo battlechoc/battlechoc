@@ -70,7 +70,7 @@ test("each demo shows its effect", () => {
 });
 
 test("the lesson can be played through and won", () => {
-  const setup = lessonMatch({ playerName: "Tester", level: undefined });
+  const setup = lessonMatch({ playerName: "Tester" });
   const match = engine.createMatch({ players: setup.players, boardSize: setup.boardSize, seed: setup.seed, balance: setup.balance });
   engine.prepareScenario(match, setup.scenario);
   assert.equal(match.fieldChooser, 0);

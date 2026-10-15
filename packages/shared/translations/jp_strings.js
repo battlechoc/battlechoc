@@ -467,7 +467,6 @@ module.exports = {
     "LAB_SLOT_EMPTY": "空きスロット",
     "LAB_REMOVE": "外す",
     "LAB_BUDGET": "予算",
-    "LAB_INVENTORY_TITLE": "{{building}}の装備",
     "LAB_NO_ITEMS": "この建物の装備はまだありません。ラボのテーブルで作りましょう。",
     "LAB_OVER_BUDGET": "予算オーバー",
     "LAB_ALREADY_EQUIPPED": "すでにこの建物に装備済み",

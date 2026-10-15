@@ -100,25 +100,6 @@ const PlayerList = (componentProps) => {
                   />
                 </>
               ) : null}
-
-              {withScore ? (
-                <>
-                  <div
-                    style={{ borderRight: "4px solid transparent" }}
-                    className={classes.cell}
-                  >
-                    {player.level}
-                  </div>
-                  <div
-                    className={`${classes.icon} ${classes.cell}`}
-                    style={{
-                      background: `url(/images/level.svg) no-repeat`,
-                      backgroundSize: "100% 100%",
-                      borderRight: "0.1vw solid transparent",
-                    }}
-                  />
-                </>
-              ) : null}
             </div>
           );
         })}

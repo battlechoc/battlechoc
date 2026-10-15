@@ -416,13 +416,13 @@ class App extends Component {
           id: this.props.playerInfos.uid || "local-player",
           name: "Carolin Cacao",
           type: PlayerType.HUMAN,
-          level: stats.level,
+          // the equipment from the lab (AI opponents play without)
+          loadout: stats.loadout,
         },
         {
           id: opponent.id,
           name: opponent.name,
           type: opponent.type,
-          level: stats.level,
         },
       ],
       boardSize,

@@ -118,7 +118,6 @@ const AccountOverview = (props) => {
 
   const isPlayerAccount = typeof props.playerAccount === "undefined";
 
-  let level = 0;
   let winnings = 0;
   let losses = 0;
   let playerName = EmptyPlayerStats.username;
@@ -135,25 +134,12 @@ const AccountOverview = (props) => {
     playerName = props.playerInfos.stats.username;
     ranking = props.ranking;
 
-    if (typeof props.playerInfos.stats.level !== "undefined") {
-      level = Object.values(props.playerInfos.stats.level).reduce(
-        (value, prev) => value + prev,
-        1
-      );
-    }
-
     if (account.isReady()) {
       winnings = props.playerInfos.stats.winnings;
       losses = props.playerInfos.stats.losses;
     }
   } else {
     playerName = props.playerAccount.name;
-    level = props.playerAccount.level;
-
-    if (typeof level !== "number") {
-      level = 1;
-    }
-
     winnings = props.playerAccount.winnings;
     losses = props.playerAccount.losses;
     ranking = props.playerAccount.ranking;
@@ -306,14 +292,6 @@ const AccountOverview = (props) => {
             />
             <div>{t(tr.ACCOUNT_OVERVIEW_LOST)}</div>
             <div>{losses}</div>
-          </div>
-          <div className={`${classes.gold} ${classes.attribute}`}>
-            <div
-              className={classes.icon}
-              style={{ background: `url(/images/level-up-icon.svg) no-repeat` }}
-            />
-            <div>{t(tr.ACCOUNT_OVERVIEW_LEVEL)}</div>
-            <div>{level}</div>
           </div>
         </div>
 

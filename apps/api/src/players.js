@@ -82,7 +82,6 @@ const stats = async (pool, playerId) => {
         items,
         equipment: equipmentOf(player),
         loadout: loadoutOf(player, items),
-        level: levelOf(player),
         tutorialStarted: player.tutorial_started,
         tutorialSkipped: player.tutorial_skipped,
         tutorialFinished: player.tutorial_finished,
@@ -101,7 +100,6 @@ const playerInfo = async (pool, player) => ({
     // what others see is the rating (verified matches only), never the XP, which offline matches feed
     score: player.rated_matches > 0 ? Math.round(player.rating) : 0,
     rating: Math.round(player.rating),
-    level: Object.values(levelOf(player)).reduce((sum, value) => sum + value, 0),
     ...(await results(pool, player.id)),
     ranking: await ranking(pool, player.rating),
 });

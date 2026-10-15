@@ -67,44 +67,46 @@ const fill = (text, values) =>
   );
 const seconds = (ms) => Math.round(ms / 100) / 10;
 
-// real-time facts of a building, from the match balance and the player's Choclab level
+// real-time facts of a building, from the match balance and the player's equipment
 const buildingLines = (view, type) => {
   const spec = view.balance.entities[type] || {};
-  const level = (view.players[view.viewer].level || {})[type] || 0;
+  const value = (stat, base) => engine.equippedStat(view, view.viewer, type, stat, base);
+  const costs = engine.buildCosts(view, view.viewer, type);
   const lines = [];
   if (type === EntityType.CREAM) {
     lines.push(t(tr.TOOLTIP_RT_CREAM));
   }
   if (!isDonut(type)) {
     lines.push(
-      spec.costs > 0
-        ? fill(t(tr.TOOLTIP_RT_COSTS), { costs: spec.costs })
+      costs > 0
+        ? fill(t(tr.TOOLTIP_RT_COSTS), { costs })
         : t(tr.TOOLTIP_RT_COSTS_FREE)
     );
   }
   if (spec.cacao) {
     lines.push(
       fill(t(tr.TOOLTIP_RT_CACAO), {
-        amount: valueAt(spec.cacao.amount, level),
-        seconds: seconds(valueAt(spec.cacao.intervalMs, level)),
+        amount: value("cacaoAmount", valueAt(spec.cacao.amount)),
+        seconds: seconds(valueAt(spec.cacao.intervalMs)),
       })
     );
   }
   if (spec.build) {
     lines.push(
       fill(t(tr.TOOLTIP_RT_BUILDINGS), {
-        seconds: seconds(valueAt(spec.build.intervalMs, level)),
-        capacity: valueAt(spec.build.capacity, level),
+        seconds: seconds(value("buildIntervalMs", valueAt(spec.build.intervalMs))),
+        capacity: value("buildCapacity", valueAt(spec.build.capacity)),
       })
     );
   }
   (spec.weapons || []).forEach((weapon) => {
-    lines.push(fill(t(tr.TOOLTIP_RT_WEAPON), { seconds: seconds(weapon.cooldownMs) }));
+    const cooldownMs = value("cooldownMs", weapon.cooldownMs);
+    lines.push(fill(t(tr.TOOLTIP_RT_WEAPON), { seconds: seconds(cooldownMs) }));
     if (weapon.rush && weapon.rush.enabled) {
       lines.push(
         fill(t(tr.TOOLTIP_RT_RUSH), {
-          seconds: seconds(weapon.cooldownMs * weapon.rush.fromProgress),
-          costs: weapon.rush.cost,
+          seconds: seconds(cooldownMs * value("rushFrom", weapon.rush.fromProgress)),
+          costs: value("rushCost", weapon.rush.cost),
         })
       );
     }
@@ -112,8 +114,8 @@ const buildingLines = (view, type) => {
   if (spec.donuts) {
     lines.push(
       fill(t(tr.TOOLTIP_RT_DONUTS), {
-        seconds: seconds(valueAt(spec.donuts.intervalMs, level)),
-        chance: Math.round(valueAt(spec.donuts.probability, level) * 100),
+        seconds: seconds(value("donutIntervalMs", valueAt(spec.donuts.intervalMs))),
+        chance: Math.round(value("donutProbability", valueAt(spec.donuts.probability)) * 100),
       })
     );
   }
@@ -162,7 +164,7 @@ const InfoCard = ({ view, tappedBuilding, selectedAttack, tutorial, tipsEnabled,
   let lines = [];
   if (subject.kind === "building") {
     title = t(tr.TOOLTIP_BUILDING_TITLE, subject.type);
-    const descriptor = getEntityDescriptor(subject.type, view.players[view.viewer].level);
+    const descriptor = getEntityDescriptor(subject.type);
     info = t(tr.TOOLTIP_BUILDING_INFO, subject.type, descriptor).info;
     lines = buildingLines(view, subject.type);
   } else {

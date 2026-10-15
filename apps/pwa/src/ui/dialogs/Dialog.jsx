@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { Jukebox } from "../misc";
 import { createUseStyles } from "react-jss";
@@ -182,6 +182,14 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
+// the open closable dialogs, the topmost last: Escape closes only that one
+const escapable = [];
+const onKeyDown = (event) => {
+  if (event.key === "Escape" && escapable.length > 0) {
+    escapable[escapable.length - 1].current();
+  }
+};
+
 const Dialog = (componentProps) => {
   const props = withDefaultProps(componentProps, defaultProps);
   const classes = useStyles(props);
@@ -191,6 +199,24 @@ const Dialog = (componentProps) => {
       props.close();
     }
   };
+  const latestClose = useRef(closeDialog);
+  latestClose.current = closeDialog;
+
+  useEffect(() => {
+    if (!props.open || !props.closable) {
+      return undefined;
+    }
+    if (escapable.length === 0) {
+      window.addEventListener("keydown", onKeyDown);
+    }
+    escapable.push(latestClose);
+    return () => {
+      escapable.splice(escapable.indexOf(latestClose), 1);
+      if (escapable.length === 0) {
+        window.removeEventListener("keydown", onKeyDown);
+      }
+    };
+  }, [props.open, props.closable]);
 
   return (
     <div

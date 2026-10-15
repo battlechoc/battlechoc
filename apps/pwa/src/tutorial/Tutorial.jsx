@@ -123,7 +123,6 @@ const Tutorial = (props) => {
     if (lesson) {
       runner.current.startLesson({
         playerName,
-        level: stats.level,
         onEnded: () => setFinished(true),
       });
     }

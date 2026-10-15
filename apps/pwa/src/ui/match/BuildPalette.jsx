@@ -140,7 +140,7 @@ const BuildPalette = ({ view, score, selectedBuilding, select, whitelist }) => {
       return false;
     }
     const entitySpec = view.balance.entities[type];
-    if (me.buildTokens < 1 || me.cacao < (entitySpec.costs || 0)) {
+    if (me.buildTokens < 1 || me.cacao < engine.buildCosts(view, view.viewer, type)) {
       return false;
     }
     if (entitySpec.maxPerField && countOnOwnField(grid, type) >= entitySpec.maxPerField) {
@@ -189,7 +189,7 @@ const BuildPalette = ({ view, score, selectedBuilding, select, whitelist }) => {
             );
           }
           const possible = canBuild(building.type);
-          const costs = view.balance.entities[building.type].costs || 0;
+          const costs = engine.buildCosts(view, view.viewer, building.type);
           return (
             <div
               key={building.type}

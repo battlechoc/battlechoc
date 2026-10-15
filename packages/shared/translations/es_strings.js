@@ -467,7 +467,6 @@ module.exports = {
     "LAB_SLOT_EMPTY": "Ranura libre",
     "LAB_REMOVE": "Quitar",
     "LAB_BUDGET": "Presupuesto",
-    "LAB_INVENTORY_TITLE": "Equipo para {{building}}",
     "LAB_NO_ITEMS": "Aún no hay objetos para este edificio. Fabrícalos en la mesa del laboratorio.",
     "LAB_OVER_BUDGET": "Supera el presupuesto",
     "LAB_ALREADY_EQUIPPED": "Ya está en este edificio",

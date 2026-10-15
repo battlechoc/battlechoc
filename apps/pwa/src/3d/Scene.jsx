@@ -649,7 +649,7 @@ class Scene extends Component {
         .catch(ignoreRuleErrors);
       return;
     }
-    const costs = (view.balance.entities[type] || {}).costs || 0;
+    const costs = engine.buildCosts(view, view.viewer, type);
     submit(MatchActionTypes.build, { entityType: type, row, col })
       .then(() => {
         Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
@@ -1118,7 +1118,6 @@ const mapStateToProps = (state) => ({
   tutorialInteractive: state.ui.tutorialInteractive,
   matchEvents: state.match.events,
   boardViewToggles: state.ui.boardViewToggles,
-  level: state.ui.playerInfos.stats.level,
   selectedBuilding: state.ui.selectedBuilding,
   selectedAttack: state.ui.selectedAttack,
   assetsReady: state.ui.assetsReady,

@@ -44,10 +44,10 @@ class TutorialRunner {
     return host;
   }
 
-  startLesson({ playerName, level, onEnded }) {
+  startLesson({ playerName, onEnded }) {
     this.stop();
     const clock = this.testClock ? new ManualClock() : new MatchClock();
-    this.host(clock, onEnded).startNew(lessonMatch({ playerName, level }));
+    this.host(clock, onEnded).startNew(lessonMatch({ playerName }));
   }
 
   startDemo(id, { playerName }) {

@@ -108,9 +108,6 @@ const uiReducer = createReducer(
       .addCase(UiActions.setPlayerRank, (state, action) => {
         state.ranking = action.payload;
       })
-      .addCase(UiActions.updateLevel, (state, action) => {
-        state.playerInfos.stats.level = action.payload;
-      })
       .addCase(UiActions.showQuickMessage, (state, action) => {
         if (
           action.payload.type === "PWA_ONLINE_MESSAGE" ||

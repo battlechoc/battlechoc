@@ -1,5 +1,4 @@
 const request = require('supertest');
-const { EntityType } = require('@battlechoc/battlechoc-shared-functions');
 const pantry = require('../src/pantry');
 const { createApp } = require('../src/app');
 const { createAuth } = require('../src/auth');
@@ -52,7 +51,9 @@ describe('accounts', () => {
         expect(player.refreshToken.length).toBeGreaterThan(30);
         const { body } = await player.get('/user').expect(200);
         expect(body.stats).toMatchObject({ id: player.playerId, username: 'Chocnonymous', coins: 0, score: 0, winnings: 0, drawn: 0, losses: 0 });
-        expect(body.stats.level[EntityType.FACTORY]).toBe(0);
+        // levels were replaced by equipment
+        expect(body.stats).not.toHaveProperty('level');
+        expect(body.stats).toMatchObject({ items: [], equipment: {}, loadout: {} });
     });
 
     test('a refresh token yields a new access token; unknown tokens are rejected', async () => {
@@ -175,7 +176,8 @@ describe('players', () => {
         await me.post('/user/friend', { friend: 'Carolin' }).expect(404);
         await me.post('/user/friend', { friend: 'Nobody' }).expect(404);
         const friends = await me.get('/user/friends').expect(200);
-        expect(friends.body).toEqual([expect.objectContaining({ name: 'Gustav', score: 0, level: 0 })]);
+        expect(friends.body).toEqual([expect.objectContaining({ name: 'Gustav', score: 0 })]);
+        expect(friends.body[0]).not.toHaveProperty('level');
         await me.del('/user/friend', { friend: 'Gustav' }).expect(200);
         expect((await me.get('/user/friends')).body).toEqual([]);
     });

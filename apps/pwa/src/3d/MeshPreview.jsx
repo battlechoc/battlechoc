@@ -86,8 +86,19 @@ const MeshPreview = (props) => {
     };
 
     window.addEventListener("resize", resize);
+    // the canvas also changes size with the layout around it (e.g. the lab's flexible stage)
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? undefined
+        : new ResizeObserver(resize);
+    if (observer && container.current) {
+      observer.observe(container.current);
+    }
     return () => {
       window.removeEventListener("resize", resize);
+      if (observer) {
+        observer.disconnect();
+      }
     };
   }, []);
 
