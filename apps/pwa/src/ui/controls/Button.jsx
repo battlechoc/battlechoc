@@ -185,6 +185,7 @@ const Button = (componentProps) => {
       <div
         style={props.style}
         onClick={onClick}
+        data-icon={props.icon}
         className={`${classes.iconButton} ${classes.background} ${
           props.className
         } ${props.disabled ? classes.disabled : ""}`}

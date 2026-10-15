@@ -20,6 +20,7 @@ import {
   Highscore,
 } from "./dialogs";
 import OnlineLobby from "./dialogs/OnlineLobby";
+import IngredientIcon from "./ingredients/IngredientIcon";
 import { liveLobby } from "../match/liveLobby";
 import Choclab from "./pages/Choclab";
 import { multiplayer } from "../Multiplayer";
@@ -125,10 +126,6 @@ const useStyles = createUseStyles((theme) => ({
       marginRight: "1.5vw",
       fontSize: "calc(3.5vh + 3.5vw)",
       WebkitTextStroke: "calc(0.08vh + 0.08vw) #3C1C0C",
-    },
-    "& > div": {
-      background: "url(/images/coins.svg) no-repeat",
-      padding: "calc(2vh + 2vw) calc(3vh + 3vw)",
     },
   },
   decoration: {
@@ -493,12 +490,10 @@ const Hud = (props) => {
                 </div>
               </Dialog>
               <div className={classes.titleScreen}>
-                {typeof playerInfos.stats.coins !== "undefined" ? (
-                  <div className={classes.coins}>
-                    <span>{playerInfos.stats.coins}</span>
-                    <div />
-                  </div>
-                ) : null}
+                <div className={classes.coins} data-testid="cocoa-counter">
+                  <span>{(playerInfos.stats.pantry && playerInfos.stats.pantry.COCOA) || 0}</span>
+                  <IngredientIcon id="COCOA" size="calc(4vh + 4vw)" />
+                </div>
                 <div className={classes.logo}>
                   <div />
                   <div />

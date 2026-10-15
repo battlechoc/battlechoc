@@ -9,7 +9,10 @@ import {
   translationKeys as tr,
   DefaultBalance,
   valueAt,
+  choclabCost,
 } from "@battlechoc/battlechoc-shared-functions";
+import IngredientIcon from "../ingredients/IngredientIcon";
+import Pantry from "../dialogs/Pantry";
 import { ChoclabPalette, Button } from "../controls";
 import MeshPreview from "../../3d/MeshPreview";
 import { createUseStyles, useTheme } from "react-jss";
@@ -63,10 +66,13 @@ const useStyles = createUseStyles((theme) => ({
       fontSize: "calc(3.5vh + 3.5vw)",
       WebkitTextStroke: "calc(0.08vh + 0.08vw) #3C1C0C",
     },
-    "& > div": {
-      background: "url(/images/coins.svg) no-repeat",
-      padding: "calc(2vh + 2vw) calc(3vh + 3vw)",
-    },
+    cursor: "pointer",
+  },
+  hint: {
+    textAlign: "center",
+    color: "#fff",
+    fontSize: "calc(1vh + 1vw)",
+    margin: "0.4em 0 0",
   },
   cacao: {
     background: `url(/images/cacao.svg) no-repeat`,
@@ -367,21 +373,8 @@ const useStyles = createUseStyles((theme) => ({
         "-webkit-font-smoothing": "antialiased",
         fontFamily: "Bangers",
       },
-      "& > div": {
-        backgroundImage: "url(/images/coins.svg)",
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "center",
-        padding: "10px 20px",
-        marginRight: "-10px",
-      },
-    },
-    [theme.breakpoints.orientation.landscape]: {
-      "& > div": {
-        "& > div": {
-          padding: "3vh 6vh !important",
-          marginRight: "-3vh !important",
-        },
-      },
+      "& img": { margin: "0 0.15em 0 0.4em" },
+      "& .missing": { color: theme.color.accent.light },
     },
     [theme.breakpoints.orientation.portrait]: {
       "& > div": {
@@ -432,6 +425,8 @@ const Choclab = (props) => {
     getEntityDescriptor(EntityType.FACTORY, props.level)
   );
   const [updateRunning, setUpdateRunning] = useState(false);
+  const [pantryOpen, setPantryOpen] = useState(false);
+  const pantry = props.playerInfos.stats.pantry || {};
 
   let entityType = selectedEntity.type;
   let currentEntity = getEntityDescriptor(entityType, props.level);
@@ -440,14 +435,19 @@ const Choclab = (props) => {
     (selectedEntity.hasOwnProperty("level")
       ? selectedEntity.level.max - 1
       : finalLevel);
-  let downgradePossible = props.level[entityType] > 0;
   let level = { [entityType]: finalLevel };
   let highlyDevelopedEntity = getEntityDescriptor(entityType, level);
   level[entityType] = props.level[entityType] + 1;
   let upgradedEntity = getEntityDescriptor(entityType, level);
-  if (downgradePossible) {
-    level[entityType] = props.level[entityType] - 1;
-  }
+
+  // the next level costs cocoa and, at milestones, special ingredients from online matches
+  const cost = choclabCost(entityType, props.level[entityType]);
+  const costItems = [
+    { ingredient: "COCOA", amount: cost.cocoa },
+    ...Object.entries(cost.ingredients).map(([ingredient, amount]) => ({ ingredient, amount })),
+  ];
+  const affordable = costItems.every(({ ingredient, amount }) => (pantry[ingredient] || 0) >= amount);
+  const online = navigator.onLine && props.liveStatus === "online";
 
   let updateLevel = (entityType) => {
     if (!updateRunning) {
@@ -457,11 +457,15 @@ const Choclab = (props) => {
         upgrade: true,
       })
         .then((response) => {
+          const changes = {
+            pantry: response.data.pantry,
+            spoiling: response.data.spoiling,
+            coins: response.data.pantry.COCOA || 0,
+          };
           props.updateLevel(response.data.level).then(() => {
-            props.updatePlayerStats({ coins: response.data.coins });
+            props.updatePlayerStats(changes);
             OfflineStore.playerStore.get("stats").then((playerStats) => {
-              playerStats.coins = response.data.coins;
-              OfflineStore.playerStore.set("stats", playerStats);
+              OfflineStore.playerStore.set("stats", { ...playerStats, ...changes });
             });
           });
         })
@@ -475,10 +479,16 @@ const Choclab = (props) => {
 
   return (
     <div className={classes.page}>
-      <div className={classes.coins}>
-        <span>{props.playerInfos.stats.coins}</span>
-        <div />
+      <div className={classes.coins} data-testid="pantry-button" onClick={() => setPantryOpen(true)}>
+        <span>{pantry.COCOA || 0}</span>
+        <IngredientIcon id="COCOA" size="calc(4vh + 4vw)" />
       </div>
+      <Pantry
+        open={pantryOpen}
+        close={() => setPantryOpen(false)}
+        pantry={pantry}
+        spoiling={props.playerInfos.stats.spoiling || []}
+      />
       <div className={classes.entity}>
         <MeshPreview selectedEntity={selectedEntity} />
 
@@ -512,43 +522,47 @@ const Choclab = (props) => {
 
               <div className={classes.actions}>
                 {upgradePossible ? (
-                  <Button
-                    className={classes.button}
-                    disabled={
-                      !upgradePossible ||
-                      updateRunning ||
-                      props.playerInfos.stats.coins < currentEntity.coins
-                    }
-                    onClick={() => {
-                      if (
-                        upgradePossible &&
-                        !updateRunning &&
-                        props.playerInfos.stats.coins >= currentEntity.coins
-                      ) {
-                        updateLevel(entityType);
-                      }
-                    }}
+                  <div
+                    data-testid="choclab-upgrade"
+                    data-affordable={String(affordable)}
+                    data-online={String(online)}
                   >
-                    <div className={classes.costs}>
-                      <span
-                        style={{
-                          WebkitTextStroke: `1px ${theme.color.primary.dark}`,
-                        }}
-                      >
-                        {t(tr.CHOCLAB_UPGRADE)}
-                      </span>
-                      <div>
+                    <Button
+                      className={classes.button}
+                      disabled={updateRunning || !affordable || !online}
+                      onClick={() => updateLevel(entityType)}
+                    >
+                      <div className={classes.costs}>
                         <span
                           style={{
                             WebkitTextStroke: `1px ${theme.color.primary.dark}`,
                           }}
                         >
-                          {currentEntity.coins}
+                          {t(tr.CHOCLAB_UPGRADE)}
                         </span>
-                        <div />
+                        <div>
+                          {costItems.map(({ ingredient, amount }) => (
+                            <React.Fragment key={ingredient}>
+                              <IngredientIcon id={ingredient} size="1.4em" />
+                              <span
+                                className={(pantry[ingredient] || 0) < amount ? "missing" : ""}
+                                style={{
+                                  WebkitTextStroke: `1px ${theme.color.primary.dark}`,
+                                }}
+                              >
+                                {amount}
+                              </span>
+                            </React.Fragment>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  </Button>
+                    </Button>
+                    {!online ? (
+                      <p className={classes.hint}>{t(tr.CHOCLAB_NEEDS_CONNECTION)}</p>
+                    ) : !affordable ? (
+                      <p className={classes.hint}>{t(tr.CHOCLAB_NOT_ENOUGH)}</p>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -634,6 +648,7 @@ const Choclab = (props) => {
 const mapStateToProps = (state) => ({
   level: state.ui.playerInfos.stats.level,
   playerInfos: state.ui.playerInfos,
+  liveStatus: state.live.status,
 });
 
 const mapDispatchToProps = {

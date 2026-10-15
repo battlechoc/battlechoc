@@ -175,9 +175,8 @@ class Multiplayer {
       };
       playerStats.trackRecord = [...(playerStats.trackRecord || []), ...gameStats];
       Object.assign(playerStats, this.computeTrackRecordStats(playerStats.trackRecord));
-      const coins = this.calculateCoinsFromTrackRecord(gameStats);
-      playerStats.coins = (playerStats.coins || 0) + coins;
-      playerStats.score = (playerStats.score || 0) + coins;
+      // offline matches give XP only; ingredients come from verified online matches
+      playerStats.score = (playerStats.score || 0) + this.calculateXpFromTrackRecord(gameStats);
       await OfflineStore.playerStore.set("stats", playerStats);
       this.callbacks.updatePlayerStats(playerStats);
     } catch (error) {
@@ -239,20 +238,18 @@ class Multiplayer {
     return offlineAccount;
   }
 
-  // offline estimate of the coins of finished matches (the server computes the real value)
-  calculateCoinsFromTrackRecord(trackRecord) {
+  // offline estimate of the XP of finished matches (the server computes the real value):
+  // winners and draws get the full XP of their achievements, losers half
+  calculateXpFromTrackRecord(trackRecord) {
     if (!Array.isArray(trackRecord)) {
       return 0;
     }
     return trackRecord.reduce((total, record) => {
-      if (record.won !== true && !(Array.isArray(record.winners) && record.winners.length > 1)) {
-        return total;
-      }
-      const coins = (Array.isArray(record.awards) ? record.awards : []).reduce(
-        (sum, award) => sum + (award && typeof award.coins === "number" ? award.coins : 0),
+      const xp = (Array.isArray(record.awards) ? record.awards : []).reduce(
+        (sum, award) => sum + (award && typeof award.xp === "number" ? award.xp : 0),
         0
       );
-      return total + (record.won === true ? coins : Math.floor(coins / 2));
+      return total + (record.lost === true ? Math.floor(xp / 2) : xp);
     }, 0);
   }
 

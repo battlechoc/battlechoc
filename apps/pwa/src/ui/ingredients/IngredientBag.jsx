@@ -50,7 +50,11 @@ const IngredientBag = ({ items = [], greyed = false, message, showSources = true
     <div data-testid="ingredient-bag">
       <div className={`${classes.bag} ${greyed ? classes.greyed : ""}`}>
         {shown.map((item, index) => (
-          <div key={index} className={classes.item} data-ingredient={item.ingredient}>
+          <div
+            key={index}
+            className={`${classes.item} ${item.amount === 0 && !greyed ? classes.greyed : ""}`}
+            data-ingredient={item.ingredient}
+          >
             <IngredientIcon id={item.ingredient} size="2.2em" />
             <span>{`×${item.amount}`}</span>
             {showSources && item.achievement ? (
