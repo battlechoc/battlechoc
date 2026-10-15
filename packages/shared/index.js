@@ -185,6 +185,9 @@ module.exports.DropTables = progression.DropTables;
 module.exports.DropRules = progression.DropRules;
 module.exports.achievementXp = progression.achievementXp;
 module.exports.rollDrops = progression.rollDrops;
+const rating = require('./rating');
+module.exports.updateRating = rating.updateRating;
+module.exports.rateMatch = rating.rateMatch;
 module.exports.EmptyPlayerStats = EmptyPlayerStats;
 module.exports.PlayerType = PlayerType;
 
@@ -383,6 +386,15 @@ const translationPredicates = {
     },
     PLAYER_NAME_GENERATED_BODY: function (strings, name) {
         return fmt(strings.PLAYER_NAME_GENERATED_BODY, { name: name });
+    },
+    END_BAG_FROM: function (strings, achievement) {
+        return fmt(strings.END_BAG_FROM, { achievement: achievement });
+    },
+    MATCHMAKING_AI_IN: function (strings, seconds) {
+        return fmt(strings.MATCHMAKING_AI_IN, { seconds: seconds });
+    },
+    PANTRY_SPOILS_IN: function (strings, time) {
+        return fmt(strings.PANTRY_SPOILS_IN, { time: time });
     },
     COINS_FOR_NEXT_FEATURE_TITLE: function (strings, feature) {
         return fmt(strings.COINS_FOR_NEXT_FEATURE_TITLE, { feature: feature });

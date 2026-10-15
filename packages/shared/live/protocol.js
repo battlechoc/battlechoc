@@ -5,8 +5,9 @@
 // Client → server
 //   hello          { token }                     first message, a device account access token
 //   ping           { id, clientT }               clock sync and heartbeat, every 5 s
-//   queue.join     {}                            matchmaking; an AI joins after 30 s alone
+//   queue.join     {}                            matchmaking; an AI joins after 15 s alone
 //   queue.leave    {}
+//   queue.ai       {}                            play against the server AI now (queued or not)
 //   invite         { username }                  live invite (WebSocket, else Web Push)
 //   invite.accept  { inviteId }
 //   invite.decline { inviteId }
@@ -27,7 +28,7 @@
 //   view           { matchId, serverT, epoch, view }        snapshot plus the new events
 //   ack            { matchId, uid, ok, error? }             answer to an intent
 //   presence       { matchId, player, online, forfeitAt }   the opponent left or came back
-//   result         { matchId, result }                      own outcome, awards and coins
+//   result         { matchId, result }                      own outcome, achievements, xp, drops and rating
 //   presence.list  { online }                               usernames of presence.query that are online
 //   error          { code, message, uid? }                  see LiveError
 
@@ -38,6 +39,7 @@ const ClientMessage = Object.freeze({
     PING: 'ping',
     QUEUE_JOIN: 'queue.join',
     QUEUE_LEAVE: 'queue.leave',
+    QUEUE_AI: 'queue.ai',
     INVITE: 'invite',
     INVITE_ACCEPT: 'invite.accept',
     INVITE_DECLINE: 'invite.decline',
@@ -101,8 +103,8 @@ const LiveDefaults = Object.freeze({
     helloTimeoutMs: 5000,
     // an offline player loses the match after this long (D11)
     disconnectGraceMs: 60000,
-    // matchmaking: an AI joins after this long without an opponent (D18)
-    aiFallbackMs: 30000,
+    // matchmaking: an AI joins after this long without an opponent (D18; 15 s since the Start button)
+    aiFallbackMs: 15000,
     inviteTtlMs: 60000,
     // per player: at most this many match actions per second
     intentsPerSecond: 10,
