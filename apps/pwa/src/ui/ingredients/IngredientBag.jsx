@@ -51,7 +51,7 @@ const IngredientBag = ({ items = [], greyed = false, message, showSources = true
       <div className={`${classes.bag} ${greyed ? classes.greyed : ""}`}>
         {shown.map((item, index) => (
           <div key={index} className={classes.item} data-ingredient={item.ingredient}>
-            <IngredientIcon id={item.ingredient} size="3em" />
+            <IngredientIcon id={item.ingredient} size="2.2em" />
             <span>{`×${item.amount}`}</span>
             {showSources && item.achievement ? (
               <small>{t(tr.END_BAG_FROM, t(tr[`AWARDS_${item.achievement}_TITLE`]))}</small>

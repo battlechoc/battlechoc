@@ -209,5 +209,9 @@ test("a passive player's match ends within the time limit and shows the overview
     await expect(page.getByText("Time is up!").first()).toBeVisible();
   }
   await expect(page.getByText(/You won|You lost/i).first()).toBeVisible();
+  // the achievements count up as XP; offline the ingredient bag stays empty and says why
+  await expect(page.locator('[class^="overview"] [class^="coins"]')).toHaveCount(0);
+  await page.locator("[data-icon=fast-forward]:visible").first().click();
+  await expect(page.getByTestId("ingredient-bag")).toContainText("Ingredients only drop in online matches");
   await page.screenshot({ path: "test/output/screenshot_realtime_ended.png" });
 });

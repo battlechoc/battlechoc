@@ -167,7 +167,7 @@ class LocalMatchHost {
       reason: outcome.reason,
       winners: outcome.winners.map((index) => ({ ...this.match.players[index], idx: index })),
       statistics: structuredClone(this.match.players[LOCAL_PLAYER].statistics),
-      awards: engine.computeMatchAwards(this.match, LOCAL_PLAYER).map((award) => ({ key: award.key, coins: award.coins })),
+      awards: engine.computeMatchAwards(this.match, LOCAL_PLAYER).map((award) => ({ key: award.key, xp: award.xp })),
     };
   }
 

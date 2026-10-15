@@ -181,6 +181,23 @@ test.describe("the Start button", () => {
     await fiona.page.getByText("Play the AI now", { exact: true }).click();
     await inOnlineMatch(fiona.page);
     await expect(fiona.page.getByTestId("matchmaking")).toBeHidden();
+    // giving up a running match still ends it verified: the first one of the day brings a fresh
+    // batch of cocoa
+    await toRunning([fiona]);
+    await host(fiona.page, () => window.__battlechoc.host.surrender());
+    await expect(fiona.page.getByText(/You lost/i).first()).toBeVisible({ timeout: 15000 });
+    const skip = fiona.page.locator("[data-icon=fast-forward]:visible");
+    if ((await skip.count()) > 0) {
+      await skip.first().click();
+    }
+    const cocoa = fiona.page.getByTestId("ingredient-bag").locator('[data-ingredient="COCOA"]');
+    await expect(cocoa.first()).toBeVisible({ timeout: 15000 });
+    await expect(fiona.page.getByTestId("ingredient-bag")).toContainText("from Fresh batch");
+    // the icons are loaded and shown
+    await expect
+      .poll(() => cocoa.first().locator("img").evaluate((img) => img.complete && img.naturalWidth > 0))
+      .toBe(true);
+    await fiona.page.screenshot({ path: "test/output/screenshot_online_bag.png" });
     await fiona.context.close();
   });
 });

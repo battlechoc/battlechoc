@@ -204,6 +204,8 @@ const Hud = (props) => {
     notification,
     hideNotification,
     matchAwards,
+    matchOnline,
+    matchResult,
   } = props;
 
   const [open, setOpen] = useState(false);
@@ -567,7 +569,7 @@ const Hud = (props) => {
                     ...engine.matchAwards.find(
                       (candidate) => candidate.key === award.key
                     ),
-                    coins: award.coins,
+                    xp: award.xp,
                   }))}
                   outcome={
                     result.winners.length === 1 &&
@@ -575,7 +577,10 @@ const Hud = (props) => {
                       ? "won"
                       : "lost"
                   }
-                  finishGame={(coins) => endGame(coins)}
+                  isWinner={result.winners.includes(game.viewer)}
+                  verified={matchOnline}
+                  drops={matchResult ? matchResult.drops : undefined}
+                  finishGame={(xp) => endGame(xp)}
                 />
               ) : null}
             </div>
@@ -598,6 +603,8 @@ Hud.propTypes = {
 const mapStateToProps = (state) => ({
   game: selectActiveGame(state),
   matchAwards: state.match.awards,
+  matchOnline: state.match.online,
+  matchResult: state.match.result,
   state:
     typeof selectActiveGame(state) === "undefined"
       ? undefined

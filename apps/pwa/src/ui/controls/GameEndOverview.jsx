@@ -4,7 +4,9 @@ import Fab from "./Fab";
 import {
   translate as t,
   translationKeys as tr,
+  achievementXp,
 } from "@battlechoc/battlechoc-shared-functions";
+import IngredientBag from "../ingredients/IngredientBag";
 import { createUseStyles } from "react-jss";
 import confetti from "canvas-confetti";
 import CountUpModule from "react-countup";
@@ -48,9 +50,9 @@ const useStyles = createUseStyles((theme) => ({
     justifyContent: "center",
     marginBottom: "8vh",
   },
-  coins: {
+  xp: {
     display: "flex",
-    alignItems: "center",
+    alignItems: "baseline",
     justifyContent: "center",
     "& span": {
       fontSize: "10vh",
@@ -59,14 +61,11 @@ const useStyles = createUseStyles((theme) => ({
         fontSize: "6.5vh",
       },
     },
-    "& > div": {
-      background: "url(/images/coins.svg) no-repeat",
-      height: "7vh",
-      width: "10vh",
-      marginLeft: "1.5vh",
+    "& > small": {
+      fontSize: "5vh",
+      marginLeft: "1vh",
       [theme.breakpoints.orientation.portrait]: {
-        height: "5vh",
-        width: "7.5vh",
+        fontSize: "3.5vh",
       },
     },
   },
@@ -98,6 +97,10 @@ const useStyles = createUseStyles((theme) => ({
       },
     },
   },
+  bag: {
+    fontSize: "4vh",
+    [theme.breakpoints.orientation.portrait]: { fontSize: "2.6vh" },
+  },
   confetti: {
     position: "absolute",
     zIndex: -1,
@@ -106,15 +109,26 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
+// the cocoa that achievements gave instead of a special ingredient is shown as one item;
+// special ingredients and the daily fresh batch keep their source
+const bagItems = (drops) => {
+  const fallback = drops.filter((drop) => drop.ingredient === "COCOA" && drop.achievement !== "FRESHBATCH");
+  const cocoa = fallback.reduce((sum, drop) => sum + drop.amount, 0);
+  return [
+    ...(cocoa > 0 ? [{ ingredient: "COCOA", amount: cocoa }] : []),
+    ...drops.filter((drop) => !fallback.includes(drop)),
+  ];
+};
+
 const GameEndOverview = (props) => {
   const classes = useStyles();
-  const { outcome, awards } = props;
+  const { outcome, awards, isWinner, verified, drops } = props;
 
   const pointer = useRef(0);
   const confettiCanvas = useRef();
   const highlight = useRef();
   const [award, setAward] = useState(pointer.current);
-  const [count, setCount] = useState(awards.length > 0 ? awards[0].coins : 0);
+  const [count, setCount] = useState(awards.length > 0 ? awards[0].xp : 0);
   let headline = t(tr.MESSAGE_WIN_GAME);
   if (outcome !== "won") {
     headline = t(tr.MESSAGE_LOST_GAME);
@@ -153,13 +167,13 @@ const GameEndOverview = (props) => {
         shootConfetti.reset();
       };
     }
+    startGettingAwards();
+    return undefined;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [outcome]);
 
-  const coins = awards.reduce(
-    (previous, current) => current.coins + previous,
-    0
-  );
+  // losers get half the XP of their achievements
+  const xp = achievementXp(awards, isWinner);
 
   const showNextAward = (skip = false) => {
     pointer.current++;
@@ -180,7 +194,7 @@ const GameEndOverview = (props) => {
     }, 2200);
 
     if (award > 0 && award < awards.length) {
-      setCount((current) => current + awards[award].coins);
+      setCount((current) => current + awards[award].xp);
     }
 
     return () => clearTimeout(timeout);
@@ -190,7 +204,7 @@ const GameEndOverview = (props) => {
   let title = "";
   let subtitle = "";
   if (award < awards.length) {
-    title = `${awards[award].title()} +${awards[award].coins}`;
+    title = `${awards[award].title()} +${awards[award].xp}`;
     subtitle = awards[award].subtitle();
   }
 
@@ -208,9 +222,9 @@ const GameEndOverview = (props) => {
       <canvas className={classes.confetti} ref={confettiCanvas} />
       <div className={classes.headline}>{headline}</div>
       <div className={classes.total}>
-        <div className={classes.coins}>
-          <span>{award < awards.length ? counterView : coins}</span>
-          <div />
+        <div className={classes.xp} data-testid="end-xp">
+          <span>{award < awards.length ? counterView : xp}</span>
+          <small>{t(tr.END_XP)}</small>
         </div>
         <div className={classes.table}>
           {awards.map((entry, index) => (
@@ -219,7 +233,7 @@ const GameEndOverview = (props) => {
               style={index < award ? null : { visibility: "hidden" }}
             >
               <div>{entry.title()}</div>
-              <div>{`+${entry.coins}`}</div>
+              <div>{`+${entry.xp}`}</div>
             </div>
           ))}
         </div>
@@ -235,6 +249,23 @@ const GameEndOverview = (props) => {
           <div>{title}</div>
           <div>{subtitle}</div>
         </div>
+        {award >= awards.length ? (
+          <div className={classes.bag}>
+            {verified ? (
+              <IngredientBag
+                items={bagItems(drops || [])}
+                message={typeof drops === "undefined" ? t(tr.END_BAG_WAITING) : undefined}
+              />
+            ) : (
+              <IngredientBag
+                items={[{ ingredient: "COCOA", amount: 0 }]}
+                greyed
+                showSources={false}
+                message={t(tr.END_BAG_OFFLINE)}
+              />
+            )}
+          </div>
+        ) : null}
       </div>
 
       <div className={classes.actions}>
@@ -248,7 +279,7 @@ const GameEndOverview = (props) => {
           <Fab
             color="secondary"
             icon="done"
-            onClick={() => props.finishGame(coins)}
+            onClick={() => props.finishGame(xp)}
           />
         )}
       </div>
@@ -260,6 +291,10 @@ GameEndOverview.propTypes = {
   finishGame: PropTypes.func.isRequired,
   outcome: PropTypes.string.isRequired,
   awards: PropTypes.array.isRequired,
+  isWinner: PropTypes.bool.isRequired,
+  // online matches are verified by the server, which sends the drops (undefined while pending)
+  verified: PropTypes.bool.isRequired,
+  drops: PropTypes.array,
 };
 
 export default GameEndOverview;
