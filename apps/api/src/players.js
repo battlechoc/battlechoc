@@ -62,7 +62,8 @@ const ranking = async (pool, rating) => 1 + await count(pool,
 
 const playerInfo = async (pool, player) => ({
     name: player.username || EmptyPlayerStats.username,
-    score: player.xp,
+    // what others see is the rating (verified matches only), never the XP, which offline matches feed
+    score: player.rated_matches > 0 ? Math.round(player.rating) : 0,
     rating: Math.round(player.rating),
     level: Object.values(levelOf(player)).reduce((sum, value) => sum + value, 0),
     ...(await results(pool, player.id)),

@@ -232,7 +232,10 @@ describe('players', () => {
         expect(highscore.body.list.map(entry => [entry.name, entry.ranking, entry.rating])).toEqual([
             ['Dora', 1, 1700], ['Cleo', 2, 1600], ['Bert', 3, 1550],
         ]);
-        expect((await accounts[0].get('/user/cleo').expect(200)).body[0]).toMatchObject({ name: 'Cleo', score: 300, rating: 1600, ranking: 2 });
+        // the public score is the rating (XP can be faked offline); unrated players show 0
+        expect((await accounts[0].get('/user/cleo').expect(200)).body[0]).toMatchObject({ name: 'Cleo', score: 1600, rating: 1600, ranking: 2 });
+        expect((await accounts[3].get('/user/anna').expect(200)).body[0]).toMatchObject({ name: 'Anna', score: 0 });
+        highscore.body.list.forEach(entry => expect(entry.score).toBe(entry.rating));
         await accounts[0].get('/user/nobody').expect(404);
         expect((await accounts[0].get('/query/user/e')).body.map(entry => entry.name)).toEqual(['Cleo', 'Bert']);
         const opponent = await accounts[0].get('/random/opponent').expect(200);
