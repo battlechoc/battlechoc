@@ -58,7 +58,7 @@ class MatchRoom {
 
     static async create({ id, kind, players, boardSize, seed, agents = [], store, ...rest }) {
         const match = engine.createMatch({
-            players: players.map(({ id: publicId, name, type, level }) => ({ id: publicId, name, type, level })),
+            players: players.map(({ id: publicId, name, type, loadout }) => ({ id: publicId, name, type, loadout })),
             boardSize,
             seed,
         });

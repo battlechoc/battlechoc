@@ -1,7 +1,7 @@
 // Player data access and the response objects the PWA expects (stats and player infos).
 
 const crypto = require('crypto');
-const { EmptyPlayerStats } = require('@battlechoc/battlechoc-shared-functions');
+const { EmptyPlayerStats, sanitizeLoadout } = require('@battlechoc/battlechoc-shared-functions');
 const { resultOf, xpOf } = require('./xp');
 const pantry = require('./pantry');
 
@@ -28,6 +28,38 @@ const results = async (pool, playerId) => {
 
 const levelOf = player => ({ ...EmptyPlayerStats.level, ...(player.level || {}) });
 
+/** The crafted items of a player, newest first. */
+const itemsOf = async (db, playerId) => {
+    const { rows } = await db.query(
+        `SELECT i.id, i.item_key, i.serial, i.crafted_by, i.created_at, p.username AS crafter
+         FROM items i LEFT JOIN players p ON p.id = i.crafted_by WHERE i.player_id = $1`, [playerId]);
+    return rows
+        .map(row => ({
+            id: row.id,
+            item: row.item_key,
+            serial: Number(row.serial),
+            craftedBy: row.crafter || EmptyPlayerStats.username,
+            createdAt: new Date(row.created_at).getTime(),
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt || b.serial - a.serial);
+};
+
+// slots of item ids per building type: { [entityType]: [itemId | null, itemId | null] }
+const equipmentOf = player => (player.equipment && typeof player.equipment === 'object' ? player.equipment : {});
+
+/** The item types in a player's slots, as the engine takes them (only owned items, within the rules). */
+const loadoutOf = (player, items) => {
+    const keyOf = new Map(items.map(entry => [entry.id, entry.item]));
+    const loadout = {};
+    Object.entries(equipmentOf(player)).forEach(([entityType, slots]) => {
+        const keys = (Array.isArray(slots) ? slots : []).filter(id => keyOf.has(id)).map(id => keyOf.get(id));
+        if (keys.length > 0) {
+            loadout[entityType] = keys;
+        }
+    });
+    return sanitizeLoadout(loadout);
+};
+
 const stats = async (pool, playerId) => {
     const player = await findPlayer(pool, playerId);
     if (!player) {
@@ -35,6 +67,7 @@ const stats = async (pool, playerId) => {
     }
     const now = Date.now();
     const pantryTotals = await pantry.totals(pool, playerId, now);
+    const items = await itemsOf(pool, playerId);
     return {
         id: player.id,
         username: player.username || EmptyPlayerStats.username,
@@ -46,6 +79,9 @@ const stats = async (pool, playerId) => {
         ratedMatches: player.rated_matches,
         pantry: pantryTotals,
         spoiling: await pantry.spoiling(pool, playerId, now),
+        items,
+        equipment: equipmentOf(player),
+        loadout: loadoutOf(player, items),
         level: levelOf(player),
         tutorialStarted: player.tutorial_started,
         tutorialSkipped: player.tutorial_skipped,
@@ -95,4 +131,6 @@ const addTrackRecords = async (pool, playerId, records) => {
     return credited;
 };
 
-module.exports = { findPlayer, findPlayerByName, createPlayer, stats, ranking, playerInfo, addTrackRecords, levelOf, count };
+module.exports = {
+    findPlayer, findPlayerByName, createPlayer, stats, ranking, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
+};

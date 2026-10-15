@@ -30,12 +30,16 @@ const migrate = async (pool, { upTo } = {}) => {
         applied = new Set();
     }
     const files = fs.readdirSync(MIGRATIONS)
-        .filter(file => file.endsWith('.sql') && (typeof upTo === 'undefined' || file <= upTo))
+        .filter(file => /\.(sql|js)$/.test(file) && (typeof upTo === 'undefined' || file <= upTo))
         .sort();
     for (const file of files) {
         if (!applied.has(file)) {
-            const sql = fs.readFileSync(path.join(MIGRATIONS, file), 'utf8');
-            await pool.query(sql);
+            if (file.endsWith('.js')) {
+                // a migration that needs code (e.g. the shared rules) exports async pool => {}
+                await require(path.join(MIGRATIONS, file))(pool);
+            } else {
+                await pool.query(fs.readFileSync(path.join(MIGRATIONS, file), 'utf8'));
+            }
             await pool.query('INSERT INTO schema_migrations (name) VALUES ($1)', [file]);
         }
     }

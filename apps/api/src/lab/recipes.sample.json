@@ -1,0 +1,235 @@
+{
+  "recipes": [
+    {
+      "item": "DARK_WALLS",
+      "ingredients": [
+        "MILK",
+        "RUM",
+        "CINNAMON"
+      ],
+      "amounts": {
+        "MILK": 3,
+        "RUM": 3,
+        "CINNAMON": 1
+      }
+    },
+    {
+      "item": "TURBO_CONVEYOR",
+      "ingredients": [
+        "MILK",
+        "VANILLA",
+        "GOLDLEAF"
+      ],
+      "amounts": {
+        "MILK": 5,
+        "VANILLA": 2,
+        "GOLDLEAF": 1
+      }
+    },
+    {
+      "item": "NUT_BRICKS",
+      "ingredients": [
+        "HAZELNUTS",
+        "RUM",
+        "MILK"
+      ],
+      "amounts": {
+        "HAZELNUTS": 2,
+        "RUM": 2,
+        "MILK": 1
+      }
+    },
+    {
+      "item": "SECOND_SHIFT",
+      "ingredients": [
+        "HAZELNUTS",
+        "HAZELNUTS",
+        "CINNAMON"
+      ],
+      "amounts": {
+        "HAZELNUTS": 6,
+        "CINNAMON": 1
+      }
+    },
+    {
+      "item": "SUGAR_FERTILIZER",
+      "ingredients": [
+        "SUGAR",
+        "RUM",
+        "CREAM"
+      ],
+      "amounts": {
+        "SUGAR": 2,
+        "RUM": 2,
+        "CREAM": 1
+      }
+    },
+    {
+      "item": "DEEP_ROOTS",
+      "ingredients": [
+        "SUGAR",
+        "HAZELNUTS",
+        "MILK"
+      ],
+      "amounts": {
+        "SUGAR": 2,
+        "HAZELNUTS": 2,
+        "MILK": 1
+      }
+    },
+    {
+      "item": "HEAVY_BARREL",
+      "ingredients": [
+        "RUM",
+        "CREAM",
+        "SPRINKLES"
+      ],
+      "amounts": {
+        "RUM": 3,
+        "CREAM": 3,
+        "SPRINKLES": 1
+      }
+    },
+    {
+      "item": "LIGHT_BARREL",
+      "ingredients": [
+        "RUM",
+        "SUGAR",
+        "MILK"
+      ],
+      "amounts": {
+        "RUM": 2,
+        "SUGAR": 2,
+        "MILK": 1
+      }
+    },
+    {
+      "item": "CHERRY_BOMB",
+      "ingredients": [
+        "CHERRIES",
+        "COCOA",
+        "MARZIPAN"
+      ],
+      "amounts": {
+        "CHERRIES": 3,
+        "COCOA": 3,
+        "MARZIPAN": 1
+      }
+    },
+    {
+      "item": "JUICY_RELOAD",
+      "ingredients": [
+        "CHERRIES",
+        "HAZELNUTS",
+        "RUM"
+      ],
+      "amounts": {
+        "CHERRIES": 2,
+        "HAZELNUTS": 2,
+        "RUM": 1
+      }
+    },
+    {
+      "item": "MARZIPAN_CARROTS",
+      "ingredients": [
+        "MARZIPAN",
+        "RUM",
+        "MARZIPAN"
+      ],
+      "amounts": {
+        "MARZIPAN": 4,
+        "RUM": 3
+      }
+    },
+    {
+      "item": "LONG_EARS",
+      "ingredients": [
+        "MARZIPAN",
+        "CINNAMON",
+        "GOLDLEAF"
+      ],
+      "amounts": {
+        "MARZIPAN": 5,
+        "CINNAMON": 2,
+        "GOLDLEAF": 1
+      }
+    },
+    {
+      "item": "CINNAMON_LURE",
+      "ingredients": [
+        "CINNAMON",
+        "CHERRIES",
+        "MARZIPAN"
+      ],
+      "amounts": {
+        "CINNAMON": 3,
+        "CHERRIES": 3,
+        "MARZIPAN": 1
+      }
+    },
+    {
+      "item": "HOT_BOILER",
+      "ingredients": [
+        "CINNAMON",
+        "SPRINKLES",
+        "GOLDLEAF"
+      ],
+      "amounts": {
+        "CINNAMON": 5,
+        "SPRINKLES": 2,
+        "GOLDLEAF": 1
+      }
+    },
+    {
+      "item": "THICK_SHIELD",
+      "ingredients": [
+        "CREAM",
+        "SUGAR",
+        "CINNAMON"
+      ],
+      "amounts": {
+        "CREAM": 3,
+        "SUGAR": 3,
+        "CINNAMON": 1
+      }
+    },
+    {
+      "item": "WIDE_SPRAY",
+      "ingredients": [
+        "CREAM",
+        "MARZIPAN",
+        "GOLDLEAF"
+      ],
+      "amounts": {
+        "CREAM": 5,
+        "MARZIPAN": 2,
+        "GOLDLEAF": 1
+      }
+    },
+    {
+      "item": "SPRINKLE_SORTER",
+      "ingredients": [
+        "SPRINKLES",
+        "MILK",
+        "VANILLA"
+      ],
+      "amounts": {
+        "SPRINKLES": 3,
+        "MILK": 3,
+        "VANILLA": 1
+      }
+    },
+    {
+      "item": "GLAZED_OVEN",
+      "ingredients": [
+        "SPRINKLES",
+        "SPRINKLES",
+        "GOLDLEAF"
+      ],
+      "amounts": {
+        "SPRINKLES": 7,
+        "GOLDLEAF": 1
+      }
+    }
+  ]
+}

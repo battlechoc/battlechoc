@@ -4,16 +4,15 @@
 const crypto = require('crypto');
 const express = require('express');
 const {
-    EntityType,
     EmptyPlayerStats,
-    getEntityDescriptor,
-    finalLevel,
     isValidLanguage,
-    choclabCost,
+    StarterKit,
 } = require('@battlechoc/battlechoc-shared-functions');
 const players = require('./players');
 const pantry = require('./pantry');
-const { withTransaction } = require('./db');
+const { registerLabRoutes } = require('./lab/routes');
+const { loadRecipes } = require('./lab/recipes');
+const { createKeyedQueue } = require('./queue');
 const { isValidUsername, randomName } = require('./names');
 const { AuthError } = require('./auth');
 
@@ -56,8 +55,10 @@ const rateLimit = ({ windowMs, max }) => {
     };
 };
 
-const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10 }) => {
+const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10, recipes = loadRecipes(), labTriesPerHour = 30 }) => {
     const app = express();
+    // purchases and equipment changes of one player run one at a time
+    const oneAtATime = createKeyedQueue();
     app.set('trust proxy', 1);
     app.use(cors(corsOrigins));
     app.use(express.json({ limit: '256kb' }));
@@ -128,11 +129,12 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10 
         } else if (step === 'skipped') {
             await pool.query('UPDATE players SET tutorial_started = FALSE, tutorial_skipped = TRUE WHERE id = $1', [req.playerId]);
         } else if (step === 'finished') {
-            // finishing the tutorial gives 100 XP and 100 cocoa, once
+            // finishing the tutorial gives 100 XP and the starter kit (cocoa and the ingredients of the
+            // starter recipe), once
             const { rows } = await pool.query(
                 'UPDATE players SET xp = xp + 100 WHERE id = $1 AND tutorial_finished = FALSE RETURNING id', [req.playerId]);
             if (rows.length > 0) {
-                await pantry.add(pool, req.playerId, [{ ingredient: 'COCOA', amount: 100 }], Date.now());
+                await pantry.add(pool, req.playerId, Object.entries(StarterKit).map(([ingredient, amount]) => ({ ingredient, amount })), Date.now());
             }
             await pool.query('UPDATE players SET tutorial_started = TRUE, tutorial_skipped = FALSE, tutorial_finished = TRUE WHERE id = $1', [req.playerId]);
         } else {
@@ -203,70 +205,14 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10 
         res.status(201).json({});
     }));
 
-    /* ---------- Choclab ---------- */
-
-    // Choclab upgrades run one at a time per player (one API process), each in a transaction
-    const upgradeQueues = new Map();
-    const oneAtATime = (playerId, task) => {
-        const previous = upgradeQueues.get(playerId) || Promise.resolve();
-        const next = previous.catch(() => {}).then(task);
-        upgradeQueues.set(playerId, next);
-        next.catch(() => {}).finally(() => {
-            if (upgradeQueues.get(playerId) === next) {
-                upgradeQueues.delete(playerId);
-            }
-        });
-        return next;
-    };
+    /* ---------- pantry and lab ---------- */
 
     app.get('/user/pantry', ...user, handle(async (req, res) => {
         const now = Date.now();
         res.json({ pantry: await pantry.totals(pool, req.playerId, now), spoiling: await pantry.spoiling(pool, req.playerId, now) });
     }));
 
-    app.post('/update/level', ...user, handle(async (req, res) => {
-        const { entityType, upgrade } = req.body || {};
-        if (!EntityType.isInstanceOf(entityType) || !(entityType in EmptyPlayerStats.level)) {
-            res.status(400).json({ error: 'INVALID ENTITY TYPE' });
-            return;
-        }
-        if (upgrade !== true) {
-            res.status(400).json({ error: 'ONLY UPGRADES ARE SUPPORTED' });
-            return;
-        }
-        let outcome;
-        try {
-            outcome = await oneAtATime(req.playerId, () => withTransaction(pool, async client => {
-                const level = players.levelOf(await players.findPlayer(client, req.playerId));
-                const descriptor = getEntityDescriptor(entityType, level);
-                const limit = descriptor.level ? descriptor.level.max - 1 : finalLevel;
-                if (level[entityType] + 1 > limit) {
-                    return { error: 'LEVEL LIMIT REACHED' };
-                }
-                const cost = choclabCost(entityType, level[entityType]);
-                await pantry.spend(client, req.playerId, { COCOA: cost.cocoa, ...cost.ingredients }, Date.now());
-                const nextLevel = { ...level, [entityType]: level[entityType] + 1 };
-                await client.query('UPDATE players SET level = $1 WHERE id = $2', [JSON.stringify(nextLevel), req.playerId]);
-                return { level: nextLevel };
-            }));
-        } catch (error) {
-            if (error instanceof pantry.NotEnoughIngredientsError) {
-                res.status(400).json({ error: 'NOT ENOUGH INGREDIENTS' });
-                return;
-            }
-            throw error;
-        }
-        if (outcome.error) {
-            res.status(400).json({ error: outcome.error });
-            return;
-        }
-        const now = Date.now();
-        res.json({
-            level: outcome.level,
-            pantry: await pantry.totals(pool, req.playerId, now),
-            spoiling: await pantry.spoiling(pool, req.playerId, now),
-        });
-    }));
+    registerLabRoutes(app, { pool, user, handle, recipes, oneAtATime, triesPerHour: labTriesPerHour });
 
     /* ---------- friends, ranking, lookup ---------- */
 

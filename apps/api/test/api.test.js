@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { EntityType, choclabCost } = require('@battlechoc/battlechoc-shared-functions');
+const { EntityType } = require('@battlechoc/battlechoc-shared-functions');
 const pantry = require('../src/pantry');
 const { createApp } = require('../src/app');
 const { createAuth } = require('../src/auth');
@@ -111,7 +111,7 @@ describe('progress', () => {
         const player = await account(app);
         expect((await player.post('/user/tutorial/started')).body.stats.tutorialStarted).toBe(true);
         const finished = await player.post('/user/tutorial/finished').expect(200);
-        expect(finished.body.stats).toMatchObject({ tutorialFinished: true, xp: 100, score: 100, coins: 100, pantry: { COCOA: 100 } });
+        expect(finished.body.stats).toMatchObject({ tutorialFinished: true, xp: 100, score: 100, coins: 100, pantry: { COCOA: 100, RUM: 4, SUGAR: 4, MILK: 2 } });
         const again = await player.post('/user/tutorial/finished');
         expect(again.body.stats).toMatchObject({ xp: 100, pantry: { COCOA: 100 } });
     });
@@ -144,37 +144,6 @@ describe('progress', () => {
         expect(merged.body.mergedPlayerInfo).toMatchObject({ username: 'OfflineHero', xp: 25, coins: 0, pantry: {}, tutorialFinished: true });
         const again = await player.post('/user/merge', { playerInfo }).expect(200);
         expect(again.body.mergedPlayerInfo.xp).toBe(25);
-    });
-
-    test('the Choclab charges cocoa and milestone ingredients and enforces limits', async () => {
-        const { app, pool } = await setup();
-        const player = await account(app);
-        const up = entityType => player.post('/update/level', { entityType, upgrade: true });
-        expect((await up(EntityType.RUM_TRUFFLE_CANNON).expect(400)).body.error).toBe('NOT ENOUGH INGREDIENTS');
-        await pantry.add(pool, player.playerId, [{ ingredient: 'COCOA', amount: 1000 }], Date.now());
-        for (let level = 1; level <= 4; level++) {
-            expect((await up(EntityType.RUM_TRUFFLE_CANNON).expect(200)).body.level[EntityType.RUM_TRUFFLE_CANNON]).toBe(level);
-        }
-        // the 5th level also needs 5 rum
-        expect((await up(EntityType.RUM_TRUFFLE_CANNON).expect(400)).body.error).toBe('NOT ENOUGH INGREDIENTS');
-        await pantry.add(pool, player.playerId, [{ ingredient: 'RUM', amount: 5 }], Date.now());
-        const upgraded = await up(EntityType.RUM_TRUFFLE_CANNON).expect(200);
-        expect(upgraded.body.level[EntityType.RUM_TRUFFLE_CANNON]).toBe(5);
-        expect(upgraded.body.pantry.RUM).toBeUndefined();
-        const spent = [0, 1, 2, 3, 4].reduce((sum, level) => sum + choclabCost(EntityType.RUM_TRUFFLE_CANNON, level).cocoa, 0);
-        expect(upgraded.body.pantry.COCOA).toBe(1000 - spent);
-        await player.post('/update/level', { entityType: 'EntityType.NOPE', upgrade: true }).expect(400);
-        await player.post('/update/level', { entityType: EntityType.FACTORY, upgrade: false }).expect(400);
-    });
-
-    test('two upgrades at once with ingredients for one: exactly one succeeds', async () => {
-        const { app, pool } = await setup();
-        const player = await account(app);
-        await pantry.add(pool, player.playerId, [{ ingredient: 'COCOA', amount: choclabCost(EntityType.FACTORY, 0).cocoa }], Date.now());
-        const up = () => player.post('/update/level', { entityType: EntityType.FACTORY, upgrade: true });
-        const statuses = (await Promise.all([up(), up()])).map(response => response.status).sort();
-        expect(statuses).toEqual([200, 400]);
-        expect((await player.get('/user')).body.stats.level[EntityType.FACTORY]).toBe(1);
     });
 
     test('the pantry endpoint lists totals and spoiling batches', async () => {

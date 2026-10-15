@@ -404,6 +404,21 @@ describe('live: matches', () => {
         expect(await totals()).toEqual(before);
     });
 
+    test('an online match uses the loadout from the database; the server AI has none', async () => {
+        const env = await start();
+        const equipped = await player(env, { score: 150 });
+        const itemId = 'item-light';
+        await env.pool.query('INSERT INTO items (id, player_id, item_key, serial, crafted_by) VALUES ($1, $2, $3, 1, $2)',
+            [itemId, equipped.account.playerId, 'LIGHT_BARREL']);
+        await env.pool.query('UPDATE players SET equipment = $1 WHERE id = $2',
+            [JSON.stringify({ [EntityType.RUM_TRUFFLE_CANNON]: [itemId, null] }), equipped.account.playerId]);
+        equipped.send({ type: ClientMessage.QUEUE_AI });
+        const { matchId, playerIndex } = await equipped.next(ServerMessage.MATCH);
+        const r = room(env, matchId);
+        expect(r.match.players[playerIndex].loadout).toEqual({ [EntityType.RUM_TRUFFLE_CANNON]: ['LIGHT_BARREL'] });
+        expect(r.match.players[1 - playerIndex].loadout).toEqual({});
+    });
+
     test('a match between two players that never ran changes no rating', async () => {
         const env = await start();
         const { a, b, matchId } = await queueMatch(env);

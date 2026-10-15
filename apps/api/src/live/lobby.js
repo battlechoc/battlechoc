@@ -121,7 +121,7 @@ class Lobby {
             playerId,
             name: row.username || EmptyPlayerStats.username,
             type: PlayerType.HUMAN,
-            level: players.levelOf(row),
+            loadout: players.loadoutOf(row, await players.itemsOf(this.pool, playerId)),
             score: row.xp,
             language: row.language,
         };
@@ -140,7 +140,8 @@ class Lobby {
         const matchPlayers = setups.map((setup, index) => (setup ? { ...setup, id: `p${index}` } : null));
         if (matchPlayers[1] === null) {
             const opponent = engine.aiOpponentForScore(lowestScore);
-            matchPlayers[1] = { id: 'p1', playerId: null, name: opponent.name, type: opponent.type, level: humans[0].level };
+            // the server AI plays without equipment
+            matchPlayers[1] = { id: 'p1', playerId: null, name: opponent.name, type: opponent.type };
             agents = [{ ...opponent.agent, playerIndex: 1, seed: `${seed}-ai`, reactionTimeMs: AI_REACTION_TIME_MS }];
         }
         const room = await MatchRoom.create({
