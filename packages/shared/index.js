@@ -171,6 +171,16 @@ module.exports.isDonut = isDonut;
 module.exports.getEntityDescriptor = getEntityDescriptor;
 module.exports.EntityDescriptors = EntityDescriptors;
 module.exports.finalLevel = finalLevel;
+
+// ingredients and progress outside a match
+const ingredients = require('./ingredients');
+const progression = require('./progression');
+module.exports.Rarity = ingredients.Rarity;
+module.exports.Ingredient = ingredients.Ingredient;
+module.exports.Ingredients = ingredients.Ingredients;
+module.exports.SpecialIngredient = progression.SpecialIngredient;
+module.exports.ChoclabMilestones = progression.ChoclabMilestones;
+module.exports.choclabCost = progression.choclabCost;
 module.exports.EmptyPlayerStats = EmptyPlayerStats;
 module.exports.PlayerType = PlayerType;
 
