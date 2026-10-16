@@ -1,0 +1,16 @@
+# Local overlay: adds the game itself, built against the local API, to the server stack.
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml -p battlechoc-dev up -d --build
+# The game runs on http://localhost:3000, the API on http://localhost (API_DOMAIN=http://localhost
+# in deploy/.env, see README.md).
+services:
+  pwa:
+    build:
+      context: ..
+      dockerfile: apps/pwa/Dockerfile
+      args:
+        VITE_API_URL: ${PWA_API_URL:-http://localhost}
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - caddy

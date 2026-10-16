@@ -1,0 +1,7 @@
+# Serves the built game; unknown paths (deep links like /<username>) get index.html.
+:80 {
+	root * /srv
+	encode gzip
+	try_files {path} /index.html
+	file_server
+}

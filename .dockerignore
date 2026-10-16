@@ -1,0 +1,13 @@
+# Keeps Docker build contexts small; the images copy only what they need.
+**/node_modules
+.git
+.claude
+.superpowers
+apps/android
+apps/server
+apps/pwa/build
+apps/pwa/test/results
+apps/pwa/test/output
+whitepaper
+# secrets of the server stack never go into an image
+deploy/.env

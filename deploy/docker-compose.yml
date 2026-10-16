@@ -26,9 +26,9 @@ services:
       DATABASE_URL: postgres://battlechoc:${POSTGRES_PASSWORD}@postgres:5432/battlechoc
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
       CORS_ORIGINS: ${CORS_ORIGINS}
-      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
-      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
-      VAPID_SUBJECT: ${VAPID_SUBJECT}
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
       # the secret recipe table, mounted read-only (never in the repository)
       RECIPES_FILE: /run/secrets/recipes.json
     volumes:
