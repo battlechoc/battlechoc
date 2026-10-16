@@ -55,13 +55,12 @@ This runs Postgres, the API, Caddy and the game in Docker. It needs nothing but 
 1. Create `deploy/.env` (it is git-ignored):
 
    ```sh
-   cat > deploy/.env <<EOF
-   API_DOMAIN=http://localhost
-   POSTGRES_PASSWORD=$(openssl rand -hex 16)
-   JWT_SECRET=$(openssl rand -base64 48)
-   CORS_ORIGINS=http://localhost:3000
-   RECIPES_PATH=../apps/api/src/lab/recipes.sample.json
-   EOF
+   printf '%s\n' \
+     "API_DOMAIN=http://localhost" \
+     "POSTGRES_PASSWORD=$(openssl rand -hex 16)" \
+     "JWT_SECRET=$(openssl rand -base64 48)" \
+     "CORS_ORIGINS=http://localhost:3000" \
+     "RECIPES_PATH=../apps/api/src/lab/recipes.sample.json" > deploy/.env
    ```
 
    - `http://` tells Caddy to serve plain HTTP instead of requesting a TLS certificate.
