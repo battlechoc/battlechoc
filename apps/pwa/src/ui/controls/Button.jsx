@@ -145,6 +145,20 @@ const useStyles = createUseStyles((theme) => ({
   disabled: {
     filter: "grayscale(1)",
   },
+  // keyboard focus: the clip path would cut off an outline, so the light rim turns gold
+  focusable: {
+    outline: "none",
+    "&:focus-visible": {
+      background: theme.color.gold.light,
+    },
+  },
+  focusableIcon: {
+    outline: "none",
+    "&:focus-visible": {
+      outline: `0.25vw solid ${theme.color.gold.light}`,
+      outlineOffset: "0.1vw",
+    },
+  },
   locked: {
     position: "absolute",
     right: "2vh",
@@ -162,9 +176,27 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
+// the props the button handles itself; everything else (data-testid, aria-label, ...) goes to its element
+const OWN_PROPS = [
+  "color",
+  "onClick",
+  "className",
+  "style",
+  "buttonStyle",
+  "size",
+  "disabled",
+  "locked",
+  "onLockedClick",
+  "icon",
+  "children",
+];
+
 const Button = (componentProps) => {
   const props = withDefaultProps(componentProps, defaultProps);
   const classes = useStyles(props);
+  const rest = Object.fromEntries(
+    Object.entries(componentProps).filter(([name]) => !OWN_PROPS.includes(name))
+  );
   // a disabled button does nothing; a locked one may explain how to unlock it
   const onClick = () => {
     if (props.locked) {
@@ -179,16 +211,32 @@ const Button = (componentProps) => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     props.onClick();
   };
+  const onKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onClick();
+    }
+  };
+  // a locked button stays clickable (it explains itself), a disabled one does not
+  const inert = props.disabled && !props.locked;
+  const accessibility = {
+    role: "button",
+    tabIndex: inert ? -1 : 0,
+    "aria-disabled": inert ? "true" : undefined,
+    onKeyDown,
+  };
 
   if (props.icon) {
     return (
       <div
+        {...rest}
+        {...accessibility}
         style={props.style}
         onClick={onClick}
         data-icon={props.icon}
         className={`${classes.iconButton} ${classes.background} ${
-          props.className
-        } ${props.disabled ? classes.disabled : ""}`}
+          classes.focusableIcon
+        } ${props.className} ${props.disabled ? classes.disabled : ""}`}
       >
         <div
           className={classes.icon}
@@ -204,11 +252,15 @@ const Button = (componentProps) => {
   } else {
     return (
       <div
+        {...rest}
+        {...accessibility}
         style={props.style}
         onClick={onClick}
         className={`${classes.border} ${classes[props.size]} ${
-          props.className
-        } ${props.disabled || props.locked ? classes.disabled : ""}`}
+          classes.focusable
+        } ${props.className} ${
+          props.disabled || props.locked ? classes.disabled : ""
+        }`}
       >
         <div
           style={props.buttonStyle}

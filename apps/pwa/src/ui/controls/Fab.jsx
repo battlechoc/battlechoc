@@ -41,6 +41,13 @@ const useStyles = createUseStyles((theme) => ({
 
     return style;
   },
+  focusable: {
+    outline: "none",
+    "&:focus-visible": {
+      outline: `0.3vw solid ${theme.color.gold.light}`,
+      outlineOffset: "0.2vw",
+    },
+  },
   background: {
     border: (props) => `0.4vw solid ${theme.color[props.color].light}`,
     background: (props) =>
@@ -56,8 +63,14 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
+// the props the fab handles itself; everything else (data-testid, aria-label, ...) goes to its element
+const OWN_PROPS = ["color", "onClick", "className", "style", "iconStyle", "icon"];
+
 const Fab = (componentProps) => {
   const props = withDefaultProps(componentProps, defaultProps);
+  const rest = Object.fromEntries(
+    Object.entries(componentProps).filter(([name]) => !OWN_PROPS.includes(name))
+  );
   const color =
     props.icon === "discord" || props.icon === "instagram"
       ? props.icon
@@ -67,11 +80,21 @@ const Fab = (componentProps) => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     props.onClick();
   };
+  const onKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onClick();
+    }
+  };
   return (
     <div
+      role="button"
+      tabIndex={0}
+      {...rest}
+      onKeyDown={onKeyDown}
       style={props.style}
       onClick={onClick}
-      className={`${classes.fab} ${classes.background} ${props.className}`}
+      className={`${classes.fab} ${classes.background} ${classes.focusable} ${props.className}`}
       data-icon={props.icon}
     >
       <div
@@ -130,6 +153,7 @@ Fab.propTypes = {
     "pause",
     "play",
     "swap-view",
+    "lab/recipe-book",
   ]),
   iconStyle: PropTypes.object,
   className: PropTypes.string,

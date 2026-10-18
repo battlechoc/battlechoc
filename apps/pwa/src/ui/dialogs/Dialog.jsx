@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 import { Jukebox } from "../misc";
 import { createUseStyles } from "react-jss";
 import Fab from "../controls/Fab";
+import DialogFrame from "./DialogFrame";
 import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
@@ -141,40 +142,6 @@ const useStyles = createUseStyles((theme) => ({
       fontSize: "2.5vw",
     },
   },
-  border: {
-    position: "absolute",
-    zIndex: 12,
-  },
-  top: {
-    top: 0,
-    left: 0,
-    width: (props) =>
-      ["notification", "info"].includes(props.mode) ? "50vw" : "80vw",
-    height: (props) =>
-      ["notification", "info"].includes(props.mode) ? "20vh" : "32vh",
-    background: "url(/images/dialog-border-top.svg) no-repeat",
-  },
-  left: {
-    display: (props) =>
-      ["notification", "info"].includes(props.mode) ? "none" : "block",
-    bottom: 0,
-    left: 0,
-    width: "16vw",
-    height: "32vh",
-    background: "url(/images/dialog-border-left.svg) no-repeat",
-    backgroundPositionY: "bottom",
-  },
-  right: {
-    bottom: 0,
-    right: 0,
-    width: (props) =>
-      ["notification", "info"].includes(props.mode) ? "15vw" : "24vw",
-    height: (props) =>
-      ["notification", "info"].includes(props.mode) ? "20vh" : "32vh",
-    background: "url(/images/dialog-border-right.svg) no-repeat",
-    backgroundPositionX: "right",
-    backgroundPositionY: "bottom",
-  },
   icon: {
     padding: "4vw",
     marginRight: "1vw",
@@ -233,9 +200,9 @@ const Dialog = (componentProps) => {
           />
         ) : null}
         <div className={classes.body}>
-          <div className={`${classes.border} ${classes.top}`} />
-          <div className={`${classes.border} ${classes.left}`} />
-          <div className={`${classes.border} ${classes.right}`} />
+          <DialogFrame
+            compact={["notification", "info"].includes(props.mode)}
+          />
           <span className={classes.title}>
             {props.titleSlotBefore}
             {props.icon ? (
