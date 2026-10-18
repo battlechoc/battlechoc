@@ -60,7 +60,7 @@ export const gamePanel = (theme) => ({
 
 /** Names, headings and counts: Bangers with a dark blue outline. */
 export const bangers = (theme, color = "white") => ({
-  fontFamily: "Bangers",
+  fontFamily: "var(--font-display)",
   fontWeight: "normal",
   letterSpacing: "0.03em",
   color,

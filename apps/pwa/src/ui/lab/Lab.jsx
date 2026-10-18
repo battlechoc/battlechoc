@@ -83,7 +83,7 @@ const useStyles = createUseStyles((theme) => ({
     borderRadius: 12,
     cursor: "pointer",
     outline: "none",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "calc(2.5vh + 2.5vw)",
     color: "white",
     "-webkit-text-stroke": `calc(0.06vh + 0.06vw) ${theme.color.secondary.dark}`,
@@ -151,7 +151,7 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   name: {
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "1.9em",
     letterSpacing: "0.03em",
     "-webkit-text-stroke": `0.05em ${theme.color.secondary.dark}`,
