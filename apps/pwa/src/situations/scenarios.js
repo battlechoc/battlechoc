@@ -10,23 +10,8 @@ const { BLACK, BROWN, WHITE } = BoardCellTypes;
 // Real-time matches that start from a prepared board (see engine.prepareScenario).
 // `opponent` names the AI agent; the scenario is applied right after the match is created.
 const scenarios = {
-  // the first match of a new player: a running game with a few own buildings in place
-  firstGame: {
-    boardSize: { rows: 6, cols: 6 },
-    opponent: "TomToffee",
-    scenario: {
-      phase: MatchPhase.RUNNING,
-      cacao: [200, 50],
-      cells: [
-        { row: 0, col: 0, type: BLACK, cream: true, entities: [EntityType.FACTORY] },
-        { row: 3, col: 4, type: BROWN, cream: true, entities: [EntityType.RUM_TRUFFLE_CANNON] },
-        { row: 0, col: 1, type: BROWN, cream: true, entities: [EntityType.RUM_TRUFFLE_CANNON] },
-        { row: 1, col: 4, type: BLACK, cream: true, entities: [EntityType.CACAOTREE] },
-        { row: 5, col: 5, type: BROWN, cream: false, entities: [EntityType.CACAOTREE] },
-        { player: 1, row: 3, col: 0, type: BROWN, cream: true, entities: [EntityType.FACTORY] },
-      ],
-    },
-  },
+  // the first matches of a new player (shared with the live server, which hosts them online)
+  firstGame: engine.scenarios.firstGame,
   // /situation/d41d8cd98f00b204e9800998ecf8427e: factory placement on black, brown and white cells
   buildFactoryTest: {
     boardSize: { rows: 8, cols: 8 },

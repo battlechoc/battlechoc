@@ -20,7 +20,8 @@ const accountOf = (page) =>
       })
   );
 
-const createPlayer = async (browser, request, username) => {
+// firstWin: false keeps the player at 0 XP (tutorial skipped), a new player's first matches
+const createPlayer = async (browser, request, username, { firstWin = true } = {}) => {
   const context = await browser.newContext();
   await context.addInitScript((url) => {
     window.localStorage.setItem("battlechoc.apiUrl", url);
@@ -40,10 +41,12 @@ const createPlayer = async (browser, request, username) => {
     won: true,
     builtEntities: 3,
     winners: [{ idx: 0, name: username }],
-    // more than 100 XP: Start plays online instead of the prepared first match
+    // more than 100 XP: Start queues instead of the prepared first match against the server AI
     awards: [{ key: "WINNER" }, { key: "OUVERT" }],
   };
-  expect((await request.post(`${api}/user/trackrecords`, { headers, data: { stats: [win] } })).ok()).toBe(true);
+  if (firstWin) {
+    expect((await request.post(`${api}/user/trackrecords`, { headers, data: { stats: [win] } })).ok()).toBe(true);
+  }
   await page.goto("/", { waitUntil: "networkidle" });
   await expect(page.getByText("Start Game", { exact: true }).first()).toBeVisible({ timeout: 15000 });
   return { context, page, username };
@@ -174,6 +177,35 @@ test.describe("online", () => {
 });
 
 test.describe("the Start button", () => {
+  test("a new player plays the prepared first match against the server AI and gets ingredients", async ({ browser, request }) => {
+    const gina = await createPlayer(browser, request, "Gina", { firstWin: false });
+    await gina.page.getByText("Start Game", { exact: true }).first().click();
+    await inOnlineMatch(gina.page);
+    // no queue: the server AI plays right away, on the prepared first-game board
+    await expect(gina.page.getByTestId("matchmaking")).toBeHidden();
+    const match = await host(gina.page, () => {
+      const view = window.__battlechoc.view();
+      return {
+        phase: view.phase,
+        size: view.board.size,
+        opponent: view.players[1 - view.viewer].name,
+        cacao: view.players[view.viewer].cacao,
+      };
+    });
+    expect(match).toEqual({ phase: "MatchPhase.RUNNING", size: { rows: 6, cols: 6 }, opponent: "Tom Toffee", cacao: expect.any(Number) });
+    expect(match.cacao).toBeGreaterThanOrEqual(200);
+    // the end is verified by the server: the bag holds ingredients instead of the offline text
+    await host(gina.page, () => window.__battlechoc.host.surrender());
+    await expect(gina.page.getByText(/You lost/i).first()).toBeVisible({ timeout: 15000 });
+    const skip = gina.page.locator("[data-icon=fast-forward]:visible");
+    if ((await skip.count()) > 0) {
+      await skip.first().click();
+    }
+    await expect(gina.page.getByTestId("ingredient-bag").locator('[data-ingredient="COCOA"]').first()).toBeVisible({ timeout: 15000 });
+    await expect(gina.page.getByText(/only drop in online matches/i)).toHaveCount(0);
+    await gina.context.close();
+  });
+
   test("queues, and 'Play the AI now' starts a match the server hosts", async ({ browser, request }) => {
     const fiona = await createPlayer(browser, request, "Fiona");
     await fiona.page.getByText("Start Game", { exact: true }).first().click();

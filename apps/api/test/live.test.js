@@ -355,6 +355,11 @@ describe('live: matches', () => {
         expect(r.match.board.size).toEqual({ rows: 10, cols: 10 });
         expect(r.match.fieldChooser).toBe(message.playerIndex);
         await lonely.act(message.matchId, MatchActionTypes.chooseField, { fieldIndex: 1 });
+        // against the AI the placement waits for the player
+        expect(r.match.phaseEndsAt).toBe(engine.AI_MATCH_DEADLINE_MS);
+        const placed = await nextView(lonely, message.matchId, v => v.players[message.playerIndex].fieldIndex !== null);
+        const cell = freeCell(placed.view, message.playerIndex);
+        expect((await lonely.act(message.matchId, MatchActionTypes.placeFactory, { row: cell.row, col: cell.col })).ok).toBe(true);
         for (let i = 0; i < 40; i++) {
             env.clock.advance(1000);
         }
@@ -402,6 +407,52 @@ describe('live: matches', () => {
         env.live.lobby.matchEnded(r);
         await r.writes;
         expect(await totals()).toEqual(before);
+    });
+
+    test('a new player (up to 100 XP) gets the prepared first game against Tom Toffee on the server', async () => {
+        const env = await start();
+        const rookie = await player(env, { score: 100 });
+        rookie.send({ type: ClientMessage.QUEUE_AI });
+        const { matchId, playerIndex, opponent } = await rookie.next(ServerMessage.MATCH);
+        expect(playerIndex).toBe(0);
+        expect(opponent).toEqual({ name: 'Tom Toffee', type: 'PlayerType.AI_EASY' });
+        const r = room(env, matchId);
+        expect(r.kind).toBe('ai');
+        expect(r.match.board.size).toEqual({ rows: 6, cols: 6 });
+        expect(r.match.phase).toBe(MatchPhase.RUNNING);
+        expect(r.match.players.map(p => p.cacao)).toEqual([200, 50]);
+        expect(engine.cellAt(r.match, 0, 0, 0).occupiedBy.map(entity => entity.type)).toContain(EntityType.FACTORY);
+        expect(engine.cellAt(r.match, 1, 3, 0).occupiedBy.map(entity => entity.type)).toContain(EntityType.FACTORY);
+        expect(r.match.balance.match.placementTimeoutMs).toBe(engine.AI_MATCH_DEADLINE_MS);
+        // the prepared board is part of the stored match (it survives a restart)
+        const stored = (await env.pool.query('SELECT snapshot FROM matches WHERE id = $1', [matchId])).rows[0].snapshot;
+        expect((typeof stored === 'string' ? JSON.parse(stored) : stored).match.phase).toBe(MatchPhase.RUNNING);
+
+        // the AI gives up: a verified win with xp and drops
+        const action = { type: MatchActionTypes.surrender, player: 1, t: r.now(), payload: {} };
+        expect(engine.applyAction(r.match, action).ok).toBe(true);
+        r.record(action);
+        r.afterChange();
+        const { result } = await rookie.next(ServerMessage.RESULT);
+        expect(result.won).toBe(true);
+        expect(result.xp).toBeGreaterThan(0);
+        expect(result.drops.length).toBeGreaterThan(0);
+        await r.writes;
+        const records = (await env.pool.query('SELECT verified FROM track_records WHERE player_id = $1', [rookie.account.playerId])).rows;
+        expect(records).toEqual([{ verified: true }]);
+    });
+
+    test('later matches against the AI start with the field choice, without hurry', async () => {
+        const env = await start();
+        const regular = await player(env, { score: 101 });
+        regular.send({ type: ClientMessage.QUEUE_AI });
+        const { matchId } = await regular.next(ServerMessage.MATCH);
+        const r = room(env, matchId);
+        expect(r.match.phase).toBe(MatchPhase.FIELD_CHOICE);
+        expect(r.match.phaseEndsAt).toBe(engine.AI_MATCH_DEADLINE_MS);
+        // a client cannot ask for the first game: the score comes from the database
+        expect(r.match.board.size).toEqual({ rows: 6, cols: 6 });
+        expect(r.match.players.map(p => p.cacao)).toEqual([r.match.balance.match.startCacao, r.match.balance.match.startCacao]);
     });
 
     test('an online match uses the loadout from the database; the server AI has none', async () => {

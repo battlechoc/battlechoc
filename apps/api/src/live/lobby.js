@@ -122,7 +122,7 @@ class Lobby {
             name: row.username || EmptyPlayerStats.username,
             type: PlayerType.HUMAN,
             loadout: players.loadoutOf(row, await players.itemsOf(this.pool, playerId)),
-            score: row.xp,
+            score: Number(row.xp) || 0,
             language: row.language,
         };
     }
@@ -130,16 +130,23 @@ class Lobby {
     /**
      * Starts a match between two players (setups from playerSetup) or a player and an AI
      * (second entry null) and connects the online players to it. Callers mark the players
-     * as starting while they prepare the match.
+     * as starting while they prepare the match. A match against the AI is set up like the
+     * single player one by the player's XP from the database: the prepared first game up to
+     * 100 XP, the opponent and board by XP, no hurry for field choice and placement.
      */
     async startMatch(kind, setups) {
         const humans = setups.filter(Boolean);
         const lowestScore = Math.min(...humans.map(setup => setup.score));
         const seed = newSeed();
         let agents = [];
+        let boardSize = engine.boardSizeForScore(lowestScore);
+        let balance;
+        let scenario;
         const matchPlayers = setups.map((setup, index) => (setup ? { ...setup, id: `p${index}` } : null));
         if (matchPlayers[1] === null) {
-            const opponent = engine.aiOpponentForScore(lowestScore);
+            const aiSetup = engine.aiMatchSetup(lowestScore);
+            const { opponent } = aiSetup;
+            ({ boardSize, balance, scenario } = aiSetup);
             // the server AI plays without equipment
             matchPlayers[1] = { id: 'p1', playerId: null, name: opponent.name, type: opponent.type };
             agents = [{ ...opponent.agent, playerIndex: 1, seed: `${seed}-ai`, reactionTimeMs: AI_REACTION_TIME_MS }];
@@ -148,8 +155,10 @@ class Lobby {
             id: newId(),
             kind,
             players: matchPlayers,
-            boardSize: engine.boardSizeForScore(lowestScore),
+            boardSize,
             seed,
+            balance,
+            scenario,
             agents,
             ...this.deps(),
         });

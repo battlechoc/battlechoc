@@ -56,12 +56,20 @@ class MatchRoom {
         this.writes = Promise.resolve();
     }
 
-    static async create({ id, kind, players, boardSize, seed, agents = [], store, ...rest }) {
+    /**
+     * Creates a new match; balance (default: DefaultBalance) and scenario (a prepared board,
+     * engine.prepareScenario) come from the lobby, never from a client.
+     */
+    static async create({ id, kind, players, boardSize, seed, balance, scenario, agents = [], store, ...rest }) {
         const match = engine.createMatch({
             players: players.map(({ id: publicId, name, type, loadout }) => ({ id: publicId, name, type, loadout })),
             boardSize,
             seed,
+            balance,
         });
+        if (scenario) {
+            engine.prepareScenario(match, scenario);
+        }
         const room = new MatchRoom({
             id,
             kind,

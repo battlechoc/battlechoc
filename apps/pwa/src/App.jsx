@@ -12,7 +12,6 @@ import {
   translationKeys as tr,
   setCurrentLanguage,
   engine,
-  DefaultBalance,
 } from "@battlechoc/battlechoc-shared-functions";
 import { LocalMatchHost, matchSession } from "./match/LocalMatchHost";
 import { RemoteMatchHost } from "./match/RemoteMatchHost";
@@ -38,7 +37,7 @@ import {
   deselectBuildings,
   deselectAttack,
 } from "./ui/UiActions";
-import { scenarios, debugScenarios } from "./situations/scenarios";
+import { debugScenarios } from "./situations/scenarios";
 import Hud from "./ui/Hud";
 import { v4 as uuidv4 } from "uuid";
 import IncomingInvite from "./ui/dialogs/IncomingInvite";
@@ -49,6 +48,12 @@ import logger from "./helper/logger";
 import { LESSON } from "./tutorial/lesson";
 import { allDemos } from "./tutorial/demos";
 const Scene = React.lazy(() => import("./3d/Scene"));
+
+// Start: the time limits to reach the live service before the local AI plays instead
+const ACCOUNT_TIMEOUT_MS = 10000;
+const LIVE_TIMEOUT_MS = 3000;
+// after queue.ai: the time until the server's match message, else the local AI plays
+const SERVER_MATCH_TIMEOUT_MS = 6000;
 
 class App extends Component {
   constructor(props) {
@@ -207,7 +212,8 @@ class App extends Component {
     }
   }
 
-  prepareNewGame = (resumeGame) => {
+  // fullscreen (landscape on Android) needs the click of the player: call it synchronously
+  requestFullscreen() {
     const isElectronApp =
       navigator.userAgent.toLowerCase().indexOf(" electron/") > -1;
     const isAndroidDevice = /Android/i.test(navigator.userAgent);
@@ -236,6 +242,13 @@ class App extends Component {
           });
       }
     }
+  }
+
+  // the tutorial, Resume of a saved local match, or a new match against the local AI (offline)
+  prepareNewGame = (resumeGame, { fullscreen = true } = {}) => {
+    if (fullscreen) {
+      this.requestFullscreen();
+    }
 
     if (
       !this.props.playerInfos.stats.tutorialFinished &&
@@ -254,40 +267,70 @@ class App extends Component {
       }
       this.props.gameResumeable(false);
       OfflineStore.clearRealtimeMatch();
-      // new players start with a prepared board
-      this.startRealtimeMatch(
-        undefined,
-        this.props.playerInfos.stats.score <= 100 ? scenarios.firstGame : undefined
-      );
+      // new players start with a prepared board (engine.aiMatchSetup, by score)
+      this.startRealtimeMatch();
     }
   };
 
-  // Start: an online match when the live service answers within 3 s (a human from the queue or
-  // the server AI), otherwise the local AI. New players keep the tutorial and the prepared first
-  // match, which run locally.
+  // Start: every match runs on the server when it is reachable, so it is verified and gives
+  // ingredients. Players up to 100 XP play the server AI right away (the prepared first game,
+  // chosen by the server from the XP in its database); everyone else joins the queue (a human,
+  // or the server AI after a while). New players get the tutorial; without the server the local
+  // AI plays.
   startGame = () => {
     const stats = this.props.playerInfos.stats;
     const newPlayer = !stats.tutorialFinished && !stats.tutorialSkipped;
-    if (newPlayer || (stats.score || 0) <= 100 || !navigator.onLine) {
+    if (newPlayer || !navigator.onLine) {
       this.prepareNewGame(false);
       return;
     }
+    this.requestFullscreen();
+    const againstAi = (stats.score || 0) <= engine.FIRST_GAME_MAX_SCORE;
     const attempt = ++this.startAttempt;
-    const timeout = new Promise((resolve) => setTimeout(() => resolve(false), 3000));
-    Promise.race([liveLobby.enter().then(() => true), timeout])
-      .catch(() => false)
-      .then((connected) => {
-        if (attempt !== this.startAttempt) {
-          return;
-        }
-        if (connected) {
-          this.setState({ matchmaking: true });
-          liveLobby.joinQueue().catch((error) => logger.info("queue failed", error));
-        } else {
-          this.prepareNewGame(false);
-        }
-      });
+    const current = () => attempt === this.startAttempt;
+    const playLocally = () => {
+      if (current()) {
+        this.startAttempt++;
+        this.prepareNewGame(false, { fullscreen: false });
+      }
+    };
+    this.reachLiveService().then((connected) => {
+      if (!current()) {
+        return;
+      }
+      if (!connected) {
+        playLocally();
+      } else if (againstAi) {
+        liveLobby.playAiNow().catch((error) => logger.info("AI match failed", error));
+        // the match message normally follows at once; without it the local AI plays
+        const timeoutId = setTimeout(playLocally, SERVER_MATCH_TIMEOUT_MS);
+        this.timeouts.push(timeoutId);
+      } else {
+        this.setState({ matchmaking: true });
+        liveLobby.joinQueue().catch((error) => logger.info("queue failed", error));
+      }
+    });
   };
+
+  // resolves true once the live service welcomed us. The account token comes first with its own
+  // time limit (the first start registers the device account), so only the WebSocket races the
+  // 3 s; an open connection answers at once.
+  reachLiveService() {
+    if (liveConnection.status === "online") {
+      return liveLobby.enter().then(
+        () => true,
+        () => false
+      );
+    }
+    const within = (promise, ms) =>
+      Promise.race([
+        promise.then(() => true),
+        new Promise((resolve) => setTimeout(() => resolve(false), ms)),
+      ]).catch(() => false);
+    return within(account.token(), ACCOUNT_TIMEOUT_MS).then(
+      (ready) => ready && within(liveLobby.enter(), LIVE_TIMEOUT_MS)
+    );
+  }
 
   cancelMatchmaking = () => {
     this.startAttempt++;
@@ -396,19 +439,14 @@ class App extends Component {
         logger.warn("could not resume the saved match", error);
       }
     }
-    const boardSize =
-      typeof scenario !== "undefined"
-        ? scenario.boardSize
-        : engine.boardSizeForScore(stats.score);
     const seed = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-    // below a score of 800 the easy Tom Toffee, afterwards Gustav Ganache with a handicap by score
-    const opponent = engine.aiOpponentForScore(stats.score, {
-      forceEasy: typeof scenario !== "undefined" && scenario.opponent === "TomToffee",
-    });
-    // against the AI nobody has to hurry: field choice and placement wait for the player
-    const balance = JSON.parse(JSON.stringify(DefaultBalance));
-    balance.match.fieldChoiceTimeoutMs = 60 * 60 * 1000;
-    balance.match.placementTimeoutMs = 60 * 60 * 1000;
+    // the same setup as the server AI: board and opponent by score (below 800 the easy Tom
+    // Toffee, afterwards Gustav Ganache with a handicap), the prepared first game up to a score
+    // of 100 unless a scenario is given, no hurry for field choice and placement
+    const { boardSize, opponent, balance, scenario: prepared } = engine.aiMatchSetup(
+      stats.score,
+      { scenario }
+    );
     host.startNew({
       balance,
       players: [
@@ -430,7 +468,7 @@ class App extends Component {
       agents: [
         { ...opponent.agent, playerIndex: 1, seed: `${seed}-ai`, reactionTimeMs: 1000 },
       ],
-      scenario: typeof scenario !== "undefined" ? scenario.scenario : undefined,
+      scenario: prepared,
     });
   };
 
@@ -517,7 +555,7 @@ class App extends Component {
     this.props.resetUi();
 
     if (startGame) {
-      this.prepareNewGame(false);
+      this.startGame();
     }
   };
 

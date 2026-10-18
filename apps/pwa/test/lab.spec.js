@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 // The lab against the local API (sample recipes): a new player finishes the tutorial (starter kit:
 // cocoa, rum, sugar, milk), discovers the starter recipe for the truffle cannon on the lab table,
-// crafts it, equips it, and a local match reloads that cannon 20 % faster.
+// crafts it, equips it, and the next match (on the server) carries that equipment.
 const api = `http://127.0.0.1:${process.env.API_PORT || 8091}`;
 
 const accountOf = (page) =>
@@ -61,7 +61,7 @@ const chooseBuilding = async (page, name) => {
   throw new Error(`building ${name} not found`);
 };
 
-test("discover, craft and equip the starter item; a local match uses it", async ({
+test("discover, craft and equip the starter item; the next match uses it", async ({
   browser,
   request,
 }) => {
@@ -124,32 +124,33 @@ test("discover, craft and equip the starter item; a local match uses it", async 
     page.getByTestId("pantry").locator('[data-ingredient="MILK"]')
   ).toContainText("1");
 
-  // a local match carries the loadout (the engine tests cover the 20 % shorter reload)
-  await page.goto("/?testclock", { waitUntil: "networkidle" });
+  // the match carries the loadout (the engine tests cover the 20 % shorter reload): a new
+  // player (score at most 100) plays the server AI, which takes the loadout from the database
+  // (the API tests check that the server AI has none)
+  await page.goto("/", { waitUntil: "networkidle" });
   await page.getByText("Start Game", { exact: true }).first().click();
   await page.waitForFunction(
     () =>
       window.__battlechoc &&
       window.__battlechoc.host &&
-      window.__battlechoc.host.match,
+      window.__battlechoc.host.online &&
+      window.__battlechoc.view &&
+      window.__battlechoc.view(),
     null,
     { timeout: 15000 }
   );
-  // a new player (score at most 100) plays the local AI; only the human carries a loadout
-  const loadouts = await page.evaluate(() =>
-    window.__battlechoc.host.match.players.map((player) => ({
+  const players = await page.evaluate(() => {
+    const view = window.__battlechoc.view();
+    return view.players.map((player, index) => ({
+      own: index === view.viewer,
       type: player.type,
       loadout: player.loadout,
-    }))
-  );
-  expect(
-    loadouts.find((player) => player.type === "PlayerType.HUMAN").loadout
-  ).toEqual({
+    }));
+  });
+  expect(players.find((player) => player.own).loadout).toEqual({
     "EntityType.RUM_TRUFFLE_CANNON": ["LIGHT_BARREL"],
   });
-  expect(
-    loadouts.find((player) => player.type !== "PlayerType.HUMAN").loadout
-  ).toEqual({});
+  expect(players.find((player) => !player.own).type).not.toBe("PlayerType.HUMAN");
   await context.close();
 });
 
