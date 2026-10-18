@@ -7,7 +7,15 @@ import {
 import Dialog from "../dialogs/Dialog";
 import ItemIcon from "./ItemIcon";
 import IngredientIcon from "../ingredients/IngredientIcon";
-import { BUILDING_ICON, effectLines, itemName } from "./itemText";
+import Button from "../controls/Button";
+import {
+  BUILDING_ICON,
+  bangers,
+  effectLines,
+  gamePanel,
+  itemName,
+  labColors,
+} from "./itemText";
 
 const useStyles = createUseStyles((theme) => ({
   book: {
@@ -15,29 +23,35 @@ const useStyles = createUseStyles((theme) => ({
     maxHeight: "100%",
     overflowY: "auto",
     color: "white",
-    fontFamily: "system-ui, -apple-system, sans-serif",
-    padding: "0 0.5em",
+    padding: "0 0.5em 0.5em",
     boxSizing: "border-box",
     textAlign: "left",
+    fontSize: "0.7em",
   },
   building: {
     display: "flex",
     alignItems: "center",
     gap: "0.6em",
-    margin: "1em 0 0.4em",
+    margin: "0.8em 0 0.4em",
   },
-  buildingName: { fontFamily: "var(--font-display)", fontSize: "1.4em" },
+  buildingName: {
+    ...bangers(theme, theme.color.gold.light),
+    fontSize: "1.4em",
+  },
   recipe: {
+    ...gamePanel(theme),
     display: "flex",
     alignItems: "center",
     gap: "1em",
     padding: "0.6em 0.9em",
-    borderRadius: 14,
-    background: "rgba(255, 255, 255, 0.14)",
     marginBottom: "0.5em",
+    [theme.breakpoints.orientation.portrait]: {
+      flexWrap: "wrap",
+      justifyContent: "center",
+    },
   },
   text: { flexGrow: 1, minWidth: 0 },
-  name: { fontFamily: "var(--font-display)", fontSize: "1.25em" },
+  name: { ...bangers(theme), fontSize: "1.25em" },
   ingredients: {
     display: "flex",
     flexWrap: "wrap",
@@ -45,24 +59,15 @@ const useStyles = createUseStyles((theme) => ({
     alignItems: "center",
     margin: "0.3em 0",
   },
-  amount: { display: "inline-flex", alignItems: "center", gap: "0.2em" },
-  small: { fontSize: "0.85em", opacity: 0.9 },
-  hint: { opacity: 0.8, fontStyle: "italic", margin: "0.2em 0 0.6em" },
-  use: {
-    minWidth: 88,
-    minHeight: 44,
-    borderRadius: 22,
-    border: "none",
-    fontFamily: "var(--font-display)",
+  amount: {
+    ...bangers(theme),
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.2em",
     fontSize: "1.1em",
-    color: "white",
-    cursor: "pointer",
-    background: `linear-gradient(0deg, ${theme.color.secondary.dark}, ${theme.color.secondary.light})`,
-    "&:focus-visible": {
-      outline: `3px solid ${theme.color.gold.light}`,
-      outlineOffset: 2,
-    },
   },
+  small: { fontSize: "0.85em" },
+  hint: { ...bangers(theme, labColors(theme).reason), margin: "0.2em 0 0.6em" },
   empty: { textAlign: "center", fontSize: "1.1em" },
 }));
 
@@ -72,7 +77,14 @@ const RecipeBook = ({ open, close, book, buildings, buildingName, onUse }) => {
   const recipes = (book && book.recipes) || [];
   const undiscovered = (book && book.undiscovered) || {};
   return (
-    <Dialog open={open} close={close} title={t(tr.LAB_RECIPE_BOOK)} closable>
+    <Dialog
+      open={open}
+      close={close}
+      title={t(tr.LAB_RECIPE_BOOK)}
+      icon="lab/recipe-book"
+      autoscale
+      closable
+    >
       <div className={classes.book} data-testid="recipe-book">
         {recipes.length === 0 ? (
           <p className={classes.empty}>{t(tr.LAB_NO_RECIPES)}</p>
@@ -130,13 +142,13 @@ const RecipeBook = ({ open, close, book, buildings, buildingName, onUse }) => {
                       {t(tr.LAB_DISCOVERED_BY, recipe.discoveredBy)}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className={classes.use}
+                  <Button
+                    size="small"
+                    color="secondary"
                     onClick={() => onUse(recipe)}
                   >
                     {t(tr.LAB_CRAFT)}
-                  </button>
+                  </Button>
                 </div>
               ))}
               {missing > 0 ? (

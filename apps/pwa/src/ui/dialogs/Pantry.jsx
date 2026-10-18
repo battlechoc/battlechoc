@@ -26,7 +26,7 @@ const Pantry = ({ open, close, pantry = {}, spoiling = [] }) => {
   const items = Object.keys(Ingredients).map((ingredient) => ({ ingredient, amount: pantry[ingredient] || 0 }));
   const empty = items.every((item) => item.amount === 0);
   return (
-    <Dialog open={open} close={close} title={t(tr.PANTRY_TITLE)}>
+    <Dialog open={open} close={close} title={t(tr.PANTRY_TITLE)} icon="ingredients/cocoa">
       <div data-testid="pantry" style={{ minWidth: "50vw" }}>
         <IngredientBag
           items={items}

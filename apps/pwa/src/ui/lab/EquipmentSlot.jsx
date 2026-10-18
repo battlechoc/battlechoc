@@ -5,7 +5,7 @@ import {
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import ItemIcon from "./ItemIcon";
-import { itemName } from "./itemText";
+import { bangers, itemName, labColors } from "./itemText";
 
 const useStyles = createUseStyles((theme) => ({
   slot: {
@@ -35,8 +35,9 @@ const useStyles = createUseStyles((theme) => ({
     minWidth: 48,
     minHeight: 48,
     borderRadius: "50%",
-    border: "0.2em dashed rgba(255, 255, 255, 0.85)",
-    background: "rgba(27, 78, 105, 0.35)",
+    boxSizing: "border-box",
+    border: `0.2em dashed ${theme.color.secondary.light}`,
+    background: theme.color.secondary.dark,
     fontSize: "1em",
     transition: "transform 0.15s",
     "button:hover:not(:disabled) > &": { transform: "scale(1.06)" },
@@ -46,17 +47,19 @@ const useStyles = createUseStyles((theme) => ({
   // equipped but left out of matches: over the budget after a balance change
   inactive: { opacity: 0.45, filter: "grayscale(0.8)" },
   warning: {
-    fontFamily: "system-ui, -apple-system, sans-serif",
-    fontSize: "0.8em",
-    color: "#ffe08a",
+    ...bangers(theme, labColors(theme).reason),
+    fontSize: "0.9em",
   },
-  plus: { fontFamily: "var(--font-display)", fontSize: "2.4em", lineHeight: 1 },
+  plus: {
+    ...bangers(theme, theme.color.secondary.light),
+    fontSize: "2.4em",
+    lineHeight: 1,
+  },
   label: {
-    fontFamily: "var(--font-display)",
+    ...bangers(theme),
     fontSize: "1.05em",
     textAlign: "center",
     lineHeight: 1.1,
-    "-webkit-text-stroke": `0.04em ${theme.color.secondary.dark}`,
   },
 }));
 

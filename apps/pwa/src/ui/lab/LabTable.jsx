@@ -6,261 +6,269 @@ import {
   Ingredients,
 } from "@battlechoc/battlechoc-shared-functions";
 import IngredientIcon from "../ingredients/IngredientIcon";
+import Button from "../controls/Button";
+import DialogFrame from "../dialogs/DialogFrame";
 import ItemIcon from "./ItemIcon";
-import { effectLines, itemName } from "./itemText";
+import {
+  bangers,
+  effectLines,
+  gamePanel,
+  itemName,
+  labColors,
+} from "./itemText";
 
-const useStyles = createUseStyles((theme) => ({
-  // a chocolate bench: the lip with melting chocolate on top, three columns below
-  table: {
-    position: "relative",
-    display: "flex",
-    alignItems: "stretch",
-    gap: "1.2em",
-    padding: "2.6em 1.4em 1.1em",
-    borderRadius: 16,
-    background:
-      "url(/images/lab/table-edge.svg) repeat-x left top / auto 2.2em, linear-gradient(180deg, #6e3d21 0%, #4a2611 100%)",
-    boxShadow: "0 0.35em 0 #2e1608, inset 0 -0.25em 0 rgba(0, 0, 0, 0.2)",
-    boxSizing: "border-box",
-    color: "white",
-    [theme.breakpoints.orientation.portrait]: {
+const useStyles = createUseStyles((theme) => {
+  const colors = labColors(theme);
+  return {
+    // a blue game panel like the dialogs, with the chocolate pieces in its corners
+    table: {
+      position: "relative",
+      // its own stacking context: the frame and columns stay below the dialogs of the lab
+      isolation: "isolate",
+      overflow: "hidden",
+      borderRadius: 20,
+      background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`,
+      boxShadow: "0 0.3em 0.9em rgba(0, 0, 0, 0.3)",
+      color: "white",
+    },
+    // the chocolate pieces of the dialogs, scaled down to the bench
+    frameTop: { "&&": { width: "22em", height: "4.6em" } },
+    frameLeft: { "&&": { width: "5em", height: "6em" } },
+    frameRight: { "&&": { width: "8em", height: "6em" } },
+    columns: {
+      position: "relative",
+      zIndex: 13,
+      display: "flex",
+      alignItems: "stretch",
+      gap: "1em",
+      padding: "1em 1.4em",
+      boxSizing: "border-box",
+      [theme.breakpoints.orientation.portrait]: {
+        flexDirection: "column",
+        gap: "0.7em",
+        padding: "0.9em",
+      },
+    },
+    shelf: {
+      ...gamePanel(theme),
+      flex: "1 1 30%",
+      minWidth: 0,
+      display: "flex",
       flexDirection: "column",
+      gap: "0.4em",
+      padding: "0.5em 0.7em 0.7em",
+      [theme.breakpoints.orientation.portrait]: { order: 2 },
+    },
+    heading: { ...bangers(theme, theme.color.gold.light), fontSize: "1.2em" },
+    jars: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "0.4em",
+      overflowY: "auto",
+      maxHeight: "9.5em",
+      padding: "0.2em",
+      [theme.breakpoints.orientation.portrait]: {
+        flexWrap: "nowrap",
+        overflowX: "auto",
+        overflowY: "hidden",
+        maxHeight: "none",
+      },
+    },
+    // like the game's icon buttons: blue gradient with a light rim
+    jar: {
+      position: "relative",
+      flexShrink: 0,
+      width: "3.3em",
+      height: "3.3em",
+      minWidth: 48,
+      minHeight: 48,
+      padding: 0,
+      borderRadius: "12.5%",
+      border: `0.12em solid ${theme.color.secondary.light}`,
+      background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+      cursor: "pointer",
+      "&:disabled": { filter: "grayscale(1)", cursor: "default" },
+      "&:hover:not(:disabled)": {
+        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 120%)`,
+      },
+      "&:focus-visible": {
+        outline: `3px solid ${theme.color.gold.light}`,
+        outlineOffset: 2,
+      },
+    },
+    count: {
+      ...bangers(theme),
+      position: "absolute",
+      right: "0.15em",
+      bottom: "-0.05em",
+      fontSize: "1em",
+    },
+    work: {
+      flex: "1 1 36%",
+      minWidth: 0,
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "0.5em",
+    },
+    result: {
+      flex: "1 1 34%",
+      minWidth: 0,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      [theme.breakpoints.orientation.portrait]: { order: 1 },
+    },
+    // where the result of a try will appear
+    placeholder: {
+      ...gamePanel(theme),
+      width: "100%",
+      maxWidth: "16em",
+      minHeight: "5.2em",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      "& > span": {
+        ...bangers(theme, theme.color.secondary.light),
+        fontSize: "2.6em",
+        lineHeight: 1,
+      },
+      [theme.breakpoints.orientation.portrait]: { display: "none" },
+    },
+    bowls: {
+      ...gamePanel(theme),
+      position: "relative",
+      display: "flex",
       gap: "0.8em",
-      padding: "2.4em 1em 1em",
+      alignItems: "flex-end",
+      padding: "1em 1em 0.4em",
     },
-  },
-  shelf: {
-    flex: "1 1 30%",
-    minWidth: 0,
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.4em",
-    [theme.breakpoints.orientation.portrait]: { order: 2 },
-  },
-  heading: {
-    fontFamily: "var(--font-display)",
-    fontSize: "1.1em",
-    "-webkit-text-stroke": "0.04em #2e1608",
-    letterSpacing: "0.03em",
-  },
-  jars: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "0.35em",
-    overflowY: "auto",
-    maxHeight: "9.5em",
-    [theme.breakpoints.orientation.portrait]: {
-      flexWrap: "nowrap",
-      overflowX: "auto",
-      overflowY: "hidden",
-      maxHeight: "none",
+    bowl: {
+      position: "relative",
+      width: "5.4em",
+      height: "3.8em",
+      minWidth: 64,
+      minHeight: 46,
+      border: "none",
+      padding: 0,
+      background: "url(/images/lab/bowl.svg) no-repeat",
+      backgroundSize: "100% 100%",
+      cursor: "pointer",
+      "&:disabled": { cursor: "default" },
+      "&:focus-visible": {
+        outline: `3px solid ${theme.color.gold.light}`,
+        outlineOffset: 2,
+        borderRadius: 12,
+      },
+      "& > img": {
+        position: "absolute",
+        left: "50%",
+        top: "-18%",
+        transform: "translateX(-50%)",
+      },
     },
-  },
-  jar: {
-    position: "relative",
-    flexShrink: 0,
-    width: "3.3em",
-    height: "3.3em",
-    minWidth: 48,
-    minHeight: 48,
-    borderRadius: 12,
-    border: "none",
-    background: "rgba(255, 246, 230, 0.16)",
-    cursor: "pointer",
-    "&:disabled": { opacity: 0.45, cursor: "default" },
-    "&:hover:not(:disabled)": { background: "rgba(255, 246, 230, 0.3)" },
-    "&:focus-visible": {
-      outline: `3px solid ${theme.color.gold.light}`,
-      outlineOffset: 2,
+    // the special ingredient is not on the shelf: show it greyed out
+    lacking: { "& > img": { opacity: 0.35, filter: "grayscale(1)" } },
+    fixed: {
+      position: "absolute",
+      right: "-0.3em",
+      top: "-0.5em",
+      width: "1.5em",
+      height: "1.5em",
+      boxSizing: "border-box",
+      borderRadius: "50%",
+      background: theme.color.secondary.dark,
+      border: `0.1em solid ${theme.color.secondary.light}`,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      "& > span": {
+        width: "70%",
+        height: "70%",
+        background: "url(/images/lock.svg) no-repeat",
+        backgroundSize: "100% 100%",
+      },
     },
-  },
-  count: {
-    position: "absolute",
-    right: 2,
-    bottom: 0,
-    fontFamily: "var(--font-display)",
-    fontSize: "0.95em",
-    color: "white",
-    "-webkit-text-stroke": "0.05em #2e1608",
-  },
-  work: {
-    flex: "1 1 36%",
-    minWidth: 0,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "0.6em",
-  },
-  result: {
-    flex: "1 1 34%",
-    minWidth: 0,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    [theme.breakpoints.orientation.portrait]: { order: 1 },
-  },
-  // where the result of a try will appear
-  placeholder: {
-    width: "100%",
-    maxWidth: "16em",
-    minHeight: "5.2em",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 14,
-    border: "0.15em dashed rgba(255, 246, 230, 0.35)",
-    fontFamily: "var(--font-display)",
-    fontSize: "1.1em",
-    color: "rgba(255, 246, 230, 0.45)",
-    "& > span": { fontSize: "2.4em", lineHeight: 1 },
-    [theme.breakpoints.orientation.portrait]: { display: "none" },
-  },
-  bowls: {
-    position: "relative",
-    display: "flex",
-    gap: "0.8em",
-    alignItems: "flex-end",
-  },
-  bowl: {
-    position: "relative",
-    width: "5.4em",
-    height: "3.8em",
-    minWidth: 64,
-    minHeight: 46,
-    border: "none",
-    padding: 0,
-    background: "url(/images/lab/bowl.svg) no-repeat",
-    backgroundSize: "100% 100%",
-    cursor: "pointer",
-    "&:disabled": { cursor: "default" },
-    "&:focus-visible": {
-      outline: `3px solid ${theme.color.gold.light}`,
-      outlineOffset: 2,
-      borderRadius: 12,
+    "@keyframes shake": {
+      "0%, 100%": { transform: "translateX(0)" },
+      "20%, 60%": { transform: "translateX(-0.4em)" },
+      "40%, 80%": { transform: "translateX(0.4em)" },
     },
-    "& > img": {
+    shake: {
+      animation: "$shake 0.45s ease-in-out",
+      "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+    },
+    "@keyframes rise": {
+      "0%": { opacity: 0, transform: "translate(-50%, 0.6em)" },
+      "30%": { opacity: 0.9 },
+      "100%": { opacity: 0, transform: "translate(-50%, -1.6em)" },
+    },
+    steam: {
       position: "absolute",
       left: "50%",
-      top: "-18%",
-      transform: "translateX(-50%)",
-    },
-  },
-  // the special ingredient is not on the shelf: show it as a faded outline
-  lacking: { "& > img": { opacity: 0.35, filter: "grayscale(1)" } },
-  fixed: {
-    position: "absolute",
-    right: "-0.3em",
-    top: "-0.5em",
-    width: "1.5em",
-    height: "1.5em",
-    borderRadius: "50%",
-    background: theme.color.secondary.dark,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    "& > span": {
-      width: "70%",
-      height: "70%",
-      background: "url(/images/lock.svg) no-repeat",
+      top: "-2.6em",
+      width: "5em",
+      height: "3.6em",
+      background: "url(/images/lab/steam.svg) no-repeat",
       backgroundSize: "100% 100%",
+      pointerEvents: "none",
+      animation: "$rise 1.8s ease-out infinite",
+      "@media (prefers-reduced-motion: reduce)": {
+        animation: "none",
+        opacity: 0.8,
+        transform: "translateX(-50%)",
+      },
     },
-  },
-  "@keyframes shake": {
-    "0%, 100%": { transform: "translateX(0)" },
-    "20%, 60%": { transform: "translateX(-0.4em)" },
-    "40%, 80%": { transform: "translateX(0.4em)" },
-  },
-  shake: {
-    animation: "$shake 0.45s ease-in-out",
-    "@media (prefers-reduced-motion: reduce)": { animation: "none" },
-  },
-  "@keyframes rise": {
-    "0%": { opacity: 0, transform: "translate(-50%, 0.6em)" },
-    "30%": { opacity: 0.9 },
-    "100%": { opacity: 0, transform: "translate(-50%, -1.6em)" },
-  },
-  steam: {
-    position: "absolute",
-    left: "50%",
-    top: "-3.2em",
-    width: "5em",
-    height: "3.6em",
-    background: "url(/images/lab/steam.svg) no-repeat",
-    backgroundSize: "100% 100%",
-    pointerEvents: "none",
-    animation: "$rise 1.8s ease-out infinite",
-    "@media (prefers-reduced-motion: reduce)": {
-      animation: "none",
-      opacity: 0.8,
-      transform: "translateX(-50%)",
+    message: {
+      minHeight: "1.4em",
+      textAlign: "center",
+      fontSize: "1em",
+      lineHeight: 1.3,
     },
-  },
-  message: {
-    minHeight: "1.4em",
-    textAlign: "center",
-    fontFamily: "system-ui, -apple-system, sans-serif",
-    fontSize: "1em",
-    textShadow: "0 1px 2px rgba(0,0,0,0.6)",
-  },
-  card: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.8em",
-    padding: "0.5em 0.8em",
-    borderRadius: 14,
-    background: "rgba(255, 246, 230, 0.18)",
-    fontFamily: "system-ui, -apple-system, sans-serif",
-  },
-  cardName: { fontFamily: "var(--font-display)", fontSize: "1.2em" },
-  costs: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "0.5em",
-    alignItems: "center",
-    fontSize: "0.95em",
-  },
-  cost: { display: "inline-flex", alignItems: "center", gap: "0.15em" },
-  missing: { color: "#ffb3c4", fontWeight: 700 },
-  effects: {
-    fontSize: "0.85em",
-    display: "flex",
-    flexWrap: "wrap",
-    columnGap: "0.7em",
-  },
-  good: { color: "#c8f59a" },
-  bad: { color: "#ffc2cf" },
-  actions: { display: "flex", gap: "0.8em" },
-  action: {
-    minWidth: 110,
-    minHeight: 46,
-    borderRadius: 23,
-    border: "none",
-    padding: "0 1.2em",
-    fontFamily: "var(--font-display)",
-    fontSize: "1.3em",
-    letterSpacing: "0.03em",
-    color: "white",
-    cursor: "pointer",
-    boxShadow: "0 0.15em 0 rgba(0,0,0,0.3)",
-    "&:disabled": {
-      background: "rgba(255,255,255,0.22)",
-      boxShadow: "none",
-      cursor: "default",
-      color: "rgba(255,255,255,0.75)",
+    card: {
+      ...gamePanel(theme),
+      display: "flex",
+      alignItems: "center",
+      gap: "0.8em",
+      padding: "0.6em 0.9em",
     },
-    "&:focus-visible": {
-      outline: `3px solid ${theme.color.gold.light}`,
-      outlineOffset: 2,
+    cardName: { ...bangers(theme, theme.color.gold.light), fontSize: "1.3em" },
+    costs: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "0.5em",
+      alignItems: "center",
+      margin: "0.15em 0",
     },
-  },
-  try: {
-    background: `linear-gradient(0deg, ${theme.color.secondary.dark}, ${theme.color.secondary.light})`,
-  },
-  craft: {
-    background: `linear-gradient(0deg, ${theme.color.primary.dark}, ${theme.color.primary.light})`,
-  },
-}));
+    cost: {
+      ...bangers(theme),
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "0.15em",
+      fontSize: "1.1em",
+    },
+    missing: { color: colors.bad },
+    effects: {
+      fontSize: "0.85em",
+      fontWeight: "bold",
+      display: "flex",
+      flexWrap: "wrap",
+      columnGap: "0.7em",
+    },
+    good: { color: colors.good },
+    bad: { color: colors.bad },
+    actions: { display: "flex", gap: "0.8em" },
+    // what the button costs, inside it (like the old upgrade button)
+    actionLabel: {
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "0.25em",
+      whiteSpace: "nowrap",
+      [theme.breakpoints.orientation.portrait]: { fontSize: "0.75em" },
+    },
+  };
+});
 
 const RESULT_TEXT = {
   missing: "LAB_MISSING",
@@ -323,148 +331,172 @@ const LabTable = ({
     message = t(tr.LAB_TABLE_HINT, specialName);
   }
 
+  let action;
+  if (crafted) {
+    action = (
+      <Button
+        size="small"
+        color="primary"
+        onClick={onEquipCrafted}
+        data-testid="lab-equip"
+      >
+        {t(tr.LAB_EQUIP_NOW)}
+      </Button>
+    );
+  } else if (recipe) {
+    action = (
+      <Button
+        size="small"
+        color="primary"
+        onClick={onCraft}
+        disabled={!online || busy || !affordable}
+        data-testid="lab-craft"
+        aria-label={`${t(tr.LAB_CRAFT)} (${cost.COCOA})`}
+      >
+        <span className={classes.actionLabel}>
+          {t(tr.LAB_CRAFT)}
+          <IngredientIcon id="COCOA" size="1.1em" />
+          <span className={missing("COCOA", cost.COCOA) ? classes.missing : ""}>
+            {cost.COCOA}
+          </span>
+        </span>
+      </Button>
+    );
+  } else {
+    action = (
+      <Button
+        size="small"
+        color="secondary"
+        onClick={onTry}
+        disabled={!online || busy || !full || !hasSpecial}
+        data-testid="lab-try"
+        aria-label={`${t(tr.LAB_TRY)} (${buildingName})`}
+      >
+        {t(tr.LAB_TRY)}
+      </Button>
+    );
+  }
+
   return (
     <div className={classes.table} data-testid="lab-table">
-      <div className={classes.shelf}>
-        <span className={classes.heading}>{t(tr.LAB_SHELF)}</span>
-        <div className={classes.jars}>
-          {owned.map((id) => (
-            <button
-              type="button"
-              key={id}
-              className={classes.jar}
-              onClick={() => onAdd(id)}
-              disabled={full || busy || !hasSpecial}
-              aria-label={`${t(tr[`INGREDIENT_${id}`])} (${pantry[id]})`}
-              data-ingredient={id}
-            >
-              <IngredientIcon id={id} size="2.4em" />
-              <span className={classes.count}>{pantry[id]}</span>
-            </button>
-          ))}
+      <DialogFrame
+        classes={{
+          top: classes.frameTop,
+          left: classes.frameLeft,
+          right: classes.frameRight,
+        }}
+      />
+      <div className={classes.columns}>
+        <div className={classes.shelf} data-testid="lab-shelf">
+          <span className={classes.heading}>{t(tr.LAB_SHELF)}</span>
+          <div className={classes.jars}>
+            {owned.map((id) => (
+              <button
+                type="button"
+                key={id}
+                className={classes.jar}
+                onClick={() => onAdd(id)}
+                disabled={full || busy || !hasSpecial}
+                aria-label={`${t(tr[`INGREDIENT_${id}`])} (${pantry[id]})`}
+                data-ingredient={id}
+              >
+                <IngredientIcon id={id} size="2.4em" />
+                <span className={classes.count}>{pantry[id]}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-      <div className={classes.work}>
-        <div
-          key={result ? result.seq : 0}
-          className={`${classes.bowls} ${
-            result && result.status === "nothing" ? classes.shake : ""
-          }`}
-          data-testid="bowls"
-        >
-          {result && result.status === "smell" ? (
-            <span className={classes.steam} aria-hidden="true" />
-          ) : null}
-          {bowls.map((ingredient, index) => (
-            <button
-              type="button"
-              key={index}
-              className={`${classes.bowl} ${
-                index === 0 && !hasSpecial ? classes.lacking : ""
-              }`}
-              disabled={index === 0 || !ingredient || busy}
-              onClick={() => onClear(index)}
-              aria-label={
-                ingredient
-                  ? `${t(tr.LAB_CLEAR)}: ${t(tr[`INGREDIENT_${ingredient}`])}`
-                  : t(tr.LAB_EMPTY_BOWL)
-              }
-              data-ingredient={ingredient || ""}
-              data-missing={index === 0 && !hasSpecial ? "true" : "false"}
-            >
-              {ingredient ? (
-                <IngredientIcon id={ingredient} size="2.6em" />
-              ) : null}
-              {index === 0 ? (
-                <span className={classes.fixed} aria-hidden="true">
-                  <span />
-                </span>
-              ) : null}
-            </button>
-          ))}
-        </div>
-        <div
-          className={classes.message}
-          role="status"
-          aria-live="polite"
-          data-testid="lab-message"
-        >
-          {message}
-        </div>
-        <div className={classes.actions}>
-          {crafted ? (
-            <button
-              type="button"
-              className={`${classes.action} ${classes.craft}`}
-              onClick={onEquipCrafted}
-            >
-              {t(tr.LAB_EQUIP_NOW)}
-            </button>
-          ) : recipe ? (
-            <button
-              type="button"
-              className={`${classes.action} ${classes.craft}`}
-              onClick={onCraft}
-              disabled={!online || busy || !affordable}
-              data-testid="lab-craft"
-            >
-              {`${t(tr.LAB_CRAFT)} · ${recipe.fee}`}
-            </button>
-          ) : (
-            <button
-              type="button"
-              className={`${classes.action} ${classes.try}`}
-              onClick={onTry}
-              disabled={!online || busy || !full || !hasSpecial}
-              data-testid="lab-try"
-              aria-label={`${t(tr.LAB_TRY)} (${buildingName})`}
-            >
-              {t(tr.LAB_TRY)}
-            </button>
-          )}
-        </div>
-      </div>
-      <div className={classes.result}>
-        {recipe ? (
+        <div className={classes.work}>
           <div
-            className={classes.card}
-            data-testid="recipe-card"
-            data-item={recipe.item}
+            key={result ? result.seq : 0}
+            className={`${classes.bowls} ${
+              result && result.status === "nothing" ? classes.shake : ""
+            }`}
+            data-testid="bowls"
           >
-            <ItemIcon item={recipe.item} size="3em" />
-            <div>
-              <div className={classes.cardName}>{itemName(recipe.item)}</div>
-              <div className={classes.costs}>
-                {Object.entries(cost).map(([ingredient, amount]) => (
-                  <span
-                    key={ingredient}
-                    className={`${classes.cost} ${
-                      missing(ingredient, amount) ? classes.missing : ""
-                    }`}
-                  >
-                    <IngredientIcon id={ingredient} size="1.4em" />
-                    {`×${amount}`}
+            {result && result.status === "smell" ? (
+              <span className={classes.steam} aria-hidden="true" />
+            ) : null}
+            {bowls.map((ingredient, index) => (
+              <button
+                type="button"
+                key={index}
+                className={`${classes.bowl} ${
+                  index === 0 && !hasSpecial ? classes.lacking : ""
+                }`}
+                disabled={index === 0 || !ingredient || busy}
+                onClick={() => onClear(index)}
+                aria-label={
+                  ingredient
+                    ? `${t(tr.LAB_CLEAR)}: ${t(tr[`INGREDIENT_${ingredient}`])}`
+                    : t(tr.LAB_EMPTY_BOWL)
+                }
+                data-ingredient={ingredient || ""}
+                data-missing={index === 0 && !hasSpecial ? "true" : "false"}
+              >
+                {ingredient ? (
+                  <IngredientIcon id={ingredient} size="2.6em" />
+                ) : null}
+                {index === 0 ? (
+                  <span className={classes.fixed} aria-hidden="true">
+                    <span />
                   </span>
-                ))}
-              </div>
-              <div className={classes.effects}>
-                {effectLines(recipe.item).map((line) => (
-                  <span
-                    key={line.text}
-                    className={line.good ? classes.good : classes.bad}
-                  >
-                    {line.good ? "▲ " : "▼ "}
-                    {line.text}
-                  </span>
-                ))}
+                ) : null}
+              </button>
+            ))}
+          </div>
+          <div
+            className={classes.message}
+            role="status"
+            aria-live="polite"
+            data-testid="lab-message"
+          >
+            {message}
+          </div>
+          <div className={classes.actions}>{action}</div>
+        </div>
+        <div className={classes.result}>
+          {recipe ? (
+            <div
+              className={classes.card}
+              data-testid="recipe-card"
+              data-item={recipe.item}
+            >
+              <ItemIcon item={recipe.item} size="3em" />
+              <div>
+                <div className={classes.cardName}>{itemName(recipe.item)}</div>
+                <div className={classes.costs}>
+                  {Object.entries(cost).map(([ingredient, amount]) => (
+                    <span
+                      key={ingredient}
+                      className={`${classes.cost} ${
+                        missing(ingredient, amount) ? classes.missing : ""
+                      }`}
+                    >
+                      <IngredientIcon id={ingredient} size="1.3em" />
+                      {`×${amount}`}
+                    </span>
+                  ))}
+                </div>
+                <div className={classes.effects}>
+                  {effectLines(recipe.item).map((line) => (
+                    <span
+                      key={line.text}
+                      className={line.good ? classes.good : classes.bad}
+                    >
+                      {line.good ? "▲ " : "▼ "}
+                      {line.text}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className={classes.placeholder} aria-hidden="true">
-            <span>?</span>
-          </div>
-        )}
+          ) : (
+            <div className={classes.placeholder} aria-hidden="true">
+              <span>?</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

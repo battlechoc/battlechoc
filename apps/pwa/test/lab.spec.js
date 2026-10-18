@@ -96,7 +96,7 @@ test("discover, craft and equip the starter item; the next match uses it", async
   const inventory = page.getByTestId("inventory");
   await expect(inventory.locator('[data-item="LIGHT_BARREL"]')).toBeVisible();
   await page.screenshot({ path: "test/output/screenshot_lab_inventory.png" });
-  await inventory.locator('[data-item="LIGHT_BARREL"] button').click();
+  await inventory.locator('[data-item="LIGHT_BARREL"] [role=button]').click();
   await expect(page.getByTestId("equipment-slot-0")).toHaveAttribute(
     "data-item",
     "LIGHT_BARREL"

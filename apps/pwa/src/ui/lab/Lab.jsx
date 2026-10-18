@@ -7,12 +7,13 @@ import {
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
-import { ChoclabPalette } from "../controls";
+import { ChoclabPalette, Fab } from "../controls";
 import MeshPreview from "../../3d/MeshPreview";
 import { updatePlayerStats } from "../UiActions";
 import { ServerRequest } from "../../helper/settings";
 import logger from "../../helper/logger";
 import OfflineStore from "../../OfflineStore";
+import { Jukebox } from "../misc";
 import IngredientIcon from "../ingredients/IngredientIcon";
 import Pantry from "../dialogs/Pantry";
 import EquipmentSlot from "./EquipmentSlot";
@@ -20,7 +21,7 @@ import BudgetBar from "./BudgetBar";
 import LabTable from "./LabTable";
 import InventoryPicker from "./InventoryPicker";
 import RecipeBook from "./RecipeBook";
-import { effectLines } from "./itemText";
+import { bangers, effectLines, labColors } from "./itemText";
 
 // the buildings that can be equipped, in the order of the carousel
 const BUILDINGS = Object.keys(SpecialIngredient).filter((type) =>
@@ -36,8 +37,8 @@ const useStyles = createUseStyles((theme) => ({
     flexDirection: "column",
     overflow: "hidden",
     color: "white",
-    background:
-      "linear-gradient(180deg, #9DD5E9 0%, #3DA2CE 60%, #1B4E69 100%)",
+    // the sky of the menus (the body gradient)
+    background: `linear-gradient(0deg, ${theme.color.sky.dark} 0%, ${theme.color.sky.light} 80%)`,
     fontSize: "calc(0.9vh + 0.75vw)",
     [theme.breakpoints.orientation.portrait]: {
       fontSize: "calc(1.1vh + 1.1vw)",
@@ -63,40 +64,32 @@ const useStyles = createUseStyles((theme) => ({
     backgroundSize: "auto 100%",
     pointerEvents: "none",
   },
+  // like the title screen: the cocoa count (it opens the pantry) and the recipe book
   topbar: {
     position: "relative",
     zIndex: 1,
+    alignSelf: "flex-end",
     display: "flex",
-    justifyContent: "flex-end",
     alignItems: "center",
-    gap: "0.8em",
-    padding: "0.6em 0.8em 0",
+    gap: "1.5vw",
+    margin: "5px 5px 0",
   },
-  roundButton: {
+  cocoa: {
     display: "flex",
     alignItems: "center",
-    gap: "0.3em",
-    minHeight: 48,
-    minWidth: 48,
-    padding: "0.2em 0.7em",
-    borderRadius: 28,
-    border: `3px solid ${theme.color.secondary.dark}`,
-    background: "linear-gradient(0deg, #3DA2CE 0%, #9DD5E9 80%)",
-    fontFamily: "var(--font-display)",
-    fontSize: "1.5em",
-    color: "white",
-    "-webkit-text-stroke": `0.04em ${theme.color.secondary.dark}`,
+    gap: "0.2em",
+    padding: "0 0.2em",
+    borderRadius: 12,
     cursor: "pointer",
+    outline: "none",
+    fontFamily: "Bangers",
+    fontSize: "calc(2.5vh + 2.5vw)",
+    color: "white",
+    "-webkit-text-stroke": `calc(0.06vh + 0.06vw) ${theme.color.secondary.dark}`,
+    "-webkit-font-smoothing": "antialiased",
     "&:focus-visible": {
-      outline: `3px solid ${theme.color.gold.light}`,
-      outlineOffset: 2,
+      outline: `0.3vw solid ${theme.color.gold.light}`,
     },
-  },
-  bookIcon: {
-    width: "1.6em",
-    height: "1.6em",
-    background: "url(/images/lab/recipe-book.svg) no-repeat",
-    backgroundSize: "100% 100%",
   },
   // the building with its two equipment slots beside it; the preview takes the height that is left
   stage: {
@@ -116,6 +109,11 @@ const useStyles = createUseStyles((theme) => ({
     alignItems: "center",
     justifyContent: "center",
     gap: "1.5em",
+    // landscape: only as wide as the slots and the building
+    [theme.breakpoints.orientation.landscape]: {
+      width: "auto",
+      padding: "0 0.5em",
+    },
     // portrait: the building across the full width, the two slots side by side below it
     [theme.breakpoints.orientation.portrait]: {
       display: "grid",
@@ -137,6 +135,7 @@ const useStyles = createUseStyles((theme) => ({
       height: "100% !important",
       outline: "none",
     },
+    [theme.breakpoints.orientation.landscape]: { width: "24vw" },
     [theme.breakpoints.orientation.portrait]: {
       gridColumn: "1 / -1",
       gridRow: 1,
@@ -151,21 +150,20 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   name: {
-    fontFamily: "var(--font-display)",
+    fontFamily: "Bangers",
     fontSize: "1.9em",
     letterSpacing: "0.03em",
     "-webkit-text-stroke": `0.05em ${theme.color.secondary.dark}`,
   },
   effects: {
     minHeight: "1.3em",
-    fontFamily: "system-ui, -apple-system, sans-serif",
-    fontSize: "0.95em",
+    ...bangers(theme),
+    fontSize: "1.15em",
     textAlign: "center",
-    textShadow: "0 1px 2px rgba(0,0,0,0.5)",
     "& > span": { margin: "0 0.35em", whiteSpace: "nowrap" },
   },
-  good: { color: "#e8ffd0" },
-  bad: { color: "#ffd6df" },
+  good: { color: labColors(theme).good },
+  bad: { color: labColors(theme).bad },
   table: { flex: "0 0 auto", margin: "0 1em 0.8em" },
 }));
 
@@ -384,6 +382,11 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
     setCrafted(undefined);
   };
 
+  const openPantry = () => {
+    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+    setPantryOpen(true);
+  };
+
   const slotItem = (index) => {
     const id = (equipment[entityType] || [])[index];
     const entry = id
@@ -411,28 +414,33 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       <div className={classes.decorationLeft} />
       <div className={classes.decorationRight} />
       <div className={classes.topbar}>
-        <button
-          type="button"
-          className={classes.roundButton}
-          onClick={() => setPantryOpen(true)}
+        <div
+          role="button"
+          tabIndex={0}
+          className={classes.cocoa}
+          onClick={openPantry}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              openPantry();
+            }
+          }}
           aria-label={t(tr.PANTRY_TITLE)}
           data-testid="pantry-button"
         >
           <span>{pantry.COCOA || 0}</span>
-          <IngredientIcon id="COCOA" size="1.6em" />
-        </button>
-        <button
-          type="button"
-          className={classes.roundButton}
+          <IngredientIcon id="COCOA" size="calc(3vh + 3vw)" />
+        </div>
+        <Fab
+          color="secondary"
+          icon="lab/recipe-book"
           onClick={() => {
             loadBook();
             setBookOpen(true);
           }}
           aria-label={t(tr.LAB_RECIPE_BOOK)}
           data-testid="recipe-book-button"
-        >
-          <span className={classes.bookIcon} />
-        </button>
+        />
       </div>
 
       <div className={classes.stage}>

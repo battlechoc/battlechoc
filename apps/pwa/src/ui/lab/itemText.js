@@ -40,6 +40,34 @@ export const TIER_COLORS = {
   EPIC: { ring: "#9b5de5", fill: "#ecdcfb", label: "LAB_TIER_EPIC" },
 };
 
+/**
+ * The lab's text colours, from the theme: what helps the player, what is the price or missing,
+ * and why something cannot be done.
+ */
+export const labColors = (theme) => ({
+  good: theme.color.primary.light,
+  bad: theme.color.accent.light,
+  reason: theme.color.gold.light,
+});
+
+/** A game panel: dark blue with a light blue rim, like the info card of a match. */
+export const gamePanel = (theme) => ({
+  borderRadius: "0.8em",
+  background: theme.color.secondary.dark,
+  border: `0.15em solid ${theme.color.secondary.light}`,
+  boxSizing: "border-box",
+});
+
+/** Names, headings and counts: Bangers with a dark blue outline. */
+export const bangers = (theme, color = "white") => ({
+  fontFamily: "Bangers",
+  fontWeight: "normal",
+  letterSpacing: "0.03em",
+  color,
+  "-webkit-text-stroke": `0.04em ${theme.color.secondary.dark}`,
+  "-webkit-font-smoothing": "antialiased",
+});
+
 const BADGES = {
   hp: "/images/lab/badge-hp.svg",
   cacaoAmount: "/images/ingredients/cocoa.svg",

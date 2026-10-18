@@ -7,75 +7,66 @@ import {
   LOADOUT_BUDGET,
 } from "@battlechoc/battlechoc-shared-functions";
 import Dialog from "../dialogs/Dialog";
+import Button from "../controls/Button";
 import ItemIcon from "./ItemIcon";
-import { effectLines, itemName, TIER_COLORS } from "./itemText";
+import {
+  BUILDING_ICON,
+  bangers,
+  effectLines,
+  gamePanel,
+  itemName,
+  labColors,
+  TIER_COLORS,
+} from "./itemText";
 
-const useStyles = createUseStyles((theme) => ({
-  list: {
-    width: "100%",
-    maxHeight: "100%",
-    overflowY: "auto",
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.8em",
-    padding: "0 0.5em",
-    boxSizing: "border-box",
-  },
-  row: {
-    display: "flex",
-    alignItems: "center",
-    gap: "1em",
-    padding: "0.7em 0.9em",
-    borderRadius: 14,
-    background: "rgba(255, 255, 255, 0.14)",
-  },
-  current: { boxShadow: `inset 0 0 0 3px ${theme.color.gold.light}` },
-  text: {
-    flexGrow: 1,
-    minWidth: 0,
-    color: "white",
-    fontFamily: "system-ui, -apple-system, sans-serif",
-  },
-  name: { fontFamily: "var(--font-display)", fontSize: "1.3em", letterSpacing: "0.02em" },
-  meta: { fontSize: "0.85em", opacity: 0.9 },
-  good: { color: "#b9f27a", fontSize: "0.95em" },
-  bad: { color: "#ffb3c4", fontSize: "0.95em" },
-  reason: { fontSize: "0.85em", color: "#ffe08a" },
-  action: {
-    minWidth: 96,
-    minHeight: 44,
-    borderRadius: 22,
-    border: "none",
-    padding: "0 1.1em",
-    fontFamily: "var(--font-display)",
-    fontSize: "1.15em",
-    color: "white",
-    cursor: "pointer",
-    background: `linear-gradient(0deg, ${theme.color.primary.dark}, ${theme.color.primary.light})`,
-    "&:disabled": { background: "rgba(255,255,255,0.25)", cursor: "default" },
-    "&:focus-visible": {
-      outline: `3px solid ${theme.color.gold.light}`,
-      outlineOffset: 2,
+const useStyles = createUseStyles((theme) => {
+  const colors = labColors(theme);
+  return {
+    list: {
+      width: "100%",
+      maxHeight: "100%",
+      overflowY: "auto",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "stretch",
+      gap: "0.5em",
+      padding: "0 0.5em 0.5em",
+      boxSizing: "border-box",
+      fontSize: "0.7em",
     },
-  },
-  remove: {
-    background: `linear-gradient(0deg, ${theme.color.accent.dark}, ${theme.color.accent.light})`,
-  },
-  context: {
-    margin: "0 0 0.2em",
-    color: "white",
-    textAlign: "center",
-    fontFamily: "system-ui, -apple-system, sans-serif",
-    fontSize: "1.05em",
-    opacity: 0.9,
-  },
-  empty: {
-    color: "white",
-    textAlign: "center",
-    fontFamily: "system-ui, -apple-system, sans-serif",
-    fontSize: "1.1em",
-  },
-}));
+    row: {
+      ...gamePanel(theme),
+      display: "flex",
+      alignItems: "center",
+      gap: "1em",
+      padding: "0.6em 0.9em",
+      textAlign: "left",
+      [theme.breakpoints.orientation.portrait]: {
+        flexWrap: "wrap",
+        justifyContent: "center",
+      },
+    },
+    current: { borderColor: theme.color.gold.light },
+    text: {
+      flexGrow: 1,
+      minWidth: 0,
+      color: "white",
+    },
+    name: { ...bangers(theme, theme.color.gold.light), fontSize: "1.3em" },
+    meta: { fontSize: "0.85em" },
+    good: { color: colors.good, fontWeight: "bold", fontSize: "0.95em" },
+    bad: { color: colors.bad, fontWeight: "bold", fontSize: "0.95em" },
+    reason: { color: colors.reason, fontWeight: "bold", fontSize: "0.85em" },
+    remove: { alignSelf: "center", marginTop: "0.3em" },
+    empty: { color: "white", textAlign: "center" },
+    // on a phone the context line stays below the (autoscaled) title
+    subtitle: {
+      display: "block",
+      textAlign: "center",
+      [theme.breakpoints.orientation.portrait]: { fontSize: "0.65em" },
+    },
+  };
+});
 
 /**
  * Picks the item for one slot: the player's items of this building, one row per item type
@@ -122,13 +113,22 @@ const InventoryPicker = ({
 
   const freed = currentKey ? Items[currentKey].points : 0;
   return (
-    <Dialog open={open} close={close} title={t(tr.LAB_EQUIPMENT)} closable>
-      <div className={classes.list} data-testid="inventory">
-        <p className={classes.context}>
+    <Dialog
+      open={open}
+      close={close}
+      title={t(tr.LAB_EQUIPMENT)}
+      icon={`${BUILDING_ICON[entityType]}-icon`}
+      subtitle={
+        <span className={classes.subtitle} data-testid="inventory-context">
           {`${buildingName} · ${t(tr.LAB_SLOT_LABEL, slot + 1)} · ${t(
             tr.LAB_BUDGET
           )} ${budgetUsed}/${LOADOUT_BUDGET}`}
-        </p>
+        </span>
+      }
+      autoscale
+      closable
+    >
+      <div className={classes.list} data-testid="inventory">
         {types.length === 0 ? (
           <p className={classes.empty}>{t(tr.LAB_NO_ITEMS)}</p>
         ) : null}
@@ -175,26 +175,27 @@ const InventoryPicker = ({
                 ))}
                 {reason ? <div className={classes.reason}>{reason}</div> : null}
               </div>
-              <button
-                type="button"
-                className={classes.action}
+              <Button
+                size="small"
+                color="primary"
                 disabled={busy || isCurrent || Boolean(reason)}
                 onClick={() => onEquip(free.id)}
               >
                 {isCurrent ? t(tr.LAB_EQUIPPED) : t(tr.LAB_EQUIP_NOW)}
-              </button>
+              </Button>
             </div>
           );
         })}
         {currentId ? (
-          <button
-            type="button"
-            className={`${classes.action} ${classes.remove}`}
+          <Button
+            size="small"
+            color="accent"
+            className={classes.remove}
             disabled={busy}
             onClick={() => onEquip(null)}
           >
             {t(tr.LAB_REMOVE)}
-          </button>
+          </Button>
         ) : null}
       </div>
     </Dialog>

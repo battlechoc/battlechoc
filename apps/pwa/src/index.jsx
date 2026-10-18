@@ -34,6 +34,8 @@ const theme = {
     instagram: { light: "#FE5A93", dark: "#803FBB" },
     brown: { light: "#56321E", dark: "#4D2C1B" },
     warning: { light: "#FAD25A", dark: "#D28304" },
+    // the sky behind the menus (the body gradient in index.css)
+    sky: { light: "#9DD5E9", dark: "#3DA2CE" },
   },
   breakpoints: {
     desktop: "@media screen and (min-width: 1200px)",

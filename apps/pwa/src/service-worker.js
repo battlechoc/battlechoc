@@ -95,7 +95,6 @@ precacheAndRoute(
     { url: "/images/lab/bowl.svg", revision: "1" },
     { url: "/images/lab/recipe-book.svg", revision: "1" },
     { url: "/images/lab/steam.svg", revision: "1" },
-    { url: "/images/lab/table-edge.svg", revision: "1" },
     { url: "/images/ingredients/cocoa.svg", revision: "1" },
     { url: "/images/ingredients/sugar.svg", revision: "1" },
     { url: "/images/ingredients/milk.svg", revision: "1" },
