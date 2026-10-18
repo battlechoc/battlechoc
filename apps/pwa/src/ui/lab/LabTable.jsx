@@ -59,7 +59,10 @@ const useStyles = createUseStyles((theme) => {
       padding: "0.5em 0.7em 0.7em",
       [theme.breakpoints.orientation.portrait]: { order: 2 },
     },
-    heading: { ...bangers(theme, theme.color.gold.light), fontSize: "1.2em" },
+    heading: {
+      ...bangers(theme, theme.color.gold.light),
+      fontSize: theme.font.size.lg,
+    },
     jars: {
       display: "flex",
       flexWrap: "wrap",
@@ -101,7 +104,7 @@ const useStyles = createUseStyles((theme) => {
       position: "absolute",
       right: "0.15em",
       bottom: "-0.05em",
-      fontSize: "1em",
+      fontSize: theme.font.size.sm,
     },
     work: {
       flex: "1 1 36%",
@@ -131,6 +134,7 @@ const useStyles = createUseStyles((theme) => {
       justifyContent: "center",
       "& > span": {
         ...bangers(theme, theme.color.secondary.light),
+        // a glyph filling the placeholder (in em of the lab's text)
         fontSize: "2.6em",
         lineHeight: 1,
       },
@@ -223,7 +227,6 @@ const useStyles = createUseStyles((theme) => {
     message: {
       minHeight: "1.4em",
       textAlign: "center",
-      fontSize: "1em",
       lineHeight: 1.3,
     },
     card: {
@@ -233,7 +236,10 @@ const useStyles = createUseStyles((theme) => {
       gap: "0.8em",
       padding: "0.6em 0.9em",
     },
-    cardName: { ...bangers(theme, theme.color.gold.light), fontSize: "1.3em" },
+    cardName: {
+      ...bangers(theme, theme.color.gold.light),
+      fontSize: theme.font.size.lg,
+    },
     costs: {
       display: "flex",
       flexWrap: "wrap",
@@ -246,11 +252,10 @@ const useStyles = createUseStyles((theme) => {
       display: "inline-flex",
       alignItems: "center",
       gap: "0.15em",
-      fontSize: "1.1em",
     },
     missing: { color: colors.bad },
     effects: {
-      fontSize: "0.85em",
+      fontSize: theme.font.size.sm,
       fontWeight: "bold",
       display: "flex",
       flexWrap: "wrap",
@@ -265,7 +270,6 @@ const useStyles = createUseStyles((theme) => {
       alignItems: "center",
       gap: "0.25em",
       whiteSpace: "nowrap",
-      [theme.breakpoints.orientation.portrait]: { fontSize: "0.75em" },
     },
   };
 });

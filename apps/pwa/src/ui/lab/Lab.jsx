@@ -40,10 +40,10 @@ const useStyles = createUseStyles((theme) => ({
     color: "white",
     // the sky of the menus (the body gradient)
     background: `linear-gradient(0deg, ${theme.color.sky.dark} 0%, ${theme.color.sky.light} 80%)`,
-    fontSize: "calc(0.9vh + 0.75vw)",
-    [theme.breakpoints.orientation.portrait]: {
-      fontSize: "calc(1.1vh + 1.1vw)",
-    },
+    // the lab's parts size themselves in em of this
+    fontSize: theme.font.size.md,
+    // phones held sideways: too little height for everything, the page scrolls
+    [theme.breakpoints.shortLandscape]: { overflowY: "auto" },
   },
   decorationLeft: {
     position: "absolute",
@@ -83,10 +83,10 @@ const useStyles = createUseStyles((theme) => ({
     borderRadius: 12,
     cursor: "pointer",
     outline: "none",
-    fontFamily: "var(--font-display)",
-    fontSize: "calc(2.5vh + 2.5vw)",
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.xl,
     color: "white",
-    "-webkit-text-stroke": `calc(0.06vh + 0.06vw) ${theme.color.secondary.dark}`,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
     "-webkit-font-smoothing": "antialiased",
     "&:focus-visible": {
       outline: `0.3vw solid ${theme.color.gold.light}`,
@@ -101,6 +101,7 @@ const useStyles = createUseStyles((theme) => ({
     alignItems: "center",
     gap: "0.35em",
     padding: "0 1em 0.6em",
+    [theme.breakpoints.shortLandscape]: { flex: "0 0 auto" },
   },
   building: {
     flex: "1 1 0",
@@ -151,15 +152,15 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   name: {
-    fontFamily: "var(--font-display)",
-    fontSize: "1.9em",
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.xl,
     letterSpacing: "0.03em",
-    "-webkit-text-stroke": `0.05em ${theme.color.secondary.dark}`,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
   },
   effects: {
     minHeight: "1.3em",
     ...bangers(theme),
-    fontSize: "1.15em",
+    fontSize: theme.font.size.md,
     textAlign: "center",
     "& > span": { margin: "0 0.35em", whiteSpace: "nowrap" },
   },

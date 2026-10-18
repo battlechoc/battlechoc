@@ -4,14 +4,16 @@ import { createUseStyles } from "react-jss";
 import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
+  // a toast in body text; its icons size with the text
   message: {
     color: "white",
-    margin: "1vh",
-    padding: "1vh",
+    fontSize: theme.font.size.md,
+    margin: "0.5em",
+    padding: "0.5em",
     display: "flex",
-    borderRadius: "2vh",
+    borderRadius: "1em",
     alignItems: "flex-start",
-    boderWidth: "0.4vh",
+    boderWidth: "0.2em",
     borderStyle: "solid",
     borderColor: (props) => {
       if (props.variant === "error") {
@@ -35,24 +37,12 @@ const useStyles = createUseStyles((theme) => ({
         return `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`;
       }
     },
-    [theme.breakpoints.orientation.landscape]: {
-      margin: "1vw",
-      padding: "1vw",
-      borderRadius: "2vw",
-      boderWidth: "0.4vw",
-    },
   },
   icon: {
-    margin: "1vh",
+    margin: "0.5em",
     "& > div": {
-      padding: "3vh",
+      padding: "1.5em",
       backgroundSize: "100% 100%",
-    },
-    [theme.breakpoints.orientation.landscape]: {
-      margin: "1vw",
-      "& > div": {
-        padding: "3vw",
-      },
     },
   },
   info: {
@@ -76,10 +66,10 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   actions: {
-    margin: "1vh",
-    padding: "0.5vh",
+    margin: "0.5em",
+    padding: "0.25em",
     "& > div": {
-      padding: "1.5vh",
+      padding: "0.75em",
       background: (props) => {
         if (props.variant === "error") {
           return `url(/images/close.svg) no-repeat`;
@@ -93,22 +83,11 @@ const useStyles = createUseStyles((theme) => ({
       },
       backgroundSize: "100% 100%",
     },
-    [theme.breakpoints.orientation.landscape]: {
-      margin: "1vw",
-      padding: "0.5vw",
-      "& > div": {
-        padding: "1.5vw",
-      },
-    },
   },
   text: {
-    margin: "1vh",
-    fontSize: "2vh",
+    margin: "0.5em",
+    fontSize: theme.font.size.md,
     alignSelf: "center",
-    [theme.breakpoints.orientation.landscape]: {
-      margin: "1vw",
-      fontSize: "2vw",
-    },
   },
   invisible: {
     transition: "opacity 1s ease-out",
@@ -118,34 +97,22 @@ const useStyles = createUseStyles((theme) => ({
     opacity: 1,
   },
   rotate: {
-    padding: "1.5vh",
-    margin: "0.5vh",
+    padding: "0.75em",
+    margin: "0.25em",
     background: `url(/images/phone-rotation.svg) no-repeat`,
     backgroundSize: "100% 100%",
-    [theme.breakpoints.orientation.landscape]: {
-      padding: "1.5vw",
-      margin: "0.5vw",
-    },
   },
   share: {
-    padding: "1.1vh",
-    margin: "0.5vh",
+    padding: "0.55em",
+    margin: "0.25em",
     background: `url(/images/apple-share-icon.svg) no-repeat`,
     backgroundSize: "100% 100%",
-    [theme.breakpoints.orientation.landscape]: {
-      padding: "1.1vw",
-      margin: "0.5vw",
-    },
   },
   add: {
-    padding: "1.2vh",
-    margin: "0.5vh",
+    padding: "0.6em",
+    margin: "0.25em",
     background: `url(/images/add-icon.svg) no-repeat`,
     backgroundSize: "100% 100%",
-    [theme.breakpoints.orientation.landscape]: {
-      padding: "1.2vw",
-      margin: "0.5vw",
-    },
   },
 }));
 

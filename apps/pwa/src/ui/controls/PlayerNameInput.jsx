@@ -12,73 +12,65 @@ import {
 import Progress from "./Progress";
 import withDefaultProps from "../../helper/defaultProps";
 
+// One row in the text size of buttons (the type scale); the action button sits on its right end.
 const useStyles = createUseStyles((theme) => ({
   root: {
     display: "flex",
     alignItems: "center",
     position: "relative",
+    fontSize: theme.font.size.lg,
   },
   input: {
-    width: "calc(100% - 10vh)",
+    width: "100%",
+    boxSizing: "border-box",
+    paddingRight: "2.4em",
     outline: "none",
-    borderRadius: "2.857vh 0 0 2.857vh",
+    borderRadius: "0.55em",
     color: theme.color.secondary.dark,
-    fontFamily: "var(--font-display)",
+    fontFamily: theme.font.display,
+    fontSize: "inherit",
     display: "flex",
     justifyContent: "flex-start",
     alignItems: "center",
-    fontSize: "7vh",
-    height: "11.428vh",
+    height: "2.2em",
     background: "white",
-    border: `0.2vh solid ${theme.color.secondary.light}`,
-    [theme.breakpoints.orientation.portrait]: {
-      width: "calc(100% - 10vw)",
-      borderRadius: "2.857vw 0 0 2.857vw",
-      border: `0.2vw solid ${theme.color.secondary.light}`,
-      height: "11.428vw",
-      fontSize: "7vw",
-    },
+    border: `2px solid ${theme.color.secondary.light}`,
+    overflow: "hidden",
+    whiteSpace: "nowrap",
   },
   error: {
-    border: `0.2vh solid ${theme.color.accent.light} !important`,
+    border: `2px solid ${theme.color.accent.light} !important`,
     color: `${theme.color.accent.dark} !important`,
-    [theme.breakpoints.orientation.portrait]: {
-      border: `0.2vw solid ${theme.color.accent.light} !important`,
-    },
   },
   errorLabel: {
     color: theme.color.accent.light,
-    fontFamily: "var(--font-display)",
-    "-webkit-text-stroke": `1px ${theme.color.accent.dark}`,
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.md,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.accent.dark}`,
     "-webkit-font-smoothing": "antialiased",
   },
   icon: {
-    padding: "4vh 8vh",
-    [theme.breakpoints.orientation.portrait]: {
-      padding: "4vw 8vw",
-    },
+    flex: "0 0 auto",
+    width: "2.4em",
+    height: "1.1em",
   },
   actionButton: {
-    border: `1vh solid ${theme.color.secondary.light}`,
-    borderRadius: "2.857vh",
+    boxSizing: "border-box",
+    border: `0.12em solid ${theme.color.secondary.light}`,
+    borderRadius: "0.55em",
     background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
-    height: "10vh",
-    width: "10vh",
+    height: "2.2em",
+    width: "2.2em",
     position: "absolute",
     top: 0,
     right: 0,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    [theme.breakpoints.orientation.portrait]: {
-      border: `1vw solid ${theme.color.secondary.light}`,
-      borderRadius: "2.857vw",
-      height: "10vw",
-      width: "10vw",
-    },
+    cursor: "pointer",
   },
   buttonError: {
-    border: `3px solid ${theme.color.accent.light}`,
+    border: `0.12em solid ${theme.color.accent.light}`,
     background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 70%)`,
     "& > div": {
       filter: "hue-rotate(120deg)",
@@ -90,22 +82,14 @@ const useStyles = createUseStyles((theme) => ({
   },
   disabled: {
     background: "linear-gradient(0deg, #666 0%, #aaa 70%)",
-    border: "3px solid #aaa",
+    border: "0.12em solid #aaa",
     "& > div": {
       filter: "grayscale(1)",
     },
   },
-  small: {
-    fontSize: "6vh",
-    [theme.breakpoints.orientation.portrait]: {
-      fontSize: "6vw",
-    },
-  },
-  normal: {
-    fontSize: "8vh",
-    [theme.breakpoints.orientation.portrait]: {
-      fontSize: "8vw",
-    },
+  name: {
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
 }));
 
@@ -253,7 +237,7 @@ const PlayerNameInput = (componentProps) => {
               }}
             ></div>
             <div
-              className={playerName.length > 7 ? classes.small : classes.normal}
+              className={classes.name}
             >
               {playerName}
             </div>

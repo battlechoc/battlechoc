@@ -9,9 +9,9 @@ import {
 const useStyles = createUseStyles((theme) => ({
   bar: { display: "flex", alignItems: "center", gap: "0.6em" },
   label: {
-    fontFamily: "var(--font-display)",
-    fontSize: "1.05em",
-    "-webkit-text-stroke": `0.04em ${theme.color.secondary.dark}`,
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.md,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
     whiteSpace: "nowrap",
   },
   cells: { display: "flex", gap: "0.18em" },

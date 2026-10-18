@@ -82,11 +82,11 @@ const useStyles = createUseStyles((theme) => ({
     padding: "0 0.35em 0 0.2em",
     borderRadius: "1em",
     color: "white",
-    fontFamily: "var(--font-display)",
-    fontSize: "1.8vw",
+    fontFamily: theme.font.display,
+    // body size: on the icons (in vw/vh) it stays readable on small phones and big screens
+    fontSize: theme.font.size.md,
     whiteSpace: "nowrap",
-    border: "0.2vw solid white",
-    [theme.breakpoints.orientation.portrait]: { fontSize: "3.4vw" },
+    border: "0.1em solid white",
     "& i": {
       display: "inline-block",
       width: "1.15em",
@@ -107,11 +107,10 @@ const useStyles = createUseStyles((theme) => ({
     padding: "0 0.25em",
     borderRadius: "1em",
     color: "white",
-    fontFamily: "var(--font-display)",
-    fontSize: "2.2vw",
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.md,
     textAlign: "center",
-    border: "0.2vw solid white",
-    [theme.breakpoints.orientation.portrait]: { fontSize: "4.4vw" },
+    border: "0.1em solid white",
   },
 }));
 

@@ -26,7 +26,6 @@ const useStyles = createUseStyles((theme) => ({
     padding: "0 0.5em 0.5em",
     boxSizing: "border-box",
     textAlign: "left",
-    fontSize: "0.7em",
   },
   building: {
     display: "flex",
@@ -36,7 +35,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   buildingName: {
     ...bangers(theme, theme.color.gold.light),
-    fontSize: "1.4em",
+    fontSize: theme.font.size.lg,
   },
   recipe: {
     ...gamePanel(theme),
@@ -51,7 +50,7 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   text: { flexGrow: 1, minWidth: 0 },
-  name: { ...bangers(theme), fontSize: "1.25em" },
+  name: { ...bangers(theme), fontSize: theme.font.size.md },
   ingredients: {
     display: "flex",
     flexWrap: "wrap",
@@ -64,11 +63,10 @@ const useStyles = createUseStyles((theme) => ({
     display: "inline-flex",
     alignItems: "center",
     gap: "0.2em",
-    fontSize: "1.1em",
   },
-  small: { fontSize: "0.85em" },
+  small: { fontSize: theme.font.size.sm },
   hint: { ...bangers(theme, labColors(theme).reason), margin: "0.2em 0 0.6em" },
-  empty: { textAlign: "center", fontSize: "1.1em" },
+  empty: { textAlign: "center" },
 }));
 
 // Every discovered recipe, by building, with its discoverer; "use" puts it on the lab table.
@@ -82,7 +80,6 @@ const RecipeBook = ({ open, close, book, buildings, buildingName, onUse }) => {
       close={close}
       title={t(tr.LAB_RECIPE_BOOK)}
       icon="lab/recipe-book"
-      autoscale
       closable
     >
       <div className={classes.book} data-testid="recipe-book">

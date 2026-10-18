@@ -38,7 +38,6 @@ const useStyles = createUseStyles((theme) => ({
     boxSizing: "border-box",
     border: `0.2em dashed ${theme.color.secondary.light}`,
     background: theme.color.secondary.dark,
-    fontSize: "1em",
     transition: "transform 0.15s",
     "button:hover:not(:disabled) > &": { transform: "scale(1.06)" },
     "@media (prefers-reduced-motion: reduce)": { transition: "none" },
@@ -48,16 +47,17 @@ const useStyles = createUseStyles((theme) => ({
   inactive: { opacity: 0.45, filter: "grayscale(0.8)" },
   warning: {
     ...bangers(theme, labColors(theme).reason),
-    fontSize: "0.9em",
+    fontSize: theme.font.size.sm,
   },
   plus: {
     ...bangers(theme, theme.color.secondary.light),
+    // a glyph filling the ring (both in em of the lab's text)
     fontSize: "2.4em",
     lineHeight: 1,
   },
   label: {
     ...bangers(theme),
-    fontSize: "1.05em",
+    fontSize: theme.font.size.md,
     textAlign: "center",
     lineHeight: 1.1,
   },

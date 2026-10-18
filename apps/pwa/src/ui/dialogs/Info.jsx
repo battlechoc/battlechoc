@@ -27,11 +27,10 @@ const useStyles = createUseStyles((theme) => ({
   text: {
     "& *": { color: "white" },
     width: "70vw",
-    fontSize: "2vw",
+    maxWidth: "48em",
+    fontSize: theme.font.size.sm,
     textAlign: "left",
-    [theme.breakpoints.orientation.portrait]: {
-      fontSize: "2vh",
-    },
+    "& h2": { fontSize: theme.font.size.lg },
   },
   header: {
     textAlign: "center",

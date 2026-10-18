@@ -60,11 +60,11 @@ export const gamePanel = (theme) => ({
 
 /** Names, headings and counts: Bangers with a dark blue outline. */
 export const bangers = (theme, color = "white") => ({
-  fontFamily: "var(--font-display)",
+  fontFamily: theme.font.display,
   fontWeight: "normal",
   letterSpacing: "0.03em",
   color,
-  "-webkit-text-stroke": `0.04em ${theme.color.secondary.dark}`,
+  "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
   "-webkit-font-smoothing": "antialiased",
 });
 

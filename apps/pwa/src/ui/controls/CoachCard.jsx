@@ -3,54 +3,65 @@ import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 
 const useStyles = createUseStyles((theme) => ({
+  // beside the board in landscape (never narrower than about 20 words), across in portrait;
+  // a long text scrolls, the footer with the buttons stays visible
   coach: {
     position: "absolute",
     zIndex: 5,
     left: "1vw",
     top: "calc(12px + 7vw)",
-    width: "27vw",
+    width: "max(27vw, 20em)",
+    maxWidth: "calc(100vw - 2vw)",
     maxHeight: "calc(100vh - 7vw - 13vw)",
-    overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
     boxSizing: "border-box",
-    padding: "1.2vw 1.4vw",
+    padding: "0.8em 0.95em",
     borderRadius: 20,
     background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 80%)`,
     border: `0.3vw solid ${theme.color.secondary.light}`,
     boxShadow: "0 0.5vw 1.5vw rgba(0, 0, 0, 0.35)",
     color: "white",
+    fontSize: theme.font.size.md,
+    // landscape: down to the build palette (its icons are min(6vw, 11vh))
+    [theme.breakpoints.orientation.landscape]: {
+      maxHeight: "calc(100vh - 7vw - 28px - min(6vw, 11vh) - 1vw)",
+    },
     [theme.breakpoints.orientation.portrait]: {
       left: "3vw",
       width: "94vw",
       top: "calc(12px + 14vw)",
-      padding: "3vw",
+      padding: "0.8em",
     },
   },
   title: {
-    margin: "0 0 0.6vw 0",
-    fontFamily: "var(--font-display)",
-    fontSize: "2.4vw",
+    flex: "0 0 auto",
+    margin: "0 0 0.3em 0",
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.lg,
     letterSpacing: "0.05em",
-    "-webkit-text-stroke": `0.08vw ${theme.color.secondary.dark}`,
-    [theme.breakpoints.orientation.portrait]: { fontSize: "6vw" },
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
   },
   message: {
+    flex: "0 1 auto",
+    minHeight: 0,
+    overflowY: "auto",
     margin: 0,
-    fontSize: "1.35vw",
     lineHeight: 1.4,
-    [theme.breakpoints.orientation.portrait]: { fontSize: "3.8vw" },
   },
   footer: {
-    marginTop: "1vw",
+    flex: "0 0 auto",
+    marginTop: "0.6em",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: "1vw",
+    gap: "0.6em",
   },
   progress: {
-    fontFamily: "var(--font-display)",
-    fontSize: "1.4vw",
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.sm,
     opacity: 0.85,
-    [theme.breakpoints.orientation.portrait]: { fontSize: "4vw" },
   },
   skip: {
     background: "none",
@@ -59,13 +70,13 @@ const useStyles = createUseStyles((theme) => ({
     opacity: 0.8,
     textDecoration: "underline",
     cursor: "pointer",
-    fontSize: "1.1vw",
+    fontFamily: "inherit",
+    fontSize: theme.font.size.sm,
     padding: 0,
-    [theme.breakpoints.orientation.portrait]: { fontSize: "3.4vw" },
   },
   buttons: {
     display: "flex",
-    gap: "0.8vw",
+    gap: "0.5em",
   },
 }));
 

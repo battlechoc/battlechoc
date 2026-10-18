@@ -22,8 +22,12 @@ const useStyles = createUseStyles((theme) => ({
     minWidth: "4.5em",
     fontFamily: "var(--font-display)",
     color: "white",
-    "-webkit-text-stroke": `1px ${theme.color.secondary.dark}`,
-    "& small": { fontSize: "0.7em", opacity: 0.9, textAlign: "center" },
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
+    "& small": {
+      fontSize: theme.font.size.xs,
+      opacity: 0.9,
+      textAlign: "center",
+    },
   },
   message: {
     textAlign: "center",

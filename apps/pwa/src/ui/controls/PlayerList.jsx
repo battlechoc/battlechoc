@@ -5,17 +5,14 @@ import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
   list: {
-    fontFamily: "var(--font-display)",
-    fontSize: (props) => (props.size === "small" ? "2.5vw" : "3vw"),
-    "-webkit-text-stroke": `0.1vw ${theme.color.secondary.dark}`,
+    fontFamily: theme.font.display,
+    fontSize: (props) =>
+      props.size === "small" ? theme.font.size.md : theme.font.size.lg,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
     "& > :nth-child(odd)": {
       backgroundColor: theme.color.secondary.dark,
     },
     display: "table",
-    [theme.breakpoints.orientation.portrait]: {
-      fontSize: (props) => (props.size === "small" ? "3vh" : "3.5vh"),
-      "-webkit-text-stroke": `0.1vh ${theme.color.secondary.dark}`,
-    },
     "-webkit-font-smoothing": "antialiased",
   },
   row: {

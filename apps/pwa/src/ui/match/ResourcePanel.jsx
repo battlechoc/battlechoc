@@ -27,11 +27,10 @@ const useStyles = createUseStyles((theme) => ({
     "& p": {
       margin: "0 5px 0 0",
       color: "white",
-      fontFamily: "var(--font-display)",
-      fontSize: "3vw",
-      "-webkit-text-stroke": `0.15vw ${theme.color.secondary.dark}`,
+      fontFamily: theme.font.display,
+      fontSize: theme.font.size.lg,
+      "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
       "-webkit-font-smoothing": "antialiased",
-      [theme.breakpoints.orientation.portrait]: { fontSize: "5.5vw" },
     },
   },
   icon: {
@@ -60,10 +59,9 @@ const useStyles = createUseStyles((theme) => ({
     top: "50%",
     display: "flex",
     alignItems: "center",
-    fontFamily: "var(--font-display)",
-    fontSize: "2.4vw",
-    "-webkit-text-stroke": `0.12vw ${theme.color.secondary.dark}`,
-    [theme.breakpoints.orientation.portrait]: { fontSize: "4.4vw" },
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.md,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
     "& i": {
       display: "inline-block",
       width: "1em",

@@ -24,11 +24,11 @@ const useStyles = createUseStyles((theme) => ({
     pointerEvents: "none",
     userSelect: "none",
     color: "white",
-    fontFamily: "var(--font-display)",
-    "-webkit-text-stroke": `0.15vw ${theme.color.secondary.dark}`,
+    fontFamily: theme.font.display,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
     "-webkit-font-smoothing": "antialiased",
-    "& p": { margin: 0, fontSize: "3vw", [theme.breakpoints.orientation.portrait]: { fontSize: "6vw" } },
-    "& .timer": { fontSize: "2.4vw", [theme.breakpoints.orientation.portrait]: { fontSize: "5vw" } },
+    "& p": { margin: 0, fontSize: theme.font.size.xl },
+    "& .timer": { fontSize: theme.font.size.lg },
     "& .warning": { color: theme.color.accent.light },
   },
   // longer messages go below the row of action buttons
@@ -45,9 +45,10 @@ const useStyles = createUseStyles((theme) => ({
     zIndex: 3,
     pointerEvents: "none",
     color: theme.color.gold.light,
-    fontFamily: "var(--font-display)",
-    fontSize: "18vw",
-    "-webkit-text-stroke": `0.5vw ${theme.color.brown.light}`,
+    fontFamily: theme.font.display,
+    // the splash of the countdown: three times the biggest step
+    fontSize: `calc(3 * ${theme.font.size.xxl})`,
+    "-webkit-text-stroke": `0.03em ${theme.color.brown.light}`,
   },
   paused: {
     position: "absolute",
@@ -59,10 +60,10 @@ const useStyles = createUseStyles((theme) => ({
     justifyContent: "center",
     background: "rgba(30, 15, 10, 0.55)",
     color: "white",
-    fontFamily: "var(--font-display)",
+    fontFamily: theme.font.display,
     cursor: "pointer",
-    "& p": { margin: 0, fontSize: "6vw" },
-    "& small": { fontSize: "2.5vw", [theme.breakpoints.orientation.portrait]: { fontSize: "5vw" } },
+    "& p": { margin: 0, fontSize: theme.font.size.xxl },
+    "& small": { fontSize: theme.font.size.md },
   },
 }));
 

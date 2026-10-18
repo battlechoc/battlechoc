@@ -3,89 +3,67 @@ import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import withDefaultProps from "../../helper/defaultProps";
 
+// One row in the text size of buttons (the type scale), like the player name input.
 const useStyles = createUseStyles((theme) => ({
   wrapper: {
     width: "100%",
     position: "relative",
     display: "flex",
+    fontSize: theme.font.size.lg,
   },
   input: {
     color: theme.color.secondary.dark,
-    fontFamily: "var(--font-display)",
-    borderRadius: "2.857vh",
+    fontFamily: theme.font.display,
+    borderRadius: "0.55em",
     width: "100%",
+    boxSizing: "border-box",
+    paddingRight: "2.4em",
     display: "flex",
     justifyContent: "flex-start",
     alignItems: "center",
-    fontSize: "7vh",
-    height: "11.428vh",
+    height: "2.2em",
     background: "white",
-    border: `0.2vh solid ${theme.color.secondary.light}`,
+    border: `2px solid ${theme.color.secondary.light}`,
     "& > span": {
-      marginLeft: "2vh",
-    },
-    [theme.breakpoints.orientation.portrait]: {
-      fontSize: "7vw",
-      borderRadius: "2.857vw",
-      height: "11.428vw",
-      border: `0.2vw solid ${theme.color.secondary.light}`,
-      "& > span": {
-        marginLeft: "2vw",
-      },
+      marginLeft: "0.3em",
     },
   },
   dropdown: {
-    border: `1vh solid ${theme.color.secondary.light}`,
-    borderRadius: "2.857vh",
+    boxSizing: "border-box",
+    border: `0.12em solid ${theme.color.secondary.light}`,
+    borderRadius: "0.55em",
     background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
-    height: "10vh",
-    width: "10vh",
+    height: "2.2em",
+    width: "2.2em",
     position: "absolute",
     top: 0,
     right: 0,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    [theme.breakpoints.orientation.portrait]: {
-      height: "10vw",
-      width: "10vw",
-      borderRadius: "2.857vw",
-      border: `1vw solid ${theme.color.secondary.light}`,
-    },
+    cursor: "pointer",
   },
   options: {
     position: "absolute",
     zIndex: 15,
     width: "100%",
     flexDirection: "column",
-    border: `0.2vh solid ${theme.color.secondary.light}`,
+    border: `2px solid ${theme.color.secondary.light}`,
     background: "white",
-    borderRadius: "2.857vh",
+    borderRadius: "0.55em",
     overflow: "hidden",
-    fontFamily: "var(--font-display)",
+    fontFamily: theme.font.display,
     "& > div": {
-      height: "11.428vh",
-      borderBottom: `0.2vh solid ${theme.color.secondary.light}`,
+      height: "2.2em",
+      borderBottom: `2px solid ${theme.color.secondary.light}`,
       display: "flex",
       color: theme.color.secondary.dark,
       alignItems: "center",
-      fontSize: "7vh",
       justifyContent: "flex-start",
+      cursor: "pointer",
     },
     "& > div > span": {
-      marginLeft: "2vh",
-    },
-    [theme.breakpoints.orientation.portrait]: {
-      border: `0.2vw solid ${theme.color.secondary.light}`,
-      borderRadius: "2.857vw",
-      "& > div": {
-        height: "11.428vw",
-        borderBottom: `0.2vw solid ${theme.color.secondary.light}`,
-        fontSize: "7vw",
-      },
-      "& span": {
-        marginLeft: "2vw",
-      },
+      marginLeft: "0.3em",
     },
   },
   icon: {
@@ -97,10 +75,9 @@ const useStyles = createUseStyles((theme) => ({
     color: "white !important",
   },
   optionIcon: {
-    padding: "4vh 8vh",
-    [theme.breakpoints.orientation.portrait]: {
-      padding: "4vw 8vw",
-    },
+    flex: "0 0 auto",
+    width: "2.4em",
+    height: "1.1em",
   },
 }));
 

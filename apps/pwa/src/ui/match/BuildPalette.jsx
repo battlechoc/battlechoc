@@ -109,12 +109,12 @@ const useStyles = createUseStyles((theme) => ({
     padding: "0 0.25em",
     borderRadius: "1em",
     background: theme.color.brown.light,
-    border: `0.2vw solid ${theme.color.gold.light}`,
+    border: `0.1em solid ${theme.color.gold.light}`,
     color: "white",
-    fontFamily: "var(--font-display)",
-    fontSize: "1.6vw",
+    fontFamily: theme.font.display,
+    // body size: on the icons (in vw/vh) it stays readable on small phones and big screens
+    fontSize: theme.font.size.md,
     textAlign: "center",
-    [theme.breakpoints.orientation.portrait]: { fontSize: "3vw" },
   },
 }));
 

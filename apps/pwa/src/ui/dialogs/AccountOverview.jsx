@@ -43,71 +43,58 @@ const useStyles = createUseStyles((theme) => ({
     marginLeft: "-0.5rem",
   },
   noAccountInfo: {
-    fontSize: "3vw",
     textAlign: "center",
     color: "white",
-    marginBottom: "2vw",
-    [theme.breakpoints.orientation.portrait]: {
-      fontSize: "3vh",
-      marginBottom: "2vh",
-    },
+    marginBottom: "1em",
   },
   icon: {
-    padding: "2.5vw",
+    padding: "0.8em",
     backgroundSize: "100% 100%",
   },
+  // rank, wins and losses in round badges sized by their text
   attributes: {
     display: "flex",
     flexWrap: "wrap",
     justifyContent: "center",
-    fontFamily: "var(--font-display)",
-    fontSize: "3vw",
-    [theme.breakpoints.orientation.portrait]: {
-      fontSize: "3vh",
-    },
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.md,
+    lineHeight: 1.15,
   },
   attribute: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "column",
-    padding: "1vw",
+    padding: "0.4em",
     borderRadius: "100%",
-    width: "12vw",
-    height: "12vw",
-    margin: "0.5vw",
-    borderWidth: "0.6vw",
+    width: "5em",
+    height: "5em",
+    margin: "0.25em",
+    borderWidth: "0.2em",
     borderStyle: "solid",
-    [theme.breakpoints.orientation.portrait]: {
-      padding: "1vh",
-      width: "12vh",
-      height: "12vh",
-      margin: "0.5vh",
-      borderWidth: "0.6vh",
-    },
   },
   gold: {
     borderColor: theme.color.gold.light,
     background: `linear-gradient(0deg, ${theme.color.gold.dark} 0%, ${theme.color.gold.light} 100%)`,
-    "-webkit-text-stroke": `0.1vh ${theme.color.gold.dark}`,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.gold.dark}`,
     "-webkit-font-smoothing": "antialiased",
   },
   primary: {
     borderColor: theme.color.primary.light,
     background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`,
-    "-webkit-text-stroke": `0.1vh ${theme.color.primary.dark}`,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.primary.dark}`,
     "-webkit-font-smoothing": "antialiased",
   },
   secondary: {
     borderColor: theme.color.secondary.light,
     background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`,
-    "-webkit-text-stroke": `0.1vh ${theme.color.secondary.dark}`,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
     "-webkit-font-smoothing": "antialiased",
   },
   accent: {
     borderColor: theme.color.accent.light,
     background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 100%)`,
-    "-webkit-text-stroke": `0.1vh ${theme.color.accent.dark}`,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.accent.dark}`,
     "-webkit-font-smoothing": "antialiased",
   },
 }));
@@ -182,7 +169,6 @@ const AccountOverview = (props) => {
       close={props.close}
       mode={props.dialogStyle}
       id="accountOverviewDialog"
-      autoscale={true}
       title={
         playerName.length > 20 ? `${playerName.slice(0, 17)}...` : playerName
       }

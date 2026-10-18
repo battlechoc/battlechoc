@@ -32,7 +32,6 @@ const useStyles = createUseStyles((theme) => {
       gap: "0.5em",
       padding: "0 0.5em 0.5em",
       boxSizing: "border-box",
-      fontSize: "0.7em",
     },
     row: {
       ...gamePanel(theme),
@@ -52,18 +51,32 @@ const useStyles = createUseStyles((theme) => {
       minWidth: 0,
       color: "white",
     },
-    name: { ...bangers(theme, theme.color.gold.light), fontSize: "1.3em" },
-    meta: { fontSize: "0.85em" },
-    good: { color: colors.good, fontWeight: "bold", fontSize: "0.95em" },
-    bad: { color: colors.bad, fontWeight: "bold", fontSize: "0.95em" },
-    reason: { color: colors.reason, fontWeight: "bold", fontSize: "0.85em" },
+    name: {
+      ...bangers(theme, theme.color.gold.light),
+      fontSize: theme.font.size.lg,
+    },
+    meta: { fontSize: theme.font.size.sm },
+    good: {
+      color: colors.good,
+      fontWeight: "bold",
+      fontSize: theme.font.size.sm,
+    },
+    bad: {
+      color: colors.bad,
+      fontWeight: "bold",
+      fontSize: theme.font.size.sm,
+    },
+    reason: {
+      color: colors.reason,
+      fontWeight: "bold",
+      fontSize: theme.font.size.sm,
+    },
     remove: { alignSelf: "center", marginTop: "0.3em" },
     empty: { color: "white", textAlign: "center" },
-    // on a phone the context line stays below the (autoscaled) title
+    // the context line below the title
     subtitle: {
       display: "block",
       textAlign: "center",
-      [theme.breakpoints.orientation.portrait]: { fontSize: "0.65em" },
     },
   };
 });
@@ -125,7 +138,6 @@ const InventoryPicker = ({
           )} ${budgetUsed}/${LOADOUT_BUDGET}`}
         </span>
       }
-      autoscale
       closable
     >
       <div className={classes.list} data-testid="inventory">

@@ -24,18 +24,16 @@ const useStyles = createUseStyles((theme) => ({
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    fontFamily: "var(--font-display)",
-    fontSize: "8vh",
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.lg,
     color: "white",
-    "-webkit-text-stroke": `0.05vh ${theme.color.secondary.dark}`,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
     "-webkit-font-smoothing": "antialiased",
-    [theme.breakpoints.orientation.portrait]: {
-      fontSize: "5vh",
-    },
   },
   headline: {
     textAlign: "center",
     marginTop: "2vh",
+    fontSize: theme.font.size.xxl,
   },
   total: {
     width: "100%",
@@ -55,39 +53,31 @@ const useStyles = createUseStyles((theme) => ({
     alignItems: "baseline",
     justifyContent: "center",
     "& span": {
-      fontSize: "10vh",
-      marginRight: "0.5vh",
-      [theme.breakpoints.orientation.portrait]: {
-        fontSize: "6.5vh",
-      },
+      fontSize: theme.font.size.xxl,
+      marginRight: "0.1em",
     },
     "& > small": {
-      fontSize: "5vh",
-      marginLeft: "1vh",
-      [theme.breakpoints.orientation.portrait]: {
-        fontSize: "3.5vh",
-      },
+      fontSize: theme.font.size.lg,
+      marginLeft: "0.2em",
     },
   },
   award: {
     display: "flex",
     flexDirection: "column",
-    fontSize: "5vh",
     opacity: 1,
     transition: "opacity .25s ease-in-out",
     textAlign: "center",
     "& > div": {
-      minHeight: "5.5vh",
+      minHeight: "1.2em",
     },
   },
   table: {
     display: "table",
-    fontSize: "5vh",
     margin: "0 auto",
     width: "fit-content",
-    borderSpacing: "5vw 1vh",
+    borderSpacing: "1em 0.25em",
     color: theme.color.primary.light,
-    "-webkit-text-stroke": `0.05vh ${theme.color.primary.dark}`,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.primary.dark}`,
     "-webkit-font-smoothing": "antialiased",
     "& > div": {
       display: "table-row",
@@ -98,8 +88,7 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   bag: {
-    fontSize: "4vh",
-    [theme.breakpoints.orientation.portrait]: { fontSize: "2.6vh" },
+    fontSize: theme.font.size.md,
   },
   confetti: {
     position: "absolute",

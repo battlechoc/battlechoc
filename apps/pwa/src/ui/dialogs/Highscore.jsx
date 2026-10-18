@@ -42,14 +42,10 @@ const useStyles = createUseStyles((theme) => ({
     marginTop: "0.5em",
   },
   rank: {
-    fontFamily: "var(--font-display)",
-    fontSize: "5vw",
-    "-webkit-text-stroke": `0.1vw ${theme.color.secondary.dark}`,
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.lg,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
     "-webkit-font-smoothing": "antialiased",
-    [theme.breakpoints.orientation.portrait]: {
-      fontSize: "4vh",
-      "-webkit-text-stroke": `0.1vh ${theme.color.secondary.dark}`,
-    },
   },
 }));
 
