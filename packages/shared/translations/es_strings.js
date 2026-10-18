@@ -492,5 +492,16 @@ module.exports = {
     "LAB_EQUIPMENT": "Equipo",
     "HIGHSCORE_EMPTY": "Todavía no hay partidas puntuadas: juega en línea contra otros jugadores para conseguir un puesto.",
     "HIGHSCORE_UNRATED": "Obtendrás tu puesto después de tu primera partida en línea contra otro jugador.",
-    "UNLOCK_NEW_FEATURES": "¡Nuevas funciones desbloqueadas: Choclab y Amigos!"
+    "UNLOCK_NEW_FEATURES": "¡Nuevas funciones desbloqueadas: Choclab y Amigos!",
+    "LAB_INTRO_BUILDING_TITLE": "¡Bienvenido al Choclab!",
+    "LAB_INTRO_BUILDING": "Elige un edificio. Cada uno tiene dos huecos de equipo y todo lo que equipas comparte un presupuesto: la barra muestra cuánto has usado.",
+    "LAB_INTRO_TABLE_TITLE": "La mesa del laboratorio",
+    "LAB_INTRO_TABLE": "Pon tres ingredientes en los cuencos y toca Probar para descubrir una receta. El primer cuenco siempre lleva el ingrediente especial del edificio.",
+    "LAB_INTRO_CRAFT_TITLE": "Fabricar y equipar",
+    "LAB_INTRO_CRAFT": "¿Has encontrado una receta? Fabrica el objeto y ponlo en un hueco del edificio. Te acompañará en tus partidas.",
+    "LAB_INTRO_PANTRY_TITLE": "Libro de recetas y despensa",
+    "LAB_INTRO_PANTRY": "El libro de recetas guarda todas las recetas descubiertas. Toca tu cacao para abrir la despensa: algunos ingredientes caducan, ¡úsalos a tiempo!",
+    "LAB_INTRO_SKIP": "Saltar introducción",
+    "LAB_INTRO_NEXT": "Siguiente",
+    "LAB_INTRO_DONE": "Entendido"
 }

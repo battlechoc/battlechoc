@@ -492,5 +492,16 @@ module.exports = {
     "LAB_EQUIPMENT": "Equipaggiamento",
     "HIGHSCORE_EMPTY": "Ancora nessuna partita valutata: gioca online contro altri giocatori per ottenere una posizione.",
     "HIGHSCORE_UNRATED": "Otterrai la tua posizione dopo la tua prima partita online contro un altro giocatore.",
-    "UNLOCK_NEW_FEATURES": "Nuove funzioni sbloccate: Choclab e Amici!"
+    "UNLOCK_NEW_FEATURES": "Nuove funzioni sbloccate: Choclab e Amici!",
+    "LAB_INTRO_BUILDING_TITLE": "Benvenuto nel Choclab!",
+    "LAB_INTRO_BUILDING": "Scegli un edificio. Ognuno ha due slot di equipaggiamento e tutto ciò che equipaggi condivide un budget: la barra mostra quanto ne hai usato.",
+    "LAB_INTRO_TABLE_TITLE": "Il tavolo del laboratorio",
+    "LAB_INTRO_TABLE": "Metti tre ingredienti nelle ciotole e tocca Prova per scoprire una ricetta. La prima ciotola contiene sempre l’ingrediente speciale dell’edificio.",
+    "LAB_INTRO_CRAFT_TITLE": "Crea ed equipaggia",
+    "LAB_INTRO_CRAFT": "Hai trovato una ricetta? Crea l’oggetto e mettilo in uno slot dell’edificio. Ti seguirà nelle tue partite.",
+    "LAB_INTRO_PANTRY_TITLE": "Ricettario e dispensa",
+    "LAB_INTRO_PANTRY": "Il ricettario conserva tutte le ricette scoperte. Tocca il tuo cacao per aprire la dispensa: alcuni ingredienti scadono, usali in tempo!",
+    "LAB_INTRO_SKIP": "Salta l’introduzione",
+    "LAB_INTRO_NEXT": "Avanti",
+    "LAB_INTRO_DONE": "Capito"
 }

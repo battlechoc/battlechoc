@@ -22,7 +22,46 @@ const accountOf = (page) =>
       })
   );
 
-const newPlayer = async (browser, request, username, viewport) => {
+// the lab explains itself on the first visit; most tests start with that intro already seen
+const seeIntro = (page) =>
+  page.evaluate(
+    () =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open("battlechoc");
+        open.onsuccess = () => {
+          const tx = open.result.transaction("settings", "readwrite");
+          tx.objectStore("settings").put(true, "labIntroSeen");
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        };
+        open.onerror = () => reject(open.error);
+      })
+  );
+
+const introSeen = (page) =>
+  page.evaluate(
+    () =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open("battlechoc");
+        open.onsuccess = () => {
+          const get = open.result
+            .transaction("settings")
+            .objectStore("settings")
+            .get("labIntroSeen");
+          get.onsuccess = () => resolve(get.result === true);
+          get.onerror = () => reject(get.error);
+        };
+        open.onerror = () => reject(open.error);
+      })
+  );
+
+const newPlayer = async (
+  browser,
+  request,
+  username,
+  viewport,
+  { intro = false } = {}
+) => {
   const context = await browser.newContext(viewport ? { viewport } : {});
   await context.addInitScript(
     (url) => window.localStorage.setItem("battlechoc.apiUrl", url),
@@ -47,6 +86,9 @@ const newPlayer = async (browser, request, username, viewport) => {
   expect(
     (await request.post(`${api}/user/tutorial/finished`, { headers })).ok()
   ).toBe(true);
+  if (!intro) {
+    await seeIntro(page);
+  }
   await page.goto("/?testclock", { waitUntil: "networkidle" });
   return { context, page };
 };
@@ -184,5 +226,56 @@ test("the lab on a phone in portrait", async ({ browser, request }) => {
   expect(preview.width).toBeGreaterThan(300);
   await page.waitForLoadState("networkidle");
   await page.screenshot({ path: "test/output/screenshot_lab_portrait.png" });
+  await context.close();
+});
+
+test("the lab explains itself once: an intro on the first visit, again after Restart tutorial", async ({
+  browser,
+  request,
+}) => {
+  const { context, page } = await newPlayer(browser, request, "Ella", null, {
+    intro: true,
+  });
+  await page.getByText("Choclab", { exact: true }).first().click();
+  const intro = page.getByTestId("lab-intro");
+  await expect(intro).toHaveAttribute("data-step", "building");
+  await expect(intro).toContainText("Welcome to the Choclab!");
+  await expect(intro).toContainText("1/4");
+  await page.screenshot({ path: "test/output/screenshot_lab_intro.png" });
+  await page.getByTestId("lab-intro-next").click();
+  await expect(intro).toHaveAttribute("data-step", "table");
+  await page.getByTestId("lab-intro-back").click();
+  await expect(intro).toHaveAttribute("data-step", "building");
+  for (const id of ["table", "craft", "pantry"]) {
+    await page.getByTestId("lab-intro-next").click();
+    await expect(intro).toHaveAttribute("data-step", id);
+  }
+  await expect(intro).toContainText("4/4");
+  await page.getByTestId("lab-intro-done").click();
+  await expect(intro).toHaveCount(0);
+  // the lab works without it
+  await expect(page.getByTestId("lab-table")).toBeVisible();
+  await expect.poll(() => introSeen(page)).toBe(true);
+
+  // remembered on this device
+  await page.goto("/?testclock", { waitUntil: "networkidle" });
+  await page.getByText("Choclab", { exact: true }).first().click();
+  await expect(page.getByTestId("lab")).toBeVisible();
+  await expect(page.getByTestId("lab-table")).toBeVisible();
+  await expect(intro).toHaveCount(0);
+
+  // Settings → Restart tutorial shows it again
+  await page.goto("/?testclock", { waitUntil: "networkidle" });
+  await page.locator("[data-icon=settings]:visible").first().click();
+  await page.getByText("Restart Tutorial", { exact: true }).click();
+  await expect.poll(() => introSeen(page)).toBe(false);
+  await page
+    .getByTestId("tutorial-coach")
+    .getByText("Skip Tutorial", { exact: true })
+    .click();
+  await page.getByText("Choclab", { exact: true }).first().click();
+  await expect(intro).toHaveAttribute("data-step", "building");
+  await intro.getByText("Skip intro", { exact: true }).click();
+  await expect(intro).toHaveCount(0);
   await context.close();
 });

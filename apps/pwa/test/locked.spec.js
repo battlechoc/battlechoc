@@ -39,6 +39,10 @@ test("a first win unlocks the Choclab; friends also need a player name", async (
   await expect(page.getByTestId("online-lobby")).not.toBeVisible();
   await page.getByText("Ok", { exact: true }).click();
   await page.getByText("Choclab", { exact: true }).first().click();
+  // the first visit starts with a short intro, which can be skipped
+  await expect(page.getByTestId("lab-intro")).toBeVisible();
+  await page.getByText("Skip intro", { exact: true }).click();
+  await expect(page.getByTestId("lab-intro")).toHaveCount(0);
   await expect(page.locator("[data-icon=back]:visible").first()).toBeVisible();
   await expect(page.getByText("Start Game", { exact: true })).toHaveCount(0);
 });

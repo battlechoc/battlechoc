@@ -492,5 +492,16 @@ module.exports = {
     "LAB_EQUIPMENT": "Équipement",
     "HIGHSCORE_EMPTY": "Aucune partie classée pour l'instant – joue en ligne contre d'autres joueurs pour obtenir un rang.",
     "HIGHSCORE_UNRATED": "Tu obtiendras ton rang après ta première partie en ligne contre un autre joueur.",
-    "UNLOCK_NEW_FEATURES": "Nouvelles fonctions débloquées : Choclab et Copains !"
+    "UNLOCK_NEW_FEATURES": "Nouvelles fonctions débloquées : Choclab et Copains !",
+    "LAB_INTRO_BUILDING_TITLE": "Bienvenue au Choclab !",
+    "LAB_INTRO_BUILDING": "Choisis un bâtiment. Chacun a deux emplacements d’équipement, et tout ce que tu équipes partage un budget : la barre montre ce qui est utilisé.",
+    "LAB_INTRO_TABLE_TITLE": "La table du labo",
+    "LAB_INTRO_TABLE": "Mets trois ingrédients dans les bols et touche Essayer pour découvrir une recette. Le premier bol contient toujours l’ingrédient spécial du bâtiment.",
+    "LAB_INTRO_CRAFT_TITLE": "Fabriquer et équiper",
+    "LAB_INTRO_CRAFT": "Une recette trouvée ? Fabrique l’objet et place-le dans un emplacement du bâtiment. Il t’accompagne dans tes parties.",
+    "LAB_INTRO_PANTRY_TITLE": "Livre de recettes et garde-manger",
+    "LAB_INTRO_PANTRY": "Le livre de recettes garde toutes les recettes découvertes. Touche ton cacao pour ouvrir le garde-manger : certains ingrédients se gâtent, utilise-les à temps !",
+    "LAB_INTRO_SKIP": "Passer l’intro",
+    "LAB_INTRO_NEXT": "Suivant",
+    "LAB_INTRO_DONE": "Compris"
 }

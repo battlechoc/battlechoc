@@ -492,5 +492,16 @@ module.exports = {
     "LAB_EQUIPMENT": "Ausrüstung",
     "HIGHSCORE_EMPTY": "Noch keine gewerteten Partien – spiele online gegen andere Spieler, um einen Rang zu bekommen.",
     "HIGHSCORE_UNRATED": "Deinen Rang bekommst du nach deiner ersten Online-Partie gegen einen anderen Spieler.",
-    "UNLOCK_NEW_FEATURES": "Neue Funktionen freigeschaltet: Choclab und Freunde!"
+    "UNLOCK_NEW_FEATURES": "Neue Funktionen freigeschaltet: Choclab und Freunde!",
+    "LAB_INTRO_BUILDING_TITLE": "Willkommen im Choclab!",
+    "LAB_INTRO_BUILDING": "Wähle ein Gebäude. Jedes hat zwei Ausrüstungsplätze, und alles, was du ausrüstest, teilt sich ein Budget: Der Balken zeigt, wie viel verbraucht ist.",
+    "LAB_INTRO_TABLE_TITLE": "Der Labortisch",
+    "LAB_INTRO_TABLE": "Gib drei Zutaten in die Schüsseln und tippe auf Ausprobieren, um ein Rezept zu entdecken. In der ersten Schüssel liegt immer die besondere Zutat des Gebäudes.",
+    "LAB_INTRO_CRAFT_TITLE": "Herstellen und ausrüsten",
+    "LAB_INTRO_CRAFT": "Rezept gefunden? Stell den Gegenstand her und setz ihn in einen Platz des Gebäudes. Er kommt mit in deine Matches.",
+    "LAB_INTRO_PANTRY_TITLE": "Rezeptbuch und Vorratskammer",
+    "LAB_INTRO_PANTRY": "Im Rezeptbuch steht jedes bisher entdeckte Rezept. Tippe auf deinen Kakao, um die Vorratskammer zu öffnen: Manche Zutaten verderben, also nutze sie rechtzeitig!",
+    "LAB_INTRO_SKIP": "Einführung überspringen",
+    "LAB_INTRO_NEXT": "Weiter",
+    "LAB_INTRO_DONE": "Alles klar"
 }

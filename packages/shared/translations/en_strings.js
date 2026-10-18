@@ -492,5 +492,16 @@ module.exports = {
     "LAB_EQUIPMENT": "Equipment",
     "HIGHSCORE_EMPTY": "No rated matches yet – play online against other players to get a rank.",
     "HIGHSCORE_UNRATED": "You get your rank after your first online match against another player.",
-    "UNLOCK_NEW_FEATURES": "New features unlocked: Choclab and Friends!"
+    "UNLOCK_NEW_FEATURES": "New features unlocked: Choclab and Friends!",
+    "LAB_INTRO_BUILDING_TITLE": "Welcome to the Choclab!",
+    "LAB_INTRO_BUILDING": "Pick a building. Each one has two equipment slots, and everything you equip shares one budget: the bar shows how much is used.",
+    "LAB_INTRO_TABLE_TITLE": "The lab table",
+    "LAB_INTRO_TABLE": "Put three ingredients in the bowls and tap Try to discover a recipe. The first bowl always holds the building's special ingredient.",
+    "LAB_INTRO_CRAFT_TITLE": "Craft and equip",
+    "LAB_INTRO_CRAFT": "Found a recipe? Craft the item and put it in one of the building's slots. It comes along into your matches.",
+    "LAB_INTRO_PANTRY_TITLE": "Recipe book and pantry",
+    "LAB_INTRO_PANTRY": "The recipe book keeps every recipe found so far. Tap your cocoa to open the pantry: some ingredients spoil, so use them in time!",
+    "LAB_INTRO_SKIP": "Skip intro",
+    "LAB_INTRO_NEXT": "Next",
+    "LAB_INTRO_DONE": "Got it"
 }

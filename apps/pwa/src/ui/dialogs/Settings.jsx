@@ -21,6 +21,7 @@ import logger from "../../helper/logger";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
 import { Button, Select, Progress } from "../controls";
+import { LAB_INTRO_SEEN } from "../lab/LabIntro";
 
 const useStyles = createUseStyles((theme) => ({
   wrapper: {
@@ -339,6 +340,10 @@ const Settings = (props) => {
                       color="accent"
                       onClick={() => {
                         Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                        // the Choclab explains itself again on the next visit
+                        OfflineStore.settingsStore
+                          .delete(LAB_INTRO_SEEN)
+                          .catch((error) => logger.info(error));
                         props.startTutorial();
                         props.close();
                       }}

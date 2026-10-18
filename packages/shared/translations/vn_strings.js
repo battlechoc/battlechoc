@@ -492,5 +492,16 @@ module.exports = {
     "LAB_EQUIPMENT": "Trang bị",
     "HIGHSCORE_EMPTY": "Chưa có trận đấu xếp hạng nào – hãy chơi trực tuyến với người chơi khác để có thứ hạng.",
     "HIGHSCORE_UNRATED": "Bạn sẽ có thứ hạng sau trận đấu trực tuyến đầu tiên với người chơi khác.",
-    "UNLOCK_NEW_FEATURES": "Đã mở khóa tính năng mới: Choclab và Bạn bè!"
+    "UNLOCK_NEW_FEATURES": "Đã mở khóa tính năng mới: Choclab và Bạn bè!",
+    "LAB_INTRO_BUILDING_TITLE": "Chào mừng đến Choclab!",
+    "LAB_INTRO_BUILDING": "Chọn một công trình. Mỗi công trình có hai ô trang bị, và mọi thứ bạn trang bị dùng chung một ngân sách: thanh bên dưới cho biết đã dùng bao nhiêu.",
+    "LAB_INTRO_TABLE_TITLE": "Bàn thí nghiệm",
+    "LAB_INTRO_TABLE": "Bỏ ba nguyên liệu vào các bát rồi chạm Thử để khám phá công thức. Bát đầu tiên luôn chứa nguyên liệu đặc biệt của công trình.",
+    "LAB_INTRO_CRAFT_TITLE": "Chế tạo và trang bị",
+    "LAB_INTRO_CRAFT": "Tìm được công thức? Hãy chế tạo vật phẩm và đặt nó vào một ô của công trình. Nó sẽ theo bạn vào các trận đấu.",
+    "LAB_INTRO_PANTRY_TITLE": "Sổ công thức và kho bếp",
+    "LAB_INTRO_PANTRY": "Sổ công thức lưu mọi công thức đã được khám phá. Chạm vào cacao của bạn để mở kho bếp: một số nguyên liệu sẽ hỏng, hãy dùng kịp lúc!",
+    "LAB_INTRO_SKIP": "Bỏ qua giới thiệu",
+    "LAB_INTRO_NEXT": "Tiếp",
+    "LAB_INTRO_DONE": "Đã hiểu"
 }

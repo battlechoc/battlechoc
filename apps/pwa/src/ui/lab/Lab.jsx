@@ -21,6 +21,7 @@ import BudgetBar from "./BudgetBar";
 import LabTable from "./LabTable";
 import InventoryPicker from "./InventoryPicker";
 import RecipeBook from "./RecipeBook";
+import LabIntro, { LAB_INTRO_SEEN, LAB_INTRO_STEPS } from "./LabIntro";
 import { bangers, effectLines, labColors } from "./itemText";
 
 // the buildings that can be equipped, in the order of the carousel
@@ -164,7 +165,24 @@ const useStyles = createUseStyles((theme) => ({
   },
   good: { color: labColors(theme).good },
   bad: { color: labColors(theme).bad },
-  table: { flex: "0 0 auto", margin: "0 1em 0.8em" },
+  table: { flex: "0 0 auto", margin: "0 1em 0.8em", borderRadius: 20 },
+  // the part of the lab the intro talks about
+  "@keyframes glow": {
+    "0%, 100%": {
+      boxShadow: `0 0 0 0.2em ${theme.color.gold.light}, 0 0 0.6em ${theme.color.gold.light}`,
+    },
+    "50%": {
+      boxShadow: `0 0 0 0.2em ${theme.color.gold.light}, 0 0 1.6em ${theme.color.gold.light}`,
+    },
+  },
+  highlight: {
+    borderRadius: 20,
+    animation: "$glow 1.8s ease-in-out infinite",
+    "@media (prefers-reduced-motion: reduce)": {
+      animation: "none",
+      boxShadow: `0 0 0 0.2em ${theme.color.gold.light}`,
+    },
+  },
 }));
 
 const persist = (changes) =>
@@ -198,6 +216,8 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   const [pantryOpen, setPantryOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [crafted, setCrafted] = useState(undefined);
+  // the step of the first-visit intro, undefined when it is not shown
+  const [introStep, setIntroStep] = useState(undefined);
 
   const online =
     typeof navigator === "undefined" || navigator.onLine
@@ -221,6 +241,32 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       .catch((error) => logger.info("recipe book not available", error));
   }, [online]);
   useEffect(() => loadBook(), [loadBook]);
+
+  // the intro on the first visit (per device)
+  useEffect(() => {
+    let active = true;
+    OfflineStore.settingsStore
+      .get(LAB_INTRO_SEEN)
+      .then((seen) => {
+        if (active && !seen) {
+          setIntroStep(0);
+        }
+      })
+      .catch((error) => logger.info("could not read the lab intro flag", error));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const endIntro = () => {
+    setIntroStep(undefined);
+    OfflineStore.settingsStore
+      .set(LAB_INTRO_SEEN, true)
+      .catch((error) => logger.info("could not store the lab intro flag", error));
+  };
+  const introTarget =
+    typeof introStep === "number" ? LAB_INTRO_STEPS[introStep].target : null;
+  const glow = (target) => (introTarget === target ? classes.highlight : "");
 
   // the recipe the bowls hold, once it is known (discovered by anyone)
   const recipe = useMemo(() => {
@@ -413,7 +459,7 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
     <div className={classes.page} data-testid="lab">
       <div className={classes.decorationLeft} />
       <div className={classes.decorationRight} />
-      <div className={classes.topbar}>
+      <div className={`${classes.topbar} ${glow("topbar")}`}>
         <div
           role="button"
           tabIndex={0}
@@ -443,8 +489,8 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
         />
       </div>
 
-      <div className={classes.stage}>
-        <div className={classes.building}>
+      <div className={`${classes.stage} ${glow("stage")}`}>
+        <div className={`${classes.building} ${glow("building")}`}>
           <EquipmentSlot
             index={0}
             item={slotItem(0)}
@@ -487,7 +533,7 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
         <BudgetBar used={equippedPoints} />
       </div>
 
-      <div className={classes.table}>
+      <div className={`${classes.table} ${glow("table")}`}>
         <LabTable
           buildingName={buildingName(entityType)}
           bowls={bowls}
@@ -505,6 +551,9 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
         />
       </div>
 
+      {typeof introStep === "number" ? (
+        <LabIntro step={introStep} onStep={setIntroStep} onDone={endIntro} />
+      ) : null}
       <InventoryPicker
         open={typeof pickerSlot === "number"}
         close={() => setPickerSlot(undefined)}

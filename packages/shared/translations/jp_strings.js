@@ -492,5 +492,16 @@ module.exports = {
     "LAB_EQUIPMENT": "装備",
     "HIGHSCORE_EMPTY": "まだ評価対象の対戦がありません。オンラインで他のプレイヤーと対戦して順位を手に入れよう！",
     "HIGHSCORE_UNRATED": "ほかのプレイヤーとの最初のオンライン対戦のあとで順位がつきます。",
-    "UNLOCK_NEW_FEATURES": "新しい機能が解放されました：Choclabとフレンズ！"
+    "UNLOCK_NEW_FEATURES": "新しい機能が解放されました：Choclabとフレンズ！",
+    "LAB_INTRO_BUILDING_TITLE": "Choclabへようこそ！",
+    "LAB_INTRO_BUILDING": "建物を選ぼう。どの建物にも装備スロットが2つあり、装備はすべて1つの予算を分け合うよ。バーで使った分がわかるよ。",
+    "LAB_INTRO_TABLE_TITLE": "ラボのテーブル",
+    "LAB_INTRO_TABLE": "ボウルに材料を3つ入れて「試す」をタップし、レシピを見つけよう。最初のボウルにはいつも建物の特別な材料が入っているよ。",
+    "LAB_INTRO_CRAFT_TITLE": "作って装備しよう",
+    "LAB_INTRO_CRAFT": "レシピが見つかったら、アイテムを作って建物のスロットに入れよう。対戦にも持っていけるよ。",
+    "LAB_INTRO_PANTRY_TITLE": "レシピ帳と食料庫",
+    "LAB_INTRO_PANTRY": "レシピ帳にはこれまでに見つかったレシピが全部のっているよ。カカオをタップすると食料庫が開くよ。傷む材料もあるので、早めに使おう！",
+    "LAB_INTRO_SKIP": "説明をスキップ",
+    "LAB_INTRO_NEXT": "次へ",
+    "LAB_INTRO_DONE": "わかった"
 }
