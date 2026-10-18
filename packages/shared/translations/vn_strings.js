@@ -146,12 +146,6 @@ module.exports = {
     "NEW_GAME": "Trò chơi mới",
     "NOTIFICATION_PERMISSION_INFO": "Bây giờ chúng tôi sẽ yêu cầu bạn cho phép thông báo cho bạn nếu ai đó thách thức bạn hoặc đối thủ đã kết thúc lượt chơi của bạn và bạn sẵn sàng chơi",
     "NOTIFICATION_SURRENDER_NOT_POSSIBLE": "Bạn không thể đầu hàng vì bạn có quá ít tiền",
-    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "Bạn cần thu thập thêm {{coins}} đồng xu để mở khóa Chocolate Fountain và Fruit Cannon",
-    "NOTIFICATION_UNLOCK_BUNNY_TITLE": "Sô cô la đang đến",
-    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE": "Bạn cần thu thập thêm {{coins}} đồng xu để mở khóa Easter Bunny, Xmas Facotry và Hot Chocolate Ballista",
-    "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "Thu thập thêm tiền sô cô la",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Donut Traps, Muliplayer và Choclab sẽ là của bạn sau khi thu thập {{coins}} nhiều tiền hơn",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "Rào cản cuối cùng",
     "NO_ACCOUNT_INFO": "Bạn cần kiếm được ít nhất 1000 điểm để mở khóa thêm các tính năng nhiều người chơi.",
     "NO_HEALTHY_INTERNET": "Bạn có thể không có kết nối internet lành mạnh. Vui lòng thử lại sau.",
     "OPPONENT": "Phản đối",
@@ -290,8 +284,6 @@ module.exports = {
     "TUTORIAL_TREE_TITLE": "Trồng một cây ca cao",
     "TUTORIAL_XMAS_MESSAGE": "Một cái bẫy cho thỏ: khi thỏ gián điệp dò xét vùng có nhà máy Giáng sinh của bạn, thỏ bị bắt và nhà máy Giáng sinh biến thành Nỏ sô cô la nóng.",
     "TUTORIAL_XMAS_TITLE": "Nhà máy Giáng sinh",
-    "UNLOCK_CONGRATULATIONS_CHOCLAB": "Xin chúc mừng bạn đã mở khóa Choclab. Đây là nơi để nâng cấp các thực thể của bạn!",
-    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "Bạn đã mở khóa chế độ nhiều người chơi. Chơi với những người chơi khác trên toàn thế giới và đạt đến đỉnh cao!",
     "UPDATE_LEVEL_FAILED_DOWNGRADE": "Không thể thực hiện hạ cấp. Kiểm tra kết nối Internet của bạn.",
     "UPDATE_LEVEL_FAILED_UPGRADE": "Không thể thực hiện nâng cấp. Kiểm tra kết nối Internet của bạn.",
     "VIETNAMESE": "Tiếng Việt",
@@ -499,5 +491,6 @@ module.exports = {
     "LAB_NO_RECIPES": "Chưa có công thức nào. Hãy thử nghiệm ở bàn!",
     "LAB_EQUIPMENT": "Trang bị",
     "HIGHSCORE_EMPTY": "Chưa có trận đấu xếp hạng nào – hãy chơi trực tuyến với người chơi khác để có thứ hạng.",
-    "HIGHSCORE_UNRATED": "Bạn sẽ có thứ hạng sau trận đấu trực tuyến đầu tiên với người chơi khác."
+    "HIGHSCORE_UNRATED": "Bạn sẽ có thứ hạng sau trận đấu trực tuyến đầu tiên với người chơi khác.",
+    "UNLOCK_NEW_FEATURES": "Đã mở khóa tính năng mới: Choclab và Bạn bè!"
 }

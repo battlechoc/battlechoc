@@ -146,12 +146,6 @@ module.exports = {
     "NEW_GAME": "Nuovo gioco",
     "NOTIFICATION_PERMISSION_INFO": "Chiederemo ora la tua autorizzazione per informarti se qualcuno ti sfida, o se un avversario ha terminato il suo turno e sei pronto a giocare",
     "NOTIFICATION_SURRENDER_NOT_POSSIBLE": "Non puoi arrenderti perché hai troppe poche monete",
-    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "Devi raccogliere {{coins}} più monete per sbloccare la fontana di cioccolato e il cannone alla frutta",
-    "NOTIFICATION_UNLOCK_BUNNY_TITLE": "Il cioccolato sta arrivando",
-    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE": "Devi raccogliere {{coins}} più monete per sbloccare il coniglietto di Pasqua, la maschera di Natale e la balista di cioccolata calda",
-    "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "Raccogli più monete di cioccolato",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Donut Traps, Muliplayer e Choclab saranno tuoi dopo aver raccolto {{coins}} più monete",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "L'ultima barriera",
     "NO_ACCOUNT_INFO": "È necessario guadagnare un punteggio di almeno 1000 per sbloccare ulteriori funzionalità multiplayer.",
     "NO_HEALTHY_INTERNET": "Potresti non avere una buona connessione a Internet. Per favore riprova più tardi.",
     "OPPONENT": "Avversario",
@@ -290,8 +284,6 @@ module.exports = {
     "TUTORIAL_TREE_TITLE": "Pianta un albero di cacao",
     "TUTORIAL_XMAS_MESSAGE": "Una trappola per coniglietti: se un coniglietto spia osserva un'area con la tua fabbrica di Natale, viene catturato e la tua fabbrica di Natale diventa una balista alla cioccolata calda.",
     "TUTORIAL_XMAS_TITLE": "Fabbrica di Natale",
-    "UNLOCK_CONGRATULATIONS_CHOCLAB": "Congratulazioni, hai sbloccato Choclab. Questo è il posto giusto per migliorare le tue entità!",
-    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "Hai sbloccato la modalità multiplayer. Gioca contro altri giocatori in tutto il mondo e raggiungi la vetta del punteggio più alto!",
     "UPDATE_LEVEL_FAILED_DOWNGRADE": "Non è stato possibile eseguire il downgrade. Controlla la tua connessione Internet.",
     "UPDATE_LEVEL_FAILED_UPGRADE": "Non è stato possibile eseguire l'aggiornamento. Controlla la tua connessione Internet.",
     "VIETNAMESE": "Tiếng Việt",
@@ -499,5 +491,6 @@ module.exports = {
     "LAB_NO_RECIPES": "Nessuna ricetta scoperta. Sperimenta sul tavolo!",
     "LAB_EQUIPMENT": "Equipaggiamento",
     "HIGHSCORE_EMPTY": "Ancora nessuna partita valutata: gioca online contro altri giocatori per ottenere una posizione.",
-    "HIGHSCORE_UNRATED": "Otterrai la tua posizione dopo la tua prima partita online contro un altro giocatore."
+    "HIGHSCORE_UNRATED": "Otterrai la tua posizione dopo la tua prima partita online contro un altro giocatore.",
+    "UNLOCK_NEW_FEATURES": "Nuove funzioni sbloccate: Choclab e Amici!"
 }

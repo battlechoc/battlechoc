@@ -386,15 +386,6 @@ const translationPredicates = {
     UPDATE_LEVEL_FAILED: function (strings, upgrade) {
         return upgrade ? strings.UPDATE_LEVEL_FAILED_UPGRADE : strings.UPDATE_LEVEL_FAILED_DOWNGRADE;
     },
-    NOTIFICATION_UNLOCK_EXTENSION_MESSAGE: function (strings, coins) {
-        return fmt(strings.NOTIFICATION_UNLOCK_EXTENSION_MESSAGE, { coins: coins });
-    },
-    NOTIFICATION_UNLOCK_BUNNY_MESSAGE: function (strings, coins) {
-        return fmt(strings.NOTIFICATION_UNLOCK_BUNNY_MESSAGE, { coins: coins });
-    },
-    NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE: function (strings, coins) {
-        return fmt(strings.NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE, { coins: coins });
-    },
     PLAYER_NAME_GENERATED_BODY: function (strings, name) {
         return fmt(strings.PLAYER_NAME_GENERATED_BODY, { name: name });
     },

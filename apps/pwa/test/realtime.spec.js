@@ -215,3 +215,17 @@ test("a passive player's match ends within the time limit and shows the overview
   await expect(page.getByTestId("ingredient-bag")).toContainText("Ingredients only drop in online matches");
   await page.screenshot({ path: "test/output/screenshot_realtime_ended.png" });
 });
+
+test("the first XP unlocks the Choclab and Friends with a single message", async ({ page }) => {
+  await openAsPlayer(page, 0);
+  await startMatch(page);
+  // the prepared first game runs from the start; the passive player's match ends in time
+  await advance(page, 11 * 60 * 1000);
+  expect(await phase(page)).toBe("MatchPhase.ENDED");
+  await expect(page.getByText(/You won|You lost/i).first()).toBeVisible();
+  await page.locator("[data-icon=fast-forward]:visible").first().click();
+  await page.locator("[data-icon=done]:visible").first().click();
+  await expect(page.getByText("New features unlocked: Choclab and Friends!")).toHaveCount(1);
+  await expect(page.getByText(/You have unlocked the multiplayer mode/i)).toHaveCount(0);
+  await page.screenshot({ path: "test/output/screenshot_realtime_unlocked.png" });
+});

@@ -527,14 +527,11 @@ class App extends Component {
 
           const score = this.props.playerInfos.stats.score;
           if (typeof coins !== "undefined" && coins > 0) {
-            // the first coins unlock every building: show them
+            // the first coins unlock every building, the Choclab and Friends: one message,
+            // then the demos of the buildings
             if (score - coins === 0) {
               this.props.showQuickMessage({
-                text: t(tr.UNLOCK_CONGRATULATIONS_CHOCLAB),
-                variant: "success",
-              });
-              this.props.showQuickMessage({
-                text: t(tr.UNLOCK_CONGRATULATIONS_MULTIPLAYER),
+                text: t(tr.UNLOCK_NEW_FEATURES),
                 variant: "success",
               });
               this.props.startTutorial({

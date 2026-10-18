@@ -146,12 +146,6 @@ module.exports = {
     "NEW_GAME": "Nouveau jeu",
     "NOTIFICATION_PERMISSION_INFO": "Nous allons maintenant demander votre permission pour vous informer si quelqu'un vous met au défi, ou si un adversaire a terminé son tour et que vous êtes prêt à jouer",
     "NOTIFICATION_SURRENDER_NOT_POSSIBLE": "Vous ne pouvez pas vous rendre parce que vous avez trop peu de pièces",
-    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "Vous devez collecter {{coins}} pièces supplémentaires pour déverrouiller la fontaine de chocolat et le canon à fruits",
-    "NOTIFICATION_UNLOCK_BUNNY_TITLE": "Le chocolat arrive",
-    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE": "Vous devez collecter {{coins}} pièces supplémentaires pour déverrouiller le lapin de Pâques, la facoterie de Noël et la baliste au chocolat chaud",
-    "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "Collectez plus de pièces de chocolat",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Les pièges à beignets, Muliplayer et le Choclab seront à vous après avoir collecté {{coins}} plus de pièces",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "La dernière barrière",
     "NO_ACCOUNT_INFO": "Vous devez gagner un score d'au moins 1000 pour débloquer d'autres fonctionnalités multijoueurs.",
     "NO_HEALTHY_INTERNET": "Vous ne disposez peut-être pas d'une connexion Internet saine. Veuillez réessayer plus tard.",
     "OPPONENT": "Adversaire",
@@ -290,8 +284,6 @@ module.exports = {
     "TUTORIAL_TREE_TITLE": "Plante un cacaoyer",
     "TUTORIAL_XMAS_MESSAGE": "Un piège à lapins : quand un lapin espion observe une zone avec ton usine de Noël, il est capturé et ton usine de Noël devient une baliste au chocolat chaud.",
     "TUTORIAL_XMAS_TITLE": "Usine de Noël",
-    "UNLOCK_CONGRATULATIONS_CHOCLAB": "Félicitations, vous avez déverrouillé le Choclab. C'est l'endroit idéal pour mettre à niveau vos entités!",
-    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "Vous avez déverrouillé le mode multijoueur. Jouez contre d'autres joueurs du monde entier et atteignez le sommet du classement!",
     "UPDATE_LEVEL_FAILED_DOWNGRADE": "Il n'a pas été possible d'effectuer la rétrogradation. Vérifiez votre connection internet.",
     "UPDATE_LEVEL_FAILED_UPGRADE": "Il n'a pas été possible d'effectuer la mise à niveau. Vérifiez votre connection internet.",
     "VIETNAMESE": "Tiếng Việt",
@@ -499,5 +491,6 @@ module.exports = {
     "LAB_NO_RECIPES": "Aucune recette découverte. Expérimente sur la table du labo !",
     "LAB_EQUIPMENT": "Équipement",
     "HIGHSCORE_EMPTY": "Aucune partie classée pour l'instant – joue en ligne contre d'autres joueurs pour obtenir un rang.",
-    "HIGHSCORE_UNRATED": "Tu obtiendras ton rang après ta première partie en ligne contre un autre joueur."
+    "HIGHSCORE_UNRATED": "Tu obtiendras ton rang après ta première partie en ligne contre un autre joueur.",
+    "UNLOCK_NEW_FEATURES": "Nouvelles fonctions débloquées : Choclab et Copains !"
 }

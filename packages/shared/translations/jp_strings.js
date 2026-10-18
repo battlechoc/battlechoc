@@ -146,12 +146,6 @@ module.exports = {
     "NEW_GAME": "新しいゲーム",
     "NOTIFICATION_PERMISSION_INFO": "誰かがあなたに挑戦するか、または対戦相手が彼のターンを終了し、あなたがプレイする準備ができている場合、私たちはあなたに通知する許可を要求します",
     "NOTIFICATION_SURRENDER_NOT_POSSIBLE": "コインが少なすぎて降伏できない",
-    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "チョコレートファウンテンとフルーツキャノンのロックを解除するには、コインをさらに{{coins}}集める必要があります",
-    "NOTIFICATION_UNLOCK_BUNNY_TITLE": "チョコレートが来ています",
-    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE": "イースターバニー、クリスマスファコトリ、ホットチョコレートバリスタのロックを解除するには、さらに{{coins}}コインを集める必要があります",
-    "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "チョコレートコインをさらに集める",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "ドーナツトラップ、マルチプレーヤー、チョクラブは、{{coins}}枚以上のコインを集めるとあなたのものになります",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "最後の障壁",
     "NO_ACCOUNT_INFO": "さらにマルチプレイヤー機能をアンロックするには、少なくとも1000のスコアを獲得する必要があります。",
     "NO_HEALTHY_INTERNET": "正常なインターネット接続がない可能性があります。後でもう一度やり直してください。",
     "OPPONENT": "相手",
@@ -290,8 +284,6 @@ module.exports = {
     "TUTORIAL_TREE_TITLE": "カカオの木を植えよう",
     "TUTORIAL_XMAS_MESSAGE": "バニー用の罠です。スパイバニーがあなたのクリスマスファクトリーのある範囲を調べると、バニーは捕まり、クリスマスファクトリーはホットチョコレートバリスタに変わります。",
     "TUTORIAL_XMAS_TITLE": "クリスマスファクトリー",
-    "UNLOCK_CONGRATULATIONS_CHOCLAB": "Choclabのロックを解除していただき、ありがとうございます。これはエンティティをアップグレードするための場所です！",
-    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "マルチプレイヤーモードのロックを解除しました。世界中の他のプレイヤーと対戦して、ハイスコアのトップに到達しましょう！",
     "UPDATE_LEVEL_FAILED_DOWNGRADE": "ダウングレードを実行できませんでした。インターネット接続を確認してください。",
     "UPDATE_LEVEL_FAILED_UPGRADE": "アップグレードを実行できませんでした。インターネット接続を確認してください。",
     "VIETNAMESE": "Tiếng Việt",
@@ -499,5 +491,6 @@ module.exports = {
     "LAB_NO_RECIPES": "まだレシピは発見されていません。テーブルで実験しよう！",
     "LAB_EQUIPMENT": "装備",
     "HIGHSCORE_EMPTY": "まだ評価対象の対戦がありません。オンラインで他のプレイヤーと対戦して順位を手に入れよう！",
-    "HIGHSCORE_UNRATED": "ほかのプレイヤーとの最初のオンライン対戦のあとで順位がつきます。"
+    "HIGHSCORE_UNRATED": "ほかのプレイヤーとの最初のオンライン対戦のあとで順位がつきます。",
+    "UNLOCK_NEW_FEATURES": "新しい機能が解放されました：Choclabとフレンズ！"
 }

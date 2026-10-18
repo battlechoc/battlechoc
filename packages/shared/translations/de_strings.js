@@ -286,14 +286,6 @@ module.exports = {
     "ATTRIBUTE_NAME_donutProbability": "Donut-Wahrscheinlichkeit",
     "ATTRIBUTE_NAME_donutTypes": "Donutsorten",
     "ATTRIBUTE_NAME_UNKNOWN": "Unbekannt",
-    "NOTIFICATION_UNLOCK_EXTENSION_TITLE": "Sammle noch mehr Schokoladenmünzen",
-    "NOTIFICATION_UNLOCK_BUNNY_TITLE": "Die Schokolade naht",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_TITLE": "Die letzte Hürde",
-    "NOTIFICATION_UNLOCK_EXTENSION_MESSAGE": "Sammle noch {{coins}} Schokomünzen, um den Spionage-Osterhasen, die Weihnachtsfabrik und die heiße Schokoladenschleuder freizuschalten.",
-    "NOTIFICATION_UNLOCK_BUNNY_MESSAGE": "Sammle noch {{coins}} Schokomünzen, um den Schokobrunnen und die Fruchtkanone freizuschalten.",
-    "NOTIFICATION_UNLOCK_FOUNTAIN_MESSAGE": "Donut-Fallen, Multiplayer und das Choclab gehören dir, wenn du noch weitere {{coins}} Schokomünzen sammelst.",
-    "UNLOCK_CONGRATULATIONS_CHOCLAB": "Herzlichen Glückwunsch! Du hast das Choclab freigeschaltet. Hier kannst du deine Einheiten verbessern!",
-    "UNLOCK_CONGRATULATIONS_MULTIPLAYER": "Du hast den Multiplayer-Modus freigeschaltet. Spiele gegen andere Spieler weltweit und erklimme den Highscore!",
     "PLAYER_NAME_GENERATED_TITLE": "Ein zufälliger Spielername wurde für dich ausgewählt",
     "PLAYER_NAME_GENERATED_BODY": "Wir haben den Name {{name}} für dich ausgewählt, um dich für die Multiplayer-Funktionen freizuschalten. Du kannst den Namen jederzeit im Einstellungsmenü ändern.",
     "COINS_FOR_NEXT_FEATURE_TITLE": "{{feature}} noch nicht freigeschaltet",
@@ -499,5 +491,6 @@ module.exports = {
     "LAB_NO_RECIPES": "Noch keine Rezepte entdeckt. Experimentiere am Labortisch!",
     "LAB_EQUIPMENT": "Ausrüstung",
     "HIGHSCORE_EMPTY": "Noch keine gewerteten Partien – spiele online gegen andere Spieler, um einen Rang zu bekommen.",
-    "HIGHSCORE_UNRATED": "Deinen Rang bekommst du nach deiner ersten Online-Partie gegen einen anderen Spieler."
+    "HIGHSCORE_UNRATED": "Deinen Rang bekommst du nach deiner ersten Online-Partie gegen einen anderen Spieler.",
+    "UNLOCK_NEW_FEATURES": "Neue Funktionen freigeschaltet: Choclab und Freunde!"
 }
