@@ -28,7 +28,8 @@ const useStyles = createUseStyles((theme) => ({
       margin: "0 5px 0 0",
       color: "white",
       fontFamily: theme.font.display,
-      fontSize: theme.font.size.lg,
+      // the number sits next to the big round icon, so it takes the headline step
+      fontSize: theme.font.size.xl,
       "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
       "-webkit-font-smoothing": "antialiased",
     },
@@ -60,7 +61,7 @@ const useStyles = createUseStyles((theme) => ({
     display: "flex",
     alignItems: "center",
     fontFamily: theme.font.display,
-    fontSize: theme.font.size.md,
+    fontSize: theme.font.size.lg,
     "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
     "& i": {
       display: "inline-block",
