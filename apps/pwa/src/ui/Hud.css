@@ -14,7 +14,7 @@
 .waiting-room > p {
   color: #324d5c;
   font-weight: bold;
-  font-size: 1.2rem;
+  font-size: var(--fs-lg);
   text-align: center;
   padding: 5vw;
 }
@@ -46,7 +46,7 @@
 }
 
 .multiplayerNotification p {
-  font-size: 1.2rem;
+  font-size: var(--fs-lg);
   color: white;
 }
 

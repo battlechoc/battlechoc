@@ -37,11 +37,30 @@ const theme = {
     // the sky behind the menus (the body gradient in index.css)
     sky: { light: "#9DD5E9", dark: "#3DA2CE" },
   },
+  // the type scale of src/index.css: every font size is one of these steps (or em of one)
+  font: {
+    display: "var(--font-display)",
+    body: "var(--font-body)",
+    size: {
+      xs: "var(--fs-xs)",
+      sm: "var(--fs-sm)",
+      md: "var(--fs-md)",
+      lg: "var(--fs-lg)",
+      xl: "var(--fs-xl)",
+      xxl: "var(--fs-xxl)",
+    },
+    // the outline of display text, relative to its size
+    stroke: "0.04em",
+  },
+  // the widths are repeated in the type scale's media queries in src/index.css: keep them in sync
   breakpoints: {
     desktop: "@media screen and (min-width: 1200px)",
     laptop: "@media screen and (min-width: 992px)",
     tablet: "@media screen and (min-width: 768px)",
     smartphone: "@media screen and (min-width: 576px)",
+    // phones held sideways (the type scale shrinks its big steps there)
+    shortLandscape:
+      "@media screen and (orientation: landscape) and (max-height: 430px)",
     orientation: {
       portrait: "@media screen and (orientation: portrait)",
       landscape: "@media screen and (orientation: landscape)",

@@ -87,10 +87,53 @@
   /* the two font stacks of the game; the fallbacks keep the look while a font loads */
   --font-display: "Bangers", Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
   --font-body: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* The type scale: every text of the game uses one of these steps (in JSS through
+   * theme.font.size, see src/index.jsx). Each step grows with the shorter side of the screen
+   * (vmin), so portrait and landscape of the same device get the same sizes, from its minimum
+   * at a 360px short side to its maximum at 1080px:
+   *            360px  390px  720px  1080px
+   *   xs        11     11     12.5   14     badges, fine print
+   *   sm        13     13     15     17     secondary text, labels
+   *   md        15     15     17.5   20     body text, small buttons
+   *   lg        20     20.5   25     30     buttons, subheads, HUD numbers
+   *   xl        28     29     37     46     dialog titles, headlines
+   *   xxl       34     35     49     64     title screen menu, big numbers
+   * The breakpoints below adjust whole steps, so a change there reaches every text. */
+  --fs-xs: clamp(11px, 9.5px + 0.417vmin, 14px);
+  --fs-sm: clamp(13px, 11px + 0.556vmin, 17px);
+  --fs-md: clamp(15px, 12.5px + 0.694vmin, 20px);
+  --fs-lg: clamp(20px, 15px + 1.389vmin, 30px);
+  --fs-xl: clamp(28px, 19px + 2.5vmin, 46px);
+  --fs-xxl: clamp(34px, 19px + 4.167vmin, 64px);
+}
+
+/* The breakpoints of the type scale. Media queries cannot read custom properties, so the
+ * widths are written out; keep them in sync with theme.breakpoints in src/index.jsx
+ * (smartphone 576, tablet 768, laptop 992, desktop 1200, shortLandscape 430px high). */
+
+/* phones held sideways: little height, the big steps shrink so menus and dialogs fit */
+@media screen and (orientation: landscape) and (max-height: 430px) {
+  :root {
+    --fs-lg: 19px;
+    --fs-xl: 25px;
+    --fs-xxl: 28px;
+  }
+}
+
+/* desktop: big screens, seen from further away; same minima, larger maxima (at 1080px) */
+@media screen and (min-width: 1200px) and (min-height: 800px) {
+  :root {
+    --fs-md: clamp(15px, 12px + 0.833vmin, 21px);
+    --fs-lg: clamp(20px, 14px + 1.667vmin, 32px);
+    --fs-xl: clamp(28px, 17px + 3.056vmin, 50px);
+    --fs-xxl: clamp(34px, 15px + 5.278vmin, 72px);
+  }
 }
 
 body {
   font-family: var(--font-body);
+  font-size: var(--fs-md);
   margin: 0px;
   padding: 0px;
   overflow: hidden;
