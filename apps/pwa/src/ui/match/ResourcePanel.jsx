@@ -85,26 +85,52 @@ const useStyles = createUseStyles((theme) => ({
   },
   gain: { color: "white", animation: `$gain ${POP_MS}ms ease-out forwards` },
   spend: { color: theme.color.accent.light, animation: `$spend ${POP_MS}ms ease-in forwards` },
-  // one socket per build slot; the next one fills up while it refills
-  sockets: {
+  // one small donut per build slot, like the donut above the factory: a whole donut per
+  // free slot, a grey one per used slot, the next one grows piece by piece while it refills
+  slots: {
     display: "flex",
     flexWrap: "wrap-reverse",
     justifyContent: "flex-end",
-    maxWidth: "16vw",
+    maxWidth: "17vw",
     margin: "0 5px 0 0",
     [theme.breakpoints.orientation.portrait]: { maxWidth: "34vw" },
   },
-  socket: {
-    width: "1.9vw",
-    height: "1.9vw",
-    margin: "0.2vw",
-    borderRadius: "0.5vw",
-    border: `0.25vw solid ${theme.color.secondary.dark}`,
-    background: "rgba(255, 255, 255, 0.25)",
-    transition: "background 0.3s",
-    [theme.breakpoints.orientation.portrait]: { width: "4vw", height: "4vw", borderRadius: "1vw" },
+  slot: {
+    position: "relative",
+    width: "3vw",
+    height: "3vw",
+    margin: "0.15vw",
+    filter: `drop-shadow(0 0 0.15vw ${theme.color.secondary.dark})`,
+    [theme.breakpoints.orientation.portrait]: { width: "5.4vw", height: "5.4vw", margin: "0.3vw" },
   },
-  full: { background: theme.color.gold.light },
+  // a donut image (--donut), optionally glazed with --tint where the image is opaque
+  layer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    backgroundImage: "var(--donut)",
+    backgroundSize: "100% 100%",
+    backgroundRepeat: "no-repeat",
+    "&::after": {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      background: "var(--tint, transparent)",
+      WebkitMaskImage: "var(--donut)",
+      WebkitMaskSize: "100% 100%",
+      WebkitMaskRepeat: "no-repeat",
+      maskImage: "var(--donut)",
+      maskSize: "100% 100%",
+      maskRepeat: "no-repeat",
+    },
+  },
+  grey: { "--tint": "rgba(118, 112, 108, 0.88)", opacity: 0.92 },
+  ready: { "--tint": "rgba(144, 208, 27, 0.55)" },
   srOnly: {
     position: "absolute",
     width: 1,
@@ -114,6 +140,8 @@ const useStyles = createUseStyles((theme) => ({
     whiteSpace: "nowrap",
   },
 }));
+
+const donut = (percent) => ({ "--donut": `url(/images/progress-${percent}.svg)` });
 
 // progress (0..1) of the soonest timer among the entities that have one
 const nextTimerProgress = (entities, timerOf, intervalOf, t) => {
@@ -195,22 +223,30 @@ const ResourcePanel = ({ view }) => {
       </div>
       <div className={classes.info}>
         <div
-          className={classes.sockets}
+          className={classes.slots}
           data-testid="build-tokens"
           data-tokens={me.buildTokens}
           data-capacity={capacity}
         >
           <span className={classes.srOnly}>{`${me.buildTokens}/${capacity}`}</span>
           {Array.from({ length: capacity }, (_, i) => {
-            const filling = i === me.buildTokens && typeof buildProgress === "number";
-            const style = filling
-              ? {
-                  background: `linear-gradient(0deg, ${theme.color.gold.light} ${Math.round(
-                    buildProgress * 100
-                  )}%, rgba(255,255,255,0.25) ${Math.round(buildProgress * 100)}%)`,
-                }
-              : undefined;
-            return <div key={i} className={`${classes.socket} ${i < me.buildTokens ? classes.full : ""}`} style={style} />;
+            const full = i < me.buildTokens;
+            // the donut steps of the 3D indicator: ten pieces, the first one as soon as it starts
+            const step =
+              i === me.buildTokens && typeof buildProgress === "number" && buildProgress > 0
+                ? Math.max(1, Math.min(10, Math.round(buildProgress * 10)))
+                : 0;
+            return (
+              <div key={i} className={classes.slot} data-slot={full ? "full" : step > 0 ? `filling-${step * 10}` : "empty"}>
+                {full ? null : <i className={`${classes.layer} ${classes.grey}`} style={donut(100)} />}
+                {full || step > 0 ? (
+                  <i
+                    className={`${classes.layer} ${full && me.buildTokens >= capacity ? classes.ready : ""}`}
+                    style={donut(full ? 100 : step * 10)}
+                  />
+                ) : null}
+              </div>
+            );
           })}
         </div>
         <div className={classes.icon}>
