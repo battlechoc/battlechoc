@@ -29,6 +29,7 @@ const useStyles = createUseStyles((theme) => ({
     flexDirection: "column",
     alignItems: "center",
     width: "70vw",
+    maxWidth: "36em",
   },
   userReport: {
     margin: "5px 0",
@@ -36,14 +37,15 @@ const useStyles = createUseStyles((theme) => ({
     border: `3px solid ${theme.color.secondary.dark}`,
     borderRadius: 15,
     padding: 10,
-    fontSize: "0.8rem",
+    fontFamily: "inherit",
+    fontSize: theme.font.size.sm,
   },
   username: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     userSelect: "none",
-    fontSize: "5vw",
+    fontSize: theme.font.size.lg,
     fontWeight: "bolder",
     padding: "2vh",
   },
@@ -66,21 +68,10 @@ const useStyles = createUseStyles((theme) => ({
   reportInformation: {
     marginTop: 15,
   },
+  // the buttons keep their own size (the type scale); the same width keeps the grid tidy
   button: {
-    marginTop: "2vh",
-    width: "30vw",
-    textAlign: "center",
-    height: "10vw",
-    "& > div": {
-      fontSize: "4vw",
-    },
-    [theme.breakpoints.orientation.portrait]: {
-      width: "50vw",
-      height: "16vw",
-      "& > div": {
-        fontSize: "6vw",
-      },
-    },
+    margin: "0.5em 0.25em 0",
+    width: "10em",
   },
   checkbox: {
     marginBottom: 10,
@@ -89,13 +80,15 @@ const useStyles = createUseStyles((theme) => ({
     background: "white",
     color: theme.color.secondary.dark,
     padding: 10,
-    fontSize: "0.8rem",
+    fontSize: theme.font.size.sm,
   },
   playerName: {
     marginTop: "2vh",
     marginBottom: "2vh",
     width: "100%",
   },
+  // the buttons of the group flow with the others
+  group: { display: "contents" },
   actions: {
     display: "flex",
     flexDirection: "row",
@@ -334,7 +327,7 @@ const Settings = (props) => {
                   props.playerInfos.stats.tutorialFinished === true)
               ) {
                 return (
-                  <div>
+                  <div className={classes.group}>
                     <Button
                       className={classes.button}
                       color="accent"

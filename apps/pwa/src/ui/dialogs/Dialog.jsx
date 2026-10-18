@@ -75,41 +75,32 @@ const useStyles = createUseStyles((theme) => ({
       padding: "32px 24px",
     },
   },
+  // titles of compact dialogs (notifications, questions) are one step smaller; long titles wrap
   title: {
     zIndex: 12,
     marginTop: "2vh",
-    fontFamily: "var(--font-display)",
+    fontFamily: theme.font.display,
     fontSize: (props) =>
-      (props.autoscale && props.title.length > 7) ||
       ["notification", "info"].includes(props.mode)
-        ? "4vw"
-        : "8vw",
+        ? theme.font.size.lg
+        : theme.font.size.xl,
+    lineHeight: 1.1,
     display: "flex",
-    textAlign: (props) =>
-      ["notification", "info"].includes(props.mode) ? "center" : "unset",
+    textAlign: "center",
+    overflowWrap: "anywhere",
     justifyContent: "center",
     alignItems: "center",
     color: "white",
-    "-webkit-text-stroke": `0.1vw ${theme.color.secondary.dark}`,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
     "-webkit-font-smoothing": "antialiased",
-    [theme.breakpoints.orientation.portrait]: {
-      fontSize: (props) =>
-        (props.autoscale && props.title.length > 7) ||
-        ["notification", "info"].includes(props.mode)
-          ? "5vw"
-          : "8vw",
-    },
   },
   subtitle: {
     zIndex: 12,
-    fontFamily: "var(--font-display)",
-    fontSize: "3.5vh",
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.md,
     color: "white",
-    "-webkit-text-stroke": `1px ${theme.color.secondary.dark}`,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
     "-webkit-font-smoothing": "antialiased",
-    [theme.breakpoints.orientation.landscape]: {
-      fontSize: "3.5vw",
-    },
   },
   close: {
     position: "absolute",
@@ -125,12 +116,14 @@ const useStyles = createUseStyles((theme) => ({
     zIndex: 16,
     overflowY: "auto",
     overflowX: "hidden",
-    height: "75%",
+    // the space below the title; scrolls when the content is taller
+    flex: "1 1 auto",
+    minHeight: 0,
     width: "100%",
     color: "white",
     display: "flex",
     justifyContent: "center",
-    fontSize: "5vw",
+    fontSize: theme.font.size.md,
     textAlign: "center",
     [theme.breakpoints.smartphone]: {
       width: "80%",
@@ -138,14 +131,14 @@ const useStyles = createUseStyles((theme) => ({
     },
     [theme.breakpoints.orientation.landscape]: {
       width: "90%",
-      height: "90%",
-      fontSize: "2.5vw",
     },
   },
+  // a square of the title's size before the title
   icon: {
-    padding: "4vw",
-    marginRight: "1vw",
-    marginLeft: "-4vw",
+    flex: "0 0 auto",
+    width: "1em",
+    height: "1em",
+    marginRight: "0.15em",
   },
 }));
 
@@ -238,7 +231,6 @@ Dialog.propTypes = {
   titleSlotAfter: PropTypes.element,
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
   mode: PropTypes.oneOf(["default", "stacked", "notification", "info"]),
-  autoscale: PropTypes.bool,
 };
 
 const defaultProps = {
@@ -248,7 +240,6 @@ const defaultProps = {
   mode: "default",
   titleSlotBefore: null,
   titleSlotAfter: null,
-  autoscale: false,
 };
 
 export default Dialog;

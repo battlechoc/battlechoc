@@ -4,54 +4,37 @@ import { createUseStyles } from "react-jss";
 import { Jukebox } from "../misc";
 import withDefaultProps from "../../helper/defaultProps";
 
-const calculateFontSize = (text, orientation, size) => {
-  const basics = {
-    landscape: {
-      huge: 7.5,
-      normal: 6.75,
-      small: 4,
-    },
-    portrait: {
-      huge: 5,
-      normal: 4.5,
-      small: 4,
-    },
-  };
-
-  if (typeof text !== "string" || text.length < 8) {
-    return `${basics[orientation][size]}vh`;
-  } else if (text.length < 12) {
-    return `${basics[orientation][size] * 0.9}vh`;
-  } else if (text.length < 16) {
-    return `${basics[orientation][size] * 0.8}vh`;
-  } else {
-    return `${basics[orientation][size] * 0.7}vh`;
-  }
-};
-
+// The text size comes from the type scale (huge: title menu, normal: dialogs, small: inline
+// actions); the blob grows with its label instead of shrinking the text, so nothing spills out.
 const useStyles = createUseStyles((theme) => ({
-  button: {
-    color: "white",
-    "-webkit-text-stroke": (props) => `0.15vw ${theme.color[props.color].dark}`,
-    "-webkit-font-smoothing": "antialiased",
-    width: "calc(100% - 1.2vw) !important",
-    height: "calc(100% - 1.2vw) !important",
+  // the light rim around the blob: the outer blob shows through this padding
+  border: (props) => ({
+    cursor: "pointer",
     clipPath: "url(#menu-button-clip-path)",
-    position: "absolute",
-    top: "0.6vw",
-    left: "0.6vw",
+    position: "relative",
+    display: "flex",
+    width: "fit-content",
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    padding: "max(2px, 0.16em)",
+    background: theme.color[props.color].light,
+  }),
+  button: {
+    flex: "1 1 auto",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontFamily: "var(--font-display)",
-    [theme.breakpoints.orientation.portrait]: {
-      top: "0.6vh",
-      left: "0.6vh",
-      width: "calc(100% - 1.2vh) !important",
-      height: "calc(100% - 1.2vh) !important",
-      "-webkit-text-stroke": (props) =>
-        `0.15vh ${theme.color[props.color].dark}`,
-    },
+    boxSizing: "border-box",
+    padding: "0.3em 0.9em",
+    clipPath: "url(#menu-button-clip-path)",
+    textAlign: "center",
+    lineHeight: 1.05,
+    overflowWrap: "anywhere",
+    color: "white",
+    fontFamily: theme.font.display,
+    "-webkit-text-stroke": (props) =>
+      `${theme.font.stroke} ${theme.color[props.color].dark}`,
+    "-webkit-font-smoothing": "antialiased",
   },
   iconButton: {
     color: "white",
@@ -83,12 +66,6 @@ const useStyles = createUseStyles((theme) => ({
 
     return style;
   },
-  border: (props) => ({
-    cursor: "pointer",
-    clipPath: "url(#menu-button-clip-path)",
-    position: "relative",
-    background: theme.color[props.color].light,
-  }),
   background: (props) => ({
     background: `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${
       theme.color[props.color].light
@@ -99,48 +76,21 @@ const useStyles = createUseStyles((theme) => ({
       } 120%)`,
     },
   }),
+  // the blob is at least this big (in em of its text) and grows with longer labels
   huge: {
-    [theme.breakpoints.orientation.portrait]: {
-      fontSize: (props) =>
-        props.locked
-          ? "4vh"
-          : calculateFontSize(props.children, "portrait", "huge"),
-      width: "35vh",
-      height: "8.75vh",
-    },
-    [theme.breakpoints.orientation.landscape]: {
-      fontSize: (props) =>
-        props.locked
-          ? "6vh"
-          : calculateFontSize(props.children, "landscape", "huge"),
-      width: "45vh",
-      height: "11.25vh",
-    },
+    fontSize: theme.font.size.xxl,
+    minWidth: "6.5em",
+    minHeight: "1.8em",
   },
   normal: {
-    [theme.breakpoints.orientation.portrait]: {
-      fontSize: (props) =>
-        calculateFontSize(props.children, "portrait", "normal"),
-      width: "31.5vh",
-      height: "7.875vh",
-    },
-    [theme.breakpoints.orientation.landscape]: {
-      fontSize: (props) =>
-        calculateFontSize(props.children, "landscape", "normal"),
-      width: "40.5vh",
-      height: "10.125vh",
-    },
+    fontSize: theme.font.size.lg,
+    minWidth: "7em",
+    minHeight: "2.3em",
   },
   small: {
-    fontSize: (props) => calculateFontSize(props.children, "portrait", "small"),
-    width: "18vh",
-    height: "6vh",
-    [theme.breakpoints.orientation.landscape]: {
-      fontSize: (props) =>
-        calculateFontSize(props.children, "landscape", "small"),
-      width: "18vw",
-      height: "6vw",
-    },
+    fontSize: theme.font.size.md,
+    minWidth: "5.5em",
+    minHeight: "2.3em",
   },
   disabled: {
     filter: "grayscale(1)",
@@ -159,20 +109,17 @@ const useStyles = createUseStyles((theme) => ({
       outlineOffset: "0.1vw",
     },
   },
+  // the lock leans on the upper right of the blob, sized by the button's text
   locked: {
     position: "absolute",
-    right: "2vh",
-    top: "1.5vh",
+    right: "0.45em",
+    top: "0.25em",
     transform: "rotate(-15deg)",
-    padding: "2.2vh",
+    width: "0.95em",
+    height: "0.95em",
     backgroundSize: "100% 100%",
     backgroundRepeat: "no-repeat",
     backgroundImage: "url(/images/lock.svg)",
-    [theme.breakpoints.orientation.landscape]: {
-      right: "3vh",
-      top: "2.5vh",
-      padding: "2.4vh",
-    },
   },
 }));
 
@@ -264,9 +211,7 @@ const Button = (componentProps) => {
       >
         <div
           style={props.buttonStyle}
-          className={`${classes.background} ${classes[props.size]} ${
-            classes.button
-          }`}
+          className={`${classes.background} ${classes.button}`}
         >
           {props.children}
         </div>

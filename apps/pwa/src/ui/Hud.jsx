@@ -98,8 +98,10 @@ const useStyles = createUseStyles((theme) => ({
     flexDirection: "column",
     position: "absolute",
     zIndex: 4,
+    // the menu buttons share the width of the widest
     "& > div": {
       marginBottom: 6,
+      width: "100%",
     },
     [theme.breakpoints.orientation.portrait]: {
       top: "48%",
@@ -130,11 +132,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   resumeGameDialog: {
     color: "white",
-    fontSize: "5vw",
     textAlign: "center",
-    [theme.breakpoints.orientation.landscape]: {
-      fontSize: "3.4vw",
-    },
   },
   actions: {
     display: "flex",
