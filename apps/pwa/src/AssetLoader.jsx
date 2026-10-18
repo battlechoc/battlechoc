@@ -144,11 +144,24 @@ class AssetLoader {
 
 const assetLoader = new AssetLoader();
 
+// the menu also waits for the fonts (src/index.css), but never longer than FONT_TIMEOUT:
+// a font that does not load must not keep the game from starting
+const FONTS = ["1em Bangers", "1em Montserrat"];
+const FONT_TIMEOUT = 5000;
+const loadFonts = () =>
+  Promise.race([
+    document.fonts
+      ? Promise.all(FONTS.map((font) => document.fonts.load(font)))
+      : Promise.resolve(),
+    new Promise((resolve) => setTimeout(resolve, FONT_TIMEOUT)),
+  ]).catch(() => undefined);
+
 const AssetLoadingView = (props) => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const totalResources = useRef(
     Object.keys(assetLoader.assets.models).length +
-      assetLoader.assets.images.length
+      assetLoader.assets.images.length +
+      1 // the fonts
   );
   const loadedResources = useRef(0);
 
@@ -197,6 +210,8 @@ const AssetLoadingView = (props) => {
           })
           .catch((error) => console.error(error));
       }
+
+      loadFonts().then(() => updateProgress());
 
       for (const image of assetLoader.assets.images) {
         loadImage("/images/" + image).then(() => updateProgress());

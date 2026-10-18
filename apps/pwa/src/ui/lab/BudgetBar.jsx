@@ -9,7 +9,7 @@ import {
 const useStyles = createUseStyles((theme) => ({
   bar: { display: "flex", alignItems: "center", gap: "0.6em" },
   label: {
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "1.05em",
     "-webkit-text-stroke": `0.04em ${theme.color.secondary.dark}`,
     whiteSpace: "nowrap",

@@ -24,7 +24,7 @@ const useStyles = createUseStyles((theme) => ({
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "8vh",
     color: "white",
     "-webkit-text-stroke": `0.05vh ${theme.color.secondary.dark}`,

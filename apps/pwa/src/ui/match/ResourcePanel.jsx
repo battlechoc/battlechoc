@@ -27,7 +27,7 @@ const useStyles = createUseStyles((theme) => ({
     "& p": {
       margin: "0 5px 0 0",
       color: "white",
-      fontFamily: "Bangers",
+      fontFamily: "var(--font-display)",
       fontSize: "3vw",
       "-webkit-text-stroke": `0.15vw ${theme.color.secondary.dark}`,
       "-webkit-font-smoothing": "antialiased",
@@ -60,7 +60,7 @@ const useStyles = createUseStyles((theme) => ({
     top: "50%",
     display: "flex",
     alignItems: "center",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "2.4vw",
     "-webkit-text-stroke": `0.12vw ${theme.color.secondary.dark}`,
     [theme.breakpoints.orientation.portrait]: { fontSize: "4.4vw" },

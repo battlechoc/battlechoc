@@ -35,7 +35,7 @@ const useStyles = createUseStyles((theme) => ({
     flexGrow: 1,
   },
   rank: {
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "5vw",
     "-webkit-text-stroke": `0.1vw ${theme.color.secondary.dark}`,
     "-webkit-font-smoothing": "antialiased",

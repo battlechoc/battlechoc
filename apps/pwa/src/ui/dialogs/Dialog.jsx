@@ -77,7 +77,7 @@ const useStyles = createUseStyles((theme) => ({
   title: {
     zIndex: 12,
     marginTop: "2vh",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: (props) =>
       (props.autoscale && props.title.length > 7) ||
       ["notification", "info"].includes(props.mode)
@@ -101,7 +101,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   subtitle: {
     zIndex: 12,
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "3.5vh",
     color: "white",
     "-webkit-text-stroke": `1px ${theme.color.secondary.dark}`,

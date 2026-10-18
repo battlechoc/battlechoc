@@ -46,6 +46,17 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
+// the fonts ship with the app now (precached from /fonts/); drop the old Google Fonts caches
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    Promise.all(
+      ["google-fonts-stylesheets", "google-fonts-webfonts"].map((name) =>
+        caches.delete(name)
+      )
+    )
+  );
+});
+
 self.skipWaiting();
 clientsClaim();
 
@@ -241,22 +252,6 @@ registerRoute(
   /https:.*images\/.*\.(svg|png)/,
   new StaleWhileRevalidate({
     cacheName: "image-cache",
-    plugins: [new CacheableResponsePlugin({ statuses: [200] })],
-  })
-);
-
-registerRoute(
-  /^https:\/\/fonts\.googleapis\.com/,
-  new StaleWhileRevalidate({
-    cacheName: "google-fonts-stylesheets",
-    plugins: [new CacheableResponsePlugin({ statuses: [200] })],
-  })
-);
-
-registerRoute(
-  /^https:\/\/fonts\.gstatic\.com/,
-  new StaleWhileRevalidate({
-    cacheName: "google-fonts-webfonts",
     plugins: [new CacheableResponsePlugin({ statuses: [200] })],
   })
 );

@@ -20,7 +20,7 @@ const useStyles = createUseStyles((theme) => ({
     flexDirection: "column",
     alignItems: "center",
     minWidth: "4.5em",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     color: "white",
     "-webkit-text-stroke": `1px ${theme.color.secondary.dark}`,
     "& small": { fontSize: "0.7em", opacity: 0.9, textAlign: "center" },

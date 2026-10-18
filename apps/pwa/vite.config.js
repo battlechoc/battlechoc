@@ -83,6 +83,8 @@ export default defineConfig(({ command }) => ({
       manifest: false,
       injectManifest: {
         rollupFormat: 'iife',
+        // the build plus the fonts (public/fonts); the media is listed by hand in the worker
+        globPatterns: ['**/*.{js,css,html}', 'fonts/*.woff2'],
         maximumFileSizeToCacheInBytes: 20971520,
       },
     }),

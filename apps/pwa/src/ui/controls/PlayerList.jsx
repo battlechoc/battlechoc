@@ -5,7 +5,7 @@ import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
   list: {
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: (props) => (props.size === "small" ? "2.5vw" : "3vw"),
     "-webkit-text-stroke": `0.1vw ${theme.color.secondary.dark}`,
     "& > :nth-child(odd)": {

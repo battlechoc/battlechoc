@@ -20,7 +20,9 @@ This applies to the following paths:
 
 Exceptions: third-party brand icons (for example discord.svg, facebook.svg,
 instagram.svg and apple-share-icon.svg in apps/pwa/public/images/) belong to
-their respective owners and are not licensed under CC BY-NC-SA 4.0.
+their respective owners and are not licensed under CC BY-NC-SA 4.0. The fonts in
+apps/pwa/public/fonts/ (Bangers, Montserrat) are third-party works under the
+SIL Open Font License 1.1; their licenses are the OFL-*.txt files next to them.
 
 In short: you may share and adapt these assets with attribution, for
 non-commercial purposes only, and adaptations must use the same license. For

@@ -26,7 +26,7 @@ const useStyles = createUseStyles((theme) => ({
     gap: "0.6em",
     margin: "1em 0 0.4em",
   },
-  buildingName: { fontFamily: "Bangers", fontSize: "1.4em" },
+  buildingName: { fontFamily: "var(--font-display)", fontSize: "1.4em" },
   recipe: {
     display: "flex",
     alignItems: "center",
@@ -37,7 +37,7 @@ const useStyles = createUseStyles((theme) => ({
     marginBottom: "0.5em",
   },
   text: { flexGrow: 1, minWidth: 0 },
-  name: { fontFamily: "Bangers", fontSize: "1.25em" },
+  name: { fontFamily: "var(--font-display)", fontSize: "1.25em" },
   ingredients: {
     display: "flex",
     flexWrap: "wrap",
@@ -53,7 +53,7 @@ const useStyles = createUseStyles((theme) => ({
     minHeight: 44,
     borderRadius: 22,
     border: "none",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "1.1em",
     color: "white",
     cursor: "pointer",

@@ -82,7 +82,7 @@ const useStyles = createUseStyles((theme) => ({
     borderRadius: 28,
     border: `3px solid ${theme.color.secondary.dark}`,
     background: "linear-gradient(0deg, #3DA2CE 0%, #9DD5E9 80%)",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "1.5em",
     color: "white",
     "-webkit-text-stroke": `0.04em ${theme.color.secondary.dark}`,
@@ -151,7 +151,7 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   name: {
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "1.9em",
     letterSpacing: "0.03em",
     "-webkit-text-stroke": `0.05em ${theme.color.secondary.dark}`,

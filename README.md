@@ -95,6 +95,7 @@ Postgres applies `POSTGRES_PASSWORD` only when it creates its volume. If you cha
 
 - **Code:** [GNU Affero General Public License v3.0 or later](LICENSE). If you run a modified version of battlechoc as a network service, you must offer its source code to its users.
 - **Art and music** (images, 3D models, music, sounds and their sources): [CC BY-NC-SA 4.0](LICENSE-ASSETS). They may not be used commercially. These files are source-available, not open source.
+- **Fonts** in `apps/pwa/public/fonts/`: [Bangers](apps/pwa/public/fonts/OFL-Bangers.txt) and [Montserrat](apps/pwa/public/fonts/OFL-Montserrat.txt) by their respective authors, under the SIL Open Font License 1.1.
 
 ## Contributing
 

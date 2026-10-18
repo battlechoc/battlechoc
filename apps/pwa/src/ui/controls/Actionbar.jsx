@@ -23,7 +23,7 @@ const useStyles = createUseStyles((theme) => ({
     flexDirection: "column",
     alignItems: "center",
     gap: "2vh",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "4vh",
     color: theme.color.secondary.dark,
     "& p": { margin: 0, textAlign: "center" },

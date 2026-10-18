@@ -111,7 +111,7 @@ const useStyles = createUseStyles((theme) => ({
     background: theme.color.brown.light,
     border: `0.2vw solid ${theme.color.gold.light}`,
     color: "white",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "1.6vw",
     textAlign: "center",
     [theme.breakpoints.orientation.portrait]: { fontSize: "3vw" },

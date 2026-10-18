@@ -18,7 +18,7 @@ const useStyles = createUseStyles((theme) => ({
     alignItems: "center",
     gap: "2vh",
     padding: "2vh",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     color: theme.color.secondary.dark,
     fontSize: "4vh",
     "& p": { margin: 0 },

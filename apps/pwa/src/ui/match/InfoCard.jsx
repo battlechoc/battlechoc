@@ -38,7 +38,7 @@ const useStyles = createUseStyles((theme) => ({
     },
     "& h3": {
       margin: "0 0 0.2em 0",
-      fontFamily: "Bangers",
+      fontFamily: "var(--font-display)",
       fontWeight: "normal",
       fontSize: "140%",
       color: theme.color.gold.light,

@@ -50,9 +50,9 @@ const useStyles = createUseStyles((theme) => ({
     fontSize: "0.8em",
     color: "#ffe08a",
   },
-  plus: { fontFamily: "Bangers", fontSize: "2.4em", lineHeight: 1 },
+  plus: { fontFamily: "var(--font-display)", fontSize: "2.4em", lineHeight: 1 },
   label: {
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "1.05em",
     textAlign: "center",
     lineHeight: 1.1,

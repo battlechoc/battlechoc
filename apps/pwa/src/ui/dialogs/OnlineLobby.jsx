@@ -21,7 +21,7 @@ const useStyles = createUseStyles((theme) => ({
     flexDirection: "column",
     gap: "2vh",
     padding: "2vh 4vw",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     color: theme.color.secondary.dark,
     fontSize: "4vh",
     [theme.breakpoints.orientation.portrait]: { fontSize: "4vw", gap: "2vw" },
@@ -37,7 +37,7 @@ const useStyles = createUseStyles((theme) => ({
   input: {
     flex: 1,
     minWidth: "30vw",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "inherit",
     padding: "1vh 2vh",
     borderRadius: "2vh",
@@ -57,7 +57,7 @@ const useStyles = createUseStyles((theme) => ({
     color: "white",
     cursor: "pointer",
     border: "none",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "0.8em",
   },
   online: {

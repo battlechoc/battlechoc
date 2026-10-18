@@ -45,7 +45,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   title: {
     margin: "0 0 0.6vw 0",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "2.4vw",
     letterSpacing: "0.05em",
     "-webkit-text-stroke": `0.08vw ${theme.color.secondary.dark}`,
@@ -65,7 +65,7 @@ const useStyles = createUseStyles((theme) => ({
     gap: "1vw",
   },
   progress: {
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "1.4vw",
     opacity: 0.85,
     [theme.breakpoints.orientation.portrait]: { fontSize: "4vw" },

@@ -11,7 +11,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   input: {
     color: theme.color.secondary.dark,
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     borderRadius: "2.857vh",
     width: "100%",
     display: "flex",
@@ -62,7 +62,7 @@ const useStyles = createUseStyles((theme) => ({
     background: "white",
     borderRadius: "2.857vh",
     overflow: "hidden",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     "& > div": {
       height: "11.428vh",
       borderBottom: `0.2vh solid ${theme.color.secondary.light}`,

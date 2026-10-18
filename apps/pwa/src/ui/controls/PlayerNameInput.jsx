@@ -23,7 +23,7 @@ const useStyles = createUseStyles((theme) => ({
     outline: "none",
     borderRadius: "2.857vh 0 0 2.857vh",
     color: theme.color.secondary.dark,
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     display: "flex",
     justifyContent: "flex-start",
     alignItems: "center",
@@ -48,7 +48,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   errorLabel: {
     color: theme.color.accent.light,
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     "-webkit-text-stroke": `1px ${theme.color.accent.dark}`,
     "-webkit-font-smoothing": "antialiased",
   },

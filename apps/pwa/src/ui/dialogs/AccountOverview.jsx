@@ -60,7 +60,7 @@ const useStyles = createUseStyles((theme) => ({
     display: "flex",
     flexWrap: "wrap",
     justifyContent: "center",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     fontSize: "3vw",
     [theme.breakpoints.orientation.portrait]: {
       fontSize: "3vh",

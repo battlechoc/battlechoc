@@ -43,7 +43,7 @@ const useStyles = createUseStyles((theme) => ({
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontFamily: "Bangers",
+    fontFamily: "var(--font-display)",
     [theme.breakpoints.orientation.portrait]: {
       top: "0.6vh",
       left: "0.6vh",
