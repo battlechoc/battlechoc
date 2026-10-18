@@ -66,8 +66,6 @@ test("discover, craft and equip the starter item; a local match uses it", async 
   request,
 }) => {
   const { context, page } = await newPlayer(browser, request, "Lena");
-  // the title screen counts cocoa
-  await expect(page.getByTestId("cocoa-counter")).toContainText("100");
   await page.getByText("Choclab", { exact: true }).first().click();
   await expect(page.getByTestId("lab")).toBeVisible();
   await expect(page.getByTestId("pantry-button")).toContainText("100");
