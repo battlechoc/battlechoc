@@ -198,19 +198,47 @@ describe('players', () => {
         }
         expect((await accounts[3].get('/rank')).body.ranking).toBe(1);
         expect((await accounts[1].get('/rank')).body.ranking).toBe(3);
+        // unrated players have no rank yet
+        expect((await accounts[0].get('/rank')).body).toEqual({ ranking: null });
         const highscore = await accounts[0].get('/highscore').expect(200);
-        expect(highscore.body).toMatchObject({ page: 1, lastPage: 1 });
+        expect(highscore.body).toMatchObject({ page: 1, lastPage: 1, total: 3 });
+        // the own entry of an unrated player: name and no rank, never the XP
+        expect(highscore.body.own).toMatchObject({ name: 'Anna', ranking: null, score: 0 });
+        expect(highscore.body.own).not.toHaveProperty('xp');
+        expect((await accounts[1].get('/highscore')).body.own).toMatchObject({ name: 'Bert', ranking: 3, rating: 1550 });
         expect(highscore.body.list.map(entry => [entry.name, entry.ranking, entry.rating])).toEqual([
             ['Dora', 1, 1700], ['Cleo', 2, 1600], ['Bert', 3, 1550],
         ]);
         // the public score is the rating (XP can be faked offline); unrated players show 0
         expect((await accounts[0].get('/user/cleo').expect(200)).body[0]).toMatchObject({ name: 'Cleo', score: 1600, rating: 1600, ranking: 2 });
-        expect((await accounts[3].get('/user/anna').expect(200)).body[0]).toMatchObject({ name: 'Anna', score: 0 });
+        expect((await accounts[3].get('/user/anna').expect(200)).body[0]).toMatchObject({ name: 'Anna', score: 0, ranking: null });
         highscore.body.list.forEach(entry => expect(entry.score).toBe(entry.rating));
         await accounts[0].get('/user/nobody').expect(404);
         expect((await accounts[0].get('/query/user/e')).body.map(entry => entry.name)).toEqual(['Cleo', 'Bert']);
         const opponent = await accounts[0].get('/random/opponent').expect(200);
         expect(['Bert', 'Cleo', 'Dora']).toContain(opponent.body.name);
+    });
+
+    test('an empty highscore still answers with the own entry; unnamed players have none', async () => {
+        const { app } = await setup();
+        const anna = await named(app, 'Anna');
+        const highscore = await anna.get('/highscore').expect(200);
+        expect(highscore.body).toMatchObject({ page: 1, lastPage: 1, total: 0, list: [] });
+        expect(highscore.body.own).toMatchObject({ name: 'Anna', ranking: null });
+        // a later page of an empty list is still page 1
+        expect((await anna.get('/highscore?page=3')).body.page).toBe(1);
+
+        const unnamed = await account(app);
+        expect((await unnamed.get('/highscore').expect(200)).body).toMatchObject({ list: [], own: null });
+        expect((await unnamed.get('/rank').expect(200)).body).toEqual({ ranking: null });
+    });
+
+    test('a rated player without a name is not on the list and has no rank', async () => {
+        const { app, pool } = await setup();
+        const unnamed = await account(app);
+        await pool.query('UPDATE players SET rating = 1800, rated_matches = 2 WHERE id = $1', [unnamed.playerId]);
+        expect((await unnamed.get('/rank')).body).toEqual({ ranking: null });
+        expect((await unnamed.get('/highscore')).body).toMatchObject({ total: 0, list: [], own: null });
     });
 });
 

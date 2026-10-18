@@ -34,6 +34,13 @@ const useStyles = createUseStyles((theme) => ({
     justifyContent: "center",
     flexGrow: 1,
   },
+  empty: {
+    textAlign: "center",
+    padding: "0 1em",
+  },
+  own: {
+    marginTop: "0.5em",
+  },
   rank: {
     fontFamily: "var(--font-display)",
     fontSize: "5vw",
@@ -52,6 +59,8 @@ const Highscore = (componentProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [highscore, setHighscore] = useState([]);
+  // the own entry from the server (ranking null while unrated; null without a player name)
+  const [own, setOwn] = useState(null);
   const [highscoreLastPage, setHighscoreLastPage] = useState(1);
   const [highscorePage, setHighscorePage] = useState(1);
   const { showQuickMessage } = props;
@@ -63,6 +72,7 @@ const Highscore = (componentProps) => {
       try {
         const highscore = await multiplayer.fetchHighscore(page);
         setHighscore(highscore.list);
+        setOwn(highscore.own || null);
         setHighscorePage(highscore.page);
         setHighscoreLastPage(highscore.lastPage);
       } catch (error) {
@@ -80,6 +90,14 @@ const Highscore = (componentProps) => {
       openHighscorePage();
     }
   }, [open, openHighscorePage]);
+
+  const ownName = own ? own.name : props.playername;
+  // the own row below the list when the player is not on this page (or the list is empty)
+  const ownElsewhere =
+    own !== null && !highscore.some((player) => player.name === own.name);
+  const unrated =
+    own !== null &&
+    (own.ranking === null || typeof own.ranking === "undefined");
 
   return (
     <div style={props.style}>
@@ -127,7 +145,7 @@ const Highscore = (componentProps) => {
                     ? `${highscore[0].ranking} - ${
                         highscore[highscore.length - 1].ranking
                       }`
-                    : "1 - 1"}
+                    : "–"}
                 </span>
               )}
             </div>
@@ -153,12 +171,33 @@ const Highscore = (componentProps) => {
             </div>
           </div>
           {loading ? null : (
-            <PlayerList
-              withScore={true}
-              players={highscore}
-              username={props.playername}
-              showProfile={props.showPlayerProfile}
-            />
+            <>
+              <PlayerList
+                withScore={true}
+                players={highscore}
+                username={ownName}
+                showProfile={props.showPlayerProfile}
+              />
+              {highscore.length === 0 ? (
+                <p className={classes.empty} data-testid="highscore-empty">
+                  {t(tr.HIGHSCORE_EMPTY)}
+                </p>
+              ) : null}
+              {ownElsewhere ? (
+                <PlayerList
+                  withScore={true}
+                  players={[own]}
+                  username={own.name}
+                  className={classes.own}
+                  showProfile={props.showPlayerProfile}
+                />
+              ) : null}
+              {ownElsewhere && unrated && highscore.length > 0 ? (
+                <p className={classes.empty} data-testid="highscore-unrated">
+                  {t(tr.HIGHSCORE_UNRATED)}
+                </p>
+              ) : null}
+            </>
           )}
         </div>
       </Dialog>

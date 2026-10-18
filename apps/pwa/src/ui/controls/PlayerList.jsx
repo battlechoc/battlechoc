@@ -34,6 +34,10 @@ const useStyles = createUseStyles((theme) => ({
     borderLeft: "8px solid transparent",
     borderRight: "8px solid transparent",
   },
+  rank: {
+    borderLeft: "8px solid transparent",
+    whiteSpace: "nowrap",
+  },
   own: {
     backgroundColor: `${theme.color.accent.light} !important`,
     color: "white",
@@ -45,6 +49,11 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
 }));
+
+// no rank yet (no rated match): a dash instead of rank and rating
+const NO_RANK = "–";
+const isRanked = (player) =>
+  player.ranking !== null && typeof player.ranking !== "undefined";
 
 const PlayerList = (componentProps) => {
   const props = withDefaultProps(componentProps, defaultProps);
@@ -66,6 +75,7 @@ const PlayerList = (componentProps) => {
           return (
             <div
               key={i}
+              data-testid={isPlayer ? "player-list-own" : undefined}
               className={
                 isPlayer ? `${classes.own} ${classes.row}` : classes.row
               }
@@ -73,8 +83,11 @@ const PlayerList = (componentProps) => {
               {withScore ? (
                 <div
                   onClick={() => openPlayerProfile(player)}
-                  className={classes.ranking}
-                >{`${player.ranking}.`}</div>
+                  className={`${classes.cell} ${classes.rank}`}
+                  data-testid="player-list-rank"
+                >
+                  {isRanked(player) ? `${player.ranking}.` : NO_RANK}
+                </div>
               ) : null}
               <div
                 onClick={() => openPlayerProfile(player)}
@@ -88,7 +101,7 @@ const PlayerList = (componentProps) => {
                     style={{ borderRight: "4px solid transparent" }}
                     className={classes.cell}
                   >
-                    {player.score}
+                    {isRanked(player) ? player.score : NO_RANK}
                   </div>
                   <div
                     className={`${classes.icon} ${classes.cell}`}

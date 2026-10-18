@@ -497,5 +497,7 @@ module.exports = {
     "LAB_EQUIPPED": "Ausgerüstet",
     "LAB_FAILED": "Das hat nicht geklappt. Bitte versuch es noch einmal.",
     "LAB_NO_RECIPES": "Noch keine Rezepte entdeckt. Experimentiere am Labortisch!",
-    "LAB_EQUIPMENT": "Ausrüstung"
+    "LAB_EQUIPMENT": "Ausrüstung",
+    "HIGHSCORE_EMPTY": "Noch keine gewerteten Partien – spiele online gegen andere Spieler, um einen Rang zu bekommen.",
+    "HIGHSCORE_UNRATED": "Deinen Rang bekommst du nach deiner ersten Online-Partie gegen einen anderen Spieler."
 }

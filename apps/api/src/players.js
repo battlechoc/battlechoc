@@ -95,13 +95,19 @@ const stats = async (pool, playerId) => {
 const ranking = async (pool, rating) => 1 + await count(pool,
     'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL AND rated_matches > 0 AND rating > $1', [rating]);
 
+// only players on the highscore list (named, at least one rated match) have a rank
+const isRanked = player => Boolean(player.username) && Number(player.rated_matches) > 0;
+
+/** The rank of a player, null while they are not on the highscore list. */
+const rankOf = async (pool, player) => (isRanked(player) ? ranking(pool, player.rating) : null);
+
 const playerInfo = async (pool, player) => ({
     name: player.username || EmptyPlayerStats.username,
     // what others see is the rating (verified matches only), never the XP, which offline matches feed
     score: player.rated_matches > 0 ? Math.round(player.rating) : 0,
     rating: Math.round(player.rating),
     ...(await results(pool, player.id)),
-    ranking: await ranking(pool, player.rating),
+    ranking: await rankOf(pool, player),
 });
 
 // stores finished offline matches once (by record id) and credits the XP computed on the server;
@@ -130,5 +136,5 @@ const addTrackRecords = async (pool, playerId, records) => {
 };
 
 module.exports = {
-    findPlayer, findPlayerByName, createPlayer, stats, ranking, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
+    findPlayer, findPlayerByName, createPlayer, stats, ranking, rankOf, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
 };

@@ -497,5 +497,7 @@ module.exports = {
     "LAB_EQUIPPED": "Equipaggiato",
     "LAB_FAILED": "Non ha funzionato. Riprova.",
     "LAB_NO_RECIPES": "Nessuna ricetta scoperta. Sperimenta sul tavolo!",
-    "LAB_EQUIPMENT": "Equipaggiamento"
+    "LAB_EQUIPMENT": "Equipaggiamento",
+    "HIGHSCORE_EMPTY": "Ancora nessuna partita valutata: gioca online contro altri giocatori per ottenere una posizione.",
+    "HIGHSCORE_UNRATED": "Otterrai la tua posizione dopo la tua prima partita online contro un altro giocatore."
 }

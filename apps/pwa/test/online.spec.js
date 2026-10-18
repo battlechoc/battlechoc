@@ -176,6 +176,21 @@ test.describe("online", () => {
   });
 });
 
+test.describe("the highscore", () => {
+  test("shows the own player even without rated matches", async ({ browser, request }) => {
+    const hugo = await createPlayer(browser, request, "Hugo");
+    await hugo.page.locator("[data-icon=trophy]:visible").first().click();
+    // nobody has played a rated match yet (the e2e server is fresh or has only unrated players)
+    const own = hugo.page.getByTestId("player-list-own");
+    await expect(own).toBeVisible();
+    await expect(own).toContainText("Hugo");
+    await expect(own.getByTestId("player-list-rank")).toHaveText("–");
+    await expect(hugo.page.getByText("1 - 1", { exact: true })).toHaveCount(0);
+    await hugo.page.screenshot({ path: "test/output/screenshot_highscore_own.png" });
+    await hugo.context.close();
+  });
+});
+
 test.describe("the Start button", () => {
   test("a new player plays the prepared first match against the server AI and gets ingredients", async ({ browser, request }) => {
     const gina = await createPlayer(browser, request, "Gina", { firstWin: false });

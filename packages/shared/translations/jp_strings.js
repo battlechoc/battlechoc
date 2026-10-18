@@ -497,5 +497,7 @@ module.exports = {
     "LAB_EQUIPPED": "装備中",
     "LAB_FAILED": "うまくいきませんでした。もう一度お試しください。",
     "LAB_NO_RECIPES": "まだレシピは発見されていません。テーブルで実験しよう！",
-    "LAB_EQUIPMENT": "装備"
+    "LAB_EQUIPMENT": "装備",
+    "HIGHSCORE_EMPTY": "まだ評価対象の対戦がありません。オンラインで他のプレイヤーと対戦して順位を手に入れよう！",
+    "HIGHSCORE_UNRATED": "ほかのプレイヤーとの最初のオンライン対戦のあとで順位がつきます。"
 }

@@ -275,7 +275,12 @@ const AccountOverview = (props) => {
               style={{ background: `url(/images/trophy.svg) no-repeat` }}
             />
             <div>{t(tr.ACCOUNT_OVERVIEW_RANK)}</div>
-            <div>{ranking}</div>
+            {/* no rank (null) until the first rated match */}
+            <div data-testid="account-rank">
+              {ranking === null || typeof ranking === "undefined"
+                ? "–"
+                : ranking}
+            </div>
           </div>
           <div className={`${classes.primary} ${classes.attribute}`}>
             <div
