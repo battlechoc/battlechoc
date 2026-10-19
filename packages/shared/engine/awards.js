@@ -95,7 +95,8 @@ const awards = [
         builtCount(m, p, EntityType.CACAOTREE) > 0 && builtCount(m, p, EntityType.RUM_TRUFFLE_CANNON) > 0),
     award('UPGRADE', 50, B, (m, p) => builtCount(m, p, EntityType.FRUIT_CANNON) > 0),
     award('REFILLED', 30, B, (m, p) => builtCount(m, p, EntityType.CREAM) > 0),
-    award('PERSONALCONCERN', 100, B, (m, p) => ownCells(m, p).every(cell => cell.occupiedBy.some(entity => entity.type === EntityType.CREAM))),
+    // molten cells cannot hold cream
+    award('PERSONALCONCERN', 100, B, (m, p) => ownCells(m, p).filter(cell => !cell.molten).every(cell => cell.occupiedBy.some(entity => entity.type === EntityType.CREAM))),
     // new with the ingredients (2026-10)
     award('GOODSPORT', 30, B, (m, p) => !surrendered(m, p)),
     award('SURVIVOR', 150, B, m => m.outcome.reason === OutcomeReason.TIME_LIMIT),
