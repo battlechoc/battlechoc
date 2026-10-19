@@ -125,8 +125,9 @@ class RandomBot extends Agent {
 /**
  * Plays a match between two agents with the engine as the host, waking each agent every
  * reactionTimeMs. Returns the final match. Throws if the engine throws (not on invalid actions).
+ * `onStep(match)` (optional) runs after every agent decision, e.g. to sample statistics.
  */
-const playMatch = (engine, getPlayerView, match, agents, { maxTime } = {}) => {
+const playMatch = (engine, getPlayerView, match, agents, { maxTime, onStep } = {}) => {
     const limit = typeof maxTime === 'number' ? maxTime : match.balance.match.timeLimitMs * 2;
     const wakeAt = agents.map(agent => agent.reactionTimeMs * (agent.playerIndex + 1) / 2);
     const stats = { actions: 0, rejected: 0 };
@@ -143,6 +144,9 @@ const playMatch = (engine, getPlayerView, match, agents, { maxTime } = {}) => {
             }
         }
         wakeAt[index] = t + agents[index].nextReactionTime();
+        if (onStep) {
+            onStep(match);
+        }
     }
     return { match, stats };
 };
