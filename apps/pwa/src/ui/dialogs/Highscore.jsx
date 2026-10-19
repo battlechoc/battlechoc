@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
-import { Fab, Progress, Button, PlayerList } from "../controls";
+import { Progress, Button, PlayerList } from "../controls";
 import {
   translate as t,
   translationKeys as tr,
@@ -12,12 +12,6 @@ import logger from "../../helper/logger";
 import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
-  fab: {
-    position: "absolute",
-    top: "calc(4vh + 4vw + 10px)",
-    right: 5,
-    zIndex: 4,
-  },
   paginator: {
     display: "flex",
     alignItems: "center",
@@ -52,18 +46,21 @@ const useStyles = createUseStyles((theme) => ({
 const Highscore = (componentProps) => {
   const props = withDefaultProps(componentProps, defaultProps);
   const classes = useStyles(props);
-  const [open, setOpen] = useState(false);
+  const { open, close } = props;
   const [loading, setLoading] = useState(false);
   const [highscore, setHighscore] = useState([]);
   // the own entry from the server (ranking null while unrated; null without a player name)
   const [own, setOwn] = useState(null);
   const [highscoreLastPage, setHighscoreLastPage] = useState(1);
   const [highscorePage, setHighscorePage] = useState(1);
+  // a failed request is not an empty list: the toast explains it
+  const [failed, setFailed] = useState(false);
   const { showQuickMessage } = props;
 
   const openHighscorePage = useCallback(
     async (page) => {
       setLoading(true);
+      setFailed(false);
       setHighscore([]);
       try {
         const highscore = await multiplayer.fetchHighscore(page);
@@ -73,6 +70,7 @@ const Highscore = (componentProps) => {
         setHighscoreLastPage(highscore.lastPage);
       } catch (error) {
         logger.warn(error);
+        setFailed(true);
         showQuickMessage({ text: t(tr.FETCH_HIGHSCORE_FAILED) });
       } finally {
         setLoading(false);
@@ -97,16 +95,9 @@ const Highscore = (componentProps) => {
 
   return (
     <div style={props.style}>
-      <Fab
-        onClick={() => setOpen(true)}
-        color="gold"
-        icon="trophy"
-        className={classes.fab}
-      />
-
       <Dialog
         open={open}
-        close={() => setOpen(false)}
+        close={close}
         icon="highscore"
         title="Highscore"
       >
@@ -174,7 +165,7 @@ const Highscore = (componentProps) => {
                 username={ownName}
                 showProfile={props.showPlayerProfile}
               />
-              {highscore.length === 0 ? (
+              {highscore.length === 0 && !failed ? (
                 <p className={classes.empty} data-testid="highscore-empty">
                   {t(tr.HIGHSCORE_EMPTY)}
                 </p>
@@ -209,6 +200,8 @@ const defaultProps = {
 Highscore.propTypes = {
   style: PropTypes.object,
   className: PropTypes.string,
+  open: PropTypes.bool.isRequired,
+  close: PropTypes.func.isRequired,
   showQuickMessage: PropTypes.func.isRequired,
   showPlayerProfile: PropTypes.func.isRequired,
 };

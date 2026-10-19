@@ -188,6 +188,7 @@ const Hud = (props) => {
 
   const [open, setOpen] = useState(false);
   const [openSettings, setOpenSettings] = useState(false);
+  const [openHighscore, setOpenHighscore] = useState(false);
   const [showAccountOverview, setShowAccountOverview] = useState(false);
   const [dialogStyle, setDialogStyle] = useState("default");
   const [showOnlineLobby, setShowOnlineLobby] = useState(false);
@@ -346,6 +347,11 @@ const Hud = (props) => {
               endGame={endGame}
               showSettings={() => setOpenSettings(true)}
               showSignInOrUp={openAccountOverview}
+              showHighscore={
+                stage === "TITLE_SCREEN"
+                  ? () => setOpenHighscore(true)
+                  : undefined
+              }
             />
           );
         }
@@ -481,6 +487,8 @@ const Hud = (props) => {
                 </div>
               </div>
               <Highscore
+                open={openHighscore}
+                close={() => setOpenHighscore(false)}
                 playername={playername}
                 showPlayerProfile={(session) =>
                   openAccountOverview(session.opponent, "stacked")
