@@ -383,17 +383,36 @@ class Gamefield {
               this.renderEntities(playerField.grid[position]);
             }
           } else {
-            explodeCream(position);
-            if (!this.isPlayerGameField) {
-              this.playerField.grid[position].occupiedBy
-                .filter((building) => building.type !== EntityType.CREAM)
-                .forEach((entity) => {
-                  this.createMeshInstance(
-                    entity.type,
-                    this.playerField.grid[position]
-                  );
-                });
-            }
+            // Some entities are gone, others stayed: a hit took the cream and revealed the
+            // building, or a fountain broke under its cream (shots hit the fountain, not its
+            // cell). Explode exactly what is gone, then draw what is left.
+            const before = this.playerField.grid[position];
+            const after = playerField.grid[position];
+            before.occupiedBy
+              .filter(
+                (entity) =>
+                  !isDonut(entity.type) &&
+                  !after.occupiedBy.some((other) => other.id === entity.id)
+              )
+              .forEach((entity) => {
+                if (entity.type === EntityType.CREAM) {
+                  explodeCream(position);
+                } else {
+                  this.scene
+                    .getMeshesByID(
+                      this.fieldIdx +
+                        "." +
+                        entity.type +
+                        "." +
+                        before.row +
+                        "." +
+                        before.col
+                    )
+                    .forEach((mesh) => this.explode(mesh));
+                }
+              });
+            this.renderEntities(before, true);
+            this.renderEntities(after);
           }
           this.playerField.grid[position] = JSON.parse(
             JSON.stringify(playerField.grid[position])
@@ -499,6 +518,10 @@ class Gamefield {
   };
 
   explode(mesh) {
+    // a mesh that is not there cannot explode; never let an animation take the match down
+    if (!mesh) {
+      return;
+    }
     let gravity = -0.02;
     let solidParticleSystem = new SolidParticleSystem(
       "solidParticleSystem",
