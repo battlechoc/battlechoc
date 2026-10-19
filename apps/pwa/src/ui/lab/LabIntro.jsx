@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useLayoutEffect, useState } from "react";
 import { createUseStyles } from "react-jss";
 import {
   translate as t,
@@ -12,8 +12,8 @@ import CoachCard from "../controls/CoachCard";
 export const LAB_INTRO_SEEN = "labIntroSeen";
 
 /**
- * The steps of the intro; `target` names the part of the lab that glows while the step talks
- * about it, `place` where the card sits on a phone (away from the target).
+ * The steps of the intro; `target` names the part of the lab that stays lit while the step
+ * talks about it, `place` where the card sits on a phone (away from the target).
  */
 export const LAB_INTRO_STEPS = [
   {
@@ -53,7 +53,63 @@ const useStyles = createUseStyles((theme) => ({
       "&&": { top: "auto", bottom: "3vw" },
     },
   },
+  // the lab darkens around the part the step talks about: a hole whose shadow covers the rest
+  spotlight: {
+    position: "absolute",
+    zIndex: 4,
+    borderRadius: 20,
+    pointerEvents: "none",
+    boxShadow: "0 0 0 200vmax rgba(0, 0, 0, 0.6)",
+    transition: "top 0.35s ease, left 0.35s ease, width 0.35s ease, height 0.35s ease",
+    "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+  },
 }));
+
+// room around the target inside the hole
+const SPOTLIGHT_PADDING = 6;
+
+// The darkened lab with a hole over `target` (an element inside `container`, the lab page,
+// which may scroll). It follows the target when the layout changes.
+export const Spotlight = ({ target, container }) => {
+  const classes = useStyles();
+  const [box, setBox] = useState(undefined);
+
+  useLayoutEffect(() => {
+    if (!target || !container) {
+      setBox(undefined);
+      return undefined;
+    }
+    const measure = () => {
+      const outer = container.getBoundingClientRect();
+      const inner = target.getBoundingClientRect();
+      setBox({
+        top: inner.top - outer.top + container.scrollTop - SPOTLIGHT_PADDING,
+        left: inner.left - outer.left + container.scrollLeft - SPOTLIGHT_PADDING,
+        width: inner.width + 2 * SPOTLIGHT_PADDING,
+        height: inner.height + 2 * SPOTLIGHT_PADDING,
+      });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    const observer =
+      typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measure);
+    if (observer) {
+      observer.observe(target);
+      observer.observe(container);
+    }
+    return () => {
+      window.removeEventListener("resize", measure);
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, [target, container]);
+
+  if (!box) {
+    return null;
+  }
+  return <div className={classes.spotlight} style={box} data-testid="lab-spotlight" />;
+};
 
 // The coach card of the lab's first visit: a few steps through the lab, with a skip link.
 const LabIntro = ({ step, onStep, onDone }) => {
