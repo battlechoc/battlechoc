@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
-import { Progress, Button, PlayerList } from "../controls";
+import { Fab, Progress, Button, PlayerList } from "../controls";
 import {
   translate as t,
   translationKeys as tr,
@@ -12,6 +12,13 @@ import logger from "../../helper/logger";
 import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
+  // the title screen's top right corner, level with the buttons at the top left
+  fab: {
+    position: "absolute",
+    top: 5,
+    right: 5,
+    zIndex: 4,
+  },
   paginator: {
     display: "flex",
     alignItems: "center",
@@ -46,7 +53,7 @@ const useStyles = createUseStyles((theme) => ({
 const Highscore = (componentProps) => {
   const props = withDefaultProps(componentProps, defaultProps);
   const classes = useStyles(props);
-  const { open, close } = props;
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [highscore, setHighscore] = useState([]);
   // the own entry from the server (ranking null while unrated; null without a player name)
@@ -95,9 +102,16 @@ const Highscore = (componentProps) => {
 
   return (
     <div style={props.style}>
+      <Fab
+        onClick={() => setOpen(true)}
+        color="gold"
+        icon="trophy"
+        className={classes.fab}
+      />
+
       <Dialog
         open={open}
-        close={close}
+        close={() => setOpen(false)}
         icon="highscore"
         title="Highscore"
       >
@@ -200,8 +214,6 @@ const defaultProps = {
 Highscore.propTypes = {
   style: PropTypes.object,
   className: PropTypes.string,
-  open: PropTypes.bool.isRequired,
-  close: PropTypes.func.isRequired,
   showQuickMessage: PropTypes.func.isRequired,
   showPlayerProfile: PropTypes.func.isRequired,
 };

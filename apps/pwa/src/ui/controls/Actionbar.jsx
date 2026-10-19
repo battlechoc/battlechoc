@@ -165,18 +165,6 @@ const Actionbar = (props) => {
     );
   }
 
-  // the title screen: the highscore sits at the end of the row
-  if (typeof props.showHighscore === "function") {
-    buttons.push(
-      <Fab
-        key="highscore"
-        color="gold"
-        icon="trophy"
-        onClick={() => props.showHighscore()}
-      ></Fab>
-    );
-  }
-
   // real-time match: pause and switch between the own and the opponent's board
   if (
     typeof props.game !== "undefined" &&
@@ -248,7 +236,6 @@ const Actionbar = (props) => {
 Actionbar.propTypes = {
   showSettings: PropTypes.func.isRequired,
   showSignInOrUp: PropTypes.func.isRequired,
-  showHighscore: PropTypes.func,
 };
 
 const mapStateToProps = (state) => ({
