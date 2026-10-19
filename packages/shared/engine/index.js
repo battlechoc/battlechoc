@@ -728,19 +728,43 @@ const placeFactory = (match, events, action) => {
     placeFactoryInternal(match, events, action.player, cell);
 };
 
-const creamFootprint = (match, playerIndex, row, col) => {
-    const { rows, cols } = match.board.size;
-    const size = spec(match, EntityType.CREAM).footprint || 1;
-    const top = Math.max(0, Math.min(row, rows - size));
-    const left = Math.max(0, Math.min(col, cols - size));
-    const cells = [];
-    for (let r = top; r < top + size; r++) {
-        for (let c = left; c < left + size; c++) {
-            cells.push(cellAt(match, playerIndex, r, c));
+/**
+ * The cells (row, col) one cream build covers when tapped at (row, col), from a balance
+ * (match.balance or view.balance) and the board size. Pure, so the AIs and the UI can use it.
+ * - `area: n`: the n×n square centred on the tapped cell, clipped at the board edges (like the
+ *   bunny and the fountain; since 2026-10-19).
+ * - `footprint: n` (balance snapshots of matches created before): the n×n square anchored
+ *   top-left at the tapped cell, shifted inward at the edges. Kept so that saved matches and
+ *   logged actions replay as they were played.
+ */
+const creamArea = (balance, boardSize, row, col) => {
+    const { rows, cols } = boardSize;
+    const creamSpec = balance.entities[EntityType.CREAM] || {};
+    const inBoard = (r, c) => r >= 0 && c >= 0 && r < rows && c < cols;
+    const square = (top, left, size) => {
+        const cells = [];
+        for (let r = top; r < top + size; r++) {
+            for (let c = left; c < left + size; c++) {
+                if (inBoard(r, c)) {
+                    cells.push({ row: r, col: c });
+                }
+            }
         }
+        return cells;
+    };
+    if (!inBoard(row, col)) {
+        return [];
     }
-    return cells;
+    if (creamSpec.area) {
+        const radius = Math.floor(creamSpec.area / 2);
+        return square(row - radius, col - radius, 2 * radius + 1);
+    }
+    const size = creamSpec.footprint || 1;
+    return square(Math.max(0, Math.min(row, rows - size)), Math.max(0, Math.min(col, cols - size)), size);
 };
+
+const creamFootprint = (match, playerIndex, row, col) => creamArea(match.balance, match.board.size, row, col)
+    .map(position => cellAt(match, playerIndex, position.row, position.col));
 
 const countOnField = (match, playerIndex, entityType) => entitiesOf(match, playerIndex).filter(entity => entity.type === entityType).length;
 
@@ -772,7 +796,7 @@ const build = (match, events, action) => {
     if (entityType === EntityType.CREAM) {
         const targets = creamFootprint(match, playerIndex, row, col).filter(target => !target.molten && !contains(target, EntityType.CREAM));
         if (targets.length === 0) {
-            throw new BuildNotPossibleError('Every cell of the cream footprint already has cream.');
+            throw new BuildNotPossibleError('Every cell of the cream area already has cream.');
         }
         targets.forEach(target => {
             const cream = createEntity(match, playerIndex, EntityType.CREAM, target);
@@ -1181,5 +1205,6 @@ module.exports = {
     weaponStatus,
     hasHarmfulWeapon,
     boardValue,
+    creamArea,
     creamFootprint,
 };

@@ -27,18 +27,10 @@ const ownCell = (page, kind) =>
       const grid = match.board.fields[match.players[0].fieldIndex].grid;
       const empty = (cell) => cell.occupiedBy.every((entity) => entity.type === "EntityType.CREAM");
       const creamed = (cell) => cell.occupiedBy.some((entity) => entity.type === "EntityType.CREAM");
-      const size = match.board.size.cols;
-      const at = (row, col) => grid[row * size + col];
-      if (kind === "creamFootprint") {
-        // a 2x2 area with at least one cell without cream
-        for (let row = 0; row < size - 1; row++) {
-          for (let col = 0; col < size - 1; col++) {
-            const area = [at(row, col), at(row + 1, col), at(row, col + 1), at(row + 1, col + 1)];
-            if (area.some((cell) => !creamed(cell) && !cell.molten)) {
-              return { row, col };
-            }
-          }
-        }
+      if (kind === "creamArea") {
+        // cream covers the 3x3 area around the tapped cell: tap a cell without cream
+        const cell = grid.find((candidate) => !creamed(candidate) && !candidate.molten);
+        return { row: cell.row, col: cell.col };
       }
       const cell = grid.find(empty);
       return { row: cell.row, col: cell.col };
@@ -73,7 +65,7 @@ test("the lesson teaches a whole match against Mimi Marzipan", async ({ page }) 
 
   await expectStep(page, "cream");
   await advance(page, 15000);
-  expect(await submit(page, "battlechoc/match/build", { entityType: "EntityType.CREAM", ...(await ownCell(page, "creamFootprint")) })).toBe("ok");
+  expect(await submit(page, "battlechoc/match/build", { entityType: "EntityType.CREAM", ...(await ownCell(page, "creamArea")) })).toBe("ok");
 
   // the cannon is rushable by now
   await expectStep(page, "fire");

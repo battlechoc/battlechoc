@@ -1,4 +1,4 @@
-const { engine, PlayerType } = require('./helper');
+const { engine, PlayerType, runningMatch, place } = require('./helper');
 const { EntityType } = require('../../index');
 
 const { TomToffee, GustavGanache, Personality } = engine.ai;
@@ -79,5 +79,15 @@ describe('AI agents', () => {
         expect(copy.memory).toEqual(agent.memory);
         expect(copy.rage).toBe(0.9);
         expect(copy.personality).toBe(agent.personality);
+    });
+
+    test('Gustav aims its cream at the centre of the exposed buildings', () => {
+        const match = runningMatch();
+        [[2, 2], [2, 4], [4, 2], [4, 4]].forEach(([row, col]) => place(match, 0, EntityType.CACAOTREE, row, col));
+        const agent = new GustavGanache({ playerIndex: 0, seed: 'cream', handicap: 0, personality: Personality.DEFENSIVE });
+        agent.rage = 0;
+        agent.rageUntil = Infinity;
+        const decision = agent.build(engine.getPlayerView(match, 0), match.t);
+        expect(decision.payload).toEqual({ entityType: EntityType.CREAM, row: 3, col: 3 });
     });
 });

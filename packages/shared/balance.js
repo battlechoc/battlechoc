@@ -56,7 +56,8 @@ const DefaultBalance = Object.freeze({
         black: { buildCapacityBonus: 1, buildIntervalFactor: 0.75 },
     },
     entities: {
-        [EntityType.CREAM]: { hp: 1, costs: 0, footprint: 2 },
+        // one build covers the area × area square centred on the tapped cell (engine creamArea)
+        [EntityType.CREAM]: { hp: 1, costs: 0, area: 3 },
         [EntityType.FACTORY]: {
             hp: [11, 52], costs: 0, coins: { exp: [102, 13002] },
             build: { capacity: capacityTiers, intervalMs: [15000, 10000] },

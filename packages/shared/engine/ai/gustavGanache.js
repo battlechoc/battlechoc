@@ -7,7 +7,7 @@
 //   may use, like the turn-based Augustus did.
 
 const { BoardCellTypes, EntityType, AttackType, isDonut } = require('../../constants');
-const { MatchPhase, MatchActionTypes, WeaponState } = require('../index');
+const { MatchPhase, MatchActionTypes, WeaponState, creamArea } = require('../index');
 const { Agent } = require('../agents');
 
 const Personality = Object.freeze({
@@ -257,10 +257,10 @@ class GustavGanache extends Agent {
         // 1. hide exposed own buildings
         const exposed = grid.filter(cell => buildings(cell).length > 0 && !hasCream(cell) && !cell.molten);
         if (exposed.length > 0 && this.rage < 0.75 && this.nextRandom() < this.skill) {
+            const exposedKeys = new Set(exposed.map(key));
             const anchors = grid.map(cell => ({
                 cell,
-                covers: exposed.filter(other => other.row >= Math.min(cell.row, size.rows - 2) && other.row <= Math.min(cell.row, size.rows - 2) + 1 &&
-                    other.col >= Math.min(cell.col, size.cols - 2) && other.col <= Math.min(cell.col, size.cols - 2) + 1).length,
+                covers: creamArea(view.balance, size, cell.row, cell.col).filter(position => exposedKeys.has(key(position))).length,
             }));
             const best = Math.max(...anchors.map(anchor => anchor.covers));
             const anchor = this.pick(anchors.filter(candidate => candidate.covers === best)).cell;

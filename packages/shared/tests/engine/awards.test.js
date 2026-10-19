@@ -61,6 +61,16 @@ describe('achievements', () => {
         expect(engine.computeMatchAwards(match, 1)).toEqual([]);
     });
 
+    test('a board fully under cream earns PERSONALCONCERN, molten cells do not count', () => {
+        const { place, cellOf } = require('./helper');
+        const match = runningMatch();
+        cellOf(match, 0, 5, 5).molten = true;
+        [[1, 1], [1, 4], [4, 1], [4, 4]].forEach(([row, col]) => place(match, 0, EntityType.CREAM, row, col));
+        end(match, [0]);
+        expect(fulfilled(match, 0)).toContain('PERSONALCONCERN');
+        expect(fulfilled(match, 1)).not.toContain('PERSONALCONCERN');
+    });
+
     test('a player who surrendered is no good sport', () => {
         const match = runningMatch();
         end(match, [0], engine.OutcomeReason.SURRENDER);
