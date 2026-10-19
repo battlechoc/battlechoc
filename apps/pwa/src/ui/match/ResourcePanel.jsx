@@ -25,7 +25,8 @@ const useStyles = createUseStyles((theme) => ({
     alignItems: "center",
     marginBottom: 5,
     "& p": {
-      margin: "0 5px 0 0",
+      // room between the number and its round icon, growing with the text
+      margin: "0 0.4em 0 0",
       color: "white",
       fontFamily: theme.font.display,
       // the number sits next to the big round icon, so it takes the headline step
