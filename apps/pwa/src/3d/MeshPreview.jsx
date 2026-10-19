@@ -10,6 +10,7 @@ import {
   Color4,
   Camera,
   StandardMaterial,
+  TransformNode,
 } from "@babylonjs/core";
 import { assetLoader } from "../AssetLoader";
 import {
@@ -24,9 +25,11 @@ const MeshPreview = (props) => {
   const scene = useRef();
   const container = useRef();
   const preview = useRef();
+  // the building turns around this node, which sits under the model's centre
+  const pivot = useRef();
 
   const rotate = useCallback(() => {
-    preview.current.forEach((mesh) => (mesh.rotation.y += 0.01));
+    pivot.current.rotation.y += 0.01;
   }, []);
 
   const estimateOrthographicSize = (camera) => {
@@ -110,13 +113,27 @@ const MeshPreview = (props) => {
       .then(({ meshes: group }) => {
         if (typeof preview.current !== "undefined") {
           scene.current.unregisterBeforeRender(rotate);
-          preview.current.forEach((mesh) => mesh.dispose());
+          pivot.current.dispose();
         }
 
         preview.current = group;
         preview.current[0].getChildren().forEach((mesh) => {
           mesh.scaling = new Vector3(1, 1, 1);
         });
+
+        // Turning every mesh of the model around its own origin made the building wobble (and
+        // the glTF root ignores rotation.y, it has a rotationQuaternion): one pivot turns the
+        // whole model around the vertical axis through its centre.
+        const root = group[0];
+        // (the fountain's shield is hidden below, so it does not count)
+        const { min, max } = root.getHierarchyBoundingVectors(
+          true,
+          (mesh) => !(mesh.material && mesh.material.name === "Shield")
+        );
+        pivot.current = new TransformNode("preview.pivot", scene.current);
+        root.parent = pivot.current;
+        root.position.x -= (min.x + max.x) / 2;
+        root.position.z -= (min.z + max.z) / 2;
 
         if (selectedEntity.type === EntityType.CHOCOLATE_FOUNTAIN) {
           preview.current.forEach((mesh) => {
