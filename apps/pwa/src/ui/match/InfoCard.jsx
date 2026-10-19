@@ -74,7 +74,8 @@ const buildingLines = (view, type) => {
   const costs = engine.buildCosts(view, view.viewer, type);
   const lines = [];
   if (type === EntityType.CREAM) {
-    lines.push(t(tr.TOOLTIP_RT_CREAM));
+    // the square centred on the tapped cell (engine.creamArea)
+    lines.push(fill(t(tr.TOOLTIP_RT_CREAM), { size: spec.area || spec.footprint || 1 }));
   }
   if (!isDonut(type)) {
     lines.push(
