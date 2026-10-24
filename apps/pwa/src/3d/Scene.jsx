@@ -52,13 +52,15 @@ class Scene extends Component {
 
   componentDidMount() {
     this.props.onRef(this);
+    // A phone with a 3x screen would render nine times the pixels of the CSS size; twice is
+    // sharp enough and leaves the GPU less than half the work (limitDeviceRatio).
     this.engine = new Engine(
       this.container,
       true,
       {
-        preserveDrawingBuffer: true,
         stencil: true,
         useHighPrecisionFloats: false,
+        limitDeviceRatio: 2,
       },
       true
     );
