@@ -197,12 +197,14 @@ class Scene extends Component {
       "energy.bar.material." + name,
       this.scene
     );
+    // unlit like the weapon indicators: the lights would darken the bar's colour
+    material.disableLighting = true;
     if (energy < 0.3) {
-      material.diffuseColor = Color3.FromHexString("#D05531");
+      material.emissiveColor = Color3.FromHexString("#D05531");
     } else if (energy < 0.6) {
-      material.diffuseColor = Color3.FromHexString("#DFBF31");
+      material.emissiveColor = Color3.FromHexString("#DFBF31");
     } else {
-      material.diffuseColor = Color3.FromHexString("#70bf31");
+      material.emissiveColor = Color3.FromHexString("#70bf31");
     }
 
     bar.material = material;
