@@ -15,7 +15,7 @@ import {
   ImageProcessingConfiguration,
   PBRMaterial,
   StandardMaterial,
-} from "@babylonjs/core";
+} from "./babylon";
 import { requestedLook } from "../testHooks";
 
 export const LOOKS = ["classic", "bright", "sky"];

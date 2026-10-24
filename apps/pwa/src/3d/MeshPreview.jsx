@@ -8,7 +8,7 @@ import {
   Color4,
   Camera,
   TransformNode,
-} from "@babylonjs/core";
+} from "./babylon";
 import { assetLoader } from "../AssetLoader";
 import { applyLook, cellMaterial, prepareMaterials } from "./look";
 import {

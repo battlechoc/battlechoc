@@ -19,11 +19,10 @@ import {
   Color4,
   StandardMaterial,
   ImportMeshAsync,
-} from "@babylonjs/core";
-import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
+} from "../../src/3d/babylon";
+import "../../src/3d/gltf";
 import { applyLook, cellMaterial, currentLook, prepareMaterials } from "../../src/3d/look";
 
-registerBuiltInLoaders();
 
 const GAME_MODELS = [
   "factory.glb",

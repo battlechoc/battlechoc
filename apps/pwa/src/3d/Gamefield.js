@@ -9,7 +9,7 @@ import {
   SolidParticleSystem,
   Texture,
   MeshBuilder,
-} from "@babylonjs/core";
+} from "./babylon.js";
 import { v4 as uuidv4 } from "uuid";
 
 class Gamefield {

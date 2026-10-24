@@ -11,11 +11,10 @@ import {
   StandardMaterial,
   Color3,
   Engine,
-} from "@babylonjs/core";
-import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
+} from "./3d/babylon";
+import "./3d/gltf";
 import { cellMaterial, prepareMaterials } from "./3d/look";
 
-registerBuiltInLoaders();
 
 class AssetLoader {
   constructor() {
