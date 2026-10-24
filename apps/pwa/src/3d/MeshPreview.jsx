@@ -2,17 +2,15 @@ import React, { useRef, useEffect, useCallback } from "react";
 import {
   Scene as BabylonScene,
   ImportMeshAsync,
-  HemisphericLight,
   Engine,
   FlyCamera,
   Vector3,
-  Color3,
   Color4,
   Camera,
-  StandardMaterial,
   TransformNode,
 } from "@babylonjs/core";
-import { assetLoader, withoutMetal } from "../AssetLoader";
+import { assetLoader } from "../AssetLoader";
+import { applyLook, cellMaterial, prepareMaterials } from "./look";
 import {
   BoardCellTypes,
   EntityType,
@@ -51,7 +49,8 @@ const MeshPreview = (props) => {
 
     const createScene = () => {
       const scene = new BabylonScene(engine.current);
-      new HemisphericLight("light", new Vector3(0, 1, 0), scene);
+      // the game's light, so that the building looks the same in the lab and on the board
+      applyLook(scene);
       scene.clearColor = new Color4(0, 0, 0, 0);
       camera.current = new FlyCamera("camera", new Vector3(30, 30, 30), scene);
       camera.current.mode = Camera.ORTHOGRAPHIC_CAMERA;
@@ -76,11 +75,7 @@ const MeshPreview = (props) => {
         if (scene.current.isDisposed) {
           return;
         }
-        const material = new StandardMaterial(
-          "brown.field.material",
-          scene.current
-        );
-        material.diffuseColor = Color3.FromHexString("#824529");
+        const material = cellMaterial("brown.field.material", "#824529", scene.current);
         material.sideOrientation = 0;
         group[1].material = material;
         group[1].scaling = new Vector3(1.5, 1, 1.5);
@@ -122,7 +117,7 @@ const MeshPreview = (props) => {
         if (scene.current.isDisposed) {
           return;
         }
-        withoutMetal(group);
+        prepareMaterials(group);
         if (typeof preview.current !== "undefined") {
           scene.current.unregisterBeforeRender(rotate);
           pivot.current.dispose();

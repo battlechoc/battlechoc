@@ -13,6 +13,7 @@ import {
   Engine,
 } from "@babylonjs/core";
 import { registerBuiltInLoaders } from "@babylonjs/loaders/dynamic";
+import { cellMaterial, prepareMaterials } from "./3d/look";
 
 registerBuiltInLoaders();
 
@@ -174,14 +175,11 @@ const DONUT_COLORS = {
   },
 };
 
-// The scenes have no environment map, so a metallic surface would only mirror black (the donut
-// factory's bucket came out black, silver in its icon): every model renders as a non-metal.
-const withoutMetal = (meshes) =>
-  meshes.forEach((mesh) => {
-    if (mesh.material && typeof mesh.material.metallic === "number") {
-      mesh.material.metallic = 0;
-    }
-  });
+const CELL_COLORS = {
+  [BoardCellTypes.BROWN]: "#824529",
+  [BoardCellTypes.BLACK]: "#3E211B",
+  [BoardCellTypes.WHITE]: "#F8DBAF",
+};
 
 // another template from an already loaded file; the copies share the geometry
 const copyModel = (root) => {
@@ -196,15 +194,7 @@ const prepareModel = (key, group, scene) => {
       Object.values(BoardCellTypes).includes(key) &&
       mesh.name !== "__root__"
     ) {
-      let material = new StandardMaterial(key + ".material", scene);
-      if (key === BoardCellTypes.BROWN) {
-        material.diffuseColor = Color3.FromHexString("#824529");
-      } else if (key === BoardCellTypes.BLACK) {
-        material.diffuseColor = Color3.FromHexString("#3E211B");
-      } else {
-        material.diffuseColor = Color3.FromHexString("#F8DBAF");
-      }
-      mesh.material = material;
+      mesh.material = cellMaterial(key + ".material", CELL_COLORS[key], scene);
     }
     const colors = DONUT_COLORS[key];
     if (colors && mesh.material && colors[mesh.material.name]) {
@@ -228,7 +218,7 @@ const prepareModel = (key, group, scene) => {
       }
     }
   });
-  withoutMetal(group);
+  prepareMaterials(group);
 };
 
 // the menu also waits for the fonts (src/index.css), but never longer than FONT_TIMEOUT:
@@ -323,4 +313,4 @@ const AssetLoadingViewContainer = connect(
   mapStateToProps,
   mapDispatchToProps
 )(AssetLoadingView);
-export { assetLoader, withoutMetal, AssetLoadingViewContainer };
+export { assetLoader, AssetLoadingViewContainer };

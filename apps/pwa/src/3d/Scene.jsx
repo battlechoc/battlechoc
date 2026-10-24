@@ -12,6 +12,7 @@ import { matchSession } from "../match/LocalMatchHost";
 import { submit, ignoreRuleErrors } from "../ui/match/submit";
 import { InfoType } from "./InfoType";
 import Gamefield from "./Gamefield";
+import { applyLook } from "./look";
 import {
   EntityType,
   AttackType,
@@ -27,14 +28,12 @@ import {
   DynamicTexture,
   Mesh,
   StandardMaterial,
-  DirectionalLight,
   Engine,
   HighlightLayer,
   FlyCamera,
   Color3,
   Camera,
   Vector3,
-  HemisphericLight,
   Color4,
   Animation,
   MeshBuilder,
@@ -74,12 +73,7 @@ class Scene extends Component {
       this.camera.maxZ = 100;
       this.estimateOrthographicSize();
       this.camera.setTarget(Vector3.Zero());
-      let light = new HemisphericLight("light", new Vector3(40, 44, 1), scene);
-      light.intensity = 0.1;
-      light.diffuse = new Color3(1.0, 0.97, 0.93);
-      let spot = new DirectionalLight("spot", new Vector3(0, -1, -1), scene);
-      spot.intensity = 1;
-      spot.position = new Vector3(35, 35, 35);
+      applyLook(scene);
       this.loadingView.current.loadAssets(scene);
       return scene;
     };

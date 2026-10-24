@@ -10,3 +10,10 @@ export const exposeForTests = (hooks) => {
     window.__battlechoc = hooks;
   }
 };
+
+/** ?look=<name> picks the light of the 3D scenes (src/3d/look.js); read on load, before App
+ * resets the URL (test builds only). */
+export const requestedLook =
+  testHooksEnabled && typeof location !== "undefined"
+    ? new URLSearchParams(location.search).get("look")
+    : null;
