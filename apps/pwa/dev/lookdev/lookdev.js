@@ -4,8 +4,7 @@
 // Query parameters (all optional):
 //   models=factory.glb,cannon.glb   which models (default: all that the game loads)
 //   base=/models/                   where they come from (e.g. a folder of optimized exports)
-//   look=bright                     the light of src/3d/look.js (classic, bright, sky)
-//   hemi=0.6&sun=0.9                override the intensity of the fill and the directional light
+//   env=0.8&fill=0.2&sun=0.75&exposure=0.95   tune the light of src/3d/look.js
 //   cols=5                          tiles per row
 //   gap=1.6                         distance between the tiles (1 = the board)
 // window.lookdevReady turns true once everything is drawn (for screenshots).
@@ -21,7 +20,7 @@ import {
   ImportMeshAsync,
 } from "../../src/3d/babylon";
 import "../../src/3d/gltf";
-import { applyLook, cellMaterial, currentLook, prepareMaterials } from "../../src/3d/look";
+import { applyLook, cellMaterial, lightSettings, prepareMaterials } from "../../src/3d/look";
 
 
 const GAME_MODELS = [
@@ -44,7 +43,6 @@ const FIELD_COLORS = ["#824529", "#F8DBAF", "#3E211B"];
 const params = new URLSearchParams(location.search);
 const models = params.has("models") ? params.get("models").split(",") : GAME_MODELS;
 const base = params.get("base") || "/models/";
-const look = currentLook();
 const cols = Number(params.get("cols") || 5);
 const gap = Number(params.get("gap") || 1.6);
 
@@ -70,13 +68,7 @@ const fit = () => {
 };
 fit();
 
-applyLook(scene, look);
-if (params.has("hemi")) {
-  scene.getLightByName("light").intensity = Number(params.get("hemi"));
-}
-if (params.has("sun")) {
-  scene.getLightByName("spot").intensity = Number(params.get("sun"));
-}
+applyLook(scene);
 
 // the fountain's shield as src/AssetLoader.jsx replaces it
 const shield = new StandardMaterial("shield", scene);
@@ -84,7 +76,7 @@ shield.diffuseColor = Color3.FromHexString("#DE8731");
 shield.alpha = 0.5;
 shield.alphaMode = Engine.ALPHA_COMBINE;
 
-const fieldMaterials = FIELD_COLORS.map((hex, i) => cellMaterial("field" + i, hex, scene, look));
+const fieldMaterials = FIELD_COLORS.map((hex, i) => cellMaterial("field" + i, hex, scene));
 
 // templates below a disabled root, instances without a parent: the way src/3d/Gamefield.js
 // places them (it ignores the transforms of the exported nodes)
@@ -102,7 +94,7 @@ const place = (meshes, row, col, material) => {
       } else if (isShield) {
         child.material = shield;
       } else {
-        prepareMaterials([child], look);
+        prepareMaterials([child]);
       }
       const instance = child.createInstance(child.name + "." + row + "." + col);
       instance.parent = null;
@@ -126,9 +118,9 @@ const loads = models.map((file, i) => {
 
 document.getElementById("legend").textContent =
   models.map((file, i) => `${Math.floor(i / cols)},${i % cols} ${file}`).join("\n") +
-  `\nlook ${look} · fill ${scene.getLightByName("light").intensity} · sun ${
-    scene.getLightByName("spot").intensity
-  } · ${base}`;
+  `\n${Object.entries(lightSettings())
+    .map(([key, value]) => `${key} ${value}`)
+    .join(" · ")} · ${base}`;
 
 Promise.all(loads).then(() =>
   scene.executeWhenReady(() => {

@@ -89,6 +89,7 @@ precacheAndRoute(
     { url: "/models/hotChocolateBallista.glb", revision: "5" },
     { url: "/models/spyingEasterBunny.glb", revision: "5" },
     { url: "/models/xmasFactory.glb", revision: "5" },
+    { url: "/textures/sky.env", revision: "1" },
     { url: "/images/lab/badge-damage.svg", revision: "1" },
     { url: "/images/lab/badge-hp.svg", revision: "1" },
     { url: "/images/lab/badge-shield.svg", revision: "1" },

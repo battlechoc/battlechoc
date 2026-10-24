@@ -11,9 +11,16 @@ export const exposeForTests = (hooks) => {
   }
 };
 
-/** ?look=<name> picks the light of the 3D scenes (src/3d/look.js); read on load, before App
- * resets the URL (test builds only). */
-export const requestedLook =
-  testHooksEnabled && typeof location !== "undefined"
-    ? new URLSearchParams(location.search).get("look")
-    : null;
+/** ?env=, ?fill=, ?sun=, ?exposure= override the light of the 3D scenes (src/3d/look.js) to tune
+ * it; read on load, before App resets the URL (test builds only). */
+export const requestedLight = (() => {
+  if (!testHooksEnabled || typeof location === "undefined") {
+    return {};
+  }
+  const query = new URLSearchParams(location.search);
+  return Object.fromEntries(
+    ["env", "fill", "sun", "exposure"]
+      .filter((key) => query.has(key))
+      .map((key) => [key, Number(query.get(key))])
+  );
+})();
