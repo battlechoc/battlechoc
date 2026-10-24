@@ -522,7 +522,14 @@ class Gamefield {
     if (!mesh) {
       return;
     }
-    let gravity = -0.02;
+    // In units and seconds: the pieces burst up and out in every direction, tumble, fall back
+    // and shrink away within the lifetime, at the same pace on a 60 and a 120 Hz screen.
+    // (Per-frame steps with positive random speeds sent every explosion off to one side,
+    // across half the screen.)
+    const gravity = -18;
+    const lifetime = 1.2;
+    let age = 0;
+    let delta = 0;
     let solidParticleSystem = new SolidParticleSystem(
       "solidParticleSystem",
       this.scene
@@ -534,14 +541,17 @@ class Gamefield {
     solidParticleSystem.refreshVisibleSize();
 
     solidParticleSystem.updateParticle = (particle) => {
-      if (particle.position.y < -20) {
-        particle.isVisible = false;
-      } else {
-        particle.velocity.y += gravity;
-        particle.velocity.x -= 0.01;
-        particle.velocity.z -= 0.01;
-        particle.position.addInPlace(particle.velocity);
-      }
+      const velocity = particle.velocity;
+      velocity.y += gravity * delta;
+      particle.position.addInPlaceFromFloats(
+        velocity.x * delta,
+        velocity.y * delta,
+        velocity.z * delta
+      );
+      particle.rotation.x += velocity.z * delta * 2;
+      particle.rotation.z -= velocity.x * delta * 2;
+      particle.scaling.setAll(Math.max(0, 1 - age / lifetime));
+      return particle;
     };
 
     solidParticleSystem.initParticles = () => {
@@ -566,21 +576,26 @@ class Gamefield {
     solidParticleSystem.initParticles();
     solidParticleSystem.setParticles();
 
-    let setParticles = () => solidParticleSystem.setParticles();
+    let setParticles = () => {
+      // seconds since the last frame, capped so that the first frame after a pause does not jump
+      delta = Math.min(this.scene.getEngine().getDeltaTime() / 1000, 0.05);
+      age += delta;
+      solidParticleSystem.setParticles();
+    };
 
     this.setRenderLoop();
-    let speed = 0.7;
     for (
       let particle = 0;
       particle < solidParticleSystem.nbParticles;
       particle++
     ) {
-      solidParticleSystem.particles[particle].velocity.x =
-        Math.random() * speed;
-      solidParticleSystem.particles[particle].velocity.y =
-        Math.random() * speed;
-      solidParticleSystem.particles[particle].velocity.z =
-        Math.random() * speed;
+      const angle = Math.random() * 2 * Math.PI;
+      const speed = 1.5 + Math.random() * 2.5;
+      solidParticleSystem.particles[particle].velocity.set(
+        Math.cos(angle) * speed,
+        3 + Math.random() * 4,
+        Math.sin(angle) * speed
+      );
     }
     this.scene.registerBeforeRender(setParticles);
 
@@ -604,7 +619,7 @@ class Gamefield {
           .find((callback) => callback.id === uuid)
           .stopAnimation();
       }
-    }, 3000);
+    }, lifetime * 1000 + 100);
     mesh.dispose();
   }
 }
