@@ -22,8 +22,8 @@ npm install          # installs all workspaces
 npm run dev          # Vite dev server for the PWA on port 3000
 npm test             # unit tests of the shared rules engine
 npm run build        # production build of the PWA into apps/pwa/build
-npm run test:e2e     # Playwright end-to-end tests against the production build (run the build
-                     # first, and `npx playwright install chromium` once)
+npm run test:e2e     # Playwright end-to-end tests; builds the e2e build (production build plus
+                     # test hooks) into apps/pwa/build-e2e first (`npx playwright install chromium` once)
 npm run test:api     # tests of the API (in-memory database)
 ```
 

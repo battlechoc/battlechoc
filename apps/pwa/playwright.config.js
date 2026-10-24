@@ -5,7 +5,8 @@ const port = Number(process.env.PORT || 3000);
 const apiPort = Number(process.env.API_PORT || 8091);
 const devPort = Number(process.env.DEV_PORT || 3001);
 
-// The tests run against the production build (`npm run build` first), served by vite preview.
+// The tests run against the e2e build (`npm run build:e2e`, the production build with the test
+// hooks of src/testHooks.js, in build-e2e/; `npm test` builds it first), served by vite preview.
 // They never leave the machine: every host except 127.0.0.1/localhost resolves to nothing, so
 // the app runs as it does offline (no account, no API). The online tests point the app at the
 // local API below through localStorage "battlechoc.apiUrl".
@@ -49,7 +50,7 @@ export default defineConfig({
   webServer: [
     {
       // --open false: vite preview inherits server.open and would open a tab in the default browser
-      command: `vite preview --host 127.0.0.1 --port ${port} --strictPort --open false`,
+      command: `vite preview --outDir build-e2e --host 127.0.0.1 --port ${port} --strictPort --open false`,
       url: `http://127.0.0.1:${port}`,
       reuseExistingServer: true,
       timeout: 60000,

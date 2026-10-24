@@ -5,6 +5,7 @@ import { matchCleared } from "../match/matchSlice";
 import { selectAttack, selectBuilding, deselectAttack, deselectBuildings, focusBoard } from "../ui/UiActions";
 import { lessonMatch } from "./lesson";
 import { demos, demoMatch } from "./demos";
+import { exposeForTests } from "../testHooks";
 
 const TICK_MS = 50;
 const LOOP_PAUSE_MS = 1500;
@@ -40,7 +41,7 @@ class TutorialRunner {
   host(clock, onEnded) {
     const host = new LocalMatchHost({ dispatch: this.dispatch, clock, onEnded });
     matchSession.host = host;
-    window.__battlechoc = { host, engine };
+    exposeForTests({ host, engine });
     return host;
   }
 
