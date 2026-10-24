@@ -12,7 +12,7 @@ import {
   StandardMaterial,
   TransformNode,
 } from "@babylonjs/core";
-import { assetLoader } from "../AssetLoader";
+import { assetLoader, withoutMetal } from "../AssetLoader";
 import {
   BoardCellTypes,
   EntityType,
@@ -28,8 +28,9 @@ const MeshPreview = (props) => {
   // the building turns around this node, which sits under the model's centre
   const pivot = useRef();
 
+  // 0.6 rad per second, whatever the display's frame rate
   const rotate = useCallback(() => {
-    pivot.current.rotation.y += 0.01;
+    pivot.current.rotation.y += 0.0006 * engine.current.getDeltaTime();
   }, []);
 
   const estimateOrthographicSize = (camera) => {
@@ -45,7 +46,8 @@ const MeshPreview = (props) => {
   };
 
   useEffect(() => {
-    engine.current = new Engine(container.current, true);
+    // sharp on high-density screens, but never more than twice the CSS pixels
+    engine.current = new Engine(container.current, true, { limitDeviceRatio: 2 }, true);
 
     const createScene = () => {
       const scene = new BabylonScene(engine.current);
@@ -71,6 +73,9 @@ const MeshPreview = (props) => {
       scene.current
     )
       .then(({ meshes: group }) => {
+        if (scene.current.isDisposed) {
+          return;
+        }
         const material = new StandardMaterial(
           "brown.field.material",
           scene.current
@@ -102,6 +107,9 @@ const MeshPreview = (props) => {
       if (observer) {
         observer.disconnect();
       }
+      // without this the render loop kept turning the building after the lab closed, and
+      // every visit left a WebGL context behind
+      engine.current.dispose();
     };
   }, []);
 
@@ -111,6 +119,10 @@ const MeshPreview = (props) => {
       scene.current
     )
       .then(({ meshes: group }) => {
+        if (scene.current.isDisposed) {
+          return;
+        }
+        withoutMetal(group);
         if (typeof preview.current !== "undefined") {
           scene.current.unregisterBeforeRender(rotate);
           pivot.current.dispose();
