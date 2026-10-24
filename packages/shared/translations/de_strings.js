@@ -201,6 +201,7 @@ module.exports = {
     "INFO_IMPRESS_EXECUTIVE_DIRECTORS": "Geschäftsführung",
     "INFO_PRIVACY_POLICY": "Datenschutzerklärung",
     "INFO_PRIVACY_POLICY_TEXT": "Derzeit verdienen wir kein Geld mit battlechoc und es ist für jeden frei spielbar. Wir sind bemüht, deine Daten zu schützen. Deshalb speichern wir serverseitig allgemein nur so wenig Daten wie möglich. Wir speichern die Fehlerberichte, die du uns aktiv über die Einstellungen sendest. Hier sichern wir deinen Spielstand und deinen Zugverlauf, damit wir dein Problem nachstellen können. Durch aktives Bestätigen einer Checkbox kannst du uns auch zusätzlich Browserinformationen und dein Betriebssystem mitteilen. Um den Fehler nachvollziehen zu können, hilft oft auch eine zusätzliche Nachricht, die wir bei Angabe ebenfalls speichern. Nachdem wir den Fehler reproduzieren und beheben konnten, werden wir all diese Informationen unverzüglich löschen, spätestens jedoch nach 2 Monaten nach Absenden des Fehlerberichts.",
+    "INFO_SOURCE_CODE": "Freie Software (AGPL-3.0): Quellcode auf GitHub",
     "TUTORIAL": "Tutorial",
     "IOS_MESSAGE": "Drehe dein iPhone, um battlechoc im Vollbildmodus spielen zu können [0] oder verwende die Share-Funktion [1] und klicke auf [2] \"Zum Home-Bildschirm\"",
     "JOIN_MULTIPLAYER": "Multiplayer Spiel beitreten",

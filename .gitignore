@@ -2,6 +2,7 @@
 node_modules/
 coverage/
 build/
+build-e2e/
 dist/
 
 # local environment

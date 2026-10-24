@@ -38,6 +38,7 @@ import {
   deselectAttack,
 } from "./ui/UiActions";
 import { debugScenarios } from "./situations/scenarios";
+import { testHooksEnabled, exposeForTests } from "./testHooks";
 import Hud from "./ui/Hud";
 import { v4 as uuidv4 } from "uuid";
 import IncomingInvite from "./ui/dialogs/IncomingInvite";
@@ -58,10 +59,10 @@ const SERVER_MATCH_TIMEOUT_MS = 6000;
 class App extends Component {
   constructor(props) {
     super(props);
-    // ?testclock replaces the real-time match clock with a manual one (e2e tests); read it
-    // before the path is reset below
+    // ?testclock replaces the real-time match clock with a manual one (e2e tests, test builds
+    // only); read it before the path is reset below
     const query = new URLSearchParams(window.location.search);
-    this.testClock = query.has("testclock");
+    this.testClock = testHooksEnabled && query.has("testclock");
     // an invite to a live match, opened from its push notification
     this.inviteId = query.get("invite") || undefined;
     let path = window.location.pathname;
@@ -70,7 +71,7 @@ class App extends Component {
       openInfo = true;
     } else if (/^(\/[a-zA-Z][a-zA-Z0-9_]{2,15})$/.test(path)) {
       var player = path.slice(1);
-    } else if (path.startsWith("/situation/")) {
+    } else if (testHooksEnabled && path.startsWith("/situation/")) {
       var situation = path.replace("/situation/", "").slice(0, 32);
     }
 
@@ -395,12 +396,12 @@ class App extends Component {
       },
     });
     matchSession.host = host;
-    window.__battlechoc = {
+    exposeForTests({
       host,
       engine,
       live: liveConnection,
       view: () => this.props.matchView,
-    };
+    });
     this.props.resetUi();
     this.props.deselectBuildings();
     this.props.deselectAttack();
@@ -426,7 +427,7 @@ class App extends Component {
       },
     });
     matchSession.host = host;
-    window.__battlechoc = { host, engine };
+    exposeForTests({ host, engine });
     this.props.resetUi();
     this.props.deselectBuildings();
     this.props.deselectAttack();

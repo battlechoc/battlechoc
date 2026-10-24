@@ -108,6 +108,14 @@ const Info = (props) => {
               by Sebastian Bode & Fabian Bormann
               <br />
               E-mail: contact@battlechoc.com
+              <br />
+              <a
+                href="https://github.com/battlechoc/battlechoc"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t(tr.INFO_SOURCE_CODE)}
+              </a>
             </p>
           </div>
           <h2 style={{ textAlign: "center" }}>{t(tr.INFO_PRIVACY_POLICY)}</h2>

@@ -6,6 +6,7 @@
 apps/android
 apps/server
 apps/pwa/build
+apps/pwa/build-e2e
 apps/pwa/test/results
 apps/pwa/test/output
 whitepaper

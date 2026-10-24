@@ -123,6 +123,7 @@ module.exports = {
     "INFO_IMPRESS_PHONE": "Điện thoại",
     "INFO_PRIVACY_POLICY": "Chính sách bảo mật",
     "INFO_PRIVACY_POLICY_TEXT": "Hiện tại chúng tôi không kiếm được tiền với battlechoc và mọi người đều có thể chơi miễn phí. Chúng tôi cố gắng bảo vệ dữ liệu của bạn mọi lúc, đây là lý do tại sao chúng tôi lưu trữ dữ liệu tối thiểu nhất có thể. Chúng tôi thu thập dữ liệu nếu bạn tự gửi báo cáo lỗi. Đây là nơi chúng tôi lưu trữ trạng thái trò chơi và lịch sử di chuyển của bạn. Bằng cách kích hoạt hộp kiểm, bạn cũng có thể cho chúng tôi biết thông tin trình duyệt và hệ điều hành của bạn. Để có thể tái tạo lỗi, một thông báo bổ sung cũng thường giúp ích, chúng tôi cũng lưu lại khi bạn chỉ định lỗi. Sau khi chúng tôi có thể sao chép và khắc phục lỗi, chúng tôi sẽ xóa ngay thông tin này, nhưng chậm nhất là sau 2 tháng sau khi gửi báo cáo lỗi.",
+    "INFO_SOURCE_CODE": "Phần mềm tự do (AGPL-3.0): mã nguồn trên GitHub",
     "INVITATION": "Tham gia trò chơi nhiều người chơi battlechoc của tôi!",
     "IOS_MESSAGE": "Để chơi battlechoc ở chế độ toàn màn hình trên iOS, bạn cần xoay iPhone [0] hoặc sử dụng biểu tượng chia sẻ [1] và chọn [2] \"Thêm vào màn hình chính\"",
     "ITALIAN": "Italiano",

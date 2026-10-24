@@ -34,7 +34,7 @@ Thank you for your interest in contributing to battlechoc! Please follow these g
    npm run test:api    # API tests (in-memory Postgres)
    npm run build       # PWA production build
    npx playwright install chromium   # once, for the end-to-end tests
-   npm run test:e2e    # Playwright end-to-end tests against the build
+   npm run test:e2e    # Playwright end-to-end tests (builds its own test build first)
    ```
 
 ## Licensing of contributions
