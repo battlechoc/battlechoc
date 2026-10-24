@@ -123,6 +123,7 @@ module.exports = {
     "INFO_IMPRESS_PHONE": "Téléphone",
     "INFO_PRIVACY_POLICY": "Politique de confidentialité",
     "INFO_PRIVACY_POLICY_TEXT": "Actuellement, nous ne gagnons pas d'argent avec battlechoc et c'est jouable gratuitement pour tout le monde. Nous essayons de protéger vos données à tout moment, c'est pourquoi nous stockons le moins de données possible. Nous collectons des données si vous soumettez manuellement un rapport de bogue. C'est là que nous stockons votre état de jeu et votre historique de coups. En activant une case à cocher, vous pouvez également nous indiquer les informations de votre navigateur et votre système d'exploitation. Afin de pouvoir reproduire l'erreur, un message supplémentaire est souvent utile également, que nous enregistrons également lorsque vous le spécifiez. Après avoir pu reproduire et résoudre le bogue, nous supprimerons immédiatement ces informations, mais au plus tard 2 mois après l'envoi du rapport d'erreur.",
+    "INFO_SOURCE_CODE": "Logiciel libre (AGPL-3.0) : code source sur GitHub",
     "INVITATION": "Rejoignez mon jeu multijoueur battlechoc!",
     "IOS_MESSAGE": "Pour jouer à battlechoc en mode plein écran sur iOS, vous devez faire pivoter votre iPhone [0] ou utiliser l'icône de partage [1] et sélectionner [2] \"Ajouter à l'écran d'accueil\"",
     "ITALIAN": "Italiano",

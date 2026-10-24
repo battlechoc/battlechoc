@@ -127,6 +127,7 @@ module.exports = {
     "INFO_IMPRESS_EXECUTIVE_DIRECTORS": "Executive Directors",
     "INFO_PRIVACY_POLICY": "Privacy policy",
     "INFO_PRIVACY_POLICY_TEXT": "Currently we do not earn any money with battlechoc and it is free playable for everyone. We try to protect your data at all times, this is why we store as minimal data as possible. We collect data if you manually submit a bug report. This is where we store your game state and your move history. By activating a checkbox you can also tell us your browser information and your operating system. In order to be able to reproduce the error, an additional message often helps as well, which we also save when you specify it. After we have been able to reproduce and resolve the bug, we will immediately delete this information, but at the latest after 2 months after sending the error report.",
+    "INFO_SOURCE_CODE": "Free software (AGPL-3.0): source code on GitHub",
     "TUTORIAL": "Tutorial",
     "IOS_MESSAGE": "To play battlechoc in fullscreen mode on iOS you need to rotate your iPhone [0] or use the share icon [1] and select [2] \"Add to Home Screen\"",
     "JOIN_MULTIPLAYER": "Join Multiplayer Game",

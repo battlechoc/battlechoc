@@ -33,6 +33,8 @@ jobs:
           sed -i "s/LOCAL_DATETIME/$TIMESTAMP/g" src/ui/dialogs/Info.jsx src/helper/settings.jsx
           sed -i "s/NEXT_REVISION/${GITHUB_RUN_NUMBER}/g" src/service-worker.js
       - run: npm run build
+      - name: The published build has no test hooks
+        run: "! grep -rlE '__battlechoc|testclock' apps/pwa/build"
       - name: Prepare GitHub Pages output
         working-directory: apps/pwa/build
         env:
