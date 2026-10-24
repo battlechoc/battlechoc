@@ -13,7 +13,7 @@ import {
   Engine,
 } from "./3d/babylon";
 import "./3d/gltf";
-import { cellMaterial, prepareMaterials } from "./3d/look";
+import { cellMaterial } from "./3d/look";
 
 
 class AssetLoader {
@@ -217,7 +217,6 @@ const prepareModel = (key, group, scene) => {
       }
     }
   });
-  prepareMaterials(group);
 };
 
 // the menu also waits for the fonts (src/index.css), but never longer than FONT_TIMEOUT:

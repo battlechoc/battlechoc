@@ -20,7 +20,7 @@ import {
   ImportMeshAsync,
 } from "../../src/3d/babylon";
 import "../../src/3d/gltf";
-import { applyLook, cellMaterial, lightSettings, prepareMaterials } from "../../src/3d/look";
+import { applyLook, cellMaterial, lightSettings } from "../../src/3d/look";
 
 
 const GAME_MODELS = [
@@ -52,7 +52,8 @@ const scene = new Scene(engine);
 scene.clearColor = new Color4(0, 0, 0, 0);
 
 const rows = Math.ceil(models.length / cols);
-const center = new Vector3(((rows - 1) * gap) / 2, 0, ((cols - 1) * gap) / 2);
+// aimed at the middle of the models, which stand about 0.2 to 1.5 above the tile's centre
+const center = new Vector3(((rows - 1) * gap) / 2, 0.6, ((cols - 1) * gap) / 2);
 const camera = new FlyCamera("camera", center.add(new Vector3(30, 30, 30)), scene);
 camera.mode = Camera.ORTHOGRAPHIC_CAMERA;
 camera.minZ = 0;
@@ -60,7 +61,7 @@ camera.maxZ = 100;
 camera.setTarget(center);
 const fit = () => {
   const ratio = canvas.clientWidth / canvas.clientHeight;
-  const half = Math.max(rows, cols) * gap * 0.7;
+  const half = Math.max(rows, cols) * gap * 0.7 + 0.3;
   camera.orthoTop = half / Math.min(ratio, 1.6);
   camera.orthoBottom = -camera.orthoTop;
   camera.orthoLeft = camera.orthoBottom * ratio;
@@ -93,8 +94,6 @@ const place = (meshes, row, col, material) => {
         child.material = material;
       } else if (isShield) {
         child.material = shield;
-      } else {
-        prepareMaterials([child]);
       }
       const instance = child.createInstance(child.name + "." + row + "." + col);
       instance.parent = null;

@@ -10,7 +10,7 @@ import {
   TransformNode,
 } from "./babylon";
 import { assetLoader } from "../AssetLoader";
-import { applyLook, cellMaterial, prepareMaterials } from "./look";
+import { applyLook, cellMaterial } from "./look";
 import {
   BoardCellTypes,
   EntityType,
@@ -117,7 +117,6 @@ const MeshPreview = (props) => {
         if (scene.current.isDisposed) {
           return;
         }
-        prepareMaterials(group);
         if (typeof preview.current !== "undefined") {
           scene.current.unregisterBeforeRender(rotate);
           pivot.current.dispose();

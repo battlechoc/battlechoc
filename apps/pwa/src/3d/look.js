@@ -49,23 +49,3 @@ export const cellMaterial = (name, hex, scene) => {
   material.roughness = 0.75;
   return material;
 };
-
-// Until the .blend sources are modernised: the old exports set metallic on materials that are no
-// metal (pink wheels, cream), and gave white things (cream, snow, the bunny) a white emission as a
-// stand-in for light; the sky lights them properly. Coloured emission (windows, fairy lights) stays.
-const prepared = new WeakSet();
-export const prepareMaterials = (meshes) =>
-  meshes.forEach((mesh) => {
-    const material = mesh.material;
-    // materials can be shared between templates: only once each
-    if (!material || typeof material.metallic !== "number" || prepared.has(material)) {
-      return;
-    }
-    prepared.add(material);
-    material.metallic = 0;
-    const { r, g, b } = material.emissiveColor;
-    const max = Math.max(r, g, b);
-    if (max > 0 && (max - Math.min(r, g, b)) / max < 0.05) {
-      material.emissiveColor = Color3.Black();
-    }
-  });
