@@ -38,7 +38,8 @@
     "test": "npm run build:e2e && playwright test",
     "live-testing": "npm run build:e2e && playwright test --headed",
     "test:unit": "node --test \"test/unit/*.test.js\"",
-    "models:optimize": "node dev/optimize-models.mjs"
+    "models:optimize": "node dev/optimize-models.mjs",
+    "images:optimize": "node dev/optimize-images.mjs"
   },
   "browserslist": [
     ">0.2%",
