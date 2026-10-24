@@ -1,7 +1,7 @@
 # battlechoc Contributor License Agreement (CLA)
 
 **Version 1.0**  
-**Copyright © Fabian Bormann**
+**Copyright © Fabian Bormann and Sebastian Bode**
 
 Thank you for your interest in contributing to **battlechoc** (the "Project"). This Contributor License Agreement ("Agreement") sets out the terms under which your contributions to the Project will be made.
 
@@ -9,14 +9,15 @@ Thank you for your interest in contributing to **battlechoc** (the "Project"). T
 
 - **"You" (or "Your")**: This refers to the individual or legal entity making a contribution to the Project.
 - **"Contribution"**: Any code, documentation, or other material that you submit to the Project, in any form, including but not limited to source code, object code, patches, bug fixes, documentation, or any other work.
+- **"Maintainers"**: Fabian Bormann and Sebastian Bode, the copyright holders of the Project.
 - **"Project"**: The battlechoc project, including its source code repository on GitHub and any related repositories or subprojects. A publicly accessible instance of the Project is deployed as a web application at battlechoc.com.
 
 ## 2. Grant of Rights
 
 By submitting a Contribution to the Project, You agree to the following:
 
-1. **Copyright License**: You grant Fabian Bormann, the copyright holder of the Project, a perpetual, worldwide, non-exclusive, royalty-free, irrevocable license to use, reproduce, prepare derivative works of, publicly display, publicly perform, sublicense, and distribute Your Contribution and any derivative works thereof.
-2. **Patent License**: You grant Fabian Bormann a perpetual, worldwide, non-exclusive, royalty-free, irrevocable license under any patent claims that You own or control that are necessarily infringed by Your Contribution or its combination with the Project.
+1. **Copyright License**: You grant the Maintainers a perpetual, worldwide, non-exclusive, royalty-free, irrevocable license to use, reproduce, prepare derivative works of, publicly display, publicly perform, sublicense, and distribute Your Contribution and any derivative works thereof.
+2. **Patent License**: You grant the Maintainers a perpetual, worldwide, non-exclusive, royalty-free, irrevocable license under any patent claims that You own or control that are necessarily infringed by Your Contribution or its combination with the Project.
 3. **Moral Rights Waiver**: To the fullest extent permitted by law, You waive and agree not to assert any moral rights or equivalent rights in Your Contribution.
 
 ## 3. Representations and Warranties
@@ -29,7 +30,7 @@ You represent and warrant that:
 
 ## 4. License of the Project
 
-You acknowledge that the source code of the Project is currently licensed under the **GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)** and that its art and music are currently licensed under **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**. However, You agree that Fabian Bormann, as the copyright holder, may relicense the Project under a different license in the future, including proprietary licenses, at their sole discretion.
+You acknowledge that the source code of the Project is currently licensed under the **GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)** and that its art and music are currently licensed under **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)**. However, You agree that the Maintainers, as the copyright holders, may by joint decision relicense the Project under a different license in the future, including proprietary licenses, at their sole discretion.
 
 ## 5. No Obligation to Use
 
