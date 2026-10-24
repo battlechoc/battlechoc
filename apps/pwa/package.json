@@ -37,7 +37,8 @@
     "build:e2e": "vite build --mode e2e --outDir build-e2e",
     "test": "npm run build:e2e && playwright test",
     "live-testing": "npm run build:e2e && playwright test --headed",
-    "test:unit": "node --test \"test/unit/*.test.js\""
+    "test:unit": "node --test \"test/unit/*.test.js\"",
+    "models:optimize": "node dev/optimize-models.mjs"
   },
   "browserslist": [
     ">0.2%",

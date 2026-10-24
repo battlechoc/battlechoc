@@ -35,12 +35,13 @@ class AssetLoader {
         [EntityType.CHOCOLATE_FOUNTAIN]: "chocolateFountain.glb",
         [EntityType.FRUIT_CANNON]: "fruitCannon.glb",
         [EntityType.DONUT_FACTORY]: "donutFactory.glb",
-        [EntityType.DONUT_PORTAL_RED]: "donutPortalRed.glb",
-        [EntityType.DONUT_PORTAL_BLUE]: "donutPortalBlue.glb",
-        [EntityType.DONUT_SURPRISE_YELLOW]: "donutSurpriseYellow.glb",
-        [EntityType.DONUT_STOP_PINK]: "donutStopPink.glb",
-        [EntityType.DONUT_CREAM_WHITE]: "donutCreamWhite.glb",
-        [EntityType.DONUT_HEALTH_GREEN]: "donutHealthGreen.glb",
+        // the trap donuts share one model, DONUT_COLORS paints them
+        [EntityType.DONUT_PORTAL_RED]: "donut.glb",
+        [EntityType.DONUT_PORTAL_BLUE]: "donut.glb",
+        [EntityType.DONUT_SURPRISE_YELLOW]: "donut.glb",
+        [EntityType.DONUT_STOP_PINK]: "donut.glb",
+        [EntityType.DONUT_CREAM_WHITE]: "donut.glb",
+        [EntityType.DONUT_HEALTH_GREEN]: "donut.glb",
       },
       images: [
         "add-icon.svg",
@@ -144,6 +145,92 @@ class AssetLoader {
 
 const assetLoader = new AssetLoader();
 
+// The colours of the trap donuts by material of donut.glb (linear RGB, as Blender exported them
+// when every donut had its own file): "Topping" is the glaze, "Material.002" the sprinkles.
+const DONUT_COLORS = {
+  [EntityType.DONUT_PORTAL_RED]: {
+    Topping: [0.8, 0.1208, 0.1208],
+    "Material.002": [0.8, 0, 0.0104],
+  },
+  [EntityType.DONUT_PORTAL_BLUE]: {
+    Topping: [0.3728, 0.6569, 0.8],
+    "Material.002": [0.0351, 0.0017, 0.8],
+  },
+  [EntityType.DONUT_SURPRISE_YELLOW]: {
+    Topping: [0.9221, 1, 0],
+    "Material.002": [0.3863, 0.393, 0.1622],
+  },
+  [EntityType.DONUT_STOP_PINK]: {
+    Topping: [1, 0.0805, 0.3398],
+    "Material.002": [0.5813, 0, 0.1205],
+  },
+  [EntityType.DONUT_CREAM_WHITE]: {
+    Topping: [0.8253, 0.9711, 1],
+    "Material.002": [0.5641, 0.5813, 0.5813],
+  },
+  [EntityType.DONUT_HEALTH_GREEN]: {
+    Topping: [0.1078, 1, 0.0488],
+    "Material.002": [0.0177, 0.5813, 0.0781],
+  },
+};
+
+// The scenes have no environment map, so a metallic surface would only mirror black (the donut
+// factory's bucket came out black, silver in its icon): every model renders as a non-metal.
+const withoutMetal = (meshes) =>
+  meshes.forEach((mesh) => {
+    if (mesh.material && typeof mesh.material.metallic === "number") {
+      mesh.material.metallic = 0;
+    }
+  });
+
+// another template from an already loaded file; the copies share the geometry
+const copyModel = (root) => {
+  const copy = root.clone("__root__", null);
+  return [copy, ...copy.getChildMeshes(false)];
+};
+
+// turns the meshes of a model into the disabled template "<key>__root__" that Gamefield instances
+const prepareModel = (key, group, scene) => {
+  group.forEach((mesh, i) => {
+    if (
+      Object.values(BoardCellTypes).includes(key) &&
+      mesh.name !== "__root__"
+    ) {
+      let material = new StandardMaterial(key + ".material", scene);
+      if (key === BoardCellTypes.BROWN) {
+        material.diffuseColor = Color3.FromHexString("#824529");
+      } else if (key === BoardCellTypes.BLACK) {
+        material.diffuseColor = Color3.FromHexString("#3E211B");
+      } else {
+        material.diffuseColor = Color3.FromHexString("#F8DBAF");
+      }
+      mesh.material = material;
+    }
+    const colors = DONUT_COLORS[key];
+    if (colors && mesh.material && colors[mesh.material.name]) {
+      const color = colors[mesh.material.name];
+      mesh.material = mesh.material.clone(key + "." + mesh.material.name);
+      mesh.material.albedoColor = Color3.FromArray(color);
+    }
+    mesh.name = key + (mesh.name === "__root__" ? "__root__" : i);
+    mesh.setEnabled(false);
+    if (key === EntityType.CHOCOLATE_FOUNTAIN && mesh.material !== null) {
+      if (mesh.material.name === "Shield") {
+        let shieldMaterial = new StandardMaterial(
+          key + ".Shield.material",
+          scene
+        );
+        shieldMaterial.diffuseColor = Color3.FromHexString("#DE8731");
+        shieldMaterial.alpha = 0.5;
+        shieldMaterial.alphaMode = Engine.ALPHA_COMBINE;
+        mesh.material = shieldMaterial;
+        mesh.visibility = 0.6;
+      }
+    }
+  });
+  withoutMetal(group);
+};
+
 // the menu also waits for the fonts (src/index.css), but never longer than FONT_TIMEOUT:
 // a font that does not load must not keep the game from starting
 const FONTS = ["1em Bangers", "1em Montserrat"];
@@ -169,44 +256,20 @@ const AssetLoadingView = (props) => {
 
   useImperativeHandle(customRef, () => ({
     loadAssets(scene) {
-      for (const key in assetLoader.assets.models) {
-        ImportMeshAsync("/models/" + assetLoader.assets.models[key], scene)
-          .then(({ meshes: group }) => {
-            group.forEach((mesh, i) => {
-              if (
-                Object.values(BoardCellTypes).includes(key) &&
-                mesh.name !== "__root__"
-              ) {
-                let material = new StandardMaterial(key + ".material", scene);
-                if (key === BoardCellTypes.BROWN) {
-                  material.diffuseColor = Color3.FromHexString("#824529");
-                } else if (key === BoardCellTypes.BLACK) {
-                  material.diffuseColor = Color3.FromHexString("#3E211B");
-                } else {
-                  material.diffuseColor = Color3.FromHexString("#F8DBAF");
-                }
-                mesh.material = material;
-              }
-              mesh.name = key + (mesh.name === "__root__" ? "__root__" : i);
-              mesh.setEnabled(false);
-              if (
-                key === EntityType.CHOCOLATE_FOUNTAIN &&
-                mesh.material !== null
-              ) {
-                if (mesh.material.name === "Shield") {
-                  let shieldMaterial = new StandardMaterial(
-                    key + ".Shield.material",
-                    scene
-                  );
-                  shieldMaterial.diffuseColor = Color3.FromHexString("#DE8731");
-                  shieldMaterial.alpha = 0.5;
-                  shieldMaterial.alphaMode = Engine.ALPHA_COMBINE;
-                  mesh.material = shieldMaterial;
-                  mesh.visibility = 0.6;
-                }
-              }
+      const { models } = assetLoader.assets;
+      // one request per file: the board cells and the trap donuts share theirs
+      for (const file of new Set(Object.values(models))) {
+        const keys = Object.keys(models).filter((key) => models[key] === file);
+        ImportMeshAsync("/models/" + file, scene)
+          .then(({ meshes }) => {
+            // copy before the first template gets its names and materials
+            const groups = keys.map((key, i) =>
+              i === 0 ? meshes : copyModel(meshes[0])
+            );
+            keys.forEach((key, i) => {
+              prepareModel(key, groups[i], scene);
+              updateProgress();
             });
-            updateProgress();
           })
           .catch((error) => console.error(error));
       }
@@ -260,4 +323,4 @@ const AssetLoadingViewContainer = connect(
   mapStateToProps,
   mapDispatchToProps
 )(AssetLoadingView);
-export { assetLoader, AssetLoadingViewContainer };
+export { assetLoader, withoutMetal, AssetLoadingViewContainer };
