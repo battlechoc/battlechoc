@@ -10,6 +10,7 @@ from build import TILE, Model
 
 LENGTH, RADIUS = 0.62, 0.2
 RIDGES = 5
+HUSKS = {None: (0.62, 0.42, 0.14), "dark": (0.42, 0.24, 0.07)}
 LID_AT = (-0.24, 0.2, 0.12)
 # the beans: as in a real pod, packed around a central strand like kernels on a cob, each with its
 # long side pointing out; semi-axes along the pod, around it and outwards
@@ -24,14 +25,16 @@ def build(variant=None):
     outside = m.material("Pod", (0.6, 0.32, 0.02), roughness=0.55)
     lid_outside = m.material("Pod Red", (0.42, 0.04, 0.02), roughness=0.55)
     inside = m.material("Pulp", (0.85, 0.82, 0.72), roughness=0.8)
+    # the husk's cut and inner side: darker than the white pulp, like a real pod's
+    husk = m.material("Husk", HUSKS.get(variant, HUSKS[None]), roughness=0.75)
     # fresh beans are rosy beige, still moist from the pulp
     bean = m.material("Bean", (0.7, 0.47, 0.38), roughness=0.45)
 
     # the lower half, lying along x, cut open at the top
-    lower = half_pod(m, outside, inside, top=False)
+    lower = half_pod(m, outside, husk, top=False)
     beans(m, inside, bean)
     # the upper half, turned over and leaning against the lower one
-    lid = half_pod(m, lid_outside, inside, top=True)
+    lid = half_pod(m, lid_outside, husk, top=True)
     # (behind the open half, on the right in the picture, its red outside towards the camera)
     m.transform(Matrix.Translation(LID_AT) @ Matrix.Rotation(1.15, 4, "X") @ Matrix.Rotation(-0.35, 4, "Z"), lid)
     m.transform(Matrix.Translation((0, 0, TILE + RADIUS * 0.7)))
