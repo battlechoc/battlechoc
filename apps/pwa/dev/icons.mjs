@@ -43,6 +43,7 @@ const WHOLE = {
   "stop-donut-icon": "stop-donut-icon",
   "surprise-donut-icon": "surprise-donut-icon",
   "portal-donut-icon": "portal-donut-icon",
+  decoration: "decoration",
 };
 // picture -> the render shown inside the green arrows
 const ARROWS = {

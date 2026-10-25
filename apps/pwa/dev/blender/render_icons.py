@@ -87,6 +87,8 @@ ICONS = {
     "portal-donut-icon": dict(model="donut", copies=(((-0.3, -0.3, 0), "blue"), ((0.3, 0.3, 0), "red")), elevation=50),
     # the logo's and the app icon's motif (the user's pick of 2026-10: over the old cacao tree)
     "logo-fountain": dict(model="chocolateFountain", hide=("Shield",), shadow=False),
+    # the title screen's decoration: a donut on a broken chocolate bar
+    "decoration": dict(model="decoration", elevation=38),
     # dev/icons.mjs cuts the ten progress-NN pictures from it
     "progress-donut": dict(model="donut", copies=(((0, 0, 0), "progress"),), elevation=70, shadow=False),
 }
