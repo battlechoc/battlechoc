@@ -1,5 +1,5 @@
 import { registerRoute } from "workbox-routing";
-import { StaleWhileRevalidate, NetworkFirst } from "workbox-strategies";
+import { StaleWhileRevalidate } from "workbox-strategies";
 import { clientsClaim } from "workbox-core";
 import { precacheAndRoute } from "workbox-precaching";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
@@ -50,7 +50,8 @@ self.addEventListener("notificationclick", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     Promise.all(
-      ["google-fonts-stylesheets", "google-fonts-webfonts"].map((name) =>
+      // caches of routes that are gone ("static-resources" never matched: its pattern was a string)
+      ["google-fonts-stylesheets", "google-fonts-webfonts", "static-resources"].map((name) =>
         caches.delete(name)
       )
     )
@@ -211,13 +212,6 @@ precacheAndRoute(
 
 precacheAndRoute([]);
 
-registerRoute(
-  "/.(?:js|css|html)$/",
-  new NetworkFirst({
-    plugins: [new CacheableResponsePlugin({ statuses: [200] })],
-    cacheName: "static-resources",
-  })
-);
 
 registerRoute(
   /https:.*sound\/.*\.mp3/,

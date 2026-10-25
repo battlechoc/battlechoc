@@ -25,8 +25,7 @@ export { HighlightLayer } from "@babylonjs/core/Layers/highlightLayer.js";
 export { Animation } from "@babylonjs/core/Animations/animation.js";
 export { ParticleSystem } from "@babylonjs/core/Particles/particleSystem.js";
 export { SolidParticleSystem } from "@babylonjs/core/Particles/solidParticleSystem.js";
-export { ActionManager } from "@babylonjs/core/Actions/actionManager.js";
-export { ExecuteCodeAction } from "@babylonjs/core/Actions/directActions.js";
+export { PointerEventTypes } from "@babylonjs/core/Events/pointerEvents.js";
 export { ImportMeshAsync } from "@babylonjs/core/Loading/sceneLoader.js";
 
 import { CreatePlane } from "@babylonjs/core/Meshes/Builders/planeBuilder.js";
