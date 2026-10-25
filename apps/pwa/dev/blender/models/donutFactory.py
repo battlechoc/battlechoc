@@ -1,4 +1,4 @@
-# The donut factory: the user's model (dev/models/donutFactory1.blend) with riveted iron bands round
+# The donut factory: the user's model (dev/models/donutFactory1.blend) with a riveted iron band round
 # the bucket, a glowing porthole, a steam pipe on the lid, a stack of donut boxes and fresh donuts
 # on a tray where the chute comes out.
 import math
@@ -26,8 +26,8 @@ def build(variant=None):
     glazes = [m.material(name, color, roughness=0.6) for name, color in (("Glaze Pink", (0.85, 0.2, 0.4)), ("Glaze Chocolate", (0.1, 0.04, 0.015)), ("Glaze White", (0.9, 0.88, 0.82)))]
     sprinkles = [m.material(name, color) for name, color in (("Sprinkle Yellow", (0.9, 0.7, 0.05)), ("Sprinkle Blue", (0.1, 0.3, 0.9)), ("Sprinkle Green", (0.1, 0.6, 0.15)))]
 
-    # riveted bands round the bucket
-    for z, radius in ((0.335, 0.256), (0.6, 0.289)):
+    # a riveted band round the top of the bucket (the user found one at the bottom too much)
+    for z, radius in ((0.6, 0.289),):
         m.ring((0, 0, z), (0, 0, 1), radius, 0.011, iron, segments=36, minor=5)
         for k in range(12):
             angle = k * math.tau / 12

@@ -48,9 +48,11 @@ def build(variant=None):
     # lying on the pot's surface
     # only on the sides the camera faces (towards +x and -y): seen in profile at the back, a drip
     # over the rim stuck out like a handle
-    for angle in (math.radians(a) for a in (-118, -55, -25, 5, 32)):
+    # (angle in degrees, how far it runs down)
+    for degrees, length in ((-118, 0.1), (-55, 0.3), (-25, 0.06), (5, 0.21), (32, 0.14)):
+        angle = math.radians(degrees)
         out = Vector((math.cos(angle), math.sin(angle), 0))
-        end = 0.92 - m.random.uniform(0.07, 0.22)
+        end = 0.92 - length
         # from the chocolate in the pot over the rim (found from above) and down its outside
         path = []
         for radius in (0.29, 0.325):
@@ -66,13 +68,16 @@ def build(variant=None):
         m.sphere(0.021, path[-1] + Vector((0, 0, -0.008)), chocolate, scale=(1, 1, 1.3), segments=8, rings=6)
 
     # strawberries on the plate, every other one dipped
-    for k in range(8):
-        angle = k * math.tau / 8 + 0.2
-        at = around(angle, 0.355, PLATE + 0.03)
-        m.sphere(0.03, at, strawberry, scale=(1, 1, 1.25), segments=10, rings=7)
-        m.cylinder(0.024, 0.01, at + Vector((0, 0, 0.036)), leaf, radius2=0.006, segments=7)
+    for k in range(7):
+        angle = k * math.tau / 7 + 0.2
+        at = around(angle, 0.365, PLATE + 0.045)
+        m.sphere(0.046, at, strawberry, scale=(1, 1, 1.2), segments=12, rings=8)
+        for leaf_angle in range(5):  # the green calyx
+            a = leaf_angle * math.tau / 5
+            m.sphere(1.0, at + Vector((math.cos(a) * 0.02, math.sin(a) * 0.02, 0.052)), leaf, scale=(0.022, 0.022, 0.006), rot=(0, 0, a), segments=6, rings=4)
+        m.cylinder(0.005, 0.02, at + Vector((0, 0, 0.062)), leaf, segments=5)
         if k % 2:
-            m.sphere(0.032, at + Vector((0, 0, -0.012)), dark, scale=(1, 1, 0.75), segments=10, rings=7)
+            m.sphere(0.049, at + Vector((0, 0, -0.018)), dark, scale=(1, 1, 0.75), segments=12, rings=8)
 
     # two marshmallow skewers leaning against the pot on the visible sides
     for angle in (-0.9, 0.5):
