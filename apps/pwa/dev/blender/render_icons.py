@@ -47,7 +47,8 @@ DONUTS = {
 # picture -> what it shows. copies: (offset, donut colours) for several donuts in one picture;
 # hide: materials left out (the fountain's shield dome); tile: on a chocolate tile; turn: degrees
 # the model turns about its upright axis; elevation: the camera's angle for this picture;
-# mirror: False keeps the picture as rendered; shadow: False leaves out the shadow under it.
+# mirror: False keeps the picture as rendered; shadow: False leaves out the shadow under it;
+# look: its own colour handling; recolor: {material: colour}; tile_color: the chocolate piece's.
 # (`name@degrees` on the command line tries another turn.)
 # colour handling and light: view transform, contrast look, exposure, sky strength, sun strength.
 # The old icons were deep and contrasty; the game's PBR Neutral with a bright sky made the
@@ -64,6 +65,20 @@ LOOKS = {
 # the user's sheets of 2026-10-25: 20° and mirrored chosen; "dark-chocolate" (7) or "bright" (5)
 # to be picked
 LOOKS["default"] = LOOKS["dark-chocolate"]
+# the logo's tree: lighter, like the old logo's
+LOOKS["logo"] = ("Standard", "Medium High Contrast", 0.25, 0.6, 2.6)
+LOOKS["logo-light"] = ("Standard", "Medium High Contrast", 0.55, 0.6, 2.6)
+
+# the colours of the old logo's tree (its lime crown, orange-brown trunk, warm chocolate piece),
+# linear RGB
+OLD_TREE = {
+    "Leaf Dark": (0.1, 0.2, 0.012),
+    "Leaf": (0.2, 0.38, 0.015),
+    "Leaf Light": (0.37, 0.62, 0.04),
+    "Crown": (0.05, 0.09, 0.004),
+    "Bark": (0.4, 0.14, 0.03),
+}
+OLD_SLAB = (0.198, 0.072, 0.022)
 
 ICONS = {
     "factory-icon": dict(model="factory"),
@@ -88,7 +103,8 @@ ICONS = {
     "portal-donut-icon": dict(model="donut", copies=(((-0.3, -0.3, 0), "blue"), ((0.3, 0.3, 0), "red")), elevation=50),
     # the tree of the logo and the app icon, on a piece of chocolate like the old one or without;
     # no shadow on the ground, it would float in the sky
-    "logo-tree": dict(model="cacaotree", tile=True, shadow=False),
+    "logo-tree": dict(model="cacaotree", tile=True, shadow=False, look="logo", recolor=OLD_TREE, tile_color=OLD_SLAB),
+    "logo-tree-light": dict(model="cacaotree", tile=True, shadow=False, look="logo-light", recolor=OLD_TREE, tile_color=OLD_SLAB),
     "logo-tree-plain": dict(model="cacaotree", shadow=False),
     # dev/icons.mjs cuts the ten progress-NN pictures from it
     "progress-donut": dict(model="donut", copies=(((0, 0, 0), "progress"),), elevation=70, shadow=False),
@@ -159,7 +175,7 @@ def material(name, color, roughness):
     return made
 
 
-def setup_scene():
+def setup_scene(look):
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
     scene.cycles.samples = samples
@@ -254,7 +270,8 @@ def frame(scene, objects, hidden=(), margin=1.1, angle=None):
 def render(name, spec):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     addon_utils.enable("cycles", default_set=True)
-    scene = setup_scene()
+    look_name = spec.get("look", look)
+    scene = setup_scene(look_name)
     objects = []
     for offset, colors in spec.get("copies", (((0, 0, 0), None),)):
         copy = load(spec["model"])
@@ -268,14 +285,16 @@ def render(name, spec):
         for slot in obj.material_slots:
             if slot.material and slot.material.name in spec.get("hide", ()):
                 bsdf(slot.material).inputs["Alpha"].default_value = 0.0
-    if look == "dark-chocolate":
+    if spec.get("recolor"):
+        paint(objects, spec["recolor"], tone=1.0)
+    if look_name == "dark-chocolate":
         deepen_browns(objects)
     ground = TILE
     if spec.get("tile") or tile_all:
         # a flat piece of chocolate (the board tile, a third of its height), like the old icons
         tile = load("field")[0]
         tile.data.materials.clear()
-        tile.data.materials.append(material("Tile", BROWN, 0.9))
+        tile.data.materials.append(material("Tile", spec.get("tile_color", BROWN), 0.9))
         tile.scale.z = 0.35
         tile.location.z = TILE * (1 - tile.scale.z)
         objects.append(tile)
