@@ -95,7 +95,6 @@ ICONS = {
     "logo-fountain": dict(model="chocolateFountain", hide=("Shield",)),
     # the resources: cacao and building slots (also inside the arrows of the "per turn" pictures)
     "cacao": dict(model="cacao", elevation=35),
-    "cacao-dark": dict(model="cacao-dark", elevation=35),
     "buildings-icon": dict(model="hammer", elevation=35),
     # the title screen's decoration: a donut on a broken chocolate bar
     "decoration": dict(model="decoration", elevation=38),

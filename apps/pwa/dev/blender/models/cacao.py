@@ -10,8 +10,8 @@ from build import TILE, Model
 
 LENGTH, RADIUS = 0.62, 0.2
 RIDGES = 5
-HUSKS = {None: (0.62, 0.42, 0.14), "dark": (0.42, 0.24, 0.07)}
-LID_AT = (-0.24, 0.2, 0.12)
+HUSK = (0.42, 0.24, 0.07)  # the cut edge (the user's pick of a yellowish and this brown)
+LID_AT = (-0.26, 0.36, 0.06)
 # the beans: as in a real pod, packed around a central strand like kernels on a cob, each with its
 # long side pointing out; semi-axes along the pod, around it and outwards
 BEAN = (0.05, 0.034, 0.062)
@@ -22,28 +22,29 @@ SHELL = 0.78  # the inside's size against the outside (a thick rim)
 
 def build(variant=None):
     m = Model("cacao", seed=47)
-    outside = m.material("Pod", (0.6, 0.32, 0.02), roughness=0.55)
+    outside = m.material("Pod", (0.78, 0.55, 0.05), roughness=0.55)  # yellow, like a ripe pod
     lid_outside = m.material("Pod Red", (0.42, 0.04, 0.02), roughness=0.55)
     inside = m.material("Pulp", (0.85, 0.82, 0.72), roughness=0.8)
-    # the husk's cut and inner side: darker than the white pulp, like a real pod's
-    husk = m.material("Husk", HUSKS.get(variant, HUSKS[None]), roughness=0.75)
+    # the husk's cut edge: brown, the inside white like the pulp (the user's sketch)
+    husk = m.material("Husk", HUSK, roughness=0.75)
     # fresh beans are rosy beige, still moist from the pulp
     bean = m.material("Bean", (0.7, 0.47, 0.38), roughness=0.45)
 
     # the lower half, lying along x, cut open at the top
-    lower = half_pod(m, outside, husk, top=False)
+    lower = half_pod(m, outside, inside, husk, top=False)
     beans(m, inside, bean)
     # the upper half, turned over and leaning against the lower one
-    lid = half_pod(m, lid_outside, husk, top=True)
-    # (behind the open half, on the right in the picture, its red outside towards the camera)
+    lid = half_pod(m, lid_outside, inside, husk, top=True)
+    # behind the open half, clear of it (on the right in the picture), its red outside towards
+    # the camera
     m.transform(Matrix.Translation(LID_AT) @ Matrix.Rotation(1.15, 4, "X") @ Matrix.Rotation(-0.35, 4, "Z"), lid)
     m.transform(Matrix.Translation((0, 0, TILE + RADIUS * 0.7)))
     return m
 
 
-def half_pod(m, outside, inside, top):
+def half_pod(m, outside, inside, rim, top):
     """Half a ridged cacao pod along x, cut at z = 0 (the lower half, or the upper with `top`),
-    with a thin shell: outside and inside surfaces joined at the rim."""
+    with a thick shell: outside and inside surfaces joined by the cut edge, the rim."""
     segments, rings = 40, 24
     faces = []
     shells = []
@@ -76,7 +77,7 @@ def half_pod(m, outside, inside, top):
         for k in (0, segments):
             quad = (outer[i][k], outer[i + 1][k], inner[i + 1][k], inner[i][k])
             face = m.bm.faces.new(quad if (k == 0) != top else quad[::-1])
-            face.material_index = inside
+            face.material_index = rim
             face.smooth = True
             faces.append(face)
     bmesh.ops.remove_doubles(m.bm, verts=list({v for f in faces for v in f.verts}), dist=1e-5)
@@ -87,7 +88,7 @@ def beans(m, pulp, bean):
     """The upper half of the bean "cob" in the open half: rings of beans along the pod, staggered,
     each turned to point away from the strand, the gaps white with pulp."""
     # white pulp filling the bowl under the beans, showing between them
-    m.sphere(1.0, (0, 0, -0.09), pulp, scale=(LENGTH / 2 * 0.62, RADIUS * SHELL * 0.78, 0.03), segments=28, rings=14)
+    m.sphere(1.0, (0, 0, -0.08), pulp, scale=(LENGTH / 2 * 0.66, RADIUS * SHELL * 0.82, 0.032), segments=28, rings=14)
     rings = 7
     spacing = 2 * BEAN[0] * 0.8
     for i in range(rings):
