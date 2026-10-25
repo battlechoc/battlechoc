@@ -40,14 +40,18 @@ class Model:
         self.materials = {}
         self.random = random.Random(seed)
 
-    def include(self, path):
+    def include(self, path, without=(), leave_out=()):
         """Adds the visible meshes of another .blend (the user's hand-made models) with their
-        modifiers applied and their materials as they are. Returns the new faces."""
+        modifiers applied, except those named in `without`, and their materials as they are;
+        faces of the materials in `leave_out` are left out. Returns the new faces."""
         with bpy.data.libraries.load(path) as (source, target):
             target.objects = list(source.objects)
         depsgraph_objects = []
         for obj in target.objects:
             if obj is not None and obj.type == "MESH" and not obj.hide_render:
+                for modifier in obj.modifiers:
+                    if modifier.name in without:
+                        modifier.show_viewport = modifier.show_render = False
                 bpy.context.scene.collection.objects.link(obj)
                 depsgraph_objects.append(obj)
         depsgraph = bpy.context.evaluated_depsgraph_get()
@@ -58,15 +62,25 @@ class Model:
             slots = []
             for slot in obj.material_slots:
                 material = slot.material
+                if material.name in leave_out:
+                    slots.append(None)
+                    continue
                 if material.name not in self.materials:
                     self.materials[material.name] = (len(self.materials), {"existing": material})
                 slots.append(self.materials[material.name][0])
             count = len(self.bm.faces)
             self.bm.from_mesh(mesh)
             self.bm.faces.ensure_lookup_table()
+            dropped = []
             for face in self.bm.faces[count:]:
-                face.material_index = slots[face.material_index] if slots else 0
+                slot = slots[face.material_index] if slots else 0
+                if slot is None:
+                    dropped.append(face)
+                    continue
+                face.material_index = slot
                 faces.append(face)
+            if dropped:
+                bmesh.ops.delete(self.bm, geom=dropped, context="FACES")
             evaluated.to_mesh_clear()
             bpy.data.objects.remove(obj)
         return faces
@@ -202,6 +216,31 @@ class Model:
             for k in range(segments)
         ]
         return self.tube(points, thickness, mat, segments=minor, closed=True)
+
+    def lathe(self, profile, centre, mat, segments=48):
+        """A surface of revolution about the upright axis through `centre`: `profile` is a list of
+        (radius, height) from the bottom up; a radius of 0 at either end closes it there."""
+        cx, cy = centre[0], centre[1]
+        rings = []
+        for radius, z in profile:
+            if radius == 0:
+                rings.append([self.bm.verts.new((cx, cy, z))])
+                continue
+            rings.append(
+                [
+                    self.bm.verts.new((cx + radius * math.cos(2 * math.pi * k / segments), cy + radius * math.sin(2 * math.pi * k / segments), z))
+                    for k in range(segments)
+                ]
+            )
+        for lower, upper in zip(rings, rings[1:]):
+            for k in range(segments):
+                if len(lower) == 1:
+                    self.bm.faces.new((lower[0], upper[k], upper[(k + 1) % segments]))
+                elif len(upper) == 1:
+                    self.bm.faces.new((lower[k], lower[(k + 1) % segments], upper[0]))
+                else:
+                    self.bm.faces.new((lower[k], lower[(k + 1) % segments], upper[(k + 1) % segments], upper[k]))
+        return self._part([vert for ring in rings for vert in ring], mat)
 
     def leaf(self, base, direction, up, length, width, mat, droop=0.25, fold=0.35):
         """A leaf with a midrib: pointing along `direction`, its face towards `up`, folded along

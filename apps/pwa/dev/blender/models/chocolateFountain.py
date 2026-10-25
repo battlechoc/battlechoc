@@ -1,6 +1,8 @@
-# The chocolate fountain: the user's model (dev/models/chocolateFountain.blend) with chocolate
-# running over the pot's rim, a plate under the pot with strawberries (some dipped) and
-# marshmallow skewers. "Shield" (the shield's dome) stays as it is.
+# The chocolate fountain: the tiers of the user's model (dev/models/chocolateFountain.blend) on an
+# even pot of brushed steel turned to the original's profile (the original pot had a control box
+# that read as a grill), with a clear control module facing the camera, chocolate running over
+# the rim, a plate with strawberries (some dipped) and marshmallow skewers. "Shield" (the shield's
+# dome) stays as it is.
 import math
 import os
 
@@ -11,16 +13,16 @@ from build import TILE, Model
 SMOOTH_ANGLE = 40
 MODEL = os.path.join(os.path.dirname(__file__), "..", "..", "models", "chocolateFountain.blend")
 CENTRE = Vector((-0.031, 0.059, 0.0))
-# the pot's outside: (height, radius)
-POT = ((0.359, 0.225), (0.47, 0.25), (0.6, 0.31), (0.75, 0.31), (0.86, 0.337), (0.924, 0.338))
+# the pot's outside, measured on the original away from its control box: (radius, height)
+POT = ((0.221, 0.365), (0.303, 0.76), (0.339, 0.815), (0.339, 0.92))
 PLATE = TILE + 0.025
 
 
 def pot_radius(z):
-    for (z0, r0), (z1, r1) in zip(POT, POT[1:]):
+    for (r0, z0), (r1, z1) in zip(POT, POT[1:]):
         if z <= z1:
             return r0 + (r1 - r0) * max(0.0, z - z0) / (z1 - z0)
-    return POT[-1][1]
+    return POT[-1][0]
 
 
 def around(angle, radius, z):
@@ -29,8 +31,17 @@ def around(angle, radius, z):
 
 def build(variant=None):
     m = Model("chocolateFountain", seed=29)
-    m.include(MODEL)
-    pot = m.materials["Material.002"][0]
+    turn = 0.0
+    # without the subdivision the modernisation gave it, and without the original's pot and its
+    # buttons: an even steel pot instead
+    m.include(MODEL, without=("Subdivision (battlechoc)",), leave_out=("Material.002", "Material.003"))
+    pot = m.material("Steel", (0.75, 0.75, 0.77), metallic=1.0, roughness=0.4)
+    m.lathe(
+        [(0.0, 0.36), (0.221, 0.36), *POT, (0.33, 0.93), (0.313, 0.922), (0.313, 0.86), (0.0, 0.86)],
+        CENTRE,
+        pot,
+        segments=56,
+    )
     chocolate = m.material("Chocolate Drip", (0.41, 0.2, 0.06), roughness=0.5)
     porcelain = m.material("Plate", (0.85, 0.83, 0.8), roughness=0.6)
     strawberry = m.material("Strawberry", (0.55, 0.03, 0.03))
@@ -49,8 +60,9 @@ def build(variant=None):
     # only on the sides the camera faces (towards +x and -y): seen in profile at the back, a drip
     # over the rim stuck out like a handle
     # (angle in degrees, how far it runs down)
-    for degrees, length in ((-118, 0.1), (-55, 0.3), (-25, 0.06), (5, 0.21), (32, 0.14)):
-        angle = math.radians(degrees)
+    # (not over the control module, which takes -60° to -15°)
+    for degrees, length in ((-118, 0.1), (-80, 0.3), (-5, 0.06), (12, 0.21), (34, 0.14)):
+        angle = math.radians(degrees) + turn
         out = Vector((math.cos(angle), math.sin(angle), 0))
         end = 0.92 - length
         # from the chocolate in the pot over the rim (found from above) and down its outside
@@ -67,6 +79,8 @@ def build(variant=None):
         m.tube(path, [0.02, 0.02] + [0.018 - 0.002 * i for i in range(len(path) - 2)], chocolate, segments=8)
         m.sphere(0.021, path[-1] + Vector((0, 0, -0.008)), chocolate, scale=(1, 1, 1.3), segments=8, rings=6)
 
+    control_module(m)
+
     # strawberries on the plate, every other one dipped
     for k in range(7):
         angle = k * math.tau / 7 + 0.2
@@ -80,7 +94,7 @@ def build(variant=None):
             m.sphere(0.049, at + Vector((0, 0, -0.018)), dark, scale=(1, 1, 0.75), segments=12, rings=8)
 
     # two marshmallow skewers leaning against the pot on the visible sides
-    for angle in (-0.9, 0.5):
+    for angle in (-1.45 + turn, 0.55 + turn):  # beside the control module, not in front of it
         foot = around(angle, 0.4, PLATE + 0.005)
         tip = around(angle, pot_radius(0.56) + 0.04, 0.58)
         m.tube([foot, tip], 0.005, stick, segments=5)
@@ -89,3 +103,30 @@ def build(variant=None):
             direction = (tip - foot).normalized()
             m.cylinder(0.034, 0.05, at, marshmallows[i % 2], rot=direction.to_track_quat("Z", "Y").to_euler(), segments=12, bevel=0.01)
     return m
+
+
+def control_module(m, degrees=-37.5, z=0.59):
+    """A clear face for the fountain's control module, as in the user's old icon: a dark rounded
+    panel with a small display, two red buttons and a green light, over the box the original
+    model has there (it faces `degrees`, towards the game's camera; its slanted buttons and an
+    opening above them did not read as controls)."""
+    panel = m.material("Control Panel", (0.08, 0.08, 0.09), metallic=1.0, roughness=0.5)
+    button = m.material("Button Red", (0.6, 0.03, 0.02), roughness=0.35, emission=(1.0, 0.05, 0.03), strength=0.4)
+    light = m.material("Light Green", (0.1, 0.8, 0.15), emission=(0.1, 1.0, 0.2), strength=2.0)
+    a = math.radians(degrees)
+    out = Vector((math.cos(a), math.sin(a), 0))
+    right = Vector((-math.sin(a), math.cos(a), 0))
+    turn = a + math.pi / 2  # turns a part's -y onto `out`
+    face = m.surface(CENTRE + out * 1.0 + Vector((0, 0, z)), -out)
+
+    def at(along, outwards, up):
+        return face + right * along + out * outwards + Vector((0, 0, up))
+
+    screen = m.material("Display", (0.02, 0.06, 0.03), roughness=0.2, emission=(0.2, 0.9, 0.3), strength=0.6)
+    m.box((0.2, 0.03, 0.22), at(0, 0.006, 0), panel, rot=(0, 0, turn), bevel=0.016, segments=3)
+    m.box((0.185, 0.006, 0.205), at(0, 0.022, 0), panel, rot=(0, 0, turn), bevel=0.01, segments=2)
+    m.box((0.13, 0.006, 0.05), at(-0.01, 0.026, 0.06), screen, rot=(0, 0, turn), bevel=0.006)
+    for along in (-0.045, 0.035):
+        m.cylinder(0.028, 0.012, at(along, 0.026, -0.04), panel, rot=(math.pi / 2, 0, turn), segments=18)
+        m.cylinder(0.022, 0.022, at(along, 0.034, -0.04), button, rot=(math.pi / 2, 0, turn), segments=18, bevel=0.006)
+    m.sphere(0.009, at(0.072, 0.027, 0.06), light, segments=10, rings=7)

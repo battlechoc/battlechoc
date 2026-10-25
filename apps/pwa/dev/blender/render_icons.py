@@ -119,7 +119,9 @@ if not os.path.exists(HDR):
 
 def load(name):
     """The visible mesh objects of a model's .blend, linked into the scene."""
-    with bpy.data.libraries.load(os.path.join(pwa, "dev", "models", SOURCES[name])) as (source, target):
+    # a model's file, or a generated variant such as "chocolateFountain-back"
+    file = SOURCES.get(name, f"generated/{name}.blend")
+    with bpy.data.libraries.load(os.path.join(pwa, "dev", "models", file)) as (source, target):
         target.objects = list(source.objects)
     objects = [obj for obj in target.objects if obj is not None and obj.type == "MESH" and not obj.hide_render]
     for obj in objects:
