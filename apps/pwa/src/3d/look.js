@@ -3,10 +3,10 @@
 //
 // Image-based light from a CC0 sky (Poly Haven's "Kloofendal 48d Partly Cloudy (Pure Sky)", in
 // public/textures/sky.env, made from its 1k .hdr with Babylon's CreateEnvTextureAsync: 256 px,
-// WebP faces, 92 KB), a warm fill with a chocolate ground colour and a sun for the shape. ACES tone
-// mapping takes the glow out of the saturated colours the way film does (Khronos PBR Neutral kept
-// them saturated, and the lime trees and pink carriages shone).
-// (Chosen 2026-10 over the old light, a 0.1 fill that left the shadow sides almost black.)
+// WebP faces, 92 KB), a warm fill with a chocolate ground colour and a sun for the shape, Khronos
+// PBR Neutral tone mapping and a little less saturation, so the bright colours do not glow.
+// (The user's pick in 2026-10 from variant sheets, "E": over the old light, a 0.1 fill that left
+// the shadow sides almost black, and over ACES, which made the snow and cream grey.)
 import {
   ColorCurves,
   HemisphericLight,
@@ -21,7 +21,7 @@ import { requestedLight } from "../testHooks";
 
 // Dev server and test builds can try other values in the URL, e.g. ?env=0.6&exposure=1&saturation=-15
 // (saturation from -100, grey, to 100; tonemap aces or neutral)
-const LIGHT = { env: 0.7, fill: 0.2, sun: 0.75, exposure: 1.1, saturation: 0, tonemap: "aces" };
+const LIGHT = { env: 0.8, fill: 0.2, sun: 0.75, exposure: 0.9, saturation: -20, tonemap: "neutral" };
 const TONE_MAPPING = {
   aces: ImageProcessingConfiguration.TONEMAPPING_ACES,
   neutral: ImageProcessingConfiguration.TONEMAPPING_KHR_PBR_NEUTRAL,
@@ -33,7 +33,7 @@ export const applyLook = (scene) => {
   const light = lightSettings();
   const processing = scene.imageProcessingConfiguration;
   processing.toneMappingEnabled = true;
-  processing.toneMappingType = TONE_MAPPING[light.tonemap] ?? TONE_MAPPING.aces;
+  processing.toneMappingType = TONE_MAPPING[light.tonemap] ?? TONE_MAPPING.neutral;
   processing.exposure = light.exposure;
   if (light.saturation) {
     processing.colorCurvesEnabled = true;
