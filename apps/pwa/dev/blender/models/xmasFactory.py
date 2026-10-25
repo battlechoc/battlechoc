@@ -1,7 +1,8 @@
 # The xmas factory as a Swedish cottage: Falu red board-and-batten walls with white corner boards
-# and window frames on a stone plinth, a snowy gable roof with a brick chimney, fairy lights along
-# the eave and the gable, a wreath on the door, a small fir tree and a stack of presents (what the
-# factory makes). The front (door) faces -y and the gable +x: the sides the game's camera sees.
+# and window frames on a stone plinth, a snowy gable roof with a smoking brick chimney, fairy
+# lights along the eave and the gable, a wreath on the door, a small fir tree. What makes it a
+# factory (the user found it looked like a decorated house): a chocolate silo piping into the
+# gable, and presents coming out of a hatch on a conveyor belt onto a pile. The front (door) faces -y and the gable +x: the sides the game's camera sees.
 import math
 
 from mathutils import Vector
@@ -32,6 +33,11 @@ def build(variant=None):
         gift_green=m.material("Gift Green", (0.03, 0.25, 0.08)),
         gift_blue=m.material("Gift Blue", (0.05, 0.12, 0.45)),
         ribbon=m.material("Ribbon", (0.8, 0.55, 0.15), roughness=0.5),
+        steel=m.material("Steel", (0.6, 0.6, 0.62), metallic=1.0, roughness=0.7),
+        chocolate=m.material("Chocolate", (0.1, 0.04, 0.015), roughness=0.6),
+        rubber=m.material("Belt", (0.02, 0.02, 0.022), roughness=0.9),
+        hatch=m.material("Hatch", (0.03, 0.015, 0.01)),
+        smoke=m.material("Smoke", (0.7, 0.7, 0.72), roughness=1.0),
     )
     bulbs = [
         m.material("Light Red", (0.8, 0.05, 0.03), emission=(1.0, 0.06, 0.03), strength=3.0),
@@ -68,8 +74,10 @@ def build(variant=None):
     roof(m, z_eave, ridge, mats, bulbs)
     chimney(m, ridge, mats)
     fir_tree(m, (-0.31, -0.27, z_plinth - 0.005), mats, bulbs)
-    presents(m, (0.26, -0.3, z_plinth - 0.005), mats)
-    for at, scale in (((-0.24, 0.26), (0.07, 0.05, 0.03)), ((0.32, 0.22), (0.05, 0.06, 0.025)), ((0.08, -0.31), (0.06, 0.035, 0.02))):
+    silo(m, (0.315, 0.205), z_plinth, z_wall, mats)
+    conveyor(m, z_plinth, z_wall, mats)
+    presents(m, (0.3, -0.33, z_plinth - 0.005), mats)
+    for at, scale in (((-0.24, 0.26), (0.07, 0.05, 0.03)), ((0.08, -0.31), (0.06, 0.035, 0.02))):
         m.blob(1.0, (*at, z_plinth - 0.005), mats["snow"], scale=scale, subdivisions=2, noise=0.08)
     # sized to fill its cell like the other buildings
     m.grow(1.25)
@@ -183,6 +191,64 @@ def chimney(m, ridge, mats):
     m.box((0.07, 0.07, 0.19), (x, y, ridge + 0.02), mats["brick"], bevel=0.004)
     m.box((0.086, 0.086, 0.02), (x, y, ridge + 0.12), mats["trim"], bevel=0.004)
     m.box((0.08, 0.08, 0.035), (x, y, ridge + 0.145), mats["snow"], bevel=0.013, segments=3)
+    smoke(m, (x, y, ridge + 0.16), mats)
+
+
+def silo(m, at, z_plinth, z_wall, mats):
+    """A steel silo of chocolate on three legs, a snow cap, a chocolate band and a pipe into the
+    gable."""
+    x, y = at
+    radius, bottom, top = 0.058, z_plinth + 0.07, z_wall + 0.3
+    for k in range(3):
+        angle = k * math.tau / 3 + 0.5
+        m.cylinder(0.007, bottom - z_plinth, (x + math.cos(angle) * 0.045, y + math.sin(angle) * 0.045, (bottom + z_plinth) / 2), mats["steel"], segments=6)
+    m.cylinder(radius * 0.5, 0.04, (x, y, bottom - 0.01), mats["steel"], radius2=radius, segments=16)
+    m.cylinder(radius, top - bottom, (x, y, (top + bottom) / 2), mats["steel"], segments=20, bevel=0.004)
+    for z in (bottom + 0.06, top - 0.04):
+        m.ring((x, y, z), (0, 0, 1), radius + 0.002, 0.004, mats["steel"], segments=20, minor=4)
+    m.cylinder(radius + 0.003, 0.05, (x, y, (top + bottom) / 2), mats["chocolate"], segments=20)
+    m.cylinder(radius, 0.05, (x, y, top + 0.025), mats["steel"], radius2=0.012, segments=20)
+    m.cylinder(radius * 0.9, 0.03, (x, y, top + 0.02), mats["snow"], radius2=0.015, segments=20)
+    for k in range(6):  # a ladder up the side the camera sees
+        m.box((0.003, 0.03, 0.004), (x + radius + 0.006, y, bottom + 0.03 + k * 0.035), mats["steel"])
+    m.tube([(x, y, top + 0.04), (x, y, top + 0.08), (x - 0.03, y - 0.04, top + 0.08), (W / 2 + 0.005, y - 0.075, top - 0.02)], 0.011, mats["steel"], segments=8)
+
+
+def conveyor(m, z_plinth, z_wall, mats):
+    """A hatch in the gable wall and a conveyor belt carrying presents down to the pile."""
+    hatch_y, hatch_z = -0.115, z_wall + 0.07
+    m.box((0.006, 0.08, 0.08), (W / 2 + 0.003, hatch_y, hatch_z), mats["hatch"])
+    for dy in (-0.047, 0.047):
+        m.box((0.016, 0.014, 0.094), (W / 2 + 0.008, hatch_y + dy, hatch_z), mats["trim"])
+    m.box((0.016, 0.108, 0.014), (W / 2 + 0.008, hatch_y, hatch_z + 0.047), mats["trim"])
+    start = Vector((W / 2 + 0.01, hatch_y, hatch_z - 0.03))
+    end = Vector((0.33, -0.27, z_plinth + 0.07))
+    run = end - start
+    middle = (start + end) / 2
+    turn = math.atan2(run.y, run.x)
+    slope = math.atan2(run.z, run.to_2d().length)
+    rot = (0, -slope, turn)
+    length = run.length
+    m.box((length, 0.05, 0.012), middle, mats["rubber"], rot=rot)
+    for side in (-1, 1):
+        offset = Vector((-math.sin(turn), math.cos(turn), 0)) * side * 0.03
+        m.box((length, 0.006, 0.022), middle + offset, mats["steel"], rot=rot)
+    for t in (0.0, 1.0):
+        point = start.lerp(end, t)
+        m.cylinder(0.009, 0.06, point, mats["steel"], rot=(math.pi / 2, 0, turn + math.pi / 2), segments=8)
+    for t in (0.35, 0.85):
+        point = start.lerp(end, t)
+        m.box((0.008, 0.008, point.z - z_plinth), (point.x, point.y, (point.z + z_plinth) / 2), mats["steel"])
+    for t, mat in ((0.3, mats["gift_blue"]), (0.68, mats["gift_red"])):
+        point = start.lerp(end, t) + Vector((0, 0, 0.026))
+        m.box((0.034, 0.034, 0.034), point, mat, rot=rot, bevel=0.003)
+        m.box((0.036, 0.008, 0.036), point, mats["ribbon"], rot=rot)
+
+
+def smoke(m, at, mats):
+    x, y, z = at
+    for i, (dx, dz, radius) in enumerate(((0.0, 0.04, 0.026), (0.025, 0.09, 0.034), (0.06, 0.15, 0.042))):
+        m.blob(radius, (x + dx, y + dx * 0.4, z + dz), mats["smoke"], subdivisions=2, noise=0.15)
 
 
 def fir_tree(m, base, mats, bulbs):

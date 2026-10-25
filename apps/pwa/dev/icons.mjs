@@ -2,8 +2,8 @@
 // file's name and viewBox, so nothing in the code changes: npm run icons [-- name ...]
 //
 // - "whole" pictures become the render alone, fitted into the old viewBox
-// - in composed pictures only the embedded image that showed the model is swapped (the arrows,
-//   rings and other vector parts stay); `drop` removes leftover pieces of the old render
+// - the "per turn" pictures get the render inside the two green arrows of buildings-per-turn.svg
+//   (their old cannon was drawn in paths, so it could not simply be swapped)
 // - the build progress donuts (progress-10 … 100) show the donut in ten clockwise steps
 //
 // The renders are trimmed to their content, scaled to twice their box and embedded as WebP
@@ -39,11 +39,11 @@ const WHOLE = {
   "surprise-donut-icon": "surprise-donut-icon",
   "portal-donut-icon": "portal-donut-icon",
 };
-// picture -> the render and the id of the embedded image it replaces
-const SWAP = {
-  "attacks-per-turn": { render: "truffle-cannon-icon", image: "_Image2" },
-  "fruit-attacks-per-turn": { render: "fruit-cannon-icon", image: "_Image3", drop: true },
-  "spy-attacks-per-turn": { render: "easter-bunny-icon", image: "_Image1" },
+// picture -> the render shown inside the green arrows
+const ARROWS = {
+  "attacks-per-turn": "truffle-cannon-icon",
+  "fruit-attacks-per-turn": "fruit-cannon-icon",
+  "spy-attacks-per-turn": "easter-bunny-icon",
 };
 const PADDING = 0.04; // of the viewBox, round a whole picture
 
@@ -81,22 +81,23 @@ const whole = (name, render) => {
   );
 };
 
-const swap = (name, { render, image: id, drop }) => {
-  const file = path.join(images, name + ".svg");
-  let svg = fs.readFileSync(file, "utf8");
-  const element = new RegExp(`<image id="${id}" width="([\\d.]+)px" height="([\\d.]+)px" xlink:href="data:image/[a-z]+;base64,[^"]+"/>`);
-  const match = svg.match(element);
-  if (!match) {
-    throw new Error(`${name}: no embedded image ${id}`);
-  }
-  const image = webp(render, Number(match[1]) * 2, Number(match[2]) * 2);
-  // the old box stays; the image keeps its proportions inside it (preserveAspectRatio meet)
-  svg = svg.replace(element, `<image id="${id}" width="${match[1]}px" height="${match[2]}px" xlink:href="${image.data}"/>`);
-  if (drop) {
-    // the pieces of the old render that were laid over the arrows
-    svg = svg.replace(new RegExp(`<use xlink:href="#(?!${id}")_Image\\d+"[^>]*/>`, "g"), "");
-  }
-  fs.writeFileSync(file, svg);
+const arrows = (name, render) => {
+  // the arrows (two paths and their gradients) of the hammer's picture, which keeps them
+  const template = fs.readFileSync(path.join(images, "buildings-per-turn.svg"), "utf8");
+  const paths = template.match(/<path [^>]*\/>/g).slice(0, 2).join("");
+  const gradients = template.match(/<linearGradient[\s\S]*?<\/linearGradient>/g).join("");
+  const box = viewBox(template);
+  const [cx, cy, inner] = [131, 128.5, 160];
+  const image = webp(render, inner * 2, inner * 2);
+  const scale = Math.min(inner / image.width, inner / image.height);
+  const w = image.width * scale;
+  const h = image.height * scale;
+  fs.writeFileSync(
+    path.join(images, name + ".svg"),
+    header(box) +
+      `<defs>${gradients}</defs><g style="stroke-linecap:round;stroke-linejoin:round">${paths}</g>` +
+      `<image x="${(cx - w / 2).toFixed(2)}" y="${(cy - h / 2).toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}" xlink:href="${image.data}"/></svg>\n`
+  );
 };
 
 /** progress-10 … progress-100: the donut in clockwise slices from twelve o'clock. */
@@ -134,10 +135,10 @@ for (const [name, render] of Object.entries(WHOLE)) {
     console.log("whole  ", name);
   }
 }
-for (const [name, spec] of Object.entries(SWAP)) {
-  if (wanted(name) && fs.existsSync(path.join(renders, spec.render + ".png"))) {
-    swap(name, spec);
-    console.log("swapped", name);
+for (const [name, render] of Object.entries(ARROWS)) {
+  if (wanted(name) && fs.existsSync(path.join(renders, render + ".png"))) {
+    arrows(name, render);
+    console.log("arrows ", name);
   }
 }
 if (wanted("progress") && fs.existsSync(path.join(renders, "progress-donut.png"))) {

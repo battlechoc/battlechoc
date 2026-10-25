@@ -4,9 +4,9 @@
 import math
 
 from build import TILE, Model, aim
-from models.cannon import AIM, carriage_and_barrel
+from models.cannon import AIM, BARREL_Z, carriage_and_barrel, raise_barrel
 
-AXIS_Z = TILE + 0.3  # the barrel's axis (see cannon_barrel)
+AXIS_Z = BARREL_Z
 ALONG_X = (0, math.pi / 2, 0)  # turns a cylinder's axis onto x
 
 
@@ -25,14 +25,16 @@ def build(variant=None):
     wood_dark = m.material("Wood Dark", (0.09, 0.04, 0.015))
     apple = m.material("Apple", (0.6, 0.06, 0.03))
 
-    m.cylinder(0.006, 0.43, (0.515, 0, AXIS_Z), stick, rot=ALONG_X, segments=6)
-    m.sphere(0.042, (0.45, 0, AXIS_Z), strawberry, scale=(1.25, 1, 1), segments=10, rings=7)
-    m.cylinder(0.035, 0.012, (0.4, 0, AXIS_Z), leaf, rot=ALONG_X, radius2=0.01, segments=7)
-    m.cylinder(0.045, 0.016, (0.52, 0, AXIS_Z), kiwi, rot=ALONG_X, segments=14)
-    m.cylinder(0.018, 0.018, (0.52, 0, AXIS_Z), kiwi_core, rot=ALONG_X, segments=10)
-    m.cylinder(0.05, 0.016, (0.58, 0, AXIS_Z), orange, rot=ALONG_X, segments=14)
-    m.sphere(0.03, (0.635, 0, AXIS_Z), grape, segments=10, rings=7)
-    m.box((0.05, 0.05, 0.05), (0.69, 0, AXIS_Z), pineapple, rot=(0.3, 0, 0), bevel=0.006)
+    # the skewer, built along the level barrel and raised with it
+    skewer = m.cylinder(0.006, 0.43, (0.515, 0, AXIS_Z), stick, rot=ALONG_X, segments=6)
+    skewer += m.sphere(0.042, (0.45, 0, AXIS_Z), strawberry, scale=(1.25, 1, 1), segments=10, rings=7)
+    skewer += m.cylinder(0.035, 0.012, (0.4, 0, AXIS_Z), leaf, rot=ALONG_X, radius2=0.01, segments=7)
+    skewer += m.cylinder(0.045, 0.016, (0.52, 0, AXIS_Z), kiwi, rot=ALONG_X, segments=14)
+    skewer += m.cylinder(0.018, 0.018, (0.52, 0, AXIS_Z), kiwi_core, rot=ALONG_X, segments=10)
+    skewer += m.cylinder(0.05, 0.016, (0.58, 0, AXIS_Z), orange, rot=ALONG_X, segments=14)
+    skewer += m.sphere(0.03, (0.635, 0, AXIS_Z), grape, segments=10, rings=7)
+    skewer += m.box((0.05, 0.05, 0.05), (0.69, 0, AXIS_Z), pineapple, rot=(0.3, 0, 0), bevel=0.006)
+    raise_barrel(m, skewer)
 
     # a crate of fruit by the trail
     cx, cy = -0.24, 0.22

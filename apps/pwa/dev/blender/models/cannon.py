@@ -5,7 +5,7 @@
 # cannons around). Variant "bronze" casts the barrel in bronze instead of iron.
 import math
 
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 from build import TILE, Model, aim
 
@@ -14,6 +14,14 @@ AIM = Vector((-0.73, -0.683, 0.0))
 WHEEL = 0.16
 AXLE = Vector((0.04, 0.0, TILE + WHEEL))
 TRACK = 0.17  # wheel distance from the middle
+BARREL_Z = TILE + 0.3  # the barrel's axis before it is raised
+TRUNNION = Vector((0.03, 0.0, BARREL_Z - 0.02))  # what the barrel turns about
+ELEVATION = math.radians(10)  # the barrel points a little upwards, like the old cannon's
+
+
+def raise_barrel(m, faces):
+    """Turns faces built along the level barrel (+x) up about the trunnions."""
+    m.transform(Matrix.Translation(TRUNNION) @ Matrix.Rotation(-ELEVATION, 4, "Y") @ Matrix.Translation(-TRUNNION), faces)
 
 
 def build(variant=None):
@@ -79,7 +87,7 @@ def carriage(m, wood, wood_dark, iron):
 
 
 def cannon_barrel(m, barrel, bore):
-    z = TILE + 0.3
+    z = BARREL_Z
     profile = (
         (-0.235, 0.0),
         (-0.232, 0.035),
@@ -99,8 +107,9 @@ def cannon_barrel(m, barrel, bore):
     )
     points = [(x, 0.0, z) for x, _ in profile]
     radii = [max(radius, 0.002) for _, radius in profile]
-    m.tube(points, radii, barrel, segments=16, caps=False)
-    m.sphere(0.03, (-0.265, 0.0, z), barrel, segments=10, rings=7)
-    m.cylinder(0.031, 0.004, (0.399, 0.0, z), bore, rot=(0, math.pi / 2, 0), segments=14)
+    faces = m.tube(points, radii, barrel, segments=16, caps=False)
+    faces += m.sphere(0.03, (-0.265, 0.0, z), barrel, segments=10, rings=7)
+    faces += m.cylinder(0.031, 0.004, (0.399, 0.0, z), bore, rot=(0, math.pi / 2, 0), segments=14)
+    raise_barrel(m, faces)
     for side in (-1, 1):  # trunnions resting on the cheeks
         m.cylinder(0.02, 0.06, (0.03, side * 0.075, z - 0.02), barrel, rot=(math.pi / 2, 0, 0), segments=10)

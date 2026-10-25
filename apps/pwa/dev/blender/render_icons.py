@@ -40,10 +40,15 @@ DONUTS = {
     "pink": {"Topping": (1, 0.0805, 0.3398), "Material.002": (0.5813, 0, 0.1205)},
     "white": {"Topping": (0.8253, 0.9711, 1), "Material.002": (0.5641, 0.5813, 0.5813)},
     "green": {"Topping": (0.1078, 1, 0.0488), "Material.002": (0.0177, 0.5813, 0.0781)},
+    # the build progress donut: white glaze, chocolate sprinkles (the game tints it)
+    "progress": {"Topping": (0.72, 0.69, 0.63), "Material.002": (0.06, 0.025, 0.01)},
 }
 
 # picture -> what it shows. copies: (offset, donut colours) for several donuts in one picture;
-# hide: materials left out (the fountain's shield dome); tile: on a chocolate tile
+# hide: materials left out (the fountain's shield dome); tile: on a chocolate tile; turn: degrees
+# the model turns about its upright axis; elevation: the camera's angle for this picture;
+# mirror: False keeps the picture as rendered; shadow: False leaves out the shadow under it.
+# (`name@degrees` on the command line tries another turn.)
 # colour handling and light: view transform, contrast look, exposure, sky strength, sun strength.
 # The old icons were deep and contrasty; the game's PBR Neutral with a bright sky made the
 # chocolate light and flat.
@@ -67,17 +72,22 @@ ICONS = {
     "truffle-cannon-icon": dict(model="cannon"),
     "fruit-cannon-icon": dict(model="fruitCannon"),
     "ballista-icon": dict(model="hotChocolateBallista"),
-    "easter-bunny-icon": dict(model="spyingEasterBunny"),
+    # looking to the lower right like the old icon, from a little higher so the eggs show
+    "easter-bunny-icon": dict(model="spyingEasterBunny", turn=25, elevation=32),
     "fountain-icon": dict(model="chocolateFountain", hide=("Shield",)),
     "xmas-factory-icon": dict(model="xmasFactory"),
     "donut-factory-icon": dict(model="donutFactory"),
-    "cream-icon": dict(model="cream"),
-    "cream": dict(model="cream"),
-    "cream-donut-icon": dict(model="donut", copies=(((0, 0, 0), "white"),)),
-    "health-donut-icon": dict(model="donut", copies=(((0, 0, 0), "green"),)),
-    "stop-donut-icon": dict(model="donut", copies=(((0, 0, 0), "pink"),)),
-    "surprise-donut-icon": dict(model="donut", copies=(((0, 0, 0), "yellow"),)),
-    "portal-donut-icon": dict(model="donut", copies=(((-0.33, 0.33, 0), "blue"), ((0.33, -0.33, 0), "red"))),
+    # the cream as in the old icons: not mirrored, the icon on a piece of chocolate
+    "cream-icon": dict(model="cream", tile=True, mirror=False),
+    "cream": dict(model="cream", mirror=False),
+    # donuts lie flat: seen from higher up
+    "cream-donut-icon": dict(model="donut", copies=(((0, 0, 0), "white"),), elevation=50),
+    "health-donut-icon": dict(model="donut", copies=(((0, 0, 0), "green"),), elevation=50),
+    "stop-donut-icon": dict(model="donut", copies=(((0, 0, 0), "pink"),), elevation=50),
+    "surprise-donut-icon": dict(model="donut", copies=(((0, 0, 0), "yellow"),), elevation=50),
+    "portal-donut-icon": dict(model="donut", copies=(((-0.3, -0.3, 0), "blue"), ((0.3, 0.3, 0), "red")), elevation=50),
+    # dev/icons.mjs cuts the ten progress-NN pictures from it
+    "progress-donut": dict(model="donut", copies=(((0, 0, 0), "progress"),), elevation=70, shadow=False),
 }
 
 args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
@@ -120,13 +130,18 @@ def bsdf(material):
     return next(node for node in material.node_tree.nodes if node.type == "BSDF_PRINCIPLED")
 
 
-def paint(objects, colors):
+def paint(objects, colors, tone=0.8):
+    """The donut colours, a little darker (`tone`): the icons' high contrast blew the bright
+    glazes out to flat white and neon."""
     for obj in objects:
         for slot in obj.material_slots:
-            base = slot.material.name.split(".copy")[0]
+            # a second copy of a model comes with its materials renamed; Blender keeps the name
+            # they had in their file
+            source = slot.material.library_weak_reference
+            base = source.id_name[2:] if source else slot.material.name
             if base in colors:
                 slot.material = slot.material.copy()
-                bsdf(slot.material).inputs["Base Color"].default_value = (*colors[base], 1)
+                bsdf(slot.material).inputs["Base Color"].default_value = (*(c * tone for c in colors[base]), 1)
 
 
 def material(name, color, roughness):
@@ -202,10 +217,10 @@ def deepen_browns(objects, factor=0.5, saturate=1.15):
                 node.inputs["Base Color"].default_value = (max(0, r) * factor, max(0, g) * factor, max(0, b) * factor, a)
 
 
-def frame(scene, objects, hidden=(), margin=1.1):
-    """An orthographic camera looking from +x, -y like the game's, `elevation` degrees above the
-    ground, fitted to the objects (leaving out faces of the `hidden` materials)."""
-    up_angle = math.radians(elevation)
+def frame(scene, objects, hidden=(), margin=1.1, angle=None):
+    """An orthographic camera looking from +x, -y like the game's, `angle` (or `elevation`) degrees
+    above the ground, fitted to the objects (leaving out faces of the `hidden` materials)."""
+    up_angle = math.radians(elevation if angle is None else angle)
     direction = Vector((math.cos(up_angle) / math.sqrt(2), -math.cos(up_angle) / math.sqrt(2), math.sin(up_angle)))
     camera = bpy.data.objects.new("Camera", bpy.data.cameras.new("Camera"))
     camera.data.type = "ORTHO"
@@ -241,6 +256,7 @@ def render(name, spec):
         copy = load(spec["model"])
         for obj in copy:
             obj.location = Vector(offset)
+            obj.rotation_euler.z += math.radians(spec.get("turn", 0))
         if colors:
             paint(copy, DONUTS[colors])
         objects += copy
@@ -252,20 +268,25 @@ def render(name, spec):
         deepen_browns(objects)
     ground = TILE
     if spec.get("tile") or tile_all:
+        # a flat piece of chocolate (the board tile, a third of its height), like the old icons
         tile = load("field")[0]
         tile.data.materials.clear()
         tile.data.materials.append(material("Tile", BROWN, 0.9))
+        tile.scale.z = 0.35
+        tile.location.z = TILE * (1 - tile.scale.z)
         objects.append(tile)
-        ground = -0.34  # the tile's bottom
-    catcher = bpy.data.objects.new("Shadow", bpy.data.meshes.new("Shadow"))
-    catcher.data.from_pydata([(-3, -3, ground), (3, -3, ground), (3, 3, ground), (-3, 3, ground)], [], [(0, 1, 2, 3)])
-    catcher.is_shadow_catcher = True
-    scene.collection.objects.link(catcher)
-    frame(scene, objects, hidden=spec.get("hide", ()))
+        ground = TILE - 0.6 * tile.scale.z  # the tile's bottom
+    if spec.get("shadow", True):
+        catcher = bpy.data.objects.new("Shadow", bpy.data.meshes.new("Shadow"))
+        catcher.data.from_pydata([(-3, -3, ground), (3, -3, ground), (3, 3, ground), (-3, 3, ground)], [], [(0, 1, 2, 3)])
+        catcher.is_shadow_catcher = True
+        scene.collection.objects.link(catcher)
+    frame(scene, objects, hidden=spec.get("hide", ()), angle=spec.get("elevation"))
     path = os.path.join(out, name + ".png")
     scene.render.filepath = path
     bpy.ops.render.render(write_still=True)
-    mirror(path)
+    if spec.get("mirror", True):
+        mirror(path)
     print(f"rendered {name}")
 
 
@@ -283,4 +304,6 @@ def mirror(path):
 
 
 for name in names or ICONS:
-    render(name, ICONS[name])
+    base, _, turn = name.partition("@")
+    spec = dict(ICONS[base], **({"turn": float(turn)} if turn else {}))
+    render(name, spec)
