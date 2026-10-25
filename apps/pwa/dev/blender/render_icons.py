@@ -86,6 +86,10 @@ ICONS = {
     "stop-donut-icon": dict(model="donut", copies=(((0, 0, 0), "pink"),), elevation=50),
     "surprise-donut-icon": dict(model="donut", copies=(((0, 0, 0), "yellow"),), elevation=50),
     "portal-donut-icon": dict(model="donut", copies=(((-0.3, -0.3, 0), "blue"), ((0.3, 0.3, 0), "red")), elevation=50),
+    # the tree of the logo and the app icon, on a piece of chocolate like the old one or without;
+    # no shadow on the ground, it would float in the sky
+    "logo-tree": dict(model="cacaotree", tile=True, shadow=False),
+    "logo-tree-plain": dict(model="cacaotree", shadow=False),
     # dev/icons.mjs cuts the ten progress-NN pictures from it
     "progress-donut": dict(model="donut", copies=(((0, 0, 0), "progress"),), elevation=70, shadow=False),
 }
