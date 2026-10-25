@@ -16,7 +16,7 @@ Thank you for your interest in contributing to battlechoc! Please follow these g
    - `build(deps): update vite`
 
 3. **Sign the CLA**
-   All contributors must sign the [Contributor License Agreement](./CLA.md) before their contributions can be merged. The [CLA Assistant](https://cla-assistant.io/) bot guides you through signing when you open a pull request.
+   All contributors must sign the [Contributor License Agreement](./CLA.md) before their contributions can be merged. When you open a pull request, [cla-bot](https://colineberhardt.github.io/cla-bot/) checks whether we have your agreement on file. If not, it comments on the pull request: reply there that you have read the CLA and agree to its terms, and a maintainer adds your GitHub username to [`.clabot`](./.clabot), the list of contributors who signed. The check then passes (maintainers can re-run it with a comment `@cla-bot check`).
 
 4. **Pull requests**
 
