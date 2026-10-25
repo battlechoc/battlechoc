@@ -8,8 +8,9 @@
 #    Add/Mix/Emission shaders) become a Principled BSDF with the values of the shipped GLB in
 #    public/models (read before it is replaced; run this before exporting). Every material is a
 #    non-metal unless METALS says otherwise: the old exports were metallic where nothing is metal
-#    (pink wheels, cream). White emission, a stand-in for light under the old dark fill, goes;
-#    coloured emission (windows, fairy lights) stays.
+#    (pink wheels, cream). Non-metals are matte and reflect half as much (no plastic look). White
+#    emission, a stand-in for light under the old dark fill, goes; coloured emission (windows,
+#    fairy lights) stays.
 # 2. Shading: smooth, with sharp edges where faces meet at more than SMOOTH_ANGLE.
 # 3. Modifiers from RECIPES, kept live in the .blend (export applies them): a small bevel that
 #    catches the light on hard edges, a subdivision level for round shapes. Running the script
@@ -38,6 +39,13 @@ METALS = {
 }
 # rough metal reflects nothing but a grey sky; brushed is enough
 METAL_ROUGHNESS = 0.45
+# Everything else is matte: under the sky light the old roughness of 0.5 (and less) made cream,
+# chocolate and paint look like glossy plastic. A few materials keep some shine.
+MATTE_ROUGHNESS = 0.85
+ROUGHNESS = {("donut", "Topping"): 0.6}  # the glaze
+# and reflects half as much as glTF's default (Specular IOR Level 0.5), also at grazing angles
+SPECULAR_LEVEL = 0.25
+SPECULAR_TINT = 0.5
 
 # bevel: width in model units (a board cell is 1), only on edges sharper than SMOOTH_ANGLE;
 # subdivide: Catmull-Clark levels (each level makes four times the triangles); smooth: False for
@@ -111,9 +119,13 @@ def rebuild(material, values):
 def apply_policies(name, material, bsdf):
     metal = (name, material.name) in METALS
     bsdf.inputs["Metallic"].default_value = 1.0 if metal else 0.0
+    roughness = bsdf.inputs["Roughness"]
     if metal:
-        roughness = bsdf.inputs["Roughness"]
         roughness.default_value = min(roughness.default_value, METAL_ROUGHNESS)
+    else:
+        roughness.default_value = ROUGHNESS.get((name, material.name), max(roughness.default_value, MATTE_ROUGHNESS))
+        bsdf.inputs["Specular IOR Level"].default_value = SPECULAR_LEVEL
+        bsdf.inputs["Specular Tint"].default_value = (SPECULAR_TINT, SPECULAR_TINT, SPECULAR_TINT, 1)
     emission = bsdf.inputs["Emission Color"].default_value[:3]
     if bsdf.inputs["Emission Strength"].default_value > 0 and neutral(emission):
         bsdf.inputs["Emission Strength"].default_value = 0.0
