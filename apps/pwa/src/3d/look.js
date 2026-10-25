@@ -1,12 +1,14 @@
-// The light of the 3D scenes (match board, lab preview, dev/lookdev) and the material fixes that
-// go with it, in one place so that all of them look the same.
+// The light of the 3D scenes (match board, lab preview, dev/lookdev), in one place so that all of
+// them look the same.
 //
 // Image-based light from a CC0 sky (Poly Haven's "Kloofendal 48d Partly Cloudy (Pure Sky)", in
 // public/textures/sky.env, made from its 1k .hdr with Babylon's CreateEnvTextureAsync: 256 px,
-// WebP faces, 92 KB), a warm fill with a chocolate ground colour and a sun for the shape, tone
-// mapped with Khronos PBR Neutral, which keeps the base colours and only rolls off highlights.
+// WebP faces, 92 KB), a warm fill with a chocolate ground colour and a sun for the shape. ACES tone
+// mapping takes the glow out of the saturated colours the way film does (Khronos PBR Neutral kept
+// them saturated, and the lime trees and pink carriages shone).
 // (Chosen 2026-10 over the old light, a 0.1 fill that left the shadow sides almost black.)
 import {
+  ColorCurves,
   HemisphericLight,
   DirectionalLight,
   Vector3,
@@ -17,8 +19,13 @@ import {
 } from "./babylon";
 import { requestedLight } from "../testHooks";
 
-// Dev server and test builds can try other values in the URL: ?env=0.7&fill=0.2&sun=0.8&exposure=1
-const LIGHT = { env: 0.8, fill: 0.2, sun: 0.75, exposure: 0.95 };
+// Dev server and test builds can try other values in the URL, e.g. ?env=0.6&exposure=1&saturation=-15
+// (saturation from -100, grey, to 100; tonemap aces or neutral)
+const LIGHT = { env: 0.7, fill: 0.2, sun: 0.75, exposure: 1.1, saturation: 0, tonemap: "aces" };
+const TONE_MAPPING = {
+  aces: ImageProcessingConfiguration.TONEMAPPING_ACES,
+  neutral: ImageProcessingConfiguration.TONEMAPPING_KHR_PBR_NEUTRAL,
+};
 
 export const lightSettings = () => ({ ...LIGHT, ...requestedLight });
 
@@ -26,8 +33,13 @@ export const applyLook = (scene) => {
   const light = lightSettings();
   const processing = scene.imageProcessingConfiguration;
   processing.toneMappingEnabled = true;
-  processing.toneMappingType = ImageProcessingConfiguration.TONEMAPPING_KHR_PBR_NEUTRAL;
+  processing.toneMappingType = TONE_MAPPING[light.tonemap] ?? TONE_MAPPING.aces;
   processing.exposure = light.exposure;
+  if (light.saturation) {
+    processing.colorCurvesEnabled = true;
+    processing.colorCurves = new ColorCurves();
+    processing.colorCurves.globalSaturation = light.saturation;
+  }
   scene.environmentTexture = CubeTexture.CreateFromPrefilteredData("/textures/sky.env", scene);
   scene.environmentIntensity = light.env;
   const fill = new HemisphericLight("light", new Vector3(40, 44, 1), scene);
@@ -40,12 +52,15 @@ export const applyLook = (scene) => {
   sun.intensity = light.sun;
 };
 
-// A board cell's material: PBR like the models, so that the cells get the sky's light too
+// A board cell's material: PBR like the models, so that the cells get the sky's light too; matte,
+// with half the usual reflection, like the models (see dev/blender/modernize_models.py)
 export const cellMaterial = (name, hex, scene) => {
   const material = new PBRMaterial(name, scene);
   // hex colours are sRGB, PBR albedo is linear
   material.albedoColor = Color3.FromHexString(hex).toLinearSpace();
   material.metallic = 0;
-  material.roughness = 0.75;
+  material.roughness = 0.9;
+  material.metallicF0Factor = 0.5;
+  material.metallicReflectanceColor = new Color3(0.5, 0.5, 0.5);
   return material;
 };

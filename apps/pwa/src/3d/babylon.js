@@ -13,6 +13,7 @@ export { Color3, Color4 } from "@babylonjs/core/Maths/math.color.js";
 export { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight.js";
 export { DirectionalLight } from "@babylonjs/core/Lights/directionalLight.js";
 export { ImageProcessingConfiguration } from "@babylonjs/core/Materials/imageProcessingConfiguration.js";
+export { ColorCurves } from "@babylonjs/core/Materials/colorCurves.js";
 export { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.js";
 export { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial.js";
 export { Texture } from "@babylonjs/core/Materials/Textures/texture.js";

@@ -11,16 +11,17 @@ export const exposeForTests = (hooks) => {
   }
 };
 
-/** ?env=, ?fill=, ?sun=, ?exposure= override the light of the 3D scenes (src/3d/look.js) to tune
- * it; read on load, before App resets the URL (test builds only). */
+/** ?env=, ?fill=, ?sun=, ?exposure=, ?saturation=, ?tonemap= override the light of the 3D scenes
+ * (src/3d/look.js) to tune it; read on load, before App resets the URL (test builds only). */
 export const requestedLight = (() => {
   if (!testHooksEnabled || typeof location === "undefined") {
     return {};
   }
   const query = new URLSearchParams(location.search);
-  return Object.fromEntries(
-    ["env", "fill", "sun", "exposure"]
+  const light = Object.fromEntries(
+    ["env", "fill", "sun", "exposure", "saturation"]
       .filter((key) => query.has(key))
       .map((key) => [key, Number(query.get(key))])
   );
+  return query.has("tonemap") ? { ...light, tonemap: query.get("tonemap") } : light;
 })();

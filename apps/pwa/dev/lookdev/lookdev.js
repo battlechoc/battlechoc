@@ -4,7 +4,7 @@
 // Query parameters (all optional):
 //   models=factory.glb,cannon.glb   which models (default: all that the game loads)
 //   base=/models/                   where they come from (e.g. a folder of optimized exports)
-//   env=0.8&fill=0.2&sun=0.75&exposure=0.95   tune the light of src/3d/look.js
+//   env=0.7&fill=0.2&sun=0.75&exposure=1.1&saturation=0   tune the light of src/3d/look.js
 //   cols=5                          tiles per row
 //   gap=1.6                         distance between the tiles (1 = the board)
 // window.lookdevReady turns true once everything is drawn (for screenshots).
