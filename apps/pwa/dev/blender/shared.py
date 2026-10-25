@@ -1,23 +1,23 @@
 # What export_models.py and modernize_models.py share.
 import bmesh
 
-# The .blend source of each GLB in public/models
+# The .blend source of each GLB in public/models. Those in generated/ are built by code
+# (dev/blender/models/<name>.py, generate_models.py) and need no modernising.
 SOURCES = {
-    "cacaotree": "cacaotree.blend",
-    "cannon": "cannon.blend",
-    "chocolateFountain": "chocolateFountain.blend",
+    "cacaotree": "generated/cacaotree.blend",
+    "cannon": "generated/cannon.blend",
+    "chocolateFountain": "generated/chocolateFountain.blend",
     "cream": "cream.blend",
     "creamAroundBuilding": "creamAroundBuilding.blend",
-    "donut": "donutBlue.blend",
-    # donutFactory.blend holds the same model four times larger
-    "donutFactory": "donutFactory1.blend",
-    "factory": "factory.blend",
-    "factoryExtension": "factory_extension.blend",
+    "donut": "generated/donut.blend",
+    "donutFactory": "generated/donutFactory.blend",
+    "factory": "generated/factory.blend",
+    "factoryExtension": "generated/factoryExtension.blend",
     "field": "field.blend",
-    "fruitCannon": "fruitCannon.blend",
-    "hotChocolateBallista": "HotChocolateBallista.blend",
-    "spyingEasterBunny": "spyingEasterBunny.blend",
-    "xmasFactory": "xmasFactory.blend",
+    "fruitCannon": "generated/fruitCannon.blend",
+    "hotChocolateBallista": "generated/hotChocolateBallista.blend",
+    "spyingEasterBunny": "generated/spyingEasterBunny.blend",
+    "xmasFactory": "generated/xmasFactory.blend",
 }
 
 

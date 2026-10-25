@@ -23,6 +23,14 @@ def placement(at=(0, 0, 0), rot=(0, 0, 0), scale=(1, 1, 1)):
     return Matrix.LocRotScale(Vector(at), Euler(rot), Vector(scale))
 
 
+def aim(model, direction):
+    """Turns a model built facing +x towards `direction` and centres it on its cell."""
+    model.transform(Matrix.Rotation(math.atan2(direction[1], direction[0]), 4, "Z"))
+    xs = [vert.co.x for vert in model.bm.verts]
+    ys = [vert.co.y for vert in model.bm.verts]
+    model.transform(Matrix.Translation((-(min(xs) + max(xs)) / 2, -(min(ys) + max(ys)) / 2, 0)))
+
+
 class Model:
     def __init__(self, name, seed=1):
         self.name = name
@@ -74,7 +82,8 @@ class Model:
                 for face in made["faces"]:
                     face.material_index = mat
                     face.smooth = True
-                faces += made["faces"]
+                # bevelling replaces some of the part's faces
+                faces = [face for face in faces if face.is_valid] + list(made["faces"])
         return faces
 
     def box(self, size, at, mat, rot=(0, 0, 0), bevel=0.0, segments=2):
@@ -113,9 +122,10 @@ class Model:
                 vert.co = centre + offset * (1 + self.random.uniform(-noise, noise))
         return self._part(made["verts"], mat)
 
-    def tube(self, points, radius, mat, segments=8, caps=True, closed=False):
+    def tube(self, points, radius, mat, segments=8, caps=True, closed=False, profile=None):
         """A tube through `points`; `radius` is one value or one per point. `closed` joins the
-        end to the start (a ring) and leaves out the caps."""
+        end to the start (a ring) and leaves out the caps. `profile(angle)` scales the radius
+        around the tube (ridges)."""
         points = [Vector(point) for point in points]
         radii = radius if isinstance(radius, (list, tuple)) else [radius] * len(points)
         count = len(points)
@@ -133,16 +143,12 @@ class Model:
                 # carried along the curve so the tube does not twist
                 normal = (normal - tangent * normal.dot(tangent)).normalized()
             binormal = tangent.cross(normal)
-            rings.append(
-                [
-                    self.bm.verts.new(
-                        point
-                        + radii[i]
-                        * (math.cos(2 * math.pi * k / segments) * normal + math.sin(2 * math.pi * k / segments) * binormal)
-                    )
-                    for k in range(segments)
-                ]
-            )
+            ring = []
+            for k in range(segments):
+                angle = 2 * math.pi * k / segments
+                scale = profile(angle) if profile else 1.0
+                ring.append(self.bm.verts.new(point + radii[i] * scale * (math.cos(angle) * normal + math.sin(angle) * binormal)))
+            rings.append(ring)
         pairs = list(zip(rings, rings[1:])) + ([(rings[-1], rings[0])] if closed else [])
         for first, second in pairs:
             for k in range(segments):
@@ -194,7 +200,7 @@ class Model:
         self.transform(Matrix.Translation((0, 0, TILE)) @ Matrix.Scale(factor, 4) @ Matrix.Translation((0, 0, -TILE)))
 
     def transform(self, matrix, faces=None):
-        verts = {vert for face in faces for vert in face.verts} if faces else self.bm.verts
+        verts = {vert for face in faces if face.is_valid for vert in face.verts} if faces else self.bm.verts
         bmesh.ops.transform(self.bm, matrix=matrix, verts=list(verts))
 
     # -- output ------------------------------------------------------------------------------

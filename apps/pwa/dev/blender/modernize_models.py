@@ -1,5 +1,5 @@
-# Brings the .blend sources of the game models up to date and away from the faceted low-poly
-# look, then saves them. Run it headless from apps/pwa, then export_models.py and
+# Brings the hand-made .blend sources of the game models up to date and away from the faceted
+# low-poly look, then saves them (the models built in code, dev/blender/models, are left alone). Run it headless from apps/pwa, then export_models.py and
 # `npm run models:optimize`:
 #
 #   /Applications/Blender.app/Contents/MacOS/Blender -b -P dev/blender/modernize_models.py -- [names]
@@ -29,49 +29,28 @@ from shared import SOURCES, smooth_by_angle  # noqa: E402
 
 SMOOTH_ANGLE = 40
 
-# (model, material) pairs that are metal; they reflect the sky
-METALS = {
-    ("cannon", "Material.001"),  # the barrel
-    ("fruitCannon", "Material.001"),  # the barrel
-    ("donutFactory", "Material.001"),  # the bucket
-    ("xmasFactory", "Material.003"),  # the stove pipe
-    ("spyingEasterBunny", "Material.006"),  # the binoculars
-}
+# (model, material) pairs that are metal; they reflect the sky. (The metals of 2026-10, cannon
+# barrels, bucket, pipe and binoculars, are in models built in code now.)
+METALS = set()
 # brushed, not polished (polished metal glared under the sky)
 METAL_ROUGHNESS = 0.7
 # Everything else is matte: under the sky light the old roughness of 0.5 (and less) made cream,
-# chocolate and paint look like glossy plastic. A few materials keep some shine.
+# chocolate and paint look like glossy plastic. ROUGHNESS lets a material keep some shine.
 MATTE_ROUGHNESS = 0.85
-ROUGHNESS = {("donut", "Topping"): 0.6}  # the glaze
+ROUGHNESS = {}
 # and reflects half as much as glTF's default (Specular IOR Level 0.5), also at grazing angles
 SPECULAR_LEVEL = 0.25
 SPECULAR_TINT = 0.5
-# Lights: emission strength; a white bulb with a coloured glow washed out to pastel under the sky,
-# so a bulb gets its light's colour as base colour too
-LIGHTS = {
-    ("xmasFactory", "Material.008"): 3.0,  # red fairy lights
-    ("xmasFactory", "Material.010"): 3.0,  # green fairy lights
-    ("xmasFactory", "Material.007"): 2.0,  # yellow fairy lights and the window
-}
+# Lights: (model, material) -> emission strength; a white bulb takes its light's colour as base
+# colour too, or it washes out to pastel under the sky
+LIGHTS = {}
 # base colours that differ from the old exports (linear RGB)
-BASE_COLORS = {
-    ("xmasFactory", "Material.002"): (1.0, 1.0, 1.0),  # the snow (was 0.8 with a white glow)
-}
+BASE_COLORS = {}
 
 # bevel: width in model units (a board cell is 1), only on edges sharper than SMOOTH_ANGLE;
 # subdivide: Catmull-Clark levels (each level makes four times the triangles); smooth: False for
-# no sharp edges at all. Models that stand on many cells at once (cream, donut traps, the board)
-# stay light.
+# no sharp edges at all. Models that stand on many cells at once (cream, the board) stay light.
 RECIPES = {
-    "factory": {"bevel": 0.012},
-    "factoryExtension": {"bevel": 0.012},
-    "xmasFactory": {"bevel": 0.012},
-    # (no bevel: on the sprinkles of its donut it made 50k triangles)
-    "cannon": {"bevel": 0.006},
-    "fruitCannon": {"bevel": 0.006},
-    "cacaotree": {"subdivide": 1},
-    "chocolateFountain": {"bevel": 0.012, "subdivide": 1},
-    "hotChocolateBallista": {"bevel": 0.012, "subdivide": 1},
     "field": {"bevel": 0.04, "segments": 3},
     # the swirl's ridges are steeper than SMOOTH_ANGLE and came out as steps
     "cream": {"smooth": False},
@@ -174,6 +153,9 @@ args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
 bpy.context.preferences.filepaths.save_version = 0
 
 for name in args or SOURCES:
+    if SOURCES[name].startswith("generated/"):
+        print(f"skipped {name}: built by dev/blender/models/{name}.py")
+        continue
     shipped = shipped_materials(name)
     bpy.ops.wm.open_mainfile(filepath=os.path.join(pwa, "dev", "models", SOURCES[name]), load_ui=False)
     if bpy.context.object and bpy.context.object.mode != "OBJECT":

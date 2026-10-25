@@ -5,9 +5,9 @@
 # cannons around). Variant "bronze" casts the barrel in bronze instead of iron.
 import math
 
-from mathutils import Matrix, Vector
+from mathutils import Vector
 
-from build import TILE, Model
+from build import TILE, Model, aim
 
 # where the old model's muzzle pointed (its barrel axis)
 AIM = Vector((-0.73, -0.683, 0.0))
@@ -18,6 +18,18 @@ TRACK = 0.17  # wheel distance from the middle
 
 def build(variant=None):
     m = Model("cannon", seed=5)
+    carriage_and_barrel(m, variant)
+    truffle = m.material("Truffle", (0.07, 0.033, 0.014), roughness=0.95)
+    for x, y, layer in ((-0.2, 0.21, 0), (-0.27, 0.21, 0), (-0.235, 0.27, 0), (-0.235, 0.233, 1)):
+        m.sphere(0.035, (x, y, TILE + 0.035 + layer * 0.055), truffle, segments=10, rings=7)
+    # point the muzzle where the old model's did, keep the cannon on its cell, fill it
+    aim(m, AIM)
+    m.grow(1.25)
+    return m
+
+
+def carriage_and_barrel(m, variant=None):
+    """Wheels, carriage and barrel, muzzle along +x (the fruit cannon uses them too)."""
     wood = m.material("Wood", (0.2, 0.09, 0.035))
     wood_dark = m.material("Wood Dark", (0.09, 0.04, 0.015))
     iron = m.material("Iron", (0.04, 0.04, 0.045), metallic=1.0, roughness=0.7)
@@ -26,26 +38,11 @@ def build(variant=None):
     else:
         barrel = m.material("Barrel", (0.05, 0.05, 0.055), metallic=1.0, roughness=0.65)
     bore = m.material("Bore", (0.01, 0.01, 0.01), roughness=1.0)
-    truffle = m.material("Truffle", (0.07, 0.033, 0.014), roughness=0.95)
-
     for side in (-1, 1):
         wheel(m, AXLE + Vector((0, side * TRACK, 0)), side, wood, wood_dark, iron)
     m.cylinder(0.018, 2 * TRACK, AXLE, iron, rot=(math.pi / 2, 0, 0), segments=10)
     carriage(m, wood, wood_dark, iron)
     cannon_barrel(m, barrel, bore)
-    for at in ((-0.2, 0.21, 0), (-0.27, 0.21, 0), (-0.235, 0.27, 0), (-0.235, 0.233, 1)):
-        x, y, layer = at
-        m.sphere(0.035, (x, y, TILE + 0.035 + layer * 0.055), truffle, segments=10, rings=7)
-
-    # point the muzzle where the old model's did, and keep the whole cannon on its cell
-    turn = Matrix.Rotation(math.atan2(AIM.y, AIM.x), 4, "Z")
-    m.transform(turn)
-    xs = [vert.co.x for vert in m.bm.verts]
-    ys = [vert.co.y for vert in m.bm.verts]
-    m.transform(Matrix.Translation((-(min(xs) + max(xs)) / 2, -(min(ys) + max(ys)) / 2, 0)))
-    # sized to fill its cell like the other buildings
-    m.grow(1.25)
-    return m
 
 
 def wheel(m, centre, side, wood, wood_dark, iron):

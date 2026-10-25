@@ -7,8 +7,7 @@ import bmesh
 from mathutils import Vector
 
 from build import TILE, Model
-
-GOLDEN_ANGLE = math.pi * (3 - math.sqrt(5))
+from models.parts import leaf_cluster
 
 # crown clusters: centre, radii, leaves
 CLUSTERS = (
@@ -43,33 +42,7 @@ def build(variant=None):
         model.tube([fork, fork.lerp(Vector(centre), 0.5) + Vector((0, 0, 0.03)), Vector(centre)], [0.016, 0.012, 0.01], bark, segments=6)
 
     for centre, radii, count in CLUSTERS:
-        centre, radii = Vector(centre), Vector(radii)
-        model.blob(1.0, centre, core, scale=radii * 0.78, subdivisions=2, noise=0.05)
-        for i in range(count):
-            # spread evenly over the cluster (Fibonacci sphere), with some jitter
-            y = 1 - 2 * (i + 0.5) / count
-            ring = math.sqrt(max(0.0, 1 - y * y))
-            phi = i * GOLDEN_ANGLE + model.random.uniform(-0.2, 0.2)
-            unit = Vector((math.cos(phi) * ring, math.sin(phi) * ring, y))
-            if unit.z < -0.8:
-                continue
-            point = centre + Vector(a * b for a, b in zip(unit, radii)) * 0.95
-            normal = Vector(a / b for a, b in zip(unit, radii)).normalized()
-            sideways = Vector(model.random.uniform(-1, 1) for _ in range(3))
-            sideways = (sideways - normal * sideways.dot(normal)).normalized()
-            # lying on the crown like shingles, tips a little out and down
-            direction = (sideways + normal * 0.3 + Vector((0, 0, -0.3))).normalized()
-            # the sunny top lighter, the shaded bottom darker
-            shade = (unit.z + 1) / 2 + model.random.uniform(-0.35, 0.35)
-            model.leaf(
-                point - normal * 0.03,
-                direction,
-                normal,
-                model.random.uniform(0.1, 0.14),
-                model.random.uniform(0.045, 0.06),
-                leaves[0 if shade < 0.35 else 1 if shade < 0.75 else 2],
-                droop=0.3,
-            )
+        leaf_cluster(model, centre, radii, count, leaves, core)
 
     for i, (height, angle, length) in enumerate(PODS):
         out = Vector((math.cos(angle), math.sin(angle), 0))
