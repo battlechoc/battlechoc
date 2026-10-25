@@ -50,14 +50,18 @@ const WHOLE = {
 };
 // picture -> the render shown inside the green arrows
 const ARROWS = {
-  "attacks-per-turn": "truffle-cannon-icon",
-  "fruit-attacks-per-turn": "fruit-cannon-icon",
+  "attacks-per-turn": "cannon-whole",
+  "fruit-attacks-per-turn": "fruit-cannon-whole",
   "spy-attacks-per-turn": "easter-bunny-icon",
   "cacao-per-turn": "cacao",
   // also the template of the arrows: arrows() reads them before it writes the file
   "buildings-per-turn": "buildings-icon",
 };
 const PADDING = 0.04; // of the viewBox, round a whole picture
+// renders that show only part of a model (zoomed in): they fill their picture as a circle, so
+// the cut edges are the round edge of the icon (straight cuts showed where the picture sits
+// smaller than its round button)
+const ROUND = new Set(["truffle-cannon-icon", "fruit-cannon-icon"]);
 
 const run = (command, args) => execFileSync(command, args, { stdio: ["ignore", "pipe", "pipe"] });
 
@@ -65,7 +69,10 @@ const run = (command, args) => execFileSync(command, args, { stdio: ["ignore", "
 const webp = (render, width, height) => {
   const png = path.join(scratch, "fit.png");
   const out = path.join(scratch, "fit.webp");
-  run("magick", [path.join(renders, render + ".png"), "-trim", "+repage", "-resize", `${Math.round(width)}x${Math.round(height)}`, png]);
+  const source = path.join(renders, render + ".png");
+  // a zoomed render keeps its frame (no trim): it is cut to a circle in the picture
+  const fit = ROUND.has(render) ? [] : ["-trim", "+repage"];
+  run("magick", [source, ...fit, "-resize", `${Math.round(width)}x${Math.round(height)}`, png]);
   run("cwebp", ["-quiet", "-q", "90", "-alpha_q", "100", "-m", "6", png, "-o", out]);
   const size = run("magick", ["identify", "-format", "%w %h", png]).toString().split(" ").map(Number);
   return { data: `data:image/webp;base64,${fs.readFileSync(out).toString("base64")}`, width: size[0], height: size[1] };
@@ -81,6 +88,18 @@ const whole = (name, render) => {
   const file = path.join(images, name + ".svg");
   const box = viewBox(fs.readFileSync(file, "utf8"));
   const [, , width, height] = box;
+  if (ROUND.has(render)) {
+    const side = Math.min(width, height);
+    const image = webp(render, side * 2, side * 2);
+    const [x, y] = [(width - side) / 2, (height - side) / 2];
+    fs.writeFileSync(
+      file,
+      header(box) +
+        `<defs><clipPath id="round"><circle cx="${width / 2}" cy="${height / 2}" r="${side / 2}"/></clipPath></defs>` +
+        `<image clip-path="url(#round)" x="${x}" y="${y}" width="${side}" height="${side}" xlink:href="${image.data}"/></svg>\n`
+    );
+    return;
+  }
   const inner = { width: width * (1 - 2 * PADDING), height: height * (1 - 2 * PADDING) };
   const image = webp(render, inner.width * 2, inner.height * 2);
   const scale = Math.min(inner.width / image.width, inner.height / image.height);

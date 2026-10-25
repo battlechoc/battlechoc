@@ -49,6 +49,7 @@ DONUTS = {
 # hide: materials left out (the fountain's shield dome); tile: on a chocolate tile; turn: degrees
 # the model turns about its upright axis; elevation: the camera's angle for this picture;
 # mirror: False keeps the picture as rendered; shadow: True casts a shadow on the ground under it;
+# zoom, focus, keep: a closer picture of a part of the model (see frame);
 # look: its own colour handling; recolor: {material: colour}; tile_color: the chocolate piece's.
 # (`name@degrees` on the command line tries another turn.)
 # colour handling and light: view transform, contrast look, exposure, sky strength, sun strength.
@@ -69,8 +70,12 @@ ICONS = {
     "factory-icon": dict(model="factory"),
     "factory-extension-icon": dict(model="factoryExtension"),
     "cacao-tree-icon": dict(model="cacaotree"),
-    "truffle-cannon-icon": dict(model="cannon"),
-    "fruit-cannon-icon": dict(model="fruitCannon"),
+    # closer on the barrel, so the icon is filled (the user's wish); the fruit cannon's skewer
+    # stays whole, it tells the two apart. The pictures in the green arrows show them whole.
+    "truffle-cannon-icon": dict(model="cannon-steep", zoom=1.6, focus=(0.06, 0.06), keep=("Bore",)),
+    "fruit-cannon-icon": dict(model="fruitCannon-steep", zoom=1.5, focus=(0.06, 0.06), keep=("Strawberry",)),
+    "cannon-whole": dict(model="cannon"),
+    "fruit-cannon-whole": dict(model="fruitCannon"),
     "ballista-icon": dict(model="hotChocolateBallista"),
     # looking to the lower right like the old icon, from a little higher so the eggs show
     "easter-bunny-icon": dict(model="spyingEasterBunny", turn=25, elevation=32),
@@ -207,8 +212,14 @@ def setup_scene(look):
     return scene
 
 
+# materials that are brown but no chocolate: they keep their colour
+NOT_CHOCOLATE = ("Wood", "Skewer", "Bark", "Grip", "Crate", "Kiwi", "Pod", "Bean", "Door", "Roof", "Brick", "Dough")
+
+
 def deepen_browns(objects, factor=0.5, saturate=1.15):
-    """Darker, richer chocolate and wood: the old icons' browns were deep, the models' caramel."""
+    """Darker, richer chocolate: the old icons' browns were deep, the models' caramel. Only
+    chocolate: dark browns (bright ones are fruit: orange, pineapple, apple) that are not named
+    as something else (wood made the cannon's carriage almost black)."""
     done = set()
     for obj in objects:
         for slot in obj.material_slots:
@@ -221,16 +232,21 @@ def deepen_browns(objects, factor=0.5, saturate=1.15):
                 continue
             r, g, b, a = node.inputs["Base Color"].default_value
             top, low = max(r, g, b), min(r, g, b)
-            brown = top == r and r > g > b and top > 0.03 and (top - low) / top > 0.55 and g / r < 0.75
+            brown = top == r and r > g > b and 0.03 < top < 0.6 and (top - low) / top > 0.55 and g / r < 0.75
+            if any(word in material.name for word in NOT_CHOCOLATE):
+                brown = False
             if brown:
                 mean = (r + g + b) / 3
                 r, g, b = (mean + (c - mean) * saturate for c in (r, g, b))
                 node.inputs["Base Color"].default_value = (max(0, r) * factor, max(0, g) * factor, max(0, b) * factor, a)
 
 
-def frame(scene, objects, hidden=(), margin=1.1, angle=None):
+def frame(scene, objects, hidden=(), margin=1.1, angle=None, zoom=1.0, focus=(0.0, 0.0), mirrored=True, keep=()):
     """An orthographic camera looking from +x, -y like the game's, `angle` (or `elevation`) degrees
-    above the ground, fitted to the objects (leaving out faces of the `hidden` materials)."""
+    above the ground, fitted to the objects (leaving out faces of the `hidden` materials).
+    `zoom` > 1 fills the picture with a part of the model; `focus` moves the view towards the
+    right and up of the finished (mirrored) picture, in fractions of the whole model's size; the
+    faces of the materials in `keep` (a muzzle) are then moved into the picture if they fell out."""
     up_angle = math.radians(elevation if angle is None else angle)
     direction = Vector((math.cos(up_angle) / math.sqrt(2), -math.cos(up_angle) / math.sqrt(2), math.sin(up_angle)))
     camera = bpy.data.objects.new("Camera", bpy.data.cameras.new("Camera"))
@@ -252,9 +268,29 @@ def frame(scene, objects, hidden=(), margin=1.1, angle=None):
         evaluated.to_mesh_clear()
     xs = [point.dot(right) for point in points]
     ys = [point.dot(up) for point in points]
+    kept = []
+    for obj in objects:
+        evaluated = obj.evaluated_get(depsgraph)
+        mesh = evaluated.to_mesh()
+        wanted = {i for i, slot in enumerate(evaluated.material_slots) if slot.material and slot.material.name in keep}
+        used = {i for polygon in mesh.polygons if polygon.material_index in wanted for i in polygon.vertices}
+        kept += [obj.matrix_world @ mesh.vertices[i].co for i in used]
+        evaluated.to_mesh_clear()
     centre = right * (min(xs) + max(xs)) / 2 + up * (min(ys) + max(ys)) / 2
+    size = max(max(xs) - min(xs), max(ys) - min(ys))
+    centre += right * (focus[0] * size * (-1 if mirrored else 1)) + up * (focus[1] * size)
+    scale = size * margin / zoom
+    if kept:
+        # move the view the least so that the kept parts lie inside the round icon, with a margin
+        radius = scale / 2 * 0.84
+        for _ in range(50):
+            offsets = [(point - centre).dot(right) * right + (point - centre).dot(up) * up for point in kept]
+            farthest = max(offsets, key=lambda offset: offset.length)
+            if farthest.length <= radius:
+                break
+            centre += farthest.normalized() * (farthest.length - radius)
     camera.location = centre + direction * 20
-    camera.data.ortho_scale = max(max(xs) - min(xs), max(ys) - min(ys)) * margin
+    camera.data.ortho_scale = scale
     camera.data.clip_end = 100
 
 
@@ -295,7 +331,16 @@ def render(name, spec):
         catcher.data.from_pydata([(-3, -3, ground), (3, -3, ground), (3, 3, ground), (-3, 3, ground)], [], [(0, 1, 2, 3)])
         catcher.is_shadow_catcher = True
         scene.collection.objects.link(catcher)
-    frame(scene, objects, hidden=spec.get("hide", ()), angle=spec.get("elevation"))
+    frame(
+        scene,
+        objects,
+        hidden=spec.get("hide", ()),
+        angle=spec.get("elevation"),
+        zoom=spec.get("zoom", 1.0),
+        focus=spec.get("focus", (0.0, 0.0)),
+        mirrored=spec.get("mirror", True),
+        keep=spec.get("keep", ()),
+    )
     path = os.path.join(out, name + ".png")
     scene.render.filepath = path
     bpy.ops.render.render(write_still=True)

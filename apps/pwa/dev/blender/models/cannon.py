@@ -17,11 +17,17 @@ TRACK = 0.17  # wheel distance from the middle
 BARREL_Z = TILE + 0.3  # the barrel's axis before it is raised
 TRUNNION = Vector((0.03, 0.0, BARREL_Z - 0.02))  # what the barrel turns about
 ELEVATION = math.radians(10)  # the barrel points a little upwards, like the old cannon's
+# variant "steep": for the icons, where a steeper barrel fits a closer picture (the old icon's)
+STEEP = math.radians(26)
 
 
-def raise_barrel(m, faces):
+def elevation(variant):
+    return STEEP if variant == "steep" else ELEVATION
+
+
+def raise_barrel(m, faces, angle=ELEVATION):
     """Turns faces built along the level barrel (+x) up about the trunnions."""
-    m.transform(Matrix.Translation(TRUNNION) @ Matrix.Rotation(-ELEVATION, 4, "Y") @ Matrix.Translation(-TRUNNION), faces)
+    m.transform(Matrix.Translation(TRUNNION) @ Matrix.Rotation(-angle, 4, "Y") @ Matrix.Translation(-TRUNNION), faces)
 
 
 def build(variant=None):
@@ -36,21 +42,25 @@ def build(variant=None):
     return m
 
 
-def carriage_and_barrel(m, variant=None):
-    """Wheels, carriage and barrel, muzzle along +x (the fruit cannon uses them too)."""
-    wood = m.material("Wood", (0.2, 0.09, 0.035))
-    wood_dark = m.material("Wood Dark", (0.09, 0.04, 0.015))
+def carriage_and_barrel(m, variant=None, barrel=True):
+    """Wheels, carriage and (unless not `barrel`) the barrel, muzzle along +x (the fruit cannon
+    uses the carriage too)."""
+    # a warm, mid brown: darker went almost black next to the iron
+    wood = m.material("Wood", (0.36, 0.17, 0.07))
+    wood_dark = m.material("Wood Dark", (0.19, 0.085, 0.035))
     iron = m.material("Iron", (0.04, 0.04, 0.045), metallic=1.0, roughness=0.7)
-    if variant == "bronze":
-        barrel = m.material("Bronze", (0.55, 0.32, 0.12), metallic=1.0, roughness=0.6)
-    else:
-        barrel = m.material("Barrel", (0.05, 0.05, 0.055), metallic=1.0, roughness=0.65)
-    bore = m.material("Bore", (0.01, 0.01, 0.01), roughness=1.0)
     for side in (-1, 1):
         wheel(m, AXLE + Vector((0, side * TRACK, 0)), side, wood, wood_dark, iron)
     m.cylinder(0.018, 2 * TRACK, AXLE, iron, rot=(math.pi / 2, 0, 0), segments=10)
     carriage(m, wood, wood_dark, iron)
-    cannon_barrel(m, barrel, bore)
+    if not barrel:
+        return
+    if variant == "bronze":
+        metal = m.material("Bronze", (0.55, 0.32, 0.12), metallic=1.0, roughness=0.6)
+    else:
+        metal = m.material("Barrel", (0.05, 0.05, 0.055), metallic=1.0, roughness=0.65)
+    bore = m.material("Bore", (0.01, 0.01, 0.01), roughness=1.0)
+    cannon_barrel(m, metal, bore, elevation(variant))
 
 
 def wheel(m, centre, side, wood, wood_dark, iron):
@@ -86,7 +96,7 @@ def carriage(m, wood, wood_dark, iron):
     m.box((0.06, 0.14, 0.05), back + Vector((0.02, 0, 0.0)), wood_dark, rot=(0, -angle, 0), bevel=0.008)
 
 
-def cannon_barrel(m, barrel, bore):
+def cannon_barrel(m, barrel, bore, angle=ELEVATION):
     z = BARREL_Z
     profile = (
         (-0.235, 0.0),
@@ -110,6 +120,6 @@ def cannon_barrel(m, barrel, bore):
     faces = m.tube(points, radii, barrel, segments=16, caps=False)
     faces += m.sphere(0.03, (-0.265, 0.0, z), barrel, segments=10, rings=7)
     faces += m.cylinder(0.031, 0.004, (0.399, 0.0, z), bore, rot=(0, math.pi / 2, 0), segments=14)
-    raise_barrel(m, faces)
+    raise_barrel(m, faces, angle)
     for side in (-1, 1):  # trunnions resting on the cheeks
         m.cylinder(0.02, 0.06, (0.03, side * 0.075, z - 0.02), barrel, rot=(math.pi / 2, 0, 0), segments=10)
