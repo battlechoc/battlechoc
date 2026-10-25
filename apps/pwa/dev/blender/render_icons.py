@@ -106,6 +106,10 @@ ICONS = {
     "logo-tree": dict(model="cacaotree", tile=True, shadow=False, look="logo", recolor=OLD_TREE, tile_color=OLD_SLAB),
     "logo-tree-light": dict(model="cacaotree", tile=True, shadow=False, look="logo-light", recolor=OLD_TREE, tile_color=OLD_SLAB),
     "logo-tree-plain": dict(model="cacaotree", shadow=False),
+    # the user's idea: the chocolate fountain instead of the tree
+    "logo-fountain": dict(model="chocolateFountain", hide=("Shield",), tile=True, shadow=False, look="logo", tile_color=OLD_SLAB),
+    "logo-fountain-plain": dict(model="chocolateFountain", hide=("Shield",), shadow=False, look="logo"),
+    "logo-fountain-dark": dict(model="chocolateFountain", hide=("Shield",), shadow=False),
     # dev/icons.mjs cuts the ten progress-NN pictures from it
     "progress-donut": dict(model="donut", copies=(((0, 0, 0), "progress"),), elevation=70, shadow=False),
 }
