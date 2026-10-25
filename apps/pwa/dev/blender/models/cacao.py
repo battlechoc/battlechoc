@@ -10,6 +10,9 @@ from build import TILE, Model
 
 LENGTH, RADIUS = 0.62, 0.2
 RIDGES = 5
+LID_AT = (-0.24, 0.2, 0.12)
+PULP_DEPTH = 0.075  # how far the pulp's surface lies below the rim
+SHELL = 0.78  # the inside's size against the outside (a thick rim)
 
 
 def build(variant=None):
@@ -21,20 +24,20 @@ def build(variant=None):
 
     # the lower half, lying along x, cut open at the top
     lower = half_pod(m, outside, inside, top=False)
-    # the white pulp filling the open half up to its rim, a little domed (the beans floated
-    # over the hollow shell)
-    m.sphere(1.0, (0, 0, 0.0), inside, scale=(LENGTH / 2 * 0.93, RADIUS * 0.93, 0.03), segments=32, rings=12)
+    # the white pulp filling the open half, a little domed (the beans floated over the hollow
+    # shell), below the rim, so the shell holds the beans like a bowl
+    m.sphere(1.0, (0, 0, -PULP_DEPTH), inside, scale=(LENGTH / 2 * 0.74, RADIUS * 0.7, 0.03), segments=32, rings=12)
     # beans in two rows, sunk half into the pulp
     for row in (-1, 1):
         for i in range(5):
             x = -0.2 + i * 0.1
             taper = 1 - (abs(x) / (LENGTH / 2)) ** 2
-            at = Vector((x, row * 0.055 * taper, 0.018 + 0.016 * taper))
+            at = Vector((x * 0.92, row * 0.05 * taper, -PULP_DEPTH + 0.018 + 0.016 * taper))
             m.sphere(1.0, at, bean, scale=(0.045, 0.032 * taper + 0.008, 0.028), rot=(0, 0, row * 0.15), segments=12, rings=8)
     # the upper half, turned over and leaning against the lower one
     lid = half_pod(m, lid_outside, inside, top=True)
     # (behind the open half, on the right in the picture, its red outside towards the camera)
-    m.transform(Matrix.Translation((-0.24, 0.2, 0.12)) @ Matrix.Rotation(1.15, 4, "X") @ Matrix.Rotation(-0.35, 4, "Z"), lid)
+    m.transform(Matrix.Translation(LID_AT) @ Matrix.Rotation(1.15, 4, "X") @ Matrix.Rotation(-0.35, 4, "Z"), lid)
     m.transform(Matrix.Translation((0, 0, TILE + RADIUS * 0.7)))
     return m
 
@@ -45,7 +48,7 @@ def half_pod(m, outside, inside, top):
     segments, rings = 40, 24
     faces = []
     shells = []
-    for scale, mat in ((1.0, outside), (0.86, inside)):
+    for scale, mat in ((1.0, outside), (SHELL, inside)):
         rows = []
         for i in range(rings + 1):
             t = i / rings
