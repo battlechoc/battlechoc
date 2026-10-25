@@ -96,6 +96,13 @@ ICONS = {
     # the resources: cacao and building slots (also inside the arrows of the "per turn" pictures)
     "cacao": dict(model="cacao", elevation=35),
     "buildings-icon": dict(model="hammer", elevation=35),
+    # the caught bunny's ghost in bunny-caught.svg: the bunny alone, without nest, grass and eggs
+    "bunny-ghost": dict(
+        model="spyingEasterBunny",
+        turn=25,
+        elevation=20,
+        hide=("Material.019", "Material.000", "Material.008", "Material.012", "Grass Green", "Grass Light", "Grass Yellow", "Grass Yellow Green"),
+    ),
     # the title screen's decoration: a donut on a broken chocolate bar
     "decoration": dict(model="decoration", elevation=38),
     # dev/icons.mjs cuts the ten progress-NN pictures from it

@@ -202,7 +202,7 @@ precacheAndRoute(
     { url: "/images/progress-90.svg", revision: "9" },
     { url: "/images/attacks-per-turn.svg", revision: "9" },
     { url: "/images/buildings-per-turn.svg", revision: "8" },
-    { url: "/images/bunny-caught.svg", revision: "5" },
+    { url: "/images/bunny-caught.svg", revision: "6" },
     { url: "/images/cacao-per-turn.svg", revision: "13" },
     { url: "/images/fruit-attacks-per-turn.svg", revision: "9" },
     { url: "/images/spy-attacks-per-turn.svg", revision: "9" },

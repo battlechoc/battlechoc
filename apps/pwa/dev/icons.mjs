@@ -5,6 +5,8 @@
 // - the "per turn" pictures get the render inside the two green arrows of buildings-per-turn.svg
 //   (their old cannon was drawn in paths, so it could not simply be swapped)
 // - the build progress donuts (progress-10 … 100) show the donut in ten clockwise steps
+// - "bunny-caught" gets the bunny (render bunny-ghost) as a blue ghost fading out at the bottom,
+//   between the wings and under the halo of the old picture
 // - "logo" puts the fountain (render logo-fountain) on the letters of dev/logo-letters.svg and
 //   makes the app icons from it on a deep blue ray background: favicon.png/.ico and the
 //   manifest's icons (round), the maskable icons (the fountain inside the safe zone), the apple
@@ -219,6 +221,44 @@ const logo = (render) => {
   ]);
 };
 
+/** bunny-caught.svg: the embedded bunny (_Image3) swapped for the new one, tinted like a ghost. */
+const ghost = (render) => {
+  const file = path.join(images, "bunny-caught.svg");
+  let svg = fs.readFileSync(file, "utf8");
+  const element = /<image id="_Image3" width="([\d.]+)px" height="([\d.]+)px" xlink:href="data:image\/[a-z]+;base64,[^"]+"\/>/;
+  const match = svg.match(element);
+  if (!match) {
+    throw new Error("bunny-caught.svg: no embedded image _Image3");
+  }
+  const [w, h] = [Number(match[1]) * 2, Number(match[2]) * 2];
+  const png = path.join(scratch, "ghost.png");
+  const out = path.join(scratch, "ghost.webp");
+  const [base, alpha, rgb] = ["ghost-base.png", "ghost-alpha.png", "ghost-rgb.png"].map((name) => path.join(scratch, name));
+  // without the bottom, where the nest cut the body off
+  run("magick", [
+    path.join(renders, render + ".png"), "-trim", "+repage", "-gravity", "south", "-chop", "0x20%",
+    // the head up under the halo
+    "-resize", `${w}x${h}`, "-background", "none", "-gravity", "north", "-extent", `${w}x${h}`, base,
+  ]);
+  // blue like the old ghost: light and dark stretched onto a deep and a pale blue (on grey, so the
+  // transparent pixels do not count)
+  run("magick", [
+    base, "-background", "#808080", "-alpha", "remove", "-colorspace", "gray", "-gamma", "0.8",
+    "-contrast-stretch", "1%x1%", "+level-colors", "#06304f,#a8e0ff", rgb,
+  ]);
+  // fading out at the bottom
+  run("magick", [
+    base, "-alpha", "extract",
+    "(", "-size", `${w}x${h}`, "gradient:white-black", "-level", "0%,30%", ")",
+    "-compose", "multiply", "-composite", alpha,
+  ]);
+  run("magick", [rgb, alpha, "-alpha", "off", "-compose", "CopyOpacity", "-composite", png]);
+  run("cwebp", ["-quiet", "-q", "90", "-alpha_q", "100", "-m", "6", png, "-o", out]);
+  const data = `data:image/webp;base64,${fs.readFileSync(out).toString("base64")}`;
+  svg = svg.replace(element, `<image id="_Image3" width="${match[1]}px" height="${match[2]}px" xlink:href="${data}"/>`);
+  fs.writeFileSync(file, svg);
+};
+
 const only = process.argv.slice(2);
 const wanted = (name) => only.length === 0 || only.includes(name);
 for (const [name, render] of Object.entries(WHOLE)) {
@@ -236,6 +276,10 @@ for (const [name, render] of Object.entries(ARROWS)) {
 if (wanted("progress") && fs.existsSync(path.join(renders, "progress-donut.png"))) {
   progress("progress-donut");
   console.log("progress donuts");
+}
+if (wanted("bunny-caught") && fs.existsSync(path.join(renders, "bunny-ghost.png"))) {
+  ghost("bunny-ghost");
+  console.log("ghost   bunny-caught");
 }
 if (wanted("logo") && fs.existsSync(path.join(renders, "logo-fountain.png"))) {
   logo("logo-fountain");
