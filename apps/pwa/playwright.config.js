@@ -57,7 +57,9 @@ export default defineConfig({
     },
     {
       // the dev server too: it serves the linked shared package differently than the build
+      // its own dependency cache, apart from a dev server the developer may be running (vite.config.js)
       command: `vite --host 127.0.0.1 --port ${devPort} --strictPort --open false`,
+      env: { VITE_CACHE_DIR: "node_modules/.vite-e2e" },
       url: `http://127.0.0.1:${devPort}`,
       reuseExistingServer: true,
       timeout: 60000,

@@ -9,6 +9,13 @@ const isLocalhost = Boolean(
 );
 
 export function register(config) {
+  if (import.meta.env.DEV && "serviceWorker" in navigator) {
+    // The dev server shares its port with the e2e build's preview (3000), whose worker would stay
+    // registered and could answer the dev server's requests with that build's files.
+    navigator.serviceWorker
+      .getRegistrations()
+      .then((registrations) => registrations.forEach((registration) => registration.unregister()));
+  }
   if (import.meta.env.PROD && "serviceWorker" in navigator) {
     // The URL constructor is available in all browsers that support SW.
     const publicUrl = new URL(import.meta.env.BASE_URL, window.location.href);

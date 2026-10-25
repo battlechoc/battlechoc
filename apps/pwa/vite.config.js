@@ -13,6 +13,10 @@ import { VitePWA } from 'vite-plugin-pwa';
 // differ from the last bundle, and restarts itself when they change while it runs.
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sharedDir = path.resolve(here, '../../packages/shared');
+// Every dev server on this project needs its own dependency cache (VITE_CACHE_DIR): a second server
+// (the e2e suite's, a lookdev server) that re-bundled the shared one left a running server's page
+// importing chunks that no longer existed, a white page until a hard reload.
+const cacheDir = path.resolve(here, process.env.VITE_CACHE_DIR || 'node_modules/.vite');
 const NOT_BUNDLED = new Set(['node_modules', 'coverage', 'tests', 'scripts']);
 
 const sharedSources = (dir) =>
@@ -36,7 +40,7 @@ const sharedHash = () => {
 
 // true when the shared sources changed since the last pre-bundle (remembered next to Vite's cache)
 const sharedChanged = () => {
-  const stamp = path.join(here, 'node_modules', '.vite', 'battlechoc-shared.hash');
+  const stamp = path.join(cacheDir, 'battlechoc-shared.hash');
   const current = sharedHash();
   let previous;
   try {
@@ -72,6 +76,7 @@ const restartOnSharedChange = () => ({
 });
 
 export default defineConfig(({ command }) => ({
+  cacheDir,
   plugins: [
     restartOnSharedChange(),
     react(),
@@ -83,8 +88,9 @@ export default defineConfig(({ command }) => ({
       manifest: false,
       injectManifest: {
         rollupFormat: 'iife',
-        // the build plus the fonts (public/fonts); the media is listed by hand in the worker
-        globPatterns: ['**/*.{js,css,html}', 'fonts/*.woff2'],
+        // the build plus the fonts (public/fonts) and the web app manifest; the media is listed by
+        // hand in the worker
+        globPatterns: ['**/*.{js,css,html}', 'fonts/*.woff2', 'manifest.json'],
         maximumFileSizeToCacheInBytes: 20971520,
       },
     }),

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
@@ -8,7 +8,6 @@ import {
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import { ChoclabPalette, Fab } from "../controls";
-import MeshPreview from "../../3d/MeshPreview";
 import { updatePlayerStats } from "../UiActions";
 import { ServerRequest } from "../../helper/settings";
 import logger from "../../helper/logger";
@@ -23,6 +22,9 @@ import InventoryPicker from "./InventoryPicker";
 import RecipeBook from "./RecipeBook";
 import LabIntro, { LAB_INTRO_SEEN, LAB_INTRO_STEPS, Spotlight } from "./LabIntro";
 import { bangers, effectLines, labColors } from "./itemText";
+
+// loaded with the lab, like the game's scene: Babylon stays out of the first bundle
+const MeshPreview = React.lazy(() => import("../../3d/MeshPreview"));
 
 // the buildings that can be equipped, in the order of the carousel
 const BUILDINGS = Object.keys(SpecialIngredient).filter((type) =>
@@ -488,7 +490,9 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
             disabled={!online}
           />
           <div className={classes.preview}>
-            <MeshPreview selectedEntity={selected} />
+            <Suspense fallback={null}>
+              <MeshPreview selectedEntity={selected} />
+            </Suspense>
           </div>
           <EquipmentSlot
             index={1}

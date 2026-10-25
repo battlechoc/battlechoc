@@ -4,12 +4,10 @@ import {
   ParticleSystem,
   Vector3,
   Color4,
-  ActionManager,
-  ExecuteCodeAction,
   SolidParticleSystem,
   Texture,
   MeshBuilder,
-} from "@babylonjs/core";
+} from "./babylon.js";
 import { v4 as uuidv4 } from "uuid";
 
 class Gamefield {
@@ -21,7 +19,9 @@ class Gamefield {
     size,
     scene,
     action,
-    setRenderLoop
+    setRenderLoop,
+    // draws the scene once soon; the scene coalesces several requests into one frame
+    requestRender = () => scene.render()
   ) {
     this.isPlayerGameField = isPlayerGameField;
     this.rows = size.rows;
@@ -35,6 +35,7 @@ class Gamefield {
     this.build();
     this.animations = [];
     this.setRenderLoop = setRenderLoop;
+    this.requestRender = requestRender;
   }
 
   build() {
@@ -132,12 +133,8 @@ class Gamefield {
       mesh.id = meshId;
       mesh.position = this.position.add(new Vector3(cell.row, 0, cell.col));
       if (pivot.material.name !== phenotype + ".Shield.material") {
-        mesh.actionManager = new ActionManager(this.scene);
-        mesh.actionManager.registerAction(
-          new ExecuteCodeAction(ActionManager.OnPickDownTrigger, (event) => {
-            this.action(cell.row, cell.col, mesh.position);
-          })
-        );
+        // the scene's one pointer handler (Scene.jsx) finds the cell of a picked mesh here
+        mesh.metadata = { gamefield: this, row: cell.row, col: cell.col };
       } else {
         mesh.isPickable = false;
       }
@@ -271,7 +268,7 @@ class Gamefield {
             JSON.stringify(playerField.grid[position])
           );
           this.renderEntities(this.playerField.grid[position]);
-          this.scene.render();
+          this.requestRender();
         } else if (
           playerField.grid[position].occupiedBy.length <
           this.playerField.grid[position].occupiedBy.length
@@ -494,7 +491,7 @@ class Gamefield {
         this.setRenderLoop(false);
         particleSystem.dispose();
         fountain.dispose();
-        this.scene.render();
+        this.requestRender();
         this.animations = this.animations.filter(
           (callback) => callback.id !== uuid
         );
@@ -522,7 +519,14 @@ class Gamefield {
     if (!mesh) {
       return;
     }
-    let gravity = -0.02;
+    // In units and seconds: the pieces burst up and out in every direction, tumble, fall back
+    // and shrink away within the lifetime, at the same pace on a 60 and a 120 Hz screen.
+    // (Per-frame steps with positive random speeds sent every explosion off to one side,
+    // across half the screen.)
+    const gravity = -18;
+    const lifetime = 1.2;
+    let age = 0;
+    let delta = 0;
     let solidParticleSystem = new SolidParticleSystem(
       "solidParticleSystem",
       this.scene
@@ -534,14 +538,17 @@ class Gamefield {
     solidParticleSystem.refreshVisibleSize();
 
     solidParticleSystem.updateParticle = (particle) => {
-      if (particle.position.y < -20) {
-        particle.isVisible = false;
-      } else {
-        particle.velocity.y += gravity;
-        particle.velocity.x -= 0.01;
-        particle.velocity.z -= 0.01;
-        particle.position.addInPlace(particle.velocity);
-      }
+      const velocity = particle.velocity;
+      velocity.y += gravity * delta;
+      particle.position.addInPlaceFromFloats(
+        velocity.x * delta,
+        velocity.y * delta,
+        velocity.z * delta
+      );
+      particle.rotation.x += velocity.z * delta * 2;
+      particle.rotation.z -= velocity.x * delta * 2;
+      particle.scaling.setAll(Math.max(0, 1 - age / lifetime));
+      return particle;
     };
 
     solidParticleSystem.initParticles = () => {
@@ -566,21 +573,26 @@ class Gamefield {
     solidParticleSystem.initParticles();
     solidParticleSystem.setParticles();
 
-    let setParticles = () => solidParticleSystem.setParticles();
+    let setParticles = () => {
+      // seconds since the last frame, capped so that the first frame after a pause does not jump
+      delta = Math.min(this.scene.getEngine().getDeltaTime() / 1000, 0.05);
+      age += delta;
+      solidParticleSystem.setParticles();
+    };
 
     this.setRenderLoop();
-    let speed = 0.7;
     for (
       let particle = 0;
       particle < solidParticleSystem.nbParticles;
       particle++
     ) {
-      solidParticleSystem.particles[particle].velocity.x =
-        Math.random() * speed;
-      solidParticleSystem.particles[particle].velocity.y =
-        Math.random() * speed;
-      solidParticleSystem.particles[particle].velocity.z =
-        Math.random() * speed;
+      const angle = Math.random() * 2 * Math.PI;
+      const speed = 1.5 + Math.random() * 2.5;
+      solidParticleSystem.particles[particle].velocity.set(
+        Math.cos(angle) * speed,
+        3 + Math.random() * 4,
+        Math.sin(angle) * speed
+      );
     }
     this.scene.registerBeforeRender(setParticles);
 
@@ -604,7 +616,7 @@ class Gamefield {
           .find((callback) => callback.id === uuid)
           .stopAnimation();
       }
-    }, 3000);
+    }, lifetime * 1000 + 100);
     mesh.dispose();
   }
 }

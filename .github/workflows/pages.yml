@@ -26,12 +26,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Stamp build time and service worker revision
+      - name: Stamp build time
         working-directory: apps/pwa
         run: |
           TIMESTAMP=$(date --utc -Iseconds)
           sed -i "s/LOCAL_DATETIME/$TIMESTAMP/g" src/ui/dialogs/Info.jsx src/helper/settings.jsx
-          sed -i "s/NEXT_REVISION/${GITHUB_RUN_NUMBER}/g" src/service-worker.js
       - run: npm run build
       - name: The published build has no test hooks
         run: "! grep -rlE '__battlechoc|testclock' apps/pwa/build"

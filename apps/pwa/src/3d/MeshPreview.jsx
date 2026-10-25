@@ -2,17 +2,15 @@ import React, { useRef, useEffect, useCallback } from "react";
 import {
   Scene as BabylonScene,
   ImportMeshAsync,
-  HemisphericLight,
   Engine,
   FlyCamera,
   Vector3,
-  Color3,
   Color4,
   Camera,
-  StandardMaterial,
   TransformNode,
-} from "@babylonjs/core";
+} from "./babylon";
 import { assetLoader } from "../AssetLoader";
+import { applyLook, cellMaterial } from "./look";
 import {
   BoardCellTypes,
   EntityType,
@@ -28,8 +26,9 @@ const MeshPreview = (props) => {
   // the building turns around this node, which sits under the model's centre
   const pivot = useRef();
 
+  // 0.6 rad per second, whatever the display's frame rate
   const rotate = useCallback(() => {
-    pivot.current.rotation.y += 0.01;
+    pivot.current.rotation.y += 0.0006 * engine.current.getDeltaTime();
   }, []);
 
   const estimateOrthographicSize = (camera) => {
@@ -45,11 +44,13 @@ const MeshPreview = (props) => {
   };
 
   useEffect(() => {
-    engine.current = new Engine(container.current, true);
+    // sharp on high-density screens, but never more than twice the CSS pixels
+    engine.current = new Engine(container.current, true, { limitDeviceRatio: 2 }, true);
 
     const createScene = () => {
       const scene = new BabylonScene(engine.current);
-      new HemisphericLight("light", new Vector3(0, 1, 0), scene);
+      // the game's light, so that the building looks the same in the lab and on the board
+      applyLook(scene);
       scene.clearColor = new Color4(0, 0, 0, 0);
       camera.current = new FlyCamera("camera", new Vector3(30, 30, 30), scene);
       camera.current.mode = Camera.ORTHOGRAPHIC_CAMERA;
@@ -71,11 +72,10 @@ const MeshPreview = (props) => {
       scene.current
     )
       .then(({ meshes: group }) => {
-        const material = new StandardMaterial(
-          "brown.field.material",
-          scene.current
-        );
-        material.diffuseColor = Color3.FromHexString("#824529");
+        if (scene.current.isDisposed) {
+          return;
+        }
+        const material = cellMaterial("brown.field.material", "#824529", scene.current);
         material.sideOrientation = 0;
         group[1].material = material;
         group[1].scaling = new Vector3(1.5, 1, 1.5);
@@ -102,6 +102,9 @@ const MeshPreview = (props) => {
       if (observer) {
         observer.disconnect();
       }
+      // without this the render loop kept turning the building after the lab closed, and
+      // every visit left a WebGL context behind
+      engine.current.dispose();
     };
   }, []);
 
@@ -111,6 +114,9 @@ const MeshPreview = (props) => {
       scene.current
     )
       .then(({ meshes: group }) => {
+        if (scene.current.isDisposed) {
+          return;
+        }
         if (typeof preview.current !== "undefined") {
           scene.current.unregisterBeforeRender(rotate);
           pivot.current.dispose();

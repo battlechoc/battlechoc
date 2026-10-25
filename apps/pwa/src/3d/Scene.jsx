@@ -12,6 +12,7 @@ import { matchSession } from "../match/LocalMatchHost";
 import { submit, ignoreRuleErrors } from "../ui/match/submit";
 import { InfoType } from "./InfoType";
 import Gamefield from "./Gamefield";
+import { applyLook } from "./look";
 import {
   EntityType,
   AttackType,
@@ -27,18 +28,17 @@ import {
   DynamicTexture,
   Mesh,
   StandardMaterial,
-  DirectionalLight,
   Engine,
   HighlightLayer,
   FlyCamera,
   Color3,
   Camera,
   Vector3,
-  HemisphericLight,
   Color4,
   Animation,
   MeshBuilder,
-} from "@babylonjs/core";
+  PointerEventTypes,
+} from "./babylon";
 import { AssetLoadingViewContainer as AssetLoadingView } from "../AssetLoader";
 import logger from "../helper/logger";
 import { v4 as uuidv4 } from "uuid";
@@ -52,13 +52,15 @@ class Scene extends Component {
 
   componentDidMount() {
     this.props.onRef(this);
+    // A phone with a 3x screen would render nine times the pixels of the CSS size; twice is
+    // sharp enough and leaves the GPU less than half the work (limitDeviceRatio).
     this.engine = new Engine(
       this.container,
       true,
       {
-        preserveDrawingBuffer: true,
         stencil: true,
         useHighPrecisionFloats: false,
+        limitDeviceRatio: 2,
       },
       true
     );
@@ -72,12 +74,7 @@ class Scene extends Component {
       this.camera.maxZ = 100;
       this.estimateOrthographicSize();
       this.camera.setTarget(Vector3.Zero());
-      let light = new HemisphericLight("light", new Vector3(40, 44, 1), scene);
-      light.intensity = 0.1;
-      light.diffuse = new Color3(1.0, 0.97, 0.93);
-      let spot = new DirectionalLight("spot", new Vector3(0, -1, -1), scene);
-      spot.intensity = 1;
-      spot.position = new Vector3(35, 35, 35);
+      applyLook(scene);
       this.loadingView.current.loadAssets(scene);
       return scene;
     };
@@ -89,12 +86,41 @@ class Scene extends Component {
       camera: this.camera,
     });
     this.animate = () => this.scene.render();
+    // Renders once in the next frame, however often it is asked before; the render loop, while
+    // it runs, renders anyway. (Every view update used to render right away.)
+    this.requestRender = () => {
+      if (this.renderLoopRepetitions > 0 || this.renderRequested) {
+        return;
+      }
+      this.renderRequested = true;
+      requestAnimationFrame(() => {
+        this.renderRequested = false;
+        if (!this.scene.isDisposed) {
+          this.scene.render();
+        }
+      });
+    };
+    // One pointer handler for the boards: the meshes of a Gamefield carry their cell in
+    // metadata (an action manager on every instance cost picking work on every pointer move).
+    // Only board meshes are picked, and only on pointer down.
+    this.scene.skipPointerMovePicking = true;
+    this.scene.skipPointerUpPicking = true;
+    this.scene.pointerDownPredicate = (mesh) =>
+      mesh.isPickable && mesh.isVisible && mesh.isEnabled() && Boolean(mesh.metadata && mesh.metadata.gamefield);
+    this.scene.onPointerObservable.add((info) => {
+      const pick = info.pickInfo;
+      if (pick && pick.hit && pick.pickedMesh && pick.pickedMesh.metadata) {
+        const { gamefield, row, col } = pick.pickedMesh.metadata;
+        gamefield.action(row, col, pick.pickedMesh.position);
+      }
+    }, PointerEventTypes.POINTERDOWN);
     window.addEventListener("resize", this.resize);
     this.playerGameField = null;
     this.opponentGameField = null;
     this.renderLoopRepetitions = 0;
     this.opponentGameFieldDistance = 12;
     this.weaponIndicators = new Map();
+    this.donutBitmaps = new Map();
     // the loading donut in ten steps doubles as the progress indicator above the units
     this.donutImages = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((percent) => {
       const image = new Image();
@@ -195,12 +221,14 @@ class Scene extends Component {
       "energy.bar.material." + name,
       this.scene
     );
+    // unlit like the weapon indicators: the lights would darken the bar's colour
+    material.disableLighting = true;
     if (energy < 0.3) {
-      material.diffuseColor = Color3.FromHexString("#D05531");
+      material.emissiveColor = Color3.FromHexString("#D05531");
     } else if (energy < 0.6) {
-      material.diffuseColor = Color3.FromHexString("#DFBF31");
+      material.emissiveColor = Color3.FromHexString("#DFBF31");
     } else {
-      material.diffuseColor = Color3.FromHexString("#70bf31");
+      material.emissiveColor = Color3.FromHexString("#70bf31");
     }
 
     bar.material = material;
@@ -501,7 +529,7 @@ class Scene extends Component {
     }
     this.playerGameField = null;
     this.opponentGameField = null;
-    this.scene.render();
+    this.requestRender();
     this.camera.position = new Vector3(30, 30, 30);
     this.lookAtOpponent = undefined;
   }
@@ -519,7 +547,7 @@ class Scene extends Component {
       }
     });
 
-    this.scene.render();
+    this.requestRender();
   };
 
   detonateAtPosition(row, col, playerField = false) {
@@ -619,7 +647,7 @@ class Scene extends Component {
     if (prevProps.matchEvents !== this.props.matchEvents) {
       this.playMatchEvents(this.props.matchEvents);
     }
-    this.scene.render();
+    this.requestRender();
   }
 
   realtimePlayerFieldClick(row, col, position) {
@@ -833,44 +861,53 @@ class Scene extends Component {
     return [{ progress: Math.max(0, Math.min(1, progress)), state: "charging" }];
   }
 
+  // A donut step as a 112 px bitmap, tinted for its state ("grey" is the whole donut greyed
+  // out): rasterised once per step and state, not on every redraw.
+  donutBitmap(step, state) {
+    const key = `${step}:${state}`;
+    if (this.donutBitmaps.has(key)) {
+      return this.donutBitmaps.get(key);
+    }
+    const image = this.donutImages[step - 1];
+    if (!image || !image.complete || image.naturalWidth === 0) {
+      return undefined;
+    }
+    const tints = {
+      grey: "rgba(118, 112, 108, 0.88)",
+      ready: "rgba(144, 208, 27, 0.55)",
+      rushable: "rgba(49, 144, 195, 0.6)",
+    };
+    const bitmap = document.createElement("canvas");
+    bitmap.width = 112;
+    bitmap.height = 112;
+    const context = bitmap.getContext("2d");
+    context.drawImage(image, 0, 0, 112, 112);
+    if (tints[state]) {
+      context.globalCompositeOperation = "source-atop";
+      context.fillStyle = tints[state];
+      context.fillRect(0, 0, 112, 112);
+    }
+    this.donutBitmaps.set(key, bitmap);
+    return bitmap;
+  }
+
   drawDonuts(texture, donuts) {
-    const tints = { ready: "rgba(144, 208, 27, 0.55)", rushable: "rgba(49, 144, 195, 0.6)" };
     const context = texture.getContext();
     context.clearRect(0, 0, 128 * donuts.length, 128);
     donuts.forEach(({ progress, state }, index) => {
       const step = progress <= 0 ? 0 : Math.max(1, Math.min(10, Math.round(progress * 10)));
       const x = index * 128 + 8;
       // a grey whole donut shows how much is still missing
-      const whole = this.donutImages[9];
-      if (whole.complete && whole.naturalWidth > 0) {
-        const grey = document.createElement("canvas");
-        grey.width = 112;
-        grey.height = 112;
-        const greyContext = grey.getContext("2d");
-        greyContext.drawImage(whole, 0, 0, 112, 112);
-        greyContext.globalCompositeOperation = "source-atop";
-        greyContext.fillStyle = "rgba(118, 112, 108, 0.88)";
-        greyContext.fillRect(0, 0, 112, 112);
+      const grey = this.donutBitmap(10, "grey");
+      if (grey) {
         context.globalAlpha = 0.92;
         context.drawImage(grey, x, 8);
         context.globalAlpha = 1;
       }
-      const image = step > 0 ? this.donutImages[step - 1] : undefined;
-      if (!image || !image.complete || image.naturalWidth === 0) {
-        return;
+      const piece = step > 0 ? this.donutBitmap(step, state) : undefined;
+      if (piece) {
+        context.drawImage(piece, x, 8);
       }
-      // tint the glaze on a scratch canvas, then copy it into the texture
-      const scratch = document.createElement("canvas");
-      scratch.width = 112;
-      scratch.height = 112;
-      const scratchContext = scratch.getContext("2d");
-      scratchContext.drawImage(image, 0, 0, 112, 112);
-      if (tints[state]) {
-        scratchContext.globalCompositeOperation = "source-atop";
-        scratchContext.fillStyle = tints[state];
-        scratchContext.fillRect(0, 0, 112, 112);
-      }
-      context.drawImage(scratch, x, 8);
     });
     texture.update();
   }
@@ -1002,7 +1039,7 @@ class Scene extends Component {
       }
     });
     if (changed && render) {
-      this.scene.render();
+      this.requestRender();
     }
   }
 
@@ -1072,7 +1109,8 @@ class Scene extends Component {
       this.scene,
       (row, col, eventX, eventY) =>
         this.playerFieldClick(row, col, eventX, eventY),
-      (run) => this.setRenderLoop(run)
+      (run) => this.setRenderLoop(run),
+      this.requestRender
     );
     this.opponentGameField = new Gamefield(
       false,
@@ -1087,7 +1125,8 @@ class Scene extends Component {
       this.scene,
       (row, col, eventX, eventY) =>
         this.opponentFieldClick(row, col, eventX, eventY),
-      (run) => this.setRenderLoop(run)
+      (run) => this.setRenderLoop(run),
+      this.requestRender
     );
 
     this.resize();
