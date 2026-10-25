@@ -60,15 +60,13 @@ self.addEventListener("activate", (event) => {
 self.skipWaiting();
 clientsClaim();
 
-// NEXT REVISION will replaced by $CI_PIPELINE_ID within the GitLab build process
+// index.html and manifest.json come from the build's manifest with revisions of their content
+// (injectManifest.globPatterns). They used to be listed here with the revision "NEXT_REVISION",
+// which only CI replaced: a local build's worker then served its first index.html after every
+// rebuild, pointing at scripts that no longer existed. "/" finds index.html as its directory
+// index, and the start URL's parameters are ignored.
 precacheAndRoute(
   (self.__precacheManifest || self.__WB_MANIFEST || []).concat([
-    { url: "/", revision: "NEXT_REVISION" },
-    {
-      url: "/index.html?app_runs_as=pwa&app_version=1",
-      revision: "NEXT_REVISION",
-    },
-    { url: "/manifest.json", revision: "NEXT_REVISION" },
     { url: "/sound/attack_bunny.mp3", revision: "4" },
     { url: "/sound/attack_explosion.mp3", revision: "4" },
     { url: "/sound/bunny_caught.mp3", revision: "4" },
@@ -86,7 +84,7 @@ precacheAndRoute(
     { url: "/models/factoryExtension.glb", revision: "9" },
     { url: "/models/field.glb", revision: "7" },
     { url: "/models/fruitCannon.glb", revision: "9" },
-    { url: "/models/hotChocolateBallista.glb", revision: "8" },
+    { url: "/models/hotChocolateBallista.glb", revision: "9" },
     { url: "/models/spyingEasterBunny.glb", revision: "12" },
     { url: "/models/xmasFactory.glb", revision: "9" },
     { url: "/textures/sky.env", revision: "1" },
@@ -207,7 +205,8 @@ precacheAndRoute(
     { url: "/images/cacao-per-turn.svg", revision: "5" },
     { url: "/images/fruit-attacks-per-turn.svg", revision: "5" },
     { url: "/images/spy-attacks-per-turn.svg", revision: "5" },
-  ])
+  ]),
+  { ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^app_runs_as$/, /^app_version$/] }
 );
 
 precacheAndRoute([]);
