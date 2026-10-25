@@ -44,12 +44,18 @@ const WHOLE = {
   "surprise-donut-icon": "surprise-donut-icon",
   "portal-donut-icon": "portal-donut-icon",
   decoration: "decoration",
+  cacao: "cacao",
+  "cacao-icon": "cacao",
+  "buildings-icon": "buildings-icon",
 };
 // picture -> the render shown inside the green arrows
 const ARROWS = {
   "attacks-per-turn": "truffle-cannon-icon",
   "fruit-attacks-per-turn": "fruit-cannon-icon",
   "spy-attacks-per-turn": "easter-bunny-icon",
+  "cacao-per-turn": "cacao",
+  // also the template of the arrows: arrows() reads them before it writes the file
+  "buildings-per-turn": "buildings-icon",
 };
 const PADDING = 0.04; // of the viewBox, round a whole picture
 
