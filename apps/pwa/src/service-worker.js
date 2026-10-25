@@ -87,7 +87,7 @@ precacheAndRoute(
     { url: "/models/field.glb", revision: "7" },
     { url: "/models/fruitCannon.glb", revision: "9" },
     { url: "/models/hotChocolateBallista.glb", revision: "8" },
-    { url: "/models/spyingEasterBunny.glb", revision: "11" },
+    { url: "/models/spyingEasterBunny.glb", revision: "12" },
     { url: "/models/xmasFactory.glb", revision: "9" },
     { url: "/textures/sky.env", revision: "1" },
     { url: "/images/lab/badge-damage.svg", revision: "1" },
