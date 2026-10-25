@@ -1,5 +1,5 @@
-# Renders the game's pictures of its models (palette icons, donut traps, the logo's tree, the app
-# icon's tree …) with Cycles from the .blend sources: transparent background, the game's sky
+# Renders the game's pictures of its models (palette icons, donut traps, the logo's fountain, the
+# app icon's …) with Cycles from the .blend sources: transparent background, the game's sky
 # (dev/textures/sky.hdr, downloaded on first use) and a sun from the upper left, a soft shadow
 # under the model, an orthographic camera 20° above the ground from the game's side, the picture
 # mirrored like the old icons. Writes PNGs; dev/icons.mjs puts them into the SVGs and PNGs of
@@ -62,24 +62,8 @@ LOOKS = {
     "dark-chocolate": ("Standard", "High Contrast", 0.15, 0.4, 2.4),
     "punchy-bright": ("AgX", "AgX - Punchy", 0.45, 0.4, 2.6),
 }
-# the user's sheets of 2026-10-25: 20° and mirrored chosen; "dark-chocolate" (7) or "bright" (5)
-# to be picked
+# the user's pick from sheets of 2026-10: 20°, mirrored, "dark-chocolate"
 LOOKS["default"] = LOOKS["dark-chocolate"]
-# the logo's tree: lighter, like the old logo's
-LOOKS["logo"] = ("Standard", "Medium High Contrast", 0.25, 0.6, 2.6)
-LOOKS["logo-light"] = ("Standard", "Medium High Contrast", 0.55, 0.6, 2.6)
-
-# the colours of the old logo's tree (its lime crown, orange-brown trunk, warm chocolate piece),
-# linear RGB
-OLD_TREE = {
-    "Leaf Dark": (0.1, 0.2, 0.012),
-    "Leaf": (0.2, 0.38, 0.015),
-    "Leaf Light": (0.37, 0.62, 0.04),
-    "Crown": (0.05, 0.09, 0.004),
-    "Bark": (0.4, 0.14, 0.03),
-}
-OLD_SLAB = (0.198, 0.072, 0.022)
-
 ICONS = {
     "factory-icon": dict(model="factory"),
     "factory-extension-icon": dict(model="factoryExtension"),
@@ -101,15 +85,8 @@ ICONS = {
     "stop-donut-icon": dict(model="donut", copies=(((0, 0, 0), "pink"),), elevation=50),
     "surprise-donut-icon": dict(model="donut", copies=(((0, 0, 0), "yellow"),), elevation=50),
     "portal-donut-icon": dict(model="donut", copies=(((-0.3, -0.3, 0), "blue"), ((0.3, 0.3, 0), "red")), elevation=50),
-    # the tree of the logo and the app icon, on a piece of chocolate like the old one or without;
-    # no shadow on the ground, it would float in the sky
-    "logo-tree": dict(model="cacaotree", tile=True, shadow=False, look="logo", recolor=OLD_TREE, tile_color=OLD_SLAB),
-    "logo-tree-light": dict(model="cacaotree", tile=True, shadow=False, look="logo-light", recolor=OLD_TREE, tile_color=OLD_SLAB),
-    "logo-tree-plain": dict(model="cacaotree", shadow=False),
-    # the user's idea: the chocolate fountain instead of the tree
-    "logo-fountain": dict(model="chocolateFountain", hide=("Shield",), tile=True, shadow=False, look="logo", tile_color=OLD_SLAB),
-    "logo-fountain-plain": dict(model="chocolateFountain", hide=("Shield",), shadow=False, look="logo"),
-    "logo-fountain-dark": dict(model="chocolateFountain", hide=("Shield",), shadow=False),
+    # the logo's and the app icon's motif (the user's pick of 2026-10: over the old cacao tree)
+    "logo-fountain": dict(model="chocolateFountain", hide=("Shield",), shadow=False),
     # dev/icons.mjs cuts the ten progress-NN pictures from it
     "progress-donut": dict(model="donut", copies=(((0, 0, 0), "progress"),), elevation=70, shadow=False),
 }
