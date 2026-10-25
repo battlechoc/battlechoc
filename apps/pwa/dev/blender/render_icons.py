@@ -1,7 +1,8 @@
 # Renders the game's pictures of its models (palette icons, donut traps, the logo's fountain, the
 # app icon's …) with Cycles from the .blend sources: transparent background, the game's sky
-# (dev/textures/sky.hdr, downloaded on first use) and a sun from the upper left, a soft shadow
-# under the model, an orthographic camera 20° above the ground from the game's side, the picture
+# (dev/textures/sky.hdr, downloaded on first use) and a sun from the upper left, no shadow on the
+# ground (on the flat buttons it looked like a stain; `shadow=True` brings it back), an
+# orthographic camera 20° above the ground from the game's side, the picture
 # mirrored like the old icons. Writes PNGs; dev/icons.mjs puts them into the SVGs and PNGs of
 # public. Headless, from apps/pwa:
 #
@@ -47,7 +48,7 @@ DONUTS = {
 # picture -> what it shows. copies: (offset, donut colours) for several donuts in one picture;
 # hide: materials left out (the fountain's shield dome); tile: on a chocolate tile; turn: degrees
 # the model turns about its upright axis; elevation: the camera's angle for this picture;
-# mirror: False keeps the picture as rendered; shadow: False leaves out the shadow under it;
+# mirror: False keeps the picture as rendered; shadow: True casts a shadow on the ground under it;
 # look: its own colour handling; recolor: {material: colour}; tile_color: the chocolate piece's.
 # (`name@degrees` on the command line tries another turn.)
 # colour handling and light: view transform, contrast look, exposure, sky strength, sun strength.
@@ -86,14 +87,14 @@ ICONS = {
     "surprise-donut-icon": dict(model="donut", copies=(((0, 0, 0), "yellow"),), elevation=50),
     "portal-donut-icon": dict(model="donut", copies=(((-0.3, -0.3, 0), "blue"), ((0.3, 0.3, 0), "red")), elevation=50),
     # the logo's and the app icon's motif (the user's pick of 2026-10: over the old cacao tree)
-    "logo-fountain": dict(model="chocolateFountain", hide=("Shield",), shadow=False),
+    "logo-fountain": dict(model="chocolateFountain", hide=("Shield",)),
     # the resources: cacao and building slots (also inside the arrows of the "per turn" pictures)
     "cacao": dict(model="cacao", elevation=35),
     "buildings-icon": dict(model="hammer", elevation=35),
     # the title screen's decoration: a donut on a broken chocolate bar
     "decoration": dict(model="decoration", elevation=38),
     # dev/icons.mjs cuts the ten progress-NN pictures from it
-    "progress-donut": dict(model="donut", copies=(((0, 0, 0), "progress"),), elevation=70, shadow=False),
+    "progress-donut": dict(model="donut", copies=(((0, 0, 0), "progress"),), elevation=70),
 }
 
 args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
@@ -289,7 +290,7 @@ def render(name, spec):
         tile.location.z = TILE * (1 - tile.scale.z)
         objects.append(tile)
         ground = TILE - 0.6 * tile.scale.z  # the tile's bottom
-    if spec.get("shadow", True):
+    if spec.get("shadow", False):
         catcher = bpy.data.objects.new("Shadow", bpy.data.meshes.new("Shadow"))
         catcher.data.from_pydata([(-3, -3, ground), (3, -3, ground), (3, 3, ground), (-3, 3, ground)], [], [(0, 1, 2, 3)])
         catcher.is_shadow_catcher = True
