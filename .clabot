@@ -1,0 +1,4 @@
+{
+  "contributors": ["fabianbormann", "cleanerm5"],
+  "message": "Thank you for your pull request! Every contributor needs to agree to our [Contributor License Agreement](https://github.com/battlechoc/battlechoc/blob/main/CLA.md) before we can merge, and we don't have it on file for {{usersWithoutCLA}}. Please read it and reply to this pull request with: \"I have read the CLA and I agree to its terms.\" A maintainer then adds you to `.clabot` and the check runs again."
+}
