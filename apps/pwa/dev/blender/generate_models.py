@@ -3,7 +3,7 @@
 # exports it as GLB into DIR for a preview. Headless, from apps/pwa:
 #
 #   /Applications/Blender.app/Contents/MacOS/Blender -b -P dev/blender/generate_models.py -- \
-#       [--out dev/models-preview/v2] cacaotree xmasFactory cannon cannon@bronze
+#       [--out dev/models-preview/v2] cacaotree xmasFactory cannon cannon@steep
 #
 # name@variant hands the variant to the model's build() and adds it to the file names.
 import importlib

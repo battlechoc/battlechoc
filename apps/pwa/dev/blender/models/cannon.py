@@ -2,7 +2,7 @@
 # two spoked wheels with iron tyres, a barrel with reinforcing bands, a muzzle swell and a
 # cascabel knob, and a small pyramid of chocolate truffles as its ammunition. Built with the muzzle
 # along +x, then turned to point where the old model pointed (the game turns the opponent's
-# cannons around). Variant "bronze" casts the barrel in bronze instead of iron.
+# cannons around).
 import math
 
 from mathutils import Matrix, Vector
@@ -55,10 +55,7 @@ def carriage_and_barrel(m, variant=None, barrel=True):
     carriage(m, wood, wood_dark, iron)
     if not barrel:
         return
-    if variant == "bronze":
-        metal = m.material("Bronze", (0.55, 0.32, 0.12), metallic=1.0, roughness=0.6)
-    else:
-        metal = m.material("Barrel", (0.05, 0.05, 0.055), metallic=1.0, roughness=0.65)
+    metal = m.material("Barrel", (0.05, 0.05, 0.055), metallic=1.0, roughness=0.65)
     bore = m.material("Bore", (0.01, 0.01, 0.01), roughness=1.0)
     cannon_barrel(m, metal, bore, elevation(variant))
 
