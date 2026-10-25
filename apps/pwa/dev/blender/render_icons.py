@@ -192,6 +192,8 @@ def setup_scene(look):
     sun = bpy.data.objects.new("Sun", bpy.data.lights.new("Sun", "SUN"))
     sun.data.energy = sun_strength
     sun.data.angle = math.radians(12)
+    # metal mirrored the sun as a hard white patch: the sun only lights, the sky reflects
+    sun.visible_glossy = False
     # from the upper left in the mirrored picture (from the camera's right before mirroring):
     # light from the camera's side, like the game's, left white cream and snow flat
     sun.rotation_euler = (-Vector((-0.35, -1.0, 1.3))).to_track_quat("Z", "Y").to_euler()

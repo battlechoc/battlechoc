@@ -35,7 +35,8 @@ def build(variant=None):
     # without the subdivision the modernisation gave it, and without the original's pot and its
     # buttons: an even steel pot instead
     m.include(MODEL, without=("Subdivision (battlechoc)",), leave_out=("Material.002", "Material.003"))
-    pot = m.material("Steel", (0.75, 0.75, 0.77), metallic=1.0, roughness=0.4)
+    # brushed steel: polished, the sky blew out into a white patch
+    pot = m.material("Steel", (0.62, 0.62, 0.64), metallic=1.0, roughness=0.55)
     m.lathe(
         [(0.0, 0.36), (0.221, 0.36), *POT, (0.33, 0.93), (0.313, 0.922), (0.313, 0.86), (0.0, 0.86)],
         CENTRE,
