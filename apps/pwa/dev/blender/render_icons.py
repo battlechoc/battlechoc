@@ -1,14 +1,16 @@
 # Renders the game's pictures of its models (palette icons, donut traps, the logo's tree, the app
-# icon's tree …) with Cycles from the .blend sources: transparent background, the game's sky light
-# (dev/textures/sky.hdr, downloaded on first use), a sun from the camera's side, a soft shadow
-# under the model, Khronos PBR Neutral like the game. Writes PNGs; dev/icons.mjs puts them into
-# the SVGs and PNGs of public. Headless, from apps/pwa:
+# icon's tree …) with Cycles from the .blend sources: transparent background, the game's sky
+# (dev/textures/sky.hdr, downloaded on first use) and a sun from the upper left, a soft shadow
+# under the model, an orthographic camera 20° above the ground from the game's side, the picture
+# mirrored like the old icons. Writes PNGs; dev/icons.mjs puts them into the SVGs and PNGs of
+# public. Headless, from apps/pwa:
 #
 #   /Applications/Blender.app/Contents/MacOS/Blender -b -P dev/blender/render_icons.py -- \
-#       [--out dev/icons] [--size 512] [--samples 128] [--tile] [--elevation 35] [names]
+#       [--out dev/icons] [--size 512] [--samples 128] [--tile] [--elevation 20] \
+#       [--look NAME] [names]
 #
 # --tile puts every model on a chocolate tile, --elevation sets the camera's angle above the
-# ground (the game's is 35°); names are keys of ICONS.
+# ground, --look one of LOOKS (colour handling and light); names are keys of ICONS.
 import math
 import os
 import sys
@@ -16,6 +18,7 @@ import urllib.request
 
 import addon_utils
 import bpy
+import numpy
 from mathutils import Vector
 
 sys.dont_write_bytecode = True
@@ -41,6 +44,22 @@ DONUTS = {
 
 # picture -> what it shows. copies: (offset, donut colours) for several donuts in one picture;
 # hide: materials left out (the fountain's shield dome); tile: on a chocolate tile
+# colour handling and light: view transform, contrast look, exposure, sky strength, sun strength.
+# The old icons were deep and contrasty; the game's PBR Neutral with a bright sky made the
+# chocolate light and flat.
+LOOKS = {
+    "neutral": ("Khronos PBR Neutral", "None", -0.35, 0.75, 1.8),
+    "standard": ("Standard", "Medium High Contrast", -0.3, 0.35, 2.4),
+    "contrast": ("Standard", "High Contrast", -0.45, 0.3, 2.6),
+    "punchy": ("AgX", "AgX - Punchy", 0.0, 0.35, 2.6),
+    "bright": ("Standard", "High Contrast", 0.15, 0.4, 2.4),
+    "dark-chocolate": ("Standard", "High Contrast", 0.15, 0.4, 2.4),
+    "punchy-bright": ("AgX", "AgX - Punchy", 0.45, 0.4, 2.6),
+}
+# the user's sheets of 2026-10-25: 20° and mirrored chosen; "dark-chocolate" (7) or "bright" (5)
+# to be picked
+LOOKS["default"] = LOOKS["dark-chocolate"]
+
 ICONS = {
     "factory-icon": dict(model="factory"),
     "factory-extension-icon": dict(model="factoryExtension"),
@@ -63,7 +82,8 @@ ICONS = {
 
 args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
 out = os.path.join(pwa, "dev", "icons")
-size, samples, tile_all, elevation, names = 512, 128, False, 35.26, []
+size, samples, tile_all, elevation, names = 512, 128, False, 20.0, []
+look = "dark-chocolate"
 while args:
     arg = args.pop(0)
     if arg == "--out":
@@ -76,6 +96,8 @@ while args:
         tile_all = True
     elif arg == "--elevation":
         elevation = float(args.pop(0))
+    elif arg == "--look":
+        look = args.pop(0)
     else:
         names.append(arg)
 os.makedirs(out, exist_ok=True)
@@ -136,9 +158,10 @@ def setup_scene():
     scene.render.resolution_x = scene.render.resolution_y = size
     scene.render.image_settings.file_format = "PNG"
     scene.render.image_settings.color_mode = "RGBA"
-    scene.view_settings.view_transform = "Khronos PBR Neutral"
-    # a little darker than the game: white cream and snow lost their shape
-    scene.view_settings.exposure = -0.35
+    view, contrast, exposure, sky, sun_strength = LOOKS[look]
+    scene.view_settings.view_transform = view
+    scene.view_settings.look = contrast
+    scene.view_settings.exposure = exposure
     world = bpy.data.worlds.new("Sky")
     scene.world = world
     world.use_nodes = True
@@ -146,16 +169,37 @@ def setup_scene():
     environment = nodes.new("ShaderNodeTexEnvironment")
     environment.image = bpy.data.images.load(HDR)
     background = next(node for node in nodes if node.type == "BACKGROUND")
-    background.inputs["Strength"].default_value = 0.75
+    background.inputs["Strength"].default_value = sky
     links.new(environment.outputs["Color"], background.inputs["Color"])
     sun = bpy.data.objects.new("Sun", bpy.data.lights.new("Sun", "SUN"))
-    sun.data.energy = 1.8
+    sun.data.energy = sun_strength
     sun.data.angle = math.radians(12)
-    # from the upper left as the camera sees it (the camera looks along (-1, 1, -1)): light from
-    # the camera's side, like the game's, left white cream and snow flat
-    sun.rotation_euler = (-Vector((1.0, 0.35, -1.3))).to_track_quat("Z", "Y").to_euler()
+    # from the upper left in the mirrored picture (from the camera's right before mirroring):
+    # light from the camera's side, like the game's, left white cream and snow flat
+    sun.rotation_euler = (-Vector((-0.35, -1.0, 1.3))).to_track_quat("Z", "Y").to_euler()
     scene.collection.objects.link(sun)
     return scene
+
+
+def deepen_browns(objects, factor=0.5, saturate=1.15):
+    """Darker, richer chocolate and wood: the old icons' browns were deep, the models' caramel."""
+    done = set()
+    for obj in objects:
+        for slot in obj.material_slots:
+            material = slot.material
+            if material is None or material.name in done or not material.node_tree:
+                continue
+            done.add(material.name)
+            node = next((n for n in material.node_tree.nodes if n.type == "BSDF_PRINCIPLED"), None)
+            if node is None or node.inputs["Base Color"].is_linked:
+                continue
+            r, g, b, a = node.inputs["Base Color"].default_value
+            top, low = max(r, g, b), min(r, g, b)
+            brown = top == r and r > g > b and top > 0.03 and (top - low) / top > 0.55 and g / r < 0.75
+            if brown:
+                mean = (r + g + b) / 3
+                r, g, b = (mean + (c - mean) * saturate for c in (r, g, b))
+                node.inputs["Base Color"].default_value = (max(0, r) * factor, max(0, g) * factor, max(0, b) * factor, a)
 
 
 def frame(scene, objects, hidden=(), margin=1.1):
@@ -204,6 +248,8 @@ def render(name, spec):
         for slot in obj.material_slots:
             if slot.material and slot.material.name in spec.get("hide", ()):
                 bsdf(slot.material).inputs["Alpha"].default_value = 0.0
+    if look == "dark-chocolate":
+        deepen_browns(objects)
     ground = TILE
     if spec.get("tile") or tile_all:
         tile = load("field")[0]
@@ -216,9 +262,24 @@ def render(name, spec):
     catcher.is_shadow_catcher = True
     scene.collection.objects.link(catcher)
     frame(scene, objects, hidden=spec.get("hide", ()))
-    scene.render.filepath = os.path.join(out, name + ".png")
+    path = os.path.join(out, name + ".png")
+    scene.render.filepath = path
     bpy.ops.render.render(write_still=True)
+    mirror(path)
     print(f"rendered {name}")
+
+
+def mirror(path):
+    """Flips the picture left to right: the old icons showed the models mirrored to the game."""
+    image = bpy.data.images.load(path)
+    width, height = image.size
+    pixels = numpy.empty(width * height * 4, dtype=numpy.float32)
+    image.pixels.foreach_get(pixels)
+    image.pixels.foreach_set(pixels.reshape(height, width, 4)[:, ::-1].ravel())
+    image.filepath_raw = path
+    image.file_format = "PNG"
+    image.save()
+    bpy.data.images.remove(image)
 
 
 for name in names or ICONS:
