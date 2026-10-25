@@ -1,4 +1,5 @@
-# Helpers for building game models from code in headless Blender (dev/blender/models/<name>.py).
+# Helpers for building game models from code in headless Blender (dev/blender/models/<name>.py),
+# from scratch or around one of the user's hand-made meshes (Model.include).
 # All parts go into one bmesh with material slots, because the game instances the primitives of a
 # model's first node only: a model must be one object. Units: a board cell is 1 wide, the tile's
 # top is at z = TILE (Blender is z-up; the glTF export turns it y-up).
@@ -8,6 +9,7 @@ import random
 import bmesh
 import bpy
 from mathutils import Euler, Matrix, Vector
+from mathutils.bvhtree import BVHTree
 
 from shared import smooth_by_angle
 
@@ -37,6 +39,37 @@ class Model:
         self.bm = bmesh.new()
         self.materials = {}
         self.random = random.Random(seed)
+
+    def include(self, path):
+        """Adds the visible meshes of another .blend (the user's hand-made models) with their
+        modifiers applied and their materials as they are. Returns the new faces."""
+        with bpy.data.libraries.load(path) as (source, target):
+            target.objects = list(source.objects)
+        depsgraph_objects = []
+        for obj in target.objects:
+            if obj is not None and obj.type == "MESH" and not obj.hide_render:
+                bpy.context.scene.collection.objects.link(obj)
+                depsgraph_objects.append(obj)
+        depsgraph = bpy.context.evaluated_depsgraph_get()
+        faces = []
+        for obj in depsgraph_objects:
+            evaluated = obj.evaluated_get(depsgraph)
+            mesh = evaluated.to_mesh()
+            slots = []
+            for slot in obj.material_slots:
+                material = slot.material
+                if material.name not in self.materials:
+                    self.materials[material.name] = (len(self.materials), {"existing": material})
+                slots.append(self.materials[material.name][0])
+            count = len(self.bm.faces)
+            self.bm.from_mesh(mesh)
+            self.bm.faces.ensure_lookup_table()
+            for face in self.bm.faces[count:]:
+                face.material_index = slots[face.material_index] if slots else 0
+                faces.append(face)
+            evaluated.to_mesh_clear()
+            bpy.data.objects.remove(obj)
+        return faces
 
     def material(self, name, color, roughness=MATTE, metallic=0.0, emission=None, strength=0.0, double_sided=False):
         """The slot index of a material (made once per name). Colours are linear RGB."""
@@ -195,6 +228,16 @@ class Model:
             self.bm.faces.new((mid[3], mid[4], edge[2]))
         return self._part(mid + left + right, mat, normals=False)
 
+    def surface(self, origin, direction, offset=0.0):
+        """Where a ray from `origin` along `direction` first meets the model built so far, moved
+        `offset` back towards the origin; None if it misses. For details that lie on a mesh."""
+        if getattr(self, "_tree_faces", None) != len(self.bm.faces):
+            self._tree = BVHTree.FromBMesh(self.bm)
+            self._tree_faces = len(self.bm.faces)
+        direction = Vector(direction).normalized()
+        hit, _, _, _ = self._tree.ray_cast(Vector(origin), direction)
+        return None if hit is None else hit - direction * offset
+
     def grow(self, factor):
         """Scales the whole model about the middle of the tile's top."""
         self.transform(Matrix.Translation((0, 0, TILE)) @ Matrix.Scale(factor, 4) @ Matrix.Translation((0, 0, -TILE)))
@@ -206,15 +249,17 @@ class Model:
     # -- output ------------------------------------------------------------------------------
 
     def save(self, path, smooth_angle=50):
+        """`smooth_angle` None keeps the shading of the faces as they are (included meshes)."""
         mesh = bpy.data.meshes.new(self.name)
         self.bm.normal_update()
         self.bm.to_mesh(mesh)
         self.bm.free()
-        smooth_by_angle(mesh, math.radians(smooth_angle))
+        if smooth_angle is not None:
+            smooth_by_angle(mesh, math.radians(smooth_angle))
         obj = bpy.data.objects.new(self.name, mesh)
         bpy.context.scene.collection.objects.link(obj)
         for name, (_, settings) in sorted(self.materials.items(), key=lambda item: item[1][0]):
-            mesh.materials.append(make_material(name, **settings))
+            mesh.materials.append(settings["existing"] if "existing" in settings else make_material(name, **settings))
         bpy.ops.wm.save_as_mainfile(filepath=path)
         return obj
 

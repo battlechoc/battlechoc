@@ -37,8 +37,9 @@ for spec in names:
     file = spec.replace("@", "-")
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.context.preferences.filepaths.save_version = 0
-    model = importlib.import_module("models." + name).build(variant or None)
-    model.save(os.path.join(generated, file + ".blend"))
+    module = importlib.import_module("models." + name)
+    model = module.build(variant or None)
+    model.save(os.path.join(generated, file + ".blend"), getattr(module, "SMOOTH_ANGLE", 50))
     if out:
         bpy.ops.export_scene.gltf(
             filepath=os.path.join(out, file + ".glb"),

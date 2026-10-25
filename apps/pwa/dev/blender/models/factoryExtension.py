@@ -7,8 +7,8 @@ from build import TILE, Model
 from models.parts import window
 
 Z0 = TILE + 0.035
-W, D, H = 0.42, 0.34, 0.38
-CY = 0.14  # the warehouse sits towards +y, the pipes take the -y side
+W, D, H = 0.6, 0.46, 0.44
+CY = 0.17  # the warehouse sits towards +y, the pipes take the -y side
 PITCH = math.radians(32)
 
 
@@ -25,9 +25,9 @@ def build(variant=None):
         paving=m.material("Paving", (0.42, 0.38, 0.33), roughness=0.95),
         chocolate=m.material("Chocolate Pipe", (0.12, 0.05, 0.02), roughness=0.6),
     )
-    m.box((0.56, 0.48, 0.035), (0, CY, TILE + 0.0175), mats["paving"], bevel=0.01)
+    m.box((0.74, 0.62, 0.035), (0, CY - 0.02, TILE + 0.0175), mats["paving"], bevel=0.01)
     m.box((W, D, H), (0, CY, Z0 + H / 2), mats["brick"])
-    for z in (0.09, 0.2, 0.31):
+    for z in (0.09, 0.21, 0.33):
         m.box((W + 0.008, D + 0.008, 0.014), (0, CY, Z0 + z), mats["brick_dark"])
     m.box((W + 0.02, D + 0.02, 0.02), (0, CY, Z0 + H), mats["trim"], bevel=0.004)
 
@@ -46,21 +46,21 @@ def build(variant=None):
     for side in (1, -1):
         middle = (0, CY + side * half / 2, ridge - half * math.tan(PITCH) / 2 + 0.01)
         m.box((W + 0.06, width, 0.022), middle, mats["roof"], rot=(-side * PITCH, 0, 0), bevel=0.004)
-    m.cylinder(0.04, 0.2, (0.12, CY + 0.08, ridge), mats["brick"], segments=12)
-    m.cylinder(0.046, 0.025, (0.12, CY + 0.08, ridge + 0.09), mats["trim"], segments=12)
+    m.cylinder(0.048, 0.24, (0.17, CY + 0.1, ridge), mats["brick"], segments=12)
+    m.cylinder(0.055, 0.025, (0.17, CY + 0.1, ridge + 0.11), mats["trim"], segments=12)
 
     front, side = CY - D / 2, W / 2
-    m.box((0.14, 0.012, 0.18), (-0.08, front - 0.006, Z0 + 0.09), mats["door_steel"])
-    for k in range(7):
-        m.box((0.14, 0.016, 0.006), (-0.08, front - 0.008, Z0 + 0.02 + k * 0.024), mats["trim"])
-    for wz in (Z0 + 0.13, Z0 + 0.28):
-        window(m, "front", (0.1, front, wz), 0.07, 0.09, mats["trim"], mats["glass"], sill=mats["trim"])
-        for wy in (CY - 0.07, CY + 0.07):
-            window(m, "side", (side, wy, wz), 0.07, 0.09, mats["trim"], mats["glass"], sill=mats["trim"])
+    m.box((0.17, 0.012, 0.21), (-0.13, front - 0.006, Z0 + 0.105), mats["door_steel"])
+    for k in range(8):
+        m.box((0.17, 0.016, 0.006), (-0.13, front - 0.008, Z0 + 0.02 + k * 0.025), mats["trim"])
+    for wz in (Z0 + 0.14, Z0 + 0.32):
+        window(m, "front", (0.13, front, wz), 0.08, 0.1, mats["trim"], mats["glass"], sill=mats["trim"])
+        for wy in (CY - 0.11, CY + 0.11):
+            window(m, "side", (side, wy, wz), 0.08, 0.1, mats["trim"], mats["glass"], sill=mats["trim"])
 
     # the pipes to the factory, out along -y, on a frame
     end = -0.7
-    for px, pz, radius, mat in ((-0.06, Z0 + 0.3, 0.032, mats["chocolate"]), (0.07, Z0 + 0.25, 0.024, mats["steel"])):
+    for px, pz, radius, mat in ((-0.08, Z0 + 0.34, 0.04, mats["chocolate"]), (0.08, Z0 + 0.28, 0.03, mats["steel"])):
         m.cylinder(radius, front - end + 0.02, (px, (front + end) / 2, pz), mat, rot=(math.pi / 2, 0, 0), segments=12)
         y = front - 0.06
         while y > end + 0.03:
@@ -68,7 +68,7 @@ def build(variant=None):
             y -= 0.13
     for fy in (-0.32,):
         for fx in (-0.13, 0.13):
-            m.box((0.02, 0.02, 0.32), (fx, fy, Z0 + 0.16), mats["steel"])
-        m.box((0.28, 0.02, 0.02), (0, fy, Z0 + 0.315), mats["steel"])
-        m.box((0.28, 0.02, 0.02), (0, fy, Z0 + 0.24), mats["steel"])
+            m.box((0.022, 0.022, 0.36), (fx * 1.25, fy, Z0 + 0.18), mats["steel"])
+        m.box((0.35, 0.022, 0.022), (0, fy, Z0 + 0.3), mats["steel"])
+        m.box((0.35, 0.022, 0.022), (0, fy, Z0 + 0.25), mats["steel"])
     return m
