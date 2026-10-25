@@ -11,7 +11,11 @@ from build import TILE, Model
 LENGTH, RADIUS = 0.62, 0.2
 RIDGES = 5
 LID_AT = (-0.24, 0.2, 0.12)
-PULP_DEPTH = 0.075  # how far the pulp's surface lies below the rim
+# the beans: as in a real pod, packed around a central strand like kernels on a cob, each with its
+# long side pointing out; semi-axes along the pod, around it and outwards
+BEAN = (0.05, 0.034, 0.062)
+STRAND = 0.02  # the strand's radius
+BEAN_TOP = -0.004  # how high the bean mass reaches (the rim is at 0)
 SHELL = 0.78  # the inside's size against the outside (a thick rim)
 
 
@@ -20,20 +24,12 @@ def build(variant=None):
     outside = m.material("Pod", (0.6, 0.32, 0.02), roughness=0.55)
     lid_outside = m.material("Pod Red", (0.42, 0.04, 0.02), roughness=0.55)
     inside = m.material("Pulp", (0.85, 0.82, 0.72), roughness=0.8)
-    bean = m.material("Bean", (0.62, 0.45, 0.25), roughness=0.6)
+    # fresh beans are rosy beige, still moist from the pulp
+    bean = m.material("Bean", (0.7, 0.47, 0.38), roughness=0.45)
 
     # the lower half, lying along x, cut open at the top
     lower = half_pod(m, outside, inside, top=False)
-    # the white pulp filling the open half, a little domed (the beans floated over the hollow
-    # shell), below the rim, so the shell holds the beans like a bowl
-    m.sphere(1.0, (0, 0, -PULP_DEPTH), inside, scale=(LENGTH / 2 * 0.74, RADIUS * 0.7, 0.03), segments=32, rings=12)
-    # beans in two rows, sunk half into the pulp
-    for row in (-1, 1):
-        for i in range(5):
-            x = -0.2 + i * 0.1
-            taper = 1 - (abs(x) / (LENGTH / 2)) ** 2
-            at = Vector((x * 0.92, row * 0.05 * taper, -PULP_DEPTH + 0.018 + 0.016 * taper))
-            m.sphere(1.0, at, bean, scale=(0.045, 0.032 * taper + 0.008, 0.028), rot=(0, 0, row * 0.15), segments=12, rings=8)
+    beans(m, inside, bean)
     # the upper half, turned over and leaning against the lower one
     lid = half_pod(m, lid_outside, inside, top=True)
     # (behind the open half, on the right in the picture, its red outside towards the camera)
@@ -82,3 +78,37 @@ def half_pod(m, outside, inside, top):
             faces.append(face)
     bmesh.ops.remove_doubles(m.bm, verts=list({v for f in faces for v in f.verts}), dist=1e-5)
     return [f for f in faces if f.is_valid]
+
+
+def beans(m, pulp, bean):
+    """The upper half of the bean "cob" in the open half: rings of beans along the pod, staggered,
+    each turned to point away from the strand, the gaps white with pulp."""
+    # white pulp filling the bowl under the beans, showing between them
+    m.sphere(1.0, (0, 0, -0.09), pulp, scale=(LENGTH / 2 * 0.62, RADIUS * SHELL * 0.78, 0.03), segments=28, rings=14)
+    rings = 7
+    spacing = 2 * BEAN[0] * 0.8
+    for i in range(rings):
+        x = (i - (rings - 1) / 2) * spacing
+        t = x / LENGTH + 0.5
+        # smaller towards the ends, where the pod narrows, the strand nearer the rim
+        size = max(0.5, math.sin(math.pi * t) ** 0.6)
+        radius = (STRAND + BEAN[2]) * size
+        axis_z = BEAN_TOP - (STRAND + 2 * BEAN[2]) * size
+        # packed tight: the beans press against each other
+        step = 2 * BEAN[1] * size * 0.78 / radius
+        count = 5 if i % 2 == 0 else 4
+        for k in range(count):
+            a = (k - (count - 1) / 2) * step + m.random.uniform(-0.06, 0.06)
+            if abs(a) > math.radians(75):
+                continue
+            jitter = m.random.uniform(0.9, 1.08)
+            centre = Vector((x + m.random.uniform(-0.004, 0.004), math.sin(a) * radius, axis_z + math.cos(a) * radius))
+            m.sphere(
+                1.0,
+                centre,
+                bean,
+                scale=(BEAN[0] * size * jitter, BEAN[1] * size * jitter, BEAN[2] * size * jitter),
+                rot=(-a, m.random.uniform(-0.18, 0.18), 0),
+                segments=14,
+                rings=10,
+            )
