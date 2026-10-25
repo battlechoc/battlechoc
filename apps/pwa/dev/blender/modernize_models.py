@@ -37,8 +37,8 @@ METALS = {
     ("xmasFactory", "Material.003"),  # the stove pipe
     ("spyingEasterBunny", "Material.006"),  # the binoculars
 }
-# rough metal reflects nothing but a grey sky; brushed is enough
-METAL_ROUGHNESS = 0.45
+# brushed, not polished (polished metal glared under the sky)
+METAL_ROUGHNESS = 0.7
 # Everything else is matte: under the sky light the old roughness of 0.5 (and less) made cream,
 # chocolate and paint look like glossy plastic. A few materials keep some shine.
 MATTE_ROUGHNESS = 0.85
@@ -46,6 +46,17 @@ ROUGHNESS = {("donut", "Topping"): 0.6}  # the glaze
 # and reflects half as much as glTF's default (Specular IOR Level 0.5), also at grazing angles
 SPECULAR_LEVEL = 0.25
 SPECULAR_TINT = 0.5
+# Lights: emission strength; a white bulb with a coloured glow washed out to pastel under the sky,
+# so a bulb gets its light's colour as base colour too
+LIGHTS = {
+    ("xmasFactory", "Material.008"): 3.0,  # red fairy lights
+    ("xmasFactory", "Material.010"): 3.0,  # green fairy lights
+    ("xmasFactory", "Material.007"): 2.0,  # yellow fairy lights and the window
+}
+# base colours that differ from the old exports (linear RGB)
+BASE_COLORS = {
+    ("xmasFactory", "Material.002"): (1.0, 1.0, 1.0),  # the snow (was 0.8 with a white glow)
+}
 
 # bevel: width in model units (a board cell is 1), only on edges sharper than SMOOTH_ANGLE;
 # subdivide: Catmull-Clark levels (each level makes four times the triangles); smooth: False for
@@ -121,7 +132,7 @@ def apply_policies(name, material, bsdf):
     bsdf.inputs["Metallic"].default_value = 1.0 if metal else 0.0
     roughness = bsdf.inputs["Roughness"]
     if metal:
-        roughness.default_value = min(roughness.default_value, METAL_ROUGHNESS)
+        roughness.default_value = METAL_ROUGHNESS
     else:
         roughness.default_value = ROUGHNESS.get((name, material.name), max(roughness.default_value, MATTE_ROUGHNESS))
         bsdf.inputs["Specular IOR Level"].default_value = SPECULAR_LEVEL
@@ -129,6 +140,13 @@ def apply_policies(name, material, bsdf):
     emission = bsdf.inputs["Emission Color"].default_value[:3]
     if bsdf.inputs["Emission Strength"].default_value > 0 and neutral(emission):
         bsdf.inputs["Emission Strength"].default_value = 0.0
+    if (name, material.name) in BASE_COLORS:
+        bsdf.inputs["Base Color"].default_value = (*BASE_COLORS[(name, material.name)], 1)
+    if (name, material.name) in LIGHTS:
+        bsdf.inputs["Emission Strength"].default_value = LIGHTS[(name, material.name)]
+        if neutral(bsdf.inputs["Base Color"].default_value[:3]):
+            bsdf.inputs["Base Color"].default_value = (*emission, 1)
+    material.diffuse_color = bsdf.inputs["Base Color"].default_value
 
 
 def set_modifiers(obj, recipe):
