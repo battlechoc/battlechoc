@@ -21,12 +21,15 @@ def build(variant=None):
 
     # the lower half, lying along x, cut open at the top
     lower = half_pod(m, outside, inside, top=False)
-    # beans in two rows in the pulp
+    # the white pulp filling the open half up to its rim, a little domed (the beans floated
+    # over the hollow shell)
+    m.sphere(1.0, (0, 0, 0.0), inside, scale=(LENGTH / 2 * 0.93, RADIUS * 0.93, 0.03), segments=32, rings=12)
+    # beans in two rows, sunk half into the pulp
     for row in (-1, 1):
         for i in range(5):
             x = -0.2 + i * 0.1
             taper = 1 - (abs(x) / (LENGTH / 2)) ** 2
-            at = Vector((x, row * 0.055 * taper, 0.02))
+            at = Vector((x, row * 0.055 * taper, 0.018 + 0.016 * taper))
             m.sphere(1.0, at, bean, scale=(0.045, 0.032 * taper + 0.008, 0.028), rot=(0, 0, row * 0.15), segments=12, rings=8)
     # the upper half, turned over and leaning against the lower one
     lid = half_pod(m, lid_outside, inside, top=True)
