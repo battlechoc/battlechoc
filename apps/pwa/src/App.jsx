@@ -43,6 +43,7 @@ import Hud from "./ui/Hud";
 import { v4 as uuidv4 } from "uuid";
 import IncomingInvite from "./ui/dialogs/IncomingInvite";
 import Matchmaking from "./ui/dialogs/Matchmaking";
+import Unlocked from "./ui/dialogs/Unlocked";
 import Tutorial from "./tutorial/Tutorial";
 import QuickMessage from "./ui/dialogs/QuickMessage";
 import logger from "./helper/logger";
@@ -85,6 +86,8 @@ class App extends Component {
       situation: situation,
       openInfo: openInfo,
       matchmaking: false,
+      // the first win unlocked the buildings, the Choclab and Friends
+      unlocked: false,
     };
     // each Start counts up; a late answer of an earlier Start is ignored
     this.startAttempt = 0;
@@ -528,16 +531,10 @@ class App extends Component {
 
           const score = this.props.playerInfos.stats.score;
           if (typeof coins !== "undefined" && coins > 0) {
-            // the first coins unlock every building, the Choclab and Friends: one message,
-            // then the demos of the buildings
+            // the first coins unlock every building, the Choclab and Friends: one dialog that
+            // leads to the demos of the buildings
             if (score - coins === 0) {
-              this.props.showQuickMessage({
-                text: t(tr.UNLOCK_NEW_FEATURES),
-                variant: "success",
-              });
-              this.props.startTutorial({
-                loops: allDemos,
-              });
+              this.setState({ unlocked: true });
             }
           }
         }
@@ -615,6 +612,14 @@ class App extends Component {
           openInfo={this.state.openInfo}
         />
         <IncomingInvite />
+        <Unlocked
+          open={this.state.unlocked}
+          close={() => this.setState({ unlocked: false })}
+          showDemos={() => {
+            this.setState({ unlocked: false });
+            this.showBuildingDemos();
+          }}
+        />
         <Matchmaking
           open={this.state.matchmaking}
           cancel={this.cancelMatchmaking}

@@ -494,6 +494,8 @@ module.exports = {
     "HIGHSCORE_EMPTY": "Todavía no hay partidas puntuadas: juega en línea contra otros jugadores para conseguir un puesto.",
     "HIGHSCORE_UNRATED": "Obtendrás tu puesto después de tu primera partida en línea contra otro jugador.",
     "UNLOCK_NEW_FEATURES": "¡Nuevas funciones desbloqueadas: Choclab y Amigos!",
+    "UNLOCK_TITLE": "¡Desbloqueado!",
+    "UNLOCK_DEMOS_HINT": "Además, ahora tienes todos los edificios. Mira lo que hace cada uno:",
     "LAB_INTRO_BUILDING_TITLE": "¡Bienvenido al Choclab!",
     "LAB_INTRO_BUILDING": "Elige un edificio. Cada uno tiene dos huecos de equipo y todo lo que equipas comparte un presupuesto: la barra muestra cuánto has usado.",
     "LAB_INTRO_TABLE_TITLE": "La mesa del laboratorio",

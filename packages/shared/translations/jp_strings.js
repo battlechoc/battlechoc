@@ -494,6 +494,8 @@ module.exports = {
     "HIGHSCORE_EMPTY": "まだ評価対象の対戦がありません。オンラインで他のプレイヤーと対戦して順位を手に入れよう！",
     "HIGHSCORE_UNRATED": "ほかのプレイヤーとの最初のオンライン対戦のあとで順位がつきます。",
     "UNLOCK_NEW_FEATURES": "新しい機能が解放されました：Choclabとフレンズ！",
+    "UNLOCK_TITLE": "解放！",
+    "UNLOCK_DEMOS_HINT": "すべての建物も解放されました。それぞれの役割を見てみましょう：",
     "LAB_INTRO_BUILDING_TITLE": "Choclabへようこそ！",
     "LAB_INTRO_BUILDING": "建物を選ぼう。どの建物にも装備スロットが2つあり、装備はすべて1つの予算を分け合うよ。バーで使った分がわかるよ。",
     "LAB_INTRO_TABLE_TITLE": "ラボのテーブル",

@@ -494,6 +494,8 @@ module.exports = {
     "HIGHSCORE_EMPTY": "Noch keine gewerteten Partien – spiele online gegen andere Spieler, um einen Rang zu bekommen.",
     "HIGHSCORE_UNRATED": "Deinen Rang bekommst du nach deiner ersten Online-Partie gegen einen anderen Spieler.",
     "UNLOCK_NEW_FEATURES": "Neue Funktionen freigeschaltet: Choclab und Freunde!",
+    "UNLOCK_TITLE": "Freigeschaltet!",
+    "UNLOCK_DEMOS_HINT": "Außerdem gehören dir jetzt alle Gebäude. Sieh dir an, was sie können:",
     "LAB_INTRO_BUILDING_TITLE": "Willkommen im Choclab!",
     "LAB_INTRO_BUILDING": "Wähle ein Gebäude. Jedes hat zwei Ausrüstungsplätze, und alles, was du ausrüstest, teilt sich ein Budget: Der Balken zeigt, wie viel verbraucht ist.",
     "LAB_INTRO_TABLE_TITLE": "Der Labortisch",
