@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 // Live matches between two browsers against the local API that playwright.config.js starts
-// (in-memory database, 6 s disconnect grace, AI fallback after 3 s). Each player is a separate
+// (in-memory database, 20 s disconnect grace, AI fallback after 3 s). Each player is a separate
 // browser context with its own device account; names and a first win are set up through the
 // public API, as a real player would get them.
 const api = `http://127.0.0.1:${process.env.API_PORT || 8091}`;
@@ -20,8 +20,11 @@ const accountOf = (page) =>
       })
   );
 
-// firstWin: false keeps the player at 0 XP (tutorial skipped), a new player's first matches
-const createPlayer = async (browser, request, username, { firstWin = true } = {}) => {
+// firstWin: false keeps the player at 0 XP (tutorial skipped), a new player's first matches.
+// A retry (or --repeat-each) gets new names: the first attempt took them on the server.
+const createPlayer = async (browser, request, name, { firstWin = true } = {}) => {
+  const { retry, repeatEachIndex } = test.info();
+  const username = retry || repeatEachIndex ? `${name}_${repeatEachIndex}${retry}` : name;
   const context = await browser.newContext();
   await context.addInitScript((url) => {
     window.localStorage.setItem("battlechoc.apiUrl", url);
@@ -131,7 +134,7 @@ test.describe("online", () => {
     // Ben is gone for good: after the grace period Anna wins
     await ben.context.close();
     await expect(anna.page.getByTestId("opponent-left")).toBeVisible({ timeout: 15000 });
-    await anna.page.waitForFunction(() => window.__battlechoc.host.phase === "MatchPhase.ENDED", null, { timeout: 20000 });
+    await anna.page.waitForFunction(() => window.__battlechoc.host.phase === "MatchPhase.ENDED", null, { timeout: 35000 });
     await expect(anna.page.getByText(/You won/i).first()).toBeVisible({ timeout: 15000 });
     await anna.page.screenshot({ path: "test/output/screenshot_online_won.png" });
     await anna.context.close();
@@ -142,7 +145,7 @@ test.describe("online", () => {
     const dora = await createPlayer(browser, request, "Dora");
 
     await openLobby(carla.page);
-    await carla.page.getByTestId("online-invite-name").fill("Dora");
+    await carla.page.getByTestId("online-invite-name").fill(dora.username);
     await carla.page.getByText("Invite", { exact: true }).click();
     await expect(carla.page.getByTestId("online-invite-waiting")).toBeVisible();
     await expect(dora.page.getByTestId("incoming-invite")).toBeVisible({ timeout: 10000 });

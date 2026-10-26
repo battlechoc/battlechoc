@@ -74,7 +74,9 @@ export default defineConfig({
         DATABASE_URL: "memory",
         JWT_SECRET: "e2e-only-secret-e2e-only-secret-e2e",
         CORS_ORIGINS: `http://127.0.0.1:${port},http://localhost:${port}`,
-        LIVE_DISCONNECT_GRACE_MS: "6000",
+        // long enough for the "opponent left" warning to be seen: on CI the software-rendered
+        // page blocks for seconds at a time, and a reload must fit in it too
+        LIVE_DISCONNECT_GRACE_MS: "20000",
         LIVE_AI_FALLBACK_MS: "3000",
       },
     },
