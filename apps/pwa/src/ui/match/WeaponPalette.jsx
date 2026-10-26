@@ -71,10 +71,11 @@ const useStyles = createUseStyles((theme) => ({
     "50%": { transform: "scale(0.95)", boxShadow: "0 0 0 0 rgba(255, 78, 133, 0)" },
   },
   denied: { animation: "$deniedFlash 0.6s ease-in-out" },
-  // price of an early shot, in cacao
+  // price of an early shot, in cacao: on the lower edge of the ring, inside the button (hanging
+  // below it, it went out of the window at the bottom right)
   price: {
     position: "absolute",
-    bottom: "-10%",
+    bottom: 0,
     left: "50%",
     transform: "translateX(-50%)",
     display: "flex",
