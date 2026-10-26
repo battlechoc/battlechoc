@@ -195,7 +195,7 @@ precacheAndRoute(
     { url: "/images/cream.svg", revision: "9" },
     { url: "/images/health-donut-icon.svg", revision: "9" },
     { url: "/images/progress-80.svg", revision: "9" },
-    { url: "/images/decoration.svg", revision: "8" },
+    { url: "/images/decoration.svg", revision: "9" },
     { url: "/images/highscore.svg", revision: "4" },
     { url: "/images/progress-90.svg", revision: "9" },
     { url: "/images/attacks-per-turn.svg", revision: "9" },
