@@ -20,14 +20,26 @@ import { LESSON, lessonSteps } from "./lesson";
 import { demos } from "./demos";
 import logger from "../helper/logger";
 
-const useStyles = createUseStyles({
+const useStyles = createUseStyles((theme) => ({
   finished: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     textAlign: "center",
   },
-});
+  // portrait: the card leaves the cacao and the building slots at the top right visible
+  card: {
+    [theme.breakpoints.orientation.portrait]: {
+      "&&": { width: "67vw" },
+    },
+  },
+  // the demos have no buttons at the top left: their card goes right to the top
+  top: {
+    [theme.breakpoints.orientation.portrait]: {
+      "&&": { top: 5 },
+    },
+  },
+}));
 
 const isNamed = (stats) =>
   typeof stats.username !== "undefined" && stats.username !== EmptyPlayerStats.username;
@@ -165,6 +177,7 @@ const Tutorial = (props) => {
       <CoachCard
         data-testid="tutorial-coach"
         onLayout={cardLayout}
+        className={classes.card}
         data-step={current.id}
         title={t(current.title)}
         message={t(current.message)}
@@ -193,6 +206,7 @@ const Tutorial = (props) => {
       <CoachCard
         data-testid="tutorial-coach"
         onLayout={cardLayout}
+        className={`${classes.card} ${classes.top}`}
         data-demo={loops[page]}
         title={t(demo.title)}
         message={t(demo.message)}
