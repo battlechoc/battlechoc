@@ -50,7 +50,8 @@ DONUTS = {
 # the model turns about its upright axis; elevation: the camera's angle for this picture;
 # mirror: False keeps the picture as rendered; shadow: True casts a shadow on the ground under it;
 # zoom, focus, keep: a closer picture of a part of the model (see frame);
-# look: its own colour handling; recolor: {material: colour}; tile_color: the chocolate piece's.
+# look: its own colour handling; recolor: {material: colour}; tile_color: the chocolate piece's;
+# fill: the strength of a low light from the front.
 # (`name@degrees` on the command line tries another turn.)
 # colour handling and light: view transform, contrast look, exposure, sky strength, sun strength.
 # The old icons were deep and contrasty; the game's PBR Neutral with a bright sky made the
@@ -103,8 +104,9 @@ ICONS = {
         elevation=20,
         hide=("Material.019", "Material.000", "Material.008", "Material.012", "Grass Green", "Grass Light", "Grass Yellow", "Grass Yellow Green"),
     ),
-    # the title screen's decoration: a donut on a broken chocolate bar
-    "decoration": dict(model="decoration", elevation=38),
+    # the title screen's decoration: a donut on a bar of chocolate, its front lit like the old
+    # drawing's (the user's pick of 2026-10)
+    "decoration": dict(model="decoration", elevation=32, fill=1.0),
     # dev/icons.mjs cuts the ten progress-NN pictures from it
     "progress-donut": dict(model="donut", copies=(((0, 0, 0), "progress"),), elevation=70),
 }
@@ -348,6 +350,15 @@ def render(name, spec):
         mirrored=spec.get("mirror", True),
         keep=spec.get("keep", ()),
     )
+    if spec.get("fill"):
+        # a low light from the camera's side brightens the fronts the sun leaves dark (a light
+        # shines along its -Z: its Z points to where the light comes from)
+        fill = bpy.data.objects.new("Fill", bpy.data.lights.new("Fill", "SUN"))
+        fill.data.energy = spec["fill"]
+        fill.data.angle = math.radians(30)
+        fill.visible_glossy = False
+        fill.rotation_euler = Vector((1.0, -1.0, 0.2)).to_track_quat("Z", "Y").to_euler()
+        scene.collection.objects.link(fill)
     path = os.path.join(out, name + ".png")
     scene.render.filepath = path
     bpy.ops.render.render(write_still=True)

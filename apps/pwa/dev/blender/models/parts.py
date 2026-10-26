@@ -46,10 +46,23 @@ def donut(m, centre, radius, tube, dough, glaze, sprinkles, count=60, flatten=1.
             remove.append(face)
     bmesh.ops.delete(m.bm, geom=remove, context="FACES")
     icing = [face for face in icing if face.is_valid]
+    faces += sprinkle(m, centre, radius, tube, sprinkles, count)
+    faces += icing
+    if flatten != 1.0:
+        m.transform(Matrix.Translation(centre) @ Matrix.Diagonal((1, 1, flatten, 1)) @ Matrix.Translation(-centre), faces)
+    return faces
+
+
+
+def sprinkle(m, centre, radius, tube, sprinkles, count, spread=(0.25, 0.75)):
+    """`count` sprinkles in the `sprinkles` materials (one or several) on the glaze of a donut
+    lying flat around `centre`, between `spread` (fractions of a half turn around the tube: 0 the
+    outside, 0.5 the top) . Returns their faces."""
     sprinkles = sprinkles if isinstance(sprinkles, (list, tuple)) else [sprinkles]
+    faces = []
     for i in range(count):
         phi = m.random.uniform(0, math.tau)
-        theta = m.random.uniform(0.25, 0.75) * math.pi
+        theta = m.random.uniform(*spread) * math.pi
         radial = Vector((math.cos(phi), math.sin(phi), 0))
         normal = radial * math.cos(theta) + Vector((0, 0, math.sin(theta)))
         point = centre + radial * radius + normal * tube * 1.09
@@ -57,9 +70,6 @@ def donut(m, centre, radius, tube, dough, glaze, sprinkles, count=60, flatten=1.
         along = (along - normal * along.dot(normal)).normalized()
         rot = along.to_track_quat("Z", "Y").to_euler()
         faces += m.cylinder(tube * 0.05, tube * 0.22, point, sprinkles[i % len(sprinkles)], rot=rot, segments=5)
-    faces += icing
-    if flatten != 1.0:
-        m.transform(Matrix.Translation(centre) @ Matrix.Diagonal((1, 1, flatten, 1)) @ Matrix.Translation(-centre), faces)
     return faces
 
 
