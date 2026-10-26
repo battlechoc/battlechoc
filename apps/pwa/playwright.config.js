@@ -49,8 +49,10 @@ export default defineConfig({
   ],
   webServer: [
     {
-      // --open false: vite preview inherits server.open and would open a tab in the default browser
-      command: `vite preview --outDir build-e2e --host 127.0.0.1 --port ${port} --strictPort --open false`,
+      // vite preview inherits server.open: BROWSER=none keeps it from opening a tab in the
+      // default browser (`--open false` does not: vite takes "false" as a path and opens /false)
+      command: `vite preview --outDir build-e2e --host 127.0.0.1 --port ${port} --strictPort`,
+      env: { BROWSER: "none" },
       url: `http://127.0.0.1:${port}`,
       reuseExistingServer: true,
       timeout: 60000,
@@ -58,8 +60,8 @@ export default defineConfig({
     {
       // the dev server too: it serves the linked shared package differently than the build
       // its own dependency cache, apart from a dev server the developer may be running (vite.config.js)
-      command: `vite --host 127.0.0.1 --port ${devPort} --strictPort --open false`,
-      env: { VITE_CACHE_DIR: "node_modules/.vite-e2e" },
+      command: `vite --host 127.0.0.1 --port ${devPort} --strictPort`,
+      env: { VITE_CACHE_DIR: "node_modules/.vite-e2e", BROWSER: "none" },
       url: `http://127.0.0.1:${devPort}`,
       reuseExistingServer: true,
       timeout: 60000,
