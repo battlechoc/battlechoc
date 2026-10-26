@@ -34,9 +34,14 @@ const useStyles = createUseStyles((theme) => ({
       width: "calc(100% - 24px)",
     },
   },
+  // compact: the body in the flow, so the dialog is as high as its content; the close button
+  // stays on the corner like in the other dialogs
   info: {
     "& > div > div ": {
       position: "relative",
+    },
+    "& > div > $close": {
+      position: "absolute",
     },
   },
   dialog: {

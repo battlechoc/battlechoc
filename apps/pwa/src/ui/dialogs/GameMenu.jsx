@@ -15,9 +15,10 @@ const useStyles = createUseStyles((theme) => ({
     alignItems: "center",
     gap: "0.6em",
     "& p": {
-      margin: 0,
+      margin: "0 0 0.3em",
       textAlign: "center",
-      color: theme.color.secondary.dark,
+      color: "white",
+      fontFamily: theme.font.body,
       fontSize: theme.font.size.md,
     },
   },
