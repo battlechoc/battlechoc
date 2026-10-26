@@ -20,13 +20,41 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  # Several merges in a row start one CI run each, and their deploys follow in
+  # the order the runs finish: an older commit could be deployed last. Only the
+  # commit that main is at now goes out; for an older one, the newer commit's
+  # CI deploys (or, if it fails, nothing untested does).
+  newest:
     # only after CI passed on a push to main: a pull request from a fork's
     # branch named main runs CI too and must not be deployed
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.check.outputs.deploy }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TESTED: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          main=$(gh api "repos/$GITHUB_REPOSITORY/commits/main" --jq .sha)
+          if [ "$main" = "$TESTED" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "main is at $main by now, not at $TESTED: its own CI run deploys it"
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: newest
+    if: needs.newest.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     env:
       PUPPETEER_SKIP_DOWNLOAD: "true"
