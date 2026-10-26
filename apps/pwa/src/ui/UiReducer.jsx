@@ -29,6 +29,8 @@ const uiReducer = createReducer(
     // the tutorial lesson lets the player act; whitelistBuildings limits the build palette
     tutorialInteractive: false,
     whitelistBuildings: undefined,
+    // the bottom edge of the tutorial's card (px from the top, 0 without a card)
+    boardTopInset: 0,
   },
   (builder) =>
     builder

@@ -283,6 +283,9 @@ class Scene extends Component {
   }
 
   componentDidUpdate(prevProps) {
+    if (prevProps.boardTopInset !== this.props.boardTopInset) {
+      this.resize();
+    }
     if (typeof this.props.game !== "undefined") {
       this.realtimeUpdate(prevProps);
     }
@@ -509,8 +512,12 @@ class Scene extends Component {
       }
     }
 
-    this.camera.orthoTop = distance;
-    this.camera.orthoBottom = -distance;
+    // in portrait the tutorial's card lies across the top: the board moves down by half the
+    // card, into the middle of the space below it
+    const inset = height > width ? this.props.boardTopInset : 0;
+    const shift = (inset * distance) / height;
+    this.camera.orthoTop = distance + shift;
+    this.camera.orthoBottom = -distance + shift;
     this.camera.orthoLeft = -distance * ratio;
     this.camera.orthoRight = distance * ratio;
   }
@@ -1162,6 +1169,7 @@ const mapStateToProps = (state) => ({
   assetsReady: state.ui.assetsReady,
   tutorial: state.ui.tutorial,
   boardFocus: state.ui.boardFocus,
+  boardTopInset: state.ui.boardTopInset,
 });
 
 const mapDispatchToProps = {

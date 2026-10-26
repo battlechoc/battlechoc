@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 
@@ -83,7 +83,8 @@ const useStyles = createUseStyles((theme) => ({
 /**
  * The coach card of the tutorial: a title, a short text, the progress ("2/10"), an optional
  * skip link and the buttons that lead on. `className` places it (it is absolutely positioned);
- * other props (data-testid, data-step, ...) go to the card.
+ * `onLayout(bottom)` learns where its bottom edge is (px from the top of the window, 0 once it
+ * is gone); other props (data-testid, data-step, ...) go to the card.
  */
 const CoachCard = ({
   title,
@@ -92,12 +93,30 @@ const CoachCard = ({
   skipLabel,
   onSkip,
   className = "",
+  onLayout,
   children,
   ...rest
 }) => {
   const classes = useStyles();
+  const card = useRef(null);
+
+  useEffect(() => {
+    if (!onLayout || !card.current) {
+      return undefined;
+    }
+    const report = () => onLayout(Math.round(card.current.getBoundingClientRect().bottom));
+    const observer = new ResizeObserver(report);
+    observer.observe(card.current);
+    window.addEventListener("resize", report);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", report);
+      onLayout(0);
+    };
+  }, [onLayout]);
+
   return (
-    <div className={`${classes.coach} ${className}`} {...rest}>
+    <div ref={card} className={`${classes.coach} ${className}`} {...rest}>
       <p className={classes.title}>{title}</p>
       <p className={classes.message}>{message}</p>
       <div className={classes.footer}>
@@ -120,6 +139,7 @@ CoachCard.propTypes = {
   skipLabel: PropTypes.node,
   onSkip: PropTypes.func,
   className: PropTypes.string,
+  onLayout: PropTypes.func,
   children: PropTypes.node,
 };
 
