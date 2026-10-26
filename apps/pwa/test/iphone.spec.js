@@ -27,6 +27,9 @@ const advance = (page, ms) =>
   page.evaluate((ms) => window.__battlechoc.host.clock.advance(ms), ms);
 const phase = (page) => page.evaluate(() => window.__battlechoc.host.match.phase);
 
+// The clicks hit cells of the 8×8 debug board at the iPhone's 667×375 points; they move with the
+// board's height on the screen (boardHeight in src/3d/Scene.jsx: a world unit up is 37.5 · 0.82
+// points up here).
 const placeFactoryAt = async (page, x, y) => {
   await openSituation(page);
   await page.mouse.click(x, y);
@@ -35,18 +38,18 @@ const placeFactoryAt = async (page, x, y) => {
 };
 
 test("builds a factory on a black field", async ({ page }) => {
-  await placeFactoryAt(page, 336, 241);
+  await placeFactoryAt(page, 336, 264);
   await page.screenshot({ fullPage: true, path: "test/output/screenshot_test005.png" });
   await expect(page.getByTestId("build-tokens")).toContainText("3/3");
 });
 
 test("builds a factory on a brown field", async ({ page }) => {
-  await placeFactoryAt(page, 388, 209);
+  await placeFactoryAt(page, 388, 232);
   await expect(page.getByTestId("build-tokens")).toContainText("2/2");
 });
 
 test("builds a factory on a white field", async ({ page }) => {
-  await placeFactoryAt(page, 363, 223);
+  await placeFactoryAt(page, 363, 246);
   await page.screenshot({ fullPage: true, path: "test/output/screenshot_test006.png" });
   await expect(page.getByTestId("build-tokens")).toContainText("2/2");
 });
@@ -54,7 +57,7 @@ test("builds a factory on a white field", async ({ page }) => {
 test("counts down and starts the match after both factories are placed", async ({ page }) => {
   await openSituation(page);
   await page.screenshot({ fullPage: true, path: "test/output/screenshot_test004_0.png" });
-  await page.mouse.click(335, 238);
+  await page.mouse.click(335, 261);
   await page.waitForTimeout(500);
   expect(await phase(page)).toBe("MatchPhase.PLACEMENT");
   // the AI places its factory within a few seconds, then the countdown starts

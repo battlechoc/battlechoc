@@ -73,12 +73,24 @@ test('the migration converts coins into cocoa and score into xp', async () => {
 });
 
 test('the scheduled cleanup runs right away and then periodically, until stopped', async () => {
+    const count = async () => Number((await pool.query('SELECT COUNT(*) AS n FROM pantry')).rows[0].n);
+    // waits on real time until the pantry is empty: on Postgres in CI a cleanup can take longer
+    // than a fixed wait of a few ticks
+    const emptied = async () => {
+        const end = Date.now() + 3000;
+        while ((await count()) > 0 && Date.now() < end) {
+            await new Promise(resolve => setTimeout(resolve, 10));
+        }
+        return count();
+    };
     await pantry.add(pool, playerId, [{ ingredient: 'GOLDLEAF', amount: 1 }], Date.now() - 4 * DAY);
     const stop = pantry.scheduleCleanup(pool, { intervalMs: 30 });
-    await new Promise(resolve => setTimeout(resolve, 20));
-    expect(Number((await pool.query('SELECT COUNT(*) AS n FROM pantry')).rows[0].n)).toBe(0);
-    await pantry.add(pool, playerId, [{ ingredient: 'GOLDLEAF', amount: 1 }], Date.now() - 4 * DAY);
-    await new Promise(resolve => setTimeout(resolve, 60));
-    expect(Number((await pool.query('SELECT COUNT(*) AS n FROM pantry')).rows[0].n)).toBe(0);
-    stop();
+    try {
+        expect(await emptied()).toBe(0);
+        // added after the first run had finished: only a later run can delete it
+        await pantry.add(pool, playerId, [{ ingredient: 'GOLDLEAF', amount: 1 }], Date.now() - 4 * DAY);
+        expect(await emptied()).toBe(0);
+    } finally {
+        stop();
+    }
 });

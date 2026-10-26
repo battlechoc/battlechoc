@@ -9,6 +9,7 @@ export { Scene } from "@babylonjs/core/scene.js";
 export { Camera } from "@babylonjs/core/Cameras/camera.js";
 export { FlyCamera } from "@babylonjs/core/Cameras/flyCamera.js";
 export { Vector3 } from "@babylonjs/core/Maths/math.vector.js";
+export { Viewport } from "@babylonjs/core/Maths/math.viewport.js";
 export { Color3, Color4 } from "@babylonjs/core/Maths/math.color.js";
 export { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight.js";
 export { DirectionalLight } from "@babylonjs/core/Lights/directionalLight.js";
@@ -42,6 +43,7 @@ import "@babylonjs/core/Animations/animatable.js"; // scene.beginAnimation & co.
 import "@babylonjs/core/Culling/ray.js"; // picking (the board clicks)
 import "@babylonjs/core/Meshes/instancedMesh.js"; // mesh.createInstance
 import "@babylonjs/core/Particles/particleSystemComponent.js"; // particle systems in a scene
+import "@babylonjs/core/Engines/thinEngine.scissor.js"; // engine.enableScissor (the board preview)
 
 // The game shows its own progress; Babylon's loading screen is not even bundled any more.
 SceneLoaderFlags.ShowLoadingScreen = false;

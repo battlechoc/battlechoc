@@ -178,6 +178,32 @@ test("pauses when the tab is hidden and resumes after a reload", async ({ page }
   expect(await phase(page)).toBe("MatchPhase.RUNNING");
 });
 
+test("the menu pauses a match against the AI; the preview switches the boards", async ({ page }) => {
+  await openAsPlayer(page);
+  await startMatch(page);
+  await reachRunningPhase(page);
+  // one button at the top left: the menu, with everything the bar used to show
+  await expect(page.locator("[data-icon=pause]:visible")).toHaveCount(0);
+  await expect(page.locator("[data-icon=swap-view]:visible")).toHaveCount(0);
+  await page.locator("[data-icon=settings]:visible").first().click();
+  const menu = page.getByTestId("game-menu");
+  await expect(menu).toContainText("The match is paused.");
+  expect(await page.evaluate(() => window.__battlechoc.host.userPaused)).toBe(true);
+  await page.screenshot({ path: "test/output/screenshot_realtime_menu.png" });
+  await menu.getByText("Resume", { exact: true }).click();
+  await expect(menu).toHaveCount(0);
+  expect(await page.evaluate(() => window.__battlechoc.host.userPaused)).toBe(false);
+
+  // the preview shows the board not in view; tapping it switches
+  const preview = page.getByTestId("board-preview");
+  await expect(preview).toHaveAttribute("data-board", "opponent");
+  await preview.click();
+  await expect(preview).toHaveAttribute("data-board", "own");
+  await page.screenshot({ path: "test/output/screenshot_realtime_preview.png" });
+  await preview.click();
+  await expect(preview).toHaveAttribute("data-board", "opponent");
+});
+
 test("plays against Gustav Ganache on a 10x10 board with a high score", async ({ page }) => {
   await openAsPlayer(page, 900);
   await startMatch(page);
