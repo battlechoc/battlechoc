@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./Hud.css";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
@@ -192,6 +192,8 @@ const Hud = (props) => {
 
   const [open, setOpen] = useState(false);
   const [openSettings, setOpenSettings] = useState(false);
+  // what to do once the settings close (the match menu comes back)
+  const afterSettings = useRef(undefined);
   const [showAccountOverview, setShowAccountOverview] = useState(false);
   const [dialogStyle, setDialogStyle] = useState("default");
   const [showOnlineLobby, setShowOnlineLobby] = useState(false);
@@ -302,7 +304,14 @@ const Hud = (props) => {
         startTutorial={kickOffTutorial}
         showBuildingDemos={props.showBuildingDemos}
         open={openSettings}
-        close={() => setOpenSettings(false)}
+        close={() => {
+          setOpenSettings(false);
+          const after = afterSettings.current;
+          afterSettings.current = undefined;
+          if (after) {
+            after();
+          }
+        }}
       />
       <AccountOverview
         challengePlayer={(username) => {
@@ -348,7 +357,10 @@ const Hud = (props) => {
           return (
             <Actionbar
               endGame={endGame}
-              showSettings={() => setOpenSettings(true)}
+              showSettings={(after) => {
+                afterSettings.current = after;
+                setOpenSettings(true);
+              }}
               showSignInOrUp={openAccountOverview}
             />
           );

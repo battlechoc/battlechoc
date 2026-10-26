@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import {
@@ -6,12 +6,12 @@ import {
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
-import { toggleBoardView } from "../UiActions";
 import { selectActiveGame } from "../../match/matchSlice";
 import { matchSession } from "../../match/LocalMatchHost";
 import Fab from "./Fab";
 import Button from "./Button";
 import Dialog from "../dialogs/Dialog";
+import GameMenu from "../dialogs/GameMenu";
 import { Jukebox } from "../misc";
 import OfflineStore from "../../OfflineStore";
 import logger from "../../helper/logger";
@@ -50,6 +50,9 @@ const Actionbar = (props) => {
   const [activeMusicButton, setActiveMusicButton] = useState(!Jukebox.isMuted);
   const [activeFullscreenButton, setActiveFullscreenButton] = useState(true);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  // a match against the AI waits while its menu is open
+  const pausedByMenu = useRef(false);
 
   useEffect(() => {
     const fetchAudioState = async () => {
@@ -86,7 +89,15 @@ const Actionbar = (props) => {
     };
   }, []);
 
-  // the demos show no controls; the lesson keeps the view and sound buttons
+  const hasMatch = typeof props.game !== "undefined";
+  useEffect(() => {
+    if (!hasMatch) {
+      setMenuOpen(false);
+      pausedByMenu.current = false;
+    }
+  }, [hasMatch]);
+
+  // the demos show no controls; the lesson keeps the menu
   if (props.tutorial && !props.tutorialInteractive) {
     return null;
   }
@@ -104,36 +115,69 @@ const Actionbar = (props) => {
       .catch(() => logger.info("fullscreen request failed"));
   };
 
+  const { MatchPhase } = engine;
+  const pausable = () =>
+    !props.online &&
+    !props.tutorial &&
+    typeof matchSession.host !== "undefined" &&
+    props.game.phase !== MatchPhase.FIELD_CHOICE &&
+    props.game.phase !== MatchPhase.ENDED;
+
+  const openMenu = () => {
+    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+    if (pausable() && !props.paused) {
+      matchSession.host.pause();
+      pausedByMenu.current = true;
+    }
+    setMenuOpen(true);
+  };
+
+  const closeMenu = () => {
+    setMenuOpen(false);
+    if (pausedByMenu.current) {
+      pausedByMenu.current = false;
+      if (matchSession.host) {
+        matchSession.host.resume();
+      }
+    }
+  };
+
+  // the settings cover the menu; the match stays paused and the menu comes back after them
+  const openSettings = () => {
+    setMenuOpen(false);
+    props.showSettings(() => setMenuOpen(true));
+  };
+
+  // leaving a running online match gives it up: ask first. The tutorial has its own way out.
+  const leave = props.tutorial
+    ? undefined
+    : () => {
+        setMenuOpen(false);
+        if (props.online && props.game.phase !== MatchPhase.ENDED) {
+          setConfirmLeave(true);
+        } else {
+          pausedByMenu.current = false;
+          props.endGame();
+        }
+      };
+
   const buttons = [];
 
-  if (typeof props.game !== "undefined" && !props.tutorial) {
+  if (hasMatch) {
+    // in a match one button opens the menu with all the rest; the boards switch through the
+    // preview of the other board (Scene)
+    buttons.push(
+      <Fab key="menu" color="secondary" icon="settings" onClick={openMenu}></Fab>
+    );
+  } else {
     buttons.push(
       <Fab
-        key="0"
+        key="1"
         color="secondary"
-        icon="back"
-        onClick={() => {
-          // leaving a running online match gives it up: ask first
-          if (props.online && props.game.phase !== engine.MatchPhase.ENDED) {
-            setConfirmLeave(true);
-          } else {
-            props.endGame();
-          }
-        }}
+        icon="settings"
+        onClick={() => props.showSettings()}
       ></Fab>
     );
-  }
-
-  buttons.push(
-    <Fab
-      key="1"
-      color="secondary"
-      icon="settings"
-      onClick={() => props.showSettings()}
-    ></Fab>
-  );
-
-  if (typeof props.game === "undefined") {
     buttons.push(
       <Fab
         key="2"
@@ -142,68 +186,41 @@ const Actionbar = (props) => {
         onClick={() => props.showSignInOrUp()}
       ></Fab>
     );
-  }
-
-  if (activeMusicButton) {
-    buttons.push(
-      <Fab key="3" color="secondary" icon="volume" onClick={toggleMusic}></Fab>
-    );
-  } else {
-    buttons.push(
-      <Fab key="4" color="secondary" icon="mute" onClick={toggleMusic}></Fab>
-    );
-  }
-
-  if (activeFullscreenButton) {
-    buttons.push(
-      <Fab
-        key="5"
-        color="secondary"
-        icon="fullscreen"
-        onClick={toggleFullscreen}
-      ></Fab>
-    );
-  }
-
-  // real-time match: pause and switch between the own and the opponent's board
-  if (
-    typeof props.game !== "undefined" &&
-    typeof props.game.phase !== "undefined" &&
-    props.game.phase !== engine.MatchPhase.FIELD_CHOICE
-  ) {
-    buttons.push(
-      <Fab
-        key="realtime-view"
-        color="secondary"
-        icon="swap-view"
-        onClick={() => {
-          Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-          props.toggleBoardView();
-        }}
-      ></Fab>
-    );
-    // online matches cannot be paused, the lesson has no deadlines to pause
-    if (!props.online && !props.tutorial) buttons.push(
-      <Fab
-        key="realtime-pause"
-        color="secondary"
-        icon={props.paused ? "play" : "pause"}
-        onClick={() => {
-          Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-          if (matchSession.host) {
-            if (props.paused) {
-              matchSession.host.resume();
-            } else {
-              matchSession.host.pause();
-            }
-          }
-        }}
-      ></Fab>
-    );
+    if (activeMusicButton) {
+      buttons.push(
+        <Fab key="3" color="secondary" icon="volume" onClick={toggleMusic}></Fab>
+      );
+    } else {
+      buttons.push(
+        <Fab key="4" color="secondary" icon="mute" onClick={toggleMusic}></Fab>
+      );
+    }
+    if (activeFullscreenButton) {
+      buttons.push(
+        <Fab
+          key="5"
+          color="secondary"
+          icon="fullscreen"
+          onClick={toggleFullscreen}
+        ></Fab>
+      );
+    }
   }
   return (
     <>
       <div className={classes.actions}> {buttons} </div>
+      <GameMenu
+        open={menuOpen && hasMatch}
+        close={closeMenu}
+        paused={Boolean(props.paused)}
+        online={Boolean(props.online)}
+        soundOn={activeMusicButton}
+        toggleSound={toggleMusic}
+        fullscreen={activeFullscreenButton}
+        toggleFullscreen={toggleFullscreen}
+        openSettings={openSettings}
+        leave={leave}
+      />
       <Dialog
         open={confirmLeave}
         close={() => setConfirmLeave(false)}
@@ -248,12 +265,5 @@ const mapStateToProps = (state) => ({
   tutorialInteractive: state.ui.tutorialInteractive,
 });
 
-const mapDispatchToProps = {
-  toggleBoardView,
-};
-
-const ActionbarContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Actionbar);
+const ActionbarContainer = connect(mapStateToProps)(Actionbar);
 export default ActionbarContainer;

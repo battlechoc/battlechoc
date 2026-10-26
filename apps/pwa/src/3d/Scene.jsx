@@ -6,6 +6,7 @@ import {
   tapBuilding,
   showQuickMessage,
   attackDenied,
+  toggleBoardView,
 } from "../ui/UiActions";
 import { selectActiveGame } from "../match/matchSlice";
 import { matchSession } from "../match/LocalMatchHost";
@@ -38,6 +39,7 @@ import {
   Animation,
   MeshBuilder,
   PointerEventTypes,
+  Viewport,
 } from "./babylon";
 import { AssetLoadingViewContainer as AssetLoadingView } from "../AssetLoader";
 import logger from "../helper/logger";
@@ -51,11 +53,16 @@ import { withTheme } from "react-jss";
 const boardHeight = (cols) => (cols - 1) / 2 + (cols - 6) / 8;
 // the energy bars float this high above the base of the boards
 const ENERGY_BAR = 1.5;
+// the preview of the other board: its frame's border (px) and what is behind its board
+const PREVIEW_BORDER = 4;
+const PREVIEW_BACKGROUND = Color4.FromHexString("#7FC3E0FF");
 
 class Scene extends Component {
   constructor(props) {
     super(props);
     this.loadingView = createRef();
+    // the preview of the other board: where it is on the screen and which board it shows
+    this.state = { preview: null };
   }
 
   componentDidMount() {
@@ -518,10 +525,111 @@ class Scene extends Component {
   resize = () => {
     this.estimateOrthographicSize();
     this.engine.resize();
+    if (this.state.preview) {
+      this.showPreview();
+    }
     this.scene.render();
   };
 
+  // The preview of the board not in view, at the top left beside the menu button (a corner the
+  // isometric boards leave free): a second camera renders it into its own part of the canvas,
+  // and tapping it switches the boards. Not in the tutorial.
+  previewRect() {
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    const ratio = width / height;
+    // the menu button's size (Fab.jsx: square screens, portrait, landscape)
+    const fab = ratio >= 3 / 4 && ratio <= 4 / 3 ? 0.035 * (width + height) : ratio < 1 ? 0.12 * width : 0.07 * width;
+    if (ratio < 1) {
+      // portrait: under the menu button, clear of the match time at the top middle
+      const side = 0.4 * width;
+      return { left: 5, top: Math.round(5 + fab + 8), width: Math.round(side), height: Math.round(side * 0.6) };
+    }
+    // landscape: beside the menu button; on a phone held sideways no higher than a fifth of the
+    // screen, the board comes close to the corner there
+    const side = Math.min(Math.max(0.2 * width, 180), 340, (0.22 * height) / 0.6);
+    return { left: Math.round(5 + fab + 10), top: 5, width: Math.round(side), height: Math.round(side * 0.6) };
+  }
+
+  showPreview() {
+    const game = this.props.game;
+    if (typeof game === "undefined" || this.props.tutorial || this.playerGameField === null) {
+      this.hidePreview();
+      return;
+    }
+    if (!this.previewCamera) {
+      this.previewCamera = new FlyCamera("preview", new Vector3(30, 30, 30), this.scene);
+      this.previewCamera.mode = Camera.ORTHOGRAPHIC_CAMERA;
+      this.previewCamera.minZ = 0;
+      this.previewCamera.maxZ = 200;
+      // its own background: the board in it never mixes with the big one behind
+      this.scene.onBeforeCameraRenderObservable.add((camera) => {
+        if (camera === this.previewCamera && this.previewPixels) {
+          const { x, y, width, height } = this.previewPixels;
+          this.engine.enableScissor(x, y, width, height);
+          this.engine.clear(PREVIEW_BACKGROUND, true, true, true);
+          this.engine.disableScissor();
+        }
+      });
+    }
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+    const rect = this.previewRect();
+    // inside the frame's border, which covers the edge of what the camera clears
+    const inner = {
+      left: rect.left + PREVIEW_BORDER,
+      top: rect.top + PREVIEW_BORDER,
+      width: rect.width - 2 * PREVIEW_BORDER,
+      height: rect.height - 2 * PREVIEW_BORDER,
+    };
+    const camera = this.previewCamera;
+    // viewport and scissor count from the bottom left
+    camera.viewport = new Viewport(inner.left / width, 1 - (inner.top + inner.height) / height, inner.width / width, inner.height / height);
+    const scale = this.engine.getRenderWidth() / width;
+    this.previewPixels = {
+      x: Math.round(inner.left * scale),
+      y: Math.round((height - inner.top - inner.height) * scale),
+      width: Math.round(inner.width * scale),
+      height: Math.round(inner.height * scale),
+    };
+    // the whole board that is not in view, seen like the big one
+    const cols = game.board.size.cols;
+    const middle = (cols - 1) / 2;
+    const own = Boolean(this.lookAtOpponent);
+    const away = own ? 0 : this.opponentGameFieldDistance;
+    const target = new Vector3(middle - away, boardHeight(cols) + 0.5, middle + away);
+    camera.position = target.add(new Vector3(1, 1, 1).normalize().scale(40));
+    camera.setTarget(target);
+    const aspect = inner.width / inner.height;
+    // on the screen a board is 0.82 · cols high (with what stands on it a bit more) and
+    // 1.41 · cols wide
+    const half = Math.max((0.82 * cols + 2) / 2, (0.71 * cols + 0.3) / aspect);
+    camera.orthoTop = half;
+    camera.orthoBottom = -half;
+    camera.orthoLeft = -half * aspect;
+    camera.orthoRight = half * aspect;
+    this.scene.activeCameras = [this.camera, camera];
+    this.scene.cameraToUseForPointers = this.camera;
+    const preview = { ...rect, own };
+    const current = this.state.preview;
+    if (!current || ["left", "top", "width", "height", "own"].some((key) => current[key] !== preview[key])) {
+      this.setState({ preview });
+    }
+    this.requestRender();
+  }
+
+  hidePreview() {
+    if (this.scene && this.scene.activeCameras && this.scene.activeCameras.length > 0) {
+      this.scene.activeCameras = [];
+      this.scene.activeCamera = this.camera;
+    }
+    if (this.state.preview) {
+      this.setState({ preview: null });
+    }
+  }
+
   clear() {
+    this.hidePreview();
     this.weaponIndicators.forEach((indicator, id) => this.disposeIndicator(id, indicator));
     const instances = this.scene.meshes.filter((mesh) => mesh.isAnInstance);
     for (const instance of instances) {
@@ -629,6 +737,7 @@ class Scene extends Component {
     if (this.lookAtOpponent !== lookAtOpponent) {
       this.lookAtOpponent = lookAtOpponent;
       this.performCameraFlight();
+      this.showPreview();
     }
   }
 
@@ -1124,11 +1233,58 @@ class Scene extends Component {
       this.requestRender
     );
 
+    this.showPreview();
     this.resize();
     // new instances only show up once their materials are compiled; render again then,
     // because a real-time match has no camera flight that would keep rendering
     this.scene.executeWhenReady(() => this.scene.render());
   };
+
+  renderPreviewFrame({ left, top, width, height, own }) {
+    const { color, font } = this.props.theme;
+    return (
+      <button
+        type="button"
+        data-testid="board-preview"
+        data-board={own ? "own" : "opponent"}
+        aria-label={own ? t(tr.BOARD_PREVIEW_OWN) : t(tr.BOARD_PREVIEW_OPPONENT)}
+        onClick={() => {
+          Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+          this.props.toggleBoardView();
+        }}
+        style={{
+          position: "absolute",
+          zIndex: 2,
+          left,
+          top,
+          width,
+          height,
+          boxSizing: "border-box",
+          padding: 0,
+          border: `${PREVIEW_BORDER}px solid ${color.secondary.light}`,
+          borderRadius: 12,
+          background: "none",
+          boxShadow: "0 0.3vw 1vw rgba(0, 0, 0, 0.3)",
+          cursor: "pointer",
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            left: 8,
+            bottom: 4,
+            color: "white",
+            fontFamily: font.display,
+            fontSize: font.size.sm,
+            WebkitTextStroke: `${font.stroke} ${color.secondary.dark}`,
+            pointerEvents: "none",
+          }}
+        >
+          {own ? t(tr.BOARD_PREVIEW_OWN) : t(tr.BOARD_PREVIEW_OPPONENT)}
+        </span>
+      </button>
+    );
+  }
 
   render() {
     return (
@@ -1142,6 +1298,7 @@ class Scene extends Component {
             this.container = container;
           }}
         />
+        {this.state.preview ? this.renderPreviewFrame(this.state.preview) : null}
       </div>
     );
   }
@@ -1161,6 +1318,7 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = {
+  toggleBoardView,
   deselectBuildings,
   selectBuilding,
   tapBuilding,

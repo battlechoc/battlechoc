@@ -154,11 +154,13 @@ test.describe("online", () => {
     await dora.page.getByTestId("incoming-invite").getByText("Play", { exact: true }).click();
     await Promise.all([inOnlineMatch(carla.page), inOnlineMatch(dora.page)]);
 
-    // no pause online; the back button asks before it gives the match up
+    // no pause online: the menu says the match keeps running, and asks before it gives it up
     await carla.page.locator("[data-testid=match-banner]").waitFor({ state: "attached" });
     await carla.page.waitForFunction(() => window.__battlechoc.host.phase !== "MatchPhase.FIELD_CHOICE", null, { timeout: 20000 });
-    const back = carla.page.locator("[data-icon=back]:visible").first();
-    await back.click();
+    await carla.page.locator("[data-icon=settings]:visible").first().click();
+    const menu = carla.page.getByTestId("game-menu");
+    await expect(menu).toContainText("Online, the match keeps running.");
+    await menu.getByText("Surrender", { exact: true }).click();
     await expect(carla.page.getByTestId("confirm-leave")).toBeVisible();
     await carla.page.getByTestId("confirm-leave").getByText("Surrender", { exact: true }).click();
     await dora.page.waitForFunction(() => window.__battlechoc.host.phase === "MatchPhase.ENDED", null, { timeout: 15000 });
