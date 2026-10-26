@@ -494,6 +494,8 @@ module.exports = {
     "HIGHSCORE_EMPTY": "Chưa có trận đấu xếp hạng nào – hãy chơi trực tuyến với người chơi khác để có thứ hạng.",
     "HIGHSCORE_UNRATED": "Bạn sẽ có thứ hạng sau trận đấu trực tuyến đầu tiên với người chơi khác.",
     "UNLOCK_NEW_FEATURES": "Đã mở khóa tính năng mới: Choclab và Bạn bè!",
+    "UNLOCK_TITLE": "Đã mở khóa!",
+    "UNLOCK_DEMOS_HINT": "Giờ bạn cũng có tất cả công trình. Hãy xem mỗi công trình làm gì:",
     "LAB_INTRO_BUILDING_TITLE": "Chào mừng đến Choclab!",
     "LAB_INTRO_BUILDING": "Chọn một công trình. Mỗi công trình có hai ô trang bị, và mọi thứ bạn trang bị dùng chung một ngân sách: thanh bên dưới cho biết đã dùng bao nhiêu.",
     "LAB_INTRO_TABLE_TITLE": "Bàn thí nghiệm",

@@ -494,6 +494,8 @@ module.exports = {
     "HIGHSCORE_EMPTY": "No rated matches yet – play online against other players to get a rank.",
     "HIGHSCORE_UNRATED": "You get your rank after your first online match against another player.",
     "UNLOCK_NEW_FEATURES": "New features unlocked: Choclab and Friends!",
+    "UNLOCK_TITLE": "Unlocked!",
+    "UNLOCK_DEMOS_HINT": "All buildings are yours now too. See what each of them does:",
     "LAB_INTRO_BUILDING_TITLE": "Welcome to the Choclab!",
     "LAB_INTRO_BUILDING": "Pick a building. Each one has two equipment slots, and everything you equip shares one budget: the bar shows how much is used.",
     "LAB_INTRO_TABLE_TITLE": "The lab table",

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
@@ -20,14 +20,26 @@ import { LESSON, lessonSteps } from "./lesson";
 import { demos } from "./demos";
 import logger from "../helper/logger";
 
-const useStyles = createUseStyles({
+const useStyles = createUseStyles((theme) => ({
   finished: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     textAlign: "center",
   },
-});
+  // portrait: the card leaves the cacao and the building slots at the top right visible
+  card: {
+    [theme.breakpoints.orientation.portrait]: {
+      "&&": { width: "67vw" },
+    },
+  },
+  // the demos have no buttons at the top left: their card goes right to the top
+  top: {
+    [theme.breakpoints.orientation.portrait]: {
+      "&&": { top: 5 },
+    },
+  },
+}));
 
 const isNamed = (stats) =>
   typeof stats.username !== "undefined" && stats.username !== EmptyPlayerStats.username;
@@ -53,6 +65,8 @@ const Tutorial = (props) => {
   const [finished, setFinished] = useState(false);
   const [named, setNamed] = useState(isNamed(stats));
   const [initialUserName, setInitialUserName] = useState(stats.username);
+  // in portrait the card lies across the top of the board: the scene moves the board below it
+  const cardLayout = useCallback((bottom) => dispatch(loadUiState({ boardTopInset: bottom })), [dispatch]);
 
   // the lesson: start once; the demos: (re)start whenever the page changes
   useEffect(() => {
@@ -162,6 +176,8 @@ const Tutorial = (props) => {
     card = (
       <CoachCard
         data-testid="tutorial-coach"
+        onLayout={cardLayout}
+        className={classes.card}
         data-step={current.id}
         title={t(current.title)}
         message={t(current.message)}
@@ -189,6 +205,8 @@ const Tutorial = (props) => {
     card = (
       <CoachCard
         data-testid="tutorial-coach"
+        onLayout={cardLayout}
+        className={`${classes.card} ${classes.top}`}
         data-demo={loops[page]}
         title={t(demo.title)}
         message={t(demo.message)}

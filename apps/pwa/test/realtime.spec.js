@@ -216,7 +216,7 @@ test("a passive player's match ends within the time limit and shows the overview
   await page.screenshot({ path: "test/output/screenshot_realtime_ended.png" });
 });
 
-test("the first XP unlocks the Choclab and Friends with a single message", async ({ page }) => {
+test("the first XP unlocks the Choclab and Friends with one dialog that leads to the demos", async ({ page }) => {
   await openAsPlayer(page, 0);
   await startMatch(page);
   // the prepared first game runs from the start; the passive player's match ends in time
@@ -225,7 +225,14 @@ test("the first XP unlocks the Choclab and Friends with a single message", async
   await expect(page.getByText(/You won|You lost/i).first()).toBeVisible();
   await page.locator("[data-icon=fast-forward]:visible").first().click();
   await page.locator("[data-icon=done]:visible").first().click();
+  const unlocked = page.getByTestId("unlocked");
+  await expect(unlocked).toContainText("New features unlocked: Choclab and Friends!");
   await expect(page.getByText("New features unlocked: Choclab and Friends!")).toHaveCount(1);
   await expect(page.getByText(/You have unlocked the multiplayer mode/i)).toHaveCount(0);
+  // the demos start only from the dialog, not under it
+  await expect(page.getByTestId("tutorial-coach")).toHaveCount(0);
   await page.screenshot({ path: "test/output/screenshot_realtime_unlocked.png" });
+  await unlocked.getByText("Show the buildings", { exact: true }).click();
+  await expect(unlocked).toHaveCount(0);
+  await expect(page.getByTestId("tutorial-coach")).toContainText("1/8");
 });
