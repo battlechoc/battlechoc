@@ -1,8 +1,13 @@
 name: Deploy PWA to GitHub Pages
 
-# Manual until the real-time cut-over switches battlechoc.com from Firebase
-# Hosting to GitHub Pages (see the migration plan, phase 8).
+# Deploys main to battlechoc.com once CI has passed on it (a merged pull request
+# or a push), or by hand. The custom domain is set in the repository's Pages
+# settings: with a workflow deployment, GitHub ignores a CNAME file.
 on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -16,11 +21,20 @@ concurrency:
 
 jobs:
   build:
+    # only after CI passed on a push to main: a pull request from a fork's
+    # branch named main runs CI too and must not be deployed
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     env:
       PUPPETEER_SKIP_DOWNLOAD: "true"
     steps:
       - uses: actions/checkout@v7
+        with:
+          # the commit CI tested, not whatever main is by now
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -36,14 +50,11 @@ jobs:
         run: "! grep -rlE '__battlechoc|testclock' apps/pwa/build"
       - name: Prepare GitHub Pages output
         working-directory: apps/pwa/build
-        env:
-          PAGES_DOMAIN: ${{ vars.PAGES_DOMAIN }}
         run: |
           # GitHub Pages has no rewrites: serve the SPA for deep links via 404.html
           cp index.html 404.html
           # keep dot-folders such as .well-known (Digital Asset Links)
           touch .nojekyll
-          if [ -n "$PAGES_DOMAIN" ]; then echo "$PAGES_DOMAIN" > CNAME; fi
       - uses: actions/upload-pages-artifact@v5
         with:
           path: apps/pwa/build
