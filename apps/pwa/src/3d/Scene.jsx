@@ -44,6 +44,14 @@ import logger from "../helper/logger";
 import { v4 as uuidv4 } from "uuid";
 import { withTheme } from "react-jss";
 
+// The camera looks at the origin and a board's cells start at its position, its middle
+// (cols - 1) / 2 further in: lifted by that, a board is centred on the screen. The 6×6 board
+// is; the 10×10 one, which nearly fills a landscape screen, sits half a unit higher, clear of
+// the build palette; the 8×8 one in between.
+const boardHeight = (cols) => (cols - 1) / 2 + (cols - 6) / 8;
+// the energy bars float this high above the base of the boards
+const ENERGY_BAR = 1.5;
+
 class Scene extends Component {
   constructor(props) {
     super(props);
@@ -132,14 +140,7 @@ class Scene extends Component {
   }
 
   hideEnergyBar = (position, field) => {
-    let height = 6.5;
-    if (typeof this.props.game !== "undefined") {
-      if (this.props.game.board.size.cols === 6) {
-        height = 5.5;
-      } else if (this.props.game.board.size.cols === 8) {
-        height = 6.1;
-      }
-    }
+    const height = this.heightAbove(ENERGY_BAR);
 
     if (position === null) {
       position = new Vector3(field.row, height, field.col);
@@ -188,14 +189,7 @@ class Scene extends Component {
       }
     }
 
-    let height = 6.5;
-    if (typeof this.props.game !== "undefined") {
-      if (this.props.game.board.size.cols === 6) {
-        height = 5.5;
-      } else if (this.props.game.board.size.cols === 8) {
-        height = 6.1;
-      }
-    }
+    const height = this.heightAbove(ENERGY_BAR);
 
     if (typeof position === "undefined") {
       position = new Vector3(entity.position.row, height, entity.position.col);
@@ -306,8 +300,7 @@ class Scene extends Component {
     info.renderingGroupId = 1;
     info.position = position;
     // starts right above the units of the board (boards sit lower the smaller they are)
-    const size = this.props.game ? this.props.game.board.size.cols : 10;
-    info.position.y = size === 6 ? 5 : size === 8 ? 5.5 : 6;
+    info.position.y = this.heightAbove(1);
     info.billboardMode = Mesh.BILLBOARDMODE_ALL;
 
     const texture = new DynamicTexture("info_texture_" + id, 208, this.scene);
@@ -567,12 +560,12 @@ class Scene extends Component {
       BoardCellTypes.BROWN + ".material"
     );
     if (playerField) {
-      truffle.position = new Vector3(row, 5, col);
+      truffle.position = new Vector3(row, this.heightAbove(0.5), col);
       this.playerGameField.explode(truffle);
     } else {
       truffle.position = new Vector3(
         row - this.opponentGameFieldDistance,
-        5,
+        this.heightAbove(0.5),
         col + this.opponentGameFieldDistance
       );
       this.opponentGameField.explode(truffle);
@@ -615,6 +608,11 @@ class Scene extends Component {
     if (!this.props.tutorial || this.props.tutorialInteractive) {
       this.realtimeOpponentFieldClick(row, col, position);
     }
+  }
+
+  // a height `offset` above the base of the boards (of `cols` columns, the match's by default)
+  heightAbove(offset, cols = this.props.game ? this.props.game.board.size.cols : 10) {
+    return boardHeight(cols) + offset;
   }
 
   boardPosition(row, col, ownBoard) {
@@ -784,12 +782,7 @@ class Scene extends Component {
     }
     const grid = view.board.fields[view.players[view.viewer].fieldIndex].grid;
     const present = new Set();
-    let height = 6.5;
-    if (view.board.size.cols === 6) {
-      height = 5.5;
-    } else if (view.board.size.cols === 8) {
-      height = 6.1;
-    }
+    const height = this.heightAbove(ENERGY_BAR, view.board.size.cols);
     const producers = [EntityType.FACTORY, EntityType.FACTORY_EXTENSION];
     grid.forEach((cell) =>
       cell.occupiedBy
@@ -1100,12 +1093,7 @@ class Scene extends Component {
     this.lookAtOpponent = false;
     this.camera.position = new Vector3(30, 30, 30);
 
-    let gamefieldHeight = 5;
-    if (game.board.size.cols === 6) {
-      gamefieldHeight = 4;
-    } else if (game.board.size.cols === 8) {
-      gamefieldHeight = 4.5;
-    }
+    const gamefieldHeight = boardHeight(game.board.size.cols);
 
     this.playerGameField = new Gamefield(
       true,
