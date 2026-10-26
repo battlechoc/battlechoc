@@ -51,7 +51,8 @@ DONUTS = {
 # mirror: False keeps the picture as rendered; shadow: True casts a shadow on the ground under it;
 # zoom, focus, keep: a closer picture of a part of the model (see frame);
 # look: its own colour handling; recolor: {material: colour}; tile_color: the chocolate piece's;
-# fill: the strength of a low light from the front.
+# fill: the strength of a low light from the front; size: its own resolution (a picture shown
+# large, which must not be scaled up).
 # (`name@degrees` on the command line tries another turn.)
 # colour handling and light: view transform, contrast look, exposure, sky strength, sun strength.
 # The old icons were deep and contrasty; the game's PBR Neutral with a bright sky made the
@@ -92,8 +93,11 @@ ICONS = {
     "stop-donut-icon": dict(model="donut", copies=(((0, 0, 0), "pink"),), elevation=50),
     "surprise-donut-icon": dict(model="donut", copies=(((0, 0, 0), "yellow"),), elevation=50),
     "portal-donut-icon": dict(model="donut", copies=(((-0.3, -0.3, 0), "blue"), ((0.3, 0.3, 0), "red")), elevation=50),
-    # the logo's and the app icon's motif (the user's pick of 2026-10: over the old cacao tree)
-    "logo-fountain": dict(model="chocolateFountain", hide=("Shield",)),
+    # the logo's motif (the user's pick of 2026-10: over the old cacao tree), its chocolate as
+    # light as in the game (the user's pick "1 hell")
+    "logo-fountain": dict(model="chocolateFountain", hide=("Shield",), look="bright", size=1024),
+    # the app icons' motif: the fountain in the darker chocolate of the other pictures
+    "app-icon-fountain": dict(model="chocolateFountain", hide=("Shield",)),
     # the resources: cacao and building slots (also inside the arrows of the "per turn" pictures)
     "cacao": dict(model="cacao", elevation=35),
     "buildings-icon": dict(model="hammer", elevation=35),
@@ -106,7 +110,7 @@ ICONS = {
     ),
     # the title screen's decoration: a donut on a bar of chocolate, its front lit like the old
     # drawing's (the user's pick of 2026-10)
-    "decoration": dict(model="decoration", elevation=32, fill=1.0),
+    "decoration": dict(model="decoration", elevation=32, fill=1.0, size=1536),
     # dev/icons.mjs cuts the ten progress-NN pictures from it
     "progress-donut": dict(model="donut", copies=(((0, 0, 0), "progress"),), elevation=70),
 }
@@ -178,7 +182,7 @@ def material(name, color, roughness):
     return made
 
 
-def setup_scene(look):
+def setup_scene(look, resolution):
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
     scene.cycles.samples = samples
@@ -193,7 +197,7 @@ def setup_scene(look):
     except TypeError:
         scene.cycles.device = "CPU"
     scene.render.film_transparent = True
-    scene.render.resolution_x = scene.render.resolution_y = size
+    scene.render.resolution_x = scene.render.resolution_y = resolution
     scene.render.image_settings.file_format = "PNG"
     scene.render.image_settings.color_mode = "RGBA"
     view, contrast, exposure, sky, sun_strength = LOOKS[look]
@@ -307,7 +311,7 @@ def render(name, spec):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     addon_utils.enable("cycles", default_set=True)
     look_name = spec.get("look", look)
-    scene = setup_scene(look_name)
+    scene = setup_scene(look_name, spec.get("size", size))
     objects = []
     for offset, colors in spec.get("copies", (((0, 0, 0), None),)):
         copy = load(spec["model"])

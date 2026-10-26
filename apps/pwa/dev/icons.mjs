@@ -7,13 +7,15 @@
 // - the build progress donuts (progress-10 … 100) show the donut in ten clockwise steps
 // - "bunny-caught" gets the bunny (render bunny-ghost) as a blue ghost fading out at the bottom,
 //   between the wings and under the halo of the old picture
-// - "logo" puts the fountain (render logo-fountain) on the letters of dev/logo-letters.svg and
-//   makes the app icons from it on a deep blue ray background: favicon.png/.ico and the
+// - "logo" puts the fountain (render logo-fountain) on the letters of dev/logo-letters.svg
+// - "app-icons" puts the fountain (render app-icon-fountain) on a deep blue ray background: the
 //   manifest's icons (round), the maskable icons (the fountain inside the safe zone), the apple
 //   touch icons (square, iOS rounds them) and the notification icon (a white silhouette)
+// - "favicon" makes favicon.png/.ico of the B on its chocolate piece (render favicon, from
+//   dev/blender/render_favicon.py)
 //
-// The renders are trimmed to their content, scaled to twice their box and embedded as WebP
-// (needs ImageMagick and cwebp).
+// The renders are trimmed to their content, scaled to twice their box (or SCALE times) and
+// embedded as WebP (needs ImageMagick and cwebp).
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -60,6 +62,9 @@ const ARROWS = {
   "buildings-per-turn": "buildings-icon",
 };
 const PADDING = 0.04; // of the viewBox, round a whole picture
+// pixels per unit of the viewBox where twice is not enough: the title screen's decoration is
+// shown up to 70vh, some 1500 device pixels wide on a big screen
+const SCALE = { decoration: 4 };
 // renders that show only part of a model (zoomed in): they fill their picture as a circle, so
 // the cut edges are the round edge of the icon (straight cuts showed where the picture sits
 // smaller than its round button)
@@ -103,10 +108,11 @@ const whole = (name, render) => {
     return;
   }
   const inner = { width: width * (1 - 2 * PADDING), height: height * (1 - 2 * PADDING) };
-  const image = webp(render, inner.width * 2, inner.height * 2);
-  const scale = Math.min(inner.width / image.width, inner.height / image.height);
-  const w = image.width * scale;
-  const h = image.height * scale;
+  const scale = SCALE[name] || 2;
+  const image = webp(render, inner.width * scale, inner.height * scale);
+  const fit = Math.min(inner.width / image.width, inner.height / image.height);
+  const w = image.width * fit;
+  const h = image.height * fit;
   fs.writeFileSync(
     file,
     header(box) +
@@ -202,6 +208,10 @@ const logo = (render) => {
   const w = image.width * scale;
   const motif = `<image x="${(cx - w / 2).toFixed(1)}" y="${(bottom - height).toFixed(1)}" width="${w.toFixed(1)}" height="${height}" xlink:href="${image.data}"/>`;
   fs.writeFileSync(path.join(images, "logo.svg"), letters.replace("</svg>", motif + "</svg>"));
+};
+
+/** The app icons and the notification icon: the fountain on the blue rays. */
+const appIcons = (render) => {
   for (const size of [144, 192, 512]) {
     appIcon(render, size, 0.74, path.join(pub, `icon-${size}x${size}.png`), true);
     // maskable: only the inner circle of 80 % is sure to show
@@ -210,8 +220,6 @@ const logo = (render) => {
   for (const size of [120, 152, 167, 180]) {
     appIcon(render, size, 0.7, path.join(pub, `apple-icon-${size}.png`), false);
   }
-  appIcon(render, 128, 0.74, path.join(pub, "favicon.png"), true);
-  run("magick", [path.join(pub, "favicon.png"), "-define", "icon:auto-resize=128,64,48,32,16", path.join(pub, "favicon.ico")]);
   // Android shows the notification icon as a white shape
   run("magick", [
     path.join(renders, render + ".png"), "-trim", "+repage", "-resize", "84x84",
@@ -219,6 +227,16 @@ const logo = (render) => {
     "-gravity", "center", "-background", "none", "-extent", "96x96", "-strip",
     `PNG32:${path.join(images, "battlechoc_notification_icon.png")}`,
   ]);
+};
+
+/** favicon.png and favicon.ico: the B on its chocolate piece, filling the square. */
+const favicon = (render) => {
+  const png = path.join(pub, "favicon.png");
+  run("magick", [
+    path.join(renders, render + ".png"), "-trim", "+repage", "-resize", "124x124",
+    "-background", "none", "-gravity", "center", "-extent", "128x128", "-strip", `PNG32:${png}`,
+  ]);
+  run("magick", [png, "-define", "icon:auto-resize=128,64,48,32,16", path.join(pub, "favicon.ico")]);
 };
 
 /** bunny-caught.svg: the embedded bunny (_Image3) swapped for the new one, tinted like a ghost. */
@@ -283,6 +301,14 @@ if (wanted("bunny-caught") && fs.existsSync(path.join(renders, "bunny-ghost.png"
 }
 if (wanted("logo") && fs.existsSync(path.join(renders, "logo-fountain.png"))) {
   logo("logo-fountain");
-  console.log("logo and app icons");
+  console.log("logo");
+}
+if (wanted("app-icons") && fs.existsSync(path.join(renders, "app-icon-fountain.png"))) {
+  appIcons("app-icon-fountain");
+  console.log("app icons");
+}
+if (wanted("favicon") && fs.existsSync(path.join(renders, "favicon.png"))) {
+  favicon("favicon");
+  console.log("favicon");
 }
 fs.rmSync(scratch, { recursive: true });
