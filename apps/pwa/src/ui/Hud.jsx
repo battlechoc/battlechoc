@@ -44,6 +44,28 @@ import {
   InfoCard,
 } from "./match";
 
+// The title screen's logo: its top and size (a square in vh; logo.svg fills its width) and the
+// rays turning behind it, centred on the fountain (dev/icons.mjs puts it at x 308, y 22 to 392
+// of logo.svg's 1209 × 924)
+const LOGO = {
+  landscape: { top: 5, size: 50, rays: 350 },
+  portrait: { top: 12, size: 40, rays: 200 },
+};
+const FOUNTAIN = { x: 308 / 1209, y: 207 / 1209 };
+
+const logoBox = ({ top, size }) => ({
+  top: `${top}vh`,
+  width: `${size}vh`,
+  height: `${size}vh`,
+});
+
+const raysBox = ({ top, size, rays }) => ({
+  top: `${top + FOUNTAIN.y * size - rays / 2}vh`,
+  left: `calc(50% + ${(FOUNTAIN.x - 0.5) * size - rays / 2}vh)`,
+  width: `${rays}vh`,
+  height: `${rays}vh`,
+});
+
 const useStyles = createUseStyles((theme) => ({
   actionbar: {
     position: "absolute",
@@ -62,16 +84,8 @@ const useStyles = createUseStyles((theme) => ({
       position: "absolute",
       background: "url(/images/logo.svg) no-repeat",
       zIndex: 1,
-      [theme.breakpoints.orientation.landscape]: {
-        top: "5vh",
-        width: "50vh",
-        height: "50vh",
-      },
-      [theme.breakpoints.orientation.portrait]: {
-        top: "12vh",
-        width: "40vh",
-        height: "40vh",
-      },
+      [theme.breakpoints.orientation.landscape]: logoBox(LOGO.landscape),
+      [theme.breakpoints.orientation.portrait]: logoBox(LOGO.portrait),
     },
     "& > :last-child": {
       position: "absolute",
@@ -79,18 +93,8 @@ const useStyles = createUseStyles((theme) => ({
       backgroundSize: "100%",
       zIndex: 0,
       animation: "pulse 20s linear 0s infinite",
-      [theme.breakpoints.orientation.landscape]: {
-        top: "-160vh",
-        height: "350vh",
-        width: "350vh",
-        marginLeft: "-12vh",
-      },
-      [theme.breakpoints.orientation.portrait]: {
-        top: "-85vh",
-        height: "200vh",
-        width: "200vh",
-        marginLeft: "-10vh",
-      },
+      [theme.breakpoints.orientation.landscape]: raysBox(LOGO.landscape),
+      [theme.breakpoints.orientation.portrait]: raysBox(LOGO.portrait),
     },
   },
   menu: {
