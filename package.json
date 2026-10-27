@@ -1,5 +1,6 @@
 {
   "name": "battlechoc-monorepo",
+  "version": "3.0.0",
   "private": true,
   "description": "battlechoc: a chocolate-themed two-player strategy game",
   "license": "AGPL-3.0-or-later",
