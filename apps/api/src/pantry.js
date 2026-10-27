@@ -78,15 +78,4 @@ const cleanup = async (db, now) => {
     await db.query('DELETE FROM pantry WHERE amount <= 0 OR expires_at <= $1', [new Date(now)]);
 };
 
-/** Deletes spoiled and used-up batches now and then every `intervalMs`; returns a stop function. */
-const scheduleCleanup = (pool, { intervalMs = 60 * 60 * 1000, log = console } = {}) => {
-    const run = () => cleanup(pool, Date.now()).catch(error => log.error('pantry cleanup failed', error));
-    run();
-    const timer = setInterval(run, intervalMs);
-    if (typeof timer.unref === 'function') {
-        timer.unref();
-    }
-    return () => clearInterval(timer);
-};
-
-module.exports = { add, totals, spoiling, spend, cleanup, scheduleCleanup, NotEnoughIngredientsError };
+module.exports = { add, totals, spoiling, spend, cleanup, NotEnoughIngredientsError };
