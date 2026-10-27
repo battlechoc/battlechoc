@@ -31,11 +31,14 @@ jobs:
       # A pull request that a workflow opens with the GITHUB_TOKEN starts no workflows, so its
       # required checks would never report. workflow_dispatch is the exception: CI and the
       # secret scan run on the release branch, and their checks land on its head commit.
+      # The pull request is parsed in the script: GitHub evaluates a step's env even when the
+      # step is skipped, and fromJSON of an empty output fails the whole workflow.
       - name: Run the checks on the release pull request
         if: steps.release.outputs.prs_created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          PR: ${{ steps.release.outputs.pr }}
         run: |
-          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
-          gh workflow run secret-scan.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
+          branch=$(jq -r .headBranchName <<< "$PR")
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$branch"
+          gh workflow run secret-scan.yml --repo "$GITHUB_REPOSITORY" --ref "$branch"
