@@ -29,6 +29,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   icon: (props) => {
     const style = {
+      position: "relative",
       width: "60%",
       height: "60%",
     };
@@ -40,6 +41,28 @@ const useStyles = createUseStyles((theme) => ({
     }
 
     return style;
+  },
+  // without the server: grey, does not answer the pointer, the no-wifi sign on a badge
+  offline: {
+    filter: "grayscale(1)",
+    cursor: "default",
+  },
+  // a round badge on the rim at the lower right, 38 % of the fab; placed in the icon's box
+  // (60 % of the fab, the trophy's 90 %), which the fab centres
+  badge: (props) => {
+    const icon = props.icon === "trophy" ? 90 : 60;
+    const edge = 50 + 50 * Math.SQRT1_2 - 19;
+    return {
+      position: "absolute",
+      left: `${((edge - (100 - icon) / 2) / icon) * 100}%`,
+      top: `${((edge - (100 - icon) / 2) / icon) * 100}%`,
+      width: `${(38 / icon) * 100}%`,
+      height: `${(38 / icon) * 100}%`,
+      boxSizing: "border-box",
+      borderRadius: "50%",
+      border: "0.25vw solid #e6e6e6",
+      background: "#555 url(/images/offline.svg) no-repeat center / 72%",
+    };
   },
   focusable: {
     outline: "none",
@@ -58,13 +81,22 @@ const useStyles = createUseStyles((theme) => ({
       background: (props) =>
         `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${
           theme.color[props.color].light
-        } 150%)`,
+        } ${props.offline ? 100 : 150}%)`,
     },
   },
 }));
 
 // the props the fab handles itself; everything else (data-testid, aria-label, ...) goes to its element
-const OWN_PROPS = ["color", "onClick", "className", "style", "iconStyle", "icon"];
+const OWN_PROPS = [
+  "color",
+  "onClick",
+  "className",
+  "style",
+  "iconStyle",
+  "icon",
+  "offline",
+  "onOfflineClick",
+];
 
 const Fab = (componentProps) => {
   const props = withDefaultProps(componentProps, defaultProps);
@@ -76,7 +108,14 @@ const Fab = (componentProps) => {
       ? props.icon
       : props.color;
   const classes = useStyles({ ...props, color: color });
+  // a fab that needs the server explains itself while it does not answer
   const onClick = () => {
+    if (props.offline) {
+      if (typeof props.onOfflineClick === "function") {
+        props.onOfflineClick();
+      }
+      return;
+    }
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     props.onClick();
   };
@@ -94,8 +133,11 @@ const Fab = (componentProps) => {
       onKeyDown={onKeyDown}
       style={props.style}
       onClick={onClick}
-      className={`${classes.fab} ${classes.background} ${classes.focusable} ${props.className}`}
+      className={`${classes.fab} ${classes.background} ${classes.focusable} ${
+        props.className
+      } ${props.offline ? classes.offline : ""}`}
       data-icon={props.icon}
+      data-offline={props.offline ? "true" : undefined}
     >
       <div
         className={classes.icon}
@@ -105,7 +147,9 @@ const Fab = (componentProps) => {
           backgroundSize: "100% 100%",
           ...props.iconStyle,
         }}
-      />
+      >
+        {props.offline ? <div className={classes.badge} /> : null}
+      </div>
     </div>
   );
 };
@@ -116,6 +160,7 @@ const defaultProps = {
   iconStyle: {},
   icon: "settings",
   className: "",
+  offline: false,
 };
 
 Fab.propTypes = {
@@ -156,6 +201,9 @@ Fab.propTypes = {
   className: PropTypes.string,
   onClick: PropTypes.func.isRequired,
   style: PropTypes.object,
+  // needs the server, which does not answer: grey, with the no-wifi sign
+  offline: PropTypes.bool,
+  onOfflineClick: PropTypes.func,
 };
 
 export default Fab;

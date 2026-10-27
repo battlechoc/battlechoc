@@ -135,6 +135,7 @@ precacheAndRoute(
     { url: "/images/ballista-icon.svg", revision: "9" },
     { url: "/images/donuts-enabled.svg", revision: "5" },
     { url: "/images/lock.svg", revision: "4" },
+    { url: "/images/offline.svg", revision: "1" },
     { url: "/images/share.svg", revision: "4" },
     { url: "/images/battlechoc_notification_icon.png", revision: "7" },
     { url: "/images/dropdown.svg", revision: "4" },

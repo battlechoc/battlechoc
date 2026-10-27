@@ -20,6 +20,8 @@ test("locked menu entries explain themselves and do not open", async ({ page }) 
 });
 
 test("a first win unlocks the Choclab; friends also need a player name", async ({ page }) => {
+  // the server's /health answers, nothing else does: online, but without an account
+  await page.route("**/health", (route) => route.fulfill({ status: 200, body: '{"ok":true}' }));
   await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.body.innerText.trim().length > 0);
   // skipped the tutorial without a server: plenty of coins, but no name

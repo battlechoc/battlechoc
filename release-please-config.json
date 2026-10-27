@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "a5cfc80e0ea9e65a449f57f02d50f3fbca006db0",
+  "include-component-in-tag": false,
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "battlechoc",
+      "extra-files": [
+        { "type": "json", "path": "apps/pwa/package.json", "jsonpath": "$.version" },
+        { "type": "json", "path": "package-lock.json", "jsonpath": "$.packages['apps/pwa'].version" }
+      ]
+    }
+  }
+}

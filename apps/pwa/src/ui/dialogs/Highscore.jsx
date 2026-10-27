@@ -104,6 +104,8 @@ const Highscore = (componentProps) => {
     <div style={props.style}>
       <Fab
         onClick={() => setOpen(true)}
+        offline={props.offline}
+        onOfflineClick={props.showOfflineMessage}
         color="gold"
         icon="trophy"
         className={classes.fab}
@@ -209,6 +211,7 @@ const Highscore = (componentProps) => {
 const defaultProps = {
   style: {},
   className: "",
+  offline: false,
 };
 
 Highscore.propTypes = {
@@ -216,6 +219,9 @@ Highscore.propTypes = {
   className: PropTypes.string,
   showQuickMessage: PropTypes.func.isRequired,
   showPlayerProfile: PropTypes.func.isRequired,
+  // the server does not answer: the trophy is grey and explains itself
+  offline: PropTypes.bool,
+  showOfflineMessage: PropTypes.func,
 };
 
 export default Highscore;

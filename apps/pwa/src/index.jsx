@@ -11,7 +11,8 @@ import {
 import rootReducer from "./RootReducer";
 import { matchSession } from "./match/LocalMatchHost";
 import { multiplayer } from "./Multiplayer";
-import { showQuickMessage } from "./ui/UiActions";
+import { showQuickMessage, loadUiState } from "./ui/UiActions";
+import { connectivity } from "./connectivity";
 import promiseDispatch from "./helper/promiseDispatch";
 import { configureStore } from "@reduxjs/toolkit";
 import { ThemeProvider } from "react-jss";
@@ -110,6 +111,18 @@ window.addEventListener("online", () => {
     })
   );
 });
+
+// state.ui.online: whether the server answers, serverDown: the internet works but the server does
+// not (the toasts above follow the browser's network)
+connectivity.onChange((status) =>
+  store.dispatch(
+    loadUiState({
+      online: status === "online",
+      serverDown: status === "server-down",
+    })
+  )
+);
+connectivity.start();
 
 // push messages forwarded by the service worker while the app is open
 if ("serviceWorker" in navigator) {

@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>battlechoc – Datenschutzerklärung / Privacy policy</title>
+    <meta name="description" content="Welche Daten battlechoc verarbeitet, warum und wie lange. Which data battlechoc processes, why and for how long." />
+    <link rel="icon" href="/favicon.ico" />
+    <!-- A page of its own, without the game's scripts: readable without JavaScript and for
+         search engines and app stores. The Info dialog in the game links here. -->
+    <style>
+      @font-face {
+        font-family: "Bangers";
+        font-display: swap;
+        src: url("/fonts/bangers-latin-400-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Montserrat";
+        font-weight: 400;
+        font-display: swap;
+        src: url("/fonts/montserrat-latin-400-normal.woff2") format("woff2");
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212;
+      }
+      @font-face {
+        font-family: "Montserrat";
+        font-weight: 400;
+        font-display: swap;
+        src: url("/fonts/montserrat-latin-ext-400-normal.woff2") format("woff2");
+        unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+      }
+      @font-face {
+        font-family: "Montserrat";
+        font-weight: 700;
+        font-display: swap;
+        src: url("/fonts/montserrat-latin-700-normal.woff2") format("woff2");
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2212;
+      }
+      :root {
+        --paper: #fff8ee;
+        --ink: #4d2c1b;
+        --heading: #772549;
+        --link: #1b4e69;
+        --rule: #e8d6c0;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font: 16px/1.6 "Montserrat", system-ui, sans-serif;
+      }
+      main {
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 1.5rem 16px 4rem;
+      }
+      nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1.5rem;
+        justify-content: space-between;
+        align-items: baseline;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--rule);
+      }
+      .brand {
+        font: 2rem "Bangers", cursive;
+        letter-spacing: 0.04em;
+        color: var(--heading);
+        text-decoration: none;
+      }
+      h1,
+      h2 {
+        font-family: "Bangers", cursive;
+        font-weight: 400;
+        letter-spacing: 0.04em;
+        color: var(--heading);
+        line-height: 1.2;
+      }
+      h1 {
+        font-size: 2.2rem;
+        margin: 2.5rem 0 0;
+      }
+      h2 {
+        font-size: 1.5rem;
+        margin: 2rem 0 0.5rem;
+      }
+      a {
+        color: var(--link);
+      }
+      .date {
+        margin-top: 0.25rem;
+        opacity: 0.8;
+      }
+      .summary {
+        padding: 1rem 1.25rem;
+        border-radius: 0.75rem;
+        background: #fdebd3;
+      }
+      ul {
+        padding-left: 1.25rem;
+      }
+      li {
+        margin: 0.25rem 0;
+      }
+      section + section {
+        margin-top: 4rem;
+        padding-top: 1rem;
+        border-top: 2px solid var(--rule);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <nav>
+        <a class="brand" href="/">battlechoc</a>
+        <span><a href="#de" hreflang="de">Deutsch</a> · <a href="#en" hreflang="en">English</a></span>
+      </nav>
+
+      <section id="de" lang="de">
+        <h1>Datenschutzerklärung</h1>
+        <p class="date">Stand: 27. Oktober 2026</p>
+
+        <p class="summary">
+          <strong>Kurz gesagt:</strong> battlechoc ist kostenlos, ohne Werbung, ohne Tracking, ohne
+          Analysewerkzeuge und ohne Cookies. Offline läuft das Spiel komplett auf deinem Gerät. Für
+          die Online-Funktionen legt es auf unserem Server ein Spielerkonto an, ohne E-Mail-Adresse
+          und ohne Passwort.
+        </p>
+
+        <h2>1. Verantwortlich</h2>
+        <p>
+          Fabian Bormann<br />
+          E-Mail: <a href="mailto:contact@battlechoc.com">contact@battlechoc.com</a>
+        </p>
+        <p>Unter dieser Adresse erreichst du uns mit allen Fragen zum Datenschutz und für deine Rechte (Abschnitt 10).</p>
+
+        <h2>2. Was auf deinem Gerät gespeichert wird</h2>
+        <p>
+          Das Spiel speichert im Speicher deines Browsers (IndexedDB) deine
+          Einstellungen (Sprache, Lautstärke, Klickgeräusch, Vollbild), deinen Spielstand und deine
+          Statistiken, eine unterbrochene Partie und den Zugangsschlüssel deines Spielerkontos. Ein
+          Service Worker hält die Dateien des Spiels bereit, damit es auch ohne Verbindung startet.
+          Das ist nötig, damit das Spiel funktioniert (§ 25 Abs. 2 Nr. 2 TDDDG). Was davon an unseren
+          Server geht, steht in den folgenden Abschnitten. Du löschst diese Daten, indem du die
+          Website-Daten von battlechoc.com in deinem Browser löschst oder die App deinstallierst.
+        </p>
+
+        <h2>3. Beim Aufruf: GitHub Pages</h2>
+        <p>
+          Die Dateien des Spiels liefert GitHub Pages aus, ein Dienst der GitHub, Inc., 88 Colin P.
+          Kelly Jr. Street, San Francisco, CA 94107, USA. Dabei verarbeitet GitHub deine IP-Adresse
+          und technische Angaben zur Anfrage und speichert die IP-Adresse nach eigener Angabe zu
+          Sicherheitszwecken. GitHub ist unter dem EU-US Data Privacy Framework zertifiziert; darauf
+          stützt sich die Übermittlung in die USA. Rechtsgrundlage ist unser berechtigtes Interesse,
+          das Spiel zuverlässig und sicher auszuliefern (Art. 6 Abs. 1 lit. f DSGVO). Mehr dazu im
+          <a href="https://docs.github.com/de/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener">Datenschutzhinweis von GitHub</a>.
+        </p>
+
+        <h2>4. Unser Server und dein Spielerkonto</h2>
+        <p>
+          Sobald das Spiel unseren Server (api.battlechoc.com) erreicht, legt es dort ein
+          Spielerkonto an. Es kommt ohne E-Mail-Adresse, Klarnamen, Telefonnummer und Passwort aus.
+          Darin speichern wir:
+        </p>
+        <ul>
+          <li>eine zufällige Spieler-ID und einen Zugangsschlüssel, den wir nur als Hash speichern,</li>
+          <li>wann das Konto angelegt und zuletzt benutzt wurde, und deine Spielsprache,</li>
+          <li>deinen Fortschritt: Erfahrungspunkte, Wertung, Zahl der gewerteten Partien, Fortschritt im Tutorial,</li>
+          <li>deinen Spielernamen, wenn du einen festlegst, und deine Freundesliste,</li>
+          <li>die Zutaten in deiner Vorratskammer, hergestellte Gegenstände, deine Ausrüstung und die Rezepte, die du im Choclab entdeckt hast,</li>
+          <li>die Ergebnisse deiner Partien, auch der offline gespielten, damit der Server dir Erfahrungspunkte gutschreiben kann,</li>
+          <li>deine Online-Partien: Der Server führt sie aus und speichert jeden Zug mit Zeitpunkt, damit eine Partie nach einem Neustart weiterläuft und Ergebnisse geprüft werden können.</li>
+        </ul>
+        <p>
+          Andere Spieler sehen deinen Spielernamen, deine Wertung, deinen Rang in der Bestenliste,
+          deine Siege, Unentschieden und Niederlagen und, bei Rezepten, die du als Erste oder Erster
+          entdeckt hast, deinen Namen als Entdecker. In einer Online-Partie sieht dein Gegner deinen
+          Namen und deine Züge.
+        </p>
+        <p>
+          Rechtsgrundlage ist, dass wir diese Daten brauchen, um dir die Online-Funktionen des
+          Spiels bereitzustellen (Art. 6 Abs. 1 lit. b DSGVO). Den Server betreibt ein
+          Hosting-Anbieter in unserem Auftrag (Auftragsverarbeitung, Art. 28 DSGVO).
+        </p>
+        <p>
+          <strong>IP-Adressen:</strong> Unser Server schreibt keine Zugriffsprotokolle und speichert
+          keine IP-Adressen. Er hält deine IP-Adresse nur kurz im Arbeitsspeicher, um zu begrenzen,
+          wie viele Konten pro Minute angelegt werden (Schutz vor Missbrauch, Art. 6 Abs. 1 lit. f
+          DSGVO).
+        </p>
+
+        <h2>5. Benachrichtigungen</h2>
+        <p>
+          Nur wenn du sie erlaubst: Dein Browser erzeugt dann eine Push-Adresse mit Schlüsseln, die
+          wir zu deinem Konto speichern, um dir zum Beispiel Einladungen zu Partien zu schicken.
+          Zugestellt werden die Nachrichten vom Push-Dienst deines Browserherstellers (etwa Google,
+          Mozilla oder Apple); ihr Inhalt ist dabei verschlüsselt. Du kannst die Erlaubnis jederzeit
+          in deinem Browser widerrufen; Push-Adressen, die der Push-Dienst als ungültig meldet, löscht
+          unser Server. Rechtsgrundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO).
+        </p>
+
+        <h2>6. Problemberichte</h2>
+        <p>
+          Nur wenn du in den Einstellungen einen Problembericht abschickst. Er enthält deine
+          Spieler-ID, den Stand deiner laufenden Partie, die technischen Protokolle des Spiels, die
+          Version des Spiels, den Zeitpunkt, deine Nachricht, falls du eine schreibst, und nur wenn du
+          das Häkchen setzt, deinen Browser und dein Betriebssystem. Wir nutzen den Bericht nur, um das
+          Problem zu finden und zu beheben, und löschen ihn automatisch nach 60 Tagen. Rechtsgrundlage
+          ist unser berechtigtes Interesse, Fehler zu beheben, die du uns meldest (Art. 6 Abs. 1 lit. f
+          DSGVO).
+        </p>
+
+        <h2>7. Links zu anderen Diensten</h2>
+        <p>
+          Instagram, Discord, GitHub und das Teilen über WhatsApp sind einfache Links. Erst wenn du
+          einen davon antippst, öffnet sich der jeweilige Dienst, und es gilt dessen
+          Datenschutzerklärung. Inhalte dieser Dienste binden wir nicht ein.
+        </p>
+
+        <h2>8. Was es nicht gibt</h2>
+        <p>
+          Keine Werbung, kein Tracking, keine Analyse- oder Statistikdienste, keine Cookies und keine
+          Inhalte oder Schriften von fremden Servern: Alles, was das Spiel lädt, kommt von
+          battlechoc.com und api.battlechoc.com.
+        </p>
+
+        <h2>9. Wie lange wir Daten speichern</h2>
+        <ul>
+          <li>Spielerkonto und Spieldaten: solange das Konto besteht. Auf Wunsch löschen wir es (Abschnitt 10).</li>
+          <li>Problemberichte: 60 Tage.</li>
+          <li>Push-Adressen: bis du die Erlaubnis widerrufst, der Push-Dienst sie für ungültig erklärt oder dein Konto gelöscht wird.</li>
+        </ul>
+
+        <h2>10. Deine Rechte</h2>
+        <p>
+          Du hast das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17),
+          Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch
+          gegen Verarbeitungen, die auf unserem berechtigten Interesse beruhen (Art. 21). Eine
+          Einwilligung kannst du jederzeit für die Zukunft widerrufen (Art. 7 Abs. 3).
+        </p>
+        <p>
+          Schreib uns dafür an <a href="mailto:contact@battlechoc.com">contact@battlechoc.com</a>.
+          Damit wir dein Konto finden und wissen, dass es deins ist, schick vorher in den
+          Einstellungen des Spiels einen Problembericht mit dem Wort „Datenschutz“ in der Nachricht
+          ab.
+        </p>
+        <p>
+          Außerdem kannst du dich bei einer Datenschutz-Aufsichtsbehörde beschweren (Art. 77 DSGVO),
+          zum Beispiel bei der Behörde deines Wohnorts.
+        </p>
+
+        <h2>11. Änderungen</h2>
+        <p>Ändert sich das Spiel, passen wir diese Erklärung an. Es gilt die Fassung auf dieser Seite.</p>
+      </section>
+
+      <section id="en" lang="en">
+        <h1>Privacy policy</h1>
+        <p class="date">Last updated: 27 October 2026</p>
+
+        <p class="summary">
+          <strong>In short:</strong> battlechoc is free, with no ads, no tracking, no analytics and
+          no cookies. Offline, the game runs entirely on your device. For the online features it
+          creates a player account on our server, without e-mail address or password.
+        </p>
+
+        <h2>1. Controller</h2>
+        <p>
+          Fabian Bormann<br />
+          E-mail: <a href="mailto:contact@battlechoc.com">contact@battlechoc.com</a>
+        </p>
+        <p>Write to this address with any question about your data and to exercise your rights (section 10).</p>
+
+        <h2>2. What is stored on your device</h2>
+        <p>
+          The game stores in your browser's storage (IndexedDB) your settings
+          (language, volume, click sound, fullscreen), your progress and statistics, an interrupted
+          match and the key of your player account. A service worker keeps the game's files so it
+          also starts without a connection. This is necessary for the game to work (Section 25 (2)
+          no. 2 TDDDG). What of this reaches our server is described below. You delete this data by
+          clearing the site data of battlechoc.com in your browser or by uninstalling the app.
+        </p>
+
+        <h2>3. Loading the game: GitHub Pages</h2>
+        <p>
+          The game's files are served by GitHub Pages, a service of GitHub, Inc., 88 Colin P. Kelly
+          Jr. Street, San Francisco, CA 94107, USA. GitHub processes your IP address and technical
+          details of the request and, by its own account, stores the IP address for security
+          purposes. GitHub is certified under the EU-U.S. Data Privacy Framework, on which the
+          transfer to the USA is based. The legal basis is our legitimate interest in delivering the
+          game reliably and securely (Art. 6 (1) (f) GDPR). See
+          <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener">GitHub's privacy statement</a>.
+        </p>
+
+        <h2>4. Our server and your player account</h2>
+        <p>
+          As soon as the game reaches our server (api.battlechoc.com), it creates a player account
+          there. It needs no e-mail address, real name, phone number or password. It holds:
+        </p>
+        <ul>
+          <li>a random player ID and an access key, which we store only as a hash,</li>
+          <li>when the account was created and last used, and your game language,</li>
+          <li>your progress: experience points, rating, number of rated matches, tutorial progress,</li>
+          <li>your player name, if you choose one, and your friends list,</li>
+          <li>the ingredients in your pantry, the items you crafted, your equipment and the recipes you discovered in the Choclab,</li>
+          <li>the results of your matches, offline ones too, so the server can credit your experience points,</li>
+          <li>your online matches: the server runs them and stores every move with its time, so a match continues after a restart and results can be checked.</li>
+        </ul>
+        <p>
+          Other players see your player name, rating, rank in the highscore, your wins, draws and
+          losses and, for recipes you discovered first, your name as their discoverer. In an online
+          match your opponent sees your name and your moves.
+        </p>
+        <p>
+          The legal basis is that we need this data to provide the game's online features to you
+          (Art. 6 (1) (b) GDPR). A hosting provider runs the server on our behalf (data processing
+          agreement, Art. 28 GDPR).
+        </p>
+        <p>
+          <strong>IP addresses:</strong> our server writes no access logs and stores no IP addresses.
+          It keeps your IP address briefly in memory to limit how many accounts are created per
+          minute (abuse prevention, Art. 6 (1) (f) GDPR).
+        </p>
+
+        <h2>5. Notifications</h2>
+        <p>
+          Only if you allow them: your browser then creates a push address with keys, which we store
+          with your account to send you, for example, invitations to matches. The messages are
+          delivered by the push service of your browser's vendor (such as Google, Mozilla or Apple);
+          their content is encrypted on the way. You can withdraw the permission in your browser at
+          any time; our server deletes push addresses that the push service reports as invalid. The
+          legal basis is your consent (Art. 6 (1) (a) GDPR).
+        </p>
+
+        <h2>6. Problem reports</h2>
+        <p>
+          Only if you send a problem report from the settings. It contains your player ID, the state
+          of your current match, the game's technical logs, the game's version, the time, your
+          message if you write one and, only if you tick the box, your browser and operating system.
+          We use the report only to find and fix the problem and delete it automatically after 60
+          days. The legal basis is our legitimate interest in fixing the problems you report (Art. 6
+          (1) (f) GDPR).
+        </p>
+
+        <h2>7. Links to other services</h2>
+        <p>
+          Instagram, Discord, GitHub and sharing via WhatsApp are plain links. Only when you tap one
+          does that service open, and its privacy policy applies. We embed no content of these
+          services.
+        </p>
+
+        <h2>8. What there is not</h2>
+        <p>
+          No ads, no tracking, no analytics or statistics services, no cookies and no content or
+          fonts from other servers: everything the game loads comes from battlechoc.com and
+          api.battlechoc.com.
+        </p>
+
+        <h2>9. How long we keep data</h2>
+        <ul>
+          <li>Player account and game data: as long as the account exists. We delete it on request (section 10).</li>
+          <li>Problem reports: 60 days.</li>
+          <li>Push addresses: until you withdraw the permission, the push service declares them invalid or your account is deleted.</li>
+        </ul>
+
+        <h2>10. Your rights</h2>
+        <p>
+          You have the right of access (Art. 15 GDPR), rectification (Art. 16), erasure (Art. 17),
+          restriction of processing (Art. 18), data portability (Art. 20) and to object to processing
+          based on our legitimate interest (Art. 21). You can withdraw a consent at any time with
+          effect for the future (Art. 7 (3)).
+        </p>
+        <p>
+          Write to <a href="mailto:contact@battlechoc.com">contact@battlechoc.com</a>. So that we
+          find your account and know it is yours, first send a problem report from the game's
+          settings with the word "privacy" in the message.
+        </p>
+        <p>
+          You also have the right to lodge a complaint with a data protection supervisory authority
+          (Art. 77 GDPR), for example the one where you live.
+        </p>
+
+        <h2>11. Changes</h2>
+        <p>When the game changes, we update this policy. The version on this page applies.</p>
+      </section>
+    </main>
+  </body>
+</html>

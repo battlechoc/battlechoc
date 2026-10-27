@@ -1,15 +1,7 @@
 import axios from "axios";
 import { NoHealthyInternetConnectionError } from "@battlechoc/battlechoc-shared-functions";
 import { account, apiUrl } from "../account";
-
-let date = "LOCAL_DATETIME";
-let version = import.meta.env.VITE_VERSION;
-
-if (date.startsWith("LOCAL")) {
-  date = new Date().getTime();
-} else {
-  date = new Date(date).getTime();
-}
+import { version, builtAt } from "../build";
 
 const instance = axios.create({
   baseURL: apiUrl,
@@ -28,7 +20,7 @@ const ServerRequest = async (method, url, body) => {
     headers: {
       Authorization: `Bearer ${token}`,
       "battlechoc-pwa-version": version,
-      "battlechoc-pwa-date": date,
+      "battlechoc-pwa-date": builtAt,
     },
   };
 

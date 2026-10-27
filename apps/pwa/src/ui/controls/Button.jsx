@@ -6,10 +6,13 @@ import withDefaultProps from "../../helper/defaultProps";
 
 // The text size comes from the type scale (huge: title menu, normal: dialogs, small: inline
 // actions); the blob grows with its label instead of shrinking the text, so nothing spills out.
+// A disabled, locked or offline button is grey and does not answer the pointer.
+const still = (props) => props.disabled || props.locked || props.offline;
+
 const useStyles = createUseStyles((theme) => ({
   // the light rim around the blob: the outer blob shows through this padding
   border: (props) => ({
-    cursor: "pointer",
+    cursor: still(props) ? "default" : "pointer",
     clipPath: "url(#menu-button-clip-path)",
     position: "relative",
     display: "flex",
@@ -73,7 +76,7 @@ const useStyles = createUseStyles((theme) => ({
     "&:hover": {
       background: `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${
         theme.color[props.color].light
-      } 120%)`,
+      } ${still(props) ? 70 : 120}%)`,
     },
   }),
   // the blob is at least this big (in em of its text) and grows with longer labels
@@ -121,6 +124,18 @@ const useStyles = createUseStyles((theme) => ({
     backgroundRepeat: "no-repeat",
     backgroundImage: "url(/images/lock.svg)",
   },
+  // the no-wifi sign of a button that needs the server, upright in the middle of the right end;
+  // the label keeps clear of it on both sides, so it stays centred
+  offline: {
+    backgroundImage: "url(/images/offline.svg)",
+    top: "50%",
+    right: "0.5em",
+    transform: "translateY(-50%)",
+  },
+  roomForBadge: {
+    paddingLeft: "1.5em",
+    paddingRight: "1.5em",
+  },
 }));
 
 // the props the button handles itself; everything else (data-testid, aria-label, ...) goes to its element
@@ -134,6 +149,8 @@ const OWN_PROPS = [
   "disabled",
   "locked",
   "onLockedClick",
+  "offline",
+  "onOfflineClick",
   "icon",
   "children",
 ];
@@ -144,11 +161,18 @@ const Button = (componentProps) => {
   const rest = Object.fromEntries(
     Object.entries(componentProps).filter(([name]) => !OWN_PROPS.includes(name))
   );
-  // a disabled button does nothing; a locked one may explain how to unlock it
+  // a disabled button does nothing; a locked one may explain how to unlock it, one that needs
+  // the server that it does not answer (the lock comes first: offline matches unlock it too)
   const onClick = () => {
     if (props.locked) {
       if (typeof props.onLockedClick === "function") {
         props.onLockedClick();
+      }
+      return;
+    }
+    if (props.offline) {
+      if (typeof props.onOfflineClick === "function") {
+        props.onOfflineClick();
       }
       return;
     }
@@ -164,8 +188,8 @@ const Button = (componentProps) => {
       onClick();
     }
   };
-  // a locked button stays clickable (it explains itself), a disabled one does not
-  const inert = props.disabled && !props.locked;
+  // a locked or offline button stays clickable (it explains itself), a disabled one does not
+  const inert = props.disabled && !props.locked && !props.offline;
   const accessibility = {
     role: "button",
     tabIndex: inert ? -1 : 0,
@@ -206,16 +230,22 @@ const Button = (componentProps) => {
         className={`${classes.border} ${classes[props.size]} ${
           classes.focusable
         } ${props.className} ${
-          props.disabled || props.locked ? classes.disabled : ""
+          props.disabled || props.locked || props.offline ? classes.disabled : ""
         }`}
+        data-offline={props.offline && !props.locked ? "true" : undefined}
       >
         <div
           style={props.buttonStyle}
-          className={`${classes.background} ${classes.button}`}
+          className={`${classes.background} ${classes.button} ${
+            props.offline && !props.locked ? classes.roomForBadge : ""
+          }`}
         >
           {props.children}
         </div>
         {props.locked ? <div className={classes.locked} /> : null}
+        {props.offline && !props.locked ? (
+          <div className={`${classes.locked} ${classes.offline}`} />
+        ) : null}
       </div>
     );
   }
@@ -228,6 +258,7 @@ const defaultProps = {
   buttonStyle: {},
   className: "",
   locked: false,
+  offline: false,
   disabled: false,
 };
 
@@ -241,6 +272,9 @@ Button.propTypes = {
   disabled: PropTypes.bool,
   locked: PropTypes.bool,
   onLockedClick: PropTypes.func,
+  // needs the server, which does not answer: grey, with the no-wifi sign
+  offline: PropTypes.bool,
+  onOfflineClick: PropTypes.func,
 };
 
 export default Button;

@@ -10,6 +10,7 @@ const {
 } = require('@battlechoc/battlechoc-shared-functions');
 const players = require('./players');
 const pantry = require('./pantry');
+const reports = require('./reports');
 const { registerLabRoutes } = require('./lab/routes');
 const { loadRecipes } = require('./lab/recipes');
 const { createKeyedQueue } = require('./queue');
@@ -201,7 +202,7 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10,
             res.status(400).json({ error: 'INVALID REPORT' });
             return;
         }
-        await pool.query('INSERT INTO reports (id, player_id, payload) VALUES ($1, $2, $3)', [crypto.randomUUID(), req.playerId, JSON.stringify(report)]);
+        await reports.add(pool, req.playerId, report);
         res.status(201).json({});
     }));
 

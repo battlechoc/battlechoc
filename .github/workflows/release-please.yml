@@ -1,0 +1,41 @@
+name: Release
+
+# release-please keeps a release pull request open on every push to main: the next version
+# from the conventional commits since the last release (feat → minor, fix → patch, ! → major)
+# and the CHANGELOG.md entries. Merging it tags vX.Y.Z and creates the GitHub release; the
+# deploy of that merge shows the new version in the Info dialog (apps/pwa/package.json).
+# Configuration: release-please-config.json, .release-please-manifest.json.
+#
+# Needs "Allow GitHub Actions to create and approve pull requests" in the repository's
+# Settings → Actions → General.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  # starts the checks of the release pull request, see below
+  actions: write
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v5
+        id: release
+      # A pull request that a workflow opens with the GITHUB_TOKEN starts no workflows, so its
+      # required checks would never report. workflow_dispatch is the exception: CI and the
+      # secret scan run on the release branch, and their checks land on its head commit.
+      - name: Run the checks on the release pull request
+        if: steps.release.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+        run: |
+          gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"
+          gh workflow run secret-scan.yml --repo "$GITHUB_REPOSITORY" --ref "$BRANCH"

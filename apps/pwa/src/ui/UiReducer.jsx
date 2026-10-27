@@ -31,6 +31,13 @@ const uiReducer = createReducer(
     whitelistBuildings: undefined,
     // the bottom edge of the tutorial's card (px from the top, 0 without a card)
     boardTopInset: 0,
+    // the server answers (src/connectivity.js); without it profile, highscore, Choclab and
+    // friends are greyed out
+    online: typeof navigator === "undefined" || navigator.onLine !== false,
+    // not online although the internet works: the server is down, try again later
+    serverDown: false,
+    // a match goes fullscreen on start (settings: "autoFullscreen")
+    autoFullscreen: true,
   },
   (builder) =>
     builder
@@ -127,6 +134,8 @@ const uiReducer = createReducer(
               ? 4000
               : action.payload.autoHideDuration,
           id: uuidv4(),
+          // the online/offline toasts replace each other (above)
+          type: action.payload.type,
           text: action.payload.text || "",
           variant: action.payload.variant || "warning",
         });
