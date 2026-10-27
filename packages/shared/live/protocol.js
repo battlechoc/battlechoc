@@ -90,6 +90,8 @@ const InviteClosedReason = Object.freeze({
 const CloseCode = Object.freeze({
     PROTOCOL: 4400,
     UNAUTHORIZED: 4401,
+    // no hello in time (LiveDefaults.helloTimeoutMs): a busy or slow page, which may connect again
+    HELLO_TIMEOUT: 4408,
     // the same account connected again (another tab or device)
     REPLACED: 4409,
     RESTART: 1012,

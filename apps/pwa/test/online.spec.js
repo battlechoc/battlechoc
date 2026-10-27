@@ -121,8 +121,24 @@ test.describe("online", () => {
     await toRunning([anna, ben]);
     await anna.page.screenshot({ path: "test/output/screenshot_online_running.png" });
 
-    // Ben's tab reloads: he is back in the same match and Anna sees him again
+    // Ben's tab reloads: he is back in the same match and Anna sees him again. Like a slow
+    // phone (or a busy CI runner), the page is busy right after its live socket opens, longer
+    // than the server waits for the hello: the server closes the socket, and the page has to
+    // connect again in time.
     const matchId = await host(anna.page, () => window.__battlechoc.host.matchId);
+    await ben.context.addInitScript(() => {
+      const NativeWebSocket = window.WebSocket;
+      window.WebSocket = class extends NativeWebSocket {
+        constructor(...args) {
+          super(...args);
+          if (!window.__busyOnce) {
+            window.__busyOnce = true;
+            const until = Date.now() + 6000;
+            while (Date.now() < until);
+          }
+        }
+      };
+    });
     await ben.page.reload({ waitUntil: "networkidle" });
     await ben.page.waitForFunction(
       (id) => window.__battlechoc && window.__battlechoc.host && window.__battlechoc.host.matchId === id && window.__battlechoc.host.phase === "MatchPhase.RUNNING",
