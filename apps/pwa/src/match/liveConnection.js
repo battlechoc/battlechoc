@@ -116,7 +116,8 @@ class LiveConnection {
           if (!welcomed) {
             reject(new Error(`live connection closed (${event.code})`));
           }
-          // another tab or device took over this account: do not fight over it
+          // another tab or device took over this account: do not fight over it. A hello that
+          // came too late (HELLO_TIMEOUT: the page was busy loading) is retried like a lost link.
           if (this.holders > 0 && event.code !== CloseCode.REPLACED && event.code !== CloseCode.UNAUTHORIZED) {
             this.scheduleReconnect();
           }

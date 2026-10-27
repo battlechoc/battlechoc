@@ -102,7 +102,7 @@ const createLive = ({ server, pool, auth, push, clock = systemClock, config = {}
         ws.on('error', error => log.warn('live socket error', error.message));
         connection.terminate = () => ws.terminate();
         connections.add(connection);
-        connection.helloTimer = setTimeout(() => connection.close(CloseCode.UNAUTHORIZED, 'no hello'), settings.helloTimeoutMs);
+        connection.helloTimer = setTimeout(() => connection.close(CloseCode.HELLO_TIMEOUT, 'no hello'), settings.helloTimeoutMs);
 
         const allowed = () => {
             const now = Date.now();

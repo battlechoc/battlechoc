@@ -132,6 +132,14 @@ describe('live: connection', () => {
         expect((await client.next(ServerMessage.ERROR)).code).toBe(LiveError.BAD_MESSAGE);
     });
 
+    // a page that is busy while it loads sends its hello late: that is no rejection, it may retry
+    test('closes a socket without a hello in time with its own code, not as unauthorized', async () => {
+        const env = await start({ config: { helloTimeoutMs: 50 } });
+        const busy = await connect(env);
+        await expect(busy.next(ServerMessage.WELCOME, () => true, 1000)).rejects.toThrow(`closed (${CloseCode.HELLO_TIMEOUT})`);
+        expect(CloseCode.HELLO_TIMEOUT).not.toBe(CloseCode.UNAUTHORIZED);
+    });
+
     test('answers pings with the server time for the clock sync', async () => {
         const env = await start();
         const client = await player(env);
