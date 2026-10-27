@@ -507,6 +507,7 @@ module.exports = {
     "BOARD_PREVIEW_OPPONENT": "相手",
     "BOARD_PREVIEW_OWN": "自分の盤面",
     "OFFLINE_ONLY": "オンラインでのみ利用できます。インターネット接続を確認してください。",
+    "SERVER_UNREACHABLE": "現在battlechocのサーバーに接続できません。しばらくしてからもう一度お試しください。",
     "SETTINGS_MUSIC": "音楽",
     "SETTINGS_EFFECTS": "効果音",
     "SETTINGS_CLICKS_ON": "クリック音：オン",

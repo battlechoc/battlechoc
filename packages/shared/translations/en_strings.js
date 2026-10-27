@@ -507,6 +507,7 @@ module.exports = {
     "BOARD_PREVIEW_OPPONENT": "Opponent",
     "BOARD_PREVIEW_OWN": "Your board",
     "OFFLINE_ONLY": "Only available online. Check your internet connection.",
+    "SERVER_UNREACHABLE": "The battlechoc server can't be reached right now. Please try again later.",
     "SETTINGS_MUSIC": "Music",
     "SETTINGS_EFFECTS": "Sounds",
     "SETTINGS_CLICKS_ON": "Click sound: on",

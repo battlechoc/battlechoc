@@ -34,6 +34,8 @@ const uiReducer = createReducer(
     // the server answers (src/connectivity.js); without it profile, highscore, Choclab and
     // friends are greyed out
     online: typeof navigator === "undefined" || navigator.onLine !== false,
+    // not online although the internet works: the server is down, try again later
+    serverDown: false,
     // a match goes fullscreen on start (settings: "autoFullscreen")
     autoFullscreen: true,
   },

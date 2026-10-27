@@ -112,8 +112,16 @@ window.addEventListener("online", () => {
   );
 });
 
-// state.ui.online: whether the server answers (the toasts above follow the browser's network)
-connectivity.onChange((online) => store.dispatch(loadUiState({ online })));
+// state.ui.online: whether the server answers, serverDown: the internet works but the server does
+// not (the toasts above follow the browser's network)
+connectivity.onChange((status) =>
+  store.dispatch(
+    loadUiState({
+      online: status === "online",
+      serverDown: status === "server-down",
+    })
+  )
+);
 connectivity.start();
 
 // push messages forwarded by the service worker while the app is open

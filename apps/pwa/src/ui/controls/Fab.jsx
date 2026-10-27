@@ -42,21 +42,28 @@ const useStyles = createUseStyles((theme) => ({
 
     return style;
   },
-  // without the server: grey, with the no-wifi sign on the upper right of the icon
+  // without the server: grey, does not answer the pointer, the no-wifi sign on a badge
   offline: {
     filter: "grayscale(1)",
+    cursor: "default",
   },
-  // within the fab's square, so it stays on screen in a corner (the trophy's icon is bigger)
-  badge: (props) => ({
-    position: "absolute",
-    top: props.icon === "trophy" ? "-4%" : "-22%",
-    right: props.icon === "trophy" ? "-4%" : "-28%",
-    width: props.icon === "trophy" ? "42%" : "62%",
-    height: props.icon === "trophy" ? "42%" : "62%",
-    backgroundSize: "100% 100%",
-    backgroundRepeat: "no-repeat",
-    backgroundImage: "url(/images/offline.svg)",
-  }),
+  // a round badge on the rim at the lower right, 38 % of the fab; placed in the icon's box
+  // (60 % of the fab, the trophy's 90 %), which the fab centres
+  badge: (props) => {
+    const icon = props.icon === "trophy" ? 90 : 60;
+    const edge = 50 + 50 * Math.SQRT1_2 - 19;
+    return {
+      position: "absolute",
+      left: `${((edge - (100 - icon) / 2) / icon) * 100}%`,
+      top: `${((edge - (100 - icon) / 2) / icon) * 100}%`,
+      width: `${(38 / icon) * 100}%`,
+      height: `${(38 / icon) * 100}%`,
+      boxSizing: "border-box",
+      borderRadius: "50%",
+      border: "0.25vw solid #e6e6e6",
+      background: "#555 url(/images/offline.svg) no-repeat center / 72%",
+    };
+  },
   focusable: {
     outline: "none",
     "&:focus-visible": {
@@ -74,7 +81,7 @@ const useStyles = createUseStyles((theme) => ({
       background: (props) =>
         `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${
           theme.color[props.color].light
-        } 150%)`,
+        } ${props.offline ? 100 : 150}%)`,
     },
   },
 }));

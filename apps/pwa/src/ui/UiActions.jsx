@@ -55,13 +55,16 @@ const focusBoard = createAction(UiActionTypes.focusBoard);
 // an attack that could not be fired right now: its palette button flashes
 const attackDenied = createAction(UiActionTypes.attackDenied);
 const hideNotification = createAction(UiActionTypes.hideNotification);
-// a tap on what needs the server while it does not answer; replaces the online/offline toasts
-const showOfflineMessage = () =>
-  showQuickMessage({
-    text: t(tr.OFFLINE_ONLY),
-    variant: "info",
-    type: "PWA_OFFLINE_MESSAGE",
-  });
+// a tap on what needs the server while it does not answer: no internet, or the server is down
+// (then the player can only try later); replaces the online/offline toasts
+const showOfflineMessage = () => (dispatch, getState) =>
+  dispatch(
+    showQuickMessage({
+      text: getState().ui.serverDown ? t(tr.SERVER_UNREACHABLE) : t(tr.OFFLINE_ONLY),
+      variant: "info",
+      type: "PWA_OFFLINE_MESSAGE",
+    })
+  );
 
 export {
   toggleBoardView,

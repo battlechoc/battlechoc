@@ -507,6 +507,7 @@ module.exports = {
     "BOARD_PREVIEW_OPPONENT": "Đối thủ",
     "BOARD_PREVIEW_OWN": "Bàn của bạn",
     "OFFLINE_ONLY": "Chỉ dùng được khi trực tuyến. Hãy kiểm tra kết nối internet.",
+    "SERVER_UNREACHABLE": "Hiện không thể kết nối tới máy chủ battlechoc. Vui lòng thử lại sau.",
     "SETTINGS_MUSIC": "Nhạc",
     "SETTINGS_EFFECTS": "Hiệu ứng âm thanh",
     "SETTINGS_CLICKS_ON": "Âm thanh nhấn: bật",

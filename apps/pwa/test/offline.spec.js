@@ -1,7 +1,8 @@
 import { test, expect } from "@playwright/test";
 
-// The tests block every host but localhost, so the API's /health never answers and the game is
-// offline (src/connectivity.js) unless a test answers it.
+// The tests block every host but localhost, so the API's /health never answers while the page's
+// own host (127.0.0.1) does: to src/connectivity.js the server is down, unless a test answers
+// /health. setOffline takes the internet away.
 const seed = (page, stats) =>
   page.evaluate(
     (stats) =>
@@ -35,8 +36,11 @@ const answerHealth = (page) =>
   page.route("**/health", (route) => route.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' }));
 
 const unlocked = { username: "Tester", score: 150, tutorialFinished: true };
+const serverDown = "The battlechoc server can't be reached right now. Please try again later.";
+const offline = "Only available online. Check your internet connection.";
+const cursor = (locator) => locator.evaluate((element) => getComputedStyle(element).cursor);
 
-test("without the server profile, highscore, Choclab and Friends are greyed out and the links are gone", async ({
+test("without the server profile, highscore, Choclab and Friends are greyed out and say why", async ({
   page,
 }) => {
   await page.goto("/", { waitUntil: "networkidle" });
@@ -55,13 +59,17 @@ test("without the server profile, highscore, Choclab and Friends are greyed out 
   await expect(page.locator("[data-icon=volume], [data-icon=mute], [data-icon=fullscreen]")).toHaveCount(0);
   await page.screenshot({ path: "test/output/screenshot_offline_title.png" });
 
+  // grey ones still explain themselves, but do not look clickable
+  const greyChoclab = page.locator("[role=button][data-offline=true]", { hasText: "Choclab" });
+  expect(await cursor(greyChoclab)).toBe("default");
+  expect(await cursor(page.locator("[data-icon=trophy]:visible"))).toBe("default");
   await choclab.click();
-  await expect(page.getByText("Only available online. Check your internet connection.")).toBeVisible();
+  await expect(page.getByText(serverDown)).toBeVisible();
   await expect(page.getByTestId("lab")).toHaveCount(0);
   await page.locator("[data-icon=trophy]:visible").click();
   await expect(page.getByText("Highscore", { exact: true })).toBeHidden();
   // one toast: they replace each other
-  await expect(page.getByText("Only available online. Check your internet connection.")).toHaveCount(1);
+  await expect(page.getByText(serverDown)).toHaveCount(1);
   await page.screenshot({ path: "test/output/screenshot_offline_toast.png" });
 
   // the server answers again: the browser's online event checks at once
@@ -72,13 +80,17 @@ test("without the server profile, highscore, Choclab and Friends are greyed out 
   await expect(page.locator("[role=button][data-offline=true]")).toHaveCount(0);
   await expect(page.locator("[data-icon=instagram]:visible")).toHaveCount(1);
   await expect(page.locator("[data-icon=discord]:visible")).toHaveCount(1);
-  await expect(page.getByText("Only available online. Check your internet connection.")).toHaveCount(0);
+  await expect(page.getByText(serverDown)).toHaveCount(0);
+  expect(await cursor(page.locator("[data-icon=trophy]:visible"))).toBe("pointer");
   await page.screenshot({ path: "test/output/screenshot_online_title.png" });
 
-  // the network goes away: offline at once
+  // the internet goes away: offline at once, and the player's connection is to blame
   await page.context().setOffline(true);
   await expect(page.locator("[data-icon=user]:visible")).toHaveAttribute("data-offline", "true");
   await expect(page.locator("[data-icon=instagram], [data-icon=discord]")).toHaveCount(0);
+  await choclab.click();
+  await expect(page.getByText(offline)).toBeVisible();
+  await expect(page.getByText(serverDown)).toHaveCount(0);
   await page.context().setOffline(false);
 });
 
