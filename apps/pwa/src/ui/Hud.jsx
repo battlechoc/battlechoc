@@ -9,6 +9,7 @@ import {
 } from "@battlechoc/battlechoc-shared-functions";
 import {
   showQuickMessage,
+  showOfflineMessage,
   showNotification,
   hideNotification,
 } from "./UiActions";
@@ -188,6 +189,7 @@ const Hud = (props) => {
     matchAwards,
     matchOnline,
     matchResult,
+    online,
   } = props;
 
   const [open, setOpen] = useState(false);
@@ -409,6 +411,8 @@ const Hud = (props) => {
                 key="2"
                 size="huge"
                 color="secondary"
+                offline={!online}
+                onOfflineClick={props.showOfflineMessage}
                 onClick={() => setShowAccountOverview(true)}
               >
                 {t(tr.SIGNINORUP)}
@@ -432,6 +436,8 @@ const Hud = (props) => {
                 size="huge"
                 locked={lockedChoclab}
                 onLockedClick={() => notifyLocked(t(tr.MAIN_MENU_CHOCLAB))}
+                offline={!online}
+                onOfflineClick={props.showOfflineMessage}
                 color="accent"
                 onClick={() => {
                   setChoclabScreen(true);
@@ -449,6 +455,8 @@ const Hud = (props) => {
                 color="secondary"
                 locked={lockedFriends}
                 onLockedClick={() => notifyLocked(t(tr.FRIENDS))}
+                offline={!online}
+                onOfflineClick={props.showOfflineMessage}
                 onClick={() => setShowOnlineLobby(true)}
               >
                 {t(tr.FRIENDS)}
@@ -497,6 +505,8 @@ const Hud = (props) => {
                 </div>
               </div>
               <Highscore
+                offline={!online}
+                showOfflineMessage={props.showOfflineMessage}
                 playername={playername}
                 showPlayerProfile={(session) =>
                   openAccountOverview(session.opponent, "stacked")
@@ -520,7 +530,7 @@ const Hud = (props) => {
                   </Button>
                 </div>
               </Dialog>
-              <Info openInfo={openInfo} />
+              <Info openInfo={openInfo} online={online} />
               <OnlineLobby
                 open={showOnlineLobby}
                 close={() => setShowOnlineLobby(false)}
@@ -602,10 +612,12 @@ const mapStateToProps = (state) => ({
   assetsReady: state.ui.assetsReady,
   notification: state.ui.notification,
   playerInfos: state.ui.playerInfos,
+  online: state.ui.online,
 });
 
 const mapDispatchToProps = {
   showQuickMessage,
+  showOfflineMessage,
   showNotification,
   hideNotification,
 };

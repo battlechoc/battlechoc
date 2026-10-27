@@ -12,9 +12,9 @@ import Fab from "./Fab";
 import Button from "./Button";
 import Dialog from "../dialogs/Dialog";
 import GameMenu from "../dialogs/GameMenu";
-import { Jukebox } from "../misc";
-import OfflineStore from "../../OfflineStore";
-import logger from "../../helper/logger";
+import { Jukebox, useAudioSettings } from "../misc";
+import { showOfflineMessage } from "../UiActions";
+import { enterFullscreen, useFullscreenAvailable } from "../../helper/fullscreen";
 import { createUseStyles } from "react-jss";
 
 const useStyles = createUseStyles((theme) => ({
@@ -47,47 +47,12 @@ const useStyles = createUseStyles((theme) => ({
 
 const Actionbar = (props) => {
   const classes = useStyles();
-  const [activeMusicButton, setActiveMusicButton] = useState(!Jukebox.isMuted);
-  const [activeFullscreenButton, setActiveFullscreenButton] = useState(true);
+  const { muted } = useAudioSettings();
+  const fullscreenAvailable = useFullscreenAvailable();
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   // a match against the AI waits while its menu is open
   const pausedByMenu = useRef(false);
-
-  useEffect(() => {
-    const fetchAudioState = async () => {
-      const audioSettings = await OfflineStore.settingsStore.get("audio");
-      if (typeof audioSettings !== "undefined") {
-        setActiveMusicButton(!audioSettings.sfxMuted);
-      }
-    };
-    fetchAudioState();
-
-    const fullscreenchange = () => {
-      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-      const isElectronApp =
-        navigator.userAgent.toLowerCase().indexOf(" electron/") > -1;
-      const isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
-      const isPWA =
-        window.matchMedia("(display-mode: fullscreen)").matches &&
-        /iPad|iPhone|iPod|Android/.test(userAgent);
-      const isFullscreen =
-        document.fullscreenElement ||
-        document.webkitFullscreenElement ||
-        document.mozFullScreenElement ||
-        document.msFullscreenElement;
-      setActiveFullscreenButton(
-        !isFullscreen && !isiOS && !isPWA && !isElectronApp
-      );
-    };
-
-    document.addEventListener("fullscreenchange", fullscreenchange, false);
-    fullscreenchange();
-
-    return () => {
-      document.removeEventListener("fullscreenchange", fullscreenchange, false);
-    };
-  }, []);
 
   const hasMatch = typeof props.game !== "undefined";
   useEffect(() => {
@@ -103,21 +68,18 @@ const Actionbar = (props) => {
   }
 
   const toggleMusic = () => {
-    Jukebox.mute(!activeMusicButton);
+    Jukebox.mute(muted);
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-    setActiveMusicButton(!activeMusicButton);
   };
 
   const toggleFullscreen = () => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-    document.documentElement
-      .requestFullscreen()
-      .catch(() => logger.info("fullscreen request failed"));
+    enterFullscreen();
   };
 
   const { MatchPhase } = engine;
   const pausable = () =>
-    !props.online &&
+    !props.matchOnline &&
     !props.tutorial &&
     typeof matchSession.host !== "undefined" &&
     props.game.phase !== MatchPhase.FIELD_CHOICE &&
@@ -153,7 +115,7 @@ const Actionbar = (props) => {
     ? undefined
     : () => {
         setMenuOpen(false);
-        if (props.online && props.game.phase !== MatchPhase.ENDED) {
+        if (props.matchOnline && props.game.phase !== MatchPhase.ENDED) {
           setConfirmLeave(true);
         } else {
           pausedByMenu.current = false;
@@ -170,9 +132,10 @@ const Actionbar = (props) => {
       <Fab key="menu" color="secondary" icon="settings" onClick={openMenu}></Fab>
     );
   } else {
+    // sound and fullscreen are in the settings; the profile needs the server
     buttons.push(
       <Fab
-        key="1"
+        key="settings"
         color="secondary"
         icon="settings"
         onClick={() => props.showSettings()}
@@ -180,31 +143,14 @@ const Actionbar = (props) => {
     );
     buttons.push(
       <Fab
-        key="2"
+        key="user"
         color="secondary"
         icon="user"
+        offline={!props.online}
+        onOfflineClick={props.showOfflineMessage}
         onClick={() => props.showSignInOrUp()}
       ></Fab>
     );
-    if (activeMusicButton) {
-      buttons.push(
-        <Fab key="3" color="secondary" icon="volume" onClick={toggleMusic}></Fab>
-      );
-    } else {
-      buttons.push(
-        <Fab key="4" color="secondary" icon="mute" onClick={toggleMusic}></Fab>
-      );
-    }
-    if (activeFullscreenButton) {
-      buttons.push(
-        <Fab
-          key="5"
-          color="secondary"
-          icon="fullscreen"
-          onClick={toggleFullscreen}
-        ></Fab>
-      );
-    }
   }
   return (
     <>
@@ -213,10 +159,10 @@ const Actionbar = (props) => {
         open={menuOpen && hasMatch}
         close={closeMenu}
         paused={Boolean(props.paused)}
-        online={Boolean(props.online)}
-        soundOn={activeMusicButton}
+        online={Boolean(props.matchOnline)}
+        soundOn={!muted}
         toggleSound={toggleMusic}
-        fullscreen={activeFullscreenButton}
+        fullscreen={fullscreenAvailable}
         toggleFullscreen={toggleFullscreen}
         openSettings={openSettings}
         leave={leave}
@@ -258,12 +204,16 @@ Actionbar.propTypes = {
 const mapStateToProps = (state) => ({
   game: selectActiveGame(state),
   paused: state.match.paused,
-  online: state.match.online,
+  matchOnline: state.match.online,
+  // the server answers (connectivity)
+  online: state.ui.online,
   players: state.players,
   language: state.ui.language,
   tutorial: state.ui.tutorial,
   tutorialInteractive: state.ui.tutorialInteractive,
 });
 
-const ActionbarContainer = connect(mapStateToProps)(Actionbar);
+const mapDispatchToProps = { showOfflineMessage };
+
+const ActionbarContainer = connect(mapStateToProps, mapDispatchToProps)(Actionbar);
 export default ActionbarContainer;

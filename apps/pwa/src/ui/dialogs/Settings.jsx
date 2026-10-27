@@ -7,7 +7,7 @@ import {
   showQuickMessage,
   loadUiState,
 } from "../UiActions";
-import { Jukebox } from "../misc";
+import { Jukebox, useAudioSettings } from "../misc";
 import {
   translate as t,
   translationKeys as tr,
@@ -20,7 +20,12 @@ import PlayerNameInput from "../controls/PlayerNameInput";
 import logger from "../../helper/logger";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
-import { Button, Select, Progress } from "../controls";
+import { Button, Select, Progress, Slider } from "../controls";
+import {
+  enterFullscreen,
+  fullscreenSupported,
+  useFullscreenAvailable,
+} from "../../helper/fullscreen";
 import { LAB_INTRO_SEEN } from "../lab/LabIntro";
 
 const useStyles = createUseStyles((theme) => ({
@@ -89,6 +94,10 @@ const useStyles = createUseStyles((theme) => ({
   },
   // the buttons of the group flow with the others
   group: { display: "contents" },
+  levels: {
+    width: "100%",
+    marginTop: "0.5em",
+  },
   actions: {
     display: "flex",
     flexDirection: "row",
@@ -107,6 +116,8 @@ const Settings = (props) => {
   const [forceUpdate, setForceUpdate] = useState(0);
 
   const classes = useStyles();
+  const audio = useAudioSettings();
+  const fullscreenAvailable = useFullscreenAvailable();
 
   const setPlayerName = async (playerName) => {
     try {
@@ -296,6 +307,61 @@ const Settings = (props) => {
             options={options}
             defaultSelected={getCurrentLanguage()}
           />
+          <div className={classes.levels}>
+            <Slider
+              label={t(tr.SETTINGS_MUSIC)}
+              value={audio.musicVolume}
+              onChange={(volume) => Jukebox.setMusicVolume(volume)}
+              data-testid="music-volume"
+            />
+            <Slider
+              label={t(tr.SETTINGS_EFFECTS)}
+              value={audio.soundVolume}
+              onChange={(volume) => Jukebox.setSoundVolume(volume)}
+              onCommit={() => Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD)}
+              data-testid="sound-volume"
+            />
+          </div>
+          <div className={classes.actions}>
+            <Button
+              className={classes.button}
+              color="secondary"
+              onClick={() => Jukebox.mute(audio.muted)}
+            >
+              {audio.muted ? t(tr.GAME_MENU_SOUND_OFF) : t(tr.GAME_MENU_SOUND_ON)}
+            </Button>
+            <Button
+              className={classes.button}
+              color="secondary"
+              onClick={() => Jukebox.setClicks(!audio.clicks)}
+            >
+              {audio.clicks ? t(tr.SETTINGS_CLICKS_ON) : t(tr.SETTINGS_CLICKS_OFF)}
+            </Button>
+            {fullscreenSupported() ? (
+              <Button
+                className={classes.button}
+                color="secondary"
+                onClick={() => {
+                  const enabled = !props.autoFullscreen;
+                  props.loadUiState({ autoFullscreen: enabled });
+                  OfflineStore.settingsStore.set("autoFullscreen", enabled);
+                }}
+              >
+                {props.autoFullscreen
+                  ? t(tr.SETTINGS_AUTO_FULLSCREEN_ON)
+                  : t(tr.SETTINGS_AUTO_FULLSCREEN_OFF)}
+              </Button>
+            ) : null}
+            {fullscreenAvailable ? (
+              <Button
+                className={classes.button}
+                color="secondary"
+                onClick={enterFullscreen}
+              >
+                {t(tr.GAME_MENU_FULLSCREEN)}
+              </Button>
+            ) : null}
+          </div>
           <div className={classes.actions}>
             <Button
               className={classes.button}
@@ -378,6 +444,7 @@ const mapStateToProps = (state) => ({
   playerInfos: state.ui.playerInfos,
   tutorial: state.ui.tutorial,
   tipsEnabled: state.ui.tipsEnabled,
+  autoFullscreen: state.ui.autoFullscreen,
 });
 
 const mapDispatchToProps = {

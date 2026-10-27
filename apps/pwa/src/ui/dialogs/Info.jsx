@@ -71,16 +71,21 @@ const Info = (props) => {
   return (
     <>
       <div className={classes.icons}>
-        <Fab
-          icon="instagram"
-          onClick={() =>
-            window.open("https://www.instagram.com/battlechoc/", "_blank")
-          }
-        ></Fab>
-        <Fab
-          icon="discord"
-          onClick={() => window.open("https://discord.gg/XekFHYXNmu", "_blank")}
-        ></Fab>
+        {/* the links lead nowhere offline */}
+        {props.online ? (
+          <>
+            <Fab
+              icon="instagram"
+              onClick={() =>
+                window.open("https://www.instagram.com/battlechoc/", "_blank")
+              }
+            ></Fab>
+            <Fab
+              icon="discord"
+              onClick={() => window.open("https://discord.gg/XekFHYXNmu", "_blank")}
+            ></Fab>
+          </>
+        ) : null}
         <Fab
           icon="info"
           color="primary"

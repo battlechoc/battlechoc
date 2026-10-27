@@ -121,6 +121,11 @@ const useStyles = createUseStyles((theme) => ({
     backgroundRepeat: "no-repeat",
     backgroundImage: "url(/images/lock.svg)",
   },
+  // the no-wifi sign of a button that needs the server, in the place of the lock
+  offline: {
+    backgroundImage: "url(/images/offline.svg)",
+    transform: "none",
+  },
 }));
 
 // the props the button handles itself; everything else (data-testid, aria-label, ...) goes to its element
@@ -134,6 +139,8 @@ const OWN_PROPS = [
   "disabled",
   "locked",
   "onLockedClick",
+  "offline",
+  "onOfflineClick",
   "icon",
   "children",
 ];
@@ -144,11 +151,18 @@ const Button = (componentProps) => {
   const rest = Object.fromEntries(
     Object.entries(componentProps).filter(([name]) => !OWN_PROPS.includes(name))
   );
-  // a disabled button does nothing; a locked one may explain how to unlock it
+  // a disabled button does nothing; a locked one may explain how to unlock it, one that needs
+  // the server that it does not answer (the lock comes first: offline matches unlock it too)
   const onClick = () => {
     if (props.locked) {
       if (typeof props.onLockedClick === "function") {
         props.onLockedClick();
+      }
+      return;
+    }
+    if (props.offline) {
+      if (typeof props.onOfflineClick === "function") {
+        props.onOfflineClick();
       }
       return;
     }
@@ -164,8 +178,8 @@ const Button = (componentProps) => {
       onClick();
     }
   };
-  // a locked button stays clickable (it explains itself), a disabled one does not
-  const inert = props.disabled && !props.locked;
+  // a locked or offline button stays clickable (it explains itself), a disabled one does not
+  const inert = props.disabled && !props.locked && !props.offline;
   const accessibility = {
     role: "button",
     tabIndex: inert ? -1 : 0,
@@ -206,8 +220,9 @@ const Button = (componentProps) => {
         className={`${classes.border} ${classes[props.size]} ${
           classes.focusable
         } ${props.className} ${
-          props.disabled || props.locked ? classes.disabled : ""
+          props.disabled || props.locked || props.offline ? classes.disabled : ""
         }`}
+        data-offline={props.offline && !props.locked ? "true" : undefined}
       >
         <div
           style={props.buttonStyle}
@@ -216,6 +231,9 @@ const Button = (componentProps) => {
           {props.children}
         </div>
         {props.locked ? <div className={classes.locked} /> : null}
+        {props.offline && !props.locked ? (
+          <div className={`${classes.locked} ${classes.offline}`} />
+        ) : null}
       </div>
     );
   }
@@ -228,6 +246,7 @@ const defaultProps = {
   buttonStyle: {},
   className: "",
   locked: false,
+  offline: false,
   disabled: false,
 };
 
@@ -241,6 +260,9 @@ Button.propTypes = {
   disabled: PropTypes.bool,
   locked: PropTypes.bool,
   onLockedClick: PropTypes.func,
+  // needs the server, which does not answer: grey, with the no-wifi sign
+  offline: PropTypes.bool,
+  onOfflineClick: PropTypes.func,
 };
 
 export default Button;

@@ -135,6 +135,12 @@ class App extends Component {
       }
     });
 
+    OfflineStore.settingsStore.get("autoFullscreen").then((autoFullscreen) => {
+      if (autoFullscreen === false) {
+        this.props.loadUiState({ autoFullscreen: false });
+      }
+    });
+
     OfflineStore.playerStore.get("friends").then((friends) => {
       if (typeof friends !== "undefined") {
         this.props.loadFriendsList(friends);
@@ -216,8 +222,12 @@ class App extends Component {
     }
   }
 
-  // fullscreen (landscape on Android) needs the click of the player: call it synchronously
+  // fullscreen (landscape on Android) needs the click of the player: call it synchronously.
+  // The settings can turn it off.
   requestFullscreen() {
+    if (!this.props.autoFullscreen) {
+      return;
+    }
     const isElectronApp =
       navigator.userAgent.toLowerCase().indexOf(" electron/") > -1;
     const isAndroidDevice = /Android/i.test(navigator.userAgent);
@@ -648,6 +658,7 @@ const mapStateToProps = (state) => ({
   assetsReady: state.ui.assetsReady,
   playerInfos: state.ui.playerInfos,
   quickMessages: state.ui.quickMessages,
+  autoFullscreen: state.ui.autoFullscreen,
 });
 
 const mapDispatchToProps = {
