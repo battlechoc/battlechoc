@@ -16,7 +16,6 @@
     "babylonjs-gltf2interface": "^9.30.0",
     "canvas-confetti": "^1.9.4",
     "idb": "^8.0.4",
-    "javascript-time-ago": "^2.6.4",
     "prop-types": "^15.8.1",
     "react": "^19.3.0",
     "react-countup": "^6.5.3",

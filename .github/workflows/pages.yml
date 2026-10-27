@@ -68,12 +68,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Stamp build time
-        working-directory: apps/pwa
-        run: |
-          TIMESTAMP=$(date --utc -Iseconds)
-          sed -i "s/LOCAL_DATETIME/$TIMESTAMP/g" src/ui/dialogs/Info.jsx src/helper/settings.jsx
-      - run: npm run build
+      # the commit and the build time: in the Info dialog and in problem reports (src/build.js)
+      - name: Build
+        env:
+          VITE_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: VITE_BUILD_TIME=$(date --utc -Iseconds) npm run build
       - name: The published build has no test hooks
         run: "! grep -rlE '__battlechoc|testclock' apps/pwa/build"
       - name: Prepare GitHub Pages output

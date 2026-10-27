@@ -452,6 +452,12 @@ const translationPredicates = {
     SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE: function (strings, name) {
         return fmt(strings.SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE, { name: name });
     },
+    INFO_LAST_UPDATE: function (strings, time) {
+        return fmt(strings.INFO_LAST_UPDATE, { time: time });
+    },
+    INFO_MADE_BY: function (strings, names) {
+        return fmt(strings.INFO_MADE_BY, { names: names });
+    },
 };
 
 const predicateNames = Object.freeze(Object.keys(translationPredicates));

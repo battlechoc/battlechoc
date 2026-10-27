@@ -178,7 +178,6 @@ const Hud = (props) => {
     overviewVisible,
     game,
     state,
-    openInfo,
     prepareNewGameCallback,
     className,
     startTutorial,
@@ -530,7 +529,7 @@ const Hud = (props) => {
                   </Button>
                 </div>
               </Dialog>
-              <Info openInfo={openInfo} online={online} />
+              <Info online={online} />
               <OnlineLobby
                 open={showOnlineLobby}
                 close={() => setShowOnlineLobby(false)}

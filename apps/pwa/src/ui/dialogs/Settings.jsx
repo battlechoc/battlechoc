@@ -18,6 +18,7 @@ import OfflineStore from "../../OfflineStore";
 import { ServerRequest } from "../../helper/settings";
 import PlayerNameInput from "../controls/PlayerNameInput";
 import logger from "../../helper/logger";
+import { version, commit } from "../../build";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
 import { Button, Select, Progress, Slider } from "../controls";
@@ -158,6 +159,9 @@ const Settings = (props) => {
           message: additionalReportMessage,
           logs: logger.summarize(),
           reported: new Date().getTime(),
+          // the build that ran
+          version: version,
+          commit: commit,
         };
         await ServerRequest("post", "/debugging/gamestate", { report: report });
         props.showQuickMessage({

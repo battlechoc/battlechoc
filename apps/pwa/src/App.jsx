@@ -67,10 +67,8 @@ class App extends Component {
     // an invite to a live match, opened from its push notification
     this.inviteId = query.get("invite") || undefined;
     let path = window.location.pathname;
-    let openInfo = false;
-    if (path === "/privacy-policy") {
-      openInfo = true;
-    } else if (/^(\/[a-zA-Z][a-zA-Z0-9_]{2,15})$/.test(path)) {
+    // /privacy-policy/ is a page of its own (public/privacy-policy/index.html)
+    if (/^(\/[a-zA-Z][a-zA-Z0-9_]{2,15})$/.test(path)) {
       var player = path.slice(1);
     } else if (testHooksEnabled && path.startsWith("/situation/")) {
       var situation = path.replace("/situation/", "").slice(0, 32);
@@ -84,7 +82,6 @@ class App extends Component {
     this.state = {
       player: player,
       situation: situation,
-      openInfo: openInfo,
       matchmaking: false,
       // the first win unlocked the buildings, the Choclab and Friends
       unlocked: false,
@@ -619,7 +616,6 @@ class App extends Component {
           className={this.props.tutorial ? "tutorial hud" : "hud"}
           endGame={(coins) => this.endGame(coins)}
           challengedPlayer={this.state.player}
-          openInfo={this.state.openInfo}
         />
         <IncomingInvite />
         <Unlocked
