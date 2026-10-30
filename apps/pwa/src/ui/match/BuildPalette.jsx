@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
@@ -6,7 +6,8 @@ import {
   EntityType,
   unlocks,
 } from "@battlechoc/battlechoc-shared-functions";
-import { selectBuilding, tapBuilding, focusBoard } from "../UiActions";
+import { selectBuilding, tapBuilding, focusBoard, deselectBuildings } from "../UiActions";
+import { fruitCannonPossible } from "../../3d/cannonPick";
 import { Jukebox } from "../misc";
 
 const buildings = [
@@ -124,8 +125,19 @@ const countOnOwnField = (grid, entityType) =>
     cell.occupiedBy.some((entity) => entity.type === entityType)
   ).length;
 
-const BuildPalette = ({ view, stats, earlyUnlock, selectedBuilding, select, whitelist }) => {
+const BuildPalette = ({ view, stats, earlyUnlock, selectedBuilding, select, endSelection, whitelist }) => {
   const classes = useStyles();
+  // a selected fruit cannon ends by itself once it can no longer be built (no cacao, no free
+  // building slot, no cannon left): the spotlight on the cannons goes and the board is normal again
+  const fruitPossible = fruitCannonPossible(view);
+  const fruitWasPossible = useRef(fruitPossible);
+  useEffect(() => {
+    if (selectedBuilding === EntityType.FRUIT_CANNON && fruitWasPossible.current && !fruitPossible) {
+      endSelection();
+    }
+    fruitWasPossible.current = fruitPossible;
+  }, [fruitPossible, selectedBuilding, endSelection]);
+
   if (
     typeof view === "undefined" ||
     view.phase !== engine.MatchPhase.RUNNING
@@ -239,6 +251,7 @@ const mapDispatchToProps = (dispatch) => ({
     dispatch(selectBuilding(type));
     dispatch(focusBoard("own"));
   },
+  endSelection: () => dispatch(deselectBuildings()),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(BuildPalette);

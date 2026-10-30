@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { connect } from "react-redux";
 import { createUseStyles, useTheme } from "react-jss";
 import {
@@ -143,11 +143,49 @@ const weaponOverview = (view, t) => {
 // the attack buttons: a ring shows how far the readiest weapon has charged, green when a shot
 // is free, "×N" when several can fire, and a cacao price tag when a shot can only be fired early
 // (red when the cacao is not enough); a denied shot flashes the button
-const WeaponPalette = ({ view, selectedAttack, deniedAttack, select }) => {
+// how many shots of each weapon type can be fired now: { [attackType]: { available, free } }
+const availability = (view, t) => {
+  if (typeof view === "undefined" || view.phase !== engine.MatchPhase.RUNNING) {
+    return {};
+  }
+  const me = view.players[view.viewer];
+  const stunned = t < me.stunnedUntil;
+  const overview = weaponOverview(view, t);
+  return Object.fromEntries(
+    Object.entries(overview).map(([type, entry]) => {
+      const affordableRushes = me.cacao >= entry.rushCost ? entry.rushable : 0;
+      return [type, { available: stunned ? 0 : entry.ready + affordableRushes, free: stunned ? 0 : entry.ready }];
+    })
+  );
+};
+
+const WeaponPalette = ({ view, selectedAttack, deniedAttack, select, switchTo }) => {
   const classes = useStyles();
   const theme = useTheme();
   const t = useMatchTime(4);
   const [flashing, setFlashing] = useState(undefined);
+
+  // the selected weapon has fired its last shot: the selection moves on to one that can fire
+  // (a free shot first, else an early one the cacao pays for), in the palette's order
+  const shots = availability(view, t);
+  const shotsKey = weapons.map((weapon) => `${(shots[weapon.type] || {}).available || 0}`).join(",");
+  const previousShots = useRef(shots);
+  useEffect(() => {
+    const before = previousShots.current;
+    previousShots.current = shots;
+    const had = before[selectedAttack] && before[selectedAttack].available > 0;
+    const has = shots[selectedAttack] && shots[selectedAttack].available > 0;
+    if (!selectedAttack || !had || has) {
+      return;
+    }
+    const next =
+      weapons.find((weapon) => shots[weapon.type] && shots[weapon.type].free > 0) ||
+      weapons.find((weapon) => shots[weapon.type] && shots[weapon.type].available > 0);
+    if (next) {
+      switchTo(next.type);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shotsKey, selectedAttack]);
   useEffect(() => {
     if (deniedAttack.seq === 0) {
       return undefined;
@@ -235,6 +273,8 @@ const mapDispatchToProps = (dispatch) => ({
     dispatch(selectAttack(type));
     dispatch(focusBoard("opponent"));
   },
+  // the camera stays where it is
+  switchTo: (type) => dispatch(selectAttack(type)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(WeaponPalette);

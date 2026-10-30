@@ -4,6 +4,14 @@
 export const testHooksEnabled =
   import.meta.env.DEV || import.meta.env.VITE_TEST_HOOKS === "true";
 
+/** The 3D scene component as window.__battlechocScene, for visual checks that move its cameras
+ * (test builds only). */
+export const exposeSceneForTests = (scene) => {
+  if (testHooksEnabled) {
+    window.__battlechocScene = scene;
+  }
+};
+
 /** Hands the running match to the tests as window.__battlechoc (test builds only). */
 export const exposeForTests = (hooks) => {
   if (testHooksEnabled) {
@@ -25,3 +33,4 @@ export const requestedLight = (() => {
   );
   return query.has("tonemap") ? { ...light, tonemap: query.get("tonemap") } : light;
 })();
+

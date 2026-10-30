@@ -22,7 +22,6 @@ export { DynamicTexture } from "@babylonjs/core/Materials/Textures/dynamicTextur
 export { CubeTexture } from "@babylonjs/core/Materials/Textures/cubeTexture.js";
 export { Mesh } from "@babylonjs/core/Meshes/mesh.js";
 export { TransformNode } from "@babylonjs/core/Meshes/transformNode.js";
-export { HighlightLayer } from "@babylonjs/core/Layers/highlightLayer.js";
 export { Animation } from "@babylonjs/core/Animations/animation.js";
 export { ParticleSystem } from "@babylonjs/core/Particles/particleSystem.js";
 export { SolidParticleSystem } from "@babylonjs/core/Particles/solidParticleSystem.js";

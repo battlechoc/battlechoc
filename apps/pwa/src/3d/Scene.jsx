@@ -30,7 +30,6 @@ import {
   Mesh,
   StandardMaterial,
   Engine,
-  HighlightLayer,
   FlyCamera,
   Color3,
   Camera,
@@ -46,6 +45,8 @@ import logger from "../helper/logger";
 import { v4 as uuidv4 } from "uuid";
 import { withTheme } from "react-jss";
 import { measureEdges } from "../helper/edges";
+import { showCannonPick, cannonCells, fruitCannonPossible } from "./cannonPick.js";
+import { exposeSceneForTests } from "../testHooks";
 
 // The camera looks at the origin and a board's cells start at its position, its middle
 // (cols - 1) / 2 further in: lifted by that, a board is centred on the screen. The 6×6 board
@@ -63,11 +64,14 @@ class Scene extends Component {
     super(props);
     this.loadingView = createRef();
     // the preview of the other board: where it is on the screen and which board it shows
-    this.state = { preview: null };
+    this.state = { preview: null, cannonSpots: null };
+    // the floating infos (+cacao, +1 shot, ...) on their way up
+    this.infoPops = new Set();
   }
 
   componentDidMount() {
     this.props.onRef(this);
+    exposeSceneForTests(this);
     // A phone with a 3x screen would render nine times the pixels of the CSS size; twice is
     // sharp enough and leaves the GPU less than half the work (limitDeviceRatio).
     this.engine = new Engine(
@@ -98,9 +102,6 @@ class Scene extends Component {
     this.animations = [];
     this.scene = createScene();
     this.energyBars = [];
-    this.highlightLayer = new HighlightLayer("highlightLayer", this.scene, {
-      camera: this.camera,
-    });
     this.animate = () => this.scene.render();
     // Renders once in the next frame, however often it is asked before; the render loop, while
     // it runs, renders anyway. (Every view update used to render right away.)
@@ -291,9 +292,18 @@ class Scene extends Component {
     if (typeof this.props.game !== "undefined") {
       this.realtimeUpdate(prevProps);
     }
+    // the end screen: what still floats up goes
+    if (this.matchEnded() && !(prevProps.game && prevProps.game.phase === engine.MatchPhase.ENDED)) {
+      this.stopInfos();
+    }
+    this.updateCannonPick();
   }
 
   spawnInfo(messageType, position, amount, donutType) {
+    // the floating infos belong to a running match: none once the end screen shows
+    if (this.matchEnded()) {
+      return;
+    }
     if (!(position instanceof Vector3)) {
       position = new Vector3(position.row, 6.5, position.col);
     }
@@ -320,10 +330,24 @@ class Scene extends Component {
 
     info.material = material;
 
+    // until its picture has loaded the info is only a mesh; stopInfos() removes it either way
+    const pop = {
+      stop: () => {
+        info.dispose();
+        texture.dispose();
+        material.dispose();
+        this.infoPops.delete(pop);
+      },
+    };
+    this.infoPops.add(pop);
+
     const drawInfo = (filename, color, text, plain = false) => {
       const image = new Image();
       image.src = filename;
       image.onload = () => {
+        if (!this.infoPops.has(pop)) {
+          return;
+        }
         this.setRenderLoop();
         let top = 120;
         let left = 70;
@@ -416,8 +440,16 @@ class Scene extends Component {
             this.animations = this.animations.filter(
               (callback) => callback.id !== uuid
             );
+            this.infoPops.delete(pop);
           },
         });
+        pop.stop = () => {
+          this.scene.stopAnimation(info);
+          const running = this.animations.find((callback) => callback.id === uuid);
+          if (running) {
+            running.stopAnimation();
+          }
+        };
         this.scene.beginAnimation(info, 0, 180, false, 1, () => {
           if (
             this.animations.findIndex((callback) => callback.id === uuid) > -1
@@ -631,6 +663,12 @@ class Scene extends Component {
 
   clear() {
     this.hidePreview();
+    this.stopInfos();
+    if (this.hideCannonPick) {
+      this.hideCannonPick();
+      this.hideCannonPick = null;
+    }
+    this.cannonPickKey = "";
     this.weaponIndicators.forEach((indicator, id) => this.disposeIndicator(id, indicator));
     const instances = this.scene.meshes.filter((mesh) => mesh.isAnInstance);
     for (const instance of instances) {
@@ -643,21 +681,69 @@ class Scene extends Component {
     this.lookAtOpponent = undefined;
   }
 
-  highlightCannons = (highlight = true) => {
-    const parent = this.scene.getMeshByName(
-      EntityType.RUM_TRUFFLE_CANNON + "__root__"
-    );
-    const children = parent.getChildMeshes(false);
-    children.forEach((child) => {
-      if (highlight) {
-        this.highlightLayer.addMesh(child, new Color3(1, 1, 0));
-      } else {
-        this.highlightLayer.removeMesh(child);
-      }
-    });
+  // While a fruit cannon is selected, the own truffle cannons it can replace stand out
+  // (src/3d/cannonPick.js); they follow the board when a cannon comes or goes meanwhile.
+  updateCannonPick() {
+    const view = this.props.game;
+    const active =
+      typeof view !== "undefined" &&
+      this.playerGameField !== null &&
+      this.props.selectedBuilding === EntityType.FRUIT_CANNON &&
+      fruitCannonPossible(view);
+    const cells = active ? cannonCells(view) : [];
+    const key = cells.map(({ row, col }) => `${row}.${col}`).join(",");
+    if (key === this.cannonPickKey) {
+      return;
+    }
+    if (this.hideCannonPick) {
+      this.hideCannonPick();
+      this.hideCannonPick = null;
+    }
+    this.cannonPickKey = key;
+    if (cells.length > 0) {
+      this.hideCannonPick = showCannonPick({
+        scene: this.scene,
+        camera: this.camera,
+        field: this.playerGameField,
+        cells,
+        requestRender: this.requestRender,
+        onSpots: (cannonSpots) => this.setState({ cannonSpots }),
+      });
+    }
+  }
 
-    this.requestRender();
-  };
+  // the screen dims around soft circles of light on the cannons, each with a gold rim
+  renderCannonSpots({ spots, radius }) {
+    return (
+      <svg className="cannonSpots" aria-hidden="true" data-testid="cannon-spots">
+        <defs>
+          <radialGradient id="cannon-spot">
+            <stop offset="0.65" stopColor="black" />
+            <stop offset="1" stopColor="white" />
+          </radialGradient>
+          <mask id="cannon-spots">
+            <rect width="100%" height="100%" fill="white" />
+            {spots.map(({ x, y }) => (
+              <circle key={`${x}.${y}`} cx={x} cy={y} r={radius} fill="url(#cannon-spot)" />
+            ))}
+          </mask>
+        </defs>
+        <rect width="100%" height="100%" fill="rgba(30, 15, 8, 0.55)" mask="url(#cannon-spots)" />
+        {spots.map(({ x, y }) => (
+          <circle
+            key={`${x}.${y}`}
+            cx={x}
+            cy={y}
+            r={radius * 0.8}
+            fill="none"
+            stroke="#FAD25A"
+            strokeOpacity="0.95"
+            strokeWidth="5"
+          />
+        ))}
+      </svg>
+    );
+  }
 
   detonateAtPosition(row, col, playerField = false) {
     let truffle = MeshBuilder.CreateTorus(
@@ -717,6 +803,15 @@ class Scene extends Component {
     if (!this.props.tutorial || this.props.tutorialInteractive) {
       this.realtimeOpponentFieldClick(row, col, position);
     }
+  }
+
+  matchEnded() {
+    return typeof this.props.game !== "undefined" && this.props.game.phase === engine.MatchPhase.ENDED;
+  }
+
+  // takes the floating infos away, also those still on their way up
+  stopInfos() {
+    [...this.infoPops].forEach((pop) => pop.stop());
   }
 
   // a height `offset` above the base of the boards (of `cols` columns, the match's by default)
@@ -1117,6 +1212,11 @@ class Scene extends Component {
     if (typeof this.props.game === "undefined" || typeof matchSession.host === "undefined" || this.weaponIndicators.size === 0) {
       return;
     }
+    // the donuts stop with the match: its clock goes on, and a cannon would report a shot
+    // ("+1") over the end screen
+    if (this.matchEnded()) {
+      return;
+    }
     const view = this.props.game;
     const now = matchSession.host.now();
     const loaded = this.donutImages.filter((image) => image.complete).length;
@@ -1300,6 +1400,7 @@ class Scene extends Component {
           }}
         />
         {this.state.preview ? this.renderPreviewFrame(this.state.preview) : null}
+        {this.state.cannonSpots ? this.renderCannonSpots(this.state.cannonSpots) : null}
       </div>
     );
   }

@@ -7,7 +7,6 @@ import { ServerRequest } from "./helper/settings";
 import { multiplayer } from "./Multiplayer";
 import {
   PlayerType,
-  EntityType,
   translate as t,
   translationKeys as tr,
   setCurrentLanguage,
@@ -211,21 +210,6 @@ class App extends Component {
       this.props.matchView.phase !== engine.MatchPhase.FIELD_CHOICE
     ) {
       this.scene.startGame(this.props.matchView);
-    }
-
-    // a selected fruit cannon highlights the truffle cannons it can replace
-    if (typeof this.scene !== "undefined" && this.scene.playerGameField) {
-      if (
-        this.props.selectedBuilding === EntityType.FRUIT_CANNON &&
-        prevProps.selectedBuilding !== EntityType.FRUIT_CANNON
-      ) {
-        this.scene.highlightCannons();
-      } else if (
-        this.props.selectedBuilding !== EntityType.FRUIT_CANNON &&
-        prevProps.selectedBuilding === EntityType.FRUIT_CANNON
-      ) {
-        this.scene.highlightCannons(false);
-      }
     }
   }
 

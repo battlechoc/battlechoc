@@ -333,3 +333,47 @@ test("the third match unlocks the Choclab and online play with one dialog", asyn
   // offline the Choclab is no longer locked, only waits for the server
   await expect(page.locator("[role=button][data-offline=true]", { hasText: "Choclab" })).toHaveCount(1);
 });
+
+test("nothing floats up once the match is over", async ({ page }) => {
+  await openAsPlayer(page, 50);
+  await startMatch(page);
+  // the prepared first game runs at once: a cannon fires and charges again (at a cell with
+  // nothing but cream: a hit on the factory could end the match at once)
+  await advance(page, 21000);
+  await page.evaluate(async () => {
+    const h = window.__battlechoc.host;
+    const grid = h.match.board.fields[h.match.players[1].fieldIndex].grid;
+    const cream = grid.find(
+      (cell) => cell.occupiedBy.length > 0 && cell.occupiedBy.every((entity) => entity.type === "EntityType.CREAM")
+    );
+    await h.submit("battlechoc/match/attack", { attackType: "AttackType.TRUFFLE", row: cream.row, col: cream.col });
+  });
+  // a pop still on its way up when the match ends
+  const pops = await page.evaluate(async () => {
+    const sc = window.__battlechocScene;
+    window.__pops = [];
+    const spawn = sc.spawnInfo.bind(sc);
+    sc.spawnInfo = (type, ...rest) => {
+      window.__pops.push({ type, phase: window.__battlechoc.host.match.phase });
+      return spawn(type, ...rest);
+    };
+    sc.spawnInfo("InfoType.CACAO_HARVESTED", { row: 1, col: 1 }, 10);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const inFlight = sc.scene.meshes.filter((mesh) => mesh.name.startsWith("info_") && !mesh.isDisposed()).length;
+    const { host: h, engine } = window.__battlechoc;
+    engine.applyAction(h.match, { type: "battlechoc/match/surrender", player: 1, t: h.now(), payload: {} });
+    h.publish();
+    h.schedule();
+    return inFlight;
+  });
+  expect(pops).toBeGreaterThan(0);
+  await expect(page.getByText(/You won/i).first()).toBeVisible();
+  // time goes on while the overview is open: the charging cannon must not report a shot
+  await advance(page, 30000);
+  await page.waitForTimeout(1000);
+  const after = await page.evaluate(() => ({
+    spawned: window.__pops.filter((pop) => pop.phase === "MatchPhase.ENDED").length,
+    inFlight: window.__battlechocScene.scene.meshes.filter((mesh) => mesh.name.startsWith("info_") && !mesh.isDisposed()).length,
+  }));
+  expect(after).toEqual({ spawned: 0, inFlight: 0 });
+});
