@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import {
   engine,
+  unlocks,
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
@@ -122,6 +123,19 @@ const useStyles = createUseStyles((theme) => ({
         height: `calc((100% + ${theme.edge.bottom}) * 0.55)`,
       },
     },
+  },
+  // how many matches until the Choclab and online play, below the menu
+  unlockHint: {
+    flex: "0 0 auto",
+    maxWidth: "min(90vw, 30em)",
+    margin: "0.2em 0 0",
+    textAlign: "center",
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.md,
+    letterSpacing: "0.03em",
+    color: "white",
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
+    "-webkit-font-smoothing": "antialiased",
   },
   menu: {
     flex: "0 0 auto",
@@ -330,16 +344,25 @@ const Hud = (props) => {
     await multiplayer.tutorialSkipped();
   };
 
-  // what is missing to unlock a menu entry: a first win (a coin) or a player name
-  const notifyLocked = (feature) => {
-    const score = playerInfos.stats.score || 0;
+  // what the player has unlocked by playing (shared progression.js, src/unlocks.js)
+  const unlocked = unlocks(playerInfos.stats, { early: props.earlyUnlock });
+
+  // what is missing to unlock a menu entry: more matches against the AI, or a player name
+  const notifyLocked = (feature, part) => {
+    const left = unlocked.gamesLeft[part];
     props.showNotification({
       title: t(tr.COINS_FOR_NEXT_FEATURE_TITLE, feature),
-      message: score < 1 ? t(tr.COINS_FOR_NEXT_FEATURE_BODY, feature, 1 - score) : t(tr.UNLOCK_NEEDS_NAME),
+      message:
+        left > 1
+          ? t(tr.UNLOCK_FEATURE_GAMES, feature, left)
+          : left === 1
+          ? t(tr.UNLOCK_FEATURE_ONE_GAME, feature)
+          : t(tr.UNLOCK_NEEDS_NAME),
     });
   };
 
   const stage = estimateStage();
+  let unlockHint = null;
   return (
     <div className={className}>
       <Settings
@@ -413,15 +436,23 @@ const Hud = (props) => {
         if (stage === "TITLE_SCREEN") {
           const controls = [];
           const playername = playerInfos.stats.username;
-          const score = playerInfos.stats.score;
           const firstPlayScreen =
             playerInfos.stats.tutorialFinished === false &&
             playerInfos.stats.tutorialSkipped === false;
-          // a first win unlocks the Choclab; friends also need a player name, under which
-          // others find and invite you (the server assigns one once it is reachable)
+          // a few matches against the AI unlock the Choclab and online play; friends also need
+          // a player name, under which others find and invite you (the server assigns one once
+          // it is reachable)
           const unnamed = typeof playername === "undefined" || playername === "Chocnonymous";
-          const lockedChoclab = score < 1;
-          const lockedFriends = unnamed || score < 1;
+          const lockedChoclab = !unlocked.choclab;
+          const lockedFriends = unnamed || !unlocked.online;
+          // how far the next step is, under the menu
+          const gamesLeft = unlocked.gamesLeft.online;
+          unlockHint =
+            !firstPlayScreen && gamesLeft > 0
+              ? gamesLeft === 1
+                ? t(tr.UNLOCK_ONLINE_ONE_GAME)
+                : t(tr.UNLOCK_ONLINE_GAMES, gamesLeft)
+              : null;
 
           if (firstPlayScreen) {
             controls.push(
@@ -475,7 +506,7 @@ const Hud = (props) => {
                 key="2"
                 size="huge"
                 locked={lockedChoclab}
-                onLockedClick={() => notifyLocked(t(tr.MAIN_MENU_CHOCLAB))}
+                onLockedClick={() => notifyLocked(t(tr.MAIN_MENU_CHOCLAB), "choclab")}
                 offline={!online}
                 onOfflineClick={props.showOfflineMessage}
                 color="accent"
@@ -494,7 +525,7 @@ const Hud = (props) => {
                 size="huge"
                 color="secondary"
                 locked={lockedFriends}
-                onLockedClick={() => notifyLocked(t(tr.FRIENDS))}
+                onLockedClick={() => notifyLocked(t(tr.FRIENDS), "online")}
                 offline={!online}
                 onOfflineClick={props.showOfflineMessage}
                 onClick={() => setShowOnlineLobby(true)}
@@ -545,6 +576,11 @@ const Hud = (props) => {
                   <div className={classes.menu}>
                     {assetsReady ? controls : null}
                   </div>
+                  {assetsReady && unlockHint ? (
+                    <p className={classes.unlockHint} data-testid="unlock-hint">
+                      {unlockHint}
+                    </p>
+                  ) : null}
                 </div>
               </div>
               <Highscore
@@ -625,7 +661,7 @@ const Hud = (props) => {
                   isWinner={result.winners.includes(game.viewer)}
                   verified={matchOnline}
                   drops={matchResult ? matchResult.drops : undefined}
-                  finishGame={(xp) => endGame(xp)}
+                  finishGame={() => endGame()}
                 />
               ) : null}
             </div>
@@ -660,6 +696,7 @@ const mapStateToProps = (state) => ({
   notification: state.ui.notification,
   playerInfos: state.ui.playerInfos,
   online: state.ui.online,
+  earlyUnlock: state.ui.earlyUnlock,
 });
 
 const mapDispatchToProps = {

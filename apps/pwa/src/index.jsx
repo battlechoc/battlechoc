@@ -124,14 +124,18 @@ window.addEventListener("online", () => {
 
 // state.ui.online: whether the server answers, serverDown: the internet works but the server does
 // not (the toasts above follow the browser's network)
-connectivity.onChange((status) =>
+connectivity.onChange((status) => {
   store.dispatch(
     loadUiState({
       online: status === "online",
       serverDown: status === "server-down",
     })
-  )
-);
+  );
+  // a name chosen offline is claimed as soon as the server answers
+  if (status === "online") {
+    multiplayer.syncPendingUsername();
+  }
+});
 connectivity.start();
 
 // push messages forwarded by the service worker while the app is open

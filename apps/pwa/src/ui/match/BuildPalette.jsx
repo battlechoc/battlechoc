@@ -4,6 +4,7 @@ import { createUseStyles } from "react-jss";
 import {
   engine,
   EntityType,
+  unlocks,
 } from "@battlechoc/battlechoc-shared-functions";
 import { selectBuilding, tapBuilding, focusBoard } from "../UiActions";
 import { Jukebox } from "../misc";
@@ -123,7 +124,7 @@ const countOnOwnField = (grid, entityType) =>
     cell.occupiedBy.some((entity) => entity.type === entityType)
   ).length;
 
-const BuildPalette = ({ view, score, selectedBuilding, select, whitelist }) => {
+const BuildPalette = ({ view, stats, earlyUnlock, selectedBuilding, select, whitelist }) => {
   const classes = useStyles();
   if (
     typeof view === "undefined" ||
@@ -133,7 +134,9 @@ const BuildPalette = ({ view, score, selectedBuilding, select, whitelist }) => {
   }
   const me = view.players[view.viewer];
   const grid = view.board.fields[me.fieldIndex].grid;
-  const unlocked = (type) => score >= 1 || unlockedWithoutScore.includes(type);
+  // the first finished match unlocks every building (shared progression.js)
+  const allBuildings = unlocks(stats, { early: earlyUnlock }).buildings;
+  const unlocked = (type) => allBuildings || unlockedWithoutScore.includes(type);
 
   const canBuild = (type) => {
     if (Array.isArray(whitelist) && !whitelist.includes(type)) {
@@ -223,7 +226,8 @@ const BuildPalette = ({ view, score, selectedBuilding, select, whitelist }) => {
 
 const mapStateToProps = (state) => ({
   view: state.match.view,
-  score: state.ui.playerInfos.stats.score,
+  stats: state.ui.playerInfos.stats,
+  earlyUnlock: state.ui.earlyUnlock,
   selectedBuilding: state.ui.selectedBuilding,
   whitelist: state.ui.whitelistBuildings,
 });

@@ -154,3 +154,60 @@ describe('levelRefund', () => {
         expect(StarterKit).toEqual({ COCOA: 100, RUM: 4, SUGAR: 4, MILK: 2 });
     });
 });
+
+describe('unlocks', () => {
+    const { unlocks, gamesPlayed, UnlockGames } = require('../index');
+    const stats = (games, score = games * 50) => ({ winnings: games, drawn: 0, losses: 0, score });
+
+    test('finished matches are wins, draws and losses', () => {
+        expect(gamesPlayed({ winnings: 2, drawn: 1, losses: 3 })).toBe(6);
+        expect(gamesPlayed({})).toBe(0);
+        expect(gamesPlayed(undefined)).toBe(0);
+    });
+
+    test('the buildings come with the first match, the Choclab and online play with the third', () => {
+        expect(UnlockGames).toEqual({ buildings: 1, choclab: 3, online: 3 });
+        expect(unlocks(stats(0))).toMatchObject({ buildings: false, choclab: false, online: false, gamesLeft: { choclab: 3, online: 3 } });
+        expect(unlocks(stats(1))).toMatchObject({ buildings: true, choclab: false, online: false, gamesLeft: { choclab: 2, online: 2 } });
+        expect(unlocks(stats(2))).toMatchObject({ choclab: false, online: false, gamesLeft: { choclab: 1, online: 1 } });
+        expect(unlocks(stats(3))).toMatchObject({ buildings: true, choclab: true, online: true, gamesLeft: { choclab: 0, online: 0 } });
+        expect(unlocks({ winnings: 1, drawn: 1, losses: 1 })).toMatchObject({ choclab: true, online: true });
+    });
+
+    test('XP keeps the buildings open, as the old rule did', () => {
+        expect(unlocks({ score: 20 }).buildings).toBe(true);
+    });
+
+    test('a player who had everything under the old rule keeps it', () => {
+        expect(unlocks(stats(1), { early: true })).toMatchObject({
+            buildings: true, choclab: true, online: true, gamesLeft: { choclab: 0, online: 0 },
+        });
+        expect(unlocks(stats(0, 0), { early: true }).choclab).toBe(true);
+    });
+});
+
+describe('player levels', () => {
+    const { playerLevel, LevelXp } = require('../index');
+
+    test('level 1 from 0 XP; the first steps where the AI matches change', () => {
+        expect(LevelXp.slice(0, 5)).toEqual([0, 200, 500, 800, 1000]);
+        expect(playerLevel(0)).toEqual({ level: 1, xp: 0, from: 0, to: 200, progress: 0 });
+        expect(playerLevel(100)).toMatchObject({ level: 1, from: 0, to: 200, progress: 0.5 });
+        expect(playerLevel(200)).toMatchObject({ level: 2, from: 200, to: 500, progress: 0 });
+        expect(playerLevel(999)).toMatchObject({ level: 4, from: 800, to: 1000 });
+    });
+
+    test('beyond the table a level every 2500 XP', () => {
+        const last = LevelXp[LevelXp.length - 1];
+        expect(playerLevel(last)).toMatchObject({ level: LevelXp.length, from: last, to: last + 2500, progress: 0 });
+        expect(playerLevel(last + 2500 * 2 + 1250)).toMatchObject({
+            level: LevelXp.length + 2, from: last + 5000, to: last + 7500, progress: 0.5,
+        });
+    });
+
+    test('nonsense counts as 0 XP', () => {
+        expect(playerLevel(undefined)).toMatchObject({ level: 1, xp: 0 });
+        expect(playerLevel(-5)).toMatchObject({ level: 1, xp: 0 });
+        expect(playerLevel('300')).toMatchObject({ level: 2, xp: 300 });
+    });
+});

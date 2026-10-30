@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import {
-  updatePlayerStats,
   hideQuickMessage,
   showQuickMessage,
   loadUiState,
@@ -13,8 +12,10 @@ import {
   translationKeys as tr,
   setCurrentLanguage,
   getCurrentLanguage,
+  unlocks,
 } from "@battlechoc/battlechoc-shared-functions";
 import OfflineStore from "../../OfflineStore";
+import { multiplayer } from "../../Multiplayer";
 import { ServerRequest } from "../../helper/settings";
 import PlayerNameInput from "../controls/PlayerNameInput";
 import logger from "../../helper/logger";
@@ -121,12 +122,15 @@ const Settings = (props) => {
   const fullscreenAvailable = useFullscreenAvailable();
 
   const setPlayerName = async (playerName) => {
+    // offline the name waits on the device until the server answers (Multiplayer)
+    if (!props.online) {
+      await multiplayer.setUsernameOffline(playerName);
+      setEditPlayerName(false);
+      return;
+    }
     try {
       await ServerRequest("post", "/user/username", { username: playerName });
-      props.updatePlayerStats({ username: playerName });
-      const playerStats = await OfflineStore.playerStore.get("stats");
-      playerStats.username = playerName;
-      OfflineStore.playerStore.set("stats", playerStats);
+      await multiplayer.usernameSynced(playerName);
       setEditPlayerName(false);
     } catch (error) {
       logger.warn(error);
@@ -304,6 +308,8 @@ const Settings = (props) => {
               setPlayerName={setPlayerName}
               startValue={props.playerInfos.stats.username}
               current={props.playerInfos.stats.username}
+              offline={!props.online}
+              pending={Boolean(props.playerInfos.stats.usernamePending)}
             />
           ) : null}
           <Select
@@ -413,7 +419,8 @@ const Settings = (props) => {
                     >
                       {t(tr.RESTART_TUTORIAL)}
                     </Button>
-                    {props.playerInfos.stats.score >= 1 && props.showBuildingDemos ? (
+                    {unlocks(props.playerInfos.stats, { early: props.earlyUnlock }).buildings &&
+                    props.showBuildingDemos ? (
                       <Button
                         className={classes.button}
                         color="secondary"
@@ -449,11 +456,12 @@ const mapStateToProps = (state) => ({
   tutorial: state.ui.tutorial,
   tipsEnabled: state.ui.tipsEnabled,
   autoFullscreen: state.ui.autoFullscreen,
+  earlyUnlock: state.ui.earlyUnlock,
+  online: state.ui.online,
 });
 
 const mapDispatchToProps = {
   loadUiState,
-  updatePlayerStats,
   hideQuickMessage,
   showQuickMessage,
 };

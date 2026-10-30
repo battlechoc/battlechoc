@@ -127,7 +127,8 @@ const Actionbar = (props) => {
       <Fab key="menu" color="secondary" icon="settings" onClick={openMenu}></Fab>
     );
   } else {
-    // sound and fullscreen are in the settings; the profile needs the server
+    // sound and fullscreen are in the settings; the profile also works offline (level, XP and
+    // matches from the device; rank and friends wait for the server)
     buttons.push(
       <Fab
         key="settings"
@@ -141,8 +142,6 @@ const Actionbar = (props) => {
         key="user"
         color="secondary"
         icon="user"
-        offline={!props.online}
-        onOfflineClick={props.showOfflineMessage}
         onClick={() => props.showSignInOrUp()}
       ></Fab>
     );

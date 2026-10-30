@@ -28,6 +28,7 @@ class Multiplayer {
       setPlayerRank: notInitialized("setPlayerRank"),
       showQuickMessage: notInitialized("showQuickMessage"),
       showNotification: notInitialized("showNotification"),
+      nameConflict: notInitialized("nameConflict"),
     };
 
     account
@@ -50,6 +51,7 @@ class Multiplayer {
       const mergedStats = await this.mergePlayerStats();
       if (
         typeof mergedStats !== "undefined" &&
+        !mergedStats.usernamePending &&
         mergedStats.username === EmptyPlayerStats.username &&
         (mergedStats.tutorialFinished === true ||
           mergedStats.tutorialSkipped === true)
@@ -135,6 +137,62 @@ class Multiplayer {
       .catch((error) => logger.warn(error));
   }
 
+  /* ---------- a name chosen offline ---------- */
+
+  // Offline the player can still change the name: it is kept on the device, marked as not on
+  // the server yet (stats.usernamePending, a sign beside the name), and claimed there as soon as
+  // the server answers. If somebody else took it meanwhile, the player chooses another one
+  // (callbacks.nameConflict opens the dialog).
+  async setUsernameOffline(username) {
+    const stats = (await OfflineStore.playerStore.get("stats")) || { ...EmptyPlayerStats };
+    await OfflineStore.playerStore.set("stats", { ...stats, username, usernamePending: true });
+    this.callbacks.updatePlayerStats({ username, usernamePending: true });
+  }
+
+  // the name now belongs to the player on the server
+  async usernameSynced(username) {
+    const stats = (await OfflineStore.playerStore.get("stats")) || { ...EmptyPlayerStats };
+    await OfflineStore.playerStore.set("stats", { ...stats, username, usernamePending: false });
+    this.callbacks.updatePlayerStats({ username, usernamePending: false });
+  }
+
+  // claims a name chosen offline; once at a time
+  syncPendingUsername() {
+    if (typeof this.syncingName === "undefined") {
+      this.syncingName = (async () => {
+        const stats = await OfflineStore.playerStore.get("stats");
+        if (!stats || !stats.usernamePending) {
+          return;
+        }
+        await account.ensure();
+        try {
+          await ServerRequest("post", "/user/username", { username: stats.username });
+          await this.usernameSynced(stats.username);
+        } catch (error) {
+          if (error.response && error.response.status === 400) {
+            // taken by someone else (or not allowed any more)
+            this.callbacks.nameConflict(stats.username);
+          } else {
+            logger.info("could not claim the name chosen offline", error);
+          }
+        }
+      })()
+        .catch((error) => logger.info("could not claim the name chosen offline", error))
+        .finally(() => {
+          this.syncingName = undefined;
+        });
+    }
+    return this.syncingName;
+  }
+
+  // the server's stats, with a name chosen offline that it does not know yet
+  async withPendingName(stats) {
+    const local = await OfflineStore.playerStore.get("stats").catch(() => undefined);
+    return local && local.usernamePending
+      ? { ...stats, username: local.username, usernamePending: true }
+      : stats;
+  }
+
   registerCallbacks(callbacks) {
     this.callbacks = { ...this.callbacks, ...callbacks };
   }
@@ -163,7 +221,7 @@ class Multiplayer {
         const data = (
           await ServerRequest("post", "/user/trackrecords", { stats: gameStats })
         ).data;
-        this.callbacks.updatePlayerStats(data.stats);
+        this.callbacks.updatePlayerStats(await this.withPendingName(data.stats));
         return;
       } catch (error) {
         logger.warn("Could not update player track record.", error);
@@ -201,11 +259,18 @@ class Multiplayer {
       const data = (
         await ServerRequest("post", "/user/merge", { playerInfo: offlineAccount })
       ).data;
-      OfflineStore.playerStore
-        .set("stats", data.mergedPlayerInfo)
+      // a name chosen offline stays until the server has it (or turns it down)
+      const merged = offlineAccount.usernamePending
+        ? { ...data.mergedPlayerInfo, username: offlineAccount.username, usernamePending: true }
+        : data.mergedPlayerInfo;
+      await OfflineStore.playerStore
+        .set("stats", merged)
         .catch((error) => logger.warn("could not set new player stats in idb.", error));
-      this.callbacks.updatePlayerStats(data.mergedPlayerInfo);
-      return data.mergedPlayerInfo;
+      this.callbacks.updatePlayerStats(merged);
+      if (merged.usernamePending) {
+        this.syncPendingUsername();
+      }
+      return merged;
     } catch (error) {
       logger.warn("Could not merge stats.", error);
       return this.fetchPlayerStats();
@@ -216,8 +281,9 @@ class Multiplayer {
     if (this.signedIn()) {
       try {
         const data = (await ServerRequest("get", "/user")).data;
-        this.callbacks.updatePlayerStats(data.stats);
-        return data.stats;
+        const stats = await this.withPendingName(data.stats);
+        this.callbacks.updatePlayerStats(stats);
+        return stats;
       } catch (error) {
         logger.warn("not able to fetch player stats from backend", error);
       }
@@ -267,8 +333,9 @@ class Multiplayer {
     if (this.signedIn()) {
       try {
         const data = (await ServerRequest("post", "/user/tutorial/" + step)).data;
-        this.callbacks.updatePlayerStats(data.stats);
-        return data.stats;
+        const stats = await this.withPendingName(data.stats);
+        this.callbacks.updatePlayerStats(stats);
+        return stats;
       } catch (error) {
         logger.warn(`Could not update the tutorial state ${step}.`, error);
       }

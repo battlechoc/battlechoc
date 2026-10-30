@@ -3,13 +3,15 @@ import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import { connect } from "react-redux";
 import { multiplayer } from "../../Multiplayer";
-import { account } from "../../account";
 import logger from "../../helper/logger";
 import { Jukebox } from "../misc";
 import { Button, Progress, Fab } from "../controls";
+import UnsyncedMark from "../controls/UnsyncedMark";
 import Dialog from "./Dialog";
 import {
   EmptyPlayerStats,
+  playerLevel,
+  unlocks,
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
@@ -50,6 +52,50 @@ const useStyles = createUseStyles((theme) => ({
   icon: {
     padding: "0.8em",
     backgroundSize: "100% 100%",
+  },
+  // the own profile: level, XP to the next level, what the next matches unlock
+  progress: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "0.35em",
+    margin: "0 0 1em",
+    textAlign: "center",
+  },
+  level: {
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.xl,
+    lineHeight: 1,
+    color: theme.color.gold.light,
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.brown.light}`,
+    "-webkit-font-smoothing": "antialiased",
+  },
+  bar: {
+    position: "relative",
+    width: "min(16em, 70vw)",
+    height: "0.9em",
+    borderRadius: "1em",
+    overflow: "hidden",
+    boxSizing: "border-box",
+    border: `0.15em solid ${theme.color.gold.light}`,
+    background: "rgba(0, 0, 0, 0.3)",
+    "& > div": {
+      height: "100%",
+      background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`,
+    },
+  },
+  xp: {
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.md,
+    color: "white",
+  },
+  note: {
+    margin: 0,
+    maxWidth: "22em",
+    fontSize: theme.font.size.sm,
+  },
+  offlineNote: {
+    opacity: 0.85,
   },
   // rank, wins and losses in round badges sized by their text
   attributes: {
@@ -120,11 +166,9 @@ const AccountOverview = (props) => {
   if (isPlayerAccount) {
     playerName = props.playerInfos.stats.username;
     ranking = props.ranking;
-
-    if (account.isReady()) {
-      winnings = props.playerInfos.stats.winnings;
-      losses = props.playerInfos.stats.losses;
-    }
+    // the server's numbers once it answered, else the device's own record
+    winnings = props.playerInfos.stats.winnings || 0;
+    losses = props.playerInfos.stats.losses || 0;
   } else {
     playerName = props.playerAccount.name;
     winnings = props.playerAccount.winnings;
@@ -152,8 +196,9 @@ const AccountOverview = (props) => {
     }
   };
 
+  // a profile link only helps where others can open it
   const share =
-    playerName !== EmptyPlayerStats.username ? (
+    playerName !== EmptyPlayerStats.username && (props.online || !isPlayerAccount) ? (
       <Fab
         style={{ marginLeft: "2vw", marginRight: "-7vw" }}
         icon="share"
@@ -172,7 +217,12 @@ const AccountOverview = (props) => {
       title={
         playerName.length > 20 ? `${playerName.slice(0, 17)}...` : playerName
       }
-      titleSlotAfter={share}
+      titleSlotAfter={
+        <>
+          {isPlayerAccount && props.playerInfos.stats.usernamePending ? <UnsyncedMark /> : null}
+          {share}
+        </>
+      }
     >
       <div className={classes.wrapper}>
         {(() => {
@@ -254,20 +304,66 @@ const AccountOverview = (props) => {
           }
         })()}
 
+        {isPlayerAccount
+          ? (() => {
+              const level = playerLevel(props.playerInfos.stats.score);
+              const gamesLeft = unlocks(props.playerInfos.stats, {
+                early: props.earlyUnlock,
+              }).gamesLeft.online;
+              return (
+                <div className={classes.progress} data-testid="profile-progress">
+                  <div className={classes.level} data-testid="profile-level">
+                    {`${t(tr.ACCOUNT_OVERVIEW_LEVEL)} ${level.level}`}
+                  </div>
+                  <div
+                    className={classes.bar}
+                    role="progressbar"
+                    aria-valuemin={level.from}
+                    aria-valuemax={level.to}
+                    aria-valuenow={level.xp}
+                  >
+                    <div style={{ width: `${Math.round(level.progress * 100)}%` }} />
+                  </div>
+                  <div className={classes.xp} data-testid="profile-xp">
+                    {t(tr.PROFILE_XP, level.xp, level.to)}
+                  </div>
+                  {gamesLeft > 0 ? (
+                    <p className={classes.note} data-testid="profile-next-unlock">
+                      {gamesLeft === 1
+                        ? t(tr.UNLOCK_ONLINE_ONE_GAME)
+                        : t(tr.UNLOCK_ONLINE_GAMES, gamesLeft)}
+                    </p>
+                  ) : null}
+                  {props.online ? null : (
+                    <p
+                      className={`${classes.note} ${classes.offlineNote}`}
+                      data-testid="profile-offline"
+                    >
+                      {t(tr.PROFILE_OFFLINE)}
+                    </p>
+                  )}
+                </div>
+              );
+            })()
+          : null}
+
         <div className={classes.attributes}>
-          <div className={`${classes.gold} ${classes.attribute}`}>
-            <div
-              className={classes.icon}
-              style={{ background: `url(/images/trophy.svg) no-repeat` }}
-            />
-            <div>{t(tr.ACCOUNT_OVERVIEW_RANK)}</div>
-            {/* no rank (null) until the first rated match */}
-            <div data-testid="account-rank">
-              {ranking === null || typeof ranking === "undefined"
-                ? "–"
-                : ranking}
+          {/* the rank comes from the server */}
+          {!isPlayerAccount || props.online ? (
+            <div className={`${classes.gold} ${classes.attribute}`}>
+              <div
+                className={classes.icon}
+                style={{ background: `url(/images/trophy.svg) no-repeat` }}
+              />
+              <div>{t(tr.ACCOUNT_OVERVIEW_RANK)}</div>
+              {/* no rank (null) until the first rated match */}
+              <div data-testid="account-rank">
+                {ranking === null || typeof ranking === "undefined"
+                  ? "–"
+                  : ranking}
+              </div>
             </div>
-          </div>
+          ) : null}
           <div className={`${classes.primary} ${classes.attribute}`}>
             <div
               className={classes.icon}
@@ -301,6 +397,8 @@ const mapStateToProps = (state) => ({
   playerInfos: state.ui.playerInfos,
   ranking: state.ui.ranking,
   friends: state.ui.friends,
+  online: state.ui.online,
+  earlyUnlock: state.ui.earlyUnlock,
 });
 
 const mapDispatchToProps = {};

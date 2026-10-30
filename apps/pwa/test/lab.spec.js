@@ -86,6 +86,16 @@ const newPlayer = async (
   expect(
     (await request.post(`${api}/user/tutorial/finished`, { headers })).ok()
   ).toBe(true);
+  // three finished matches against the AI unlock the Choclab (shared progression.js)
+  const matches = [0, 1, 2].map((i) => ({
+    id: `seed-${username}-${i}`,
+    lost: true,
+    winners: [{ idx: 1, name: "Tom Toffee" }],
+    awards: [],
+  }));
+  expect(
+    (await request.post(`${api}/user/trackrecords`, { headers, data: { stats: matches } })).ok()
+  ).toBe(true);
   if (!intro) {
     await seeIntro(page);
   }

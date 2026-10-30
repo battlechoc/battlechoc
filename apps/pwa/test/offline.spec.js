@@ -35,12 +35,19 @@ const setting = (page, key) =>
 const answerHealth = (page) =>
   page.route("**/health", (route) => route.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' }));
 
-const unlocked = { username: "Tester", score: 150, tutorialFinished: true };
+// three finished matches unlock the Choclab and Friends (shared progression.js); offline the
+// device counts them from its track record
+const unlocked = {
+  username: "Tester",
+  score: 150,
+  tutorialFinished: true,
+  trackRecord: [0, 1, 2].map((i) => ({ id: `seed-${i}`, won: true, winners: [{ idx: 0 }] })),
+};
 const serverDown = "The battlechoc server can't be reached right now. Please try again later.";
 const offline = "Only available online. Check your internet connection.";
 const cursor = (locator) => locator.evaluate((element) => getComputedStyle(element).cursor);
 
-test("without the server profile, highscore, Choclab and Friends are greyed out and say why", async ({
+test("without the server highscore, Choclab and Friends are greyed out and say why", async ({
   page,
 }) => {
   await page.goto("/", { waitUntil: "networkidle" });
@@ -49,7 +56,8 @@ test("without the server profile, highscore, Choclab and Friends are greyed out 
   await page.goto("/", { waitUntil: "networkidle" });
 
   const choclab = page.getByText("Choclab", { exact: true }).first();
-  await expect(page.locator("[data-icon=user]:visible")).toHaveAttribute("data-offline", "true");
+  // the profile works offline (level, XP, matches from the device)
+  await expect(page.locator("[data-icon=user]:visible")).not.toHaveAttribute("data-offline", "true");
   await expect(page.locator("[data-icon=trophy]:visible")).toHaveAttribute("data-offline", "true");
   for (const name of ["Choclab", "Friends"]) {
     await expect(page.locator("[role=button][data-offline=true]", { hasText: name })).toHaveCount(1);
@@ -75,7 +83,6 @@ test("without the server profile, highscore, Choclab and Friends are greyed out 
   // the server answers again: the browser's online event checks at once
   await answerHealth(page);
   await page.evaluate(() => window.dispatchEvent(new Event("online")));
-  await expect(page.locator("[data-icon=user]:visible")).not.toHaveAttribute("data-offline", "true");
   await expect(page.locator("[data-icon=trophy]:visible")).not.toHaveAttribute("data-offline", "true");
   await expect(page.locator("[role=button][data-offline=true]")).toHaveCount(0);
   await expect(page.locator("[data-icon=instagram]:visible")).toHaveCount(1);
@@ -86,7 +93,7 @@ test("without the server profile, highscore, Choclab and Friends are greyed out 
 
   // the internet goes away: offline at once, and the player's connection is to blame
   await page.context().setOffline(true);
-  await expect(page.locator("[data-icon=user]:visible")).toHaveAttribute("data-offline", "true");
+  await expect(page.locator("[data-icon=trophy]:visible")).toHaveAttribute("data-offline", "true");
   await expect(page.locator("[data-icon=instagram], [data-icon=discord]")).toHaveCount(0);
   await choclab.click();
   await expect(page.getByText(offline)).toBeVisible();
@@ -138,4 +145,52 @@ test("a phone in portrait: the settings fit", async ({ browser }) => {
   await expect(page.getByTestId("music-volume")).toBeVisible();
   await page.screenshot({ path: "test/output/screenshot_settings_portrait.png" });
   await context.close();
+});
+
+test("offline the profile shows level, XP and what the next matches unlock; the rank waits for the server", async ({
+  page,
+}) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.waitForFunction(() => document.body.innerText.trim().length > 0);
+  await seed(page, {
+    username: "Tester",
+    score: 260,
+    tutorialFinished: true,
+    trackRecord: [
+      { id: "first", won: true, winners: [{ idx: 0 }] },
+      { id: "second", lost: true, winners: [{ idx: 1 }] },
+    ],
+  });
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.locator("[data-icon=user]:visible").click();
+  await expect(page.getByTestId("profile-level")).toHaveText("Level 2");
+  await expect(page.getByTestId("profile-xp")).toHaveText("260 / 500 XP");
+  await expect(page.getByTestId("profile-next-unlock")).toHaveText(
+    "One more match against the AI unlocks the Choclab and online matches."
+  );
+  await expect(page.getByTestId("profile-offline")).toBeVisible();
+  await expect(page.getByTestId("account-rank")).toHaveCount(0);
+  await expect(page.locator("[data-icon=share]:visible")).toHaveCount(0);
+  await page.screenshot({ path: "test/output/screenshot_offline_profile.png" });
+});
+
+test("offline the name can change; it shows as not on the server yet", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.waitForFunction(() => document.body.innerText.trim().length > 0);
+  await seed(page, { username: "Tester", score: 150, tutorialFinished: true });
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.locator("[data-icon=settings]:visible").first().click();
+  await page.locator("div[class^=actionButton]:visible").first().click();
+  await expect(page.getByTestId("name-offline-hint")).toBeVisible();
+  await page.locator("input:visible").first().fill("Pralina");
+  await page.locator("div[class^=actionButton]:visible").first().click();
+  await expect(page.getByText("Pralina", { exact: true }).filter({ visible: true }).first()).toBeVisible();
+  await expect(page.getByTestId("name-unsynced").filter({ visible: true })).toHaveCount(1);
+  await page.screenshot({ path: "test/output/screenshot_offline_name.png" });
+  // kept on the device, still waiting for the server (the closed settings stay in the page,
+  // hidden: look at what is visible)
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.locator("[data-icon=user]:visible").click();
+  await expect(page.getByText("Pralina").filter({ visible: true }).first()).toBeVisible();
+  await expect(page.getByTestId("name-unsynced").filter({ visible: true })).toHaveCount(1);
 });

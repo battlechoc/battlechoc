@@ -242,7 +242,7 @@ test("a passive player's match ends within the time limit and shows the overview
   await page.screenshot({ path: "test/output/screenshot_realtime_ended.png" });
 });
 
-test("the first XP unlocks the Choclab and Friends with one dialog that leads to the demos", async ({ page }) => {
+test("the first match unlocks every building with one dialog that leads to the demos", async ({ page }) => {
   await openAsPlayer(page, 0);
   await startMatch(page);
   // the prepared first game runs from the start; the passive player's match ends in time
@@ -252,8 +252,11 @@ test("the first XP unlocks the Choclab and Friends with one dialog that leads to
   await page.locator("[data-icon=fast-forward]:visible").first().click();
   await page.locator("[data-icon=done]:visible").first().click();
   const unlocked = page.getByTestId("unlocked");
-  await expect(unlocked).toContainText("New features unlocked: Choclab and Friends!");
-  await expect(page.getByText("New features unlocked: Choclab and Friends!")).toHaveCount(1);
+  await expect(unlocked).toHaveAttribute("data-step", "buildings");
+  await expect(unlocked).toContainText("Every building is yours now.");
+  // the Choclab and online play take two more matches
+  await expect(unlocked).toContainText("2 more matches against the AI unlock the Choclab and online matches.");
+  await expect(page.getByText("New features unlocked: Choclab and Friends!")).toHaveCount(0);
   await expect(page.getByText(/You have unlocked the multiplayer mode/i)).toHaveCount(0);
   // the demos start only from the dialog, not under it
   await expect(page.getByTestId("tutorial-coach")).toHaveCount(0);
@@ -261,4 +264,72 @@ test("the first XP unlocks the Choclab and Friends with one dialog that leads to
   await unlocked.getByText("Show the buildings", { exact: true }).click();
   await expect(unlocked).toHaveCount(0);
   await expect(page.getByTestId("tutorial-coach")).toContainText("1/8");
+});
+
+test("the third match unlocks the Choclab and online play with one dialog", async ({ page }) => {
+  await page.goto(url, { waitUntil: "networkidle" });
+  await page.waitForFunction(() => document.body.innerText.trim().length > 0);
+  // the app decides once what an earlier player keeps (src/unlocks.js); wait for that first
+  await page.waitForFunction(
+    () =>
+      new Promise((resolve) => {
+        const open = indexedDB.open("battlechoc");
+        open.onsuccess = () => {
+          const get = open.result.transaction("settings").objectStore("settings").get("unlocks");
+          get.onsuccess = () => resolve(get.result !== undefined);
+        };
+      })
+  );
+  // two finished matches on the device; the buildings were announced after the first
+  await page.evaluate(
+    () =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open("battlechoc");
+        open.onsuccess = () => {
+          const tx = open.result.transaction(["player", "settings"], "readwrite");
+          const player = tx.objectStore("player");
+          const get = player.get("stats");
+          get.onsuccess = () =>
+            player.put(
+              Object.assign({}, get.result || {}, {
+                username: "Tester",
+                score: 60,
+                tutorialFinished: true,
+                trackRecord: [
+                  { id: "first", won: true, winners: [{ idx: 0 }] },
+                  { id: "second", lost: true, winners: [{ idx: 1 }] },
+                ],
+              }),
+              "stats"
+            );
+          tx.objectStore("settings").put({ early: false, announced: { buildings: true, online: false } }, "unlocks");
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        };
+        open.onerror = () => reject(open.error);
+      })
+  );
+  await page.goto(url, { waitUntil: "networkidle" });
+  await expect(page.getByTestId("unlock-hint")).toHaveText(
+    "One more match against the AI unlocks the Choclab and online matches."
+  );
+  await startMatch(page);
+  // the prepared first game runs from the start; Tom Toffee gives up
+  await page.evaluate(() => {
+    const { host: h, engine } = window.__battlechoc;
+    engine.applyAction(h.match, { type: "battlechoc/match/surrender", player: 1, t: h.now(), payload: {} });
+    h.publish();
+    h.schedule();
+  });
+  await expect(page.getByText(/You won/i).first()).toBeVisible();
+  await page.locator("[data-icon=fast-forward]:visible").first().click();
+  await page.locator("[data-icon=done]:visible").first().click();
+  const unlocked = page.getByTestId("unlocked");
+  await expect(unlocked).toHaveAttribute("data-step", "online");
+  await expect(unlocked).toContainText("New features unlocked: Choclab and Friends!");
+  await unlocked.getByText("Ok", { exact: true }).click();
+  await expect(unlocked).toHaveCount(0);
+  await expect(page.getByTestId("unlock-hint")).toHaveCount(0);
+  // offline the Choclab is no longer locked, only waits for the server
+  await expect(page.locator("[role=button][data-offline=true]", { hasText: "Choclab" })).toHaveCount(1);
 });
