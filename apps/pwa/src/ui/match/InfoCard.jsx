@@ -16,12 +16,11 @@ import {
 const VISIBLE_MS = 6000;
 
 const useStyles = createUseStyles((theme) => ({
-  // small, just above the build palette, so it does not cover the boards
+  // small, just above the build palette (the match's bottom bar in Hud.jsx stacks them), so it
+  // does not cover the boards
   card: {
-    position: "absolute",
-    bottom: "calc(min(6vw, 11vh) + 2vw + 16px)",
-    left: 5,
-    zIndex: 4,
+    position: "relative",
+    pointerEvents: "auto",
     maxWidth: "max(24vw, 16em)",
     padding: "0.45em 0.7em",
     borderRadius: "0.8em",
@@ -32,8 +31,7 @@ const useStyles = createUseStyles((theme) => ({
     cursor: "pointer",
     userSelect: "none",
     [theme.breakpoints.orientation.portrait]: {
-      bottom: "calc(12vw + 4vw + 16px)",
-      maxWidth: "70vw",
+      maxWidth: "100%",
     },
     "& h3": {
       margin: "0 0 0.2em 0",

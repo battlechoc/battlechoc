@@ -70,8 +70,8 @@ const raysBox = ({ top, size, rays }) => ({
 const useStyles = createUseStyles((theme) => ({
   actionbar: {
     position: "absolute",
-    top: 5,
-    left: 5,
+    top: theme.edge.top,
+    left: theme.edge.left,
     zIndex: 5,
   },
   logo: {
@@ -98,24 +98,40 @@ const useStyles = createUseStyles((theme) => ({
       [theme.breakpoints.orientation.portrait]: raysBox(LOGO.portrait),
     },
   },
-  menu: {
+  // the menu starts at about half the screen's height; when it does not fit below that (phones
+  // held sideways), the space above it shrinks, so it never reaches the bottom edge
+  lowerHalf: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: theme.edge.bottom,
+    zIndex: 4,
     display: "flex",
     flexDirection: "column",
-    position: "absolute",
-    zIndex: 4,
+    alignItems: "center",
+    pointerEvents: "none",
+  },
+  spaceAboveMenu: {
+    flex: "0 1 auto",
+    minHeight: 0,
+    // as a share of the whole screen, the bottom edge included
+    height: `calc((100% + ${theme.edge.bottom}) * 0.48)`,
+    [theme.breakpoints.orientation.landscape]: {
+      "@media screen and (max-height: 339px)": {
+        height: `calc((100% + ${theme.edge.bottom}) * 0.55)`,
+      },
+    },
+  },
+  menu: {
+    flex: "0 0 auto",
+    display: "flex",
+    flexDirection: "column",
+    pointerEvents: "auto",
     // the menu buttons share the width of the widest
     "& > div": {
       marginBottom: 6,
       width: "100%",
-    },
-    [theme.breakpoints.orientation.portrait]: {
-      top: "48%",
-    },
-    [theme.breakpoints.orientation.landscape]: {
-      top: "55%",
-      "@media screen and (min-height: 340px)": {
-        top: "48%",
-      },
     },
   },
   decoration: {
@@ -157,6 +173,29 @@ const useStyles = createUseStyles((theme) => ({
     flexDirection: "column",
     alignItems: "flex-end",
   },
+  // the bottom of a match: what to build (its tips above it) at the left, the weapons at the
+  // right, always an edge apart; the buildings wrap instead of running into the weapons. Only
+  // the buttons take the pointer, the space between them belongs to the board.
+  matchBar: {
+    position: "absolute",
+    left: theme.edge.left,
+    right: theme.edge.right,
+    bottom: theme.edge.bottom,
+    zIndex: 4,
+    display: "flex",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: theme.edge.gap,
+    pointerEvents: "none",
+  },
+  buildColumn: {
+    flex: "1 1 auto",
+    minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: theme.edge.gap,
+  },
   titleScreen: {
     position: "relative",
     display: "flex",
@@ -164,7 +203,9 @@ const useStyles = createUseStyles((theme) => ({
     justifyContent: "center",
     flexDirection: "column",
     zIndex: 2,
-    height: "100vh",
+    // the page's height, not 100vh: mobile browsers take vh with their toolbar hidden, so the
+    // screen grew under the toolbar and the info button at the bottom went behind it
+    height: "100%",
   },
 }));
 
@@ -499,8 +540,11 @@ const Hud = (props) => {
                   <div />
                 </div>
                 <div className={classes.decoration} />
-                <div className={classes.menu}>
-                  {assetsReady ? controls : null}
+                <div className={classes.lowerHalf}>
+                  <div className={classes.spaceAboveMenu} />
+                  <div className={classes.menu}>
+                    {assetsReady ? controls : null}
+                  </div>
                 </div>
               </div>
               <Highscore
@@ -556,10 +600,14 @@ const Hud = (props) => {
           return (
             <div>
               <MatchBanner />
-              <InfoCard />
               <ResourcePanel />
-              <BuildPalette />
-              <WeaponPalette />
+              <div className={classes.matchBar}>
+                <div className={classes.buildColumn}>
+                  <InfoCard />
+                  <BuildPalette />
+                </div>
+                <WeaponPalette />
+              </div>
               {overviewVisible && result ? (
                 <GameEndOverview
                   awards={(matchAwards || []).map((award) => ({

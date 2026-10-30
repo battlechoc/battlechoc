@@ -53,6 +53,16 @@ const theme = {
     // the outline of display text, relative to its size
     stroke: "0.04em",
   },
+  // the room every control keeps from the screen's edges (safe area included) and from its
+  // neighbours, and the size of the round buttons: CSS variables of src/index.css
+  edge: {
+    top: "var(--edge-top)",
+    right: "var(--edge-right)",
+    bottom: "var(--edge-bottom)",
+    left: "var(--edge-left)",
+    gap: "var(--edge)",
+  },
+  fab: "var(--fab)",
   // the widths are repeated in the type scale's media queries in src/index.css: keep them in sync
   breakpoints: {
     desktop: "@media screen and (min-width: 1200px)",

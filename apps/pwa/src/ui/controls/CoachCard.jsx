@@ -8,11 +8,13 @@ const useStyles = createUseStyles((theme) => ({
   coach: {
     position: "absolute",
     zIndex: 5,
-    left: "1vw",
-    top: "calc(12px + 7vw)",
+    left: theme.edge.left,
+    // below the round buttons at the top left
+    top: `calc(${theme.edge.top} + ${theme.fab} + ${theme.edge.gap})`,
     width: "max(27vw, 20em)",
-    maxWidth: "calc(100vw - 2vw)",
-    maxHeight: "calc(100vh - 7vw - 13vw)",
+    maxWidth: `calc(100% - ${theme.edge.left} - ${theme.edge.right})`,
+    // heights in % of the page, which (unlike vh) leaves out a mobile browser's toolbar
+    maxHeight: `calc(100% - ${theme.edge.top} - ${theme.fab} - ${theme.edge.gap} - 13vw - ${theme.edge.bottom})`,
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
@@ -26,12 +28,10 @@ const useStyles = createUseStyles((theme) => ({
     fontSize: theme.font.size.md,
     // landscape: down to the build palette (its icons are min(6vw, 11vh))
     [theme.breakpoints.orientation.landscape]: {
-      maxHeight: "calc(100vh - 7vw - 28px - min(6vw, 11vh) - 1vw)",
+      maxHeight: `calc(100% - ${theme.edge.top} - ${theme.fab} - ${theme.edge.gap} - min(6vw, 11vh) - 1vw - 16px - ${theme.edge.bottom})`,
     },
     [theme.breakpoints.orientation.portrait]: {
-      left: "3vw",
-      width: "94vw",
-      top: "calc(12px + 14vw)",
+      width: `calc(100% - ${theme.edge.left} - ${theme.edge.right})`,
       padding: "0.8em",
     },
   },

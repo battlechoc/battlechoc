@@ -35,6 +35,9 @@ const unlockedWithoutScore = [
   EntityType.CREAM,
 ];
 
+// the room between two buttons
+const GAP = 6;
+
 const size = (theme) => ({
   [theme.breakpoints.orientation.portrait]: { width: "12vw", height: "12vw" },
   [theme.breakpoints.orientation.landscape]: {
@@ -50,26 +53,23 @@ const size = (theme) => ({
 });
 
 const useStyles = createUseStyles((theme) => ({
+  // placed by the match's bottom bar (Hud.jsx), beside the weapons; it wraps into more rows
+  // when they leave little room. Only the buttons take the pointer, the gaps go to the board.
   container: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    zIndex: 1,
     display: "flex",
     flexDirection: "column",
     alignItems: "flex-start",
+    gap: GAP,
+    pointerEvents: "none",
   },
   palette: {
     display: "flex",
     flexWrap: "wrap",
-    marginBottom: 5,
-    marginLeft: 5,
-    [theme.breakpoints.orientation.portrait]: { width: "80vw" },
+    gap: GAP,
   },
   item: {
     position: "relative",
-    marginRight: 5,
-    marginTop: 5,
+    pointerEvents: "auto",
     border: `0.4vw solid ${theme.color.secondary.dark}`,
     borderRadius: "50%",
     background: "linear-gradient(0deg, #3DA2CE 0%, #9DD5E9 80%)",

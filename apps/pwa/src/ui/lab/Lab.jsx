@@ -75,7 +75,7 @@ const useStyles = createUseStyles((theme) => ({
     display: "flex",
     alignItems: "center",
     gap: "1.5vw",
-    margin: "5px 5px 0",
+    margin: `${theme.edge.top} ${theme.edge.right} 0`,
   },
   cocoa: {
     display: "flex",
@@ -168,7 +168,12 @@ const useStyles = createUseStyles((theme) => ({
   },
   good: { color: labColors(theme).good },
   bad: { color: labColors(theme).bad },
-  table: { flex: "0 0 auto", margin: "0 1em 0.8em", borderRadius: 20 },
+  // the screen's edges (and the safe area) stay free around it, also when the lab scrolls
+  table: {
+    flex: "0 0 auto",
+    margin: `0 max(1em, ${theme.edge.right}) max(0.8em, ${theme.edge.bottom}) max(1em, ${theme.edge.left})`,
+    borderRadius: 20,
+  },
 }));
 
 const persist = (changes) =>

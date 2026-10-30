@@ -1,5 +1,7 @@
 .hud {
   flex-grow: 1;
+  /* no taller than the app, whatever its content asks for (a flex item grows to its content) */
+  min-height: 0;
   position: relative;
 }
 

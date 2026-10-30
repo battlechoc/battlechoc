@@ -45,6 +45,7 @@ import { AssetLoadingViewContainer as AssetLoadingView } from "../AssetLoader";
 import logger from "../helper/logger";
 import { v4 as uuidv4 } from "uuid";
 import { withTheme } from "react-jss";
+import { measureEdges } from "../helper/edges";
 
 // The camera looks at the origin and a board's cells start at its position, its middle
 // (cols - 1) / 2 further in: lifted by that, a board is centred on the screen. The 6×6 board
@@ -538,17 +539,17 @@ class Scene extends Component {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
     const ratio = width / height;
-    // the menu button's size (Fab.jsx: square screens, portrait, landscape)
-    const fab = ratio >= 3 / 4 && ratio <= 4 / 3 ? 0.035 * (width + height) : ratio < 1 ? 0.12 * width : 0.07 * width;
+    // the screen's edges and the menu button's size, as the HUD has them (src/index.css)
+    const { top, left, fab, gap } = measureEdges();
     if (ratio < 1) {
       // portrait: under the menu button, clear of the match time at the top middle
       const side = 0.4 * width;
-      return { left: 5, top: Math.round(5 + fab + 8), width: Math.round(side), height: Math.round(side * 0.6) };
+      return { left: Math.round(left), top: Math.round(top + fab + gap), width: Math.round(side), height: Math.round(side * 0.6) };
     }
     // landscape: beside the menu button; on a phone held sideways no higher than a fifth of the
     // screen, the board comes close to the corner there
     const side = Math.min(Math.max(0.2 * width, 180), 340, (0.22 * height) / 0.6);
-    return { left: Math.round(5 + fab + 10), top: 5, width: Math.round(side), height: Math.round(side * 0.6) };
+    return { left: Math.round(left + fab + gap), top: Math.round(top), width: Math.round(side), height: Math.round(side * 0.6) };
   }
 
   showPreview() {

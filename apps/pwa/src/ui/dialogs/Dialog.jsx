@@ -17,6 +17,10 @@ const useStyles = createUseStyles((theme) => ({
     position: "fixed",
     justifyContent: "center",
     alignItems: "center",
+    // the dialog stays inside the safe area (notches, home indicator)
+    boxSizing: "border-box",
+    padding:
+      "env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px)",
   },
   stacked: {
     background: "unset !important",
@@ -34,29 +38,42 @@ const useStyles = createUseStyles((theme) => ({
       width: "calc(100% - 24px)",
     },
   },
-  // compact: the body in the flow, so the dialog is as high as its content; the close button
-  // stays on the corner like in the other dialogs
+  // compact: as high as its content (the body in the flow) and centred; when the content is
+  // higher than the screen allows, it scrolls
   info: {
+    "& > div": {
+      height: "auto",
+      maxHeight: `calc(100% - ${theme.fab})`,
+      display: "flex",
+      flexDirection: "column",
+    },
     "& > div > div ": {
       position: "relative",
+      flex: "0 1 auto",
+      minHeight: 0,
     },
-    "& > div > $close": {
-      position: "absolute",
+    // phones held sideways: less room around the content, so a short menu needs no scrolling
+    [theme.breakpoints.shortLandscape]: {
+      "& > div > div ": { paddingTop: 16, paddingBottom: 16 },
     },
   },
+  // 80 % of the screen and 90 % of its height, but small enough that the close button on the
+  // corner keeps an edge (--edge) from the screen's edges
   dialog: {
-    width: (props) => (props.mode === "notification" ? "100%" : "80%"),
-    height: "90%",
+    boxSizing: "border-box",
+    width: (props) =>
+      props.mode === "notification"
+        ? "100%"
+        : `min(calc(80% + 32px), calc(100% - ${theme.fab}))`,
+    height: `min(calc(90% + 32px), calc(100% - ${theme.fab}))`,
     padding: 16,
     position: "relative",
-    top: (props) => (props.mode === "info" ? "10vh" : "unset"),
   },
   body: {
     borderRadius: (props) => (props.mode === "notification" ? 0 : 20),
     position: "absolute",
     top: 12,
     right: 6,
-    overflow: "hidden",
     height: (props) => (props.mode === "info" ? "unset" : "calc(100% - 88px)"), // 12px (top) + 2 * 32px (padding) = 88px
     width: "calc(100% - 30px)", // 6px (left) + 2 * 12px (padding) = 30px
     padding: "32px 12px",
@@ -107,14 +124,27 @@ const useStyles = createUseStyles((theme) => ({
     "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
     "-webkit-font-smoothing": "antialiased",
   },
+  // the chocolate pieces of the frame, cut to the rounded body (the body itself does not clip,
+  // so the close button can sit on its corner)
+  frame: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    overflow: "hidden",
+    borderRadius: (props) => (props.mode === "notification" ? 0 : 20),
+    zIndex: 12,
+    pointerEvents: "none",
+  },
+  // every dialog's close button: centred on the top right corner of its border (where the
+  // rounded corner bends, 6px in), the same in every dialog and on every screen
   close: {
     position: "absolute",
-    right: "-2vw",
-    top: 0,
-    zIndex: 16,
-    [theme.breakpoints.orientation.portrait]: {
-      right: "-2vh",
-    },
+    top: 6,
+    right: 6,
+    transform: "translate(50%, -50%)",
+    zIndex: 17,
   },
   content: {
     position: "relative",
@@ -189,18 +219,20 @@ const Dialog = (componentProps) => {
       style={props.open ? { display: "flex" } : { display: "none" }}
     >
       <div className={classes.dialog}>
-        {props.closable ? (
-          <Fab
-            className={classes.close}
-            color={props.mode === "stacked" ? "secondary" : "accent"}
-            icon={props.mode === "stacked" ? "back" : "close"}
-            onClick={closeDialog}
-          />
-        ) : null}
         <div className={classes.body}>
-          <DialogFrame
-            compact={["notification", "info"].includes(props.mode)}
-          />
+          <div className={classes.frame}>
+            <DialogFrame
+              compact={["notification", "info"].includes(props.mode)}
+            />
+          </div>
+          {props.closable ? (
+            <Fab
+              className={classes.close}
+              color={props.mode === "stacked" ? "secondary" : "accent"}
+              icon={props.mode === "stacked" ? "back" : "close"}
+              onClick={closeDialog}
+            />
+          ) : null}
           <span className={classes.title}>
             {props.titleSlotBefore}
             {props.icon ? (

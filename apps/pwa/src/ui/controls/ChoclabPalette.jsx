@@ -6,8 +6,11 @@ import Button from "./Button";
 import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
+  // the arrows at the ends keep an edge (--edge) from the screen's sides: 6px of it is their margin
   palette: {
-    width: "100vw",
+    width: "100%",
+    boxSizing: "border-box",
+    padding: `0 calc(${theme.edge.right} - 6px) 0 calc(${theme.edge.left} - 6px)`,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",

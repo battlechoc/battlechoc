@@ -33,15 +33,10 @@ const useStyles = createUseStyles((theme) => ({
     position: "absolute",
     zIndex: 4,
     display: "flex",
-    top: 5,
-    left: 5,
+    top: theme.edge.top,
+    left: theme.edge.left,
     flexDirection: "row",
-    "& > div": {
-      marginRight: 5,
-      [theme.breakpoints.smartphone]: {
-        marginRight: 10,
-      },
-    },
+    gap: theme.edge.gap,
   },
 }));
 
@@ -154,7 +149,7 @@ const Actionbar = (props) => {
   }
   return (
     <>
-      <div className={classes.actions}> {buttons} </div>
+      <div className={classes.actions}>{buttons}</div>
       <GameMenu
         open={menuOpen && hasMatch}
         close={closeMenu}

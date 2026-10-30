@@ -36,7 +36,7 @@ const useStyles = createUseStyles((theme) => ({
   // the demos have no buttons at the top left: their card goes right to the top
   top: {
     [theme.breakpoints.orientation.portrait]: {
-      "&&": { top: 5 },
+      "&&": { top: theme.edge.top },
     },
   },
 }));

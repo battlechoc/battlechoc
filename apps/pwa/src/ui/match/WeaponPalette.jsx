@@ -26,20 +26,19 @@ const stateColors = (theme) => ({
 });
 
 const useStyles = createUseStyles((theme) => ({
+  // placed by the match's bottom bar (Hud.jsx): a row from the right in landscape, a column
+  // from the bottom in portrait, so the buildings keep the width of the screen
   container: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    zIndex: 1,
     display: "flex",
     flexDirection: "row-reverse",
-    marginBottom: 5,
-    marginRight: 5,
+    gap: 6,
+    pointerEvents: "none",
+    [theme.breakpoints.orientation.portrait]: { flexDirection: "column-reverse" },
   },
   item: {
     position: "relative",
+    pointerEvents: "auto",
     "& > div:first-child": { position: "relative" },
-    marginLeft: 5,
     borderRadius: "50%",
     padding: "0.5vw",
     cursor: "pointer",

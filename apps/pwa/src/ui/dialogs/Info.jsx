@@ -11,16 +11,14 @@ import { version, commit, builtAt } from "../../build";
 import Dialog from "./Dialog";
 
 const useStyles = createUseStyles((theme) => ({
+  // the bottom right corner of the title screen
   icons: {
     position: "absolute",
     zIndex: 2,
-    bottom: 0,
-    right: 0,
-    marginBottom: 5,
+    bottom: theme.edge.bottom,
+    right: theme.edge.right,
     display: "flex",
-    "& > div": {
-      marginRight: 5,
-    },
+    gap: theme.edge.gap,
   },
   text: {
     "& *": { color: "white" },
