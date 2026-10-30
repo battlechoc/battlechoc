@@ -285,7 +285,7 @@ module.exports = {
     "TUTORIAL_FOUNTAIN_TITLE": "チョコレートファウンテン",
     "TUTORIAL_FRUIT_CANNON_MESSAGE": "ラムトリュフキャノンの上に建てます。トリュフはそのままに、30秒で再装填するフルーツ弾が加わります。フルーツはシールドを割りますが、建物にはほとんど効きません。",
     "TUTORIAL_FRUIT_CANNON_TITLE": "フルーツキャノン",
-    "TUTORIAL_INTRO_MESSAGE": "バトルチョックではすべてが同時に進みます。あなたも相手も、好きなときに建てて撃てます。まずはミミ・マジパンと対戦してみましょう。心配いりません、彼女は反撃しません。",
+    "TUTORIAL_INTRO_MESSAGE": "まずはミミ・マジパンと対戦してみましょう。心配いりません、彼女は反撃しません。",
     "TUTORIAL_INTRO_TITLE": "バトルチョックへようこそ",
     "TUTORIAL_TREE_MESSAGE": "建物にはカカオが必要です。左下のカカオの木を選び、自分の盤の空いているマスをタップしましょう。ホワイトチョコレートのマスでは収穫が50%増えます。",
     "TUTORIAL_TREE_TITLE": "カカオの木を植えよう",

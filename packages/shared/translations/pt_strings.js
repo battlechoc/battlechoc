@@ -285,7 +285,7 @@ module.exports = {
     "TUTORIAL_FOUNTAIN_TITLE": "Fonte de chocolate",
     "TUTORIAL_FRUIT_CANNON_MESSAGE": "Construa-o sobre um canhão de trufa de rum: ele mantém as trufas e ganha um tiro de frutas que recarrega em 30 segundos. Frutas quebram escudos, mas mal arranham edifícios.",
     "TUTORIAL_FRUIT_CANNON_TITLE": "Canhão de frutas",
-    "TUTORIAL_INTRO_MESSAGE": "No battlechoc tudo acontece ao mesmo tempo: você e seu oponente constroem e atiram quando quiserem. Jogue uma primeira partida contra Mimi Marzipan. Não se preocupe, ela não vai revidar.",
+    "TUTORIAL_INTRO_MESSAGE": "Jogue sua primeira partida contra Mimi Marzipan. Não se preocupe, ela não vai revidar.",
     "TUTORIAL_INTRO_TITLE": "Bem-vindo ao battlechoc",
     "TUTORIAL_TREE_MESSAGE": "Edifícios custam cacau. Escolha a árvore de cacau no canto inferior esquerdo e toque em um campo livre do seu tabuleiro. Sobre chocolate branco ela colhe 50 % a mais.",
     "TUTORIAL_TREE_TITLE": "Plante uma árvore de cacau",

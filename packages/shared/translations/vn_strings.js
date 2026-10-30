@@ -285,7 +285,7 @@ module.exports = {
     "TUTORIAL_FOUNTAIN_TITLE": "Đài phun sô cô la",
     "TUTORIAL_FRUIT_CANNON_MESSAGE": "Xây nó trên một Pháo Truffle Rum: nó giữ truffle và có thêm phát bắn trái cây nạp lại trong 30 giây. Trái cây phá được lá chắn nhưng hầu như không làm xước công trình.",
     "TUTORIAL_FRUIT_CANNON_TITLE": "Pháo trái cây",
-    "TUTORIAL_INTRO_MESSAGE": "Trong battlechoc mọi thứ diễn ra cùng lúc: bạn và đối thủ xây và bắn bất cứ khi nào muốn. Hãy chơi trận đầu tiên với Mimi Marzipan. Đừng lo, cô ấy sẽ không đánh trả.",
+    "TUTORIAL_INTRO_MESSAGE": "Hãy chơi trận đầu tiên với Mimi Marzipan. Đừng lo, cô ấy sẽ không đánh trả.",
     "TUTORIAL_INTRO_TITLE": "Chào mừng đến với battlechoc",
     "TUTORIAL_TREE_MESSAGE": "Công trình tốn ca cao. Chọn cây ca cao ở góc dưới bên trái và chạm vào một ô trống trên bàn của bạn. Trên sô cô la trắng, cây thu hoạch thêm 50 %.",
     "TUTORIAL_TREE_TITLE": "Trồng một cây ca cao",

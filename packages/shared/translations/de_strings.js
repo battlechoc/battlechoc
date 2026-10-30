@@ -212,7 +212,7 @@ module.exports = {
     "IOS_MESSAGE": "Drehe dein iPhone, um battlechoc im Vollbildmodus spielen zu können [0] oder verwende die Share-Funktion [1] und klicke auf [2] \"Zum Home-Bildschirm\"",
     "JOIN_MULTIPLAYER": "Multiplayer Spiel beitreten",
     "TUTORIAL_INTRO_TITLE": "Willkommen bei battlechoc",
-    "TUTORIAL_INTRO_MESSAGE": "In battlechoc passiert alles gleichzeitig: Du und dein Gegner baut und feuert, wann immer ihr wollt. Spiel eine erste Partie gegen Mimi Marzipan. Keine Sorge, sie wehrt sich nicht.",
+    "TUTORIAL_INTRO_MESSAGE": "Spiel deine erste Partie gegen Mimi Marzipan. Keine Sorge, sie wehrt sich nicht.",
     "TUTORIAL_FACTORY_TITLE": "Deine Schokoladenfabrik",
     "TUTORIAL_FACTORY_MESSAGE": "Tippe auf ein Feld deines Spielbretts, um deine Fabrik zu platzieren. Sie liefert dir Gebäude und etwas Kakao. Auf dunkler Schokolade fasst sie ein Gebäude mehr und arbeitet schneller.",
     "TUTORIAL_TREE_TITLE": "Pflanze einen Kakaobaum",

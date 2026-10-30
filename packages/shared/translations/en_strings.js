@@ -138,7 +138,7 @@ module.exports = {
     "IOS_MESSAGE": "To play battlechoc in fullscreen mode on iOS you need to rotate your iPhone [0] or use the share icon [1] and select [2] \"Add to Home Screen\"",
     "JOIN_MULTIPLAYER": "Join Multiplayer Game",
     "TUTORIAL_INTRO_TITLE": "Welcome to battlechoc",
-    "TUTORIAL_INTRO_MESSAGE": "In battlechoc everything happens at the same time: you and your opponent build and fire whenever you like. Play a first match against Mimi Marzipan. Don't worry, she won't fight back.",
+    "TUTORIAL_INTRO_MESSAGE": "Play your first match against Mimi Marzipan. Don't worry, she won't fight back.",
     "TUTORIAL_FACTORY_TITLE": "Your chocolate factory",
     "TUTORIAL_FACTORY_MESSAGE": "Tap a field on your board to place your factory. It produces your buildings and some cacao. On dark chocolate it holds one more building and works faster.",
     "TUTORIAL_TREE_TITLE": "Plant a cacao tree",
