@@ -174,21 +174,25 @@ test("offline the profile shows level, XP and what the next matches unlock; the 
   await page.screenshot({ path: "test/output/screenshot_offline_profile.png" });
 });
 
-test("offline the name can change; it shows as not on the server yet", async ({ page }) => {
+test("offline the name can change in the profile; it shows as not on the server yet", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.body.innerText.trim().length > 0);
   await seed(page, { username: "Tester", score: 150, tutorialFinished: true });
   await page.goto("/", { waitUntil: "networkidle" });
+  // the name is in the profile, not in the settings
   await page.locator("[data-icon=settings]:visible").first().click();
-  await page.locator("div[class^=actionButton]:visible").first().click();
+  await expect(page.locator("input:not([type=range]):visible")).toHaveCount(0);
+  await page.locator("[data-icon=close]:visible").first().click();
+  await page.locator("[data-icon=user]:visible").click();
+  await page.getByTestId("change-name").click();
   await expect(page.getByTestId("name-offline-hint")).toBeVisible();
   await page.locator("input:visible").first().fill("Pralina");
   await page.locator("div[class^=actionButton]:visible").first().click();
   await expect(page.getByText("Pralina", { exact: true }).filter({ visible: true }).first()).toBeVisible();
   await expect(page.getByTestId("name-unsynced").filter({ visible: true })).toHaveCount(1);
   await page.screenshot({ path: "test/output/screenshot_offline_name.png" });
-  // kept on the device, still waiting for the server (the closed settings stay in the page,
-  // hidden: look at what is visible)
+  // kept on the device, still waiting for the server (closed dialogs stay in the page, hidden:
+  // look at what is visible)
   await page.goto("/", { waitUntil: "networkidle" });
   await page.locator("[data-icon=user]:visible").click();
   await expect(page.getByText("Pralina").filter({ visible: true }).first()).toBeVisible();

@@ -15,9 +15,7 @@ import {
   unlocks,
 } from "@battlechoc/battlechoc-shared-functions";
 import OfflineStore from "../../OfflineStore";
-import { multiplayer } from "../../Multiplayer";
 import { ServerRequest } from "../../helper/settings";
-import PlayerNameInput from "../controls/PlayerNameInput";
 import logger from "../../helper/logger";
 import { version, commit } from "../../build";
 import { createUseStyles } from "react-jss";
@@ -89,11 +87,6 @@ const useStyles = createUseStyles((theme) => ({
     padding: 10,
     fontSize: theme.font.size.sm,
   },
-  playerName: {
-    marginTop: "2vh",
-    marginBottom: "2vh",
-    width: "100%",
-  },
   // the buttons of the group flow with the others
   group: { display: "contents" },
   levels: {
@@ -114,34 +107,16 @@ const Settings = (props) => {
   const [withDeviceInformation, setWithDeviceInformation] = useState(false);
   const [additionalReportMessage, setAdditionalReportMessage] = useState(false);
   const [sendingReport, setSendingReport] = useState(false);
-  const [editPlayerName, setEditPlayerName] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
 
   const classes = useStyles();
   const audio = useAudioSettings();
   const fullscreenAvailable = useFullscreenAvailable();
 
-  const setPlayerName = async (playerName) => {
-    // offline the name waits on the device until the server answers (Multiplayer)
-    if (!props.online) {
-      await multiplayer.setUsernameOffline(playerName);
-      setEditPlayerName(false);
-      return;
-    }
-    try {
-      await ServerRequest("post", "/user/username", { username: playerName });
-      await multiplayer.usernameSynced(playerName);
-      setEditPlayerName(false);
-    } catch (error) {
-      logger.warn(error);
-    }
-  };
-
   const closeDialog = () => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     props.close();
     setShowErrorReport(false);
-    setEditPlayerName(false);
   };
 
   const submitReport = async () => {
@@ -297,21 +272,6 @@ const Settings = (props) => {
         title={t(tr.SETTINGS)}
       >
         <div className={classes.wrapper}>
-          {(typeof props.playerInfos.stats.username !== "undefined" &&
-            props.playerInfos.stats.username !== "Chocnonymous") ||
-          props.playerInfos.stats.tutorialSkipped === true ||
-          props.playerInfos.stats.tutorialFinished === true ? (
-            <PlayerNameInput
-              className={classes.playerName}
-              onEditMode={() => setEditPlayerName(true)}
-              editMode={editPlayerName}
-              setPlayerName={setPlayerName}
-              startValue={props.playerInfos.stats.username}
-              current={props.playerInfos.stats.username}
-              offline={!props.online}
-              pending={Boolean(props.playerInfos.stats.usernamePending)}
-            />
-          ) : null}
           <Select
             onChange={changeLanguage}
             options={options}
@@ -457,7 +417,6 @@ const mapStateToProps = (state) => ({
   tipsEnabled: state.ui.tipsEnabled,
   autoFullscreen: state.ui.autoFullscreen,
   earlyUnlock: state.ui.earlyUnlock,
-  online: state.ui.online,
 });
 
 const mapDispatchToProps = {

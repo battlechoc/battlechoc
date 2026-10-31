@@ -149,6 +149,17 @@ class Multiplayer {
     this.callbacks.updatePlayerStats({ username, usernamePending: true });
   }
 
+  // a new name from the profile: claimed on the server right away, or kept on the device until
+  // the server answers; rejects when the server turns it down
+  async changeUsername(username, online) {
+    if (!online) {
+      await this.setUsernameOffline(username);
+      return;
+    }
+    await ServerRequest("post", "/user/username", { username });
+    await this.usernameSynced(username);
+  }
+
   // the name now belongs to the player on the server
   async usernameSynced(username) {
     const stats = (await OfflineStore.playerStore.get("stats")) || { ...EmptyPlayerStats };

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import { connect } from "react-redux";
@@ -7,6 +7,7 @@ import logger from "../../helper/logger";
 import { Jukebox } from "../misc";
 import { Button, Progress, Fab } from "../controls";
 import UnsyncedMark from "../controls/UnsyncedMark";
+import PlayerNameInput from "../controls/PlayerNameInput";
 import Dialog from "./Dialog";
 import {
   EmptyPlayerStats,
@@ -52,6 +53,17 @@ const useStyles = createUseStyles((theme) => ({
   icon: {
     padding: "0.8em",
     backgroundSize: "100% 100%",
+  },
+  // the own name, while the player changes it (the pen beside the title)
+  nameField: {
+    width: "min(22em, 100%)",
+    margin: "0 auto 1em",
+  },
+  // the pen beside the own name, as big as the title's text
+  pen: {
+    width: "1.1em !important",
+    height: "1.1em !important",
+    marginLeft: "0.3em",
   },
   // the own profile: level, XP to the next level, what the next matches unlock
   progress: {
@@ -148,6 +160,13 @@ const useStyles = createUseStyles((theme) => ({
 const AccountOverview = (props) => {
   const classes = useStyles();
   const [refreshFriend, setRefreshFriend] = useState(false);
+  // the own name is changed here (offline too: Multiplayer keeps it until the server answers)
+  const [editName, setEditName] = useState(false);
+  useEffect(() => {
+    if (!props.open) {
+      setEditName(false);
+    }
+  }, [props.open]);
 
   const isPlayerAccount = typeof props.playerAccount === "undefined";
 
@@ -197,6 +216,22 @@ const AccountOverview = (props) => {
   };
 
   // a profile link only helps where others can open it
+  // a player who chose a name or got one (after the tutorial) can change it
+  const stats = props.playerInfos.stats;
+  const nameEditable =
+    isPlayerAccount &&
+    ((typeof stats.username !== "undefined" && stats.username !== EmptyPlayerStats.username) ||
+      stats.tutorialSkipped === true ||
+      stats.tutorialFinished === true);
+  const changeName = async (username) => {
+    try {
+      await multiplayer.changeUsername(username, props.online);
+      setEditName(false);
+    } catch (error) {
+      logger.warn("could not change the name", error);
+    }
+  };
+
   const share =
     playerName !== EmptyPlayerStats.username && (props.online || !isPlayerAccount) ? (
       <Fab
@@ -220,11 +255,31 @@ const AccountOverview = (props) => {
       titleSlotAfter={
         <>
           {isPlayerAccount && props.playerInfos.stats.usernamePending ? <UnsyncedMark /> : null}
+          {nameEditable ? (
+            <Fab
+              className={classes.pen}
+              icon="pen"
+              color="secondary"
+              aria-label={t(tr.PROFILE_CHANGE_NAME)}
+              data-testid="change-name"
+              onClick={() => setEditName(!editName)}
+            />
+          ) : null}
           {share}
         </>
       }
     >
       <div className={classes.wrapper}>
+        {nameEditable && editName ? (
+          <PlayerNameInput
+            className={classes.nameField}
+            editMode
+            setPlayerName={changeName}
+            startValue={stats.username}
+            current={stats.username}
+            offline={!props.online}
+          />
+        ) : null}
         {(() => {
           if (!isPlayerAccount) {
             const actions = [];

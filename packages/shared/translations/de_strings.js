@@ -540,5 +540,6 @@ module.exports = {
     "NAME_UNSYNCED": "Noch nicht auf dem Server gespeichert",
     "NAME_OFFLINE_HINT": "Offline: Dein neuer Name wird auf dem Server gespeichert, sobald battlechoc ihn erreicht.",
     "NAME_CONFLICT_TITLE": "Name schon vergeben",
-    "NAME_CONFLICT_TEXT": "Während du offline warst, hat sich jemand anderes „{{name}}“ genommen. Bitte wähle einen anderen Namen."
+    "NAME_CONFLICT_TEXT": "Während du offline warst, hat sich jemand anderes „{{name}}“ genommen. Bitte wähle einen anderen Namen.",
+    "PROFILE_CHANGE_NAME": "Namen ändern"
 }

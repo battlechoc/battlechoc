@@ -186,6 +186,7 @@ Fab.propTypes = {
     "back",
     "share",
     "refresh",
+    "pen",
     "discord",
     "lab/recipe-book",
   ]),

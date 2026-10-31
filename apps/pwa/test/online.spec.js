@@ -302,8 +302,8 @@ test("a name chosen offline that somebody took meanwhile asks for another one", 
       })
   );
   await page.goto("/", { waitUntil: "networkidle" });
-  await page.locator("[data-icon=settings]:visible").first().click();
-  await page.locator("div[class^=actionButton]:visible").first().click();
+  await page.locator("[data-icon=user]:visible").click();
+  await page.getByTestId("change-name").click();
   await page.locator("input:visible").first().fill(mara.username);
   await page.locator("div[class^=actionButton]:visible").first().click();
   await expect(page.getByTestId("name-unsynced").filter({ visible: true })).toHaveCount(1);

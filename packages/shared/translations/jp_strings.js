@@ -540,5 +540,6 @@ module.exports = {
     "NAME_UNSYNCED": "まだサーバーに保存されていません",
     "NAME_OFFLINE_HINT": "オフライン：新しい名前は、バトルチョックがサーバーにつながるとすぐに保存されます。",
     "NAME_CONFLICT_TITLE": "その名前は使われています",
-    "NAME_CONFLICT_TEXT": "オフラインの間に、ほかの人が「{{name}}」を使い始めました。別の名前を選んでください。"
+    "NAME_CONFLICT_TEXT": "オフラインの間に、ほかの人が「{{name}}」を使い始めました。別の名前を選んでください。",
+    "PROFILE_CHANGE_NAME": "名前を変更"
 }
