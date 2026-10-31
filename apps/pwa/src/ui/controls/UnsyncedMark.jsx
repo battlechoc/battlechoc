@@ -6,8 +6,9 @@ import {
 } from "@battlechoc/battlechoc-shared-functions";
 
 // Beside a name chosen offline that the server does not know yet (Multiplayer.syncPendingUsername):
-// two round arrows on an amber badge, as big as the text around it.
-const useStyles = createUseStyles((theme) => ({
+// the game's offline sign (no wifi on a dark round badge, like on the buttons that need the
+// server), as big as the text around it.
+const useStyles = createUseStyles({
   mark: {
     display: "inline-block",
     flex: "0 0 auto",
@@ -17,10 +18,10 @@ const useStyles = createUseStyles((theme) => ({
     verticalAlign: "middle",
     borderRadius: "50%",
     boxSizing: "border-box",
-    border: `0.08em solid ${theme.color.warning.light}`,
-    background: `${theme.color.warning.dark} url(/images/refresh.svg) no-repeat center / 75%`,
+    border: "0.06em solid #e6e6e6",
+    background: "#555 url(/images/offline.svg) no-repeat center / 72%",
   },
-}));
+});
 
 const UnsyncedMark = () => {
   const classes = useStyles();
