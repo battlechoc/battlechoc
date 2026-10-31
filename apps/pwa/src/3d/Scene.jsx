@@ -37,7 +37,6 @@ import {
   Color4,
   Animation,
   MeshBuilder,
-  PointerEventTypes,
   Viewport,
 } from "./babylon";
 import { AssetLoadingViewContainer as AssetLoadingView } from "../AssetLoader";
@@ -46,6 +45,16 @@ import { v4 as uuidv4 } from "uuid";
 import { withTheme } from "react-jss";
 import { measureEdges } from "../helper/edges";
 import { showCannonPick, cannonCells, fruitCannonPossible } from "./cannonPick.js";
+import {
+  fitView,
+  orthoBounds,
+  clampView,
+  zoomAbout,
+  panBy,
+  lerpView,
+  sameView,
+  attachGestures,
+} from "./boardView.js";
 import { exposeSceneForTests } from "../testHooks";
 
 // The camera looks at the origin and a board's cells start at its position, its middle
@@ -67,6 +76,10 @@ class Scene extends Component {
     this.state = { preview: null, cannonSpots: null };
     // the floating infos (+cacao, +1 shot, ...) on their way up
     this.infoPops = new Set();
+    // the boards' views (src/3d/boardView.js): zoom 1 and the whole board, each remembers where
+    // the player left it; and the view on its way between two boards or to a double tap's zoom
+    this.views = { own: fitView(), opponent: fitView() };
+    this.viewTransition = null;
   }
 
   componentDidMount() {
@@ -117,20 +130,24 @@ class Scene extends Component {
         }
       });
     };
-    // One pointer handler for the boards: the meshes of a Gamefield carry their cell in
-    // metadata (an action manager on every instance cost picking work on every pointer move).
-    // Only board meshes are picked, and only on pointer down.
-    this.scene.skipPointerMovePicking = true;
-    this.scene.skipPointerUpPicking = true;
-    this.scene.pointerDownPredicate = (mesh) =>
-      mesh.isPickable && mesh.isVisible && mesh.isEnabled() && Boolean(mesh.metadata && mesh.metadata.gamefield);
-    this.scene.onPointerObservable.add((info) => {
-      const pick = info.pickInfo;
-      if (pick && pick.hit && pick.pickedMesh && pick.pickedMesh.metadata) {
-        const { gamefield, row, col } = pick.pickedMesh.metadata;
-        gamefield.action(row, col, pick.pickedMesh.position);
+    // The pointer is ours, not Babylon's (its input manager picked on every pointer down): a tap
+    // picks a cell of a board (the meshes of a Gamefield carry their cell in metadata), a drag
+    // moves the view, two fingers or the wheel zoom (src/3d/boardView.js).
+    this.scene.detachControl();
+    this.detachGestures = attachGestures(this.container, {
+      onTap: this.tapBoard,
+      onDoubleTap: this.doubleTapBoard,
+      onPan: (dx, dy) => this.changeView((fit, view) => panBy(fit, view, dx, dy, this.container.clientWidth, this.container.clientHeight)),
+      onPinch: (factor, x, y) => this.zoomBy(factor, x, y),
+      onWheel: (deltaY, x, y, pinch) => this.zoomBy(Math.exp(-deltaY * (pinch ? 0.01 : 0.0015)), x, y),
+      enabled: () => this.zoomEnabled(),
+    });
+    window.addEventListener("keydown", this.keyDown);
+    this.scene.onBeforeRenderObservable.add(() => {
+      if (this.viewTransition) {
+        this.applyView(lerpView(this.viewTransition.from, this.viewTransition.to, this.viewTransition.t));
       }
-    }, PointerEventTypes.POINTERDOWN);
+    });
     window.addEventListener("resize", this.resize);
     this.playerGameField = null;
     this.opponentGameField = null;
@@ -282,6 +299,10 @@ class Scene extends Component {
 
   componentWillUnmount() {
     window.removeEventListener("resize", this.resize);
+    window.removeEventListener("keydown", this.keyDown);
+    if (this.detachGestures) {
+      this.detachGestures();
+    }
     clearInterval(this.weaponIndicatorInterval);
   }
 
@@ -531,10 +552,12 @@ class Scene extends Component {
     }
   }
 
-  estimateOrthographicSize() {
+  // How the camera fits a whole board on the screen: half the height of its window in world
+  // units, the screen's ratio and the window's lift (src/3d/boardView.js reckons with it).
+  boardFit() {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
-    let ratio = width / height;
+    const ratio = width / height;
     let distance = Math.max(7.5 / ratio, 5);
 
     if (typeof this.props.game !== "undefined") {
@@ -549,11 +572,131 @@ class Scene extends Component {
     // card, into the middle of the space below it
     const inset = height > width ? this.props.boardTopInset : 0;
     const shift = (inset * distance) / height;
-    this.camera.orthoTop = distance + shift;
-    this.camera.orthoBottom = -distance + shift;
-    this.camera.orthoLeft = -distance * ratio;
-    this.camera.orthoRight = distance * ratio;
+    return { distance, ratio, shift };
   }
+
+  estimateOrthographicSize() {
+    this.applyView(this.boardView());
+  }
+
+  // the view of the board in front: the own one before the match
+  boardView() {
+    return this.lookAtOpponent ? this.views.opponent : this.views.own;
+  }
+
+  setBoardView(view) {
+    if (this.lookAtOpponent) {
+      this.views.opponent = view;
+    } else {
+      this.views.own = view;
+    }
+  }
+
+  // the camera's window for a view (clamped to the fitted window) and a frame soon
+  applyView(view) {
+    const fit = this.boardFit();
+    const bounds = orthoBounds(fit, clampView(fit, view));
+    this.camera.orthoLeft = bounds.left;
+    this.camera.orthoRight = bounds.right;
+    this.camera.orthoTop = bounds.top;
+    this.camera.orthoBottom = bounds.bottom;
+    // (the first call comes while the scene is being made, before requestRender exists)
+    if (this.requestRender) {
+      this.requestRender();
+    }
+  }
+
+  // zooming and moving: in a match, not in the tutorial (Mimi's card and the demos keep the
+  // whole board)
+  zoomEnabled() {
+    return this.playerGameField !== null && !this.props.tutorial && !this.viewTransition;
+  }
+
+  // `change(fit, view)` gives the new view of the board in front
+  changeView(change) {
+    if (!this.zoomEnabled()) {
+      return;
+    }
+    const fit = this.boardFit();
+    const view = clampView(fit, change(fit, this.boardView()));
+    this.setBoardView(view);
+    this.applyView(view);
+  }
+
+  zoomBy(factor, x, y) {
+    this.changeView((fit, view) =>
+      zoomAbout(fit, view, factor, x / this.container.clientWidth, y / this.container.clientHeight)
+    );
+  }
+
+  // a double tap: twice as close there, or the whole board again when zoomed in
+  doubleTapBoard = (x, y) => {
+    if (!this.zoomEnabled()) {
+      return;
+    }
+    const fit = this.boardFit();
+    const view = this.boardView();
+    const target =
+      view.zoom > 1.05
+        ? fitView()
+        : zoomAbout(fit, view, 2, x / this.container.clientWidth, y / this.container.clientHeight);
+    this.setBoardView(target);
+    this.animateView(view, target, 8);
+  };
+
+  // the view glides from one to another over `frames` (at 30 a second); the camera flight
+  // between the boards does the same for their views
+  animateView(from, to, frames) {
+    if (sameView(from, to)) {
+      this.applyView(to);
+      return;
+    }
+    this.viewTransition = { from, to, t: 0 };
+    const glide = new Animation("boardView", "t", 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+    glide.setKeys([
+      { frame: 0, value: 0 },
+      { frame: frames, value: 1 },
+    ]);
+    this.setRenderLoop();
+    this.scene.beginDirectAnimation(this.viewTransition, [glide], 0, frames, false, 1, () => {
+      this.viewTransition = null;
+      this.applyView(to);
+      this.setRenderLoop(false);
+    });
+  }
+
+  keyDown = (event) => {
+    const target = event.target;
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+      return;
+    }
+    if (event.key === "+" || event.key === "=") {
+      this.zoomBy(1.25, this.container.clientWidth / 2, this.container.clientHeight / 2);
+    } else if (event.key === "-") {
+      this.zoomBy(0.8, this.container.clientWidth / 2, this.container.clientHeight / 2);
+    } else if (event.key === "0") {
+      this.changeView(() => fitView());
+    }
+  };
+
+  // a tap on a cell of a board: the board's action (build, aim, place the factory)
+  tapBoard = (x, y) => {
+    if (!this.scene || this.scene.isDisposed) {
+      return;
+    }
+    const pick = this.scene.pick(
+      x,
+      y,
+      (mesh) =>
+        mesh.isPickable && mesh.isVisible && mesh.isEnabled() && Boolean(mesh.metadata && mesh.metadata.gamefield),
+      false,
+      this.camera
+    );
+    if (pick && pick.hit && pick.pickedMesh && pick.pickedMesh.metadata) {
+      const { gamefield, row, col } = pick.pickedMesh.metadata;
+      gamefield.action(row, col, pick.pickedMesh.position);
+    }
+  };
 
   resize = () => {
     this.estimateOrthographicSize();
@@ -679,6 +822,8 @@ class Scene extends Component {
     this.requestRender();
     this.camera.position = new Vector3(30, 30, 30);
     this.lookAtOpponent = undefined;
+    this.views = { own: fitView(), opponent: fitView() };
+    this.viewTransition = null;
   }
 
   // While a fruit cannon is selected, the own truffle cannons it can replace stand out
@@ -1268,6 +1413,13 @@ class Scene extends Component {
   }
 
   performCameraFlight = () => {
+    // the view glides to the other board's zoom and place along with the flight
+    const from = this.viewTransition
+      ? lerpView(this.viewTransition.from, this.viewTransition.to, this.viewTransition.t)
+      : this.lookAtOpponent
+      ? this.views.own
+      : this.views.opponent;
+    this.animateView(from, this.boardView(), 30);
     this.setRenderLoop();
     let target = new Vector3(30, 30, 30);
     if (this.lookAtOpponent) {
@@ -1302,6 +1454,8 @@ class Scene extends Component {
     const opponentFieldIndex = game.players[1 - game.viewer].fieldIndex;
     this.lookAtOpponent = false;
     this.camera.position = new Vector3(30, 30, 30);
+    this.views = { own: fitView(), opponent: fitView() };
+    this.viewTransition = null;
 
     const gamefieldHeight = boardHeight(game.board.size.cols);
 

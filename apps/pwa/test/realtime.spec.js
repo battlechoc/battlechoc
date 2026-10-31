@@ -377,3 +377,91 @@ test("nothing floats up once the match is over", async ({ page }) => {
   }));
   expect(after).toEqual({ spawned: 0, inFlight: 0 });
 });
+
+// the camera's window and the boards' views (src/3d/boardView.js)
+const boardView = (page) =>
+  page.evaluate(() => {
+    const sc = window.__battlechocScene;
+    return { own: { ...sc.views.own }, opponent: { ...sc.views.opponent }, height: sc.camera.orthoTop - sc.camera.orthoBottom };
+  });
+
+test("the wheel, a drag and a double click zoom and move the board; a tap still builds", async ({ page }) => {
+  await openAsPlayer(page);
+  await startMatch(page);
+  await reachRunningPhase(page);
+  await page.waitForTimeout(1500);
+  const whole = await boardView(page);
+  expect(whole.own).toEqual({ zoom: 1, x: 0, y: 0 });
+
+  // the wheel over the board zooms in about the pointer
+  await page.mouse.move(400, 400);
+  await page.mouse.wheel(0, -400);
+  await page.waitForTimeout(300);
+  const wheeled = await boardView(page);
+  expect(wheeled.own.zoom).toBeGreaterThan(1.5);
+  expect(wheeled.height).toBeCloseTo(whole.height / wheeled.own.zoom, 3);
+
+  // a drag moves the view, a tap does not
+  await page.mouse.move(640, 360);
+  await page.mouse.down();
+  await page.mouse.move(540, 420, { steps: 5 });
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+  const dragged = await boardView(page);
+  expect(dragged.own.zoom).toBeCloseTo(wheeled.own.zoom, 6);
+  expect(dragged.own.x).not.toBeCloseTo(wheeled.own.x, 3);
+
+  // zoomed in, a tap on a free cell builds cream there
+  await page.getByTestId("build-cream").click();
+  const cell = await page.evaluate(() => {
+    const h = window.__battlechoc.host;
+    const grid = h.match.board.fields[h.match.players[0].fieldIndex].grid;
+    const free = grid.find((c) => !c.molten && c.occupiedBy.length === 0);
+    const sc = window.__battlechocScene;
+    const V = sc.camera.position.constructor;
+    const canvas = sc.engine.getRenderingCanvas();
+    const transform = sc.camera.getViewMatrix().multiply(sc.camera.getProjectionMatrix());
+    const p = V.TransformCoordinates(sc.playerGameField.position.add(new V(free.row, 0.3, free.col)), transform);
+    return { row: free.row, col: free.col, x: ((p.x + 1) / 2) * canvas.clientWidth, y: ((1 - p.y) / 2) * canvas.clientHeight };
+  });
+  await page.mouse.click(cell.x, cell.y);
+  await page.waitForTimeout(500);
+  const built = await page.evaluate(
+    ({ row, col }) => {
+      const h = window.__battlechoc.host;
+      const grid = h.match.board.fields[h.match.players[0].fieldIndex].grid;
+      return grid.find((c) => c.row === row && c.col === col).occupiedBy.map((entity) => entity.type);
+    },
+    cell
+  );
+  expect(built).toEqual(["EntityType.CREAM"]);
+  expect((await boardView(page)).own).toEqual(dragged.own);
+  await page.screenshot({ path: "test/output/screenshot_realtime_zoom.png" });
+
+  // 0 shows the whole board, a double click zooms in twice, another shows the whole board again
+  await page.keyboard.press("0");
+  await page.waitForTimeout(200);
+  expect((await boardView(page)).own).toEqual({ zoom: 1, x: 0, y: 0 });
+  await page.mouse.dblclick(500, 300);
+  await page.waitForTimeout(800);
+  expect((await boardView(page)).own.zoom).toBeCloseTo(2, 3);
+  await page.mouse.dblclick(700, 500);
+  await page.waitForTimeout(800);
+  expect((await boardView(page)).own.zoom).toBe(1);
+
+  // each board keeps its own view across the camera flights
+  await page.mouse.move(640, 360);
+  await page.mouse.wheel(0, -400);
+  await page.waitForTimeout(300);
+  const zoomedOwn = (await boardView(page)).own;
+  await page.getByTestId("board-preview").click();
+  await page.waitForTimeout(1500);
+  const atOpponent = await boardView(page);
+  expect(atOpponent.opponent).toEqual({ zoom: 1, x: 0, y: 0 });
+  expect(atOpponent.height).toBeCloseTo(whole.height, 3);
+  await page.getByTestId("board-preview").click();
+  await page.waitForTimeout(1500);
+  const back = await boardView(page);
+  expect(back.own).toEqual(zoomedOwn);
+  expect(back.height).toBeCloseTo(whole.height / zoomedOwn.zoom, 3);
+});

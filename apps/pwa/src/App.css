@@ -37,6 +37,11 @@ body,
   z-index: 1;
   height: 100%;
   width: 100%;
+  /* the board takes drags and pinches itself (src/3d/boardView.js); the browser must not
+   * scroll or zoom the page with them */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* the fruit cannon's choice (src/3d/cannonPick.js): the cannons in circles of light, over the
