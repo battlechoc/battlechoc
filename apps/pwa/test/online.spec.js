@@ -133,22 +133,21 @@ test.describe("online", () => {
     await toRunning([anna, ben]);
     await anna.page.screenshot({ path: "test/output/screenshot_online_running.png" });
 
-    // Ben's tab reloads: he is back in the same match and Anna sees him again. Like a slow
-    // phone (or a busy CI runner), the page is busy right after its live socket opens, longer
-    // than the server waits for the hello: the server closes the socket, and the page has to
-    // connect again in time.
+    // Ben's tab reloads: he is back in the same match and Anna sees him again. Like a page too
+    // busy to say hello in time (a slow phone), his first hello never reaches the server: the
+    // server closes the socket (HELLO_TIMEOUT), and the page has to connect again in time.
+    // (Blocking the main thread for 6 s instead starved the WebGL setup on the CI runner: the
+    // trace's screencast captured the title's animation through the software GPU all the while,
+    // the context creation waited for that backlog, and Ben came back after the grace period.)
     const matchId = await host(anna.page, () => window.__battlechoc.host.matchId);
     await ben.context.addInitScript(() => {
-      const NativeWebSocket = window.WebSocket;
-      window.WebSocket = class extends NativeWebSocket {
-        constructor(...args) {
-          super(...args);
-          if (!window.__busyOnce) {
-            window.__busyOnce = true;
-            const until = Date.now() + 6000;
-            while (Date.now() < until);
-          }
+      const send = WebSocket.prototype.send;
+      WebSocket.prototype.send = function (data) {
+        if (!window.__helloDropped && typeof data === "string" && data.includes('"hello"')) {
+          window.__helloDropped = true;
+          return undefined;
         }
+        return send.call(this, data);
       };
     });
     await ben.page.reload({ waitUntil: "networkidle" });
