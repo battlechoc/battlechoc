@@ -49,7 +49,8 @@ const createPlayer = async (browser, request, name, { unlocked = true } = {}) =>
     // more than 100 XP: Start queues instead of the prepared first match against the server AI
     awards: [{ key: "WINNER" }, { key: "OUVERT" }],
   };
-  const losses = [1, 2].map((i) => ({
+  // with the win, four finished matches: the Choclab and online play are open (shared progression.js)
+  const losses = [1, 2, 3].map((i) => ({
     id: `seed-${username}-${i}`,
     lost: true,
     builtEntities: 3,
