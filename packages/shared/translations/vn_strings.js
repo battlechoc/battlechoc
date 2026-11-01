@@ -511,6 +511,7 @@ module.exports = {
     "GAME_MENU_ONLINE": "Trận đấu trực tuyến vẫn tiếp tục.",
     "BOARD_PREVIEW_OPPONENT": "Đối thủ",
     "BOARD_PREVIEW_OWN": "Bàn của bạn",
+    "BOARD_ZOOM_RESET": "Toàn bộ bàn cờ",
     "OFFLINE_ONLY": "Chỉ dùng được khi trực tuyến. Hãy kiểm tra kết nối internet.",
     "SERVER_UNREACHABLE": "Hiện không thể kết nối tới máy chủ battlechoc. Vui lòng thử lại sau.",
     "SETTINGS_MUSIC": "Nhạc",

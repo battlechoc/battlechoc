@@ -189,6 +189,7 @@ Fab.propTypes = {
     "pen",
     "discord",
     "lab/recipe-book",
+    "fit-board",
   ]),
   iconStyle: PropTypes.object,
   className: PropTypes.string,

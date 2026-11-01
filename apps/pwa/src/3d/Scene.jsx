@@ -53,9 +53,17 @@ import {
   panBy,
   lerpView,
   sameView,
+  swipeBy,
+  swipeGoesOn,
   attachGestures,
 } from "./boardView.js";
 import { exposeSceneForTests } from "../testHooks";
+import Fab from "../ui/controls/Fab";
+
+// The camera's place for the own board, and how far it moves to look at the opponent's (the
+// boards lie 12 apart in x and z: on the screen the other one is beside, just out of view)
+const CAMERA_HOME = new Vector3(30, 30, 30);
+const CAMERA_FLIGHT = new Vector3(-24, -12, 0);
 
 // The camera looks at the origin and a board's cells start at its position, its middle
 // (cols - 1) / 2 further in: lifted by that, a board is centred on the screen. The 6×6 board
@@ -73,13 +81,19 @@ class Scene extends Component {
     super(props);
     this.loadingView = createRef();
     // the preview of the other board: where it is on the screen and which board it shows
-    this.state = { preview: null, cannonSpots: null };
+    // and whether the board in view is zoomed in (the whole-board button shows then)
+    this.state = { preview: null, cannonSpots: null, zoomed: false };
     // the floating infos (+cacao, +1 shot, ...) on their way up
     this.infoPops = new Set();
     // the boards' views (src/3d/boardView.js): zoom 1 and the whole board, each remembers where
-    // the player left it; and the view on its way between two boards or to a double tap's zoom
+    // the player left it; and a view on its way to the whole board
     this.views = { own: fitView(), opponent: fitView() };
     this.viewTransition = null;
+    // where the camera is between the boards (0 the own, 1 the opponent's), its flight from
+    // one to the other, and a finger dragging it there (src/3d/boardView.js, swipeBy)
+    this.between = 0;
+    this.flight = null;
+    this.swipe = null;
   }
 
   componentDidMount() {
@@ -132,19 +146,22 @@ class Scene extends Component {
     };
     // The pointer is ours, not Babylon's (its input manager picked on every pointer down): a tap
     // picks a cell of a board (the meshes of a Gamefield carry their cell in metadata), a drag
-    // moves the view, two fingers or the wheel zoom (src/3d/boardView.js).
+    // moves the view or pulls the other board in, two fingers or the wheel zoom
+    // (src/3d/boardView.js).
     this.scene.detachControl();
     this.detachGestures = attachGestures(this.container, {
       onTap: this.tapBoard,
-      onDoubleTap: this.doubleTapBoard,
-      onPan: (dx, dy) => this.changeView((fit, view) => panBy(fit, view, dx, dy, this.container.clientWidth, this.container.clientHeight)),
+      onPan: this.dragBoard,
+      onPanEnd: this.endSwipe,
       onPinch: (factor, x, y) => this.zoomBy(factor, x, y),
       onWheel: (deltaY, x, y, pinch) => this.zoomBy(Math.exp(-deltaY * (pinch ? 0.01 : 0.0015)), x, y),
       enabled: () => this.zoomEnabled(),
     });
     window.addEventListener("keydown", this.keyDown);
     this.scene.onBeforeRenderObservable.add(() => {
-      if (this.viewTransition) {
+      if (this.flight) {
+        this.applyBetween(this.flight.from + (this.flight.to - this.flight.from) * this.flight.t);
+      } else if (this.viewTransition) {
         this.applyView(lerpView(this.viewTransition.from, this.viewTransition.to, this.viewTransition.t));
       }
     });
@@ -576,12 +593,34 @@ class Scene extends Component {
   }
 
   estimateOrthographicSize() {
-    this.applyView(this.boardView());
+    this.applyView(this.currentView());
   }
 
   // the view of the board in front: the own one before the match
   boardView() {
     return this.lookAtOpponent ? this.views.opponent : this.views.own;
+  }
+
+  // the view as it shows right now: between the boards, a mix of both views
+  currentView() {
+    if (this.viewTransition) {
+      return lerpView(this.viewTransition.from, this.viewTransition.to, this.viewTransition.t);
+    }
+    return lerpView(this.views.own, this.views.opponent, this.between);
+  }
+
+  // the camera on its way between the boards (0 the own, 1 the opponent's): its place and the
+  // view that goes with it
+  applyBetween(between) {
+    this.between = between;
+    this.camera.position = CAMERA_HOME.add(CAMERA_FLIGHT.scale(between));
+    this.applyView(this.currentView());
+  }
+
+  // the other board's offset on the screen in world units, negative when it lies to the left
+  // (the flight's part across the camera's view)
+  sideways() {
+    return Vector3.TransformNormal(CAMERA_FLIGHT, this.camera.getViewMatrix()).x;
   }
 
   setBoardView(view) {
@@ -600,6 +639,11 @@ class Scene extends Component {
     this.camera.orthoRight = bounds.right;
     this.camera.orthoTop = bounds.top;
     this.camera.orthoBottom = bounds.bottom;
+    // the whole-board button comes with the first bit of zoom and goes with the last
+    const zoomed = view.zoom > 1.01;
+    if (zoomed !== this.state.zoomed) {
+      this.setState({ zoomed });
+    }
     // (the first call comes while the scene is being made, before requestRender exists)
     if (this.requestRender) {
       this.requestRender();
@@ -607,14 +651,14 @@ class Scene extends Component {
   }
 
   // zooming and moving: in a match, not in the tutorial (Mimi's card and the demos keep the
-  // whole board)
+  // whole board), not while the camera flies
   zoomEnabled() {
-    return this.playerGameField !== null && !this.props.tutorial && !this.viewTransition;
+    return this.playerGameField !== null && !this.props.tutorial && !this.viewTransition && !this.flight;
   }
 
   // `change(fit, view)` gives the new view of the board in front
   changeView(change) {
-    if (!this.zoomEnabled()) {
+    if (!this.zoomEnabled() || this.swipe) {
       return;
     }
     const fit = this.boardFit();
@@ -629,23 +673,108 @@ class Scene extends Component {
     );
   }
 
-  // a double tap: twice as close there, or the whole board again when zoomed in
-  doubleTapBoard = (x, y) => {
+  // the whole board again (the button under the preview, the 0 key)
+  fitBoard = () => {
+    if (!this.zoomEnabled() || this.swipe) {
+      return;
+    }
+    const view = this.boardView();
+    this.setBoardView(fitView());
+    this.animateView(view, fitView(), 8);
+  };
+
+  // A drag: the view moves with the finger; what it cannot take sideways, at the edge of the
+  // board or with the whole board in view, pulls the other board in. Once that began, the
+  // finger scrubs the camera between the boards until it goes back where it started.
+  dragBoard = (dx, dy) => {
     if (!this.zoomEnabled()) {
       return;
     }
+    if (this.swipe) {
+      this.moveSwipe(dx);
+      return;
+    }
     const fit = this.boardFit();
-    const view = this.boardView();
-    const target =
-      view.zoom > 1.05
-        ? fitView()
-        : zoomAbout(fit, view, 2, x / this.container.clientWidth, y / this.container.clientHeight);
-    this.setBoardView(target);
-    this.animateView(view, target, 8);
+    const before = this.boardView();
+    const width = this.container.clientWidth;
+    const after = panBy(fit, before, dx, dy, width, this.container.clientHeight);
+    this.setBoardView(after);
+    this.applyView(after);
+    const bounds = orthoBounds(fit, before);
+    const taken = ((before.x - after.x) * width) / (bounds.right - bounds.left);
+    const leftover = dx - taken;
+    if (Math.abs(leftover) > 0.5) {
+      this.moveSwipe(leftover);
+    }
   };
 
-  // the view glides from one to another over `frames` (at 30 a second); the camera flight
-  // between the boards does the same for their views
+  moveSwipe(dx) {
+    const bounds = orthoBounds(this.boardFit(), this.currentView());
+    const perPixel = (bounds.right - bounds.left) / this.container.clientWidth;
+    const between = swipeBy(this.between, dx, perPixel, this.sideways());
+    const start = this.lookAtOpponent ? 1 : 0;
+    const now = performance.now();
+    if (!this.swipe) {
+      if (between === start) {
+        return;
+      }
+      this.swipe = { start, speed: 0, time: now };
+    } else {
+      // the speed of the last moves toward the other board (pixels a millisecond), for a flick
+      const dt = Math.max(1, now - this.swipe.time);
+      const pixels = ((between - this.between) * (start === 0 ? 1 : -1) * Math.abs(this.sideways())) / perPixel;
+      this.swipe.speed = 0.6 * this.swipe.speed + (0.4 * pixels) / dt;
+      this.swipe.time = now;
+    }
+    this.applyBetween(between);
+    if (between === start) {
+      this.swipe = null;
+    }
+  }
+
+  // the finger is off: on to the other board, or back
+  endSwipe = () => {
+    if (!this.swipe) {
+      return;
+    }
+    const { start, speed } = this.swipe;
+    this.swipe = null;
+    if (swipeGoesOn(start, this.between, speed)) {
+      // the HUD's toggle, as the preview button: the flight follows (realtimeUpdate)
+      this.props.toggleBoardView();
+    } else {
+      this.animateBetween(start);
+    }
+  };
+
+  // the camera flies between the boards, over `frames` (at 30 a second) for the whole way
+  animateBetween(to, frames = 30) {
+    if (this.viewTransition) {
+      this.scene.stopAnimation(this.viewTransition);
+      this.viewTransition = null;
+    }
+    const from = this.between;
+    if (from === to) {
+      this.applyBetween(to);
+      return;
+    }
+    // part of the way (after a swipe) takes its share of the time, a short hop at least
+    const length = Math.max(6, Math.round(frames * Math.abs(to - from)));
+    this.flight = { from, to, t: 0 };
+    const glide = new Animation("cameraFlight", "t", 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+    glide.setKeys([
+      { frame: 0, value: 0 },
+      { frame: length, value: 1 },
+    ]);
+    this.setRenderLoop();
+    this.scene.beginDirectAnimation(this.flight, [glide], 0, length, false, 1, () => {
+      this.flight = null;
+      this.applyBetween(to);
+      this.setRenderLoop(false);
+    });
+  }
+
+  // the view glides from one to another over `frames` (at 30 a second)
   animateView(from, to, frames) {
     if (sameView(from, to)) {
       this.applyView(to);
@@ -675,7 +804,7 @@ class Scene extends Component {
     } else if (event.key === "-") {
       this.zoomBy(0.8, this.container.clientWidth / 2, this.container.clientHeight / 2);
     } else if (event.key === "0") {
-      this.changeView(() => fitView());
+      this.fitBoard();
     }
   };
 
@@ -716,15 +845,16 @@ class Scene extends Component {
     const ratio = width / height;
     // the screen's edges and the menu button's size, as the HUD has them (src/index.css)
     const { top, left, fab, gap } = measureEdges();
+    // (fab and gap: the whole-board button sits under the preview, renderFitButton)
     if (ratio < 1) {
       // portrait: under the menu button, clear of the match time at the top middle
       const side = 0.4 * width;
-      return { left: Math.round(left), top: Math.round(top + fab + gap), width: Math.round(side), height: Math.round(side * 0.6) };
+      return { left: Math.round(left), top: Math.round(top + fab + gap), width: Math.round(side), height: Math.round(side * 0.6), fab, gap };
     }
     // landscape: beside the menu button; on a phone held sideways no higher than a fifth of the
     // screen, the board comes close to the corner there
     const side = Math.min(Math.max(0.2 * width, 180), 340, (0.22 * height) / 0.6);
-    return { left: Math.round(left + fab + gap), top: Math.round(top), width: Math.round(side), height: Math.round(side * 0.6) };
+    return { left: Math.round(left + fab + gap), top: Math.round(top), width: Math.round(side), height: Math.round(side * 0.6), fab, gap };
   }
 
   showPreview() {
@@ -820,10 +950,8 @@ class Scene extends Component {
     this.playerGameField = null;
     this.opponentGameField = null;
     this.requestRender();
-    this.camera.position = new Vector3(30, 30, 30);
     this.lookAtOpponent = undefined;
-    this.views = { own: fitView(), opponent: fitView() };
-    this.viewTransition = null;
+    this.resetCamera();
   }
 
   // While a fruit cannon is selected, the own truffle cannons it can replace stand out
@@ -1412,50 +1540,33 @@ class Scene extends Component {
     }
   }
 
+  // the camera flies to the board in front, from wherever it is (a swipe may have brought it
+  // part of the way); the view glides to that board's zoom and place along with it
   performCameraFlight = () => {
-    // the view glides to the other board's zoom and place along with the flight
-    const from = this.viewTransition
-      ? lerpView(this.viewTransition.from, this.viewTransition.to, this.viewTransition.t)
-      : this.lookAtOpponent
-      ? this.views.own
-      : this.views.opponent;
-    this.animateView(from, this.boardView(), 30);
-    this.setRenderLoop();
-    let target = new Vector3(30, 30, 30);
-    if (this.lookAtOpponent) {
-      target = new Vector3(6, 18, 30);
-    }
-    let flight = new Animation(
-      "animCam",
-      "position",
-      30,
-      Animation.ANIMATIONTYPE_VECTOR3,
-      Animation.ANIMATIONLOOPMODE_CYCLE
-    );
-    let keyframes = [
-      { frame: 0, value: this.camera.position },
-      { frame: 30, value: target },
-    ];
-    flight.setKeys(keyframes);
-    this.scene.beginDirectAnimation(
-      this.camera,
-      [flight],
-      0,
-      60,
-      false,
-      1,
-      () => this.setRenderLoop(false)
-    );
+    this.animateBetween(this.lookAtOpponent ? 1 : 0);
   };
+
+  // the camera at the own board, nothing on its way
+  resetCamera() {
+    if (this.flight) {
+      this.scene.stopAnimation(this.flight);
+      this.flight = null;
+    }
+    if (this.viewTransition) {
+      this.scene.stopAnimation(this.viewTransition);
+      this.viewTransition = null;
+    }
+    this.swipe = null;
+    this.views = { own: fitView(), opponent: fitView() };
+    this.applyBetween(0);
+  }
 
   startGame = (game) => {
     // the viewer's board is in front, the opponent's behind it; the player switches freely
     const playerFieldIndex = game.players[game.viewer].fieldIndex;
     const opponentFieldIndex = game.players[1 - game.viewer].fieldIndex;
     this.lookAtOpponent = false;
-    this.camera.position = new Vector3(30, 30, 30);
-    this.views = { own: fitView(), opponent: fitView() };
-    this.viewTransition = null;
+    this.resetCamera();
 
     const gamefieldHeight = boardHeight(game.board.size.cols);
 
@@ -1541,6 +1652,36 @@ class Scene extends Component {
     );
   }
 
+  // The whole-board button under the preview: there as soon as the board in view is zoomed
+  // in, gone when the whole board shows again. A small round button, an icon only (the
+  // corners of a frame closing in on a board).
+  renderFitButton({ left, top, height, fab, gap }) {
+    const zoomed = this.state.zoomed;
+    const size = Math.max(40, Math.round(0.7 * fab));
+    return (
+      <Fab
+        color="secondary"
+        icon="fit-board"
+        data-testid="board-fit"
+        aria-label={t(tr.BOARD_ZOOM_RESET)}
+        aria-hidden={!zoomed}
+        tabIndex={zoomed ? 0 : -1}
+        onClick={this.fitBoard}
+        style={{
+          position: "absolute",
+          zIndex: 2,
+          left,
+          top: top + height + gap,
+          width: size,
+          height: size,
+          opacity: zoomed ? 1 : 0,
+          pointerEvents: zoomed ? "auto" : "none",
+          transition: "opacity 0.2s",
+        }}
+      />
+    );
+  }
+
   render() {
     return (
       <div>
@@ -1554,6 +1695,7 @@ class Scene extends Component {
           }}
         />
         {this.state.preview ? this.renderPreviewFrame(this.state.preview) : null}
+        {this.state.preview ? this.renderFitButton(this.state.preview) : null}
         {this.state.cannonSpots ? this.renderCannonSpots(this.state.cannonSpots) : null}
       </div>
     );

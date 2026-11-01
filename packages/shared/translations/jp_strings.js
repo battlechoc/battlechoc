@@ -511,6 +511,7 @@ module.exports = {
     "GAME_MENU_ONLINE": "オンラインでは試合は続きます。",
     "BOARD_PREVIEW_OPPONENT": "相手",
     "BOARD_PREVIEW_OWN": "自分の盤面",
+    "BOARD_ZOOM_RESET": "盤面全体",
     "OFFLINE_ONLY": "オンラインでのみ利用できます。インターネット接続を確認してください。",
     "SERVER_UNREACHABLE": "現在battlechocのサーバーに接続できません。しばらくしてからもう一度お試しください。",
     "SETTINGS_MUSIC": "音楽",

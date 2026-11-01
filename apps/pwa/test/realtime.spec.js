@@ -385,7 +385,7 @@ const boardView = (page) =>
     return { own: { ...sc.views.own }, opponent: { ...sc.views.opponent }, height: sc.camera.orthoTop - sc.camera.orthoBottom };
   });
 
-test("the wheel, a drag and a double click zoom and move the board; a tap still builds", async ({ page }) => {
+test("the wheel and a drag zoom and move the board, a swipe brings the other board; a tap still builds", async ({ page }) => {
   await openAsPlayer(page);
   await startMatch(page);
   await reachRunningPhase(page);
@@ -438,16 +438,48 @@ test("the wheel, a drag and a double click zoom and move the board; a tap still 
   expect((await boardView(page)).own).toEqual(dragged.own);
   await page.screenshot({ path: "test/output/screenshot_realtime_zoom.png" });
 
-  // 0 shows the whole board, a double click zooms in twice, another shows the whole board again
-  await page.keyboard.press("0");
-  await page.waitForTimeout(200);
+  // the whole-board button is there while zoomed in; it and the 0 key show the whole board
+  const fitButton = page.getByTestId("board-fit");
+  expect(await fitButton.evaluate((e) => getComputedStyle(e).opacity)).toBe("1");
+  await fitButton.click();
+  await page.waitForTimeout(900);
   expect((await boardView(page)).own).toEqual({ zoom: 1, x: 0, y: 0 });
+  expect(await fitButton.evaluate((e) => getComputedStyle(e).opacity)).toBe("0");
+  await page.keyboard.press("+");
+  await page.waitForTimeout(200);
+  expect((await boardView(page)).own.zoom).toBeCloseTo(1.25, 3);
+  await page.keyboard.press("0");
+  await page.waitForTimeout(600);
+  expect((await boardView(page)).own).toEqual({ zoom: 1, x: 0, y: 0 });
+
+  // a double click is two taps, no zoom (firing many cannons means tapping fast)
   await page.mouse.dblclick(500, 300);
-  await page.waitForTimeout(800);
-  expect((await boardView(page)).own.zoom).toBeCloseTo(2, 3);
-  await page.mouse.dblclick(700, 500);
-  await page.waitForTimeout(800);
+  await page.waitForTimeout(500);
   expect((await boardView(page)).own.zoom).toBe(1);
+
+  // a swipe toward the other board pulls it in: released far enough, the camera flies on and
+  // the preview shows the own board; a short one springs back
+  const toward = (await page.evaluate(() => window.__battlechocScene.sideways())) < 0 ? 1 : -1;
+  await page.mouse.move(640, 400);
+  await page.mouse.down();
+  await page.mouse.move(640 + toward * 200, 400, { steps: 10 });
+  const midway = await page.evaluate(() => window.__battlechocScene.between);
+  expect(midway).toBeGreaterThan(0.1);
+  expect(midway).toBeLessThan(0.6);
+  await page.mouse.move(640 + toward * 500, 400, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(1500);
+  expect(await page.evaluate(() => window.__battlechocScene.between)).toBe(1);
+  await expect(page.getByTestId("board-preview")).toHaveAttribute("data-board", "own");
+  await page.mouse.move(640, 400);
+  await page.mouse.down();
+  await page.mouse.move(640 - toward * 100, 400, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(800);
+  expect(await page.evaluate(() => window.__battlechocScene.between)).toBe(1);
+  await page.getByTestId("board-preview").click();
+  await page.waitForTimeout(1500);
+  expect(await page.evaluate(() => window.__battlechocScene.between)).toBe(0);
 
   // each board keeps its own view across the camera flights
   await page.mouse.move(640, 360);

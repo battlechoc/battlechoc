@@ -511,6 +511,7 @@ module.exports = {
     "GAME_MENU_ONLINE": "En ligne, la partie continue.",
     "BOARD_PREVIEW_OPPONENT": "Adversaire",
     "BOARD_PREVIEW_OWN": "Votre plateau",
+    "BOARD_ZOOM_RESET": "Tout le tableau",
     "OFFLINE_ONLY": "Disponible uniquement en ligne. Vérifiez votre connexion internet.",
     "SERVER_UNREACHABLE": "Le serveur de battlechoc est injoignable pour le moment. Réessayez plus tard.",
     "SETTINGS_MUSIC": "Musique",

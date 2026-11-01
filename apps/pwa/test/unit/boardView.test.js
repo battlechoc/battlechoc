@@ -10,6 +10,8 @@ import {
   zoomAbout,
   panBy,
   lerpView,
+  swipeBy,
+  swipeGoesOn,
   ZOOM_MAX,
 } from "../../src/3d/boardView.js";
 
@@ -78,4 +80,27 @@ test("a view glides between two others, the zoom in even steps of its ratio", ()
   close(middle.zoom, 2, "zoom");
   close(middle.x, 1, "x");
   close(middle.y, -1, "y");
+});
+
+test("a swipe pulls the other board in by what the picture moves, and no further than it", () => {
+  // the other board 17 units to the left, 50 px a unit: a drag to the right by 170 px is a
+  // fifth of the way; past the end it stops
+  close(swipeBy(0, 170, 0.02, -17), 0.2, "a fifth");
+  close(swipeBy(0.2, -170, 0.02, -17), 0, "back");
+  assert.equal(swipeBy(0, -100, 0.02, -17), 0);
+  assert.equal(swipeBy(0.9, 1000, 0.02, -17), 1);
+  // the other board to the right: a drag to the left pulls it in
+  close(swipeBy(0, -170, 0.02, 17), 0.2, "to the right");
+});
+
+test("a released swipe goes on past a third of the way or with a flick, else springs back", () => {
+  assert.equal(swipeGoesOn(0, 0.2, 0), false);
+  assert.equal(swipeGoesOn(0, 0.35, 0), true);
+  assert.equal(swipeGoesOn(0, 0.1, 1), true);
+  assert.equal(swipeGoesOn(0, 0.1, 0.2), false);
+  assert.equal(swipeGoesOn(0, 0.02, 1), false);
+  // from the opponent's board back: the way counts the other way
+  assert.equal(swipeGoesOn(1, 0.6, 0), true);
+  assert.equal(swipeGoesOn(1, 0.8, 0), false);
+  assert.equal(swipeGoesOn(1, 0.8, 1), true);
 });

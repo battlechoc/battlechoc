@@ -79,27 +79,41 @@ export const lerpView = (from, to, t) => ({
 export const sameView = (a, b) =>
   Math.abs(a.zoom - b.zoom) < 1e-6 && Math.abs(a.x - b.x) < 1e-6 && Math.abs(a.y - b.y) < 1e-6;
 
+// Between the boards: 0 is the own board, 1 the opponent's; the Scene moves the camera along
+// the line between them, a swipe scrubs it. A drag of `dx` pixels pulls the other board in by
+// what the picture moves on the screen: `perPixel` world units a pixel and `sideways` the
+// other board's offset on the screen in world units (negative: it lies to the left).
+export const swipeBy = (between, dx, perPixel, sideways) =>
+  Math.min(1, Math.max(0, between - (dx * perPixel) / sideways)) + 0;
+
+// A released swipe goes on to the other board this far along the way, or when flicked this
+// fast (`speed`: CSS pixels per millisecond toward the other board, the same on every screen)
+// after a twentieth of the way; otherwise it springs back
+export const SWIPE_SNAP = 0.3;
+export const SWIPE_FLICK = 0.5;
+export const swipeGoesOn = (start, between, speed) => {
+  const progress = (between - start) * (start === 0 ? 1 : -1);
+  return progress > SWIPE_SNAP || (progress > 0.05 && speed > SWIPE_FLICK);
+};
+
 // A finger or a mouse button moving less than this is a tap (CSS pixels)
 export const TAP_SLACK = 8;
-// Two taps this close in time and place are a double tap
-export const DOUBLE_TAP_MS = 300;
-export const DOUBLE_TAP_SLACK = 30;
 
 /**
- * Tells taps, double taps, drags, pinches and the wheel apart on an element (pointer events).
- * Coordinates are CSS pixels from the element's top left. The handlers:
+ * Tells taps, drags, pinches and the wheel apart on an element (pointer events). No double
+ * tap: firing many cannons means tapping fast, every tap must count. Coordinates are CSS
+ * pixels from the element's top left. The handlers:
  *   onTap(x, y)            a press and release that did not move
- *   onDoubleTap(x, y)      the second of two quick taps (the first was already a tap)
  *   onPan(dx, dy)          a drag by dx, dy pixels since the last call
+ *   onPanEnd()             the last finger or the button went up after a drag or a pinch
  *   onPinch(factor, x, y)  two fingers: their distance grew by factor, about their middle
  *   onWheel(deltaY, x, y, pinch)  the wheel, or a trackpad pinch (ctrl + wheel)
  * `enabled()` says whether drags and zooms count right now (taps always do).
  */
-export const attachGestures = (element, { onTap, onDoubleTap, onPan, onPinch, onWheel, enabled = () => true }) => {
+export const attachGestures = (element, { onTap, onPan, onPanEnd = () => {}, onPinch, onWheel, enabled = () => true }) => {
   const pointers = new Map();
   let moved = false;
   let pinching = false;
-  let lastTap = null;
 
   const local = (event) => {
     const rect = element.getBoundingClientRect();
@@ -184,26 +198,19 @@ export const attachGestures = (element, { onTap, onDoubleTap, onPan, onPinch, on
       return;
     }
     pointers.delete(event.pointerId);
-    if (pointers.size > 0 || moved || event.type === "pointercancel") {
-      if (pointers.size === 0) {
-        pinching = false;
+    if (pointers.size > 0) {
+      return;
+    }
+    if (moved || event.type === "pointercancel") {
+      const dragged = moved;
+      pinching = false;
+      moved = false;
+      if (dragged) {
+        onPanEnd();
       }
       return;
     }
     const point = local(event);
-    const now = event.timeStamp;
-    if (
-      lastTap &&
-      now - lastTap.time < DOUBLE_TAP_MS &&
-      Math.hypot(point.x - lastTap.x, point.y - lastTap.y) < DOUBLE_TAP_SLACK
-    ) {
-      lastTap = null;
-      if (enabled()) {
-        onDoubleTap(point.x, point.y);
-        return;
-      }
-    }
-    lastTap = { x: point.x, y: point.y, time: now };
     onTap(point.x, point.y);
   };
 

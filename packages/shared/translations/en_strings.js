@@ -511,6 +511,7 @@ module.exports = {
     "GAME_MENU_ONLINE": "Online, the match keeps running.",
     "BOARD_PREVIEW_OPPONENT": "Opponent",
     "BOARD_PREVIEW_OWN": "Your board",
+    "BOARD_ZOOM_RESET": "Whole board",
     "OFFLINE_ONLY": "Only available online. Check your internet connection.",
     "SERVER_UNREACHABLE": "The battlechoc server can't be reached right now. Please try again later.",
     "SETTINGS_MUSIC": "Music",
