@@ -116,6 +116,11 @@ test("builds a cannon that turns blue after 10 s and green after 20 s", async ({
   await openAsPlayer(page);
   await startMatch(page);
   await reachRunningPhase(page);
+  // Tom Toffee sits this one out: his first shot, due at 20 s like the cannon's, now and then
+  // hit the cannon under test (the match host runs the agents it has)
+  await page.evaluate(() => {
+    window.__battlechoc.host.agents = [];
+  });
   const result = await page.evaluate(() => {
     const h = window.__battlechoc.host;
     const grid = h.match.board.fields[h.match.players[0].fieldIndex].grid;
@@ -445,17 +450,17 @@ test("the wheel and a drag zoom and move the board, a swipe brings the other boa
   await page.screenshot({ path: "test/output/screenshot_realtime_zoom.png" });
 
   // the whole-board button is there while zoomed in; it and the 0 key show the whole board
+  // (the glides and flights take a while on a slow machine: wait for their ends, not for a time)
   const fitButton = page.getByTestId("board-fit");
-  expect(await fitButton.evaluate((e) => getComputedStyle(e).opacity)).toBe("1");
+  await expect(fitButton).toHaveCSS("opacity", "1");
   await fitButton.click();
-  await page.waitForTimeout(900);
   expect((await boardView(page)).own).toEqual({ zoom: 1, x: 0, y: 0 });
-  expect(await fitButton.evaluate((e) => getComputedStyle(e).opacity)).toBe("0");
+  await expect(fitButton).toHaveCSS("opacity", "0", { timeout: 10000 });
   await page.keyboard.press("+");
   await page.waitForTimeout(200);
   expect((await boardView(page)).own.zoom).toBeCloseTo(1.25, 3);
   await page.keyboard.press("0");
-  await page.waitForTimeout(600);
+  await expect(fitButton).toHaveCSS("opacity", "0", { timeout: 10000 });
   expect((await boardView(page)).own).toEqual({ zoom: 1, x: 0, y: 0 });
 
   // a double click is two taps, no zoom (firing many cannons means tapping fast)
@@ -474,18 +479,17 @@ test("the wheel and a drag zoom and move the board, a swipe brings the other boa
   expect(midway).toBeLessThan(0.6);
   await page.mouse.move(640 + toward * 500, 400, { steps: 10 });
   await page.mouse.up();
-  await page.waitForTimeout(1500);
-  expect(await page.evaluate(() => window.__battlechocScene.between)).toBe(1);
+  const between = () => page.evaluate(() => window.__battlechocScene.between);
+  await expect.poll(between, { timeout: 10000 }).toBe(1);
   await expect(page.getByTestId("board-preview")).toHaveAttribute("data-board", "own");
   await page.mouse.move(640, 400);
   await page.mouse.down();
   await page.mouse.move(640 - toward * 100, 400, { steps: 10 });
+  expect(await between()).toBeLessThan(1);
   await page.mouse.up();
-  await page.waitForTimeout(800);
-  expect(await page.evaluate(() => window.__battlechocScene.between)).toBe(1);
+  await expect.poll(between, { timeout: 10000 }).toBe(1);
   await page.getByTestId("board-preview").click();
-  await page.waitForTimeout(1500);
-  expect(await page.evaluate(() => window.__battlechocScene.between)).toBe(0);
+  await expect.poll(between, { timeout: 10000 }).toBe(0);
 
   // each board keeps its own view across the camera flights
   await page.mouse.move(640, 360);
@@ -493,12 +497,12 @@ test("the wheel and a drag zoom and move the board, a swipe brings the other boa
   await page.waitForTimeout(300);
   const zoomedOwn = (await boardView(page)).own;
   await page.getByTestId("board-preview").click();
-  await page.waitForTimeout(1500);
+  await expect.poll(between, { timeout: 10000 }).toBe(1);
   const atOpponent = await boardView(page);
   expect(atOpponent.opponent).toEqual({ zoom: 1, x: 0, y: 0 });
   expect(atOpponent.height).toBeCloseTo(whole.height, 3);
   await page.getByTestId("board-preview").click();
-  await page.waitForTimeout(1500);
+  await expect.poll(between, { timeout: 10000 }).toBe(0);
   const back = await boardView(page);
   expect(back.own).toEqual(zoomedOwn);
   expect(back.height).toBeCloseTo(whole.height / zoomedOwn.zoom, 3);

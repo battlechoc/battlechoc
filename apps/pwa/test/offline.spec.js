@@ -41,7 +41,7 @@ const unlocked = {
   username: "Tester",
   score: 150,
   tutorialFinished: true,
-  trackRecord: [0, 1, 2].map((i) => ({ id: `seed-${i}`, won: true, winners: [{ idx: 0 }] })),
+  trackRecord: [0, 1, 2, 3].map((i) => ({ id: `seed-${i}`, won: true, winners: [{ idx: 0 }] })),
 };
 const serverDown = "The battlechoc server can't be reached right now. Please try again later.";
 const offline = "Only available online. Check your internet connection.";
@@ -159,6 +159,7 @@ test("offline the profile shows level, XP and what the next matches unlock; the 
     trackRecord: [
       { id: "first", won: true, winners: [{ idx: 0 }] },
       { id: "second", lost: true, winners: [{ idx: 1 }] },
+      { id: "third", won: true, winners: [{ idx: 0 }] },
     ],
   });
   await page.goto("/", { waitUntil: "networkidle" });
