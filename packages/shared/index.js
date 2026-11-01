@@ -187,6 +187,13 @@ module.exports.achievementXp = progression.achievementXp;
 module.exports.rollDrops = progression.rollDrops;
 module.exports.levelRefund = progression.levelRefund;
 module.exports.StarterKit = progression.StarterKit;
+module.exports.BuildingUnlocks = progression.BuildingUnlocks;
+module.exports.UnlockGames = progression.UnlockGames;
+module.exports.buildingsUnlockedBetween = progression.buildingsUnlockedBetween;
+module.exports.gamesPlayed = progression.gamesPlayed;
+module.exports.unlocks = progression.unlocks;
+module.exports.LevelXp = progression.LevelXp;
+module.exports.playerLevel = progression.playerLevel;
 const equipment = require('./equipment');
 module.exports.Items = equipment.Items;
 module.exports.Tier = equipment.Tier;
@@ -419,8 +426,20 @@ const translationPredicates = {
     COINS_FOR_NEXT_FEATURE_TITLE: function (strings, feature) {
         return fmt(strings.COINS_FOR_NEXT_FEATURE_TITLE, { feature: feature });
     },
-    COINS_FOR_NEXT_FEATURE_BODY: function (strings, feature, missingScore) {
-        return fmt(strings.COINS_FOR_NEXT_FEATURE_BODY, { feature: feature, missingScore: missingScore });
+    UNLOCK_FEATURE_ONE_GAME: function (strings, feature) {
+        return fmt(strings.UNLOCK_FEATURE_ONE_GAME, { feature: feature });
+    },
+    UNLOCK_FEATURE_GAMES: function (strings, feature, count) {
+        return fmt(strings.UNLOCK_FEATURE_GAMES, { feature: feature, count: count });
+    },
+    UNLOCK_ONLINE_GAMES: function (strings, count) {
+        return fmt(strings.UNLOCK_ONLINE_GAMES, { count: count });
+    },
+    NAME_CONFLICT_TEXT: function (strings, name) {
+        return fmt(strings.NAME_CONFLICT_TEXT, { name: name });
+    },
+    PROFILE_XP: function (strings, xp, next) {
+        return fmt(strings.PROFILE_XP, { xp: xp, next: next });
     },
     MULTIPLAYER_AUTOMATICALLY_LOSE: function (strings, hours, minutes) {
         return fmt(strings.MULTIPLAYER_AUTOMATICALLY_LOSE, { hours: hours, minutes: minutes });

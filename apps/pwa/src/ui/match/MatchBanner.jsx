@@ -16,7 +16,7 @@ const { MatchPhase, OutcomeReason } = engine;
 const useStyles = createUseStyles((theme) => ({
   banner: {
     position: "absolute",
-    top: 5,
+    top: theme.edge.top,
     left: "50%",
     transform: "translateX(-50%)",
     zIndex: 3,
@@ -33,9 +33,8 @@ const useStyles = createUseStyles((theme) => ({
   },
   // longer messages go below the row of action buttons
   message: {
-    top: "calc(10px + 8vw)",
+    top: `calc(${theme.edge.top} + ${theme.fab} + ${theme.edge.gap})`,
     width: "90vw",
-    [theme.breakpoints.orientation.portrait]: { top: "calc(10px + 16vw)" },
   },
   countdown: {
     position: "absolute",

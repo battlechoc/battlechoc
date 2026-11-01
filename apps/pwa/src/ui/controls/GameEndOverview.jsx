@@ -32,7 +32,8 @@ const useStyles = createUseStyles((theme) => ({
   },
   headline: {
     textAlign: "center",
-    marginTop: "2vh",
+    marginTop: `max(2vh, ${theme.edge.top})`,
+    padding: `0 ${theme.edge.right} 0 ${theme.edge.left}`,
     fontSize: theme.font.size.xxl,
   },
   total: {
@@ -109,6 +110,23 @@ const bagItems = (drops) => {
   ];
 };
 
+// The confetti: chocolate, caramel and the game's sweet colours. canvas-confetti colours a burst's
+// particles in order (colors[i % colors.length]), so the bursts of two particles each that rain
+// down here took only the first two colours of its palette, blue and purple: every burst gets
+// two of these at random instead.
+const CONFETTI_COLORS = [
+  "#a0652f", // milk chocolate (dark chocolate disappears on the dark overview)
+  "#f3e5c8", // white chocolate
+  "#d9913b", // caramel
+  "#fad25a", // gold
+  "#ff4e85", // raspberry
+  "#90d01b", // pistachio
+  "#ff9ec4", // strawberry cream
+  "#3190c3", // blueberry
+];
+const pickColors = (count) =>
+  Array.from({ length: count }, () => CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)]);
+
 const GameEndOverview = (props) => {
   const classes = useStyles();
   const { outcome, awards, isWinner, verified, drops } = props;
@@ -157,17 +175,22 @@ const GameEndOverview = (props) => {
       const shootConfetti = confetti.create(confettiCanvas.current, {
         resize: true,
       });
-      // let it rain confetti until the overview is closed
+      // let it rain confetti until the overview is closed: big pieces, one at a time. (A burst
+      // of several starts them all at one point with no speed, and they fell as little
+      // clusters; the user saw them, 2026-11-01.)
       const interval = setInterval(
         () =>
           shootConfetti({
-            particleCount: 2,
+            particleCount: 1,
+            colors: pickColors(1),
+            shapes: ["square", "circle"],
+            scalar: 1.6,
             startVelocity: 0,
             gravity: 0.6,
             ticks: 400,
             origin: { x: Math.random(), y: -0.1 },
           }),
-        100
+        25
       );
       startGettingAwards();
 

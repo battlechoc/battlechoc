@@ -10,8 +10,8 @@ const POP_MS = 1400;
 const useStyles = createUseStyles((theme) => ({
   panel: {
     position: "absolute",
-    top: 5,
-    right: 5,
+    top: theme.edge.top,
+    right: theme.edge.right,
     zIndex: 1,
     display: "flex",
     flexDirection: "column",

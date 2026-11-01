@@ -15,8 +15,8 @@ const useStyles = createUseStyles((theme) => ({
   // the title screen's top right corner, level with the buttons at the top left
   fab: {
     position: "absolute",
-    top: 5,
-    right: 5,
+    top: theme.edge.top,
+    right: theme.edge.right,
     zIndex: 4,
   },
   paginator: {

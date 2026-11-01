@@ -93,7 +93,7 @@ test("skipping the lesson returns to the title screen", async ({ page }) => {
 test("the building demos play on the real engine", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.body.innerText.trim().length > 0);
-  // a player who won once: everything is unlocked
+  // a player who won once: the demos are in the settings
   await page.evaluate(
     () =>
       new Promise((resolve, reject) => {
@@ -103,7 +103,7 @@ test("the building demos play on the real engine", async ({ page }) => {
           const store = tx.objectStore("player");
           const get = store.get("stats");
           get.onsuccess = () =>
-            store.put(Object.assign({}, get.result || {}, { username: "Tester", score: 150, tutorialFinished: true }), "stats");
+            store.put(Object.assign({}, get.result || {}, { username: "Tester", score: 150, tutorialFinished: true, trackRecord: [{ id: "first", won: true, winners: [{ idx: 0 }] }] }), "stats");
           tx.oncomplete = () => resolve();
           tx.onerror = () => reject(tx.error);
         };

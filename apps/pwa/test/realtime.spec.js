@@ -242,7 +242,7 @@ test("a passive player's match ends within the time limit and shows the overview
   await page.screenshot({ path: "test/output/screenshot_realtime_ended.png" });
 });
 
-test("the first XP unlocks the Choclab and Friends with one dialog that leads to the demos", async ({ page }) => {
+test("the first match unlocks two buildings with one dialog that leads to the demos", async ({ page }) => {
   await openAsPlayer(page, 0);
   await startMatch(page);
   // the prepared first game runs from the start; the passive player's match ends in time
@@ -252,8 +252,12 @@ test("the first XP unlocks the Choclab and Friends with one dialog that leads to
   await page.locator("[data-icon=fast-forward]:visible").first().click();
   await page.locator("[data-icon=done]:visible").first().click();
   const unlocked = page.getByTestId("unlocked");
-  await expect(unlocked).toContainText("New features unlocked: Choclab and Friends!");
-  await expect(page.getByText("New features unlocked: Choclab and Friends!")).toHaveCount(1);
+  await expect(unlocked).toHaveAttribute("data-step", "buildings");
+  await expect(unlocked).toContainText("New buildings for you:");
+  await expect(unlocked.getByTestId("unlocked-building")).toHaveText(["Factory extension", "Chocolate fountain"]);
+  // the Choclab and online play take three more matches
+  await expect(unlocked).toContainText("3 more matches against the AI unlock the Choclab and online matches.");
+  await expect(page.getByText("New features unlocked: Choclab and Friends!")).toHaveCount(0);
   await expect(page.getByText(/You have unlocked the multiplayer mode/i)).toHaveCount(0);
   // the demos start only from the dialog, not under it
   await expect(page.getByTestId("tutorial-coach")).toHaveCount(0);
@@ -261,4 +265,241 @@ test("the first XP unlocks the Choclab and Friends with one dialog that leads to
   await unlocked.getByText("Show the buildings", { exact: true }).click();
   await expect(unlocked).toHaveCount(0);
   await expect(page.getByTestId("tutorial-coach")).toContainText("1/8");
+  // the demos show every building, locked or not
+  await expect(page.getByTestId("build-palette").locator("[class*=locked]")).toHaveCount(0);
+});
+
+test("the fourth match unlocks the Choclab and online play with one dialog", async ({ page }) => {
+  await page.goto(url, { waitUntil: "networkidle" });
+  await page.waitForFunction(() => document.body.innerText.trim().length > 0);
+  // the app decides once what an earlier player keeps (src/unlocks.js); wait for that first
+  await page.waitForFunction(
+    () =>
+      new Promise((resolve) => {
+        const open = indexedDB.open("battlechoc");
+        open.onsuccess = () => {
+          const get = open.result.transaction("settings").objectStore("settings").get("unlocks");
+          get.onsuccess = () => resolve(get.result !== undefined);
+        };
+      })
+  );
+  // three finished matches on the device; their buildings were announced
+  await page.evaluate(
+    () =>
+      new Promise((resolve, reject) => {
+        const open = indexedDB.open("battlechoc");
+        open.onsuccess = () => {
+          const tx = open.result.transaction(["player", "settings"], "readwrite");
+          const player = tx.objectStore("player");
+          const get = player.get("stats");
+          get.onsuccess = () =>
+            player.put(
+              Object.assign({}, get.result || {}, {
+                username: "Tester",
+                score: 60,
+                tutorialFinished: true,
+                trackRecord: [
+                  { id: "first", won: true, winners: [{ idx: 0 }] },
+                  { id: "second", lost: true, winners: [{ idx: 1 }] },
+                  { id: "third", won: true, winners: [{ idx: 0 }] },
+                ],
+              }),
+              "stats"
+            );
+          tx.objectStore("settings").put({ early: false, announced: { buildings: 3, online: false } }, "unlocks");
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        };
+        open.onerror = () => reject(open.error);
+      })
+  );
+  await page.goto(url, { waitUntil: "networkidle" });
+  await expect(page.getByTestId("unlock-hint")).toHaveText(
+    "One more match against the AI unlocks the Choclab and online matches."
+  );
+  await startMatch(page);
+  // the prepared first game runs from the start; Tom Toffee gives up
+  await page.evaluate(() => {
+    const { host: h, engine } = window.__battlechoc;
+    engine.applyAction(h.match, { type: "battlechoc/match/surrender", player: 1, t: h.now(), payload: {} });
+    h.publish();
+    h.schedule();
+  });
+  await expect(page.getByText(/You won/i).first()).toBeVisible();
+  await page.locator("[data-icon=fast-forward]:visible").first().click();
+  await page.locator("[data-icon=done]:visible").first().click();
+  const unlocked = page.getByTestId("unlocked");
+  await expect(unlocked).toHaveAttribute("data-step", "online");
+  await expect(unlocked).toContainText("New features unlocked: Choclab and Friends!");
+  // every building came before: none in this dialog
+  await expect(unlocked.getByTestId("unlocked-building")).toHaveCount(0);
+  await unlocked.getByText("Ok", { exact: true }).click();
+  await expect(unlocked).toHaveCount(0);
+  await expect(page.getByTestId("unlock-hint")).toHaveCount(0);
+  // offline the Choclab is no longer locked, only waits for the server
+  await expect(page.locator("[role=button][data-offline=true]", { hasText: "Choclab" })).toHaveCount(1);
+});
+
+test("nothing floats up once the match is over", async ({ page }) => {
+  await openAsPlayer(page, 50);
+  await startMatch(page);
+  // the prepared first game runs at once: a cannon fires and charges again (at a cell with
+  // nothing but cream: a hit on the factory could end the match at once)
+  await advance(page, 21000);
+  await page.evaluate(async () => {
+    const h = window.__battlechoc.host;
+    const grid = h.match.board.fields[h.match.players[1].fieldIndex].grid;
+    const cream = grid.find(
+      (cell) => cell.occupiedBy.length > 0 && cell.occupiedBy.every((entity) => entity.type === "EntityType.CREAM")
+    );
+    await h.submit("battlechoc/match/attack", { attackType: "AttackType.TRUFFLE", row: cream.row, col: cream.col });
+  });
+  // a pop still on its way up when the match ends
+  const pops = await page.evaluate(async () => {
+    const sc = window.__battlechocScene;
+    window.__pops = [];
+    const spawn = sc.spawnInfo.bind(sc);
+    sc.spawnInfo = (type, ...rest) => {
+      window.__pops.push({ type, phase: window.__battlechoc.host.match.phase });
+      return spawn(type, ...rest);
+    };
+    sc.spawnInfo("InfoType.CACAO_HARVESTED", { row: 1, col: 1 }, 10);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const inFlight = sc.scene.meshes.filter((mesh) => mesh.name.startsWith("info_") && !mesh.isDisposed()).length;
+    const { host: h, engine } = window.__battlechoc;
+    engine.applyAction(h.match, { type: "battlechoc/match/surrender", player: 1, t: h.now(), payload: {} });
+    h.publish();
+    h.schedule();
+    return inFlight;
+  });
+  expect(pops).toBeGreaterThan(0);
+  await expect(page.getByText(/You won/i).first()).toBeVisible();
+  // time goes on while the overview is open: the charging cannon must not report a shot
+  await advance(page, 30000);
+  await page.waitForTimeout(1000);
+  const after = await page.evaluate(() => ({
+    spawned: window.__pops.filter((pop) => pop.phase === "MatchPhase.ENDED").length,
+    inFlight: window.__battlechocScene.scene.meshes.filter((mesh) => mesh.name.startsWith("info_") && !mesh.isDisposed()).length,
+  }));
+  expect(after).toEqual({ spawned: 0, inFlight: 0 });
+});
+
+// the camera's window and the boards' views (src/3d/boardView.js)
+const boardView = (page) =>
+  page.evaluate(() => {
+    const sc = window.__battlechocScene;
+    return { own: { ...sc.views.own }, opponent: { ...sc.views.opponent }, height: sc.camera.orthoTop - sc.camera.orthoBottom };
+  });
+
+test("the wheel and a drag zoom and move the board, a swipe brings the other board; a tap still builds", async ({ page }) => {
+  await openAsPlayer(page);
+  await startMatch(page);
+  await reachRunningPhase(page);
+  await page.waitForTimeout(1500);
+  const whole = await boardView(page);
+  expect(whole.own).toEqual({ zoom: 1, x: 0, y: 0 });
+
+  // the wheel over the board zooms in about the pointer
+  await page.mouse.move(400, 400);
+  await page.mouse.wheel(0, -400);
+  await page.waitForTimeout(300);
+  const wheeled = await boardView(page);
+  expect(wheeled.own.zoom).toBeGreaterThan(1.5);
+  expect(wheeled.height).toBeCloseTo(whole.height / wheeled.own.zoom, 3);
+
+  // a drag moves the view, a tap does not
+  await page.mouse.move(640, 360);
+  await page.mouse.down();
+  await page.mouse.move(540, 420, { steps: 5 });
+  await page.mouse.up();
+  await page.waitForTimeout(300);
+  const dragged = await boardView(page);
+  expect(dragged.own.zoom).toBeCloseTo(wheeled.own.zoom, 6);
+  expect(dragged.own.x).not.toBeCloseTo(wheeled.own.x, 3);
+
+  // zoomed in, a tap on a free cell builds cream there
+  await page.getByTestId("build-cream").click();
+  const cell = await page.evaluate(() => {
+    const h = window.__battlechoc.host;
+    const grid = h.match.board.fields[h.match.players[0].fieldIndex].grid;
+    const free = grid.find((c) => !c.molten && c.occupiedBy.length === 0);
+    const sc = window.__battlechocScene;
+    const V = sc.camera.position.constructor;
+    const canvas = sc.engine.getRenderingCanvas();
+    const transform = sc.camera.getViewMatrix().multiply(sc.camera.getProjectionMatrix());
+    const p = V.TransformCoordinates(sc.playerGameField.position.add(new V(free.row, 0.3, free.col)), transform);
+    return { row: free.row, col: free.col, x: ((p.x + 1) / 2) * canvas.clientWidth, y: ((1 - p.y) / 2) * canvas.clientHeight };
+  });
+  await page.mouse.click(cell.x, cell.y);
+  await page.waitForTimeout(500);
+  const built = await page.evaluate(
+    ({ row, col }) => {
+      const h = window.__battlechoc.host;
+      const grid = h.match.board.fields[h.match.players[0].fieldIndex].grid;
+      return grid.find((c) => c.row === row && c.col === col).occupiedBy.map((entity) => entity.type);
+    },
+    cell
+  );
+  expect(built).toEqual(["EntityType.CREAM"]);
+  expect((await boardView(page)).own).toEqual(dragged.own);
+  await page.screenshot({ path: "test/output/screenshot_realtime_zoom.png" });
+
+  // the whole-board button is there while zoomed in; it and the 0 key show the whole board
+  const fitButton = page.getByTestId("board-fit");
+  expect(await fitButton.evaluate((e) => getComputedStyle(e).opacity)).toBe("1");
+  await fitButton.click();
+  await page.waitForTimeout(900);
+  expect((await boardView(page)).own).toEqual({ zoom: 1, x: 0, y: 0 });
+  expect(await fitButton.evaluate((e) => getComputedStyle(e).opacity)).toBe("0");
+  await page.keyboard.press("+");
+  await page.waitForTimeout(200);
+  expect((await boardView(page)).own.zoom).toBeCloseTo(1.25, 3);
+  await page.keyboard.press("0");
+  await page.waitForTimeout(600);
+  expect((await boardView(page)).own).toEqual({ zoom: 1, x: 0, y: 0 });
+
+  // a double click is two taps, no zoom (firing many cannons means tapping fast)
+  await page.mouse.dblclick(500, 300);
+  await page.waitForTimeout(500);
+  expect((await boardView(page)).own.zoom).toBe(1);
+
+  // a swipe toward the other board pulls it in: released far enough, the camera flies on and
+  // the preview shows the own board; a short one springs back
+  const toward = (await page.evaluate(() => window.__battlechocScene.sideways())) < 0 ? 1 : -1;
+  await page.mouse.move(640, 400);
+  await page.mouse.down();
+  await page.mouse.move(640 + toward * 200, 400, { steps: 10 });
+  const midway = await page.evaluate(() => window.__battlechocScene.between);
+  expect(midway).toBeGreaterThan(0.1);
+  expect(midway).toBeLessThan(0.6);
+  await page.mouse.move(640 + toward * 500, 400, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(1500);
+  expect(await page.evaluate(() => window.__battlechocScene.between)).toBe(1);
+  await expect(page.getByTestId("board-preview")).toHaveAttribute("data-board", "own");
+  await page.mouse.move(640, 400);
+  await page.mouse.down();
+  await page.mouse.move(640 - toward * 100, 400, { steps: 10 });
+  await page.mouse.up();
+  await page.waitForTimeout(800);
+  expect(await page.evaluate(() => window.__battlechocScene.between)).toBe(1);
+  await page.getByTestId("board-preview").click();
+  await page.waitForTimeout(1500);
+  expect(await page.evaluate(() => window.__battlechocScene.between)).toBe(0);
+
+  // each board keeps its own view across the camera flights
+  await page.mouse.move(640, 360);
+  await page.mouse.wheel(0, -400);
+  await page.waitForTimeout(300);
+  const zoomedOwn = (await boardView(page)).own;
+  await page.getByTestId("board-preview").click();
+  await page.waitForTimeout(1500);
+  const atOpponent = await boardView(page);
+  expect(atOpponent.opponent).toEqual({ zoom: 1, x: 0, y: 0 });
+  expect(atOpponent.height).toBeCloseTo(whole.height, 3);
+  await page.getByTestId("board-preview").click();
+  await page.waitForTimeout(1500);
+  const back = await boardView(page);
+  expect(back.own).toEqual(zoomedOwn);
+  expect(back.height).toBeCloseTo(whole.height / zoomedOwn.zoom, 3);
 });

@@ -20,9 +20,11 @@ const accountOf = (page) =>
       })
   );
 
-// firstWin: false keeps the player at 0 XP (tutorial skipped), a new player's first matches.
+// unlocked: three finished matches (online play needs three against the AI, shared
+// progression.js), one of them a win worth more than 100 XP; false keeps the player at 0 XP and
+// no matches (tutorial skipped), a new player's first matches.
 // A retry (or --repeat-each) gets new names: the first attempt took them on the server.
-const createPlayer = async (browser, request, name, { firstWin = true } = {}) => {
+const createPlayer = async (browser, request, name, { unlocked = true } = {}) => {
   const { retry, repeatEachIndex } = test.info();
   const username = retry || repeatEachIndex ? `${name}_${repeatEachIndex}${retry}` : name;
   const context = await browser.newContext();
@@ -47,8 +49,17 @@ const createPlayer = async (browser, request, name, { firstWin = true } = {}) =>
     // more than 100 XP: Start queues instead of the prepared first match against the server AI
     awards: [{ key: "WINNER" }, { key: "OUVERT" }],
   };
-  if (firstWin) {
-    expect((await request.post(`${api}/user/trackrecords`, { headers, data: { stats: [win] } })).ok()).toBe(true);
+  const losses = [1, 2].map((i) => ({
+    id: `seed-${username}-${i}`,
+    lost: true,
+    builtEntities: 3,
+    winners: [{ idx: 1, name: "Tom Toffee" }],
+    awards: [],
+  }));
+  if (unlocked) {
+    expect(
+      (await request.post(`${api}/user/trackrecords`, { headers, data: { stats: [win, ...losses] } })).ok()
+    ).toBe(true);
   }
   await page.goto("/", { waitUntil: "networkidle" });
   await expect(page.getByText("Start Game", { exact: true }).first()).toBeVisible({ timeout: 15000 });
@@ -214,7 +225,7 @@ test.describe("the highscore", () => {
 
 test.describe("the Start button", () => {
   test("a new player plays the prepared first match against the server AI and gets ingredients", async ({ browser, request }) => {
-    const gina = await createPlayer(browser, request, "Gina", { firstWin: false });
+    const gina = await createPlayer(browser, request, "Gina", { unlocked: false });
     await gina.page.getByText("Start Game", { exact: true }).first().click();
     await inOnlineMatch(gina.page);
     // no queue: the server AI plays right away, on the prepared first-game board
@@ -268,4 +279,52 @@ test.describe("the Start button", () => {
     await fiona.page.screenshot({ path: "test/output/screenshot_online_bag.png" });
     await fiona.context.close();
   });
+});
+
+test("a name chosen offline that somebody took meanwhile asks for another one", async ({ browser, request }) => {
+  const mara = await createPlayer(browser, request, "Mara");
+  // a second player without the server: the API does not answer yet
+  const context = await browser.newContext();
+  await context.addInitScript((url) => window.localStorage.setItem("battlechoc.apiUrl", url), api);
+  await context.route(`${api}/**`, (route) => route.abort());
+  const page = await context.newPage();
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.waitForFunction(() => document.body.innerText.trim().length > 0);
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const open = indexedDB.open("battlechoc");
+        open.onsuccess = () => {
+          const tx = open.result.transaction("player", "readwrite");
+          tx.objectStore("player").put({ username: "Chocnonymous", score: 0, tutorialSkipped: true }, "stats");
+          tx.oncomplete = () => resolve();
+        };
+      })
+  );
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.locator("[data-icon=user]:visible").click();
+  await page.getByTestId("change-name").click();
+  await page.locator("input:visible").first().fill(mara.username);
+  await page.locator("div[class^=actionButton]:visible").first().click();
+  await expect(page.getByTestId("name-unsynced").filter({ visible: true })).toHaveCount(1);
+  await page.locator("[data-icon=close]:visible").first().click();
+
+  // the server answers: the name is taken, the player picks another
+  await context.unroute(`${api}/**`);
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  const conflict = page.getByTestId("name-conflict");
+  await expect(conflict).toBeVisible({ timeout: 20000 });
+  await expect(conflict).toContainText(`somebody else took “${mara.username}”`);
+  await page.screenshot({ path: "test/output/screenshot_name_conflict.png" });
+  const fresh = `${mara.username}Two`;
+  await conflict.locator("input").fill(fresh);
+  // the field checks the name with the server before it can be sent
+  await page.waitForTimeout(1200);
+  await conflict.locator("div[class^=actionButton]").click();
+  await expect(conflict).toHaveCount(0);
+  await page.locator("[data-icon=user]:visible").click();
+  await expect(page.getByText(fresh).filter({ visible: true }).first()).toBeVisible();
+  await expect(page.getByTestId("name-unsynced")).toHaveCount(0);
+  await mara.context.close();
+  await context.close();
 });

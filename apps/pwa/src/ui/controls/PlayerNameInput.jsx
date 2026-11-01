@@ -10,6 +10,7 @@ import {
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import Progress from "./Progress";
+import UnsyncedMark from "./UnsyncedMark";
 import withDefaultProps from "../../helper/defaultProps";
 
 // One row in the text size of buttons (the type scale); the action button sits on its right end.
@@ -41,6 +42,13 @@ const useStyles = createUseStyles((theme) => ({
   error: {
     border: `2px solid ${theme.color.accent.light} !important`,
     color: `${theme.color.accent.dark} !important`,
+  },
+  // offline: the name is checked when the server answers
+  hint: {
+    display: "block",
+    marginBottom: "0.2em",
+    color: "white",
+    fontSize: theme.font.size.sm,
   },
   errorLabel: {
     color: theme.color.accent.light,
@@ -128,6 +136,12 @@ const PlayerNameInput = (componentProps) => {
     if (playerName !== "" && playerName !== current) {
       setPlayerNameValid(validate(playerName));
       setPlayerNameAvailable(true);
+      // offline only the spelling counts; the server checks the name once it answers
+      if (props.offline) {
+        setBadInternetConnection(false);
+        setLoading(false);
+        return;
+      }
 
       clearTimeout(requestTimeout);
       if (requestRunning) {
@@ -212,6 +226,10 @@ const PlayerNameInput = (componentProps) => {
     <div className={props.className}>
       {hasError ? (
         <span className={classes.errorLabel}>{getHelperText()}</span>
+      ) : editMode && props.offline ? (
+        <span className={classes.hint} data-testid="name-offline-hint">
+          {t(tr.NAME_OFFLINE_HINT)}
+        </span>
       ) : null}
       <div className={classes.root}>
         {editMode ? (
@@ -241,6 +259,7 @@ const PlayerNameInput = (componentProps) => {
             >
               {playerName}
             </div>
+            {props.pending ? <UnsyncedMark /> : null}
           </div>
         )}
         <div
@@ -270,12 +289,18 @@ const PlayerNameInput = (componentProps) => {
 const defaultProps = {
   editMode: true,
   className: "",
+  offline: false,
+  pending: false,
 };
 
 PlayerNameInput.propTypes = {
   editMode: PropTypes.bool,
   className: PropTypes.string,
   onEditMode: PropTypes.func,
+  // without the server: the name is only checked for its spelling
+  offline: PropTypes.bool,
+  // a name chosen offline that the server does not know yet
+  pending: PropTypes.bool,
 };
 
 export default PlayerNameInput;

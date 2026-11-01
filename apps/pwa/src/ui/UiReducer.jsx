@@ -38,6 +38,10 @@ const uiReducer = createReducer(
     serverDown: false,
     // a match goes fullscreen on start (settings: "autoFullscreen")
     autoFullscreen: true,
+    // the player had everything under the old unlock rule and keeps it (src/unlocks.js)
+    earlyUnlock: false,
+    // a name chosen offline that somebody else took meanwhile (dialogs/NameConflict.jsx)
+    nameConflict: null,
   },
   (builder) =>
     builder

@@ -4,6 +4,7 @@ import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import {
   engine,
+  unlocks,
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
@@ -70,8 +71,8 @@ const raysBox = ({ top, size, rays }) => ({
 const useStyles = createUseStyles((theme) => ({
   actionbar: {
     position: "absolute",
-    top: 5,
-    left: 5,
+    top: theme.edge.top,
+    left: theme.edge.left,
     zIndex: 5,
   },
   logo: {
@@ -98,24 +99,53 @@ const useStyles = createUseStyles((theme) => ({
       [theme.breakpoints.orientation.portrait]: raysBox(LOGO.portrait),
     },
   },
-  menu: {
+  // the menu starts at about half the screen's height; when it does not fit below that (phones
+  // held sideways), the space above it shrinks, so it never reaches the bottom edge
+  lowerHalf: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: theme.edge.bottom,
+    zIndex: 4,
     display: "flex",
     flexDirection: "column",
-    position: "absolute",
-    zIndex: 4,
+    alignItems: "center",
+    pointerEvents: "none",
+  },
+  spaceAboveMenu: {
+    flex: "0 1 auto",
+    minHeight: 0,
+    // as a share of the whole screen, the bottom edge included
+    height: `calc((100% + ${theme.edge.bottom}) * 0.48)`,
+    [theme.breakpoints.orientation.landscape]: {
+      "@media screen and (max-height: 339px)": {
+        height: `calc((100% + ${theme.edge.bottom}) * 0.55)`,
+      },
+    },
+  },
+  // how many matches until the Choclab and online play, below the menu
+  unlockHint: {
+    flex: "0 0 auto",
+    maxWidth: "min(90vw, 30em)",
+    margin: "0.2em 0 0",
+    textAlign: "center",
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.md,
+    letterSpacing: "0.03em",
+    color: "white",
+    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
+    "-webkit-font-smoothing": "antialiased",
+  },
+  menu: {
+    flex: "0 0 auto",
+    display: "flex",
+    flexDirection: "column",
+    pointerEvents: "auto",
     // the menu buttons share the width of the widest
     "& > div": {
       marginBottom: 6,
       width: "100%",
-    },
-    [theme.breakpoints.orientation.portrait]: {
-      top: "48%",
-    },
-    [theme.breakpoints.orientation.landscape]: {
-      top: "55%",
-      "@media screen and (min-height: 340px)": {
-        top: "48%",
-      },
     },
   },
   decoration: {
@@ -157,6 +187,29 @@ const useStyles = createUseStyles((theme) => ({
     flexDirection: "column",
     alignItems: "flex-end",
   },
+  // the bottom of a match: what to build (its tips above it) at the left, the weapons at the
+  // right, always an edge apart; the buildings wrap instead of running into the weapons. Only
+  // the buttons take the pointer, the space between them belongs to the board.
+  matchBar: {
+    position: "absolute",
+    left: theme.edge.left,
+    right: theme.edge.right,
+    bottom: theme.edge.bottom,
+    zIndex: 4,
+    display: "flex",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: theme.edge.gap,
+    pointerEvents: "none",
+  },
+  buildColumn: {
+    flex: "1 1 auto",
+    minWidth: 0,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: theme.edge.gap,
+  },
   titleScreen: {
     position: "relative",
     display: "flex",
@@ -164,7 +217,9 @@ const useStyles = createUseStyles((theme) => ({
     justifyContent: "center",
     flexDirection: "column",
     zIndex: 2,
-    height: "100vh",
+    // the page's height, not 100vh: mobile browsers take vh with their toolbar hidden, so the
+    // screen grew under the toolbar and the info button at the bottom went behind it
+    height: "100%",
   },
 }));
 
@@ -289,16 +344,25 @@ const Hud = (props) => {
     await multiplayer.tutorialSkipped();
   };
 
-  // what is missing to unlock a menu entry: a first win (a coin) or a player name
-  const notifyLocked = (feature) => {
-    const score = playerInfos.stats.score || 0;
+  // what the player has unlocked by playing (shared progression.js, src/unlocks.js)
+  const unlocked = unlocks(playerInfos.stats, { early: props.earlyUnlock });
+
+  // what is missing to unlock a menu entry: more matches against the AI, or a player name
+  const notifyLocked = (feature, part) => {
+    const left = unlocked.gamesLeft[part];
     props.showNotification({
       title: t(tr.COINS_FOR_NEXT_FEATURE_TITLE, feature),
-      message: score < 1 ? t(tr.COINS_FOR_NEXT_FEATURE_BODY, feature, 1 - score) : t(tr.UNLOCK_NEEDS_NAME),
+      message:
+        left > 1
+          ? t(tr.UNLOCK_FEATURE_GAMES, feature, left)
+          : left === 1
+          ? t(tr.UNLOCK_FEATURE_ONE_GAME, feature)
+          : t(tr.UNLOCK_NEEDS_NAME),
     });
   };
 
   const stage = estimateStage();
+  let unlockHint = null;
   return (
     <div className={className}>
       <Settings
@@ -372,15 +436,23 @@ const Hud = (props) => {
         if (stage === "TITLE_SCREEN") {
           const controls = [];
           const playername = playerInfos.stats.username;
-          const score = playerInfos.stats.score;
           const firstPlayScreen =
             playerInfos.stats.tutorialFinished === false &&
             playerInfos.stats.tutorialSkipped === false;
-          // a first win unlocks the Choclab; friends also need a player name, under which
-          // others find and invite you (the server assigns one once it is reachable)
+          // a few matches against the AI unlock the Choclab and online play; friends also need
+          // a player name, under which others find and invite you (the server assigns one once
+          // it is reachable)
           const unnamed = typeof playername === "undefined" || playername === "Chocnonymous";
-          const lockedChoclab = score < 1;
-          const lockedFriends = unnamed || score < 1;
+          const lockedChoclab = !unlocked.choclab;
+          const lockedFriends = unnamed || !unlocked.online;
+          // how far the next step is, under the menu
+          const gamesLeft = unlocked.gamesLeft.online;
+          unlockHint =
+            !firstPlayScreen && gamesLeft > 0
+              ? gamesLeft === 1
+                ? t(tr.UNLOCK_ONLINE_ONE_GAME)
+                : t(tr.UNLOCK_ONLINE_GAMES, gamesLeft)
+              : null;
 
           if (firstPlayScreen) {
             controls.push(
@@ -434,7 +506,7 @@ const Hud = (props) => {
                 key="2"
                 size="huge"
                 locked={lockedChoclab}
-                onLockedClick={() => notifyLocked(t(tr.MAIN_MENU_CHOCLAB))}
+                onLockedClick={() => notifyLocked(t(tr.MAIN_MENU_CHOCLAB), "choclab")}
                 offline={!online}
                 onOfflineClick={props.showOfflineMessage}
                 color="accent"
@@ -453,7 +525,7 @@ const Hud = (props) => {
                 size="huge"
                 color="secondary"
                 locked={lockedFriends}
-                onLockedClick={() => notifyLocked(t(tr.FRIENDS))}
+                onLockedClick={() => notifyLocked(t(tr.FRIENDS), "online")}
                 offline={!online}
                 onOfflineClick={props.showOfflineMessage}
                 onClick={() => setShowOnlineLobby(true)}
@@ -499,8 +571,16 @@ const Hud = (props) => {
                   <div />
                 </div>
                 <div className={classes.decoration} />
-                <div className={classes.menu}>
-                  {assetsReady ? controls : null}
+                <div className={classes.lowerHalf}>
+                  <div className={classes.spaceAboveMenu} />
+                  <div className={classes.menu}>
+                    {assetsReady ? controls : null}
+                  </div>
+                  {assetsReady && unlockHint ? (
+                    <p className={classes.unlockHint} data-testid="unlock-hint">
+                      {unlockHint}
+                    </p>
+                  ) : null}
                 </div>
               </div>
               <Highscore
@@ -556,10 +636,14 @@ const Hud = (props) => {
           return (
             <div>
               <MatchBanner />
-              <InfoCard />
               <ResourcePanel />
-              <BuildPalette />
-              <WeaponPalette />
+              <div className={classes.matchBar}>
+                <div className={classes.buildColumn}>
+                  <InfoCard />
+                  <BuildPalette />
+                </div>
+                <WeaponPalette />
+              </div>
               {overviewVisible && result ? (
                 <GameEndOverview
                   awards={(matchAwards || []).map((award) => ({
@@ -577,7 +661,7 @@ const Hud = (props) => {
                   isWinner={result.winners.includes(game.viewer)}
                   verified={matchOnline}
                   drops={matchResult ? matchResult.drops : undefined}
-                  finishGame={(xp) => endGame(xp)}
+                  finishGame={() => endGame()}
                 />
               ) : null}
             </div>
@@ -612,6 +696,7 @@ const mapStateToProps = (state) => ({
   notification: state.ui.notification,
   playerInfos: state.ui.playerInfos,
   online: state.ui.online,
+  earlyUnlock: state.ui.earlyUnlock,
 });
 
 const mapDispatchToProps = {

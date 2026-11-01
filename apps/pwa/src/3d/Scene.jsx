@@ -30,7 +30,6 @@ import {
   Mesh,
   StandardMaterial,
   Engine,
-  HighlightLayer,
   FlyCamera,
   Color3,
   Camera,
@@ -38,13 +37,33 @@ import {
   Color4,
   Animation,
   MeshBuilder,
-  PointerEventTypes,
   Viewport,
 } from "./babylon";
 import { AssetLoadingViewContainer as AssetLoadingView } from "../AssetLoader";
 import logger from "../helper/logger";
 import { v4 as uuidv4 } from "uuid";
 import { withTheme } from "react-jss";
+import { measureEdges } from "../helper/edges";
+import { showCannonPick, cannonCells, fruitCannonPossible } from "./cannonPick.js";
+import {
+  fitView,
+  orthoBounds,
+  clampView,
+  zoomAbout,
+  panBy,
+  lerpView,
+  sameView,
+  swipeBy,
+  swipeGoesOn,
+  attachGestures,
+} from "./boardView.js";
+import { exposeSceneForTests } from "../testHooks";
+import Fab from "../ui/controls/Fab";
+
+// The camera's place for the own board, and how far it moves to look at the opponent's (the
+// boards lie 12 apart in x and z: on the screen the other one is beside, just out of view)
+const CAMERA_HOME = new Vector3(30, 30, 30);
+const CAMERA_FLIGHT = new Vector3(-24, -12, 0);
 
 // The camera looks at the origin and a board's cells start at its position, its middle
 // (cols - 1) / 2 further in: lifted by that, a board is centred on the screen. The 6×6 board
@@ -53,6 +72,10 @@ import { withTheme } from "react-jss";
 const boardHeight = (cols) => (cols - 1) / 2 + (cols - 6) / 8;
 // the energy bars float this high above the base of the boards
 const ENERGY_BAR = 1.5;
+// the progress donut's glaze by the cannon's state: pistachio when a shot is ready, blueberry
+// when one can be rushed (the weapon palette's colours, mixed with 25 % white: the full colours
+// were too dark for a glaze, the user's pick from screenshots/progress-donut/glaze-colours.png)
+const GLAZE_COLORS = { ready: [172, 220, 84], rushable: [101, 172, 210] };
 // the preview of the other board: its frame's border (px) and what is behind its board
 const PREVIEW_BORDER = 4;
 const PREVIEW_BACKGROUND = Color4.FromHexString("#7FC3E0FF");
@@ -62,11 +85,24 @@ class Scene extends Component {
     super(props);
     this.loadingView = createRef();
     // the preview of the other board: where it is on the screen and which board it shows
-    this.state = { preview: null };
+    // and whether the board in view is zoomed in (the whole-board button shows then)
+    this.state = { preview: null, cannonSpots: null, zoomed: false };
+    // the floating infos (+cacao, +1 shot, ...) on their way up
+    this.infoPops = new Set();
+    // the boards' views (src/3d/boardView.js): zoom 1 and the whole board, each remembers where
+    // the player left it; and a view on its way to the whole board
+    this.views = { own: fitView(), opponent: fitView() };
+    this.viewTransition = null;
+    // where the camera is between the boards (0 the own, 1 the opponent's), its flight from
+    // one to the other, and a finger dragging it there (src/3d/boardView.js, swipeBy)
+    this.between = 0;
+    this.flight = null;
+    this.swipe = null;
   }
 
   componentDidMount() {
     this.props.onRef(this);
+    exposeSceneForTests(this);
     // A phone with a 3x screen would render nine times the pixels of the CSS size; twice is
     // sharp enough and leaves the GPU less than half the work (limitDeviceRatio).
     this.engine = new Engine(
@@ -97,9 +133,6 @@ class Scene extends Component {
     this.animations = [];
     this.scene = createScene();
     this.energyBars = [];
-    this.highlightLayer = new HighlightLayer("highlightLayer", this.scene, {
-      camera: this.camera,
-    });
     this.animate = () => this.scene.render();
     // Renders once in the next frame, however often it is asked before; the render loop, while
     // it runs, renders anyway. (Every view update used to render right away.)
@@ -115,20 +148,27 @@ class Scene extends Component {
         }
       });
     };
-    // One pointer handler for the boards: the meshes of a Gamefield carry their cell in
-    // metadata (an action manager on every instance cost picking work on every pointer move).
-    // Only board meshes are picked, and only on pointer down.
-    this.scene.skipPointerMovePicking = true;
-    this.scene.skipPointerUpPicking = true;
-    this.scene.pointerDownPredicate = (mesh) =>
-      mesh.isPickable && mesh.isVisible && mesh.isEnabled() && Boolean(mesh.metadata && mesh.metadata.gamefield);
-    this.scene.onPointerObservable.add((info) => {
-      const pick = info.pickInfo;
-      if (pick && pick.hit && pick.pickedMesh && pick.pickedMesh.metadata) {
-        const { gamefield, row, col } = pick.pickedMesh.metadata;
-        gamefield.action(row, col, pick.pickedMesh.position);
+    // The pointer is ours, not Babylon's (its input manager picked on every pointer down): a tap
+    // picks a cell of a board (the meshes of a Gamefield carry their cell in metadata), a drag
+    // moves the view or pulls the other board in, two fingers or the wheel zoom
+    // (src/3d/boardView.js).
+    this.scene.detachControl();
+    this.detachGestures = attachGestures(this.container, {
+      onTap: this.tapBoard,
+      onPan: this.dragBoard,
+      onPanEnd: this.endSwipe,
+      onPinch: (factor, x, y) => this.zoomBy(factor, x, y),
+      onWheel: (deltaY, x, y, pinch) => this.zoomBy(Math.exp(-deltaY * (pinch ? 0.01 : 0.0015)), x, y),
+      enabled: () => this.zoomEnabled(),
+    });
+    window.addEventListener("keydown", this.keyDown);
+    this.scene.onBeforeRenderObservable.add(() => {
+      if (this.flight) {
+        this.applyBetween(this.flight.from + (this.flight.to - this.flight.from) * this.flight.t);
+      } else if (this.viewTransition) {
+        this.applyView(lerpView(this.viewTransition.from, this.viewTransition.to, this.viewTransition.t));
       }
-    }, PointerEventTypes.POINTERDOWN);
+    });
     window.addEventListener("resize", this.resize);
     this.playerGameField = null;
     this.opponentGameField = null;
@@ -280,6 +320,10 @@ class Scene extends Component {
 
   componentWillUnmount() {
     window.removeEventListener("resize", this.resize);
+    window.removeEventListener("keydown", this.keyDown);
+    if (this.detachGestures) {
+      this.detachGestures();
+    }
     clearInterval(this.weaponIndicatorInterval);
   }
 
@@ -290,9 +334,18 @@ class Scene extends Component {
     if (typeof this.props.game !== "undefined") {
       this.realtimeUpdate(prevProps);
     }
+    // the end screen: what still floats up goes
+    if (this.matchEnded() && !(prevProps.game && prevProps.game.phase === engine.MatchPhase.ENDED)) {
+      this.stopInfos();
+    }
+    this.updateCannonPick();
   }
 
   spawnInfo(messageType, position, amount, donutType) {
+    // the floating infos belong to a running match: none once the end screen shows
+    if (this.matchEnded()) {
+      return;
+    }
     if (!(position instanceof Vector3)) {
       position = new Vector3(position.row, 6.5, position.col);
     }
@@ -319,10 +372,24 @@ class Scene extends Component {
 
     info.material = material;
 
+    // until its picture has loaded the info is only a mesh; stopInfos() removes it either way
+    const pop = {
+      stop: () => {
+        info.dispose();
+        texture.dispose();
+        material.dispose();
+        this.infoPops.delete(pop);
+      },
+    };
+    this.infoPops.add(pop);
+
     const drawInfo = (filename, color, text, plain = false) => {
       const image = new Image();
       image.src = filename;
       image.onload = () => {
+        if (!this.infoPops.has(pop)) {
+          return;
+        }
         this.setRenderLoop();
         let top = 120;
         let left = 70;
@@ -415,8 +482,16 @@ class Scene extends Component {
             this.animations = this.animations.filter(
               (callback) => callback.id !== uuid
             );
+            this.infoPops.delete(pop);
           },
         });
+        pop.stop = () => {
+          this.scene.stopAnimation(info);
+          const running = this.animations.find((callback) => callback.id === uuid);
+          if (running) {
+            running.stopAnimation();
+          }
+        };
         this.scene.beginAnimation(info, 0, 180, false, 1, () => {
           if (
             this.animations.findIndex((callback) => callback.id === uuid) > -1
@@ -498,10 +573,12 @@ class Scene extends Component {
     }
   }
 
-  estimateOrthographicSize() {
+  // How the camera fits a whole board on the screen: half the height of its window in world
+  // units, the screen's ratio and the window's lift (src/3d/boardView.js reckons with it).
+  boardFit() {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
-    let ratio = width / height;
+    const ratio = width / height;
     let distance = Math.max(7.5 / ratio, 5);
 
     if (typeof this.props.game !== "undefined") {
@@ -516,11 +593,243 @@ class Scene extends Component {
     // card, into the middle of the space below it
     const inset = height > width ? this.props.boardTopInset : 0;
     const shift = (inset * distance) / height;
-    this.camera.orthoTop = distance + shift;
-    this.camera.orthoBottom = -distance + shift;
-    this.camera.orthoLeft = -distance * ratio;
-    this.camera.orthoRight = distance * ratio;
+    return { distance, ratio, shift };
   }
+
+  estimateOrthographicSize() {
+    this.applyView(this.currentView());
+  }
+
+  // the view of the board in front: the own one before the match
+  boardView() {
+    return this.lookAtOpponent ? this.views.opponent : this.views.own;
+  }
+
+  // the view as it shows right now: between the boards, a mix of both views
+  currentView() {
+    if (this.viewTransition) {
+      return lerpView(this.viewTransition.from, this.viewTransition.to, this.viewTransition.t);
+    }
+    return lerpView(this.views.own, this.views.opponent, this.between);
+  }
+
+  // the camera on its way between the boards (0 the own, 1 the opponent's): its place and the
+  // view that goes with it
+  applyBetween(between) {
+    this.between = between;
+    this.camera.position = CAMERA_HOME.add(CAMERA_FLIGHT.scale(between));
+    this.applyView(this.currentView());
+  }
+
+  // the other board's offset on the screen in world units, negative when it lies to the left
+  // (the flight's part across the camera's view)
+  sideways() {
+    return Vector3.TransformNormal(CAMERA_FLIGHT, this.camera.getViewMatrix()).x;
+  }
+
+  setBoardView(view) {
+    if (this.lookAtOpponent) {
+      this.views.opponent = view;
+    } else {
+      this.views.own = view;
+    }
+  }
+
+  // the camera's window for a view (clamped to the fitted window) and a frame soon
+  applyView(view) {
+    const fit = this.boardFit();
+    const bounds = orthoBounds(fit, clampView(fit, view));
+    this.camera.orthoLeft = bounds.left;
+    this.camera.orthoRight = bounds.right;
+    this.camera.orthoTop = bounds.top;
+    this.camera.orthoBottom = bounds.bottom;
+    // the whole-board button comes with the first bit of zoom and goes with the last
+    const zoomed = view.zoom > 1.01;
+    if (zoomed !== this.state.zoomed) {
+      this.setState({ zoomed });
+    }
+    // (the first call comes while the scene is being made, before requestRender exists)
+    if (this.requestRender) {
+      this.requestRender();
+    }
+  }
+
+  // zooming and moving: in a match, not in the tutorial (Mimi's card and the demos keep the
+  // whole board), not while the camera flies
+  zoomEnabled() {
+    return this.playerGameField !== null && !this.props.tutorial && !this.viewTransition && !this.flight;
+  }
+
+  // `change(fit, view)` gives the new view of the board in front
+  changeView(change) {
+    if (!this.zoomEnabled() || this.swipe) {
+      return;
+    }
+    const fit = this.boardFit();
+    const view = clampView(fit, change(fit, this.boardView()));
+    this.setBoardView(view);
+    this.applyView(view);
+  }
+
+  zoomBy(factor, x, y) {
+    this.changeView((fit, view) =>
+      zoomAbout(fit, view, factor, x / this.container.clientWidth, y / this.container.clientHeight)
+    );
+  }
+
+  // the whole board again (the button under the preview, the 0 key)
+  fitBoard = () => {
+    if (!this.zoomEnabled() || this.swipe) {
+      return;
+    }
+    const view = this.boardView();
+    this.setBoardView(fitView());
+    this.animateView(view, fitView(), 8);
+  };
+
+  // A drag: the view moves with the finger; what it cannot take sideways, at the edge of the
+  // board or with the whole board in view, pulls the other board in. Once that began, the
+  // finger scrubs the camera between the boards until it goes back where it started.
+  dragBoard = (dx, dy) => {
+    if (!this.zoomEnabled()) {
+      return;
+    }
+    if (this.swipe) {
+      this.moveSwipe(dx);
+      return;
+    }
+    const fit = this.boardFit();
+    const before = this.boardView();
+    const width = this.container.clientWidth;
+    const after = panBy(fit, before, dx, dy, width, this.container.clientHeight);
+    this.setBoardView(after);
+    this.applyView(after);
+    const bounds = orthoBounds(fit, before);
+    const taken = ((before.x - after.x) * width) / (bounds.right - bounds.left);
+    const leftover = dx - taken;
+    if (Math.abs(leftover) > 0.5) {
+      this.moveSwipe(leftover);
+    }
+  };
+
+  moveSwipe(dx) {
+    const bounds = orthoBounds(this.boardFit(), this.currentView());
+    const perPixel = (bounds.right - bounds.left) / this.container.clientWidth;
+    const between = swipeBy(this.between, dx, perPixel, this.sideways());
+    const start = this.lookAtOpponent ? 1 : 0;
+    const now = performance.now();
+    if (!this.swipe) {
+      if (between === start) {
+        return;
+      }
+      this.swipe = { start, speed: 0, time: now };
+    } else {
+      // the speed of the last moves toward the other board (pixels a millisecond), for a flick
+      const dt = Math.max(1, now - this.swipe.time);
+      const pixels = ((between - this.between) * (start === 0 ? 1 : -1) * Math.abs(this.sideways())) / perPixel;
+      this.swipe.speed = 0.6 * this.swipe.speed + (0.4 * pixels) / dt;
+      this.swipe.time = now;
+    }
+    this.applyBetween(between);
+    if (between === start) {
+      this.swipe = null;
+    }
+  }
+
+  // the finger is off: on to the other board, or back
+  endSwipe = () => {
+    if (!this.swipe) {
+      return;
+    }
+    const { start, speed } = this.swipe;
+    this.swipe = null;
+    if (swipeGoesOn(start, this.between, speed)) {
+      // the HUD's toggle, as the preview button: the flight follows (realtimeUpdate)
+      this.props.toggleBoardView();
+    } else {
+      this.animateBetween(start);
+    }
+  };
+
+  // the camera flies between the boards, over `frames` (at 30 a second) for the whole way
+  animateBetween(to, frames = 30) {
+    if (this.viewTransition) {
+      this.scene.stopAnimation(this.viewTransition);
+      this.viewTransition = null;
+    }
+    const from = this.between;
+    if (from === to) {
+      this.applyBetween(to);
+      return;
+    }
+    // part of the way (after a swipe) takes its share of the time, a short hop at least
+    const length = Math.max(6, Math.round(frames * Math.abs(to - from)));
+    this.flight = { from, to, t: 0 };
+    const glide = new Animation("cameraFlight", "t", 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+    glide.setKeys([
+      { frame: 0, value: 0 },
+      { frame: length, value: 1 },
+    ]);
+    this.setRenderLoop();
+    this.scene.beginDirectAnimation(this.flight, [glide], 0, length, false, 1, () => {
+      this.flight = null;
+      this.applyBetween(to);
+      this.setRenderLoop(false);
+    });
+  }
+
+  // the view glides from one to another over `frames` (at 30 a second)
+  animateView(from, to, frames) {
+    if (sameView(from, to)) {
+      this.applyView(to);
+      return;
+    }
+    this.viewTransition = { from, to, t: 0 };
+    const glide = new Animation("boardView", "t", 30, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+    glide.setKeys([
+      { frame: 0, value: 0 },
+      { frame: frames, value: 1 },
+    ]);
+    this.setRenderLoop();
+    this.scene.beginDirectAnimation(this.viewTransition, [glide], 0, frames, false, 1, () => {
+      this.viewTransition = null;
+      this.applyView(to);
+      this.setRenderLoop(false);
+    });
+  }
+
+  keyDown = (event) => {
+    const target = event.target;
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+      return;
+    }
+    if (event.key === "+" || event.key === "=") {
+      this.zoomBy(1.25, this.container.clientWidth / 2, this.container.clientHeight / 2);
+    } else if (event.key === "-") {
+      this.zoomBy(0.8, this.container.clientWidth / 2, this.container.clientHeight / 2);
+    } else if (event.key === "0") {
+      this.fitBoard();
+    }
+  };
+
+  // a tap on a cell of a board: the board's action (build, aim, place the factory)
+  tapBoard = (x, y) => {
+    if (!this.scene || this.scene.isDisposed) {
+      return;
+    }
+    const pick = this.scene.pick(
+      x,
+      y,
+      (mesh) =>
+        mesh.isPickable && mesh.isVisible && mesh.isEnabled() && Boolean(mesh.metadata && mesh.metadata.gamefield),
+      false,
+      this.camera
+    );
+    if (pick && pick.hit && pick.pickedMesh && pick.pickedMesh.metadata) {
+      const { gamefield, row, col } = pick.pickedMesh.metadata;
+      gamefield.action(row, col, pick.pickedMesh.position);
+    }
+  };
 
   resize = () => {
     this.estimateOrthographicSize();
@@ -538,17 +847,19 @@ class Scene extends Component {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
     const ratio = width / height;
-    // the menu button's size (Fab.jsx: square screens, portrait, landscape)
-    const fab = ratio >= 3 / 4 && ratio <= 4 / 3 ? 0.035 * (width + height) : ratio < 1 ? 0.12 * width : 0.07 * width;
+    // the screen's edges and the menu button's size, as the HUD has them (src/index.css)
+    const { top, left, fab, gap } = measureEdges();
+    // (the edges, fab and gap place the whole-board button too, renderFitButton)
+    const edges = { edgeLeft: left, edgeTop: top, fab, gap };
     if (ratio < 1) {
       // portrait: under the menu button, clear of the match time at the top middle
       const side = 0.4 * width;
-      return { left: 5, top: Math.round(5 + fab + 8), width: Math.round(side), height: Math.round(side * 0.6) };
+      return { left: Math.round(left), top: Math.round(top + fab + gap), width: Math.round(side), height: Math.round(side * 0.6), ...edges };
     }
     // landscape: beside the menu button; on a phone held sideways no higher than a fifth of the
     // screen, the board comes close to the corner there
     const side = Math.min(Math.max(0.2 * width, 180), 340, (0.22 * height) / 0.6);
-    return { left: Math.round(5 + fab + 10), top: 5, width: Math.round(side), height: Math.round(side * 0.6) };
+    return { left: Math.round(left + fab + gap), top: Math.round(top), width: Math.round(side), height: Math.round(side * 0.6), ...edges };
   }
 
   showPreview() {
@@ -630,6 +941,12 @@ class Scene extends Component {
 
   clear() {
     this.hidePreview();
+    this.stopInfos();
+    if (this.hideCannonPick) {
+      this.hideCannonPick();
+      this.hideCannonPick = null;
+    }
+    this.cannonPickKey = "";
     this.weaponIndicators.forEach((indicator, id) => this.disposeIndicator(id, indicator));
     const instances = this.scene.meshes.filter((mesh) => mesh.isAnInstance);
     for (const instance of instances) {
@@ -638,25 +955,73 @@ class Scene extends Component {
     this.playerGameField = null;
     this.opponentGameField = null;
     this.requestRender();
-    this.camera.position = new Vector3(30, 30, 30);
     this.lookAtOpponent = undefined;
+    this.resetCamera();
   }
 
-  highlightCannons = (highlight = true) => {
-    const parent = this.scene.getMeshByName(
-      EntityType.RUM_TRUFFLE_CANNON + "__root__"
-    );
-    const children = parent.getChildMeshes(false);
-    children.forEach((child) => {
-      if (highlight) {
-        this.highlightLayer.addMesh(child, new Color3(1, 1, 0));
-      } else {
-        this.highlightLayer.removeMesh(child);
-      }
-    });
+  // While a fruit cannon is selected, the own truffle cannons it can replace stand out
+  // (src/3d/cannonPick.js); they follow the board when a cannon comes or goes meanwhile.
+  updateCannonPick() {
+    const view = this.props.game;
+    const active =
+      typeof view !== "undefined" &&
+      this.playerGameField !== null &&
+      this.props.selectedBuilding === EntityType.FRUIT_CANNON &&
+      fruitCannonPossible(view);
+    const cells = active ? cannonCells(view) : [];
+    const key = cells.map(({ row, col }) => `${row}.${col}`).join(",");
+    if (key === this.cannonPickKey) {
+      return;
+    }
+    if (this.hideCannonPick) {
+      this.hideCannonPick();
+      this.hideCannonPick = null;
+    }
+    this.cannonPickKey = key;
+    if (cells.length > 0) {
+      this.hideCannonPick = showCannonPick({
+        scene: this.scene,
+        camera: this.camera,
+        field: this.playerGameField,
+        cells,
+        requestRender: this.requestRender,
+        onSpots: (cannonSpots) => this.setState({ cannonSpots }),
+      });
+    }
+  }
 
-    this.requestRender();
-  };
+  // the screen dims around soft circles of light on the cannons, each with a gold rim
+  renderCannonSpots({ spots, radius }) {
+    return (
+      <svg className="cannonSpots" aria-hidden="true" data-testid="cannon-spots">
+        <defs>
+          <radialGradient id="cannon-spot">
+            <stop offset="0.65" stopColor="black" />
+            <stop offset="1" stopColor="white" />
+          </radialGradient>
+          <mask id="cannon-spots">
+            <rect width="100%" height="100%" fill="white" />
+            {spots.map(({ x, y }) => (
+              <circle key={`${x}.${y}`} cx={x} cy={y} r={radius} fill="url(#cannon-spot)" />
+            ))}
+          </mask>
+        </defs>
+        <rect width="100%" height="100%" fill="rgba(30, 15, 8, 0.55)" mask="url(#cannon-spots)" />
+        {spots.map(({ x, y }) => (
+          <circle
+            key={`${x}.${y}`}
+            cx={x}
+            cy={y}
+            r={radius * 0.8}
+            fill="none"
+            stroke="#FAD25A"
+            strokeOpacity="0.95"
+            strokeWidth="5"
+          />
+        ))}
+      </svg>
+    );
+  }
 
   detonateAtPosition(row, col, playerField = false) {
     let truffle = MeshBuilder.CreateTorus(
@@ -716,6 +1081,15 @@ class Scene extends Component {
     if (!this.props.tutorial || this.props.tutorialInteractive) {
       this.realtimeOpponentFieldClick(row, col, position);
     }
+  }
+
+  matchEnded() {
+    return typeof this.props.game !== "undefined" && this.props.game.phase === engine.MatchPhase.ENDED;
+  }
+
+  // takes the floating infos away, also those still on their way up
+  stopInfos() {
+    [...this.infoPops].forEach((pop) => pop.stop());
   }
 
   // a height `offset` above the base of the boards (of `cols` columns, the match's by default)
@@ -970,8 +1344,10 @@ class Scene extends Component {
     return [{ progress: Math.max(0, Math.min(1, progress)), state: "charging" }];
   }
 
-  // A donut step as a 112 px bitmap, tinted for its state ("grey" is the whole donut greyed
-  // out): rasterised once per step and state, not on every redraw.
+  // A donut step as a 112 px bitmap, coloured for its state: "ready" and "rushable" colour the
+  // glaze only, the dough and the sprinkles keep their colours (the user, 2026-11-01); "ghost"
+  // is the whole donut as a pale shadow of what is still missing. Rasterised once per step and
+  // state, not on every redraw.
   donutBitmap(step, state) {
     const key = `${step}:${state}`;
     if (this.donutBitmaps.has(key)) {
@@ -981,20 +1357,32 @@ class Scene extends Component {
     if (!image || !image.complete || image.naturalWidth === 0) {
       return undefined;
     }
-    const tints = {
-      grey: "rgba(118, 112, 108, 0.88)",
-      ready: "rgba(144, 208, 27, 0.55)",
-      rushable: "rgba(49, 144, 195, 0.6)",
-    };
     const bitmap = document.createElement("canvas");
     bitmap.width = 112;
     bitmap.height = 112;
     const context = bitmap.getContext("2d");
     context.drawImage(image, 0, 0, 112, 112);
-    if (tints[state]) {
+    if (state === "ghost") {
       context.globalCompositeOperation = "source-atop";
-      context.fillStyle = tints[state];
+      context.fillStyle = "rgba(226, 230, 236, 0.8)";
       context.fillRect(0, 0, 112, 112);
+    } else if (GLAZE_COLORS[state]) {
+      // the glaze is the light, unsaturated part of the picture: those pixels take the state's
+      // colour, shaded as they were
+      const [red, green, blue] = GLAZE_COLORS[state];
+      const pixels = context.getImageData(0, 0, 112, 112);
+      const data = pixels.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const max = Math.max(data[i], data[i + 1], data[i + 2]);
+        const min = Math.min(data[i], data[i + 1], data[i + 2]);
+        if (data[i + 3] > 0 && max > 150 && max - min < 40) {
+          const shade = max / 255;
+          data[i] = red * shade;
+          data[i + 1] = green * shade;
+          data[i + 2] = blue * shade;
+        }
+      }
+      context.putImageData(pixels, 0, 0);
     }
     this.donutBitmaps.set(key, bitmap);
     return bitmap;
@@ -1006,11 +1394,12 @@ class Scene extends Component {
     donuts.forEach(({ progress, state }, index) => {
       const step = progress <= 0 ? 0 : Math.max(1, Math.min(10, Math.round(progress * 10)));
       const x = index * 128 + 8;
-      // a grey whole donut shows how much is still missing
-      const grey = this.donutBitmap(10, "grey");
-      if (grey) {
-        context.globalAlpha = 0.92;
-        context.drawImage(grey, x, 8);
+      // a pale whole donut shows what is still missing (a grey one looked black and dirty; the
+      // user's pick of 2026-11-01, "C3" in screenshots/progress-donut)
+      const ghost = this.donutBitmap(10, "ghost");
+      if (ghost) {
+        context.globalAlpha = 0.35;
+        context.drawImage(ghost, x, 8);
         context.globalAlpha = 1;
       }
       const piece = step > 0 ? this.donutBitmap(step, state) : undefined;
@@ -1116,6 +1505,11 @@ class Scene extends Component {
     if (typeof this.props.game === "undefined" || typeof matchSession.host === "undefined" || this.weaponIndicators.size === 0) {
       return;
     }
+    // the donuts stop with the match: its clock goes on, and a cannon would report a shot
+    // ("+1") over the end screen
+    if (this.matchEnded()) {
+      return;
+    }
     const view = this.props.game;
     const now = matchSession.host.now();
     const loaded = this.donutImages.filter((image) => image.complete).length;
@@ -1166,41 +1560,33 @@ class Scene extends Component {
     }
   }
 
+  // the camera flies to the board in front, from wherever it is (a swipe may have brought it
+  // part of the way); the view glides to that board's zoom and place along with it
   performCameraFlight = () => {
-    this.setRenderLoop();
-    let target = new Vector3(30, 30, 30);
-    if (this.lookAtOpponent) {
-      target = new Vector3(6, 18, 30);
-    }
-    let flight = new Animation(
-      "animCam",
-      "position",
-      30,
-      Animation.ANIMATIONTYPE_VECTOR3,
-      Animation.ANIMATIONLOOPMODE_CYCLE
-    );
-    let keyframes = [
-      { frame: 0, value: this.camera.position },
-      { frame: 30, value: target },
-    ];
-    flight.setKeys(keyframes);
-    this.scene.beginDirectAnimation(
-      this.camera,
-      [flight],
-      0,
-      60,
-      false,
-      1,
-      () => this.setRenderLoop(false)
-    );
+    this.animateBetween(this.lookAtOpponent ? 1 : 0);
   };
+
+  // the camera at the own board, nothing on its way
+  resetCamera() {
+    if (this.flight) {
+      this.scene.stopAnimation(this.flight);
+      this.flight = null;
+    }
+    if (this.viewTransition) {
+      this.scene.stopAnimation(this.viewTransition);
+      this.viewTransition = null;
+    }
+    this.swipe = null;
+    this.views = { own: fitView(), opponent: fitView() };
+    this.applyBetween(0);
+  }
 
   startGame = (game) => {
     // the viewer's board is in front, the opponent's behind it; the player switches freely
     const playerFieldIndex = game.players[game.viewer].fieldIndex;
     const opponentFieldIndex = game.players[1 - game.viewer].fieldIndex;
     this.lookAtOpponent = false;
-    this.camera.position = new Vector3(30, 30, 30);
+    this.resetCamera();
 
     const gamefieldHeight = boardHeight(game.board.size.cols);
 
@@ -1286,6 +1672,41 @@ class Scene extends Component {
     );
   }
 
+  // The whole-board button: there as soon as the board in view is zoomed in, gone when the
+  // whole board shows again. A small round button, an icon only (the corners of a frame closing
+  // in on a board). In landscape under the menu button, so it ends about where the preview
+  // beside it ends (the user, 2026-11-01); in portrait under the preview.
+  renderFitButton({ left, top, width, height, edgeLeft, edgeTop, fab, gap }) {
+    const zoomed = this.state.zoomed;
+    const size = Math.max(40, Math.round(0.7 * fab));
+    const landscape = this.container.clientWidth >= this.container.clientHeight;
+    const place = landscape
+      ? { left: Math.round(edgeLeft), top: Math.round(edgeTop + fab + gap) }
+      : { left, top: top + height + gap };
+    return (
+      <Fab
+        color="secondary"
+        icon="fit-board"
+        data-testid="board-fit"
+        aria-label={t(tr.BOARD_ZOOM_RESET)}
+        aria-hidden={!zoomed}
+        tabIndex={zoomed ? 0 : -1}
+        onClick={this.fitBoard}
+        style={{
+          position: "absolute",
+          zIndex: 2,
+          left: place.left,
+          top: place.top,
+          width: size,
+          height: size,
+          opacity: zoomed ? 1 : 0,
+          pointerEvents: zoomed ? "auto" : "none",
+          transition: "opacity 0.2s",
+        }}
+      />
+    );
+  }
+
   render() {
     return (
       <div>
@@ -1299,6 +1720,8 @@ class Scene extends Component {
           }}
         />
         {this.state.preview ? this.renderPreviewFrame(this.state.preview) : null}
+        {this.state.preview ? this.renderFitButton(this.state.preview) : null}
+        {this.state.cannonSpots ? this.renderCannonSpots(this.state.cannonSpots) : null}
       </div>
     );
   }

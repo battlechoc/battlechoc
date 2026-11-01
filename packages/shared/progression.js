@@ -179,6 +179,78 @@ const levelRefund = levels => {
 // finishing the tutorial: cocoa and the ingredients of the starter recipe (Light barrel)
 const StarterKit = Object.freeze({ COCOA: 100, RUM: 4, SUGAR: 4, MILK: 2 });
 
+// What a player opens up by playing (2026-10-30, the user's play test: one match used to unlock
+// everything; 2026-11-01: the first match still brought every building, too much at once): the
+// tutorial's three buildings from the start, two more after each of the first three finished
+// matches; the Choclab and online play (random opponents and Friends) after four matches
+// against the AI (the user, 2026-11-01).
+const BuildingUnlocks = Object.freeze([
+    Object.freeze({ games: 0, buildings: Object.freeze([EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM]) }),
+    Object.freeze({ games: 1, buildings: Object.freeze([EntityType.FACTORY_EXTENSION, EntityType.CHOCOLATE_FOUNTAIN]) }),
+    Object.freeze({ games: 2, buildings: Object.freeze([EntityType.SPYING_EASTER_BUNNY, EntityType.FRUIT_CANNON]) }),
+    Object.freeze({ games: 3, buildings: Object.freeze([EntityType.XMAS_FACTORY, EntityType.DONUT_FACTORY]) }),
+]);
+const UnlockGames = Object.freeze({ buildings: BuildingUnlocks[BuildingUnlocks.length - 1].games, choclab: 4, online: 4 });
+
+/** Finished matches of a player (won, drawn or lost), as the server or the device counts them. */
+const gamesPlayed = stats => ['winnings', 'drawn', 'losses']
+    .reduce((sum, key) => sum + Math.max(0, Number(stats && stats[key]) || 0), 0);
+
+/** The buildings that come with more than `from` and up to `to` finished matches, in order. */
+const buildingsUnlockedBetween = (from, to) => BuildingUnlocks
+    .filter(step => step.games > from && step.games <= to)
+    .flatMap(step => step.buildings);
+
+/**
+ * What a player has unlocked and how many more matches each locked part needs.
+ *
+ * @param {object} stats the player's stats (winnings, drawn, losses, score)
+ * @param {object} [options]
+ * @param {boolean} [options.early] the player had everything under the old rule (one match
+ *   unlocked all), so nothing they had locks again
+ * @returns {{games: number, buildings: boolean, unlockedBuildings: string[], choclab: boolean,
+ *   online: boolean, gamesLeft: {buildings: number, choclab: number, online: number}}}
+ *   `buildings`: every building; `unlockedBuildings`: the ones so far
+ */
+const unlocks = (stats, { early = false } = {}) => {
+    const games = gamesPlayed(stats);
+    const left = feature => (early ? 0 : Math.max(0, UnlockGames[feature] - games));
+    return {
+        games,
+        buildings: left('buildings') === 0,
+        unlockedBuildings: buildingsUnlockedBetween(-1, early ? UnlockGames.buildings : games),
+        choclab: left('choclab') === 0,
+        online: left('online') === 0,
+        gamesLeft: { buildings: left('buildings'), choclab: left('choclab'), online: left('online') },
+    };
+};
+
+// Player levels by XP. The first steps are where matches against the AI change (engine/setup.js:
+// an 8x8 board from 200, 10x10 from 500, Gustav Ganache from 800, at full strength from 1000);
+// afterwards each level needs a little more, and beyond the table one every LEVEL_XP_BEYOND.
+const LevelXp = Object.freeze([0, 200, 500, 800, 1000, 1500, 2000, 3000, 4000, 5000, 6500, 8000, 10000]);
+const LEVEL_XP_BEYOND = 2500;
+
+/** The level of `xp`: { level (from 1), xp, from and to (the XP of this level and the next), progress (0..1) }. */
+const playerLevel = xp => {
+    const value = Math.max(0, Number(xp) || 0);
+    let index = LevelXp.length - 1;
+    while (index > 0 && LevelXp[index] > value) {
+        index--;
+    }
+    let level = index + 1;
+    let from = LevelXp[index];
+    let to = LevelXp[index + 1];
+    if (typeof to === 'undefined') {
+        const beyond = Math.floor((value - from) / LEVEL_XP_BEYOND);
+        level += beyond;
+        from += beyond * LEVEL_XP_BEYOND;
+        to = from + LEVEL_XP_BEYOND;
+    }
+    return { level, xp: value, from, to, progress: (value - from) / (to - from) };
+};
+
 module.exports = {
     SpecialIngredient, ChoclabMilestones, choclabCost, DropTables, DropRules, achievementXp, rollDrops, levelRefund, StarterKit,
+    BuildingUnlocks, UnlockGames, gamesPlayed, buildingsUnlockedBetween, unlocks, LevelXp, playerLevel,
 };

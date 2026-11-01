@@ -41,8 +41,9 @@ DONUTS = {
     "pink": {"Topping": (1, 0.0805, 0.3398), "Material.002": (0.5813, 0, 0.1205)},
     "white": {"Topping": (0.8253, 0.9711, 1), "Material.002": (0.5641, 0.5813, 0.5813)},
     "green": {"Topping": (0.1078, 1, 0.0488), "Material.002": (0.0177, 0.5813, 0.0781)},
-    # the build progress donut: white glaze, chocolate sprinkles (the game tints it)
-    "progress": {"Topping": (0.72, 0.69, 0.63), "Material.002": (0.06, 0.025, 0.01)},
+    # the build progress donut: white glaze, milk chocolate sprinkles (the game tints it); the
+    # greyer glaze and near-black sprinkles of before looked dirty (the user, 2026-11-01)
+    "progress": {"Topping": (0.9, 0.88, 0.84), "Material.002": (0.3, 0.13, 0.05)},
 }
 
 # picture -> what it shows. copies: (offset, donut colours) for several donuts in one picture;
@@ -112,7 +113,7 @@ ICONS = {
     # drawing's (the user's pick of 2026-10)
     "decoration": dict(model="decoration", elevation=32, fill=1.0, size=1536),
     # dev/icons.mjs cuts the ten progress-NN pictures from it
-    "progress-donut": dict(model="donut", copies=(((0, 0, 0), "progress"),), elevation=70),
+    "progress-donut": dict(model="donut-sprinkled", copies=(((0, 0, 0), "progress"),), elevation=70, fill=1.0),
 }
 
 args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []

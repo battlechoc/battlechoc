@@ -12,20 +12,12 @@ const useStyles = createUseStyles((theme) => ({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: "100%",
-    [theme.breakpoints.orientation.portrait]: {
-      width: "12vw",
-      height: "12vw",
-    },
-    [theme.breakpoints.orientation.landscape]: {
-      width: "7vw",
-      height: "7vw",
-      maxWidth: "12vh",
-      maxHeight: "12vh",
-    },
-    [theme.breakpoints.orientation.square]: {
-      width: "calc(3.5vh + 3.5vw)",
-      height: "calc(3.5vh + 3.5vw)",
-    },
+    // --fab (src/index.css) by orientation, the border included: dialogs and the board preview
+    // reckon with the same size
+    boxSizing: "border-box",
+    width: theme.fab,
+    height: theme.fab,
+    flex: "0 0 auto",
   },
   icon: (props) => {
     const style = {
@@ -194,8 +186,10 @@ Fab.propTypes = {
     "back",
     "share",
     "refresh",
+    "pen",
     "discord",
     "lab/recipe-book",
+    "fit-board",
   ]),
   iconStyle: PropTypes.object,
   className: PropTypes.string,

@@ -7,11 +7,11 @@ import { ServerRequest } from "./helper/settings";
 import { multiplayer } from "./Multiplayer";
 import {
   PlayerType,
-  EntityType,
   translate as t,
   translationKeys as tr,
   setCurrentLanguage,
   engine,
+  unlocks,
 } from "@battlechoc/battlechoc-shared-functions";
 import { LocalMatchHost, matchSession } from "./match/LocalMatchHost";
 import { RemoteMatchHost } from "./match/RemoteMatchHost";
@@ -44,6 +44,8 @@ import { v4 as uuidv4 } from "uuid";
 import IncomingInvite from "./ui/dialogs/IncomingInvite";
 import Matchmaking from "./ui/dialogs/Matchmaking";
 import Unlocked from "./ui/dialogs/Unlocked";
+import NameConflict from "./ui/dialogs/NameConflict";
+import { loadUnlockState, takeNewUnlock } from "./unlocks";
 import Tutorial from "./tutorial/Tutorial";
 import QuickMessage from "./ui/dialogs/QuickMessage";
 import logger from "./helper/logger";
@@ -98,6 +100,8 @@ class App extends Component {
       notifyPlayerSignedIn: this.props.notifyPlayerSignedIn,
       showQuickMessage: this.props.showQuickMessage,
       showNotification: this.props.showNotification,
+      // a name chosen offline was taken meanwhile: the player chooses another (NameConflict)
+      nameConflict: (name) => this.props.loadUiState({ nameConflict: name }),
     });
 
     let browserLanguage = "en";
@@ -160,7 +164,12 @@ class App extends Component {
     window.onfocus = () => Jukebox.playMusic();
     window.onblur = () => Jukebox.pauseMusic();
 
-    multiplayer.fetchPlayerStats(this.props.updatePlayerStats);
+    // what the player has unlocked: decided from the stats on the device (src/unlocks.js)
+    multiplayer
+      .fetchPlayerStats(this.props.updatePlayerStats)
+      .then((stats) => loadUnlockState(stats))
+      .then((unlockState) => this.props.loadUiState({ earlyUnlock: Boolean(unlockState.early) }))
+      .catch((error) => logger.warn("could not load the unlocks", error));
 
     let iOSDevice = /^(iPhone|iPad|iPod)/.test(navigator.platform);
     let isFullscreen =
@@ -201,21 +210,6 @@ class App extends Component {
       this.props.matchView.phase !== engine.MatchPhase.FIELD_CHOICE
     ) {
       this.scene.startGame(this.props.matchView);
-    }
-
-    // a selected fruit cannon highlights the truffle cannons it can replace
-    if (typeof this.scene !== "undefined" && this.scene.playerGameField) {
-      if (
-        this.props.selectedBuilding === EntityType.FRUIT_CANNON &&
-        prevProps.selectedBuilding !== EntityType.FRUIT_CANNON
-      ) {
-        this.scene.highlightCannons();
-      } else if (
-        this.props.selectedBuilding !== EntityType.FRUIT_CANNON &&
-        prevProps.selectedBuilding === EntityType.FRUIT_CANNON
-      ) {
-        this.scene.highlightCannons(false);
-      }
     }
   }
 
@@ -296,7 +290,10 @@ class App extends Component {
       return;
     }
     this.requestFullscreen();
-    const againstAi = (stats.score || 0) <= engine.FIRST_GAME_MAX_SCORE;
+    // the prepared first match, and every match until online play is unlocked, is against the AI
+    const againstAi =
+      (stats.score || 0) <= engine.FIRST_GAME_MAX_SCORE ||
+      !unlocks(stats, { early: this.props.earlyUnlock }).online;
     const attempt = ++this.startAttempt;
     const current = () => attempt === this.startAttempt;
     const playLocally = () => {
@@ -507,7 +504,7 @@ class App extends Component {
     ]);
   }
 
-  endGame(coins) {
+  endGame() {
     if (!this.props.tutorial) {
       Jukebox.stopMusic(true);
       setTimeout(() => {
@@ -528,22 +525,23 @@ class App extends Component {
             this.props.gameResumeable(resumeable)
           );
           this.props.resetUi();
-          multiplayer.fetchPlayerStats();
+          // the match may have unlocked something (buildings after each of the first three, the
+          // Choclab and online play after the fourth): one dialog says what
+          multiplayer
+            .fetchPlayerStats()
+            .then((stats) => takeNewUnlock(stats))
+            .then((unlock) => {
+              if (unlock) {
+                this.setState({ unlocked: unlock });
+              }
+            })
+            .catch((error) => logger.warn("could not check the unlocks", error));
 
           if (/Android/i.test(navigator.userAgent) && window.screen.orientation) {
             window.screen.orientation.unlock();
           }
 
           this.scene.clear();
-
-          const score = this.props.playerInfos.stats.score;
-          if (typeof coins !== "undefined" && coins > 0) {
-            // the first coins unlock every building, the Choclab and Friends: one dialog that
-            // leads to the demos of the buildings
-            if (score - coins === 0) {
-              this.setState({ unlocked: true });
-            }
-          }
         }
       }, 1000);
     }
@@ -614,12 +612,16 @@ class App extends Component {
           startTutorial={() => this.startTutorial()}
           showBuildingDemos={() => this.showBuildingDemos()}
           className={this.props.tutorial ? "tutorial hud" : "hud"}
-          endGame={(coins) => this.endGame(coins)}
+          endGame={() => this.endGame()}
           challengedPlayer={this.state.player}
         />
         <IncomingInvite />
+        <NameConflict />
         <Unlocked
-          open={this.state.unlocked}
+          unlock={this.state.unlocked || undefined}
+          gamesLeft={
+            unlocks(this.props.playerInfos.stats, { early: this.props.earlyUnlock }).gamesLeft.online
+          }
           close={() => this.setState({ unlocked: false })}
           showDemos={() => {
             this.setState({ unlocked: false });
@@ -655,6 +657,7 @@ const mapStateToProps = (state) => ({
   playerInfos: state.ui.playerInfos,
   quickMessages: state.ui.quickMessages,
   autoFullscreen: state.ui.autoFullscreen,
+  earlyUnlock: state.ui.earlyUnlock,
 });
 
 const mapDispatchToProps = {

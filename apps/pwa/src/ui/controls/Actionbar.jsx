@@ -33,15 +33,10 @@ const useStyles = createUseStyles((theme) => ({
     position: "absolute",
     zIndex: 4,
     display: "flex",
-    top: 5,
-    left: 5,
+    top: theme.edge.top,
+    left: theme.edge.left,
     flexDirection: "row",
-    "& > div": {
-      marginRight: 5,
-      [theme.breakpoints.smartphone]: {
-        marginRight: 10,
-      },
-    },
+    gap: theme.edge.gap,
   },
 }));
 
@@ -132,7 +127,8 @@ const Actionbar = (props) => {
       <Fab key="menu" color="secondary" icon="settings" onClick={openMenu}></Fab>
     );
   } else {
-    // sound and fullscreen are in the settings; the profile needs the server
+    // sound and fullscreen are in the settings; the profile also works offline (level, XP and
+    // matches from the device; rank and friends wait for the server)
     buttons.push(
       <Fab
         key="settings"
@@ -146,15 +142,13 @@ const Actionbar = (props) => {
         key="user"
         color="secondary"
         icon="user"
-        offline={!props.online}
-        onOfflineClick={props.showOfflineMessage}
         onClick={() => props.showSignInOrUp()}
       ></Fab>
     );
   }
   return (
     <>
-      <div className={classes.actions}> {buttons} </div>
+      <div className={classes.actions}>{buttons}</div>
       <GameMenu
         open={menuOpen && hasMatch}
         close={closeMenu}
