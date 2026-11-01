@@ -72,6 +72,9 @@ const CAMERA_FLIGHT = new Vector3(-24, -12, 0);
 const boardHeight = (cols) => (cols - 1) / 2 + (cols - 6) / 8;
 // the energy bars float this high above the base of the boards
 const ENERGY_BAR = 1.5;
+// the progress donut's glaze by the cannon's state: pistachio when a shot is ready, blueberry
+// when one can be rushed (the weapon palette's colours)
+const GLAZE_COLORS = { ready: [144, 208, 27], rushable: [49, 144, 195] };
 // the preview of the other board: its frame's border (px) and what is behind its board
 const PREVIEW_BORDER = 4;
 const PREVIEW_BACKGROUND = Color4.FromHexString("#7FC3E0FF");
@@ -1340,8 +1343,10 @@ class Scene extends Component {
     return [{ progress: Math.max(0, Math.min(1, progress)), state: "charging" }];
   }
 
-  // A donut step as a 112 px bitmap, tinted for its state ("grey" is the whole donut greyed
-  // out): rasterised once per step and state, not on every redraw.
+  // A donut step as a 112 px bitmap, coloured for its state: "ready" and "rushable" colour the
+  // glaze only, the dough and the sprinkles keep their colours (the user, 2026-11-01); "ghost"
+  // is the whole donut as a pale shadow of what is still missing. Rasterised once per step and
+  // state, not on every redraw.
   donutBitmap(step, state) {
     const key = `${step}:${state}`;
     if (this.donutBitmaps.has(key)) {
@@ -1351,20 +1356,32 @@ class Scene extends Component {
     if (!image || !image.complete || image.naturalWidth === 0) {
       return undefined;
     }
-    const tints = {
-      grey: "rgba(118, 112, 108, 0.88)",
-      ready: "rgba(144, 208, 27, 0.55)",
-      rushable: "rgba(49, 144, 195, 0.6)",
-    };
     const bitmap = document.createElement("canvas");
     bitmap.width = 112;
     bitmap.height = 112;
     const context = bitmap.getContext("2d");
     context.drawImage(image, 0, 0, 112, 112);
-    if (tints[state]) {
+    if (state === "ghost") {
       context.globalCompositeOperation = "source-atop";
-      context.fillStyle = tints[state];
+      context.fillStyle = "rgba(226, 230, 236, 0.8)";
       context.fillRect(0, 0, 112, 112);
+    } else if (GLAZE_COLORS[state]) {
+      // the glaze is the light, unsaturated part of the picture: those pixels take the state's
+      // colour, shaded as they were
+      const [red, green, blue] = GLAZE_COLORS[state];
+      const pixels = context.getImageData(0, 0, 112, 112);
+      const data = pixels.data;
+      for (let i = 0; i < data.length; i += 4) {
+        const max = Math.max(data[i], data[i + 1], data[i + 2]);
+        const min = Math.min(data[i], data[i + 1], data[i + 2]);
+        if (data[i + 3] > 0 && max > 150 && max - min < 40) {
+          const shade = max / 255;
+          data[i] = red * shade;
+          data[i + 1] = green * shade;
+          data[i + 2] = blue * shade;
+        }
+      }
+      context.putImageData(pixels, 0, 0);
     }
     this.donutBitmaps.set(key, bitmap);
     return bitmap;
@@ -1376,8 +1393,14 @@ class Scene extends Component {
     donuts.forEach(({ progress, state }, index) => {
       const step = progress <= 0 ? 0 : Math.max(1, Math.min(10, Math.round(progress * 10)));
       const x = index * 128 + 8;
-      // the donut grows, nothing behind it: a grey whole donut used to show what was missing
-      // and looked black and dirty (the user, 2026-11-01)
+      // a pale whole donut shows what is still missing (a grey one looked black and dirty; the
+      // user's pick of 2026-11-01, "C3" in screenshots/progress-donut)
+      const ghost = this.donutBitmap(10, "ghost");
+      if (ghost) {
+        context.globalAlpha = 0.35;
+        context.drawImage(ghost, x, 8);
+        context.globalAlpha = 1;
+      }
       const piece = step > 0 ? this.donutBitmap(step, state) : undefined;
       if (piece) {
         context.drawImage(piece, x, 8);

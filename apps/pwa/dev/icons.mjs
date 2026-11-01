@@ -291,7 +291,9 @@ for (const [name, render] of Object.entries(ARROWS)) {
     console.log("arrows ", name);
   }
 }
-if (wanted("progress") && fs.existsSync(path.join(renders, "progress-donut.png"))) {
+// (only when asked for by name: the game shows the hand-drawn donut of 2026-10, which the user
+// chose over the render on 2026-11-01; `node dev/icons.mjs progress` would replace it)
+if (only.includes("progress") && fs.existsSync(path.join(renders, "progress-donut.png"))) {
   progress("progress-donut");
   console.log("progress donuts");
 }
