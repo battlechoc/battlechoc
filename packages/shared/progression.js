@@ -180,13 +180,26 @@ const levelRefund = levels => {
 const StarterKit = Object.freeze({ COCOA: 100, RUM: 4, SUGAR: 4, MILK: 2 });
 
 // What a player opens up by playing (2026-10-30, the user's play test: one match used to unlock
-// everything; now there is a small curve): every building after the first finished match, the
-// Choclab and online play (random opponents and Friends) after three matches against the AI.
-const UnlockGames = Object.freeze({ buildings: 1, choclab: 3, online: 3 });
+// everything; 2026-11-01: the first match still brought every building, too much at once): the
+// tutorial's three buildings from the start, two more after each of the first three finished
+// matches; the Choclab and online play (random opponents and Friends) after three matches
+// against the AI.
+const BuildingUnlocks = Object.freeze([
+    Object.freeze({ games: 0, buildings: Object.freeze([EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM]) }),
+    Object.freeze({ games: 1, buildings: Object.freeze([EntityType.FACTORY_EXTENSION, EntityType.CHOCOLATE_FOUNTAIN]) }),
+    Object.freeze({ games: 2, buildings: Object.freeze([EntityType.SPYING_EASTER_BUNNY, EntityType.FRUIT_CANNON]) }),
+    Object.freeze({ games: 3, buildings: Object.freeze([EntityType.XMAS_FACTORY, EntityType.DONUT_FACTORY]) }),
+]);
+const UnlockGames = Object.freeze({ buildings: BuildingUnlocks[BuildingUnlocks.length - 1].games, choclab: 3, online: 3 });
 
 /** Finished matches of a player (won, drawn or lost), as the server or the device counts them. */
 const gamesPlayed = stats => ['winnings', 'drawn', 'losses']
     .reduce((sum, key) => sum + Math.max(0, Number(stats && stats[key]) || 0), 0);
+
+/** The buildings that come with more than `from` and up to `to` finished matches, in order. */
+const buildingsUnlockedBetween = (from, to) => BuildingUnlocks
+    .filter(step => step.games > from && step.games <= to)
+    .flatMap(step => step.buildings);
 
 /**
  * What a player has unlocked and how many more matches each locked part needs.
@@ -195,18 +208,20 @@ const gamesPlayed = stats => ['winnings', 'drawn', 'losses']
  * @param {object} [options]
  * @param {boolean} [options.early] the player had everything under the old rule (one match
  *   unlocked all), so nothing they had locks again
+ * @returns {{games: number, buildings: boolean, unlockedBuildings: string[], choclab: boolean,
+ *   online: boolean, gamesLeft: {buildings: number, choclab: number, online: number}}}
+ *   `buildings`: every building; `unlockedBuildings`: the ones so far
  */
 const unlocks = (stats, { early = false } = {}) => {
     const games = gamesPlayed(stats);
     const left = feature => (early ? 0 : Math.max(0, UnlockGames[feature] - games));
-    // any XP kept the buildings open before, and still does
-    const buildings = early || (Number(stats && stats.score) || 0) >= 1 || left('buildings') === 0;
     return {
         games,
-        buildings,
+        buildings: left('buildings') === 0,
+        unlockedBuildings: buildingsUnlockedBetween(-1, early ? UnlockGames.buildings : games),
         choclab: left('choclab') === 0,
         online: left('online') === 0,
-        gamesLeft: { buildings: buildings ? 0 : left('buildings'), choclab: left('choclab'), online: left('online') },
+        gamesLeft: { buildings: left('buildings'), choclab: left('choclab'), online: left('online') },
     };
 };
 
@@ -237,5 +252,5 @@ const playerLevel = xp => {
 
 module.exports = {
     SpecialIngredient, ChoclabMilestones, choclabCost, DropTables, DropRules, achievementXp, rollDrops, levelRefund, StarterKit,
-    UnlockGames, gamesPlayed, unlocks, LevelXp, playerLevel,
+    BuildingUnlocks, UnlockGames, gamesPlayed, buildingsUnlockedBetween, unlocks, LevelXp, playerLevel,
 };

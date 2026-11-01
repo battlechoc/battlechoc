@@ -112,9 +112,13 @@
    * from its neighbours. In JSS: theme.edge.top/right/bottom/left/gap. */
   --edge: 12px;
   --edge-top: calc(env(safe-area-inset-top, 0px) + var(--edge));
-  --edge-right: calc(env(safe-area-inset-right, 0px) + var(--edge));
   --edge-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--edge));
-  --edge-left: calc(env(safe-area-inset-left, 0px) + var(--edge));
+  /* At the sides the inset is the camera cutout's whole band (Android reports 60 px and more
+   * in landscape, full screen), which the corners are clear of: no more than --edge-side.
+   * The user's phone had the controls far from the edge (2026-11-01). */
+  --edge-side: 24px;
+  --edge-right: calc(min(env(safe-area-inset-right, 0px), var(--edge-side)) + var(--edge));
+  --edge-left: calc(min(env(safe-area-inset-left, 0px), var(--edge-side)) + var(--edge));
 
   /* the round buttons (Fab.jsx), border included; the dialogs and the board preview leave room
    * for them */

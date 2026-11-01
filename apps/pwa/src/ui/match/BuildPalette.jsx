@@ -31,11 +31,8 @@ const donutImages = {
   [EntityType.DONUT_CREAM_WHITE]: "cream-donut",
 };
 
-const unlockedWithoutScore = [
-  EntityType.CACAOTREE,
-  EntityType.RUM_TRUFFLE_CANNON,
-  EntityType.CREAM,
-];
+// the picture of each building, for the dialog that announces new ones too (dialogs/Unlocked.jsx)
+export const buildingImages = Object.fromEntries(buildings.map((building) => [building.type, building.image]));
 
 // the room between two buttons
 const GAP = 6;
@@ -125,7 +122,7 @@ const countOnOwnField = (grid, entityType) =>
     cell.occupiedBy.some((entity) => entity.type === entityType)
   ).length;
 
-const BuildPalette = ({ view, stats, earlyUnlock, selectedBuilding, select, endSelection, whitelist }) => {
+const BuildPalette = ({ view, stats, earlyUnlock, tutorial, selectedBuilding, select, endSelection, whitelist }) => {
   const classes = useStyles();
   // a selected fruit cannon ends by itself once it can no longer be built (no cacao, no free
   // building slot, no cannon left): the spotlight on the cannons goes and the board is normal again
@@ -146,9 +143,10 @@ const BuildPalette = ({ view, stats, earlyUnlock, selectedBuilding, select, endS
   }
   const me = view.players[view.viewer];
   const grid = view.board.fields[me.fieldIndex].grid;
-  // the first finished match unlocks every building (shared progression.js)
-  const allBuildings = unlocks(stats, { early: earlyUnlock }).buildings;
-  const unlocked = (type) => allBuildings || unlockedWithoutScore.includes(type);
+  // the first matches unlock the buildings two by two (shared progression.js); the tutorial and
+  // the demos show them all
+  const unlockedBuildings = unlocks(stats, { early: earlyUnlock }).unlockedBuildings;
+  const unlocked = (type) => tutorial || unlockedBuildings.includes(type);
 
   const canBuild = (type) => {
     if (Array.isArray(whitelist) && !whitelist.includes(type)) {
@@ -242,6 +240,7 @@ const mapStateToProps = (state) => ({
   earlyUnlock: state.ui.earlyUnlock,
   selectedBuilding: state.ui.selectedBuilding,
   whitelist: state.ui.whitelistBuildings,
+  tutorial: state.ui.tutorial,
 });
 
 const mapDispatchToProps = (dispatch) => ({

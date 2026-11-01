@@ -845,16 +845,17 @@ class Scene extends Component {
     const ratio = width / height;
     // the screen's edges and the menu button's size, as the HUD has them (src/index.css)
     const { top, left, fab, gap } = measureEdges();
-    // (fab and gap: the whole-board button sits under the preview, renderFitButton)
+    // (the edges, fab and gap place the whole-board button too, renderFitButton)
+    const edges = { edgeLeft: left, edgeTop: top, fab, gap };
     if (ratio < 1) {
       // portrait: under the menu button, clear of the match time at the top middle
       const side = 0.4 * width;
-      return { left: Math.round(left), top: Math.round(top + fab + gap), width: Math.round(side), height: Math.round(side * 0.6), fab, gap };
+      return { left: Math.round(left), top: Math.round(top + fab + gap), width: Math.round(side), height: Math.round(side * 0.6), ...edges };
     }
     // landscape: beside the menu button; on a phone held sideways no higher than a fifth of the
     // screen, the board comes close to the corner there
     const side = Math.min(Math.max(0.2 * width, 180), 340, (0.22 * height) / 0.6);
-    return { left: Math.round(left + fab + gap), top: Math.round(top), width: Math.round(side), height: Math.round(side * 0.6), fab, gap };
+    return { left: Math.round(left + fab + gap), top: Math.round(top), width: Math.round(side), height: Math.round(side * 0.6), ...edges };
   }
 
   showPreview() {
@@ -1652,12 +1653,17 @@ class Scene extends Component {
     );
   }
 
-  // The whole-board button under the preview: there as soon as the board in view is zoomed
-  // in, gone when the whole board shows again. A small round button, an icon only (the
-  // corners of a frame closing in on a board).
-  renderFitButton({ left, top, height, fab, gap }) {
+  // The whole-board button: there as soon as the board in view is zoomed in, gone when the
+  // whole board shows again. A small round button, an icon only (the corners of a frame closing
+  // in on a board). In landscape under the menu button, so it ends about where the preview
+  // beside it ends (the user, 2026-11-01); in portrait under the preview.
+  renderFitButton({ left, top, width, height, edgeLeft, edgeTop, fab, gap }) {
     const zoomed = this.state.zoomed;
     const size = Math.max(40, Math.round(0.7 * fab));
+    const landscape = this.container.clientWidth >= this.container.clientHeight;
+    const place = landscape
+      ? { left: Math.round(edgeLeft), top: Math.round(edgeTop + fab + gap) }
+      : { left, top: top + height + gap };
     return (
       <Fab
         color="secondary"
@@ -1670,8 +1676,8 @@ class Scene extends Component {
         style={{
           position: "absolute",
           zIndex: 2,
-          left,
-          top: top + height + gap,
+          left: place.left,
+          top: place.top,
           width: size,
           height: size,
           opacity: zoomed ? 1 : 0,

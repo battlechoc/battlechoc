@@ -525,14 +525,14 @@ class App extends Component {
             this.props.gameResumeable(resumeable)
           );
           this.props.resetUi();
-          // the match may have unlocked something (the buildings after the first, the Choclab and
-          // online play after the third): one dialog says what
+          // the match may have unlocked something (buildings after each of the first three, the
+          // Choclab and online play after the third): one dialog says what
           multiplayer
             .fetchPlayerStats()
             .then((stats) => takeNewUnlock(stats))
-            .then((step) => {
-              if (step) {
-                this.setState({ unlocked: step });
+            .then((unlock) => {
+              if (unlock) {
+                this.setState({ unlocked: unlock });
               }
             })
             .catch((error) => logger.warn("could not check the unlocks", error));
@@ -618,7 +618,7 @@ class App extends Component {
         <IncomingInvite />
         <NameConflict />
         <Unlocked
-          step={this.state.unlocked || undefined}
+          unlock={this.state.unlocked || undefined}
           gamesLeft={
             unlocks(this.props.playerInfos.stats, { early: this.props.earlyUnlock }).gamesLeft.online
           }

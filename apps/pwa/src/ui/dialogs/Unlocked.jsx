@@ -6,21 +6,56 @@ import {
 } from "@battlechoc/battlechoc-shared-functions";
 import Dialog from "./Dialog";
 import Button from "../controls/Button";
+import { buildingImages } from "../match/BuildPalette";
 
 // What a match just unlocked (src/unlocks.js), once each:
-// - "buildings" (the first match): every building, and the way to the demos of the buildings;
-//   closing it skips them, the settings show them again; it also says how many matches the
-//   Choclab and online play still need
-// - "online" (the third match): the Choclab and online matches
+// - buildings (two after each of the first three matches): their pictures and names, and the
+//   way to the demos of the buildings; closing it skips them, the settings show them again; it
+//   also says how many matches the Choclab and online play still need
+// - online (the third match): the Choclab and online matches, in the same dialog as that
+//   match's buildings
 // Only in the page while open: its button reads like the one in the settings.
-const Unlocked = ({ step, gamesLeft, close, showDemos }) => {
-  if (!step) {
+const Unlocked = ({ unlock, gamesLeft, close, showDemos }) => {
+  if (!unlock) {
     return null;
   }
+  const buildings = unlock.buildings || [];
+  const step = unlock.online ? "online" : "buildings";
   return (
     <Dialog open close={close} mode="info" title={t(tr.UNLOCK_TITLE)}>
       <div data-testid="unlocked" data-step={step} style={{ textAlign: "center" }}>
-        {step === "buildings" ? (
+        {buildings.length > 0 ? (
+          <>
+            <p>{t(tr.UNLOCK_BUILDINGS_HINT)}</p>
+            <div style={{ display: "flex", justifyContent: "center", gap: "1.5em", flexWrap: "wrap" }}>
+              {buildings.map((type) => (
+                <div key={type} data-testid="unlocked-building" style={{ width: "6em" }}>
+                  <div
+                    style={{
+                      width: "4em",
+                      height: "4em",
+                      margin: "0 auto",
+                      backgroundImage: `url(/images/${buildingImages[type]}-icon.svg)`,
+                      backgroundSize: "contain",
+                      backgroundRepeat: "no-repeat",
+                      backgroundPosition: "center",
+                    }}
+                  />
+                  <div>{t(tr[`TOOLTIP_BUILDING_TITLE_${type.split(".")[1]}`])}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : null}
+        {unlock.online ? (
+          <>
+            <p>{t(tr.UNLOCK_NEW_FEATURES)}</p>
+            <p>{t(tr.UNLOCK_ONLINE_HINT)}</p>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <Button onClick={close}>Ok</Button>
+            </div>
+          </>
+        ) : (
           <>
             <p>{t(tr.UNLOCK_DEMOS_HINT)}</p>
             <div style={{ display: "flex", justifyContent: "center" }}>
@@ -34,14 +69,6 @@ const Unlocked = ({ step, gamesLeft, close, showDemos }) => {
               </p>
             ) : null}
           </>
-        ) : (
-          <>
-            <p>{t(tr.UNLOCK_NEW_FEATURES)}</p>
-            <p>{t(tr.UNLOCK_ONLINE_HINT)}</p>
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <Button onClick={close}>Ok</Button>
-            </div>
-          </>
         )}
       </div>
     </Dialog>
@@ -49,7 +76,10 @@ const Unlocked = ({ step, gamesLeft, close, showDemos }) => {
 };
 
 Unlocked.propTypes = {
-  step: PropTypes.oneOf(["buildings", "online"]),
+  unlock: PropTypes.shape({
+    buildings: PropTypes.arrayOf(PropTypes.string),
+    online: PropTypes.bool,
+  }),
   gamesLeft: PropTypes.number,
   close: PropTypes.func.isRequired,
   showDemos: PropTypes.func.isRequired,

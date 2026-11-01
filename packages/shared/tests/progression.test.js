@@ -165,23 +165,44 @@ describe('unlocks', () => {
         expect(gamesPlayed(undefined)).toBe(0);
     });
 
-    test('the buildings come with the first match, the Choclab and online play with the third', () => {
-        expect(UnlockGames).toEqual({ buildings: 1, choclab: 3, online: 3 });
-        expect(unlocks(stats(0))).toMatchObject({ buildings: false, choclab: false, online: false, gamesLeft: { choclab: 3, online: 3 } });
-        expect(unlocks(stats(1))).toMatchObject({ buildings: true, choclab: false, online: false, gamesLeft: { choclab: 2, online: 2 } });
-        expect(unlocks(stats(2))).toMatchObject({ choclab: false, online: false, gamesLeft: { choclab: 1, online: 1 } });
-        expect(unlocks(stats(3))).toMatchObject({ buildings: true, choclab: true, online: true, gamesLeft: { choclab: 0, online: 0 } });
+    test('two buildings come with each of the first three matches, the Choclab and online play with the third', () => {
+        const { EntityType, BuildingUnlocks, buildingsUnlockedBetween } = require('../index');
+        expect(UnlockGames).toEqual({ buildings: 3, choclab: 3, online: 3 });
+        expect(BuildingUnlocks.map(step => step.games)).toEqual([0, 1, 2, 3]);
+        expect(unlocks(stats(0))).toMatchObject({
+            buildings: false, choclab: false, online: false, gamesLeft: { buildings: 3, choclab: 3, online: 3 },
+            unlockedBuildings: [EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM],
+        });
+        expect(unlocks(stats(1))).toMatchObject({ buildings: false, choclab: false, online: false, gamesLeft: { buildings: 2, choclab: 2, online: 2 } });
+        expect(unlocks(stats(1)).unlockedBuildings).toEqual([
+            EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM,
+            EntityType.FACTORY_EXTENSION, EntityType.CHOCOLATE_FOUNTAIN,
+        ]);
+        expect(unlocks(stats(2))).toMatchObject({ choclab: false, online: false, gamesLeft: { buildings: 1, choclab: 1, online: 1 } });
+        expect(unlocks(stats(2)).unlockedBuildings).toContain(EntityType.FRUIT_CANNON);
+        expect(unlocks(stats(2)).unlockedBuildings).not.toContain(EntityType.DONUT_FACTORY);
+        expect(unlocks(stats(3))).toMatchObject({ buildings: true, choclab: true, online: true, gamesLeft: { buildings: 0, choclab: 0, online: 0 } });
+        expect(unlocks(stats(3)).unlockedBuildings).toHaveLength(9);
+        expect(unlocks(stats(9)).unlockedBuildings).toHaveLength(9);
         expect(unlocks({ winnings: 1, drawn: 1, losses: 1 })).toMatchObject({ choclab: true, online: true });
+        // what a match brought: the dialog after it (apps/pwa/src/unlocks.js)
+        expect(buildingsUnlockedBetween(0, 1)).toEqual([EntityType.FACTORY_EXTENSION, EntityType.CHOCOLATE_FOUNTAIN]);
+        expect(buildingsUnlockedBetween(1, 3)).toEqual([
+            EntityType.SPYING_EASTER_BUNNY, EntityType.FRUIT_CANNON, EntityType.XMAS_FACTORY, EntityType.DONUT_FACTORY,
+        ]);
+        expect(buildingsUnlockedBetween(3, 4)).toEqual([]);
     });
 
-    test('XP keeps the buildings open, as the old rule did', () => {
-        expect(unlocks({ score: 20 }).buildings).toBe(true);
+    test('XP alone opens nothing, finished matches do', () => {
+        expect(unlocks({ score: 20 }).buildings).toBe(false);
+        expect(unlocks({ score: 20 }).unlockedBuildings).toHaveLength(3);
     });
 
     test('a player who had everything under the old rule keeps it', () => {
         expect(unlocks(stats(1), { early: true })).toMatchObject({
-            buildings: true, choclab: true, online: true, gamesLeft: { choclab: 0, online: 0 },
+            buildings: true, choclab: true, online: true, gamesLeft: { buildings: 0, choclab: 0, online: 0 },
         });
+        expect(unlocks(stats(1), { early: true }).unlockedBuildings).toHaveLength(9);
         expect(unlocks(stats(0, 0), { early: true }).choclab).toBe(true);
     });
 });

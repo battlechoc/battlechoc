@@ -379,7 +379,7 @@ const Settings = (props) => {
                     >
                       {t(tr.RESTART_TUTORIAL)}
                     </Button>
-                    {unlocks(props.playerInfos.stats, { early: props.earlyUnlock }).buildings &&
+                    {unlocks(props.playerInfos.stats, { early: props.earlyUnlock }).games > 0 &&
                     props.showBuildingDemos ? (
                       <Button
                         className={classes.button}
