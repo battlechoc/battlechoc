@@ -1,15 +1,23 @@
-# Renders the favicon with Cycles: the logo's B in white chocolate on a rounded square of
-# chocolate with milk and dark chocolate rays (the user's pick of 2026-10: "B3 als Schokostück",
-# in the colours of the flat B3). Writes dev/icons/favicon.png; dev/icons.mjs makes favicon.png
-# and favicon.ico of public from it. Headless, from apps/pwa:
+# Renders the favicon and the app icon with Cycles: the logo's B in white chocolate on a rounded
+# square of chocolate with milk and dark chocolate rays (the user's pick of 2026-10: "B3 als
+# Schokostück", in the colours of the flat B3). Writes into dev/icons/ (RENDERS below):
 #
-#   /Applications/Blender.app/Contents/MacOS/Blender -b -P dev/blender/render_favicon.py
+# - favicon: the whole piece (favicon.png/.ico and the manifest's icons)
+# - favicon-bleed: a bigger piece that fills the frame, the B inside the safe zone of maskable
+#   icons; favicon-bleed-apple: the same, the B larger (iOS rounds the corners itself)
+# - favicon-letter: the B alone (the white shape of the notification icon)
+#
+# dev/icons.mjs makes the files of public from them. Headless, from apps/pwa:
+#
+#   /Applications/Blender.app/Contents/MacOS/Blender -b -P dev/blender/render_favicon.py -- \
+#       [--size 1024] [--samples 128] [names]
 #
 # dev/favicon-b.svg is the B of dev/logo-letters.svg (a bitmap there), traced with potrace. The
 # light comes from dev/textures/sky.hdr (render_icons.py downloads it) and a sun from the upper
 # left.
 import math
 import os
+import sys
 
 import addon_utils
 import bmesh
@@ -20,9 +28,18 @@ here = os.path.dirname(os.path.abspath(__file__))
 pwa = os.path.normpath(os.path.join(here, "..", ".."))
 LETTER = os.path.join(pwa, "dev", "favicon-b.svg")
 HDR = os.path.join(pwa, "dev", "textures", "sky.hdr")
-OUT = os.path.join(pwa, "dev", "icons", "favicon.png")
+OUT = os.path.join(pwa, "dev", "icons")
 
 SIDE, HEIGHT = 1.9, 0.3  # the chocolate piece
+SCALE = 2.3  # the camera's view: the piece with a little room around it
+# name: the piece's side (None: no piece), the camera's view. The B is 1.1 high: 48 % of the
+# frame at 2.3 (inside the 80 % circle of a maskable icon), 63 % at 1.75.
+RENDERS = {
+    "favicon": (SIDE, SCALE),
+    "favicon-bleed": (2 * SIDE, SCALE),
+    "favicon-bleed-apple": (2 * SIDE, 1.75),
+    "favicon-letter": (None, SCALE),
+}
 RAYS, RAY_WIDTH = 16, 0.2  # rays and the angle (radians) of a light one
 # linear albedo, darker than the flat B3's colours so that the lit render shows them: its rays
 # (#a8703f) and the brown between them (#5e381f)
@@ -30,12 +47,12 @@ LIGHT = (0.207, 0.075, 0.012)
 DARK = (0.051, 0.01, 0.001)
 
 
-def setup_scene():
+def setup_scene(size, samples):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     addon_utils.enable("cycles", default_set=True)
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
-    scene.cycles.samples = 128
+    scene.cycles.samples = samples
     scene.cycles.use_denoising = True
     preferences = bpy.context.preferences.addons["cycles"].preferences
     try:
@@ -47,7 +64,7 @@ def setup_scene():
     except TypeError:
         scene.cycles.device = "CPU"
     scene.render.film_transparent = True
-    scene.render.resolution_x = scene.render.resolution_y = 512
+    scene.render.resolution_x = scene.render.resolution_y = size
     scene.render.image_settings.file_format = "PNG"
     scene.render.image_settings.color_mode = "RGBA"
     scene.view_settings.view_transform = "Standard"
@@ -118,11 +135,11 @@ def white_chocolate():
     return material
 
 
-def piece(material):
+def piece(material, side):
     """A rounded square slab of chocolate, its top edges rounded too."""
     bm = bmesh.new()
     bmesh.ops.create_cube(bm, size=1.0)
-    bmesh.ops.scale(bm, vec=(SIDE, SIDE, HEIGHT), verts=bm.verts)
+    bmesh.ops.scale(bm, vec=(side, side, HEIGHT), verts=bm.verts)
     bmesh.ops.translate(bm, vec=(0, 0, HEIGHT / 2), verts=bm.verts)
     upright = [edge for edge in bm.edges if abs(edge.verts[0].co.z - edge.verts[1].co.z) > 0.01]
     bmesh.ops.bevel(bm, geom=upright, offset=0.32, segments=10, affect="EDGES", profile=0.5)
@@ -165,7 +182,7 @@ def letter(material, height=1.1, extrude=0.06, bevel=0.022):
     obj.data.materials.append(material)
 
 
-def camera(scene, scale=2.3, tilt=12):
+def camera(scene, scale, tilt=12):
     """Orthographic, from the front and a little from below the top: the piece's edge shows."""
     cam = bpy.data.objects.new("Camera", bpy.data.cameras.new("Camera"))
     cam.data.type = "ORTHO"
@@ -178,11 +195,18 @@ def camera(scene, scale=2.3, tilt=12):
     scene.camera = cam
 
 
-scene = setup_scene()
-piece(rays_material())
-letter(white_chocolate())
-camera(scene)
-os.makedirs(os.path.dirname(OUT), exist_ok=True)
-scene.render.filepath = OUT
-bpy.ops.render.render(write_still=True)
-print("rendered favicon")
+args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
+size = int(args[args.index("--size") + 1]) if "--size" in args else 1024
+samples = int(args[args.index("--samples") + 1]) if "--samples" in args else 128
+names = [arg for i, arg in enumerate(args) if not arg.startswith("--") and (i == 0 or not args[i - 1].startswith("--"))]
+os.makedirs(OUT, exist_ok=True)
+for name in names or RENDERS:
+    side, scale = RENDERS[name]
+    scene = setup_scene(size, samples)
+    if side is not None:
+        piece(rays_material(), side)
+    letter(white_chocolate())
+    camera(scene, scale)
+    scene.render.filepath = os.path.join(OUT, name + ".png")
+    bpy.ops.render.render(write_still=True)
+    print("rendered", name)
