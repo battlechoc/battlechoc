@@ -73,8 +73,9 @@ const boardHeight = (cols) => (cols - 1) / 2 + (cols - 6) / 8;
 // the energy bars float this high above the base of the boards
 const ENERGY_BAR = 1.5;
 // the progress donut's glaze by the cannon's state: pistachio when a shot is ready, blueberry
-// when one can be rushed (the weapon palette's colours)
-const GLAZE_COLORS = { ready: [144, 208, 27], rushable: [49, 144, 195] };
+// when one can be rushed (the weapon palette's colours, mixed with 40 % white: the full colours
+// were too dark for a glaze, the user's pick from screenshots/progress-donut/glaze-colours.png)
+const GLAZE_COLORS = { ready: [188, 227, 118], rushable: [131, 188, 219] };
 // the preview of the other board: its frame's border (px) and what is behind its board
 const PREVIEW_BORDER = 4;
 const PREVIEW_BACKGROUND = Color4.FromHexString("#7FC3E0FF");
