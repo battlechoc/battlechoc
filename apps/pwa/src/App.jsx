@@ -45,6 +45,7 @@ import IncomingInvite from "./ui/dialogs/IncomingInvite";
 import Matchmaking from "./ui/dialogs/Matchmaking";
 import Unlocked from "./ui/dialogs/Unlocked";
 import NameConflict from "./ui/dialogs/NameConflict";
+import UpdateAvailable from "./ui/dialogs/UpdateAvailable";
 import { loadUnlockState, takeNewUnlock } from "./unlocks";
 import Tutorial from "./tutorial/Tutorial";
 import QuickMessage from "./ui/dialogs/QuickMessage";
@@ -617,6 +618,7 @@ class App extends Component {
         />
         <IncomingInvite />
         <NameConflict />
+        <UpdateAvailable />
         <Unlocked
           unlock={this.state.unlocked || undefined}
           gamesLeft={
