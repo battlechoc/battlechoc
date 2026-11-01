@@ -97,8 +97,6 @@ ICONS = {
     # the logo's motif (the user's pick of 2026-10: over the old cacao tree), its chocolate as
     # light as in the game (the user's pick "1 hell")
     "logo-fountain": dict(model="chocolateFountain", hide=("Shield",), look="bright", size=1024),
-    # the app icons' motif: the fountain in the darker chocolate of the other pictures
-    "app-icon-fountain": dict(model="chocolateFountain", hide=("Shield",)),
     # the resources: cacao and building slots (also inside the arrows of the "per turn" pictures)
     "cacao": dict(model="cacao", elevation=35),
     "buildings-icon": dict(model="hammer", elevation=35),

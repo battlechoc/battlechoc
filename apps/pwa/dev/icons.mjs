@@ -8,11 +8,11 @@
 // - "bunny-caught" gets the bunny (render bunny-ghost) as a blue ghost fading out at the bottom,
 //   between the wings and under the halo of the old picture
 // - "logo" puts the fountain (render logo-fountain) on the letters of dev/logo-letters.svg
-// - "app-icons" puts the fountain (render app-icon-fountain) on a deep blue ray background: the
-//   manifest's icons (round), the maskable icons (the fountain inside the safe zone), the apple
-//   touch icons (square, iOS rounds them) and the notification icon (a white silhouette)
-// - "favicon" makes favicon.png/.ico of the B on its chocolate piece (render favicon, from
-//   dev/blender/render_favicon.py)
+// - "app-icons" makes the manifest's icons, the maskable icons, the apple touch icons and the
+//   notification icon of the B on its chocolate piece (renders favicon, favicon-bleed,
+//   favicon-bleed-apple and favicon-letter of dev/blender/render_favicon.py; the user made the
+//   favicon the main icon on 2026-11-01)
+// - "favicon" makes favicon.png/.ico of the same piece (render favicon)
 //
 // The renders are trimmed to their content, scaled to twice their box (or SCALE times) and
 // embedded as WebP (needs ImageMagick and cwebp).
@@ -166,37 +166,17 @@ const progress = (render) => {
   }
 };
 
-// the app icon's background (the user's pick, "deeper blue")
-const BLUE = ["#8fd6f5", "#3aa3dc", "#1d6aa5"];
-const background = (size) => {
-  const rays = Array.from({ length: 22 }, (_, i) => {
-    const a = (i * 2 * Math.PI) / 22;
-    const point = (angle) => `${(256 + 400 * Math.cos(angle)).toFixed(1)},${(256 + 400 * Math.sin(angle)).toFixed(1)}`;
-    return `<path d="M256,256 L${point(a)} L${point(a + 0.13)} Z" fill="#ffffff" fill-opacity="0.13"/>`;
-  }).join("");
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512"><defs>` +
-    `<radialGradient id="g" cx="50%" cy="45%" r="70%"><stop offset="0" stop-color="${BLUE[0]}"/>` +
-    `<stop offset="0.55" stop-color="${BLUE[1]}"/><stop offset="1" stop-color="${BLUE[2]}"/></radialGradient>` +
-    `</defs><rect width="512" height="512" fill="url(#g)"/>${rays}</svg>`;
-  const file = path.join(scratch, "background.svg");
-  fs.writeFileSync(file, svg);
-  const png = path.join(scratch, `background-${size}.png`);
-  run("rsvg-convert", ["-w", String(size), "-h", String(size), file, "-o", png]);
-  return png;
+/** The piece on a transparent square of `size`, `fraction` of it wide. */
+const piece = (render, size, fraction, out) => {
+  run("magick", [
+    path.join(renders, render + ".png"), "-trim", "+repage", "-resize", `${Math.round(size * fraction)}x${Math.round(size * fraction)}`,
+    "-background", "none", "-gravity", "center", "-extent", `${size}x${size}`, "-strip", `PNG32:${out}`,
+  ]);
 };
 
-/** The motif on the blue background, `fraction` of the icon's height, as a PNG of `size`. */
-const appIcon = (render, size, fraction, out, round) => {
-  const motif = path.join(scratch, "motif.png");
-  run("magick", [path.join(renders, render + ".png"), "-trim", "+repage", "-resize", `x${Math.round(size * fraction)}`, motif]);
-  const args = [background(size), motif, "-gravity", "center", "-geometry", `+0+${Math.round(size * 0.012)}`, "-composite"];
-  if (round) {
-    const r = size / 2 - 0.5;
-    args.push("(", "-size", `${size}x${size}`, "xc:black", "-fill", "white", "-draw", `circle ${size / 2},${size / 2} ${size / 2},${size / 2 - r}`, ")");
-    args.push("-alpha", "off", "-compose", "CopyOpacity", "-composite");
-  }
-  run("magick", [...args, out]);
+/** A render that fills its frame (the bleed renders), scaled to `size`. */
+const bleed = (render, size, out) => {
+  run("magick", [path.join(renders, render + ".png"), "-resize", `${size}x${size}`, "-background", "none", "-alpha", "off", "-strip", `PNG24:${out}`]);
 };
 
 const logo = (render) => {
@@ -210,19 +190,20 @@ const logo = (render) => {
   fs.writeFileSync(path.join(images, "logo.svg"), letters.replace("</svg>", motif + "</svg>"));
 };
 
-/** The app icons and the notification icon: the fountain on the blue rays. */
-const appIcons = (render) => {
+/** The app icons and the notification icon: the B on its chocolate piece. */
+const appIcons = () => {
   for (const size of [144, 192, 512]) {
-    appIcon(render, size, 0.74, path.join(pub, `icon-${size}x${size}.png`), true);
-    // maskable: only the inner circle of 80 % is sure to show
-    appIcon(render, size, 0.58, path.join(pub, `icon-${size}x${size}-maskable.png`), false);
+    piece("favicon", size, 124 / 128, path.join(pub, `icon-${size}x${size}.png`));
+    // maskable: only the inner circle of 80 % is sure to show, so the piece fills the frame
+    bleed("favicon-bleed", size, path.join(pub, `icon-${size}x${size}-maskable.png`));
   }
   for (const size of [120, 152, 167, 180]) {
-    appIcon(render, size, 0.7, path.join(pub, `apple-icon-${size}.png`), false);
+    // iOS rounds the corners itself
+    bleed("favicon-bleed-apple", size, path.join(pub, `apple-icon-${size}.png`));
   }
   // Android shows the notification icon as a white shape
   run("magick", [
-    path.join(renders, render + ".png"), "-trim", "+repage", "-resize", "84x84",
+    path.join(renders, "favicon-letter.png"), "-trim", "+repage", "-resize", "84x84",
     "-alpha", "extract", "-background", "white", "-alpha", "shape",
     "-gravity", "center", "-background", "none", "-extent", "96x96", "-strip",
     `PNG32:${path.join(images, "battlechoc_notification_icon.png")}`,
@@ -232,10 +213,7 @@ const appIcons = (render) => {
 /** favicon.png and favicon.ico: the B on its chocolate piece, filling the square. */
 const favicon = (render) => {
   const png = path.join(pub, "favicon.png");
-  run("magick", [
-    path.join(renders, render + ".png"), "-trim", "+repage", "-resize", "124x124",
-    "-background", "none", "-gravity", "center", "-extent", "128x128", "-strip", `PNG32:${png}`,
-  ]);
+  piece(render, 128, 124 / 128, png);
   run("magick", [png, "-define", "icon:auto-resize=128,64,48,32,16", path.join(pub, "favicon.ico")]);
 };
 
@@ -305,8 +283,8 @@ if (wanted("logo") && fs.existsSync(path.join(renders, "logo-fountain.png"))) {
   logo("logo-fountain");
   console.log("logo");
 }
-if (wanted("app-icons") && fs.existsSync(path.join(renders, "app-icon-fountain.png"))) {
-  appIcons("app-icon-fountain");
+if (wanted("app-icons") && ["favicon", "favicon-bleed", "favicon-bleed-apple", "favicon-letter"].every((render) => fs.existsSync(path.join(renders, render + ".png")))) {
+  appIcons();
   console.log("app icons");
 }
 if (wanted("favicon") && fs.existsSync(path.join(renders, "favicon.png"))) {
