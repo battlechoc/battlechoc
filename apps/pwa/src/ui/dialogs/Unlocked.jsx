@@ -12,8 +12,7 @@ import { buildingImages } from "../match/BuildPalette";
 // - buildings (two after each of the first three matches): their pictures and names, and the
 //   way to the demos of the buildings; closing it skips them, the settings show them again; it
 //   also says how many matches the Choclab and online play still need
-// - online (the third match): the Choclab and online matches, in the same dialog as that
-//   match's buildings
+// - online (the fourth match): the Choclab and online matches
 // Only in the page while open: its button reads like the one in the settings.
 const Unlocked = ({ unlock, gamesLeft, close, showDemos }) => {
   if (!unlock) {

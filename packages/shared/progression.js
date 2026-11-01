@@ -182,15 +182,15 @@ const StarterKit = Object.freeze({ COCOA: 100, RUM: 4, SUGAR: 4, MILK: 2 });
 // What a player opens up by playing (2026-10-30, the user's play test: one match used to unlock
 // everything; 2026-11-01: the first match still brought every building, too much at once): the
 // tutorial's three buildings from the start, two more after each of the first three finished
-// matches; the Choclab and online play (random opponents and Friends) after three matches
-// against the AI.
+// matches; the Choclab and online play (random opponents and Friends) after four matches
+// against the AI (the user, 2026-11-01).
 const BuildingUnlocks = Object.freeze([
     Object.freeze({ games: 0, buildings: Object.freeze([EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM]) }),
     Object.freeze({ games: 1, buildings: Object.freeze([EntityType.FACTORY_EXTENSION, EntityType.CHOCOLATE_FOUNTAIN]) }),
     Object.freeze({ games: 2, buildings: Object.freeze([EntityType.SPYING_EASTER_BUNNY, EntityType.FRUIT_CANNON]) }),
     Object.freeze({ games: 3, buildings: Object.freeze([EntityType.XMAS_FACTORY, EntityType.DONUT_FACTORY]) }),
 ]);
-const UnlockGames = Object.freeze({ buildings: BuildingUnlocks[BuildingUnlocks.length - 1].games, choclab: 3, online: 3 });
+const UnlockGames = Object.freeze({ buildings: BuildingUnlocks[BuildingUnlocks.length - 1].games, choclab: 4, online: 4 });
 
 /** Finished matches of a player (won, drawn or lost), as the server or the device counts them. */
 const gamesPlayed = stats => ['winnings', 'drawn', 'losses']

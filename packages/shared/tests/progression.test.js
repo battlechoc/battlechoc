@@ -165,26 +165,27 @@ describe('unlocks', () => {
         expect(gamesPlayed(undefined)).toBe(0);
     });
 
-    test('two buildings come with each of the first three matches, the Choclab and online play with the third', () => {
+    test('two buildings come with each of the first three matches, the Choclab and online play with the fourth', () => {
         const { EntityType, BuildingUnlocks, buildingsUnlockedBetween } = require('../index');
-        expect(UnlockGames).toEqual({ buildings: 3, choclab: 3, online: 3 });
+        expect(UnlockGames).toEqual({ buildings: 3, choclab: 4, online: 4 });
         expect(BuildingUnlocks.map(step => step.games)).toEqual([0, 1, 2, 3]);
         expect(unlocks(stats(0))).toMatchObject({
-            buildings: false, choclab: false, online: false, gamesLeft: { buildings: 3, choclab: 3, online: 3 },
+            buildings: false, choclab: false, online: false, gamesLeft: { buildings: 3, choclab: 4, online: 4 },
             unlockedBuildings: [EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM],
         });
-        expect(unlocks(stats(1))).toMatchObject({ buildings: false, choclab: false, online: false, gamesLeft: { buildings: 2, choclab: 2, online: 2 } });
+        expect(unlocks(stats(1))).toMatchObject({ buildings: false, choclab: false, online: false, gamesLeft: { buildings: 2, choclab: 3, online: 3 } });
         expect(unlocks(stats(1)).unlockedBuildings).toEqual([
             EntityType.CACAOTREE, EntityType.RUM_TRUFFLE_CANNON, EntityType.CREAM,
             EntityType.FACTORY_EXTENSION, EntityType.CHOCOLATE_FOUNTAIN,
         ]);
-        expect(unlocks(stats(2))).toMatchObject({ choclab: false, online: false, gamesLeft: { buildings: 1, choclab: 1, online: 1 } });
+        expect(unlocks(stats(2))).toMatchObject({ choclab: false, online: false, gamesLeft: { buildings: 1, choclab: 2, online: 2 } });
         expect(unlocks(stats(2)).unlockedBuildings).toContain(EntityType.FRUIT_CANNON);
         expect(unlocks(stats(2)).unlockedBuildings).not.toContain(EntityType.DONUT_FACTORY);
-        expect(unlocks(stats(3))).toMatchObject({ buildings: true, choclab: true, online: true, gamesLeft: { buildings: 0, choclab: 0, online: 0 } });
+        expect(unlocks(stats(3))).toMatchObject({ buildings: true, choclab: false, online: false, gamesLeft: { buildings: 0, choclab: 1, online: 1 } });
+        expect(unlocks(stats(4))).toMatchObject({ buildings: true, choclab: true, online: true, gamesLeft: { buildings: 0, choclab: 0, online: 0 } });
         expect(unlocks(stats(3)).unlockedBuildings).toHaveLength(9);
         expect(unlocks(stats(9)).unlockedBuildings).toHaveLength(9);
-        expect(unlocks({ winnings: 1, drawn: 1, losses: 1 })).toMatchObject({ choclab: true, online: true });
+        expect(unlocks({ winnings: 2, drawn: 1, losses: 1 })).toMatchObject({ choclab: true, online: true });
         // what a match brought: the dialog after it (apps/pwa/src/unlocks.js)
         expect(buildingsUnlockedBetween(0, 1)).toEqual([EntityType.FACTORY_EXTENSION, EntityType.CHOCOLATE_FOUNTAIN]);
         expect(buildingsUnlockedBetween(1, 3)).toEqual([

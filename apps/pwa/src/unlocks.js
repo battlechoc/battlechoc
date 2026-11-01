@@ -3,7 +3,7 @@ import { unlocks, buildingsUnlockedBetween } from "@battlechoc/battlechoc-shared
 import logger from "./helper/logger";
 
 // What a player has unlocked comes from their finished matches (shared progression.js: two
-// buildings after each of the first three matches, the Choclab and online play after three
+// buildings after each of the first three matches, the Choclab and online play after four
 // matches against the AI). Until 2026-10-30 a single match unlocked all of it. Nobody loses
 // what they had: on the first start with the new rule, a device whose player already had XP (so
 // everything was open) keeps everything ("early"). Decided once and kept in the settings store,

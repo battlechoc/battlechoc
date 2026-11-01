@@ -175,12 +175,14 @@ const GameEndOverview = (props) => {
       const shootConfetti = confetti.create(confettiCanvas.current, {
         resize: true,
       });
-      // let it rain confetti until the overview is closed: big pieces, a few at a time
+      // let it rain confetti until the overview is closed: big pieces, one at a time. (A burst
+      // of several starts them all at one point with no speed, and they fell as little
+      // clusters; the user saw them, 2026-11-01.)
       const interval = setInterval(
         () =>
           shootConfetti({
-            particleCount: 4,
-            colors: pickColors(4),
+            particleCount: 1,
+            colors: pickColors(1),
             shapes: ["square", "circle"],
             scalar: 1.6,
             startVelocity: 0,
@@ -188,7 +190,7 @@ const GameEndOverview = (props) => {
             ticks: 400,
             origin: { x: Math.random(), y: -0.1 },
           }),
-        100
+        25
       );
       startGettingAwards();
 

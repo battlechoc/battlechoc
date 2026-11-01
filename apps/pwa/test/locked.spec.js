@@ -15,15 +15,15 @@ test("locked menu entries explain themselves and do not open", async ({ page }) 
   await page.goto("/", { waitUntil: "networkidle" });
   // what is left shows below the menu, and a tap on a locked entry says it again
   await expect(page.getByTestId("unlock-hint")).toHaveText(
-    "3 more matches against the AI unlock the Choclab and online matches."
+    "4 more matches against the AI unlock the Choclab and online matches."
   );
   await page.getByText("Choclab", { exact: true }).first().click();
-  await expect(page.getByText("Play 3 more matches against the AI to unlock “Choclab”.")).toBeVisible();
+  await expect(page.getByText("Play 4 more matches against the AI to unlock “Choclab”.")).toBeVisible();
   await page.screenshot({ path: "test/output/visual_locked.png" });
   await expect(page.getByTestId("online-lobby")).not.toBeVisible();
 });
 
-test("three matches unlock the Choclab; friends also need a player name", async ({ page }) => {
+test("four matches unlock the Choclab; friends also need a player name", async ({ page }) => {
   // the server's /health answers, nothing else does: online, but without an account
   await page.route("**/health", (route) => route.fulfill({ status: 200, body: '{"ok":true}' }));
   await page.goto("/", { waitUntil: "networkidle" });
@@ -40,7 +40,7 @@ test("three matches unlock the Choclab; friends also need a player name", async 
         score: 3535,
         coins: 3535,
         tutorialSkipped: true,
-        trackRecord: [0, 1, 2].map((i) => ({ id: `seed-${i}`, won: true, winners: [{ idx: 0 }] })),
+        trackRecord: [0, 1, 2, 3].map((i) => ({ id: `seed-${i}`, won: true, winners: [{ idx: 0 }] })),
       }), "stats");
       tx.oncomplete = () => resolve();
     };

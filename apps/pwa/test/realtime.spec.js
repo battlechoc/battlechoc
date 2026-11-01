@@ -255,8 +255,8 @@ test("the first match unlocks two buildings with one dialog that leads to the de
   await expect(unlocked).toHaveAttribute("data-step", "buildings");
   await expect(unlocked).toContainText("New buildings for you:");
   await expect(unlocked.getByTestId("unlocked-building")).toHaveText(["Factory extension", "Chocolate fountain"]);
-  // the Choclab and online play take two more matches
-  await expect(unlocked).toContainText("2 more matches against the AI unlock the Choclab and online matches.");
+  // the Choclab and online play take three more matches
+  await expect(unlocked).toContainText("3 more matches against the AI unlock the Choclab and online matches.");
   await expect(page.getByText("New features unlocked: Choclab and Friends!")).toHaveCount(0);
   await expect(page.getByText(/You have unlocked the multiplayer mode/i)).toHaveCount(0);
   // the demos start only from the dialog, not under it
@@ -269,7 +269,7 @@ test("the first match unlocks two buildings with one dialog that leads to the de
   await expect(page.getByTestId("build-palette").locator("[class*=locked]")).toHaveCount(0);
 });
 
-test("the third match unlocks the Choclab and online play with one dialog", async ({ page }) => {
+test("the fourth match unlocks the Choclab and online play with one dialog", async ({ page }) => {
   await page.goto(url, { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.body.innerText.trim().length > 0);
   // the app decides once what an earlier player keeps (src/unlocks.js); wait for that first
@@ -283,7 +283,7 @@ test("the third match unlocks the Choclab and online play with one dialog", asyn
         };
       })
   );
-  // two finished matches on the device; their buildings were announced
+  // three finished matches on the device; their buildings were announced
   await page.evaluate(
     () =>
       new Promise((resolve, reject) => {
@@ -301,11 +301,12 @@ test("the third match unlocks the Choclab and online play with one dialog", asyn
                 trackRecord: [
                   { id: "first", won: true, winners: [{ idx: 0 }] },
                   { id: "second", lost: true, winners: [{ idx: 1 }] },
+                  { id: "third", won: true, winners: [{ idx: 0 }] },
                 ],
               }),
               "stats"
             );
-          tx.objectStore("settings").put({ early: false, announced: { buildings: 2, online: false } }, "unlocks");
+          tx.objectStore("settings").put({ early: false, announced: { buildings: 3, online: false } }, "unlocks");
           tx.oncomplete = () => resolve();
           tx.onerror = () => reject(tx.error);
         };
@@ -330,8 +331,8 @@ test("the third match unlocks the Choclab and online play with one dialog", asyn
   const unlocked = page.getByTestId("unlocked");
   await expect(unlocked).toHaveAttribute("data-step", "online");
   await expect(unlocked).toContainText("New features unlocked: Choclab and Friends!");
-  // the third match's buildings come in the same dialog
-  await expect(unlocked.getByTestId("unlocked-building")).toHaveText(["X-mas factory", "Donut factory"]);
+  // every building came before: none in this dialog
+  await expect(unlocked.getByTestId("unlocked-building")).toHaveCount(0);
   await unlocked.getByText("Ok", { exact: true }).click();
   await expect(unlocked).toHaveCount(0);
   await expect(page.getByTestId("unlock-hint")).toHaveCount(0);

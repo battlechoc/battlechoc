@@ -1376,13 +1376,8 @@ class Scene extends Component {
     donuts.forEach(({ progress, state }, index) => {
       const step = progress <= 0 ? 0 : Math.max(1, Math.min(10, Math.round(progress * 10)));
       const x = index * 128 + 8;
-      // a grey whole donut shows how much is still missing
-      const grey = this.donutBitmap(10, "grey");
-      if (grey) {
-        context.globalAlpha = 0.92;
-        context.drawImage(grey, x, 8);
-        context.globalAlpha = 1;
-      }
+      // the donut grows, nothing behind it: a grey whole donut used to show what was missing
+      // and looked black and dirty (the user, 2026-11-01)
       const piece = step > 0 ? this.donutBitmap(step, state) : undefined;
       if (piece) {
         context.drawImage(piece, x, 8);

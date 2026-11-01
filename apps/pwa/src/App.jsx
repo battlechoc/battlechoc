@@ -526,7 +526,7 @@ class App extends Component {
           );
           this.props.resetUi();
           // the match may have unlocked something (buildings after each of the first three, the
-          // Choclab and online play after the third): one dialog says what
+          // Choclab and online play after the fourth): one dialog says what
           multiplayer
             .fetchPlayerStats()
             .then((stats) => takeNewUnlock(stats))
