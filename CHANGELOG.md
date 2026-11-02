@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.2.0](https://github.com/battlechoc/battlechoc/compare/v4.1.0...v4.2.0) (2026-11-02)
+
+
+### Features
+
+* **pwa:** the version in the Info dialog links to the changelog ([d0dfc7a](https://github.com/battlechoc/battlechoc/commit/d0dfc7aabe4b535e108605b73eda71f3b9ee6118))
+* **pwa:** the version in the Info dialog links to the changelog on GitHub ([e93c691](https://github.com/battlechoc/battlechoc/commit/e93c6915fe669c68318db9d35fd6050598c9189e))
+
 ## [4.1.0](https://github.com/battlechoc/battlechoc/compare/v4.0.0...v4.1.0) (2026-11-02)
 
 
