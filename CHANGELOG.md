@@ -1,5 +1,13 @@
 # Changelog
 
+## [4.1.0](https://github.com/battlechoc/battlechoc/compare/v4.0.0...v4.1.0) (2026-11-02)
+
+
+### Features
+
+* **pwa:** a new version asks to be started instead of waiting for th… ([57cb73f](https://github.com/battlechoc/battlechoc/commit/57cb73ffec8f703776592f58e4cb3e85f4c9bcdc))
+* **pwa:** a new version asks to be started instead of waiting for the next browser start ([f8f432f](https://github.com/battlechoc/battlechoc/commit/f8f432fbe71e00d2d7dc665132a9fddae7825550))
+
 ## [4.0.0](https://github.com/battlechoc/battlechoc/compare/v3.0.0...v4.0.0) (2026-11-01)
 
 
