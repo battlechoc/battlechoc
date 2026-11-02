@@ -42,6 +42,9 @@ const uiReducer = createReducer(
     earlyUnlock: false,
     // a name chosen offline that somebody else took meanwhile (dialogs/NameConflict.jsx)
     nameConflict: null,
+    // a new build of the app has been installed by the service worker: the player may start it
+    // (dialogs/UpdateAvailable.jsx)
+    updateAvailable: false,
   },
   (builder) =>
     builder
