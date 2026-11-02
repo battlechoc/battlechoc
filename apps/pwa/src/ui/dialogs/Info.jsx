@@ -31,7 +31,17 @@ const useStyles = createUseStyles((theme) => ({
   header: {
     textAlign: "center",
   },
+  // the version number in the subtitle leads to the changelog
+  changelog: {
+    color: "inherit",
+    textDecoration: "underline",
+    textUnderlineOffset: "0.15em",
+    textDecorationThickness: "0.08em",
+  },
 }));
+
+// release-please writes the changelog of every release here
+const CHANGELOG_URL = "https://github.com/battlechoc/battlechoc/blob/main/CHANGELOG.md";
 
 // the game's language codes that are no BCP 47 tags
 const LOCALES = { jp: "ja", vn: "vi" };
@@ -97,7 +107,10 @@ const Info = (props) => {
         title={t(tr.INFO_TITLE)}
         subtitle={
           <div style={{ textAlign: "center" }} data-testid="info-build">
-            {t(tr.INFO_VERSION)} {version}
+            {t(tr.INFO_VERSION)}{" "}
+            <a className={classes.changelog} href={CHANGELOG_URL} target="_blank" rel="noopener noreferrer">
+              {version}
+            </a>
             {commit ? ` · ${commit}` : null} <br />
             {t(tr.INFO_LAST_UPDATE, timeAgo(builtAt))}
           </div>
