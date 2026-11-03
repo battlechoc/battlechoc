@@ -1,5 +1,17 @@
 # Changelog
 
+## [4.3.0](https://github.com/battlechoc/battlechoc/compare/v4.2.0...v4.3.0) (2026-11-03)
+
+
+### Features
+
+* **pwa:** pools of light under the cannons a fruit cannon can replace ([6792dc4](https://github.com/battlechoc/battlechoc/commit/6792dc4289c18928c185ea825459d8651dabc79e))
+
+
+### Bug Fixes
+
+* **pwa:** the fruit cannon pick lights the cannons' cells, neighbours share one frame ([55c391f](https://github.com/battlechoc/battlechoc/commit/55c391f11de165bcc424e6d775d6f37556816672))
+
 ## [4.2.0](https://github.com/battlechoc/battlechoc/compare/v4.1.0...v4.2.0) (2026-11-02)
 
 
