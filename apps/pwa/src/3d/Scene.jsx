@@ -985,13 +985,14 @@ class Scene extends Component {
         field: this.playerGameField,
         cells,
         requestRender: this.requestRender,
+        setRenderLoop: (run) => this.setRenderLoop(run),
         onSpots: (cannonSpots) => this.setState({ cannonSpots }),
       });
     }
   }
 
-  // the screen dims around the lit cells of the cannons, a gold frame along their pieces
-  renderCannonSpots({ frame, lights, blur, stroke }) {
+  // the screen dims around the lit cells of the cannons (their pools of light are meshes)
+  renderCannonSpots({ lights, blur }) {
     const points = (polygon) => polygon.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
     return (
       <svg className="cannonSpots" aria-hidden="true" data-testid="cannon-spots">
@@ -1009,14 +1010,6 @@ class Scene extends Component {
           </mask>
         </defs>
         <rect width="100%" height="100%" fill="rgba(30, 15, 8, 0.55)" mask="url(#cannon-spots)" />
-        <path
-          d={frame.map(([from, to]) => `M${points([from])} L${points([to])}`).join(" ")}
-          fill="none"
-          stroke="#FAD25A"
-          strokeOpacity="0.95"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-        />
       </svg>
     );
   }
