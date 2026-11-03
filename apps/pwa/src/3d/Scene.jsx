@@ -985,40 +985,31 @@ class Scene extends Component {
         field: this.playerGameField,
         cells,
         requestRender: this.requestRender,
+        setRenderLoop: (run) => this.setRenderLoop(run),
         onSpots: (cannonSpots) => this.setState({ cannonSpots }),
       });
     }
   }
 
-  // the screen dims around soft circles of light on the cannons, each with a gold rim
-  renderCannonSpots({ spots, radius }) {
+  // the screen dims around the lit cells of the cannons (their pools of light are meshes)
+  renderCannonSpots({ lights, blur }) {
+    const points = (polygon) => polygon.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
     return (
       <svg className="cannonSpots" aria-hidden="true" data-testid="cannon-spots">
         <defs>
-          <radialGradient id="cannon-spot">
-            <stop offset="0.65" stopColor="black" />
-            <stop offset="1" stopColor="white" />
-          </radialGradient>
+          <filter id="cannon-light">
+            <feGaussianBlur stdDeviation={blur} />
+          </filter>
           <mask id="cannon-spots">
             <rect width="100%" height="100%" fill="white" />
-            {spots.map(({ x, y }) => (
-              <circle key={`${x}.${y}`} cx={x} cy={y} r={radius} fill="url(#cannon-spot)" />
-            ))}
+            <g filter="url(#cannon-light)">
+              {lights.map((polygons, i) =>
+                polygons.map((polygon, j) => <polygon key={`${i}.${j}`} points={points(polygon)} fill="black" />)
+              )}
+            </g>
           </mask>
         </defs>
         <rect width="100%" height="100%" fill="rgba(30, 15, 8, 0.55)" mask="url(#cannon-spots)" />
-        {spots.map(({ x, y }) => (
-          <circle
-            key={`${x}.${y}`}
-            cx={x}
-            cy={y}
-            r={radius * 0.8}
-            fill="none"
-            stroke="#FAD25A"
-            strokeOpacity="0.95"
-            strokeWidth="5"
-          />
-        ))}
       </svg>
     );
   }
