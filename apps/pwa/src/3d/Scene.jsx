@@ -579,20 +579,24 @@ class Scene extends Component {
     const width = this.container.clientWidth;
     const height = this.container.clientHeight;
     const ratio = width / height;
-    let distance = Math.max(7.5 / ratio, 5);
-
-    if (typeof this.props.game !== "undefined") {
-      if (this.props.game.board.size.cols === 6) {
-        distance = Math.max(4.5 / ratio, 5);
-      } else if (this.props.game.board.size.cols === 8) {
-        distance = Math.max(6 / ratio, 5);
-      }
+    const cols = typeof this.props.game !== "undefined" ? this.props.game.board.size.cols : 10;
+    // the 10×10 board fills a landscape screen: a little further away, and the window a little
+    // higher, so that its back corner (with a tall building) stays under the match time and
+    // its front corner above the palette (seen cut on 844×390 and 1280×720, 2026-11-03)
+    let distance = Math.max(7.5 / ratio, 5.8);
+    let lift = ratio > 1 ? 0.7 : 0;
+    if (cols === 6) {
+      distance = Math.max(4.5 / ratio, 5);
+      lift = 0;
+    } else if (cols === 8) {
+      distance = Math.max(6 / ratio, 5);
+      lift = 0;
     }
 
     // in portrait the tutorial's card lies across the top: the board moves down by half the
     // card, into the middle of the space below it
     const inset = height > width ? this.props.boardTopInset : 0;
-    const shift = (inset * distance) / height;
+    const shift = (inset * distance) / height + lift;
     return { distance, ratio, shift };
   }
 
