@@ -1,5 +1,18 @@
 # Changelog
 
+## [4.4.0](https://github.com/battlechoc/battlechoc/compare/v4.3.0...v4.4.0) (2026-11-03)
+
+
+### Features
+
+* **pwa:** the preview is a minimap while zoomed in, and the tutorial's lesson zooms too ([27f4985](https://github.com/battlechoc/battlechoc/commit/27f49859ce3221f501efca2e2bfd4f126f9e2b36))
+
+
+### Bug Fixes
+
+* **pwa:** the 10x10 board fits a landscape screen ([27f4985](https://github.com/battlechoc/battlechoc/commit/27f49859ce3221f501efca2e2bfd4f126f9e2b36))
+* **pwa:** the meta description and keywords describe the real-time game ([27f4985](https://github.com/battlechoc/battlechoc/commit/27f49859ce3221f501efca2e2bfd4f126f9e2b36))
+
 ## [4.3.0](https://github.com/battlechoc/battlechoc/compare/v4.2.0...v4.3.0) (2026-11-03)
 
 
