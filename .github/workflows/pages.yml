@@ -85,6 +85,9 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: apps/pwa/build
+          # the artifact drops dot-files unless told otherwise: /.well-known/assetlinks.json
+          # (Digital Asset Links for the Android app) and brave-rewards-verification.txt
+          include-hidden-files: true
 
   deploy:
     needs: build

@@ -121,7 +121,7 @@ const Info = (props) => {
             <p>
               {t(tr.INFO_MADE_BY, "Sebastian Bode & Fabian Bormann")}
               <br />
-              {t(tr.INFO_EMAIL)}: contact@battlechoc.com
+              {t(tr.INFO_EMAIL)}: hello@battlechoc.com
               <br />
               <a
                 href="https://github.com/battlechoc/battlechoc"

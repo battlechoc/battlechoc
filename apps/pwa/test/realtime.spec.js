@@ -449,6 +449,12 @@ test("the wheel and a drag zoom and move the board, a swipe brings the other boa
   expect((await boardView(page)).own).toEqual(dragged.own);
   await page.screenshot({ path: "test/output/screenshot_realtime_zoom.png" });
 
+  // zoomed in, the preview is a minimap: the board in view with the part of it on the screen
+  const preview = page.getByTestId("board-preview");
+  await expect(preview).toHaveAttribute("data-board", "own");
+  await expect(preview).toHaveAttribute("data-minimap", "true");
+  await expect(page.getByTestId("board-minimap")).toBeAttached();
+
   // the whole-board button is there while zoomed in; it and the 0 key show the whole board
   // (the glides and flights take a while on a slow machine: wait for their ends, not for a time)
   const fitButton = page.getByTestId("board-fit");
@@ -462,6 +468,9 @@ test("the wheel and a drag zoom and move the board, a swipe brings the other boa
   await page.keyboard.press("0");
   await expect(fitButton).toHaveCSS("opacity", "0", { timeout: 10000 });
   expect((await boardView(page)).own).toEqual({ zoom: 1, x: 0, y: 0 });
+  // and the preview shows the other board again
+  await expect(preview).toHaveAttribute("data-board", "opponent");
+  await expect(preview).not.toHaveAttribute("data-minimap", "true");
 
   // a double click is two taps, no zoom (firing many cannons means tapping fast)
   await page.mouse.dblclick(500, 300);

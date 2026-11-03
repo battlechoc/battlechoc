@@ -45,4 +45,4 @@ Code is licensed under [AGPL-3.0-or-later](LICENSE). Art and music are licensed 
 
 ## Need help?
 
-Open an issue or write to **[info@battlechoc.dev](mailto:info@battlechoc.dev)**.
+Open an issue or write to **[hello@battlechoc.com](mailto:hello@battlechoc.com)**.
