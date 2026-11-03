@@ -6,7 +6,7 @@ const webpush = require('web-push');
 const createPush = ({ pool, publicKey, privateKey, subject, sender = webpush }) => {
     const enabled = Boolean(publicKey && privateKey);
     if (enabled) {
-        sender.setVapidDetails(subject || 'mailto:info@battlechoc.dev', publicKey, privateKey);
+        sender.setVapidDetails(subject || 'mailto:hello@battlechoc.com', publicKey, privateKey);
     }
 
     const subscribe = async (playerId, subscription) => {
