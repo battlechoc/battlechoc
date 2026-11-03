@@ -1,0 +1,10 @@
+# Overlay for a VPS whose nginx terminates TLS (see README.md here): the API listens on the
+# loopback port 8080 for nginx, and Caddy is not started (it gets a profile nobody enables).
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.nginx.yml up -d --build
+# API_DOMAIN stays in .env: Compose reads the whole file before it knows which services run.
+services:
+  api:
+    ports:
+      - "127.0.0.1:8080:8080"
+  caddy:
+    profiles: ["caddy"]

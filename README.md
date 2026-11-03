@@ -9,7 +9,7 @@ A chocolate-themed two-player strategy game. Each player owns a board of chocola
 | `apps/pwa` | The game client: React, Redux Toolkit, Babylon.js, Vite, Workbox |
 | `packages/shared` | Shared by client and server: the real-time rules engine, AIs, balance, equipment, live protocol, translations |
 | `apps/api` | The backend: REST API (accounts, profile, lab, Web Push) and the live match WebSocket, on Postgres |
-| `deploy` | Docker Compose stack for the server: Postgres, the API and Caddy |
+| `deploy` | Docker Compose stack for the server: Postgres, the API and Caddy (or the host's nginx); how to deploy it: [deploy/README.md](deploy/README.md) |
 | `apps/server` | Legacy Firebase Cloud Functions backend, kept for reference until the switch to `apps/api` |
 | `whitepaper` | Draft whitepaper for the planned competitive layer, with the economy simulator behind its numbers |
 
