@@ -643,10 +643,13 @@ class Scene extends Component {
     this.camera.orthoRight = bounds.right;
     this.camera.orthoTop = bounds.top;
     this.camera.orthoBottom = bounds.bottom;
-    // the whole-board button comes with the first bit of zoom and goes with the last
+    // the whole-board button comes with the first bit of zoom and goes with the last; the
+    // preview then shows the board in view with the part of it on the screen (showPreview)
     const zoomed = view.zoom > 1.01;
     if (zoomed !== this.state.zoomed) {
-      this.setState({ zoomed });
+      this.setState({ zoomed }, () => this.state.preview && this.showPreview());
+    } else if (zoomed && this.state.preview) {
+      this.updateMinimap(bounds);
     }
     // (the first call comes while the scene is being made, before requestRender exists)
     if (this.requestRender) {
@@ -654,10 +657,43 @@ class Scene extends Component {
     }
   }
 
-  // zooming and moving: in a match, not in the tutorial (Mimi's card and the demos keep the
-  // whole board), not while the camera flies
+  // The part of the board on the screen, as a rectangle in the preview (fractions of its
+  // inside): both cameras look the same way, so the camera's window only has to be moved by
+  // where the preview's target lies in the camera's view.
+  minimapRect(bounds) {
+    const camera = this.previewCamera;
+    if (!camera || !this.previewTarget) {
+      return null;
+    }
+    const target = Vector3.TransformCoordinates(this.previewTarget, this.camera.getViewMatrix());
+    const width = camera.orthoRight - camera.orthoLeft;
+    const height = camera.orthoTop - camera.orthoBottom;
+    const clamp = (value) => Math.min(1, Math.max(0, value));
+    const left = clamp((bounds.left - target.x - camera.orthoLeft) / width);
+    const right = clamp((bounds.right - target.x - camera.orthoLeft) / width);
+    const top = clamp((target.y + camera.orthoTop - bounds.top) / height);
+    const bottom = clamp((target.y + camera.orthoTop - bounds.bottom) / height);
+    const round = (value) => Math.round(value * 1000) / 1000;
+    return { left: round(left), top: round(top), width: round(right - left), height: round(bottom - top) };
+  }
+
+  updateMinimap(bounds) {
+    const minimap = this.minimapRect(bounds);
+    const current = this.state.preview && this.state.preview.minimap;
+    if (minimap && (!current || ["left", "top", "width", "height"].some((key) => current[key] !== minimap[key]))) {
+      this.setState({ preview: { ...this.state.preview, minimap } });
+    }
+  }
+
+  // zooming and moving: in a match and in the tutorial's lesson (not in the building demos,
+  // they keep the whole board), not while the camera flies
   zoomEnabled() {
-    return this.playerGameField !== null && !this.props.tutorial && !this.viewTransition && !this.flight;
+    return (
+      this.playerGameField !== null &&
+      (!this.props.tutorial || this.props.tutorialInteractive) &&
+      !this.viewTransition &&
+      !this.flight
+    );
   }
 
   // `change(fit, view)` gives the new view of the board in front
@@ -903,12 +939,15 @@ class Scene extends Component {
       width: Math.round(inner.width * scale),
       height: Math.round(inner.height * scale),
     };
-    // the whole board that is not in view, seen like the big one
+    // the whole board that is not in view, seen like the big one; zoomed in, the board in view
+    // instead, with the part of it on the screen marked (a minimap)
     const cols = game.board.size.cols;
     const middle = (cols - 1) / 2;
-    const own = Boolean(this.lookAtOpponent);
+    const zoomed = Boolean(this.state.zoomed);
+    const own = zoomed ? !this.lookAtOpponent : Boolean(this.lookAtOpponent);
     const away = own ? 0 : this.opponentGameFieldDistance;
     const target = new Vector3(middle - away, boardHeight(cols) + 0.5, middle + away);
+    this.previewTarget = target;
     camera.position = target.add(new Vector3(1, 1, 1).normalize().scale(40));
     camera.setTarget(target);
     const aspect = inner.width / inner.height;
@@ -921,9 +960,21 @@ class Scene extends Component {
     camera.orthoRight = half * aspect;
     this.scene.activeCameras = [this.camera, camera];
     this.scene.cameraToUseForPointers = this.camera;
-    const preview = { ...rect, own };
+    const minimap = zoomed
+      ? this.minimapRect({
+          left: this.camera.orthoLeft,
+          right: this.camera.orthoRight,
+          top: this.camera.orthoTop,
+          bottom: this.camera.orthoBottom,
+        })
+      : null;
+    const preview = { ...rect, own, minimap };
     const current = this.state.preview;
-    if (!current || ["left", "top", "width", "height", "own"].some((key) => current[key] !== preview[key])) {
+    if (
+      !current ||
+      ["left", "top", "width", "height", "own"].some((key) => current[key] !== preview[key]) ||
+      JSON.stringify(current.minimap) !== JSON.stringify(minimap)
+    ) {
       this.setState({ preview });
     }
     this.requestRender();
@@ -1617,13 +1668,14 @@ class Scene extends Component {
     this.scene.executeWhenReady(() => this.scene.render());
   };
 
-  renderPreviewFrame({ left, top, width, height, own }) {
+  renderPreviewFrame({ left, top, width, height, own, minimap }) {
     const { color, font } = this.props.theme;
     return (
       <button
         type="button"
         data-testid="board-preview"
         data-board={own ? "own" : "opponent"}
+        data-minimap={minimap ? "true" : undefined}
         aria-label={own ? t(tr.BOARD_PREVIEW_OWN) : t(tr.BOARD_PREVIEW_OPPONENT)}
         onClick={() => {
           Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -1645,6 +1697,23 @@ class Scene extends Component {
           cursor: "pointer",
         }}
       >
+        {minimap ? (
+          <span
+            data-testid="board-minimap"
+            style={{
+              position: "absolute",
+              left: `${minimap.left * 100}%`,
+              top: `${minimap.top * 100}%`,
+              width: `${minimap.width * 100}%`,
+              height: `${minimap.height * 100}%`,
+              boxSizing: "border-box",
+              border: "2px solid #FAD25A",
+              borderRadius: 3,
+              boxShadow: "0 0 0 1px rgba(0, 0, 0, 0.35)",
+              pointerEvents: "none",
+            }}
+          />
+        ) : null}
         <span
           style={{
             position: "absolute",
@@ -1667,13 +1736,24 @@ class Scene extends Component {
   // whole board shows again. A small round button, an icon only (the corners of a frame closing
   // in on a board). In landscape under the menu button, so it ends about where the preview
   // beside it ends (the user, 2026-11-01); in portrait under the preview.
-  renderFitButton({ left, top, width, height, edgeLeft, edgeTop, fab, gap }) {
+  // where the whole-board button stands in the tutorial's lesson, which has no preview: beside
+  // the menu button (Mimi's card hangs under it), in portrait under her card
+  lessonFitPlace({ edgeLeft, edgeTop, fab, gap }) {
+    const landscape = this.container.clientWidth >= this.container.clientHeight;
+    return landscape
+      ? { left: Math.round(edgeLeft + fab + gap), top: Math.round(edgeTop) }
+      : { left: Math.round(edgeLeft), top: Math.round((this.props.boardTopInset || edgeTop + fab) + gap) };
+  }
+
+  renderFitButton({ left, top, width, height, edgeLeft, edgeTop, fab, gap }, where) {
     const zoomed = this.state.zoomed;
     const size = Math.max(40, Math.round(0.7 * fab));
     const landscape = this.container.clientWidth >= this.container.clientHeight;
-    const place = landscape
-      ? { left: Math.round(edgeLeft), top: Math.round(edgeTop + fab + gap) }
-      : { left, top: top + height + gap };
+    const place =
+      where ||
+      (landscape
+        ? { left: Math.round(edgeLeft), top: Math.round(edgeTop + fab + gap) }
+        : { left, top: top + height + gap });
     return (
       <Fab
         color="secondary"
@@ -1711,7 +1791,11 @@ class Scene extends Component {
           }}
         />
         {this.state.preview ? this.renderPreviewFrame(this.state.preview) : null}
-        {this.state.preview ? this.renderFitButton(this.state.preview) : null}
+        {this.state.preview
+          ? this.renderFitButton(this.state.preview)
+          : this.props.tutorial && this.container && this.playerGameField
+          ? this.renderFitButton(this.previewRect(), this.lessonFitPlace(this.previewRect()))
+          : null}
         {this.state.cannonSpots ? this.renderCannonSpots(this.state.cannonSpots) : null}
       </div>
     );
