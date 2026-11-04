@@ -29,6 +29,8 @@ repository.
 ```sh
 sudo mkdir -p /opt/battlechoc/private
 # copy recipes.json there (scp from the machine that has it), then
+# the API runs as the user `node` (uid 1000) in its container: give it the file, nobody else
+sudo chown 1000:1000 /opt/battlechoc/private/recipes.json
 sudo chmod 600 /opt/battlechoc/private/recipes.json
 ```
 
@@ -50,7 +52,7 @@ Fill in `.env` (`.env.example` explains every line):
 | Key | Value |
 | --- | --- |
 | `API_DOMAIN` | `api.battlechoc.com` (Caddy reads it; with nginx it must still be set) |
-| `POSTGRES_PASSWORD` | `openssl rand -base64 24` |
+| `POSTGRES_PASSWORD` | `openssl rand -hex 24` |
 | `JWT_SECRET` | `openssl rand -base64 48` (at least 32 characters) |
 | `CORS_ORIGINS` | `https://battlechoc.com` (comma separated if the game has more origins) |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | `npx web-push generate-vapid-keys`; the public key also goes into the game (see below) |
