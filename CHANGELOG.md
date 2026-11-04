@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.4.1](https://github.com/battlechoc/battlechoc/compare/v4.4.0...v4.4.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **deploy:** pass the database password outside the URL ([#30](https://github.com/battlechoc/battlechoc/issues/30)) ([281ead5](https://github.com/battlechoc/battlechoc/commit/281ead52cf9e909f1e5c6e419b77f13b146ff252))
+* **pwa:** compact highscore list with readable rows ([33abe4d](https://github.com/battlechoc/battlechoc/commit/33abe4dadb0aae763584da9763db92345b637b86))
+* **pwa:** precache the media with revisions of their content ([33abe4d](https://github.com/battlechoc/battlechoc/commit/33abe4dadb0aae763584da9763db92345b637b86))
+* **pwa:** replace a taken device name with a random one and say so ([33abe4d](https://github.com/battlechoc/battlechoc/commit/33abe4dadb0aae763584da9763db92345b637b86))
+
 ## [4.4.0](https://github.com/battlechoc/battlechoc/compare/v4.3.0...v4.4.0) (2026-11-03)
 
 
