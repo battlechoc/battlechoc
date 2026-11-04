@@ -102,7 +102,7 @@ class App extends Component {
       showQuickMessage: this.props.showQuickMessage,
       showNotification: this.props.showNotification,
       // a name chosen offline was taken meanwhile: the player chooses another (NameConflict)
-      nameConflict: (name) => this.props.loadUiState({ nameConflict: name }),
+      nameConflict: (conflict) => this.props.loadUiState({ nameConflict: conflict }),
     });
 
     let browserLanguage = "en";

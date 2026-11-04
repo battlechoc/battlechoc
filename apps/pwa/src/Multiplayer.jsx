@@ -17,6 +17,12 @@ const urlBase64ToUint8Array = (base64) => {
   return Uint8Array.from([...raw].map((char) => char.charCodeAt(0)));
 };
 
+// a name the player chose (the default "Chocnonymous" is no name)
+const isNamed = (stats) =>
+  Boolean(stats) &&
+  typeof stats.username === "string" &&
+  stats.username !== EmptyPlayerStats.username;
+
 class Multiplayer {
   constructor() {
     const notInitialized = (name) => () =>
@@ -141,8 +147,9 @@ class Multiplayer {
 
   // Offline the player can still change the name: it is kept on the device, marked as not on
   // the server yet (stats.usernamePending, a sign beside the name), and claimed there as soon as
-  // the server answers. If somebody else took it meanwhile, the player chooses another one
-  // (callbacks.nameConflict opens the dialog).
+  // the server answers; the sign then just goes away. If somebody else has the name, the player
+  // gets a random one instead and a dialog says so (callbacks.nameConflict); it can be changed
+  // in the profile.
   async setUsernameOffline(username) {
     const stats = (await OfflineStore.playerStore.get("stats")) || { ...EmptyPlayerStats };
     await OfflineStore.playerStore.set("stats", { ...stats, username, usernamePending: true });
@@ -167,33 +174,47 @@ class Multiplayer {
     this.callbacks.updatePlayerStats({ username, usernamePending: false });
   }
 
-  // claims a name chosen offline; once at a time
+  // The merge of the device's profile and the claiming of its name both read and write the
+  // stored stats: they run one after the other, so neither writes back a name the other has
+  // just replaced.
+  exclusive(task) {
+    const run = (this.statsLock || Promise.resolve()).then(task);
+    this.statsLock = run.catch(() => undefined);
+    return run;
+  }
+
+  // claims the name kept on the device (see setUsernameOffline)
   syncPendingUsername() {
-    if (typeof this.syncingName === "undefined") {
-      this.syncingName = (async () => {
-        const stats = await OfflineStore.playerStore.get("stats");
-        if (!stats || !stats.usernamePending) {
-          return;
+    return this.exclusive(async () => {
+      const stats = await OfflineStore.playerStore.get("stats");
+      if (!stats || !stats.usernamePending) {
+        return;
+      }
+      await account.ensure();
+      try {
+        await ServerRequest("post", "/user/username", { username: stats.username });
+        await this.usernameSynced(stats.username);
+      } catch (error) {
+        if (error.response && error.response.status === 400) {
+          // taken by someone else (or not allowed any more)
+          await this.replaceTakenName(stats.username);
+        } else {
+          logger.info("could not claim the name chosen offline", error);
         }
-        await account.ensure();
-        try {
-          await ServerRequest("post", "/user/username", { username: stats.username });
-          await this.usernameSynced(stats.username);
-        } catch (error) {
-          if (error.response && error.response.status === 400) {
-            // taken by someone else (or not allowed any more)
-            this.callbacks.nameConflict(stats.username);
-          } else {
-            logger.info("could not claim the name chosen offline", error);
-          }
-        }
-      })()
-        .catch((error) => logger.info("could not claim the name chosen offline", error))
-        .finally(() => {
-          this.syncingName = undefined;
-        });
+      }
+    }).catch((error) => logger.info("could not claim the name chosen offline", error));
+  }
+
+  // the device's name belongs to somebody else on the server: a random one instead, and the
+  // dialog that says so; if that fails too, the name stays pending for the next try
+  async replaceTakenName(taken) {
+    const generated = await this.fetchRandomName();
+    if (generated === EmptyPlayerStats.username) {
+      return;
     }
-    return this.syncingName;
+    await ServerRequest("post", "/user/username", { username: generated });
+    await this.usernameSynced(generated);
+    this.callbacks.nameConflict({ taken, generated });
   }
 
   // the server's stats, with a name chosen offline that it does not know yet
@@ -253,10 +274,14 @@ class Multiplayer {
     }
   }
 
-  async mergePlayerStats() {
+  mergePlayerStats() {
     if (!this.signedIn()) {
-      return undefined;
+      return Promise.resolve(undefined);
     }
+    return this.exclusive(() => this.mergeOfflineProfile());
+  }
+
+  async mergeOfflineProfile() {
     let offlineAccount;
     try {
       offlineAccount = await OfflineStore.playerStore.get("stats");
@@ -270,8 +295,13 @@ class Multiplayer {
       const data = (
         await ServerRequest("post", "/user/merge", { playerInfo: offlineAccount })
       ).data;
-      // a name chosen offline stays until the server has it (or turns it down)
-      const merged = offlineAccount.usernamePending
+      // A name chosen offline stays until the server has it (or turns it down). So does a name
+      // the device has but the server's account does not, e.g. from before this server: the
+      // merge takes it when it is free, so here it is taken (syncPendingUsername replaces it).
+      const unclaimed =
+        offlineAccount.usernamePending ||
+        (isNamed(offlineAccount) && !isNamed(data.mergedPlayerInfo));
+      const merged = unclaimed
         ? { ...data.mergedPlayerInfo, username: offlineAccount.username, usernamePending: true }
         : data.mergedPlayerInfo;
       await OfflineStore.playerStore

@@ -545,6 +545,7 @@ module.exports = {
     "NAME_UNSYNCED": "Chưa được lưu trên máy chủ",
     "NAME_OFFLINE_HINT": "Ngoại tuyến: tên mới của bạn sẽ được lưu trên máy chủ ngay khi battlechoc kết nối được.",
     "NAME_CONFLICT_TITLE": "Tên đã có người dùng",
-    "NAME_CONFLICT_TEXT": "Trong lúc bạn ngoại tuyến, người khác đã lấy tên “{{name}}”. Hãy chọn tên khác.",
+    "NAME_CONFLICT_TEXT": "Tên “{{name}}” đã có người dùng trực tuyến. Chúng tôi đã đặt cho bạn tên “{{generated}}”. Bạn có thể đổi tên bất cứ lúc nào trong hồ sơ.",
+    "NAME_CONFLICT_OK": "Đã hiểu",
     "PROFILE_CHANGE_NAME": "Đổi tên"
 }

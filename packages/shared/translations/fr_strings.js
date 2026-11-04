@@ -545,6 +545,7 @@ module.exports = {
     "NAME_UNSYNCED": "Pas encore enregistré sur le serveur",
     "NAME_OFFLINE_HINT": "Hors ligne : ton nouveau nom sera enregistré sur le serveur dès que battlechoc l'atteindra.",
     "NAME_CONFLICT_TITLE": "Nom déjà pris",
-    "NAME_CONFLICT_TEXT": "Pendant que tu étais hors ligne, quelqu'un d'autre a pris « {{name}} ». Choisis un autre nom.",
+    "NAME_CONFLICT_TEXT": "Le nom « {{name}} » est déjà pris en ligne. Nous t'avons donné le nom « {{generated}} ». Tu peux le changer à tout moment dans ton profil.",
+    "NAME_CONFLICT_OK": "Compris",
     "PROFILE_CHANGE_NAME": "Changer de nom"
 }
