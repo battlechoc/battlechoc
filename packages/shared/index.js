@@ -435,8 +435,8 @@ const translationPredicates = {
     UNLOCK_ONLINE_GAMES: function (strings, count) {
         return fmt(strings.UNLOCK_ONLINE_GAMES, { count: count });
     },
-    NAME_CONFLICT_TEXT: function (strings, name) {
-        return fmt(strings.NAME_CONFLICT_TEXT, { name: name });
+    NAME_CONFLICT_TEXT: function (strings, name, generated) {
+        return fmt(strings.NAME_CONFLICT_TEXT, { name: name, generated: generated });
     },
     PROFILE_XP: function (strings, xp, next) {
         return fmt(strings.PROFILE_XP, { xp: xp, next: next });

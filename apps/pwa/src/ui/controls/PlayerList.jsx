@@ -3,47 +3,56 @@ import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import withDefaultProps from "../../helper/defaultProps";
 
+// one dark blue strip per player (the own one pink): rank, name (shortened with an ellipsis
+// when it is long) and rating; the list is as wide as its dialog
 const useStyles = createUseStyles((theme) => ({
   list: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.3em",
+    width: "100%",
     fontFamily: theme.font.display,
-    fontSize: (props) =>
-      props.size === "small" ? theme.font.size.md : theme.font.size.lg,
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "& > :nth-child(odd)": {
-      backgroundColor: theme.color.secondary.dark,
-    },
-    display: "table",
+    fontSize: `calc(${theme.font.size.md} * 1.2)`,
+    "-webkit-text-stroke": `${theme.font.stroke} #0f3045`,
     "-webkit-font-smoothing": "antialiased",
   },
   row: {
+    display: "flex",
+    alignItems: "center",
+    padding: "0.25em 0.7em",
+    borderRadius: "0.25em",
+    backgroundColor: theme.color.secondary.dark,
     cursor: "pointer",
     userSelect: "none",
-    display: "table-row",
-  },
-  cell: {
-    display: "table-cell",
-    borderTop: "4px solid transparent",
-    borderBottom: "4px solid transparent",
-  },
-  name: {
-    width: "100%",
-    textAlign: "center",
-    borderLeft: "8px solid transparent",
-    borderRight: "8px solid transparent",
-  },
-  rank: {
-    borderLeft: "8px solid transparent",
-    whiteSpace: "nowrap",
   },
   own: {
-    backgroundColor: `${theme.color.accent.light} !important`,
-    color: "white",
+    backgroundColor: theme.color.accent.light,
+    "-webkit-text-stroke-color": theme.color.accent.dark,
+  },
+  rank: {
+    minWidth: "2.4em",
+    paddingRight: "0.6em",
+    textAlign: "right",
+    whiteSpace: "nowrap",
+  },
+  name: {
+    flex: "1 1 auto",
+    minWidth: 0,
+    textAlign: "left",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  score: {
+    paddingLeft: "0.6em",
   },
   icon: {
-    padding: "1vw",
-    [theme.breakpoints.orientation.portrait]: {
-      padding: "1vh",
-    },
+    flex: "0 0 auto",
+    width: "1.1em",
+    height: "1.1em",
+    marginLeft: "0.25em",
+    background: "url(/images/score.svg) no-repeat center",
+    backgroundSize: "contain",
   },
 }));
 
@@ -74,40 +83,24 @@ const PlayerList = (componentProps) => {
               key={i}
               data-testid={isPlayer ? "player-list-own" : undefined}
               className={
-                isPlayer ? `${classes.own} ${classes.row}` : classes.row
+                isPlayer ? `${classes.row} ${classes.own}` : classes.row
               }
+              onClick={() => openPlayerProfile(player)}
             >
               {withScore ? (
-                <div
-                  onClick={() => openPlayerProfile(player)}
-                  className={`${classes.cell} ${classes.rank}`}
-                  data-testid="player-list-rank"
-                >
+                <div className={classes.rank} data-testid="player-list-rank">
                   {isRanked(player) ? `${player.ranking}.` : NO_RANK}
                 </div>
               ) : null}
-              <div
-                onClick={() => openPlayerProfile(player)}
-                className={`${classes.cell} ${classes.name}`}
-              >
+              <div className={classes.name} title={player.name}>
                 {player.name}
               </div>
               {withScore ? (
                 <>
-                  <div
-                    style={{ borderRight: "4px solid transparent" }}
-                    className={classes.cell}
-                  >
+                  <div className={classes.score}>
                     {isRanked(player) ? player.score : NO_RANK}
                   </div>
-                  <div
-                    className={`${classes.icon} ${classes.cell}`}
-                    style={{
-                      background: `url(/images/score.svg) no-repeat`,
-                      backgroundSize: "100% 100%",
-                      borderRight: "0.3vw solid transparent",
-                    }}
-                  />
+                  <div className={classes.icon} aria-hidden="true" />
                 </>
               ) : null}
             </div>
@@ -125,7 +118,6 @@ const defaultProps = {
   style: {},
   className: "",
   username: "",
-  size: "small",
 };
 
 PlayerList.propTypes = {
@@ -135,7 +127,6 @@ PlayerList.propTypes = {
   style: PropTypes.object,
   username: PropTypes.string,
   className: PropTypes.string,
-  size: PropTypes.oneOf(["small", "medium"]),
 };
 
 export default PlayerList;

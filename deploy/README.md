@@ -29,6 +29,8 @@ repository.
 ```sh
 sudo mkdir -p /opt/battlechoc/private
 # copy recipes.json there (scp from the machine that has it), then
+# the API runs as the user `node` (uid 1000) in its container: give it the file, nobody else
+sudo chown 1000:1000 /opt/battlechoc/private/recipes.json
 sudo chmod 600 /opt/battlechoc/private/recipes.json
 ```
 

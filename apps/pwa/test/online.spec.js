@@ -281,9 +281,8 @@ test.describe("the Start button", () => {
   });
 });
 
-test("a name chosen offline that somebody took meanwhile asks for another one", async ({ browser, request }) => {
-  const mara = await createPlayer(browser, request, "Mara");
-  // a second player without the server: the API does not answer yet
+// a device without the server: the API does not answer yet; `stats` is the stored profile
+const offlineDevice = async (browser, stats) => {
   const context = await browser.newContext();
   await context.addInitScript((url) => window.localStorage.setItem("battlechoc.apiUrl", url), api);
   await context.route(`${api}/**`, (route) => route.abort());
@@ -291,40 +290,102 @@ test("a name chosen offline that somebody took meanwhile asks for another one", 
   await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.body.innerText.trim().length > 0);
   await page.evaluate(
-    () =>
+    (value) =>
       new Promise((resolve) => {
         const open = indexedDB.open("battlechoc");
         open.onsuccess = () => {
           const tx = open.result.transaction("player", "readwrite");
-          tx.objectStore("player").put({ username: "Chocnonymous", score: 0, tutorialSkipped: true }, "stats");
+          tx.objectStore("player").put(value, "stats");
           tx.oncomplete = () => resolve();
         };
-      })
+      }),
+    stats
   );
   await page.goto("/", { waitUntil: "networkidle" });
+  return { context, page };
+};
+
+// the profile's name field, offline: the name stays on the device, marked as not on the server
+const chooseNameOffline = async (page, name) => {
   await page.locator("[data-icon=user]:visible").click();
   await page.getByTestId("change-name").click();
-  await page.locator("input:visible").first().fill(mara.username);
+  await page.locator("input:visible").first().fill(name);
   await page.locator("div[class^=actionButton]:visible").first().click();
   await expect(page.getByTestId("name-unsynced").filter({ visible: true })).toHaveCount(1);
   await page.locator("[data-icon=close]:visible").first().click();
+};
 
-  // the server answers: the name is taken, the player picks another
+// the profile shows the name (a long one shortened) without the mark, and the device keeps it as
+// the server's
+const profileName = async (page, name) => {
+  await page.locator("[data-icon=user]:visible").click();
+  await expect(page.getByText(name.slice(0, 12)).filter({ visible: true }).first()).toBeVisible();
+  await expect(page.getByTestId("name-unsynced")).toHaveCount(0);
+  const stats = await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const open = indexedDB.open("battlechoc");
+        open.onsuccess = () => {
+          const get = open.result.transaction("player").objectStore("player").get("stats");
+          get.onsuccess = () => resolve(get.result);
+        };
+      })
+  );
+  expect({ username: stats.username, pending: Boolean(stats.usernamePending) }).toEqual({ username: name, pending: false });
+};
+
+const uniqueName = (name) => {
+  const { retry, repeatEachIndex } = test.info();
+  return retry || repeatEachIndex ? `${name}_${repeatEachIndex}${retry}` : name;
+};
+
+test("a name chosen offline goes to the server once it answers, without a word", async ({ browser }) => {
+  // a name no other spec registers on the shared test server
+  const name = uniqueName("Philippa");
+  const { context, page } = await offlineDevice(browser, { username: "Chocnonymous", score: 0, tutorialSkipped: true });
+  await chooseNameOffline(page, name);
+  // the next start of the app finds the server
+  await context.unroute(`${api}/**`);
+  await page.goto("/", { waitUntil: "networkidle" });
+  await profileName(page, name);
+  await expect(page.getByTestId("name-conflict")).toHaveCount(0);
+  await context.close();
+});
+
+test("a name chosen offline that somebody took meanwhile is replaced by a random one", async ({ browser, request }) => {
+  const mara = await createPlayer(browser, request, "Mara");
+  const { context, page } = await offlineDevice(browser, { username: "Chocnonymous", score: 0, tutorialSkipped: true });
+  await chooseNameOffline(page, mara.username);
+  // the server answers while the app is open
   await context.unroute(`${api}/**`);
   await page.evaluate(() => window.dispatchEvent(new Event("online")));
   const conflict = page.getByTestId("name-conflict");
   await expect(conflict).toBeVisible({ timeout: 20000 });
-  await expect(conflict).toContainText(`somebody else took “${mara.username}”`);
+  await expect(conflict).toContainText(`“${mara.username}” is already taken online`);
+  const generated = (await conflict.innerText()).match(/the name “([^”]+)” instead/)[1];
+  expect(generated).not.toBe(mara.username);
   await page.screenshot({ path: "test/output/screenshot_name_conflict.png" });
-  const fresh = `${mara.username}Two`;
-  await conflict.locator("input").fill(fresh);
-  // the field checks the name with the server before it can be sent
-  await page.waitForTimeout(1200);
-  await conflict.locator("div[class^=actionButton]").click();
+  await conflict.getByText("Got it", { exact: true }).click();
   await expect(conflict).toHaveCount(0);
-  await page.locator("[data-icon=user]:visible").click();
-  await expect(page.getByText(fresh).filter({ visible: true }).first()).toBeVisible();
-  await expect(page.getByTestId("name-unsynced")).toHaveCount(0);
+  await profileName(page, generated);
   await mara.context.close();
+  await context.close();
+});
+
+test("a device's name from before this server, taken there, is replaced on the first start", async ({ browser, request }) => {
+  const olga = await createPlayer(browser, request, "Olga");
+  // the stored profile has the name without the mark: it was on another server once
+  const { context, page } = await offlineDevice(browser, { username: olga.username, score: 0, tutorialFinished: true });
+  await context.unroute(`${api}/**`);
+  await page.goto("/", { waitUntil: "networkidle" });
+  const conflict = page.getByTestId("name-conflict");
+  await expect(conflict).toBeVisible({ timeout: 20000 });
+  await expect(conflict).toContainText(`“${olga.username}” is already taken online`);
+  const generated = (await conflict.innerText()).match(/the name “([^”]+)” instead/)[1];
+  await conflict.getByText("Got it", { exact: true }).click();
+  await profileName(page, generated);
+  // the general note about a random name does not show as well
+  await expect(page.getByText("A random player name has been set for you")).toHaveCount(0);
+  await olga.context.close();
   await context.close();
 });

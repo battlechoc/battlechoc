@@ -19,16 +19,39 @@ const useStyles = createUseStyles((theme) => ({
     right: theme.edge.right,
     zIndex: 4,
   },
+  // below the list: back buttons, the shown ranks, forward buttons
   paginator: {
     display: "flex",
     alignItems: "center",
-    justifyContent: "space-around",
-    padding: 8,
+    justifyContent: "space-between",
+    flex: "0 0 auto",
+    marginTop: "0.6em",
   },
+  // the page buttons stay small next to the list (the default icon button grows with the screen)
+  nav: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5em",
+    "& > div": {
+      width: "clamp(30px, 2.6vw, 44px)",
+      height: "clamp(30px, 2.6vw, 44px)",
+    },
+  },
+  // on a short screen only the list scrolls: the page buttons stay below it
   page: {
     display: "flex",
     flexDirection: "column",
     width: "100%",
+    minHeight: 0,
+  },
+  list: {
+    flex: "1 1 auto",
+    minHeight: 0,
+    overflowY: "auto",
+  },
+  // the old page stays while the next one loads, so the dialog keeps its height
+  loading: {
+    opacity: 0.5,
   },
   info: {
     display: "flex",
@@ -68,7 +91,6 @@ const Highscore = (componentProps) => {
     async (page) => {
       setLoading(true);
       setFailed(false);
-      setHighscore([]);
       try {
         const highscore = await multiplayer.fetchHighscore(page);
         setHighscore(highscore.list);
@@ -77,6 +99,7 @@ const Highscore = (componentProps) => {
         setHighscoreLastPage(highscore.lastPage);
       } catch (error) {
         logger.warn(error);
+        setHighscore([]);
         setFailed(true);
         showQuickMessage({ text: t(tr.FETCH_HIGHSCORE_FAILED) });
       } finally {
@@ -116,10 +139,44 @@ const Highscore = (componentProps) => {
         close={() => setOpen(false)}
         icon="highscore"
         title="Highscore"
+        mode="list"
       >
         <div className={classes.page}>
+          <div className={`${classes.list} ${loading ? classes.loading : ""}`}>
+            <PlayerList
+              withScore={true}
+              players={highscore}
+              username={ownName}
+              showProfile={props.showPlayerProfile}
+            />
+            {highscore.length === 0 && !failed && !loading ? (
+              <p className={classes.empty} data-testid="highscore-empty">
+                {t(tr.HIGHSCORE_EMPTY)}
+              </p>
+            ) : null}
+            {ownElsewhere ? (
+              <PlayerList
+                withScore={true}
+                players={[own]}
+                username={own.name}
+                className={classes.own}
+                showProfile={props.showPlayerProfile}
+              />
+            ) : null}
+            {ownElsewhere && unrated && highscore.length > 0 ? (
+              <p className={classes.empty} data-testid="highscore-unrated">
+                {t(tr.HIGHSCORE_UNRATED)}
+              </p>
+            ) : null}
+          </div>
           <div className={classes.paginator}>
-            <div>
+            <div className={classes.nav}>
+              <Button
+                color="accent"
+                icon="fast-backward"
+                disabled={highscorePage === 1}
+                onClick={() => openHighscorePage(1)}
+              />
               <Button
                 icon="backward"
                 disabled={highscorePage === 1}
@@ -127,23 +184,13 @@ const Highscore = (componentProps) => {
                   openHighscorePage(Math.max(highscorePage - 1, 1))
                 }
               />
-              <Button
-                color="accent"
-                style={{
-                  marginTop: 5,
-                }}
-                icon="fast-backward"
-                disabled={highscorePage === 1}
-                onClick={() => openHighscorePage(1)}
-              />
             </div>
             <div className={classes.info}>
               {loading ? (
                 <Progress infiniteAnimation />
               ) : (
                 <span className={classes.rank}>
-                  {t(tr.ACCOUNT_OVERVIEW_RANK)}
-                  <br />
+                  {t(tr.ACCOUNT_OVERVIEW_RANK)}{" "}
                   {highscore.length > 0
                     ? `${highscore[0].ranking} - ${
                         highscore[highscore.length - 1].ranking
@@ -152,7 +199,7 @@ const Highscore = (componentProps) => {
                 </span>
               )}
             </div>
-            <div>
+            <div className={classes.nav}>
               <Button
                 icon="forward"
                 disabled={highscorePage === highscoreLastPage}
@@ -164,44 +211,12 @@ const Highscore = (componentProps) => {
               />
               <Button
                 color="accent"
-                style={{
-                  marginTop: 5,
-                }}
                 icon="fast-forward"
                 disabled={highscorePage === highscoreLastPage}
                 onClick={() => openHighscorePage(highscoreLastPage)}
               />
             </div>
           </div>
-          {loading ? null : (
-            <>
-              <PlayerList
-                withScore={true}
-                players={highscore}
-                username={ownName}
-                showProfile={props.showPlayerProfile}
-              />
-              {highscore.length === 0 && !failed ? (
-                <p className={classes.empty} data-testid="highscore-empty">
-                  {t(tr.HIGHSCORE_EMPTY)}
-                </p>
-              ) : null}
-              {ownElsewhere ? (
-                <PlayerList
-                  withScore={true}
-                  players={[own]}
-                  username={own.name}
-                  className={classes.own}
-                  showProfile={props.showPlayerProfile}
-                />
-              ) : null}
-              {ownElsewhere && unrated && highscore.length > 0 ? (
-                <p className={classes.empty} data-testid="highscore-unrated">
-                  {t(tr.HIGHSCORE_UNRATED)}
-                </p>
-              ) : null}
-            </>
-          )}
         </div>
       </Dialog>
     </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
@@ -6,63 +6,51 @@ import {
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import Dialog from "./Dialog";
-import PlayerNameInput from "../controls/PlayerNameInput";
-import { ServerRequest } from "../../helper/settings";
-import { multiplayer } from "../../Multiplayer";
+import Button from "../controls/Button";
 import { loadUiState } from "../UiActions";
-import logger from "../../helper/logger";
 
 const useStyles = createUseStyles((theme) => ({
   body: {
     display: "flex",
     flexDirection: "column",
+    alignItems: "center",
     gap: "0.8em",
     width: "min(22em, 70vw)",
-    textAlign: "center",
-    "& p": { margin: 0 },
+    "& p": {
+      margin: "0 0 0.3em",
+      textAlign: "center",
+      color: "white",
+      fontFamily: theme.font.body,
+      fontSize: theme.font.size.md,
+    },
   },
 }));
 
-// A name chosen offline was taken by somebody else before the server got it
-// (Multiplayer.syncPendingUsername): the player chooses another one. It cannot be closed: other
-// players must find a name, and the old one belongs to someone else now.
-const NameConflict = ({ name, resolved }) => {
+// The name kept on this device belongs to somebody else on the server
+// (Multiplayer.replaceTakenName): the player got a random one instead, which the profile can
+// change. Not during a match: the dialog waits for the title screen.
+const NameConflict = ({ conflict, open, close }) => {
   const classes = useStyles();
-  const [failed, setFailed] = useState(false);
-  if (!name) {
+  if (!open) {
     return null;
   }
-  const choose = async (username) => {
-    try {
-      await ServerRequest("post", "/user/username", { username });
-      await multiplayer.usernameSynced(username);
-      resolved();
-    } catch (error) {
-      // taken in the meantime too: the field says so on the next check
-      logger.info("could not take the new name", error);
-      setFailed(true);
-    }
-  };
   return (
-    <Dialog open closable={false} mode="info" title={t(tr.NAME_CONFLICT_TITLE)}>
+    <Dialog open close={close} mode="info" title={t(tr.NAME_CONFLICT_TITLE)}>
       <div className={classes.body} data-testid="name-conflict">
-        <p>{t(tr.NAME_CONFLICT_TEXT, name)}</p>
-        <PlayerNameInput
-          key={failed ? "again" : "first"}
-          editMode
-          setPlayerName={choose}
-          startValue={name}
-          current={name}
-        />
+        <p>{t(tr.NAME_CONFLICT_TEXT, conflict.taken, conflict.generated)}</p>
+        <Button onClick={close}>{t(tr.NAME_CONFLICT_OK)}</Button>
       </div>
     </Dialog>
   );
 };
 
-const mapStateToProps = (state) => ({ name: state.ui.nameConflict });
+const mapStateToProps = (state) => ({
+  conflict: state.ui.nameConflict,
+  open: Boolean(state.ui.nameConflict) && typeof state.match.view === "undefined",
+});
 
 const mapDispatchToProps = (dispatch) => ({
-  resolved: () => dispatch(loadUiState({ nameConflict: null })),
+  close: () => dispatch(loadUiState({ nameConflict: null })),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(NameConflict);

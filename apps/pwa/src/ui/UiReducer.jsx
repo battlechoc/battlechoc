@@ -40,7 +40,8 @@ const uiReducer = createReducer(
     autoFullscreen: true,
     // the player had everything under the old unlock rule and keeps it (src/unlocks.js)
     earlyUnlock: false,
-    // a name chosen offline that somebody else took meanwhile (dialogs/NameConflict.jsx)
+    // { taken, generated }: the device's name belongs to somebody else on the server, the
+    // player got a random one (dialogs/NameConflict.jsx)
     nameConflict: null,
     // a new build of the app has been installed by the service worker: the player may start it
     // (dialogs/UpdateAvailable.jsx)
