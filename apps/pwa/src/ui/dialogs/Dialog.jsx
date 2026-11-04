@@ -6,6 +6,25 @@ import Fab from "../controls/Fab";
 import DialogFrame from "./DialogFrame";
 import withDefaultProps from "../../helper/defaultProps";
 
+// the dialog as high as its content (modes info and list)
+const fitContent = (theme) => ({
+  "& > div": {
+    height: "auto",
+    maxHeight: `calc(100% - ${theme.fab})`,
+    display: "flex",
+    flexDirection: "column",
+  },
+  "& > div > div ": {
+    position: "relative",
+    flex: "0 1 auto",
+    minHeight: 0,
+  },
+  // phones held sideways: less room around the content, so a short menu needs no scrolling
+  [theme.breakpoints.shortLandscape]: {
+    "& > div > div ": { paddingTop: 16, paddingBottom: 16 },
+  },
+});
+
 const useStyles = createUseStyles((theme) => ({
   overlay: {
     background: "rgba(0, 0, 0, 0.85)",
@@ -40,21 +59,21 @@ const useStyles = createUseStyles((theme) => ({
   },
   // compact: as high as its content (the body in the flow) and centred; when the content is
   // higher than the screen allows, it scrolls
-  info: {
+  info: fitContent(theme),
+  // a list (the highscore): as high as its content, a readable width instead of the whole
+  // screen, more room inside and a frame that scales with the panel instead of the screen
+  list: {
+    ...fitContent(theme),
     "& > div": {
-      height: "auto",
-      maxHeight: `calc(100% - ${theme.fab})`,
-      display: "flex",
-      flexDirection: "column",
+      ...fitContent(theme)["& > div"],
+      width: `min(38rem, calc(100% - ${theme.fab}))`,
     },
     "& > div > div ": {
-      position: "relative",
-      flex: "0 1 auto",
-      minHeight: 0,
+      ...fitContent(theme)["& > div > div "],
+      padding: "2.2em 2em",
     },
-    // phones held sideways: less room around the content, so a short menu needs no scrolling
     [theme.breakpoints.shortLandscape]: {
-      "& > div > div ": { paddingTop: 16, paddingBottom: 16 },
+      "& > div > div ": { paddingTop: "1.2em", paddingBottom: "1.2em" },
     },
   },
   // 80 % of the screen and 90 % of its height, but small enough that the close button on the
@@ -74,7 +93,8 @@ const useStyles = createUseStyles((theme) => ({
     position: "absolute",
     top: 12,
     right: 6,
-    height: (props) => (props.mode === "info" ? "unset" : "calc(100% - 88px)"), // 12px (top) + 2 * 32px (padding) = 88px
+    height: (props) =>
+      ["info", "list"].includes(props.mode) ? "unset" : "calc(100% - 88px)", // 12px (top) + 2 * 32px (padding) = 88px
     width: "calc(100% - 30px)", // 6px (left) + 2 * 12px (padding) = 30px
     padding: "32px 12px",
     display: "flex",
@@ -136,6 +156,9 @@ const useStyles = createUseStyles((theme) => ({
     borderRadius: (props) => (props.mode === "notification" ? 0 : 20),
     zIndex: 12,
     pointerEvents: "none",
+    // the scaled frame of a list measures the panel
+    containerType: (props) =>
+      props.mode === "list" ? "inline-size" : "normal",
   },
   // every dialog's close button: centred on the top right corner of its border (where the
   // rounded corner bends, 6px in), the same in every dialog and on every screen
@@ -223,6 +246,7 @@ const Dialog = (componentProps) => {
           <div className={classes.frame}>
             <DialogFrame
               compact={["notification", "info"].includes(props.mode)}
+              scaled={props.mode === "list"}
             />
           </div>
           {props.closable ? (
@@ -267,7 +291,7 @@ Dialog.propTypes = {
   titleSlotBefore: PropTypes.element,
   titleSlotAfter: PropTypes.element,
   subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-  mode: PropTypes.oneOf(["default", "stacked", "notification", "info"]),
+  mode: PropTypes.oneOf(["default", "stacked", "notification", "info", "list"]),
 };
 
 const defaultProps = {
