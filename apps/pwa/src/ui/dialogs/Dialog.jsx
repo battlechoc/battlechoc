@@ -25,6 +25,20 @@ const fitContent = (theme) => ({
   },
 });
 
+// The top frame piece (DialogFrame) is as high as its box allows: min(32vh, 80vw / 2.49) in a
+// dialog, min(20vh, 50vw / 2.49) in a compact one. Its chocolate edge reaches down to 27 % of
+// that height, so the title starts below it (the body's padding is 32px); a list's scaled frame
+// stays clear of the title anyway.
+const titleMargin = (mode) => {
+  if (mode === "list") {
+    return "2vh";
+  }
+  const piece = ["notification", "info"].includes(mode)
+    ? "min(20vh, 20vw)"
+    : "min(32vh, 32vw)";
+  return `max(2vh, calc(${piece} * 0.27 - 24px))`;
+};
+
 const useStyles = createUseStyles((theme) => ({
   overlay: {
     background: "rgba(0, 0, 0, 0.85)",
@@ -120,7 +134,7 @@ const useStyles = createUseStyles((theme) => ({
   // titles of compact dialogs (notifications, questions) are one step smaller; long titles wrap
   title: {
     zIndex: 12,
-    marginTop: "2vh",
+    marginTop: (props) => titleMargin(props.mode),
     fontFamily: theme.font.display,
     fontSize: (props) =>
       ["notification", "info"].includes(props.mode)

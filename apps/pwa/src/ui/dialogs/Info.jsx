@@ -31,17 +31,41 @@ const useStyles = createUseStyles((theme) => ({
   header: {
     textAlign: "center",
   },
-  // the version number in the subtitle leads to the changelog
-  changelog: {
-    color: "inherit",
-    textDecoration: "underline",
-    textUnderlineOffset: "0.15em",
-    textDecorationThickness: "0.08em",
+  // the version in the subtitle is a small button to the release notes on GitHub
+  release: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "0.3em",
+    margin: "0.2em 0",
+    padding: "0.15em 0.6em",
+    borderRadius: "1em",
+    background: theme.color.secondary.dark,
+    border: `0.12em solid ${theme.color.secondary.light}`,
+    color: "white",
+    textDecoration: "none",
+    cursor: "pointer",
+    transition: "transform 0.15s",
+    "&:hover, &:focus-visible": {
+      transform: "scale(1.06)",
+      borderColor: theme.color.gold.light,
+    },
+    "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+  },
+  // the arrow out of a box: the link opens GitHub
+  external: {
+    width: "0.85em",
+    height: "0.85em",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2.5,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
   },
 }));
 
-// release-please writes the changelog of every release here
-const CHANGELOG_URL = "https://github.com/battlechoc/battlechoc/blob/main/CHANGELOG.md";
+// release-please tags every release vX.Y.Z and writes its notes there
+const releaseUrl = (number) =>
+  `https://github.com/battlechoc/battlechoc/releases/tag/v${number}`;
 
 // the game's language codes that are no BCP 47 tags
 const LOCALES = { jp: "ja", vn: "vi" };
@@ -59,7 +83,9 @@ const timeAgo = (time) => {
   const language = getCurrentLanguage();
   const seconds = Math.round((time - Date.now()) / 1000);
   const found = UNITS.find(([, size]) => Math.abs(seconds) >= size);
-  const [unit, value] = found ? [found[0], Math.round(seconds / found[1])] : ["second", 0];
+  const [unit, value] = found
+    ? [found[0], Math.round(seconds / found[1])]
+    : ["second", 0];
   return new Intl.RelativeTimeFormat(LOCALES[language] || language, {
     numeric: "auto",
   }).format(value, unit);
@@ -88,7 +114,9 @@ const Info = (props) => {
             ></Fab>
             <Fab
               icon="discord"
-              onClick={() => window.open("https://discord.gg/XekFHYXNmu", "_blank")}
+              onClick={() =>
+                window.open("https://discord.gg/XekFHYXNmu", "_blank")
+              }
             ></Fab>
           </>
         ) : null}
@@ -107,11 +135,24 @@ const Info = (props) => {
         title={t(tr.INFO_TITLE)}
         subtitle={
           <div style={{ textAlign: "center" }} data-testid="info-build">
-            {t(tr.INFO_VERSION)}{" "}
-            <a className={classes.changelog} href={CHANGELOG_URL} target="_blank" rel="noopener noreferrer">
-              {version}
+            <a
+              className={classes.release}
+              href={releaseUrl(version)}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="info-release"
+            >
+              {t(tr.INFO_VERSION)} {version}
+              {commit ? ` · ${commit}` : null}
+              <svg
+                className={classes.external}
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+              </svg>
             </a>
-            {commit ? ` · ${commit}` : null} <br />
+            <br />
             {t(tr.INFO_LAST_UPDATE, timeAgo(builtAt))}
           </div>
         }
