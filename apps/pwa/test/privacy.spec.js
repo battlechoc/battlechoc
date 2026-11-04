@@ -57,7 +57,7 @@ test("the privacy policy is a page of its own, in German and English", async ({ 
   await expect(page.locator("#en h1")).toHaveText("Privacy policy");
   for (const section of ["#de", "#en"]) {
     await expect(page.locator(`${section} h2`)).toHaveCount(11);
-    await expect(page.locator(`${section} a[href="mailto:contact@battlechoc.com"]`).first()).toBeVisible();
+    await expect(page.locator(`${section} a[href="mailto:hello@battlechoc.com"]`).first()).toBeVisible();
   }
   // the game's own fonts, no scripts
   expect(await page.evaluate(() => document.fonts.check('1em "Bangers"'))).toBe(true);
