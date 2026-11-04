@@ -79,7 +79,7 @@ const Highscore = (componentProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [highscore, setHighscore] = useState([]);
-  // the own entry from the server (ranking null while unrated; null without a player name)
+  // the own entry from the server (null without a player name)
   const [own, setOwn] = useState(null);
   const [highscoreLastPage, setHighscoreLastPage] = useState(1);
   const [highscorePage, setHighscorePage] = useState(1);
@@ -119,9 +119,6 @@ const Highscore = (componentProps) => {
   // the own row below the list when the player is not on this page (or the list is empty)
   const ownElsewhere =
     own !== null && !highscore.some((player) => player.name === own.name);
-  const unrated =
-    own !== null &&
-    (own.ranking === null || typeof own.ranking === "undefined");
 
   return (
     <div style={props.style}>
@@ -162,11 +159,6 @@ const Highscore = (componentProps) => {
                 className={classes.own}
                 showProfile={props.showPlayerProfile}
               />
-            ) : null}
-            {ownElsewhere && unrated && highscore.length > 0 ? (
-              <p className={classes.empty} data-testid="highscore-unrated">
-                {t(tr.HIGHSCORE_UNRATED)}
-              </p>
             ) : null}
           </div>
           <div className={classes.paginator}>

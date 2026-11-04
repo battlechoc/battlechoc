@@ -91,20 +91,27 @@ const stats = async (pool, playerId) => {
     };
 };
 
-// rank by rating among named players with at least one rated match; ties share a rank
-const ranking = async (pool, rating) => 1 + await count(pool,
-    'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL AND rated_matches > 0 AND rating > $1', [rating]);
+// Every named player is on the highscore list. Its order: the shown score (the rating after
+// rated matches, 0 before), then who joined first; so every player has a rank of their own,
+// also the only player or several with 0.
+const score = table => `CASE WHEN ${table}.rated_matches > 0 THEN ${table}.rating ELSE 0 END`;
+const ORDER = `${score('players')} DESC, created_at ASC, id ASC`;
+const scoreOf = player => (Number(player.rated_matches) > 0 ? Number(player.rating) : 0);
 
-// only players on the highscore list (named, at least one rated match) have a rank
-const isRanked = player => Boolean(player.username) && Number(player.rated_matches) > 0;
+// compared with the player's own row in SQL: timestamps there are finer than in JavaScript
+const ranking = async (pool, player) => 1 + await count(pool,
+    `SELECT COUNT(*) AS n FROM players other, players me WHERE me.id = $1 AND other.username IS NOT NULL
+     AND (${score('other')} > ${score('me')} OR (${score('other')} = ${score('me')}
+     AND (other.created_at < me.created_at OR (other.created_at = me.created_at AND other.id < me.id))))`,
+    [player.id]);
 
-/** The rank of a player, null while they are not on the highscore list. */
-const rankOf = async (pool, player) => (isRanked(player) ? ranking(pool, player.rating) : null);
+/** The rank of a player, null while they have no name (unnamed players are not listed). */
+const rankOf = async (pool, player) => (player.username ? ranking(pool, player) : null);
 
 const playerInfo = async (pool, player) => ({
     name: player.username || EmptyPlayerStats.username,
     // what others see is the rating (verified matches only), never the XP, which offline matches feed
-    score: player.rated_matches > 0 ? Math.round(player.rating) : 0,
+    score: Math.round(scoreOf(player)),
     rating: Math.round(player.rating),
     ...(await results(pool, player.id)),
     ranking: await rankOf(pool, player),
@@ -136,5 +143,5 @@ const addTrackRecords = async (pool, playerId, records) => {
 };
 
 module.exports = {
-    findPlayer, findPlayerByName, createPlayer, stats, ranking, rankOf, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
+    findPlayer, findPlayerByName, createPlayer, stats, ORDER, rankOf, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
 };
