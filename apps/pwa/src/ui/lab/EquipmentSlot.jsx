@@ -49,11 +49,13 @@ const useStyles = createUseStyles((theme) => ({
     ...bangers(theme, labColors(theme).reason),
     fontSize: theme.font.size.sm,
   },
+  // an upright plus with round ends, drawn (the display font's "+" leans and is tiny)
   plus: {
-    ...bangers(theme, theme.color.secondary.light),
-    // a glyph filling the ring (both in em of the lab's text)
-    fontSize: "2.4em",
-    lineHeight: 1,
+    width: "45%",
+    height: "45%",
+    stroke: theme.color.secondary.light,
+    strokeWidth: 4,
+    strokeLinecap: "round",
   },
   label: {
     ...bangers(theme),
@@ -87,7 +89,9 @@ const EquipmentSlot = ({ index, item, inactive, onClick, disabled }) => {
         {item ? (
           <ItemIcon item={item} size="4.6em" />
         ) : (
-          <span className={classes.plus}>+</span>
+          <svg className={classes.plus} viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3v18M3 12h18" />
+          </svg>
         )}
       </span>
       <span className={classes.label}>{name}</span>
