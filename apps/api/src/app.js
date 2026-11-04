@@ -246,16 +246,16 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10,
         res.json({});
     }));
 
-    // null while the player is not on the highscore list (no name or no rated match yet)
+    // null while the player has no name (only named players are on the highscore list)
     app.get('/rank', ...user, handle(async (req, res) => {
         res.json({ ranking: await players.rankOf(pool, req.player) });
     }));
 
     // a page of the list (default: the page of the requesting player) and the requesting
-    // player's own entry (ranking null while unrated; own null without a player name), so the
+    // player's own entry (own null without a player name), so the
     // client can always show where the player stands
     app.get('/highscore', ...user, handle(async (req, res) => {
-        const total = await players.count(pool, 'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL AND rated_matches > 0', []);
+        const total = await players.count(pool, 'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL', []);
         const lastPage = Math.max(1, Math.ceil(total / HIGHSCORE_PAGE_SIZE));
         const own = req.player.username ? await players.playerInfo(pool, req.player) : null;
         let page = Number.parseInt(req.query.page, 10);
@@ -264,7 +264,7 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10,
         }
         page = Math.min(Math.max(1, page), lastPage);
         const { rows } = await pool.query(
-            'SELECT * FROM players WHERE username IS NOT NULL AND rated_matches > 0 ORDER BY rating DESC, username_lower ASC LIMIT $1 OFFSET $2',
+            `SELECT * FROM players WHERE username IS NOT NULL ORDER BY ${players.ORDER} LIMIT $1 OFFSET $2`,
             [HIGHSCORE_PAGE_SIZE, (page - 1) * HIGHSCORE_PAGE_SIZE]);
         const list = [];
         for (const row of rows) {

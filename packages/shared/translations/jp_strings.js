@@ -500,7 +500,6 @@ module.exports = {
     "LAB_NO_RECIPES": "まだレシピは発見されていません。テーブルで実験しよう！",
     "LAB_EQUIPMENT": "装備",
     "HIGHSCORE_EMPTY": "まだ評価対象の対戦がありません。オンラインで他のプレイヤーと対戦して順位を手に入れよう！",
-    "HIGHSCORE_UNRATED": "ほかのプレイヤーとの最初のオンライン対戦のあとで順位がつきます。",
     "UNLOCK_NEW_FEATURES": "新しい機能が解放されました：Choclabとフレンズ！",
     "UNLOCK_TITLE": "解放！",
     "UNLOCK_BUILDINGS_HINT": "新しい建物が使えるようになりました：",

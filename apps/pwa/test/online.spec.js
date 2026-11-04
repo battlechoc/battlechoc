@@ -209,15 +209,14 @@ test.describe("online", () => {
 });
 
 test.describe("the highscore", () => {
-  test("shows the own player even without rated matches", async ({ browser, request }) => {
+  test("ranks every named player, also without rated matches", async ({ browser, request }) => {
     const hugo = await createPlayer(browser, request, "Hugo");
     await hugo.page.locator("[data-icon=trophy]:visible").first().click();
-    // nobody has played a rated match yet (the e2e server is fresh or has only unrated players)
+    // unrated players show 0 and are ranked by who joined first (other specs' players come first)
     const own = hugo.page.getByTestId("player-list-own");
     await expect(own).toBeVisible();
     await expect(own).toContainText("Hugo");
-    await expect(own.getByTestId("player-list-rank")).toHaveText("–");
-    await expect(hugo.page.getByText("1 - 1", { exact: true })).toHaveCount(0);
+    await expect(own.getByTestId("player-list-rank")).toHaveText(/^\d+\.$/);
     await hugo.page.screenshot({ path: "test/output/screenshot_highscore_own.png" });
     await hugo.context.close();
   });

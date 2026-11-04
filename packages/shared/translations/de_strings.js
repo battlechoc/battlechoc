@@ -500,7 +500,6 @@ module.exports = {
     "LAB_NO_RECIPES": "Noch keine Rezepte entdeckt. Experimentiere am Labortisch!",
     "LAB_EQUIPMENT": "Ausrüstung",
     "HIGHSCORE_EMPTY": "Noch keine gewerteten Partien – spiele online gegen andere Spieler, um einen Rang zu bekommen.",
-    "HIGHSCORE_UNRATED": "Deinen Rang bekommst du nach deiner ersten Online-Partie gegen einen anderen Spieler.",
     "UNLOCK_NEW_FEATURES": "Neue Funktionen freigeschaltet: Choclab und Freunde!",
     "UNLOCK_TITLE": "Freigeschaltet!",
     "UNLOCK_BUILDINGS_HINT": "Neue Gebäude für dich:",
