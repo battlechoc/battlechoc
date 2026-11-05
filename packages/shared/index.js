@@ -451,6 +451,42 @@ const translationPredicates = {
     SERVER_NOTIFICATION_REMEMBER_TURN_TITLE: function (strings, name) {
         return fmt(strings.SERVER_NOTIFICATION_REMEMBER_TURN_TITLE, { name: name });
     },
+    CHALLENGE_HEADLINE: function (strings, name) {
+        return fmt(strings.CHALLENGE_HEADLINE, { name: name });
+    },
+    CHALLENGE_PRIMER: function (strings, name) {
+        return fmt(strings.CHALLENGE_PRIMER, { name: name });
+    },
+    CHALLENGE_YOU_PLAY_AS: function (strings, name) {
+        return fmt(strings.CHALLENGE_YOU_PLAY_AS, { name: name });
+    },
+    CHALLENGE_ON_THE_WAY: function (strings, name) {
+        return fmt(strings.CHALLENGE_ON_THE_WAY, { name: name });
+    },
+    CHALLENGE_AWAY: function (strings, name) {
+        return fmt(strings.CHALLENGE_AWAY, { name: name });
+    },
+    REMATCH_OFFER: function (strings, name) {
+        return fmt(strings.REMATCH_OFFER, { name: name });
+    },
+    REMATCH_WAITING: function (strings, name) {
+        return fmt(strings.REMATCH_WAITING, { name: name });
+    },
+    REMATCH_DECLINED: function (strings, name) {
+        return fmt(strings.REMATCH_DECLINED, { name: name });
+    },
+    REMATCH_GONE: function (strings, name) {
+        return fmt(strings.REMATCH_GONE, { name: name });
+    },
+    CHALLENGE_CODE: function (strings, code) {
+        return fmt(strings.CHALLENGE_CODE, { code: code });
+    },
+    CHALLENGE_APP_HINT: function (strings, code) {
+        return fmt(strings.CHALLENGE_APP_HINT, { code: code });
+    },
+    SECONDS_LEFT: function (strings, seconds) {
+        return fmt(strings.SECONDS_LEFT, { seconds: seconds });
+    },
     CHALLENGE_PREVIEW_TITLE: function (strings, name) {
         return fmt(strings.CHALLENGE_PREVIEW_TITLE, { name: name });
     },
