@@ -1,5 +1,20 @@
 # Changelog
 
+## [5.1.0](https://github.com/battlechoc/battlechoc/compare/v5.0.0...v5.1.0) (2026-11-05)
+
+
+### Features
+
+* **api:** AI matches by the ladder; the starter kit also when the tutorial was finished offline ([c227442](https://github.com/battlechoc/battlechoc/commit/c2274429d500a12e6a8089552b8d9bb77d23142f))
+* **pwa:** the AI ladder, the lesson's own three buildings, the starter kit on the tutorial's end ([c227442](https://github.com/battlechoc/battlechoc/commit/c2274429d500a12e6a8089552b8d9bb77d23142f))
+* **shared:** an AI ladder by results instead of XP; a smaller starter kit ([c227442](https://github.com/battlechoc/battlechoc/commit/c2274429d500a12e6a8089552b8d9bb77d23142f))
+
+
+### Bug Fixes
+
+* **pwa:** the loading progress no longer floods React with updates ([c227442](https://github.com/battlechoc/battlechoc/commit/c2274429d500a12e6a8089552b8d9bb77d23142f))
+* **pwa:** the tutorial's name works without the server ([c227442](https://github.com/battlechoc/battlechoc/commit/c2274429d500a12e6a8089552b8d9bb77d23142f))
+
 ## [5.0.0](https://github.com/battlechoc/battlechoc/compare/v4.4.1...v5.0.0) (2026-11-05)
 
 
