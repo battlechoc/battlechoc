@@ -32,7 +32,7 @@ test("a challenge the server no longer knows (a restart) is lost while it waited
   for (const status of ["waiting", "reading", "accepted"]) {
     const state = liveReducer(
       liveReducer(initial, challengeUpdated({ ...waiting, state: status })),
-      challengeUpdated(null),
+      challengeUpdated(null)
     );
     assert.equal(state.challenge.state, "lost");
     assert.equal(state.challenge.code, "K7Q2M9XD");
@@ -40,7 +40,7 @@ test("a challenge the server no longer knows (a restart) is lost while it waited
   for (const status of ["expired", "declined", "missed", "lost"]) {
     const state = liveReducer(
       liveReducer(initial, challengeUpdated({ ...waiting, state: status })),
-      challengeUpdated(null),
+      challengeUpdated(null)
     );
     assert.equal(state.challenge, null);
   }
@@ -59,7 +59,7 @@ test("a friend's view of a challenge is stored; a match clears both", () => {
 test("the match kind comes with the host", () => {
   let state = matchReducer(
     undefined,
-    matchHosted({ online: true, kind: "challenge" }),
+    matchHosted({ online: true, kind: "challenge" })
   );
   assert.equal(state.kind, "challenge");
   state = matchReducer(state, matchCleared());

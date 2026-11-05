@@ -159,6 +159,7 @@ class LiveLobby {
 
   // after a challenge match: offers the opponent another one (an incoming invite on their side)
   requestRematch(matchId) {
+    this.dispatch(liveErrorReceived(null));
     return this.send({ type: ClientMessage.REMATCH, matchId });
   }
 

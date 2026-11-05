@@ -22,6 +22,8 @@ import {
   Highscore,
 } from "./dialogs";
 import ChallengeDialog from "./dialogs/ChallengeDialog";
+import { liveLobby } from "../match/liveLobby";
+import { matchSession } from "../match/LocalMatchHost";
 import Choclab from "./pages/Choclab";
 import { multiplayer } from "../Multiplayer";
 import { ServerRequest } from "../helper/settings";
@@ -632,6 +634,18 @@ const Hud = (props) => {
           );
         } else {
           const result = game.outcome;
+          // after a challenge match both may ask for another one (a challenge again)
+          const rematchable = Boolean(matchOnline && props.matchKind === "challenge" && matchSession.host);
+          const opponentName = game.players[1 - game.viewer].name;
+          const rematchStatus = !rematchable
+            ? undefined
+            : props.outgoingInvite
+            ? t(tr.REMATCH_WAITING, opponentName)
+            : props.inviteClosed === "declined" || props.inviteClosed === "expired"
+            ? t(tr.REMATCH_DECLINED, opponentName)
+            : props.liveError === "PLAYER_OFFLINE"
+            ? t(tr.REMATCH_GONE, opponentName)
+            : undefined;
           return (
             <div>
               <MatchBanner />
@@ -660,6 +674,12 @@ const Hud = (props) => {
                   isWinner={result.winners.includes(game.viewer)}
                   verified={matchOnline}
                   drops={matchResult ? matchResult.drops : undefined}
+                  rematch={
+                    rematchable && !props.outgoingInvite
+                      ? () => liveLobby.requestRematch(matchSession.host.matchId).catch(() => {})
+                      : undefined
+                  }
+                  rematchStatus={rematchStatus}
                   finishGame={() => endGame()}
                 />
               ) : null}
@@ -697,6 +717,10 @@ const mapStateToProps = (state) => ({
   online: state.ui.online,
   earlyUnlock: state.ui.earlyUnlock,
   challenge: state.live.challenge,
+  matchKind: state.match.kind,
+  outgoingInvite: state.live.outgoingInvite,
+  inviteClosed: state.live.inviteClosed,
+  liveError: state.live.error,
 });
 
 const mapDispatchToProps = {

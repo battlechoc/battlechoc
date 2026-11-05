@@ -490,9 +490,6 @@ const translationPredicates = {
     CHALLENGE_PREVIEW_TITLE: function (strings, name) {
         return fmt(strings.CHALLENGE_PREVIEW_TITLE, { name: name });
     },
-    SERVER_NOTIFICATION_CHALLENGE_TITLE: function (strings, name) {
-        return fmt(strings.SERVER_NOTIFICATION_CHALLENGE_TITLE, { name: name });
-    },
     SERVER_NOTIFICATION_GAME_LOST_BODY: function (strings, name) {
         return fmt(strings.SERVER_NOTIFICATION_GAME_LOST_BODY, { name: name });
     },

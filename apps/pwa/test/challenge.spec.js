@@ -17,7 +17,7 @@ const visitor = async (browser, path, apiUrl = api) => {
   const context = await browser.newContext();
   await context.addInitScript(
     (url) => window.localStorage.setItem("battlechoc.apiUrl", url),
-    apiUrl,
+    apiUrl
   );
   const page = await context.newPage();
   await page.goto(path);
@@ -50,7 +50,7 @@ test.describe("challenge links", () => {
       timeout: 10000,
     });
     await expect(dialog.getByTestId("challenge-countdown")).toHaveText(
-      /^(2:00|1:[0-5]\d)$/,
+      /^(2:00|1:[0-5]\d)$/
     );
     await expect(dialog.getByTestId("challenge-share")).toBeVisible();
     await carla.page.screenshot({
@@ -92,13 +92,13 @@ test.describe("challenge links", () => {
     const card = newcomer.page.getByTestId("challenge-card");
     await expect(card.getByTestId("challenge-headline")).toContainText(
       carla.username,
-      { timeout: 15000 },
+      { timeout: 15000 }
     );
     await expect(card).toContainText("You play as");
     await expect(card).toContainText(code);
     await expect(newcomer.page.getByTestId("tutorial-coach")).toHaveCount(0);
     await expect(carla.page.getByTestId("challenge-status")).toHaveText(
-      "Your friend is reading the challenge…",
+      "Your friend is reading the challenge…"
     );
     await newcomer.page.screenshot({
       path: "test/output/screenshot_challenge_card.png",
@@ -113,7 +113,7 @@ test.describe("challenge links", () => {
     ]);
     for (const { page } of [carla, newcomer]) {
       expect(
-        await host(page, () => window.__battlechoc.view().board.size),
+        await host(page, () => window.__battlechoc.view().board.size)
       ).toEqual({ rows: 10, cols: 10 });
     }
 
@@ -123,7 +123,7 @@ test.describe("challenge links", () => {
     const doraCard = dora.page.getByTestId("challenge-card");
     await expect(doraCard.getByTestId("challenge-card-status")).toHaveText(
       "This match is already on.",
-      { timeout: 15000 },
+      { timeout: 15000 }
     );
     await expect(doraCard.getByTestId("challenge-start")).toBeVisible();
     await dora.context.close();
@@ -134,7 +134,7 @@ test.describe("challenge links", () => {
     await expect(palette).toBeVisible();
     await expect(palette.locator('.icon[style*="lock.svg"]')).toHaveCount(0);
     expect(
-      await palette.locator('[data-testid^="build-"]').count(),
+      await palette.locator('[data-testid^="build-"]').count()
     ).toBeGreaterThan(6);
 
     // no pause online: the menu says the match keeps running, and asks before it gives it up
@@ -156,7 +156,7 @@ test.describe("challenge links", () => {
     await newcomer.page.locator("[data-icon=done]:visible").first().click();
     // back home the newcomer is a newcomer again: the tutorial waits
     await expect(
-      newcomer.page.getByText("Start Tutorial", { exact: true }).first(),
+      newcomer.page.getByText("Start Tutorial", { exact: true }).first()
     ).toBeVisible({ timeout: 15000 });
     await carla.context.close();
     await newcomer.context.close();
@@ -171,7 +171,7 @@ test.describe("challenge links", () => {
       "This challenge has ended, ask for a new one.",
       {
         timeout: 15000,
-      },
+      }
     );
     await expect(card.getByTestId("challenge-learn")).toBeVisible();
     await newcomer.context.close();
@@ -181,15 +181,61 @@ test.describe("challenge links", () => {
     const newcomer = await visitor(
       browser,
       "/?challenge=K7Q2-M9XD",
-      "http://127.0.0.1:9",
+      "http://127.0.0.1:9"
     );
     const card = newcomer.page.getByTestId("challenge-card");
     await expect(card.getByTestId("challenge-card-status")).toHaveText(
       "The battle server can't be reached right now.",
       {
         timeout: 20000,
-      },
+      }
     );
     await newcomer.context.close();
+  });
+  test("rematch from the end screen starts a new challenge match", async ({
+    browser,
+    request,
+  }) => {
+    const ella = await createPlayer(browser, request, "Ella");
+    const finn = await createPlayer(browser, request, "Finn");
+    const code = await challengeCode(ella.page);
+    await finn.page.goto(`/?challenge=${code}`);
+    const card = finn.page.getByTestId("challenge-card");
+    await expect(card.getByTestId("challenge-accept")).toBeEnabled({
+      timeout: 30000,
+    });
+    await card.getByTestId("challenge-accept").click();
+    await Promise.all([inOnlineMatch(ella.page), inOnlineMatch(finn.page)]);
+    const first = await host(ella.page, () => window.__battlechoc.host.matchId);
+    await toRunning([ella, finn]);
+    await host(ella.page, () => window.__battlechoc.host.surrender());
+    await expect(finn.page.getByText(/You won/i).first()).toBeVisible({
+      timeout: 15000,
+    });
+    await ella.page.getByTestId("rematch").click();
+    const offer = finn.page.getByTestId("incoming-invite");
+    await expect(offer).toContainText("wants a rematch", { timeout: 10000 });
+    await expect(offer).toContainText("s left");
+    await finn.page.screenshot({
+      path: "test/output/screenshot_rematch_offer.png",
+    });
+    await offer.getByText("Play", { exact: true }).click();
+    for (const { page } of [ella, finn]) {
+      await page.waitForFunction(
+        (id) =>
+          window.__battlechoc &&
+          window.__battlechoc.host &&
+          window.__battlechoc.host.online &&
+          window.__battlechoc.host.matchId !== id &&
+          window.__battlechoc.host.phase,
+        first,
+        { timeout: 15000 }
+      );
+      expect(
+        await host(page, () => window.__battlechoc.view().board.size)
+      ).toEqual({ rows: 10, cols: 10 });
+    }
+    await ella.context.close();
+    await finn.context.close();
   });
 });

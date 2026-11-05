@@ -414,6 +414,13 @@ class App extends Component {
     if (typeof matchSession.host !== "undefined") {
       matchSession.host.persist(true);
       matchSession.host.stop();
+      // a rematch from the end screen: the finished board goes before the new one comes
+      if (this.props.matchView && this.props.matchView.phase === engine.MatchPhase.ENDED) {
+        matchSession.dispatch(matchCleared());
+        if (typeof this.scene !== "undefined") {
+          this.scene.clear();
+        }
+      }
     }
     if (this.props.tutorial) {
       this.props.stopTutorial();

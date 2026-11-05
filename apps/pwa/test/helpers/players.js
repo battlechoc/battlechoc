@@ -20,7 +20,7 @@ export const accountOf = (page) =>
           get.onerror = () => reject(get.error);
         };
         open.onerror = () => reject(open.error);
-      }),
+      })
   );
 
 // unlocked: three finished matches (online play needs three against the AI, shared
@@ -31,7 +31,7 @@ export const createPlayer = async (
   browser,
   request,
   name,
-  { unlocked = true } = {},
+  { unlocked = true } = {}
 ) => {
   const { retry, repeatEachIndex } = test.info();
   const username =
@@ -54,10 +54,10 @@ export const createPlayer = async (
         headers,
         data: { username },
       })
-    ).ok(),
+    ).ok()
   ).toBe(true);
   expect(
-    (await request.post(`${api}/user/tutorial/skipped`, { headers })).ok(),
+    (await request.post(`${api}/user/tutorial/skipped`, { headers })).ok()
   ).toBe(true);
   const win = {
     id: `seed-${username}`,
@@ -82,12 +82,12 @@ export const createPlayer = async (
           headers,
           data: { stats: [win, ...losses] },
         })
-      ).ok(),
+      ).ok()
     ).toBe(true);
   }
   await page.goto("/", { waitUntil: "networkidle" });
   await expect(
-    page.getByText("Start Game", { exact: true }).first(),
+    page.getByText("Start Game", { exact: true }).first()
   ).toBeVisible({ timeout: 15000 });
   return { context, page, username };
 };
@@ -101,7 +101,7 @@ export const inOnlineMatch = (page) =>
       window.__battlechoc &&
       window.__battlechoc.host &&
       window.__battlechoc.host.online &&
-      window.__battlechoc.host.phase,
+      window.__battlechoc.host.phase
   );
 
 // field choice by whoever chooses, both factories, then the countdown on real time
@@ -116,7 +116,7 @@ export const toRunning = async (players) => {
   }
   for (const { page } of players) {
     await page.waitForFunction(
-      () => window.__battlechoc.host.phase === "MatchPhase.PLACEMENT",
+      () => window.__battlechoc.host.phase === "MatchPhase.PLACEMENT"
     );
   }
   for (const { page } of players) {
@@ -136,7 +136,7 @@ export const toRunning = async (players) => {
       });
       const grid = view.board.fields[view.players[view.viewer].fieldIndex].grid;
       const cell = grid.find((c) =>
-        c.occupiedBy.every((e) => e.type === "EntityType.CREAM"),
+        c.occupiedBy.every((e) => e.type === "EntityType.CREAM")
       );
       return store.host
         .submit("battlechoc/match/placeFactory", {
@@ -145,7 +145,7 @@ export const toRunning = async (players) => {
         })
         .then(
           () => true,
-          (error) => error.message,
+          (error) => error.message
         );
     });
     expect(ok).toBe(true);
@@ -154,7 +154,7 @@ export const toRunning = async (players) => {
     await page.waitForFunction(
       () => window.__battlechoc.host.phase === "MatchPhase.RUNNING",
       null,
-      { timeout: 15000 },
+      { timeout: 15000 }
     );
   }
 };
