@@ -276,6 +276,24 @@ describe('live: challenges', () => {
         expect(env.live.lobby.rooms.size).toBe(0);
     });
 
+    test('a friend who accepted and left is not pulled into a match when the challenger comes back', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        anna.close();
+        await sleep(50);
+        const ben = await player(env, { username: 'Ben' });
+        await open(ben, code);
+        ben.send({ type: ClientMessage.CHALLENGE_ACCEPT, code });
+        await viewIs(ben, 'waiting-for-challenger');
+        ben.terminate();
+        await sleep(50);
+        const back = await connect(env, anna.account.accessToken);
+        expect((await challengeIs(back, 'missed')).code).toBe(code);
+        await sleep(50);
+        expect(env.live.lobby.rooms.size).toBe(0);
+    });
+
     test('a reader who leaves for a minute frees the challenge again', async () => {
         const env = await start();
         const anna = await player(env, { username: 'Anna' });

@@ -351,9 +351,15 @@ class Challenges {
     /** After the welcome: a friend accepted while the challenger was away, so the match starts now. */
     async afterWelcome(connection) {
         const challenge = this.byPlayer.get(connection.playerId);
-        if (challenge && challenge.state === State.ACCEPTED && !this.lobby.busy(connection.playerId)) {
-            await this.start(challenge);
+        if (!challenge || challenge.state !== State.ACCEPTED || this.lobby.busy(connection.playerId)) {
+            return;
         }
+        if (!this.lobby.online(challenge.acceptedBy)) {
+            // the friend gave up and left: no match in their name, the challenger may send it again
+            this.missed(challenge);
+            return;
+        }
+        await this.start(challenge);
     }
 
     /** A connection closed: its player stops reading challenges unless they come back within the grace. */
