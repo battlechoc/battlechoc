@@ -27,7 +27,7 @@ A challenge link replaces all of this. The player sends a link through WhatsApp 
 - Push notifications. They come later, and the "Play with a friend" moment is the natural place to ask for permission then.
 - A friends list, player search or presence.
 - Challenges that wait longer than a few minutes, for example a day.
-- Link previews that name the challenger. GitHub Pages serves fixed files, so the preview is the same general battlechoc card for every link.
+- A preview picture with the challenger's name drawn into it. The preview names the challenger in its title (section 2b); the picture is the same for every link.
 
 ## Anti-goals (a failure even if it works)
 
@@ -69,7 +69,7 @@ A challenge link replaces all of this. The player sends a link through WhatsApp 
 
 ### 2. The friend opens the link
 
-The link is `https://battlechoc.com/?challenge=<code>`. The parameter is read and removed from the address bar the same way `?invite=` is today.
+The link is `https://play.battlechoc.com/<code>` (section 2b), which sends a browser on to `https://battlechoc.com/?challenge=<code>`. The app reads the parameter and removes it from the address bar the same way `?invite=` is today.
 
 - **Newcomer** (tutorial neither finished nor skipped): a challenge card replaces the first-play screen. It appears as soon as the app's code runs, before the 3D assets finish loading:
   - "**Carolin Cacao challenges you to a chocolate battle!**"
@@ -79,6 +79,27 @@ The link is `https://battlechoc.com/?challenge=<code>`. The parameter is read an
   - **Not now**: leads to the normal first-play screen (Start Tutorial / Skip Tutorial). The challenger sees "Your friend isn't up for it right now" with Send again and Back to home.
 - **Existing player**: the same card without the primer and the name line, whatever their unlock progress.
 - The friend sees no countdown, to avoid pressuring a newcomer.
+
+### 2b. The link page on play.battlechoc.com (the user, 2026-11-05)
+
+The shared link points to the API on the VPS, not to GitHub Pages, so the preview in the chat can name the challenger:
+
+- `GET https://play.battlechoc.com/<code>` answers with a small HTML page. The same page goes to everyone; there is no bot detection.
+- The page's head carries the Open Graph tags:
+  - `og:title`: "Carolin Cacao challenges you to battlechoc!";
+  - `og:description`: the one-sentence primer;
+  - `og:image`: one shared challenge picture (absolute URL, about 1200×630, under 300 KB so WhatsApp shows the large preview);
+  - `og:url`: the play.battlechoc.com link itself, not battlechoc.com, so crawlers that follow `og:url` keep the challenge's tags.
+- Its body sends a browser on with `location.replace("https://battlechoc.com/?challenge=<code>")` and shows a plain link as a fallback. Preview bots (WhatsApp, Telegram, iMessage, Signal, Slack, Discord) read the tags and run no scripts. No HTTP redirect, because crawlers follow those and would read battlechoc.com's general tags instead.
+- An unknown or ended code gets the general battlechoc tags and still sends the browser on; the app then shows the "ended" card.
+- WhatsApp builds the preview on the sender's phone while the message is written, so the challenge must exist before the share sheet opens (it does: it is created when the dialog opens) and the page must answer quickly.
+- The page names only the challenger's player name, which is public anyway (highscore, profiles). The codes are unguessable and the page is rate limited.
+- **Android:** the installed app (Trusted Web Activity) shares Chrome's storage, so a friend whose link opens in Chrome still plays as themselves. iPhones keep the problem of section 2a.
+- **Infrastructure (the user):**
+  - a DNS record for `play.battlechoc.com` at OVH pointing to the VPS;
+  - an nginx site with a certbot certificate next to `deploy/nginx/api.battlechoc.com.conf`, described in `deploy/README.md`.
+- **The picture:** a new piece of art by the user, or a stand-in made from existing game art until then.
+- **Without play.battlechoc.com:** before it is live, the app shares `https://battlechoc.com/?challenge=<code>` directly, with the general preview.
 
 ### 2a. The challenge code (the user, 2026-11-05)
 
@@ -147,7 +168,8 @@ On an iPhone the home-screen app has its own storage, separate from Safari, and 
 - The challenge code: short and unguessable, for example 8 characters of random base32, lifetime 2 minutes.
 - Whether the server-side invite by username stays as the rematch transport or rematch goes by match id. By match id is preferred, since names can change.
 - How the random name is assigned for a newcomer: the existing `setRandomPlayerName` without its notification, or the server on opening.
-- Open Graph tags in `index.html` for a general link preview (title, description, an absolute image URL).
+- General Open Graph tags in `index.html` too, for profile links and the fallback link.
+- How the API serves the play.battlechoc.com page: a route on the existing Express app chosen by the `Host` header, or its own path that nginx proxies to.
 - The layout of the dialog and the card. These are shown to the user as labelled variant screenshots before building (`apps/pwa/test/output/`).
 - Whether the server's friends endpoints, the `friends` table and its line in the privacy policy go in this project or a follow-up.
 
@@ -166,3 +188,4 @@ On an iPhone the home-screen app has its own storage, separate from Safari, and 
 - **e2e (Playwright, targeted):**
   - two browser contexts: the challenger creates a link, a fresh context (newcomer) opens it, sees the card without the tutorial, accepts, both are in a 10×10 match with every building in the palette;
   - an expired link shows the ended card.
+- **API, play page:** it has the challenger's name in `og:title` for a waiting challenge, the general tags for an unknown code, the redirect to `?challenge=<code>`, and the name escaped in the HTML.
