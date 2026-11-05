@@ -270,7 +270,12 @@ const Tutorial = (props) => {
           </div>
         ) : (
           <div data-testid="tutorial-name">
-            <PlayerNameInput setPlayerName={setPlayerName} startValue={initialUserName} current={stats.username} />
+            <PlayerNameInput
+              setPlayerName={setPlayerName}
+              startValue={initialUserName}
+              current={stats.username}
+              offline={!props.online}
+            />
             <p>{t(tr.TUTORIAL_CHOOSE_NAME_INFO)}</p>
           </div>
         )}
