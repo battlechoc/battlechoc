@@ -570,6 +570,7 @@ const hosting = require('./engine/hosting');
 const setup = require('./engine/setup');
 const protocol = require('./live/protocol');
 const { ClockSync } = require('./live/clockSync');
+const challengeCode = require('./live/challengeCode');
 
 module.exports.engine = {
     ...realtimeEngine,
@@ -584,7 +585,7 @@ module.exports.engine = {
     ...hosting,
     ...setup,
 };
-module.exports.live = { ...protocol, ClockSync };
+module.exports.live = { ...protocol, ...challengeCode, ClockSync };
 module.exports.DefaultBalance = DefaultBalance;
 module.exports.valueAt = valueAt;
 module.exports.WeaponNotReadyError = require('./errors').WeaponNotReadyError;
