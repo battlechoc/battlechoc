@@ -1,7 +1,7 @@
 // Player data access and the response objects the PWA expects (stats and player infos).
 
 const crypto = require('crypto');
-const { EmptyPlayerStats, sanitizeLoadout } = require('@battlechoc/battlechoc-shared-functions');
+const { EmptyPlayerStats, sanitizeLoadout, engine, StarterKit } = require('@battlechoc/battlechoc-shared-functions');
 const { resultOf, xpOf } = require('./xp');
 const { isValidUsername, randomName } = require('./names');
 const pantry = require('./pantry');
@@ -94,6 +94,34 @@ const loadoutOf = (player, items) => {
     return sanitizeLoadout(loadout);
 };
 
+// the AI ladder of a player (stats.aiLadder); before their first match since the ladder came, from their XP
+const ladderOf = player => engine.aiLadderOf({
+    score: Number(player.xp) || 0,
+    aiLadder: typeof player.ai_ladder === 'string' ? JSON.parse(player.ai_ladder) : player.ai_ladder,
+});
+
+/** Moves a player's AI ladder after a match against the AI: outcome 'won', 'lost' or 'draw'. */
+const advanceAiLadder = async (db, playerId, outcome) => {
+    const player = await findPlayer(db, playerId);
+    if (player) {
+        await db.query('UPDATE players SET ai_ladder = $1 WHERE id = $2',
+            [JSON.stringify(engine.nextAiLadder(ladderOf(player), outcome)), playerId]);
+    }
+};
+
+/**
+ * The tutorial is finished: 100 XP and the starter kit, once per player (also when the device
+ * reports it later, after a tutorial without the server).
+ */
+const finishTutorial = async (pool, playerId) => {
+    const { rows } = await pool.query(
+        'UPDATE players SET xp = xp + 100 WHERE id = $1 AND tutorial_finished = FALSE RETURNING id', [playerId]);
+    if (rows.length > 0) {
+        await pantry.add(pool, playerId, Object.entries(StarterKit).map(([ingredient, amount]) => ({ ingredient, amount })), Date.now());
+    }
+    await pool.query('UPDATE players SET tutorial_started = TRUE, tutorial_skipped = FALSE, tutorial_finished = TRUE WHERE id = $1', [playerId]);
+};
+
 const stats = async (pool, playerId) => {
     const player = await findPlayer(pool, playerId);
     if (!player) {
@@ -109,8 +137,10 @@ const stats = async (pool, playerId) => {
         coins: pantryTotals.COCOA || 0,
         score: player.xp,
         xp: player.xp,
-        // the part of the XP from challenge matches (progression.aiSetupScore)
+        // the part of the XP from challenge matches
         challengeXp: player.challenge_xp,
+        // the opponent and board of the next match against the AI
+        aiLadder: ladderOf(player),
         rating: Math.round(player.rating),
         ratedMatches: player.rated_matches,
         pantry: pantryTotals,
@@ -171,6 +201,11 @@ const addTrackRecords = async (pool, playerId, records) => {
         await pool.query('INSERT INTO track_records (id, player_id, record, result, coins, xp) VALUES ($1, $2, $3, $4, 0, $5)',
             [`${playerId}:${id}`, playerId, JSON.stringify(record), result, xp]);
         credited += xp;
+        // a match played without the server is one against the AI: it moves the ladder too (like
+        // the XP, a faked one only changes the player's own opponents)
+        if (result !== 'open') {
+            await advanceAiLadder(pool, playerId, result);
+        }
     }
     if (credited > 0) {
         await pool.query('UPDATE players SET xp = xp + $1 WHERE id = $2', [credited, playerId]);
@@ -179,5 +214,5 @@ const addTrackRecords = async (pool, playerId, records) => {
 };
 
 module.exports = {
-    findPlayer, findPlayerByName, freeRandomName, assignRandomName, createPlayer, stats, results, ORDER, rankOf, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
+    findPlayer, findPlayerByName, freeRandomName, assignRandomName, createPlayer, stats, results, ladderOf, advanceAiLadder, finishTutorial, ORDER, rankOf, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
 };
