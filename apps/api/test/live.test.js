@@ -94,6 +94,18 @@ const queueMatch = async env => {
     return { a, b, matchId: ma.matchId };
 };
 
+// two connected players in a challenge match (the lobby's own start, as an accepted challenge does)
+const challengeMatch = async env => {
+    const a = await player(env);
+    const b = await player(env);
+    await env.live.lobby.startBetween('challenge', a.account.playerId, b.account.playerId);
+    const [ma, mb] = await Promise.all([a.next(ServerMessage.MATCH), b.next(ServerMessage.MATCH)]);
+    await Promise.all([a, b].map(client => client.next(ServerMessage.VIEW, message => message.matchId === ma.matchId)));
+    a.index = ma.playerIndex;
+    b.index = mb.playerIndex;
+    return { a, b, matchId: ma.matchId, messages: [ma, mb] };
+};
+
 const nextView = (client, matchId, predicate) =>
     client.next(ServerMessage.VIEW, message => message.matchId === matchId && predicate(message.view));
 
@@ -487,6 +499,51 @@ describe('live: matches', () => {
         const { rows } = await env.pool.query('SELECT rated_matches, rating FROM players');
         rows.forEach(row => expect(row).toMatchObject({ rated_matches: 0, rating: 1500 }));
         expect(Number((await env.pool.query('SELECT COUNT(*) AS n FROM rated_matches')).rows[0].n)).toBe(0);
+    });
+
+    test('a challenge match is 10x10, has a coin toss and 45 s placement, and the match message says challenge', async () => {
+        const env = await start();
+        const { matchId, messages } = await challengeMatch(env);
+        const r = room(env, matchId);
+        expect(r.kind).toBe('challenge');
+        expect(r.match.board.size).toEqual({ rows: 10, cols: 10 });
+        expect(r.match.balance.match.placementTimeoutMs).toBe(45000);
+        expect(r.match.balance.match.fieldChoiceTimeoutMs).toBe(10000);
+        expect([0, 1]).toContain(r.match.fieldChooser);
+        messages.forEach(message => expect(message.kind).toBe('challenge'));
+    });
+
+    test('a challenge is not rated but credits XP, challenge XP and a finished match', async () => {
+        const env = await start();
+        const match = await challengeMatch(env);
+        const { a, b, matchId } = match;
+        await toRunning(env, match);
+        env.clock.advance(1000);
+        expect((await a.act(matchId, MatchActionTypes.surrender, {})).ok).toBe(true);
+        await Promise.all([a, b].map(client => client.next(ServerMessage.RESULT)));
+        await room(env, matchId).writes;
+        const { rows } = await env.pool.query('SELECT id, xp, challenge_xp, rated_matches, rating FROM players');
+        rows.forEach(row => {
+            expect(row).toMatchObject({ rated_matches: 0, rating: 1500 });
+            expect(row.challenge_xp).toBe(row.xp);
+        });
+        expect(rows.find(row => row.id === b.account.playerId).xp).toBeGreaterThan(0);
+        expect(Number((await env.pool.query('SELECT COUNT(*) AS n FROM rated_matches')).rows[0].n)).toBe(0);
+        const { stats } = (await request(env.app).get('/user').set('Authorization', `Bearer ${a.account.accessToken}`)).body;
+        expect(stats.losses).toBe(1);
+        expect(stats.challengeXp).toBe(stats.xp);
+    });
+
+    test('below the online unlock, challenge XP does not leave the beginner AI track', async () => {
+        const env = await start();
+        const rookie = await player(env, { score: 700 });
+        await env.pool.query('UPDATE players SET challenge_xp = 650 WHERE id = $1', [rookie.account.playerId]);
+        rookie.send({ type: ClientMessage.QUEUE_AI });
+        const { matchId, opponent } = await rookie.next(ServerMessage.MATCH);
+        const r = room(env, matchId);
+        expect(opponent.name).toBe('Tom Toffee');
+        expect(r.match.board.size).toEqual({ rows: 6, cols: 6 });
+        expect(r.match.phase).toBe(MatchPhase.RUNNING);
     });
 
     test('invites: live, declined, expired and by push to an offline player', async () => {

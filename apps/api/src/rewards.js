@@ -14,8 +14,11 @@ const startOfUtcDay = now => {
 
 const secureRandom = () => crypto.randomInt(0, 2 ** 32) / 2 ** 32;
 
-/** Credits a player's verified match (record from MatchRoom.resultFor); null when it was credited before. */
-const creditVerifiedMatch = (pool, { playerId, record, isWinner, opponentIsAi, now, random = secureRandom }) =>
+/**
+ * Credits a player's verified match (record from MatchRoom.resultFor); null when it was credited before.
+ * The XP of a challenge match is also counted apart (players.challenge_xp, see progression.aiSetupScore).
+ */
+const creditVerifiedMatch = (pool, { playerId, record, isWinner, opponentIsAi, challenge = false, now, random = secureRandom }) =>
     withTransaction(pool, async client => {
         const id = `${playerId}:${record.id}`;
         if (await count(client, 'SELECT COUNT(*) AS n FROM track_records WHERE id = $1', [id]) > 0) {
@@ -44,6 +47,9 @@ const creditVerifiedMatch = (pool, { playerId, record, isWinner, opponentIsAi, n
                 [crypto.randomUUID(), record.id, playerId, drop.ingredient, drop.amount, drop.achievement]);
         }
         await client.query('UPDATE players SET xp = xp + $1 WHERE id = $2', [xp, playerId]);
+        if (challenge) {
+            await client.query('UPDATE players SET challenge_xp = challenge_xp + $1 WHERE id = $2', [xp, playerId]);
+        }
         return { xp, drops };
     });
 

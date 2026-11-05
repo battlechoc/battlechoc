@@ -75,6 +75,8 @@ const stats = async (pool, playerId) => {
         coins: pantryTotals.COCOA || 0,
         score: player.xp,
         xp: player.xp,
+        // the part of the XP from challenge matches (progression.aiSetupScore)
+        challengeXp: player.challenge_xp,
         rating: Math.round(player.rating),
         ratedMatches: player.rated_matches,
         pantry: pantryTotals,
@@ -136,5 +138,5 @@ const addTrackRecords = async (pool, playerId, records) => {
 };
 
 module.exports = {
-    findPlayer, findPlayerByName, createPlayer, stats, ranking, rankOf, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
+    findPlayer, findPlayerByName, createPlayer, stats, results, ranking, rankOf, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
 };

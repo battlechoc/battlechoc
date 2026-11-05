@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const {
     engine,
     live,
+    aiSetupScore,
     PlayerType,
     EmptyPlayerStats,
     translate,
@@ -117,12 +118,16 @@ class Lobby {
         if (!row) {
             return null;
         }
+        const score = Number(row.xp) || 0;
         return {
             playerId,
             name: row.username || EmptyPlayerStats.username,
             type: PlayerType.HUMAN,
             loadout: players.loadoutOf(row, await players.itemsOf(this.pool, playerId)),
-            score: Number(row.xp) || 0,
+            score,
+            // the score matches against the AI are set up with: without challenge XP until the player
+            // unlocked online play (the server does not know a device's early unlock)
+            aiScore: aiSetupScore({ score, challengeXp: Number(row.challenge_xp) || 0, ...(await players.results(this.pool, playerId)) }),
             language: row.language,
         };
     }
@@ -131,8 +136,9 @@ class Lobby {
      * Starts a match between two players (setups from playerSetup) or a player and an AI
      * (second entry null) and connects the online players to it. Callers mark the players
      * as starting while they prepare the match. A match against the AI is set up like the
-     * single player one by the player's XP from the database: the prepared first game up to
-     * 100 XP, the opponent and board by XP, no hurry for field choice and placement.
+     * single player one by the player's XP from the database (aiScore: the beginner track): the
+     * prepared first game up to 100 XP, the opponent and board by XP, no hurry for field choice and
+     * placement. A challenge match is always on the big board, with more time for the placement.
      */
     async startMatch(kind, setups) {
         const humans = setups.filter(Boolean);
@@ -143,8 +149,11 @@ class Lobby {
         let balance;
         let scenario;
         const matchPlayers = setups.map((setup, index) => (setup ? { ...setup, id: `p${index}` } : null));
+        if (kind === 'challenge') {
+            ({ boardSize, balance } = engine.challengeMatchSetup());
+        }
         if (matchPlayers[1] === null) {
-            const aiSetup = engine.aiMatchSetup(lowestScore);
+            const aiSetup = engine.aiMatchSetup(humans[0].aiScore);
             const { opponent } = aiSetup;
             ({ boardSize, balance, scenario } = aiSetup);
             // the server AI plays without equipment
@@ -230,7 +239,8 @@ class Lobby {
             let ratings = {};
             // only a match that ran is rated (an instant surrender must not move the public rating)
             const ran = room.match.startedAt !== null && typeof room.match.startedAt !== 'undefined';
-            if (humans.length === 2 && ran) {
+            // a challenge is a friendly match: never rated
+            if (humans.length === 2 && ran && room.kind !== 'challenge') {
                 const scoreA = winners.length === 2 ? 0.5 : winners[0] === 0 ? 1 : 0;
                 ratings = (await rewards.rateMatch(this.pool, room.id, room.playerIds, scoreA)) || {};
             }
@@ -242,6 +252,7 @@ class Lobby {
                     record,
                     isWinner: winners.includes(index),
                     opponentIsAi: record.opponent.ai,
+                    challenge: room.kind === 'challenge',
                     now: this.clock.now(),
                     random: this.random,
                 });
