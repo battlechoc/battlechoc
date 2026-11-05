@@ -547,5 +547,7 @@ module.exports = {
     "NAME_CONFLICT_TITLE": "Nombre ya ocupado",
     "NAME_CONFLICT_TEXT": "El nombre «{{name}}» ya está ocupado en línea. Te hemos dado el nombre «{{generated}}». Puedes cambiarlo cuando quieras en tu perfil.",
     "NAME_CONFLICT_OK": "Entendido",
-    "PROFILE_CHANGE_NAME": "Cambiar nombre"
+    "PROFILE_CHANGE_NAME": "Cambiar nombre",
+    "ASSETS_LOADING": "Cargando modelos 3D…",
+    "ASSETS_FAILED": "Error al cargar: toca para reintentar"
 }

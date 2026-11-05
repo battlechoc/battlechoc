@@ -547,5 +547,7 @@ module.exports = {
     "NAME_CONFLICT_TITLE": "Name schon vergeben",
     "NAME_CONFLICT_TEXT": "Der Name „{{name}}“ ist online schon vergeben. Wir haben dir den Namen „{{generated}}“ gegeben. Du kannst ihn jederzeit in deinem Profil ändern.",
     "NAME_CONFLICT_OK": "Alles klar",
-    "PROFILE_CHANGE_NAME": "Namen ändern"
+    "PROFILE_CHANGE_NAME": "Namen ändern",
+    "ASSETS_LOADING": "3D-Modelle laden…",
+    "ASSETS_FAILED": "Laden fehlgeschlagen: antippen"
 }

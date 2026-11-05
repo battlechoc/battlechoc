@@ -1,7 +1,6 @@
-import React, { useState, useRef, useImperativeHandle } from "react";
-import { Progress } from "./ui/controls";
+import { useImperativeHandle } from "react";
 import { connect } from "react-redux";
-import { assetsReady } from "./ui/UiActions";
+import { assetsReady, loadUiState } from "./ui/UiActions";
 import {
   EntityType,
   BoardCellTypes,
@@ -229,82 +228,130 @@ const loadFonts = () =>
     new Promise((resolve) => setTimeout(resolve, FONT_TIMEOUT)),
   ]).catch(() => undefined);
 
+// a model that does not arrive is asked for again after these pauses, then the start button offers
+// another try (retryAssets)
+const MODEL_RETRY_DELAYS_MS = [1000, 2500];
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const loadImage = (src) =>
+  new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", src);
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        new Image().src = src;
+        resolve(xhr.response);
+      } else {
+        reject({ status: xhr.status, statusText: xhr.statusText });
+      }
+    };
+    xhr.onerror = () => reject({ status: xhr.status, statusText: xhr.statusText });
+    xhr.send();
+  });
+
+// The loading of the first start, once per page: the 3D models (the templates Gamefield
+// instances), the interface pictures and the fonts. The title screen does not wait for it; the
+// start button shows its progress (state.ui.assetsProgress) and starts the game once
+// state.ui.assetsReady.
+const loading = {
+  scene: null,
+  callbacks: null,
+  total: 0,
+  done: 0,
+  failed: new Map(),
+
+  start(scene, callbacks) {
+    this.scene = scene;
+    this.callbacks = callbacks;
+    const { models, images } = assetLoader.assets;
+    this.total = Object.keys(models).length + images.length + 1;
+    this.done = 0;
+    // one request per file: the board cells and the trap donuts share theirs
+    for (const file of new Set(Object.values(models))) {
+      this.loadModel(file);
+    }
+    loadFonts().then(() => {
+      this.callbacks.fontsReady();
+      this.count(1);
+    });
+    for (const image of images) {
+      // a missing picture shows as an empty icon; it must not keep the game from starting
+      loadImage("/images/" + image)
+        .catch((error) => console.warn("could not load", image, error))
+        .then(() => this.count(1));
+    }
+  },
+
+  async loadModel(file) {
+    const { models } = assetLoader.assets;
+    const keys = Object.keys(models).filter((key) => models[key] === file);
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const { meshes } = await ImportMeshAsync("/models/" + file, this.scene);
+        // copy before the first template gets its names and materials
+        const groups = keys.map((key, i) => (i === 0 ? meshes : copyModel(meshes[0])));
+        keys.forEach((key, i) => prepareModel(key, groups[i], this.scene));
+        this.failed.delete(file);
+        this.count(keys.length);
+        return;
+      } catch (error) {
+        if (attempt >= MODEL_RETRY_DELAYS_MS.length) {
+          console.error("could not load", file, error);
+          this.failed.set(file, true);
+          this.callbacks.failed(true);
+          return;
+        }
+        await wait(MODEL_RETRY_DELAYS_MS[attempt]);
+      }
+    }
+  },
+
+  // the start button's "try again": the models that did not arrive
+  retry() {
+    if (this.scene === null || this.failed.size === 0) {
+      return;
+    }
+    this.callbacks.failed(false);
+    for (const file of [...this.failed.keys()]) {
+      this.loadModel(file);
+    }
+  },
+
+  count(amount) {
+    this.done += amount;
+    if (this.done >= this.total) {
+      this.callbacks.ready();
+    } else {
+      this.callbacks.progress(Math.round((this.done / this.total) * 100));
+    }
+  },
+};
+
+/** The start button's "try again" after a 3D model did not load. */
+export const retryAssets = () => loading.retry();
+
+// starts the loading with the scene (Scene.jsx); shows nothing itself, the start button does
 const AssetLoadingView = (props) => {
-  const [loadingProgress, setLoadingProgress] = useState(0);
-  const totalResources = useRef(
-    Object.keys(assetLoader.assets.models).length +
-      assetLoader.assets.images.length +
-      1 // the fonts
-  );
-  const loadedResources = useRef(0);
-
   const { customRef } = props;
-
   useImperativeHandle(customRef, () => ({
     loadAssets(scene) {
-      const { models } = assetLoader.assets;
-      // one request per file: the board cells and the trap donuts share theirs
-      for (const file of new Set(Object.values(models))) {
-        const keys = Object.keys(models).filter((key) => models[key] === file);
-        ImportMeshAsync("/models/" + file, scene)
-          .then(({ meshes }) => {
-            // copy before the first template gets its names and materials
-            const groups = keys.map((key, i) =>
-              i === 0 ? meshes : copyModel(meshes[0])
-            );
-            keys.forEach((key, i) => {
-              prepareModel(key, groups[i], scene);
-              updateProgress();
-            });
-          })
-          .catch((error) => console.error(error));
-      }
-
-      loadFonts().then(() => updateProgress());
-
-      for (const image of assetLoader.assets.images) {
-        loadImage("/images/" + image).then(() => updateProgress());
-      }
+      loading.start(scene, {
+        fontsReady: () => props.loadUiState({ fontsReady: true }),
+        progress: (value) => props.loadUiState({ assetsProgress: value }),
+        failed: (value) => props.loadUiState({ assetsFailed: value }),
+        ready: () => {
+          props.loadUiState({ assetsProgress: 100, assetsFailed: false });
+          props.assetsReady();
+        },
+      });
     },
   }));
-
-  const updateProgress = () => {
-    loadedResources.current += 1;
-    if (loadedResources.current === totalResources.current) {
-      props.assetsReady();
-    } else {
-      setLoadingProgress(
-        Math.round(
-          (loadedResources.current / (totalResources.current - 1)) * 100
-        )
-      );
-    }
-  };
-
-  const loadImage = (src) => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open("GET", src);
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          new Image().src = src;
-          resolve(xhr.response);
-        } else {
-          reject({ status: xhr.status, statusText: xhr.statusText });
-        }
-      };
-
-      xhr.onerror = () =>
-        reject({ status: xhr.status, statusText: xhr.statusText });
-      xhr.send();
-    });
-  };
-
-  return <Progress className="assetLoader" value={loadingProgress} />;
+  return null;
 };
 
 const mapStateToProps = () => ({});
-const mapDispatchToProps = { assetsReady };
+const mapDispatchToProps = { assetsReady, loadUiState };
 const AssetLoadingViewContainer = connect(
   mapStateToProps,
   mapDispatchToProps

@@ -547,5 +547,7 @@ module.exports = {
     "NAME_CONFLICT_TITLE": "Name already taken",
     "NAME_CONFLICT_TEXT": "The name “{{name}}” is already taken online. We gave you the name “{{generated}}” instead. You can change it any time in your profile.",
     "NAME_CONFLICT_OK": "Got it",
-    "PROFILE_CHANGE_NAME": "Change name"
+    "PROFILE_CHANGE_NAME": "Change name",
+    "ASSETS_LOADING": "Loading 3D models…",
+    "ASSETS_FAILED": "Loading failed: tap to retry"
 }

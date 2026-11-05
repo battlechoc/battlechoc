@@ -97,7 +97,21 @@ let config = {
   },
 };
 
-serviceWorker.register(config);
+// The offline cache downloads the whole game once more (Workbox fetches it past the browser cache):
+// it starts only once the 3D models are in, so the first start does not share the connection
+const whenAssetsReady = new Promise((resolve) => {
+  if (store.getState().ui.assetsReady) {
+    resolve();
+    return;
+  }
+  const unsubscribe = store.subscribe(() => {
+    if (store.getState().ui.assetsReady) {
+      unsubscribe();
+      resolve();
+    }
+  });
+});
+whenAssetsReady.then(() => serviceWorker.register(config));
 
 window.addEventListener("offline", () => {
   store.dispatch(

@@ -547,5 +547,7 @@ module.exports = {
     "NAME_CONFLICT_TITLE": "Tên đã có người dùng",
     "NAME_CONFLICT_TEXT": "Tên “{{name}}” đã có người dùng trực tuyến. Chúng tôi đã đặt cho bạn tên “{{generated}}”. Bạn có thể đổi tên bất cứ lúc nào trong hồ sơ.",
     "NAME_CONFLICT_OK": "Đã hiểu",
-    "PROFILE_CHANGE_NAME": "Đổi tên"
+    "PROFILE_CHANGE_NAME": "Đổi tên",
+    "ASSETS_LOADING": "Đang tải mô hình 3D…",
+    "ASSETS_FAILED": "Tải thất bại: chạm để thử lại"
 }

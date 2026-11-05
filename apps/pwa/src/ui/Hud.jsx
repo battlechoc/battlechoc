@@ -24,6 +24,7 @@ import {
 import OnlineLobby from "./dialogs/OnlineLobby";
 import { liveLobby } from "../match/liveLobby";
 import Choclab from "./pages/Choclab";
+import { retryAssets } from "../AssetLoader";
 import { multiplayer } from "../Multiplayer";
 import { ServerRequest } from "../helper/settings";
 import logger from "../helper/logger";
@@ -454,17 +455,22 @@ const Hud = (props) => {
                 : t(tr.UNLOCK_ONLINE_GAMES, gamesLeft)
               : null;
 
+          // the start button waits for the 3D models: it fills up while they load and offers
+          // another try when one did not arrive (AssetLoader); everything else works at once
+          const startButton = (label, start) => (
+            <Button
+              className={classes.menuButton}
+              key="0"
+              size="huge"
+              data-testid="start-button"
+              progress={assetsReady || props.assetsFailed ? undefined : props.assetsProgress}
+              onClick={() => (assetsReady ? start() : retryAssets())}
+            >
+              {assetsReady ? label : props.assetsFailed ? t(tr.ASSETS_FAILED) : t(tr.ASSETS_LOADING)}
+            </Button>
+          );
           if (firstPlayScreen) {
-            controls.push(
-              <Button
-                className={classes.menuButton}
-                key="0"
-                size="huge"
-                onClick={() => kickOffTutorial()}
-              >
-                {t(tr.START_TUTORIAL)}
-              </Button>
-            );
+            controls.push(startButton(t(tr.START_TUTORIAL), () => kickOffTutorial()));
             controls.push(
               <Button
                 className={classes.menuButton}
@@ -490,16 +496,7 @@ const Hud = (props) => {
               </Button>
             );
           } else {
-            controls.push(
-              <Button
-                className={classes.menuButton}
-                key="0"
-                size="huge"
-                onClick={() => resumeOrStartGame()}
-              >
-                {t(tr.START_GAME)}
-              </Button>
-            );
+            controls.push(startButton(t(tr.START_GAME), () => resumeOrStartGame()));
             controls.push(
               <Button
                 className={classes.menuButton}
@@ -574,9 +571,10 @@ const Hud = (props) => {
                 <div className={classes.lowerHalf}>
                   <div className={classes.spaceAboveMenu} />
                   <div className={classes.menu}>
-                    {assetsReady ? controls : null}
+                    {/* the title screen shows once the fonts are in (no jumping labels) */}
+                    {assetsReady || props.fontsReady ? controls : null}
                   </div>
-                  {assetsReady && unlockHint ? (
+                  {(assetsReady || props.fontsReady) && unlockHint ? (
                     <p className={classes.unlockHint} data-testid="unlock-hint">
                       {unlockHint}
                     </p>
@@ -693,6 +691,9 @@ const mapStateToProps = (state) => ({
   overviewVisible: state.ui.overviewVisible,
   resumeGamePossible: state.ui.resumeGamePossible,
   assetsReady: state.ui.assetsReady,
+  fontsReady: state.ui.fontsReady,
+  assetsProgress: state.ui.assetsProgress,
+  assetsFailed: state.ui.assetsFailed,
   notification: state.ui.notification,
   playerInfos: state.ui.playerInfos,
   online: state.ui.online,

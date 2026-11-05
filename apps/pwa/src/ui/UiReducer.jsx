@@ -12,6 +12,11 @@ const uiReducer = createReducer(
     selectedBuilding: EntityType.FACTORY,
     tappedBuilding: EntityType.FACTORY,
     assetsReady: false,
+    // the first start (AssetLoader): the title screen shows once the fonts are in; the start
+    // button fills up with the 3D models (0..100) and offers another try when one fails
+    fontsReady: false,
+    assetsProgress: 0,
+    assetsFailed: false,
     tutorialAlreadySeen: false,
     overviewVisible: false,
     tutorial: false,

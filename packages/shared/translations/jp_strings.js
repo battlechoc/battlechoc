@@ -547,5 +547,7 @@ module.exports = {
     "NAME_CONFLICT_TITLE": "その名前は使われています",
     "NAME_CONFLICT_TEXT": "「{{name}}」はオンラインですでに使われています。代わりに「{{generated}}」という名前をつけました。名前はプロフィールでいつでも変更できます。",
     "NAME_CONFLICT_OK": "わかった",
-    "PROFILE_CHANGE_NAME": "名前を変更"
+    "PROFILE_CHANGE_NAME": "名前を変更",
+    "ASSETS_LOADING": "3Dモデルを読み込み中…",
+    "ASSETS_FAILED": "読み込みに失敗：タップで再試行"
 }
