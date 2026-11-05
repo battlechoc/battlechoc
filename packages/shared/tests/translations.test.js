@@ -47,3 +47,8 @@ test('challenge texts fill in names, codes and seconds', () => {
     expect(translate(keys.CHALLENGE_HEADLINE, 'Anna')).toContain('Anna');
     setCurrentLanguage('en');
 });
+
+test('the offline profile names only what still exists (no friends, no invites)', () => {
+    setCurrentLanguage('en');
+    expect(translate(keys.PROFILE_OFFLINE)).toBe('Offline: your rank comes back as soon as battlechoc reaches its server.');
+});

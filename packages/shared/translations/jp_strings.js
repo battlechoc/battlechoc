@@ -520,7 +520,7 @@ module.exports = {
     "UNLOCK_ONLINE_GAMES": "AIとあと{{count}}回対戦すると、Choclabとオンライン対戦が解放されます。",
     "UNLOCK_ONLINE_HINT": "Choclabでは建物の装備を作れます。「ゲームをスタート」でオンラインの対戦相手も見つかり、「友だちと対戦」ではリンクで誰にでも挑戦できます。",
     "PROFILE_XP": "{{xp}} / {{next}} EXP",
-    "PROFILE_OFFLINE": "オフライン：バトルチョックがサーバーにつながると、ランク、フレンズ、招待が戻ります。",
+    "PROFILE_OFFLINE": "オフライン：バトルチョックがサーバーにつながると、ランクが戻ります。",
     "NAME_UNSYNCED": "まだサーバーに保存されていません",
     "NAME_OFFLINE_HINT": "オフライン：新しい名前は、バトルチョックがサーバーにつながるとすぐに保存されます。",
     "NAME_CONFLICT_TITLE": "その名前は使われています",

@@ -520,7 +520,7 @@ module.exports = {
     "UNLOCK_ONLINE_GAMES": "{{count}} more matches against the AI unlock the Choclab and online matches.",
     "UNLOCK_ONLINE_HINT": "In the Choclab you craft equipment for your buildings. Start Game now also finds opponents online, and with Play with a friend you challenge anyone with a link.",
     "PROFILE_XP": "{{xp}} / {{next}} XP",
-    "PROFILE_OFFLINE": "Offline: your rank, friends and invites come back as soon as battlechoc reaches its server.",
+    "PROFILE_OFFLINE": "Offline: your rank comes back as soon as battlechoc reaches its server.",
     "NAME_UNSYNCED": "Not saved on the server yet",
     "NAME_OFFLINE_HINT": "Offline: your new name is saved on the server as soon as battlechoc reaches it.",
     "NAME_CONFLICT_TITLE": "Name already taken",

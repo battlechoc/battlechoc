@@ -520,7 +520,7 @@ module.exports = {
     "UNLOCK_ONLINE_GAMES": "Noch {{count}} Partien gegen die KI, dann sind das Choclab und Online-Partien frei.",
     "UNLOCK_ONLINE_HINT": "Im Choclab stellst du Ausrüstung für deine Gebäude her. „Spiel starten“ findet jetzt auch Gegner online, und mit „Mit Freunden spielen“ forderst du jeden per Link heraus.",
     "PROFILE_XP": "{{xp}} / {{next}} EP",
-    "PROFILE_OFFLINE": "Offline: Rang, Freunde und Einladungen sind wieder da, sobald battlechoc seinen Server erreicht.",
+    "PROFILE_OFFLINE": "Offline: Dein Rang ist wieder da, sobald battlechoc seinen Server erreicht.",
     "NAME_UNSYNCED": "Noch nicht auf dem Server gespeichert",
     "NAME_OFFLINE_HINT": "Offline: Dein neuer Name wird auf dem Server gespeichert, sobald battlechoc ihn erreicht.",
     "NAME_CONFLICT_TITLE": "Name schon vergeben",

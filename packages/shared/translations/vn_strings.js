@@ -520,7 +520,7 @@ module.exports = {
     "UNLOCK_ONLINE_GAMES": "Thêm {{count}} trận với AI nữa là mở khóa Choclab và trận đấu trực tuyến.",
     "UNLOCK_ONLINE_HINT": "Trong Choclab bạn chế tạo trang bị cho các công trình. “Bắt đầu trò chơi” giờ cũng tìm đối thủ trực tuyến, và với “Chơi với bạn bè” bạn thách đấu bất kỳ ai bằng một liên kết.",
     "PROFILE_XP": "{{xp}} / {{next}} XP",
-    "PROFILE_OFFLINE": "Ngoại tuyến: thứ hạng, bạn bè và lời mời sẽ trở lại ngay khi battlechoc kết nối được máy chủ.",
+    "PROFILE_OFFLINE": "Ngoại tuyến: thứ hạng sẽ trở lại ngay khi battlechoc kết nối được máy chủ.",
     "NAME_UNSYNCED": "Chưa được lưu trên máy chủ",
     "NAME_OFFLINE_HINT": "Ngoại tuyến: tên mới của bạn sẽ được lưu trên máy chủ ngay khi battlechoc kết nối được.",
     "NAME_CONFLICT_TITLE": "Tên đã có người dùng",
