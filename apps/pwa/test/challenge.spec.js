@@ -287,4 +287,74 @@ test.describe("challenge links", () => {
     await long.context.close();
     await newcomer.context.close();
   });
+  test("without the live service, creating a challenge and typing a code both say so", async ({
+    browser,
+    request,
+  }) => {
+    const ines = await createPlayer(browser, request, "Ines");
+    // the REST API answers (the game is online), the live WebSocket does not
+    await ines.context.routeWebSocket(/\/live/, (ws) => ws.close());
+    await ines.page.reload({ waitUntil: "networkidle" });
+    await ines.page
+      .getByText("Play with a friend", { exact: true })
+      .first()
+      .click();
+    const dialog = ines.page.getByTestId("challenge-dialog");
+    await expect(dialog).toContainText(
+      "The battle server can't be reached right now.",
+      { timeout: 20000 }
+    );
+    await dialog.getByTestId("challenge-back").click();
+    await expect(dialog).toHaveCount(0);
+
+    await ines.page
+      .getByText("Play with a friend", { exact: true })
+      .first()
+      .click();
+    await dialog.getByTestId("challenge-code-input").fill("K7Q2-M9XD");
+    await dialog.getByTestId("challenge-code-go").click();
+    const card = ines.page.getByTestId("challenge-card");
+    await expect(card.getByTestId("challenge-card-status")).toHaveText(
+      "The battle server can't be reached right now.",
+      {
+        timeout: 20000,
+      }
+    );
+    await ines.context.close();
+  });
+
+  test("a link opened during a match opens the challenge once the match is over", async ({
+    browser,
+    request,
+  }) => {
+    const kai = await createPlayer(browser, request, "Kai");
+    const lea = await createPlayer(browser, request, "Lea");
+    const code = await challengeCode(kai.page);
+    await lea.page.getByText("Start Game", { exact: true }).first().click();
+    await expect(lea.page.getByTestId("matchmaking")).toBeVisible({
+      timeout: 10000,
+    });
+    await lea.page.getByText("Play the AI now", { exact: true }).click();
+    await inOnlineMatch(lea.page);
+    // the link opens in the same app: the running match comes back first
+    await lea.page.goto(`/?challenge=${code}`);
+    await inOnlineMatch(lea.page);
+    await toRunning([lea]);
+    await host(lea.page, () => window.__battlechoc.host.surrender());
+    await expect(lea.page.getByText(/You lost/i).first()).toBeVisible({
+      timeout: 15000,
+    });
+    const skip = lea.page.locator("[data-icon=fast-forward]:visible");
+    while ((await skip.count()) > 0) {
+      await skip.first().click();
+    }
+    await lea.page.locator("[data-icon=done]:visible").first().click();
+    const card = lea.page.getByTestId("challenge-card");
+    await expect(card.getByTestId("challenge-headline")).toContainText(
+      kai.username,
+      { timeout: 15000 }
+    );
+    await kai.context.close();
+    await lea.context.close();
+  });
 });

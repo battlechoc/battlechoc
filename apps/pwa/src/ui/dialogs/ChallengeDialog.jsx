@@ -14,6 +14,7 @@ import { liveConnection } from "../../match/liveConnection";
 import { challengeViewed } from "../../match/liveSlice";
 import { challengeLink } from "../../challengeLink";
 import { Jukebox } from "../misc";
+import { CHALLENGE_UNREACHABLE_MS } from "./challengeTiming";
 
 const { ChallengeState, formatChallengeCode, normalizeChallengeCode } = live;
 
@@ -170,6 +171,20 @@ const ChallengeDialog = ({
 }) => {
   const classes = useStyles();
   const [copied, setCopied] = useState(false);
+  // the server never answered the new challenge: say so instead of loading forever
+  const [unreachable, setUnreachable] = useState(false);
+  const waitingForServer = open && !locked && challenge === null;
+  useEffect(() => {
+    if (!waitingForServer) {
+      setUnreachable(false);
+      return undefined;
+    }
+    const timeoutId = setTimeout(
+      () => setUnreachable(true),
+      CHALLENGE_UNREACHABLE_MS
+    );
+    return () => clearTimeout(timeoutId);
+  }, [waitingForServer]);
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -194,6 +209,8 @@ const ChallengeDialog = ({
   const leave = () => {
     if (code !== null) {
       liveLobby.cancelChallenge(code).catch(() => {});
+    } else if (!locked) {
+      liveLobby.dismissChallenge();
     }
     setCopied(false);
     close();
@@ -241,6 +258,20 @@ const ChallengeDialog = ({
   let main;
   if (locked) {
     main = <p>{lockText}</p>;
+  } else if (challenge === null && unreachable) {
+    main = (
+      <>
+        <p data-testid="challenge-status">{t(tr.CHALLENGE_UNREACHABLE)}</p>
+        <Button
+          size="small"
+          color="accent"
+          data-testid="challenge-back"
+          onClick={leave}
+        >
+          {t(tr.CHALLENGE_BACK_HOME)}
+        </Button>
+      </>
+    );
   } else if (challenge === null) {
     main = <p>{t(tr.CHALLENGE_CONNECTING)}</p>;
   } else if (ENDED[challenge.state]) {

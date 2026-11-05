@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
@@ -11,8 +11,9 @@ import {
 import Dialog from "./Dialog";
 import Button from "../controls/Button";
 import { liveLobby } from "../../match/liveLobby";
-import { challengeViewed } from "../../match/liveSlice";
+import { challengeViewed, challengeUnreachable } from "../../match/liveSlice";
 import { Jukebox } from "../misc";
+import { CHALLENGE_UNREACHABLE_MS } from "./challengeTiming";
 
 const { ChallengeViewState: View, formatChallengeCode } = live;
 
@@ -118,9 +119,22 @@ const ChallengeCard = ({
   close,
   learn,
   startMatch,
+  markUnreachable,
 }) => {
   const classes = useStyles();
   const [copied, setCopied] = useState(false);
+  // no answer from the server in time (a link or a typed code): it cannot be reached
+  const connecting = Boolean(view) && view.state === "connecting";
+  useEffect(() => {
+    if (!connecting) {
+      return undefined;
+    }
+    const timeoutId = setTimeout(
+      () => markUnreachable(),
+      CHALLENGE_UNREACHABLE_MS
+    );
+    return () => clearTimeout(timeoutId);
+  }, [connecting, markUnreachable]);
   if (!view || inMatch) {
     return null;
   }
@@ -305,6 +319,7 @@ const mapStateToProps = (state) => {
 
 const mapDispatchToProps = (dispatch) => ({
   close: () => dispatch(challengeViewed(null)),
+  markUnreachable: () => dispatch(challengeUnreachable()),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(ChallengeCard);

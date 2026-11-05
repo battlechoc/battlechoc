@@ -63,8 +63,6 @@ const ACCOUNT_TIMEOUT_MS = 10000;
 const LIVE_TIMEOUT_MS = 3000;
 // after queue.ai: the time until the server's match message, else the local AI plays
 const SERVER_MATCH_TIMEOUT_MS = 6000;
-// a friend's challenge link without an answer from the server this long: it cannot be reached
-const CHALLENGE_UNREACHABLE_MS = 10000;
 // a friend's challenge card that asks the server again after a reconnect
 const REOPENED_CHALLENGES = ["connecting", "unreachable", "open", "waiting-for-challenger"];
 
@@ -139,14 +137,8 @@ class App extends Component {
 
     if (typeof this.challengeCode !== "undefined") {
       // the card shows at once, before the game has loaded; the server's answer fills it in
+      // (without one, the card says the server cannot be reached)
       this.props.challengeViewed({ code: this.challengeCode, state: "connecting" });
-      const timeoutId = setTimeout(() => {
-        const view = this.props.challengeView;
-        if (view && view.state === "connecting") {
-          this.props.challengeViewed({ ...view, state: "unreachable" });
-        }
-      }, CHALLENGE_UNREACHABLE_MS);
-      this.timeouts.push(timeoutId);
     }
     this.connectLive();
 
@@ -208,6 +200,17 @@ class App extends Component {
   }
 
   componentDidUpdate(prevProps) {
+    // a challenge opened during a match ("finish your match first") is asked again once it is over
+    if (
+      typeof prevProps.matchView !== "undefined" &&
+      typeof this.props.matchView === "undefined" &&
+      this.props.challengeView &&
+      this.props.challengeView.state === "busy"
+    ) {
+      const { code } = this.props.challengeView;
+      this.props.challengeViewed({ code, state: "connecting" });
+      liveLobby.openChallenge(code).catch((error) => logger.info("could not open the challenge", error));
+    }
     // a newcomer who opened a challenge got a name from the server (shown on the card)
     const view = this.props.challengeView;
     const ownName = this.props.playerInfos.stats.username;

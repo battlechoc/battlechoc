@@ -7,6 +7,8 @@ import {
   challengeUpdated,
   challengeViewed,
   challengeCleared,
+  challengeDismissed,
+  challengeRequested,
   liveMatchStarted,
 } from "../../src/match/liveSlice.js";
 import {
@@ -71,4 +73,35 @@ test("cancelling clears the challenge, so the server's answer does not count as 
   state = liveReducer(state, challengeCleared());
   state = liveReducer(state, challengeUpdated(null));
   assert.equal(state.challenge, null);
+});
+
+test("a challenge dismissed before the server made it is cancelled when it arrives, not shown", () => {
+  let state = liveReducer(initial, challengeDismissed());
+  state = liveReducer(state, challengeUpdated(waiting));
+  assert.equal(state.challenge, null);
+  assert.equal(state.challengeToCancel, "K7Q2M9XD");
+  state = liveReducer(state, challengeCleared());
+  assert.equal(state.challengeToCancel, null);
+  // the next challenge the player makes shows as usual
+  state = liveReducer(state, challengeUpdated(waiting));
+  assert.deepEqual(state.challenge, waiting);
+});
+
+test("opening the dialog again before the answer keeps the challenge", () => {
+  let state = liveReducer(initial, challengeDismissed());
+  state = liveReducer(state, challengeRequested());
+  state = liveReducer(state, challengeUpdated(waiting));
+  assert.deepEqual(state.challenge, waiting);
+  assert.equal(state.challengeToCancel, null);
+});
+
+test("a match that comes back (a reload) keeps a friend's challenge that is still being asked", () => {
+  for (const status of ["connecting", "busy"]) {
+    let state = liveReducer(
+      initial,
+      challengeViewed({ code: "K7Q2M9XD", state: status })
+    );
+    state = liveReducer(state, liveMatchStarted());
+    assert.equal(state.challengeView.state, status);
+  }
 });

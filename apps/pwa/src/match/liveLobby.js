@@ -11,6 +11,8 @@ import {
   liveMatchStarted,
   challengeUpdated,
   challengeCleared,
+  challengeDismissed,
+  challengeRequested,
   challengeViewed,
 } from "./liveSlice";
 import logger from "../helper/logger";
@@ -131,12 +133,18 @@ class LiveLobby {
   /* ---------- challenge links ---------- */
 
   createChallenge() {
+    this.dispatch(challengeRequested());
     return this.send({ type: ClientMessage.CHALLENGE_CREATE });
   }
 
   // "Send again": the same code waits another 2 minutes
   renewChallenge(code) {
     return this.send({ type: ClientMessage.CHALLENGE_RENEW, code });
+  }
+
+  // closed before the server answered: the challenge is cancelled as soon as it arrives
+  dismissChallenge() {
+    this.dispatch(challengeDismissed());
   }
 
   cancelChallenge(code) {
