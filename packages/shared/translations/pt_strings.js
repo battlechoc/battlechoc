@@ -568,5 +568,7 @@ module.exports = {
     "REMATCH_DECLINED": "{{name}} não quer revanche agora.",
     "REMATCH_GONE": "{{name}} saiu da partida.",
     "SECONDS_LEFT": "faltam {{seconds}} s",
-    "CHALLENGE_CODE_COPIED": "Código copiado"
+    "CHALLENGE_CODE_COPIED": "Código copiado",
+    "ASSETS_LOADING": "Carregando modelos 3D…",
+    "ASSETS_FAILED": "Falha ao carregar: toque para tentar de novo"
 }

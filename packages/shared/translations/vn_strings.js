@@ -568,5 +568,7 @@ module.exports = {
     "REMATCH_DECLINED": "{{name}} hiện không muốn tái đấu.",
     "REMATCH_GONE": "{{name}} đã rời đi.",
     "SECONDS_LEFT": "còn {{seconds}} giây",
-    "CHALLENGE_CODE_COPIED": "Đã sao chép mã"
+    "CHALLENGE_CODE_COPIED": "Đã sao chép mã",
+    "ASSETS_LOADING": "Đang tải mô hình 3D…",
+    "ASSETS_FAILED": "Tải thất bại: chạm để thử lại"
 }

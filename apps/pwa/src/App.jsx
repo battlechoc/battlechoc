@@ -224,6 +224,8 @@ class App extends Component {
     }
 
     if (!prevProps.assetsReady && this.props.assetsReady) {
+      // the 3D models are in: now the music and the match sounds may take the connection
+      Jukebox.loadDeferred();
       const debugScenario = debugScenarios[this.state.situation];
       if (typeof debugScenario !== "undefined") {
         this.setState({ situation: undefined });

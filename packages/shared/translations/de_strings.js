@@ -568,5 +568,7 @@ module.exports = {
     "REMATCH_DECLINED": "{{name}} will gerade keine Revanche.",
     "REMATCH_GONE": "{{name}} ist gegangen.",
     "SECONDS_LEFT": "noch {{seconds}} s",
-    "CHALLENGE_CODE_COPIED": "Code kopiert"
+    "CHALLENGE_CODE_COPIED": "Code kopiert",
+    "ASSETS_LOADING": "3D-Modelle laden…",
+    "ASSETS_FAILED": "Laden fehlgeschlagen: antippen"
 }

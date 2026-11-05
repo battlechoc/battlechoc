@@ -568,5 +568,7 @@ module.exports = {
     "REMATCH_DECLINED": "{{name}}さんは今は再戦しないようです。",
     "REMATCH_GONE": "{{name}}さんは退出しました。",
     "SECONDS_LEFT": "残り{{seconds}}秒",
-    "CHALLENGE_CODE_COPIED": "コードをコピーしました"
+    "CHALLENGE_CODE_COPIED": "コードをコピーしました",
+    "ASSETS_LOADING": "3Dモデルを読み込み中…",
+    "ASSETS_FAILED": "読み込みに失敗：タップで再試行"
 }

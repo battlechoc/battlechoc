@@ -26,7 +26,8 @@ export function register(config) {
       return;
     }
 
-    window.addEventListener("load", () => {
+    // after the page's load event (index.jsx registers once the 3D models are in, often later)
+    const start = () => {
       const swUrl = `${import.meta.env.BASE_URL}service-worker.js`;
 
       if (isLocalhost) {
@@ -45,7 +46,12 @@ export function register(config) {
         // Is not localhost. Just register service worker
         registerValidSW(swUrl, config);
       }
-    });
+    };
+    if (document.readyState === "complete") {
+      start();
+    } else {
+      window.addEventListener("load", start);
+    }
   }
 }
 
