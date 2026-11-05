@@ -2,8 +2,17 @@ import { test, expect } from "@playwright/test";
 
 // The lab against the local API (sample recipes): a new player finishes the tutorial (starter kit:
 // cocoa, rum, sugar, milk), discovers the starter recipe for the truffle cannon on the lab table,
-// crafts it, equips it, and the next match (on the server) carries that equipment.
+// and once a second rum is in the pantry crafts it, equips it, and the next match (on the server)
+// carries that equipment.
 const api = `http://127.0.0.1:${process.env.API_PORT || 8091}`;
+
+// ingredients as a won match may drop them (a route of the test server, apps/api/test/e2eServer.js)
+const stock = async (request, username, items) =>
+  expect(
+    (
+      await request.post(`${api}/test/pantry`, { data: { username, items } })
+    ).ok()
+  ).toBe(true);
 
 const accountOf = (page) =>
   page.evaluate(
@@ -94,7 +103,12 @@ const newPlayer = async (
     awards: [],
   }));
   expect(
-    (await request.post(`${api}/user/trackrecords`, { headers, data: { stats: matches } })).ok()
+    (
+      await request.post(`${api}/user/trackrecords`, {
+        headers,
+        data: { stats: matches },
+      })
+    ).ok()
   ).toBe(true);
   if (!intro) {
     await seeIntro(page);
@@ -113,7 +127,7 @@ const chooseBuilding = async (page, name) => {
   throw new Error(`building ${name} not found`);
 };
 
-test("discover, craft and equip the starter item; the next match uses it", async ({
+test("the starter kit discovers the starter item, a second rum crafts it; the next match uses it", async ({
   browser,
   request,
 }) => {
@@ -140,6 +154,24 @@ test("discover, craft and equip the starter item; the next match uses it", async
     "LIGHT_BARREL"
   );
   await page.screenshot({ path: "test/output/screenshot_lab_discovered.png" });
+
+  // the kit has one rum and the light barrel takes two: crafting waits for a rum from a match
+  const rumCost = page.getByTestId("recipe-card").locator('[data-cost="RUM"]');
+  await expect(rumCost).toHaveAttribute("data-missing", "true");
+  await expect(page.getByTestId("lab-craft")).toBeDisabled();
+
+  await stock(request, "Lena", [{ ingredient: "RUM", amount: 1 }]);
+  await page.goto("/?testclock", { waitUntil: "networkidle" });
+  await page.getByText("Choclab", { exact: true }).first().click();
+  await chooseBuilding(page, "Rum truffle cannon");
+  // a known recipe shows as soon as the bowls hold its ingredients
+  await table.locator('[data-ingredient="SUGAR"]').first().click();
+  await table.locator('[data-ingredient="MILK"]').first().click();
+  await expect(page.getByTestId("recipe-card")).toHaveAttribute(
+    "data-item",
+    "LIGHT_BARREL"
+  );
+  await expect(rumCost).toHaveAttribute("data-missing", "false");
 
   await page.getByTestId("lab-craft").click();
   await expect(page.getByTestId("lab-message")).toContainText("Crafted!");
@@ -202,7 +234,9 @@ test("discover, craft and equip the starter item; the next match uses it", async
   expect(players.find((player) => player.own).loadout).toEqual({
     "EntityType.RUM_TRUFFLE_CANNON": ["LIGHT_BARREL"],
   });
-  expect(players.find((player) => !player.own).type).not.toBe("PlayerType.HUMAN");
+  expect(players.find((player) => !player.own).type).not.toBe(
+    "PlayerType.HUMAN"
+  );
   await context.close();
 });
 
