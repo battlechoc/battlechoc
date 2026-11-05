@@ -29,7 +29,7 @@ const main = async () => {
     const corsOrigins = (process.env.CORS_ORIGINS || '').split(',').map(origin => origin.trim()).filter(Boolean);
     const app = createApp({ pool, auth, push, corsOrigins });
     const server = http.createServer(app);
-    const live = createLive({ server, pool, auth, push, origins: corsOrigins, config: liveConfig(process.env) });
+    const live = createLive({ server, pool, auth, origins: corsOrigins, config: liveConfig(process.env) });
     const recovered = await live.recover();
     if (recovered > 0) {
         console.log(`recovered ${recovered} running matches`);

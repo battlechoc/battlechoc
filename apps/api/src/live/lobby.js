@@ -1,5 +1,6 @@
 // Everything around the match rooms: who is connected, the matchmaking queue with its AI
-// fallback, live invites, starting and recovering matches, and crediting the results.
+// fallback, challenges (challenges.js) and rematch offers, starting and recovering matches, and
+// crediting the results.
 
 const crypto = require('crypto');
 const {
@@ -8,10 +9,6 @@ const {
     aiSetupScore,
     PlayerType,
     EmptyPlayerStats,
-    translate,
-    translationKeys,
-    setCurrentLanguage,
-    getCurrentLanguage,
 } = require('@battlechoc/battlechoc-shared-functions');
 const players = require('../players');
 const rewards = require('../rewards');
@@ -25,23 +22,11 @@ const AI_REACTION_TIME_MS = 1000;
 const newId = () => crypto.randomUUID();
 const newSeed = () => crypto.randomBytes(16).toString('hex');
 
-// translated push texts in the language of the receiving player
-const textFor = (language, key, ...args) => {
-    const previous = getCurrentLanguage();
-    try {
-        setCurrentLanguage(language || 'en');
-        return translate(key, ...args);
-    } finally {
-        setCurrentLanguage(previous);
-    }
-};
-
 class Lobby {
-    constructor({ pool, push, store, clock, config, log, random }) {
+    constructor({ pool, store, clock, config, log, random }) {
         this.pool = pool;
         // random source of the ingredient drops (tests pass a fixed one; default: crypto)
         this.random = random;
-        this.push = push;
         this.store = store;
         this.clock = clock;
         this.config = config;
@@ -53,7 +38,7 @@ class Lobby {
         this.activeMatch = new Map();
         // playerId -> { since, timer }
         this.queue = new Map();
-        // inviteId -> { id, from, to, expiresAt, timer }
+        // rematch offers: inviteId -> { id, kind, from, to, expiresAt, timer }
         this.invites = new Map();
         // players whose match is being set up (guards against double starts)
         this.starting = new Set();
@@ -98,18 +83,6 @@ class Lobby {
 
     online(playerId) {
         return this.connections.has(playerId);
-    }
-
-    /** Answers which of the given usernames (e.g. the friends list) are online. */
-    async presence(connection, usernames) {
-        const names = (Array.isArray(usernames) ? usernames : [])
-            .filter(name => typeof name === 'string' && name.length <= 64)
-            .slice(0, 100)
-            .map(name => name.toLowerCase());
-        const rows = names.length > 0
-            ? (await this.pool.query(`SELECT id, username FROM players WHERE username_lower IN (${names.map((_, i) => `$${i + 1}`).join(', ')})`, names)).rows
-            : [];
-        connection.send({ type: ServerMessage.PRESENCE_LIST, online: rows.filter(row => this.online(row.id)).map(row => row.username) });
     }
 
     busy(playerId) {
@@ -373,44 +346,39 @@ class Lobby {
 
     /* ---------- invites ---------- */
 
-    async invite(connection, username) {
-        const target = await players.findPlayerByName(this.pool, username);
-        if (!target || target.id === connection.playerId) {
-            connection.sendError(LiveError.PLAYER_NOT_FOUND);
+    /** After a challenge match: offers the opponent another one (an invite that starts a challenge match). */
+    async rematch(connection, matchId) {
+        const { playerId } = connection;
+        const room = this.rooms.get(matchId);
+        const index = room ? room.indexOf(playerId) : -1;
+        if (index < 0 || room.kind !== 'challenge' || !room.ended) {
+            connection.sendError(LiveError.UNKNOWN_MATCH);
             return;
         }
-        if (this.busy(connection.playerId)) {
+        const opponent = room.playerIds[1 - index];
+        if (!this.online(opponent)) {
+            connection.sendError(LiveError.PLAYER_OFFLINE);
+            return;
+        }
+        if (this.busy(playerId) || this.busy(opponent)) {
             connection.sendError(LiveError.ALREADY_IN_MATCH);
             return;
         }
-        const from = await this.playerSetup(connection.playerId);
+        const [from, to] = await Promise.all([this.playerSetup(playerId), this.playerSetup(opponent)]);
         const invite = {
             id: newId(),
-            from: connection.playerId,
-            fromName: from.name,
-            to: target.id,
-            toName: target.username,
+            kind: 'challenge',
+            from: playerId,
+            to: opponent,
             expiresAt: this.clock.now() + this.config.inviteTtlMs,
         };
         invite.timer = this.clock.setTimer(() => this.closeInvite(invite.id, InviteClosedReason.EXPIRED), this.config.inviteTtlMs);
         this.invites.set(invite.id, invite);
-        connection.send({ type: ServerMessage.INVITE_SENT, invite: { id: invite.id, to: invite.toName, expiresAt: invite.expiresAt } });
-
-        const targetConnection = this.connections.get(target.id);
-        if (targetConnection) {
-            targetConnection.send({ type: ServerMessage.INVITE, invite: { id: invite.id, from: invite.fromName, expiresAt: invite.expiresAt } });
-        } else if (this.push && this.push.enabled) {
-            const language = target.language;
-            this.push.sendToPlayer(target.id, {
-                kind: 'invite',
-                inviteId: invite.id,
-                from: invite.fromName,
-                title: textFor(language, translationKeys.SERVER_NOTIFICATION_CHALLENGE_TITLE, invite.fromName),
-                text: textFor(language, translationKeys.SERVER_NOTIFICATION_CHALLENGE_BODY),
-                url: `/?invite=${invite.id}`,
-            }, { ttl: Math.ceil(this.config.inviteTtlMs / 1000), urgency: 'high', topic: 'invite' })
-                .catch(error => this.log.warn('invite push failed', error));
-        }
+        connection.send({ type: ServerMessage.INVITE_SENT, invite: { id: invite.id, to: to.name, expiresAt: invite.expiresAt } });
+        this.connections.get(opponent).send({
+            type: ServerMessage.INVITE,
+            invite: { id: invite.id, from: from.name, expiresAt: invite.expiresAt, rematch: true },
+        });
     }
 
     closeInvite(inviteId, reason) {
@@ -454,7 +422,7 @@ class Lobby {
             this.leaveQueue(playerId, false);
             this.challenges.cancelOwn(playerId);
         });
-        await this.startBetween('invite', invite.from, invite.to);
+        await this.startBetween(invite.kind, invite.from, invite.to);
     }
 
     /* ---------- shutdown ---------- */

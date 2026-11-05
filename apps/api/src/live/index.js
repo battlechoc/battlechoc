@@ -1,6 +1,6 @@
 // The live match service: a WebSocket endpoint (/live) on the API's HTTP server. A client
 // authenticates with the access token of its device account in the first message, then
-// syncs its clock with pings, joins the matchmaking queue or invites a player, and sends
+// syncs its clock with pings, joins the matchmaking queue, creates or opens challenges, and sends
 // match actions. See shared/live/protocol.js for the messages.
 
 const crypto = require('crypto');
@@ -17,15 +17,14 @@ const { ClientMessage, ServerMessage, LiveError, CloseCode, InviteClosedReason, 
  * @param {import('http').Server} options.server
  * @param {object} options.pool
  * @param {object} options.auth see auth.js
- * @param {object} [options.push] see push.js
  * @param {object} [options.clock] match clock, see clock.js
  * @param {object} [options.config] overrides of LiveDefaults
  * @param {string[]} [options.origins] allowed browser origins (no Origin header: allowed)
  */
-const createLive = ({ server, pool, auth, push, clock = systemClock, config = {}, origins = [], log = console, random }) => {
+const createLive = ({ server, pool, auth, clock = systemClock, config = {}, origins = [], log = console, random }) => {
     const settings = { ...LiveDefaults, ...config };
     const store = createMatchStore(pool);
-    const lobby = new Lobby({ pool, push, store, clock, config: settings, log, random });
+    const lobby = new Lobby({ pool, store, clock, config: settings, log, random });
     const connections = new Set();
 
     const wss = new WebSocketServer({
@@ -45,15 +44,12 @@ const createLive = ({ server, pool, auth, push, clock = systemClock, config = {}
         [ClientMessage.QUEUE_JOIN]: connection => lobby.joinQueue(connection),
         [ClientMessage.QUEUE_LEAVE]: connection => lobby.leaveQueue(connection.playerId),
         [ClientMessage.QUEUE_AI]: connection => lobby.playAiNow(connection),
-        [ClientMessage.INVITE]: (connection, message) => (typeof message.username === 'string'
-            ? lobby.invite(connection, message.username)
-            : connection.sendError(LiveError.BAD_MESSAGE)),
         [ClientMessage.INVITE_ACCEPT]: (connection, message) => lobby.answerInvite(connection, message.inviteId, InviteClosedReason.ACCEPTED),
         [ClientMessage.INVITE_DECLINE]: (connection, message) => lobby.answerInvite(connection, message.inviteId, InviteClosedReason.DECLINED),
         [ClientMessage.INVITE_CANCEL]: (connection, message) => lobby.answerInvite(connection, message.inviteId, InviteClosedReason.CANCELLED),
         [ClientMessage.MATCH_JOIN]: (connection, message) => lobby.join(connection, message.matchId, message.lastSeq),
         [ClientMessage.INTENT]: (connection, message) => lobby.intent(connection, message),
-        [ClientMessage.PRESENCE_QUERY]: (connection, message) => lobby.presence(connection, message.usernames),
+        [ClientMessage.REMATCH]: (connection, message) => lobby.rematch(connection, message.matchId),
         [ClientMessage.CHALLENGE_CREATE]: connection => lobby.challenges.create(connection),
         [ClientMessage.CHALLENGE_RENEW]: (connection, message) => lobby.challenges.renew(connection, message.code),
         [ClientMessage.CHALLENGE_CANCEL]: (connection, message) => lobby.challenges.cancel(connection, message.code),
