@@ -197,7 +197,7 @@ test.describe("challenge links", () => {
     browser,
     request,
   }) => {
-    const ella = await createPlayer(browser, request, "Ella");
+    const ella = await createPlayer(browser, request, "Edda");
     const finn = await createPlayer(browser, request, "Finn");
     const code = await challengeCode(ella.page);
     await finn.page.goto(`/?challenge=${code}`);
