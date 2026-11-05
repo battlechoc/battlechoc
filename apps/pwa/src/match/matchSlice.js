@@ -10,6 +10,8 @@ const initialState = {
   awards: undefined,
   // online: hosted by the server (no pause); pending: sent actions not yet confirmed
   online: false,
+  // queue, challenge, ai or invite for an online match (challenge: every building, a rematch)
+  kind: undefined,
   pending: 0,
   result: undefined,
 };
@@ -33,6 +35,9 @@ const matchSlice = createSlice({
     },
     matchHosted(state, action) {
       state.online = action.payload.online;
+      if (typeof action.payload.kind !== "undefined") {
+        state.kind = action.payload.kind;
+      }
     },
     pendingChanged(state, action) {
       state.pending = action.payload;

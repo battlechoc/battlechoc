@@ -12,6 +12,7 @@ import {
   setCurrentLanguage,
   engine,
   unlocks,
+  aiSetupScore,
 } from "@battlechoc/battlechoc-shared-functions";
 import { LocalMatchHost, matchSession } from "./match/LocalMatchHost";
 import { RemoteMatchHost } from "./match/RemoteMatchHost";
@@ -293,7 +294,7 @@ class App extends Component {
     this.requestFullscreen();
     // the prepared first match, and every match until online play is unlocked, is against the AI
     const againstAi =
-      (stats.score || 0) <= engine.FIRST_GAME_MAX_SCORE ||
+      aiSetupScore(stats, { early: this.props.earlyUnlock }) <= engine.FIRST_GAME_MAX_SCORE ||
       !unlocks(stats, { early: this.props.earlyUnlock }).online;
     const attempt = ++this.startAttempt;
     const current = () => attempt === this.startAttempt;
@@ -382,7 +383,7 @@ class App extends Component {
   }
 
   // plays an online match hosted by the server (from the queue, an invite or a resume)
-  startOnlineMatch = ({ matchId, playerIndex, epoch }) => {
+  startOnlineMatch = ({ matchId, playerIndex, epoch, kind }) => {
     this.startAttempt++;
     this.setState({ matchmaking: false });
     if (typeof matchSession.host !== "undefined") {
@@ -398,6 +399,7 @@ class App extends Component {
       matchId,
       playerIndex,
       epoch,
+      kind,
       onEnded: (result) => {
         const timeoutId = setTimeout(() => this.showRealtimeOverview(result), 2000);
         this.timeouts.push(timeoutId);
@@ -452,8 +454,9 @@ class App extends Component {
     // the same setup as the server AI: board and opponent by score (below 800 the easy Tom
     // Toffee, afterwards Gustav Ganache with a handicap), the prepared first game up to a score
     // of 100 unless a scenario is given, no hurry for field choice and placement
+    // (XP from challenges does not count before the player's own online unlock: the beginner track)
     const { boardSize, opponent, balance, scenario: prepared } = engine.aiMatchSetup(
-      stats.score,
+      aiSetupScore(stats, { early: this.props.earlyUnlock }),
       { scenario }
     );
     host.startNew({

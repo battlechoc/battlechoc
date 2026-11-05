@@ -10,6 +10,9 @@ import {
   onlinePlayersListed,
   liveErrorReceived,
   liveMatchStarted,
+  challengeUpdated,
+  challengeCleared,
+  challengeViewed,
 } from "./liveSlice";
 import logger from "../helper/logger";
 
@@ -39,6 +42,8 @@ class LiveLobby {
     const c = liveConnection;
     c.on("status", (status) => this.dispatch(liveStatusChanged(status)));
     c.on(ServerMessage.WELCOME, (message) => {
+      // the own challenge link as the server knows it (after a reload, or gone after a restart)
+      this.dispatch(challengeUpdated(message.challenge || null));
       // a match is still running for this account (reload, other device): go back into it
       if (message.activeMatch && message.activeMatch.matchId !== this.currentMatchId) {
         this.startMatch({ matchId: message.activeMatch.matchId });
@@ -55,6 +60,8 @@ class LiveLobby {
     c.on(ServerMessage.INVITE_SENT, (message) => this.dispatch(inviteSent(message.invite)));
     c.on(ServerMessage.INVITE_CLOSED, (message) => this.dispatch(inviteClosed(message)));
     c.on(ServerMessage.PRESENCE_LIST, (message) => this.dispatch(onlinePlayersListed(message.online)));
+    c.on(ServerMessage.CHALLENGE, (message) => this.dispatch(challengeUpdated(message.challenge)));
+    c.on(ServerMessage.CHALLENGE_VIEW, (message) => this.dispatch(challengeViewed(message.view)));
     c.on(ServerMessage.ERROR, (message) => {
       logger.info("live error", message.code);
       this.dispatch(liveErrorReceived(message.code));
@@ -125,6 +132,40 @@ class LiveLobby {
 
   cancelInvite(inviteId) {
     return this.send({ type: ClientMessage.INVITE_CANCEL, inviteId });
+  }
+
+  /* ---------- challenge links ---------- */
+
+  createChallenge() {
+    return this.send({ type: ClientMessage.CHALLENGE_CREATE });
+  }
+
+  // "Send again": the same code waits another 2 minutes
+  renewChallenge(code) {
+    return this.send({ type: ClientMessage.CHALLENGE_RENEW, code });
+  }
+
+  cancelChallenge(code) {
+    this.dispatch(challengeCleared());
+    return this.send({ type: ClientMessage.CHALLENGE_CANCEL, code });
+  }
+
+  // a friend's challenge: from the link (?challenge=) or a typed code
+  openChallenge(code) {
+    return this.send({ type: ClientMessage.CHALLENGE_OPEN, code });
+  }
+
+  acceptChallenge(code) {
+    return this.send({ type: ClientMessage.CHALLENGE_ACCEPT, code });
+  }
+
+  declineChallenge(code) {
+    return this.send({ type: ClientMessage.CHALLENGE_DECLINE, code });
+  }
+
+  // after a challenge match: offers the opponent another one (an incoming invite on their side)
+  requestRematch(matchId) {
+    return this.send({ type: ClientMessage.REMATCH, matchId });
   }
 
   queryPresence(usernames) {

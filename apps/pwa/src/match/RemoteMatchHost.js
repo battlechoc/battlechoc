@@ -28,7 +28,7 @@ class RemoteActionError extends BattlechocError {
  * every pushed view goes to Redux. Pause does not exist online.
  */
 class RemoteMatchHost {
-  constructor({ dispatch, connection, matchId, playerIndex, epoch, onEnded }) {
+  constructor({ dispatch, connection, matchId, playerIndex, epoch, kind, onEnded }) {
     this.dispatch = dispatch;
     this.connection = connection;
     this.matchId = matchId;
@@ -49,6 +49,8 @@ class RemoteMatchHost {
       connection.on(ServerMessage.MATCH, (message) => {
         if (message.matchId === this.matchId) {
           this.epoch = message.epoch;
+          // a resumed match learns its kind from the server's match message
+          dispatch(matchHosted({ online: true, kind: message.kind }));
         }
       }),
       connection.on(ServerMessage.PRESENCE, (message) => {
@@ -61,7 +63,7 @@ class RemoteMatchHost {
       connection.on(ServerMessage.WELCOME, () => this.join()),
       connection.on("closed", () => this.failPending()),
     ];
-    dispatch(matchHosted({ online: true }));
+    dispatch(matchHosted({ online: true, kind }));
     dispatch(presenceChanged(null));
     this.join();
   }
