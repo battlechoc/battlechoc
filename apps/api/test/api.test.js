@@ -294,7 +294,7 @@ describe('play page', () => {
         expect(response.type).toBe('text/html');
         expect(meta(response.text, 'og:title')).toBe('Anna fordert dich zu battlechoc heraus!');
         expect(meta(response.text, 'og:url')).toBe('https://play.battlechoc.com/K7Q2-M9XD');
-        expect(meta(response.text, 'og:image')).toBe('https://battlechoc.com/images/challenge-preview.png');
+        expect(meta(response.text, 'og:image')).toBe('https://battlechoc.com/images/challenge-preview.jpg');
         expect(meta(response.text, 'og:description')).toMatch(/Schokoladenschlacht/);
         expect(response.text).toContain('location.replace("https://battlechoc.com/?challenge=K7Q2-M9XD")');
         expect(response.text).toContain('href="https://battlechoc.com/?challenge=K7Q2-M9XD"');

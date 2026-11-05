@@ -16,7 +16,7 @@ const { normalizeChallengeCode, formatChallengeCode } = live;
 
 const GAME_URL = 'https://battlechoc.com/';
 const PLAY_URL = 'https://play.battlechoc.com/';
-const PREVIEW_IMAGE = 'https://battlechoc.com/images/challenge-preview.png';
+const PREVIEW_IMAGE = 'https://battlechoc.com/images/challenge-preview.jpg';
 
 const escapeHtml = text => String(text)
     .replace(/&/g, '&amp;')
