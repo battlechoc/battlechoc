@@ -11,18 +11,34 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  # The pull request's title becomes the squash commit on main, and release-please reads only
-  # conventional commits ("feat: …", "fix(pwa): …", "docs: …"): a title like "Dev" (PR #27) left
-  # its changes out of the release. Required in the ruleset, so such a title cannot be merged.
-  pr-title:
-    if: github.event_name == 'pull_request'
+  # A squash merge turns a pull request into one commit, and release-please reads only that one:
+  # a batch titled "Dev" (PR #27) left all its changes out of the release. So CI writes the
+  # changelog into the description instead: one entry per conventional commit of the pull
+  # request (BEGIN_COMMIT_OVERRIDE, which release-please prefers to the title), commits without a
+  # conventional message listed apart; anew on every push (.github/scripts/pr-changelog.js).
+  # Release pull requests and pull requests from forks are left alone.
+  changelog:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      !startsWith(github.head_ref, 'release-please--')
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: read
+      contents: read
+      pull-requests: write
     steps:
-      - uses: amannn/action-semantic-pull-request@v5
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Write the changelog into the description
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: node .github/scripts/pr-changelog.js
 
   # A release pull request (release-please) changes only the version and the changelog of a main
   # that was tested on its push, so its tests are skipped; a skipped job counts as passed for the
@@ -49,6 +65,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Changelog script tests
+        run: node --test .github/scripts/pr-changelog.test.js
       - name: Shared rules engine unit tests
         run: npm test
       - name: Tutorial scenarios on the engine
