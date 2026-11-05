@@ -4,8 +4,7 @@ import { createUseStyles } from "react-jss";
 import { connect } from "react-redux";
 import { multiplayer } from "../../Multiplayer";
 import logger from "../../helper/logger";
-import { Jukebox } from "../misc";
-import { Button, Progress, Fab } from "../controls";
+import { Fab } from "../controls";
 import UnsyncedMark from "../controls/UnsyncedMark";
 import PlayerNameInput from "../controls/PlayerNameInput";
 import Dialog from "./Dialog";
@@ -23,17 +22,6 @@ const useStyles = createUseStyles((theme) => ({
     flexDirection: "column",
     marginTop: 16,
   },
-  pendingButton: {
-    backgroundColor: "#777",
-  },
-  opponentActions: {
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-evenly",
-    alignItems: "center",
-    height: 140,
-    marginBottom: 24,
-  },
   actionIcon: {
     padding: "0.5rem",
     border: "1px solid #f3f7df",
@@ -44,11 +32,6 @@ const useStyles = createUseStyles((theme) => ({
     justifyContent: "center",
     flexGrow: 1,
     marginLeft: "-0.5rem",
-  },
-  noAccountInfo: {
-    textAlign: "center",
-    color: "white",
-    marginBottom: "1em",
   },
   icon: {
     padding: "0.8em",
@@ -159,7 +142,6 @@ const useStyles = createUseStyles((theme) => ({
 
 const AccountOverview = (props) => {
   const classes = useStyles();
-  const [refreshFriend, setRefreshFriend] = useState(false);
   // the own name is changed here (offline too: Multiplayer keeps it until the server answers)
   const [editName, setEditName] = useState(false);
   useEffect(() => {
@@ -280,84 +262,6 @@ const AccountOverview = (props) => {
             offline={!props.online}
           />
         ) : null}
-        {(() => {
-          if (!isPlayerAccount) {
-            const actions = [];
-            if (props.playerInfos.stats.username !== EmptyPlayerStats.username) {
-              // a live match: invite the player (in-app when online, else by push)
-              actions.push(
-                <Button
-                  key={0}
-                  color="secondary"
-                  onClick={() => {
-                    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                    props.challengePlayer(playerName);
-                    props.close();
-                  }}
-                >
-                  {t(tr.ONLINE_INVITE_SEND)}
-                </Button>
-              );
-
-              if (
-                !props.friends.map((friend) => friend.name).includes(playerName)
-              ) {
-                actions.push(
-                  <Button
-                    key={2}
-                    className={`${refreshFriend ? classes.pendingButton : ""}`}
-                    onClick={async () => {
-                      if (!refreshFriend) {
-                        setRefreshFriend(true);
-                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                        await props.addFriend(playerName);
-                        setRefreshFriend(false);
-                      }
-                    }}
-                  >
-                    {refreshFriend ? (
-                      <Progress infiniteAnimation size={24} />
-                    ) : (
-                      t(tr.ADD_FRIEND)
-                    )}
-                  </Button>
-                );
-              } else {
-                actions.push(
-                  <Button
-                    key={3}
-                    color="accent"
-                    className={`${refreshFriend ? classes.pendingButton : ""}`}
-                    onClick={async () => {
-                      if (!refreshFriend) {
-                        setRefreshFriend(true);
-                        Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                        props.removeFriend(playerName);
-                        await props.addFriend(playerName);
-                        setRefreshFriend(false);
-                      }
-                    }}
-                  >
-                    {refreshFriend ? (
-                      <Progress infiniteAnimation size={24} />
-                    ) : (
-                      t(tr.REMOVE_FRIEND)
-                    )}
-                  </Button>
-                );
-              }
-              return <div className={classes.opponentActions}>{actions}</div>;
-            } else if (props.playerInfos.stats.score < 1000) {
-              return (
-                <div className={classes.noAccountInfo}>
-                  {t(tr.NO_ACCOUNT_INFO)}
-                </div>
-              );
-            } else {
-              return null;
-            }
-          }
-        })()}
 
         {isPlayerAccount
           ? (() => {
@@ -451,7 +355,6 @@ AccountOverview.propTypes = {
 const mapStateToProps = (state) => ({
   playerInfos: state.ui.playerInfos,
   ranking: state.ui.ranking,
-  friends: state.ui.friends,
   online: state.ui.online,
   earlyUnlock: state.ui.earlyUnlock,
 });

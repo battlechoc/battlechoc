@@ -35,7 +35,7 @@ const setting = (page, key) =>
 const answerHealth = (page) =>
   page.route("**/health", (route) => route.fulfill({ status: 200, contentType: "application/json", body: '{"ok":true}' }));
 
-// three finished matches unlock the Choclab and Friends (shared progression.js); offline the
+// four finished matches unlock the Choclab and Play with a friend (shared progression.js); offline the
 // device counts them from its track record
 const unlocked = {
   username: "Tester",
@@ -47,7 +47,7 @@ const serverDown = "The battlechoc server can't be reached right now. Please try
 const offline = "Only available online. Check your internet connection.";
 const cursor = (locator) => locator.evaluate((element) => getComputedStyle(element).cursor);
 
-test("without the server highscore, Choclab and Friends are greyed out and say why", async ({
+test("without the server highscore, Choclab and Play with a friend are greyed out and say why", async ({
   page,
 }) => {
   await page.goto("/", { waitUntil: "networkidle" });
@@ -59,7 +59,7 @@ test("without the server highscore, Choclab and Friends are greyed out and say w
   // the profile works offline (level, XP, matches from the device)
   await expect(page.locator("[data-icon=user]:visible")).not.toHaveAttribute("data-offline", "true");
   await expect(page.locator("[data-icon=trophy]:visible")).toHaveAttribute("data-offline", "true");
-  for (const name of ["Choclab", "Friends"]) {
+  for (const name of ["Choclab", "Play with a friend"]) {
     await expect(page.locator("[role=button][data-offline=true]", { hasText: name })).toHaveCount(1);
   }
   await expect(page.locator("[data-icon=instagram], [data-icon=discord]")).toHaveCount(0);

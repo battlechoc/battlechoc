@@ -23,7 +23,7 @@ test("Start without a server plays the local AI within a few seconds", async ({ 
   await page.waitForFunction(() => document.body.innerText.trim().length > 0);
   await seed(page, { username: "Tester", score: 150, tutorialFinished: true });
   await page.goto("/?testclock", { waitUntil: "networkidle" });
-  // the menu: Start, Choclab and Friends ("Play online" is only the title of the friends dialog)
+  // the menu: Start, Choclab and Play with a friend (no "Play online" any more)
   await expect(page.locator('text="Singleplayer" >> visible=true')).toHaveCount(0);
   await expect(page.locator('text="Play online" >> visible=true')).toHaveCount(0);
   await page.getByText("Start Game", { exact: true }).first().click();

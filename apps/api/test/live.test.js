@@ -33,7 +33,7 @@ const start = async ({ pool, config = {} } = {}) => {
     });
     env.app = createApp({ pool: env.pool, auth: env.auth, push: env.push, accountsPerMinute: 1000 });
     env.server = http.createServer(env.app);
-    env.live = createLive({ server: env.server, pool: env.pool, auth: env.auth, push: env.push, clock: env.clock, config, log: silentLog });
+    env.live = createLive({ server: env.server, pool: env.pool, auth: env.auth, clock: env.clock, config, log: silentLog });
     await new Promise(resolve => env.server.listen(0, '127.0.0.1', resolve));
     env.url = `ws://127.0.0.1:${env.server.address().port}/live`;
     environments.push(env);
@@ -94,6 +94,18 @@ const queueMatch = async env => {
     return { a, b, matchId: ma.matchId };
 };
 
+// two connected players in a challenge match (the lobby's own start, as an accepted challenge does)
+const challengeMatch = async env => {
+    const a = await player(env);
+    const b = await player(env);
+    await env.live.lobby.startBetween('challenge', a.account.playerId, b.account.playerId);
+    const [ma, mb] = await Promise.all([a.next(ServerMessage.MATCH), b.next(ServerMessage.MATCH)]);
+    await Promise.all([a, b].map(client => client.next(ServerMessage.VIEW, message => message.matchId === ma.matchId)));
+    a.index = ma.playerIndex;
+    b.index = mb.playerIndex;
+    return { a, b, matchId: ma.matchId, messages: [ma, mb] };
+};
+
 const nextView = (client, matchId, predicate) =>
     client.next(ServerMessage.VIEW, message => message.matchId === matchId && predicate(message.view));
 
@@ -113,6 +125,240 @@ const toRunning = async (env, { a, b, matchId }) => {
     env.clock.advance(env.live.lobby.rooms.get(matchId).match.balance.match.countdownMs);
     await Promise.all([a, b].map(client => nextView(client, matchId, v => v.phase === MatchPhase.RUNNING)));
 };
+
+describe('live: challenges', () => {
+    const { formatChallengeCode } = live;
+    const challengeIs = (client, state) => client
+        .next(ServerMessage.CHALLENGE, message => message.challenge !== null && message.challenge.state === state)
+        .then(message => message.challenge);
+    const viewIs = (client, state) => client
+        .next(ServerMessage.CHALLENGE_VIEW, message => message.view.state === state)
+        .then(message => message.view);
+    const create = async client => {
+        client.send({ type: ClientMessage.CHALLENGE_CREATE });
+        return challengeIs(client, 'waiting');
+    };
+    const open = (client, code, state = 'open') => {
+        client.send({ type: ClientMessage.CHALLENGE_OPEN, code });
+        return viewIs(client, state);
+    };
+
+    test('create, open and accept start a challenge match; the newcomer gets a random name', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code, expiresAt } = await create(anna);
+        expect(code).toMatch(/^[0-9A-Z]{8}$/);
+        expect(expiresAt).toBe(env.clock.now() + 120000);
+        const friend = await player(env);
+        // typed as a person would: lower case, with the hyphen
+        const view = await open(friend, formatChallengeCode(code).toLowerCase());
+        expect(view.from).toBe('Anna');
+        expect(view.name).toMatch(/^[a-zA-Z][a-zA-Z0-9_]{2,24}$/);
+        expect((await challengeIs(anna, 'reading')).readers).toBe(1);
+        friend.send({ type: ClientMessage.CHALLENGE_ACCEPT, code });
+        const [ma, mf] = await Promise.all([anna.next(ServerMessage.MATCH), friend.next(ServerMessage.MATCH)]);
+        expect(ma.matchId).toBe(mf.matchId);
+        expect(ma.kind).toBe('challenge');
+        expect(ma.opponent.name).toBe(view.name);
+        const { stats } = (await request(env.app).get('/user').set('Authorization', `Bearer ${friend.account.accessToken}`)).body;
+        expect(stats.username).toBe(view.name);
+    });
+
+    test('an unopened challenge expires after 2 minutes and Send again renews the same code', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        env.clock.advance(120000);
+        expect((await challengeIs(anna, 'expired')).code).toBe(code);
+        anna.send({ type: ClientMessage.CHALLENGE_RENEW, code });
+        const renewed = await challengeIs(anna, 'waiting');
+        expect(renewed.code).toBe(code);
+        expect(renewed.expiresAt).toBe(env.clock.now() + 120000);
+    });
+
+    test('an open card keeps the challenge alive up to 10 minutes', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        const reader = await player(env, { username: 'Ben' });
+        await open(reader, code);
+        await challengeIs(anna, 'reading');
+        env.clock.advance(121000);
+        // a second create resends the challenge as it is
+        anna.send({ type: ClientMessage.CHALLENGE_CREATE });
+        expect((await anna.next(ServerMessage.CHALLENGE)).challenge.state).toBe('reading');
+        env.clock.advance(479000);
+        await challengeIs(anna, 'expired');
+        await viewIs(reader, 'ended');
+    });
+
+    test('several readers: the first accept wins, the others see taken; a decline does not end it for the others', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        const [ben, carla, dora] = await Promise.all(['Ben', 'Carla', 'Dora'].map(username => player(env, { username })));
+        for (const reader of [ben, carla, dora]) {
+            await open(reader, code);
+        }
+        await anna.next(ServerMessage.CHALLENGE, message => message.challenge.readers === 3);
+        carla.send({ type: ClientMessage.CHALLENGE_DECLINE, code });
+        const afterDecline = (await anna.next(ServerMessage.CHALLENGE, message => message.challenge.readers === 2)).challenge;
+        expect(afterDecline.state).toBe('reading');
+        ben.send({ type: ClientMessage.CHALLENGE_ACCEPT, code });
+        await Promise.all([anna.next(ServerMessage.MATCH), ben.next(ServerMessage.MATCH)]);
+        await viewIs(dora, 'taken');
+        const emil = await player(env, { username: 'Emil' });
+        await open(emil, code, 'taken');
+        ben.send({ type: ClientMessage.CHALLENGE_ACCEPT, code });
+        await sleep(50);
+        expect(env.live.lobby.rooms.size).toBe(1);
+    });
+
+    test('the only reader declining tells the challenger', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        const ben = await player(env, { username: 'Ben' });
+        await open(ben, code);
+        ben.send({ type: ClientMessage.CHALLENGE_DECLINE, code });
+        expect((await challengeIs(anna, 'declined')).code).toBe(code);
+    });
+
+    test('own code, busy friend, unknown and cancelled codes', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        await open(anna, code, 'own');
+        const { a } = await queueMatch(env);
+        await open(a, code, 'busy');
+        const ben = await player(env, { username: 'Ben' });
+        await open(ben, 'ZZZZZZZZ', 'ended');
+        await open(ben, code);
+        anna.send({ type: ClientMessage.CHALLENGE_CANCEL, code });
+        await viewIs(ben, 'ended');
+        expect((await anna.next(ServerMessage.CHALLENGE, message => message.challenge === null)).challenge).toBeNull();
+        await open(ben, code, 'ended');
+    });
+
+    test('the challenger away: an accept waits, the match starts when they come back', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        anna.close();
+        await sleep(50);
+        const ben = await player(env, { username: 'Ben' });
+        await open(ben, code);
+        ben.send({ type: ClientMessage.CHALLENGE_ACCEPT, code });
+        await viewIs(ben, 'waiting-for-challenger');
+        const back = await connect(env, anna.account.accessToken);
+        expect(back.welcome.challenge).toMatchObject({ code, state: 'accepted' });
+        const [ma, mb] = await Promise.all([back.next(ServerMessage.MATCH), ben.next(ServerMessage.MATCH)]);
+        expect(ma.matchId).toBe(mb.matchId);
+        expect(ma.kind).toBe('challenge');
+    });
+
+    test('the challenger stays away: the friend is told, the challenger sees missed on return', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        anna.close();
+        await sleep(50);
+        const ben = await player(env, { username: 'Ben' });
+        await open(ben, code);
+        ben.send({ type: ClientMessage.CHALLENGE_ACCEPT, code });
+        await viewIs(ben, 'waiting-for-challenger');
+        env.clock.advance(60000);
+        expect((await viewIs(ben, 'challenger-away')).from).toBe('Anna');
+        const back = await connect(env, anna.account.accessToken);
+        expect(back.welcome.challenge).toMatchObject({ code, state: 'missed' });
+        back.send({ type: ClientMessage.CHALLENGE_RENEW, code });
+        expect((await challengeIs(back, 'waiting')).code).toBe(code);
+        expect(env.live.lobby.rooms.size).toBe(0);
+    });
+
+    test('a friend who accepted and left is not pulled into a match when the challenger comes back', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        anna.close();
+        await sleep(50);
+        const ben = await player(env, { username: 'Ben' });
+        await open(ben, code);
+        ben.send({ type: ClientMessage.CHALLENGE_ACCEPT, code });
+        await viewIs(ben, 'waiting-for-challenger');
+        ben.terminate();
+        await sleep(50);
+        const back = await connect(env, anna.account.accessToken);
+        expect((await challengeIs(back, 'missed')).code).toBe(code);
+        await sleep(50);
+        expect(env.live.lobby.rooms.size).toBe(0);
+    });
+
+    test('a reader who leaves for a minute frees the challenge again', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        const ben = await player(env, { username: 'Ben' });
+        await open(ben, code);
+        await challengeIs(anna, 'reading');
+        ben.terminate();
+        await sleep(50);
+        env.clock.advance(60000);
+        const again = await challengeIs(anna, 'waiting');
+        expect(again.expiresAt).toBe(env.clock.now() + 120000);
+        expect(again.readers).toBe(0);
+
+        // coming back within the minute keeps the place
+        const carla = await player(env, { username: 'Carla' });
+        await open(carla, code);
+        await challengeIs(anna, 'reading');
+        carla.terminate();
+        await sleep(50);
+        env.clock.advance(30000);
+        const carlaBack = await connect(env, carla.account.accessToken);
+        await open(carlaBack, code);
+        env.clock.advance(30000);
+        anna.send({ type: ClientMessage.CHALLENGE_CREATE });
+        expect((await anna.next(ServerMessage.CHALLENGE, message => message.challenge.readers === 1)).challenge.state).toBe('reading');
+    });
+
+    test('the welcome reports a waiting challenge after a reload', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        anna.close();
+        await sleep(50);
+        const back = await connect(env, anna.account.accessToken);
+        expect(back.welcome.challenge).toMatchObject({ code, state: 'waiting' });
+        const other = await player(env, { username: 'Ben' });
+        expect(other.welcome.challenge).toBeNull();
+    });
+
+    test('the link preview names the challenger only while the challenge waits', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        const { challenges } = env.live.lobby;
+        expect(challenges.publicInfo(code)).toEqual({ from: 'Anna', language: 'en' });
+        const ben = await player(env, { username: 'Ben' });
+        await open(ben, code);
+        expect(challenges.publicInfo(code)).toEqual({ from: 'Anna', language: 'en' });
+        anna.send({ type: ClientMessage.CHALLENGE_CANCEL, code });
+        await viewIs(ben, 'ended');
+        expect(challenges.publicInfo(code)).toBeNull();
+        expect(challenges.publicInfo('ZZZZZZZZ')).toBeNull();
+    });
+
+    test('Start while challenging cancels the challenge', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        const ben = await player(env, { username: 'Ben' });
+        await open(ben, code);
+        anna.send({ type: ClientMessage.QUEUE_JOIN });
+        await viewIs(ben, 'ended');
+    });
+});
 
 describe('live: connection', () => {
     test('needs a valid token in the first message', async () => {
@@ -489,46 +735,94 @@ describe('live: matches', () => {
         expect(Number((await env.pool.query('SELECT COUNT(*) AS n FROM rated_matches')).rows[0].n)).toBe(0);
     });
 
-    test('invites: live, declined, expired and by push to an offline player', async () => {
+    test('a challenge match is 10x10, has a coin toss and 45 s placement, and the match message says challenge', async () => {
         const env = await start();
-        const anna = await player(env, { username: 'Anna' });
-        const ben = await player(env, { username: 'Ben' });
+        const { matchId, messages } = await challengeMatch(env);
+        const r = room(env, matchId);
+        expect(r.kind).toBe('challenge');
+        expect(r.match.board.size).toEqual({ rows: 10, cols: 10 });
+        expect(r.match.balance.match.placementTimeoutMs).toBe(45000);
+        expect(r.match.balance.match.fieldChoiceTimeoutMs).toBe(10000);
+        expect([0, 1]).toContain(r.match.fieldChooser);
+        messages.forEach(message => expect(message.kind).toBe('challenge'));
+    });
 
-        anna.send({ type: ClientMessage.INVITE, username: 'ben' });
-        const sent = await anna.next(ServerMessage.INVITE_SENT);
-        const incoming = await ben.next(ServerMessage.INVITE);
-        expect(incoming.invite).toEqual({ id: sent.invite.id, from: 'Anna', expiresAt: sent.invite.expiresAt });
-        ben.send({ type: ClientMessage.INVITE_DECLINE, inviteId: incoming.invite.id });
-        expect((await anna.next(ServerMessage.INVITE_CLOSED)).reason).toBe('declined');
+    test('a challenge is not rated but credits XP, challenge XP and a finished match', async () => {
+        const env = await start();
+        const match = await challengeMatch(env);
+        const { a, b, matchId } = match;
+        await toRunning(env, match);
+        env.clock.advance(1000);
+        expect((await a.act(matchId, MatchActionTypes.surrender, {})).ok).toBe(true);
+        await Promise.all([a, b].map(client => client.next(ServerMessage.RESULT)));
+        await room(env, matchId).writes;
+        const { rows } = await env.pool.query('SELECT id, xp, challenge_xp, rated_matches, rating FROM players');
+        rows.forEach(row => {
+            expect(row).toMatchObject({ rated_matches: 0, rating: 1500 });
+            expect(row.challenge_xp).toBe(row.xp);
+        });
+        expect(rows.find(row => row.id === b.account.playerId).xp).toBeGreaterThan(0);
+        expect(Number((await env.pool.query('SELECT COUNT(*) AS n FROM rated_matches')).rows[0].n)).toBe(0);
+        const { stats } = (await request(env.app).get('/user').set('Authorization', `Bearer ${a.account.accessToken}`)).body;
+        expect(stats.losses).toBe(1);
+        expect(stats.challengeXp).toBe(stats.xp);
+    });
 
-        anna.send({ type: ClientMessage.INVITE, username: 'Ben' });
-        await ben.next(ServerMessage.INVITE);
+    test('below the online unlock, challenge XP does not leave the beginner AI track', async () => {
+        const env = await start();
+        const rookie = await player(env, { score: 700 });
+        await env.pool.query('UPDATE players SET challenge_xp = 650 WHERE id = $1', [rookie.account.playerId]);
+        rookie.send({ type: ClientMessage.QUEUE_AI });
+        const { matchId, opponent } = await rookie.next(ServerMessage.MATCH);
+        const r = room(env, matchId);
+        expect(opponent.name).toBe('Tom Toffee');
+        expect(r.match.board.size).toEqual({ rows: 6, cols: 6 });
+        expect(r.match.phase).toBe(MatchPhase.RUNNING);
+    });
+
+    test('rematch after a challenge: offered, declined, expired, accepted', async () => {
+        const env = await start();
+        const { a, b, matchId } = await challengeMatch(env);
+        expect((await a.act(matchId, MatchActionTypes.surrender, {})).ok).toBe(true);
+        await Promise.all([a, b].map(client => client.next(ServerMessage.RESULT)));
+
+        a.send({ type: ClientMessage.REMATCH, matchId });
+        const sent = await a.next(ServerMessage.INVITE_SENT);
+        const offer = await b.next(ServerMessage.INVITE);
+        expect(offer.invite).toMatchObject({ id: sent.invite.id, rematch: true, expiresAt: sent.invite.expiresAt });
+        b.send({ type: ClientMessage.INVITE_DECLINE, inviteId: offer.invite.id });
+        expect((await a.next(ServerMessage.INVITE_CLOSED)).reason).toBe('declined');
+
+        a.send({ type: ClientMessage.REMATCH, matchId });
+        await b.next(ServerMessage.INVITE);
         env.clock.advance(60000);
-        expect((await anna.next(ServerMessage.INVITE_CLOSED)).reason).toBe('expired');
+        expect((await a.next(ServerMessage.INVITE_CLOSED)).reason).toBe('expired');
 
-        anna.send({ type: ClientMessage.INVITE, username: 'Ben' });
-        const second = await ben.next(ServerMessage.INVITE);
-        ben.send({ type: ClientMessage.INVITE_ACCEPT, inviteId: second.invite.id });
-        const [ma, mb] = await Promise.all([anna.next(ServerMessage.MATCH), ben.next(ServerMessage.MATCH)]);
+        a.send({ type: ClientMessage.REMATCH, matchId });
+        const third = await b.next(ServerMessage.INVITE);
+        b.send({ type: ClientMessage.INVITE_ACCEPT, inviteId: third.invite.id });
+        const [ma, mb] = await Promise.all([a.next(ServerMessage.MATCH), b.next(ServerMessage.MATCH)]);
         expect(ma.matchId).toBe(mb.matchId);
-        expect(room(env, ma.matchId).kind).toBe('invite');
-        expect(ma.opponent.name).toBe('Ben');
+        expect(ma.matchId).not.toBe(matchId);
+        expect(ma.kind).toBe('challenge');
+        expect(room(env, ma.matchId).match.board.size).toEqual({ rows: 10, cols: 10 });
+    });
 
-        const created = await account(env, { username: 'Carla' });
-        await request(env.app).post('/push/subscription').set('Authorization', `Bearer ${created.accessToken}`)
-            .send({ subscription: { endpoint: 'https://push.example/carla', keys: { p256dh: 'k', auth: 'a' } } }).expect(201);
-        const dora = await player(env, { username: 'Dora' });
-        dora.send({ type: ClientMessage.INVITE, username: 'Carla' });
-        await dora.next(ServerMessage.INVITE_SENT);
+    test('rematch only after a finished challenge, and only with the opponent still there', async () => {
+        const env = await start();
+        const queued = await queueMatch(env);
+        expect((await queued.a.act(queued.matchId, MatchActionTypes.surrender, {})).ok).toBe(true);
+        await queued.a.next(ServerMessage.RESULT);
+        queued.a.send({ type: ClientMessage.REMATCH, matchId: queued.matchId });
+        expect((await queued.a.next(ServerMessage.ERROR)).code).toBe(LiveError.UNKNOWN_MATCH);
+
+        const { a, b, matchId } = await challengeMatch(env);
+        expect((await a.act(matchId, MatchActionTypes.surrender, {})).ok).toBe(true);
+        await Promise.all([a, b].map(client => client.next(ServerMessage.RESULT)));
+        b.close();
         await sleep(50);
-        expect(env.pushed).toHaveLength(1);
-        expect(env.pushed[0]).toMatchObject({ kind: 'invite', from: 'Dora', title: 'Dora is challenging you!' });
-
-        dora.send({ type: ClientMessage.PRESENCE_QUERY, usernames: ['anna', 'Carla', 'Nobody', 42] });
-        expect((await dora.next(ServerMessage.PRESENCE_LIST)).online).toEqual(['Anna']);
-
-        dora.send({ type: ClientMessage.INVITE, username: 'Nobody' });
-        expect((await dora.next(ServerMessage.ERROR)).code).toBe(LiveError.PLAYER_NOT_FOUND);
+        a.send({ type: ClientMessage.REMATCH, matchId });
+        expect((await a.next(ServerMessage.ERROR)).code).toBe(LiveError.PLAYER_OFFLINE);
     });
 
     test('running matches survive a restart of the server', async () => {

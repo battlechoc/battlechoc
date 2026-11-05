@@ -8,20 +8,25 @@
 //   queue.join     {}                            matchmaking; an AI joins after 15 s alone
 //   queue.leave    {}
 //   queue.ai       {}                            play against the server AI now (queued or not)
-//   invite         { username }                  live invite (WebSocket, else Web Push)
 //   invite.accept  { inviteId }
 //   invite.decline { inviteId }
 //   invite.cancel  { inviteId }
 //   match.join     { matchId, lastSeq? }         (re)join a running match, e.g. after a reload
-//   presence.query { usernames }                 which of these players are online (friends list)
 //   intent         { matchId, uid, action: { type, payload } }  a match action (MatchActionTypes)
+//   challenge.create  {}                         a challenge link (one per player; resends a waiting one)
+//   challenge.renew   { code }                   "Send again": the same code waits another 2 minutes
+//   challenge.cancel  { code }
+//   challenge.open    { code }                   a friend opened the link or typed the code
+//   challenge.accept  { code }                   the first accept starts the match
+//   challenge.decline { code }                   "Not now"
+//   rematch        { matchId }                   after a challenge match: offers the opponent another
 //
 // Server → client
-//   welcome        { playerId, serverT, activeMatch, protocol }
+//   welcome        { playerId, serverT, activeMatch, challenge, protocol }  challenge: as in `challenge`
 //   pong           { id, clientT, serverT }
 //   queued         { since }
 //   queue.left     {}
-//   invite         { invite: { id, from, expiresAt } }       incoming
+//   invite         { invite: { id, from, expiresAt, rematch } }  incoming rematch offer
 //   invite.sent    { invite: { id, to, expiresAt } }
 //   invite.closed  { inviteId, reason }                      see InviteClosedReason
 //   match          { matchId, playerIndex, epoch, opponent } you are in this match
@@ -29,7 +34,9 @@
 //   ack            { matchId, uid, ok, error? }             answer to an intent
 //   presence       { matchId, player, online, forfeitAt }   the opponent left or came back
 //   result         { matchId, result }                      own outcome, achievements, xp, drops and rating
-//   presence.list  { online }                               usernames of presence.query that are online
+//   challenge      { challenge: { code, state, expiresAt, readers } | null }  to the challenger (ChallengeState)
+//   challenge.view { view: { code, state, from?, name? } }   to a friend (ChallengeViewState); name: their own
+//                                                           name when the server just gave them one
 //   error          { code, message, uid? }                  see LiveError
 
 const LIVE_PROTOCOL_VERSION = 1;
@@ -40,13 +47,18 @@ const ClientMessage = Object.freeze({
     QUEUE_JOIN: 'queue.join',
     QUEUE_LEAVE: 'queue.leave',
     QUEUE_AI: 'queue.ai',
-    INVITE: 'invite',
     INVITE_ACCEPT: 'invite.accept',
     INVITE_DECLINE: 'invite.decline',
     INVITE_CANCEL: 'invite.cancel',
     MATCH_JOIN: 'match.join',
     INTENT: 'intent',
-    PRESENCE_QUERY: 'presence.query',
+    CHALLENGE_CREATE: 'challenge.create',
+    CHALLENGE_RENEW: 'challenge.renew',
+    CHALLENGE_CANCEL: 'challenge.cancel',
+    CHALLENGE_OPEN: 'challenge.open',
+    CHALLENGE_ACCEPT: 'challenge.accept',
+    CHALLENGE_DECLINE: 'challenge.decline',
+    REMATCH: 'rematch',
 });
 
 const ServerMessage = Object.freeze({
@@ -62,7 +74,8 @@ const ServerMessage = Object.freeze({
     ACK: 'ack',
     PRESENCE: 'presence',
     RESULT: 'result',
-    PRESENCE_LIST: 'presence.list',
+    CHALLENGE: 'challenge',
+    CHALLENGE_VIEW: 'challenge.view',
     ERROR: 'error',
 });
 
@@ -75,6 +88,7 @@ const LiveError = Object.freeze({
     PLAYER_NOT_FOUND: 'PLAYER_NOT_FOUND',
     PLAYER_OFFLINE: 'PLAYER_OFFLINE',
     INVITE_NOT_FOUND: 'INVITE_NOT_FOUND',
+    CHALLENGE_NOT_FOUND: 'CHALLENGE_NOT_FOUND',
     ACTION_REJECTED: 'ACTION_REJECTED',
     SHUTTING_DOWN: 'SHUTTING_DOWN',
 });
@@ -84,6 +98,32 @@ const InviteClosedReason = Object.freeze({
     DECLINED: 'declined',
     EXPIRED: 'expired',
     CANCELLED: 'cancelled',
+});
+
+// a challenge as its challenger sees it
+const ChallengeState = Object.freeze({
+    WAITING: 'waiting',
+    // a friend has the challenge card open
+    READING: 'reading',
+    // a friend accepted while the challenger was away (in the chat app): the match starts when they are back
+    ACCEPTED: 'accepted',
+    EXPIRED: 'expired',
+    DECLINED: 'declined',
+    // the friend accepted and gave up waiting for the challenger
+    MISSED: 'missed',
+    STARTED: 'started',
+});
+
+// a challenge as a friend sees it
+const ChallengeViewState = Object.freeze({
+    OPEN: 'open',
+    WAITING_FOR_CHALLENGER: 'waiting-for-challenger',
+    CHALLENGER_AWAY: 'challenger-away',
+    ENDED: 'ended',
+    // somebody else accepted first: the match is already on
+    TAKEN: 'taken',
+    OWN: 'own',
+    BUSY: 'busy',
 });
 
 // WebSocket close codes (4000-4999 are free for applications, 1012 is "service restart")
@@ -108,6 +148,16 @@ const LiveDefaults = Object.freeze({
     // matchmaking: an AI joins after this long without an opponent (D18; 15 s since the Start button)
     aiFallbackMs: 15000,
     inviteTtlMs: 60000,
+    // challenges: an unopened link waits this long ("Send again" waits the same again)
+    challengeTtlMs: 120000,
+    // while a friend reads the card the challenge does not expire, up to this long
+    challengeReadCapMs: 600000,
+    // a friend whose connection is gone this long stops being a reader
+    challengeReaderGraceMs: 60000,
+    // a friend who accepted waits this long for an away challenger
+    challengeAwayMs: 60000,
+    // an expired, declined or missed challenge can be sent again for this long
+    challengeKeepMs: 600000,
     // per player: at most this many match actions per second
     intentsPerSecond: 10,
     // per connection: at most this many messages per second
@@ -126,6 +176,8 @@ module.exports = {
     ServerMessage,
     LiveError,
     InviteClosedReason,
+    ChallengeState,
+    ChallengeViewState,
     CloseCode,
     LiveDefaults,
 };

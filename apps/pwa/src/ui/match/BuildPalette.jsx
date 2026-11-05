@@ -122,7 +122,17 @@ const countOnOwnField = (grid, entityType) =>
     cell.occupiedBy.some((entity) => entity.type === entityType)
   ).length;
 
-const BuildPalette = ({ view, stats, earlyUnlock, tutorial, selectedBuilding, select, endSelection, whitelist }) => {
+const BuildPalette = ({
+  view,
+  stats,
+  earlyUnlock,
+  tutorial,
+  matchKind,
+  selectedBuilding,
+  select,
+  endSelection,
+  whitelist,
+}) => {
   const classes = useStyles();
   // a selected fruit cannon ends by itself once it can no longer be built (no cacao, no free
   // building slot, no cannon left): the spotlight on the cannons goes and the board is normal again
@@ -143,10 +153,10 @@ const BuildPalette = ({ view, stats, earlyUnlock, tutorial, selectedBuilding, se
   }
   const me = view.players[view.viewer];
   const grid = view.board.fields[me.fieldIndex].grid;
-  // the first matches unlock the buildings two by two (shared progression.js); the tutorial and
-  // the demos show them all
+  // the first matches unlock the buildings two by two (shared progression.js); the tutorial, the
+  // demos and a challenge match (a friend's link) show them all
   const unlockedBuildings = unlocks(stats, { early: earlyUnlock }).unlockedBuildings;
-  const unlocked = (type) => tutorial || unlockedBuildings.includes(type);
+  const unlocked = (type) => tutorial || matchKind === "challenge" || unlockedBuildings.includes(type);
 
   const canBuild = (type) => {
     if (Array.isArray(whitelist) && !whitelist.includes(type)) {
@@ -241,6 +251,7 @@ const mapStateToProps = (state) => ({
   selectedBuilding: state.ui.selectedBuilding,
   whitelist: state.ui.whitelistBuildings,
   tutorial: state.ui.tutorial,
+  matchKind: state.match.kind,
 });
 
 const mapDispatchToProps = (dispatch) => ({

@@ -19,7 +19,6 @@ const UiActionTypes = Object.freeze({
   startTutorial: "battlechoc/ui/startTutorial",
   stopTutorial: "battlechoc/ui/stopTutorial",
   updatePlayerStats: "battlechoc/ui/updatePlayerStats",
-  loadFriendsList: "battlechoc/ui/loadFriendsList",
   setPlayerRank: "battlechoc/ui/setPlayerRank",
   showQuickMessage: "battlechoc/ui/showQuickMessage",
   hideQuickMessage: "battlechoc/ui/hideQuickMessage",
@@ -44,7 +43,6 @@ const notifyPlayerSignedIn = createAction(UiActionTypes.notifyPlayerSignedIn);
 const startTutorial = createAction(UiActionTypes.startTutorial);
 const stopTutorial = createAction(UiActionTypes.stopTutorial);
 const updatePlayerStats = createAction(UiActionTypes.updatePlayerStats);
-const loadFriendsList = createAction(UiActionTypes.loadFriendsList);
 const setPlayerRank = createAction(UiActionTypes.setPlayerRank);
 const showQuickMessage = createAction(UiActionTypes.showQuickMessage);
 const hideQuickMessage = createAction(UiActionTypes.hideQuickMessage);
@@ -76,7 +74,6 @@ export {
   showOfflineMessage,
   hideQuickMessage,
   setPlayerRank,
-  loadFriendsList,
   startTutorial,
   stopTutorial,
   showOverview,

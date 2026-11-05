@@ -4,7 +4,6 @@
 const crypto = require('crypto');
 const express = require('express');
 const {
-    EmptyPlayerStats,
     isValidLanguage,
     StarterKit,
 } = require('@battlechoc/battlechoc-shared-functions');
@@ -12,9 +11,10 @@ const players = require('./players');
 const pantry = require('./pantry');
 const reports = require('./reports');
 const { registerLabRoutes } = require('./lab/routes');
+const { registerPlayRoutes } = require('./playPage');
 const { loadRecipes } = require('./lab/recipes');
 const { createKeyedQueue } = require('./queue');
-const { isValidUsername, randomName } = require('./names');
+const { isValidUsername } = require('./names');
 const { AuthError } = require('./auth');
 
 const HIGHSCORE_PAGE_SIZE = 10;
@@ -56,7 +56,9 @@ const rateLimit = ({ windowMs, max }) => {
     };
 };
 
-const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10, recipes = loadRecipes(), labTriesPerHour = 30 }) => {
+const createApp = ({
+    pool, auth, push, corsOrigins = [], accountsPerMinute = 10, recipes = loadRecipes(), labTriesPerHour = 30, challengeInfo = () => null,
+}) => {
     const app = express();
     // purchases and equipment changes of one player run one at a time
     const oneAtATime = createKeyedQueue();
@@ -78,6 +80,9 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10,
     const sendStats = async (res, playerId, status = 200) => res.status(status).json({ stats: await players.stats(pool, playerId) });
 
     app.get('/health', (req, res) => res.json({ ok: true }));
+
+    // the link preview of a challenge (play.battlechoc.com/<code>)
+    registerPlayRoutes(app, { challengeInfo, limit: rateLimit({ windowMs: 60000, max: 60 }) });
 
     /* ---------- accounts ---------- */
 
@@ -148,14 +153,7 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10,
     /* ---------- names ---------- */
 
     app.get('/generaterandomname', auth.requireAuth, handle(async (req, res) => {
-        for (let attempt = 0; attempt < 20; attempt++) {
-            const candidate = randomName();
-            if (isValidUsername(candidate) && !(await players.findPlayerByName(pool, candidate))) {
-                res.json({ username: candidate });
-                return;
-            }
-        }
-        res.json({ username: EmptyPlayerStats.username });
+        res.json({ username: await players.freeRandomName(pool) });
     }));
 
     app.get('/check/available/:username', auth.requireAuth, handle(async (req, res) => {

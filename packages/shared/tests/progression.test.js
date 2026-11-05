@@ -233,3 +233,26 @@ describe('player levels', () => {
         expect(playerLevel('300')).toMatchObject({ level: 2, xp: 300 });
     });
 });
+
+describe('the beginner AI track', () => {
+    const { aiSetupScore, engine } = require('../index');
+    const twoGames = { winnings: 1, losses: 1 };
+    const fourGames = { winnings: 2, losses: 2 };
+
+    test('before the online unlock, XP from challenges does not count for AI matches', () => {
+        expect(aiSetupScore({ score: 900, challengeXp: 800, ...twoGames })).toBe(100);
+        expect(aiSetupScore({ score: 900, ...twoGames })).toBe(900);
+    });
+
+    test('once online play is unlocked, all XP counts', () => {
+        expect(aiSetupScore({ score: 900, challengeXp: 800, ...fourGames })).toBe(900);
+        expect(aiSetupScore({ score: 900, challengeXp: 800 }, { early: true })).toBe(900);
+    });
+
+    test('a newcomer whose XP came from challenges still gets the prepared first game', () => {
+        const setup = engine.aiMatchSetup(aiSetupScore({ score: 600, challengeXp: 600 }));
+        expect(setup.scenario).toBeDefined();
+        expect(setup.boardSize).toEqual({ rows: 6, cols: 6 });
+        expect(setup.opponent.name).toBe('Tom Toffee');
+    });
+});

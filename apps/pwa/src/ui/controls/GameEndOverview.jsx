@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import PropTypes from "prop-types";
 import Fab from "./Fab";
+import Button from "./Button";
 import {
   translate as t,
   translationKeys as tr,
@@ -47,7 +48,17 @@ const useStyles = createUseStyles((theme) => ({
     width: "100%",
     display: "flex",
     justifyContent: "center",
+    alignItems: "center",
+    gap: "1.5em",
     marginBottom: "8vh",
+  },
+  rematchStatus: {
+    width: "100%",
+    margin: "0 0 0.6em",
+    textAlign: "center",
+    color: "white",
+    fontFamily: theme.font.body,
+    fontSize: theme.font.size.md,
   },
   xp: {
     display: "flex",
@@ -302,7 +313,17 @@ const GameEndOverview = (props) => {
         ) : null}
       </div>
 
+      {props.rematchStatus ? (
+        <p className={classes.rematchStatus} data-testid="rematch-status">
+          {props.rematchStatus}
+        </p>
+      ) : null}
       <div className={classes.actions}>
+        {props.rematch ? (
+          <Button size="small" data-testid="rematch" onClick={props.rematch}>
+            {t(tr.REMATCH)}
+          </Button>
+        ) : null}
         {award < awards.length ? (
           <Fab
             color="accent"
@@ -329,6 +350,9 @@ GameEndOverview.propTypes = {
   // online matches are verified by the server, which sends the drops (undefined while pending)
   verified: PropTypes.bool.isRequired,
   drops: PropTypes.array,
+  // after a challenge match: asks the opponent for another one; rematchStatus says how it goes
+  rematch: PropTypes.func,
+  rematchStatus: PropTypes.string,
 };
 
 export default GameEndOverview;

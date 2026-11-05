@@ -30,7 +30,6 @@ class Multiplayer {
     this.callbacks = {
       updatePlayerStats: notInitialized("updatePlayerStats"),
       notifyPlayerSignedIn: notInitialized("notifyPlayerSignedIn"),
-      loadFriendsList: notInitialized("loadFriendsList"),
       setPlayerRank: notInitialized("setPlayerRank"),
       showQuickMessage: notInitialized("showQuickMessage"),
       showNotification: notInitialized("showNotification"),
@@ -68,7 +67,6 @@ class Multiplayer {
       logger.info("could not load the player entry", error);
     }
     if (window.navigator.onLine) {
-      this.fetchFriendsList();
       this.computeRank();
     }
   }
@@ -399,21 +397,7 @@ class Multiplayer {
     return this.updateTutorialState("finished", { tutorialFinished: true });
   }
 
-  /* ---------- friends, ranking ---------- */
-
-  async fetchFriendsList() {
-    if (!this.signedIn()) {
-      return undefined;
-    }
-    try {
-      const response = await ServerRequest("get", "/user/friends");
-      this.callbacks.loadFriendsList(response.data);
-      return response.data;
-    } catch (error) {
-      logger.warn("error while fetching friends " + error);
-      return undefined;
-    }
-  }
+  /* ---------- ranking ---------- */
 
   async computeRank() {
     try {
@@ -424,24 +408,6 @@ class Multiplayer {
       this.callbacks.setPlayerRank(data.ranking);
     } catch {
       this.callbacks.setPlayerRank("Offline");
-    }
-  }
-
-  async removeFriend(friend) {
-    try {
-      await ServerRequest("delete", "/user/friend", { friend });
-      await this.fetchFriendsList();
-    } catch (error) {
-      logger.warn("error while removing friend " + error);
-    }
-  }
-
-  async addFriend(friend) {
-    try {
-      await ServerRequest("post", "/user/friend", { friend });
-      await this.fetchFriendsList();
-    } catch (error) {
-      logger.warn("error while adding friend " + error);
     }
   }
 

@@ -90,6 +90,27 @@ The site file proxies `/live` with the WebSocket upgrade headers and long timeou
 keeps its connection open); the API trusts one proxy (`trust proxy`) and so sees the player's
 address in `X-Forwarded-For` for its per-minute account limit.
 
+### Challenge links (play.battlechoc.com)
+
+A shared challenge link is `https://play.battlechoc.com/<code>`: a small page of the API whose link
+preview names the challenger, and which sends a browser on to `battlechoc.com/?challenge=<code>`.
+
+1. DNS at OVH: an `A` record (and `AAAA` if the VPS has IPv6) for `play.battlechoc.com` with the
+   VPS address, like `api.battlechoc.com`.
+2. nginx and TLS:
+
+   ```sh
+   sudo cp deploy/nginx/play.battlechoc.com.conf /etc/nginx/sites-available/play.battlechoc.com
+   sudo ln -s /etc/nginx/sites-available/play.battlechoc.com /etc/nginx/sites-enabled/
+   sudo nginx -t && sudo systemctl reload nginx
+   sudo certbot --nginx -d play.battlechoc.com
+   curl -s https://play.battlechoc.com/ | grep og:title
+   ```
+
+3. The game shares these links once `apps/pwa/.env` has
+   `VITE_CHALLENGE_LINK_BASE=https://play.battlechoc.com/` (a new build and deploy). Until then it
+   shares `https://battlechoc.com/?challenge=<code>` with the general preview.
+
 ## 6. The game
 
 The game's default API is `https://api.battlechoc.com` (`apps/pwa/src/helper/settings.jsx`), so

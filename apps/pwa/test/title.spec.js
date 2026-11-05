@@ -20,3 +20,14 @@ test("starts the tutorial", async ({ page }) => {
   await expect(coach).toContainText("Your chocolate factory");
   await page.screenshot({ fullPage: true, path: "test/output/screenshot_test002.png" });
 });
+
+test("link previews show the game's picture", async ({ page, request }) => {
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    "content",
+    "https://battlechoc.com/images/challenge-preview.jpg"
+  );
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", "battlechoc");
+  const picture = await request.get("/images/challenge-preview.jpg");
+  expect(picture.ok()).toBe(true);
+  expect((await picture.body()).length).toBeLessThan(300000);
+});
