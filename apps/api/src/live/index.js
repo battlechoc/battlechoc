@@ -80,7 +80,9 @@ const createLive = ({ server, pool, auth, push, clock = systemClock, config = {}
         clearTimeout(connection.helloTimer);
         connection.playerId = playerId;
         const activeMatch = lobby.register(connection);
-        connection.send({ type: ServerMessage.WELCOME, playerId, serverT: clock.now(), activeMatch, protocol: LIVE_PROTOCOL_VERSION });
+        const challenge = lobby.challenges.stateFor(playerId);
+        connection.send({ type: ServerMessage.WELCOME, playerId, serverT: clock.now(), activeMatch, challenge, protocol: LIVE_PROTOCOL_VERSION });
+        await lobby.challenges.afterWelcome(connection);
     };
 
     wss.on('connection', ws => {

@@ -332,6 +332,41 @@ class Challenges {
         }
     }
 
+    /* ---------- connections ---------- */
+
+    /** The challenger's own challenge for the welcome (null: none), so a reloaded app shows it again. */
+    stateFor(playerId) {
+        const challenge = this.byPlayer.get(playerId);
+        return challenge && challenge.state !== State.STARTED ? this.payload(challenge) : null;
+    }
+
+    /** After the welcome: a friend accepted while the challenger was away, so the match starts now. */
+    async afterWelcome(connection) {
+        const challenge = this.byPlayer.get(connection.playerId);
+        if (challenge && challenge.state === State.ACCEPTED && !this.lobby.busy(connection.playerId)) {
+            await this.start(challenge);
+        }
+    }
+
+    /** A connection closed: its player stops reading challenges unless they come back within the grace. */
+    readerLeft(connection) {
+        const { playerId } = connection;
+        this.byCode.forEach(challenge => {
+            if (!challenge.readers.has(playerId) || challenge.readers.get(playerId) !== null) {
+                return;
+            }
+            challenge.readers.set(playerId, this.clock.setTimer(() => {
+                challenge.readers.delete(playerId);
+                if (challenge.readers.size === 0 && challenge.state === State.READING) {
+                    // nobody reads any more: the link waits for someone again
+                    this.wait(challenge);
+                } else {
+                    this.notifyChallenger(challenge);
+                }
+            }, this.config.challengeReaderGraceMs));
+        });
+    }
+
     /** The match of a started challenge ended: later openers find it ended. */
     matchEnded(matchId) {
         this.byCode.forEach(challenge => {

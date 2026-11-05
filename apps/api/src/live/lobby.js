@@ -89,6 +89,8 @@ class Lobby {
         if (this.connections.get(connection.playerId) === connection) {
             this.connections.delete(connection.playerId);
             this.leaveQueue(connection.playerId, false);
+            // a challenger in the chat app keeps their challenge; a reader keeps their place a while
+            this.challenges.readerLeft(connection);
         }
         connection.rooms.forEach(room => room.detach(room.indexOf(connection.playerId), connection));
         connection.rooms.clear();
