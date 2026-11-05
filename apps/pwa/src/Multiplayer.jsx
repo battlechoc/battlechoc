@@ -3,6 +3,7 @@ import {
   EmptyPlayerStats,
   translate as t,
   translationKeys as tr,
+  engine,
 } from "@battlechoc/battlechoc-shared-functions";
 import { ServerRequest } from "./helper/settings";
 import { account } from "./account";
@@ -265,6 +266,12 @@ class Multiplayer {
       Object.assign(playerStats, this.computeTrackRecordStats(playerStats.trackRecord));
       // offline matches give XP only; ingredients come from verified online matches
       playerStats.score = (playerStats.score || 0) + this.calculateXpFromTrackRecord(gameStats);
+      // and they move the AI ladder, as the server will when it gets the records
+      playerStats.aiLadder = gameStats.reduce(
+        (ladder, record) =>
+          engine.nextAiLadder(ladder, record.won ? "won" : record.lost ? "lost" : "draw"),
+        engine.aiLadderOf(playerStats)
+      );
       await OfflineStore.playerStore.set("stats", playerStats);
       this.callbacks.updatePlayerStats(playerStats);
     } catch (error) {

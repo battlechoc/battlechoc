@@ -476,6 +476,10 @@ const LabTable = ({
                       className={`${classes.cost} ${
                         missing(ingredient, amount) ? classes.missing : ""
                       }`}
+                      data-cost={ingredient}
+                      data-missing={
+                        missing(ingredient, amount) ? "true" : "false"
+                      }
                     >
                       <IngredientIcon id={ingredient} size="1.3em" />
                       {`×${amount}`}

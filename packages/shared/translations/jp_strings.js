@@ -570,5 +570,6 @@ module.exports = {
     "SECONDS_LEFT": "残り{{seconds}}秒",
     "CHALLENGE_CODE_COPIED": "コードをコピーしました",
     "ASSETS_LOADING": "3Dモデルを読み込み中…",
-    "ASSETS_FAILED": "読み込みに失敗：タップで再試行"
+    "ASSETS_FAILED": "読み込みに失敗：タップで再試行",
+    "TUTORIAL_STARTER_KIT": "スターターキット："
 }

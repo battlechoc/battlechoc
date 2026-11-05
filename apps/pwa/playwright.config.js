@@ -67,7 +67,7 @@ export default defineConfig({
       timeout: 60000,
     },
     {
-      command: "node ../api/src/server.js",
+      command: "node ../api/test/e2eServer.js",
       url: `http://127.0.0.1:${apiPort}/health`,
       reuseExistingServer: true,
       timeout: 30000,

@@ -192,7 +192,6 @@ module.exports.UnlockGames = progression.UnlockGames;
 module.exports.buildingsUnlockedBetween = progression.buildingsUnlockedBetween;
 module.exports.gamesPlayed = progression.gamesPlayed;
 module.exports.unlocks = progression.unlocks;
-module.exports.aiSetupScore = progression.aiSetupScore;
 module.exports.LevelXp = progression.LevelXp;
 module.exports.playerLevel = progression.playerLevel;
 const equipment = require('./equipment');

@@ -112,7 +112,7 @@ describe('progress', () => {
         const player = await account(app);
         expect((await player.post('/user/tutorial/started')).body.stats.tutorialStarted).toBe(true);
         const finished = await player.post('/user/tutorial/finished').expect(200);
-        expect(finished.body.stats).toMatchObject({ tutorialFinished: true, xp: 100, score: 100, coins: 100, pantry: { COCOA: 100, RUM: 4, SUGAR: 4, MILK: 2 } });
+        expect(finished.body.stats).toMatchObject({ tutorialFinished: true, xp: 100, score: 100, coins: 100, pantry: { COCOA: 100, RUM: 1, SUGAR: 2, MILK: 2 } });
         const again = await player.post('/user/tutorial/finished');
         expect(again.body.stats).toMatchObject({ xp: 100, pantry: { COCOA: 100 } });
     });
@@ -142,9 +142,13 @@ describe('progress', () => {
             trackRecord: [winRecord('offline-1')],
         };
         const merged = await player.post('/user/merge', { playerInfo }).expect(200);
-        expect(merged.body.mergedPlayerInfo).toMatchObject({ username: 'OfflineHero', xp: 25, coins: 0, pantry: {}, tutorialFinished: true });
+        // the claimed coins and score count for nothing; the tutorial finished on the device brings
+        // its reward (100 XP and the starter kit), the record its XP
+        expect(merged.body.mergedPlayerInfo).toMatchObject({
+            username: 'OfflineHero', xp: 125, coins: 100, pantry: { COCOA: 100, RUM: 1, SUGAR: 2, MILK: 2 }, tutorialFinished: true,
+        });
         const again = await player.post('/user/merge', { playerInfo }).expect(200);
-        expect(again.body.mergedPlayerInfo.xp).toBe(25);
+        expect(again.body.mergedPlayerInfo).toMatchObject({ xp: 125, coins: 100 });
     });
 
     test('the pantry endpoint lists totals and spoiling batches', async () => {
@@ -343,5 +347,31 @@ describe('play page', () => {
             await request(app).get('/play/K7Q2M9XD').expect(200);
         }
         await request(app).get('/play/K7Q2M9XD').expect(429);
+    });
+});
+
+describe('the tutorial and the AI ladder from the device', () => {
+    test('a tutorial finished without the server brings the starter kit when the device syncs, once', async () => {
+        const { app } = await setup();
+        const player = await account(app);
+        const merged = (await player.post('/user/merge', { playerInfo: { tutorialFinished: true } }).expect(200)).body.mergedPlayerInfo;
+        expect(merged).toMatchObject({ tutorialFinished: true, xp: 100, pantry: { COCOA: 100, RUM: 1, SUGAR: 2, MILK: 2 } });
+        await player.post('/user/merge', { playerInfo: { tutorialFinished: true } }).expect(200);
+        const finished = (await player.post('/user/tutorial/finished').expect(200)).body.stats;
+        expect(finished).toMatchObject({ xp: 100, pantry: { COCOA: 100, RUM: 1, SUGAR: 2, MILK: 2 } });
+    });
+
+    test('matches against the AI played without the server move the ladder too', async () => {
+        const { app } = await setup();
+        const player = await account(app);
+        expect((await player.get('/user').expect(200)).body.stats.aiLadder).toEqual({ step: 1, wins: 0, floor: 1, games: 0 });
+        const win = i => ({ id: `w${i}`, won: true, winners: [{ idx: 0 }], awards: [] });
+        const loss = i => ({ id: `l${i}`, lost: true, winners: [{ idx: 1 }], awards: [] });
+        await player.post('/user/trackrecords', { stats: [win(1), win(2), win(3), win(4)] }).expect(200);
+        expect((await player.get('/user').expect(200)).body.stats.aiLadder).toMatchObject({ step: 3, wins: 0, games: 4 });
+        // the same records again change nothing
+        await player.post('/user/trackrecords', { stats: [win(1), win(2)] }).expect(200);
+        await player.post('/user/trackrecords', { stats: [loss(1)] }).expect(200);
+        expect((await player.get('/user').expect(200)).body.stats.aiLadder).toMatchObject({ step: 2, games: 5 });
     });
 });

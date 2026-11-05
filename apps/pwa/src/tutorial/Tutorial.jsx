@@ -4,13 +4,13 @@ import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
   EmptyPlayerStats,
+  StarterKit,
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
+import IngredientBag from "../ui/ingredients/IngredientBag";
 import { Jukebox } from "../ui/misc";
-import { ServerRequest } from "../helper/settings";
 import { multiplayer } from "../Multiplayer";
-import OfflineStore from "../OfflineStore";
 import { updatePlayerStats, showNotification, loadUiState } from "../ui/UiActions";
 import { PlayerNameInput, Button, CoachCard } from "../ui/controls";
 import { Dialog } from "../ui/dialogs";
@@ -51,6 +51,9 @@ const isNamed = (stats) =>
 const Tutorial = (props) => {
   const classes = useStyles();
   const { loops, view, playerInfos, dispatch, clearScene, testClock } = props;
+  // the first finished lesson brings the starter kit (the server credits it once, also later
+  // when the lesson was played without it); a restarted lesson brings nothing
+  const firstFinish = useRef(!playerInfos.stats.tutorialFinished);
   const lesson = loops[0] === LESSON;
   const stats = playerInfos.stats;
   const playerName = isNamed(stats) ? stats.username : "Carolin Cacao";
@@ -155,19 +158,18 @@ const Tutorial = (props) => {
     close(false);
   };
 
-  const setPlayerName = (name) => {
-    ServerRequest("post", "/user/username", { username: name })
-      .then(async () => {
-        await multiplayer.tutorialFinished();
-        props.updatePlayerStats({ username: name });
-        const playerStats = await OfflineStore.playerStore.get("stats");
-        if (playerStats) {
-          playerStats.username = name;
-          OfflineStore.playerStore.set("stats", playerStats);
-        }
-        setNamed(true);
-      })
-      .catch((error) => logger.warn(error));
+  // without the server the name stays on the device until it answers (as in the profile), so a
+  // lesson finished offline does not end in a dialog that cannot be closed
+  const setPlayerName = async (name) => {
+    try {
+      await multiplayer.changeUsername(name, props.online);
+    } catch (error) {
+      // online, the name may be taken: the player picks another
+      logger.warn(error);
+      return;
+    }
+    await multiplayer.tutorialFinished();
+    setNamed(true);
   };
 
   let card;
@@ -255,11 +257,25 @@ const Tutorial = (props) => {
               <br />
               {t(tr.TUTORIAL_DIALOG_HINT)}
             </p>
+            {firstFinish.current ? (
+              <div data-testid="starter-kit">
+                <p>{t(tr.TUTORIAL_STARTER_KIT)}</p>
+                <IngredientBag
+                  items={Object.entries(StarterKit).map(([ingredient, amount]) => ({ ingredient, amount }))}
+                  showSources={false}
+                />
+              </div>
+            ) : null}
             <Button onClick={() => close(true)}>{t(tr.TUTORIAL_DIALOG_PLAY_GAME)}</Button>
           </div>
         ) : (
           <div data-testid="tutorial-name">
-            <PlayerNameInput setPlayerName={setPlayerName} startValue={initialUserName} current={stats.username} />
+            <PlayerNameInput
+              setPlayerName={setPlayerName}
+              startValue={initialUserName}
+              current={stats.username}
+              offline={!props.online}
+            />
             <p>{t(tr.TUTORIAL_CHOOSE_NAME_INFO)}</p>
           </div>
         )}
@@ -279,6 +295,7 @@ const mapStateToProps = (state) => ({
   loops: state.ui.loopAnimations,
   notificationOnLoopsEnd: state.ui.notificationOnLoopsEnd,
   playerInfos: state.ui.playerInfos,
+  online: state.ui.online,
 });
 
 const mapDispatchToProps = (dispatch) => ({

@@ -570,5 +570,6 @@ module.exports = {
     "SECONDS_LEFT": "ancora {{seconds}} s",
     "CHALLENGE_CODE_COPIED": "Codice copiato",
     "ASSETS_LOADING": "Caricamento modelli 3D…",
-    "ASSETS_FAILED": "Caricamento fallito: tocca per riprovare"
+    "ASSETS_FAILED": "Caricamento fallito: tocca per riprovare",
+    "TUTORIAL_STARTER_KIT": "Il tuo kit iniziale:"
 }

@@ -42,6 +42,10 @@ const account = async (app, { starter = true, name } = {}) => {
     return client;
 };
 
+// more ingredients on top of the starter kit (1 rum, 2 sugar, 2 milk since 2026-11-05)
+const stock = (pool, client, amounts) => pantry.add(pool, client.playerId,
+    Object.entries(amounts).map(([ingredient, amount]) => ({ ingredient, amount })), Date.now());
+
 const tryRecipe = (client, entityType, ingredients) => client.post('/lab/try', { entityType, ingredients });
 
 describe('recipe table', () => {
@@ -53,11 +57,11 @@ describe('recipe table', () => {
 });
 
 describe('starter kit', () => {
-    test('finishing the tutorial gives cocoa and the ingredients of the starter recipe, once', async () => {
+    test('finishing the tutorial gives cocoa and a little rum, sugar and milk, once', async () => {
         const { app } = await setup();
         const player = await account(app);
         const stats = (await player.post('/user/tutorial/finished').expect(200)).body.stats;
-        expect(stats.pantry).toEqual({ COCOA: 100, RUM: 4, SUGAR: 4, MILK: 2 });
+        expect(stats.pantry).toEqual({ COCOA: 100, RUM: 1, SUGAR: 2, MILK: 2 });
         expect(stats).toMatchObject({ items: [], equipment: {}, loadout: {} });
     });
 });
@@ -113,16 +117,18 @@ describe('lab table', () => {
 
 describe('crafting', () => {
     test('needs a discovered recipe, takes amounts and fee, numbers the items', async () => {
-        const { app } = await setup();
+        const { app, pool } = await setup();
         const anna = await account(app, { name: 'Anna' });
+        await stock(pool, anna, { RUM: 3, SUGAR: 2 });
         expect((await anna.post('/lab/craft', { item: 'LIGHT_BARREL' }).expect(400)).body.error).toBe('RECIPE NOT DISCOVERED');
         await tryRecipe(anna, T.RUM_TRUFFLE_CANNON, ['SUGAR', 'MILK']).expect(200);
         const crafted = (await anna.post('/lab/craft', { item: 'LIGHT_BARREL' }).expect(200)).body;
         expect(crafted.item).toMatchObject({ item: 'LIGHT_BARREL', serial: 1, craftedBy: 'Anna' });
         expect(crafted.pantry).toEqual({ COCOA: 50, RUM: 2, SUGAR: 2, MILK: 1 });
         const ben = await account(app, { name: 'Ben' });
+        await stock(pool, ben, { RUM: 1 });
         expect((await ben.post('/lab/craft', { item: 'LIGHT_BARREL' }).expect(200)).body.item.serial).toBe(2);
-        // the starter kit holds exactly enough for a second one, then it is used up
+        // Anna's pantry holds exactly enough for a second one, then it is used up
         expect((await anna.post('/lab/craft', { item: 'LIGHT_BARREL' }).expect(200)).body.item.serial).toBe(3);
         expect((await anna.post('/lab/craft', { item: 'LIGHT_BARREL' }).expect(400)).body.error).toBe('NOT ENOUGH INGREDIENTS');
         await anna.post('/lab/craft', { item: 'NOPE' }).expect(400);
@@ -130,12 +136,13 @@ describe('crafting', () => {
     });
 
     test('two crafts at once with ingredients for one: exactly one item', async () => {
-        const { app } = await setup();
+        const { app, pool } = await setup();
         const player = await account(app);
+        await stock(pool, player, { RUM: 3, SUGAR: 2 });
         await tryRecipe(player, T.RUM_TRUFFLE_CANNON, ['SUGAR', 'MILK']).expect(200);
         const statuses = (await Promise.all([1, 2, 3].map(() => player.post('/lab/craft', { item: 'LIGHT_BARREL' }))))
             .map(response => response.status).sort();
-        // the starter kit holds milk for two light barrels but cocoa for two as well; a third fails
+        // the pantry holds milk for two light barrels and cocoa for two as well; a third fails
         expect(statuses).toEqual([200, 200, 400]);
         expect((await player.get('/user/items')).body).toHaveLength(2);
     });
