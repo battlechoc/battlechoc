@@ -546,11 +546,10 @@ module.exports = {
     "CHALLENGE_CANCEL": "Hủy",
     "CHALLENGE_HEADLINE": "{{name}} thách đấu bạn một trận sô-cô-la!",
     "CHALLENGE_PRIMER": "Trồng ca cao, xây đại bác, giấu mọi thứ dưới lớp kem và phá nhà máy của {{name}} trước khi nhà máy của bạn sụp đổ.",
-    "CHALLENGE_YOU_PLAY_AS": "Bạn chơi với tên {{name}}",
     "CHALLENGE_ACCEPT": "Chấp nhận",
     "CHALLENGE_NOT_NOW": "Để sau",
     "CHALLENGE_PREPARING": "Đang chuẩn bị chiến trường…",
-    "CHALLENGE_APP_HINT": "Bạn đã chơi trong ứng dụng battlechoc? Hãy mở ứng dụng và nhập {{code}}",
+    "CHALLENGE_APP_HINT": "Bạn đã chơi trong ứng dụng battlechoc? Hãy sao chép mã và nhập vào đó:",
     "CHALLENGE_CONNECTING": "Đang tải lời thách đấu…",
     "CHALLENGE_UNREACHABLE": "Hiện không thể kết nối tới máy chủ trò chơi.",
     "CHALLENGE_ENDED": "Lời thách đấu này đã kết thúc, hãy xin một lời mới.",
@@ -569,5 +568,6 @@ module.exports = {
     "REMATCH_WAITING": "Đang chờ {{name}}…",
     "REMATCH_DECLINED": "{{name}} hiện không muốn tái đấu.",
     "REMATCH_GONE": "{{name}} đã rời đi.",
-    "SECONDS_LEFT": "còn {{seconds}} giây"
+    "SECONDS_LEFT": "còn {{seconds}} giây",
+    "CHALLENGE_CODE_COPIED": "Đã sao chép mã"
 }

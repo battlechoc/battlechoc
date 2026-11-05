@@ -546,11 +546,10 @@ module.exports = {
     "CHALLENGE_CANCEL": "Cancelar",
     "CHALLENGE_HEADLINE": "¡{{name}} te reta a una batalla de chocolate!",
     "CHALLENGE_PRIMER": "Cultiva cacao, construye cañones, esconde todo bajo la nata y destruye la fábrica de {{name}} antes de que caiga la tuya.",
-    "CHALLENGE_YOU_PLAY_AS": "Juegas como {{name}}",
     "CHALLENGE_ACCEPT": "Aceptar",
     "CHALLENGE_NOT_NOW": "Ahora no",
     "CHALLENGE_PREPARING": "Preparando el campo de batalla…",
-    "CHALLENGE_APP_HINT": "¿Ya juegas en la app de battlechoc? Ábrela e introduce {{code}}",
+    "CHALLENGE_APP_HINT": "¿Ya juegas en la app de battlechoc? Copia el código e introdúcelo allí:",
     "CHALLENGE_CONNECTING": "Cargando el reto…",
     "CHALLENGE_UNREACHABLE": "No se puede conectar con el servidor de juego ahora mismo.",
     "CHALLENGE_ENDED": "Este reto ha terminado, pide uno nuevo.",
@@ -569,5 +568,6 @@ module.exports = {
     "REMATCH_WAITING": "Esperando a {{name}}…",
     "REMATCH_DECLINED": "{{name}} no quiere la revancha ahora mismo.",
     "REMATCH_GONE": "{{name}} ha salido de la partida.",
-    "SECONDS_LEFT": "quedan {{seconds}} s"
+    "SECONDS_LEFT": "quedan {{seconds}} s",
+    "CHALLENGE_CODE_COPIED": "Código copiado"
 }

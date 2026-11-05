@@ -457,9 +457,6 @@ const translationPredicates = {
     CHALLENGE_PRIMER: function (strings, name) {
         return fmt(strings.CHALLENGE_PRIMER, { name: name });
     },
-    CHALLENGE_YOU_PLAY_AS: function (strings, name) {
-        return fmt(strings.CHALLENGE_YOU_PLAY_AS, { name: name });
-    },
     CHALLENGE_ON_THE_WAY: function (strings, name) {
         return fmt(strings.CHALLENGE_ON_THE_WAY, { name: name });
     },
@@ -480,9 +477,6 @@ const translationPredicates = {
     },
     CHALLENGE_CODE: function (strings, code) {
         return fmt(strings.CHALLENGE_CODE, { code: code });
-    },
-    CHALLENGE_APP_HINT: function (strings, code) {
-        return fmt(strings.CHALLENGE_APP_HINT, { code: code });
     },
     SECONDS_LEFT: function (strings, seconds) {
         return fmt(strings.SECONDS_LEFT, { seconds: seconds });

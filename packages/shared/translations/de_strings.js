@@ -546,11 +546,10 @@ module.exports = {
     "CHALLENGE_CANCEL": "Abbrechen",
     "CHALLENGE_HEADLINE": "{{name}} fordert dich zur Schokoladenschlacht heraus!",
     "CHALLENGE_PRIMER": "Bau Kakao an, errichte Kanonen, versteck alles unter Sahne und zerstör die Fabrik von {{name}}, bevor deine fällt.",
-    "CHALLENGE_YOU_PLAY_AS": "Du spielst als {{name}}",
     "CHALLENGE_ACCEPT": "Annehmen",
     "CHALLENGE_NOT_NOW": "Nicht jetzt",
     "CHALLENGE_PREPARING": "Das Schlachtfeld wird vorbereitet…",
-    "CHALLENGE_APP_HINT": "Du spielst schon in der battlechoc-App? Öffne sie und gib {{code}} ein",
+    "CHALLENGE_APP_HINT": "Du spielst schon in der battlechoc-App? Kopier den Code und gib ihn dort ein:",
     "CHALLENGE_CONNECTING": "Herausforderung wird geladen…",
     "CHALLENGE_UNREACHABLE": "Der Spielserver ist gerade nicht erreichbar.",
     "CHALLENGE_ENDED": "Diese Herausforderung ist vorbei, frag nach einer neuen.",
@@ -569,5 +568,6 @@ module.exports = {
     "REMATCH_WAITING": "Warte auf {{name}}…",
     "REMATCH_DECLINED": "{{name}} will gerade keine Revanche.",
     "REMATCH_GONE": "{{name}} ist gegangen.",
-    "SECONDS_LEFT": "noch {{seconds}} s"
+    "SECONDS_LEFT": "noch {{seconds}} s",
+    "CHALLENGE_CODE_COPIED": "Code kopiert"
 }

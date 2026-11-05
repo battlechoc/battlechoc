@@ -24,6 +24,11 @@ const useStyles = createUseStyles((theme) => ({
     alignItems: "center",
     gap: "0.8em",
     width: "min(26em, 76vw)",
+    // never wider than the dialog (in portrait its inside is narrower than 76vw)
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    // long player names break instead of sticking out
+    overflowWrap: "anywhere",
     color: "white",
     fontFamily: theme.font.body,
     fontSize: theme.font.size.md,
@@ -74,6 +79,27 @@ const useStyles = createUseStyles((theme) => ({
   },
   error: {
     color: theme.color.accent.light,
+  },
+  // A: the code on a chocolate tile, the countdown as a pill, a line before the code field
+  codeTile: {
+    padding: "0.3em 0.9em",
+    borderRadius: "0.4em",
+    border: "2px dashed rgba(255, 255, 255, 0.55)",
+    background: "rgba(93, 58, 36, 0.55)",
+  },
+  pill: {
+    display: "inline-block",
+    marginLeft: "0.5em",
+    padding: "0.05em 0.6em",
+    borderRadius: "1em",
+    background: "rgba(255, 255, 255, 0.18)",
+    fontFamily: theme.font.display,
+  },
+  divider: {
+    width: "70%",
+    height: 0,
+    borderTop: "1px solid rgba(255, 255, 255, 0.3)",
+    margin: "0.4em 0 0",
   },
 }));
 
@@ -200,13 +226,25 @@ const ChallengeDialog = ({
     }
   };
 
-  let content;
+  const entry = <CodeEntry classes={classes} openCode={openCode} />;
+  const cancelButton = (
+    <Button
+      size="small"
+      color="accent"
+      data-testid="challenge-cancel"
+      onClick={leave}
+    >
+      {t(tr.CHALLENGE_CANCEL)}
+    </Button>
+  );
+
+  let main;
   if (locked) {
-    content = <p>{lockText}</p>;
+    main = <p>{lockText}</p>;
   } else if (challenge === null) {
-    content = <p>{t(tr.CHALLENGE_CONNECTING)}</p>;
+    main = <p>{t(tr.CHALLENGE_CONNECTING)}</p>;
   } else if (ENDED[challenge.state]) {
-    content = (
+    main = (
       <>
         <p data-testid="challenge-status">{t(ENDED[challenge.state])}</p>
         <div className={classes.actions}>
@@ -230,53 +268,63 @@ const ChallengeDialog = ({
     );
   } else {
     const waiting = challenge.state === ChallengeState.WAITING;
-    content = (
+    const status = t(waiting ? tr.CHALLENGE_WAITING : tr.CHALLENGE_READING);
+    const formatted = formatChallengeCode(code);
+    const shareButton = (
+      <Button data-testid="challenge-share" onClick={share}>
+        {t(tr.CHALLENGE_SHARE)}
+      </Button>
+    );
+    const copiedLine = copied ? (
+      <p>
+        {t(tr.CHALLENGE_COPIED)} ·{" "}
+        <a
+          className={classes.whatsapp}
+          href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${text} ${link}`)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t(tr.CHALLENGE_WHATSAPP)}
+        </a>
+      </p>
+    ) : null;
+    main = (
       <>
         <p>{t(tr.CHALLENGE_SEND_HINT)}</p>
-        <Button data-testid="challenge-share" onClick={share}>
-          {t(tr.CHALLENGE_SHARE)}
-        </Button>
-        {copied ? (
-          <p>
-            {t(tr.CHALLENGE_COPIED)} ·{" "}
-            <a
-              className={classes.whatsapp}
-              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`${text} ${link}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {t(tr.CHALLENGE_WHATSAPP)}
-            </a>
-          </p>
-        ) : null}
-        <p className={classes.code} data-testid="challenge-code">
-          {t(tr.CHALLENGE_CODE, formatChallengeCode(code))}
+        {shareButton}
+        {copiedLine}
+        <p
+          className={`${classes.code} ${classes.codeTile}`}
+          data-testid="challenge-code"
+        >
+          {t(tr.CHALLENGE_CODE, formatted)}
         </p>
         <p data-testid="challenge-status">
-          {t(waiting ? tr.CHALLENGE_WAITING : tr.CHALLENGE_READING)}
+          {status}
+          {waiting ? (
+            <span className={classes.pill} data-testid="challenge-countdown">
+              {countdown(challenge.expiresAt)}
+            </span>
+          ) : null}
         </p>
-        {waiting ? (
-          <p className={classes.countdown} data-testid="challenge-countdown">
-            {countdown(challenge.expiresAt)}
-          </p>
-        ) : null}
-        <Button
-          size="small"
-          color="accent"
-          data-testid="challenge-cancel"
-          onClick={leave}
-        >
-          {t(tr.CHALLENGE_CANCEL)}
-        </Button>
+        {cancelButton}
       </>
     );
   }
 
+  // the waiting link (A): a line before the code field; locked (C): the code field right below
+  const body = (
+    <>
+      {main}
+      {locked ? null : <div className={classes.divider} />}
+      {entry}
+    </>
+  );
+
   return (
     <Dialog open close={leave} mode="info" title={t(tr.CHALLENGE_BUTTON)}>
       <div className={classes.body} data-testid="challenge-dialog">
-        {content}
-        <CodeEntry classes={classes} openCode={openCode} />
+        {body}
       </div>
     </Dialog>
   );

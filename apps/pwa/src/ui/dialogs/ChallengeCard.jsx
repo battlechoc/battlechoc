@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
@@ -23,6 +23,11 @@ const useStyles = createUseStyles((theme) => ({
     alignItems: "center",
     gap: "0.8em",
     width: "min(26em, 76vw)",
+    // never wider than the dialog (in portrait its inside is narrower than 76vw)
+    maxWidth: "100%",
+    boxSizing: "border-box",
+    // long player names break instead of sticking out
+    overflowWrap: "anywhere",
     color: "white",
     fontFamily: theme.font.body,
     fontSize: theme.font.size.md,
@@ -42,6 +47,52 @@ const useStyles = createUseStyles((theme) => ({
     gap: "1em",
     flexWrap: "wrap",
     justifyContent: "center",
+  },
+  // the two names facing each other
+  versus: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "0.6em",
+    width: "100%",
+  },
+  side: {
+    flex: "1 1 0",
+    minWidth: 0,
+    padding: "0.4em 0.6em",
+    borderRadius: "0.6em",
+    background: "rgba(93, 58, 36, 0.6)",
+    fontFamily: theme.font.display,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  },
+  vs: {
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.lg,
+    color: "#f3c26b",
+  },
+  textLink: {
+    background: "none",
+    border: "none",
+    color: "white",
+    textDecoration: "underline",
+    cursor: "pointer",
+    fontFamily: theme.font.body,
+    fontSize: theme.font.size.sm,
+  },
+  // the code for the battlechoc app on an iPhone (its storage is not Safari's): tap to copy
+  codeChip: {
+    margin: "0.3em 0 0",
+    padding: "0.2em 0.9em",
+    borderRadius: "0.4em",
+    border: "2px dashed rgba(255, 255, 255, 0.55)",
+    background: "rgba(93, 58, 36, 0.55)",
+    color: "white",
+    cursor: "pointer",
+    fontFamily: theme.font.display,
+    fontSize: theme.font.size.md,
+    letterSpacing: "0.06em",
   },
 }));
 
@@ -69,6 +120,7 @@ const ChallengeCard = ({
   startMatch,
 }) => {
   const classes = useStyles();
+  const [copied, setCopied] = useState(false);
   if (!view || inMatch) {
     return null;
   }
@@ -103,39 +155,68 @@ const ChallengeCard = ({
 
   let content;
   if (view.state === View.OPEN) {
+    const headline = (
+      <p className={classes.headline} data-testid="challenge-headline">
+        {t(tr.CHALLENGE_HEADLINE, from)}
+      </p>
+    );
+    const named = name && name !== EmptyPlayerStats.username;
+    const accept = (
+      <Button
+        data-testid="challenge-accept"
+        disabled={!assetsReady}
+        onClick={() => {
+          Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+          liveLobby.acceptChallenge(view.code).catch(() => {});
+        }}
+      >
+        {assetsReady ? t(tr.CHALLENGE_ACCEPT) : t(tr.CHALLENGE_PREPARING)}
+      </Button>
+    );
+    const formatted = formatChallengeCode(view.code);
+    const copyCode = () => {
+      const done = () => setCopied(true);
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(formatted).then(done, done);
+      } else {
+        done();
+      }
+    };
     content = (
       <>
-        <p className={classes.headline} data-testid="challenge-headline">
-          {t(tr.CHALLENGE_HEADLINE, from)}
-        </p>
-        {newcomer ? <p>{t(tr.CHALLENGE_PRIMER, from)}</p> : null}
-        {newcomer && name && name !== EmptyPlayerStats.username ? (
-          <p>{t(tr.CHALLENGE_YOU_PLAY_AS, name)}</p>
-        ) : null}
-        <div className={classes.actions}>
-          <Button
-            data-testid="challenge-accept"
-            disabled={!assetsReady}
-            onClick={() => {
-              Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-              liveLobby.acceptChallenge(view.code).catch(() => {});
-            }}
-          >
-            {assetsReady ? t(tr.CHALLENGE_ACCEPT) : t(tr.CHALLENGE_PREPARING)}
-          </Button>
-          <Button
-            size="small"
-            color="accent"
-            data-testid="challenge-not-now"
-            onClick={notNow}
-          >
-            {t(tr.CHALLENGE_NOT_NOW)}
-          </Button>
+        {headline}
+        <div className={classes.versus}>
+          <span className={classes.side} title={from}>
+            {from}
+          </span>
+          <span className={classes.vs}>VS</span>
+          <span className={classes.side} title={named ? name : ""}>
+            {named ? name : "?"}
+          </span>
         </div>
+        {newcomer ? <p>{t(tr.CHALLENGE_PRIMER, from)}</p> : null}
+        {accept}
+        <button
+          type="button"
+          className={classes.textLink}
+          data-testid="challenge-not-now"
+          onClick={notNow}
+        >
+          {t(tr.CHALLENGE_NOT_NOW)}
+        </button>
         {newcomer ? (
-          <p className={classes.hint}>
-            {t(tr.CHALLENGE_APP_HINT, formatChallengeCode(view.code))}
-          </p>
+          <div className={classes.hint}>
+            <p>{t(tr.CHALLENGE_APP_HINT)}</p>
+            <button
+              type="button"
+              className={classes.codeChip}
+              data-testid="challenge-copy-code"
+              onClick={copyCode}
+            >
+              {copied ? `${formatted} ✓` : formatted}
+            </button>
+            {copied ? <p>{t(tr.CHALLENGE_CODE_COPIED)}</p> : null}
+          </div>
         ) : null}
       </>
     );

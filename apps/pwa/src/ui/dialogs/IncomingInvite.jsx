@@ -20,11 +20,18 @@ const useStyles = createUseStyles((theme) => ({
     gap: "2vh",
     padding: "2vh",
     fontFamily: theme.font.display,
-    color: theme.color.secondary.dark,
+    color: "white",
     fontSize: theme.font.size.md,
     "& p": { margin: 0 },
   },
   actions: { display: "flex", gap: "2vw" },
+  // the time left, as the challenge dialog shows it
+  pill: {
+    display: "inline-block",
+    padding: "0.05em 0.6em",
+    borderRadius: "1em",
+    background: "rgba(255, 255, 255, 0.18)",
+  },
   // over the end screen of the finished match (GameEndOverview, z-index 100)
   layer: { position: "fixed", inset: 0, zIndex: 110 },
 }));
@@ -54,7 +61,11 @@ const IncomingInvite = ({ invite, inMatch }) => {
       <Dialog open={true} closable={false} mode="info" title={t(tr.REMATCH)}>
         <div className={classes.root} data-testid="incoming-invite">
           <p>{t(tr.REMATCH_OFFER, invite.from)}</p>
-          <p>{t(tr.SECONDS_LEFT, secondsLeft)}</p>
+          <p>
+            <span className={classes.pill}>
+              {t(tr.SECONDS_LEFT, secondsLeft)}
+            </span>
+          </p>
           <div className={classes.actions}>
             <Button
               size="small"

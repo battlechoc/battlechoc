@@ -546,11 +546,10 @@ module.exports = {
     "CHALLENGE_CANCEL": "キャンセル",
     "CHALLENGE_HEADLINE": "{{name}}さんからチョコレートバトルの挑戦状！",
     "CHALLENGE_PRIMER": "カカオを育て、大砲を建て、すべてをクリームの下に隠し、自分の工場が倒れる前に{{name}}さんの工場を壊そう。",
-    "CHALLENGE_YOU_PLAY_AS": "あなたのプレイヤー名：{{name}}",
     "CHALLENGE_ACCEPT": "受けて立つ",
     "CHALLENGE_NOT_NOW": "今はしない",
     "CHALLENGE_PREPARING": "戦場を準備しています…",
-    "CHALLENGE_APP_HINT": "battlechocアプリで遊んでいますか？アプリを開いて{{code}}を入力してください",
+    "CHALLENGE_APP_HINT": "battlechocアプリで遊んでいますか？コードをコピーしてアプリで入力してください：",
     "CHALLENGE_CONNECTING": "挑戦状を読み込んでいます…",
     "CHALLENGE_UNREACHABLE": "現在ゲームサーバーにつながりません。",
     "CHALLENGE_ENDED": "この挑戦は終了しました。新しい挑戦状をもらってください。",
@@ -569,5 +568,6 @@ module.exports = {
     "REMATCH_WAITING": "{{name}}さんを待っています…",
     "REMATCH_DECLINED": "{{name}}さんは今は再戦しないようです。",
     "REMATCH_GONE": "{{name}}さんは退出しました。",
-    "SECONDS_LEFT": "残り{{seconds}}秒"
+    "SECONDS_LEFT": "残り{{seconds}}秒",
+    "CHALLENGE_CODE_COPIED": "コードをコピーしました"
 }

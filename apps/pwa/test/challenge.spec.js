@@ -94,7 +94,8 @@ test.describe("challenge links", () => {
       carla.username,
       { timeout: 15000 }
     );
-    await expect(card).toContainText("You play as");
+    // the newcomer's own (random) name faces the challenger's
+    await expect(card).toContainText(/VS[A-Za-z]/);
     await expect(card).toContainText(code);
     await expect(newcomer.page.getByTestId("tutorial-coach")).toHaveCount(0);
     await expect(carla.page.getByTestId("challenge-status")).toHaveText(
@@ -237,5 +238,53 @@ test.describe("challenge links", () => {
     }
     await ella.context.close();
     await finn.context.close();
+  });
+  test("the newcomer card fits a phone in portrait, also with a long name; the code copies", async ({
+    browser,
+    request,
+  }) => {
+    const long = await createPlayer(
+      browser,
+      request,
+      "Bartholomew_Butterscotch"
+    );
+    const code = await challengeCode(long.page);
+    const newcomer = await visitor(browser, `/?challenge=${code}`);
+    await newcomer.page.setViewportSize({ width: 390, height: 844 });
+    const card = newcomer.page.getByTestId("challenge-card");
+    await expect(card.getByTestId("challenge-headline")).toContainText(
+      "Bartholomew_Butterscotch",
+      {
+        timeout: 15000,
+      }
+    );
+    // nothing sticks out sideways: everything in the card stays inside the dialog that clips it
+    const outside = await card.evaluate((element) => {
+      let clip = element.parentElement;
+      while (clip && getComputedStyle(clip).overflowX === "visible") {
+        clip = clip.parentElement;
+      }
+      const bounds = (clip || document.body).getBoundingClientRect();
+      return [element, ...element.querySelectorAll("*")]
+        .filter((node) => node.getBoundingClientRect().width > 0)
+        .filter((node) => {
+          const box = node.getBoundingClientRect();
+          return (
+            box.left < bounds.left - 1 ||
+            box.right > bounds.right + 1 ||
+            node.scrollWidth > node.clientWidth + 1
+          );
+        })
+        .filter((node) => getComputedStyle(node).textOverflow !== "ellipsis")
+        .map((node) => `${node.tagName}.${node.className}`);
+    });
+    expect(outside).toEqual([]);
+    await newcomer.page.screenshot({
+      path: "test/output/screenshot_challenge_card_portrait.png",
+    });
+    await card.getByTestId("challenge-copy-code").click();
+    await expect(card).toContainText("Code copied");
+    await long.context.close();
+    await newcomer.context.close();
   });
 });
