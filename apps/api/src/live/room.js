@@ -19,7 +19,7 @@ class MatchRoom {
     /**
      * @param {object} options
      * @param {string} options.id
-     * @param {string} options.kind queue, invite or ai
+     * @param {string} options.kind queue, invite, challenge or ai
      * @param {Array<string|null>} options.playerIds account per match player, null for an AI
      * @param {object} options.match engine state
      * @param {object[]} options.agents engine agents of the AI players
@@ -145,6 +145,8 @@ class MatchRoom {
             matchId: this.id,
             playerIndex: index,
             epoch: this.epoch,
+            // challenge: every building for both players, whatever they unlocked (the PWA's build palette)
+            kind: this.kind,
             opponent: { name: this.match.players[1 - index].name, type: this.match.players[1 - index].type },
         });
         if (this.forfeitTimers[index] !== null) {

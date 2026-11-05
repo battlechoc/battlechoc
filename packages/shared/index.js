@@ -192,6 +192,7 @@ module.exports.UnlockGames = progression.UnlockGames;
 module.exports.buildingsUnlockedBetween = progression.buildingsUnlockedBetween;
 module.exports.gamesPlayed = progression.gamesPlayed;
 module.exports.unlocks = progression.unlocks;
+module.exports.aiSetupScore = progression.aiSetupScore;
 module.exports.LevelXp = progression.LevelXp;
 module.exports.playerLevel = progression.playerLevel;
 const equipment = require('./equipment');
@@ -450,8 +451,38 @@ const translationPredicates = {
     SERVER_NOTIFICATION_REMEMBER_TURN_TITLE: function (strings, name) {
         return fmt(strings.SERVER_NOTIFICATION_REMEMBER_TURN_TITLE, { name: name });
     },
-    SERVER_NOTIFICATION_CHALLENGE_TITLE: function (strings, name) {
-        return fmt(strings.SERVER_NOTIFICATION_CHALLENGE_TITLE, { name: name });
+    CHALLENGE_HEADLINE: function (strings, name) {
+        return fmt(strings.CHALLENGE_HEADLINE, { name: name });
+    },
+    CHALLENGE_PRIMER: function (strings, name) {
+        return fmt(strings.CHALLENGE_PRIMER, { name: name });
+    },
+    CHALLENGE_ON_THE_WAY: function (strings, name) {
+        return fmt(strings.CHALLENGE_ON_THE_WAY, { name: name });
+    },
+    CHALLENGE_AWAY: function (strings, name) {
+        return fmt(strings.CHALLENGE_AWAY, { name: name });
+    },
+    REMATCH_OFFER: function (strings, name) {
+        return fmt(strings.REMATCH_OFFER, { name: name });
+    },
+    REMATCH_WAITING: function (strings, name) {
+        return fmt(strings.REMATCH_WAITING, { name: name });
+    },
+    REMATCH_DECLINED: function (strings, name) {
+        return fmt(strings.REMATCH_DECLINED, { name: name });
+    },
+    REMATCH_GONE: function (strings, name) {
+        return fmt(strings.REMATCH_GONE, { name: name });
+    },
+    CHALLENGE_CODE: function (strings, code) {
+        return fmt(strings.CHALLENGE_CODE, { code: code });
+    },
+    SECONDS_LEFT: function (strings, seconds) {
+        return fmt(strings.SECONDS_LEFT, { seconds: seconds });
+    },
+    CHALLENGE_PREVIEW_TITLE: function (strings, name) {
+        return fmt(strings.CHALLENGE_PREVIEW_TITLE, { name: name });
     },
     SERVER_NOTIFICATION_GAME_LOST_BODY: function (strings, name) {
         return fmt(strings.SERVER_NOTIFICATION_GAME_LOST_BODY, { name: name });
@@ -570,6 +601,7 @@ const hosting = require('./engine/hosting');
 const setup = require('./engine/setup');
 const protocol = require('./live/protocol');
 const { ClockSync } = require('./live/clockSync');
+const challengeCode = require('./live/challengeCode');
 
 module.exports.engine = {
     ...realtimeEngine,
@@ -584,7 +616,7 @@ module.exports.engine = {
     ...hosting,
     ...setup,
 };
-module.exports.live = { ...protocol, ClockSync };
+module.exports.live = { ...protocol, ...challengeCode, ClockSync };
 module.exports.DefaultBalance = DefaultBalance;
 module.exports.valueAt = valueAt;
 module.exports.WeaponNotReadyError = require('./errors').WeaponNotReadyError;

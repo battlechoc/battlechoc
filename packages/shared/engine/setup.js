@@ -113,6 +113,18 @@ const aiMatchSetup = (score, { scenario, balance } = {}) => {
     };
 };
 
+// a match against a friend through a challenge link: always the big board, and more time to place
+// the factory, since the friend may never have played before
+const CHALLENGE_BOARD_SIZE = Object.freeze({ rows: 10, cols: 10 });
+const CHALLENGE_PLACEMENT_MS = 45000;
+
+/** Board size and balance (the given one, default DefaultBalance, with the longer placement) of a challenge match. */
+const challengeMatchSetup = ({ balance = DefaultBalance } = {}) => {
+    const copy = JSON.parse(JSON.stringify(balance));
+    copy.match.placementTimeoutMs = CHALLENGE_PLACEMENT_MS;
+    return { boardSize: { ...CHALLENGE_BOARD_SIZE }, balance: copy };
+};
+
 const scenarios = { firstGame };
 
 module.exports = {
@@ -121,6 +133,9 @@ module.exports = {
     aiOpponentForScore,
     aiMatchBalance,
     aiMatchSetup,
+    challengeMatchSetup,
+    CHALLENGE_BOARD_SIZE,
+    CHALLENGE_PLACEMENT_MS,
     scenarios,
     STRONG_AI_FROM_SCORE,
     FIRST_GAME_MAX_SCORE,

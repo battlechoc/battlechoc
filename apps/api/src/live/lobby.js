@@ -1,20 +1,19 @@
 // Everything around the match rooms: who is connected, the matchmaking queue with its AI
-// fallback, live invites, starting and recovering matches, and crediting the results.
+// fallback, challenges (challenges.js) and rematch offers, starting and recovering matches, and
+// crediting the results.
 
 const crypto = require('crypto');
 const {
     engine,
     live,
+    aiSetupScore,
     PlayerType,
     EmptyPlayerStats,
-    translate,
-    translationKeys,
-    setCurrentLanguage,
-    getCurrentLanguage,
 } = require('@battlechoc/battlechoc-shared-functions');
 const players = require('../players');
 const rewards = require('../rewards');
 const { MatchRoom } = require('./room');
+const { Challenges } = require('./challenges');
 
 const { ServerMessage, LiveError, InviteClosedReason, CloseCode } = live;
 
@@ -23,23 +22,11 @@ const AI_REACTION_TIME_MS = 1000;
 const newId = () => crypto.randomUUID();
 const newSeed = () => crypto.randomBytes(16).toString('hex');
 
-// translated push texts in the language of the receiving player
-const textFor = (language, key, ...args) => {
-    const previous = getCurrentLanguage();
-    try {
-        setCurrentLanguage(language || 'en');
-        return translate(key, ...args);
-    } finally {
-        setCurrentLanguage(previous);
-    }
-};
-
 class Lobby {
-    constructor({ pool, push, store, clock, config, log, random }) {
+    constructor({ pool, store, clock, config, log, random }) {
         this.pool = pool;
         // random source of the ingredient drops (tests pass a fixed one; default: crypto)
         this.random = random;
-        this.push = push;
         this.store = store;
         this.clock = clock;
         this.config = config;
@@ -51,10 +38,12 @@ class Lobby {
         this.activeMatch = new Map();
         // playerId -> { since, timer }
         this.queue = new Map();
-        // inviteId -> { id, from, to, expiresAt, timer }
+        // rematch offers: inviteId -> { id, kind, from, to, expiresAt, timer }
         this.invites = new Map();
         // players whose match is being set up (guards against double starts)
         this.starting = new Set();
+        // challenge links (challenges.js)
+        this.challenges = new Challenges({ lobby: this, clock, config, pool });
         this.shuttingDown = false;
     }
 
@@ -85,6 +74,8 @@ class Lobby {
         if (this.connections.get(connection.playerId) === connection) {
             this.connections.delete(connection.playerId);
             this.leaveQueue(connection.playerId, false);
+            // a challenger in the chat app keeps their challenge; a reader keeps their place a while
+            this.challenges.readerLeft(connection);
         }
         connection.rooms.forEach(room => room.detach(room.indexOf(connection.playerId), connection));
         connection.rooms.clear();
@@ -92,18 +83,6 @@ class Lobby {
 
     online(playerId) {
         return this.connections.has(playerId);
-    }
-
-    /** Answers which of the given usernames (e.g. the friends list) are online. */
-    async presence(connection, usernames) {
-        const names = (Array.isArray(usernames) ? usernames : [])
-            .filter(name => typeof name === 'string' && name.length <= 64)
-            .slice(0, 100)
-            .map(name => name.toLowerCase());
-        const rows = names.length > 0
-            ? (await this.pool.query(`SELECT id, username FROM players WHERE username_lower IN (${names.map((_, i) => `$${i + 1}`).join(', ')})`, names)).rows
-            : [];
-        connection.send({ type: ServerMessage.PRESENCE_LIST, online: rows.filter(row => this.online(row.id)).map(row => row.username) });
     }
 
     busy(playerId) {
@@ -117,12 +96,16 @@ class Lobby {
         if (!row) {
             return null;
         }
+        const score = Number(row.xp) || 0;
         return {
             playerId,
             name: row.username || EmptyPlayerStats.username,
             type: PlayerType.HUMAN,
             loadout: players.loadoutOf(row, await players.itemsOf(this.pool, playerId)),
-            score: Number(row.xp) || 0,
+            score,
+            // the score matches against the AI are set up with: without challenge XP until the player
+            // unlocked online play (the server does not know a device's early unlock)
+            aiScore: aiSetupScore({ score, challengeXp: Number(row.challenge_xp) || 0, ...(await players.results(this.pool, playerId)) }),
             language: row.language,
         };
     }
@@ -131,8 +114,9 @@ class Lobby {
      * Starts a match between two players (setups from playerSetup) or a player and an AI
      * (second entry null) and connects the online players to it. Callers mark the players
      * as starting while they prepare the match. A match against the AI is set up like the
-     * single player one by the player's XP from the database: the prepared first game up to
-     * 100 XP, the opponent and board by XP, no hurry for field choice and placement.
+     * single player one by the player's XP from the database (aiScore: the beginner track): the
+     * prepared first game up to 100 XP, the opponent and board by XP, no hurry for field choice and
+     * placement. A challenge match is always on the big board, with more time for the placement.
      */
     async startMatch(kind, setups) {
         const humans = setups.filter(Boolean);
@@ -143,8 +127,11 @@ class Lobby {
         let balance;
         let scenario;
         const matchPlayers = setups.map((setup, index) => (setup ? { ...setup, id: `p${index}` } : null));
+        if (kind === 'challenge') {
+            ({ boardSize, balance } = engine.challengeMatchSetup());
+        }
         if (matchPlayers[1] === null) {
-            const aiSetup = engine.aiMatchSetup(lowestScore);
+            const aiSetup = engine.aiMatchSetup(humans[0].aiScore);
             const { opponent } = aiSetup;
             ({ boardSize, balance, scenario } = aiSetup);
             // the server AI plays without equipment
@@ -218,6 +205,7 @@ class Lobby {
     // credits a verified match: drops and XP per human player, a rating change between two humans;
     // safe to run twice for the same room (after a restart), each part is credited once
     matchEnded(room) {
+        this.challenges.matchEnded(room.id);
         const humans = room.humanIndexes();
         humans.forEach(index => {
             const playerId = room.playerIds[index];
@@ -230,7 +218,8 @@ class Lobby {
             let ratings = {};
             // only a match that ran is rated (an instant surrender must not move the public rating)
             const ran = room.match.startedAt !== null && typeof room.match.startedAt !== 'undefined';
-            if (humans.length === 2 && ran) {
+            // a challenge is a friendly match: never rated
+            if (humans.length === 2 && ran && room.kind !== 'challenge') {
                 const scoreA = winners.length === 2 ? 0.5 : winners[0] === 0 ? 1 : 0;
                 ratings = (await rewards.rateMatch(this.pool, room.id, room.playerIds, scoreA)) || {};
             }
@@ -242,6 +231,7 @@ class Lobby {
                     record,
                     isWinner: winners.includes(index),
                     opponentIsAi: record.opponent.ai,
+                    challenge: room.kind === 'challenge',
                     now: this.clock.now(),
                     random: this.random,
                 });
@@ -281,6 +271,8 @@ class Lobby {
 
     async joinQueue(connection) {
         const { playerId } = connection;
+        // Start while a challenge waits: the challenger plays someone else
+        this.challenges.cancelOwn(playerId);
         if (this.shuttingDown) {
             connection.sendError(LiveError.SHUTTING_DOWN);
             return;
@@ -323,6 +315,7 @@ class Lobby {
     /** Play against the server AI right away, whether queued or not (Start → "Play the AI now"). */
     async playAiNow(connection) {
         const { playerId } = connection;
+        this.challenges.cancelOwn(playerId);
         if (this.queue.has(playerId)) {
             await this.aiFallback(playerId);
             return;
@@ -353,44 +346,39 @@ class Lobby {
 
     /* ---------- invites ---------- */
 
-    async invite(connection, username) {
-        const target = await players.findPlayerByName(this.pool, username);
-        if (!target || target.id === connection.playerId) {
-            connection.sendError(LiveError.PLAYER_NOT_FOUND);
+    /** After a challenge match: offers the opponent another one (an invite that starts a challenge match). */
+    async rematch(connection, matchId) {
+        const { playerId } = connection;
+        const room = this.rooms.get(matchId);
+        const index = room ? room.indexOf(playerId) : -1;
+        if (index < 0 || room.kind !== 'challenge' || !room.ended) {
+            connection.sendError(LiveError.UNKNOWN_MATCH);
             return;
         }
-        if (this.busy(connection.playerId)) {
+        const opponent = room.playerIds[1 - index];
+        if (!this.online(opponent)) {
+            connection.sendError(LiveError.PLAYER_OFFLINE);
+            return;
+        }
+        if (this.busy(playerId) || this.busy(opponent)) {
             connection.sendError(LiveError.ALREADY_IN_MATCH);
             return;
         }
-        const from = await this.playerSetup(connection.playerId);
+        const [from, to] = await Promise.all([this.playerSetup(playerId), this.playerSetup(opponent)]);
         const invite = {
             id: newId(),
-            from: connection.playerId,
-            fromName: from.name,
-            to: target.id,
-            toName: target.username,
+            kind: 'challenge',
+            from: playerId,
+            to: opponent,
             expiresAt: this.clock.now() + this.config.inviteTtlMs,
         };
         invite.timer = this.clock.setTimer(() => this.closeInvite(invite.id, InviteClosedReason.EXPIRED), this.config.inviteTtlMs);
         this.invites.set(invite.id, invite);
-        connection.send({ type: ServerMessage.INVITE_SENT, invite: { id: invite.id, to: invite.toName, expiresAt: invite.expiresAt } });
-
-        const targetConnection = this.connections.get(target.id);
-        if (targetConnection) {
-            targetConnection.send({ type: ServerMessage.INVITE, invite: { id: invite.id, from: invite.fromName, expiresAt: invite.expiresAt } });
-        } else if (this.push && this.push.enabled) {
-            const language = target.language;
-            this.push.sendToPlayer(target.id, {
-                kind: 'invite',
-                inviteId: invite.id,
-                from: invite.fromName,
-                title: textFor(language, translationKeys.SERVER_NOTIFICATION_CHALLENGE_TITLE, invite.fromName),
-                text: textFor(language, translationKeys.SERVER_NOTIFICATION_CHALLENGE_BODY),
-                url: `/?invite=${invite.id}`,
-            }, { ttl: Math.ceil(this.config.inviteTtlMs / 1000), urgency: 'high', topic: 'invite' })
-                .catch(error => this.log.warn('invite push failed', error));
-        }
+        connection.send({ type: ServerMessage.INVITE_SENT, invite: { id: invite.id, to: to.name, expiresAt: invite.expiresAt } });
+        this.connections.get(opponent).send({
+            type: ServerMessage.INVITE,
+            invite: { id: invite.id, from: from.name, expiresAt: invite.expiresAt, rematch: true },
+        });
     }
 
     closeInvite(inviteId, reason) {
@@ -430,8 +418,11 @@ class Lobby {
             return;
         }
         this.closeInvite(inviteId, InviteClosedReason.ACCEPTED);
-        [invite.from, invite.to].forEach(playerId => this.leaveQueue(playerId, false));
-        await this.startBetween('invite', invite.from, invite.to);
+        [invite.from, invite.to].forEach(playerId => {
+            this.leaveQueue(playerId, false);
+            this.challenges.cancelOwn(playerId);
+        });
+        await this.startBetween(invite.kind, invite.from, invite.to);
     }
 
     /* ---------- shutdown ---------- */

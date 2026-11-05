@@ -7,7 +7,9 @@ import withDefaultProps from "../../helper/defaultProps";
 // The text size comes from the type scale (huge: title menu, normal: dialogs, small: inline
 // actions); the blob grows with its label instead of shrinking the text, so nothing spills out.
 // A disabled, locked or offline button is grey and does not answer the pointer.
-const still = (props) => props.disabled || props.locked || props.offline;
+// still filling up (progress below 100) counts as still too: it does nothing yet
+const loadingOf = (props) => typeof props.progress === "number" && props.progress < 100;
+const still = (props) => props.disabled || props.locked || props.offline || loadingOf(props);
 
 const useStyles = createUseStyles((theme) => ({
   // the light rim around the blob: the outer blob shows through this padding
@@ -79,6 +81,26 @@ const useStyles = createUseStyles((theme) => ({
       } ${still(props) ? 70 : 120}%)`,
     },
   }),
+  // progress: grey, and the button's own colour fills it from the left (the first start: the
+  // start button while the 3D models load)
+  track: {
+    position: "relative",
+    overflow: "hidden",
+    background: "linear-gradient(0deg, #6f7a80 0%, #a9b3b8 70%) !important",
+  },
+  fill: (props) => ({
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    background: `linear-gradient(0deg, ${theme.color[props.color].dark} 0%, ${
+      theme.color[props.color].light
+    } 70%)`,
+    transition: "width 0.4s ease-out",
+  }),
+  label: {
+    position: "relative",
+  },
   // the blob is at least this big (in em of its text) and grows with longer labels
   huge: {
     fontSize: theme.font.size.xxl,
@@ -152,6 +174,7 @@ const OWN_PROPS = [
   "offline",
   "onOfflineClick",
   "icon",
+  "progress",
   "children",
 ];
 
@@ -163,7 +186,11 @@ const Button = (componentProps) => {
   );
   // a disabled button does nothing; a locked one may explain how to unlock it, one that needs
   // the server that it does not answer (the lock comes first: offline matches unlock it too)
+  const loading = loadingOf(props);
   const onClick = () => {
+    if (loading) {
+      return;
+    }
     if (props.locked) {
       if (typeof props.onLockedClick === "function") {
         props.onLockedClick();
@@ -189,7 +216,7 @@ const Button = (componentProps) => {
     }
   };
   // a locked or offline button stays clickable (it explains itself), a disabled one does not
-  const inert = props.disabled && !props.locked && !props.offline;
+  const inert = (props.disabled && !props.locked && !props.offline) || loading;
   const accessibility = {
     role: "button",
     tabIndex: inert ? -1 : 0,
@@ -225,8 +252,9 @@ const Button = (componentProps) => {
       <div
         {...rest}
         {...accessibility}
-        style={props.style}
+        style={loading ? { ...props.style, background: "#b9c2c6" } : props.style}
         onClick={onClick}
+        data-progress={typeof props.progress === "number" ? props.progress : undefined}
         className={`${classes.border} ${classes[props.size]} ${
           classes.focusable
         } ${props.className} ${
@@ -238,9 +266,16 @@ const Button = (componentProps) => {
           style={props.buttonStyle}
           className={`${classes.background} ${classes.button} ${
             props.offline && !props.locked ? classes.roomForBadge : ""
-          }`}
+          } ${loading ? classes.track : ""}`}
         >
-          {props.children}
+          {loading ? (
+            <>
+              <span className={classes.fill} style={{ width: `${props.progress}%` }} />
+              <span className={classes.label}>{props.children}</span>
+            </>
+          ) : (
+            props.children
+          )}
         </div>
         {props.locked ? <div className={classes.locked} /> : null}
         {props.offline && !props.locked ? (

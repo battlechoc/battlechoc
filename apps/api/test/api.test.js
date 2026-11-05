@@ -182,7 +182,7 @@ describe('players', () => {
         expect((await me.get('/user/friends')).body).toEqual([]);
     });
 
-    test('ranks and highscore come from the rating of rated players; lookups and random opponents', async () => {
+    test('ranks and highscore: rated players by rating, then the unrated ones; lookups and random opponents', async () => {
         const { app, pool } = await setup();
         const names = ['Anna', 'Bert', 'Cleo', 'Dora'];
         // Anna never played a rated match; the others did
@@ -198,39 +198,55 @@ describe('players', () => {
         }
         expect((await accounts[3].get('/rank')).body.ranking).toBe(1);
         expect((await accounts[1].get('/rank')).body.ranking).toBe(3);
-        // unrated players have no rank yet
-        expect((await accounts[0].get('/rank')).body).toEqual({ ranking: null });
+        // an unrated player shows 0 and comes after every rated one
+        expect((await accounts[0].get('/rank')).body).toEqual({ ranking: 4 });
         const highscore = await accounts[0].get('/highscore').expect(200);
-        expect(highscore.body).toMatchObject({ page: 1, lastPage: 1, total: 3 });
-        // the own entry of an unrated player: name and no rank, never the XP
-        expect(highscore.body.own).toMatchObject({ name: 'Anna', ranking: null, score: 0 });
+        expect(highscore.body).toMatchObject({ page: 1, lastPage: 1, total: 4 });
+        // the own entry of an unrated player: name, rank and score 0, never the XP
+        expect(highscore.body.own).toMatchObject({ name: 'Anna', ranking: 4, score: 0 });
         expect(highscore.body.own).not.toHaveProperty('xp');
         expect((await accounts[1].get('/highscore')).body.own).toMatchObject({ name: 'Bert', ranking: 3, rating: 1550 });
         expect(highscore.body.list.map(entry => [entry.name, entry.ranking, entry.rating])).toEqual([
-            ['Dora', 1, 1700], ['Cleo', 2, 1600], ['Bert', 3, 1550],
+            ['Dora', 1, 1700], ['Cleo', 2, 1600], ['Bert', 3, 1550], ['Anna', 4, 1500],
         ]);
         // the public score is the rating (XP can be faked offline); unrated players show 0
         expect((await accounts[0].get('/user/cleo').expect(200)).body[0]).toMatchObject({ name: 'Cleo', score: 1600, rating: 1600, ranking: 2 });
-        expect((await accounts[3].get('/user/anna').expect(200)).body[0]).toMatchObject({ name: 'Anna', score: 0, ranking: null });
-        highscore.body.list.forEach(entry => expect(entry.score).toBe(entry.rating));
+        expect((await accounts[3].get('/user/anna').expect(200)).body[0]).toMatchObject({ name: 'Anna', score: 0, ranking: 4 });
+        highscore.body.list.slice(0, 3).forEach(entry => expect(entry.score).toBe(entry.rating));
         await accounts[0].get('/user/nobody').expect(404);
         expect((await accounts[0].get('/query/user/e')).body.map(entry => entry.name)).toEqual(['Cleo', 'Bert']);
         const opponent = await accounts[0].get('/random/opponent').expect(200);
         expect(['Bert', 'Cleo', 'Dora']).toContain(opponent.body.name);
     });
 
-    test('an empty highscore still answers with the own entry; unnamed players have none', async () => {
+    test('the only player is first; unnamed players are not listed and have no rank', async () => {
         const { app } = await setup();
         const anna = await named(app, 'Anna');
         const highscore = await anna.get('/highscore').expect(200);
-        expect(highscore.body).toMatchObject({ page: 1, lastPage: 1, total: 0, list: [] });
-        expect(highscore.body.own).toMatchObject({ name: 'Anna', ranking: null });
+        expect(highscore.body).toMatchObject({ page: 1, lastPage: 1, total: 1 });
+        expect(highscore.body.list.map(entry => [entry.name, entry.ranking, entry.score])).toEqual([['Anna', 1, 0]]);
+        expect(highscore.body.own).toMatchObject({ name: 'Anna', ranking: 1 });
         // a later page of an empty list is still page 1
         expect((await anna.get('/highscore?page=3')).body.page).toBe(1);
 
         const unnamed = await account(app);
-        expect((await unnamed.get('/highscore').expect(200)).body).toMatchObject({ list: [], own: null });
+        expect((await unnamed.get('/highscore').expect(200)).body).toMatchObject({ total: 1, own: null });
         expect((await unnamed.get('/rank').expect(200)).body).toEqual({ ranking: null });
+    });
+
+    test('players with the same score are ranked by who joined first', async () => {
+        const { app, pool } = await setup();
+        const accounts = [];
+        for (const [index, name] of ['Emil', 'Fritz', 'Greta'].entries()) {
+            const player = await named(app, name);
+            // Fritz joined first, then Greta, then Emil
+            await pool.query('UPDATE players SET created_at = $1 WHERE id = $2', [new Date(Date.UTC(2026, 0, [3, 1, 2][index])), player.playerId]);
+            accounts.push(player);
+        }
+        const highscore = await accounts[0].get('/highscore').expect(200);
+        expect(highscore.body.list.map(entry => [entry.name, entry.ranking])).toEqual([['Fritz', 1], ['Greta', 2], ['Emil', 3]]);
+        expect((await accounts[0].get('/rank')).body).toEqual({ ranking: 3 });
+        expect((await accounts[1].get('/rank')).body).toEqual({ ranking: 1 });
     });
 
     test('a rated player without a name is not on the list and has no rank', async () => {
@@ -273,5 +289,59 @@ describe('web push and transport', () => {
         expect(preflight.headers['access-control-allow-headers']).toContain('battlechoc-pwa-version');
         const foreign = await request(app).options('/user').set('Origin', 'https://evil.example');
         expect(foreign.headers['access-control-allow-origin']).toBeUndefined();
+    });
+});
+
+describe('play page', () => {
+    // the preview page behind play.battlechoc.com/<code> (nginx rewrites it to /play/<code>)
+    const playApp = async (challengeInfo = () => null) => {
+        const pool = await createTestPool();
+        const auth = createAuth({ pool, secret: JWT_SECRET });
+        return createApp({ pool, auth, push: { enabled: false }, challengeInfo });
+    };
+    const meta = (html, property) => {
+        const match = html.match(new RegExp(`<meta property="${property}" content="([^"]*)"`));
+        return match ? match[1] : null;
+    };
+
+    test('a waiting challenge names the challenger in their language and sends browsers on to the game', async () => {
+        const app = await playApp(code => (code === 'K7Q2M9XD' ? { from: 'Anna', language: 'de' } : null));
+        const response = await request(app).get('/play/k7q2-m9xd').expect(200);
+        expect(response.type).toBe('text/html');
+        expect(meta(response.text, 'og:title')).toBe('Anna fordert dich zu battlechoc heraus!');
+        expect(meta(response.text, 'og:url')).toBe('https://play.battlechoc.com/K7Q2-M9XD');
+        expect(meta(response.text, 'og:image')).toBe('https://battlechoc.com/images/challenge-preview.jpg');
+        expect(meta(response.text, 'og:description')).toMatch(/Schokoladenschlacht/);
+        expect(response.text).toContain('location.replace("https://battlechoc.com/?challenge=K7Q2-M9XD")');
+        expect(response.text).toContain('href="https://battlechoc.com/?challenge=K7Q2-M9XD"');
+    });
+
+    test('an unknown or missing code gets the general preview and the plain game link', async () => {
+        const app = await playApp();
+        for (const path of ['/play/nope', '/play/', '/play/ZZZZZZZZ']) {
+            const response = await request(app).get(path).expect(200);
+            expect(meta(response.text, 'og:title')).toBe('battlechoc');
+            expect(meta(response.text, 'og:description')).toMatch(/real-time chocolate battle/);
+        }
+        const invalid = await request(app).get('/play/nope');
+        expect(invalid.text).toContain('href="https://battlechoc.com/"');
+        const unknown = await request(app).get('/play/ZZZZZZZZ');
+        // a valid code that ended still opens the game, which shows the ended card
+        expect(unknown.text).toContain('location.replace("https://battlechoc.com/?challenge=ZZZZ-ZZZZ")');
+    });
+
+    test('the name is escaped in the page', async () => {
+        const app = await playApp(() => ({ from: 'Eve<script>"', language: 'en' }));
+        const response = await request(app).get('/play/K7Q2M9XD').expect(200);
+        expect(response.text).not.toContain('Eve<script>');
+        expect(meta(response.text, 'og:title')).toBe('Eve&lt;script&gt;&quot; challenges you to battlechoc!');
+    });
+
+    test('the page is rate limited', async () => {
+        const app = await playApp();
+        for (let i = 0; i < 60; i++) {
+            await request(app).get('/play/K7Q2M9XD').expect(200);
+        }
+        await request(app).get('/play/K7Q2M9XD').expect(429);
     });
 });

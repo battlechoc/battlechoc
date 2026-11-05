@@ -7,6 +7,10 @@ test("the Info dialog links the source code and the privacy policy", async ({ pa
   await expect(page.getByText("About battlechoc", { exact: true })).toBeVisible();
   // a local build has no commit and counts as built just now
   await expect(page.getByTestId("info-build")).toHaveText(/^Version \d+\.\d+\.\d+\s*Updated now$/);
+  // the version is a button to its release notes
+  const release = page.getByTestId("info-release");
+  await expect(release).toHaveAttribute("href", /^https:\/\/github\.com\/battlechoc\/battlechoc\/releases\/tag\/v\d+\.\d+\.\d+$/);
+  await expect(release).toHaveAttribute("target", "_blank");
   const source = page.getByRole("link", { name: "Free software (AGPL-3.0): source code on GitHub" });
   await expect(source).toBeVisible();
   await expect(source).toHaveAttribute("href", "https://github.com/battlechoc/battlechoc");

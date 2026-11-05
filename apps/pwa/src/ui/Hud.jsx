@@ -21,9 +21,11 @@ import {
   Dialog,
   Highscore,
 } from "./dialogs";
-import OnlineLobby from "./dialogs/OnlineLobby";
+import ChallengeDialog from "./dialogs/ChallengeDialog";
 import { liveLobby } from "../match/liveLobby";
+import { matchSession } from "../match/LocalMatchHost";
 import Choclab from "./pages/Choclab";
+import { retryAssets } from "../AssetLoader";
 import { multiplayer } from "../Multiplayer";
 import { ServerRequest } from "../helper/settings";
 import logger from "../helper/logger";
@@ -252,7 +254,14 @@ const Hud = (props) => {
   const afterSettings = useRef(undefined);
   const [showAccountOverview, setShowAccountOverview] = useState(false);
   const [dialogStyle, setDialogStyle] = useState("default");
-  const [showOnlineLobby, setShowOnlineLobby] = useState(false);
+  // "Play with a friend": null (closed), or { locked, lockText }
+  const [challengeDialog, setChallengeDialog] = useState(null);
+  // a challenge that arrived after the dialog was closed: cancel it (liveSlice challengeToCancel)
+  useEffect(() => {
+    if (props.challengeToCancel) {
+      liveLobby.cancelChallenge(props.challengeToCancel).catch(() => {});
+    }
+  }, [props.challengeToCancel]);
   const [waitingRoom, setWaitingRoom] = useState(false);
   const [waitingRoomText, setWaitingRoomText] = useState(
     t(tr.TRY_TO_JOIN_GAME)
@@ -348,16 +357,18 @@ const Hud = (props) => {
   const unlocked = unlocks(playerInfos.stats, { early: props.earlyUnlock });
 
   // what is missing to unlock a menu entry: more matches against the AI, or a player name
-  const notifyLocked = (feature, part) => {
+  const lockMessage = (feature, part) => {
     const left = unlocked.gamesLeft[part];
+    return left > 1
+      ? t(tr.UNLOCK_FEATURE_GAMES, feature, left)
+      : left === 1
+      ? t(tr.UNLOCK_FEATURE_ONE_GAME, feature)
+      : t(tr.UNLOCK_NEEDS_NAME);
+  };
+  const notifyLocked = (feature, part) => {
     props.showNotification({
       title: t(tr.COINS_FOR_NEXT_FEATURE_TITLE, feature),
-      message:
-        left > 1
-          ? t(tr.UNLOCK_FEATURE_GAMES, feature, left)
-          : left === 1
-          ? t(tr.UNLOCK_FEATURE_ONE_GAME, feature)
-          : t(tr.UNLOCK_NEEDS_NAME),
+      message: lockMessage(feature, part),
     });
   };
 
@@ -379,17 +390,6 @@ const Hud = (props) => {
         }}
       />
       <AccountOverview
-        challengePlayer={(username) => {
-          setShowAccountOverview(false);
-          setShowOnlineLobby(true);
-          liveLobby.invite(username);
-        }}
-        addFriend={async (friend) => {
-          await multiplayer.addFriend(friend);
-        }}
-        removeFriend={async (friend) => {
-          await multiplayer.removeFriend(friend);
-        }}
         dialogStyle={dialogStyle}
         playerAccount={playerAccount}
         open={showAccountOverview}
@@ -454,17 +454,22 @@ const Hud = (props) => {
                 : t(tr.UNLOCK_ONLINE_GAMES, gamesLeft)
               : null;
 
+          // the start button waits for the 3D models: it fills up while they load and offers
+          // another try when one did not arrive (AssetLoader); everything else works at once
+          const startButton = (label, start) => (
+            <Button
+              className={classes.menuButton}
+              key="0"
+              size="huge"
+              data-testid="start-button"
+              progress={assetsReady || props.assetsFailed ? undefined : props.assetsProgress}
+              onClick={() => (assetsReady ? start() : retryAssets())}
+            >
+              {assetsReady ? label : props.assetsFailed ? t(tr.ASSETS_FAILED) : t(tr.ASSETS_LOADING)}
+            </Button>
+          );
           if (firstPlayScreen) {
-            controls.push(
-              <Button
-                className={classes.menuButton}
-                key="0"
-                size="huge"
-                onClick={() => kickOffTutorial()}
-              >
-                {t(tr.START_TUTORIAL)}
-              </Button>
-            );
+            controls.push(startButton(t(tr.START_TUTORIAL), () => kickOffTutorial()));
             controls.push(
               <Button
                 className={classes.menuButton}
@@ -490,16 +495,7 @@ const Hud = (props) => {
               </Button>
             );
           } else {
-            controls.push(
-              <Button
-                className={classes.menuButton}
-                key="0"
-                size="huge"
-                onClick={() => resumeOrStartGame()}
-              >
-                {t(tr.START_GAME)}
-              </Button>
-            );
+            controls.push(startButton(t(tr.START_GAME), () => resumeOrStartGame()));
             controls.push(
               <Button
                 className={classes.menuButton}
@@ -517,7 +513,7 @@ const Hud = (props) => {
                 {t(tr.MAIN_MENU_CHOCLAB)}
               </Button>
             );
-            // friends: invites and the lobby; others find you by your name
+            // a challenge link for a friend; locked, the dialog still takes a friend's code
             controls.push(
               <Button
                 className={classes.menuButton}
@@ -525,12 +521,17 @@ const Hud = (props) => {
                 size="huge"
                 color="secondary"
                 locked={lockedFriends}
-                onLockedClick={() => notifyLocked(t(tr.FRIENDS), "online")}
+                onLockedClick={() =>
+                  setChallengeDialog({
+                    locked: true,
+                    lockText: lockMessage(t(tr.CHALLENGE_BUTTON), "online"),
+                  })
+                }
                 offline={!online}
                 onOfflineClick={props.showOfflineMessage}
-                onClick={() => setShowOnlineLobby(true)}
+                onClick={() => setChallengeDialog({ locked: false })}
               >
-                {t(tr.FRIENDS)}
+                {t(tr.CHALLENGE_BUTTON)}
               </Button>
             );
           }
@@ -574,9 +575,10 @@ const Hud = (props) => {
                 <div className={classes.lowerHalf}>
                   <div className={classes.spaceAboveMenu} />
                   <div className={classes.menu}>
-                    {assetsReady ? controls : null}
+                    {/* the title screen shows once the fonts are in (no jumping labels) */}
+                    {assetsReady || props.fontsReady ? controls : null}
                   </div>
-                  {assetsReady && unlockHint ? (
+                  {(assetsReady || props.fontsReady) && unlockHint ? (
                     <p className={classes.unlockHint} data-testid="unlock-hint">
                       {unlockHint}
                     </p>
@@ -610,9 +612,12 @@ const Hud = (props) => {
                 </div>
               </Dialog>
               <Info online={online} />
-              <OnlineLobby
-                open={showOnlineLobby}
-                close={() => setShowOnlineLobby(false)}
+              {/* also open by itself for a challenge the welcome restored after a reload */}
+              <ChallengeDialog
+                open={challengeDialog !== null || props.challenge !== null}
+                locked={challengeDialog !== null && challengeDialog.locked}
+                lockText={challengeDialog !== null ? challengeDialog.lockText : undefined}
+                close={() => setChallengeDialog(null)}
               />
             </>
           );
@@ -633,6 +638,18 @@ const Hud = (props) => {
           );
         } else {
           const result = game.outcome;
+          // after a challenge match both may ask for another one (a challenge again)
+          const rematchable = Boolean(matchOnline && props.matchKind === "challenge" && matchSession.host);
+          const opponentName = game.players[1 - game.viewer].name;
+          const rematchStatus = !rematchable
+            ? undefined
+            : props.outgoingInvite
+            ? t(tr.REMATCH_WAITING, opponentName)
+            : props.inviteClosed === "declined" || props.inviteClosed === "expired"
+            ? t(tr.REMATCH_DECLINED, opponentName)
+            : props.liveError === "PLAYER_OFFLINE"
+            ? t(tr.REMATCH_GONE, opponentName)
+            : undefined;
           return (
             <div>
               <MatchBanner />
@@ -661,6 +678,12 @@ const Hud = (props) => {
                   isWinner={result.winners.includes(game.viewer)}
                   verified={matchOnline}
                   drops={matchResult ? matchResult.drops : undefined}
+                  rematch={
+                    rematchable && !props.outgoingInvite
+                      ? () => liveLobby.requestRematch(matchSession.host.matchId).catch(() => {})
+                      : undefined
+                  }
+                  rematchStatus={rematchStatus}
                   finishGame={() => endGame()}
                 />
               ) : null}
@@ -693,10 +716,19 @@ const mapStateToProps = (state) => ({
   overviewVisible: state.ui.overviewVisible,
   resumeGamePossible: state.ui.resumeGamePossible,
   assetsReady: state.ui.assetsReady,
+  fontsReady: state.ui.fontsReady,
+  assetsProgress: state.ui.assetsProgress,
+  assetsFailed: state.ui.assetsFailed,
   notification: state.ui.notification,
   playerInfos: state.ui.playerInfos,
   online: state.ui.online,
   earlyUnlock: state.ui.earlyUnlock,
+  challenge: state.live.challenge,
+  challengeToCancel: state.live.challengeToCancel,
+  matchKind: state.match.kind,
+  outgoingInvite: state.live.outgoingInvite,
+  inviteClosed: state.live.inviteClosed,
+  liveError: state.live.error,
 });
 
 const mapDispatchToProps = {

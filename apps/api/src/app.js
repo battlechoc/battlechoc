@@ -4,7 +4,6 @@
 const crypto = require('crypto');
 const express = require('express');
 const {
-    EmptyPlayerStats,
     isValidLanguage,
     StarterKit,
 } = require('@battlechoc/battlechoc-shared-functions');
@@ -12,9 +11,10 @@ const players = require('./players');
 const pantry = require('./pantry');
 const reports = require('./reports');
 const { registerLabRoutes } = require('./lab/routes');
+const { registerPlayRoutes } = require('./playPage');
 const { loadRecipes } = require('./lab/recipes');
 const { createKeyedQueue } = require('./queue');
-const { isValidUsername, randomName } = require('./names');
+const { isValidUsername } = require('./names');
 const { AuthError } = require('./auth');
 
 const HIGHSCORE_PAGE_SIZE = 10;
@@ -56,7 +56,9 @@ const rateLimit = ({ windowMs, max }) => {
     };
 };
 
-const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10, recipes = loadRecipes(), labTriesPerHour = 30 }) => {
+const createApp = ({
+    pool, auth, push, corsOrigins = [], accountsPerMinute = 10, recipes = loadRecipes(), labTriesPerHour = 30, challengeInfo = () => null,
+}) => {
     const app = express();
     // purchases and equipment changes of one player run one at a time
     const oneAtATime = createKeyedQueue();
@@ -78,6 +80,9 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10,
     const sendStats = async (res, playerId, status = 200) => res.status(status).json({ stats: await players.stats(pool, playerId) });
 
     app.get('/health', (req, res) => res.json({ ok: true }));
+
+    // the link preview of a challenge (play.battlechoc.com/<code>)
+    registerPlayRoutes(app, { challengeInfo, limit: rateLimit({ windowMs: 60000, max: 60 }) });
 
     /* ---------- accounts ---------- */
 
@@ -148,14 +153,7 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10,
     /* ---------- names ---------- */
 
     app.get('/generaterandomname', auth.requireAuth, handle(async (req, res) => {
-        for (let attempt = 0; attempt < 20; attempt++) {
-            const candidate = randomName();
-            if (isValidUsername(candidate) && !(await players.findPlayerByName(pool, candidate))) {
-                res.json({ username: candidate });
-                return;
-            }
-        }
-        res.json({ username: EmptyPlayerStats.username });
+        res.json({ username: await players.freeRandomName(pool) });
     }));
 
     app.get('/check/available/:username', auth.requireAuth, handle(async (req, res) => {
@@ -246,16 +244,16 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10,
         res.json({});
     }));
 
-    // null while the player is not on the highscore list (no name or no rated match yet)
+    // null while the player has no name (only named players are on the highscore list)
     app.get('/rank', ...user, handle(async (req, res) => {
         res.json({ ranking: await players.rankOf(pool, req.player) });
     }));
 
     // a page of the list (default: the page of the requesting player) and the requesting
-    // player's own entry (ranking null while unrated; own null without a player name), so the
+    // player's own entry (own null without a player name), so the
     // client can always show where the player stands
     app.get('/highscore', ...user, handle(async (req, res) => {
-        const total = await players.count(pool, 'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL AND rated_matches > 0', []);
+        const total = await players.count(pool, 'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL', []);
         const lastPage = Math.max(1, Math.ceil(total / HIGHSCORE_PAGE_SIZE));
         const own = req.player.username ? await players.playerInfo(pool, req.player) : null;
         let page = Number.parseInt(req.query.page, 10);
@@ -264,7 +262,7 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10,
         }
         page = Math.min(Math.max(1, page), lastPage);
         const { rows } = await pool.query(
-            'SELECT * FROM players WHERE username IS NOT NULL AND rated_matches > 0 ORDER BY rating DESC, username_lower ASC LIMIT $1 OFFSET $2',
+            `SELECT * FROM players WHERE username IS NOT NULL ORDER BY ${players.ORDER} LIMIT $1 OFFSET $2`,
             [HIGHSCORE_PAGE_SIZE, (page - 1) * HIGHSCORE_PAGE_SIZE]);
         const list = [];
         for (const row of rows) {

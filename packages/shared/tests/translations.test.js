@@ -34,3 +34,21 @@ test('every language has every key of the reference language', () => {
         expect({ language, missing }).toEqual({ language, missing: [] });
     });
 });
+
+test('challenge texts fill in names, codes and seconds', () => {
+    setCurrentLanguage('en');
+    expect(translate(keys.CHALLENGE_HEADLINE, 'Anna')).toBe('Anna challenges you to a chocolate battle!');
+    expect(translate(keys.CHALLENGE_APP_HINT)).toBe('Already playing in the battlechoc app? Copy the code and enter it there:');
+    expect(translate(keys.CHALLENGE_CODE_COPIED)).toBe('Code copied');
+    expect(translate(keys.CHALLENGE_CODE, 'K7Q2-M9XD')).toBe('Code: K7Q2-M9XD');
+    expect(translate(keys.REMATCH_OFFER, 'Ben')).toBe('Ben wants a rematch');
+    expect(translate(keys.SECONDS_LEFT, 42)).toBe('42 s left');
+    setCurrentLanguage('de');
+    expect(translate(keys.CHALLENGE_HEADLINE, 'Anna')).toContain('Anna');
+    setCurrentLanguage('en');
+});
+
+test('the offline profile names only what still exists (no friends, no invites)', () => {
+    setCurrentLanguage('en');
+    expect(translate(keys.PROFILE_OFFLINE)).toBe('Offline: your rank comes back as soon as battlechoc reaches its server.');
+});

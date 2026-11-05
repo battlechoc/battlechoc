@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import logger from "../../helper/logger";
 import OfflineStore from "../../OfflineStore";
+import { AudioClip } from "./audioClip";
 
 class Jukebox {
   constructor() {
@@ -36,19 +37,17 @@ class Jukebox {
     this.musicOutput = this.musicContext.createGain();
     this.musicOutput.connect(this.musicContext.destination);
 
+    // only the click loads at once; the music (2.5 MB) and the match sounds wait for the 3D
+    // models (loadDeferred), so they do not slow down the first start
     Object.keys(this.SOUNDS).forEach((sound) => {
-      this.SOUNDS[sound].sound = new Audio(
-        this.soundOutput,
-        this.SOUNDS[sound].filename,
-        false
-      );
+      this.SOUNDS[sound].sound = new AudioClip(this.soundOutput, this.SOUNDS[sound].filename, false, {
+        deferred: !this.SOUNDS[sound].click,
+      });
     });
     Object.keys(this.SONGS).forEach((song) => {
-      this.SONGS[song].music = new Audio(
-        this.musicOutput,
-        this.SONGS[song].filename,
-        true
-      );
+      this.SONGS[song].music = new AudioClip(this.musicOutput, this.SONGS[song].filename, true, {
+        deferred: true,
+      });
     });
 
     OfflineStore.settingsStore.get("audio").then((audioSettings) => {
@@ -117,6 +116,15 @@ class Jukebox {
     this.changed();
   }
 
+  /** Loads the music and the match sounds (after the 3D models of the first start, App). */
+  loadDeferred() {
+    const clips = [
+      ...Object.values(this.SOUNDS).map((entry) => entry.sound),
+      ...Object.values(this.SONGS).map((entry) => entry.music),
+    ];
+    clips.forEach((clip) => clip.load().catch((error) => logger.warn("Audio was unable to load: " + error)));
+  }
+
   startMusic(song) {
     this.music = song.music;
     this.playMusic();
@@ -178,79 +186,6 @@ class Jukebox {
   playSound(sound) {
     if (!this.isMuted && (this.clicks || !sound.click)) {
       sound.sound.play();
-    }
-  }
-}
-
-class Audio {
-  constructor(output, url, loop) {
-    this.output = output;
-    this.context = output.context;
-    this.url = url;
-    this.loop = loop;
-    this.offset = 0;
-    this.load().catch((error) =>
-      logger.warn("Audio was unable to load: " + error)
-    );
-  }
-
-  load() {
-    return new Promise((resolve, reject) => {
-      let xhr = new XMLHttpRequest();
-      xhr.open("get", this.url, true);
-      xhr.responseType = "arraybuffer";
-      xhr.onload = () => {
-        this.context.decodeAudioData(xhr.response, (buffer) => {
-          this.buffer = buffer;
-          resolve();
-        });
-      };
-      xhr.onerror = () =>
-        reject({ status: xhr.status, statusText: xhr.statusText });
-      xhr.send();
-    });
-  }
-
-  play() {
-    if (typeof this.buffer !== "undefined") {
-      if (this.loop) {
-        if (typeof this.source !== "undefined") {
-          try {
-            this.source.stop();
-          } catch (error) {
-            logger.info(error);
-          }
-        }
-        this.source = this.context.createBufferSource();
-        this.source.buffer = this.buffer;
-        this.source.connect(this.output);
-        this.source.loop = true;
-        this.source.start(
-          this.context.currentTime,
-          this.offset % Math.floor(this.buffer.duration)
-        );
-      } else {
-        let source = this.context.createBufferSource();
-        source.buffer = this.buffer;
-        source.connect(this.output);
-        source.onended = () => source.disconnect();
-        source.start();
-      }
-    }
-  }
-
-  stop(reset = false) {
-    if (typeof this.source !== "undefined") {
-      if (this.loop && !reset) {
-        this.offset = this.context.currentTime;
-      } else if (this.loop && reset) {
-        this.offset = 0;
-      }
-      try {
-        this.source.stop();
-      } catch (error) {
-        logger.info(error);
-      }
     }
   }
 }

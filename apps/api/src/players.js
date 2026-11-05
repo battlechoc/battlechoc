@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const { EmptyPlayerStats, sanitizeLoadout } = require('@battlechoc/battlechoc-shared-functions');
 const { resultOf, xpOf } = require('./xp');
+const { isValidUsername, randomName } = require('./names');
 const pantry = require('./pantry');
 
 const count = async (pool, sql, params) => Number((await pool.query(sql, params)).rows[0].n);
@@ -12,6 +13,39 @@ const findPlayer = async (pool, playerId) => (await pool.query('SELECT * FROM pl
 const findPlayerByName = async (pool, name) => (typeof name === 'string'
     ? (await pool.query('SELECT * FROM players WHERE username_lower = $1', [name.toLowerCase()])).rows[0]
     : undefined);
+
+/** A random player name nobody has yet; the placeholder name when 20 tries found none. */
+const freeRandomName = async pool => {
+    for (let attempt = 0; attempt < 20; attempt++) {
+        const candidate = randomName();
+        if (isValidUsername(candidate) && !(await findPlayerByName(pool, candidate))) {
+            return candidate;
+        }
+    }
+    return EmptyPlayerStats.username;
+};
+
+/** Gives a player without a name a random one (a newcomer opening a challenge link); resolves with their name. */
+const assignRandomName = async (pool, playerId) => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+        const player = await findPlayer(pool, playerId);
+        if (!player || player.username) {
+            return player ? player.username : null;
+        }
+        const name = await freeRandomName(pool);
+        if (name === EmptyPlayerStats.username) {
+            return null;
+        }
+        try {
+            await pool.query('UPDATE players SET username = $1, username_lower = $2 WHERE id = $3 AND username IS NULL',
+                [name, name.toLowerCase(), playerId]);
+        } catch {
+            // lost a race for the name: try another
+        }
+    }
+    const player = await findPlayer(pool, playerId);
+    return player ? player.username : null;
+};
 
 const createPlayer = async pool => {
     const id = crypto.randomUUID();
@@ -75,6 +109,8 @@ const stats = async (pool, playerId) => {
         coins: pantryTotals.COCOA || 0,
         score: player.xp,
         xp: player.xp,
+        // the part of the XP from challenge matches (progression.aiSetupScore)
+        challengeXp: player.challenge_xp,
         rating: Math.round(player.rating),
         ratedMatches: player.rated_matches,
         pantry: pantryTotals,
@@ -91,20 +127,27 @@ const stats = async (pool, playerId) => {
     };
 };
 
-// rank by rating among named players with at least one rated match; ties share a rank
-const ranking = async (pool, rating) => 1 + await count(pool,
-    'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL AND rated_matches > 0 AND rating > $1', [rating]);
+// Every named player is on the highscore list. Its order: the shown score (the rating after
+// rated matches, 0 before), then who joined first; so every player has a rank of their own,
+// also the only player or several with 0.
+const score = table => `CASE WHEN ${table}.rated_matches > 0 THEN ${table}.rating ELSE 0 END`;
+const ORDER = `${score('players')} DESC, created_at ASC, id ASC`;
+const scoreOf = player => (Number(player.rated_matches) > 0 ? Number(player.rating) : 0);
 
-// only players on the highscore list (named, at least one rated match) have a rank
-const isRanked = player => Boolean(player.username) && Number(player.rated_matches) > 0;
+// compared with the player's own row in SQL: timestamps there are finer than in JavaScript
+const ranking = async (pool, player) => 1 + await count(pool,
+    `SELECT COUNT(*) AS n FROM players other, players me WHERE me.id = $1 AND other.username IS NOT NULL
+     AND (${score('other')} > ${score('me')} OR (${score('other')} = ${score('me')}
+     AND (other.created_at < me.created_at OR (other.created_at = me.created_at AND other.id < me.id))))`,
+    [player.id]);
 
-/** The rank of a player, null while they are not on the highscore list. */
-const rankOf = async (pool, player) => (isRanked(player) ? ranking(pool, player.rating) : null);
+/** The rank of a player, null while they have no name (unnamed players are not listed). */
+const rankOf = async (pool, player) => (player.username ? ranking(pool, player) : null);
 
 const playerInfo = async (pool, player) => ({
     name: player.username || EmptyPlayerStats.username,
     // what others see is the rating (verified matches only), never the XP, which offline matches feed
-    score: player.rated_matches > 0 ? Math.round(player.rating) : 0,
+    score: Math.round(scoreOf(player)),
     rating: Math.round(player.rating),
     ...(await results(pool, player.id)),
     ranking: await rankOf(pool, player),
@@ -136,5 +179,5 @@ const addTrackRecords = async (pool, playerId, records) => {
 };
 
 module.exports = {
-    findPlayer, findPlayerByName, createPlayer, stats, ranking, rankOf, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
+    findPlayer, findPlayerByName, freeRandomName, assignRandomName, createPlayer, stats, results, ORDER, rankOf, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
 };
