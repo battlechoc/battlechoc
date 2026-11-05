@@ -20,7 +20,7 @@ test("locked menu entries explain themselves and do not open", async ({ page }) 
   await page.getByText("Choclab", { exact: true }).first().click();
   await expect(page.getByText("Play 4 more matches against the AI to unlock “Choclab”.")).toBeVisible();
   await page.screenshot({ path: "test/output/visual_locked.png" });
-  await expect(page.getByTestId("online-lobby")).not.toBeVisible();
+  await expect(page.getByTestId("challenge-dialog")).toHaveCount(0);
 });
 
 test("four matches unlock the Choclab; friends also need a player name", async ({ page }) => {
@@ -46,10 +46,14 @@ test("four matches unlock the Choclab; friends also need a player name", async (
     };
   }));
   await page.goto("/", { waitUntil: "networkidle" });
-  await page.getByText("Friends", { exact: true }).first().click();
-  await expect(page.getByText("Online play needs a player name")).toBeVisible();
-  await expect(page.getByTestId("online-lobby")).not.toBeVisible();
-  await page.getByText("Ok", { exact: true }).click();
+  // locked, "Play with a friend" says why and still takes a friend's code, but makes no link
+  await page.getByText("Play with a friend", { exact: true }).first().click();
+  const dialog = page.getByTestId("challenge-dialog");
+  await expect(dialog).toContainText("Online play needs a player name");
+  await expect(dialog.getByTestId("challenge-code-input")).toBeVisible();
+  await expect(dialog.getByTestId("challenge-share")).toHaveCount(0);
+  await page.locator("[data-icon=close]:visible").first().click();
+  await expect(dialog).toHaveCount(0);
   await page.getByText("Choclab", { exact: true }).first().click();
   // the first visit starts with a short intro, which can be skipped
   await expect(page.getByTestId("lab-intro")).toBeVisible();

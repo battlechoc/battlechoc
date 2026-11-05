@@ -21,8 +21,7 @@ import {
   Dialog,
   Highscore,
 } from "./dialogs";
-import OnlineLobby from "./dialogs/OnlineLobby";
-import { liveLobby } from "../match/liveLobby";
+import ChallengeDialog from "./dialogs/ChallengeDialog";
 import Choclab from "./pages/Choclab";
 import { multiplayer } from "../Multiplayer";
 import { ServerRequest } from "../helper/settings";
@@ -252,7 +251,8 @@ const Hud = (props) => {
   const afterSettings = useRef(undefined);
   const [showAccountOverview, setShowAccountOverview] = useState(false);
   const [dialogStyle, setDialogStyle] = useState("default");
-  const [showOnlineLobby, setShowOnlineLobby] = useState(false);
+  // "Play with a friend": null (closed), or { locked, lockText }
+  const [challengeDialog, setChallengeDialog] = useState(null);
   const [waitingRoom, setWaitingRoom] = useState(false);
   const [waitingRoomText, setWaitingRoomText] = useState(
     t(tr.TRY_TO_JOIN_GAME)
@@ -348,16 +348,18 @@ const Hud = (props) => {
   const unlocked = unlocks(playerInfos.stats, { early: props.earlyUnlock });
 
   // what is missing to unlock a menu entry: more matches against the AI, or a player name
-  const notifyLocked = (feature, part) => {
+  const lockMessage = (feature, part) => {
     const left = unlocked.gamesLeft[part];
+    return left > 1
+      ? t(tr.UNLOCK_FEATURE_GAMES, feature, left)
+      : left === 1
+      ? t(tr.UNLOCK_FEATURE_ONE_GAME, feature)
+      : t(tr.UNLOCK_NEEDS_NAME);
+  };
+  const notifyLocked = (feature, part) => {
     props.showNotification({
       title: t(tr.COINS_FOR_NEXT_FEATURE_TITLE, feature),
-      message:
-        left > 1
-          ? t(tr.UNLOCK_FEATURE_GAMES, feature, left)
-          : left === 1
-          ? t(tr.UNLOCK_FEATURE_ONE_GAME, feature)
-          : t(tr.UNLOCK_NEEDS_NAME),
+      message: lockMessage(feature, part),
     });
   };
 
@@ -379,17 +381,6 @@ const Hud = (props) => {
         }}
       />
       <AccountOverview
-        challengePlayer={(username) => {
-          setShowAccountOverview(false);
-          setShowOnlineLobby(true);
-          liveLobby.invite(username);
-        }}
-        addFriend={async (friend) => {
-          await multiplayer.addFriend(friend);
-        }}
-        removeFriend={async (friend) => {
-          await multiplayer.removeFriend(friend);
-        }}
         dialogStyle={dialogStyle}
         playerAccount={playerAccount}
         open={showAccountOverview}
@@ -517,7 +508,7 @@ const Hud = (props) => {
                 {t(tr.MAIN_MENU_CHOCLAB)}
               </Button>
             );
-            // friends: invites and the lobby; others find you by your name
+            // a challenge link for a friend; locked, the dialog still takes a friend's code
             controls.push(
               <Button
                 className={classes.menuButton}
@@ -525,12 +516,17 @@ const Hud = (props) => {
                 size="huge"
                 color="secondary"
                 locked={lockedFriends}
-                onLockedClick={() => notifyLocked(t(tr.FRIENDS), "online")}
+                onLockedClick={() =>
+                  setChallengeDialog({
+                    locked: true,
+                    lockText: lockMessage(t(tr.CHALLENGE_BUTTON), "online"),
+                  })
+                }
                 offline={!online}
                 onOfflineClick={props.showOfflineMessage}
-                onClick={() => setShowOnlineLobby(true)}
+                onClick={() => setChallengeDialog({ locked: false })}
               >
-                {t(tr.FRIENDS)}
+                {t(tr.CHALLENGE_BUTTON)}
               </Button>
             );
           }
@@ -610,9 +606,12 @@ const Hud = (props) => {
                 </div>
               </Dialog>
               <Info online={online} />
-              <OnlineLobby
-                open={showOnlineLobby}
-                close={() => setShowOnlineLobby(false)}
+              {/* also open by itself for a challenge the welcome restored after a reload */}
+              <ChallengeDialog
+                open={challengeDialog !== null || props.challenge !== null}
+                locked={challengeDialog !== null && challengeDialog.locked}
+                lockText={challengeDialog !== null ? challengeDialog.lockText : undefined}
+                close={() => setChallengeDialog(null)}
               />
             </>
           );
@@ -697,6 +696,7 @@ const mapStateToProps = (state) => ({
   playerInfos: state.ui.playerInfos,
   online: state.ui.online,
   earlyUnlock: state.ui.earlyUnlock,
+  challenge: state.live.challenge,
 });
 
 const mapDispatchToProps = {

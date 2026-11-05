@@ -15,7 +15,6 @@ const uiReducer = createReducer(
     tutorialAlreadySeen: false,
     overviewVisible: false,
     tutorial: false,
-    friends: [],
     ranking: "Offline",
     playerInfos: { stats: EmptyPlayerStats, isSignedIn: false },
     language: window.location.pathname.substr(1, 2) === "de" ? "de" : "en",
@@ -117,10 +116,6 @@ const uiReducer = createReducer(
       })
       .addCase(UiActions.updatePlayerStats, (state, action) => {
         Object.assign(state.playerInfos.stats, action.payload);
-      })
-      .addCase(UiActions.loadFriendsList, (state, action) => {
-        state.friends = action.payload;
-        OfflineStore.playerStore.set("friends", action.payload);
       })
       .addCase(UiActions.setPlayerRank, (state, action) => {
         state.ranking = action.payload;

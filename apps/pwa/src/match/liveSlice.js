@@ -9,7 +9,6 @@ const initialState = {
   outgoingInvite: null,
   inviteClosed: null,
   opponentPresence: null,
-  onlinePlayers: [],
   error: null,
   // the player's own challenge link as the server reports it ({ code, state, expiresAt, readers },
   // see live.ChallengeState), "lost" when the server forgot it (a restart)
@@ -56,9 +55,6 @@ const liveSlice = createSlice({
     presenceChanged(state, action) {
       state.opponentPresence = action.payload;
     },
-    onlinePlayersListed(state, action) {
-      state.onlinePlayers = action.payload;
-    },
     liveErrorReceived(state, action) {
       state.error = action.payload;
     },
@@ -96,7 +92,6 @@ export const {
   inviteSent,
   inviteClosed,
   presenceChanged,
-  onlinePlayersListed,
   liveErrorReceived,
   liveMatchStarted,
   challengeUpdated,

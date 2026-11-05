@@ -31,7 +31,6 @@ import {
   loadUiState,
   gameResumeable,
   updatePlayerStats,
-  loadFriendsList,
   setPlayerRank,
   notifyPlayerSignedIn,
   showNotification,
@@ -87,7 +86,7 @@ class App extends Component {
       player: player,
       situation: situation,
       matchmaking: false,
-      // the first win unlocked the buildings, the Choclab and Friends
+      // the first win unlocked the buildings, the Choclab and online play
       unlocked: false,
     };
     // each Start counts up; a late answer of an earlier Start is ignored
@@ -97,7 +96,6 @@ class App extends Component {
   componentDidMount() {
     multiplayer.registerCallbacks({
       updatePlayerStats: this.props.updatePlayerStats,
-      loadFriendsList: this.props.loadFriendsList,
       setPlayerRank: this.props.setPlayerRank,
       notifyPlayerSignedIn: this.props.notifyPlayerSignedIn,
       showQuickMessage: this.props.showQuickMessage,
@@ -141,12 +139,6 @@ class App extends Component {
     OfflineStore.settingsStore.get("autoFullscreen").then((autoFullscreen) => {
       if (autoFullscreen === false) {
         this.props.loadUiState({ autoFullscreen: false });
-      }
-    });
-
-    OfflineStore.playerStore.get("friends").then((friends) => {
-      if (typeof friends !== "undefined") {
-        this.props.loadFriendsList(friends);
       }
     });
 
@@ -673,7 +665,6 @@ const mapDispatchToProps = {
   startTutorial,
   stopTutorial,
   updatePlayerStats,
-  loadFriendsList,
   setPlayerRank,
   notifyPlayerSignedIn,
   hideQuickMessage,

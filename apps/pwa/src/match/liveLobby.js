@@ -7,7 +7,6 @@ import {
   inviteReceived,
   inviteSent,
   inviteClosed,
-  onlinePlayersListed,
   liveErrorReceived,
   liveMatchStarted,
   challengeUpdated,
@@ -59,7 +58,6 @@ class LiveLobby {
     c.on(ServerMessage.INVITE, (message) => this.dispatch(inviteReceived(message.invite)));
     c.on(ServerMessage.INVITE_SENT, (message) => this.dispatch(inviteSent(message.invite)));
     c.on(ServerMessage.INVITE_CLOSED, (message) => this.dispatch(inviteClosed(message)));
-    c.on(ServerMessage.PRESENCE_LIST, (message) => this.dispatch(onlinePlayersListed(message.online)));
     c.on(ServerMessage.CHALLENGE, (message) => this.dispatch(challengeUpdated(message.challenge)));
     c.on(ServerMessage.CHALLENGE_VIEW, (message) => this.dispatch(challengeViewed(message.view)));
     c.on(ServerMessage.ERROR, (message) => {
@@ -118,10 +116,6 @@ class LiveLobby {
     return this.send({ type: ClientMessage.QUEUE_AI });
   }
 
-  invite(username) {
-    return this.send({ type: ClientMessage.INVITE, username });
-  }
-
   acceptInvite(inviteId) {
     return this.send({ type: ClientMessage.INVITE_ACCEPT, inviteId });
   }
@@ -168,9 +162,6 @@ class LiveLobby {
     return this.send({ type: ClientMessage.REMATCH, matchId });
   }
 
-  queryPresence(usernames) {
-    return this.send({ type: ClientMessage.PRESENCE_QUERY, usernames });
-  }
 }
 
 const liveLobby = new LiveLobby();

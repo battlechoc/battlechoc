@@ -262,7 +262,7 @@ test("the first match unlocks two buildings with one dialog that leads to the de
   await expect(unlocked.getByTestId("unlocked-building")).toHaveText(["Factory extension", "Chocolate fountain"]);
   // the Choclab and online play take three more matches
   await expect(unlocked).toContainText("3 more matches against the AI unlock the Choclab and online matches.");
-  await expect(page.getByText("New features unlocked: Choclab and Friends!")).toHaveCount(0);
+  await expect(page.getByText("New features unlocked: Choclab and Play with a friend!")).toHaveCount(0);
   await expect(page.getByText(/You have unlocked the multiplayer mode/i)).toHaveCount(0);
   // the demos start only from the dialog, not under it
   await expect(page.getByTestId("tutorial-coach")).toHaveCount(0);
@@ -335,7 +335,7 @@ test("the fourth match unlocks the Choclab and online play with one dialog", asy
   await page.locator("[data-icon=done]:visible").first().click();
   const unlocked = page.getByTestId("unlocked");
   await expect(unlocked).toHaveAttribute("data-step", "online");
-  await expect(unlocked).toContainText("New features unlocked: Choclab and Friends!");
+  await expect(unlocked).toContainText("New features unlocked: Choclab and Play with a friend!");
   // every building came before: none in this dialog
   await expect(unlocked.getByTestId("unlocked-building")).toHaveCount(0);
   await unlocked.getByText("Ok", { exact: true }).click();

@@ -8,12 +8,10 @@
 //   queue.join     {}                            matchmaking; an AI joins after 15 s alone
 //   queue.leave    {}
 //   queue.ai       {}                            play against the server AI now (queued or not)
-//   invite         { username }                  live invite (WebSocket, else Web Push)
 //   invite.accept  { inviteId }
 //   invite.decline { inviteId }
 //   invite.cancel  { inviteId }
 //   match.join     { matchId, lastSeq? }         (re)join a running match, e.g. after a reload
-//   presence.query { usernames }                 which of these players are online (friends list)
 //   intent         { matchId, uid, action: { type, payload } }  a match action (MatchActionTypes)
 //   challenge.create  {}                         a challenge link (one per player; resends a waiting one)
 //   challenge.renew   { code }                   "Send again": the same code waits another 2 minutes
@@ -28,7 +26,7 @@
 //   pong           { id, clientT, serverT }
 //   queued         { since }
 //   queue.left     {}
-//   invite         { invite: { id, from, expiresAt } }       incoming
+//   invite         { invite: { id, from, expiresAt, rematch } }  incoming rematch offer
 //   invite.sent    { invite: { id, to, expiresAt } }
 //   invite.closed  { inviteId, reason }                      see InviteClosedReason
 //   match          { matchId, playerIndex, epoch, opponent } you are in this match
@@ -36,7 +34,6 @@
 //   ack            { matchId, uid, ok, error? }             answer to an intent
 //   presence       { matchId, player, online, forfeitAt }   the opponent left or came back
 //   result         { matchId, result }                      own outcome, achievements, xp, drops and rating
-//   presence.list  { online }                               usernames of presence.query that are online
 //   challenge      { challenge: { code, state, expiresAt, readers } | null }  to the challenger (ChallengeState)
 //   challenge.view { view: { code, state, from?, name? } }   to a friend (ChallengeViewState); name: their own
 //                                                           name when the server just gave them one
@@ -50,13 +47,11 @@ const ClientMessage = Object.freeze({
     QUEUE_JOIN: 'queue.join',
     QUEUE_LEAVE: 'queue.leave',
     QUEUE_AI: 'queue.ai',
-    INVITE: 'invite',
     INVITE_ACCEPT: 'invite.accept',
     INVITE_DECLINE: 'invite.decline',
     INVITE_CANCEL: 'invite.cancel',
     MATCH_JOIN: 'match.join',
     INTENT: 'intent',
-    PRESENCE_QUERY: 'presence.query',
     CHALLENGE_CREATE: 'challenge.create',
     CHALLENGE_RENEW: 'challenge.renew',
     CHALLENGE_CANCEL: 'challenge.cancel',
@@ -79,7 +74,6 @@ const ServerMessage = Object.freeze({
     ACK: 'ack',
     PRESENCE: 'presence',
     RESULT: 'result',
-    PRESENCE_LIST: 'presence.list',
     CHALLENGE: 'challenge',
     CHALLENGE_VIEW: 'challenge.view',
     ERROR: 'error',
