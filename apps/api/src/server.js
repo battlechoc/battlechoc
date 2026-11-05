@@ -16,7 +16,11 @@ const liveConfig = env => Object.fromEntries([
     ['inviteTtlMs', 'LIVE_INVITE_TTL_MS'],
 ].filter(([, name]) => Number(env[name]) > 0).map(([key, name]) => [key, Number(env[name])]));
 
-const main = async () => {
+/**
+ * Starts the backend; `wrap(app, { pool })` may put a handler around the REST app (the browser
+ * tests add a route of their own, see test/e2eServer.js).
+ */
+const main = async ({ wrap = app => app } = {}) => {
     const pool = createPool();
     await migrate(pool);
     const auth = createAuth({ pool, secret: process.env.JWT_SECRET });
@@ -31,7 +35,7 @@ const main = async () => {
     let live;
     const challengeInfo = code => (live ? live.lobby.challenges.publicInfo(code) : null);
     const app = createApp({ pool, auth, push, corsOrigins, challengeInfo });
-    const server = http.createServer(app);
+    const server = http.createServer(wrap(app, { pool }));
     live = createLive({ server, pool, auth, origins: corsOrigins, config: liveConfig(process.env) });
     const recovered = await live.recover();
     if (recovered > 0) {
@@ -52,7 +56,11 @@ const main = async () => {
     process.on('SIGINT', shutdown);
 };
 
-main().catch(error => {
-    console.error(error);
-    process.exit(1);
-});
+if (require.main === module) {
+    main().catch(error => {
+        console.error(error);
+        process.exit(1);
+    });
+}
+
+module.exports = { main };

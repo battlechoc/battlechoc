@@ -5,21 +5,46 @@ on:
     branches: [main]
   pull_request:
 
+# a new push to a pull request cancels its older run; the runs on main all finish (each may deploy)
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  # The pull request's title becomes the squash commit on main, and release-please reads only
-  # conventional commits ("feat: …", "fix(pwa): …", "docs: …"): a title like "Dev" (PR #27) left
-  # its changes out of the release. Required in the ruleset, so such a title cannot be merged.
-  pr-title:
-    if: github.event_name == 'pull_request'
+  # A squash merge turns a pull request into one commit, and release-please reads only that one:
+  # a batch titled "Dev" (PR #27) left all its changes out of the release. So CI writes the
+  # changelog into the description instead: one entry per conventional commit of the pull
+  # request (BEGIN_COMMIT_OVERRIDE, which release-please prefers to the title), commits without a
+  # conventional message listed apart; anew on every push (.github/scripts/pr-changelog.js).
+  # Release pull requests and pull requests from forks are left alone.
+  changelog:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      !startsWith(github.head_ref, 'release-please--')
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: read
+      contents: read
+      pull-requests: write
     steps:
-      - uses: amannn/action-semantic-pull-request@v5
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Write the changelog into the description
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REF: ${{ github.head_ref }}
+        run: node .github/scripts/pr-changelog.js
 
+  # A release pull request (release-please) changes only the version and the changelog of a main
+  # that was tested on its push, so its tests are skipped; a skipped job counts as passed for the
+  # required checks. The push of its merge to main runs everything before the deploy.
   test-and-build:
+    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -40,6 +65,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Changelog script tests
+        run: node --test .github/scripts/pr-changelog.test.js
       - name: Shared rules engine unit tests
         run: npm test
       - name: Tutorial scenarios on the engine
@@ -57,9 +84,18 @@ jobs:
       - name: The published build has no test hooks
         run: "! grep -rlE '__battlechoc|testclock' apps/pwa/build"
 
-  e2e:
-    needs: test-and-build
+  # The browser tests in four parallel jobs of about seven minutes each (in one job they took
+  # 29 min), next to test-and-build instead of after it. Each job builds the e2e build and runs
+  # the specs of its group; a spec not named in a group, a new one too, runs in "rest".
+  # Rebalance by the test durations in the jobs' logs.
+  e2e-group:
+    name: e2e (${{ matrix.group }})
+    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [challenge, online, realtime, rest]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -70,13 +106,43 @@ jobs:
       - name: Install Chromium for Playwright
         run: npx playwright install --with-deps chromium
       # the e2e build carries the test hooks (src/testHooks.js); the published build has none
-      - name: End-to-end tests (builds build-e2e/, Playwright serves it via vite preview)
-        run: npm run test:e2e
+      - name: End-to-end tests of the group (builds build-e2e/, Playwright serves it via vite preview)
+        working-directory: apps/pwa
+        env:
+          GROUP: ${{ matrix.group }}
+        run: |
+          challenge="test/challenge.spec.js"
+          online="test/online.spec.js test/first-load.spec.js"
+          realtime="test/realtime.spec.js test/lab.spec.js test/info.spec.js"
+          specs=()
+          if [ "$GROUP" = rest ]; then
+            for spec in test/*.spec.js; do
+              [[ " $challenge $online $realtime " == *" $spec "* ]] || specs+=("$spec")
+            done
+          else
+            read -ra specs <<< "${!GROUP}"
+          fi
+          echo "specs: ${specs[*]}"
+          npm test -- "${specs[@]}"
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: e2e-results
+          name: e2e-results-${{ matrix.group }}
           path: |
             apps/pwa/test/output
             apps/pwa/test/results
           retention-days: 2
+
+  # the required check "e2e" (ruleset): passes when every group passed, or none ran (a release
+  # pull request)
+  e2e:
+    needs: e2e-group
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every group passed
+        env:
+          RESULT: ${{ needs.e2e-group.result }}
+        run: |
+          echo "e2e groups: $RESULT"
+          [ "$RESULT" = success ] || [ "$RESULT" = skipped ]

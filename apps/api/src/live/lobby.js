@@ -6,7 +6,6 @@ const crypto = require('crypto');
 const {
     engine,
     live,
-    aiSetupScore,
     PlayerType,
     EmptyPlayerStats,
 } = require('@battlechoc/battlechoc-shared-functions');
@@ -103,9 +102,8 @@ class Lobby {
             type: PlayerType.HUMAN,
             loadout: players.loadoutOf(row, await players.itemsOf(this.pool, playerId)),
             score,
-            // the score matches against the AI are set up with: without challenge XP until the player
-            // unlocked online play (the server does not know a device's early unlock)
-            aiScore: aiSetupScore({ score, challengeXp: Number(row.challenge_xp) || 0, ...(await players.results(this.pool, playerId)) }),
+            // the step of the AI ladder: opponent and board of a match against the AI
+            aiLadder: players.ladderOf(row),
             language: row.language,
         };
     }
@@ -114,9 +112,10 @@ class Lobby {
      * Starts a match between two players (setups from playerSetup) or a player and an AI
      * (second entry null) and connects the online players to it. Callers mark the players
      * as starting while they prepare the match. A match against the AI is set up like the
-     * single player one by the player's XP from the database (aiScore: the beginner track): the
-     * prepared first game up to 100 XP, the opponent and board by XP, no hurry for field choice and
-     * placement. A challenge match is always on the big board, with more time for the placement.
+     * single player one by the player's AI ladder from the database (engine.aiLadderSetup): the
+     * prepared first game for the very first one, the opponent and board by the step, no hurry for
+     * field choice and placement. A challenge match is always on the big board, with more time for
+     * the placement.
      */
     async startMatch(kind, setups) {
         const humans = setups.filter(Boolean);
@@ -131,7 +130,7 @@ class Lobby {
             ({ boardSize, balance } = engine.challengeMatchSetup());
         }
         if (matchPlayers[1] === null) {
-            const aiSetup = engine.aiMatchSetup(humans[0].aiScore);
+            const aiSetup = engine.aiLadderSetup(humans[0].aiLadder);
             const { opponent } = aiSetup;
             ({ boardSize, balance, scenario } = aiSetup);
             // the server AI plays without equipment
@@ -235,6 +234,10 @@ class Lobby {
                     now: this.clock.now(),
                     random: this.random,
                 });
+                if (credit && record.opponent.ai) {
+                    // a match against the AI moves the player's ladder (once: credit is null the second time)
+                    await players.advanceAiLadder(this.pool, playerId, record.won ? 'won' : record.lost ? 'lost' : 'draw');
+                }
                 room.sendTo(index, {
                     type: ServerMessage.RESULT,
                     matchId: room.id,

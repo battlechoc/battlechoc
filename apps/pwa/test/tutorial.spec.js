@@ -55,6 +55,10 @@ test("the lesson teaches a whole match against Mimi Marzipan", async ({ page }) 
   // only the tree can be picked now
   await expect(page.getByTestId("build-cacao-tree")).not.toHaveClass(/disabled/);
   await expect(page.getByTestId("build-truffle-cannon")).toHaveClass(/disabled/);
+  // the lesson's three buildings; everything else waits behind a lock, as in the first match
+  const palette = page.getByTestId("build-palette");
+  await expect(palette.locator('[data-testid^="build-"]')).toHaveCount(3);
+  expect(await palette.locator('.icon[style*="lock.svg"]').count()).toBeGreaterThan(0);
   await page.screenshot({ path: "test/output/screenshot_tutorial_tree.png" });
   expect(await submit(page, "battlechoc/match/build", { entityType: "EntityType.CACAOTREE", ...(await ownCell(page, "free")) })).toBe("ok");
 
@@ -77,6 +81,13 @@ test("the lesson teaches a whole match against Mimi Marzipan", async ({ page }) 
   expect(await submit(page, "battlechoc/match/attack", { attackType: "AttackType.TRUFFLE", row: 1, col: 1, allowRush: true })).toBe("ok");
   // offline there is no account: the player picks a name to finish
   await expect(page.getByTestId("tutorial-name")).toBeVisible();
+  await page.locator("input:visible").first().fill("Lessonia");
+  await page.locator("div[class^=actionButton]:visible").first().click();
+  // the first finished lesson brings the starter kit (the server credits it once the device syncs)
+  const kit = page.getByTestId("starter-kit");
+  await expect(kit).toBeVisible();
+  await expect(kit.locator('[data-ingredient="COCOA"]')).toContainText("100");
+  await expect(kit.locator('[data-ingredient="RUM"]')).toContainText("1");
   await page.screenshot({ path: "test/output/screenshot_tutorial_done.png" });
 });
 

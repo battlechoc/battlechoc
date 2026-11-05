@@ -570,5 +570,6 @@ module.exports = {
     "SECONDS_LEFT": "noch {{seconds}} s",
     "CHALLENGE_CODE_COPIED": "Code kopiert",
     "ASSETS_LOADING": "3D-Modelle laden…",
-    "ASSETS_FAILED": "Laden fehlgeschlagen: antippen"
+    "ASSETS_FAILED": "Laden fehlgeschlagen: antippen",
+    "TUTORIAL_STARTER_KIT": "Dein Startpaket:"
 }

@@ -14,7 +14,6 @@ import {
   live,
   engine,
   unlocks,
-  aiSetupScore,
 } from "@battlechoc/battlechoc-shared-functions";
 import { LocalMatchHost, matchSession } from "./match/LocalMatchHost";
 import { RemoteMatchHost } from "./match/RemoteMatchHost";
@@ -303,7 +302,7 @@ class App extends Component {
       }
       this.props.gameResumeable(false);
       OfflineStore.clearRealtimeMatch();
-      // new players start with a prepared board (engine.aiMatchSetup, by score)
+      // the opponent and board come from the AI ladder; the very first match is a prepared board
       this.startRealtimeMatch();
     }
   };
@@ -323,7 +322,7 @@ class App extends Component {
     this.requestFullscreen();
     // the prepared first match, and every match until online play is unlocked, is against the AI
     const againstAi =
-      aiSetupScore(stats, { early: this.props.earlyUnlock }) <= engine.FIRST_GAME_MAX_SCORE ||
+      engine.aiLadderOf(stats).games === 0 ||
       !unlocks(stats, { early: this.props.earlyUnlock }).online;
     const attempt = ++this.startAttempt;
     const current = () => attempt === this.startAttempt;
@@ -488,12 +487,11 @@ class App extends Component {
       }
     }
     const seed = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
-    // the same setup as the server AI: board and opponent by score (below 800 the easy Tom
-    // Toffee, afterwards Gustav Ganache with a handicap), the prepared first game up to a score
-    // of 100 unless a scenario is given, no hurry for field choice and placement
-    // (XP from challenges does not count before the player's own online unlock: the beginner track)
-    const { boardSize, opponent, balance, scenario: prepared } = engine.aiMatchSetup(
-      aiSetupScore(stats, { early: this.props.earlyUnlock }),
+    // the same setup as the server AI: board and opponent by the player's AI ladder (Tom Toffee,
+    // then Gustav Ganache stronger step by step), the prepared first game for the very first match
+    // unless a scenario is given, no hurry for field choice and placement
+    const { boardSize, opponent, balance, scenario: prepared } = engine.aiLadderSetup(
+      engine.aiLadderOf(stats),
       { scenario }
     );
     host.startNew({

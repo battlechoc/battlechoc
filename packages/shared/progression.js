@@ -177,7 +177,8 @@ const levelRefund = levels => {
 };
 
 // finishing the tutorial: cocoa and the ingredients of the starter recipe (Light barrel)
-const StarterKit = Object.freeze({ COCOA: 100, RUM: 4, SUGAR: 4, MILK: 2 });
+// finishing the tutorial (2026-11-05, the user: less than the 4 rum, 4 sugar, 2 milk before)
+const StarterKit = Object.freeze({ COCOA: 100, RUM: 1, SUGAR: 2, MILK: 2 });
 
 // What a player opens up by playing (2026-10-30, the user's play test: one match used to unlock
 // everything; 2026-11-01: the first match still brought every building, too much at once): the
@@ -225,20 +226,6 @@ const unlocks = (stats, { early = false } = {}) => {
     };
 };
 
-/**
- * The score (XP) that sets up a player's matches against the AI (engine/setup.js). Until the player
- * has unlocked online play by their own matches, XP from challenge matches does not count: matches
- * against friends give big XP bonuses, and a newcomer would otherwise meet Gustav Ganache on the big
- * board in their first match against the AI.
- */
-const aiSetupScore = (stats, { early = false } = {}) => {
-    const score = Math.max(0, Number(stats && stats.score) || 0);
-    if (unlocks(stats, { early }).online) {
-        return score;
-    }
-    return Math.max(0, score - (Number(stats && stats.challengeXp) || 0));
-};
-
 // Player levels by XP. The first steps are where matches against the AI change (engine/setup.js:
 // an 8x8 board from 200, 10x10 from 500, Gustav Ganache from 800, at full strength from 1000);
 // afterwards each level needs a little more, and beyond the table one every LEVEL_XP_BEYOND.
@@ -266,5 +253,5 @@ const playerLevel = xp => {
 
 module.exports = {
     SpecialIngredient, ChoclabMilestones, choclabCost, DropTables, DropRules, achievementXp, rollDrops, levelRefund, StarterKit,
-    BuildingUnlocks, UnlockGames, gamesPlayed, buildingsUnlockedBetween, unlocks, aiSetupScore, LevelXp, playerLevel,
+    BuildingUnlocks, UnlockGames, gamesPlayed, buildingsUnlockedBetween, unlocks, LevelXp, playerLevel,
 };

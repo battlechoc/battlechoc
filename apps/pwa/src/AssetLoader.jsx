@@ -233,6 +233,7 @@ const loadFonts = () =>
 const MODEL_RETRY_DELAYS_MS = [1000, 2500];
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const PROGRESS_INTERVAL_MS = 50;
 
 const loadImage = (src) =>
   new Promise((resolve, reject) => {
@@ -260,6 +261,8 @@ const loading = {
   total: 0,
   done: 0,
   failed: new Map(),
+  flushTimer: null,
+  readySent: false,
 
   start(scene, callbacks) {
     this.scene = scene;
@@ -318,13 +321,25 @@ const loading = {
     }
   },
 
+  // At most one store update per PROGRESS_INTERVAL_MS: dozens of files arriving at once (the dev
+  // server answers from memory) re-rendered the app dozens of times in a row, and React stopped
+  // with "Maximum update depth exceeded" (dev.spec.js, 2026-11-05).
   count(amount) {
     this.done += amount;
-    if (this.done >= this.total) {
-      this.callbacks.ready();
-    } else {
-      this.callbacks.progress(Math.round((this.done / this.total) * 100));
+    if (this.flushTimer) {
+      return;
     }
+    this.flushTimer = setTimeout(() => {
+      this.flushTimer = null;
+      if (this.done >= this.total) {
+        if (!this.readySent) {
+          this.readySent = true;
+          this.callbacks.ready();
+        }
+      } else {
+        this.callbacks.progress(Math.round((this.done / this.total) * 100));
+      }
+    }, PROGRESS_INTERVAL_MS);
   },
 };
 

@@ -16,7 +16,7 @@ const secureRandom = () => crypto.randomInt(0, 2 ** 32) / 2 ** 32;
 
 /**
  * Credits a player's verified match (record from MatchRoom.resultFor); null when it was credited before.
- * The XP of a challenge match is also counted apart (players.challenge_xp, see progression.aiSetupScore).
+ * The XP of a challenge match is also counted apart (players.challenge_xp).
  */
 const creditVerifiedMatch = (pool, { playerId, record, isWinner, opponentIsAi, challenge = false, now, random = secureRandom }) =>
     withTransaction(pool, async client => {

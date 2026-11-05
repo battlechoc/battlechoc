@@ -110,9 +110,12 @@ const createApp = ({
         }
         await pool.query(`UPDATE players SET
             tutorial_started = tutorial_started OR $1,
-            tutorial_skipped = tutorial_skipped OR $2,
-            tutorial_finished = tutorial_finished OR $3 WHERE id = $4`,
-        [info.tutorialStarted === true, info.tutorialSkipped === true, info.tutorialFinished === true, req.playerId]);
+            tutorial_skipped = tutorial_skipped OR $2 WHERE id = $3`,
+        [info.tutorialStarted === true, info.tutorialSkipped === true, req.playerId]);
+        if (info.tutorialFinished === true) {
+            // finished on the device without the server: the reward comes now (once)
+            await players.finishTutorial(pool, req.playerId);
+        }
         if (Array.isArray(info.trackRecord)) {
             await players.addTrackRecords(pool, req.playerId, info.trackRecord.slice(0, 500));
         }
@@ -135,14 +138,8 @@ const createApp = ({
         } else if (step === 'skipped') {
             await pool.query('UPDATE players SET tutorial_started = FALSE, tutorial_skipped = TRUE WHERE id = $1', [req.playerId]);
         } else if (step === 'finished') {
-            // finishing the tutorial gives 100 XP and the starter kit (cocoa and the ingredients of the
-            // starter recipe), once
-            const { rows } = await pool.query(
-                'UPDATE players SET xp = xp + 100 WHERE id = $1 AND tutorial_finished = FALSE RETURNING id', [req.playerId]);
-            if (rows.length > 0) {
-                await pantry.add(pool, req.playerId, Object.entries(StarterKit).map(([ingredient, amount]) => ({ ingredient, amount })), Date.now());
-            }
-            await pool.query('UPDATE players SET tutorial_started = TRUE, tutorial_skipped = FALSE, tutorial_finished = TRUE WHERE id = $1', [req.playerId]);
+            // finishing the tutorial gives 100 XP and the starter kit, once
+            await players.finishTutorial(pool, req.playerId);
         } else {
             res.status(404).json({ error: 'UNKNOWN TUTORIAL STEP' });
             return;

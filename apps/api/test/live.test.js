@@ -768,16 +768,49 @@ describe('live: matches', () => {
         expect(stats.challengeXp).toBe(stats.xp);
     });
 
-    test('below the online unlock, challenge XP does not leave the beginner AI track', async () => {
+    test('the AI ladder sets up the server AI: step 4 is a very easy Gustav on the 10x10 board', async () => {
         const env = await start();
-        const rookie = await player(env, { score: 700 });
-        await env.pool.query('UPDATE players SET challenge_xp = 650 WHERE id = $1', [rookie.account.playerId]);
-        rookie.send({ type: ClientMessage.QUEUE_AI });
-        const { matchId, opponent } = await rookie.next(ServerMessage.MATCH);
+        const climber = await player(env, { score: 150 });
+        await env.pool.query('UPDATE players SET ai_ladder = $1 WHERE id = $2',
+            [JSON.stringify({ step: 4, wins: 0, floor: 4, games: 9 }), climber.account.playerId]);
+        climber.send({ type: ClientMessage.QUEUE_AI });
+        const { matchId, opponent } = await climber.next(ServerMessage.MATCH);
         const r = room(env, matchId);
-        expect(opponent.name).toBe('Tom Toffee');
-        expect(r.match.board.size).toEqual({ rows: 6, cols: 6 });
-        expect(r.match.phase).toBe(MatchPhase.RUNNING);
+        expect(opponent.name).toBe('Gustav Ganache');
+        expect(r.match.board.size).toEqual({ rows: 10, cols: 10 });
+        expect(JSON.stringify(r.snapshot().agents)).toContain('"handicap":4');
+    });
+
+    test('matches against the server AI move the ladder: two wins up, a loss down', async () => {
+        const env = await start();
+        const climber = await player(env, { score: 150 });
+        const { playerId } = climber.account;
+        await env.pool.query('UPDATE players SET ai_ladder = $1 WHERE id = $2',
+            [JSON.stringify({ step: 2, wins: 0, floor: 1, games: 3 }), playerId]);
+        const ladder = async () => (await request(env.app).get('/user')
+            .set('Authorization', `Bearer ${climber.account.accessToken}`)).body.stats.aiLadder;
+        // one match: the AI gives up (a win) or the player does (a loss)
+        const play = async aiGivesUp => {
+            climber.send({ type: ClientMessage.QUEUE_AI });
+            const { matchId } = await climber.next(ServerMessage.MATCH);
+            const r = room(env, matchId);
+            if (aiGivesUp) {
+                const action = { type: MatchActionTypes.surrender, player: 1, t: r.now(), payload: {} };
+                expect(engine.applyAction(r.match, action).ok).toBe(true);
+                r.record(action);
+                r.afterChange();
+            } else {
+                expect((await climber.act(matchId, MatchActionTypes.surrender, {})).ok).toBe(true);
+            }
+            await climber.next(ServerMessage.RESULT, message => message.matchId === matchId);
+            await r.writes;
+        };
+        await play(true);
+        expect(await ladder()).toMatchObject({ step: 2, wins: 1, games: 4 });
+        await play(true);
+        expect(await ladder()).toMatchObject({ step: 3, wins: 0, games: 5 });
+        await play(false);
+        expect(await ladder()).toMatchObject({ step: 2, wins: 0, games: 6 });
     });
 
     test('rematch after a challenge: offered, declined, expired, accepted', async () => {

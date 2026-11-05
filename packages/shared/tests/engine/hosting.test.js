@@ -71,8 +71,8 @@ describe('match hosting helpers', () => {
         expect([0, 1, 200, 500, 1000].map(engine.handicapForScore)).toEqual([4, 3, 2, 1, 0]);
     });
 
-    test('matches against the AI: the prepared first game up to a score of 100, relaxed deadlines', () => {
-        const first = engine.aiMatchSetup(100);
+    test('matches against the AI: the prepared first game for the very first one, relaxed deadlines', () => {
+        const first = engine.aiLadderSetup(engine.initialAiLadder(0));
         expect(first.boardSize).toEqual({ rows: 6, cols: 6 });
         expect(first.opponent.name).toBe('Tom Toffee');
         expect(first.scenario).toEqual(engine.scenarios.firstGame.scenario);
@@ -80,14 +80,14 @@ describe('match hosting helpers', () => {
         expect(first.scenario).not.toBe(engine.scenarios.firstGame.scenario);
         expect(first.balance.match.fieldChoiceTimeoutMs).toBe(engine.AI_MATCH_DEADLINE_MS);
         expect(first.balance.match.placementTimeoutMs).toBe(engine.AI_MATCH_DEADLINE_MS);
-        expect(engine.aiMatchSetup(undefined).scenario).toBeDefined();
+        expect(engine.aiLadderSetup(undefined).scenario).toBeDefined();
 
-        const later = engine.aiMatchSetup(900);
+        const later = engine.aiLadderSetup({ step: 7, wins: 0, floor: 4, games: 12 });
         expect(later.scenario).toBeUndefined();
         expect(later.boardSize).toEqual({ rows: 10, cols: 10 });
         expect(later.opponent.agent).toEqual({ kind: 'GustavGanache', options: { handicap: 1 } });
         expect(later.balance.match.placementTimeoutMs).toBe(engine.AI_MATCH_DEADLINE_MS);
-        expect(engine.aiMatchSetup(101).scenario).toBeUndefined();
+        expect(engine.aiLadderSetup(engine.initialAiLadder(101)).scenario).toBeUndefined();
 
         // the first game prepares a running match for the human (player 0)
         const match = engine.createMatch({
