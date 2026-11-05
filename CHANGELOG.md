@@ -1,5 +1,33 @@
 # Changelog
 
+## [5.0.0](https://github.com/battlechoc/battlechoc/compare/v4.4.1...v5.0.0) (2026-11-05)
+
+
+### ⚠ BREAKING CHANGES
+
+* **pwa:** play with a friend through a challenge link or code, instead of invites by name and the friends list
+
+### Features
+
+* **api:** link previews on play.battlechoc.com name the challenger ([f16bcdd](https://github.com/battlechoc/battlechoc/commit/f16bcdd42c7e4758efb94fb5aeb8bdd1886442c4))
+* challenge matches are 10x10 and unrated, with a rematch from the end screen ([f16bcdd](https://github.com/battlechoc/battlechoc/commit/f16bcdd42c7e4758efb94fb5aeb8bdd1886442c4))
+* every named player has a rank ([f16bcdd](https://github.com/battlechoc/battlechoc/commit/f16bcdd42c7e4758efb94fb5aeb8bdd1886442c4))
+* **pwa:** a friend who opens a challenge link plays at once, newcomers without the tutorial ([f16bcdd](https://github.com/battlechoc/battlechoc/commit/f16bcdd42c7e4758efb94fb5aeb8bdd1886442c4))
+* **pwa:** play with a friend through a challenge link or code, instead of invites by name and the friends list ([f16bcdd](https://github.com/battlechoc/battlechoc/commit/f16bcdd42c7e4758efb94fb5aeb8bdd1886442c4))
+
+
+### Bug Fixes
+
+* **pwa:** a 3D model that fails to load no longer blocks the start ([f16bcdd](https://github.com/battlechoc/battlechoc/commit/f16bcdd42c7e4758efb94fb5aeb8bdd1886442c4))
+* **pwa:** an upright plus in the empty equipment slots ([f16bcdd](https://github.com/battlechoc/battlechoc/commit/f16bcdd42c7e4758efb94fb5aeb8bdd1886442c4))
+* **pwa:** dialog titles clear the chocolate frame, and the version links its release ([f16bcdd](https://github.com/battlechoc/battlechoc/commit/f16bcdd42c7e4758efb94fb5aeb8bdd1886442c4))
+* **shared:** the offline profile no longer promises friends and invites ([f16bcdd](https://github.com/battlechoc/battlechoc/commit/f16bcdd42c7e4758efb94fb5aeb8bdd1886442c4))
+
+
+### Performance Improvements
+
+* **pwa:** the title screen shows before the 3D models are in, the start button fills up while they load ([f16bcdd](https://github.com/battlechoc/battlechoc/commit/f16bcdd42c7e4758efb94fb5aeb8bdd1886442c4))
+
 ## [4.4.1](https://github.com/battlechoc/battlechoc/compare/v4.4.0...v4.4.1) (2026-11-04)
 
 
