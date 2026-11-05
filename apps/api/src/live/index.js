@@ -54,6 +54,12 @@ const createLive = ({ server, pool, auth, push, clock = systemClock, config = {}
         [ClientMessage.MATCH_JOIN]: (connection, message) => lobby.join(connection, message.matchId, message.lastSeq),
         [ClientMessage.INTENT]: (connection, message) => lobby.intent(connection, message),
         [ClientMessage.PRESENCE_QUERY]: (connection, message) => lobby.presence(connection, message.usernames),
+        [ClientMessage.CHALLENGE_CREATE]: connection => lobby.challenges.create(connection),
+        [ClientMessage.CHALLENGE_RENEW]: (connection, message) => lobby.challenges.renew(connection, message.code),
+        [ClientMessage.CHALLENGE_CANCEL]: (connection, message) => lobby.challenges.cancel(connection, message.code),
+        [ClientMessage.CHALLENGE_OPEN]: (connection, message) => lobby.challenges.open(connection, message.code),
+        [ClientMessage.CHALLENGE_ACCEPT]: (connection, message) => lobby.challenges.accept(connection, message.code),
+        [ClientMessage.CHALLENGE_DECLINE]: (connection, message) => lobby.challenges.decline(connection, message.code),
     };
 
     const hello = async (connection, message) => {

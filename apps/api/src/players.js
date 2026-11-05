@@ -3,6 +3,7 @@
 const crypto = require('crypto');
 const { EmptyPlayerStats, sanitizeLoadout } = require('@battlechoc/battlechoc-shared-functions');
 const { resultOf, xpOf } = require('./xp');
+const { isValidUsername, randomName } = require('./names');
 const pantry = require('./pantry');
 
 const count = async (pool, sql, params) => Number((await pool.query(sql, params)).rows[0].n);
@@ -12,6 +13,39 @@ const findPlayer = async (pool, playerId) => (await pool.query('SELECT * FROM pl
 const findPlayerByName = async (pool, name) => (typeof name === 'string'
     ? (await pool.query('SELECT * FROM players WHERE username_lower = $1', [name.toLowerCase()])).rows[0]
     : undefined);
+
+/** A random player name nobody has yet; the placeholder name when 20 tries found none. */
+const freeRandomName = async pool => {
+    for (let attempt = 0; attempt < 20; attempt++) {
+        const candidate = randomName();
+        if (isValidUsername(candidate) && !(await findPlayerByName(pool, candidate))) {
+            return candidate;
+        }
+    }
+    return EmptyPlayerStats.username;
+};
+
+/** Gives a player without a name a random one (a newcomer opening a challenge link); resolves with their name. */
+const assignRandomName = async (pool, playerId) => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+        const player = await findPlayer(pool, playerId);
+        if (!player || player.username) {
+            return player ? player.username : null;
+        }
+        const name = await freeRandomName(pool);
+        if (name === EmptyPlayerStats.username) {
+            return null;
+        }
+        try {
+            await pool.query('UPDATE players SET username = $1, username_lower = $2 WHERE id = $3 AND username IS NULL',
+                [name, name.toLowerCase(), playerId]);
+        } catch {
+            // lost a race for the name: try another
+        }
+    }
+    const player = await findPlayer(pool, playerId);
+    return player ? player.username : null;
+};
 
 const createPlayer = async pool => {
     const id = crypto.randomUUID();
@@ -138,5 +172,5 @@ const addTrackRecords = async (pool, playerId, records) => {
 };
 
 module.exports = {
-    findPlayer, findPlayerByName, createPlayer, stats, results, ranking, rankOf, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
+    findPlayer, findPlayerByName, freeRandomName, assignRandomName, createPlayer, stats, results, ranking, rankOf, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
 };

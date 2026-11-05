@@ -4,7 +4,6 @@
 const crypto = require('crypto');
 const express = require('express');
 const {
-    EmptyPlayerStats,
     isValidLanguage,
     StarterKit,
 } = require('@battlechoc/battlechoc-shared-functions');
@@ -14,7 +13,7 @@ const reports = require('./reports');
 const { registerLabRoutes } = require('./lab/routes');
 const { loadRecipes } = require('./lab/recipes');
 const { createKeyedQueue } = require('./queue');
-const { isValidUsername, randomName } = require('./names');
+const { isValidUsername } = require('./names');
 const { AuthError } = require('./auth');
 
 const HIGHSCORE_PAGE_SIZE = 10;
@@ -148,14 +147,7 @@ const createApp = ({ pool, auth, push, corsOrigins = [], accountsPerMinute = 10,
     /* ---------- names ---------- */
 
     app.get('/generaterandomname', auth.requireAuth, handle(async (req, res) => {
-        for (let attempt = 0; attempt < 20; attempt++) {
-            const candidate = randomName();
-            if (isValidUsername(candidate) && !(await players.findPlayerByName(pool, candidate))) {
-                res.json({ username: candidate });
-                return;
-            }
-        }
-        res.json({ username: EmptyPlayerStats.username });
+        res.json({ username: await players.freeRandomName(pool) });
     }));
 
     app.get('/check/available/:username', auth.requireAuth, handle(async (req, res) => {

@@ -126,6 +126,131 @@ const toRunning = async (env, { a, b, matchId }) => {
     await Promise.all([a, b].map(client => nextView(client, matchId, v => v.phase === MatchPhase.RUNNING)));
 };
 
+describe('live: challenges', () => {
+    const { formatChallengeCode } = live;
+    const challengeIs = (client, state) => client
+        .next(ServerMessage.CHALLENGE, message => message.challenge !== null && message.challenge.state === state)
+        .then(message => message.challenge);
+    const viewIs = (client, state) => client
+        .next(ServerMessage.CHALLENGE_VIEW, message => message.view.state === state)
+        .then(message => message.view);
+    const create = async client => {
+        client.send({ type: ClientMessage.CHALLENGE_CREATE });
+        return challengeIs(client, 'waiting');
+    };
+    const open = (client, code, state = 'open') => {
+        client.send({ type: ClientMessage.CHALLENGE_OPEN, code });
+        return viewIs(client, state);
+    };
+
+    test('create, open and accept start a challenge match; the newcomer gets a random name', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code, expiresAt } = await create(anna);
+        expect(code).toMatch(/^[0-9A-Z]{8}$/);
+        expect(expiresAt).toBe(env.clock.now() + 120000);
+        const friend = await player(env);
+        // typed as a person would: lower case, with the hyphen
+        const view = await open(friend, formatChallengeCode(code).toLowerCase());
+        expect(view.from).toBe('Anna');
+        expect(view.name).toMatch(/^[a-zA-Z][a-zA-Z0-9_]{2,24}$/);
+        expect((await challengeIs(anna, 'reading')).readers).toBe(1);
+        friend.send({ type: ClientMessage.CHALLENGE_ACCEPT, code });
+        const [ma, mf] = await Promise.all([anna.next(ServerMessage.MATCH), friend.next(ServerMessage.MATCH)]);
+        expect(ma.matchId).toBe(mf.matchId);
+        expect(ma.kind).toBe('challenge');
+        expect(ma.opponent.name).toBe(view.name);
+        const { stats } = (await request(env.app).get('/user').set('Authorization', `Bearer ${friend.account.accessToken}`)).body;
+        expect(stats.username).toBe(view.name);
+    });
+
+    test('an unopened challenge expires after 2 minutes and Send again renews the same code', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        env.clock.advance(120000);
+        expect((await challengeIs(anna, 'expired')).code).toBe(code);
+        anna.send({ type: ClientMessage.CHALLENGE_RENEW, code });
+        const renewed = await challengeIs(anna, 'waiting');
+        expect(renewed.code).toBe(code);
+        expect(renewed.expiresAt).toBe(env.clock.now() + 120000);
+    });
+
+    test('an open card keeps the challenge alive up to 10 minutes', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        const reader = await player(env, { username: 'Ben' });
+        await open(reader, code);
+        await challengeIs(anna, 'reading');
+        env.clock.advance(121000);
+        // a second create resends the challenge as it is
+        anna.send({ type: ClientMessage.CHALLENGE_CREATE });
+        expect((await anna.next(ServerMessage.CHALLENGE)).challenge.state).toBe('reading');
+        env.clock.advance(479000);
+        await challengeIs(anna, 'expired');
+        await viewIs(reader, 'ended');
+    });
+
+    test('several readers: the first accept wins, the others see taken; a decline does not end it for the others', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        const [ben, carla, dora] = await Promise.all(['Ben', 'Carla', 'Dora'].map(username => player(env, { username })));
+        for (const reader of [ben, carla, dora]) {
+            await open(reader, code);
+        }
+        await anna.next(ServerMessage.CHALLENGE, message => message.challenge.readers === 3);
+        carla.send({ type: ClientMessage.CHALLENGE_DECLINE, code });
+        const afterDecline = (await anna.next(ServerMessage.CHALLENGE, message => message.challenge.readers === 2)).challenge;
+        expect(afterDecline.state).toBe('reading');
+        ben.send({ type: ClientMessage.CHALLENGE_ACCEPT, code });
+        await Promise.all([anna.next(ServerMessage.MATCH), ben.next(ServerMessage.MATCH)]);
+        await viewIs(dora, 'taken');
+        const emil = await player(env, { username: 'Emil' });
+        await open(emil, code, 'taken');
+        ben.send({ type: ClientMessage.CHALLENGE_ACCEPT, code });
+        await sleep(50);
+        expect(env.live.lobby.rooms.size).toBe(1);
+    });
+
+    test('the only reader declining tells the challenger', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        const ben = await player(env, { username: 'Ben' });
+        await open(ben, code);
+        ben.send({ type: ClientMessage.CHALLENGE_DECLINE, code });
+        expect((await challengeIs(anna, 'declined')).code).toBe(code);
+    });
+
+    test('own code, busy friend, unknown and cancelled codes', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        await open(anna, code, 'own');
+        const { a } = await queueMatch(env);
+        await open(a, code, 'busy');
+        const ben = await player(env, { username: 'Ben' });
+        await open(ben, 'ZZZZZZZZ', 'ended');
+        await open(ben, code);
+        anna.send({ type: ClientMessage.CHALLENGE_CANCEL, code });
+        await viewIs(ben, 'ended');
+        expect((await anna.next(ServerMessage.CHALLENGE, message => message.challenge === null)).challenge).toBeNull();
+        await open(ben, code, 'ended');
+    });
+
+    test('Start while challenging cancels the challenge', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        const ben = await player(env, { username: 'Ben' });
+        await open(ben, code);
+        anna.send({ type: ClientMessage.QUEUE_JOIN });
+        await viewIs(ben, 'ended');
+    });
+});
+
 describe('live: connection', () => {
     test('needs a valid token in the first message', async () => {
         const env = await start();

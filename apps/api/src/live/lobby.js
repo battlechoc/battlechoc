@@ -16,6 +16,7 @@ const {
 const players = require('../players');
 const rewards = require('../rewards');
 const { MatchRoom } = require('./room');
+const { Challenges } = require('./challenges');
 
 const { ServerMessage, LiveError, InviteClosedReason, CloseCode } = live;
 
@@ -56,6 +57,8 @@ class Lobby {
         this.invites = new Map();
         // players whose match is being set up (guards against double starts)
         this.starting = new Set();
+        // challenge links (challenges.js)
+        this.challenges = new Challenges({ lobby: this, clock, config, pool });
         this.shuttingDown = false;
     }
 
@@ -227,6 +230,7 @@ class Lobby {
     // credits a verified match: drops and XP per human player, a rating change between two humans;
     // safe to run twice for the same room (after a restart), each part is credited once
     matchEnded(room) {
+        this.challenges.matchEnded(room.id);
         const humans = room.humanIndexes();
         humans.forEach(index => {
             const playerId = room.playerIds[index];
@@ -292,6 +296,8 @@ class Lobby {
 
     async joinQueue(connection) {
         const { playerId } = connection;
+        // Start while a challenge waits: the challenger plays someone else
+        this.challenges.cancelOwn(playerId);
         if (this.shuttingDown) {
             connection.sendError(LiveError.SHUTTING_DOWN);
             return;
@@ -334,6 +340,7 @@ class Lobby {
     /** Play against the server AI right away, whether queued or not (Start → "Play the AI now"). */
     async playAiNow(connection) {
         const { playerId } = connection;
+        this.challenges.cancelOwn(playerId);
         if (this.queue.has(playerId)) {
             await this.aiFallback(playerId);
             return;
@@ -441,7 +448,10 @@ class Lobby {
             return;
         }
         this.closeInvite(inviteId, InviteClosedReason.ACCEPTED);
-        [invite.from, invite.to].forEach(playerId => this.leaveQueue(playerId, false));
+        [invite.from, invite.to].forEach(playerId => {
+            this.leaveQueue(playerId, false);
+            this.challenges.cancelOwn(playerId);
+        });
         await this.startBetween('invite', invite.from, invite.to);
     }
 
