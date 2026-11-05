@@ -275,3 +275,57 @@ describe('web push and transport', () => {
         expect(foreign.headers['access-control-allow-origin']).toBeUndefined();
     });
 });
+
+describe('play page', () => {
+    // the preview page behind play.battlechoc.com/<code> (nginx rewrites it to /play/<code>)
+    const playApp = async (challengeInfo = () => null) => {
+        const pool = await createTestPool();
+        const auth = createAuth({ pool, secret: JWT_SECRET });
+        return createApp({ pool, auth, push: { enabled: false }, challengeInfo });
+    };
+    const meta = (html, property) => {
+        const match = html.match(new RegExp(`<meta property="${property}" content="([^"]*)"`));
+        return match ? match[1] : null;
+    };
+
+    test('a waiting challenge names the challenger in their language and sends browsers on to the game', async () => {
+        const app = await playApp(code => (code === 'K7Q2M9XD' ? { from: 'Anna', language: 'de' } : null));
+        const response = await request(app).get('/play/k7q2-m9xd').expect(200);
+        expect(response.type).toBe('text/html');
+        expect(meta(response.text, 'og:title')).toBe('Anna fordert dich zu battlechoc heraus!');
+        expect(meta(response.text, 'og:url')).toBe('https://play.battlechoc.com/K7Q2-M9XD');
+        expect(meta(response.text, 'og:image')).toBe('https://battlechoc.com/images/challenge-preview.png');
+        expect(meta(response.text, 'og:description')).toMatch(/Schokoladenschlacht/);
+        expect(response.text).toContain('location.replace("https://battlechoc.com/?challenge=K7Q2-M9XD")');
+        expect(response.text).toContain('href="https://battlechoc.com/?challenge=K7Q2-M9XD"');
+    });
+
+    test('an unknown or missing code gets the general preview and the plain game link', async () => {
+        const app = await playApp();
+        for (const path of ['/play/nope', '/play/', '/play/ZZZZZZZZ']) {
+            const response = await request(app).get(path).expect(200);
+            expect(meta(response.text, 'og:title')).toBe('battlechoc');
+            expect(meta(response.text, 'og:description')).toMatch(/real-time chocolate battle/);
+        }
+        const invalid = await request(app).get('/play/nope');
+        expect(invalid.text).toContain('href="https://battlechoc.com/"');
+        const unknown = await request(app).get('/play/ZZZZZZZZ');
+        // a valid code that ended still opens the game, which shows the ended card
+        expect(unknown.text).toContain('location.replace("https://battlechoc.com/?challenge=ZZZZ-ZZZZ")');
+    });
+
+    test('the name is escaped in the page', async () => {
+        const app = await playApp(() => ({ from: 'Eve<script>"', language: 'en' }));
+        const response = await request(app).get('/play/K7Q2M9XD').expect(200);
+        expect(response.text).not.toContain('Eve<script>');
+        expect(meta(response.text, 'og:title')).toBe('Eve&lt;script&gt;&quot; challenges you to battlechoc!');
+    });
+
+    test('the page is rate limited', async () => {
+        const app = await playApp();
+        for (let i = 0; i < 60; i++) {
+            await request(app).get('/play/K7Q2M9XD').expect(200);
+        }
+        await request(app).get('/play/K7Q2M9XD').expect(429);
+    });
+});

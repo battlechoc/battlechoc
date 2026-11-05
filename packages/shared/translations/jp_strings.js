@@ -547,5 +547,7 @@ module.exports = {
     "NAME_CONFLICT_TITLE": "その名前は使われています",
     "NAME_CONFLICT_TEXT": "「{{name}}」はオンラインですでに使われています。代わりに「{{generated}}」という名前をつけました。名前はプロフィールでいつでも変更できます。",
     "NAME_CONFLICT_OK": "わかった",
-    "PROFILE_CHANGE_NAME": "名前を変更"
+    "PROFILE_CHANGE_NAME": "名前を変更",
+    "CHALLENGE_PREVIEW_TITLE": "{{name}}さんがbattlechocで挑戦状を送ってきた！",
+    "CHALLENGE_PREVIEW_TEXT": "リアルタイムのチョコレートバトル：カカオを育て、大砲を建て、クリームの下に隠そう。タップしてすぐにプレイ、インストール不要。"
 }

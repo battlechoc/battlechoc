@@ -451,6 +451,9 @@ const translationPredicates = {
     SERVER_NOTIFICATION_REMEMBER_TURN_TITLE: function (strings, name) {
         return fmt(strings.SERVER_NOTIFICATION_REMEMBER_TURN_TITLE, { name: name });
     },
+    CHALLENGE_PREVIEW_TITLE: function (strings, name) {
+        return fmt(strings.CHALLENGE_PREVIEW_TITLE, { name: name });
+    },
     SERVER_NOTIFICATION_CHALLENGE_TITLE: function (strings, name) {
         return fmt(strings.SERVER_NOTIFICATION_CHALLENGE_TITLE, { name: name });
     },

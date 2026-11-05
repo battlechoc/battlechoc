@@ -332,6 +332,14 @@ class Challenges {
         }
     }
 
+    /** Who challenges, for the link preview (playPage.js): only while the challenge waits for a friend. */
+    publicInfo(code) {
+        const challenge = this.byCode.get(normalizeChallengeCode(code));
+        return challenge && [State.WAITING, State.READING].includes(challenge.state)
+            ? { from: challenge.fromName, language: challenge.language || 'en' }
+            : null;
+    }
+
     /* ---------- connections ---------- */
 
     /** The challenger's own challenge for the welcome (null: none), so a reloaded app shows it again. */

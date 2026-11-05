@@ -316,6 +316,21 @@ describe('live: challenges', () => {
         expect(other.welcome.challenge).toBeNull();
     });
 
+    test('the link preview names the challenger only while the challenge waits', async () => {
+        const env = await start();
+        const anna = await player(env, { username: 'Anna' });
+        const { code } = await create(anna);
+        const { challenges } = env.live.lobby;
+        expect(challenges.publicInfo(code)).toEqual({ from: 'Anna', language: 'en' });
+        const ben = await player(env, { username: 'Ben' });
+        await open(ben, code);
+        expect(challenges.publicInfo(code)).toEqual({ from: 'Anna', language: 'en' });
+        anna.send({ type: ClientMessage.CHALLENGE_CANCEL, code });
+        await viewIs(ben, 'ended');
+        expect(challenges.publicInfo(code)).toBeNull();
+        expect(challenges.publicInfo('ZZZZZZZZ')).toBeNull();
+    });
+
     test('Start while challenging cancels the challenge', async () => {
         const env = await start();
         const anna = await player(env, { username: 'Anna' });

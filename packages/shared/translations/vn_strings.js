@@ -547,5 +547,7 @@ module.exports = {
     "NAME_CONFLICT_TITLE": "Tên đã có người dùng",
     "NAME_CONFLICT_TEXT": "Tên “{{name}}” đã có người dùng trực tuyến. Chúng tôi đã đặt cho bạn tên “{{generated}}”. Bạn có thể đổi tên bất cứ lúc nào trong hồ sơ.",
     "NAME_CONFLICT_OK": "Đã hiểu",
-    "PROFILE_CHANGE_NAME": "Đổi tên"
+    "PROFILE_CHANGE_NAME": "Đổi tên",
+    "CHALLENGE_PREVIEW_TITLE": "{{name}} thách đấu bạn trong battlechoc!",
+    "CHALLENGE_PREVIEW_TEXT": "Trận chiến sô-cô-la theo thời gian thực: trồng ca cao, xây đại bác, giấu chúng dưới lớp kem. Chạm để chơi, không cần cài đặt."
 }

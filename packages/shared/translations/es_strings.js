@@ -547,5 +547,7 @@ module.exports = {
     "NAME_CONFLICT_TITLE": "Nombre ya ocupado",
     "NAME_CONFLICT_TEXT": "El nombre «{{name}}» ya está ocupado en línea. Te hemos dado el nombre «{{generated}}». Puedes cambiarlo cuando quieras en tu perfil.",
     "NAME_CONFLICT_OK": "Entendido",
-    "PROFILE_CHANGE_NAME": "Cambiar nombre"
+    "PROFILE_CHANGE_NAME": "Cambiar nombre",
+    "CHALLENGE_PREVIEW_TITLE": "¡{{name}} te reta a battlechoc!",
+    "CHALLENGE_PREVIEW_TEXT": "Una batalla de chocolate en tiempo real: cultiva cacao, construye cañones y escóndelos bajo la nata. Toca para jugar, sin instalar nada."
 }

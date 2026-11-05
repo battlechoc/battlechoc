@@ -547,5 +547,7 @@ module.exports = {
     "NAME_CONFLICT_TITLE": "Name schon vergeben",
     "NAME_CONFLICT_TEXT": "Der Name „{{name}}“ ist online schon vergeben. Wir haben dir den Namen „{{generated}}“ gegeben. Du kannst ihn jederzeit in deinem Profil ändern.",
     "NAME_CONFLICT_OK": "Alles klar",
-    "PROFILE_CHANGE_NAME": "Namen ändern"
+    "PROFILE_CHANGE_NAME": "Namen ändern",
+    "CHALLENGE_PREVIEW_TITLE": "{{name}} fordert dich zu battlechoc heraus!",
+    "CHALLENGE_PREVIEW_TEXT": "Eine Schokoladenschlacht in Echtzeit: Kakao anbauen, Kanonen bauen, alles unter Sahne verstecken. Antippen und loslegen, ohne Installation."
 }

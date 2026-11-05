@@ -27,9 +27,12 @@ const main = async () => {
         subject: process.env.VAPID_SUBJECT,
     });
     const corsOrigins = (process.env.CORS_ORIGINS || '').split(',').map(origin => origin.trim()).filter(Boolean);
-    const app = createApp({ pool, auth, push, corsOrigins });
+    // the link preview of a challenge asks the live lobby, which starts after the HTTP server exists
+    let live;
+    const challengeInfo = code => (live ? live.lobby.challenges.publicInfo(code) : null);
+    const app = createApp({ pool, auth, push, corsOrigins, challengeInfo });
     const server = http.createServer(app);
-    const live = createLive({ server, pool, auth, origins: corsOrigins, config: liveConfig(process.env) });
+    live = createLive({ server, pool, auth, origins: corsOrigins, config: liveConfig(process.env) });
     const recovered = await live.recover();
     if (recovered > 0) {
         console.log(`recovered ${recovered} running matches`);
