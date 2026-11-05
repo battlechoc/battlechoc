@@ -570,5 +570,6 @@ module.exports = {
     "SECONDS_LEFT": "còn {{seconds}} giây",
     "CHALLENGE_CODE_COPIED": "Đã sao chép mã",
     "ASSETS_LOADING": "Đang tải mô hình 3D…",
-    "ASSETS_FAILED": "Tải thất bại: chạm để thử lại"
+    "ASSETS_FAILED": "Tải thất bại: chạm để thử lại",
+    "TUTORIAL_STARTER_KIT": "Bộ khởi đầu của bạn:"
 }

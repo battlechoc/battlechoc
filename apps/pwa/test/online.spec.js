@@ -57,8 +57,8 @@ test.describe("online", () => {
     await emil.page.getByText("Start Game", { exact: true }).first().click();
     await inOnlineMatch(emil.page);
     const opponent = await host(emil.page, () => window.__battlechoc.view().players.find((p, i) => i !== window.__battlechoc.view().viewer).name);
-    // the test players have 825 XP: from 800 on the server AI is Gustav Ganache
-    expect(opponent).toBe("Gustav Ganache");
+    // the AI ladder: the test players' one win and three losses keep them on the first step
+    expect(opponent).toBe("Tom Toffee");
     await emil.context.close();
   });
 });

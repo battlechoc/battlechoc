@@ -570,5 +570,6 @@ module.exports = {
     "SECONDS_LEFT": "encore {{seconds}} s",
     "CHALLENGE_CODE_COPIED": "Code copié",
     "ASSETS_LOADING": "Chargement des modèles 3D…",
-    "ASSETS_FAILED": "Échec du chargement : touche pour réessayer"
+    "ASSETS_FAILED": "Échec du chargement : touche pour réessayer",
+    "TUTORIAL_STARTER_KIT": "Ton kit de départ :"
 }

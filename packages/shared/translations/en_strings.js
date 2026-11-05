@@ -570,5 +570,6 @@ module.exports = {
     "SECONDS_LEFT": "{{seconds}} s left",
     "CHALLENGE_CODE_COPIED": "Code copied",
     "ASSETS_LOADING": "Loading 3D models…",
-    "ASSETS_FAILED": "Loading failed: tap to retry"
+    "ASSETS_FAILED": "Loading failed: tap to retry",
+    "TUTORIAL_STARTER_KIT": "Your starter kit:"
 }

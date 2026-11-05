@@ -5,10 +5,12 @@ import {
   engine,
   EntityType,
   unlocks,
+  buildingsUnlockedBetween,
 } from "@battlechoc/battlechoc-shared-functions";
 import { selectBuilding, tapBuilding, focusBoard, deselectBuildings } from "../UiActions";
 import { fruitCannonPossible } from "../../3d/cannonPick";
 import { Jukebox } from "../misc";
+import { LESSON } from "../../tutorial/lesson";
 
 const buildings = [
   { type: EntityType.CACAOTREE, image: "cacao-tree" },
@@ -127,6 +129,7 @@ const BuildPalette = ({
   stats,
   earlyUnlock,
   tutorial,
+  lesson,
   matchKind,
   selectedBuilding,
   select,
@@ -153,10 +156,15 @@ const BuildPalette = ({
   }
   const me = view.players[view.viewer];
   const grid = view.board.fields[me.fieldIndex].grid;
-  // the first matches unlock the buildings two by two (shared progression.js); the tutorial, the
-  // demos and a challenge match (a friend's link) show them all
+  // the first matches unlock the buildings two by two (shared progression.js); the building demos
+  // and a challenge match (a friend's link) show them all
   const unlockedBuildings = unlocks(stats, { early: earlyUnlock }).unlockedBuildings;
-  const unlocked = (type) => tutorial || matchKind === "challenge" || unlockedBuildings.includes(type);
+  // the lesson offers its own three buildings and locks the rest, as the first match does
+  const lessonBuildings = lesson ? buildingsUnlockedBetween(-1, 0) : null;
+  const unlocked = (type) =>
+    lesson
+      ? lessonBuildings.includes(type)
+      : tutorial || matchKind === "challenge" || unlockedBuildings.includes(type);
 
   const canBuild = (type) => {
     if (Array.isArray(whitelist) && !whitelist.includes(type)) {
@@ -251,6 +259,7 @@ const mapStateToProps = (state) => ({
   selectedBuilding: state.ui.selectedBuilding,
   whitelist: state.ui.whitelistBuildings,
   tutorial: state.ui.tutorial,
+  lesson: state.ui.tutorial && Array.isArray(state.ui.loopAnimations) && state.ui.loopAnimations[0] === LESSON,
   matchKind: state.match.kind,
 });
 
