@@ -10,6 +10,8 @@ import {
   translate as t,
   translationKeys as tr,
   setCurrentLanguage,
+  EmptyPlayerStats,
+  live,
   engine,
   unlocks,
   aiSetupScore,
@@ -42,6 +44,8 @@ import { testHooksEnabled, exposeForTests } from "./testHooks";
 import Hud from "./ui/Hud";
 import { v4 as uuidv4 } from "uuid";
 import IncomingInvite from "./ui/dialogs/IncomingInvite";
+import ChallengeCard from "./ui/dialogs/ChallengeCard";
+import { challengeViewed } from "./match/liveSlice";
 import Matchmaking from "./ui/dialogs/Matchmaking";
 import Unlocked from "./ui/dialogs/Unlocked";
 import NameConflict from "./ui/dialogs/NameConflict";
@@ -59,6 +63,10 @@ const ACCOUNT_TIMEOUT_MS = 10000;
 const LIVE_TIMEOUT_MS = 3000;
 // after queue.ai: the time until the server's match message, else the local AI plays
 const SERVER_MATCH_TIMEOUT_MS = 6000;
+// a friend's challenge link without an answer from the server this long: it cannot be reached
+const CHALLENGE_UNREACHABLE_MS = 10000;
+// a friend's challenge card that asks the server again after a reconnect
+const REOPENED_CHALLENGES = ["connecting", "unreachable", "open", "waiting-for-challenger"];
 
 class App extends Component {
   constructor(props) {
@@ -67,8 +75,9 @@ class App extends Component {
     // only); read it before the path is reset below
     const query = new URLSearchParams(window.location.search);
     this.testClock = testHooksEnabled && query.has("testclock");
-    // an invite to a live match, opened from its push notification
-    this.inviteId = query.get("invite") || undefined;
+    // a friend's challenge link (battlechoc.com/?challenge=K7Q2-M9XD), or the code an iPhone's
+    // home-screen app gets typed in (ChallengeDialog)
+    this.challengeCode = live.normalizeChallengeCode(query.get("challenge")) || undefined;
     let path = window.location.pathname;
     // /privacy-policy/ is a page of its own (public/privacy-policy/index.html)
     if (/^(\/[a-zA-Z][a-zA-Z0-9_]{2,15})$/.test(path)) {
@@ -77,7 +86,7 @@ class App extends Component {
       var situation = path.replace("/situation/", "").slice(0, 32);
     }
 
-    if (path !== "/" || query.has("invite")) {
+    if (path !== "/" || query.has("challenge")) {
       window.history.pushState({}, null, window.location.origin);
     }
 
@@ -128,6 +137,17 @@ class App extends Component {
       this.forceUpdate();
     });
 
+    if (typeof this.challengeCode !== "undefined") {
+      // the card shows at once, before the game has loaded; the server's answer fills it in
+      this.props.challengeViewed({ code: this.challengeCode, state: "connecting" });
+      const timeoutId = setTimeout(() => {
+        const view = this.props.challengeView;
+        if (view && view.state === "connecting") {
+          this.props.challengeViewed({ ...view, state: "unreachable" });
+        }
+      }, CHALLENGE_UNREACHABLE_MS);
+      this.timeouts.push(timeoutId);
+    }
     this.connectLive();
 
     OfflineStore.settingsStore.get("tips").then((tips) => {
@@ -188,6 +208,18 @@ class App extends Component {
   }
 
   componentDidUpdate(prevProps) {
+    // a newcomer who opened a challenge got a name from the server (shown on the card)
+    const view = this.props.challengeView;
+    const ownName = this.props.playerInfos.stats.username;
+    if (
+      view &&
+      view.name &&
+      view !== prevProps.challengeView &&
+      (typeof ownName === "undefined" || ownName === EmptyPlayerStats.username)
+    ) {
+      multiplayer.usernameSynced(view.name).catch((error) => logger.warn("could not keep the name", error));
+    }
+
     if (!prevProps.assetsReady && this.props.assetsReady) {
       const debugScenario = debugScenarios[this.state.situation];
       if (typeof debugScenario !== "undefined") {
@@ -357,9 +389,10 @@ class App extends Component {
         .token()
         .then(() => liveLobby.enter())
         .then(() => {
-          if (typeof this.inviteId !== "undefined") {
-            liveLobby.acceptInvite(this.inviteId);
-            this.inviteId = undefined;
+          // a friend's challenge card asks the server (again, after a reconnect)
+          const view = this.props.challengeView;
+          if (view && REOPENED_CHALLENGES.includes(view.state)) {
+            liveLobby.openChallenge(view.code);
           }
         })
         .catch((error) => logger.info("live service not reachable", error));
@@ -612,6 +645,13 @@ class App extends Component {
           challengedPlayer={this.state.player}
         />
         <IncomingInvite />
+        <ChallengeCard
+          learn={() => {
+            multiplayer.tutorialStarted();
+            this.startTutorial();
+          }}
+          startMatch={() => this.startGame()}
+        />
         <NameConflict />
         <UpdateAvailable />
         <Unlocked
@@ -655,6 +695,7 @@ const mapStateToProps = (state) => ({
   quickMessages: state.ui.quickMessages,
   autoFullscreen: state.ui.autoFullscreen,
   earlyUnlock: state.ui.earlyUnlock,
+  challengeView: state.live.challengeView,
 });
 
 const mapDispatchToProps = {
@@ -672,6 +713,7 @@ const mapDispatchToProps = {
   showNotification,
   deselectBuildings,
   deselectAttack,
+  challengeViewed,
 };
 
 const AppContainer = connect(mapStateToProps, mapDispatchToProps)(App);
