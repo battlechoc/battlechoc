@@ -26,6 +26,8 @@ const createLive = ({ server, pool, auth, clock = systemClock, config = {}, orig
     const store = createMatchStore(pool);
     const lobby = new Lobby({ pool, store, clock, config: settings, log, random });
     const connections = new Set();
+    // set by close(): what clients send from then on is not handled (they reconnect after the restart)
+    let closing = false;
 
     const wss = new WebSocketServer({
         server,
@@ -147,7 +149,7 @@ const createLive = ({ server, pool, auth, clock = systemClock, config = {}, orig
             }
             // messages of a connection are handled one after the other
             connection.pending = connection.pending.then(async () => {
-                if (connection.closed) {
+                if (connection.closed || closing) {
                     return;
                 }
                 if (connection.playerId === null) {
@@ -194,6 +196,7 @@ const createLive = ({ server, pool, auth, clock = systemClock, config = {}, orig
 
     /** Stops the service; running matches are saved and continue after the restart. */
     const close = async () => {
+        closing = true;
         clearInterval(heartbeat);
         await lobby.shutdown();
         connections.forEach(connection => connection.close(CloseCode.RESTART, 'restart'));

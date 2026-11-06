@@ -401,6 +401,28 @@ describe('live: connection', () => {
         await expect(first.next(ServerMessage.WELCOME, () => true, 1000)).rejects.toThrow(`closed (${CloseCode.REPLACED})`);
     });
 
+    test('closing the service leaves no timer behind', async () => {
+        const env = await start();
+        // a waiting challenge, a match that ended (its room lingers) and a running one
+        const anna = await player(env, { username: 'Anna' });
+        anna.send({ type: ClientMessage.CHALLENGE_CREATE });
+        await anna.next(ServerMessage.CHALLENGE);
+        const ended = await queueMatch(env);
+        expect((await ended.a.act(ended.matchId, MatchActionTypes.surrender, {})).ok).toBe(true);
+        await Promise.all([ended.a, ended.b].map(client => client.next(ServerMessage.RESULT)));
+        await queueMatch(env);
+        expect(env.clock.timers.size).toBeGreaterThanOrEqual(3);
+
+        await env.live.close();
+        // the sockets close after the service: a player leaving then must not start a forfeit timer
+        const end = Date.now() + 3000;
+        while (env.live.lobby.connections.size > 0 && Date.now() < end) {
+            await sleep(5);
+        }
+        expect(env.live.lobby.connections.size).toBe(0);
+        expect(env.clock.timers.size).toBe(0);
+    });
+
     test('drops connections that stop answering heartbeats', async () => {
         const env = await start({ config: { pingIntervalMs: 50, offlineAfterMs: 150 } });
         const created = await account(env);

@@ -8,25 +8,14 @@ const {
 const players = require('../players');
 const pantry = require('../pantry');
 const { withTransaction } = require('../db');
+const { slidingWindowLimit } = require('../limits');
 const { HttpError, ErrorCode } = require('../errors');
 
 const HOUR_MS = 60 * 60 * 1000;
 
 const registerLabRoutes = (app, { pool, user, recipes, oneAtATime, triesPerHour = 30, now = () => Date.now() }) => {
-    const tries = new Map();
-
     // at most `triesPerHour` tries per player in a sliding hour
-    const allowTry = playerId => {
-        const since = now() - HOUR_MS;
-        const recent = (tries.get(playerId) || []).filter(at => at > since);
-        if (recent.length >= triesPerHour) {
-            tries.set(playerId, recent);
-            return false;
-        }
-        recent.push(now());
-        tries.set(playerId, recent);
-        return true;
-    };
+    const tries = slidingWindowLimit({ windowMs: HOUR_MS, max: triesPerHour, now });
 
     const discoveries = async db => {
         const { rows } = await db.query(
@@ -58,7 +47,7 @@ const registerLabRoutes = (app, { pool, user, recipes, oneAtATime, triesPerHour 
         if (!tried.every(id => (owned[id] || 0) > 0)) {
             throw new HttpError(400, ErrorCode.MISSING_INGREDIENTS);
         }
-        if (!allowTry(req.playerId)) {
+        if (!tries.allow(req.playerId)) {
             throw new HttpError(429, ErrorCode.TOO_MANY_TRIES);
         }
         const recipe = recipes.match(entityType, tried);

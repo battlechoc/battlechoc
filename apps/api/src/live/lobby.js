@@ -35,6 +35,8 @@ class Lobby {
         // matchId -> room, playerId -> matchId of the running match
         this.rooms = new Map();
         this.activeMatch = new Map();
+        // matchId -> the timer that forgets the ended room
+        this.lingering = new Map();
         // playerId -> { since, timer }
         this.queue = new Map();
         // rematch offers: inviteId -> { id, kind, from, to, expiresAt, timer }
@@ -245,11 +247,25 @@ class Lobby {
                 });
             }
         });
-        this.clock.setTimer(() => {
+        this.linger(room);
+    }
+
+    // an ended room stays a while (the result screen, a rematch offer), then it is forgotten
+    linger(room) {
+        if (this.lingering.has(room.id)) {
+            this.clock.clearTimer(this.lingering.get(room.id));
+        }
+        const timer = this.clock.setTimer(() => {
+            this.lingering.delete(room.id);
             if (this.rooms.get(room.id) === room) {
                 this.rooms.delete(room.id);
             }
         }, this.config.endedRoomLingerMs);
+        // nothing waits for this timer: it must not keep the process alive once the server is closed
+        if (timer && typeof timer.unref === 'function') {
+            timer.unref();
+        }
+        this.lingering.set(room.id, timer);
     }
 
     /** Rebuilds the running matches after a restart. */
@@ -430,10 +446,14 @@ class Lobby {
 
     /* ---------- shutdown ---------- */
 
+    // stops every timer: after this nothing of the lobby keeps the process alive or fires later
     async shutdown() {
         this.shuttingDown = true;
         [...this.queue.keys()].forEach(playerId => this.leaveQueue(playerId, false));
         [...this.invites.keys()].forEach(inviteId => this.closeInvite(inviteId, InviteClosedReason.CANCELLED));
+        this.lingering.forEach(timer => this.clock.clearTimer(timer));
+        this.lingering.clear();
+        this.challenges.shutdown();
         await Promise.all([...this.rooms.values()].map(room => room.suspend()));
     }
 }

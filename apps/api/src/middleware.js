@@ -2,6 +2,7 @@
 // for unknown paths and for errors.
 
 const players = require('./players');
+const { fixedWindowLimit } = require('./limits');
 const { HttpError, ErrorCode } = require('./errors');
 
 // small CORS middleware for the PWA origins (custom headers included)
@@ -21,22 +22,17 @@ const cors = origins => (req, res, next) => {
     next();
 };
 
-// fixed window rate limit per client address
-const rateLimit = ({ windowMs, max }) => {
-    const hits = new Map();
-    return (req, res, next) => {
-        const now = Date.now();
-        const key = req.ip;
-        const entry = hits.get(key);
-        if (!entry || now - entry.since > windowMs) {
-            hits.set(key, { since: now, count: 1 });
-        } else if (entry.count >= max) {
+// fixed window rate limit per client address; `size` is the number of addresses it remembers
+const rateLimit = options => {
+    const limit = fixedWindowLimit(options);
+    const middleware = (req, res, next) => {
+        if (!limit.allow(req.ip)) {
             throw new HttpError(429, ErrorCode.TOO_MANY_REQUESTS);
-        } else {
-            entry.count += 1;
         }
         next();
     };
+    Object.defineProperty(middleware, 'size', { get: () => limit.size });
+    return middleware;
 };
 
 /** After auth.requireAuth: puts the player's row into req.player, or answers 404. */
