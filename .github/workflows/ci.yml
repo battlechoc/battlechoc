@@ -80,7 +80,8 @@ jobs:
           cache: npm
       - run: npm ci
       # `npm run verify` runs the same checks on a contributor's machine (package.json), except
-      # the API tests on a real Postgres: a step added here belongs there too
+      # the API tests on a real Postgres and the image check, which need Docker: a step added
+      # here belongs there too
       - name: Formatting of the files Prettier covers (.prettierignore names the rest)
         run: npm run format:check
       - name: Changelog script tests
@@ -97,6 +98,9 @@ jobs:
         run: npm run test:api
         env:
           TEST_DATABASE_URL: postgres://postgres:test@localhost:5432/postgres
+      # a release publishes this image (api-image.yml): it must build and start before that
+      - name: The API image starts with the server's compose file
+        run: deploy/test-image.sh
       - name: PWA production build
         run: npm run build
       - name: The published build has no test hooks

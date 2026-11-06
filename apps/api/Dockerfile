@@ -3,12 +3,10 @@
 # deploy/docker-compose.yml and needs nothing else of this repository.
 # Build from the repository root: docker build -f apps/api/Dockerfile .
 # (the build context is trimmed by apps/api/Dockerfile.dockerignore)
-ARG NODE_IMAGE=node:22.23.4-alpine3.24
-
 # The dependencies are plain JavaScript (no install scripts, nothing compiled), so they are
 # installed once on the build machine's own platform and copied into every target platform:
 # an arm64 image needs no emulation.
-FROM --platform=$BUILDPLATFORM ${NODE_IMAGE} AS deps
+FROM --platform=$BUILDPLATFORM node:22.23.4-alpine3.24 AS deps
 WORKDIR /app
 # workspace manifests first for a cached dependency layer
 COPY package.json package-lock.json ./
@@ -17,7 +15,8 @@ COPY apps/api/package.json ./apps/api/package.json
 COPY apps/pwa/package.json ./apps/pwa/package.json
 RUN npm ci --omit=dev --workspace apps/api --ignore-scripts
 
-FROM ${NODE_IMAGE}
+# the same Node as above: Dependabot raises both lines together
+FROM node:22.23.4-alpine3.24
 LABEL org.opencontainers.image.title="battlechoc API" \
       org.opencontainers.image.description="Backend of battlechoc: REST API and the live match WebSocket, on Postgres" \
       org.opencontainers.image.source="https://github.com/battlechoc/battlechoc" \
