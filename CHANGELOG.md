@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.2.0](https://github.com/battlechoc/battlechoc/compare/v5.1.0...v5.2.0) (2026-11-06)
+
+
+### Features
+
+* **pwa:** a hand shows where to tap in the tutorial lesson ([21ab493](https://github.com/battlechoc/battlechoc/commit/21ab4937567a8e0d0eac030facacf0eea875db0f))
+
 ## [5.1.0](https://github.com/battlechoc/battlechoc/compare/v5.0.0...v5.1.0) (2026-11-05)
 
 
