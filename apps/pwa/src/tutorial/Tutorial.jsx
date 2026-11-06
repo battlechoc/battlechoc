@@ -20,8 +20,10 @@ import {
   deselectBuildings,
   focusBoard,
 } from "../ui/UiActions";
-import { PlayerNameInput, Button, CoachCard } from "../ui/controls";
-import { Dialog } from "../ui/dialogs";
+import PlayerNameInput from "../ui/controls/PlayerNameInput";
+import Button from "../ui/controls/Button";
+import CoachCard from "../ui/controls/CoachCard";
+import Dialog from "../ui/dialogs/Dialog";
 import { matchSession } from "../match/LocalMatchHost";
 import { TutorialRunner } from "./runner";
 import { LESSON, lessonSteps } from "./lesson";

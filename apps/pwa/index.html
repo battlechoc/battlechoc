@@ -41,7 +41,7 @@
     jumps when React takes over. The box repeats `logo` in src/ui/Hud.jsx (LOGO: top and size by
     orientation): change both together, test/first-load.spec.js compares them. The picture is
     asked for at once; the title screen found it only after its script had run. -->
-  <link rel="preload" href="/images/logo.svg" as="image" type="image/svg+xml" />
+  <link rel="preload" href="/images/logo.svg" as="image" type="image/svg+xml" fetchpriority="high" />
   <style>
     .splash {
       position: absolute;

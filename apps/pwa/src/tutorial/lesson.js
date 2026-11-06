@@ -7,14 +7,13 @@ import {
   DefaultBalance,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
+import { LESSON } from "./ids.js";
 
 // The first lesson: a real match on the real engine against Mimi Marzipan, who never fights
 // back. A coach card walks the player through it; every step ends when the player has done
 // what it asks (or, for the info steps, taps next).
 
 const { MatchPhase, WeaponState } = engine;
-
-const LESSON = "TutorialLesson";
 
 const BOARD_SIZE = { rows: 6, cols: 6 };
 

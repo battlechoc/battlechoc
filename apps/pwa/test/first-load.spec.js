@@ -86,6 +86,44 @@ test("the title screen works before the 3D models are in; the start button fills
   expect(requests.filter((url) => url.includes("-per-turn.svg"))).toEqual([]);
 });
 
+// The settings, the other dialogs, the lab, the tutorial and the end of a match are not part of
+// the first script (src/ui/onDemand.js); their chunks follow by themselves once the title screen
+// stands, so a device that loses its connection then (the tests run without a service worker)
+// can still open them.
+test("what the player opens next arrives with the title screen: offline right after, the settings and the tutorial still open", async ({
+  page,
+  context,
+}) => {
+  const arrived = [];
+  page.on("requestfinished", (request) => arrived.push(request.url()));
+  await page.goto("/");
+  const start = page.getByTestId("start-button");
+  await expect(start).toHaveText("Start Tutorial", { timeout: 30000 });
+  // nobody has tapped anything yet
+  for (const chunk of [
+    "onDemandDialogs",
+    "Choclab",
+    "Tutorial",
+    "GameEndOverview",
+  ]) {
+    const file = new RegExp(`/assets/${chunk}-[^/]+\\.js$`);
+    await expect.poll(() => arrived.some((url) => file.test(url))).toBe(true);
+  }
+  await page.waitForLoadState("networkidle");
+
+  await context.setOffline(true);
+  await page.locator("[data-icon=settings]:visible").first().click();
+  const clickSound = page.getByRole("button", { name: "Click sound: on" });
+  await expect(clickSound).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(clickSound).toBeHidden();
+  await start.click();
+  await expect(page.getByTestId("tutorial-coach")).toContainText(
+    "Welcome to battlechoc"
+  );
+  await context.setOffline(false);
+});
+
 // index.html carries a splash: the logo on the page's background until the script has rendered
 // the title screen. It repeats the title screen's box by hand (LOGO in src/ui/Hud.jsx), so the
 // test holds the game's script back and compares the two, lying down and upright.

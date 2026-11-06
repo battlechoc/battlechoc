@@ -20,7 +20,10 @@ import logger from "../../helper/logger";
 import { version, commit } from "../../build";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
-import { Button, Select, Progress, Slider } from "../controls";
+import Button from "../controls/Button";
+import Select from "../controls/Select";
+import Progress from "../controls/Progress";
+import Slider from "../controls/Slider";
 import {
   enterFullscreen,
   fullscreenSupported,

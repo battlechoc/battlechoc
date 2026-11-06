@@ -10,7 +10,7 @@ import {
 import { selectBuilding, tapBuilding, focusBoard, deselectBuildings } from "../UiActions";
 import { fruitCannonPossible } from "../../match/fruitCannon";
 import { Jukebox } from "../misc";
-import { LESSON } from "../../tutorial/lesson";
+import { LESSON } from "../../tutorial/ids";
 
 const buildings = [
   { type: EntityType.CACAOTREE, image: "cacao-tree" },

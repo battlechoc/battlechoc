@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { Suspense, useState, useEffect, useRef } from "react";
 import "./Hud.css";
 import PropTypes from "prop-types";
 import { connect } from "react-redux";
@@ -14,30 +14,29 @@ import {
   showNotification,
   hideNotification,
 } from "./UiActions";
+import Info from "./dialogs/Info";
+import Dialog from "./dialogs/Dialog";
+import Highscore from "./dialogs/Highscore";
+// loaded after the title screen (src/ui/onDemand.js)
 import {
-  Info,
   Settings,
   AccountOverview,
-  Dialog,
-  Highscore,
-} from "./dialogs";
-import ChallengeDialog from "./dialogs/ChallengeDialog";
+  ChallengeDialog,
+  Choclab,
+  GameEndOverview,
+} from "./onDemand";
 import { liveLobby } from "../match/liveLobby";
 import { matchSession } from "../match/LocalMatchHost";
-import Choclab from "./pages/Choclab";
 import { retryAssets } from "../firstLoad";
 import { multiplayer } from "../Multiplayer";
 import { ServerRequest } from "../helper/settings";
 import logger from "../helper/logger";
 import { account } from "../account";
-import {
-  Button,
-  Fab,
-  Progress,
-  Actionbar,
-  GameStartSelection,
-  GameEndOverview,
-} from "./controls";
+import Button from "./controls/Button";
+import Fab from "./controls/Fab";
+import Progress from "./controls/Progress";
+import Actionbar from "./controls/Actionbar";
+import GameStartSelection from "./controls/GameStartSelection";
 import { createUseStyles } from "react-jss";
 import { selectActiveGame } from "../match/matchSlice";
 import {
@@ -377,25 +376,27 @@ const Hud = (props) => {
   let unlockHint = null;
   return (
     <div className={className}>
-      <Settings
-        startTutorial={kickOffTutorial}
-        showBuildingDemos={props.showBuildingDemos}
-        open={openSettings}
-        close={() => {
-          setOpenSettings(false);
-          const after = afterSettings.current;
-          afterSettings.current = undefined;
-          if (after) {
-            after();
-          }
-        }}
-      />
-      <AccountOverview
-        dialogStyle={dialogStyle}
-        playerAccount={playerAccount}
-        open={showAccountOverview}
-        close={() => setShowAccountOverview(false)}
-      />
+      <Suspense fallback={null}>
+        <Settings
+          startTutorial={kickOffTutorial}
+          showBuildingDemos={props.showBuildingDemos}
+          open={openSettings}
+          close={() => {
+            setOpenSettings(false);
+            const after = afterSettings.current;
+            afterSettings.current = undefined;
+            if (after) {
+              after();
+            }
+          }}
+        />
+        <AccountOverview
+          dialogStyle={dialogStyle}
+          playerAccount={playerAccount}
+          open={showAccountOverview}
+          close={() => setShowAccountOverview(false)}
+        />
+      </Suspense>
       {(() => {
         if (stage === "CHOCLAB_SCREEN") {
           return (
@@ -614,12 +615,14 @@ const Hud = (props) => {
               </Dialog>
               <Info online={online} />
               {/* also open by itself for a challenge the welcome restored after a reload */}
-              <ChallengeDialog
-                open={challengeDialog !== null || props.challenge !== null}
-                locked={challengeDialog !== null && challengeDialog.locked}
-                lockText={challengeDialog !== null ? challengeDialog.lockText : undefined}
-                close={() => setChallengeDialog(null)}
-              />
+              <Suspense fallback={null}>
+                <ChallengeDialog
+                  open={challengeDialog !== null || props.challenge !== null}
+                  locked={challengeDialog !== null && challengeDialog.locked}
+                  lockText={challengeDialog !== null ? challengeDialog.lockText : undefined}
+                  close={() => setChallengeDialog(null)}
+                />
+              </Suspense>
             </>
           );
         } else if (stage === "CHOOSE_MENU") {
@@ -629,7 +632,11 @@ const Hud = (props) => {
             </div>
           );
         } else if (stage === "CHOCLAB_SCREEN") {
-          return <Choclab />;
+          return (
+            <Suspense fallback={null}>
+              <Choclab />
+            </Suspense>
+          );
         } else if (stage === "WAITING_ROOM") {
           return (
             <div className="waiting-room">
@@ -663,30 +670,32 @@ const Hud = (props) => {
                 <WeaponPalette />
               </div>
               {overviewVisible && result ? (
-                <GameEndOverview
-                  awards={(matchAwards || []).map((award) => ({
-                    ...engine.matchAwards.find(
-                      (candidate) => candidate.key === award.key
-                    ),
-                    xp: award.xp,
-                  }))}
-                  outcome={
-                    result.winners.length === 1 &&
-                    result.winners[0] === game.viewer
-                      ? "won"
-                      : "lost"
-                  }
-                  isWinner={result.winners.includes(game.viewer)}
-                  verified={matchOnline}
-                  drops={matchResult ? matchResult.drops : undefined}
-                  rematch={
-                    rematchable && !props.outgoingInvite
-                      ? () => liveLobby.requestRematch(matchSession.host.matchId).catch(() => {})
-                      : undefined
-                  }
-                  rematchStatus={rematchStatus}
-                  finishGame={() => endGame()}
-                />
+                <Suspense fallback={null}>
+                  <GameEndOverview
+                    awards={(matchAwards || []).map((award) => ({
+                      ...engine.matchAwards.find(
+                        (candidate) => candidate.key === award.key
+                      ),
+                      xp: award.xp,
+                    }))}
+                    outcome={
+                      result.winners.length === 1 &&
+                      result.winners[0] === game.viewer
+                        ? "won"
+                        : "lost"
+                    }
+                    isWinner={result.winners.includes(game.viewer)}
+                    verified={matchOnline}
+                    drops={matchResult ? matchResult.drops : undefined}
+                    rematch={
+                      rematchable && !props.outgoingInvite
+                        ? () => liveLobby.requestRematch(matchSession.host.matchId).catch(() => {})
+                        : undefined
+                    }
+                    rematchStatus={rematchStatus}
+                    finishGame={() => endGame()}
+                  />
+                </Suspense>
               ) : null}
             </div>
           );

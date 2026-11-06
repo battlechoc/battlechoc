@@ -7,7 +7,8 @@ import {
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
-import { ChoclabPalette, Fab } from "../controls";
+import ChoclabPalette from "../controls/ChoclabPalette";
+import Fab from "../controls/Fab";
 import { updatePlayerStats } from "../UiActions";
 import { ServerRequest } from "../../helper/settings";
 import logger from "../../helper/logger";

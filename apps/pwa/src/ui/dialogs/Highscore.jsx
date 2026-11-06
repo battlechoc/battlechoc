@@ -2,7 +2,10 @@ import React, { useState, useEffect, useCallback } from "react";
 import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
-import { Fab, Progress, Button, PlayerList } from "../controls";
+import Fab from "../controls/Fab";
+import Progress from "../controls/Progress";
+import Button from "../controls/Button";
+import PlayerList from "../controls/PlayerList";
 import {
   translate as t,
   translationKeys as tr,

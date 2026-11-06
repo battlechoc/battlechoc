@@ -5,6 +5,7 @@ import {
   PlayerType,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
+import { DemoId, allDemos } from "./ids.js";
 
 // Short scripted matches that show the buildings unlocked after the first win. They run on
 // the real engine with two scripted players and a fast-forwarded clock, so production,
@@ -12,17 +13,6 @@ import {
 // weapon (which turns the camera to the opponent's board) or a building (back to your own).
 
 const { MatchActionTypes, MatchPhase } = engine;
-
-const DemoId = Object.freeze({
-  FACTORY_EXTENSION: "TutorialDemo.FactoryExtension",
-  EASTER_BUNNY: "TutorialDemo.EasterBunny",
-  XMAS_FACTORY: "TutorialDemo.XmasFactory",
-  HOT_CHOCOLATE_BALLISTA: "TutorialDemo.HotChocolateBallista",
-  CHOCOLATE_FOUNTAIN: "TutorialDemo.ChocolateFountain",
-  FRUIT_CANNON: "TutorialDemo.FruitCannon",
-  DONUT_FACTORY: "TutorialDemo.DonutFactory",
-  DONUTS: "TutorialDemo.Donuts",
-});
 
 const build = (at, entityType, row, col) => ({ at, type: MatchActionTypes.build, payload: { entityType, row, col } });
 const shoot = (at, attackType, row, col) => ({
@@ -162,8 +152,6 @@ const demos = {
     cues: [],
   },
 };
-
-const allDemos = Object.values(DemoId);
 
 const demoMatch = (id, { playerName }) => {
   const demo = demos[id];

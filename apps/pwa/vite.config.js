@@ -94,6 +94,30 @@ const preconnectApi = (mode) => ({
   },
 });
 
+// Vite writes the stylesheet behind the script and the chunks it preloads. Over HTTP/1.1 (the
+// Docker image, vite preview) a browser opens six connections at a time: once the entry had four
+// chunks, the stylesheet waited behind the fonts, the logo and the scripts for a free one, and
+// the page stayed blank meanwhile (first paint 0.24 s -> 0.93 s at 4 Mbit/s). The stylesheet goes
+// in front of the first preload.
+const stylesheetFirst = () => ({
+  name: 'battlechoc-stylesheet-first',
+  apply: 'build',
+  transformIndexHtml: {
+    order: 'post',
+    handler(html) {
+      const stylesheet = /[ \t]*<link rel="stylesheet"[^>]*>\r?\n?/g;
+      const links = html.match(stylesheet);
+      const firstPreload = html.search(/[ \t]*<link rel="preload"/);
+      if (!links || firstPreload === -1) {
+        return html;
+      }
+      const head = html.slice(0, firstPreload);
+      const rest = html.slice(firstPreload).replace(stylesheet, '');
+      return head + links.map((link) => link.trimEnd() + '\n').join('') + rest;
+    },
+  },
+});
+
 // The media the game needs offline. Workbox gives each file a revision of its content, so a
 // changed picture or model reaches installed games with the next build; add new files here.
 const PRECACHED_MEDIA = [
@@ -238,6 +262,7 @@ export default defineConfig(({ command, mode }) => ({
   plugins: [
     restartOnSharedChange(),
     preconnectApi(mode),
+    stylesheetFirst(),
     react(),
     VitePWA({
       srcDir: 'src',
@@ -265,5 +290,16 @@ export default defineConfig(({ command, mode }) => ({
   },
   build: {
     outDir: 'build',
+    rolldownOptions: {
+      output: {
+        // What the entry imports statically is one chunk, "app" (a group takes its module's
+        // static dependencies along). Left alone, Rolldown cut it into five: whatever the entry
+        // shares with a lazily loaded chunk became a request of its own before the first render
+        // (3 kB gzip more, and over HTTP/1.1 the logo arrived 0.3 s later behind them).
+        codeSplitting: {
+          groups: [{ name: 'app', test: /[\\/]src[\\/]index\.jsx$/ }],
+        },
+      },
+    },
   },
 }));
