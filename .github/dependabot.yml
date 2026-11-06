@@ -48,3 +48,17 @@ updates:
       # the Node major is the one in .nvmrc
       - dependency-name: node
         update-types: ["version-update:semver-major"]
+
+  # The images of the server stack (deploy/docker-compose*.yml).
+  - package-ecosystem: docker-compose
+    directory: /deploy
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    ignore:
+      # a new Postgres major cannot read the old one's data folder: that is a dump and restore
+      # on the server, not a pull request
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]

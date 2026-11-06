@@ -9,12 +9,12 @@ A chocolate-themed two-player strategy game. Each player owns a board of chocola
 | `apps/pwa` | The game client: React, Redux Toolkit, Babylon.js, Vite, Workbox |
 | `packages/shared` | Shared by client and server: the real-time rules engine, AIs, balance, equipment, live protocol, translations |
 | `apps/api` | The backend: REST API (accounts, profile, lab, Web Push) and the live match WebSocket, on Postgres |
-| `deploy` | Docker Compose stack for the server: Postgres, the API and Caddy (or the host's nginx); how to deploy it: [deploy/README.md](deploy/README.md) |
+| `deploy` | Docker Compose stack for the server: Postgres and the API from its published image, behind the host's nginx (or Caddy); how to deploy it: [deploy/README.md](deploy/README.md) |
 | `whitepaper` | Draft whitepaper for the planned competitive layer, with the economy simulator behind its numbers |
 
 ## Development
 
-Requires Node `^20.19` or `>=22.12`.
+Requires Node 22.13 or later (`.nvmrc` names the major version CI uses).
 
 ```sh
 npm install          # installs all workspaces
