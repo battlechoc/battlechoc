@@ -11,6 +11,55 @@ const { createLive } = require('./live');
 const { loadRecipes } = require('./lab/recipes');
 const { scheduleCleanup } = require('./cleanup');
 
+// Docker waits 10 seconds after SIGTERM, then it kills the container: the process leaves on its
+// own before that, also when a part of the shutdown hangs.
+const SHUTDOWN_TIMEOUT_MS = 8000;
+
+/**
+ * The handler of SIGTERM and SIGINT: saves the running matches (they resume after the restart,
+ * clients reconnect), then closes the HTTP server and the pool, whatever failed before, and exits.
+ * A second signal while it runs changes nothing.
+ */
+const createShutdown = ({
+    stopCleanup, live, server, pool, exit = process.exit, log = console, setTimer = setTimeout, timeoutMs = SHUTDOWN_TIMEOUT_MS,
+}) => {
+    let stopping = null;
+    const stop = async () => {
+        const forced = setTimer(() => {
+            log.error(`shutdown not finished after ${timeoutMs} ms, exiting`);
+            exit(1);
+        }, timeoutMs);
+        // the timer alone must not keep a process alive that has nothing else left to do
+        forced.unref();
+        let failed = false;
+        // each step runs, also after an earlier one failed
+        const step = async (name, run) => {
+            try {
+                await run();
+            } catch (error) {
+                failed = true;
+                log.error(`shutdown: ${name} failed`, error);
+            }
+        };
+        try {
+            stopCleanup();
+            await step('closing the live service', () => live.close());
+        } finally {
+            await step('closing the HTTP server', () => new Promise((resolve, reject) => {
+                server.close(error => (error ? reject(error) : resolve()));
+            }));
+            await step('closing the database pool', () => pool.end());
+            exit(failed ? 1 : 0);
+        }
+    };
+    return () => {
+        if (stopping === null) {
+            stopping = stop();
+        }
+        return stopping;
+    };
+};
+
 /**
  * Starts the backend; `wrap(app, { pool })` may put a handler around the REST app (the browser
  * tests add a route of their own, see test/e2eServer.js). `env` is the environment to configure
@@ -38,12 +87,7 @@ const main = async ({ wrap = app => app, env = process.env } = {}) => {
     const stopCleanup = scheduleCleanup(pool);
     server.listen(config.port, () => console.log(`battlechoc api listening on ${config.port}`));
 
-    // running matches are saved and resume after the restart (clients reconnect)
-    const shutdown = async () => {
-        stopCleanup();
-        await live.close();
-        server.close(() => pool.end().then(() => process.exit(0)));
-    };
+    const shutdown = createShutdown({ stopCleanup, live, server, pool });
     process.on('SIGTERM', shutdown);
     process.on('SIGINT', shutdown);
 };
@@ -56,4 +100,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { main };
+module.exports = { main, createShutdown };

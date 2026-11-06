@@ -35,7 +35,20 @@ const createApp = ({
     // a route for a player: the access token, then the player's row in req.player
     const user = [auth.requireAuth, requirePlayer(pool)];
 
-    app.get('/health', (req, res) => res.json({ ok: true }));
+    // Cheap by default: the process answers (what a proxy or Docker asks every few seconds).
+    // ?deep=1 also asks the database, for a monitor that wants to know whether the API can work;
+    // limited per address, because it is open to everyone and takes a connection of the pool.
+    const deepLimit = rateLimit({ windowMs: 60000, max: 60 });
+    app.get('/health', (req, res, next) => {
+        if (req.query.deep !== '1') {
+            res.json({ ok: true });
+            return;
+        }
+        deepLimit(req, res, next);
+    }, async (req, res) => {
+        const database = await pool.query('SELECT 1').then(() => true, () => false);
+        res.status(database ? 200 : 503).json({ ok: database, database });
+    });
 
     // the link preview of a challenge (play.battlechoc.com/<code>)
     registerPlayRoutes(app, { challengeInfo, limit: rateLimit({ windowMs: 60000, max: 60 }) });

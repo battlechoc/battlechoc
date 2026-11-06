@@ -423,6 +423,21 @@ describe('live: connection', () => {
         expect(env.clock.timers.size).toBe(0);
     });
 
+    test('a client that never answers the close does not hold up the shutdown', async () => {
+        const env = await start({ config: { closeGraceMs: 100 } });
+        const gone = await player(env);
+        const present = await player(env);
+        // a phone that lost its network: nothing it was sent is read any more
+        gone.ws._socket.pause();
+        const started = Date.now();
+        await env.live.close();
+        // the HTTP server can only close once every socket is gone
+        await new Promise(resolve => env.server.close(resolve));
+        expect(Date.now() - started).toBeLessThan(2000);
+        expect(env.live.wss.clients.size).toBe(0);
+        await expect(present.next(ServerMessage.WELCOME, () => true, 1000)).rejects.toThrow(`closed (${CloseCode.RESTART})`);
+    });
+
     test('drops connections that stop answering heartbeats', async () => {
         const env = await start({ config: { pingIntervalMs: 50, offlineAfterMs: 150 } });
         const created = await account(env);

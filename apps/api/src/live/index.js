@@ -12,6 +12,9 @@ const { Lobby } = require('./lobby');
 
 const { ClientMessage, ServerMessage, LiveError, CloseCode, InviteClosedReason, LiveDefaults, LIVE_PROTOCOL_VERSION } = live;
 
+// how long close() waits for the clients to answer the closing handshake
+const CLOSE_GRACE_MS = 2000;
+
 /**
  * @param {object} options
  * @param {import('http').Server} options.server
@@ -22,12 +25,14 @@ const { ClientMessage, ServerMessage, LiveError, CloseCode, InviteClosedReason, 
  * @param {string[]} [options.origins] allowed browser origins (no Origin header: allowed)
  */
 const createLive = ({ server, pool, auth, clock = systemClock, config = {}, origins = [], log = console, random }) => {
-    const settings = { ...LiveDefaults, ...config };
+    const settings = { closeGraceMs: CLOSE_GRACE_MS, ...LiveDefaults, ...config };
     const store = createMatchStore(pool);
     const lobby = new Lobby({ pool, store, clock, config: settings, log, random });
     const connections = new Set();
     // set by close(): what clients send from then on is not handled (they reconnect after the restart)
     let closing = false;
+    // resolves the wait of close() once the last connection is gone
+    let drained = () => {};
 
     const wss = new WebSocketServer({
         server,
@@ -179,6 +184,9 @@ const createLive = ({ server, pool, auth, clock = systemClock, config = {}, orig
             if (connection.playerId !== null) {
                 lobby.unregister(connection);
             }
+            if (connections.size === 0) {
+                drained();
+            }
         });
     });
 
@@ -200,6 +208,19 @@ const createLive = ({ server, pool, auth, clock = systemClock, config = {}, orig
         clearInterval(heartbeat);
         await lobby.shutdown();
         connections.forEach(connection => connection.close(CloseCode.RESTART, 'restart'));
+        // A client that is gone (a phone without network) never answers the close, and its socket
+        // would keep the HTTP server from closing for half a minute: after a moment for the others
+        // to answer, what is left is dropped.
+        if (connections.size > 0) {
+            await new Promise(resolve => {
+                const timer = setTimeout(resolve, settings.closeGraceMs);
+                drained = () => {
+                    clearTimeout(timer);
+                    resolve();
+                };
+            });
+            connections.forEach(connection => connection.terminate());
+        }
         await new Promise(resolve => wss.close(() => resolve()));
     };
 
