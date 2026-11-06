@@ -32,9 +32,15 @@ const useStyles = createUseStyles((theme) => ({
     "& .timer": { fontSize: theme.font.size.lg },
     "& .warning": { color: theme.color.accent.light },
   },
-  // longer messages go below the row of action buttons
+  // longer messages go below the row of action buttons, and below the board preview under
+  // them when there is one (ui.previewBottom, from the Scene)
   message: {
-    top: `calc(${theme.edge.top} + ${theme.fab} + ${theme.edge.gap})`,
+    top: ({ previewBottom }) => {
+      const belowButtons = `calc(${theme.edge.top} + ${theme.fab} + ${theme.edge.gap})`;
+      return previewBottom
+        ? `max(${belowButtons}, calc(${previewBottom}px + ${theme.edge.gap}))`
+        : belowButtons;
+    },
     width: "90vw",
   },
   countdown: {
@@ -75,8 +81,8 @@ const clockText = (ms) => {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 };
 
-const MatchBanner = ({ view, paused, online, presence, liveStatus, pending, tutorial }) => {
-  const classes = useStyles();
+const MatchBanner = ({ view, paused, online, presence, liveStatus, pending, tutorial, previewBottom }) => {
+  const classes = useStyles({ previewBottom });
   const ticked = useMatchTime(4);
   if (typeof view === "undefined") {
     return null;
@@ -126,7 +132,11 @@ const MatchBanner = ({ view, paused, online, presence, liveStatus, pending, tuto
       <div className={classes.banner} data-testid="match-banner" data-pending={pending}>
         {banner}
       </div>
-      {message ? <div className={`${classes.banner} ${classes.message}`}>{message}</div> : null}
+      {message ? (
+        <div className={`${classes.banner} ${classes.message}`} data-testid="match-message">
+          {message}
+        </div>
+      ) : null}
       {view.phase === MatchPhase.COUNTDOWN ? (
         <div className={classes.countdown} data-testid="countdown">
           {Math.min(seconds(view.phaseEndsAt - now), seconds(view.balance.match.countdownMs)) || t(tr.MATCH_GO)}
@@ -154,6 +164,7 @@ const mapStateToProps = (state) => ({
   presence: state.live.opponentPresence,
   liveStatus: state.live.status,
   tutorial: state.ui.tutorial,
+  previewBottom: state.ui.previewBottom,
 });
 
 export default connect(mapStateToProps)(MatchBanner);
