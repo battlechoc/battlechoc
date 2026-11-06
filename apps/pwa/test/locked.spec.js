@@ -17,6 +17,22 @@ test("locked menu entries explain themselves and do not open", async ({ page }) 
   await expect(page.getByTestId("unlock-hint")).toHaveText(
     "4 more matches against the AI unlock the Choclab and online matches."
   );
+  // the lock stands upright in the middle of the blob's right end, like the no-wifi sign, and
+  // the label keeps clear of it
+  for (const name of ["Choclab", "Play with a friend"]) {
+    const button = page.locator("[role=button]", { hasText: name }).first();
+    const lock = button.locator("[data-badge=lock]");
+    const labelRight = await button.evaluate((element) => {
+      const range = document.createRange();
+      range.selectNodeContents(element.firstElementChild);
+      return range.getBoundingClientRect().right;
+    });
+    const blob = await button.boundingBox();
+    const box = await lock.boundingBox();
+    expect(box.x, `${name}: the label runs under the lock`).toBeGreaterThanOrEqual(labelRight);
+    expect(Math.abs(box.y + box.height / 2 - (blob.y + blob.height / 2)), `${name}: the lock is off the middle`).toBeLessThan(2);
+    expect(await lock.evaluate((element) => getComputedStyle(element).transform)).toMatch(/^matrix\(1, 0, 0, 1, /);
+  }
   await page.getByText("Choclab", { exact: true }).first().click();
   await expect(page.getByText("Play 4 more matches against the AI to unlock “Choclab”.")).toBeVisible();
   await page.screenshot({ path: "test/output/visual_locked.png" });
