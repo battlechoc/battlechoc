@@ -1,0 +1,14 @@
+# The build context of apps/api/Dockerfile (BuildKit reads this file instead of the root
+# .dockerignore): only what the image copies, so a build sends a few hundred kB and not the
+# game's pictures and models.
+*
+!package.json
+!package-lock.json
+!apps/pwa/package.json
+!apps/api/package.json
+!apps/api/src
+!packages/shared
+packages/shared/node_modules
+packages/shared/coverage
+packages/shared/tests
+packages/shared/scripts

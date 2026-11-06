@@ -1,14 +1,19 @@
-# Keeps Docker build contexts small; the images copy only what they need.
+# Keeps the Docker build context of the game's image (apps/pwa/Dockerfile) small; the API
+# image has its own, narrower list (apps/api/Dockerfile.dockerignore).
 **/node_modules
+**/coverage
 .git
+.github
 .claude
 .superpowers
 apps/android
-apps/server
+apps/api/test
 apps/pwa/build
 apps/pwa/build-e2e
-apps/pwa/test/results
-apps/pwa/test/output
+apps/pwa/dev
+apps/pwa/test
+docs
+screenshots
 whitepaper
 # secrets of the server stack never go into an image
 deploy/.env
