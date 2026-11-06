@@ -4,6 +4,7 @@
 
 const { EntityType, EmptyPlayerStats } = require('./constants');
 const { Ingredient, Ingredients, Rarity } = require('./ingredients');
+const { getEntityDescriptor } = require('./entityDescriptors');
 
 const SpecialIngredient = Object.freeze({
     [EntityType.CREAM]: Ingredient.CREAM,
@@ -30,8 +31,7 @@ const RARE_SPECIAL_DIVISOR = 5;
 
 /** What upgrading `entityType` from `level` to `level + 1` costs: cocoa plus milestone ingredients. */
 const choclabCost = (entityType, level) => {
-    // the cocoa price is the former coin price the Choclab page shows (lazy: index requires this module)
-    const { getEntityDescriptor } = require('./index');
+    // the cocoa price is the former coin price the Choclab page shows
     const cocoa = getEntityDescriptor(entityType, { ...EmptyPlayerStats.level, [entityType]: level }).coins || 0;
     const milestone = ChoclabMilestones[level + 1];
     const ingredients = {};
