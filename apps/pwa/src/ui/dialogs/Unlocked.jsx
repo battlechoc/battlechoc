@@ -28,7 +28,21 @@ const Unlocked = ({ unlock, gamesLeft, close, showDemos }) => {
             <p>{t(tr.UNLOCK_BUILDINGS_HINT)}</p>
             <div style={{ display: "flex", justifyContent: "center", gap: "1.5em", flexWrap: "wrap" }}>
               {buildings.map((type) => (
-                <div key={type} data-testid="unlocked-building" style={{ width: "6em" }}>
+                // a box as wide as its name's longest word (German names are one long word:
+                // "Schokoladenbrunnen"), which decides whether the two stand side by side or one
+                // below the other; with room to spare it grows until the name is on one line.
+                // On a screen too narrow even for the word, the word breaks.
+                <div
+                  key={type}
+                  data-testid="unlocked-building"
+                  style={{
+                    flex: "1 1 auto",
+                    width: "min-content",
+                    minWidth: "6em",
+                    maxWidth: "max-content",
+                    overflowWrap: "break-word",
+                  }}
+                >
                   <div
                     style={{
                       width: "4em",
