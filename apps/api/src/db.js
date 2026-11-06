@@ -16,7 +16,20 @@ const createPool = (config = {}) => {
         const { Pool: MemoryPool } = newDb().adapters.createPg();
         return new MemoryPool();
     }
-    return new Pool({ connectionString: url, max: config.maxConnections || 10 });
+    const { log = console } = config;
+    const pool = new Pool({
+        connectionString: url,
+        max: config.maxConnections || 10,
+        // a request waits this long for a free connection or a new one, then fails instead of hanging
+        connectionTimeoutMillis: config.connectionTimeoutMs || 5000,
+        idleTimeoutMillis: config.idleTimeoutMs || 30000,
+        // the server cancels a statement that runs longer (migrations lift it, see migrate)
+        statement_timeout: config.statementTimeoutMs || 15000,
+    });
+    // A connection that waits in the pool breaks when Postgres restarts. The pool drops it and
+    // reports it here; without a listener Node throws the event and the process ends.
+    pool.on('error', error => log.error('database connection failed while idle', error));
+    return pool;
 };
 
 // `upTo` (a file name) stops after that migration; tests use it to build an older schema

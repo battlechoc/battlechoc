@@ -42,4 +42,8 @@ const closeTestPools = async () => {
     }
 };
 
-module.exports = { createTestPool, closeTestPools, JWT_SECRET: 'test-secret-test-secret-test-secret-42' };
+// for what pg-mem cannot show: it has no server (timeouts, locks) and its pg adapter commits every
+// query on its own, so a ROLLBACK undoes nothing there
+const postgresOnly = process.env.TEST_DATABASE_URL ? test : test.skip;
+
+module.exports = { createTestPool, closeTestPools, postgresOnly, JWT_SECRET: 'test-secret-test-secret-test-secret-42' };
