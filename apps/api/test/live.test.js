@@ -653,8 +653,8 @@ describe('live: matches', () => {
         expect(result.drops).toEqual(expect.arrayContaining([{ ingredient: 'COCOA', amount: 100, achievement: 'FRESHBATCH' }]));
         expect(result.rating).toBeUndefined();
         await r.writes;
-        const totals = async () => (await request(env.app).get('/user/pantry')
-            .set('Authorization', `Bearer ${lonely.account.accessToken}`)).body.pantry;
+        const totals = async () => (await request(env.app).get('/user')
+            .set('Authorization', `Bearer ${lonely.account.accessToken}`)).body.stats.pantry;
         const before = await totals();
         expect(before.COCOA).toBeGreaterThanOrEqual(100);
         // the end of the match is processed again (as after a restart): nothing more is credited

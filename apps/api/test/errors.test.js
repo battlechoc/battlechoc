@@ -136,6 +136,14 @@ describe('errors', () => {
         await answers(player.del('/user'), 404, 'NOT FOUND');
         await answers(request(app).post('/accounts/token').set('Content-Type', 'application/json').send('{"refreshToken":'), 400, 'INVALID JSON');
         await answers(request(app).post('/accounts'), 429, 'TOO MANY REQUESTS');
+        // routes of the old asynchronous multiplayer: no game version since the rewrite calls them
+        await answers(player.get('/random/opponent'), 404, 'NOT FOUND');
+        await answers(player.get('/query/user/e'), 404, 'NOT FOUND');
+        // never called by a game either; their paths are lookups of a player by name now
+        await answers(player.get('/user/pantry'), 404, 'PLAYER NOT FOUND');
+        await answers(player.get('/user/items'), 404, 'PLAYER NOT FOUND');
+        await player.post('/user/username', { username: 'Items' }).expect(200);
+        expect((await player.get('/user/items').expect(200)).body).toEqual([expect.objectContaining({ name: 'Items', ranking: 1 })]);
         // a preflight is answered before any route, also for unknown paths
         const preflight = await request(app).options('/nope').expect(204);
         expect(preflight.text).toBe('');

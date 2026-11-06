@@ -282,30 +282,6 @@ const addFriend = (db, playerId, friendId) => db.query(
 const removeFriend = (db, playerId, friendId) => db.query(
     'DELETE FROM friends WHERE player_id = $1 AND friend_id = $2', [playerId, friendId]);
 
-/** Player infos of up to `limit` players whose name contains `text`, the best rated first. */
-const searchByName = async (db, text, limit) => {
-    // the characters LIKE gives a meaning are taken out of the text
-    const pattern = String(text || '').toLowerCase().replace(/[%_\\]/g, '');
-    if (pattern.length === 0) {
-        return [];
-    }
-    const { rows } = await db.query(
-        'SELECT * FROM players WHERE username_lower LIKE $1 ORDER BY rating DESC LIMIT $2', [`%${pattern}%`, limit]);
-    return playerInfos(db, rows);
-};
-
-/** The player info of a random named player with XP other than `playerId`; undefined when there is none. */
-const randomOpponent = async (db, playerId) => {
-    const total = await count(db, 'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL AND xp > 0 AND id <> $1', [playerId]);
-    if (total === 0) {
-        return undefined;
-    }
-    const { rows } = await db.query(
-        'SELECT * FROM players WHERE username IS NOT NULL AND xp > 0 AND id <> $1 ORDER BY id LIMIT 1 OFFSET $2',
-        [playerId, crypto.randomInt(total)]);
-    return playerInfo(db, rows[0]);
-};
-
 // stores finished offline matches once (by record id) and credits the XP computed on the server;
 // they never give ingredients and never change the rating
 const addTrackRecords = async (pool, playerId, records) => {
@@ -360,5 +336,5 @@ const addTrackRecords = async (pool, playerId, records) => {
 module.exports = {
     findPlayer, findPlayerByName, setUsername, setLanguage, setTutorialStep, mergeTutorialFlags, freeRandomName, assignRandomName,
     createPlayer, stats, statsOf, results, ladderOf, advanceAiLadder, finishTutorial, rankOf, playerInfo, highscore, friendsOf, addFriend,
-    removeFriend, searchByName, randomOpponent, addTrackRecords, levelOf, itemsOf, equipmentOf, loadoutOf,
+    removeFriend, addTrackRecords, levelOf, itemsOf, equipmentOf, loadoutOf,
 };

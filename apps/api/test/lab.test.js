@@ -132,7 +132,7 @@ describe('crafting', () => {
         expect((await anna.post('/lab/craft', { item: 'LIGHT_BARREL' }).expect(200)).body.item.serial).toBe(3);
         expect((await anna.post('/lab/craft', { item: 'LIGHT_BARREL' }).expect(400)).body.error).toBe('NOT ENOUGH INGREDIENTS');
         await anna.post('/lab/craft', { item: 'NOPE' }).expect(400);
-        expect((await anna.get('/user/items').expect(200)).body.map(entry => entry.serial).sort()).toEqual([1, 3]);
+        expect((await anna.get('/user').expect(200)).body.stats.items.map(entry => entry.serial).sort()).toEqual([1, 3]);
     });
 
     test('two crafts at once with ingredients for one: exactly one item', async () => {
@@ -144,7 +144,7 @@ describe('crafting', () => {
             .map(response => response.status).sort();
         // the pantry holds milk for two light barrels and cocoa for two as well; a third fails
         expect(statuses).toEqual([200, 200, 400]);
-        expect((await player.get('/user/items')).body).toHaveLength(2);
+        expect((await player.get('/user')).body.stats.items).toHaveLength(2);
     });
 });
 

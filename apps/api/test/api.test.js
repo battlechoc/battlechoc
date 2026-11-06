@@ -173,13 +173,13 @@ describe('progress', () => {
         expect(again.body.mergedPlayerInfo).toMatchObject({ xp: 125, coins: 100 });
     });
 
-    test('the pantry endpoint lists totals and spoiling batches', async () => {
+    test('the stats list the pantry totals and the spoiling batches', async () => {
         const { app, pool } = await setup();
         const player = await account(app);
         await pantry.add(pool, player.playerId, [{ ingredient: 'VANILLA', amount: 2 }, { ingredient: 'SUGAR', amount: 4 }], Date.now());
-        const response = await player.get('/user/pantry').expect(200);
-        expect(response.body.pantry).toEqual({ VANILLA: 2, SUGAR: 4 });
-        expect(response.body.spoiling).toEqual([expect.objectContaining({ ingredient: 'VANILLA', amount: 2 })]);
+        const { stats } = (await player.get('/user').expect(200)).body;
+        expect(stats.pantry).toEqual({ VANILLA: 2, SUGAR: 4 });
+        expect(stats.spoiling).toEqual([expect.objectContaining({ ingredient: 'VANILLA', amount: 2 })]);
     });
 
     test('language and reports', async () => {
@@ -208,7 +208,7 @@ describe('players', () => {
         expect((await me.get('/user/friends')).body).toEqual([]);
     });
 
-    test('ranks and highscore: rated players by rating, then the unrated ones; lookups and random opponents', async () => {
+    test('ranks and highscore: rated players by rating, then the unrated ones; lookups by name', async () => {
         const { app, pool } = await setup();
         const names = ['Anna', 'Bert', 'Cleo', 'Dora'];
         // Anna never played a rated match; the others did
@@ -240,9 +240,6 @@ describe('players', () => {
         expect((await accounts[3].get('/user/anna').expect(200)).body[0]).toMatchObject({ name: 'Anna', score: 0, ranking: 4 });
         highscore.body.list.slice(0, 3).forEach(entry => expect(entry.score).toBe(entry.rating));
         await accounts[0].get('/user/nobody').expect(404);
-        expect((await accounts[0].get('/query/user/e')).body.map(entry => entry.name)).toEqual(['Cleo', 'Bert']);
-        const opponent = await accounts[0].get('/random/opponent').expect(200);
-        expect(['Bert', 'Cleo', 'Dora']).toContain(opponent.body.name);
     });
 
     test('the only player is first; unnamed players are not listed and have no rank', async () => {

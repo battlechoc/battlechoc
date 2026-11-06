@@ -1,9 +1,8 @@
-// The player's own data: stats, the import of an offline profile, offline match records, the
-// tutorial, the name, the language, problem reports and the pantry.
+// The player's own data: stats (with pantry, items and equipment), the import of an offline
+// profile, offline match records, the tutorial, the name, the language and problem reports.
 
 const { isValidLanguage } = require('@battlechoc/battlechoc-shared-functions');
 const players = require('../players');
-const pantry = require('../pantry');
 const reports = require('../reports');
 const { isValidUsername } = require('../names');
 const { HttpError, ErrorCode } = require('../errors');
@@ -112,13 +111,6 @@ const registerPlayerRoutes = (app, { pool, auth, user }) => {
         }
         await reports.add(pool, req.playerId, report);
         res.status(201).json({});
-    });
-
-    /* ---------- pantry ---------- */
-
-    app.get('/user/pantry', ...user, async (req, res) => {
-        const now = Date.now();
-        res.json({ pantry: await pantry.totals(pool, req.playerId, now), spoiling: await pantry.spoiling(pool, req.playerId, now) });
     });
 };
 

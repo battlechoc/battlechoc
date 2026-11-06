@@ -1,5 +1,5 @@
 // The lab: trying ingredients on the lab table, crafting items from discovered recipes, the
-// recipe book, the inventory and the equipment slots.
+// recipe book and the equipment slots (a player's items are part of their stats).
 
 const crypto = require('crypto');
 const {
@@ -131,10 +131,6 @@ const registerLabRoutes = (app, { pool, user, recipes, oneAtATime, triesPerHour 
             pantry: await pantry.totals(pool, req.playerId, now()),
             spoiling: await pantry.spoiling(pool, req.playerId, now()),
         });
-    });
-
-    app.get('/user/items', ...user, async (req, res) => {
-        res.json(await players.itemsOf(pool, req.playerId));
     });
 
     app.post('/user/equipment', ...user, async (req, res) => {

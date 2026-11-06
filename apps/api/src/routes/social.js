@@ -1,13 +1,11 @@
-// Other players: friends, the highscore list and ranks, lookups.
+// Other players: friends, the highscore list and ranks, the lookup by name.
 
 const players = require('../players');
 const { HttpError, ErrorCode } = require('../errors');
 
-const MAX_QUERY_RESULTS = 20;
-
 /**
- * Register these after the other routes under /user: GET /user/:name would otherwise take
- * /user/pantry and /user/items.
+ * Register these after the other routes under /user: GET /user/:name takes every path under it
+ * that no earlier route has.
  */
 const registerSocialRoutes = (app, { pool, auth, user }) => {
     app.get('/user/friends', ...user, async (req, res) => {
@@ -42,18 +40,6 @@ const registerSocialRoutes = (app, { pool, auth, user }) => {
     // client can always show where the player stands
     app.get('/highscore', ...user, async (req, res) => {
         res.json(await players.highscore(pool, req.player, req.query.page));
-    });
-
-    app.get('/query/user/:text', auth.requireAuth, async (req, res) => {
-        res.json(await players.searchByName(pool, req.params.text, MAX_QUERY_RESULTS));
-    });
-
-    app.get('/random/opponent', ...user, async (req, res) => {
-        const opponent = await players.randomOpponent(pool, req.playerId);
-        if (!opponent) {
-            throw new HttpError(404, ErrorCode.NO_MATCHING_PLAYER);
-        }
-        res.json(opponent);
     });
 
     app.get('/user/:name', auth.requireAuth, async (req, res) => {
