@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import PropTypes from "prop-types";
 import { Jukebox } from "../misc";
 import { createUseStyles } from "react-jss";
 import Fab from "../controls/Fab";
@@ -293,19 +292,6 @@ const Dialog = (componentProps) => {
       </div>
     </div>
   );
-};
-
-Dialog.propTypes = {
-  open: PropTypes.bool.isRequired,
-  close: PropTypes.func,
-  closable: PropTypes.bool,
-  children: PropTypes.element.isRequired,
-  title: PropTypes.string,
-  icon: PropTypes.string,
-  titleSlotBefore: PropTypes.element,
-  titleSlotAfter: PropTypes.element,
-  subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-  mode: PropTypes.oneOf(["default", "stacked", "notification", "info", "list"]),
 };
 
 const defaultProps = {

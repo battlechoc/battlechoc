@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 
 const useStyles = createUseStyles((theme) => ({
@@ -130,17 +129,6 @@ const CoachCard = ({
       </div>
     </div>
   );
-};
-
-CoachCard.propTypes = {
-  title: PropTypes.node.isRequired,
-  message: PropTypes.node.isRequired,
-  progress: PropTypes.node,
-  skipLabel: PropTypes.node,
-  onSkip: PropTypes.func,
-  className: PropTypes.string,
-  onLayout: PropTypes.func,
-  children: PropTypes.node,
 };
 
 export default CoachCard;

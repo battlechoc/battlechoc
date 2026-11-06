@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
@@ -327,12 +326,6 @@ const Tutorial = (props) => {
       </Dialog>
     </>
   );
-};
-
-Tutorial.propTypes = {
-  closeTutorial: PropTypes.func.isRequired,
-  clearScene: PropTypes.func.isRequired,
-  testClock: PropTypes.bool,
 };
 
 const mapStateToProps = (state) => ({

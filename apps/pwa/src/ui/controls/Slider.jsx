@@ -1,5 +1,4 @@
 import React from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 
 // A level from 0 to 1 with its name and percentage in one row, in the text size of buttons
@@ -82,14 +81,6 @@ const Slider = ({ label, value, onChange, onCommit, ...rest }) => {
       <span className={classes.value}>{percent} %</span>
     </label>
   );
-};
-
-Slider.propTypes = {
-  label: PropTypes.string.isRequired,
-  value: PropTypes.number.isRequired,
-  onChange: PropTypes.func.isRequired,
-  // the thumb was let go (a sample of the new level)
-  onCommit: PropTypes.func,
 };
 
 export default Slider;

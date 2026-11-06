@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import {
   hideQuickMessage,
@@ -404,13 +403,6 @@ const Settings = (props) => {
       </Dialog>
     </div>
   );
-};
-
-Settings.propTypes = {
-  open: PropTypes.bool.isRequired,
-  close: PropTypes.func.isRequired,
-  startTutorial: PropTypes.func.isRequired,
-  showBuildingDemos: PropTypes.func,
 };
 
 const mapStateToProps = (state) => ({

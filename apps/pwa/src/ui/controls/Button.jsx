@@ -1,5 +1,4 @@
 import React from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import { Jukebox } from "../misc";
 import withDefaultProps from "../../helper/defaultProps";
@@ -294,21 +293,6 @@ const defaultProps = {
   locked: false,
   offline: false,
   disabled: false,
-};
-
-Button.propTypes = {
-  color: PropTypes.oneOf(["primary", "secondary", "accent"]),
-  onClick: PropTypes.func.isRequired,
-  className: PropTypes.string,
-  style: PropTypes.object,
-  buttonStyle: PropTypes.object,
-  size: PropTypes.oneOf(["huge", "normal", "small"]),
-  disabled: PropTypes.bool,
-  locked: PropTypes.bool,
-  onLockedClick: PropTypes.func,
-  // needs the server, which does not answer: grey, with the no-wifi sign
-  offline: PropTypes.bool,
-  onOfflineClick: PropTypes.func,
 };
 
 export default Button;

@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import {
   engine,
@@ -188,11 +187,6 @@ const Actionbar = (props) => {
       </Dialog>
     </>
   );
-};
-
-Actionbar.propTypes = {
-  showSettings: PropTypes.func.isRequired,
-  showSignInOrUp: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = (state) => ({

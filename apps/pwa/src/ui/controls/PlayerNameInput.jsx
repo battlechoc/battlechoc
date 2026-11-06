@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import PropTypes from "prop-types";
 import { ServerRequest } from "../../helper/settings";
-import Axios from "axios";
+import { isCancel } from "../../helper/http";
 import { createUseStyles } from "react-jss";
 import logger from "../../helper/logger";
 import {
@@ -168,7 +167,7 @@ const PlayerNameInput = (componentProps) => {
               error.code === "auth/network-request-failed"
             ) {
               setBadInternetConnection(true);
-            } else if (!Axios.isCancel(error)) {
+            } else if (!isCancel(error)) {
               logger.warn(error);
             }
           } finally {
@@ -291,16 +290,6 @@ const defaultProps = {
   className: "",
   offline: false,
   pending: false,
-};
-
-PlayerNameInput.propTypes = {
-  editMode: PropTypes.bool,
-  className: PropTypes.string,
-  onEditMode: PropTypes.func,
-  // without the server: the name is only checked for its spelling
-  offline: PropTypes.bool,
-  // a name chosen offline that the server does not know yet
-  pending: PropTypes.bool,
 };
 
 export default PlayerNameInput;

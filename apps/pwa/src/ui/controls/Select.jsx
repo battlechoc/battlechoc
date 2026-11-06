@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import withDefaultProps from "../../helper/defaultProps";
 
@@ -174,13 +173,6 @@ const Select = (componentProps) => {
 const defaultProps = {
   className: "",
   defaultSelected: null,
-};
-
-Select.propTypes = {
-  onChange: PropTypes.func.isRequired,
-  options: PropTypes.array.isRequired,
-  defaultSelected: PropTypes.string,
-  className: PropTypes.string,
 };
 
 export default Select;

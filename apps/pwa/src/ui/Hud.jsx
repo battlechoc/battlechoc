@@ -1,6 +1,5 @@
 import React, { Suspense, useState, useEffect, useRef } from "react";
 import "./Hud.css";
-import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import {
   engine,
@@ -703,15 +702,6 @@ const Hud = (props) => {
       })()}
     </div>
   );
-};
-
-Hud.propTypes = {
-  prepareNewGameCallback: PropTypes.func.isRequired,
-  startGameCallback: PropTypes.func.isRequired,
-  startTutorial: PropTypes.func.isRequired,
-  endGame: PropTypes.func.isRequired,
-  challengedPlayer: PropTypes.string,
-  className: PropTypes.string.isRequired,
 };
 
 const mapStateToProps = (state) => ({

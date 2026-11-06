@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
 import Fab from "../controls/Fab";
@@ -222,16 +221,6 @@ const defaultProps = {
   style: {},
   className: "",
   offline: false,
-};
-
-Highscore.propTypes = {
-  style: PropTypes.object,
-  className: PropTypes.string,
-  showQuickMessage: PropTypes.func.isRequired,
-  showPlayerProfile: PropTypes.func.isRequired,
-  // the server does not answer: the trophy is grey and explains itself
-  offline: PropTypes.bool,
-  showOfflineMessage: PropTypes.func,
 };
 
 export default Highscore;

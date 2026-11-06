@@ -41,7 +41,7 @@ import {
 import { debugScenarios } from "./situations/scenarios";
 import { testHooksEnabled, exposeForTests } from "./testHooks";
 import Hud from "./ui/Hud";
-import { v4 as uuidv4 } from "uuid";
+import { uuid } from "./helper/uuid";
 // loaded after the title screen (src/ui/onDemand.js)
 import {
   IncomingInvite,
@@ -540,7 +540,7 @@ class App extends Component {
           idx: winner.idx,
         })),
         awards: result.awards,
-        id: uuidv4(),
+        id: uuid(),
       },
     ]);
   }

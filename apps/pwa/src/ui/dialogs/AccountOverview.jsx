@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import { connect } from "react-redux";
 import { multiplayer } from "../../Multiplayer";
@@ -344,12 +343,6 @@ const AccountOverview = (props) => {
       </div>
     </Dialog>
   );
-};
-
-AccountOverview.propTypes = {
-  close: PropTypes.func.isRequired,
-  open: PropTypes.bool.isRequired,
-  dialogStyle: PropTypes.string.isRequired,
 };
 
 const mapStateToProps = (state) => ({

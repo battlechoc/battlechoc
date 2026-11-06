@@ -5,7 +5,7 @@ import {
   EntityType,
 } from "@battlechoc/battlechoc-shared-functions";
 import OfflineStore from "../OfflineStore";
-import { v4 as uuidv4 } from "uuid";
+import { uuid } from "../helper/uuid";
 
 const uiReducer = createReducer(
   {
@@ -149,7 +149,7 @@ const uiReducer = createReducer(
             typeof action.payload.autoHideDuration === "undefined"
               ? 4000
               : action.payload.autoHideDuration,
-          id: uuidv4(),
+          id: uuid(),
           // the online/offline toasts replace each other (above)
           type: action.payload.type,
           text: action.payload.text || "",

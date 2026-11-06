@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import withDefaultProps from "../../helper/defaultProps";
 
@@ -168,20 +167,6 @@ const QuickMessage = (componentProps) => {
       </div>
     </div>
   );
-};
-
-QuickMessage.propTypes = {
-  open: PropTypes.bool.isRequired,
-  autoHideDuration: PropTypes.number,
-  message: PropTypes.string,
-  onClose: PropTypes.func.isRequired,
-  variant: PropTypes.oneOf([
-    "error",
-    "info",
-    "success",
-    "warning",
-    "apple-pwa-hint",
-  ]),
 };
 
 const defaultProps = {

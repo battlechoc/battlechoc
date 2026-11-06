@@ -42,7 +42,7 @@ import {
 } from "./babylon";
 import { AssetLoadingViewContainer as AssetLoadingView } from "../AssetLoader";
 import logger from "../helper/logger";
-import { v4 as uuidv4 } from "uuid";
+import { uuid as createUuid } from "../helper/uuid";
 import { withTheme } from "react-jss";
 import { measureEdges } from "../helper/edges";
 import { showCannonPick } from "./cannonPick.js";
@@ -305,7 +305,7 @@ class Scene extends Component {
     this.setRenderLoop();
     bar.animations = [fade];
 
-    const uuid = uuidv4();
+    const uuid = createUuid();
     this.animations.push({
       id: uuid,
       target: bar,
@@ -482,7 +482,7 @@ class Scene extends Component {
         ];
         flyaway.setKeys(keyframes);
         info.animations = [flyaway, fade];
-        const uuid = uuidv4();
+        const uuid = createUuid();
         this.animations.push({
           id: uuid,
           target: info,

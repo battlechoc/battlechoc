@@ -1,5 +1,4 @@
 import React from "react";
-import PropTypes from "prop-types";
 import {
   translate as t,
   translationKeys as tr,
@@ -86,16 +85,6 @@ const Unlocked = ({ unlock, gamesLeft, close, showDemos }) => {
       </div>
     </Dialog>
   );
-};
-
-Unlocked.propTypes = {
-  unlock: PropTypes.shape({
-    buildings: PropTypes.arrayOf(PropTypes.string),
-    online: PropTypes.bool,
-  }),
-  gamesLeft: PropTypes.number,
-  close: PropTypes.func.isRequired,
-  showDemos: PropTypes.func.isRequired,
 };
 
 export default Unlocked;
