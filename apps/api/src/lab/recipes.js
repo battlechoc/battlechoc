@@ -81,7 +81,8 @@ const createRecipeBook = recipes => {
 
 // The recipe table is the secret of the lab: production reads it from RECIPES_FILE (outside the
 // repository) and refuses to start without it; everywhere else the public sample stands in.
-const loadRecipes = (file = process.env.RECIPES_FILE, env = process.env.NODE_ENV) => {
+// `file` and `env` come from the configuration (config.js: RECIPES_FILE, NODE_ENV).
+const loadRecipes = (file, env) => {
     if (!file && env === 'production') {
         throw new Error('RECIPES_FILE must point to the private recipe table in production');
     }
