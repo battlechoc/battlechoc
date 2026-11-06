@@ -12,6 +12,11 @@ const devPort = Number(process.env.DEV_PORT || 3001);
 // local API below through localStorage "battlechoc.apiUrl".
 export default defineConfig({
   testDir: "./test",
+  // Only the specs: test/unit/*.test.js belong to node's test runner (npm run test:unit). By
+  // default Playwright loads them too, and node:test then runs them inside Playwright's own
+  // process while it collects, all files at once: one file's mocked timers held another's real
+  // timeout, and the suite never started.
+  testMatch: "**/*.spec.js",
   outputDir: "./test/results",
   // WebGL runs in software, so parallel workers mostly fight over the CPU
   workers: 1,
