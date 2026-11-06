@@ -23,11 +23,15 @@ jobs:
   # changelog into the description instead: one entry per conventional commit of the pull
   # request (BEGIN_COMMIT_OVERRIDE, which release-please prefers to the title), commits without a
   # conventional message listed apart; anew on every push (.github/scripts/pr-changelog.js).
-  # Release pull requests and pull requests from forks are left alone.
+  # Release pull requests and pull requests from forks are left alone. Dependabot's too: their
+  # title is a conventional commit already (.github/dependabot.yml), and a workflow that
+  # Dependabot triggers gets a read-only token by default. A skipped job counts as passed for
+  # the required check.
   changelog:
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
       !startsWith(github.head_ref, 'release-please--')
     runs-on: ubuntu-latest
     timeout-minutes: 5
