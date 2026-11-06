@@ -5,7 +5,7 @@
 const crypto = require('crypto');
 const { newDb } = require('pg-mem');
 const { Pool } = require('pg');
-const { migrate } = require('../src/db');
+const { migrate } = require('../../src/db');
 
 const pools = [];
 

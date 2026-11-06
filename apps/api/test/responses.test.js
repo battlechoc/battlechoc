@@ -2,35 +2,26 @@
 // shapes, so a change of the queries behind them must not change a byte of what they answer.
 
 const crypto = require('crypto');
-const request = require('supertest');
 const { EntityType, Ingredients } = require('@battlechoc/battlechoc-shared-functions');
-const { createApp } = require('../src/app');
-const { createAuth } = require('../src/auth');
-const { createPush } = require('../src/push');
 const pantry = require('../src/pantry');
-const { createTestPool, closeTestPools, counting, JWT_SECRET } = require('./helper');
+const { closeTestPools, counting } = require('./helpers/db');
+const { createTestApp, createAccount } = require('./helpers/api');
 
 afterAll(closeTestPools);
 
 const DAY = 24 * 60 * 60 * 1000;
 
+// the app on a pool that counts its statements
 const setup = async () => {
-    const { pool, counter } = counting(await createTestPool());
-    const auth = createAuth({ pool, secret: JWT_SECRET });
-    const app = createApp({ pool, auth, push: createPush({ pool }), accountsPerMinute: 1000 });
-    const account = async username => {
-        const created = (await request(app).post('/accounts').expect(201)).body;
-        const bearer = `Bearer ${created.accessToken}`;
-        const client = {
-            ...created,
-            get: path => request(app).get(path).set('Authorization', bearer),
-            post: (path, body = {}) => request(app).post(path).set('Authorization', bearer).send(body),
-        };
-        if (username) {
-            await client.post('/user/username', { username }).expect(200);
-        }
-        return client;
-    };
+    let counter;
+    const { app, pool } = await createTestApp({
+        wrapPool: plain => {
+            const counted = counting(plain);
+            ({ counter } = counted);
+            return counted.pool;
+        },
+    });
+    const account = username => createAccount(app, { username });
     // the statements one request runs
     const statementsOf = async send => {
         counter.statements = 0;

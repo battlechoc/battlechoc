@@ -1,20 +1,12 @@
 // What the API tells browsers about its responses, and the limit on refreshing tokens.
 
 const request = require('supertest');
-const { createApp } = require('../src/app');
-const { createAuth } = require('../src/auth');
-const { createPush } = require('../src/push');
-const { createTestPool, closeTestPools, JWT_SECRET } = require('./helper');
+const { closeTestPools } = require('./helpers/db');
+const { createTestApp } = require('./helpers/api');
 
 afterAll(closeTestPools);
 
-const setup = async (options = {}) => {
-    const pool = await createTestPool();
-    const auth = createAuth({ pool, secret: JWT_SECRET });
-    return createApp({
-        pool, auth, push: createPush({ pool }), corsOrigins: ['https://battlechoc.com'], accountsPerMinute: 1000, ...options,
-    });
-};
+const setup = async options => (await createTestApp({ corsOrigins: ['https://battlechoc.com'], ...options })).app;
 
 describe('response headers', () => {
     test('every answer forbids content sniffing, sends no referrer on and does not name the framework', async () => {

@@ -1,4 +1,4 @@
-const { createTestPool, closeTestPools } = require('./helper');
+const { createTestPool, closeTestPools } = require('./helpers/db');
 const players = require('../src/players');
 const pantry = require('../src/pantry');
 const rewards = require('../src/rewards');

@@ -1,4 +1,5 @@
-const { createTestPool, closeTestPools } = require('./helper');
+const { createTestPool, closeTestPools } = require('./helpers/db');
+const { until } = require('./helpers/wait');
 const pantry = require('../src/pantry');
 const players = require('../src/players');
 const reports = require('../src/reports');
@@ -34,22 +35,16 @@ test('the scheduled cleanup runs right away and then periodically, until stopped
     const left = async () => (await count('pantry')) + (await count('reports'));
     // waits on real time until everything is gone: on Postgres in CI a cleanup can take longer
     // than a fixed wait of a few ticks
-    const emptied = async () => {
-        const end = Date.now() + 3000;
-        while ((await left()) > 0 && Date.now() < end) {
-            await new Promise(resolve => setTimeout(resolve, 10));
-        }
-        return left();
-    };
+    const emptied = () => until(async () => (await left()) === 0, 'the cleanup to delete everything');
     await pantry.add(pool, playerId, [{ ingredient: 'GOLDLEAF', amount: 1 }], Date.now() - 4 * DAY);
     await reportFrom(Date.now() - 61 * DAY, 'first');
     const stop = scheduleCleanup(pool, { intervalMs: 30 });
     try {
-        expect(await emptied()).toBe(0);
+        await emptied();
         // added after the first run had finished: only a later run can delete them
         await pantry.add(pool, playerId, [{ ingredient: 'GOLDLEAF', amount: 1 }], Date.now() - 4 * DAY);
         await reportFrom(Date.now() - 61 * DAY, 'second');
-        expect(await emptied()).toBe(0);
+        await emptied();
     } finally {
         stop();
     }
@@ -119,11 +114,7 @@ describe('match retention', () => {
         const stop = scheduleCleanup(pool, { intervalMs: 20, log: quiet });
         try {
             // waits until the spoiled batch is gone: the cleanups have run, the matches had their turn
-            const end = Date.now() + 3000;
-            while ((await count('pantry')) > 0 && Date.now() < end) {
-                await new Promise(resolve => setTimeout(resolve, 10));
-            }
-            expect(await count('pantry')).toBe(0);
+            await until(async () => (await count('pantry')) === 0, 'the pantry cleanup');
             expect(await overview()).toEqual([
                 ['ended-long-ago', false, 3], ['ended-recently', false, 3], ['failed-long-ago', false, 3], ['running', false, 3],
             ]);
@@ -137,10 +128,7 @@ describe('match retention', () => {
         const log = { error: jest.fn(), info: jest.fn() };
         const stop = scheduleCleanup(pool, { intervalMs: 20, log, matchRetentionDays: 30 });
         try {
-            const end = Date.now() + 3000;
-            while (log.info.mock.calls.length === 0 && Date.now() < end) {
-                await new Promise(resolve => setTimeout(resolve, 10));
-            }
+            await until(() => log.info.mock.calls.length > 0, 'the match cleanup to report');
             expect(await overview()).toEqual([
                 ['ended-long-ago', true, 0], ['ended-recently', false, 3], ['failed-long-ago', true, 0], ['running', false, 3],
             ]);

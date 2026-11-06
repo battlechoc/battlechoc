@@ -2,17 +2,23 @@
 // health check answers.
 
 const request = require('supertest');
-const { createApp } = require('../src/app');
-const { createAuth } = require('../src/auth');
 const { createShutdown } = require('../src/server');
-const { createTestPool, closeTestPools, counting, failingOn, JWT_SECRET } = require('./helper');
+const { closeTestPools, counting, failingOn } = require('./helpers/db');
+const { createTestApp } = require('./helpers/api');
 
 afterAll(closeTestPools);
 
 describe('health', () => {
+    // the app on a pool that counts its statements (`wrap` may break the pool first)
     const setup = async (wrap = pool => pool) => {
-        const { pool, counter } = counting(wrap(await createTestPool()));
-        return { app: createApp({ pool, auth: createAuth({ pool, secret: JWT_SECRET }) }), counter };
+        let counted;
+        const { app } = await createTestApp({
+            wrapPool: pool => {
+                counted = counting(wrap(pool));
+                return counted.pool;
+            },
+        });
+        return { app, counter: counted.counter };
     };
 
     test('the plain check answers as ever and asks the database nothing', async () => {

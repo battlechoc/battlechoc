@@ -3,19 +3,13 @@ const os = require('os');
 const path = require('path');
 const { Pool } = require('pg');
 const { createPool, migrate } = require('../src/db');
-const { createTestPool, siblingPool, closeTestPools, postgresOnly, failingOn } = require('./helper');
+const { createTestPool, siblingPool, closeTestPools, postgresOnly, failingOn } = require('./helpers/db');
+const { until } = require('./helpers/wait');
 
 afterAll(closeTestPools);
 
 // never connected: a pg pool opens its first connection with the first query
 const UNUSED_URL = 'postgres://nobody@127.0.0.1:1/none';
-
-const until = async (condition, timeoutMs = 3000) => {
-    const end = Date.now() + timeoutMs;
-    while (!(await condition()) && Date.now() < end) {
-        await new Promise(resolve => setTimeout(resolve, 10));
-    }
-};
 
 describe('pool', () => {
     test('the error of an idle connection is logged instead of ending the process', async () => {
@@ -73,7 +67,7 @@ describe('pool', () => {
             const { rows } = await pool.query('SELECT pg_backend_pid() AS pid');
             // what a restart of Postgres does to the connections that wait in the pool
             await admin.query('SELECT pg_terminate_backend($1)', [rows[0].pid]);
-            await until(() => logged.length > 0);
+            await until(() => logged.length > 0, 'the pool to report the lost connection');
             expect(logged).toHaveLength(1);
             expect((await pool.query('SELECT 1 AS one')).rows).toEqual([{ one: 1 }]);
         } finally {

@@ -3,32 +3,16 @@
 
 const request = require('supertest');
 const { EntityType } = require('@battlechoc/battlechoc-shared-functions');
-const { createApp } = require('../src/app');
-const { createAuth } = require('../src/auth');
-const { createPush } = require('../src/push');
 const { HttpError, ErrorCode } = require('../src/errors');
 const { NotEnoughIngredientsError } = require('../src/pantry');
-const { createTestPool, closeTestPools, failingOn, JWT_SECRET } = require('./helper');
+const { closeTestPools, failingOn } = require('./helpers/db');
+const { createTestApp, createAccount, withToken } = require('./helpers/api');
 
 afterAll(closeTestPools);
 
-const setup = async ({ now, wrapPool = pool => pool, ...options } = {}) => {
-    const pool = await createTestPool();
-    const auth = createAuth({ pool, secret: JWT_SECRET, ...(now ? { now } : {}) });
-    const app = createApp({ pool: wrapPool(pool), auth, push: createPush({ pool }), accountsPerMinute: 1000, ...options });
-    const as = accessToken => {
-        const bearer = `Bearer ${accessToken}`;
-        return {
-            get: path => request(app).get(path).set('Authorization', bearer),
-            post: (path, body = {}) => request(app).post(path).set('Authorization', bearer).send(body),
-            del: (path, body = {}) => request(app).delete(path).set('Authorization', bearer).send(body),
-        };
-    };
-    const account = async () => {
-        const created = (await request(app).post('/accounts').expect(201)).body;
-        return { ...created, ...as(created.accessToken) };
-    };
-    return { app, pool, auth, as, account };
+const setup = async options => {
+    const { app, pool, auth } = await createTestApp(options);
+    return { app, pool, auth, as: accessToken => withToken(app, accessToken), account: () => createAccount(app) };
 };
 
 // status and body, as text: the order of the keys and every character count

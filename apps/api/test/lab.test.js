@@ -1,12 +1,10 @@
-const request = require('supertest');
 const { EntityType, EmptyPlayerStats, levelRefund } = require('@battlechoc/battlechoc-shared-functions');
-const { createApp } = require('../src/app');
-const { createAuth } = require('../src/auth');
 const { migrate } = require('../src/db');
 const pantry = require('../src/pantry');
 const players = require('../src/players');
 const { createRecipeBook, loadRecipes, SAMPLE } = require('../src/lab/recipes');
-const { createTestPool, closeTestPools, JWT_SECRET } = require('./helper');
+const { closeTestPools } = require('./helpers/db');
+const { createTestApp, createAccount } = require('./helpers/api');
 
 afterAll(closeTestPools);
 
@@ -18,29 +16,10 @@ const testRecipes = [
     { item: 'DARK_WALLS', ingredients: ['MILK', 'HAZELNUTS', 'VANILLA'], amounts: { MILK: 3, HAZELNUTS: 3, VANILLA: 1 } },
 ];
 
-const setup = async (options = {}) => {
-    const pool = await createTestPool();
-    const auth = createAuth({ pool, secret: JWT_SECRET });
-    const app = createApp({ pool, auth, accountsPerMinute: 1000, recipes: createRecipeBook(testRecipes), ...options });
-    return { app, pool };
-};
+const setup = options => createTestApp({ recipes: createRecipeBook(testRecipes), ...options });
 
-const account = async (app, { starter = true, name } = {}) => {
-    const created = await request(app).post('/accounts').expect(201);
-    const bearer = `Bearer ${created.body.accessToken}`;
-    const client = {
-        ...created.body,
-        get: path => request(app).get(path).set('Authorization', bearer),
-        post: (path, body = {}) => request(app).post(path).set('Authorization', bearer).send(body),
-    };
-    if (name) {
-        await client.post('/user/username', { username: name }).expect(200);
-    }
-    if (starter) {
-        await client.post('/user/tutorial/finished').expect(200);
-    }
-    return client;
-};
+// a player who finished the tutorial (unless starter is false): the starter kit is in the pantry
+const account = (app, { starter = true, name } = {}) => createAccount(app, { starter, username: name });
 
 // more ingredients on top of the starter kit (1 rum, 2 sugar, 2 milk since 2026-11-05)
 const stock = (pool, client, amounts) => pantry.add(pool, client.playerId,

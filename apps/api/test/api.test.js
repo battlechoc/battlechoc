@@ -1,44 +1,15 @@
 const request = require('supertest');
 const pantry = require('../src/pantry');
 const players = require('../src/players');
-const { createApp } = require('../src/app');
-const { createAuth } = require('../src/auth');
 const { createPush } = require('../src/push');
-const { createTestPool, closeTestPools, JWT_SECRET } = require('./helper');
+const { closeTestPools } = require('./helpers/db');
+const { createTestApp, createAccount } = require('./helpers/api');
 
 afterAll(closeTestPools);
 
-const setup = async ({ now } = {}) => {
-    const pool = await createTestPool();
-    const auth = createAuth({ pool, secret: JWT_SECRET, ...(now ? { now } : {}) });
-    const sent = [];
-    const push = createPush({
-        pool,
-        publicKey: 'public',
-        privateKey: 'private',
-        sender: { setVapidDetails: () => {}, sendNotification: async (subscription, payload) => { sent.push({ subscription, payload }); } },
-    });
-    const app = createApp({ pool, auth, push, corsOrigins: ['https://battlechoc.com'], accountsPerMinute: 1000 });
-    return { app, pool, sent };
-};
-
-// creates a device account and returns helpers bound to its access token
-const account = async app => {
-    const created = await request(app).post('/accounts').expect(201);
-    const bearer = `Bearer ${created.body.accessToken}`;
-    return {
-        ...created.body,
-        get: path => request(app).get(path).set('Authorization', bearer),
-        post: (path, body = {}) => request(app).post(path).set('Authorization', bearer).send(body),
-        del: (path, body = {}) => request(app).delete(path).set('Authorization', bearer).send(body),
-    };
-};
-
-const named = async (app, username) => {
-    const player = await account(app);
-    await player.post('/user/username', { username }).expect(200);
-    return player;
-};
+const setup = options => createTestApp({ corsOrigins: ['https://battlechoc.com'], ...options });
+const account = app => createAccount(app);
+const named = (app, username) => createAccount(app, { username });
 
 const winRecord = (id, awards = [{ key: 'WINNER', xp: 9999 }]) => ({
     id, won: true, lost: false, builtEntities: 4, attacks: 3, espionages: 0, moltenFields: 0,
@@ -77,8 +48,7 @@ describe('accounts', () => {
     });
 
     test('creating accounts is rate limited', async () => {
-        const pool = await createTestPool();
-        const app = createApp({ pool, auth: createAuth({ pool, secret: JWT_SECRET }), push: createPush({ pool }), accountsPerMinute: 2 });
+        const { app } = await setup({ accountsPerMinute: 2 });
         await request(app).post('/accounts').expect(201);
         await request(app).post('/accounts').expect(201);
         await request(app).post('/accounts').expect(429);
@@ -283,21 +253,20 @@ describe('players', () => {
 
 describe('web push and transport', () => {
     test('subscriptions are stored per player and receive notifications', async () => {
-        const { app, pool, sent } = await setup();
+        const { app, push, sent } = await setup();
         const player = await account(app);
         expect((await request(app).get('/push/key')).body.publicKey).toBe('public');
         const subscription = { endpoint: 'https://push.example/abc', keys: { p256dh: 'key', auth: 'secret' } };
         await player.post('/push/subscription', { subscription }).expect(201);
         await player.post('/push/subscription', { subscription: { endpoint: 'x' } }).expect(400);
-        const push = createPush({ pool, publicKey: 'p', privateKey: 'q', sender: { setVapidDetails: () => {}, sendNotification: async (...args) => sent.push(args) } });
         expect(await push.sendToPlayer(player.playerId, { title: 'Invite' })).toBe(1);
+        expect(sent).toEqual([{ subscription, payload: JSON.stringify({ title: 'Invite' }) }]);
         await player.del('/push/subscription', { endpoint: subscription.endpoint }).expect(200);
         expect(await push.sendToPlayer(player.playerId, { title: 'Invite' })).toBe(0);
     });
 
     test('gone subscriptions are removed', async () => {
-        const pool = await createTestPool();
-        const app = createApp({ pool, auth: createAuth({ pool, secret: JWT_SECRET }), push: createPush({ pool }) });
+        const { app, pool } = await setup();
         const player = await account(app);
         const gone = createPush({ pool, publicKey: 'p', privateKey: 'q', sender: { setVapidDetails: () => {}, sendNotification: async () => { const error = new Error('gone'); error.statusCode = 410; throw error; } } });
         await gone.subscribe(player.playerId, { endpoint: 'https://push.example/gone', keys: { p256dh: 'a', auth: 'b' } });
@@ -318,9 +287,7 @@ describe('web push and transport', () => {
 describe('play page', () => {
     // the preview page behind play.battlechoc.com/<code> (nginx rewrites it to /play/<code>)
     const playApp = async (challengeInfo = () => null) => {
-        const pool = await createTestPool();
-        const auth = createAuth({ pool, secret: JWT_SECRET });
-        return createApp({ pool, auth, push: { enabled: false }, challengeInfo });
+        return (await setup({ challengeInfo })).app;
     };
     const meta = (html, property) => {
         const match = html.match(new RegExp(`<meta property="${property}" content="([^"]*)"`));

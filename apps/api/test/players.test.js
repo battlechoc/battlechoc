@@ -3,7 +3,7 @@
 
 const players = require('../src/players');
 const { createPush } = require('../src/push');
-const { createTestPool, closeTestPools, postgresOnly, failingOn, counting } = require('./helper');
+const { createTestPool, closeTestPools, postgresOnly, failingOn, counting } = require('./helpers/db');
 
 afterAll(closeTestPools);
 
