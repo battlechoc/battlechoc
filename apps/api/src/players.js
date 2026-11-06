@@ -48,12 +48,13 @@ const assignRandomName = async (pool, playerId) => {
     return player ? player.username : null;
 };
 
-const createPlayer = async pool => {
+// a player and their device identity exist together or not at all
+const createPlayer = pool => withTransaction(pool, async client => {
     const id = crypto.randomUUID();
-    await pool.query('INSERT INTO players (id, level) VALUES ($1, $2)', [id, JSON.stringify(EmptyPlayerStats.level)]);
-    await pool.query('INSERT INTO identities (provider, subject, player_id) VALUES ($1, $2, $3)', ['device', id, id]);
+    await client.query('INSERT INTO players (id, level) VALUES ($1, $2)', [id, JSON.stringify(EmptyPlayerStats.level)]);
+    await client.query('INSERT INTO identities (provider, subject, player_id) VALUES ($1, $2, $3)', ['device', id, id]);
     return id;
-};
+});
 
 const results = async (pool, playerId) => {
     const { rows } = await pool.query('SELECT result, COUNT(*) AS n FROM track_records WHERE player_id = $1 GROUP BY result', [playerId]);
@@ -191,31 +192,52 @@ const playerInfo = async (pool, player) => ({
 // stores finished offline matches once (by record id) and credits the XP computed on the server;
 // they never give ingredients and never change the rating
 const addTrackRecords = async (pool, playerId, records) => {
-    let credited = 0;
+    // one row per record id: an id that repeats within the request counts once, like a stored one
+    const rows = new Map();
     for (const record of records) {
         if (!record || typeof record !== 'object') {
             continue;
         }
         const id = typeof record.id === 'string' && record.id.length <= 64 ? record.id : crypto.randomUUID();
-        const exists = await count(pool, 'SELECT COUNT(*) AS n FROM track_records WHERE id = $1', [`${playerId}:${id}`]);
-        if (exists > 0) {
-            continue;
-        }
-        const result = resultOf(record);
-        const xp = xpOf(record, result);
-        await pool.query('INSERT INTO track_records (id, player_id, record, result, coins, xp) VALUES ($1, $2, $3, $4, 0, $5)',
-            [`${playerId}:${id}`, playerId, JSON.stringify(record), result, xp]);
-        credited += xp;
-        // a match played without the server is one against the AI: it moves the ladder too (like
-        // the XP, a faked one only changes the player's own opponents)
-        if (result !== 'open') {
-            await advanceAiLadder(pool, playerId, result);
+        if (!rows.has(`${playerId}:${id}`)) {
+            const result = resultOf(record);
+            rows.set(`${playerId}:${id}`, { record, result, xp: xpOf(record, result) });
         }
     }
-    if (credited > 0) {
-        await pool.query('UPDATE players SET xp = xp + $1 WHERE id = $2', [credited, playerId]);
+    if (rows.size === 0) {
+        return 0;
     }
-    return credited;
+    const entries = [...rows.entries()];
+    // The records, their XP and the ladder are written together or not at all: records stored
+    // without their XP would never be credited, because the next request skips them as known.
+    return withTransaction(pool, async client => {
+        // the lock makes two requests of one player take turns (the ladder is read, then written)
+        const player = (await client.query('SELECT * FROM players WHERE id = $1 FOR UPDATE', [playerId])).rows[0];
+        const values = entries.map((entry, i) => `($${i * 4 + 2}, $1, $${i * 4 + 3}, $${i * 4 + 4}, 0, $${i * 4 + 5})`);
+        // one statement for all records; it returns the ids that were new (no conflict target:
+        // with one, pg-mem also returns the rows that existed)
+        const inserted = await client.query(
+            `INSERT INTO track_records (id, player_id, record, result, coins, xp) VALUES ${values.join(', ')}
+             ON CONFLICT DO NOTHING RETURNING id`,
+            [playerId, ...entries.flatMap(([id, { record, result, xp }]) => [id, JSON.stringify(record), result, xp])]);
+        const stored = new Set(inserted.rows.map(row => row.id));
+        let credited = 0;
+        let ladder = null;
+        for (const [id, { result, xp }] of entries) {
+            if (stored.has(id)) {
+                credited += xp;
+                // a match played without the server is one against the AI: it moves the ladder too
+                // (like the XP, a faked one only changes the player's own opponents)
+                if (result !== 'open') {
+                    ladder = engine.nextAiLadder(ladder || ladderOf(player), result);
+                }
+            }
+        }
+        if (ladder !== null) {
+            await client.query('UPDATE players SET xp = xp + $1, ai_ladder = $2 WHERE id = $3', [credited, JSON.stringify(ladder), playerId]);
+        }
+        return credited;
+    });
 };
 
 module.exports = {
