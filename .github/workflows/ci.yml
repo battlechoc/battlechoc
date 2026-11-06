@@ -10,24 +10,36 @@ concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# read-only for every job; a job that needs more says so itself (changelog)
+permissions:
+  contents: read
+
+# Every job has a timeout-minutes of several times its usual duration: without one, a hung
+# browser occupies a runner for six hours. The actions are pinned to the commit of a release
+# (the version is in the comment); Dependabot moves the pins.
 jobs:
   # A squash merge turns a pull request into one commit, and release-please reads only that one:
   # a batch titled "Dev" (PR #27) left all its changes out of the release. So CI writes the
   # changelog into the description instead: one entry per conventional commit of the pull
   # request (BEGIN_COMMIT_OVERRIDE, which release-please prefers to the title), commits without a
   # conventional message listed apart; anew on every push (.github/scripts/pr-changelog.js).
-  # Release pull requests and pull requests from forks are left alone.
+  # Release pull requests and pull requests from forks are left alone. Dependabot's too: their
+  # title is a conventional commit already (.github/dependabot.yml), and a workflow that
+  # Dependabot triggers gets a read-only token by default. A skipped job counts as passed for
+  # the required check.
   changelog:
     if: >-
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
       !startsWith(github.head_ref, 'release-please--')
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -46,6 +58,8 @@ jobs:
   test-and-build:
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     runs-on: ubuntu-latest
+    # usually 3 to 4 minutes
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:17-alpine
@@ -59,14 +73,18 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # `npm run verify` runs the same checks on a contributor's machine (package.json), except
+      # the API tests on a real Postgres: a step added here belongs there too
+      - name: Formatting of the files Prettier covers (.prettierignore names the rest)
+        run: npm run format:check
       - name: Changelog script tests
-        run: node --test .github/scripts/pr-changelog.test.js
+        run: npm run test:changelog
       - name: Shared rules engine unit tests
         run: npm test
       - name: Tutorial scenarios on the engine
@@ -82,7 +100,7 @@ jobs:
       - name: PWA production build
         run: npm run build
       - name: The published build has no test hooks
-        run: "! grep -rlE '__battlechoc|testclock' apps/pwa/build"
+        run: npm run check:build
 
   # The browser tests in four parallel jobs of about seven minutes each (in one job they took
   # 29 min), next to test-and-build instead of after it. Each job builds the e2e build and runs
@@ -92,15 +110,17 @@ jobs:
     name: e2e (${{ matrix.group }})
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     runs-on: ubuntu-latest
+    # a group usually takes 4 to 15 minutes, 20 on a slow runner
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         group: [challenge, online, realtime, rest]
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
       - name: Install Chromium for Playwright
@@ -124,7 +144,7 @@ jobs:
           fi
           echo "specs: ${specs[*]}"
           npm test -- "${specs[@]}"
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: e2e-results-${{ matrix.group }}
@@ -139,6 +159,7 @@ jobs:
     needs: e2e-group
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - name: Every group passed
         env:

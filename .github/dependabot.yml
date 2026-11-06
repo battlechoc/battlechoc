@@ -1,0 +1,50 @@
+# Dependabot opens pull requests for outdated dependencies, once a week.
+#
+# The repository squashes pull requests and release-please reads the title, so every title is a
+# conventional commit of a type that makes no release of its own and stays out of the changelog:
+# build(deps), build(deps-dev) and ci(deps). CI skips its changelog job for these pull requests
+# (.github/workflows/ci.yml), and .clabot lists dependabot[bot] for the CLA check.
+version: 2
+updates:
+  # All three workspaces share the lockfile at the root. Minor and patch updates come as one
+  # pull request, each major update as its own.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # the workspace packages: linked from this repository, not on a registry
+      - dependency-name: "@battlechoc/*"
+
+  # The actions are pinned to commits (the version is in the comment behind): this moves the pins.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+      include: scope
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # The base images of the two Dockerfiles.
+  - package-ecosystem: docker
+    directories:
+      - /apps/api
+      - /apps/pwa
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    ignore:
+      # the Node major is the one in .nvmrc
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]

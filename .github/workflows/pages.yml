@@ -32,6 +32,7 @@ jobs:
       (github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       deploy: ${{ steps.check.outputs.deploy }}
     steps:
@@ -56,16 +57,17 @@ jobs:
     needs: newest
     if: needs.newest.outputs.deploy == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       PUPPETEER_SKIP_DOWNLOAD: "true"
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # the commit CI tested, not whatever main is by now
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 22
+          node-version-file: .nvmrc
           cache: npm
       - run: npm ci
       # the commit and the build time: in the Info dialog and in problem reports (src/build.js)
@@ -74,7 +76,7 @@ jobs:
           VITE_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: VITE_BUILD_TIME=$(date --utc -Iseconds) npm run build
       - name: The published build has no test hooks
-        run: "! grep -rlE '__battlechoc|testclock' apps/pwa/build"
+        run: npm run check:build
       - name: Prepare GitHub Pages output
         working-directory: apps/pwa/build
         run: |
@@ -82,7 +84,7 @@ jobs:
           cp index.html 404.html
           # keep dot-folders such as .well-known (Digital Asset Links)
           touch .nojekyll
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: apps/pwa/build
           # the artifact drops dot-files unless told otherwise: /.well-known/assetlinks.json
@@ -92,9 +94,11 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # the action itself gives up on a deployment after 10 minutes
+    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

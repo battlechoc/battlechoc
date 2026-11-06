@@ -1,0 +1,15 @@
+# Art, sound and fonts are binary: no line-ending conversion, no text diff, no merge attempt.
+# There is no "* text=auto" on purpose: it would renormalise files that are in the repository.
+*.blend binary
+*.xcf binary
+*.glb binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.mp3 binary
+*.wav binary
+*.mid binary
+*.tg binary
+*.woff2 binary
+# Babylon environment textures. Not "*.env": that would match the text file apps/pwa/.env too.
+apps/pwa/public/textures/*.env binary
