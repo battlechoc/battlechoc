@@ -170,6 +170,14 @@ describe('migrations', () => {
         expect(await applied(pool)).toEqual(['001_first.sql']);
     });
 
+    postgresOnly('track records are indexed by player and result', async () => {
+        const pool = await createTestPool();
+        const { rows } = await pool.query(
+            "SELECT indexdef FROM pg_indexes WHERE schemaname = current_schema() AND indexname = 'track_records_player_result'");
+        expect(rows).toHaveLength(1);
+        expect(rows[0].indexdef).toMatch(/\(player_id, result\)$/);
+    });
+
     postgresOnly('two processes that start together apply each migration once', async () => {
         const pool = await createTestPool({ migrated: false });
         await Promise.all([pool, siblingPool(pool), siblingPool(pool)].map(each => migrate(each)));

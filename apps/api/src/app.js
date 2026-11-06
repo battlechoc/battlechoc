@@ -17,7 +17,6 @@ const { createKeyedQueue } = require('./queue');
 const { isValidUsername } = require('./names');
 const { AuthError } = require('./auth');
 
-const HIGHSCORE_PAGE_SIZE = 10;
 const MAX_QUERY_RESULTS = 20;
 
 // small CORS middleware for the PWA origins (custom headers included)
@@ -98,8 +97,10 @@ const createApp = ({
 
     /* ---------- player ---------- */
 
-    app.post('/user', ...user, handle(async (req, res) => sendStats(res, req.playerId)));
-    app.get('/user', ...user, handle(async (req, res) => sendStats(res, req.playerId)));
+    // nothing changed: the stats come from the row that requirePlayer loaded
+    const readStats = handle(async (req, res) => res.json({ stats: await players.statsOf(pool, req.player) }));
+    app.post('/user', ...user, readStats);
+    app.get('/user', ...user, readStats);
 
     // imports the offline profile of this device once (track records are deduplicated by id;
     // XP is always computed on the server; coins from the client are ignored)
@@ -213,9 +214,7 @@ const createApp = ({
     /* ---------- friends, ranking, lookup ---------- */
 
     app.get('/user/friends', ...user, handle(async (req, res) => {
-        const { rows } = await pool.query(
-            'SELECT p.* FROM friends f JOIN players p ON p.id = f.friend_id WHERE f.player_id = $1 ORDER BY p.username_lower', [req.playerId]);
-        res.json(await Promise.all(rows.map(row => players.playerInfo(pool, row))));
+        res.json(await players.friendsOf(pool, req.playerId));
     }));
 
     app.post('/user/friend', ...user, handle(async (req, res) => {
@@ -250,22 +249,7 @@ const createApp = ({
     // player's own entry (own null without a player name), so the
     // client can always show where the player stands
     app.get('/highscore', ...user, handle(async (req, res) => {
-        const total = await players.count(pool, 'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL', []);
-        const lastPage = Math.max(1, Math.ceil(total / HIGHSCORE_PAGE_SIZE));
-        const own = req.player.username ? await players.playerInfo(pool, req.player) : null;
-        let page = Number.parseInt(req.query.page, 10);
-        if (!Number.isInteger(page)) {
-            page = own && own.ranking !== null ? Math.ceil(own.ranking / HIGHSCORE_PAGE_SIZE) : 1;
-        }
-        page = Math.min(Math.max(1, page), lastPage);
-        const { rows } = await pool.query(
-            `SELECT * FROM players WHERE username IS NOT NULL ORDER BY ${players.ORDER} LIMIT $1 OFFSET $2`,
-            [HIGHSCORE_PAGE_SIZE, (page - 1) * HIGHSCORE_PAGE_SIZE]);
-        const list = [];
-        for (const row of rows) {
-            list.push(await players.playerInfo(pool, row));
-        }
-        res.json({ page, lastPage, total, list, own });
+        res.json(await players.highscore(pool, req.player, req.query.page));
     }));
 
     app.get('/query/user/:text', auth.requireAuth, handle(async (req, res) => {
@@ -276,7 +260,7 @@ const createApp = ({
         }
         const { rows } = await pool.query(
             'SELECT * FROM players WHERE username_lower LIKE $1 ORDER BY rating DESC LIMIT $2', [`%${text}%`, MAX_QUERY_RESULTS]);
-        res.json(await Promise.all(rows.map(row => players.playerInfo(pool, row))));
+        res.json(await players.playerInfos(pool, rows));
     }));
 
     app.get('/random/opponent', ...user, handle(async (req, res) => {

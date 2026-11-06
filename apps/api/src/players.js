@@ -56,11 +56,26 @@ const createPlayer = pool => withTransaction(pool, async client => {
     return id;
 });
 
-const results = async (pool, playerId) => {
-    const { rows } = await pool.query('SELECT result, COUNT(*) AS n FROM track_records WHERE player_id = $1 GROUP BY result', [playerId]);
-    const byResult = Object.fromEntries(rows.map(row => [row.result, Number(row.n)]));
-    return { winnings: byResult.won || 0, drawn: byResult.draw || 0, losses: byResult.lost || 0 };
+// $1, $2, … for a list of values (pg-mem does not take an array with = ANY)
+const placeholders = values => values.map((value, i) => `$${i + 1}`).join(', ');
+
+const RESULT_KEYS = { won: 'winnings', draw: 'drawn', lost: 'losses' };
+
+/** Won, drawn and lost matches of several players with one query: Map of player id → { winnings, drawn, losses }. */
+const resultsOf = async (db, playerIds) => {
+    const byPlayer = new Map(playerIds.map(id => [id, { winnings: 0, drawn: 0, losses: 0 }]));
+    if (playerIds.length > 0) {
+        const { rows } = await db.query(
+            `SELECT player_id, result, COUNT(*) AS n FROM track_records WHERE player_id IN (${placeholders(playerIds)})
+             GROUP BY player_id, result`, playerIds);
+        rows.filter(row => RESULT_KEYS[row.result]).forEach(row => {
+            byPlayer.get(row.player_id)[RESULT_KEYS[row.result]] = Number(row.n);
+        });
+    }
+    return byPlayer;
 };
+
+const results = async (pool, playerId) => (await resultsOf(pool, [playerId])).get(playerId);
 
 const levelOf = player => ({ ...EmptyPlayerStats.level, ...(player.level || {}) });
 
@@ -128,14 +143,10 @@ const finishTutorial = (pool, playerId) => withTransaction(pool, async client =>
     }
 });
 
-const stats = async (pool, playerId) => {
-    const player = await findPlayer(pool, playerId);
-    if (!player) {
-        return undefined;
-    }
-    const now = Date.now();
-    const pantryTotals = await pantry.totals(pool, playerId, now);
-    const items = await itemsOf(pool, playerId);
+/** The stats of a player row that is already loaded: three more queries (pantry, items, results). */
+const statsOf = async (pool, player) => {
+    const { totals: pantryTotals, spoiling } = await pantry.contents(pool, player.id, Date.now());
+    const items = await itemsOf(pool, player.id);
     return {
         id: player.id,
         username: player.username || EmptyPlayerStats.username,
@@ -150,7 +161,7 @@ const stats = async (pool, playerId) => {
         rating: Math.round(player.rating),
         ratedMatches: player.rated_matches,
         pantry: pantryTotals,
-        spoiling: await pantry.spoiling(pool, playerId, now),
+        spoiling,
         items,
         equipment: equipmentOf(player),
         loadout: loadoutOf(player, items),
@@ -159,8 +170,14 @@ const stats = async (pool, playerId) => {
         tutorialFinished: player.tutorial_finished,
         awards: [],
         trackRecord: [],
-        ...(await results(pool, playerId)),
+        ...(await results(pool, player.id)),
     };
+};
+
+/** The stats of a player by id (after a change: the row is read again); undefined when there is none. */
+const stats = async (pool, playerId) => {
+    const player = await findPlayer(pool, playerId);
+    return player ? statsOf(pool, player) : undefined;
 };
 
 // Every named player is on the highscore list. Its order: the shown score (the rating after
@@ -169,25 +186,79 @@ const stats = async (pool, playerId) => {
 const score = table => `CASE WHEN ${table}.rated_matches > 0 THEN ${table}.rating ELSE 0 END`;
 const ORDER = `${score('players')} DESC, created_at ASC, id ASC`;
 const scoreOf = player => (Number(player.rated_matches) > 0 ? Number(player.rating) : 0);
+const HIGHSCORE_PAGE_SIZE = 10;
 
-// compared with the player's own row in SQL: timestamps there are finer than in JavaScript
-const ranking = async (pool, player) => 1 + await count(pool,
-    `SELECT COUNT(*) AS n FROM players other, players me WHERE me.id = $1 AND other.username IS NOT NULL
-     AND (${score('other')} > ${score('me')} OR (${score('other')} = ${score('me')}
-     AND (other.created_at < me.created_at OR (other.created_at = me.created_at AND other.id < me.id))))`,
-    [player.id]);
+/**
+ * The ranks of several players with one query: Map of player id → rank, null while a player has no
+ * name (unnamed players are not listed). Compared with the players' own rows in SQL: timestamps
+ * there are finer than in JavaScript. A join with a GROUP BY, because pg-mem knows neither window
+ * functions nor correlated subqueries.
+ */
+const ranksOf = async (db, rows) => {
+    const ranks = new Map(rows.map(player => [player.id, player.username ? 1 : null]));
+    const named = rows.filter(player => player.username).map(player => player.id);
+    if (named.length > 0) {
+        // counts the listed players before each one; nobody before them: no row, the rank stays 1
+        const { rows: before } = await db.query(
+            `SELECT me.id, COUNT(*) AS n FROM players other, players me
+             WHERE me.id IN (${placeholders(named)}) AND other.username IS NOT NULL
+             AND (${score('other')} > ${score('me')} OR (${score('other')} = ${score('me')}
+             AND (other.created_at < me.created_at OR (other.created_at = me.created_at AND other.id < me.id))))
+             GROUP BY me.id`, named);
+        before.forEach(row => ranks.set(row.id, 1 + Number(row.n)));
+    }
+    return ranks;
+};
 
-/** The rank of a player, null while they have no name (unnamed players are not listed). */
-const rankOf = async (pool, player) => (player.username ? ranking(pool, player) : null);
+/** The rank of a player, null while they have no name. */
+const rankOf = async (pool, player) => (await ranksOf(pool, [player])).get(player.id);
 
-const playerInfo = async (pool, player) => ({
-    name: player.username || EmptyPlayerStats.username,
-    // what others see is the rating (verified matches only), never the XP, which offline matches feed
-    score: Math.round(scoreOf(player)),
-    rating: Math.round(player.rating),
-    ...(await results(pool, player.id)),
-    ranking: await rankOf(pool, player),
-});
+/**
+ * What others see of several players, in the order of `rows`: two queries whatever their number
+ * (results, ranks), one when the caller knows the ranks.
+ */
+const playerInfos = async (db, rows, ranks) => {
+    const results = await resultsOf(db, rows.map(player => player.id));
+    const ranking = ranks || await ranksOf(db, rows);
+    return rows.map(player => ({
+        name: player.username || EmptyPlayerStats.username,
+        // what others see is the rating (verified matches only), never the XP, which offline matches feed
+        score: Math.round(scoreOf(player)),
+        rating: Math.round(player.rating),
+        ...results.get(player.id),
+        ranking: ranking.get(player.id),
+    }));
+};
+
+const playerInfo = async (pool, player) => (await playerInfos(pool, [player]))[0];
+
+/**
+ * A page of the highscore list for a player: `requested` is the page asked for (anything that is
+ * no number: the page the player is on), `own` the player's own entry (null without a name).
+ */
+const highscore = async (db, player, requested) => {
+    const total = await count(db, 'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL', []);
+    const lastPage = Math.max(1, Math.ceil(total / HIGHSCORE_PAGE_SIZE));
+    const own = player.username ? await playerInfo(db, player) : null;
+    let page = Number.parseInt(requested, 10);
+    if (!Number.isInteger(page)) {
+        page = own && own.ranking !== null ? Math.ceil(own.ranking / HIGHSCORE_PAGE_SIZE) : 1;
+    }
+    page = Math.min(Math.max(1, page), lastPage);
+    const offset = (page - 1) * HIGHSCORE_PAGE_SIZE;
+    const { rows } = await db.query(
+        `SELECT * FROM players WHERE username IS NOT NULL ORDER BY ${ORDER} LIMIT $1 OFFSET $2`, [HIGHSCORE_PAGE_SIZE, offset]);
+    // the list is in the order of the ranks, so a row's rank is its place
+    const ranks = new Map(rows.map((row, index) => [row.id, offset + index + 1]));
+    return { page, lastPage, total, list: await playerInfos(db, rows, ranks), own };
+};
+
+/** The friends of a player as player infos, by name. */
+const friendsOf = async (db, playerId) => {
+    const { rows } = await db.query(
+        'SELECT p.* FROM friends f JOIN players p ON p.id = f.friend_id WHERE f.player_id = $1 ORDER BY p.username_lower', [playerId]);
+    return playerInfos(db, rows);
+};
 
 // stores finished offline matches once (by record id) and credits the XP computed on the server;
 // they never give ingredients and never change the rating
@@ -241,5 +312,7 @@ const addTrackRecords = async (pool, playerId, records) => {
 };
 
 module.exports = {
-    findPlayer, findPlayerByName, freeRandomName, assignRandomName, createPlayer, stats, results, ladderOf, advanceAiLadder, finishTutorial, ORDER, rankOf, playerInfo, addTrackRecords, levelOf, count, itemsOf, equipmentOf, loadoutOf,
+    findPlayer, findPlayerByName, freeRandomName, assignRandomName, createPlayer, stats, statsOf, results, ladderOf, advanceAiLadder,
+    finishTutorial, ORDER, rankOf, playerInfo, playerInfos, highscore, friendsOf, addTrackRecords, levelOf, count, itemsOf, equipmentOf,
+    loadoutOf,
 };
