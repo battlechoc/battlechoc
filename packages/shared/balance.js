@@ -115,10 +115,6 @@ const DefaultBalance = Object.freeze({
         pink: { stunMs: 15000 },
         yellow: { weights: { PINK: 1, WHITE: 1, GREEN: 1, XMAS_TO_BALLISTA: 1, XMAS_TO_FOUNTAIN: 1 } },
     },
-    ai: {
-        [`AI_EASY`]: { reactionTimeMs: [2500, 4000] },
-        [`AI_STRONG`]: { reactionTimeMsByHandicap: [800, 1000, 1300, 1600, 2000], rageWindowMs: 30000 },
-    },
     awards: { rushHourMs: 3 * 60 * 1000, goldenMultiplayerMs: 3 * 60 * 1000, diamondMultiplayerMs: 8 * 60 * 1000 },
 });
 
