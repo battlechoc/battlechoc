@@ -83,8 +83,12 @@ const main = async ({ wrap = app => app, env = process.env } = {}) => {
     if (recovered > 0) {
         console.log(`recovered ${recovered} running matches`);
     }
-    // spoiled and used-up ingredient batches and old problem reports are deleted once an hour
-    const stopCleanup = scheduleCleanup(pool);
+    // spoiled and used-up ingredient batches and old problem reports are deleted once an hour;
+    // matches only when the operator set a retention
+    if (config.matchRetentionDays) {
+        console.log(`match retention: actions and snapshots are deleted ${config.matchRetentionDays} days after a match is over`);
+    }
+    const stopCleanup = scheduleCleanup(pool, { matchRetentionDays: config.matchRetentionDays });
     server.listen(config.port, () => console.log(`battlechoc api listening on ${config.port}`));
 
     const shutdown = createShutdown({ stopCleanup, live, server, pool });

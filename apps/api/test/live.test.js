@@ -11,7 +11,7 @@ const { createPush } = require('../src/push');
 const { createLive } = require('../src/live');
 const { ManualClock } = require('../src/live/clock');
 const { LiveClient, AgentPlayer } = require('../src/live/client');
-const { createTestPool, closeTestPools, JWT_SECRET } = require('./helper');
+const { createTestPool, closeTestPools, failingOn, JWT_SECRET } = require('./helper');
 
 afterAll(closeTestPools);
 
@@ -23,7 +23,7 @@ const silentLog = { error: () => {}, warn: () => {}, info: () => {} };
 
 const environments = [];
 
-const start = async ({ pool, config = {} } = {}) => {
+const start = async ({ pool, config = {}, log = silentLog } = {}) => {
     const env = { pool: pool || await createTestPool(), clock: new ManualClock(), pushed: [], clients: [] };
     env.auth = createAuth({ pool: env.pool, secret: JWT_SECRET });
     env.push = createPush({
@@ -34,7 +34,7 @@ const start = async ({ pool, config = {} } = {}) => {
     });
     env.app = createApp({ pool: env.pool, auth: env.auth, push: env.push, accountsPerMinute: 1000 });
     env.server = http.createServer(env.app);
-    env.live = createLive({ server: env.server, pool: env.pool, auth: env.auth, clock: env.clock, config, log: silentLog });
+    env.live = createLive({ server: env.server, pool: env.pool, auth: env.auth, clock: env.clock, config, log });
     await new Promise(resolve => env.server.listen(0, '127.0.0.1', resolve));
     env.url = `ws://127.0.0.1:${env.server.address().port}/live`;
     environments.push(env);
@@ -975,6 +975,54 @@ describe('live: matches', () => {
         expect(view.events.length).toBeGreaterThan(0);
         expect(view.events.map(event => event.seq)).toEqual(view.events.map((event, i) => seen + 1 + i));
     }, 20000);
+
+    test('a match that cannot be replayed is marked as failed once and left alone on the next start', async () => {
+        const env = await start();
+        const { a, matchId } = await queueMatch(env);
+        const before = room(env, matchId);
+        await before.writes;
+        // an action in the log that the engine refuses, as after a change of the rules
+        await env.pool.query('INSERT INTO match_actions (match_id, seq, t, action) VALUES ($1, $2, 0, $3)',
+            [matchId, before.seq + 1, JSON.stringify({ type: 'MatchActionTypes.nope', player: 0, t: 0, payload: {} })]);
+        // crash: timers stop, nothing is saved anymore
+        env.clock.timers.clear();
+        env.clients.forEach(client => client.terminate());
+
+        const errors = [];
+        const restarted = await start({ pool: env.pool, log: { ...silentLog, error: (...args) => errors.push(args) } });
+        expect(await restarted.live.recover()).toBe(0);
+        expect(room(restarted, matchId)).toBeUndefined();
+        const stored = async () => (await env.pool.query('SELECT status, ended_at, recovery_error FROM matches WHERE id = $1', [matchId])).rows[0];
+        expect(await stored()).toMatchObject({ status: 'failed', ended_at: expect.any(Date), recovery_error: expect.stringMatching(/^replay of match/) });
+        expect(errors).toHaveLength(1);
+
+        // the start after that does not try it again
+        const later = await start({ pool: env.pool, log: { ...silentLog, error: (...args) => errors.push(args) } });
+        expect(await later.live.recover()).toBe(0);
+        expect(errors).toHaveLength(1);
+        // its players are free for a new match
+        const back = await connect(later, a.account.accessToken);
+        expect(back.welcome.activeMatch).toBeNull();
+        back.send({ type: ClientMessage.QUEUE_JOIN });
+        await back.next(ServerMessage.QUEUED);
+    });
+
+    test('a match whose log cannot be read stays running and is recovered by a later start', async () => {
+        const env = await start();
+        const { matchId } = await queueMatch(env);
+        await room(env, matchId).writes;
+        env.clock.timers.clear();
+        env.clients.forEach(client => client.terminate());
+
+        // the database fails while the actions are loaded: nothing says that the match is broken
+        const unlucky = await start({ pool: failingOn(env.pool, /FROM match_actions/) });
+        expect(await unlucky.live.recover()).toBe(0);
+        expect((await env.pool.query('SELECT status FROM matches WHERE id = $1', [matchId])).rows[0].status).toBe('running');
+
+        const restarted = await start({ pool: env.pool });
+        expect(await restarted.live.recover()).toBe(1);
+        expect(room(restarted, matchId).match.phase).toBe(MatchPhase.FIELD_CHOICE);
+    });
 
     test('running matches survive a restart of the server', async () => {
         const env = await start();

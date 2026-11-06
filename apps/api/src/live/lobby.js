@@ -268,22 +268,35 @@ class Lobby {
         this.lingering.set(room.id, timer);
     }
 
-    /** Rebuilds the running matches after a restart. */
+    /** Rebuilds the running matches after a restart; resolves with the number of matches that run again. */
     async recover() {
         const rows = await this.store.running();
+        let recovered = 0;
         for (const row of rows) {
+            let actions;
             try {
-                const actions = await this.store.actionsAfter(row.id, row.snapshot_seq);
+                actions = await this.store.actionsAfter(row.id, row.snapshot_seq);
+            } catch (error) {
+                // the database failed, the match may be fine: it stays running for the next start
+                this.log.error(`could not load match ${row.id}`, error);
+                continue;
+            }
+            try {
                 const room = MatchRoom.restore({ row, actions, ...this.deps() });
                 this.addRoom(room);
                 if (room.match.phase === engine.MatchPhase.ENDED) {
                     room.end();
                 }
+                recovered += 1;
             } catch (error) {
+                // The snapshot and the actions do not make a match any more (e.g. the rules changed
+                // under it). The next start would fail the same way, so it is marked and left alone.
                 this.log.error(`could not recover match ${row.id}`, error);
+                await this.store.fail(row.id, String(error && error.message))
+                    .catch(failure => this.log.error(`could not mark match ${row.id} as failed`, failure));
             }
         }
-        return rows.length;
+        return recovered;
     }
 
     /* ---------- matchmaking ---------- */

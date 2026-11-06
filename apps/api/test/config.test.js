@@ -148,6 +148,15 @@ describe('configuration', () => {
         ['0', '-5', '1.5', 'many'].forEach(DB_POOL_MAX => expect(problemsOf({ ...development, DB_POOL_MAX })).toMatch(/DB_POOL_MAX/));
     });
 
+    test('matches are kept for ever unless a retention is set, in whole days', () => {
+        expect(loadConfig(development).matchRetentionDays).toBeUndefined();
+        expect(loadConfig({ ...development, MATCH_RETENTION_DAYS: '' }).matchRetentionDays).toBeUndefined();
+        expect(loadConfig({ ...development, MATCH_RETENTION_DAYS: '30' }).matchRetentionDays).toBe(30);
+        // a setting that deletes data is never guessed
+        ['0', '-7', '1.5', 'a month', '30d'].forEach(MATCH_RETENTION_DAYS => expect(problemsOf({ ...development, MATCH_RETENTION_DAYS }))
+            .toMatch(/MATCH_RETENTION_DAYS must be a positive whole number/));
+    });
+
     test('the server reads its environment through the configuration and stops before it opens anything', async () => {
         await expect(main({ env: { NODE_ENV: 'production' } })).rejects.toThrow(ConfigError);
         await expect(main({ env: { DATABASE_URL: 'memory' } })).rejects.toThrow(/JWT_SECRET/);
