@@ -18,67 +18,100 @@ const submit = (page, type, payload) =>
 const step = (page) => page.getByTestId("tutorial-coach");
 const expectStep = (page, id) => expect(step(page)).toHaveAttribute("data-step", id);
 
-// a cell of the player's own board, by a predicate on the cell
-const ownCell = (page, kind) =>
-  host(
+// The lesson's hand (data-testid tutorial-pointer): on a field it carries the field (data-board,
+// data-row, data-col) and stands with its fingertip on the field's place on the screen; on a
+// weapon button it stands inside the button.
+const pointer = (page) => page.getByTestId("tutorial-pointer");
+const expectPointerOn = async (page, board, check) => {
+  await expect(pointer(page)).toHaveAttribute("data-board", board);
+  const target = await pointer(page).evaluate((element) => ({ row: Number(element.dataset.row), col: Number(element.dataset.col) }));
+  const cell = await host(
     page,
-    (kind) => {
+    ({ board, row, col }) => {
       const match = window.__battlechoc.host.match;
-      const grid = match.board.fields[match.players[0].fieldIndex].grid;
-      const empty = (cell) => cell.occupiedBy.every((entity) => entity.type === "EntityType.CREAM");
-      const creamed = (cell) => cell.occupiedBy.some((entity) => entity.type === "EntityType.CREAM");
-      if (kind === "creamArea") {
-        // cream covers the 3x3 area around the tapped cell: tap a cell without cream
-        const cell = grid.find((candidate) => !creamed(candidate) && !candidate.molten);
-        return { row: cell.row, col: cell.col };
-      }
-      const cell = grid.find(empty);
-      return { row: cell.row, col: cell.col };
+      const player = match.players[board === "own" ? 0 : 1];
+      const found = match.board.fields[player.fieldIndex].grid.find((candidate) => candidate.row === row && candidate.col === col);
+      return { type: found.type, buildings: found.occupiedBy.filter((entity) => entity.type !== "EntityType.CREAM").map((entity) => entity.type) };
     },
-    kind
+    { board, ...target }
   );
+  check(cell);
+};
+// taps the field under the fingertip, once the camera stands still
+const tapPointer = async (page) => {
+  await page.waitForFunction(() => window.__battlechocScene && !window.__battlechocScene.flight);
+  await page.waitForTimeout(300);
+  const { x, y } = await pointer(page).evaluate((element) => ({ x: parseFloat(element.style.left), y: parseFloat(element.style.top) }));
+  await page.mouse.click(x, y);
+};
 
 test("the lesson teaches a whole match against Mimi Marzipan", async ({ page }) => {
   await page.goto("/?testclock", { waitUntil: "networkidle" });
   await page.locator("div[class^=menu] > div:first-child").click();
   await expectStep(page, "welcome");
+  await expect(pointer(page)).toHaveCount(0);
   await step(page).locator("[class*=iconButton]").click();
 
+  // the hand shows a dark field for the factory; a tap there places it
   await expectStep(page, "factory");
+  await expectPointerOn(page, "own", (cell) => expect(cell.type).toBe("BoardCellTypes.BLACK"));
   await page.screenshot({ path: "test/output/screenshot_tutorial_factory.png" });
-  expect(await submit(page, "battlechoc/match/placeFactory", await ownCell(page, "free"))).toBe("ok");
+  await tapPointer(page);
   await advance(page, 3000);
   await expectStep(page, "slots");
+  await expect(pointer(page)).toHaveCount(0);
   await step(page).locator("[class*=iconButton]").click();
 
+  // the tree is picked for the player, the hand shows a free white field
   await expectStep(page, "tree");
-  // only the tree can be picked now
-  await expect(page.getByTestId("build-cacao-tree")).not.toHaveClass(/disabled/);
+  await expect(page.getByTestId("build-cacao-tree")).toHaveClass(/selected/);
   await expect(page.getByTestId("build-truffle-cannon")).toHaveClass(/disabled/);
   // the lesson's three buildings; everything else waits behind a lock, as in the first match
   const palette = page.getByTestId("build-palette");
   await expect(palette.locator('[data-testid^="build-"]')).toHaveCount(3);
   expect(await palette.locator('.icon[style*="lock.svg"]').count()).toBeGreaterThan(0);
+  await expectPointerOn(page, "own", (cell) => {
+    expect(cell.type).toBe("BoardCellTypes.WHITE");
+    expect(cell.buildings).toEqual([]);
+  });
   await page.screenshot({ path: "test/output/screenshot_tutorial_tree.png" });
-  expect(await submit(page, "battlechoc/match/build", { entityType: "EntityType.CACAOTREE", ...(await ownCell(page, "free")) })).toBe("ok");
+  await tapPointer(page);
 
   await expectStep(page, "cacao");
+  await expect(pointer(page)).toHaveCount(0);
   await advance(page, 10000);
   await expectStep(page, "cannon");
-  expect(await submit(page, "battlechoc/match/build", { entityType: "EntityType.RUM_TRUFFLE_CANNON", ...(await ownCell(page, "free")) })).toBe("ok");
+  await expect(page.getByTestId("build-truffle-cannon")).toHaveClass(/selected/);
+  await expectPointerOn(page, "own", (cell) => expect(cell.buildings).toEqual([]));
+  await tapPointer(page);
 
+  // the factory on dark chocolate came with three slots: the cream needs no wait
   await expectStep(page, "cream");
-  await advance(page, 15000);
-  expect(await submit(page, "battlechoc/match/build", { entityType: "EntityType.CREAM", ...(await ownCell(page, "creamArea")) })).toBe("ok");
+  await expect(page.getByTestId("build-cream")).toHaveClass(/selected/);
+  await expectPointerOn(page, "own", () => {});
+  await tapPointer(page);
 
-  // the cannon is rushable by now
+  // the cannon loads: no hand until it can fire early
+  await expectStep(page, "charge");
+  await expect(pointer(page)).toHaveCount(0);
+  await advance(page, 10000);
+
+  // fire: the hand on the cannon button, then on Mimi's tree
   await expectStep(page, "fire");
+  const cannonButton = page.getByTestId("weapon-truffle-cannon");
+  await expect(cannonButton.getByTestId("tutorial-pointer")).toHaveCount(1);
   await page.screenshot({ path: "test/output/screenshot_tutorial_fire.png" });
-  expect(await submit(page, "battlechoc/match/attack", { attackType: "AttackType.TRUFFLE", row: 3, col: 4, allowRush: true })).toBe("ok");
+  await cannonButton.click();
+  await expectPointerOn(page, "opponent", (cell) => expect(cell.buildings).toEqual(["EntityType.CACAOTREE"]));
+  await tapPointer(page);
 
+  // win: the hand waits for the cannon, then shows Mimi's factory
   await expectStep(page, "win");
+  await expect(pointer(page)).toHaveCount(0);
   await advance(page, 20000);
-  expect(await submit(page, "battlechoc/match/attack", { attackType: "AttackType.TRUFFLE", row: 1, col: 1, allowRush: true })).toBe("ok");
+  await expectPointerOn(page, "opponent", (cell) => expect(cell.buildings).toEqual(["EntityType.FACTORY"]));
+  await page.screenshot({ path: "test/output/screenshot_tutorial_win.png" });
+  await tapPointer(page);
   // offline there is no account: the player picks a name to finish
   await expect(page.getByTestId("tutorial-name")).toBeVisible();
   await page.locator("input:visible").first().fill("Lessonia");

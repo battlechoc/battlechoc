@@ -30,9 +30,12 @@ const uiReducer = createReducer(
     tipsEnabled: true,
     boardFocus: { target: "own", seq: 0 },
     deniedAttack: { type: undefined, seq: 0 },
-    // the tutorial lesson lets the player act; whitelistBuildings limits the build palette
+    // the tutorial lesson lets the player act; whitelistBuildings limits the build palette;
+    // tutorialPointer is where its hand points: a field { board, row, col }, a weapon button
+    // { weapon } or null
     tutorialInteractive: false,
     whitelistBuildings: undefined,
+    tutorialPointer: null,
     // the bottom edge of the tutorial's card (px from the top, 0 without a card)
     boardTopInset: 0,
     // the server answers (src/connectivity.js); without it profile, highscore, Choclab and
@@ -110,6 +113,7 @@ const uiReducer = createReducer(
         state.tutorial = false;
         state.tutorialInteractive = false;
         state.whitelistBuildings = undefined;
+        state.tutorialPointer = null;
         state.notificationOnLoopsEnd = null;
         OfflineStore.settingsStore.set("tutorialAlreadySeen", true);
       })

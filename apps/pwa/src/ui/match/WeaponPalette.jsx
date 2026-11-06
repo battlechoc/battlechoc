@@ -9,6 +9,7 @@ import { selectAttack, focusBoard } from "../UiActions";
 import { Jukebox } from "../misc";
 import useMatchTime from "./useMatchTime";
 import ProgressRing from "./ProgressRing";
+import TapPointer from "../controls/TapPointer";
 
 const { WeaponState } = engine;
 
@@ -62,6 +63,12 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   selected: { boxShadow: `0 0 0 0.4vw ${theme.color.gold.light}` },
+  // the tutorial's hand on a button: one and a half icons wide
+  pointer: {
+    [theme.breakpoints.orientation.portrait]: { "--tap-size": "21vw" },
+    [theme.breakpoints.orientation.landscape]: { "--tap-size": "min(10.5vw, 19.5vh)" },
+    [theme.breakpoints.orientation.square]: { "--tap-size": "calc(5.25vh + 5.25vw)" },
+  },
   // nothing to fire right now; the button stays clickable to aim
   empty: { "& > div:first-child": { filter: "grayscale(60%) brightness(60%)" } },
   "@keyframes deniedFlash": {
@@ -159,7 +166,7 @@ const availability = (view, t) => {
   );
 };
 
-const WeaponPalette = ({ view, selectedAttack, deniedAttack, select, switchTo }) => {
+const WeaponPalette = ({ view, selectedAttack, deniedAttack, pointer, select, switchTo }) => {
   const classes = useStyles();
   const theme = useTheme();
   const t = useMatchTime(4);
@@ -254,6 +261,10 @@ const WeaponPalette = ({ view, selectedAttack, deniedAttack, select, switchTo })
                   {entry.rushCost}
                 </div>
               ) : null}
+              {pointer && pointer.weapon === weapon.type ? (
+                // from the top left: the buttons stand in the bottom right corner
+                <TapPointer data-testid="tutorial-pointer" className={classes.pointer} from="top-left" x="50%" y="50%" />
+              ) : null}
             </div>
           );
         })}
@@ -265,6 +276,7 @@ const mapStateToProps = (state) => ({
   view: state.match.view,
   selectedAttack: state.ui.selectedAttack,
   deniedAttack: state.ui.deniedAttack,
+  pointer: state.ui.tutorialPointer,
 });
 
 const mapDispatchToProps = (dispatch) => ({
