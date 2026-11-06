@@ -14,9 +14,10 @@ import useMatchTime from "./useMatchTime";
 const { MatchPhase, OutcomeReason } = engine;
 
 const useStyles = createUseStyles((theme) => ({
+  // in the middle of the top edge: clear of a camera cutout's whole band in full screen
   banner: {
     position: "absolute",
-    top: theme.edge.top,
+    top: theme.edge.topMiddle,
     left: "50%",
     transform: "translateX(-50%)",
     zIndex: 3,
