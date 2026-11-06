@@ -8,7 +8,7 @@ import {
   buildingsUnlockedBetween,
 } from "@battlechoc/battlechoc-shared-functions";
 import { selectBuilding, tapBuilding, focusBoard, deselectBuildings } from "../UiActions";
-import { fruitCannonPossible } from "../../3d/cannonPick";
+import { fruitCannonPossible } from "../../match/fruitCannon";
 import { Jukebox } from "../misc";
 import { LESSON } from "../../tutorial/lesson";
 

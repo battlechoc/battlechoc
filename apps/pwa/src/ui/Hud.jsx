@@ -25,7 +25,7 @@ import ChallengeDialog from "./dialogs/ChallengeDialog";
 import { liveLobby } from "../match/liveLobby";
 import { matchSession } from "../match/LocalMatchHost";
 import Choclab from "./pages/Choclab";
-import { retryAssets } from "../AssetLoader";
+import { retryAssets } from "../firstLoad";
 import { multiplayer } from "../Multiplayer";
 import { ServerRequest } from "../helper/settings";
 import logger from "../helper/logger";

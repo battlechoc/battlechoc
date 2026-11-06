@@ -13,7 +13,7 @@ import {
 } from "./3d/babylon";
 import "./3d/gltf";
 import { cellMaterial } from "./3d/look";
-
+import { fontsLoaded, registerAssetRetry } from "./firstLoad";
 
 class AssetLoader {
   constructor() {
@@ -216,20 +216,8 @@ const prepareModel = (key, group, scene) => {
   });
 };
 
-// the menu also waits for the fonts (src/index.css), but never longer than FONT_TIMEOUT:
-// a font that does not load must not keep the game from starting
-const FONTS = ["1em Bangers", "1em Montserrat"];
-const FONT_TIMEOUT = 5000;
-const loadFonts = () =>
-  Promise.race([
-    document.fonts
-      ? Promise.all(FONTS.map((font) => document.fonts.load(font)))
-      : Promise.resolve(),
-    new Promise((resolve) => setTimeout(resolve, FONT_TIMEOUT)),
-  ]).catch(() => undefined);
-
 // a model that does not arrive is asked for again after these pauses, then the start button offers
-// another try (retryAssets)
+// another try (retryAssets in src/firstLoad.js)
 const MODEL_RETRY_DELAYS_MS = [1000, 2500];
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -274,10 +262,8 @@ const loading = {
     for (const file of new Set(Object.values(models))) {
       this.loadModel(file);
     }
-    loadFonts().then(() => {
-      this.callbacks.fontsReady();
-      this.count(1);
-    });
+    // the fonts are asked for at the start of the page (src/firstLoad.js, the menu waits for them)
+    fontsLoaded().then(() => this.count(1));
     for (const image of images) {
       // a missing picture shows as an empty icon; it must not keep the game from starting
       loadImage("/images/" + image)
@@ -343,8 +329,9 @@ const loading = {
   },
 };
 
-/** The start button's "try again" after a 3D model did not load. */
-export const retryAssets = () => loading.retry();
+// the start button's "try again" after a 3D model did not load (the title screen calls it
+// through src/firstLoad.js: it is there before this file has arrived)
+registerAssetRetry(() => loading.retry());
 
 // starts the loading with the scene (Scene.jsx); shows nothing itself, the start button does
 const AssetLoadingView = (props) => {
@@ -352,7 +339,6 @@ const AssetLoadingView = (props) => {
   useImperativeHandle(customRef, () => ({
     loadAssets(scene) {
       loading.start(scene, {
-        fontsReady: () => props.loadUiState({ fontsReady: true }),
         progress: (value) => props.loadUiState({ assetsProgress: value }),
         failed: (value) => props.loadUiState({ assetsFailed: value }),
         ready: () => {

@@ -45,7 +45,8 @@ import logger from "../helper/logger";
 import { v4 as uuidv4 } from "uuid";
 import { withTheme } from "react-jss";
 import { measureEdges } from "../helper/edges";
-import { showCannonPick, cannonCells, fruitCannonPossible } from "./cannonPick.js";
+import { showCannonPick } from "./cannonPick.js";
+import { cannonCells, fruitCannonPossible } from "../match/fruitCannon.js";
 import {
   fitView,
   orthoBounds,
