@@ -1,0 +1,42 @@
+name: Bug report
+description: Something in the game or on the server does not work as it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for the report. For a security problem please do not open an issue: the [security policy](https://github.com/battlechoc/battlechoc/security/policy) says how to report it privately.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect and what happened instead? Screenshots help.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start a match against ...
+        2. ...
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The game shows it in its "About battlechoc" dialog.
+      placeholder: 5.2.2
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where do you play?
+      options:
+        - In the browser
+        - Installed from the browser (home screen)
+        - Android app
+        - Not the game (API, build, documentation)
+  - type: input
+    id: device
+    attributes:
+      label: Device and browser
+      placeholder: iPhone 15, Safari 18
