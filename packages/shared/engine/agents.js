@@ -3,7 +3,7 @@
 // time and fills in the player index and the time.
 
 const { EntityType, AttackType, isDonut } = require('../constants');
-const { MatchPhase, MatchActionTypes, BUILDABLE, WeaponState, weaponStatus } = require('./index');
+const { MatchPhase, MatchActionTypes, BUILDABLE, WeaponState, weaponStatus, factoryPlaceable } = require('./index');
 const rng = require('./rng');
 
 class Agent {
@@ -82,7 +82,7 @@ class RandomBot extends Agent {
             if (grid.some(cell => cell.occupiedBy.some(entity => entity.type === EntityType.FACTORY))) {
                 return null;
             }
-            const candidates = grid.filter(cell => !cell.molten && cell.occupiedBy.every(entity => entity.type === EntityType.CREAM || isDonut(entity.type)));
+            const candidates = grid.filter(factoryPlaceable);
             const cell = rng.pick(this.random, candidates);
             return { type: MatchActionTypes.placeFactory, payload: { row: cell.row, col: cell.col } };
         }

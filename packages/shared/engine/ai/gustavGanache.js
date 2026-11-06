@@ -7,7 +7,7 @@
 //   may use, like the turn-based Augustus did.
 
 const { BoardCellTypes, EntityType, AttackType, isDonut } = require('../../constants');
-const { MatchPhase, MatchActionTypes, WeaponState, creamArea } = require('../index');
+const { MatchPhase, MatchActionTypes, WeaponState, creamArea, hasCream } = require('../index');
 const { Agent } = require('../agents');
 
 const Personality = Object.freeze({
@@ -31,7 +31,6 @@ const TARGET_PRIORITY = [
 ];
 
 const key = cell => `${cell.row}:${cell.col}`;
-const hasCream = cell => cell.occupiedBy.some(entity => entity.type === EntityType.CREAM);
 const buildings = cell => cell.occupiedBy.filter(entity => entity.type !== EntityType.CREAM && !isDonut(entity.type));
 const isFree = cell => !cell.molten && buildings(cell).length === 0;
 const contains = (cell, type) => cell.occupiedBy.some(entity => entity.type === type);
