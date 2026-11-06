@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -72,6 +72,25 @@ const restartOnSharedChange = () => ({
         server.restart();
       }
     });
+  },
+});
+
+// The page opens its connection to the API (DNS and TLS: several round trips on a phone) while
+// the game's script still loads. The API is the build's own (VITE_API_URL, else the game's
+// default as in src/account.js): a build for a local stack or for the e2e tests does not reach
+// out to the live server.
+const DEFAULT_API_URL = 'https://api.battlechoc.com';
+const preconnectApi = (mode) => ({
+  name: 'battlechoc-preconnect-api',
+  transformIndexHtml() {
+    const { VITE_API_URL } = loadEnv(mode, here, 'VITE_');
+    return [
+      {
+        tag: 'link',
+        attrs: { rel: 'preconnect', href: new URL(VITE_API_URL || DEFAULT_API_URL).origin, crossorigin: true },
+        injectTo: 'head',
+      },
+    ];
   },
 });
 
@@ -214,10 +233,11 @@ const PRECACHED_MEDIA = [
   'images/spy-attacks-per-turn.svg',
 ];
 
-export default defineConfig(({ command }) => ({
+export default defineConfig(({ command, mode }) => ({
   cacheDir,
   plugins: [
     restartOnSharedChange(),
+    preconnectApi(mode),
     react(),
     VitePWA({
       srcDir: 'src',

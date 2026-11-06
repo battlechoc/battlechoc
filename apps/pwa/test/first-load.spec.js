@@ -86,6 +86,67 @@ test("the title screen works before the 3D models are in; the start button fills
   expect(requests.filter((url) => url.includes("-per-turn.svg"))).toEqual([]);
 });
 
+// index.html carries a splash: the logo on the page's background until the script has rendered
+// the title screen. It repeats the title screen's box by hand (LOGO in src/ui/Hud.jsx), so the
+// test holds the game's script back and compares the two, lying down and upright.
+const logoBox = (locator) =>
+  locator.evaluate((element) => {
+    const { x, y, width, height } = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return {
+      x,
+      y,
+      width,
+      height,
+      image: style.backgroundImage,
+      repeat: style.backgroundRepeat,
+      size: style.backgroundSize,
+      position: style.backgroundPosition,
+    };
+  });
+
+for (const viewport of [
+  { width: 1280, height: 720 },
+  { width: 412, height: 915 },
+]) {
+  test(`before its script has run the page shows the logo where the title screen draws it (${viewport.width}×${viewport.height})`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    let release;
+    const held = new Promise((resolve) => (release = resolve));
+    await page.route("**/assets/index-*.js", async (route) => {
+      await held;
+      await route.continue();
+    });
+    await page.goto("/", { waitUntil: "commit" });
+    const splash = page.locator("#root > .splash > div");
+    await expect(splash).toBeVisible();
+    // the page asks for the picture itself, no script needed
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          performance
+            .getEntriesByType("resource")
+            .some((entry) => entry.name.endsWith("/images/logo.svg"))
+        )
+      )
+      .toBe(true);
+    const before = await logoBox(splash);
+    expect(before.width).toBeGreaterThan(100);
+    expect(before.image).toContain("/images/logo.svg");
+    await page.screenshot({
+      path: `test/output/screenshot_splash_${viewport.width}x${viewport.height}.png`,
+    });
+
+    release();
+    const logo = page.locator("[class^=logo] > div").first();
+    await expect(logo).toBeVisible({ timeout: 15000 });
+    expect(await logoBox(logo)).toEqual(before);
+    await expect(page.locator(".splash")).toHaveCount(0);
+  });
+}
+
 test("a 3D model that does not load is tried again, and the start button offers another try", async ({
   page,
 }) => {

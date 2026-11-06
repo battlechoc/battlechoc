@@ -50,7 +50,8 @@ import {
 
 // The title screen's logo: its top and size (a square in vh; logo.svg fills its width) and the
 // rays turning behind it, centred on the fountain (dev/icons.mjs puts it at x 308, y 22 to 392
-// of logo.svg's 1209 × 924)
+// of logo.svg's 1209 × 924). index.html shows the logo in the same box before the script has
+// arrived (its splash): change the top or the size there too.
 const LOGO = {
   landscape: { top: 5, size: 50, rays: 350 },
   portrait: { top: 12, size: 40, rays: 200 },
