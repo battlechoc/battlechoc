@@ -15,6 +15,26 @@ const { ClientMessage, ServerMessage, LiveError, CloseCode, InviteClosedReason, 
 // how long close() waits for the clients to answer the closing handshake
 const CLOSE_GRACE_MS = 2000;
 
+// a connection with more than this waiting to be written is dropped (see the heartbeat)
+const MAX_BUFFERED_BYTES = 1024 * 1024;
+
+// A room sends each player a full view with every change, about 40 KB of JSON on the big board.
+// Compressed it is a tenth of that (permessage-deflate, which browsers negotiate by themselves; a
+// client that does not offer it gets plain text as before). What bounds the cost per socket:
+const COMPRESSION = {
+    // acks, pongs and presence messages are sent as they are: there is nothing to gain
+    threshold: 1024,
+    // every message is compressed on its own, so no compression state (some 200 KB) stays with a
+    // socket between messages; for one big JSON document that costs next to nothing
+    serverNoContextTakeover: true,
+    clientNoContextTakeover: true,
+    // zlib calls at a time in the whole process (ws keeps one limiter for all sockets)
+    concurrencyLimit: 10,
+    // level 3 takes about as long as building the JSON and leaves 10 % of it; level 6 takes three
+    // times as long for 1 % more
+    zlibDeflateOptions: { level: 3, memLevel: 7 },
+};
+
 /**
  * @param {object} options
  * @param {import('http').Server} options.server
@@ -25,7 +45,7 @@ const CLOSE_GRACE_MS = 2000;
  * @param {string[]} [options.origins] allowed browser origins (no Origin header: allowed)
  */
 const createLive = ({ server, pool, auth, clock = systemClock, config = {}, origins = [], log = console, random }) => {
-    const settings = { closeGraceMs: CLOSE_GRACE_MS, ...LiveDefaults, ...config };
+    const settings = { closeGraceMs: CLOSE_GRACE_MS, maxBufferedBytes: MAX_BUFFERED_BYTES, ...LiveDefaults, ...config };
     const store = createMatchStore(pool);
     const lobby = new Lobby({ pool, store, clock, config: settings, log, random });
     const connections = new Set();
@@ -38,6 +58,7 @@ const createLive = ({ server, pool, auth, clock = systemClock, config = {}, orig
         server,
         path: '/live',
         maxPayload: settings.maxMessageBytes,
+        perMessageDeflate: COMPRESSION,
         verifyClient: ({ origin }) => !origin || origins.length === 0 || origins.includes(origin),
     });
 
@@ -102,6 +123,10 @@ const createLive = ({ server, pool, auth, clock = systemClock, config = {}, orig
                 if (!this.closed && ws.readyState === ws.OPEN) {
                     ws.send(JSON.stringify(message));
                 }
+            },
+            // bytes handed to the socket that the client has not taken yet
+            unsent() {
+                return ws.bufferedAmount;
             },
             sendError(code, uid) {
                 this.send({ type: ServerMessage.ERROR, code, ...(uid ? { uid } : {}) });
@@ -197,6 +222,17 @@ const createLive = ({ server, pool, auth, clock = systemClock, config = {}, orig
         connections.forEach(connection => {
             if (now - connection.lastSeenAt > settings.offlineAfterMs) {
                 // no closing handshake with a dead peer: drop the socket right away
+                connection.terminate();
+            } else if (connection.unsent() > settings.maxBufferedBytes) {
+                // A client that still talks but takes its messages slower than they are written (a
+                // throttled phone) lets them pile up in this process without end. Views cannot be
+                // skipped to keep the pile small: each one carries the events since the last the
+                // client got (room.publishTo), which the client plays once, so a skipped view
+                // would lose them. The connection is dropped instead: the client reconnects, joins
+                // with the last event it has and gets the current view with all it missed.
+                // Checked here and not in send(): a compressed message first waits in the queue of
+                // ws, so several sent in one go would look like a client that is behind.
+                log.warn(`live connection of ${connection.playerId} dropped: ${connection.unsent()} bytes behind`);
                 connection.terminate();
             }
         });

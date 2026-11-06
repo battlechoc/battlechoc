@@ -3,6 +3,7 @@
 
 const http = require('http');
 const request = require('supertest');
+const WebSocket = require('ws');
 const { engine, live, EntityType, AttackType } = require('@battlechoc/battlechoc-shared-functions');
 const { createApp } = require('../src/app');
 const { createAuth } = require('../src/auth');
@@ -894,6 +895,86 @@ describe('live: matches', () => {
         a.send({ type: ClientMessage.REMATCH, matchId });
         expect((await a.next(ServerMessage.ERROR)).code).toBe(LiveError.PLAYER_OFFLINE);
     });
+
+    test('views are compressed for clients that take the extension; small messages and other clients get plain text', async () => {
+        // no heartbeat ping while the bytes are counted
+        const env = await start({ config: { pingIntervalMs: 60000 } });
+        const a = await player(env);
+        const b = await connect(env, (await account(env)).accessToken, { wsOptions: { perMessageDeflate: false } });
+        a.send({ type: ClientMessage.QUEUE_JOIN });
+        await a.next(ServerMessage.QUEUED);
+        b.send({ type: ClientMessage.QUEUE_JOIN });
+        const [{ matchId }] = await Promise.all([a.next(ServerMessage.MATCH), b.next(ServerMessage.MATCH)]);
+        await Promise.all([a, b].map(client => client.next(ServerMessage.VIEW)));
+        expect(a.ws.extensions).toBe('permessage-deflate');
+        expect(b.ws.extensions).toBe('');
+        // what the server answers a client that offers the extension: each message is compressed on
+        // its own, in both directions, so no compression state stays with a socket
+        const agreed = await new Promise((resolve, reject) => {
+            const ws = new WebSocket(env.url);
+            ws.on('upgrade', response => resolve(response.headers['sec-websocket-extensions']));
+            ws.on('error', reject);
+            ws.on('open', () => ws.terminate());
+        });
+        expect(agreed).toBe('permessage-deflate; server_no_context_takeover; client_no_context_takeover');
+
+        // the bytes each client's socket reads for one message of the server (the match is quiet:
+        // nothing else is on its way)
+        const received = async (clients, type, trigger) => {
+            const before = clients.map(client => client.ws._socket.bytesRead);
+            trigger();
+            const messages = await Promise.all(clients.map(client => client.next(type)));
+            return clients.map((client, i) => ({
+                bytes: client.ws._socket.bytesRead - before[i],
+                json: Buffer.byteLength(JSON.stringify(messages[i])),
+            }));
+        };
+        const [compressed, plain] = await received([a, b], ServerMessage.VIEW, () => room(env, matchId).publish());
+        expect(compressed.json).toBeGreaterThan(10000);
+        // a frame is its payload plus a header of 4 bytes (up to 64 KB)
+        expect(plain.bytes).toBe(plain.json + 4);
+        expect(compressed.bytes).toBeLessThan(compressed.json / 5);
+
+        // under the threshold a message is not worth compressing
+        const [pong] = await received([a], ServerMessage.PONG, () => a.send({ type: ClientMessage.PING, id: 1, clientT: 1 }));
+        expect(pong.bytes).toBe(pong.json + 2);
+    });
+
+    test('a client that falls far behind is dropped; it comes back and gets every event it missed', async () => {
+        const env = await start({ config: { pingIntervalMs: 30, maxBufferedBytes: 64 * 1024 } });
+        const match = await queueMatch(env);
+        const { a, b, matchId } = match;
+        const r = room(env, matchId);
+        const lastSeq = events => (events.length > 0 ? events[events.length - 1].seq : -1);
+        const seen = Math.max(-1, ...a.buffer.filter(message => message.type === ServerMessage.VIEW).map(message => lastSeq(message.view.events)),
+            lastSeq(a.view(matchId).events));
+
+        // a's phone still talks but takes nothing in any more
+        a.ws._socket.pause();
+        const chooser = r.match.fieldChooser === a.index ? a : b;
+        chooser.send({ type: ClientMessage.INTENT, matchId, uid: 'choose', action: { type: MatchActionTypes.chooseField, payload: { fieldIndex: 0 } } });
+        await nextView(b, matchId, view => view.players[b.index].fieldIndex !== null);
+        // the server keeps writing to a (more than any socket buffer of the system holds)
+        const connection = env.live.lobby.connections.get(a.account.playerId);
+        const filler = require('crypto').randomBytes(192 * 1024).toString('base64');
+        for (let i = 0; i < 200 && env.live.lobby.connections.get(a.account.playerId) === connection; i++) {
+            connection.send({ type: 'filler', filler });
+            await sleep(5);
+        }
+        expect(env.live.lobby.connections.has(a.account.playerId)).toBe(false);
+        // b is not touched, and a's place in the match waits for them
+        expect(env.live.lobby.connections.has(b.account.playerId)).toBe(true);
+        expect(r.forfeitAt[a.index]).not.toBeNull();
+
+        const back = await connect(env, a.account.accessToken);
+        expect(back.welcome.activeMatch).toEqual({ matchId });
+        back.send({ type: ClientMessage.MATCH_JOIN, matchId, lastSeq: seen });
+        const { view } = await back.next(ServerMessage.VIEW);
+        expect(view.players[a.index].fieldIndex).not.toBeNull();
+        // the events since the last one a had seen, without a gap
+        expect(view.events.length).toBeGreaterThan(0);
+        expect(view.events.map(event => event.seq)).toEqual(view.events.map((event, i) => seen + 1 + i));
+    }, 20000);
 
     test('running matches survive a restart of the server', async () => {
         const env = await start();
