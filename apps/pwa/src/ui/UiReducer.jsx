@@ -38,6 +38,9 @@ const uiReducer = createReducer(
     tutorialPointer: null,
     // the bottom edge of the tutorial's card (px from the top, 0 without a card)
     boardTopInset: 0,
+    // the bottom edge of the board preview (px from the top, Scene), null without one: the
+    // match's messages go below it
+    previewBottom: null,
     // the server answers (src/connectivity.js); without it profile, highscore, Choclab and
     // friends are greyed out
     online: typeof navigator === "undefined" || navigator.onLine !== false,

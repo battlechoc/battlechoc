@@ -54,9 +54,12 @@ const theme = {
     stroke: "0.04em",
   },
   // the room every control keeps from the screen's edges (safe area included) and from its
-  // neighbours, and the size of the round buttons: CSS variables of src/index.css
+  // neighbours, and the size of the round buttons: CSS variables of src/index.css. top, right
+  // and left are for the corners, clear of a camera cutout's band; topMiddle for what sits in
+  // the middle of the top edge, under the cutout.
   edge: {
     top: "var(--edge-top)",
+    topMiddle: "var(--edge-top-middle)",
     right: "var(--edge-right)",
     bottom: "var(--edge-bottom)",
     left: "var(--edge-left)",

@@ -7,6 +7,7 @@ import {
   showQuickMessage,
   attackDenied,
   toggleBoardView,
+  loadUiState,
 } from "../ui/UiActions";
 import { selectActiveGame } from "../match/matchSlice";
 import { matchSession } from "../match/LocalMatchHost";
@@ -902,14 +903,15 @@ class Scene extends Component {
     // (the edges, fab and gap place the whole-board button too, renderFitButton)
     const edges = { edgeLeft: left, edgeTop: top, fab, gap };
     if (ratio < 1) {
-      // portrait: under the menu button, clear of the match time at the top middle
+      // portrait: under the menu button, clear of the match time at the top middle; it takes
+      // the row below the buttons (underButtons: the match's messages go below it)
       const side = 0.4 * width;
-      return { left: Math.round(left), top: Math.round(top + fab + gap), width: Math.round(side), height: Math.round(side * 0.6), ...edges };
+      return { left: Math.round(left), top: Math.round(top + fab + gap), width: Math.round(side), height: Math.round(side * 0.6), underButtons: true, ...edges };
     }
     // landscape: beside the menu button; on a phone held sideways no higher than a fifth of the
     // screen, the board comes close to the corner there
     const side = Math.min(Math.max(0.2 * width, 180), 340, (0.22 * height) / 0.6);
-    return { left: Math.round(left + fab + gap), top: Math.round(top), width: Math.round(side), height: Math.round(side * 0.6), ...edges };
+    return { left: Math.round(left + fab + gap), top: Math.round(top), width: Math.round(side), height: Math.round(side * 0.6), underButtons: false, ...edges };
   }
 
   showPreview() {
@@ -991,6 +993,13 @@ class Scene extends Component {
     ) {
       this.setState({ preview });
     }
+    // in portrait the preview takes the row below the buttons: the HUD puts the match's
+    // messages below it (MatchBanner); held sideways it stands beside the buttons, the row is free
+    const previewBottom = rect.underButtons ? rect.top + rect.height : null;
+    const currentBottom = current && current.underButtons ? current.top + current.height : null;
+    if (!current || currentBottom !== previewBottom) {
+      this.props.loadUiState({ previewBottom });
+    }
     this.requestRender();
   }
 
@@ -1001,6 +1010,7 @@ class Scene extends Component {
     }
     if (this.state.preview) {
       this.setState({ preview: null });
+      this.props.loadUiState({ previewBottom: null });
     }
   }
 
@@ -1896,6 +1906,7 @@ const mapDispatchToProps = {
   tapBuilding,
   showQuickMessage,
   attackDenied,
+  loadUiState,
 };
 
 const SceneContainer = connect(mapStateToProps, mapDispatchToProps)(Scene);

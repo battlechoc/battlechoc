@@ -41,10 +41,11 @@ const useStyles = createUseStyles((theme) => ({
       "&&": { width: "67vw" },
     },
   },
-  // the demos have no buttons at the top left: their card goes right to the top
+  // the demos have no buttons at the top left: their card goes right to the top (across the
+  // middle of the edge: clear of a camera cutout's whole band in full screen)
   top: {
     [theme.breakpoints.orientation.portrait]: {
-      "&&": { top: theme.edge.top },
+      "&&": { top: theme.edge.topMiddle },
     },
   },
 }));

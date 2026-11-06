@@ -111,14 +111,18 @@
    * rounded corners, the home indicator; index.html asks for viewport-fit=cover), and --edge
    * from its neighbours. In JSS: theme.edge.top/right/bottom/left/gap. */
   --edge: 12px;
-  --edge-top: calc(env(safe-area-inset-top, 0px) + var(--edge));
   --edge-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--edge));
-  /* At the sides the inset is the camera cutout's whole band (Android reports 60 px and more
-   * in landscape, full screen), which the corners are clear of: no more than --edge-side.
-   * The user's phone had the controls far from the edge (2026-11-01). */
-  --edge-side: 24px;
-  --edge-right: calc(min(env(safe-area-inset-right, 0px), var(--edge-side)) + var(--edge));
-  --edge-left: calc(min(env(safe-area-inset-left, 0px), var(--edge-side)) + var(--edge));
+  /* A camera cutout's inset is its whole band (Android reports 60 px and more in full screen:
+   * at a side in landscape, at the top in portrait; iOS keeps the page below its status bar,
+   * index.html), which the corners are clear of: a corner control moves in by no more than
+   * --edge-cutout. The user's phone had the controls far from the edge (sides 2026-11-01, top
+   * 2026-11-06). What sits in the middle of the top edge (the match banner) keeps clear of the
+   * whole band: --edge-top-middle. */
+  --edge-cutout: 24px;
+  --edge-top: calc(min(env(safe-area-inset-top, 0px), var(--edge-cutout)) + var(--edge));
+  --edge-top-middle: calc(env(safe-area-inset-top, 0px) + var(--edge));
+  --edge-right: calc(min(env(safe-area-inset-right, 0px), var(--edge-cutout)) + var(--edge));
+  --edge-left: calc(min(env(safe-area-inset-left, 0px), var(--edge-cutout)) + var(--edge));
 
   /* the round buttons (Fab.jsx), border included; the dialogs and the board preview leave room
    * for them */
