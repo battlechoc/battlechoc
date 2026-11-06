@@ -11,7 +11,15 @@ import {
 import IngredientBag from "../ui/ingredients/IngredientBag";
 import { Jukebox } from "../ui/misc";
 import { multiplayer } from "../Multiplayer";
-import { updatePlayerStats, showNotification, loadUiState } from "../ui/UiActions";
+import {
+  updatePlayerStats,
+  showNotification,
+  loadUiState,
+  tapBuilding,
+  selectBuilding,
+  deselectBuildings,
+  focusBoard,
+} from "../ui/UiActions";
 import { PlayerNameInput, Button, CoachCard } from "../ui/controls";
 import { Dialog } from "../ui/dialogs";
 import { matchSession } from "../match/LocalMatchHost";
@@ -50,7 +58,7 @@ const isNamed = (stats) =>
  */
 const Tutorial = (props) => {
   const classes = useStyles();
-  const { loops, view, playerInfos, dispatch, clearScene, testClock } = props;
+  const { loops, view, playerInfos, selectedAttack, dispatch, clearScene, testClock } = props;
   // the first finished lesson brings the starter kit (the server credits it once, also later
   // when the lesson was played without it); a restarted lesson brings nothing
   const firstFinish = useRef(!playerInfos.stats.tutorialFinished);
@@ -65,6 +73,8 @@ const Tutorial = (props) => {
   const [page, setPage] = useState(0);
   const [step, setStep] = useState(0);
   const memory = useRef({});
+  // where the hand points, as last told to the scene and the weapon palette
+  const pointerKey = useRef("null");
   const [finished, setFinished] = useState(false);
   const [named, setNamed] = useState(isNamed(stats));
   const [initialUserName, setInitialUserName] = useState(stats.username);
@@ -89,7 +99,14 @@ const Tutorial = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lesson, loops, page]);
 
-  useEffect(() => () => runner.current.stop(), []);
+  useEffect(
+    () => () => {
+      runner.current.stop();
+      dispatch(loadUiState({ tutorialPointer: null }));
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   // the board takes clicks only in the lesson; the palette offers what the step asks for
   const current = lessonSteps[step];
@@ -102,7 +119,23 @@ const Tutorial = (props) => {
     );
   }, [dispatch, lesson, current, finished]);
 
-  // lesson progress: check the current step against the view and the match time
+  // the step's building is picked for the player (the palette shows it picked); a step without
+  // one picks nothing, so a tap on the board builds nothing by accident
+  useEffect(() => {
+    if (!lesson || finished) {
+      return;
+    }
+    if (current.whitelist.length === 1) {
+      dispatch(tapBuilding(current.whitelist[0]));
+      dispatch(selectBuilding(current.whitelist[0]));
+      dispatch(focusBoard("own"));
+    } else {
+      dispatch(deselectBuildings());
+    }
+  }, [dispatch, lesson, current, finished]);
+
+  // lesson progress: check the current step against the view and the match time, and point
+  // the hand at what the step asks for
   useEffect(() => {
     if (!lesson || finished) {
       return undefined;
@@ -112,7 +145,13 @@ const Tutorial = (props) => {
       if (typeof view === "undefined" || typeof host === "undefined") {
         return;
       }
-      const context = { view, now: host.now(), memory: memory.current };
+      const context = { view, now: host.now(), memory: memory.current, selectedAttack };
+      const target = current.point ? current.point(context) : null;
+      const key = JSON.stringify(target);
+      if (key !== pointerKey.current) {
+        pointerKey.current = key;
+        dispatch(loadUiState({ tutorialPointer: target }));
+      }
       if (current.done && current.done(context)) {
         const following = lessonSteps[step + 1];
         if (following) {
@@ -125,11 +164,14 @@ const Tutorial = (props) => {
     check();
     const interval = setInterval(check, 250);
     return () => clearInterval(interval);
-  }, [lesson, finished, view, current, step]);
+  }, [dispatch, lesson, finished, view, current, step, selectedAttack]);
 
-  // the lesson is won: credit the tutorial once and ask for a name if there is none yet
+  // the lesson is won: the hand goes, credit the tutorial once and ask for a name if there is
+  // none yet
   useEffect(() => {
     if (lesson && finished) {
+      pointerKey.current = "null";
+      dispatch(loadUiState({ tutorialPointer: null }));
       if (!stats.tutorialFinished) {
         multiplayer.tutorialFinished();
       }
@@ -252,11 +294,6 @@ const Tutorial = (props) => {
       >
         {named ? (
           <div className={classes.finished} data-testid="tutorial-finished">
-            <p>
-              {t(tr.TUTORIAL_DIALOG_MESSAGE)}
-              <br />
-              {t(tr.TUTORIAL_DIALOG_HINT)}
-            </p>
             {firstFinish.current ? (
               <div data-testid="starter-kit">
                 <p>{t(tr.TUTORIAL_STARTER_KIT)}</p>
@@ -266,6 +303,11 @@ const Tutorial = (props) => {
                 />
               </div>
             ) : null}
+            <p>
+              {t(tr.TUTORIAL_DIALOG_MESSAGE)}
+              <br />
+              {t(tr.TUTORIAL_DIALOG_HINT)}
+            </p>
             <Button onClick={() => close(true)}>{t(tr.TUTORIAL_DIALOG_PLAY_GAME)}</Button>
           </div>
         ) : (
@@ -296,6 +338,7 @@ const mapStateToProps = (state) => ({
   notificationOnLoopsEnd: state.ui.notificationOnLoopsEnd,
   playerInfos: state.ui.playerInfos,
   online: state.ui.online,
+  selectedAttack: state.ui.selectedAttack,
 });
 
 const mapDispatchToProps = (dispatch) => ({

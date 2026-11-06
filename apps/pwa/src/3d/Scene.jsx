@@ -59,6 +59,12 @@ import {
 } from "./boardView.js";
 import { exposeSceneForTests } from "../testHooks";
 import Fab from "../ui/controls/Fab";
+import TapPointer from "../ui/controls/TapPointer";
+
+// the tutorial's hand on a field: its fingertip this high above the field (the top of the
+// chocolate piece), and its size, in fields, within reason on a small or a big screen (px)
+const POINTER_HEIGHT = 0.3;
+const POINTER_SIZE = { fields: 2, min: 56, max: 180 };
 
 // The camera's place for the own board, and how far it moves to look at the opponent's (the
 // boards lie 12 apart in x and z: on the screen the other one is beside, just out of view)
@@ -86,7 +92,10 @@ class Scene extends Component {
     this.loadingView = createRef();
     // the preview of the other board: where it is on the screen and which board it shows
     // and whether the board in view is zoomed in (the whole-board button shows then)
-    this.state = { preview: null, cannonSpots: null, zoomed: false };
+    this.state = { preview: null, cannonSpots: null, zoomed: false, pointer: null };
+    // the tutorial's hand: the field it stands on and the observer that keeps it there
+    this.pointerKey = "";
+    this.pointerObserver = null;
     // the floating infos (+cacao, +1 shot, ...) on their way up
     this.infoPops = new Set();
     // the boards' views (src/3d/boardView.js): zoom 1 and the whole board, each remembers where
@@ -339,6 +348,7 @@ class Scene extends Component {
       this.stopInfos();
     }
     this.updateCannonPick();
+    this.updateTutorialPointer();
   }
 
   spawnInfo(messageType, position, amount, donutType) {
@@ -1002,6 +1012,8 @@ class Scene extends Component {
       this.hideCannonPick = null;
     }
     this.cannonPickKey = "";
+    this.pointerKey = "";
+    this.hideTutorialPointer();
     this.weaponIndicators.forEach((indicator, id) => this.disposeIndicator(id, indicator));
     const instances = this.scene.meshes.filter((mesh) => mesh.isAnInstance);
     for (const instance of instances) {
@@ -1044,6 +1056,62 @@ class Scene extends Component {
         onSpots: (cannonSpots) => this.setState({ cannonSpots }),
       });
     }
+  }
+
+  // The tutorial's hand on a field (ui.tutorialPointer): its place on the screen follows the
+  // camera (it flies between the boards, the player zooms) through an observer on every frame,
+  // like the cannon pick's light. On a weapon button the weapon palette shows the hand itself.
+  updateTutorialPointer() {
+    const target = this.props.tutorialPointer;
+    const onField = Boolean(target) && typeof target.row === "number" && this.playerGameField !== null;
+    const key = onField ? `${target.board}.${target.row}.${target.col}` : "";
+    if (key === this.pointerKey) {
+      return;
+    }
+    this.pointerKey = key;
+    this.hideTutorialPointer();
+    if (!onField) {
+      return;
+    }
+    const field = target.board === "opponent" ? this.opponentGameField : this.playerGameField;
+    const world = field.position.add(new Vector3(target.row, POINTER_HEIGHT, target.col));
+    const place = () => {
+      const width = this.container.clientWidth;
+      const height = this.container.clientHeight;
+      const transform = this.camera.getViewMatrix().multiply(this.camera.getProjectionMatrix());
+      const point = Vector3.TransformCoordinates(world, transform);
+      const pixelsPerField = height / (this.camera.orthoTop - this.camera.orthoBottom);
+      const pointer = {
+        x: Math.round(((point.x + 1) / 2) * width),
+        y: Math.round(((1 - point.y) / 2) * height),
+        size: Math.round(Math.min(POINTER_SIZE.max, Math.max(POINTER_SIZE.min, POINTER_SIZE.fields * pixelsPerField))),
+        board: target.board,
+        row: target.row,
+        col: target.col,
+      };
+      const current = this.state.pointer;
+      if (!current || Object.keys(pointer).some((prop) => current[prop] !== pointer[prop])) {
+        this.setState({ pointer });
+      }
+    };
+    this.pointerObserver = this.scene.onAfterRenderObservable.add(place);
+    this.requestRender();
+  }
+
+  hideTutorialPointer() {
+    if (this.pointerObserver) {
+      this.scene.onAfterRenderObservable.remove(this.pointerObserver);
+      this.pointerObserver = null;
+    }
+    if (this.state.pointer) {
+      this.setState({ pointer: null });
+    }
+  }
+
+  renderTutorialPointer({ x, y, size, board, row, col }) {
+    return (
+      <TapPointer data-testid="tutorial-pointer" data-board={board} data-row={row} data-col={col} x={x} y={y} size={size} />
+    );
   }
 
   // the screen dims around the lit cells of the cannons (their pools of light are meshes)
@@ -1801,6 +1869,7 @@ class Scene extends Component {
           ? this.renderFitButton(this.previewRect(), this.lessonFitPlace(this.previewRect()))
           : null}
         {this.state.cannonSpots ? this.renderCannonSpots(this.state.cannonSpots) : null}
+        {this.state.pointer ? this.renderTutorialPointer(this.state.pointer) : null}
       </div>
     );
   }
@@ -1817,6 +1886,7 @@ const mapStateToProps = (state) => ({
   tutorial: state.ui.tutorial,
   boardFocus: state.ui.boardFocus,
   boardTopInset: state.ui.boardTopInset,
+  tutorialPointer: state.ui.tutorialPointer,
 });
 
 const mapDispatchToProps = {
