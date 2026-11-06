@@ -32,6 +32,9 @@ const createPool = (config = {}) => {
     return pool;
 };
 
+/** The number a `SELECT COUNT(*) AS n …` gives (Postgres sends a bigint as a string). */
+const count = async (db, sql, params) => Number((await db.query(sql, params)).rows[0].n);
+
 // a transaction on a connection the caller holds
 const inTransaction = async (client, fn) => {
     try {
@@ -128,4 +131,4 @@ const migrate = async (pool, { upTo, directory = MIGRATIONS } = {}) => {
     }
 };
 
-module.exports = { createPool, migrate, withTransaction };
+module.exports = { createPool, migrate, withTransaction, count };

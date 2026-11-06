@@ -4,8 +4,7 @@
 const crypto = require('crypto');
 const { achievementXp, rollDrops, rateMatch: rate } = require('@battlechoc/battlechoc-shared-functions');
 const pantry = require('./pantry');
-const { withTransaction } = require('./db');
-const { count } = require('./players');
+const { withTransaction, count } = require('./db');
 
 const startOfUtcDay = now => {
     const date = new Date(now);

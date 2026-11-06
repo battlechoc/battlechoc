@@ -5,15 +5,30 @@ const { EmptyPlayerStats, sanitizeLoadout, engine, StarterKit } = require('@batt
 const { resultOf, xpOf } = require('./xp');
 const { isValidUsername, randomName } = require('./names');
 const pantry = require('./pantry');
-const { withTransaction } = require('./db');
-
-const count =async (pool, sql, params) => Number((await pool.query(sql, params)).rows[0].n);
+const { withTransaction, count } = require('./db');
 
 const findPlayer = async (pool, playerId) => (await pool.query('SELECT * FROM players WHERE id = $1', [playerId])).rows[0];
 
 const findPlayerByName = async (pool, name) => (typeof name === 'string'
     ? (await pool.query('SELECT * FROM players WHERE username_lower = $1', [name.toLowerCase()])).rows[0]
     : undefined);
+
+/** Gives a player a name; rejects when another player has it (the unique index on the lower-case name decides a race). */
+const setUsername = (db, playerId, username) => db.query(
+    'UPDATE players SET username = $1, username_lower = $2 WHERE id = $3', [username, username.toLowerCase(), playerId]);
+
+const setLanguage = (db, playerId, language) => db.query('UPDATE players SET language = $1 WHERE id = $2', [language, playerId]);
+
+/** The tutorial was started (again) or skipped; the one flag clears the other. */
+const setTutorialStep = (db, playerId, { started, skipped }) => db.query(
+    'UPDATE players SET tutorial_started = $1, tutorial_skipped = $2 WHERE id = $3', [started, skipped, playerId]);
+
+/** Takes over the tutorial flags of an offline profile: they are only ever set, never cleared. */
+const mergeTutorialFlags = (db, playerId, { started, skipped }) => db.query(
+    `UPDATE players SET
+        tutorial_started = tutorial_started OR $1,
+        tutorial_skipped = tutorial_skipped OR $2 WHERE id = $3`,
+    [started, skipped, playerId]);
 
 /** A random player name nobody has yet; the placeholder name when 20 tries found none. */
 const freeRandomName = async pool => {
@@ -260,6 +275,37 @@ const friendsOf = async (db, playerId) => {
     return playerInfos(db, rows);
 };
 
+// adding a friend twice is fine: the second time changes nothing
+const addFriend = (db, playerId, friendId) => db.query(
+    'INSERT INTO friends (player_id, friend_id) VALUES ($1, $2) ON CONFLICT DO NOTHING', [playerId, friendId]);
+
+const removeFriend = (db, playerId, friendId) => db.query(
+    'DELETE FROM friends WHERE player_id = $1 AND friend_id = $2', [playerId, friendId]);
+
+/** Player infos of up to `limit` players whose name contains `text`, the best rated first. */
+const searchByName = async (db, text, limit) => {
+    // the characters LIKE gives a meaning are taken out of the text
+    const pattern = String(text || '').toLowerCase().replace(/[%_\\]/g, '');
+    if (pattern.length === 0) {
+        return [];
+    }
+    const { rows } = await db.query(
+        'SELECT * FROM players WHERE username_lower LIKE $1 ORDER BY rating DESC LIMIT $2', [`%${pattern}%`, limit]);
+    return playerInfos(db, rows);
+};
+
+/** The player info of a random named player with XP other than `playerId`; undefined when there is none. */
+const randomOpponent = async (db, playerId) => {
+    const total = await count(db, 'SELECT COUNT(*) AS n FROM players WHERE username IS NOT NULL AND xp > 0 AND id <> $1', [playerId]);
+    if (total === 0) {
+        return undefined;
+    }
+    const { rows } = await db.query(
+        'SELECT * FROM players WHERE username IS NOT NULL AND xp > 0 AND id <> $1 ORDER BY id LIMIT 1 OFFSET $2',
+        [playerId, crypto.randomInt(total)]);
+    return playerInfo(db, rows[0]);
+};
+
 // stores finished offline matches once (by record id) and credits the XP computed on the server;
 // they never give ingredients and never change the rating
 const addTrackRecords = async (pool, playerId, records) => {
@@ -312,7 +358,7 @@ const addTrackRecords = async (pool, playerId, records) => {
 };
 
 module.exports = {
-    findPlayer, findPlayerByName, freeRandomName, assignRandomName, createPlayer, stats, statsOf, results, ladderOf, advanceAiLadder,
-    finishTutorial, ORDER, rankOf, playerInfo, playerInfos, highscore, friendsOf, addTrackRecords, levelOf, count, itemsOf, equipmentOf,
-    loadoutOf,
+    findPlayer, findPlayerByName, setUsername, setLanguage, setTutorialStep, mergeTutorialFlags, freeRandomName, assignRandomName,
+    createPlayer, stats, statsOf, results, ladderOf, advanceAiLadder, finishTutorial, rankOf, playerInfo, highscore, friendsOf, addFriend,
+    removeFriend, searchByName, randomOpponent, addTrackRecords, levelOf, itemsOf, equipmentOf, loadoutOf,
 };

@@ -4,10 +4,13 @@
 
 const crypto = require('crypto');
 const { Ingredients } = require('@battlechoc/battlechoc-shared-functions');
+const { HttpError, ErrorCode } = require('./errors');
 
-class NotEnoughIngredientsError extends Error {
+// a route that spends more than the pantry holds answers 400 NOT ENOUGH INGREDIENTS
+class NotEnoughIngredientsError extends HttpError {
     constructor(ingredient) {
-        super(`not enough ${ingredient}`);
+        super(400, ErrorCode.NOT_ENOUGH_INGREDIENTS);
+        this.message = `not enough ${ingredient}`;
         this.ingredient = ingredient;
     }
 }
