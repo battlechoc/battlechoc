@@ -134,25 +134,24 @@ const useStyles = createUseStyles((theme) => ({
       outlineOffset: "0.1vw",
     },
   },
-  // the lock leans on the upper right of the blob, sized by the button's text
-  locked: {
+  // a badge upright in the middle of the blob's right end, sized by the button's text: the lock
+  // of a locked button, the no-wifi sign of one that needs the server; the label keeps clear of
+  // it on both sides (roomForBadge), so it stays centred
+  badge: {
     position: "absolute",
-    right: "0.45em",
-    top: "0.25em",
-    transform: "rotate(-15deg)",
+    top: "50%",
+    right: "0.5em",
+    transform: "translateY(-50%)",
     width: "0.95em",
     height: "0.95em",
     backgroundSize: "100% 100%",
     backgroundRepeat: "no-repeat",
+  },
+  lock: {
     backgroundImage: "url(/images/lock.svg)",
   },
-  // the no-wifi sign of a button that needs the server, upright in the middle of the right end;
-  // the label keeps clear of it on both sides, so it stays centred
   offline: {
     backgroundImage: "url(/images/offline.svg)",
-    top: "50%",
-    right: "0.5em",
-    transform: "translateY(-50%)",
   },
   roomForBadge: {
     paddingLeft: "1.5em",
@@ -265,7 +264,7 @@ const Button = (componentProps) => {
         <div
           style={props.buttonStyle}
           className={`${classes.background} ${classes.button} ${
-            props.offline && !props.locked ? classes.roomForBadge : ""
+            props.locked || props.offline ? classes.roomForBadge : ""
           } ${loading ? classes.track : ""}`}
         >
           {loading ? (
@@ -277,9 +276,9 @@ const Button = (componentProps) => {
             props.children
           )}
         </div>
-        {props.locked ? <div className={classes.locked} /> : null}
+        {props.locked ? <div className={`${classes.badge} ${classes.lock}`} data-badge="lock" /> : null}
         {props.offline && !props.locked ? (
-          <div className={`${classes.locked} ${classes.offline}`} />
+          <div className={`${classes.badge} ${classes.offline}`} data-badge="offline" />
         ) : null}
       </div>
     );

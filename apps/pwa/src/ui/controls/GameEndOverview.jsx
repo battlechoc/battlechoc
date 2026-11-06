@@ -33,7 +33,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   headline: {
     textAlign: "center",
-    marginTop: `max(2vh, ${theme.edge.top})`,
+    marginTop: `max(2vh, ${theme.edge.topMiddle})`,
     padding: `0 ${theme.edge.right} 0 ${theme.edge.left}`,
     fontSize: theme.font.size.xxl,
   },
