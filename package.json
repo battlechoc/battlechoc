@@ -22,6 +22,11 @@
     "start:api": "npm start -w apps/api",
     "test:unit": "npm run test:unit -w apps/pwa",
     "whitepaper:simulate": "node whitepaper/simulator/run.js",
-    "test:whitepaper": "node --test 'whitepaper/simulator/test/*.test.js'"
+    "test:whitepaper": "node --test 'whitepaper/simulator/test/*.test.js'",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "3.9.10"
   }
 }

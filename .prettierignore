@@ -1,0 +1,21 @@
+# Prettier checks what already conforms: the root configuration, the workflows and the
+# whitepaper's simulator (npm run format:check). Everything below is left alone, also by an
+# editor's "format on save"; CONTRIBUTING.md says why. Prettier skips what .gitignore names too.
+
+# Not formatted with Prettier. apps/api and packages/shared never were (4 spaces, single quotes,
+# long lines); in apps/pwa more than half of the files have drifted from it.
+apps/
+packages/
+.github/scripts/
+
+# The server stack keeps its own layout.
+deploy/
+
+# Markdown keeps its compact tables.
+*.md
+
+# Written by npm and release-please.
+package-lock.json
+CHANGELOG.md
+.release-please-manifest.json
+release-please-config.json

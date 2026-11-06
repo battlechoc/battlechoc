@@ -65,6 +65,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Formatting of the files Prettier covers (.prettierignore names the rest)
+        run: npm run format:check
       - name: Changelog script tests
         run: node --test .github/scripts/pr-changelog.test.js
       - name: Shared rules engine unit tests

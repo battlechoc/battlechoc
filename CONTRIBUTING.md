@@ -23,7 +23,8 @@ Thank you for your interest in contributing to battlechoc! Please follow these g
 4. **Pull requests**
 
    - Fork the repository and create a branch for your changes.
-   - Follow the existing code style (Prettier defaults with `trailingComma: "es5"`; the PWA uses `.jsx` for React files; the shared rules engine uses 4-space indentation and CommonJS).
+   - Follow the existing code style; [`.editorconfig`](./.editorconfig) states it for your editor. The PWA uses 2 spaces, double quotes and `.jsx` for React files, in the style of Prettier's defaults with `trailingComma: "es5"`. The API and the shared rules engine use 4 spaces, single quotes and CommonJS; they were never formatted with Prettier, so do not run it on them.
+   - `npm run format:check` checks with [Prettier](https://prettier.io/) the files that already conform: the root configuration files, the workflows and the whitepaper's simulator (`npm run format` fixes them). Everything else is listed in [`.prettierignore`](./.prettierignore). Please do not reformat whole files in a pull request.
    - UI text goes through `translate(translationKeys.X)` from the shared package; add new keys to all 8 files in `packages/shared/translations/`.
    - Submit a pull request with a clear description of your changes.
 
