@@ -19,7 +19,6 @@ deploy/.env
 # Claude Code files stay local
 CLAUDE.md
 .claude/
-docs/realtime-migration-plan.md
 USER_QA_FINDINGS.md
 # working notes: implementation plans, specs and play test answers
 docs/superpowers/
