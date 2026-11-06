@@ -23,10 +23,15 @@
     "test:unit": "npm run test:unit -w apps/pwa",
     "whitepaper:simulate": "node whitepaper/simulator/run.js",
     "test:whitepaper": "node --test 'whitepaper/simulator/test/*.test.js'",
+    "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.14.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.14.0",
     "prettier": "3.9.10"
   }
 }
