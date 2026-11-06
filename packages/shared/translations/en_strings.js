@@ -1,4 +1,3 @@
-/* eslint-disable no-template-curly-in-string */
 module.exports = {
     "SIGNINORUP": "Sign in",
     "NEW_GAME": "New Game",

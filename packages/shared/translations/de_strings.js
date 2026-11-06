@@ -1,4 +1,3 @@
-/* eslint-disable no-template-curly-in-string */
 module.exports = {
     "AWARDS_CONCRETEJUNGLE_SUBTITLE": "Gewonnen, ohne einen einzigen Baum zu bauen",
     "AWARDS_CONCRETEJUNGLE_TITLE": "Beton-Dschungel",

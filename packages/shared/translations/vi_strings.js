@@ -1,4 +1,3 @@
-/* eslint-disable no-template-curly-in-string */
 module.exports = {
     "ACCOUNTINFOS": "Tài khoản thông tin",
     "ACCOUNTINFOS_PREVIEW": "Sắp có, thông tin về số liệu thống kê tài khoản và người chơi của bạn.",
