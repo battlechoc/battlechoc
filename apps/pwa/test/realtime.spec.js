@@ -59,9 +59,9 @@ const waitForMatch = (page) =>
     timeout: 10000,
   });
 
-const startMatch = async (page) => {
-  await page.waitForFunction(() => document.body.innerText.includes("Start Game"));
-  await clickText(page, "Start Game");
+const startMatch = async (page, label = "Start Game") => {
+  await page.waitForFunction((label) => document.body.innerText.includes(label), label);
+  await clickText(page, label);
   await waitForMatch(page);
 };
 
@@ -515,4 +515,40 @@ test("the wheel and a drag zoom and move the board, a swipe brings the other boa
   const back = await boardView(page);
   expect(back.own).toEqual(zoomedOwn);
   expect(back.height).toBeCloseTo(whole.height / zoomedOwn.zoom, 3);
+});
+
+// On a phone in German the unlocked buildings' names are long single words ("Fabrikerweiterung",
+// "Schokoladenbrunnen"): each keeps to its own box inside the dialog, side by side or one below
+// the other (the user's phone, 2026-11-06: they ran into each other and off the dialog's edge).
+test.describe("a phone in German", () => {
+  test.use({ locale: "de-DE", viewport: { width: 412, height: 915 } });
+
+  test("the unlocked buildings' names keep apart", async ({ page }) => {
+    await openAsPlayer(page, 0);
+    await startMatch(page, "Spiel starten");
+    await advance(page, 11 * 60 * 1000);
+    expect(await phase(page)).toBe("MatchPhase.ENDED");
+    await page.locator("[data-icon=fast-forward]:visible").first().click();
+    await page.locator("[data-icon=done]:visible").first().click();
+    const unlocked = page.getByTestId("unlocked");
+    const items = unlocked.getByTestId("unlocked-building");
+    await expect(items).toHaveText(["Fabrikerweiterung", "Schokoladenbrunnen"]);
+    const dialog = await unlocked.boundingBox();
+    const boxes = await items.evaluateAll((elements) =>
+      elements.map((element) => {
+        const { left, right, top, bottom } = element.getBoundingClientRect();
+        // scrollWidth counts what sticks out of the box
+        return { left, right, top, bottom, overflow: element.scrollWidth - element.clientWidth };
+      })
+    );
+    for (const box of boxes) {
+      expect(box.overflow).toBeLessThanOrEqual(0);
+      expect(box.left).toBeGreaterThanOrEqual(dialog.x);
+      expect(box.right).toBeLessThanOrEqual(dialog.x + dialog.width);
+    }
+    const [a, b] = boxes;
+    const apart = a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top;
+    expect(apart).toBe(true);
+    await page.screenshot({ path: "test/output/screenshot_realtime_unlocked_de.png" });
+  });
 });
