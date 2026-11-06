@@ -3,49 +3,11 @@
 
 const players = require('../src/players');
 const { createPush } = require('../src/push');
-const { createTestPool, closeTestPools, postgresOnly } = require('./helper');
+const { createTestPool, closeTestPools, postgresOnly, failingOn, counting } = require('./helper');
 
 afterAll(closeTestPools);
 
 const count = async (pool, table) => Number((await pool.query(`SELECT COUNT(*) AS n FROM ${table}`)).rows[0].n);
-
-// the pool, with statements that match `pattern` failing (also inside transactions)
-const failingOn = (pool, pattern) => {
-    const wrap = db => new Proxy(db, {
-        get: (target, key) => {
-            if (key === 'query') {
-                return (sql, ...rest) => (pattern.test(sql) ? Promise.reject(new Error('injected failure')) : target.query(sql, ...rest));
-            }
-            if (key === 'connect') {
-                return async () => wrap(await target.connect());
-            }
-            const value = target[key];
-            return typeof value === 'function' ? value.bind(target) : value;
-        },
-    });
-    return wrap(pool);
-};
-
-// the pool, counting the statements it runs (also inside transactions)
-const counting = pool => {
-    const counter = { statements: 0 };
-    const wrap = db => new Proxy(db, {
-        get: (target, key) => {
-            if (key === 'query') {
-                return (...args) => {
-                    counter.statements += 1;
-                    return target.query(...args);
-                };
-            }
-            if (key === 'connect') {
-                return async () => wrap(await target.connect());
-            }
-            const value = target[key];
-            return typeof value === 'function' ? value.bind(target) : value;
-        },
-    });
-    return { pool: wrap(pool), counter };
-};
 
 const win = id => ({ id, won: true, lost: false, builtEntities: 3, winners: [{ idx: 0 }], awards: ['WINNER'] });
 const loss = id => ({ id, won: false, lost: true, winners: [{ idx: 1 }], awards: [] });
