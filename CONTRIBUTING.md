@@ -30,15 +30,31 @@ Thank you for your interest in contributing to battlechoc! Please follow these g
    - Submit a pull request with a clear description of your changes.
 
 5. **Testing**
-   Test your changes before opening a pull request:
+   Test your changes before opening a pull request. One command runs what the CI job `test-and-build` checks:
 
    ```bash
    npm install
-   npm test            # shared rules engine unit tests
-   npm run test:api    # API tests (in-memory Postgres)
-   npm run build       # PWA production build
-   npx playwright install chromium   # once, for the end-to-end tests
-   npm run test:e2e    # Playwright end-to-end tests (builds its own test build first)
+   npm run verify
+   ```
+
+   It runs these, which you can also run one at a time:
+
+   ```bash
+   npm run format:check     # Prettier, for the files it covers
+   npm run test:changelog   # tests of the CI script that writes a pull request's changelog
+   npm test                 # shared rules engine unit tests
+   npm run test:unit        # the client's headless tests: tutorial scenarios on the engine, board view, live state
+   npm run test:whitepaper  # economy simulator of the whitepaper
+   npm run test:api         # API tests (in-memory Postgres)
+   npm run build            # PWA production build
+   npm run check:build      # the production build carries no test hooks
+   ```
+
+   CI also runs the API tests on Postgres 17 (set `TEST_DATABASE_URL` to do the same) and, in separate jobs, the end-to-end tests:
+
+   ```bash
+   npx playwright install chromium   # once
+   npm run test:e2e         # Playwright end-to-end tests (builds its own test build first)
    ```
 
 ## Licensing of contributions

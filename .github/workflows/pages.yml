@@ -76,7 +76,7 @@ jobs:
           VITE_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: VITE_BUILD_TIME=$(date --utc -Iseconds) npm run build
       - name: The published build has no test hooks
-        run: "! grep -rlE '__battlechoc|testclock' apps/pwa/build"
+        run: npm run check:build
       - name: Prepare GitHub Pages output
         working-directory: apps/pwa/build
         run: |

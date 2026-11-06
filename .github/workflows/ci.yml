@@ -79,10 +79,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # `npm run verify` runs the same checks on a contributor's machine (package.json), except
+      # the API tests on a real Postgres: a step added here belongs there too
       - name: Formatting of the files Prettier covers (.prettierignore names the rest)
         run: npm run format:check
       - name: Changelog script tests
-        run: node --test .github/scripts/pr-changelog.test.js
+        run: npm run test:changelog
       - name: Shared rules engine unit tests
         run: npm test
       - name: Tutorial scenarios on the engine
@@ -98,7 +100,7 @@ jobs:
       - name: PWA production build
         run: npm run build
       - name: The published build has no test hooks
-        run: "! grep -rlE '__battlechoc|testclock' apps/pwa/build"
+        run: npm run check:build
 
   # The browser tests in four parallel jobs of about seven minutes each (in one job they took
   # 29 min), next to test-and-build instead of after it. Each job builds the e2e build and runs

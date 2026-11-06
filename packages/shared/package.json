@@ -4,7 +4,8 @@
   "description": "battlechoc definitions and functions used in server and pwa",
   "main": "index.js",
   "scripts": {
-    "test": "jest tests --coverage",
+    "test": "jest tests",
+    "test:coverage": "jest tests --coverage",
     "simulate": "node scripts/simulate.js"
   },
   "author": "battlechoc <info@battlechoc.dev>",

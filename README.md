@@ -25,6 +25,8 @@ npm run build        # production build of the PWA into apps/pwa/build
 npm run test:e2e     # Playwright end-to-end tests; builds the e2e build (production build plus
                      # test hooks) into apps/pwa/build-e2e first (`npx playwright install chromium` once)
 npm run test:api     # tests of the API (in-memory database)
+npm run verify       # what the CI job test-and-build checks: formatting, all unit tests, the
+                     # API tests and the production build
 ```
 
 Without an API the game runs offline: AI opponents work, but there are no accounts, no online matches and no lab. To play with everything, run the API locally in one of the two ways below.
