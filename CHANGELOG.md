@@ -1,5 +1,14 @@
 # Changelog
 
+## [5.2.1](https://github.com/battlechoc/battlechoc/compare/v5.2.0...v5.2.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **pwa:** in portrait the match's message goes below the board preview ([4d6be6a](https://github.com/battlechoc/battlechoc/commit/4d6be6a3f7e6738d07a562651ae7fef386c0fb1f))
+* **pwa:** the lock stands upright at the right end of a menu button ([4d6be6a](https://github.com/battlechoc/battlechoc/commit/4d6be6a3f7e6738d07a562651ae7fef386c0fb1f))
+* **pwa:** the top buttons keep closer to the top edge in full screen ([4d6be6a](https://github.com/battlechoc/battlechoc/commit/4d6be6a3f7e6738d07a562651ae7fef386c0fb1f))
+
 ## [5.2.0](https://github.com/battlechoc/battlechoc/compare/v5.1.0...v5.2.0) (2026-11-06)
 
 
