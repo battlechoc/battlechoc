@@ -1,0 +1,26 @@
+# Overlay for a server that runs nothing else: Caddy in Docker terminates TLS and fetches the
+# certificate itself (needs API_DOMAIN in .env and the ports 80 and 443).
+#   docker compose -f docker-compose.yml -f docker-compose.caddy.yml up -d
+# A server that already has nginx uses docker-compose.yml alone (see README.md). Caddy has no
+# site for the challenge links (play.battlechoc.com); nginx/play.battlechoc.com.conf shows the
+# rewrite they need.
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  caddy_data:
+  caddy_config:
