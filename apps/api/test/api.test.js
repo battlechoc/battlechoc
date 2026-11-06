@@ -1,5 +1,6 @@
 const request = require('supertest');
 const pantry = require('../src/pantry');
+const players = require('../src/players');
 const { createApp } = require('../src/app');
 const { createAuth } = require('../src/auth');
 const { createPush } = require('../src/push');
@@ -115,6 +116,27 @@ describe('progress', () => {
         expect(finished.body.stats).toMatchObject({ tutorialFinished: true, xp: 100, score: 100, coins: 100, pantry: { COCOA: 100, RUM: 1, SUGAR: 2, MILK: 2 } });
         const again = await player.post('/user/tutorial/finished');
         expect(again.body.stats).toMatchObject({ xp: 100, pantry: { COCOA: 100 } });
+    });
+
+    test('the tutorial reward is paid once when several requests arrive together', async () => {
+        const { app, pool } = await setup();
+        const player = await account(app);
+        // the game reports the finished tutorial and syncs the offline profile at the same time
+        const responses = await Promise.all([
+            player.post('/user/tutorial/finished'),
+            player.post('/user/merge', { playerInfo: { tutorialFinished: true } }),
+            player.post('/user/tutorial/finished'),
+            player.post('/user/merge', { playerInfo: { tutorialFinished: true } }),
+        ]);
+        responses.forEach(response => expect(response.status).toBe(200));
+        const { stats } = (await player.get('/user').expect(200)).body;
+        expect(stats).toMatchObject({ tutorialFinished: true, xp: 100, pantry: { COCOA: 100, RUM: 1, SUGAR: 2, MILK: 2 } });
+
+        const other = await account(app);
+        await Promise.all(Array.from({ length: 8 }, () => players.finishTutorial(pool, other.playerId)));
+        expect((await other.get('/user').expect(200)).body.stats).toMatchObject({
+            tutorialStarted: true, tutorialSkipped: false, tutorialFinished: true, xp: 100, pantry: { COCOA: 100, RUM: 1, SUGAR: 2, MILK: 2 },
+        });
     });
 
     test('offline match records credit server-computed xp once per record, never ingredients', async () => {

@@ -5,8 +5,9 @@ const { EmptyPlayerStats, sanitizeLoadout, engine, StarterKit } = require('@batt
 const { resultOf, xpOf } = require('./xp');
 const { isValidUsername, randomName } = require('./names');
 const pantry = require('./pantry');
+const { withTransaction } = require('./db');
 
-const count = async (pool, sql, params) => Number((await pool.query(sql, params)).rows[0].n);
+const count =async (pool, sql, params) => Number((await pool.query(sql, params)).rows[0].n);
 
 const findPlayer = async (pool, playerId) => (await pool.query('SELECT * FROM players WHERE id = $1', [playerId])).rows[0];
 
@@ -113,14 +114,18 @@ const advanceAiLadder = async (db, playerId, outcome) => {
  * The tutorial is finished: 100 XP and the starter kit, once per player (also when the device
  * reports it later, after a tutorial without the server).
  */
-const finishTutorial = async (pool, playerId) => {
-    const { rows } = await pool.query(
-        'UPDATE players SET xp = xp + 100 WHERE id = $1 AND tutorial_finished = FALSE RETURNING id', [playerId]);
+const finishTutorial = (pool, playerId) => withTransaction(pool, async client => {
+    // The flag is set by the statement that checks it: of several requests that arrive together
+    // (the game reports the tutorial and syncs the offline profile) only one gets a row back.
+    const { rows } = await client.query(
+        `UPDATE players SET xp = xp + 100, tutorial_started = TRUE, tutorial_skipped = FALSE, tutorial_finished = TRUE
+         WHERE id = $1 AND tutorial_finished = FALSE RETURNING id`, [playerId]);
     if (rows.length > 0) {
-        await pantry.add(pool, playerId, Object.entries(StarterKit).map(([ingredient, amount]) => ({ ingredient, amount })), Date.now());
+        await pantry.add(client, playerId, Object.entries(StarterKit).map(([ingredient, amount]) => ({ ingredient, amount })), Date.now());
+    } else {
+        await client.query('UPDATE players SET tutorial_started = TRUE, tutorial_skipped = FALSE WHERE id = $1', [playerId]);
     }
-    await pool.query('UPDATE players SET tutorial_started = TRUE, tutorial_skipped = FALSE, tutorial_finished = TRUE WHERE id = $1', [playerId]);
-};
+});
 
 const stats = async (pool, playerId) => {
     const player = await findPlayer(pool, playerId);
