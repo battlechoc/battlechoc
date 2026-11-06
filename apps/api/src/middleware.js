@@ -5,6 +5,15 @@ const players = require('./players');
 const { fixedWindowLimit } = require('./limits');
 const { HttpError, ErrorCode } = require('./errors');
 
+// For every response: browsers take the content type as given (no sniffing of JSON as HTML), and
+// a link out of a page of ours does not tell the target where the visitor came from. The page with
+// a script (playPage.js) adds its content security policy itself.
+const securityHeaders = (req, res, next) => {
+    res.set('X-Content-Type-Options', 'nosniff');
+    res.set('Referrer-Policy', 'no-referrer');
+    next();
+};
+
 // small CORS middleware for the PWA origins (custom headers included)
 const cors = origins => (req, res, next) => {
     const origin = req.get('origin');
@@ -63,4 +72,4 @@ const errorHandler = ({ log = console } = {}) =>
         }
     };
 
-module.exports = { cors, rateLimit, requirePlayer, notFound, errorHandler };
+module.exports = { securityHeaders, cors, rateLimit, requirePlayer, notFound, errorHandler };

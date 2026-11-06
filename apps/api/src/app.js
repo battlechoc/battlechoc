@@ -4,7 +4,7 @@
 // them in middleware.js.
 
 const express = require('express');
-const { cors, rateLimit, requirePlayer, notFound, errorHandler } = require('./middleware');
+const { securityHeaders, cors, rateLimit, requirePlayer, notFound, errorHandler } = require('./middleware');
 const { registerAccountRoutes } = require('./routes/accounts');
 const { registerPlayerRoutes } = require('./routes/player');
 const { registerSocialRoutes } = require('./routes/social');
@@ -14,13 +14,21 @@ const { registerPlayRoutes } = require('./playPage');
 const { loadRecipes } = require('./lab/recipes');
 const { createKeyedQueue } = require('./queue');
 
+// A game refreshes its token when it starts and when a token ran out, so a few times an hour. The
+// limit per address is far above that, also for many players behind one address (a school, a
+// mobile network); it only stops a client that hammers the endpoint.
+const TOKENS_PER_MINUTE = 120;
+
 const createApp = ({
-    pool, auth, push, corsOrigins = [], accountsPerMinute = 10, recipes = loadRecipes(), labTriesPerHour = 30, challengeInfo = () => null,
+    pool, auth, push, corsOrigins = [], accountsPerMinute = 10, tokensPerMinute = TOKENS_PER_MINUTE, recipes = loadRecipes(),
+    labTriesPerHour = 30, challengeInfo = () => null,
 }) => {
     const app = express();
     // purchases and equipment changes of one player run one at a time
     const oneAtATime = createKeyedQueue();
     app.set('trust proxy', 1);
+    app.disable('x-powered-by');
+    app.use(securityHeaders);
     app.use(cors(corsOrigins));
     app.use(express.json({ limit: '256kb' }));
 
@@ -31,7 +39,12 @@ const createApp = ({
 
     // the link preview of a challenge (play.battlechoc.com/<code>)
     registerPlayRoutes(app, { challengeInfo, limit: rateLimit({ windowMs: 60000, max: 60 }) });
-    registerAccountRoutes(app, { pool, auth, limit: rateLimit({ windowMs: 60000, max: accountsPerMinute }) });
+    registerAccountRoutes(app, {
+        pool,
+        auth,
+        limit: rateLimit({ windowMs: 60000, max: accountsPerMinute }),
+        tokenLimit: rateLimit({ windowMs: 60000, max: tokensPerMinute }),
+    });
     registerPlayerRoutes(app, { pool, auth, user });
     registerLabRoutes(app, { pool, user, recipes, oneAtATime, triesPerHour: labTriesPerHour });
     // last of the routes under /user: its GET /user/:name matches every path the others left
