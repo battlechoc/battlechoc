@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.2.2](https://github.com/battlechoc/battlechoc/compare/v5.2.1...v5.2.2) (2026-11-06)
+
+
+### Bug Fixes
+
+* **pwa:** the unlocked buildings' names keep apart in the dialog on a phone ([f41b464](https://github.com/battlechoc/battlechoc/commit/f41b464c4093a10efba970856268ad6e3e776c94))
+
 ## [5.2.1](https://github.com/battlechoc/battlechoc/compare/v5.2.0...v5.2.1) (2026-11-06)
 
 
