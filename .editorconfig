@@ -1,0 +1,44 @@
+# What the code already does, so that an editor keeps it that way. Nothing here asks for a reformat.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# The game client (React, ESM): 2 spaces, double quotes.
+[apps/pwa/**.{js,jsx,mjs}]
+quote_type = double
+
+# The backend, the shared rules engine and the CI scripts (Node, CommonJS): 4 spaces, single quotes.
+[{apps/api,packages/shared,.github/scripts}/**.js]
+indent_size = 4
+quote_type = single
+
+# The whitepaper's economy simulator: 4 spaces, double quotes.
+[whitepaper/simulator/**.js]
+indent_size = 4
+quote_type = double
+
+# Blender scripts
+[*.py]
+indent_size = 4
+
+[{Caddyfile,*.Caddyfile}]
+indent_style = tab
+
+[*.conf]
+indent_size = 4
+
+# two spaces at the end of a line are a line break
+[*.md]
+trim_trailing_whitespace = false
+
+# exported art stays as the tool wrote it
+[*.svg]
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_size = unset
