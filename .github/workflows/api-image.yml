@@ -1,0 +1,95 @@
+name: API image
+
+# Builds the API image (apps/api/Dockerfile) of a release tag for amd64 and arm64 and pushes
+# it to Docker Hub as <image>:<version>, :<major>.<minor>, :<major> and :latest. A server pulls
+# it with deploy/docker-compose.yml and needs no checkout of this repository.
+#
+# The Release workflow calls this for every release it creates. By hand (Actions → API image →
+# Run workflow) it publishes any existing tag again, e.g. the first image or a rebuild on a
+# newer base image.
+#
+# Needs two repository secrets: DOCKERHUB_USERNAME and DOCKERHUB_TOKEN (a Docker Hub access
+# token with read and write access). The image name is the repository variable
+# DOCKERHUB_IMAGE, by default fabianbormann/battlechoc-api.
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: The release tag to build, e.g. v5.3.0
+        required: true
+        type: string
+      latest:
+        description: Also move the tag "latest" to this image
+        type: boolean
+        default: true
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_TOKEN:
+        required: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The release tag to build, e.g. v5.3.0
+        required: true
+        type: string
+      latest:
+        description: Also move the tag "latest" to this image (untick for an older release)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+# two runs for the same tag would push over each other
+concurrency:
+  group: api-image-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      IMAGE: ${{ vars.DOCKERHUB_IMAGE || 'fabianbormann/battlechoc-api' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+      # only a Dockerfile older than the one that installs on the build platform needs emulation
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # v5.3.0 → 5.3.0, 5.3, 5 (and latest); the labels name the release and its commit
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ${{ env.IMAGE }}
+          flavor: latest=${{ inputs.latest }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ inputs.tag }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.tag }}
+            type=semver,pattern={{major}},value=${{ inputs.tag }}
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Summary
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          {
+            echo "### Published"
+            echo '```'
+            echo "$TAGS"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -3,7 +3,8 @@ name: Release
 # release-please keeps a release pull request open on every push to main: the next version
 # from the conventional commits since the last release (feat → minor, fix → patch, ! → major)
 # and the CHANGELOG.md entries. Merging it tags vX.Y.Z and creates the GitHub release; the
-# deploy of that merge shows the new version in the Info dialog (apps/pwa/package.json).
+# deploy of that merge shows the new version in the Info dialog (apps/pwa/package.json), and
+# the API image of that tag goes to Docker Hub (api-image.yml).
 # Configuration: release-please-config.json, .release-please-manifest.json.
 #
 # Needs "Allow GitHub Actions to create and approve pull requests" in the repository's
@@ -27,5 +28,22 @@ concurrency:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
-      - uses: googleapis/release-please-action@v5
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+
+  # A release made with the GITHUB_TOKEN starts no workflow of its own (no `release` event),
+  # so the image is published from here, in the run that created the release.
+  api-image:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/api-image.yml
+    with:
+      tag: ${{ needs.release-please.outputs.tag_name }}
+    secrets: inherit
