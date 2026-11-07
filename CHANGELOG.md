@@ -1,5 +1,50 @@
 # Changelog
 
+## [5.3.0](https://github.com/battlechoc/battlechoc/compare/v5.2.2...v5.3.0) (2026-11-07)
+
+
+### Features
+
+* **api:** an optional retention for matches, and a match that cannot be recovered is tried once ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **deploy:** a server runs the API from its published image, without a checkout ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** a crash of the interface offers the way back to the title screen ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** the game loads only its player's language, and Japanese and Vietnamese work ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** the recovery screen says what happened, and OK is translated ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **shared:** the donut factory bakes all five kinds of donuts ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+
+
+### Bug Fixes
+
+* **api:** a migration that fails leaves nothing behind and runs again ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **api:** a restart of Postgres no longer ends the API ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **api:** body-parser and qs get the releases that close their advisories ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **api:** offline records, a new player and a push subscription are written in one go ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **api:** players keep their language under its language code ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **api:** refreshing a token is rate limited, and responses carry security headers ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **api:** the rate limits forget old keys and the lobby clears its timers on shutdown ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **api:** the shutdown always ends, and the health check can ask the database ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **api:** the tutorial reward is paid once when two requests arrive together ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** a match that ends during the field choice no longer empties the page ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** a red portal donut that goes off shows the portal picture ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** small leftovers in the title menu, the dialog body and the ui state ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** the service worker no longer downloads the media a second time on its first install ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** the shield's chocolate dome sits on the board at every board size ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** the update offer waits until the new worker is in charge ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **shared:** a rule error names itself in a code that survives a bundler ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+
+
+### Performance Improvements
+
+* **api:** live views are compressed, and a client that falls far behind is dropped ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **api:** the highscore, friends and stats take a few queries instead of some per player ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** a floating info ends when it has faded, not a second later ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** dialogs, lab, tutorial and the end of a match load after the title screen ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** muted, the music and the match sounds are not loaded until the sound comes on ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** the page shows the logo before the game's script has arrived ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** the scene diffs its boards only when the view changed, and the app only re-renders for what it reads ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** the start button waits for the models and fonts, not for 92 icons ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+* **pwa:** the title screen loads without the 3D engine ([d64dc2a](https://github.com/battlechoc/battlechoc/commit/d64dc2a02a783ec583218d46041cd0b3a9572117))
+
 ## [5.2.2](https://github.com/battlechoc/battlechoc/compare/v5.2.1...v5.2.2) (2026-11-06)
 
 
