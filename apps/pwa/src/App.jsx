@@ -39,6 +39,7 @@ import {
 import { debugScenarios } from "./situations/scenarios";
 import { testHooksEnabled, exposeForTests } from "./testHooks";
 import Hud from "./ui/Hud";
+import ErrorBoundary from "./ui/ErrorBoundary";
 import { uuid } from "./helper/uuid";
 // loaded after the title screen (src/ui/onDemand.js)
 import {
@@ -526,45 +527,68 @@ class App extends Component {
   endGame() {
     if (!this.props.tutorial) {
       Jukebox.stopMusic(true);
-      setTimeout(() => {
-        const host = matchSession.host;
-        if (typeof host !== "undefined") {
-          if (host.online) {
-            // leaving a running online match gives it up; the server keeps finished ones
-            if (this.props.matchView && this.props.matchView.phase !== engine.MatchPhase.ENDED) {
-              host.surrender().catch((error) => logger.info("surrender failed", error));
-            }
-            liveLobby.matchLeft();
-          }
-          host.persist(true);
-          host.stop();
-          matchSession.host = undefined;
-          matchSession.dispatch(matchCleared());
-          OfflineStore.hasGameToResume().then((resumeable) =>
-            this.props.gameResumeable(resumeable)
-          );
-          this.props.resetUi();
-          // the match may have unlocked something (buildings after each of the first three, the
-          // Choclab and online play after the fourth): one dialog says what
-          multiplayer
-            .fetchPlayerStats()
-            .then((stats) => takeNewUnlock(stats))
-            .then((unlock) => {
-              if (unlock) {
-                this.setState({ unlocked: unlock });
-              }
-            })
-            .catch((error) => logger.warn("could not check the unlocks", error));
-
-          if (/Android/i.test(navigator.userAgent) && window.screen.orientation) {
-            window.screen.orientation.unlock();
-          }
-
-          this.scene.clear();
-        }
-      }, 1000);
+      setTimeout(() => this.closeMatch(), 1000);
     }
   }
+
+  // the match is over or left: its host goes, the title screen comes back
+  closeMatch() {
+    const host = matchSession.host;
+    if (typeof host === "undefined") {
+      return;
+    }
+    if (host.online) {
+      // leaving a running online match gives it up; the server keeps finished ones
+      if (this.props.matchView && this.props.matchView.phase !== engine.MatchPhase.ENDED) {
+        host.surrender().catch((error) => logger.info("surrender failed", error));
+      }
+      liveLobby.matchLeft();
+    }
+    host.persist(true);
+    host.stop();
+    matchSession.host = undefined;
+    matchSession.dispatch(matchCleared());
+    OfflineStore.hasGameToResume().then((resumeable) =>
+      this.props.gameResumeable(resumeable)
+    );
+    this.props.resetUi();
+    // the match may have unlocked something (buildings after each of the first three, the
+    // Choclab and online play after the fourth): one dialog says what
+    multiplayer
+      .fetchPlayerStats()
+      .then((stats) => takeNewUnlock(stats))
+      .then((unlock) => {
+        if (unlock) {
+          this.setState({ unlocked: unlock });
+        }
+      })
+      .catch((error) => logger.warn("could not check the unlocks", error));
+
+    if (/Android/i.test(navigator.userAgent) && window.screen.orientation) {
+      window.screen.orientation.unlock();
+    }
+
+    this.scene.clear();
+  }
+
+  // the way back after a crash of the interface (ui/ErrorBoundary.jsx): what ran is stopped, the
+  // title screen comes back. A local match is kept for Resume, an online one is given up.
+  recoverFromError = () => {
+    Jukebox.stopMusic(true);
+    this.startAttempt++;
+    this.setState({ matchmaking: false });
+    if (this.props.tutorial) {
+      this.props.stopTutorial();
+    }
+    try {
+      this.closeMatch();
+    } catch (error) {
+      logger.error("could not close the match", String(error));
+      matchSession.host = undefined;
+      matchSession.dispatch(matchCleared());
+    }
+    this.props.resetUi();
+  };
 
   closeTutorial = async (startGame) => {
     this.timeouts.forEach((timeoutId) => clearTimeout(timeoutId));
@@ -622,57 +646,69 @@ class App extends Component {
             ))}
           </div>
         ) : null}
-        <Suspense fallback={null}>
-          <Scene onRef={(scene) => (this.scene = scene)} />
-        </Suspense>
-        <Hud
-          prepareNewGameCallback={this.prepareNewGame}
-          startGameCallback={this.startGame}
-          startTutorial={() => this.startTutorial()}
-          showBuildingDemos={() => this.showBuildingDemos()}
-          className={this.props.tutorial ? "tutorial hud" : "hud"}
-          endGame={() => this.endGame()}
-          challengedPlayer={this.state.player}
-        />
-        <Suspense fallback={null}>
-          <IncomingInvite />
-          <ChallengeCard
-            learn={() => {
-              multiplayer.tutorialStarted();
-              this.startTutorial();
-            }}
-            startMatch={() => this.startGame()}
-          />
-          <NameConflict />
-          <UpdateAvailable />
-          <Unlocked
-            unlock={this.state.unlocked || undefined}
-            gamesLeft={
-              unlocks(this.props.playerInfos.stats, { early: this.props.earlyUnlock }).gamesLeft.online
-            }
-            close={() => this.setState({ unlocked: false })}
-            showDemos={() => {
-              this.setState({ unlocked: false });
-              this.showBuildingDemos();
-            }}
-          />
-          <Matchmaking
-            open={this.state.matchmaking}
-            cancel={this.cancelMatchmaking}
-            playAiNow={() =>
-              liveLobby.playAiNow().catch((error) => logger.info("AI match failed", error))
-            }
-          />
-        </Suspense>
-        {this.props.tutorial ? (
+        {/* the 3D scene cannot be set up a second time in the same page: after its crash the
+            way back reloads */}
+        <ErrorBoundary
+          name="scene"
+          onRecover={() => {
+            this.recoverFromError();
+            window.location.reload();
+          }}
+        >
           <Suspense fallback={null}>
-            <Tutorial
-              closeTutorial={this.closeTutorial}
-              clearScene={() => this.scene && this.scene.clear()}
-              testClock={this.testClock}
+            <Scene onRef={(scene) => (this.scene = scene)} />
+          </Suspense>
+        </ErrorBoundary>
+        <ErrorBoundary name="hud" onRecover={this.recoverFromError}>
+          <Hud
+            prepareNewGameCallback={this.prepareNewGame}
+            startGameCallback={this.startGame}
+            startTutorial={() => this.startTutorial()}
+            showBuildingDemos={() => this.showBuildingDemos()}
+            className={this.props.tutorial ? "tutorial hud" : "hud"}
+            endGame={() => this.endGame()}
+            challengedPlayer={this.state.player}
+          />
+          <Suspense fallback={null}>
+            <IncomingInvite />
+            <ChallengeCard
+              learn={() => {
+                multiplayer.tutorialStarted();
+                this.startTutorial();
+              }}
+              startMatch={() => this.startGame()}
+            />
+            <NameConflict />
+            <UpdateAvailable />
+            <Unlocked
+              unlock={this.state.unlocked || undefined}
+              gamesLeft={
+                unlocks(this.props.playerInfos.stats, { early: this.props.earlyUnlock }).gamesLeft.online
+              }
+              close={() => this.setState({ unlocked: false })}
+              showDemos={() => {
+                this.setState({ unlocked: false });
+                this.showBuildingDemos();
+              }}
+            />
+            <Matchmaking
+              open={this.state.matchmaking}
+              cancel={this.cancelMatchmaking}
+              playAiNow={() =>
+                liveLobby.playAiNow().catch((error) => logger.info("AI match failed", error))
+              }
             />
           </Suspense>
-        ) : null}
+          {this.props.tutorial ? (
+            <Suspense fallback={null}>
+              <Tutorial
+                closeTutorial={this.closeTutorial}
+                clearScene={() => this.scene && this.scene.clear()}
+                testClock={this.testClock}
+              />
+            </Suspense>
+          ) : null}
+        </ErrorBoundary>
       </div>
     );
   }
