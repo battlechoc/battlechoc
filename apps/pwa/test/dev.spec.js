@@ -8,7 +8,7 @@ test("the dev server renders the title screen and the tutorial", async ({ page }
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto(devUrl, { waitUntil: "networkidle" });
-  const firstMenuEntry = page.locator("div[class^=menu] > div:first-child");
+  const firstMenuEntry = page.getByTestId("start-button");
   await expect(firstMenuEntry).toContainText("Start Tutorial", { timeout: 30000 });
   await firstMenuEntry.click();
   await expect(page.getByTestId("tutorial-coach")).toContainText("Welcome to battlechoc");

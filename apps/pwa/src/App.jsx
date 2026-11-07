@@ -146,15 +146,6 @@ class App extends Component {
       this.props.gameResumeable(resumeable);
     });
 
-    if (this.props.language !== "en") {
-      document
-        .querySelector('meta[name="description"]')
-        .setAttribute("content", t(tr.META_DESCRIPTION));
-      document
-        .querySelector('meta[name="keywords"]')
-        .setAttribute("content", t(tr.META_KEYWORDS));
-    }
-
     window.onfocus = () => Jukebox.playMusic();
     window.onblur = () => Jukebox.pauseMusic();
 
@@ -691,7 +682,6 @@ class App extends Component {
 // App never read it; every change re-rendered the app)
 const mapStateToProps = (state) => ({
   matchView: state.match.view,
-  language: state.ui.language,
   tutorial: state.ui.tutorial,
   assetsReady: state.ui.assetsReady,
   playerInfos: state.ui.playerInfos,

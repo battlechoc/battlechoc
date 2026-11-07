@@ -47,7 +47,7 @@ const tapPointer = async (page) => {
 
 test("the lesson teaches a whole match against Mimi Marzipan", async ({ page }) => {
   await page.goto("/?testclock", { waitUntil: "networkidle" });
-  await page.locator("div[class^=menu] > div:first-child").click();
+  await page.getByTestId("start-button").click();
   await expectStep(page, "welcome");
   await expect(pointer(page)).toHaveCount(0);
   await step(page).locator("[class*=iconButton]").click();
@@ -126,11 +126,11 @@ test("the lesson teaches a whole match against Mimi Marzipan", async ({ page }) 
 
 test("skipping the lesson returns to the title screen", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
-  await page.locator("div[class^=menu] > div:first-child").click();
+  await page.getByTestId("start-button").click();
   await expectStep(page, "welcome");
   await step(page).getByText("Skip tutorial").click();
   await expect(step(page)).toHaveCount(0);
-  await expect(page.locator("div[class^=menu] > div:first-child")).toBeVisible();
+  await expect(page.getByTestId("start-button")).toBeVisible();
   expect(await host(page, () => window.__battlechoc.host === undefined || window.__battlechoc.host.stopped)).toBe(true);
 });
 

@@ -459,7 +459,6 @@ const Hud = (props) => {
           // another try when one did not arrive (AssetLoader); everything else works at once
           const startButton = (label, start) => (
             <Button
-              className={classes.menuButton}
               key="0"
               size="huge"
               data-testid="start-button"
@@ -473,7 +472,6 @@ const Hud = (props) => {
             controls.push(startButton(t(tr.START_TUTORIAL), () => kickOffTutorial()));
             controls.push(
               <Button
-                className={classes.menuButton}
                 key="1"
                 size="huge"
                 color="accent"
@@ -484,7 +482,6 @@ const Hud = (props) => {
             );
             controls.push(
               <Button
-                className={classes.menuButton}
                 key="2"
                 size="huge"
                 color="secondary"
@@ -499,7 +496,6 @@ const Hud = (props) => {
             controls.push(startButton(t(tr.START_GAME), () => resumeOrStartGame()));
             controls.push(
               <Button
-                className={classes.menuButton}
                 key="2"
                 size="huge"
                 locked={lockedChoclab}
@@ -517,7 +513,6 @@ const Hud = (props) => {
             // a challenge link for a friend; locked, the dialog still takes a friend's code
             controls.push(
               <Button
-                className={classes.menuButton}
                 key="3"
                 size="huge"
                 color="secondary"

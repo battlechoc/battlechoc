@@ -23,7 +23,6 @@ const uiReducer = createReducer(
     tutorial: false,
     ranking: "Offline",
     playerInfos: { stats: EmptyPlayerStats, isSignedIn: false },
-    language: window.location.pathname.substr(1, 2) === "de" ? "de" : "en",
     quickMessages: [],
     notification: { title: null, message: null, open: false },
     boardViewToggles: 0,

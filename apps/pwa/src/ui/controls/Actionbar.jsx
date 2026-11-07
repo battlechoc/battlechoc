@@ -196,7 +196,6 @@ const mapStateToProps = (state) => ({
   // the server answers (connectivity)
   online: state.ui.online,
   players: state.players,
-  language: state.ui.language,
   tutorial: state.ui.tutorial,
   tutorialInteractive: state.ui.tutorialInteractive,
 });

@@ -198,7 +198,6 @@ const useStyles = createUseStyles((theme) => ({
     textAlign: "center",
     [theme.breakpoints.smartphone]: {
       width: "80%",
-      paddingRight: "5",
     },
     [theme.breakpoints.orientation.landscape]: {
       width: "90%",

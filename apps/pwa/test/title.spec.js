@@ -10,7 +10,7 @@ test("shows the title page without error", async ({ page }) => {
 });
 
 test("starts the tutorial", async ({ page }) => {
-  const firstMenuEntry = page.locator("div[class^=menu] > div:first-child");
+  const firstMenuEntry = page.getByTestId("start-button");
   await expect(firstMenuEntry).toContainText("Start Tutorial");
   await firstMenuEntry.click();
   const coach = page.getByTestId("tutorial-coach");
