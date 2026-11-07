@@ -118,144 +118,83 @@ const stylesheetFirst = () => ({
   },
 });
 
-// The media the game needs offline. Workbox gives each file a revision of its content, so a
-// changed picture or model reaches installed games with the next build; add new files here.
-const PRECACHED_MEDIA = [
-  'sound/attack_bunny.mp3',
-  'sound/attack_explosion.mp3',
-  'sound/bunny_caught.mp3',
-  'sound/ui_accept.mp3',
-  'sound/ui_build.mp3',
-  'music/CacaoLiving.mp3',
-  'models/cacaotree.glb',
-  'models/cannon.glb',
-  'models/chocolateFountain.glb',
-  'models/cream.glb',
-  'models/creamAroundBuilding.glb',
-  'models/donut.glb',
-  'models/donutFactory.glb',
-  'models/factory.glb',
-  'models/factoryExtension.glb',
-  'models/field.glb',
-  'models/fruitCannon.glb',
-  'models/hotChocolateBallista.glb',
-  'models/spyingEasterBunny.glb',
-  'models/xmasFactory.glb',
-  'textures/sky.env',
-  'images/lab/badge-damage.svg',
-  'images/lab/badge-hp.svg',
-  'images/lab/badge-shield.svg',
-  'images/lab/badge-speed.svg',
-  'images/lab/badge-tag.svg',
-  'images/lab/bowl.svg',
-  'images/lab/recipe-book.svg',
-  'images/lab/steam.svg',
-  'images/ingredients/cocoa.svg',
-  'images/ingredients/sugar.svg',
-  'images/ingredients/milk.svg',
-  'images/ingredients/hazelnuts.svg',
-  'images/ingredients/rum.svg',
-  'images/ingredients/cherries.svg',
-  'images/ingredients/cream.svg',
-  'images/ingredients/marzipan.svg',
-  'images/ingredients/cinnamon.svg',
-  'images/ingredients/sprinkles.svg',
-  'images/ingredients/vanilla.svg',
-  'images/ingredients/goldleaf.svg',
-  'images/add-icon.svg',
-  'images/dialog-border-left.svg',
-  'images/info-icon.svg',
-  'images/raindrop.png',
-  'images/apple-share-icon.svg',
-  'images/dialog-border-right.svg',
-  'images/info.svg',
-  'images/refresh.svg',
-  'images/arrow-down.svg',
-  'images/dialog-border-top.svg',
-  'images/instagram.svg',
-  'images/score.svg',
-  'images/done.svg',
-  'images/search.svg',
-  'images/back.svg',
-  'images/donut-factory-icon.svg',
-  'images/lab.svg',
-  'images/secondary-close.svg',
-  'images/backward-accent.svg',
-  'images/send.svg',
-  'images/backward.svg',
-  'images/level.svg',
-  'images/settings.svg',
-  'images/ballista-icon.svg',
-  'images/donuts-enabled.svg',
-  'images/lock.svg',
-  'images/offline.svg',
-  'images/share.svg',
-  'images/battlechoc_notification_icon.png',
-  'images/dropdown.svg',
-  'images/logo.svg',
-  'images/buildings-icon.svg',
-  'images/easter-bunny-icon.svg',
-  'images/lost.svg',
-  'images/stop-donut-icon.svg',
-  'images/error-icon.svg',
-  'images/mute.svg',
-  'images/stripes.svg',
-  'images/facebook.svg',
-  'images/pen.svg',
-  'images/success-icon.svg',
-  'images/cacao-icon.svg',
-  'images/factory-extension-icon.svg',
-  'images/phone-rotation.svg',
-  'images/surprise-donut-icon.svg',
-  'images/cacao-tree-icon.svg',
-  'images/factory-icon.svg',
-  'images/portal-donut-icon.svg',
-  'images/cacao.svg',
-  'images/fast-backward.svg',
-  'images/primary-close.svg',
-  'images/fast-forward.svg',
-  'images/progress-10.svg',
-  'images/trophy.svg',
-  'images/progress-100.svg',
-  'images/truffle-cannon-icon.svg',
-  'images/choclab-decoration-left.svg',
-  'images/forward.svg',
-  'images/forward-accent.svg',
-  'images/progress-20.svg',
-  'images/user.svg',
-  'images/choclab-decoration-right.svg',
-  'images/fountain-icon.svg',
-  'images/progress-30.svg',
-  'images/volume.svg',
-  'images/close.svg',
-  'images/fruit-cannon-icon.svg',
-  'images/progress-40.svg',
-  'images/warning-close.svg',
-  'images/coins.svg',
-  'images/fullscreen.svg',
-  'images/progress-50.svg',
-  'images/warning-icon.svg',
-  'images/cream-donut-icon.svg',
-  'images/gears.svg',
-  'images/progress-60.svg',
-  'images/win.svg',
-  'images/cream-icon.svg',
-  'images/header.svg',
-  'images/progress-70.svg',
-  'images/xmas-factory-icon.svg',
-  'images/cream.svg',
-  'images/health-donut-icon.svg',
-  'images/progress-80.svg',
-  'images/decoration.svg',
-  'images/highscore.svg',
-  'images/progress-90.svg',
-  'images/attacks-per-turn.svg',
-  'images/buildings-per-turn.svg',
-  'images/bunny-caught.svg',
-  'images/cacao-per-turn.svg',
-  'images/fruit-attacks-per-turn.svg',
-  'images/spy-attacks-per-turn.svg',
+// The media the game needs offline: all of these folders of public/. Workbox gives each file a
+// revision of its content, so a changed picture or model reaches installed games with the next
+// build, and a new file is precached without being listed anywhere. (The list was kept by hand,
+// one path per file, and three pictures the game shows were missing from it.)
+const PRECACHED_MEDIA = ['images/**', 'models/**', 'sound/**', 'music/**', 'textures/**'];
+const NOT_PRECACHED = [
+  // the picture of link previews (Open Graph, index.html): chats fetch it, the game never does
+  'images/challenge-preview.jpg',
 ];
+
+// Babylon ships every shader twice, GLSL for WebGL and WGSL for WebGPU, and imports the set of
+// the engine in use on demand. The game only creates the WebGL `Engine` (src/3d/Scene.jsx,
+// MeshPreview.jsx), so the 42 WGSL chunks (0.5 MB) were built and precached and never loaded.
+// They are named like their GLSL twins, no glob can tell them apart: the build resolves every
+// WGSL shader to one empty module instead, and refuses the WebGPU engine, which would need them.
+const WGSL_SHADER = /[\\/]@babylonjs[\\/]core[\\/]ShadersWGSL[\\/]/;
+const WEBGPU_ENGINE = /[\\/]@babylonjs[\\/]core[\\/]Engines[\\/]webgpuEngine/;
+const NO_WGSL = '\0battlechoc:no-wgsl-shaders';
+const withoutWgslShaders = () => ({
+  name: 'battlechoc-no-wgsl-shaders',
+  apply: 'build',
+  enforce: 'pre',
+  async resolveId(source, importer, options) {
+    if (!/ShadersWGSL|webgpuEngine/.test(source)) {
+      return null;
+    }
+    const resolved = await this.resolve(source, importer, { ...options, skipSelf: true });
+    if (resolved && WEBGPU_ENGINE.test(resolved.id)) {
+      this.error('the build leaves out the WGSL shaders (vite.config.js): bundle them again before using the WebGPU engine');
+    }
+    return resolved && WGSL_SHADER.test(resolved.id) ? NO_WGSL : resolved;
+  },
+  load(id) {
+    return id === NO_WGSL ? 'export {};' : null;
+  },
+});
+
+// Chunks only a road the game never takes leads to. Babylon imports a texture loader by file
+// extension and the OpenPBR material by glTF extension; the game's textures are sky.env and what
+// its GLBs embed (PNG, JPEG, WebP), and its GLBs use the standard PBR material (src/3d/gltf.js
+// registers no OpenPBR extension). The build still writes these chunks, so they would load
+// online, but the service worker does not precache them (0.35 MB). Found by walking the chunk
+// graph, not by name: what anything else imports as well stays in the precache.
+const NEVER_IMPORTED = [
+  /[\\/]@babylonjs[\\/]core[\\/]Materials[\\/]Textures[\\/]Loaders[\\/](basis|dds|exr|hdr|ies|ktx|tga)TextureLoader\.js$/,
+  /[\\/]@babylonjs[\\/]core[\\/]Materials[\\/]PBR[\\/]openpbrMaterial(\.pure)?\.js$/,
+  /[\\/]@babylonjs[\\/]loaders[\\/]glTF[\\/]2\.0[\\/]openpbrMaterialLoadingAdapter\.js$/,
+];
+const unreachableChunks = new Set();
+const findUnreachableChunks = () => ({
+  name: 'battlechoc-unreachable-chunks',
+  apply: 'build',
+  generateBundle(options, bundle) {
+    const chunks = Object.values(bundle).filter((file) => file.type === 'chunk');
+    const neverImported = (chunk) =>
+      chunk.isDynamicEntry && NEVER_IMPORTED.some((pattern) => pattern.test(chunk.facadeModuleId || ''));
+    const reached = new Set();
+    const visit = (fileName) => {
+      const chunk = bundle[fileName];
+      if (!chunk || reached.has(fileName)) {
+        return;
+      }
+      reached.add(fileName);
+      chunk.imports.forEach(visit);
+      chunk.dynamicImports.filter((name) => bundle[name] && !neverImported(bundle[name])).forEach(visit);
+    };
+    chunks.filter((chunk) => chunk.isEntry).forEach((chunk) => visit(chunk.fileName));
+    unreachableChunks.clear();
+    chunks.filter((chunk) => !reached.has(chunk.fileName)).forEach((chunk) => unreachableChunks.add(chunk.fileName));
+    // Babylon moves its files now and then: a pattern that names no chunk any more saves nothing
+    for (const pattern of NEVER_IMPORTED) {
+      if (!chunks.some((chunk) => chunk.isDynamicEntry && pattern.test(chunk.facadeModuleId || ''))) {
+        this.warn(`no chunk matches ${pattern} any more (NEVER_IMPORTED in vite.config.js)`);
+      }
+    }
+  },
+});
 
 export default defineConfig(({ command, mode }) => ({
   cacheDir,
@@ -263,6 +202,8 @@ export default defineConfig(({ command, mode }) => ({
     restartOnSharedChange(),
     preconnectApi(mode),
     stylesheetFirst(),
+    withoutWgslShaders(),
+    findUnreachableChunks(),
     react(),
     VitePWA({
       srcDir: 'src',
@@ -274,6 +215,13 @@ export default defineConfig(({ command, mode }) => ({
         rollupFormat: 'iife',
         // the build, the fonts (public/fonts), the web app manifest and the media
         globPatterns: ['**/*.{js,css,html}', 'fonts/*.woff2', 'manifest.json', ...PRECACHED_MEDIA],
+        globIgnores: NOT_PRECACHED,
+        manifestTransforms: [
+          (entries) => ({
+            manifest: entries.filter((entry) => !unreachableChunks.has(entry.url)),
+            warnings: [],
+          }),
+        ],
         maximumFileSizeToCacheInBytes: 20971520,
       },
     }),
