@@ -12,6 +12,9 @@ import { VitePWA } from 'vite-plugin-pwa';
 // misses new exports and crashes the app. So the dev server re-bundles whenever the sources
 // differ from the last bundle, and restarts itself when they change while it runs.
 const here = path.dirname(fileURLToPath(import.meta.url));
+// the build's version (src/build.js, the Info dialog, the API headers): package.json's, which
+// release-please raises; also for a build that does not run through npm
+const { version } = JSON.parse(fs.readFileSync(path.join(here, 'package.json'), 'utf8'));
 const sharedDir = path.resolve(here, '../../packages/shared');
 // Every dev server on this project needs its own dependency cache (VITE_CACHE_DIR): a second server
 // (the e2e suite's, a lookdev server) that re-bundled the shared one left a running server's page
@@ -198,6 +201,9 @@ const findUnreachableChunks = () => ({
 
 export default defineConfig(({ command, mode }) => ({
   cacheDir,
+  define: {
+    'import.meta.env.VITE_VERSION': JSON.stringify(version),
+  },
   plugins: [
     restartOnSharedChange(),
     preconnectApi(mode),
@@ -234,7 +240,6 @@ export default defineConfig(({ command, mode }) => ({
   },
   server: {
     port: 3000,
-    open: true,
   },
   build: {
     outDir: 'build',

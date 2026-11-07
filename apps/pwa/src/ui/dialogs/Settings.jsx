@@ -29,6 +29,7 @@ import {
   useFullscreenAvailable,
 } from "../../helper/fullscreen";
 import { LAB_INTRO_SEEN } from "../lab/LabIntro";
+import { setDocumentLanguage } from "../../helper/language";
 
 const useStyles = createUseStyles((theme) => ({
   wrapper: {
@@ -202,6 +203,7 @@ const Settings = (props) => {
 
   const changeLanguage = (value) => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+    setDocumentLanguage(value);
     setCurrentLanguage(value, () => {
       ServerRequest("post", "/user/language", { language: value })
         .catch((error) => {

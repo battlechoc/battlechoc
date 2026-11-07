@@ -38,12 +38,6 @@
     "images:optimize": "node dev/optimize-images.mjs",
     "icons": "node dev/icons.mjs"
   },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not ie <= 11",
-    "not op_mini all"
-  ],
   "devDependencies": {
     "@playwright/test": "^1.64.0",
     "@vitejs/plugin-react": "^6.1.2",

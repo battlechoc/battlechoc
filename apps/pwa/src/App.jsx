@@ -54,6 +54,7 @@ import {
 } from "./ui/onDemand";
 import { challengeViewed } from "./match/liveSlice";
 import { loadUnlockState, takeNewUnlock } from "./unlocks";
+import { setDocumentLanguage } from "./helper/language";
 import QuickMessage from "./ui/dialogs/QuickMessage";
 import logger from "./helper/logger";
 import { LESSON, allDemos } from "./tutorial/ids";
@@ -122,6 +123,7 @@ class App extends Component {
     OfflineStore.settingsStore.get("language").then((language) => {
       const languageValue =
         typeof language !== "undefined" ? language : browserLanguage;
+      setDocumentLanguage(languageValue);
       setCurrentLanguage(languageValue, () => {
         ServerRequest("post", "/user/language", { language: languageValue })
           .catch((error) => {
