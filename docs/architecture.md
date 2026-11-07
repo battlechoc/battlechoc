@@ -1,0 +1,90 @@
+# Architecture
+
+How the parts of battlechoc fit together. For the rules of a match see
+[game-rules.md](game-rules.md); for running things, the [README](../README.md) and
+[deploy/README.md](../deploy/README.md).
+
+## The parts
+
+| Part | Where | Runs |
+| --- | --- | --- |
+| The game | `apps/pwa` | in the browser, served as static files from GitHub Pages (battlechoc.com); installable, works offline |
+| The rules | `packages/shared` | inside the game and inside the server: the same engine, texts and numbers |
+| The server | `apps/api` | on a VPS in Docker (`api.battlechoc.com`), with Postgres; image on Docker Hub |
+| Android app | `apps/android` | a Trusted Web Activity that opens battlechoc.com |
+
+```text
+ browser ──────────── battlechoc.com (GitHub Pages: HTML, JS, models, pictures)
+    │
+    ├── REST  https://api.battlechoc.com/...   accounts, profile, highscore, lab
+    └── WebSocket  wss://api.battlechoc.com/live   live matches, challenges
+                         │
+                    API container ── Postgres container
+```
+
+## One engine, three hosts
+
+`packages/shared/engine/` holds the whole rule set. It never reads a clock: every call gets the
+match time, and the match object carries everything else, the random generator included. So a
+match is reproducible from its seed and its actions, and the same engine can run anywhere:
+
+- **In the game, offline** (`apps/pwa/src/match/LocalMatchHost.js`): matches against Tom
+  Toffee or Gustav Ganache, the tutorial and the building demos. The AI agents run next to the
+  engine in the page.
+- **On the server** (`apps/api/src/live/room.js`): online matches, challenges and AI matches
+  that count for ingredients and the rating. The room is the only one that changes the match;
+  players send intents, the room applies them and sends each player their view.
+- **In tests and simulations** (`packages/shared/tests`, `packages/shared/scripts/simulate.js`).
+
+A player never gets the match itself, only a view of it (`engine/view.js`): their own field in
+full, the opponent's as far as they can see it. The server keeps the seed, the opponent's
+donuts and what lies under cream to itself.
+
+The engine is split by concern: `enums`, `selectors` (reading a match), `entities`, `match`
+(creation), `phases`, `timers`, `scenarios`, `build`, `combat`; `engine/index.js` applies an
+action and gathers them. Every number lives in `packages/shared/balance.js`; each match stores
+the balance it started with.
+
+## The game (`apps/pwa`)
+
+- **React** renders the screens and dialogs (`src/ui/`); **Redux Toolkit** holds the player's
+  view of the running match, the live connection's state and the UI state.
+- **Babylon.js** draws the boards (`src/3d/`). The 3D code loads after the title screen, so the
+  first screen needs only React and the game's own code.
+- The UI talks to one interface, the match host: `submit(type, payload)` and `now()`. Whether a
+  match runs locally or on the server makes no difference to the screens.
+- **Texts** come from `packages/shared/translations/` in eight languages; English is built in,
+  the game loads the player's language as a chunk of its own.
+- **Offline**: a Workbox service worker (`src/service-worker.js`) precaches the build, the models,
+  pictures, sounds and fonts. Without the server the game plays against its local AI; accounts,
+  online play and the lab wait for the connection.
+- **Accounts** are device accounts: on the first start the server creates a player and hands out
+  a refresh token, which the game keeps in IndexedDB. There are no passwords.
+
+## The server (`apps/api`)
+
+- **Express** serves the REST routes (`src/routes/`), **ws** the live WebSocket (`src/live/`), on
+  one HTTP server. `src/config.js` reads and checks the environment once at the start.
+- **Postgres** stores players, sessions, matches with their actions (for recovery after a
+  restart), ingredients, items and the rating. Migrations in `src/migrations/` run at the start,
+  each in a transaction.
+- **Live matches**: a lobby (`lobby.js`) pairs players from a queue, falls back to an AI after a
+  while, and hosts challenges (`challenges.js`, shared by link or code). A room saves snapshots
+  and its action log, so a restart of the server resumes the running matches; the players'
+  games reconnect by themselves.
+- **Trust**: what has value comes only from matches the server hosted: ingredients
+  (`rewards.js`) and the public rating (only matches between two humans). A match played
+  offline gives private experience only, which decides nothing but the player's own board size
+  and AI opponent, so a faked result gains nothing.
+
+## Releases and deployment
+
+- Commits follow Conventional Commits; release-please turns them into a version and
+  `CHANGELOG.md` and opens a release pull request. Merging it tags `vX.Y.Z`.
+- **The game**: every green CI run on `main` deploys `apps/pwa` to GitHub Pages
+  (`.github/workflows/pages.yml`).
+- **The server**: every release builds the API image for amd64 and arm64 and pushes it to Docker
+  Hub (`.github/workflows/api-image.yml`). The VPS runs it with `deploy/docker-compose.yml`.
+- CI (`.github/workflows/ci.yml`) runs the unit tests of every package, the API tests on an
+  in-memory database and on Postgres 17, starts the API image with the server's compose file,
+  builds the game and runs the browser tests in four parallel groups.
