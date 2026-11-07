@@ -52,6 +52,22 @@ test("walks through field choice, simultaneous placement and countdown", async (
   await page.screenshot({ path: "test/output/screenshot_realtime_running.png" });
 });
 
+// The match ends before the fields are assigned (a player gives up or leaves during the field
+// choice): no boards to draw. It took the whole page down once (Gamefield got no field).
+test("a match given up during the field choice ends with the end screen", async ({ page }) => {
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await openAsPlayer(page);
+  await startMatch(page);
+  expect(await phase(page)).toBe("MatchPhase.FIELD_CHOICE");
+  await page.evaluate(() => window.__battlechoc.host.submit("battlechoc/match/surrender", {}));
+  await expect(page.getByText(/You lost/i).first()).toBeVisible();
+  await page.locator("[data-icon=done]:visible, [data-icon=fast-forward]:visible").first().click();
+  await page.locator("[data-icon=done]:visible").first().click();
+  await expect(page.getByTestId("start-button")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test("builds a cannon that turns blue after 10 s and green after 20 s", async ({ page }) => {
   await openAsPlayer(page);
   await startMatch(page);

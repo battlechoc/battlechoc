@@ -138,12 +138,15 @@ class App extends Component {
       }
     }
 
-    // a real-time match renders its boards as soon as the fields are assigned
+    // a real-time match renders its boards as soon as the fields are assigned (a match given up
+    // during the field choice ends without them: there are no boards to show)
+    const match = this.props.matchView;
     if (
-      typeof this.props.matchView !== "undefined" &&
+      typeof match !== "undefined" &&
       typeof this.scene !== "undefined" &&
       this.scene.playerGameField === null &&
-      this.props.matchView.phase !== engine.MatchPhase.FIELD_CHOICE
+      match.phase !== engine.MatchPhase.FIELD_CHOICE &&
+      match.players.every((player) => Number.isInteger(player.fieldIndex))
     ) {
       this.scene.startGame(this.props.matchView);
     }
