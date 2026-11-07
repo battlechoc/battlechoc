@@ -5,6 +5,8 @@
 // game's general preview instead.
 
 const crypto = require('crypto');
+// the page answers in the challenger's language: every language's texts
+require('@battlechoc/battlechoc-shared-functions/i18n/all');
 const {
     live,
     translateIn,

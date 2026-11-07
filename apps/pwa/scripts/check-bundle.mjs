@@ -15,7 +15,7 @@ import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
 
 // about 15 % above the build this was last set for (see the commit); raise it knowingly
-const BUDGET_GZIP_KB = 295;
+const BUDGET_GZIP_KB = 200;
 
 // what only Babylon's code carries: its class registry names, its version line, its packages
 const BABYLON = /BABYLON\.|Babylon\.js v|@babylonjs\//;

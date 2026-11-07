@@ -60,3 +60,17 @@ test("on the dev server a match ends with the end screen and returns to the titl
   await page.waitForTimeout(3000);
   expect(errors).toEqual([]);
 });
+
+// the languages are chunks of their own, which the dev server pre-bundles one by one
+test.describe("the dev server in German", () => {
+  test.use({ locale: "de-DE" });
+
+  test("loads the German texts", async ({ page }) => {
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto(devUrl, { waitUntil: "networkidle" });
+    await expect(page.locator("html")).toHaveAttribute("lang", "de", { timeout: 30000 });
+    await expect(page.getByTestId("start-button")).toContainText("Tutorial starten", { timeout: 30000 });
+    expect(errors).toEqual([]);
+  });
+});

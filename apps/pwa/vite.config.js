@@ -235,7 +235,13 @@ export default defineConfig(({ command, mode }) => ({
   // the shared package is linked through the npm workspace and is CommonJS: the dev server
   // only converts it to ESM when it is pre-bundled like a dependency (see the top of this file)
   optimizeDeps: {
-    include: ['@battlechoc/battlechoc-shared-functions'],
+    include: [
+      '@battlechoc/battlechoc-shared-functions',
+      // the languages the game loads one by one (src/helper/language.js)
+      ...['de', 'ja', 'es', 'fr', 'it', 'pt', 'vi'].map(
+        (code) => `@battlechoc/battlechoc-shared-functions/translations/${code}`
+      ),
+    ],
     force: command === 'serve' && sharedChanged(),
   },
   server: {

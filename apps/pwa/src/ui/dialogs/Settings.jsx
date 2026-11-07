@@ -9,7 +9,6 @@ import { Jukebox, useAudioSettings } from "../misc";
 import {
   translate as t,
   translationKeys as tr,
-  setCurrentLanguage,
   getCurrentLanguage,
   unlocks,
 } from "@battlechoc/battlechoc-shared-functions";
@@ -29,7 +28,8 @@ import {
   useFullscreenAvailable,
 } from "../../helper/fullscreen";
 import { LAB_INTRO_SEEN } from "../lab/LabIntro";
-import { setDocumentLanguage } from "../../helper/language";
+import { applyLanguage } from "../../helper/language";
+import { rememberLanguage } from "../../helper/rememberLanguage";
 
 const useStyles = createUseStyles((theme) => ({
   wrapper: {
@@ -110,7 +110,7 @@ const Settings = (props) => {
   const [withDeviceInformation, setWithDeviceInformation] = useState(false);
   const [additionalReportMessage, setAdditionalReportMessage] = useState(false);
   const [sendingReport, setSendingReport] = useState(false);
-  const [forceUpdate, setForceUpdate] = useState(0);
+  const [, setForceUpdate] = useState(0);
 
   const classes = useStyles();
   const audio = useAudioSettings();
@@ -176,7 +176,7 @@ const Settings = (props) => {
       label: t(tr.GERMAN),
     },
     {
-      value: "jp",
+      value: "ja",
       label: t(tr.JAPANESE),
     },
     {
@@ -196,24 +196,19 @@ const Settings = (props) => {
       label: t(tr.PORTUGUESE),
     },
     {
-      value: "vn",
+      value: "vi",
       label: t(tr.VIETNAMESE),
     },
   ];
 
   const changeLanguage = (value) => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-    setDocumentLanguage(value);
-    setCurrentLanguage(value, () => {
-      ServerRequest("post", "/user/language", { language: value })
-        .catch((error) => {
-          if (!(error instanceof ReferenceError)) {
-            console.warn(error);
-          }
-        })
-        .finally(() => OfflineStore.settingsStore.set("language", value));
-    });
-    setForceUpdate(1 - forceUpdate);
+    applyLanguage(value)
+      .then((code) => {
+        rememberLanguage(code);
+        setForceUpdate((count) => count + 1);
+      })
+      .catch((error) => logger.warn("could not load the language", error));
   };
 
   return (

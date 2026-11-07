@@ -42,3 +42,51 @@ test("the Info dialog speaks the player's language", async ({ page }) => {
   await expect(page.getByTestId("info-build")).toContainText("Aktualisiert jetzt");
   await expect(page.getByRole("link", { name: "Zur vollständigen Datenschutzerklärung (Deutsch und Englisch)" })).toBeVisible();
 });
+
+// Japanese and Vietnamese came out English until 2026-11: the game's codes were jp and vn, the
+// browser says ja and vi
+test.describe("a Japanese browser", () => {
+  test.use({ locale: "ja-JP" });
+
+  test("gets the game in Japanese, and the page says so", async ({ page }) => {
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect(page.locator("html")).toHaveAttribute("lang", "ja");
+    await page.locator("[data-icon=info]:visible").click();
+    await expect(page.getByText("battlechoc について", { exact: true })).toBeVisible();
+  });
+});
+
+test("a device that stored the old code vn keeps its Vietnamese", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.waitForFunction(() => document.body.innerText.trim().length > 0);
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const open = indexedDB.open("battlechoc");
+        open.onsuccess = () => {
+          const tx = open.result.transaction("settings", "readwrite");
+          tx.objectStore("settings").put("vn", "language");
+          tx.oncomplete = () => resolve();
+        };
+      })
+  );
+  await page.goto("/", { waitUntil: "networkidle" });
+  await expect(page.locator("html")).toHaveAttribute("lang", "vi");
+  await page.locator("[data-icon=info]:visible").click();
+  await expect(page.getByText("Giới thiệu battlechoc", { exact: true })).toBeVisible();
+  // the device now holds the language code
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          new Promise((resolve) => {
+            const open = indexedDB.open("battlechoc");
+            open.onsuccess = () => {
+              const get = open.result.transaction("settings").objectStore("settings").get("language");
+              get.onsuccess = () => resolve(get.result);
+            };
+          })
+      )
+    )
+    .toBe("vi");
+});
