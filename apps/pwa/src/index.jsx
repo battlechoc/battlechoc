@@ -133,8 +133,8 @@ createRoot(document.getElementById("root")).render(
   </Provider>
 );
 
-// A new build is installed (the worker takes over at once, skipWaiting): the player is asked to
-// start it (dialogs/UpdateAvailable.jsx), after the match if one is running.
+// The worker of a new build has taken over (skipWaiting, registerServiceWorker.js): the player is
+// asked to start it (dialogs/UpdateAvailable.jsx), after the match if one is running.
 let config = {
   onUpdate: () => {
     store.dispatch(updateAvailableChanged(true));

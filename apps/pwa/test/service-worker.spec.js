@@ -109,14 +109,17 @@ const answers = (url, status) =>
   site.log.filter((entry) => entry.url === url && entry.status === status);
 
 // the first visit: the title screen, then the worker (registered once the 3D models are in)
-// installs, activates and takes the page over
+// installs, activates and takes the page over (clientsClaim does that while it is still
+// activating, so the page waits for the end of its activation)
 const firstVisit = async (page) => {
   await page.goto(site.origin + "/");
   await expect(page.getByTestId("start-button")).toHaveText("Start Tutorial", {
     timeout: 30000,
   });
   await page.waitForFunction(
-    () => navigator.serviceWorker.controller !== null,
+    () =>
+      navigator.serviceWorker.controller !== null &&
+      navigator.serviceWorker.controller.state === "activated",
     null,
     { timeout: 60000 }
   );
@@ -240,12 +243,14 @@ test("a new build reaches an installed game: the updated worker takes a changed 
     const registration = await navigator.serviceWorker.getRegistration();
     await registration.update();
   });
-  // the game offers the new version (dialogs/UpdateAvailable.jsx), and the new worker serves the
-  // new picture
+  // the game offers the new version (dialogs/UpdateAvailable.jsx) once the new worker is in
+  // charge, so it serves the new picture right away. (Offered at "installed", the dialog's
+  // pictures went to the old worker as Chrome stopped it: the new one kept waiting, and the
+  // reload of "Start now" hung. On Linux that happened nearly every time.)
   await expect(page.getByTestId("update-available")).toBeVisible({
     timeout: 30000,
   });
-  await expect.poll(inPage, { timeout: 15000 }).toBe(after);
+  expect(await inPage()).toBe(after);
   // of the game's files only the changed one was asked for, with a conditional request that
   // got the new file
   const fetched = site.log.filter((entry) =>
