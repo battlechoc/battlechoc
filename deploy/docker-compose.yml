@@ -44,6 +44,10 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+      # optional: match retention and database pool settings (empty = the API's defaults)
+      MATCH_RETENTION_DAYS: ${MATCH_RETENTION_DAYS:-}
+      DB_POOL_MAX: ${DB_POOL_MAX:-}
+      DB_STATEMENT_TIMEOUT_MS: ${DB_STATEMENT_TIMEOUT_MS:-}
       # the secret recipe table, mounted read-only (never in the repository or the image)
       RECIPES_FILE: /run/secrets/recipes.json
     volumes:
