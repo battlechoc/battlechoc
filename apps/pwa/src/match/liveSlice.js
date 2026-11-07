@@ -17,7 +17,7 @@ const initialState = {
   // or "connecting" and "unreachable" before the server answered
   challengeView: null,
   // the player closed "Play with a friend" before the server made the challenge: it is cancelled
-  // when it arrives (Hud sends the cancel for challengeToCancel) instead of reopening the dialog
+  // when it arrives (liveLobby sends the cancel for challengeToCancel) instead of reopening the dialog
   challengeDismissed: false,
   challengeToCancel: null,
 };

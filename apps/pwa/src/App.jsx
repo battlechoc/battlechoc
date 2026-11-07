@@ -27,7 +27,8 @@ import {
   stopTutorial,
   showOverview,
   resetUi,
-  loadUiState,
+  earlyUnlockDecided,
+  nameConflictChanged,
   gameResumeable,
   updatePlayerStats,
   setPlayerRank,
@@ -35,7 +36,7 @@ import {
   showNotification,
   deselectBuildings,
   deselectAttack,
-} from "./ui/UiActions";
+} from "./ui/uiSlice";
 import { debugScenarios } from "./situations/scenarios";
 import { testHooksEnabled, exposeForTests } from "./testHooks";
 import Hud from "./ui/Hud";
@@ -110,7 +111,7 @@ class App extends Component {
       showQuickMessage: this.props.showQuickMessage,
       showNotification: this.props.showNotification,
       // a name chosen offline was taken meanwhile: the player chooses another (NameConflict)
-      nameConflict: (conflict) => this.props.loadUiState({ nameConflict: conflict }),
+      nameConflict: (conflict) => this.props.nameConflictChanged(conflict),
     });
 
     // the language the player chose, else the browser's (ja-JP → ja; English when the game
@@ -131,18 +132,6 @@ class App extends Component {
     }
     this.connectLive();
 
-    OfflineStore.settingsStore.get("tips").then((tips) => {
-      if (tips === false) {
-        this.props.loadUiState({ tipsEnabled: false });
-      }
-    });
-
-    OfflineStore.settingsStore.get("autoFullscreen").then((autoFullscreen) => {
-      if (autoFullscreen === false) {
-        this.props.loadUiState({ autoFullscreen: false });
-      }
-    });
-
     OfflineStore.hasGameToResume().then((resumeable) => {
       this.props.gameResumeable(resumeable);
     });
@@ -154,7 +143,7 @@ class App extends Component {
     multiplayer
       .fetchPlayerStats()
       .then((stats) => loadUnlockState(stats))
-      .then((unlockState) => this.props.loadUiState({ earlyUnlock: Boolean(unlockState.early) }))
+      .then((unlockState) => this.props.earlyUnlockDecided(unlockState.early))
       .catch((error) => logger.warn("could not load the unlocks", error));
 
     let iOSDevice = /^(iPhone|iPad|iPod)/.test(navigator.platform);
@@ -360,6 +349,7 @@ class App extends Component {
   connectLive() {
     liveLobby.init({
       dispatch: matchSession.dispatch,
+      getState: matchSession.getState,
       onMatch: (message) => this.startOnlineMatch(message),
     });
     liveLobby.onMatchGone = () => {
@@ -720,13 +710,14 @@ const mapStateToProps = (state) => ({
   assetsReady: state.ui.assetsReady,
   playerInfos: state.ui.playerInfos,
   quickMessages: state.ui.quickMessages,
-  autoFullscreen: state.ui.autoFullscreen,
+  autoFullscreen: state.settings.autoFullscreen,
   earlyUnlock: state.ui.earlyUnlock,
   challengeView: state.live.challengeView,
 });
 
 const mapDispatchToProps = {
-  loadUiState,
+  earlyUnlockDecided,
+  nameConflictChanged,
   gameResumeable,
   resetUi,
   showOverview,

@@ -7,7 +7,7 @@ import {
 } from "@battlechoc/battlechoc-shared-functions";
 import Dialog from "./Dialog";
 import Button from "../controls/Button";
-import { loadUiState } from "../UiActions";
+import { nameConflictChanged } from "../uiSlice";
 
 const useStyles = createUseStyles((theme) => ({
   body: {
@@ -50,7 +50,7 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-  close: () => dispatch(loadUiState({ nameConflict: null })),
+  close: () => dispatch(nameConflictChanged(null)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(NameConflict);

@@ -5,7 +5,7 @@ import {
   engine,
   AttackType,
 } from "@battlechoc/battlechoc-shared-functions";
-import { selectAttack, focusBoard } from "../UiActions";
+import { selectAttack, focusBoard } from "../uiSlice";
 import { Jukebox } from "../misc";
 import useMatchTime from "./useMatchTime";
 import ProgressRing from "./ProgressRing";

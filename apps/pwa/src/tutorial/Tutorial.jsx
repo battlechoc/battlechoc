@@ -12,12 +12,14 @@ import { Jukebox } from "../ui/misc";
 import { multiplayer } from "../Multiplayer";
 import {
   updatePlayerStats,
-  loadUiState,
+  boardTopInsetChanged,
+  tutorialPointerChanged,
+  tutorialBoardChanged,
   tapBuilding,
   selectBuilding,
   deselectBuildings,
   focusBoard,
-} from "../ui/UiActions";
+} from "../ui/uiSlice";
 import PlayerNameInput from "../ui/controls/PlayerNameInput";
 import Button from "../ui/controls/Button";
 import CoachCard from "../ui/controls/CoachCard";
@@ -80,7 +82,7 @@ const Tutorial = (props) => {
   const [named, setNamed] = useState(isNamed(stats));
   const [initialUserName, setInitialUserName] = useState(stats.username);
   // in portrait the card lies across the top of the board: the scene moves the board below it
-  const cardLayout = useCallback((bottom) => dispatch(loadUiState({ boardTopInset: bottom })), [dispatch]);
+  const cardLayout = useCallback((bottom) => dispatch(boardTopInsetChanged(bottom)), [dispatch]);
 
   // the lesson: start once; the demos: (re)start whenever the page changes
   useEffect(() => {
@@ -103,7 +105,7 @@ const Tutorial = (props) => {
   useEffect(
     () => () => {
       runner.current.stop();
-      dispatch(loadUiState({ tutorialPointer: null }));
+      dispatch(tutorialPointerChanged(null));
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
@@ -113,8 +115,8 @@ const Tutorial = (props) => {
   const current = lessonSteps[step];
   useEffect(() => {
     dispatch(
-      loadUiState({
-        tutorialInteractive: lesson,
+      tutorialBoardChanged({
+        interactive: lesson,
         whitelistBuildings: lesson && !finished ? current.whitelist : undefined,
       })
     );
@@ -151,7 +153,7 @@ const Tutorial = (props) => {
       const key = JSON.stringify(target);
       if (key !== pointerKey.current) {
         pointerKey.current = key;
-        dispatch(loadUiState({ tutorialPointer: target }));
+        dispatch(tutorialPointerChanged(target));
       }
       if (current.done && current.done(context)) {
         const following = lessonSteps[step + 1];
@@ -172,7 +174,7 @@ const Tutorial = (props) => {
   useEffect(() => {
     if (lesson && finished) {
       pointerKey.current = "null";
-      dispatch(loadUiState({ tutorialPointer: null }));
+      dispatch(tutorialPointerChanged(null));
       if (!stats.tutorialFinished) {
         multiplayer.tutorialFinished();
       }

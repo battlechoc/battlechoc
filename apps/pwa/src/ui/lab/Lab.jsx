@@ -9,7 +9,7 @@ import {
 } from "@battlechoc/battlechoc-shared-functions";
 import ChoclabPalette from "../controls/ChoclabPalette";
 import Fab from "../controls/Fab";
-import { updatePlayerStats } from "../UiActions";
+import { updatePlayerStats } from "../uiSlice";
 import { ServerRequest } from "../../helper/settings";
 import logger from "../../helper/logger";
 import OfflineStore from "../../OfflineStore";

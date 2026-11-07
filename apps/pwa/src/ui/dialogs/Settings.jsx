@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { connect } from "react-redux";
-import { showQuickMessage, loadUiState } from "../UiActions";
+import { showQuickMessage } from "../uiSlice";
+import { tipsEnabledChanged, autoFullscreenChanged } from "../../settingsSlice";
 import { Jukebox, useAudioSettings } from "../misc";
 import {
   translate as t,
@@ -306,11 +307,7 @@ const Settings = (props) => {
               <Button
                 className={classes.button}
                 color="secondary"
-                onClick={() => {
-                  const enabled = !props.autoFullscreen;
-                  props.loadUiState({ autoFullscreen: enabled });
-                  OfflineStore.settingsStore.set("autoFullscreen", enabled);
-                }}
+                onClick={() => props.autoFullscreenChanged(!props.autoFullscreen)}
               >
                 {props.autoFullscreen
                   ? t(tr.SETTINGS_AUTO_FULLSCREEN_ON)
@@ -333,9 +330,7 @@ const Settings = (props) => {
               color="secondary"
               onClick={() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                const enabled = !props.tipsEnabled;
-                props.loadUiState({ tipsEnabled: enabled });
-                OfflineStore.settingsStore.set("tips", enabled);
+                props.tipsEnabledChanged(!props.tipsEnabled);
               }}
             >
               {props.tipsEnabled ? t(tr.SETTINGS_TIPS_ON) : t(tr.SETTINGS_TIPS_OFF)}
@@ -401,14 +396,15 @@ const Settings = (props) => {
 const mapStateToProps = (state) => ({
   game: state.match.view,
   playerInfos: state.ui.playerInfos,
-  tipsEnabled: state.ui.tipsEnabled,
-  autoFullscreen: state.ui.autoFullscreen,
+  tipsEnabled: state.settings.tipsEnabled,
+  autoFullscreen: state.settings.autoFullscreen,
   earlyUnlock: state.ui.earlyUnlock,
 });
 
 const mapDispatchToProps = {
-  loadUiState,
   showQuickMessage,
+  tipsEnabledChanged,
+  autoFullscreenChanged,
 };
 
 const SettingsContainer = connect(

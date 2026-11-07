@@ -88,11 +88,15 @@ test("the settings hold the music and sound levels, the click sound and the full
   await page.getByText("Auto fullscreen: on", { exact: true }).click();
   await expect(page.getByText("Auto fullscreen: off", { exact: true })).toBeVisible();
   await expect(page.getByText("Fullscreen", { exact: true })).toBeVisible();
+  await page.getByText("Tips: on", { exact: true }).click();
+  await expect(page.getByText("Tips: off", { exact: true })).toBeVisible();
   await page.screenshot({ path: "test/output/screenshot_settings_sound.png" });
   await expect
     .poll(() => setting(page, "audio"))
     .toMatchObject({ musicVolume: 0.4, soundVolume: 0.75, clicks: false, sfxMuted: false });
-  expect(await setting(page, "autoFullscreen")).toBe(false);
+  // under the keys installed games have
+  await expect.poll(() => setting(page, "autoFullscreen")).toBe(false);
+  await expect.poll(() => setting(page, "tips")).toBe(false);
 
   // kept on this device
   await page.goto("/", { waitUntil: "networkidle" });
@@ -101,6 +105,7 @@ test("the settings hold the music and sound levels, the click sound and the full
   await expect(page.getByTestId("sound-volume")).toHaveValue("75");
   await expect(page.getByText("Click sound: off", { exact: true })).toBeVisible();
   await expect(page.getByText("Auto fullscreen: off", { exact: true })).toBeVisible();
+  await expect(page.getByText("Tips: off", { exact: true })).toBeVisible();
   await page.getByText("Sound: on", { exact: true }).click();
   await expect(page.getByText("Sound: off", { exact: true })).toBeVisible();
   await expect.poll(() => setting(page, "audio")).toMatchObject({ sfxMuted: true, musicVolume: 0.4 });

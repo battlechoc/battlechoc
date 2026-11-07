@@ -11,26 +11,43 @@ import {
 import rootReducer from "./RootReducer";
 import { matchSession } from "./match/LocalMatchHost";
 import { multiplayer } from "./Multiplayer";
-import { showQuickMessage, loadUiState } from "./ui/UiActions";
+import {
+  showQuickMessage,
+  fontsArrived,
+  updateAvailableChanged,
+  connectivityChanged,
+} from "./ui/uiSlice";
 import { connectivity } from "./connectivity";
 import { fontsLoaded } from "./firstLoad";
 import { warmOnDemand } from "./ui/onDemand";
 import promiseDispatch from "./helper/promiseDispatch";
 import { configureStore } from "@reduxjs/toolkit";
+import { hydrateSettings, createSettingsPersistence } from "./settingsSlice";
+import OfflineStore from "./OfflineStore";
+import logger from "./helper/logger";
 import { ThemeProvider } from "react-jss";
 
 const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(promiseDispatch),
+    getDefaultMiddleware()
+      .prepend(
+        createSettingsPersistence(OfflineStore.settingsStore, (error) =>
+          logger.warn("could not keep the setting", error)
+        )
+      )
+      .concat(promiseDispatch),
 });
 matchSession.dispatch = store.dispatch;
+matchSession.getState = store.getState;
+// the settings kept on the device (tips, auto fullscreen)
+store.dispatch(hydrateSettings(OfflineStore.settingsStore));
 
 // the title screen's menu shows once the fonts are in (no jumping labels); it does not wait for
 // the 3D engine, which arrives later. Then the chunks of what the player may open next are
 // asked for (the lab, the tutorial, the end of a match).
 fontsLoaded().then(() => {
-  store.dispatch(loadUiState({ fontsReady: true }));
+  store.dispatch(fontsArrived());
   warmOnDemand();
 });
 
@@ -106,7 +123,7 @@ createRoot(document.getElementById("root")).render(
 // start it (dialogs/UpdateAvailable.jsx), after the match if one is running.
 let config = {
   onUpdate: () => {
-    store.dispatch(loadUiState({ updateAvailable: true }));
+    store.dispatch(updateAvailableChanged(true));
   },
 };
 
@@ -149,12 +166,7 @@ window.addEventListener("online", () => {
 // state.ui.online: whether the server answers, serverDown: the internet works but the server does
 // not (the toasts above follow the browser's network)
 connectivity.onChange((status) => {
-  store.dispatch(
-    loadUiState({
-      online: status === "online",
-      serverDown: status === "server-down",
-    })
-  );
+  store.dispatch(connectivityChanged(status));
   // a name chosen offline is claimed as soon as the server answers
   if (status === "online") {
     multiplayer.syncPendingUsername();

@@ -2,7 +2,7 @@ import { engine } from "@battlechoc/battlechoc-shared-functions";
 import { LocalMatchHost, matchSession } from "../match/LocalMatchHost";
 import { MatchClock, ManualClock } from "../match/clock";
 import { matchCleared } from "../match/matchSlice";
-import { selectAttack, selectBuilding, deselectAttack, deselectBuildings, focusBoard } from "../ui/UiActions";
+import { selectAttack, selectBuilding, deselectAttack, deselectBuildings, focusBoard } from "../ui/uiSlice";
 import { lessonMatch } from "./lesson";
 import { demos, demoMatch } from "./demos";
 import { exposeForTests } from "../testHooks";

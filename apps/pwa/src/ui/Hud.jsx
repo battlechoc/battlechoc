@@ -12,7 +12,7 @@ import {
   showOfflineMessage,
   showNotification,
   hideNotification,
-} from "./UiActions";
+} from "./uiSlice";
 import Info from "./dialogs/Info";
 import Dialog from "./dialogs/Dialog";
 import Highscore from "./dialogs/Highscore";
@@ -255,12 +255,6 @@ const Hud = (props) => {
   const [dialogStyle, setDialogStyle] = useState("default");
   // "Play with a friend": null (closed), or { locked, lockText }
   const [challengeDialog, setChallengeDialog] = useState(null);
-  // a challenge that arrived after the dialog was closed: cancel it (liveSlice challengeToCancel)
-  useEffect(() => {
-    if (props.challengeToCancel) {
-      liveLobby.cancelChallenge(props.challengeToCancel).catch(() => {});
-    }
-  }, [props.challengeToCancel]);
   const [waitingRoom, setWaitingRoom] = useState(false);
   const [waitingRoomText, setWaitingRoomText] = useState(
     t(tr.TRY_TO_JOIN_GAME)
@@ -701,7 +695,6 @@ const mapStateToProps = (state) => ({
   online: state.ui.online,
   earlyUnlock: state.ui.earlyUnlock,
   challenge: state.live.challenge,
-  challengeToCancel: state.live.challengeToCancel,
   matchKind: state.match.kind,
   outgoingInvite: state.live.outgoingInvite,
   inviteClosed: state.live.inviteClosed,

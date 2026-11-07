@@ -201,8 +201,11 @@ class LocalMatchHost {
 }
 
 // the host of the running match, if any (like the multiplayer singleton)
+// the running match's host; dispatch and getState of the store (set by src/index.jsx)
 const matchSession = {
   host: undefined,
+  dispatch: () => {},
+  getState: () => ({ live: {} }),
 };
 
 export { LocalMatchHost, matchSession, LOCAL_PLAYER };

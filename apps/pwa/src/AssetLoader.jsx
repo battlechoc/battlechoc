@@ -1,6 +1,6 @@
 import { useImperativeHandle } from "react";
 import { connect } from "react-redux";
-import { assetsReady, loadUiState } from "./ui/UiActions";
+import { assetsReady, assetsProgressed, assetsFailedChanged } from "./ui/uiSlice";
 import {
   EntityType,
   BoardCellTypes,
@@ -336,12 +336,10 @@ const AssetLoadingView = (props) => {
   useImperativeHandle(customRef, () => ({
     loadAssets(scene) {
       loading.start(scene, {
-        progress: (value) => props.loadUiState({ assetsProgress: value }),
-        failed: (value) => props.loadUiState({ assetsFailed: value }),
-        ready: () => {
-          props.loadUiState({ assetsProgress: 100, assetsFailed: false });
-          props.assetsReady();
-        },
+        progress: (value) => props.assetsProgressed(value),
+        failed: (value) => props.assetsFailedChanged(value),
+        // the progress at 100 and no failure
+        ready: () => props.assetsReady(),
       });
     },
   }));
@@ -349,7 +347,7 @@ const AssetLoadingView = (props) => {
 };
 
 const mapStateToProps = () => ({});
-const mapDispatchToProps = { assetsReady, loadUiState };
+const mapDispatchToProps = { assetsReady, assetsProgressed, assetsFailedChanged };
 const AssetLoadingViewContainer = connect(
   mapStateToProps,
   mapDispatchToProps

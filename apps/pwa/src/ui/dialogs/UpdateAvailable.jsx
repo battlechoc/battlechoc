@@ -7,7 +7,7 @@ import {
 } from "@battlechoc/battlechoc-shared-functions";
 import Dialog from "./Dialog";
 import Button from "../controls/Button";
-import { loadUiState } from "../UiActions";
+import { updateAvailableChanged } from "../uiSlice";
 
 const useStyles = createUseStyles((theme) => ({
   body: {
@@ -52,7 +52,7 @@ const mapStateToProps = (state) => ({
 });
 
 const mapDispatchToProps = (dispatch) => ({
-  later: () => dispatch(loadUiState({ updateAvailable: false })),
+  later: () => dispatch(updateAvailableChanged(false)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(UpdateAvailable);
