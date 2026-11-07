@@ -61,6 +61,3 @@ export const matchReducer = matchSlice.reducer;
 
 // the match view the scene and the HUD render (matches, the tutorial lesson and demos)
 export const selectActiveGame = (state) => state.match.view;
-
-export const selectIsRealtime = (state) =>
-  typeof state.match.view !== "undefined";

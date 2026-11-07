@@ -267,7 +267,6 @@ const Hud = (props) => {
   );
   const [choclabScreen, setChoclabScreen] = useState(false);
   const [playerAccount, setPlayerAccount] = useState(undefined);
-  const [challengedProfile, setChallengedProfile] = useState(undefined);
 
   const sleep = (ms) => {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -315,19 +314,12 @@ const Hud = (props) => {
   }, [challengedPlayer, showQuickMessage]);
 
   const estimateStage = () => {
-    if (
-      typeof state === "undefined" &&
-      !choclabScreen &&
-      !challengedProfile &&
-      !waitingRoom
-    ) {
+    if (typeof state === "undefined" && !choclabScreen && !waitingRoom) {
       return "TITLE_SCREEN";
     } else if (state === engine.MatchPhase.FIELD_CHOICE) {
       return "CHOOSE_MENU";
     } else if (choclabScreen) {
       return "CHOCLAB_SCREEN";
-    } else if (challengedProfile) {
-      return "CHALLENGE_SCREEN";
     } else if (waitingRoom) {
       return "WAITING_ROOM";
     } else {
@@ -404,16 +396,6 @@ const Hud = (props) => {
                 color="secondary"
                 icon="back"
                 onClick={() => setChoclabScreen(false)}
-              ></Fab>
-            </div>
-          );
-        } else if (stage === "CHALLENGE_SCREEN") {
-          return (
-            <div className={classes.actionbar}>
-              <Fab
-                color="secondary"
-                icon="back"
-                onClick={() => setChallengedProfile(undefined)}
               ></Fab>
             </div>
           );

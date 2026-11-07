@@ -12,7 +12,6 @@ import { Jukebox } from "../ui/misc";
 import { multiplayer } from "../Multiplayer";
 import {
   updatePlayerStats,
-  showNotification,
   loadUiState,
   tapBuilding,
   selectBuilding,
@@ -189,9 +188,6 @@ const Tutorial = (props) => {
   const close = (startGame) => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     runner.current.stop();
-    if (!lesson && props.notificationOnLoopsEnd) {
-      props.showNotification(props.notificationOnLoopsEnd);
-    }
     props.closeTutorial(startGame);
   };
 
@@ -331,7 +327,6 @@ const Tutorial = (props) => {
 const mapStateToProps = (state) => ({
   view: state.match.view,
   loops: state.ui.loopAnimations,
-  notificationOnLoopsEnd: state.ui.notificationOnLoopsEnd,
   playerInfos: state.ui.playerInfos,
   online: state.ui.online,
   selectedAttack: state.ui.selectedAttack,
@@ -340,7 +335,6 @@ const mapStateToProps = (state) => ({
 const mapDispatchToProps = (dispatch) => ({
   dispatch,
   updatePlayerStats: (stats) => dispatch(updatePlayerStats(stats)),
-  showNotification: (notification) => dispatch(showNotification(notification)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Tutorial);

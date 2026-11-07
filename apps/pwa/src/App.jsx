@@ -152,7 +152,7 @@ class App extends Component {
 
     // what the player has unlocked: decided from the stats on the device (src/unlocks.js)
     multiplayer
-      .fetchPlayerStats(this.props.updatePlayerStats)
+      .fetchPlayerStats()
       .then((stats) => loadUnlockState(stats))
       .then((unlockState) => this.props.loadUiState({ earlyUnlock: Boolean(unlockState.early) }))
       .catch((error) => logger.warn("could not load the unlocks", error));
@@ -230,8 +230,6 @@ class App extends Component {
     if (!this.props.autoFullscreen) {
       return;
     }
-    const isElectronApp =
-      navigator.userAgent.toLowerCase().indexOf(" electron/") > -1;
     const isAndroidDevice = /Android/i.test(navigator.userAgent);
     const isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
     const isFullscreen =
@@ -240,7 +238,7 @@ class App extends Component {
       document.mozFullScreenElement ||
       document.msFullscreenElement;
 
-    if (!isFullscreen && !isiOS && !isElectronApp) {
+    if (!isFullscreen && !isiOS) {
       if (typeof document.documentElement.requestFullscreen === "function") {
         document.documentElement
           .requestFullscreen()

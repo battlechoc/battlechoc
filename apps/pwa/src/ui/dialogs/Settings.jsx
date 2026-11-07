@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 import { connect } from "react-redux";
-import {
-  hideQuickMessage,
-  showQuickMessage,
-  loadUiState,
-} from "../UiActions";
+import { showQuickMessage, loadUiState } from "../UiActions";
 import { Jukebox, useAudioSettings } from "../misc";
 import {
   translate as t,
@@ -405,7 +401,6 @@ const Settings = (props) => {
 const mapStateToProps = (state) => ({
   game: state.match.view,
   playerInfos: state.ui.playerInfos,
-  tutorial: state.ui.tutorial,
   tipsEnabled: state.ui.tipsEnabled,
   autoFullscreen: state.ui.autoFullscreen,
   earlyUnlock: state.ui.earlyUnlock,
@@ -413,7 +408,6 @@ const mapStateToProps = (state) => ({
 
 const mapDispatchToProps = {
   loadUiState,
-  hideQuickMessage,
   showQuickMessage,
 };
 

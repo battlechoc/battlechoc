@@ -48,10 +48,7 @@ class Multiplayer {
   }
 
   async accountReady() {
-    this.callbacks.notifyPlayerSignedIn({
-      uid: account.playerId,
-      isAnonymous: true,
-    });
+    this.callbacks.notifyPlayerSignedIn({ uid: account.playerId });
     try {
       await ServerRequest("post", "/user");
       const mergedStats = await this.mergePlayerStats();
@@ -73,6 +70,8 @@ class Multiplayer {
   }
 
   /* ---------- web push ---------- */
+
+  // nothing calls these yet: when to ask for push messages is still to be decided
 
   shouldAskForNotificationPermission() {
     return (

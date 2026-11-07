@@ -4,7 +4,6 @@ import {
   EmptyPlayerStats,
   EntityType,
 } from "@battlechoc/battlechoc-shared-functions";
-import OfflineStore from "../OfflineStore";
 import { uuid } from "../helper/uuid";
 
 const uiReducer = createReducer(
@@ -18,11 +17,10 @@ const uiReducer = createReducer(
     fontsReady: false,
     assetsProgress: 0,
     assetsFailed: false,
-    tutorialAlreadySeen: false,
     overviewVisible: false,
     tutorial: false,
     ranking: "Offline",
-    playerInfos: { stats: EmptyPlayerStats, isSignedIn: false },
+    playerInfos: { stats: EmptyPlayerStats },
     quickMessages: [],
     notification: { title: null, message: null, open: false },
     boardViewToggles: 0,
@@ -106,25 +104,17 @@ const uiReducer = createReducer(
         state.overviewVisible = true;
       })
       .addCase(UiActions.notifyPlayerSignedIn, (state, action) => {
-        state.playerInfos.isSignedIn = true;
-        state.playerInfos.isAnonymous = action.payload.isAnonymous;
-        state.playerInfos.email = action.payload.email;
         state.playerInfos.uid = action.payload.uid;
-        state.playerInfos.name = action.payload.name;
       })
       .addCase(UiActions.stopTutorial, (state, action) => {
         state.tutorial = false;
         state.tutorialInteractive = false;
         state.whitelistBuildings = undefined;
         state.tutorialPointer = null;
-        state.notificationOnLoopsEnd = null;
-        OfflineStore.settingsStore.set("tutorialAlreadySeen", true);
       })
       .addCase(UiActions.startTutorial, (state, action) => {
         state.tutorial = true;
         state.loopAnimations = action.payload.loops;
-        state.notificationOnLoopsEnd =
-          action.payload.notificationOnLoopsEnd || null;
       })
       .addCase(UiActions.updatePlayerStats, (state, action) => {
         Object.assign(state.playerInfos.stats, action.payload);

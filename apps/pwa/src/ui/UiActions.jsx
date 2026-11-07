@@ -79,7 +79,6 @@ export {
   showOverview,
   resetUi,
   loadUiState,
-  UiActionTypes,
   selectBuilding,
   tapBuilding,
   selectAttack,
