@@ -80,6 +80,8 @@ const CAMERA_FLIGHT = new Vector3(-24, -12, 0);
 const boardHeight = (cols) => (cols - 1) / 2 + (cols - 6) / 8;
 // the energy bars float this high above the base of the boards
 const ENERGY_BAR = 1.5;
+// a floating info (+cacao, +1 shot, ...) rises and fades over this many frames (at 60 a second)
+const POP_FRAMES = 120;
 // the progress donut's glaze by the cannon's state: pistachio when a shot is ready, blueberry
 // when one can be rushed (the weapon palette's colours, mixed with 25 % white: the full colours
 // were too dark for a glaze, the user's pick from screenshots/progress-donut/glaze-colours.png)
@@ -473,12 +475,12 @@ class Scene extends Component {
         );
         fade.setKeys([
           { frame: 0, value: 1.0 },
-          { frame: 100, value: 0.8 },
-          { frame: 120, value: 0.0 },
+          { frame: POP_FRAMES - 20, value: 0.8 },
+          { frame: POP_FRAMES, value: 0.0 },
         ]);
         const keyframes = [
           { frame: 0, value: info.position.y },
-          { frame: 120, value: info.position.y + 1.4 },
+          { frame: POP_FRAMES, value: info.position.y + 1.4 },
         ];
         flyaway.setKeys(keyframes);
         info.animations = [flyaway, fade];
@@ -504,7 +506,9 @@ class Scene extends Component {
             running.stopAnimation();
           }
         };
-        this.scene.beginAnimation(info, 0, 180, false, 1, () => {
+        // up to the last key (POP_FRAMES): the pop is invisible from there on, and until it
+        // ends the render loop runs
+        this.scene.beginAnimation(info, 0, POP_FRAMES, false, 1, () => {
           if (
             this.animations.findIndex((callback) => callback.id === uuid) > -1
           ) {
