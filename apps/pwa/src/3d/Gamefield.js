@@ -28,26 +28,40 @@ const key = ({ phenotype, id }) => `${phenotype}|${id}`;
 // One board in the scene: the instances of the models on its cells, kept in step with the
 // board of the match view.
 class Gamefield {
-  constructor(
-    isPlayerGameField,
+  /**
+   * @param {object} options
+   * @param {boolean} options.own the viewer's own board (else the opponent's)
+   * @param {Vector3} options.position where its first cell lies
+   * @param {() => object} options.getField the board's field in the current match view
+   * @param {number} options.fieldIdx the field's index in the match
+   * @param {{rows: number, cols: number}} options.size
+   * @param {Scene} options.scene
+   * @param {(row, col, position) => void} options.onCellTap a tap on a cell; `position` is the
+   *   place of the mesh that was tapped
+   * @param {(run?: boolean) => void} options.setRenderLoop holds the render loop while an
+   *   explosion or a melting cell moves (run false gives it back)
+   * @param {() => void} [options.requestRender] draws the scene once soon; the scene coalesces
+   *   several requests into one frame
+   */
+  constructor({
+    own,
     position,
-    getPlayerField,
+    getField,
     fieldIdx,
     size,
     scene,
-    action,
+    onCellTap,
     setRenderLoop,
-    // draws the scene once soon; the scene coalesces several requests into one frame
-    requestRender = () => scene.render()
-  ) {
-    this.isPlayerGameField = isPlayerGameField;
+    requestRender = () => scene.render(),
+  }) {
+    this.isPlayerGameField = own;
     this.rows = size.rows;
     this.cols = size.cols;
     this.position = position;
     this.fieldIdx = fieldIdx;
     this.scene = scene;
-    this.action = action;
-    this.getPlayerField = () => getPlayerField();
+    this.onCellTap = onCellTap;
+    this.getPlayerField = () => getField();
     this.setRenderLoop = setRenderLoop;
     this.requestRender = requestRender;
     // explosions and melting cells on their way, and their timers

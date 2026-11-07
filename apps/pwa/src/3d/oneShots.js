@@ -32,6 +32,11 @@ export class OneShots {
     this.timers.add(timer);
   }
 
+  // whether the effect that `end` ends is still on
+  isRunning(end) {
+    return this.running.has(end);
+  }
+
   get size() {
     return this.running.size;
   }

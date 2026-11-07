@@ -103,10 +103,18 @@ const playAndRender = (seed, size) => {
       const opponent = 1 - own;
       if (!fields) {
         const noop = () => {};
-        fields = [
-          new Gamefield(true, new Vector3(0, 0, 0), () => view.board.fields[own], own, view.board.size, scene, noop, noop),
-          new Gamefield(false, new Vector3(-12, 0, 12), () => view.board.fields[opponent], opponent, view.board.size, scene, noop, noop),
-        ];
+        const board = (mine, fieldIdx, position) =>
+          new Gamefield({
+            own: mine,
+            position,
+            getField: () => view.board.fields[fieldIdx],
+            fieldIdx,
+            size: view.board.size,
+            scene,
+            onCellTap: noop,
+            setRenderLoop: noop,
+          });
+        fields = [board(true, own, new Vector3(0, 0, 0)), board(false, opponent, new Vector3(-12, 0, 12))];
       }
       fields.forEach((field) => {
         const before = JSON.parse(JSON.stringify(field.playerField));
@@ -177,17 +185,17 @@ const board = (own, cells, molten, size = { rows: 3, cols: 3 }, { shield = false
   const fieldIdx = own ? 0 : 1;
   let field = { grid: grid(cells, molten, size) };
   let loops = 0;
-  const gamefield = new Gamefield(
+  const gamefield = new Gamefield({
     own,
-    own ? new Vector3(0, 0, 0) : new Vector3(-12, 0, 12),
-    () => field,
+    position: own ? new Vector3(0, 0, 0) : new Vector3(-12, 0, 12),
+    getField: () => field,
     fieldIdx,
     size,
     scene,
-    () => {},
-    (run = true) => (loops += run ? 1 : -1),
-    () => {}
-  );
+    onCellTap: () => {},
+    setRenderLoop: (run = true) => (loops += run ? 1 : -1),
+    requestRender: () => {},
+  });
   const exploded = [];
   const melted = [];
   const explode = gamefield.explode.bind(gamefield);
@@ -361,7 +369,7 @@ test("opponent board: a creamed cell shows only its cream; shot away, the buildi
   assert.deepEqual(b.meshes(), names(b, TILE, CREAM));
   b.show({ "1.1": [["f", FACTORY]] });
   assert.deepEqual(b.meshes(), names(b, TILE, FACTORY));
-  // the cream simply makes way: the shot's own explosion is the scene's (detonateAtPosition)
+  // the cream simply makes way: the shot's own burst comes from the event (matchEffects.detonate)
   assert.deepEqual(b.exploded, []);
   b.show({});
   assert.deepEqual(b.exploded, [b.name(FACTORY)]);
