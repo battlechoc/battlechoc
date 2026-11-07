@@ -156,6 +156,10 @@ describe('progress', () => {
         const { app, pool } = await setup();
         const player = await account(app);
         expect((await player.post('/user/language', { language: 'de' }).expect(200)).body.language).toBe('de');
+        // a device that still holds the old country code, and a browser tag with a region
+        expect((await player.post('/user/language', { language: 'jp' }).expect(200)).body.language).toBe('ja');
+        expect((await player.post('/user/language', { language: 'vi-VN' }).expect(200)).body.language).toBe('vi');
+        expect((await pool.query('SELECT language FROM players')).rows.map(row => row.language)).toEqual(['vi']);
         await player.post('/user/language', { language: 'xx' }).expect(400);
         await player.post('/debugging/gamestate', { report: { message: 'hi', reported: Date.now() } }).expect(201);
         expect(Number((await pool.query('SELECT COUNT(*) AS n FROM reports')).rows[0].n)).toBe(1);
@@ -304,6 +308,14 @@ describe('play page', () => {
         expect(meta(response.text, 'og:description')).toMatch(/Schokoladenschlacht/);
         expect(response.text).toContain('location.replace("https://battlechoc.com/?challenge=K7Q2-M9XD")');
         expect(response.text).toContain('href="https://battlechoc.com/?challenge=K7Q2-M9XD"');
+    });
+
+    test('a challenger with the old Japanese code gets a Japanese page', async () => {
+        const app = await playApp(() => ({ from: 'Yuki', language: 'jp' }));
+        const response = await request(app).get('/play/k7q2-m9xd').expect(200);
+        expect(response.text).toContain('<html lang="ja">');
+        expect(meta(response.text, 'og:title')).toContain('Yuki');
+        expect(meta(response.text, 'og:title')).not.toContain('challenges');
     });
 
     test('an unknown or missing code gets the general preview and the plain game link', async () => {

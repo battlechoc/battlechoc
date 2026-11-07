@@ -66,7 +66,7 @@ const createAuth = ({ pool, secret, now = () => Date.now() }) => {
         let payload;
         try {
             payload = verifyJwt(accessToken, secret);
-        } catch (error) {
+        } catch {
             throw new HttpError(401, ErrorCode.INVALID_ACCESS_TOKEN);
         }
         if (payload.iss !== ISSUER || typeof payload.sub !== 'string' || !(payload.exp > Math.floor(now() / 1000))) {

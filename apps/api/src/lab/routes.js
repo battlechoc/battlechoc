@@ -63,7 +63,7 @@ const registerLabRoutes = (app, { pool, user, recipes, oneAtATime, triesPerHour 
                 await pool.query('INSERT INTO recipe_discoveries (item_key, player_id, discovered_at) VALUES ($1, $2, $3)',
                     [recipe.item, req.playerId, new Date(now())]);
                 first = true;
-            } catch (error) {
+            } catch {
                 // someone else discovered it in the same moment
             }
         }
