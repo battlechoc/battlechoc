@@ -14,8 +14,11 @@ const createPush = ({ pool, publicKey, privateKey, subject, sender = webpush }) 
             typeof subscription.keys.p256dh !== 'string' || typeof subscription.keys.auth !== 'string') {
             return false;
         }
-        await pool.query('DELETE FROM push_subscriptions WHERE endpoint = $1', [subscription.endpoint]);
-        await pool.query('INSERT INTO push_subscriptions (endpoint, player_id, keys) VALUES ($1, $2, $3)',
+        // One statement replaces the subscription of this endpoint (a browser, whoever used it
+        // before): a delete followed by an insert let two requests at the same time both insert.
+        await pool.query(
+            `INSERT INTO push_subscriptions (endpoint, player_id, keys) VALUES ($1, $2, $3)
+             ON CONFLICT (endpoint) DO UPDATE SET player_id = EXCLUDED.player_id, keys = EXCLUDED.keys, created_at = NOW()`,
             [subscription.endpoint, playerId, JSON.stringify(subscription.keys)]);
         return true;
     };

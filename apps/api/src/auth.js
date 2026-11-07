@@ -4,6 +4,7 @@
 // Later identities (a wallet) attach to the same player through the identities table.
 
 const crypto = require('crypto');
+const { HttpError, ErrorCode } = require('./errors');
 
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 const ISSUER = 'battlechoc';
@@ -31,13 +32,6 @@ const verifyJwt = (token, secret) => {
     return JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
 };
 
-class AuthError extends Error {
-    constructor(message, status = 401) {
-        super(message);
-        this.status = status;
-    }
-}
-
 const createAuth = ({ pool, secret, now = () => Date.now() }) => {
     if (!secret || secret.length < 32) {
         throw new Error('JWT secret must have at least 32 characters');
@@ -58,11 +52,11 @@ const createAuth = ({ pool, secret, now = () => Date.now() }) => {
 
     const refresh = async refreshToken => {
         if (typeof refreshToken !== 'string' || refreshToken.length < 20) {
-            throw new AuthError('invalid refresh token');
+            throw new HttpError(401, ErrorCode.INVALID_REFRESH_TOKEN);
         }
         const { rows } = await pool.query('SELECT id, player_id, revoked FROM sessions WHERE token_hash = $1', [sha256(refreshToken)]);
         if (rows.length === 0 || rows[0].revoked) {
-            throw new AuthError('invalid refresh token');
+            throw new HttpError(401, ErrorCode.INVALID_REFRESH_TOKEN);
         }
         await pool.query('UPDATE sessions SET last_used_at = NOW() WHERE id = $1', [rows[0].id]);
         return { playerId: rows[0].player_id, ...(await issueAccessToken(rows[0].player_id)) };
@@ -72,32 +66,27 @@ const createAuth = ({ pool, secret, now = () => Date.now() }) => {
         let payload;
         try {
             payload = verifyJwt(accessToken, secret);
-        } catch (error) {
-            throw new AuthError('invalid access token');
+        } catch {
+            throw new HttpError(401, ErrorCode.INVALID_ACCESS_TOKEN);
         }
         if (payload.iss !== ISSUER || typeof payload.sub !== 'string' || !(payload.exp > Math.floor(now() / 1000))) {
-            throw new AuthError('invalid access token');
+            throw new HttpError(401, ErrorCode.INVALID_ACCESS_TOKEN);
         }
         return payload.sub;
     };
 
-    // Express middleware: sets req.playerId or answers 401
+    // Express middleware: sets req.playerId or fails with 401
     const requireAuth = async (req, res, next) => {
         const header = req.get('authorization') || '';
         const match = /^Bearer (.+)$/.exec(header);
         if (!match) {
-            res.status(401).json({ error: 'missing access token' });
-            return;
+            throw new HttpError(401, ErrorCode.MISSING_ACCESS_TOKEN);
         }
-        try {
-            req.playerId = await verify(match[1]);
-            next();
-        } catch (error) {
-            res.status(401).json({ error: error.message });
-        }
+        req.playerId = await verify(match[1]);
+        next();
     };
 
     return { createSession, refresh, verify, issueAccessToken, requireAuth };
 };
 
-module.exports = { createAuth, AuthError, ACCESS_TOKEN_TTL_SECONDS };
+module.exports = { createAuth, ACCESS_TOKEN_TTL_SECONDS };

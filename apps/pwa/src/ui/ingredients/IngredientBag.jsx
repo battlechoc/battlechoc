@@ -1,4 +1,3 @@
-import React from "react";
 import { createUseStyles } from "react-jss";
 import {
   translate as t,
@@ -43,11 +42,19 @@ const merge = (items) => {
   items.forEach(({ ingredient, amount }) =>
     byIngredient.set(ingredient, (byIngredient.get(ingredient) || 0) + amount)
   );
-  return [...byIngredient].map(([ingredient, amount]) => ({ ingredient, amount }));
+  return [...byIngredient].map(([ingredient, amount]) => ({
+    ingredient,
+    amount,
+  }));
 };
 
 // Ingredients as icons with amounts, optionally with the achievement each one came from.
-const IngredientBag = ({ items = [], greyed = false, message, showSources = true }) => {
+const IngredientBag = ({
+  items = [],
+  greyed = false,
+  message,
+  showSources = true,
+}) => {
   const classes = useStyles();
   const shown = showSources ? items : merge(items);
   return (
@@ -62,7 +69,9 @@ const IngredientBag = ({ items = [], greyed = false, message, showSources = true
             <IngredientIcon id={item.ingredient} size="2.2em" />
             <span>{`×${item.amount}`}</span>
             {showSources && item.achievement ? (
-              <small>{t(tr.END_BAG_FROM, t(tr[`AWARDS_${item.achievement}_TITLE`]))}</small>
+              <small>
+                {t(tr.END_BAG_FROM, t(tr[`AWARDS_${item.achievement}_TITLE`]))}
+              </small>
             ) : null}
           </div>
         ))}

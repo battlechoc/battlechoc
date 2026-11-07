@@ -1,7 +1,13 @@
 // Postgres persistence of live matches: the match row with its latest snapshot and the
-// append-only action log (see migrations/002_live_matches.sql).
+// append-only action log (see migrations/002_live_matches.sql). A match is running, ended, or
+// failed (it could not be rebuilt after a restart, see Lobby.recover).
+
+const { withTransaction } = require('../db');
 
 const json = value => JSON.stringify(value);
+
+// matches trimmed per transaction (trimEndedBefore)
+const TRIM_BATCH_SIZE = 200;
 
 const createMatchStore = pool => ({
     create: ({ id, kind, playerIds, snapshot }) => pool.query(
@@ -27,6 +33,41 @@ const createMatchStore = pool => ({
 
     actionsAfter: async (matchId, seq) => (await pool.query(
         'SELECT seq, action FROM match_actions WHERE match_id = $1 AND seq > $2 ORDER BY seq', [matchId, seq])).rows,
+
+    /**
+     * A running match that cannot be rebuilt: it is over without an outcome. Its snapshot and
+     * actions stay, to find out why; setting the status back to 'running' by hand makes the next
+     * start try it again.
+     */
+    fail: (matchId, reason) => pool.query(
+        "UPDATE matches SET status = 'failed', recovery_error = $2, ended_at = NOW() WHERE id = $1 AND status = 'running'",
+        [matchId, reason]),
+
+    /**
+     * Removes the logged actions and empties the snapshot of the matches that were over before
+     * `before` (ended or failed); the row with players and outcome stays. Resolves with the number
+     * of matches trimmed. In batches, each in a transaction of its own, so a long history does not
+     * hold one big transaction.
+     */
+    trimEndedBefore: async (before, now = new Date(), { batchSize = TRIM_BATCH_SIZE } = {}) => {
+        let trimmed = 0;
+        for (;;) {
+            const { rows } = await pool.query(
+                `SELECT id FROM matches WHERE status IN ('ended', 'failed') AND ended_at < $1 AND trimmed_at IS NULL
+                 ORDER BY ended_at LIMIT $2`, [before, batchSize]);
+            if (rows.length === 0) {
+                return trimmed;
+            }
+            const ids = rows.map(row => row.id);
+            // $1, $2, … (pg-mem does not take an array with = ANY)
+            const list = ids.map((id, i) => `$${i + 1}`).join(', ');
+            await withTransaction(pool, async client => {
+                await client.query(`DELETE FROM match_actions WHERE match_id IN (${list})`, ids);
+                await client.query(`UPDATE matches SET snapshot = '{}', trimmed_at = $${ids.length + 1} WHERE id IN (${list})`, [...ids, now]);
+            });
+            trimmed += ids.length;
+        }
+    },
 });
 
 module.exports = { createMatchStore };

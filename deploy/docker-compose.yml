@@ -1,5 +1,10 @@
-# battlechoc backend on a VPS: Postgres, the Node API (REST + WebSocket) and Caddy for TLS.
-# Usage on the VPS: cp .env.example .env, fill it in, then `docker compose up -d --build`.
+# battlechoc backend on a server: Postgres and the API (REST and the live match WebSocket),
+# the API from its published image. This file and a `.env` next to it are all a server needs
+# (no checkout of the repository): cp .env.example .env, fill it in, then
+#   docker compose pull && docker compose up -d
+# The API listens on the loopback port 8080 for the host's reverse proxy (nginx, see README.md);
+# docker-compose.caddy.yml adds Caddy in Docker instead, docker-compose.local.yml builds the
+# API from a checkout and adds the game.
 services:
   postgres:
     image: postgres:17-alpine
@@ -15,12 +20,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   api:
-    build:
-      context: ..
-      dockerfile: apps/api/Dockerfile
+    # a release (5.3.0) keeps the server on that version until the tag in .env changes;
+    # `latest` follows every release with the next `docker compose pull`
+    image: ${API_IMAGE:-fabianbormann/battlechoc-api}:${API_TAG:-latest}
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:${API_PORT:-8080}:8080"
     environment:
       PORT: 8080
       # the password goes in separately (pg reads PGPASSWORD): in the URL, a slash or other
@@ -32,30 +44,22 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}
-      # the secret recipe table, mounted read-only (never in the repository)
+      # optional: match retention and database pool settings (empty = the API's defaults)
+      MATCH_RETENTION_DAYS: ${MATCH_RETENTION_DAYS:-}
+      DB_POOL_MAX: ${DB_POOL_MAX:-}
+      DB_STATEMENT_TIMEOUT_MS: ${DB_STATEMENT_TIMEOUT_MS:-}
+      # the secret recipe table, mounted read-only (never in the repository or the image)
       RECIPES_FILE: /run/secrets/recipes.json
     volumes:
       - ${RECIPES_PATH:?set RECIPES_PATH in .env}:/run/secrets/recipes.json:ro
     depends_on:
       postgres:
         condition: service_healthy
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    environment:
-      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - api
+    logging: *logging
 
 volumes:
+  # The database's volume is named in .env, so it depends neither on the folder this file lies
+  # in nor on a default: a server that started from a checkout (`deploy/`) has its data in
+  # `deploy_pgdata` and must keep saying so, or it would start with an empty database.
   pgdata:
-  caddy_data:
-  caddy_config:
+    name: ${PGDATA_VOLUME:?set PGDATA_VOLUME in .env - battlechoc_pgdata on a new server, deploy_pgdata on one that ran from a checkout (see README.md)}

@@ -6,7 +6,6 @@ import {
   StandardMaterial,
   DynamicTexture,
 } from "./babylon.js";
-import { EntityType, engine } from "@battlechoc/battlechoc-shared-functions";
 
 // While a fruit cannon is selected, the own truffle cannons it can replace come to the front:
 // the screen dims, their cells stay in the light, and a warm pool of light lies on the board
@@ -14,40 +13,9 @@ import { EntityType, engine } from "@battlechoc/battlechoc-shared-functions";
 // as an SVG mask below the HUD, the pools are meshes). The user's pick from four looks in the
 // play test of 2026-10-30 was a circle of light with a gold rim per cannon; on neighbouring
 // cannons the rims crossed, and of the looks tried on 2026-11-03 the user chose the pools of
-// light ("I is perfect"): neighbours' pools simply add up.
-
-/** The own cells with a truffle cannon a fruit cannon can replace, in the player's view. */
-export const cannonCells = (view) =>
-  view.board.fields[view.players[view.viewer].fieldIndex].grid
-    .filter(
-      (cell) =>
-        !cell.molten &&
-        cell.occupiedBy.some(
-          (entity) => entity.type === EntityType.RUM_TRUFFLE_CANNON,
-        ),
-    )
-    .map((cell) => ({ row: cell.row, col: cell.col }));
-
-/**
- * Whether the player can build a fruit cannon right now: a truffle cannon to replace, a free
- * building slot, enough cacao and room on the field. While it can't, nothing stands out.
- */
-export const fruitCannonPossible = (view) => {
-  if (!view || view.phase !== engine.MatchPhase.RUNNING) {
-    return false;
-  }
-  const me = view.players[view.viewer];
-  const spec = view.balance.entities[EntityType.FRUIT_CANNON] || {};
-  const fruitCannons = view.board.fields[me.fieldIndex].grid.filter((cell) =>
-    cell.occupiedBy.some((entity) => entity.type === EntityType.FRUIT_CANNON),
-  ).length;
-  return (
-    cannonCells(view).length > 0 &&
-    me.buildTokens >= 1 &&
-    me.cacao >= engine.buildCosts(view, view.viewer, EntityType.FRUIT_CANNON) &&
-    !(spec.maxPerField && fruitCannons >= spec.maxPerField)
-  );
-};
+// light ("I is perfect"): neighbours' pools simply add up. Which cannons, and whether a fruit
+// cannon can be built at all, is in src/match/fruitCannon.js (the build palette asks too, and
+// it must not load the 3D engine).
 
 // the top of a chocolate piece above its cell's position, and the height of the cream on it
 const TILE_TOP = 0.26;
@@ -99,7 +67,7 @@ const lightPools = ({ scene, field, cells, setRenderLoop }) => {
     const pool = MeshBuilder.CreatePlane(
       `cannon-pool.${row}.${col}`,
       { size: POOL_SIZE },
-      scene,
+      scene
     );
     pool.rotation.x = Math.PI / 2;
     pool.position = field.position.add(new Vector3(row, TILE_TOP + 0.012, col));
@@ -125,12 +93,38 @@ const lightPools = ({ scene, field, cells, setRenderLoop }) => {
   };
 };
 
+/** Whether two pictures for onSpots draw the same: points to a tenth of a pixel, as drawn. */
+export const sameSpots = (a, b) => {
+  if (!a || !b) {
+    return a === b;
+  }
+  const tenth = (value) => Math.round(value * 10);
+  return (
+    a.blur === b.blur &&
+    a.lights.length === b.lights.length &&
+    a.lights.every(
+      (polygons, i) =>
+        polygons.length === b.lights[i].length &&
+        polygons.every(
+          (polygon, j) =>
+            polygon.length === b.lights[i][j].length &&
+            polygon.every(
+              ([x, y], k) =>
+                tenth(x) === tenth(b.lights[i][j][k][0]) &&
+                tenth(y) === tenth(b.lights[i][j][k][1])
+            )
+        )
+    )
+  );
+};
+
 /**
  * Puts the cannons of `cells` on the own board in the light: pools of light around them (above),
- * and the dimming of the rest, for which `onSpots` gets, every frame while it shows (the camera
- * may still fly to the own board), `lights`: polygons in CSS pixels of the canvas, one column
- * per cell from a little around its piece up to the top of its cream, and `blur`, how softly
- * they fade. Returns the function that ends it.
+ * and the dimming of the rest, for which `onSpots` gets `lights`: polygons in CSS pixels of the
+ * canvas, one column per cell from a little around its piece up to the top of its cream, and
+ * `blur`, how softly they fade. It gets them whenever the picture changes (the camera may still
+ * fly to the own board, the player may zoom), not on every frame the breathing pools render:
+ * that set the scene component's state sixty times a second. Returns the function that ends it.
  */
 export const showCannonPick = ({
   scene,
@@ -151,7 +145,7 @@ export const showCannonPick = ({
     const project = (row, col, up) => {
       const point = Vector3.TransformCoordinates(
         field.position.add(new Vector3(row, TILE_TOP + up, col)),
-        transform,
+        transform
       );
       return [((point.x + 1) / 2) * width, ((1 - point.y) / 2) * height];
     };
@@ -164,11 +158,11 @@ export const showCannonPick = ({
       const top = square(CREAM_HEIGHT);
       const leftmost = bottom.reduce(
         (best, p, i) => (p[0] < bottom[best][0] ? i : best),
-        0,
+        0
       );
       const rightmost = bottom.reduce(
         (best, p, i) => (p[0] > bottom[best][0] ? i : best),
-        0,
+        0
       );
       return [
         bottom,
@@ -177,8 +171,13 @@ export const showCannonPick = ({
       ];
     });
     const pixelsPerUnit = height / (camera.orthoTop - camera.orthoBottom);
-    onSpots({ lights, blur: 0.12 * pixelsPerUnit });
+    const spots = { lights, blur: 0.12 * pixelsPerUnit };
+    if (!sameSpots(shown, spots)) {
+      shown = spots;
+      onSpots(spots);
+    }
   };
+  let shown = null;
   const takeAway = lightPools({ scene, field, cells, setRenderLoop });
   const observer = scene.onAfterRenderObservable.add(update);
   update();

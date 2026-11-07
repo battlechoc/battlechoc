@@ -5,11 +5,10 @@
 const { BoardCellTypes, EntityType, AttackType, PlayerType } = require('../constants');
 const { MatchPhase, OutcomeReason, DonutEffect, entitiesOf } = require('./index');
 
-// lazy, because the translations live in the package index which requires this module
-const tr = key => () => {
-    const shared = require('../index');
-    return shared.translate(shared.translationKeys[key]);
-};
+const { translate, translationKeys } = require('../i18n');
+
+// translated when it is read: the language may change after the awards were computed
+const tr = key => () => translate(translationKeys[key]);
 
 const eventsOf = (match, type, player) => match.events.filter(event => event.type === type && (typeof player === 'undefined' || event.player === player));
 const builtCount = (match, player, entityType) => eventsOf(match, 'built', player).filter(event => event.data.entityType === entityType).length;

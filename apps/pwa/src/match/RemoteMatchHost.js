@@ -1,4 +1,8 @@
-import { BattlechocError, live } from "@battlechoc/battlechoc-shared-functions";
+import {
+  BattlechocError,
+  live,
+  engine,
+} from "@battlechoc/battlechoc-shared-functions";
 import {
   matchUpdated,
   matchAwarded,
@@ -28,7 +32,15 @@ class RemoteActionError extends BattlechocError {
  * every pushed view goes to Redux. Pause does not exist online.
  */
 class RemoteMatchHost {
-  constructor({ dispatch, connection, matchId, playerIndex, epoch, kind, onEnded }) {
+  constructor({
+    dispatch,
+    connection,
+    matchId,
+    playerIndex,
+    epoch,
+    kind,
+    onEnded,
+  }) {
     this.dispatch = dispatch;
     this.connection = connection;
     this.matchId = matchId;
@@ -55,10 +67,17 @@ class RemoteMatchHost {
       }),
       connection.on(ServerMessage.PRESENCE, (message) => {
         if (message.matchId === this.matchId) {
-          dispatch(presenceChanged({ online: message.online, forfeitAt: message.forfeitAt }));
+          dispatch(
+            presenceChanged({
+              online: message.online,
+              forfeitAt: message.forfeitAt,
+            })
+          );
         }
       }),
-      connection.on(ServerMessage.RESULT, (message) => this.receiveResult(message)),
+      connection.on(ServerMessage.RESULT, (message) =>
+        this.receiveResult(message)
+      ),
       // after a reconnect: back into the match, with the events we missed
       connection.on(ServerMessage.WELCOME, () => this.join()),
       connection.on("closed", () => this.failPending()),
@@ -93,7 +112,10 @@ class RemoteMatchHost {
   }
 
   receiveAck(message) {
-    const entry = message.matchId === this.matchId ? this.pending.get(message.uid) : undefined;
+    const entry =
+      message.matchId === this.matchId
+        ? this.pending.get(message.uid)
+        : undefined;
     if (!entry) {
       return;
     }
@@ -121,7 +143,12 @@ class RemoteMatchHost {
   failPending() {
     this.pending.forEach((entry) => {
       clearTimeout(entry.timer);
-      entry.reject(new RemoteActionError({ code: LiveError.ACTION_REJECTED, message: "connection lost" }));
+      entry.reject(
+        new RemoteActionError({
+          code: LiveError.ACTION_REJECTED,
+          message: "connection lost",
+        })
+      );
     });
     this.pending.clear();
     this.dispatch(pendingChanged(0));
@@ -146,13 +173,23 @@ class RemoteMatchHost {
         action: { type, payload },
       });
       if (!sent) {
-        reject(new RemoteActionError({ code: LiveError.ACTION_REJECTED, message: "offline" }));
+        reject(
+          new RemoteActionError({
+            code: LiveError.ACTION_REJECTED,
+            message: "offline",
+          })
+        );
         return;
       }
       const timer = setTimeout(() => {
         this.pending.delete(uid);
         this.dispatch(pendingChanged(this.pending.size));
-        reject(new RemoteActionError({ code: LiveError.ACTION_REJECTED, message: "no answer" }));
+        reject(
+          new RemoteActionError({
+            code: LiveError.ACTION_REJECTED,
+            message: "no answer",
+          })
+        );
       }, ACK_TIMEOUT_MS);
       this.pending.set(uid, { resolve, reject, timer, type, payload });
       this.dispatch(pendingChanged(this.pending.size));
@@ -160,7 +197,7 @@ class RemoteMatchHost {
   }
 
   surrender() {
-    return this.submit("battlechoc/match/surrender");
+    return this.submit(engine.MatchActionTypes.surrender);
   }
 
   // the server keeps the match; nothing to pause or save on this device

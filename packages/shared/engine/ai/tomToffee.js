@@ -3,12 +3,10 @@
 // under existing cream when it can, never rushes and shoots at random cells that show
 // something (cream or a visible building).
 
-const { EntityType, AttackType, isDonut } = require('../../constants');
-const { MatchPhase, MatchActionTypes, WeaponState } = require('../index');
+const { EntityType, AttackType } = require('../../constants');
+const { MatchPhase, MatchActionTypes, WeaponState, hasCream, factoryPlaceable: isBuildable } = require('../index');
 const { Agent } = require('../agents');
 
-const hasCream = cell => cell.occupiedBy.some(entity => entity.type === EntityType.CREAM);
-const isBuildable = cell => !cell.molten && cell.occupiedBy.every(entity => entity.type === EntityType.CREAM || isDonut(entity.type));
 
 class TomToffee extends Agent {
     constructor({ playerIndex, seed, reactionTimeMs = 3000 }) {

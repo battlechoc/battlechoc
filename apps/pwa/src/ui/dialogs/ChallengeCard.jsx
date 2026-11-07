@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import PropTypes from "prop-types";
+import { useEffect, useState } from "react";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
@@ -12,7 +11,7 @@ import Dialog from "./Dialog";
 import Button from "../controls/Button";
 import { liveLobby } from "../../match/liveLobby";
 import { challengeViewed, challengeUnreachable } from "../../match/liveSlice";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import { CHALLENGE_UNREACHABLE_MS } from "./challengeTiming";
 
 const { ChallengeViewState: View, formatChallengeCode } = live;
@@ -298,12 +297,6 @@ const ChallengeCard = ({
       </div>
     </Dialog>
   );
-};
-
-ChallengeCard.propTypes = {
-  // starts the tutorial (a newcomer) and the normal Start (everyone else)
-  learn: PropTypes.func.isRequired,
-  startMatch: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = (state) => {

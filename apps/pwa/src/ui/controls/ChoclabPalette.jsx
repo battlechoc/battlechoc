@@ -1,9 +1,14 @@
-import React, { useState, useMemo, useEffect } from "react";
-import PropTypes from "prop-types";
-import { EntityType } from "@battlechoc/battlechoc-shared-functions";
+import { useState, useEffect } from "react";
 import { createUseStyles, useTheme } from "react-jss";
 import Button from "./Button";
 import withDefaultProps from "../../helper/defaultProps";
+import { LAB_BUILDINGS, BUILDING_ICON, iconUrl } from "../../catalog";
+
+// the buildings the lab equips, with their pictures
+const labBuildings = LAB_BUILDINGS.map((type) => ({
+  type,
+  icon: BUILDING_ICON[type],
+}));
 
 const useStyles = createUseStyles((theme) => ({
   // the arrows at the ends keep an edge (--edge) from the screen's sides: 6px of it is their margin
@@ -59,56 +64,10 @@ const ChoclabPalette = (componentProps) => {
   const theme = useTheme();
   const [selectedEntity, setSelectedEntity] = useState(0);
 
-  const buildingsForSeclection = useMemo(
-    () => [
-      {
-        type: EntityType.FACTORY,
-        icon: "factory",
-      },
-      {
-        type: EntityType.CACAOTREE,
-        icon: "cacao-tree",
-      },
-      {
-        type: EntityType.RUM_TRUFFLE_CANNON,
-        icon: "truffle-cannon",
-      },
-      {
-        type: EntityType.FACTORY_EXTENSION,
-        icon: "factory-extension",
-      },
-      {
-        type: EntityType.SPYING_EASTER_BUNNY,
-        icon: "easter-bunny",
-      },
-      {
-        type: EntityType.XMAS_FACTORY,
-        icon: "xmas-factory",
-      },
-      {
-        type: EntityType.CHOCOLATE_FOUNTAIN,
-        icon: "fountain",
-      },
-      {
-        type: EntityType.FRUIT_CANNON,
-        icon: "fruit-cannon",
-      },
-      {
-        type: EntityType.HOT_CHOCOLATE_BALLISTA,
-        icon: "ballista",
-      },
-      {
-        type: EntityType.DONUT_FACTORY,
-        icon: "donut-factory",
-      },
-    ],
-    []
-  );
-
   const checkEntityBounds = (entity) => {
     if (entity < 0) {
-      return buildingsForSeclection.length - 1;
-    } else if (entity >= buildingsForSeclection.length) {
+      return labBuildings.length - 1;
+    } else if (entity >= labBuildings.length) {
       return 0;
     }
     return entity;
@@ -117,7 +76,7 @@ const ChoclabPalette = (componentProps) => {
   const selectEntity = (entity) => {
     entity = checkEntityBounds(entity);
     setSelectedEntity(entity);
-    props.selectEntity(buildingsForSeclection[entity].type);
+    props.selectEntity(labBuildings[entity].type);
   };
 
   // follow a building chosen elsewhere (e.g. the recipe book of the lab)
@@ -125,7 +84,7 @@ const ChoclabPalette = (componentProps) => {
     if (typeof props.selected === "undefined") {
       return;
     }
-    const index = buildingsForSeclection.findIndex(
+    const index = labBuildings.findIndex(
       (entry) => entry.type === props.selected
     );
     if (index >= 0 && index !== selectedEntity) {
@@ -134,10 +93,9 @@ const ChoclabPalette = (componentProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.selected]);
 
-  const previous =
-    buildingsForSeclection[checkEntityBounds(selectedEntity - 1)];
-  const selected = buildingsForSeclection[selectedEntity];
-  const next = buildingsForSeclection[checkEntityBounds(selectedEntity + 1)];
+  const previous = labBuildings[checkEntityBounds(selectedEntity - 1)];
+  const selected = labBuildings[selectedEntity];
+  const next = labBuildings[checkEntityBounds(selectedEntity + 1)];
 
   return (
     <div
@@ -156,7 +114,7 @@ const ChoclabPalette = (componentProps) => {
       >
         <div
           style={{
-            backgroundImage: `url(/images/${previous.icon}-icon.svg)`,
+            backgroundImage: `url(${iconUrl(previous.icon)})`,
             backgroundRepeat: "no-repeat",
             backgroundSize: "100% 100%",
           }}
@@ -169,7 +127,7 @@ const ChoclabPalette = (componentProps) => {
       >
         <div
           style={{
-            backgroundImage: `url(/images/${selected.icon}-icon.svg)`,
+            backgroundImage: `url(${iconUrl(selected.icon)})`,
             backgroundRepeat: "no-repeat",
             backgroundSize: "100% 100%",
           }}
@@ -182,7 +140,7 @@ const ChoclabPalette = (componentProps) => {
       >
         <div
           style={{
-            backgroundImage: `url(/images/${next.icon}-icon.svg)`,
+            backgroundImage: `url(${iconUrl(next.icon)})`,
             backgroundRepeat: "no-repeat",
             backgroundSize: "100% 100%",
           }}
@@ -201,11 +159,6 @@ const ChoclabPalette = (componentProps) => {
 const defaultProps = {
   className: "",
   style: {},
-};
-
-ChoclabPalette.propTypes = {
-  className: PropTypes.string,
-  style: PropTypes.object,
 };
 
 export default ChoclabPalette;

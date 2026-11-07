@@ -11,7 +11,8 @@ const REMEMBERED_UIDS = 64;
 
 const errorInfo = error => ({
     code: LiveError.ACTION_REJECTED,
-    name: error && error.constructor ? error.constructor.name : 'Error',
+    // the rule error's own code (errors.js); older games compare it with the class name, the same string
+    name: (error && error.code) || (error && error.constructor ? error.constructor.name : 'Error'),
     message: error && error.message,
 });
 
@@ -51,6 +52,8 @@ class MatchRoom {
         this.acks = [new Map(), new Map()];
         this.timer = null;
         this.ended = false;
+        // set on shutdown: the room starts no timer any more (the match goes on after the restart)
+        this.suspended = false;
         this.lastPhase = match.phase;
         this.reachedT = match.t;
         this.writes = Promise.resolve();
@@ -167,14 +170,14 @@ class MatchRoom {
             return;
         }
         connection.lastSeqByMatch.delete(this.id);
-        if (this.members[index].size === 0 && !this.ended) {
+        if (this.members[index].size === 0 && !this.ended && !this.suspended) {
             this.startForfeitTimer(index);
             this.broadcastPresence(index);
         }
     }
 
     startForfeitTimer(index) {
-        if (this.forfeitTimers[index] !== null) {
+        if (this.forfeitTimers[index] !== null || this.suspended) {
             return;
         }
         this.forfeitAt[index] = this.clock.now() + this.config.disconnectGraceMs;
@@ -349,7 +352,7 @@ class MatchRoom {
             this.timer = null;
         }
         const next = engine.nextWakeAt(this.match, this.agents);
-        if (next === null || this.ended) {
+        if (next === null || this.ended || this.suspended) {
             return;
         }
         const delay = Math.max(0, next - this.now());
@@ -431,6 +434,7 @@ class MatchRoom {
 
     /** Stops the timers, e.g. on shutdown; the match continues after the restart. */
     async suspend() {
+        this.suspended = true;
         [this.timer, ...this.forfeitTimers].forEach(timer => timer !== null && this.clock.clearTimer(timer));
         this.timer = null;
         this.forfeitTimers = [null, null];

@@ -85,3 +85,15 @@ test('the commits of a pull request leave out merges and what an earlier merged 
     assert.deepEqual(messages(commitsOf({ cwd: dir, base, head: later, earlierHeads: ['f'.repeat(40)] })), ['feat: one', 'fix: two', 'feat: three']);
     fs.rmSync(dir, { recursive: true, force: true });
 });
+
+// every new description starts as .github/PULL_REQUEST_TEMPLATE.md
+test('the pull request template names no marker and no override, and no line of it reads like a commit', () => {
+    const template = fs.readFileSync(path.join(__dirname, '..', 'PULL_REQUEST_TEMPLATE.md'), 'utf8');
+    [START, END, 'BEGIN_COMMIT_OVERRIDE', 'END_COMMIT_OVERRIDE', 'BREAKING CHANGE', 'BREAKING-CHANGE'].forEach(text => {
+        assert.ok(!template.includes(text), text);
+    });
+    // without an override (a pull request from a fork) release-please reads the description as the body of the squash commit
+    template.split('\n').forEach(line => assert.equal(entryOf(line.replace(/^[\s*-]+/, '')), null, line));
+    const section = sectionFor([{ sha: 'a'.repeat(40), message: 'feat: one' }]);
+    assert.equal(withSection(template, section), `${template.trim()}\n\n${section}`);
+});

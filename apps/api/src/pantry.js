@@ -4,10 +4,13 @@
 
 const crypto = require('crypto');
 const { Ingredients } = require('@battlechoc/battlechoc-shared-functions');
+const { HttpError, ErrorCode } = require('./errors');
 
-class NotEnoughIngredientsError extends Error {
+// a route that spends more than the pantry holds answers 400 NOT ENOUGH INGREDIENTS
+class NotEnoughIngredientsError extends HttpError {
     constructor(ingredient) {
-        super(`not enough ${ingredient}`);
+        super(400, ErrorCode.NOT_ENOUGH_INGREDIENTS);
+        this.message = `not enough ${ingredient}`;
         this.ingredient = ingredient;
     }
 }
@@ -37,6 +40,22 @@ const spoiling = async (db, playerId, now) => {
         'SELECT ingredient, amount, expires_at FROM pantry WHERE player_id = $1 AND expires_at > $2 AND amount > 0 ORDER BY expires_at',
         [playerId, new Date(now)]);
     return rows.map(row => ({ ingredient: row.ingredient, amount: Number(row.amount), expiresAt: new Date(row.expires_at).getTime() }));
+};
+
+/** Totals and spoiling batches (as `totals` and `spoiling` give them) from one read of the fresh batches. */
+const contents = async (db, playerId, now) => {
+    const { rows } = await db.query(`SELECT ingredient, amount, expires_at FROM pantry WHERE ${FRESH}`, [playerId, new Date(now)]);
+    const sums = {};
+    rows.forEach(row => {
+        sums[row.ingredient] = (sums[row.ingredient] || 0) + Number(row.amount);
+    });
+    return {
+        totals: sums,
+        spoiling: rows
+            .filter(row => row.expires_at !== null)
+            .map(row => ({ ingredient: row.ingredient, amount: Number(row.amount), expiresAt: new Date(row.expires_at).getTime() }))
+            .sort((a, b) => a.expiresAt - b.expiresAt),
+    };
 };
 
 // fresh batches of one ingredient, the ones that spoil first first, the ones that never spoil last
@@ -78,4 +97,4 @@ const cleanup = async (db, now) => {
     await db.query('DELETE FROM pantry WHERE amount <= 0 OR expires_at <= $1', [new Date(now)]);
 };
 
-module.exports = { add, totals, spoiling, spend, cleanup, NotEnoughIngredientsError };
+module.exports = { add, totals, spoiling, contents, spend, cleanup, NotEnoughIngredientsError };

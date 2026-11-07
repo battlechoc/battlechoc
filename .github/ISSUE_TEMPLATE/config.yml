@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/battlechoc/battlechoc/security/policy
+    about: Please report a vulnerability privately, as the security policy describes, not in an issue.

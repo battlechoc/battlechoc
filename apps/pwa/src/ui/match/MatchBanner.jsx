@@ -1,4 +1,3 @@
-import React from "react";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
@@ -10,6 +9,7 @@ import {
 import { matchSession } from "../../match/LocalMatchHost";
 import { liveConnection } from "../../match/liveConnection";
 import useMatchTime from "./useMatchTime";
+import { outlined } from "../styles";
 
 const { MatchPhase, OutcomeReason } = engine;
 
@@ -26,8 +26,7 @@ const useStyles = createUseStyles((theme) => ({
     userSelect: "none",
     color: "white",
     fontFamily: theme.font.display,
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme),
     "& p": { margin: 0, fontSize: theme.font.size.xl },
     "& .timer": { fontSize: theme.font.size.lg },
     "& .warning": { color: theme.color.accent.light },
@@ -81,7 +80,16 @@ const clockText = (ms) => {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 };
 
-const MatchBanner = ({ view, paused, online, presence, liveStatus, pending, tutorial, previewBottom }) => {
+const MatchBanner = ({
+  view,
+  paused,
+  online,
+  presence,
+  liveStatus,
+  pending,
+  tutorial,
+  previewBottom,
+}) => {
   const classes = useStyles({ previewBottom });
   const ticked = useMatchTime(4);
   if (typeof view === "undefined") {
@@ -95,22 +103,46 @@ const MatchBanner = ({ view, paused, online, presence, liveStatus, pending, tuto
   let message = null;
   if (view.phase === MatchPhase.PLACEMENT) {
     const grid = view.board.fields[me.fieldIndex].grid;
-    const placed = grid.some((cell) => cell.occupiedBy.some((entity) => entity.type === EntityType.FACTORY));
+    const placed = grid.some((cell) =>
+      cell.occupiedBy.some((entity) => entity.type === EntityType.FACTORY)
+    );
     // a countdown only for real deadlines (online); single player waits for the player
-    banner = view.phaseEndsAt - now < NO_DEADLINE_MS ? <p className="timer">{seconds(view.phaseEndsAt - now)}</p> : null;
-    message = <p>{placed ? t(tr.MATCH_WAIT_FOR_OPPONENT) : t(tr.MATCH_PLACE_FACTORY)}</p>;
+    banner =
+      view.phaseEndsAt - now < NO_DEADLINE_MS ? (
+        <p className="timer">{seconds(view.phaseEndsAt - now)}</p>
+      ) : null;
+    message = (
+      <p>
+        {placed ? t(tr.MATCH_WAIT_FOR_OPPONENT) : t(tr.MATCH_PLACE_FACTORY)}
+      </p>
+    );
   } else if (view.phase === MatchPhase.RUNNING) {
     const stunned = now < me.stunnedUntil;
     const left = view.endsAt - now;
-    banner = <p className={`timer ${left < 60000 ? "warning" : ""}`} data-testid="time-left">{clockText(left)}</p>;
+    banner = (
+      <p
+        className={`timer ${left < 60000 ? "warning" : ""}`}
+        data-testid="time-left"
+      >
+        {clockText(left)}
+      </p>
+    );
     message = stunned ? <p className="warning">{t(tr.MATCH_STUNNED)}</p> : null;
-  } else if (view.phase === MatchPhase.ENDED && view.outcome && view.outcome.reason === OutcomeReason.TIME_LIMIT) {
+  } else if (
+    view.phase === MatchPhase.ENDED &&
+    view.outcome &&
+    view.outcome.reason === OutcomeReason.TIME_LIMIT
+  ) {
     message = <p>{t(tr.MATCH_TIME_UP)}</p>;
   }
   // online: our own connection first, then the opponent's
   if (online && view.phase !== MatchPhase.ENDED) {
     if (liveStatus !== "online") {
-      message = <p className="warning" data-testid="reconnecting">{t(tr.MATCH_RECONNECTING)}</p>;
+      message = (
+        <p className="warning" data-testid="reconnecting">
+          {t(tr.MATCH_RECONNECTING)}
+        </p>
+      );
     } else if (presence && presence.online === false && presence.forfeitAt) {
       const left = presence.forfeitAt - liveConnection.clock.serverNow();
       message = (
@@ -129,17 +161,27 @@ const MatchBanner = ({ view, paused, online, presence, liveStatus, pending, tuto
 
   return (
     <>
-      <div className={classes.banner} data-testid="match-banner" data-pending={pending}>
+      <div
+        className={classes.banner}
+        data-testid="match-banner"
+        data-pending={pending}
+      >
         {banner}
       </div>
       {message ? (
-        <div className={`${classes.banner} ${classes.message}`} data-testid="match-message">
+        <div
+          className={`${classes.banner} ${classes.message}`}
+          data-testid="match-message"
+        >
           {message}
         </div>
       ) : null}
       {view.phase === MatchPhase.COUNTDOWN ? (
         <div className={classes.countdown} data-testid="countdown">
-          {Math.min(seconds(view.phaseEndsAt - now), seconds(view.balance.match.countdownMs)) || t(tr.MATCH_GO)}
+          {Math.min(
+            seconds(view.phaseEndsAt - now),
+            seconds(view.balance.match.countdownMs)
+          ) || t(tr.MATCH_GO)}
         </div>
       ) : null}
       {paused && view.phase !== MatchPhase.ENDED ? (

@@ -1,7 +1,7 @@
 # The game, built against one API and served by Caddy. Used by the local stack
 # (deploy/docker-compose.local.yml); battlechoc.com itself is served from GitHub Pages.
 # Build from the repository root: docker build -f apps/pwa/Dockerfile --build-arg VITE_API_URL=http://localhost .
-FROM node:22-alpine AS build
+FROM node:22.23.4-alpine3.24 AS build
 WORKDIR /app
 # workspace manifests first for a cached dependency layer
 COPY package.json package-lock.json ./
@@ -16,6 +16,6 @@ ARG VITE_API_URL=http://localhost
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build --workspace apps/pwa
 
-FROM caddy:2-alpine
+FROM caddy:2.11.7-alpine
 COPY deploy/pwa.Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /app/apps/pwa/build /srv

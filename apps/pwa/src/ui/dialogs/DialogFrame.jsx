@@ -1,5 +1,3 @@
-import React from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 
 // `scaled`: the pieces are this high relative to the panel's width (the parent is a size
@@ -74,16 +72,6 @@ const DialogFrame = ({
       />
     </>
   );
-};
-
-DialogFrame.propTypes = {
-  compact: PropTypes.bool,
-  scaled: PropTypes.bool,
-  classes: PropTypes.shape({
-    top: PropTypes.string,
-    left: PropTypes.string,
-    right: PropTypes.string,
-  }),
 };
 
 export default DialogFrame;

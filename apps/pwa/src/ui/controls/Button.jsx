@@ -1,15 +1,15 @@
-import React from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import withDefaultProps from "../../helper/defaultProps";
 
 // The text size comes from the type scale (huge: title menu, normal: dialogs, small: inline
 // actions); the blob grows with its label instead of shrinking the text, so nothing spills out.
 // A disabled, locked or offline button is grey and does not answer the pointer.
 // still filling up (progress below 100) counts as still too: it does nothing yet
-const loadingOf = (props) => typeof props.progress === "number" && props.progress < 100;
-const still = (props) => props.disabled || props.locked || props.offline || loadingOf(props);
+const loadingOf = (props) =>
+  typeof props.progress === "number" && props.progress < 100;
+const still = (props) =>
+  props.disabled || props.locked || props.offline || loadingOf(props);
 
 const useStyles = createUseStyles((theme) => ({
   // the light rim around the blob: the outer blob shows through this padding
@@ -251,13 +251,19 @@ const Button = (componentProps) => {
       <div
         {...rest}
         {...accessibility}
-        style={loading ? { ...props.style, background: "#b9c2c6" } : props.style}
+        style={
+          loading ? { ...props.style, background: "#b9c2c6" } : props.style
+        }
         onClick={onClick}
-        data-progress={typeof props.progress === "number" ? props.progress : undefined}
+        data-progress={
+          typeof props.progress === "number" ? props.progress : undefined
+        }
         className={`${classes.border} ${classes[props.size]} ${
           classes.focusable
         } ${props.className} ${
-          props.disabled || props.locked || props.offline ? classes.disabled : ""
+          props.disabled || props.locked || props.offline
+            ? classes.disabled
+            : ""
         }`}
         data-offline={props.offline && !props.locked ? "true" : undefined}
       >
@@ -269,16 +275,27 @@ const Button = (componentProps) => {
         >
           {loading ? (
             <>
-              <span className={classes.fill} style={{ width: `${props.progress}%` }} />
+              <span
+                className={classes.fill}
+                style={{ width: `${props.progress}%` }}
+              />
               <span className={classes.label}>{props.children}</span>
             </>
           ) : (
             props.children
           )}
         </div>
-        {props.locked ? <div className={`${classes.badge} ${classes.lock}`} data-badge="lock" /> : null}
+        {props.locked ? (
+          <div
+            className={`${classes.badge} ${classes.lock}`}
+            data-badge="lock"
+          />
+        ) : null}
         {props.offline && !props.locked ? (
-          <div className={`${classes.badge} ${classes.offline}`} data-badge="offline" />
+          <div
+            className={`${classes.badge} ${classes.offline}`}
+            data-badge="offline"
+          />
         ) : null}
       </div>
     );
@@ -294,21 +311,6 @@ const defaultProps = {
   locked: false,
   offline: false,
   disabled: false,
-};
-
-Button.propTypes = {
-  color: PropTypes.oneOf(["primary", "secondary", "accent"]),
-  onClick: PropTypes.func.isRequired,
-  className: PropTypes.string,
-  style: PropTypes.object,
-  buttonStyle: PropTypes.object,
-  size: PropTypes.oneOf(["huge", "normal", "small"]),
-  disabled: PropTypes.bool,
-  locked: PropTypes.bool,
-  onLockedClick: PropTypes.func,
-  // needs the server, which does not answer: grey, with the no-wifi sign
-  offline: PropTypes.bool,
-  onOfflineClick: PropTypes.func,
 };
 
 export default Button;

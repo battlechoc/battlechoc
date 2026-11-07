@@ -1,4 +1,4 @@
-import React from "react";
+import { BUILDING_ICON } from "../../catalog";
 import { createUseStyles } from "react-jss";
 import {
   translate as t,
@@ -9,15 +9,8 @@ import {
 import Dialog from "../dialogs/Dialog";
 import Button from "../controls/Button";
 import ItemIcon from "./ItemIcon";
-import {
-  BUILDING_ICON,
-  bangers,
-  effectLines,
-  gamePanel,
-  itemName,
-  labColors,
-  TIER_COLORS,
-} from "./itemText";
+import { effectLines, itemName, labColors, TIER_COLORS } from "./itemText";
+import { bangers, gamePanel } from "../styles";
 
 const useStyles = createUseStyles((theme) => {
   const colors = labColors(theme);

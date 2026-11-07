@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
-import PropTypes from "prop-types";
+import { useState, useEffect, useRef } from "react";
 import { createUseStyles } from "react-jss";
 import withDefaultProps from "../../helper/defaultProps";
+import { rise } from "../styles";
 
 // One row in the text size of buttons (the type scale), like the player name input.
 const useStyles = createUseStyles((theme) => ({
@@ -32,7 +32,7 @@ const useStyles = createUseStyles((theme) => ({
     boxSizing: "border-box",
     border: `0.12em solid ${theme.color.secondary.light}`,
     borderRadius: "0.55em",
-    background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+    background: rise(theme.color.secondary, "70%"),
     height: "2.2em",
     width: "2.2em",
     position: "absolute",
@@ -174,13 +174,6 @@ const Select = (componentProps) => {
 const defaultProps = {
   className: "",
   defaultSelected: null,
-};
-
-Select.propTypes = {
-  onChange: PropTypes.func.isRequired,
-  options: PropTypes.array.isRequired,
-  defaultSelected: PropTypes.string,
-  className: PropTypes.string,
 };
 
 export default Select;

@@ -10,7 +10,7 @@
     "apps/api"
   ],
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "dev": "npm run dev -w apps/pwa",
@@ -22,6 +22,19 @@
     "start:api": "npm start -w apps/api",
     "test:unit": "npm run test:unit -w apps/pwa",
     "whitepaper:simulate": "node whitepaper/simulator/run.js",
-    "test:whitepaper": "node --test 'whitepaper/simulator/test/*.test.js'"
+    "test:whitepaper": "node --test 'whitepaper/simulator/test/*.test.js'",
+    "test:changelog": "node --test .github/scripts/pr-changelog.test.js",
+    "check:build": "test -d apps/pwa/build && ! grep -rlE '__battlechoc|testclock' apps/pwa/build",
+    "verify": "npm run format:check && npm run lint && npm run test:changelog && npm test && npm run test:unit && npm run test:whitepaper && npm run test:api && npm run build && npm run check:build",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.14.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.14.0",
+    "prettier": "3.9.10"
   }
 }

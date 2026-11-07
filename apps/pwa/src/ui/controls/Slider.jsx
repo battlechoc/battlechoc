@@ -1,6 +1,5 @@
-import React from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
+import { outlined, rise } from "../styles";
 
 // A level from 0 to 1 with its name and percentage in one row, in the text size of buttons
 // (like Select): the part up to the thumb is filled.
@@ -14,8 +13,7 @@ const useStyles = createUseStyles((theme) => ({
     fontSize: theme.font.size.lg,
     fontFamily: theme.font.display,
     color: "white",
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme),
     userSelect: "none",
   },
   label: {
@@ -42,7 +40,7 @@ const useStyles = createUseStyles((theme) => ({
       height: "1.3em",
       borderRadius: "50%",
       border: `0.15em solid ${theme.color.primary.dark}`,
-      background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 70%)`,
+      background: rise(theme.color.primary, "70%"),
       boxSizing: "border-box",
     },
     "&::-moz-range-thumb": {
@@ -50,7 +48,7 @@ const useStyles = createUseStyles((theme) => ({
       height: "1.3em",
       borderRadius: "50%",
       border: `0.15em solid ${theme.color.primary.dark}`,
-      background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 70%)`,
+      background: rise(theme.color.primary, "70%"),
       boxSizing: "border-box",
     },
     "&:focus-visible": {
@@ -82,14 +80,6 @@ const Slider = ({ label, value, onChange, onCommit, ...rest }) => {
       <span className={classes.value}>{percent} %</span>
     </label>
   );
-};
-
-Slider.propTypes = {
-  label: PropTypes.string.isRequired,
-  value: PropTypes.number.isRequired,
-  onChange: PropTypes.func.isRequired,
-  // the thumb was let go (a sample of the new level)
-  onCommit: PropTypes.func,
 };
 
 export default Slider;

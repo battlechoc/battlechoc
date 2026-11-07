@@ -1,12 +1,10 @@
-import React from "react";
-import PropTypes from "prop-types";
 import {
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import Dialog from "./Dialog";
 import Button from "../controls/Button";
-import { buildingImages } from "../match/BuildPalette";
+import { BUILDING_ICON, iconUrl } from "../../catalog";
 
 // What a match just unlocked (src/unlocks.js), once each:
 // - buildings (two after each of the first three matches): their pictures and names, and the
@@ -22,11 +20,22 @@ const Unlocked = ({ unlock, gamesLeft, close, showDemos }) => {
   const step = unlock.online ? "online" : "buildings";
   return (
     <Dialog open close={close} mode="info" title={t(tr.UNLOCK_TITLE)}>
-      <div data-testid="unlocked" data-step={step} style={{ textAlign: "center" }}>
+      <div
+        data-testid="unlocked"
+        data-step={step}
+        style={{ textAlign: "center" }}
+      >
         {buildings.length > 0 ? (
           <>
             <p>{t(tr.UNLOCK_BUILDINGS_HINT)}</p>
-            <div style={{ display: "flex", justifyContent: "center", gap: "1.5em", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "1.5em",
+                flexWrap: "wrap",
+              }}
+            >
               {buildings.map((type) => (
                 // a box as wide as its name's longest word (German names are one long word:
                 // "Schokoladenbrunnen"), which decides whether the two stand side by side or one
@@ -48,13 +57,15 @@ const Unlocked = ({ unlock, gamesLeft, close, showDemos }) => {
                       width: "4em",
                       height: "4em",
                       margin: "0 auto",
-                      backgroundImage: `url(/images/${buildingImages[type]}-icon.svg)`,
+                      backgroundImage: `url(${iconUrl(BUILDING_ICON[type])})`,
                       backgroundSize: "contain",
                       backgroundRepeat: "no-repeat",
                       backgroundPosition: "center",
                     }}
                   />
-                  <div>{t(tr[`TOOLTIP_BUILDING_TITLE_${type.split(".")[1]}`])}</div>
+                  <div>
+                    {t(tr[`TOOLTIP_BUILDING_TITLE_${type.split(".")[1]}`])}
+                  </div>
                 </div>
               ))}
             </div>
@@ -65,14 +76,16 @@ const Unlocked = ({ unlock, gamesLeft, close, showDemos }) => {
             <p>{t(tr.UNLOCK_NEW_FEATURES)}</p>
             <p>{t(tr.UNLOCK_ONLINE_HINT)}</p>
             <div style={{ display: "flex", justifyContent: "center" }}>
-              <Button onClick={close}>Ok</Button>
+              <Button onClick={close}>{t(tr.OK)}</Button>
             </div>
           </>
         ) : (
           <>
             <p>{t(tr.UNLOCK_DEMOS_HINT)}</p>
             <div style={{ display: "flex", justifyContent: "center" }}>
-              <Button onClick={showDemos}>{t(tr.TUTORIAL_SHOW_BUILDINGS)}</Button>
+              <Button onClick={showDemos}>
+                {t(tr.TUTORIAL_SHOW_BUILDINGS)}
+              </Button>
             </div>
             {gamesLeft > 0 ? (
               <p>
@@ -86,16 +99,6 @@ const Unlocked = ({ unlock, gamesLeft, close, showDemos }) => {
       </div>
     </Dialog>
   );
-};
-
-Unlocked.propTypes = {
-  unlock: PropTypes.shape({
-    buildings: PropTypes.arrayOf(PropTypes.string),
-    online: PropTypes.bool,
-  }),
-  gamesLeft: PropTypes.number,
-  close: PropTypes.func.isRequired,
-  showDemos: PropTypes.func.isRequired,
 };
 
 export default Unlocked;

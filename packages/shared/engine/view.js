@@ -9,7 +9,8 @@
 //   before and the cell is still shielded.
 
 const { EntityType, isDonut } = require('../constants');
-const { MatchPhase, isShielded } = require('./index');
+const { MatchPhase } = require('./enums');
+const { hasCream, isShielded, shieldingFountains, cellOfEntity } = require('./selectors');
 
 const publicEntity = entity => ({
     id: entity.id,
@@ -20,7 +21,7 @@ const publicEntity = entity => ({
 });
 
 const redactCell = (match, viewer, owner, cell) => {
-    const creamed = cell.occupiedBy.some(entity => entity.type === EntityType.CREAM);
+    const creamed = hasCream(cell);
     const visible = cell.occupiedBy.filter(entity => !isDonut(entity.type) && (!creamed || entity.type === EntityType.CREAM));
     const known = match.players[viewer].knownShields.some(position => position.row === cell.row && position.col === cell.col);
     const shielded = isShielded(match, owner, cell.row, cell.col) && (known || visibleFountainShields(match, owner, cell));
@@ -37,24 +38,8 @@ const redactCell = (match, viewer, owner, cell) => {
 };
 
 // true when a fountain whose own cell has no cream covers this cell
-const visibleFountainShields = (match, owner, cell) => {
-    const grid = match.board.fields[match.players[owner].fieldIndex].grid;
-    const { cols } = match.board.size;
-    for (let row = cell.row - 1; row <= cell.row + 1; row++) {
-        for (let col = cell.col - 1; col <= cell.col + 1; col++) {
-            if (row < 0 || col < 0 || row >= match.board.size.rows || col >= cols) {
-                continue;
-            }
-            const neighbour = grid[row * cols + col];
-            const hasFountain = neighbour.occupiedBy.some(entity => entity.type === EntityType.CHOCOLATE_FOUNTAIN);
-            const creamed = neighbour.occupiedBy.some(entity => entity.type === EntityType.CREAM);
-            if (hasFountain && !creamed) {
-                return true;
-            }
-        }
-    }
-    return false;
-};
+const visibleFountainShields = (match, owner, cell) => shieldingFountains(match, owner, cell.row, cell.col)
+    .some(fountain => !hasCream(cellOfEntity(match, owner, fountain)));
 
 const ownCell = (match, owner, cell) => ({
     ...structuredClone(cell),
@@ -101,7 +86,7 @@ const getPlayerView = (match, viewer, { eventsAfter = -1 } = {}) => {
                     row: cell.row,
                     col: cell.col,
                     molten: cell.molten,
-                    cream: cell.occupiedBy.some(entity => entity.type === EntityType.CREAM),
+                    cream: hasCream(cell),
                     shielded: false,
                     occupiedBy: cell.occupiedBy.filter(entity => entity.type === EntityType.CREAM).map(publicEntity),
                 })),

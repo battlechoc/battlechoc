@@ -1,4 +1,4 @@
-// Client side clock sync for live matches (§3.1 of the migration plan): NTP-style pings over
+// Client side clock sync for live matches: NTP-style pings over
 // the match WebSocket estimate offset = serverClock - localClock. The sample with the lowest
 // round trip of the last few wins. Server times piggy-backed on pushed views correct the
 // offset when it is clearly too small (a message can never arrive before it was sent).

@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import PropTypes from "prop-types";
+import { useEffect, useState } from "react";
 import { createUseStyles } from "react-jss";
 import withDefaultProps from "../../helper/defaultProps";
 
@@ -170,15 +169,6 @@ const defaultProps = {
   infiniteAnimation: false,
   value: 0,
   speed: "normal",
-};
-
-Progress.propTypes = {
-  infiniteAnimation: PropTypes.bool,
-  value: PropTypes.number,
-  style: PropTypes.object,
-  size: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  className: PropTypes.string,
-  speed: PropTypes.oneOf(["normal", "slow"]),
 };
 
 export default Progress;

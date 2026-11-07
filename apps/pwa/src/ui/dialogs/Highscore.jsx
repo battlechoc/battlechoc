@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
-import PropTypes from "prop-types";
+import { useState, useEffect, useCallback } from "react";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
-import { Fab, Progress, Button, PlayerList } from "../controls";
+import Fab from "../controls/Fab";
+import Progress from "../controls/Progress";
+import Button from "../controls/Button";
+import PlayerList from "../controls/PlayerList";
 import {
   translate as t,
   translationKeys as tr,
@@ -10,6 +12,7 @@ import {
 import { multiplayer } from "../../Multiplayer";
 import logger from "../../helper/logger";
 import withDefaultProps from "../../helper/defaultProps";
+import { outlined } from "../styles";
 
 const useStyles = createUseStyles((theme) => ({
   // the title screen's top right corner, level with the buttons at the top left
@@ -68,8 +71,7 @@ const useStyles = createUseStyles((theme) => ({
   rank: {
     fontFamily: theme.font.display,
     fontSize: theme.font.size.lg,
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme),
   },
 }));
 
@@ -219,16 +221,6 @@ const defaultProps = {
   style: {},
   className: "",
   offline: false,
-};
-
-Highscore.propTypes = {
-  style: PropTypes.object,
-  className: PropTypes.string,
-  showQuickMessage: PropTypes.func.isRequired,
-  showPlayerProfile: PropTypes.func.isRequired,
-  // the server does not answer: the trophy is grey and explains itself
-  offline: PropTypes.bool,
-  showOfflineMessage: PropTypes.func,
 };
 
 export default Highscore;

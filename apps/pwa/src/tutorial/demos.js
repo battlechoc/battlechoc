@@ -5,6 +5,7 @@ import {
   PlayerType,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
+import { DemoId, allDemos } from "./ids.js";
 
 // Short scripted matches that show the buildings unlocked after the first win. They run on
 // the real engine with two scripted players and a fast-forwarded clock, so production,
@@ -13,27 +14,36 @@ import {
 
 const { MatchActionTypes, MatchPhase } = engine;
 
-const DemoId = Object.freeze({
-  FACTORY_EXTENSION: "TutorialDemo.FactoryExtension",
-  EASTER_BUNNY: "TutorialDemo.EasterBunny",
-  XMAS_FACTORY: "TutorialDemo.XmasFactory",
-  HOT_CHOCOLATE_BALLISTA: "TutorialDemo.HotChocolateBallista",
-  CHOCOLATE_FOUNTAIN: "TutorialDemo.ChocolateFountain",
-  FRUIT_CANNON: "TutorialDemo.FruitCannon",
-  DONUT_FACTORY: "TutorialDemo.DonutFactory",
-  DONUTS: "TutorialDemo.Donuts",
+const build = (at, entityType, row, col) => ({
+  at,
+  type: MatchActionTypes.build,
+  payload: { entityType, row, col },
 });
-
-const build = (at, entityType, row, col) => ({ at, type: MatchActionTypes.build, payload: { entityType, row, col } });
 const shoot = (at, attackType, row, col) => ({
   at,
   type: MatchActionTypes.attack,
   payload: { attackType, row, col, allowRush: true },
 });
-const placeDonut = (at, donutType, row, col) => ({ at, type: MatchActionTypes.placeDonut, payload: { donutType, row, col } });
+const placeDonut = (at, donutType, row, col) => ({
+  at,
+  type: MatchActionTypes.placeDonut,
+  payload: { donutType, row, col },
+});
 
-const own = (row, col, entities = [], cream = false) => ({ player: 0, row, col, cream, entities });
-const mimi = (row, col, entities = [], cream = false) => ({ player: 1, row, col, cream, entities });
+const own = (row, col, entities = [], cream = false) => ({
+  player: 0,
+  row,
+  col,
+  cream,
+  entities,
+});
+const mimi = (row, col, entities = [], cream = false) => ({
+  player: 1,
+  row,
+  col,
+  cream,
+  entities,
+});
 
 // both factories face each other on otherwise empty boards; demos add their own cells
 const scenario = ({ cells = [], donuts } = {}) => ({
@@ -41,7 +51,11 @@ const scenario = ({ cells = [], donuts } = {}) => ({
   clear: true,
   cacao: [1000, 1000],
   donuts,
-  cells: [own(2, 2, [EntityType.FACTORY]), mimi(2, 3, [EntityType.FACTORY]), ...cells],
+  cells: [
+    own(2, 2, [EntityType.FACTORY]),
+    mimi(2, 3, [EntityType.FACTORY]),
+    ...cells,
+  ],
 });
 
 const demos = {
@@ -78,7 +92,13 @@ const demos = {
         mimi(4, 5, [], true),
       ],
     }),
-    scripts: [[build(1000, EntityType.SPYING_EASTER_BUNNY, 4, 1), shoot(31000, AttackType.BUNNY, 3, 4)], []],
+    scripts: [
+      [
+        build(1000, EntityType.SPYING_EASTER_BUNNY, 4, 1),
+        shoot(31000, AttackType.BUNNY, 3, 4),
+      ],
+      [],
+    ],
     cues: [{ at: 28000, attack: AttackType.BUNNY }],
   },
   [DemoId.XMAS_FACTORY]: {
@@ -95,7 +115,10 @@ const demos = {
         mimi(0, 0, [EntityType.SPYING_EASTER_BUNNY]),
       ],
     }),
-    scripts: [[build(1000, EntityType.XMAS_FACTORY, 4, 4)], [shoot(30500, AttackType.BUNNY, 4, 4)]],
+    scripts: [
+      [build(1000, EntityType.XMAS_FACTORY, 4, 4)],
+      [shoot(30500, AttackType.BUNNY, 4, 4)],
+    ],
     cues: [],
   },
   [DemoId.HOT_CHOCOLATE_BALLISTA]: {
@@ -120,8 +143,13 @@ const demos = {
     message: tr.TUTORIAL_FOUNTAIN_MESSAGE,
     speed: 3,
     duration: 26000,
-    scenario: scenario({ cells: [mimi(0, 0, [EntityType.RUM_TRUFFLE_CANNON])] }),
-    scripts: [[build(1000, EntityType.CHOCOLATE_FOUNTAIN, 2, 1)], [shoot(20500, AttackType.TRUFFLE, 2, 2)]],
+    scenario: scenario({
+      cells: [mimi(0, 0, [EntityType.RUM_TRUFFLE_CANNON])],
+    }),
+    scripts: [
+      [build(1000, EntityType.CHOCOLATE_FOUNTAIN, 2, 1)],
+      [shoot(20500, AttackType.TRUFFLE, 2, 2)],
+    ],
     cues: [],
   },
   [DemoId.FRUIT_CANNON]: {
@@ -130,9 +158,18 @@ const demos = {
     speed: 3,
     duration: 22000,
     scenario: scenario({
-      cells: [own(4, 4, [EntityType.RUM_TRUFFLE_CANNON]), mimi(2, 2, [EntityType.CHOCOLATE_FOUNTAIN])],
+      cells: [
+        own(4, 4, [EntityType.RUM_TRUFFLE_CANNON]),
+        mimi(2, 2, [EntityType.CHOCOLATE_FOUNTAIN]),
+      ],
     }),
-    scripts: [[build(1000, EntityType.FRUIT_CANNON, 4, 4), shoot(16100, AttackType.FRUIT, 2, 3)], []],
+    scripts: [
+      [
+        build(1000, EntityType.FRUIT_CANNON, 4, 4),
+        shoot(16100, AttackType.FRUIT, 2, 3),
+      ],
+      [],
+    ],
     cues: [{ at: 13500, attack: AttackType.FRUIT }],
   },
   [DemoId.DONUT_FACTORY]: {
@@ -140,11 +177,14 @@ const demos = {
     message: tr.TUTORIAL_DONUT_FACTORY_MESSAGE,
     speed: 4,
     duration: 38000,
-    // this seed bakes a green donut on the first try
-    seed: "demo-donut-factory-3",
+    // this seed bakes a green donut on the first try (out of the five sets)
+    seed: "demo-donut-factory-2",
     scenario: scenario(),
     scripts: [
-      [build(1000, EntityType.DONUT_FACTORY, 4, 4), placeDonut(34000, EntityType.DONUT_HEALTH_GREEN, 2, 2)],
+      [
+        build(1000, EntityType.DONUT_FACTORY, 4, 4),
+        placeDonut(34000, EntityType.DONUT_HEALTH_GREEN, 2, 2),
+      ],
       [],
     ],
     cues: [],
@@ -155,15 +195,20 @@ const demos = {
     speed: 3,
     duration: 26000,
     scenario: scenario({
-      cells: [own(3, 3, [EntityType.CACAOTREE]), own(3, 2, [EntityType.CACAOTREE]), mimi(0, 0, [EntityType.RUM_TRUFFLE_CANNON])],
+      cells: [
+        own(3, 3, [EntityType.CACAOTREE]),
+        own(3, 2, [EntityType.CACAOTREE]),
+        mimi(0, 0, [EntityType.RUM_TRUFFLE_CANNON]),
+      ],
       donuts: [[EntityType.DONUT_CREAM_WHITE], []],
     }),
-    scripts: [[placeDonut(1000, EntityType.DONUT_CREAM_WHITE, 3, 3)], [shoot(20500, AttackType.TRUFFLE, 3, 3)]],
+    scripts: [
+      [placeDonut(1000, EntityType.DONUT_CREAM_WHITE, 3, 3)],
+      [shoot(20500, AttackType.TRUFFLE, 3, 3)],
+    ],
     cues: [],
   },
 };
-
-const allDemos = Object.values(DemoId);
 
 const demoMatch = (id, { playerName }) => {
   const demo = demos[id];
@@ -171,7 +216,11 @@ const demoMatch = (id, { playerName }) => {
   return {
     players: [
       { id: "player", name: playerName, type: PlayerType.HUMAN },
-      { id: "ai-mimi-marzipan", name: "Mimi Marzipan", type: PlayerType.AI_TUTORIAL },
+      {
+        id: "ai-mimi-marzipan",
+        name: "Mimi Marzipan",
+        type: PlayerType.AI_TUTORIAL,
+      },
     ],
     boardSize: { rows: 6, cols: 6 },
     seed,

@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
-import PropTypes from "prop-types";
+import { useState, useEffect, useRef } from "react";
 import { connect } from "react-redux";
 import {
   engine,
@@ -12,9 +11,11 @@ import Fab from "./Fab";
 import Button from "./Button";
 import Dialog from "../dialogs/Dialog";
 import GameMenu from "../dialogs/GameMenu";
-import { Jukebox, useAudioSettings } from "../misc";
-import { showOfflineMessage } from "../UiActions";
-import { enterFullscreen, useFullscreenAvailable } from "../../helper/fullscreen";
+import Jukebox, { useAudioSettings } from "../misc/Jukebox";
+import {
+  enterFullscreen,
+  useFullscreenAvailable,
+} from "../../helper/fullscreen";
 import { createUseStyles } from "react-jss";
 
 const useStyles = createUseStyles((theme) => ({
@@ -31,7 +32,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   actions: {
     position: "absolute",
-    zIndex: 4,
+    zIndex: theme.layer.hud,
     display: "flex",
     top: theme.edge.top,
     left: theme.edge.left,
@@ -124,7 +125,12 @@ const Actionbar = (props) => {
     // in a match one button opens the menu with all the rest; the boards switch through the
     // preview of the other board (Scene)
     buttons.push(
-      <Fab key="menu" color="secondary" icon="settings" onClick={openMenu}></Fab>
+      <Fab
+        key="menu"
+        color="secondary"
+        icon="settings"
+        onClick={openMenu}
+      ></Fab>
     );
   } else {
     // sound and fullscreen are in the settings; the profile also works offline (level, XP and
@@ -190,24 +196,13 @@ const Actionbar = (props) => {
   );
 };
 
-Actionbar.propTypes = {
-  showSettings: PropTypes.func.isRequired,
-  showSignInOrUp: PropTypes.func.isRequired,
-};
-
 const mapStateToProps = (state) => ({
   game: selectActiveGame(state),
   paused: state.match.paused,
   matchOnline: state.match.online,
-  // the server answers (connectivity)
-  online: state.ui.online,
-  players: state.players,
-  language: state.ui.language,
   tutorial: state.ui.tutorial,
   tutorialInteractive: state.ui.tutorialInteractive,
 });
 
-const mapDispatchToProps = { showOfflineMessage };
-
-const ActionbarContainer = connect(mapStateToProps, mapDispatchToProps)(Actionbar);
+const ActionbarContainer = connect(mapStateToProps)(Actionbar);
 export default ActionbarContainer;

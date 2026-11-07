@@ -1,12 +1,12 @@
 {
   "name": "@battlechoc/api",
-  "version": "0.1.0",
+  "version": "5.2.2",
   "private": true,
   "description": "battlechoc backend: REST API and real-time match host on Postgres",
   "license": "AGPL-3.0-or-later",
   "main": "src/server.js",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "start": "node src/server.js",

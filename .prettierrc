@@ -1,0 +1,9 @@
+{
+  "trailingComma": "es5",
+  "overrides": [
+    {
+      "files": "whitepaper/simulator/**/*.js",
+      "options": { "tabWidth": 4, "printWidth": 120 }
+    }
+  ]
+}

@@ -1,10 +1,10 @@
-import React, { useEffect, useRef } from "react";
-import PropTypes from "prop-types";
-import { Jukebox } from "../misc";
+import { useEffect, useRef } from "react";
+import Jukebox from "../misc/Jukebox";
 import { createUseStyles } from "react-jss";
 import Fab from "../controls/Fab";
 import DialogFrame from "./DialogFrame";
 import withDefaultProps from "../../helper/defaultProps";
+import { outlined, rise } from "../styles";
 
 // the dialog as high as its content (modes info and list)
 const fitContent = (theme) => ({
@@ -44,7 +44,7 @@ const useStyles = createUseStyles((theme) => ({
     background: "rgba(0, 0, 0, 0.85)",
     height: "100%",
     width: "100%",
-    zIndex: 10,
+    zIndex: theme.layer.dialog,
     top: 0,
     left: 0,
     position: "fixed",
@@ -57,7 +57,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   stacked: {
     background: "unset !important",
-    zIndex: 20,
+    zIndex: theme.layer.stackedDialog,
   },
   notification: {
     background: "unset !important",
@@ -123,7 +123,7 @@ const useStyles = createUseStyles((theme) => ({
       zIndex: -1,
       width: "100%",
       height: "calc(100% - 1px)",
-      background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`,
+      background: rise(theme.color.secondary),
     },
     [theme.breakpoints.smartphone]: {
       right: 8,
@@ -147,16 +147,14 @@ const useStyles = createUseStyles((theme) => ({
     justifyContent: "center",
     alignItems: "center",
     color: "white",
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme),
   },
   subtitle: {
     zIndex: 12,
     fontFamily: theme.font.display,
     fontSize: theme.font.size.md,
     color: "white",
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme),
   },
   // the chocolate pieces of the frame, cut to the rounded body (the body itself does not clip,
   // so the close button can sit on its corner)
@@ -199,7 +197,6 @@ const useStyles = createUseStyles((theme) => ({
     textAlign: "center",
     [theme.breakpoints.smartphone]: {
       width: "80%",
-      paddingRight: "5",
     },
     [theme.breakpoints.orientation.landscape]: {
       width: "90%",
@@ -293,19 +290,6 @@ const Dialog = (componentProps) => {
       </div>
     </div>
   );
-};
-
-Dialog.propTypes = {
-  open: PropTypes.bool.isRequired,
-  close: PropTypes.func,
-  closable: PropTypes.bool,
-  children: PropTypes.element.isRequired,
-  title: PropTypes.string,
-  icon: PropTypes.string,
-  titleSlotBefore: PropTypes.element,
-  titleSlotAfter: PropTypes.element,
-  subtitle: PropTypes.oneOfType([PropTypes.string, PropTypes.object]),
-  mode: PropTypes.oneOf(["default", "stacked", "notification", "info", "list"]),
 };
 
 const defaultProps = {

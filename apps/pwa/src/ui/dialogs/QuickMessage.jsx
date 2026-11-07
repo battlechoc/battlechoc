@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
-import PropTypes from "prop-types";
+import { useState, useEffect, useCallback } from "react";
 import { createUseStyles } from "react-jss";
 import withDefaultProps from "../../helper/defaultProps";
+import { rise } from "../styles";
 
 const useStyles = createUseStyles((theme) => ({
   // a toast in body text; its icons size with the text
@@ -28,13 +28,13 @@ const useStyles = createUseStyles((theme) => ({
     },
     background: (props) => {
       if (props.variant === "error") {
-        return `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 100%)`;
+        return rise(theme.color.accent);
       } else if (props.variant === "success") {
-        return `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`;
+        return rise(theme.color.primary);
       } else if (props.variant === "warning") {
-        return `linear-gradient(0deg, ${theme.color.warning.dark} 0%, ${theme.color.warning.light} 100%)`;
+        return rise(theme.color.warning);
       } else {
-        return `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`;
+        return rise(theme.color.secondary);
       }
     },
   },
@@ -158,6 +158,9 @@ const QuickMessage = (componentProps) => {
       className={`${visible ? classes.visible : classes.invisible} ${
         classes.message
       }`}
+      data-testid="quick-message"
+      data-variant={props.variant}
+      data-visible={visible ? "true" : "false"}
     >
       <div className={`${classes[variant]} ${classes.icon}`}>
         <div />
@@ -168,20 +171,6 @@ const QuickMessage = (componentProps) => {
       </div>
     </div>
   );
-};
-
-QuickMessage.propTypes = {
-  open: PropTypes.bool.isRequired,
-  autoHideDuration: PropTypes.number,
-  message: PropTypes.string,
-  onClose: PropTypes.func.isRequired,
-  variant: PropTypes.oneOf([
-    "error",
-    "info",
-    "success",
-    "warning",
-    "apple-pwa-hint",
-  ]),
 };
 
 const defaultProps = {

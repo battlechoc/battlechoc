@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { accountOf, readSetting, writeSetting } from "./helpers/profile.js";
 
 // The lab against the local API (sample recipes): a new player finishes the tutorial (starter kit:
 // cocoa, rum, sugar, milk), discovers the starter recipe for the truffle cannon on the lab table,
@@ -14,55 +15,11 @@ const stock = async (request, username, items) =>
     ).ok()
   ).toBe(true);
 
-const accountOf = (page) =>
-  page.evaluate(
-    () =>
-      new Promise((resolve, reject) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const get = open.result
-            .transaction("player")
-            .objectStore("player")
-            .get("account");
-          get.onsuccess = () => resolve(get.result);
-          get.onerror = () => reject(get.error);
-        };
-        open.onerror = () => reject(open.error);
-      })
-  );
-
 // the lab explains itself on the first visit; most tests start with that intro already seen
-const seeIntro = (page) =>
-  page.evaluate(
-    () =>
-      new Promise((resolve, reject) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const tx = open.result.transaction("settings", "readwrite");
-          tx.objectStore("settings").put(true, "labIntroSeen");
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => reject(tx.error);
-        };
-        open.onerror = () => reject(open.error);
-      })
-  );
+const seeIntro = (page) => writeSetting(page, "labIntroSeen", true);
 
-const introSeen = (page) =>
-  page.evaluate(
-    () =>
-      new Promise((resolve, reject) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const get = open.result
-            .transaction("settings")
-            .objectStore("settings")
-            .get("labIntroSeen");
-          get.onsuccess = () => resolve(get.result === true);
-          get.onerror = () => reject(get.error);
-        };
-        open.onerror = () => reject(open.error);
-      })
-  );
+const introSeen = async (page) =>
+  (await readSetting(page, "labIntroSeen")) === true;
 
 const newPlayer = async (
   browser,

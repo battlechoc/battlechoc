@@ -1,4 +1,11 @@
-import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
@@ -7,12 +14,19 @@ import {
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
-import { ChoclabPalette, Fab } from "../controls";
-import { updatePlayerStats } from "../UiActions";
-import { ServerRequest } from "../../helper/settings";
+import ChoclabPalette from "../controls/ChoclabPalette";
+import Fab from "../controls/Fab";
+import { updatePlayerStats } from "../uiSlice";
+import {
+  fetchRecipes,
+  tryIngredients,
+  craftItem,
+  equipItem,
+} from "../../api/lab";
+import { fetchOwnProfile } from "../../api/profile";
 import logger from "../../helper/logger";
 import OfflineStore from "../../OfflineStore";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import IngredientIcon from "../ingredients/IngredientIcon";
 import Pantry from "../dialogs/Pantry";
 import EquipmentSlot from "./EquipmentSlot";
@@ -20,8 +34,13 @@ import BudgetBar from "./BudgetBar";
 import LabTable from "./LabTable";
 import InventoryPicker from "./InventoryPicker";
 import RecipeBook from "./RecipeBook";
-import LabIntro, { LAB_INTRO_SEEN, LAB_INTRO_STEPS, Spotlight } from "./LabIntro";
-import { bangers, effectLines, labColors } from "./itemText";
+import LabIntro, {
+  LAB_INTRO_SEEN,
+  LAB_INTRO_STEPS,
+  Spotlight,
+} from "./LabIntro";
+import { effectLines, labColors } from "./itemText";
+import { bangers, outlined, rise } from "../styles";
 
 // loaded with the lab, like the game's scene: Babylon stays out of the first bundle
 const MeshPreview = React.lazy(() => import("../../3d/MeshPreview"));
@@ -41,7 +60,7 @@ const useStyles = createUseStyles((theme) => ({
     overflow: "hidden",
     color: "white",
     // the sky of the menus (the body gradient)
-    background: `linear-gradient(0deg, ${theme.color.sky.dark} 0%, ${theme.color.sky.light} 80%)`,
+    background: rise(theme.color.sky, "80%"),
     // the lab's parts size themselves in em of this
     fontSize: theme.font.size.md,
     // phones held sideways: too little height for everything, the page scrolls
@@ -88,8 +107,7 @@ const useStyles = createUseStyles((theme) => ({
     fontFamily: theme.font.display,
     fontSize: theme.font.size.xl,
     color: "white",
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme),
     "&:focus-visible": {
       outline: `0.3vw solid ${theme.color.gold.light}`,
     },
@@ -227,8 +245,8 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
     if (!online) {
       return;
     }
-    ServerRequest("get", "/lab/recipes")
-      .then((response) => setBook(response.data))
+    fetchRecipes()
+      .then((recipes) => setBook(recipes))
       .catch((error) => logger.info("recipe book not available", error));
   }, [online]);
   useEffect(() => loadBook(), [loadBook]);
@@ -243,7 +261,9 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
           setIntroStep(0);
         }
       })
-      .catch((error) => logger.info("could not read the lab intro flag", error));
+      .catch((error) =>
+        logger.info("could not read the lab intro flag", error)
+      );
     return () => {
       active = false;
     };
@@ -253,7 +273,9 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
     setIntroStep(undefined);
     OfflineStore.settingsStore
       .set(LAB_INTRO_SEEN, true)
-      .catch((error) => logger.info("could not store the lab intro flag", error));
+      .catch((error) =>
+        logger.info("could not store the lab intro flag", error)
+      );
   };
   const introTarget =
     typeof introStep === "number" ? LAB_INTRO_STEPS[introStep].target : null;
@@ -311,14 +333,14 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   const tryBowls = () => {
     setBusy(true);
     setCrafted(undefined);
-    ServerRequest("post", "/lab/try", { entityType, ingredients: picked })
-      .then((response) => {
+    tryIngredients(entityType, picked)
+      .then((tried) => {
         setResult({
-          ...response.data,
-          status: response.data.result,
+          ...tried,
+          status: tried.result,
           seq: Date.now(),
         });
-        if (response.data.result === "found") {
+        if (tried.result === "found") {
           loadBook();
         }
       })
@@ -344,15 +366,15 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
 
   // reloads what the server knows about the player's pantry and items
   const refreshStats = () =>
-    ServerRequest("get", "/user")
-      .then((response) => {
+    fetchOwnProfile()
+      .then(({ stats }) => {
         const {
           pantry: fresh,
           spoiling,
           items: owned,
           equipment: equipped,
           loadout: active,
-        } = response.data.stats;
+        } = stats;
         const changes = {
           pantry: fresh,
           spoiling,
@@ -368,18 +390,18 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
 
   const craft = () => {
     setBusy(true);
-    ServerRequest("post", "/lab/craft", { item: recipe.item })
-      .then((response) => {
+    craftItem(recipe.item)
+      .then((crafted) => {
         const changes = {
-          pantry: response.data.pantry,
-          spoiling: response.data.spoiling,
-          coins: response.data.pantry.COCOA || 0,
-          items: [response.data.item, ...items],
+          pantry: crafted.pantry,
+          spoiling: crafted.spoiling,
+          coins: crafted.pantry.COCOA || 0,
+          items: [crafted.item, ...items],
         };
         updateStats(changes);
         persist(changes);
         setResult(undefined);
-        setCrafted(response.data.item);
+        setCrafted(crafted.item);
       })
       .catch((error) => {
         logger.warn("crafting failed", error);
@@ -391,11 +413,11 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   const equip = (itemId) => {
     const slot = pickerSlot;
     setBusy(true);
-    ServerRequest("post", "/user/equipment", { entityType, slot, itemId })
-      .then((response) => {
+    equipItem(entityType, slot, itemId)
+      .then((equipped) => {
         const changes = {
-          equipment: response.data.equipment,
-          loadout: response.data.loadout,
+          equipment: equipped.equipment,
+          loadout: equipped.loadout,
         };
         updateStats(changes);
         persist(changes);
@@ -551,7 +573,10 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
 
       {typeof introStep === "number" ? (
         <>
-          <Spotlight target={parts.current[introTarget]} container={page.current} />
+          <Spotlight
+            target={parts.current[introTarget]}
+            container={page.current}
+          />
           <LabIntro step={introStep} onStep={setIntroStep} onDone={endIntro} />
         </>
       ) : null}

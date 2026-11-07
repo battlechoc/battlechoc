@@ -1,4 +1,3 @@
-import React from "react";
 import { connect } from "react-redux";
 import {
   EntityType,
@@ -10,8 +9,9 @@ import {
 import { selectActiveGame } from "../../match/matchSlice";
 import { submit, ignoreRuleErrors } from "../match/submit";
 import useMatchTime from "../match/useMatchTime";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import { createUseStyles } from "react-jss";
+import { rise } from "../styles";
 
 const useStyles = createUseStyles((theme) => ({
   realtimeHint: {
@@ -35,7 +35,7 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   button: {
-    background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+    background: rise(theme.color.secondary, "70%"),
     height: "28vh",
     width: "28vh",
     border: `0.1vh solid ${theme.color.secondary.light}`,
@@ -181,7 +181,9 @@ const GameStartSelection = (props) => {
   const choose = (fieldIndex) => {
     if (unlocked) {
       Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-      submit(engine.MatchActionTypes.chooseField, { fieldIndex }).catch(ignoreRuleErrors);
+      submit(engine.MatchActionTypes.chooseField, { fieldIndex }).catch(
+        ignoreRuleErrors
+      );
     }
   };
 
@@ -193,8 +195,8 @@ const GameStartSelection = (props) => {
       game.board.size.cols === 6
         ? classes.six
         : game.board.size.cols === 8
-        ? classes.eight
-        : classes.ten;
+          ? classes.eight
+          : classes.ten;
     return (
       <div key={i} className={`${classes[cell.previewStyle]} ${sizeClassName}`}>
         <div className={creamy ? classes.creamy : ""} />
@@ -207,6 +209,8 @@ const GameStartSelection = (props) => {
       <div
         className={(unlocked ? "active " : "inactive ") + classes.button}
         onClick={() => choose(0)}
+        data-testid="choose-field"
+        data-field={0}
       >
         {(() => {
           if (typeof game.board !== "undefined") {
@@ -216,7 +220,8 @@ const GameStartSelection = (props) => {
                 .includes(EntityType.CREAM)
             );
             const count = (type) =>
-              game.board.fields[0].grid.filter((cell) => cell.type === type).length;
+              game.board.fields[0].grid.filter((cell) => cell.type === type)
+                .length;
             return (
               <>
                 <div className={classes.cream}>
@@ -247,7 +252,11 @@ const GameStartSelection = (props) => {
       </div>
 
       <div className={classes.realtimeHint}>
-        <p>{unlocked ? t(tr.MATCH_CHOOSE_FIELD) : t(tr.MATCH_OPPONENT_CHOOSES_FIELD)}</p>
+        <p>
+          {unlocked
+            ? t(tr.MATCH_CHOOSE_FIELD)
+            : t(tr.MATCH_OPPONENT_CHOOSES_FIELD)}
+        </p>
         <p className={classes.fieldHint}>{t(tr.MATCH_FIELD_HINT)}</p>
         {game.phaseEndsAt - now < 5 * 60 * 1000 ? (
           <p>{Math.max(0, Math.ceil((game.phaseEndsAt - now) / 1000))}</p>
@@ -257,6 +266,8 @@ const GameStartSelection = (props) => {
       <div
         className={(unlocked ? "active " : "inactive ") + classes.button}
         onClick={() => choose(1)}
+        data-testid="choose-field"
+        data-field={1}
       >
         {(() => {
           if (typeof game.board !== "undefined") {
@@ -266,7 +277,8 @@ const GameStartSelection = (props) => {
                 .includes(EntityType.CREAM)
             );
             const count = (type) =>
-              game.board.fields[1].grid.filter((cell) => cell.type === type).length;
+              game.board.fields[1].grid.filter((cell) => cell.type === type)
+                .length;
             return (
               <>
                 <div className={classes.cream}>
@@ -303,6 +315,7 @@ const mapStateToProps = (state) => ({
   game: selectActiveGame(state),
 });
 
-const GameStartSelectionContainer = connect(mapStateToProps)(GameStartSelection);
+const GameStartSelectionContainer =
+  connect(mapStateToProps)(GameStartSelection);
 
 export default GameStartSelectionContainer;

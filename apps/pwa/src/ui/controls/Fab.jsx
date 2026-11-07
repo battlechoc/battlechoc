@@ -1,7 +1,5 @@
-import React from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import withDefaultProps from "../../helper/defaultProps";
 
 const useStyles = createUseStyles((theme) => ({
@@ -153,51 +151,6 @@ const defaultProps = {
   icon: "settings",
   className: "",
   offline: false,
-};
-
-Fab.propTypes = {
-  color: PropTypes.oneOf([
-    "primary",
-    "secondary",
-    "accent",
-    "facebook",
-    "instagram",
-    "gold",
-  ]),
-  icon: PropTypes.oneOf([
-    "donuts-enabled",
-    "done",
-    "search",
-    "info",
-    "forward",
-    "forward-accent",
-    "backward",
-    "fast-forward",
-    "fast-backward",
-    "settings",
-    "mute",
-    "volume",
-    "facebook",
-    "instagram",
-    "fullscreen",
-    "user",
-    "close",
-    "trophy",
-    "back",
-    "share",
-    "refresh",
-    "pen",
-    "discord",
-    "lab/recipe-book",
-    "fit-board",
-  ]),
-  iconStyle: PropTypes.object,
-  className: PropTypes.string,
-  onClick: PropTypes.func.isRequired,
-  style: PropTypes.object,
-  // needs the server, which does not answer: grey, with the no-wifi sign
-  offline: PropTypes.bool,
-  onOfflineClick: PropTypes.func,
 };
 
 export default Fab;

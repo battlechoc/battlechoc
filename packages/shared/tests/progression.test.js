@@ -1,4 +1,4 @@
-const { Ingredient, Ingredients, choclabCost, EntityType, EmptyPlayerStats, getEntityDescriptor } = require('../index');
+const { Ingredient, Ingredients, choclabCost, EntityType, EmptyPlayerStats } = require('../index');
 
 describe('ingredients', () => {
     test('twelve ingredients; only rare and legendary ones spoil', () => {
@@ -17,12 +17,24 @@ describe('choclabCost', () => {
     });
 
     test('the cocoa price is the price the Choclab page showed in coins', () => {
+        // the prices of the levels 0, 7, 13 and 19, as they were when the coins became cocoa
+        const prices = {
+            CREAM: [0, 0, 0, 0],
+            FACTORY: [102, 563, 2394, 10207],
+            FACTORY_EXTENSION: [71, 437, 2025, 9437],
+            CACAOTREE: [24, 195, 1113, 6449],
+            RUM_TRUFFLE_CANNON: [55, 360, 1754, 8592],
+            FRUIT_CANNON: [55, 360, 1754, 8592],
+            SPYING_EASTER_BUNNY: [43, 287, 1410, 6981],
+            XMAS_FACTORY: [32, 230, 1194, 6267],
+            HOT_CHOCOLATE_BALLISTA: [68, 397, 1756, 7811],
+            CHOCOLATE_FOUNTAIN: [46, 291, 1369, 6480],
+            DONUT_FACTORY: [44, 301, 1513, 7665],
+        };
         Object.keys(EmptyPlayerStats.level).forEach(entityType => {
-            [0, 7, 13].forEach(level => {
-                const levels = { ...EmptyPlayerStats.level, [entityType]: level };
-                // the cream has no price on the page: it costs no cocoa
-                expect(choclabCost(entityType, level).cocoa).toBe(getEntityDescriptor(entityType, levels).coins || 0);
-            });
+            const expected = prices[entityType.replace('EntityType.', '')];
+            // the cream has no price on the page: it costs no cocoa
+            expect([0, 7, 13, 19].map(level => choclabCost(entityType, level).cocoa)).toEqual(expected);
         });
     });
 

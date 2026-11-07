@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import PropTypes from "prop-types";
+import { isNamed } from "../../helper/playerName";
 import { createUseStyles } from "react-jss";
 import { connect } from "react-redux";
 import { multiplayer } from "../../Multiplayer";
 import logger from "../../helper/logger";
-import { Fab } from "../controls";
+import Fab from "../controls/Fab";
 import UnsyncedMark from "../controls/UnsyncedMark";
 import PlayerNameInput from "../controls/PlayerNameInput";
 import Dialog from "./Dialog";
@@ -15,6 +15,7 @@ import {
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
+import { outlined, rise } from "../styles";
 
 const useStyles = createUseStyles((theme) => ({
   wrapper: {
@@ -62,8 +63,7 @@ const useStyles = createUseStyles((theme) => ({
     fontSize: theme.font.size.xl,
     lineHeight: 1,
     color: theme.color.gold.light,
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.brown.light}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme, theme.color.brown.light),
   },
   bar: {
     position: "relative",
@@ -76,7 +76,7 @@ const useStyles = createUseStyles((theme) => ({
     background: "rgba(0, 0, 0, 0.3)",
     "& > div": {
       height: "100%",
-      background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`,
+      background: rise(theme.color.primary),
     },
   },
   xp: {
@@ -116,27 +116,23 @@ const useStyles = createUseStyles((theme) => ({
   },
   gold: {
     borderColor: theme.color.gold.light,
-    background: `linear-gradient(0deg, ${theme.color.gold.dark} 0%, ${theme.color.gold.light} 100%)`,
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.gold.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    background: rise(theme.color.gold),
+    ...outlined(theme, theme.color.gold.dark),
   },
   primary: {
     borderColor: theme.color.primary.light,
-    background: `linear-gradient(0deg, ${theme.color.primary.dark} 0%, ${theme.color.primary.light} 100%)`,
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.primary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    background: rise(theme.color.primary),
+    ...outlined(theme, theme.color.primary.dark),
   },
   secondary: {
     borderColor: theme.color.secondary.light,
-    background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`,
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    background: rise(theme.color.secondary),
+    ...outlined(theme),
   },
   accent: {
     borderColor: theme.color.accent.light,
-    background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 100%)`,
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.accent.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    background: rise(theme.color.accent),
+    ...outlined(theme, theme.color.accent.dark),
   },
 }));
 
@@ -152,17 +148,16 @@ const AccountOverview = (props) => {
 
   const isPlayerAccount = typeof props.playerAccount === "undefined";
 
-  let winnings = 0;
-  let losses = 0;
+  let winnings;
+  let losses;
   let playerName = EmptyPlayerStats.username;
-  let ranking = 0;
+  let ranking;
 
   React.useEffect(() => {
     if (typeof props.playerAccount === "undefined") {
       multiplayer.computeRank();
     }
   }, [props.open, props.playerAccount]);
-
 
   if (isPlayerAccount) {
     playerName = props.playerInfos.stats.username;
@@ -202,7 +197,7 @@ const AccountOverview = (props) => {
   const stats = props.playerInfos.stats;
   const nameEditable =
     isPlayerAccount &&
-    ((typeof stats.username !== "undefined" && stats.username !== EmptyPlayerStats.username) ||
+    (isNamed(stats) ||
       stats.tutorialSkipped === true ||
       stats.tutorialFinished === true);
   const changeName = async (username) => {
@@ -215,7 +210,8 @@ const AccountOverview = (props) => {
   };
 
   const share =
-    playerName !== EmptyPlayerStats.username && (props.online || !isPlayerAccount) ? (
+    playerName !== EmptyPlayerStats.username &&
+    (props.online || !isPlayerAccount) ? (
       <Fab
         style={{ marginLeft: "2vw", marginRight: "-7vw" }}
         icon="share"
@@ -236,7 +232,9 @@ const AccountOverview = (props) => {
       }
       titleSlotAfter={
         <>
-          {isPlayerAccount && props.playerInfos.stats.usernamePending ? <UnsyncedMark /> : null}
+          {isPlayerAccount && props.playerInfos.stats.usernamePending ? (
+            <UnsyncedMark />
+          ) : null}
           {nameEditable ? (
             <Fab
               className={classes.pen}
@@ -270,7 +268,10 @@ const AccountOverview = (props) => {
                 early: props.earlyUnlock,
               }).gamesLeft.online;
               return (
-                <div className={classes.progress} data-testid="profile-progress">
+                <div
+                  className={classes.progress}
+                  data-testid="profile-progress"
+                >
                   <div className={classes.level} data-testid="profile-level">
                     {`${t(tr.ACCOUNT_OVERVIEW_LEVEL)} ${level.level}`}
                   </div>
@@ -281,13 +282,18 @@ const AccountOverview = (props) => {
                     aria-valuemax={level.to}
                     aria-valuenow={level.xp}
                   >
-                    <div style={{ width: `${Math.round(level.progress * 100)}%` }} />
+                    <div
+                      style={{ width: `${Math.round(level.progress * 100)}%` }}
+                    />
                   </div>
                   <div className={classes.xp} data-testid="profile-xp">
                     {t(tr.PROFILE_XP, level.xp, level.to)}
                   </div>
                   {gamesLeft > 0 ? (
-                    <p className={classes.note} data-testid="profile-next-unlock">
+                    <p
+                      className={classes.note}
+                      data-testid="profile-next-unlock"
+                    >
                       {gamesLeft === 1
                         ? t(tr.UNLOCK_ONLINE_ONE_GAME)
                         : t(tr.UNLOCK_ONLINE_GAMES, gamesLeft)}
@@ -340,16 +346,9 @@ const AccountOverview = (props) => {
             <div>{losses}</div>
           </div>
         </div>
-
       </div>
     </Dialog>
   );
-};
-
-AccountOverview.propTypes = {
-  close: PropTypes.func.isRequired,
-  open: PropTypes.bool.isRequired,
-  dialogStyle: PropTypes.string.isRequired,
 };
 
 const mapStateToProps = (state) => ({

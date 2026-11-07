@@ -1,24 +1,20 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { connect } from "react-redux";
 import { createUseStyles, useTheme } from "react-jss";
-import {
-  engine,
-  AttackType,
-} from "@battlechoc/battlechoc-shared-functions";
-import { selectAttack, focusBoard } from "../UiActions";
-import { Jukebox } from "../misc";
+import { engine } from "@battlechoc/battlechoc-shared-functions";
+import { selectAttack, focusBoard } from "../uiSlice";
+import Jukebox from "../misc/Jukebox";
 import useMatchTime from "./useMatchTime";
 import ProgressRing from "./ProgressRing";
 import TapPointer from "../controls/TapPointer";
+import { WEAPON_PALETTE, ATTACK_ICON, iconUrl } from "../../catalog";
 
 const { WeaponState } = engine;
 
-const weapons = [
-  { type: AttackType.TRUFFLE, image: "truffle-cannon" },
-  { type: AttackType.FRUIT, image: "fruit-cannon" },
-  { type: AttackType.BUNNY, image: "easter-bunny" },
-  { type: AttackType.HOT_CHOCOLATE, image: "ballista" },
-];
+const weapons = WEAPON_PALETTE.map((type) => ({
+  type,
+  image: ATTACK_ICON[type],
+}));
 
 const stateColors = (theme) => ({
   [WeaponState.READY]: theme.color.primary.light,
@@ -34,7 +30,9 @@ const useStyles = createUseStyles((theme) => ({
     flexDirection: "row-reverse",
     gap: 6,
     pointerEvents: "none",
-    [theme.breakpoints.orientation.portrait]: { flexDirection: "column-reverse" },
+    [theme.breakpoints.orientation.portrait]: {
+      flexDirection: "column-reverse",
+    },
   },
   item: {
     position: "relative",
@@ -66,15 +64,30 @@ const useStyles = createUseStyles((theme) => ({
   // the tutorial's hand on a button: one and a half icons wide
   pointer: {
     [theme.breakpoints.orientation.portrait]: { "--tap-size": "21vw" },
-    [theme.breakpoints.orientation.landscape]: { "--tap-size": "min(10.5vw, 19.5vh)" },
-    [theme.breakpoints.orientation.square]: { "--tap-size": "calc(5.25vh + 5.25vw)" },
+    [theme.breakpoints.orientation.landscape]: {
+      "--tap-size": "min(10.5vw, 19.5vh)",
+    },
+    [theme.breakpoints.orientation.square]: {
+      "--tap-size": "calc(5.25vh + 5.25vw)",
+    },
   },
   // nothing to fire right now; the button stays clickable to aim
-  empty: { "& > div:first-child": { filter: "grayscale(60%) brightness(60%)" } },
+  empty: {
+    "& > div:first-child": { filter: "grayscale(60%) brightness(60%)" },
+  },
   "@keyframes deniedFlash": {
-    "0%, 100%": { transform: "scale(1)", boxShadow: "0 0 0 0 rgba(255, 78, 133, 0)" },
-    "25%, 75%": { transform: "scale(1.12)", boxShadow: `0 0 0 0.6vw ${theme.color.accent.light}` },
-    "50%": { transform: "scale(0.95)", boxShadow: "0 0 0 0 rgba(255, 78, 133, 0)" },
+    "0%, 100%": {
+      transform: "scale(1)",
+      boxShadow: "0 0 0 0 rgba(255, 78, 133, 0)",
+    },
+    "25%, 75%": {
+      transform: "scale(1.12)",
+      boxShadow: `0 0 0 0.6vw ${theme.color.accent.light}`,
+    },
+    "50%": {
+      transform: "scale(0.95)",
+      boxShadow: "0 0 0 0 rgba(255, 78, 133, 0)",
+    },
   },
   denied: { animation: "$deniedFlash 0.6s ease-in-out" },
   // price of an early shot, in cacao: on the lower edge of the ring, inside the button (hanging
@@ -131,7 +144,13 @@ const weaponOverview = (view, t) => {
     cell.occupiedBy.forEach((entity) =>
       (entity.weapons || []).forEach((weapon) => {
         const status = engine.weaponStatus(view, weapon, t);
-        const entry = overview[weapon.attackType] || { total: 0, ready: 0, rushable: 0, rushCost: 0, progress: 0 };
+        const entry = overview[weapon.attackType] || {
+          total: 0,
+          ready: 0,
+          rushable: 0,
+          rushCost: 0,
+          progress: 0,
+        };
         entry.total += 1;
         entry.progress = Math.max(entry.progress, status.progress);
         if (status.state === WeaponState.READY) {
@@ -161,12 +180,25 @@ const availability = (view, t) => {
   return Object.fromEntries(
     Object.entries(overview).map(([type, entry]) => {
       const affordableRushes = me.cacao >= entry.rushCost ? entry.rushable : 0;
-      return [type, { available: stunned ? 0 : entry.ready + affordableRushes, free: stunned ? 0 : entry.ready }];
+      return [
+        type,
+        {
+          available: stunned ? 0 : entry.ready + affordableRushes,
+          free: stunned ? 0 : entry.ready,
+        },
+      ];
     })
   );
 };
 
-const WeaponPalette = ({ view, selectedAttack, deniedAttack, pointer, select, switchTo }) => {
+const WeaponPalette = ({
+  view,
+  selectedAttack,
+  deniedAttack,
+  pointer,
+  select,
+  switchTo,
+}) => {
   const classes = useStyles();
   const theme = useTheme();
   const t = useMatchTime(4);
@@ -175,7 +207,9 @@ const WeaponPalette = ({ view, selectedAttack, deniedAttack, pointer, select, sw
   // the selected weapon has fired its last shot: the selection moves on to one that can fire
   // (a free shot first, else an early one the cacao pays for), in the palette's order
   const shots = availability(view, t);
-  const shotsKey = weapons.map((weapon) => `${(shots[weapon.type] || {}).available || 0}`).join(",");
+  const shotsKey = weapons
+    .map((weapon) => `${(shots[weapon.type] || {}).available || 0}`)
+    .join(",");
   const previousShots = useRef(shots);
   useEffect(() => {
     const before = previousShots.current;
@@ -186,8 +220,12 @@ const WeaponPalette = ({ view, selectedAttack, deniedAttack, pointer, select, sw
       return;
     }
     const next =
-      weapons.find((weapon) => shots[weapon.type] && shots[weapon.type].free > 0) ||
-      weapons.find((weapon) => shots[weapon.type] && shots[weapon.type].available > 0);
+      weapons.find(
+        (weapon) => shots[weapon.type] && shots[weapon.type].free > 0
+      ) ||
+      weapons.find(
+        (weapon) => shots[weapon.type] && shots[weapon.type].available > 0
+      );
     if (next) {
       switchTo(next.type);
     }
@@ -216,11 +254,22 @@ const WeaponPalette = ({ view, selectedAttack, deniedAttack, pointer, select, sw
         .filter((weapon) => overview[weapon.type])
         .map((weapon) => {
           const entry = overview[weapon.type];
-          const affordableRushes = me.cacao >= entry.rushCost ? entry.rushable : 0;
+          const affordableRushes =
+            me.cacao >= entry.rushCost ? entry.rushable : 0;
           const available = stunned ? 0 : entry.ready + affordableRushes;
-          const state = entry.ready > 0 ? WeaponState.READY : entry.rushable > 0 ? WeaponState.RUSHABLE : WeaponState.CHARGING;
+          const state =
+            entry.ready > 0
+              ? WeaponState.READY
+              : entry.rushable > 0
+                ? WeaponState.RUSHABLE
+                : WeaponState.CHARGING;
           const free = !stunned && entry.ready > 0;
-          const color = available === 0 ? colors[WeaponState.CHARGING] : free ? colors[WeaponState.READY] : colors[WeaponState.RUSHABLE];
+          const color =
+            available === 0
+              ? colors[WeaponState.CHARGING]
+              : free
+                ? colors[WeaponState.READY]
+                : colors[WeaponState.RUSHABLE];
           const showPrice = !free && !stunned && entry.rushable > 0;
           const affordable = me.cacao >= entry.rushCost;
           const flash = flashing && flashing.type === weapon.type;
@@ -238,7 +287,10 @@ const WeaponPalette = ({ view, selectedAttack, deniedAttack, pointer, select, sw
                 select(weapon.type);
               }}
             >
-              <div className={classes.icon} style={{ backgroundImage: `url(/images/${weapon.image}-icon.svg)` }}>
+              <div
+                className={classes.icon}
+                style={{ backgroundImage: `url(${iconUrl(weapon.image)})` }}
+              >
                 <ProgressRing
                   progress={stunned ? 0 : entry.progress}
                   color={free ? colors[WeaponState.READY] : "white"}
@@ -255,7 +307,11 @@ const WeaponPalette = ({ view, selectedAttack, deniedAttack, pointer, select, sw
                 <div
                   className={classes.price}
                   data-testid="rush-price"
-                  style={{ background: affordable ? colors[WeaponState.RUSHABLE] : theme.color.accent.light }}
+                  style={{
+                    background: affordable
+                      ? colors[WeaponState.RUSHABLE]
+                      : theme.color.accent.light,
+                  }}
                 >
                   <i />
                   {entry.rushCost}
@@ -263,7 +319,13 @@ const WeaponPalette = ({ view, selectedAttack, deniedAttack, pointer, select, sw
               ) : null}
               {pointer && pointer.weapon === weapon.type ? (
                 // from the top left: the buttons stand in the bottom right corner
-                <TapPointer data-testid="tutorial-pointer" className={classes.pointer} from="top-left" x="50%" y="50%" />
+                <TapPointer
+                  data-testid="tutorial-pointer"
+                  className={classes.pointer}
+                  from="top-left"
+                  x="50%"
+                  y="50%"
+                />
               ) : null}
             </div>
           );

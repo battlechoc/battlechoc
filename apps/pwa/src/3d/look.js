@@ -21,7 +21,14 @@ import { requestedLight } from "../testHooks";
 
 // Dev server and test builds can try other values in the URL, e.g. ?env=0.6&exposure=1&saturation=-15
 // (saturation from -100, grey, to 100; tonemap aces or neutral)
-const LIGHT = { env: 0.8, fill: 0.2, sun: 0.75, exposure: 0.9, saturation: -20, tonemap: "neutral" };
+const LIGHT = {
+  env: 0.8,
+  fill: 0.2,
+  sun: 0.75,
+  exposure: 0.9,
+  saturation: -20,
+  tonemap: "neutral",
+};
 const TONE_MAPPING = {
   aces: ImageProcessingConfiguration.TONEMAPPING_ACES,
   neutral: ImageProcessingConfiguration.TONEMAPPING_KHR_PBR_NEUTRAL,
@@ -33,14 +40,18 @@ export const applyLook = (scene) => {
   const light = lightSettings();
   const processing = scene.imageProcessingConfiguration;
   processing.toneMappingEnabled = true;
-  processing.toneMappingType = TONE_MAPPING[light.tonemap] ?? TONE_MAPPING.neutral;
+  processing.toneMappingType =
+    TONE_MAPPING[light.tonemap] ?? TONE_MAPPING.neutral;
   processing.exposure = light.exposure;
   if (light.saturation) {
     processing.colorCurvesEnabled = true;
     processing.colorCurves = new ColorCurves();
     processing.colorCurves.globalSaturation = light.saturation;
   }
-  scene.environmentTexture = CubeTexture.CreateFromPrefilteredData("/textures/sky.env", scene);
+  scene.environmentTexture = CubeTexture.CreateFromPrefilteredData(
+    "/textures/sky.env",
+    scene
+  );
   scene.environmentIntensity = light.env;
   const fill = new HemisphericLight("light", new Vector3(40, 44, 1), scene);
   fill.diffuse = new Color3(1.0, 0.97, 0.93);

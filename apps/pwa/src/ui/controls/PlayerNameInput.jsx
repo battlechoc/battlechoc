@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
-import PropTypes from "prop-types";
-import { ServerRequest } from "../../helper/settings";
-import Axios from "axios";
+import { useState, useEffect, useRef } from "react";
+import { DEFAULT_NAME } from "../../helper/playerName";
+import { checkUsername } from "../../api/profile";
+import { isCancel } from "../../helper/http";
 import { createUseStyles } from "react-jss";
 import logger from "../../helper/logger";
 import {
@@ -12,6 +12,7 @@ import {
 import Progress from "./Progress";
 import UnsyncedMark from "./UnsyncedMark";
 import withDefaultProps from "../../helper/defaultProps";
+import { outlined, rise } from "../styles";
 
 // One row in the text size of buttons (the type scale); the action button sits on its right end.
 const useStyles = createUseStyles((theme) => ({
@@ -54,8 +55,7 @@ const useStyles = createUseStyles((theme) => ({
     color: theme.color.accent.light,
     fontFamily: theme.font.display,
     fontSize: theme.font.size.md,
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.accent.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme, theme.color.accent.dark),
   },
   icon: {
     flex: "0 0 auto",
@@ -66,7 +66,7 @@ const useStyles = createUseStyles((theme) => ({
     boxSizing: "border-box",
     border: `0.12em solid ${theme.color.secondary.light}`,
     borderRadius: "0.55em",
-    background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+    background: rise(theme.color.secondary, "70%"),
     height: "2.2em",
     width: "2.2em",
     position: "absolute",
@@ -79,7 +79,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   buttonError: {
     border: `0.12em solid ${theme.color.accent.light}`,
-    background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 70%)`,
+    background: rise(theme.color.accent, "70%"),
     "& > div": {
       filter: "hue-rotate(120deg)",
     },
@@ -109,7 +109,7 @@ const PlayerNameInput = (componentProps) => {
   const [playerNameValid, setPlayerNameValid] = useState(true);
   const [playerNameAvailable, setPlayerNameAvailable] = useState(true);
   const [playerName, updatePlayerName] = useState(
-    typeof startValue === "undefined" ? "Chocnonymous" : startValue
+    typeof startValue === "undefined" ? DEFAULT_NAME : startValue
   );
   const [unchanged, setUnchanged] = useState(current === startValue);
   const [badInternetConnection, setBadInternetConnection] = useState(false);
@@ -122,7 +122,7 @@ const PlayerNameInput = (componentProps) => {
   useEffect(() => {
     setEditMode(props.editMode);
     updatePlayerName(
-      typeof startValue === "undefined" ? "Chocnonymous" : startValue
+      typeof startValue === "undefined" ? DEFAULT_NAME : startValue
     );
     if (!props.editMode) {
       setPlayerNameAvailable(true);
@@ -155,12 +155,11 @@ const PlayerNameInput = (componentProps) => {
 
           try {
             setRequestRunning(true);
-            let response = await ServerRequest(
-              "get",
-              "/check/available/" + playerName,
+            const { available } = await checkUsername(
+              playerName,
               abortController.current.signal
             );
-            setPlayerNameAvailable(response.data.available);
+            setPlayerNameAvailable(available);
             setBadInternetConnection(false);
           } catch (error) {
             if (
@@ -168,7 +167,7 @@ const PlayerNameInput = (componentProps) => {
               error.code === "auth/network-request-failed"
             ) {
               setBadInternetConnection(true);
-            } else if (!Axios.isCancel(error)) {
+            } else if (!isCancel(error)) {
               logger.warn(error);
             }
           } finally {
@@ -254,16 +253,13 @@ const PlayerNameInput = (componentProps) => {
                 backgroundSize: "100% 100%",
               }}
             ></div>
-            <div
-              className={classes.name}
-            >
-              {playerName}
-            </div>
+            <div className={classes.name}>{playerName}</div>
             {props.pending ? <UnsyncedMark /> : null}
           </div>
         )}
         <div
           onClick={handleAction}
+          data-testid="name-submit"
           className={`${classes.actionButton} ${
             buttonDisabled ? classes.disabled : null
           } ${buttonError ? classes.buttonError : null}`}
@@ -291,16 +287,6 @@ const defaultProps = {
   className: "",
   offline: false,
   pending: false,
-};
-
-PlayerNameInput.propTypes = {
-  editMode: PropTypes.bool,
-  className: PropTypes.string,
-  onEditMode: PropTypes.func,
-  // without the server: the name is only checked for its spelling
-  offline: PropTypes.bool,
-  // a name chosen offline that the server does not know yet
-  pending: PropTypes.bool,
 };
 
 export default PlayerNameInput;

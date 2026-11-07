@@ -1,32 +1,33 @@
-import React, { useState } from "react";
-import PropTypes from "prop-types";
+import { useState } from "react";
 import { connect } from "react-redux";
-import {
-  hideQuickMessage,
-  showQuickMessage,
-  loadUiState,
-} from "../UiActions";
-import { Jukebox, useAudioSettings } from "../misc";
+import { showQuickMessage } from "../uiSlice";
+import { tipsEnabledChanged, autoFullscreenChanged } from "../../settingsSlice";
+import Jukebox, { useAudioSettings } from "../misc/Jukebox";
 import {
   translate as t,
   translationKeys as tr,
-  setCurrentLanguage,
   getCurrentLanguage,
   unlocks,
 } from "@battlechoc/battlechoc-shared-functions";
 import OfflineStore from "../../OfflineStore";
-import { ServerRequest } from "../../helper/settings";
+import { sendProblemReport } from "../../api/profile";
 import logger from "../../helper/logger";
+import { isNamed } from "../../helper/playerName";
 import { version, commit } from "../../build";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
-import { Button, Select, Progress, Slider } from "../controls";
+import Button from "../controls/Button";
+import Select from "../controls/Select";
+import Progress from "../controls/Progress";
+import Slider from "../controls/Slider";
 import {
   enterFullscreen,
   fullscreenSupported,
   useFullscreenAvailable,
 } from "../../helper/fullscreen";
 import { LAB_INTRO_SEEN } from "../lab/LabIntro";
+import { applyLanguage } from "../../helper/language";
+import { rememberLanguage } from "../../helper/rememberLanguage";
 
 const useStyles = createUseStyles((theme) => ({
   wrapper: {
@@ -107,7 +108,7 @@ const Settings = (props) => {
   const [withDeviceInformation, setWithDeviceInformation] = useState(false);
   const [additionalReportMessage, setAdditionalReportMessage] = useState(false);
   const [sendingReport, setSendingReport] = useState(false);
-  const [forceUpdate, setForceUpdate] = useState(0);
+  const [, setForceUpdate] = useState(0);
 
   const classes = useStyles();
   const audio = useAudioSettings();
@@ -142,7 +143,7 @@ const Settings = (props) => {
           version: version,
           commit: commit,
         };
-        await ServerRequest("post", "/debugging/gamestate", { report: report });
+        await sendProblemReport(report);
         props.showQuickMessage({
           text: t(tr.SUCCESSFULLY_SENDING_PROBLEM_REPORT),
           variant: "success",
@@ -173,7 +174,7 @@ const Settings = (props) => {
       label: t(tr.GERMAN),
     },
     {
-      value: "jp",
+      value: "ja",
       label: t(tr.JAPANESE),
     },
     {
@@ -193,23 +194,19 @@ const Settings = (props) => {
       label: t(tr.PORTUGUESE),
     },
     {
-      value: "vn",
+      value: "vi",
       label: t(tr.VIETNAMESE),
     },
   ];
 
   const changeLanguage = (value) => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-    setCurrentLanguage(value, () => {
-      ServerRequest("post", "/user/language", { language: value })
-        .catch((error) => {
-          if (!(error instanceof ReferenceError)) {
-            console.warn(error);
-          }
-        })
-        .finally(() => OfflineStore.settingsStore.set("language", value));
-    });
-    setForceUpdate(1 - forceUpdate);
+    applyLanguage(value)
+      .then((code) => {
+        rememberLanguage(code);
+        setForceUpdate((count) => count + 1);
+      })
+      .catch((error) => logger.warn("could not load the language", error));
   };
 
   return (
@@ -298,24 +295,26 @@ const Settings = (props) => {
               color="secondary"
               onClick={() => Jukebox.mute(audio.muted)}
             >
-              {audio.muted ? t(tr.GAME_MENU_SOUND_OFF) : t(tr.GAME_MENU_SOUND_ON)}
+              {audio.muted
+                ? t(tr.GAME_MENU_SOUND_OFF)
+                : t(tr.GAME_MENU_SOUND_ON)}
             </Button>
             <Button
               className={classes.button}
               color="secondary"
               onClick={() => Jukebox.setClicks(!audio.clicks)}
             >
-              {audio.clicks ? t(tr.SETTINGS_CLICKS_ON) : t(tr.SETTINGS_CLICKS_OFF)}
+              {audio.clicks
+                ? t(tr.SETTINGS_CLICKS_ON)
+                : t(tr.SETTINGS_CLICKS_OFF)}
             </Button>
             {fullscreenSupported() ? (
               <Button
                 className={classes.button}
                 color="secondary"
-                onClick={() => {
-                  const enabled = !props.autoFullscreen;
-                  props.loadUiState({ autoFullscreen: enabled });
-                  OfflineStore.settingsStore.set("autoFullscreen", enabled);
-                }}
+                onClick={() =>
+                  props.autoFullscreenChanged(!props.autoFullscreen)
+                }
               >
                 {props.autoFullscreen
                   ? t(tr.SETTINGS_AUTO_FULLSCREEN_ON)
@@ -338,12 +337,12 @@ const Settings = (props) => {
               color="secondary"
               onClick={() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                const enabled = !props.tipsEnabled;
-                props.loadUiState({ tipsEnabled: enabled });
-                OfflineStore.settingsStore.set("tips", enabled);
+                props.tipsEnabledChanged(!props.tipsEnabled);
               }}
             >
-              {props.tipsEnabled ? t(tr.SETTINGS_TIPS_ON) : t(tr.SETTINGS_TIPS_OFF)}
+              {props.tipsEnabled
+                ? t(tr.SETTINGS_TIPS_ON)
+                : t(tr.SETTINGS_TIPS_OFF)}
             </Button>
             <Button
               className={classes.button}
@@ -358,7 +357,7 @@ const Settings = (props) => {
               // not during a match: the tutorial runs its own
               if (
                 typeof props.game === "undefined" &&
-                (props.playerInfos.stats.username !== "Chocnonymous" ||
+                (isNamed(props.playerInfos.stats) ||
                   props.playerInfos.stats.tutorialSkipped === true ||
                   props.playerInfos.stats.tutorialFinished === true)
               ) {
@@ -379,8 +378,9 @@ const Settings = (props) => {
                     >
                       {t(tr.RESTART_TUTORIAL)}
                     </Button>
-                    {unlocks(props.playerInfos.stats, { early: props.earlyUnlock }).games > 0 &&
-                    props.showBuildingDemos ? (
+                    {unlocks(props.playerInfos.stats, {
+                      early: props.earlyUnlock,
+                    }).games > 0 && props.showBuildingDemos ? (
                       <Button
                         className={classes.button}
                         color="secondary"
@@ -403,26 +403,18 @@ const Settings = (props) => {
   );
 };
 
-Settings.propTypes = {
-  open: PropTypes.bool.isRequired,
-  close: PropTypes.func.isRequired,
-  startTutorial: PropTypes.func.isRequired,
-  showBuildingDemos: PropTypes.func,
-};
-
 const mapStateToProps = (state) => ({
   game: state.match.view,
   playerInfos: state.ui.playerInfos,
-  tutorial: state.ui.tutorial,
-  tipsEnabled: state.ui.tipsEnabled,
-  autoFullscreen: state.ui.autoFullscreen,
+  tipsEnabled: state.settings.tipsEnabled,
+  autoFullscreen: state.settings.autoFullscreen,
   earlyUnlock: state.ui.earlyUnlock,
 });
 
 const mapDispatchToProps = {
-  loadUiState,
-  hideQuickMessage,
   showQuickMessage,
+  tipsEnabledChanged,
+  autoFullscreenChanged,
 };
 
 const SettingsContainer = connect(

@@ -17,7 +17,7 @@ const initialState = {
   // or "connecting" and "unreachable" before the server answered
   challengeView: null,
   // the player closed "Play with a friend" before the server made the challenge: it is cancelled
-  // when it arrives (Hud sends the cancel for challengeToCancel) instead of reopening the dialog
+  // when it arrives (liveLobby sends the cancel for challengeToCancel) instead of reopening the dialog
   challengeDismissed: false,
   challengeToCancel: null,
 };
@@ -40,7 +40,9 @@ const liveSlice = createSlice({
     },
     inviteReceived(state, action) {
       state.incomingInvites = [
-        ...state.incomingInvites.filter((invite) => invite.id !== action.payload.id),
+        ...state.incomingInvites.filter(
+          (invite) => invite.id !== action.payload.id
+        ),
         action.payload,
       ];
     },
@@ -50,7 +52,9 @@ const liveSlice = createSlice({
     },
     inviteClosed(state, action) {
       const { inviteId, reason } = action.payload;
-      state.incomingInvites = state.incomingInvites.filter((invite) => invite.id !== inviteId);
+      state.incomingInvites = state.incomingInvites.filter(
+        (invite) => invite.id !== inviteId
+      );
       if (state.outgoingInvite && state.outgoingInvite.id === inviteId) {
         state.outgoingInvite = null;
         state.inviteClosed = reason;
@@ -63,13 +67,25 @@ const liveSlice = createSlice({
       state.error = action.payload;
     },
     challengeUpdated(state, action) {
-      if (action.payload !== null && state.challengeDismissed && state.challenge === null) {
+      if (
+        action.payload !== null &&
+        state.challengeDismissed &&
+        state.challenge === null
+      ) {
         state.challengeDismissed = false;
         state.challengeToCancel = action.payload.code;
         return;
       }
-      if (action.payload === null && state.challenge && LIVE_CHALLENGE.includes(state.challenge.state)) {
-        state.challenge = { ...state.challenge, state: "lost", expiresAt: null };
+      if (
+        action.payload === null &&
+        state.challenge &&
+        LIVE_CHALLENGE.includes(state.challenge.state)
+      ) {
+        state.challenge = {
+          ...state.challenge,
+          state: "lost",
+          expiresAt: null,
+        };
       } else {
         state.challenge = action.payload;
       }
@@ -99,7 +115,10 @@ const liveSlice = createSlice({
       state.challenge = null;
       // the challenge being played ends here; one still being asked (a link opened while a match
       // comes back after a reload) is asked again when that match is over (App)
-      if (!state.challengeView || !["connecting", "busy"].includes(state.challengeView.state)) {
+      if (
+        !state.challengeView ||
+        !["connecting", "busy"].includes(state.challengeView.state)
+      ) {
         state.challengeView = null;
       }
       state.queuedSince = null;

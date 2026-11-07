@@ -9,13 +9,18 @@ A chocolate-themed two-player strategy game. Each player owns a board of chocola
 | `apps/pwa` | The game client: React, Redux Toolkit, Babylon.js, Vite, Workbox |
 | `packages/shared` | Shared by client and server: the real-time rules engine, AIs, balance, equipment, live protocol, translations |
 | `apps/api` | The backend: REST API (accounts, profile, lab, Web Push) and the live match WebSocket, on Postgres |
-| `deploy` | Docker Compose stack for the server: Postgres, the API and Caddy (or the host's nginx); how to deploy it: [deploy/README.md](deploy/README.md) |
-| `apps/server` | Legacy Firebase Cloud Functions backend, kept for reference until the switch to `apps/api` |
+| `deploy` | Docker Compose stack for the server: Postgres and the API from its published image, behind the host's nginx (or Caddy); how to deploy it: [deploy/README.md](deploy/README.md) |
 | `whitepaper` | Draft whitepaper for the planned competitive layer, with the economy simulator behind its numbers |
+
+## Documentation
+
+- [Game rules](docs/game-rules.md): how a match works, every building, weapon and donut
+- [Architecture](docs/architecture.md): how the game, the rules and the server fit together
+- [Deploying the server](deploy/README.md)
 
 ## Development
 
-Requires Node `^20.19` or `>=22.12`.
+Requires Node 22.13 or later (`.nvmrc` names the major version CI uses).
 
 ```sh
 npm install          # installs all workspaces
@@ -25,6 +30,8 @@ npm run build        # production build of the PWA into apps/pwa/build
 npm run test:e2e     # Playwright end-to-end tests; builds the e2e build (production build plus
                      # test hooks) into apps/pwa/build-e2e first (`npx playwright install chromium` once)
 npm run test:api     # tests of the API (in-memory database)
+npm run verify       # what the CI job test-and-build checks: formatting, all unit tests, the
+                     # API tests and the production build
 ```
 
 Without an API the game runs offline: AI opponents work, but there are no accounts, no online matches and no lab. To play with everything, run the API locally in one of the two ways below.
@@ -46,24 +53,24 @@ VITE_API_URL=http://localhost:8091 npm run dev
 
 ### Production-like: everything in Docker
 
-This runs Postgres, the API, Caddy and the game in Docker. It needs nothing but Docker with Compose v2, and ports 80, 443 and 3000 must be free.
+This runs Postgres, the API and the game in Docker, with the compose file a server uses. It needs nothing but Docker with Compose v2, and ports 8080 and 3000 must be free.
 
-- `deploy/docker-compose.yml` is the server stack.
-- `deploy/docker-compose.local.yml` adds the game, built against the local API.
-- Caddy serves the API over plain HTTP on `localhost`.
+- `deploy/docker-compose.yml` is the server stack: Postgres and the API. A server pulls the API's published image; how to deploy it: [deploy/README.md](deploy/README.md).
+- `deploy/docker-compose.local.yml` builds the API from this checkout instead, and adds the game, built against that API.
 
 1. Create `deploy/.env` (it is git-ignored):
 
    ```sh
    printf '%s\n' \
-     "API_DOMAIN=http://localhost" \
      "POSTGRES_PASSWORD=$(openssl rand -hex 16)" \
      "JWT_SECRET=$(openssl rand -base64 48)" \
      "CORS_ORIGINS=http://localhost:3000" \
+     "PGDATA_VOLUME=battlechoc-dev_pgdata" \
      "RECIPES_PATH=../apps/api/src/lab/recipes.sample.json" > deploy/.env
    ```
 
-   - `http://` tells Caddy to serve plain HTTP instead of requesting a TLS certificate.
+   - `PGDATA_VOLUME` names the Docker volume of the local database.
+
    - `RECIPES_PATH` is resolved from `deploy/`. Locally it points to the public sample recipes; a real server uses the private recipe table, which is never in the repository.
    - The `VAPID_*` keys from `deploy/.env.example` are optional; without them Web Push is off.
 
@@ -73,12 +80,12 @@ This runs Postgres, the API, Caddy and the game in Docker. It needs nothing but 
    docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml -p battlechoc-dev up -d --build
    ```
 
-3. Play on http://localhost:3000. The API answers on http://localhost.
+3. Play on http://localhost:3000. The API answers on http://localhost:8080.
 
 4. Optional check: two bots create accounts and play a live match against each other. A match can take a few minutes.
 
    ```sh
-   node apps/api/scripts/live-bots.js http://localhost
+   node apps/api/scripts/live-bots.js http://localhost:8080
    ```
 
 5. Stop everything. Add `-v` to also delete the database.
@@ -87,9 +94,11 @@ This runs Postgres, the API, Caddy and the game in Docker. It needs nothing but 
    docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.local.yml -p battlechoc-dev down
    ```
 
-To work on the game against this API, leave out `-f deploy/docker-compose.local.yml` in step 2 (port 3000 stays free) and run `VITE_API_URL=http://localhost npm run dev`. The dev server reloads on every change; the `pwa` image only changes when you rebuild it.
+To work on the game against this API, add `postgres api` at the end of the command in step 2 (the game's container is not started, port 3000 stays free) and run `VITE_API_URL=http://localhost:8080 npm run dev`. The dev server reloads on every change; the images only change when you rebuild them.
 
 Postgres applies `POSTGRES_PASSWORD` only when it creates its volume. If you change the password later, the API cannot connect ("password authentication failed"). Delete the volume with `down -v`, or keep the old password.
+
+`deploy/test-image.sh` checks the API image the way CI does: it builds it, starts the server stack with it in a throwaway project and creates an account.
 
 ## License
 

@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { createUseStyles } from "react-jss";
 import Fab from "../controls/Fab";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import {
   translate as t,
   translationKeys as tr,
@@ -68,7 +68,6 @@ const releaseUrl = (number) =>
   `https://github.com/battlechoc/battlechoc/releases/tag/v${number}`;
 
 // the game's language codes that are no BCP 47 tags
-const LOCALES = { jp: "ja", vn: "vi" };
 const UNITS = [
   ["year", 365 * 24 * 60 * 60],
   ["month", 30 * 24 * 60 * 60],
@@ -86,7 +85,7 @@ const timeAgo = (time) => {
   const [unit, value] = found
     ? [found[0], Math.round(seconds / found[1])]
     : ["second", 0];
-  return new Intl.RelativeTimeFormat(LOCALES[language] || language, {
+  return new Intl.RelativeTimeFormat(language, {
     numeric: "auto",
   }).format(value, unit);
 };

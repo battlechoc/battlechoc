@@ -1,7 +1,6 @@
-import React from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import withDefaultProps from "../../helper/defaultProps";
+import { outlined } from "../styles";
 
 // one dark blue strip per player (the own one pink): rank, name (shortened with an ellipsis
 // when it is long) and rating; the list is as wide as its dialog
@@ -13,8 +12,7 @@ const useStyles = createUseStyles((theme) => ({
     width: "100%",
     fontFamily: theme.font.display,
     fontSize: `calc(${theme.font.size.md} * 1.2)`,
-    "-webkit-text-stroke": `${theme.font.stroke} #0f3045`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme, "#0f3045"),
   },
   row: {
     display: "flex",
@@ -118,15 +116,6 @@ const defaultProps = {
   style: {},
   className: "",
   username: "",
-};
-
-PlayerList.propTypes = {
-  showProfile: PropTypes.func.isRequired,
-  players: PropTypes.array.isRequired,
-  withScore: PropTypes.bool,
-  style: PropTypes.object,
-  username: PropTypes.string,
-  className: PropTypes.string,
 };
 
 export default PlayerList;

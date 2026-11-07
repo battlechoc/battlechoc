@@ -1,4 +1,6 @@
-// Errors returned or thrown by the battlechoc rules engines.
+// Errors returned or thrown by the battlechoc rules engine. Each carries its class name as
+// `code` (and `name`): the server sends it with a rejected action and the game compares it,
+// which the name of the class itself cannot serve for once a bundler has shortened it.
 
 class BattlechocError extends Error { };
 
@@ -107,7 +109,7 @@ class InvalidTimeError extends BattlechocError {
     }
 }
 
-module.exports = {
+const errors = {
     BattlechocError,
     ActionValidationError,
     InvalidActionIssuerError,
@@ -125,3 +127,11 @@ module.exports = {
     StunnedError,
     InvalidTimeError,
 };
+
+for (const [code, ErrorClass] of Object.entries(errors)) {
+    ErrorClass.code = code;
+    ErrorClass.prototype.code = code;
+    ErrorClass.prototype.name = code;
+}
+
+module.exports = errors;

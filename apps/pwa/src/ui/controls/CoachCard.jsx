@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from "react";
-import PropTypes from "prop-types";
+import { useEffect, useRef } from "react";
 import { createUseStyles } from "react-jss";
+import { rise } from "../styles";
 
 const useStyles = createUseStyles((theme) => ({
   // beside the board in landscape (never narrower than about 20 words), across in portrait;
@@ -21,7 +21,7 @@ const useStyles = createUseStyles((theme) => ({
     boxSizing: "border-box",
     padding: "0.8em 0.95em",
     borderRadius: 20,
-    background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 80%)`,
+    background: rise(theme.color.secondary, "80%"),
     border: `0.3vw solid ${theme.color.secondary.light}`,
     boxShadow: "0 0.5vw 1.5vw rgba(0, 0, 0, 0.35)",
     color: "white",
@@ -104,7 +104,8 @@ const CoachCard = ({
     if (!onLayout || !card.current) {
       return undefined;
     }
-    const report = () => onLayout(Math.round(card.current.getBoundingClientRect().bottom));
+    const report = () =>
+      onLayout(Math.round(card.current.getBoundingClientRect().bottom));
     const observer = new ResizeObserver(report);
     observer.observe(card.current);
     window.addEventListener("resize", report);
@@ -130,17 +131,6 @@ const CoachCard = ({
       </div>
     </div>
   );
-};
-
-CoachCard.propTypes = {
-  title: PropTypes.node.isRequired,
-  message: PropTypes.node.isRequired,
-  progress: PropTypes.node,
-  skipLabel: PropTypes.node,
-  onSkip: PropTypes.func,
-  className: PropTypes.string,
-  onLayout: PropTypes.func,
-  children: PropTypes.node,
 };
 
 export default CoachCard;

@@ -1,0 +1,25 @@
+name: Idea
+description: Suggest a feature or an improvement
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is also the place to align a larger change with the project before you start working on it, as [CONTRIBUTING.md](https://github.com/battlechoc/battlechoc/blob/main/CONTRIBUTING.md) asks.
+  - type: textarea
+    id: idea
+    attributes:
+      label: What is your idea?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What would it improve?
+      description: The problem it solves, or what would be more fun with it.
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Would you build it yourself?
+      options:
+        - label: Yes, I would open a pull request for it

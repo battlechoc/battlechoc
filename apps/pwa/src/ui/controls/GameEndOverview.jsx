@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
-import PropTypes from "prop-types";
+import { useState, useRef, useEffect } from "react";
 import Fab from "./Fab";
 import Button from "./Button";
 import {
@@ -11,6 +10,7 @@ import IngredientBag from "../ingredients/IngredientBag";
 import { createUseStyles } from "react-jss";
 import confetti from "canvas-confetti";
 import CountUpModule from "react-countup";
+import { outlined } from "../styles";
 
 // the default import of this CommonJS module is its module.exports object
 const CountUp = CountUpModule.default ?? CountUpModule;
@@ -20,7 +20,7 @@ const useStyles = createUseStyles((theme) => ({
     height: "100%",
     width: "100%",
     position: "absolute",
-    zIndex: 100,
+    zIndex: theme.layer.endScreen,
     backgroundColor: "rgba(0, 0, 0, 0.8)",
     display: "flex",
     flexDirection: "column",
@@ -28,8 +28,7 @@ const useStyles = createUseStyles((theme) => ({
     fontFamily: theme.font.display,
     fontSize: theme.font.size.lg,
     color: "white",
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme),
   },
   headline: {
     textAlign: "center",
@@ -89,8 +88,7 @@ const useStyles = createUseStyles((theme) => ({
     width: "fit-content",
     borderSpacing: "1em 0.25em",
     color: theme.color.primary.light,
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.primary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme, theme.color.primary.dark),
     "& > div": {
       display: "table-row",
       "& > div": {
@@ -113,7 +111,9 @@ const useStyles = createUseStyles((theme) => ({
 // the cocoa that achievements gave instead of a special ingredient is shown as one item;
 // special ingredients and the daily fresh batch keep their source
 const bagItems = (drops) => {
-  const fallback = drops.filter((drop) => drop.ingredient === "COCOA" && drop.achievement !== "FRESHBATCH");
+  const fallback = drops.filter(
+    (drop) => drop.ingredient === "COCOA" && drop.achievement !== "FRESHBATCH"
+  );
   const cocoa = fallback.reduce((sum, drop) => sum + drop.amount, 0);
   return [
     ...(cocoa > 0 ? [{ ingredient: "COCOA", amount: cocoa }] : []),
@@ -136,7 +136,10 @@ const CONFETTI_COLORS = [
   "#3190c3", // blueberry
 ];
 const pickColors = (count) =>
-  Array.from({ length: count }, () => CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)]);
+  Array.from(
+    { length: count },
+    () => CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)]
+  );
 
 const GameEndOverview = (props) => {
   const classes = useStyles();
@@ -299,7 +302,11 @@ const GameEndOverview = (props) => {
             {verified ? (
               <IngredientBag
                 items={bagItems(drops || [])}
-                message={typeof drops === "undefined" ? t(tr.END_BAG_WAITING) : undefined}
+                message={
+                  typeof drops === "undefined"
+                    ? t(tr.END_BAG_WAITING)
+                    : undefined
+                }
               />
             ) : (
               <IngredientBag
@@ -340,19 +347,6 @@ const GameEndOverview = (props) => {
       </div>
     </div>
   );
-};
-
-GameEndOverview.propTypes = {
-  finishGame: PropTypes.func.isRequired,
-  outcome: PropTypes.string.isRequired,
-  awards: PropTypes.array.isRequired,
-  isWinner: PropTypes.bool.isRequired,
-  // online matches are verified by the server, which sends the drops (undefined while pending)
-  verified: PropTypes.bool.isRequired,
-  drops: PropTypes.array,
-  // after a challenge match: asks the opponent for another one; rematchStatus says how it goes
-  rematch: PropTypes.func,
-  rematchStatus: PropTypes.string,
 };
 
 export default GameEndOverview;
