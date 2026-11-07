@@ -12,6 +12,12 @@ A chocolate-themed two-player strategy game. Each player owns a board of chocola
 | `deploy` | Docker Compose stack for the server: Postgres and the API from its published image, behind the host's nginx (or Caddy); how to deploy it: [deploy/README.md](deploy/README.md) |
 | `whitepaper` | Draft whitepaper for the planned competitive layer, with the economy simulator behind its numbers |
 
+## Documentation
+
+- [Game rules](docs/game-rules.md): how a match works, every building, weapon and donut
+- [Architecture](docs/architecture.md): how the game, the rules and the server fit together
+- [Deploying the server](deploy/README.md)
+
 ## Development
 
 Requires Node 22.13 or later (`.nvmrc` names the major version CI uses).
