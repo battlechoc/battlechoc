@@ -1,6 +1,5 @@
-import { EntityType, isDonut } from "@battlechoc/battlechoc-shared-functions";
+import { EntityType } from "@battlechoc/battlechoc-shared-functions";
 import {
-  Mesh,
   ParticleSystem,
   Vector3,
   Color4,
@@ -8,420 +7,181 @@ import {
   Texture,
   MeshBuilder,
 } from "./babylon.js";
-import { uuid as createUuid } from "../helper/uuid.js";
+import { cellMeshes, departure } from "./cellMeshes.js";
+import { OneShots } from "./oneShots.js";
 
+// the opponent's weapons turn round to face the own board
+const WEAPONS = [
+  EntityType.RUM_TRUFFLE_CANNON,
+  EntityType.FRUIT_CANNON,
+  EntityType.SPYING_EASTER_BUNNY,
+  EntityType.HOT_CHOCOLATE_BALLISTA,
+];
+
+// Only entities appearing, disappearing or changing type need other meshes; hp and the timers
+// of real-time entities change constantly and are not shown by meshes.
+const signature = (cell) =>
+  `${cell.molten}/` +
+  cell.occupiedBy.map((entity) => `${entity.id}:${entity.type}`).join("|");
+const key = ({ phenotype, id }) => `${phenotype}|${id}`;
+
+// One board in the scene: the instances of the models on its cells, kept in step with the
+// board of the match view.
 class Gamefield {
-  constructor(
-    isPlayerGameField,
+  /**
+   * @param {object} options
+   * @param {boolean} options.own the viewer's own board (else the opponent's)
+   * @param {Vector3} options.position where its first cell lies
+   * @param {() => object} options.getField the board's field in the current match view
+   * @param {number} options.fieldIdx the field's index in the match
+   * @param {{rows: number, cols: number}} options.size
+   * @param {Scene} options.scene
+   * @param {(row, col, position) => void} options.onCellTap a tap on a cell; `position` is the
+   *   place of the mesh that was tapped
+   * @param {(run?: boolean) => void} options.setRenderLoop holds the render loop while an
+   *   explosion or a melting cell moves (run false gives it back)
+   * @param {() => void} [options.requestRender] draws the scene once soon; the scene coalesces
+   *   several requests into one frame
+   */
+  constructor({
+    own,
     position,
-    getPlayerField,
+    getField,
     fieldIdx,
     size,
     scene,
-    action,
+    onCellTap,
     setRenderLoop,
-    // draws the scene once soon; the scene coalesces several requests into one frame
-    requestRender = () => scene.render()
-  ) {
-    this.isPlayerGameField = isPlayerGameField;
+    requestRender = () => scene.render(),
+  }) {
+    this.isPlayerGameField = own;
     this.rows = size.rows;
     this.cols = size.cols;
     this.position = position;
     this.fieldIdx = fieldIdx;
     this.scene = scene;
-    this.action = action;
-    this.getPlayerField = () => getPlayerField();
-    this.playerField = JSON.parse(JSON.stringify(this.getPlayerField()));
-    this.build();
-    this.animations = [];
+    this.onCellTap = onCellTap;
+    this.getPlayerField = () => getField();
     this.setRenderLoop = setRenderLoop;
     this.requestRender = requestRender;
+    // explosions and melting cells on their way, and their timers
+    this.effects = new OneShots();
+    // per cell, the meshes it shows: { phenotype, id, meshes }
+    this.cells = [];
+    this.build();
+  }
+
+  // the name and id of the meshes of a model on a cell
+  meshId(phenotype, cell) {
+    return `${this.fieldIdx}.${phenotype}.${cell.row}.${cell.col}`;
   }
 
   build() {
-    let playerField = this.getPlayerField();
-    playerField.grid.forEach((cell, i) => {
-      if (!cell.molten) {
-        if (
-          !cell.occupiedBy.some((entity) => isDonut(entity.type)) ||
-          !this.isPlayerGameField
-        ) {
-          this.createMeshInstance(cell.type, cell);
-        }
+    // the field as last drawn; views are never changed once made (Redux freezes them), so it
+    // needs no copy
+    this.playerField = this.getPlayerField();
+    const grid = this.playerField.grid;
+    this.cells = grid.map((cell) =>
+      cellMeshes(cell, this.isPlayerGameField).map((wanted) =>
+        this.place(wanted, cell, grid)
+      )
+    );
+  }
 
-        this.renderEntities(cell);
+  // Every cell that changed gets the meshes it should have now (cellMeshes): what is still
+  // wanted stays, what is new appears, and what is no longer wanted leaves (departure).
+  update() {
+    const field = this.getPlayerField();
+    field.grid.forEach((after, i) => {
+      const before = this.playerField.grid[i];
+      if (signature(after) !== signature(before)) {
+        this.redraw(i, before, after, field.grid);
       }
     });
+    this.playerField = field;
   }
 
-  renderEntities(cell, remove = false) {
-    if (remove) {
-      cell.occupiedBy.forEach((entity) => {
-        if (this.isPlayerGameField || !isDonut(entity.type)) {
-          let phenotype = entity.type;
-          if (
-            entity.type === EntityType.CREAM &&
-            cell.occupiedBy.filter((entity) => !isDonut(entity.type)).length >
-              1 &&
-            this.isPlayerGameField
-          ) {
-            phenotype = EntityType.CREAM + ".AROUND.BUILDING";
-          }
-
-          this.removeEntity(entity, phenotype, cell);
-        }
-      });
-    } else {
-      cell.occupiedBy.forEach((entity) => {
-        if (this.isPlayerGameField || !isDonut(entity.type)) {
-          let phenotype = entity.type;
-          if (
-            entity.type === EntityType.CREAM &&
-            cell.occupiedBy.filter((entity) => !isDonut(entity.type)).length >
-              1 &&
-            this.isPlayerGameField
-          ) {
-            phenotype = EntityType.CREAM + ".AROUND.BUILDING";
-          }
-
-          if (
-            entity.type === EntityType.CREAM ||
-            cell.occupiedBy.filter((entity) => !isDonut(entity.type)).length ===
-              1 ||
-            !cell.occupiedBy
-              .map((building) => building.type)
-              .includes(EntityType.CREAM) ||
-            this.isPlayerGameField
-          ) {
-            this.createMeshInstance(phenotype, cell);
-          }
-        }
-      });
-    }
+  redraw(i, before, after, grid) {
+    const wanted = cellMeshes(after, this.isPlayerGameField);
+    const wantedKeys = new Set(wanted.map(key));
+    const present = this.cells[i];
+    const presentKeys = new Set(present.map(key));
+    present
+      .filter((entry) => !wantedKeys.has(key(entry)))
+      .forEach((entry) => this.leave(entry, departure(entry, before, after)));
+    this.cells[i] = [
+      ...present.filter((entry) => wantedKeys.has(key(entry))),
+      ...wanted
+        .filter((entry) => !presentKeys.has(key(entry)))
+        .map((entry) => this.place(entry, after, grid)),
+    ];
   }
 
-  removeEntity(entity, phenotype, cell) {
-    if (
-      entity.type === EntityType.CREAM ||
-      cell.occupiedBy.length === 1 ||
-      !cell.occupiedBy
-        .map((building) => building.type)
-        .includes(EntityType.CREAM) ||
-      this.isPlayerGameField
-    ) {
-      let meshes = this.scene.getMeshesByID(
-        this.fieldIdx + "." + phenotype + "." + cell.row + "." + cell.col
+  leave({ meshes }, how) {
+    if (how === "burst") {
+      meshes.forEach((mesh) => this.explode(mesh));
+    } else if (how === "later") {
+      // until then the building stands where the cream was
+      this.effects.later(
+        () => meshes.forEach((mesh) => this.explode(mesh)),
+        1000,
+        () => meshes.forEach((mesh) => mesh.dispose())
       );
+    } else if (how === "melt") {
+      const [tile, ...rest] = meshes;
+      rest.forEach((mesh) => mesh.dispose());
+      this.animateHotChocolate(tile);
+    } else {
       meshes.forEach((mesh) => mesh.dispose());
     }
   }
 
-  createMeshInstance(phenotype, cell) {
-    let meshId =
-      this.fieldIdx + "." + phenotype + "." + cell.row + "." + cell.col;
-    let parent = this.scene.getMeshByName(phenotype + "__root__");
-    let children =
-      parent.getChildren()[0].getChildren().length > 0
-        ? parent.getChildren()[0].getChildren()
-        : parent.getChildren();
-
-    children.forEach((pivot, i) => {
-      let mesh = pivot.createInstance(meshId);
+  // the instances of a model on a cell, one per part of its template
+  place({ phenotype, id }, cell, grid) {
+    const name = this.meshId(phenotype, cell);
+    const root = this.scene.getMeshByName(phenotype + "__root__");
+    const parts =
+      root.getChildren()[0].getChildren().length > 0
+        ? root.getChildren()[0].getChildren()
+        : root.getChildren();
+    const meshes = parts.map((part) => {
+      const mesh = part.createInstance(name);
       // instances inherit the parent of their source since babylon 5, but the
       // templates live below a disabled root node
       mesh.parent = null;
-      mesh.id = meshId;
+      mesh.id = name;
       mesh.position = this.position.add(new Vector3(cell.row, 0, cell.col));
-      if (pivot.material.name !== phenotype + ".Shield.material") {
+      if (part.material.name !== phenotype + ".Shield.material") {
         // the scene's one pointer handler (Scene.jsx) finds the cell of a picked mesh here
         mesh.metadata = { gamefield: this, row: cell.row, col: cell.col };
       } else {
         mesh.isPickable = false;
       }
-
       if (phenotype === EntityType.FACTORY_EXTENSION) {
-        if (
-          this.playerField.grid[
-            cell.row * this.rows + Math.min(cell.col + 1, this.cols - 1)
-          ].occupiedBy
-            .map((building) => building.type)
-            .includes(EntityType.FACTORY)
-        ) {
-          mesh.rotation.y = 0;
-        } else if (
-          this.playerField.grid[
-            Math.max(cell.row - 1, 0) * this.cols + cell.col
-          ].occupiedBy
-            .map((building) => building.type)
-            .includes(EntityType.FACTORY)
-        ) {
-          mesh.rotation.y = -Math.PI / 2;
-        } else if (
-          this.playerField.grid[
-            Math.min(cell.row + 1, this.rows - 1) * this.cols + cell.col
-          ].occupiedBy
-            .map((building) => building.type)
-            .includes(EntityType.FACTORY)
-        ) {
-          mesh.rotation.y = Math.PI / 2;
-        } else {
-          mesh.rotation.y = Math.PI;
-        }
+        mesh.rotation.y = this.extensionTurn(cell, grid);
+      } else if (!this.isPlayerGameField && WEAPONS.includes(phenotype)) {
+        mesh.rotation.y = Math.PI;
       }
-
-      if (!this.isPlayerGameField) {
-        if (
-          [
-            EntityType.RUM_TRUFFLE_CANNON,
-            EntityType.FRUIT_CANNON,
-            EntityType.SPYING_EASTER_BUNNY,
-            EntityType.HOT_CHOCOLATE_BALLISTA,
-          ].includes(phenotype)
-        ) {
-          mesh.rotation.y = Math.PI;
-        }
-      }
+      return mesh;
     });
+    return { phenotype, id, meshes };
   }
 
-  update() {
-    let playerField = this.getPlayerField();
-    playerField.grid
-      .filter((cell, i) => cell.molten !== this.playerField.grid[i].molten)
-      .forEach((cell) => {
-        let field = this.scene.getMeshByName(
-          this.fieldIdx + "." + cell.type + "." + cell.row + "." + cell.col
-        );
-        if (field) {
-          this.animateHotChocolate(field);
-        }
-      });
-
-    if (this.isPlayerGameField) {
-      playerField.grid
-        .filter(
-          (cell, i) =>
-            !this.playerField.grid[i].occupiedBy.some((entity) =>
-              isDonut(entity.type)
-            ) && cell.occupiedBy.some((entity) => isDonut(entity.type))
-        )
-        .forEach((cell) => {
-          let field = this.scene.getMeshByName(
-            this.fieldIdx + "." + cell.type + "." + cell.row + "." + cell.col
-          );
-          field.dispose();
-        });
+  // an extension's pipes reach into the factory's cell: right, above, below, else left
+  extensionTurn(cell, grid) {
+    const factoryAt = (row, col) =>
+      grid[row * this.cols + col].occupiedBy.some(
+        (entity) => entity.type === EntityType.FACTORY
+      );
+    const { row, col } = cell;
+    if (factoryAt(row, Math.min(col + 1, this.cols - 1))) {
+      return 0;
+    } else if (factoryAt(Math.max(row - 1, 0), col)) {
+      return -Math.PI / 2;
+    } else if (factoryAt(Math.min(row + 1, this.rows - 1), col)) {
+      return Math.PI / 2;
     }
-
-    let conatinsTrap = (playerField, position) => {
-      return playerField.grid[position].occupiedBy.some((entity) =>
-        isDonut(entity.type)
-      );
-    };
-
-    let explodeCream = (position) => {
-      let entities = this.playerField.grid[position].occupiedBy;
-      let hasTrap = conatinsTrap(this.playerField, position);
-      let plainCream =
-        entities.length === 1 || (entities.length === 2 && hasTrap);
-      let creamPheonotype = plainCream
-        ? EntityType.CREAM
-        : EntityType.CREAM + ".AROUND.BUILDING";
-      let phenotype = !this.isPlayerGameField
-        ? EntityType.CREAM
-        : creamPheonotype;
-      let mesh = this.scene.getMeshByName(
-        this.fieldIdx +
-          "." +
-          phenotype +
-          "." +
-          this.playerField.grid[position].row +
-          "." +
-          this.playerField.grid[position].col
-      );
-      this.explode(mesh);
-    };
-
-    // only entities appearing, disappearing or changing type need new meshes; hp and the
-    // timers of real-time entities change constantly and are not rendered by meshes
-    const signature = (cell) =>
-      cell.occupiedBy.map((entity) => `${entity.id}:${entity.type}`).join("|");
-    let changes = playerField.grid.map((cell, i) =>
-      signature(cell) === signature(this.playerField.grid[i]) ? null : i
-    );
-    changes
-      .filter((position) => position !== null)
-      .forEach((position) => {
-        if (
-          conatinsTrap(this.playerField, position) &&
-          !conatinsTrap(playerField, position) &&
-          !playerField.grid[position].molten
-        ) {
-          this.renderEntities(this.playerField.grid[position], true);
-          if (this.isPlayerGameField) {
-            this.createMeshInstance(
-              playerField.grid[position].type,
-              playerField.grid[position]
-            );
-          }
-          this.playerField.grid[position] = JSON.parse(
-            JSON.stringify(playerField.grid[position])
-          );
-          this.renderEntities(this.playerField.grid[position]);
-          this.requestRender();
-        } else if (
-          playerField.grid[position].occupiedBy.length <
-          this.playerField.grid[position].occupiedBy.length
-        ) {
-          if (
-            playerField.grid[position].occupiedBy.filter(
-              (entity) => !isDonut(entity.type)
-            ).length === 0
-          ) {
-            if (
-              this.playerField.grid[position].occupiedBy.length > 1 &&
-              this.playerField.grid[position].occupiedBy
-                .map((building) => building.type)
-                .includes(EntityType.CREAM)
-            ) {
-              this.playerField.grid[position].occupiedBy
-                .filter(
-                  (building) =>
-                    building.type !== EntityType.CREAM &&
-                    !isDonut(building.type)
-                )
-                .forEach((entity) => {
-                  if (!this.isPlayerGameField) {
-                    this.createMeshInstance(
-                      entity.type,
-                      this.playerField.grid[position]
-                    );
-                  }
-                  setTimeout(() => {
-                    let meshes = this.scene.getMeshesByID(
-                      this.fieldIdx +
-                        "." +
-                        entity.type +
-                        "." +
-                        this.playerField.grid[position].row +
-                        "." +
-                        this.playerField.grid[position].col
-                    );
-                    meshes.forEach((mesh) => {
-                      this.explode(mesh);
-                    });
-                  }, 1000);
-                });
-              explodeCream(position);
-            } else {
-              this.playerField.grid[position].occupiedBy.forEach((entity) => {
-                if (entity.type === EntityType.CREAM) {
-                  let mesh = this.scene.getMeshByName(
-                    this.fieldIdx +
-                      "." +
-                      EntityType.CREAM +
-                      "." +
-                      this.playerField.grid[position].row +
-                      "." +
-                      this.playerField.grid[position].col
-                  );
-                  this.explode(mesh);
-                } else if (!isDonut(entity.type)) {
-                  let meshes = this.scene.getMeshesByID(
-                    this.fieldIdx +
-                      "." +
-                      entity.type +
-                      "." +
-                      this.playerField.grid[position].row +
-                      "." +
-                      this.playerField.grid[position].col
-                  );
-                  meshes.forEach((mesh) => this.explode(mesh));
-                }
-              });
-            }
-          } else if (
-            this.playerField.grid[position].occupiedBy
-              .map((building) => building.type)
-              .includes(EntityType.SPYING_EASTER_BUNNY) &&
-            !playerField.grid[position].occupiedBy
-              .map((building) => building.type)
-              .includes(EntityType.SPYING_EASTER_BUNNY)
-          ) {
-            let meshes = this.scene.getMeshesByID(
-              this.fieldIdx +
-                "." +
-                EntityType.SPYING_EASTER_BUNNY +
-                "." +
-                this.playerField.grid[position].row +
-                "." +
-                this.playerField.grid[position].col
-            );
-            meshes.forEach((mesh) => this.explode(mesh));
-            if (
-              this.playerField.grid[position].occupiedBy
-                .map((building) => building.type)
-                .includes(EntityType.CREAM)
-            ) {
-              let phenotype = EntityType.CREAM;
-              if (this.isPlayerGameField) {
-                phenotype = EntityType.CREAM + ".AROUND.BUILDING";
-              }
-              meshes = this.scene.getMeshesByID(
-                this.fieldIdx +
-                  "." +
-                  phenotype +
-                  "." +
-                  this.playerField.grid[position].row +
-                  "." +
-                  this.playerField.grid[position].col
-              );
-              meshes.forEach((mesh) => mesh.dispose());
-              this.renderEntities(playerField.grid[position]);
-            }
-          } else {
-            // Some entities are gone, others stayed: a hit took the cream and revealed the
-            // building, or a fountain broke under its cream (shots hit the fountain, not its
-            // cell). Explode exactly what is gone, then draw what is left.
-            const before = this.playerField.grid[position];
-            const after = playerField.grid[position];
-            before.occupiedBy
-              .filter(
-                (entity) =>
-                  !isDonut(entity.type) &&
-                  !after.occupiedBy.some((other) => other.id === entity.id)
-              )
-              .forEach((entity) => {
-                if (entity.type === EntityType.CREAM) {
-                  explodeCream(position);
-                } else {
-                  this.scene
-                    .getMeshesByID(
-                      this.fieldIdx +
-                        "." +
-                        entity.type +
-                        "." +
-                        before.row +
-                        "." +
-                        before.col
-                    )
-                    .forEach((mesh) => this.explode(mesh));
-                }
-              });
-            this.renderEntities(before, true);
-            this.renderEntities(after);
-          }
-          this.playerField.grid[position] = JSON.parse(
-            JSON.stringify(playerField.grid[position])
-          );
-        } else {
-          this.renderEntities(this.playerField.grid[position], true);
-          this.playerField.grid[position] = JSON.parse(
-            JSON.stringify(playerField.grid[position])
-          );
-          this.renderEntities(this.playerField.grid[position]);
-        }
-      });
+    return Math.PI;
   }
 
   animateHotChocolate(field) {
@@ -479,44 +239,36 @@ class Gamefield {
 
     particleSystem.start();
     this.scene.beginAnimation(fountain, 0, 100, true);
-    setTimeout(() => {
-      field.dispose();
-    }, 1000);
+    const disposeTile = () => field.dispose();
+    this.effects.later(disposeTile, 1000, disposeTile);
 
-    const uuid = createUuid();
-    this.animations.push({
-      id: uuid,
-      stopAnimation: () => {
-        this.scene.stopAnimation(fountain);
-        this.setRenderLoop(false);
-        particleSystem.dispose();
-        fountain.dispose();
-        this.requestRender();
-        this.animations = this.animations.filter(
-          (callback) => callback.id !== uuid
-        );
-      },
+    const end = this.effects.start(() => {
+      this.scene.stopAnimation(fountain);
+      this.setRenderLoop(false);
+      particleSystem.dispose();
+      fountain.dispose();
+      this.requestRender();
     });
-
-    setTimeout(() => {
-      if (this.animations.findIndex((callback) => callback.id === uuid) > -1) {
-        this.animations
-          .find((callback) => callback.id === uuid)
-          .stopAnimation();
-      }
-    }, 3000);
+    this.effects.later(end, 3000);
   }
 
-  stopAllAnimations = () => {
-    for (const callback of this.animations) {
-      callback.stopAnimation();
-    }
-    this.animations = [];
-  };
+  // ends the explosions and melting cells on their way at once
+  stopAllAnimations() {
+    this.effects.stopAll();
+  }
+
+  // the board leaves the scene: its effects end, its meshes go
+  dispose() {
+    this.effects.stopAll();
+    this.cells.forEach((entries) =>
+      entries.forEach((entry) => entry.meshes.forEach((mesh) => mesh.dispose()))
+    );
+    this.cells = [];
+  }
 
   explode(mesh) {
     // a mesh that is not there cannot explode; never let an animation take the match down
-    if (!mesh) {
+    if (!mesh || mesh.isDisposed()) {
       return;
     }
     // In units and seconds: the pieces burst up and out in every direction, tumble, fall back
@@ -596,27 +348,13 @@ class Gamefield {
     }
     this.scene.registerBeforeRender(setParticles);
 
-    const uuid = createUuid();
-    this.animations.push({
-      id: uuid,
-      stopAnimation: () => {
-        this.scene.unregisterBeforeRender(setParticles);
-        solidParticleSystem.dispose();
-        solidParticleSystem = null;
-        this.setRenderLoop(false);
-        this.animations = this.animations.filter(
-          (callback) => callback.id !== uuid
-        );
-      },
+    const end = this.effects.start(() => {
+      this.scene.unregisterBeforeRender(setParticles);
+      solidParticleSystem.dispose();
+      solidParticleSystem = null;
+      this.setRenderLoop(false);
     });
-
-    setTimeout(() => {
-      if (this.animations.findIndex((callback) => callback.id === uuid) > -1) {
-        this.animations
-          .find((callback) => callback.id === uuid)
-          .stopAnimation();
-      }
-    }, lifetime * 1000 + 100);
+    this.effects.later(end, lifetime * 1000 + 100);
     mesh.dispose();
   }
 }

@@ -145,7 +145,7 @@ export const attachGestures = (element, { onTap, onPan, onPanEnd = () => {}, onP
     if (element.setPointerCapture) {
       try {
         element.setPointerCapture(event.pointerId);
-      } catch (error) {
+      } catch {
         // a pointer that is gone already
       }
     }

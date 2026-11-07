@@ -19,6 +19,7 @@ import {
   FreeCamera,
 } from "@babylonjs/core";
 import Gamefield from "../../src/3d/Gamefield.js";
+import { CREAM_AROUND_BUILDING } from "../../src/3d/cellMeshes.js";
 
 // what the asset loader provides: a disabled "<phenotype>__root__" template per model
 const createScene = () => {
@@ -27,7 +28,7 @@ const createScene = () => {
   new FreeCamera("camera", new Vector3(30, 30, 30), scene);
   const phenotypes = [
     ...Object.values(EntityType),
-    `${EntityType.CREAM}.AROUND.BUILDING`,
+    CREAM_AROUND_BUILDING,
     ...Object.values(BoardCellTypes),
   ];
   phenotypes.forEach((phenotype) => {
@@ -40,7 +41,8 @@ const createScene = () => {
   return scene;
 };
 
-// the entity meshes a cell should have, by the rules of Gamefield.renderEntities
+// the entity meshes a cell should have, written out on their own (src/3d/cellMeshes.js has the
+// same rules)
 const expectedMeshes = (cell, own, fieldIdx) => {
   if (cell.molten) {
     return [];
@@ -55,7 +57,7 @@ const expectedMeshes = (cell, own, fieldIdx) => {
     )
     .map((entity) =>
       entity.type === EntityType.CREAM && own && solid.length > 1
-        ? `${EntityType.CREAM}.AROUND.BUILDING`
+        ? CREAM_AROUND_BUILDING
         : entity.type
     )
     .map((phenotype) => `${fieldIdx}.${phenotype}.${cell.row}.${cell.col}`)
@@ -101,10 +103,18 @@ const playAndRender = (seed, size) => {
       const opponent = 1 - own;
       if (!fields) {
         const noop = () => {};
-        fields = [
-          new Gamefield(true, new Vector3(0, 0, 0), () => view.board.fields[own], own, view.board.size, scene, noop, noop),
-          new Gamefield(false, new Vector3(-12, 0, 12), () => view.board.fields[opponent], opponent, view.board.size, scene, noop, noop),
-        ];
+        const board = (mine, fieldIdx, position) =>
+          new Gamefield({
+            own: mine,
+            position,
+            getField: () => view.board.fields[fieldIdx],
+            fieldIdx,
+            size: view.board.size,
+            scene,
+            onCellTap: noop,
+            setRenderLoop: noop,
+          });
+        fields = [board(true, own, new Vector3(0, 0, 0)), board(false, opponent, new Vector3(-12, 0, 12))];
       }
       fields.forEach((field) => {
         const before = JSON.parse(JSON.stringify(field.playerField));
@@ -139,3 +149,277 @@ for (const size of [6, 8, 10]) {
     }
   });
 }
+
+// Scripted transitions of one cell, (1, 1) of a 3×3 board: which meshes the cell has afterwards,
+// which of them burst (explode) and which tile melted, against what the game shows today.
+const { CREAM, FACTORY, FACTORY_EXTENSION, CACAOTREE, CHOCOLATE_FOUNTAIN, SPYING_EASTER_BUNNY } = EntityType;
+const AROUND = CREAM_AROUND_BUILDING;
+const TILE = BoardCellTypes.BROWN;
+
+// a 3×3 grid, empty but for the given cells: { "1.1": [[id, type], …] }; `molten` lists cells
+const grid = (cells = {}, molten = [], size = { rows: 3, cols: 3 }) => {
+  const result = [];
+  for (let row = 0; row < size.rows; row++) {
+    for (let col = 0; col < size.cols; col++) {
+      const entities = cells[`${row}.${col}`] || [];
+      result.push({
+        type: TILE,
+        row,
+        col,
+        molten: molten.includes(`${row}.${col}`),
+        occupiedBy: entities.map(([id, type]) => ({ id, type, position: { row, col } })),
+      });
+    }
+  }
+  return result;
+};
+
+const board = (own, cells, molten, size = { rows: 3, cols: 3 }, { shield = false } = {}) => {
+  const scene = createScene();
+  if (shield) {
+    // the fountain's dome is a second part of its model with a material of its own
+    const dome = MeshBuilder.CreateBox(`${CHOCOLATE_FOUNTAIN}.shield`, { size: 2 }, scene);
+    dome.material = new StandardMaterial(`${CHOCOLATE_FOUNTAIN}.Shield.material`, scene);
+    dome.parent = scene.getMeshByName(`${CHOCOLATE_FOUNTAIN}__root__`);
+  }
+  const fieldIdx = own ? 0 : 1;
+  let field = { grid: grid(cells, molten, size) };
+  let loops = 0;
+  const gamefield = new Gamefield({
+    own,
+    position: own ? new Vector3(0, 0, 0) : new Vector3(-12, 0, 12),
+    getField: () => field,
+    fieldIdx,
+    size,
+    scene,
+    onCellTap: () => {},
+    setRenderLoop: (run = true) => (loops += run ? 1 : -1),
+    requestRender: () => {},
+  });
+  const exploded = [];
+  const melted = [];
+  const explode = gamefield.explode.bind(gamefield);
+  gamefield.explode = (mesh) => {
+    exploded.push(mesh ? mesh.name : null);
+    explode(mesh);
+  };
+  const melt = gamefield.animateHotChocolate.bind(gamefield);
+  gamefield.animateHotChocolate = (tile) => {
+    melted.push(tile.name);
+    melt(tile);
+  };
+  const name = (phenotype, row = 1, col = 1) => `${fieldIdx}.${phenotype}.${row}.${col}`;
+  return {
+    scene,
+    gamefield,
+    exploded,
+    melted,
+    name,
+    loops: () => loops,
+    show(cells, molten) {
+      field = { grid: grid(cells, molten, size) };
+      gamefield.update();
+    },
+    // the meshes of a cell, its tile included
+    meshes: (row = 1, col = 1) =>
+      scene.meshes
+        .filter((mesh) => !mesh.isDisposed() && mesh.name.startsWith(`${fieldIdx}.`) && mesh.name.endsWith(`.${row}.${col}`))
+        .map((mesh) => mesh.name)
+        .sort(),
+    // a phenotype's meshes, wherever they are
+    find: (phenotype) => scene.meshes.filter((mesh) => !mesh.isDisposed() && mesh.name.startsWith(`${fieldIdx}.${phenotype}.`)),
+  };
+};
+
+const names = (b, ...phenotypes) => phenotypes.map((phenotype) => b.name(phenotype)).sort();
+
+test("own board: cream shot away from a tree bursts, the tree stays", () => {
+  const b = board(true, { "1.1": [["c", CREAM], ["t", CACAOTREE]] });
+  assert.deepEqual(b.meshes(), names(b, TILE, AROUND, CACAOTREE));
+  b.show({ "1.1": [["t", CACAOTREE]] });
+  assert.deepEqual(b.exploded, [b.name(AROUND)]);
+  assert.deepEqual(b.meshes(), names(b, TILE, CACAOTREE));
+});
+
+test("own board: plain cream shot away bursts", () => {
+  const b = board(true, { "1.1": [["c", CREAM]] });
+  b.show({});
+  assert.deepEqual(b.exploded, [b.name(CREAM)]);
+  assert.deepEqual(b.meshes(), names(b, TILE));
+});
+
+test("own board: a fountain destroyed under its cream bursts and leaves plain cream (2026-10-19)", () => {
+  const b = board(true, { "1.1": [["f", CHOCOLATE_FOUNTAIN], ["c", CREAM]] });
+  assert.deepEqual(b.meshes(), names(b, TILE, AROUND, CHOCOLATE_FOUNTAIN));
+  b.show({ "1.1": [["c", CREAM]] });
+  assert.deepEqual(b.exploded, [b.name(CHOCOLATE_FOUNTAIN)]);
+  assert.deepEqual(b.meshes(), names(b, TILE, CREAM));
+  // the next hit takes the cream: no ghost fountain, no explode(null)
+  b.show({});
+  assert.deepEqual(b.exploded, [b.name(CHOCOLATE_FOUNTAIN), b.name(CREAM)]);
+  assert.deepEqual(b.meshes(), names(b, TILE));
+});
+
+test("own board: cream and the factory under it go together, the factory bursts a second later", () => {
+  const b = board(true, { "1.1": [["c", CREAM], ["f", FACTORY]] });
+  b.show({});
+  assert.deepEqual(b.exploded, [b.name(AROUND)]);
+  assert.deepEqual(b.meshes(), names(b, TILE, FACTORY));
+  mock.timers.tick(1000);
+  assert.deepEqual(b.exploded, [b.name(AROUND), b.name(FACTORY)]);
+  assert.deepEqual(b.meshes(), names(b, TILE));
+  mock.timers.tick(5000);
+  assert.equal(b.loops(), 0);
+});
+
+test("own board: a fruit cannon replaces a truffle cannon without a burst", () => {
+  const b = board(true, { "1.1": [["a", EntityType.RUM_TRUFFLE_CANNON]] });
+  b.show({ "1.1": [["b", EntityType.FRUIT_CANNON]] });
+  assert.deepEqual(b.exploded, []);
+  assert.deepEqual(b.meshes(), names(b, TILE, EntityType.FRUIT_CANNON));
+  // under cream too
+  const creamed = board(true, { "1.1": [["c", CREAM], ["a", EntityType.RUM_TRUFFLE_CANNON]] });
+  creamed.show({ "1.1": [["c", CREAM], ["b", EntityType.FRUIT_CANNON]] });
+  assert.deepEqual(creamed.exploded, []);
+  assert.deepEqual(creamed.meshes(), names(creamed, TILE, AROUND, EntityType.FRUIT_CANNON));
+});
+
+test("a caught bunny turns the Xmas factory into a ballista without a burst, on both boards", () => {
+  for (const own of [true, false]) {
+    const b = board(own, { "1.1": [["x", EntityType.XMAS_FACTORY]] });
+    b.show({ "1.1": [["y", EntityType.HOT_CHOCOLATE_BALLISTA]] });
+    assert.deepEqual(b.exploded, []);
+    assert.deepEqual(b.meshes(), names(b, TILE, EntityType.HOT_CHOCOLATE_BALLISTA));
+  }
+});
+
+test("own board: a caught bunny bursts, its cream stays as plain cream", () => {
+  const b = board(true, { "1.1": [["c", CREAM], ["s", SPYING_EASTER_BUNNY]] });
+  b.show({ "1.1": [["c", CREAM]] });
+  assert.deepEqual(b.exploded, [b.name(SPYING_EASTER_BUNNY)]);
+  assert.deepEqual(b.meshes(), names(b, TILE, CREAM));
+});
+
+test("own board: a donut takes the tile's place and a triggered trap gives it back, quietly", () => {
+  const donut = EntityType.DONUT_STOP_PINK;
+  const b = board(true, {});
+  b.show({ "1.1": [["d", donut]] });
+  assert.deepEqual(b.meshes(), names(b, donut));
+  b.show({});
+  assert.deepEqual(b.meshes(), names(b, TILE));
+  // cream over a donut: the trap goes off, the cream stays
+  b.show({ "1.1": [["d", donut]] });
+  b.show({ "1.1": [["c", CREAM], ["d", donut]] });
+  assert.deepEqual(b.meshes(), names(b, CREAM, donut));
+  b.show({ "1.1": [["c", CREAM]] });
+  assert.deepEqual(b.meshes(), names(b, TILE, CREAM));
+  assert.deepEqual(b.exploded, []);
+});
+
+test("opponent board: donuts never show", () => {
+  const b = board(false, { "1.1": [["d", EntityType.DONUT_STOP_PINK]] });
+  assert.deepEqual(b.meshes(), names(b, TILE));
+  b.show({});
+  assert.deepEqual(b.meshes(), names(b, TILE));
+  assert.deepEqual(b.exploded, []);
+});
+
+test("a cell melts: the tile goes in a spray of hot chocolate, once", () => {
+  const b = board(true, {});
+  b.show({}, ["1.1"]);
+  assert.deepEqual(b.melted, [b.name(TILE)]);
+  // the next views come before the tile is gone
+  b.show({}, ["1.1"]);
+  assert.deepEqual(b.melted, [b.name(TILE)]);
+  mock.timers.tick(1000);
+  assert.deepEqual(b.meshes(), []);
+  mock.timers.tick(5000);
+  assert.equal(b.loops(), 0);
+});
+
+test("own board: a donut's cell melts, the donut goes with it", () => {
+  const b = board(true, { "1.1": [["d", EntityType.DONUT_STOP_PINK]] });
+  b.show({}, ["1.1"]);
+  mock.timers.tick(5000);
+  assert.deepEqual(b.meshes(), []);
+  assert.equal(b.loops(), 0);
+});
+
+test("a cell melts with cream and a factory on it: they burst, the factory a second later", () => {
+  const b = board(true, { "1.1": [["c", CREAM], ["f", FACTORY]] });
+  b.show({}, ["1.1"]);
+  assert.deepEqual(b.melted, [b.name(TILE)]);
+  assert.deepEqual(b.exploded, [b.name(AROUND)]);
+  mock.timers.tick(1000);
+  assert.deepEqual(b.exploded, [b.name(AROUND), b.name(FACTORY)]);
+  assert.deepEqual(b.meshes(), []);
+  // the opponent's creamed cell
+  const opponent = board(false, { "1.1": [["c", CREAM]] });
+  opponent.show({}, ["1.1"]);
+  assert.deepEqual(opponent.melted, [opponent.name(TILE)]);
+  assert.deepEqual(opponent.exploded, [opponent.name(CREAM)]);
+});
+
+test("opponent board: a creamed cell shows only its cream; shot away, the building appears", () => {
+  // a view from before the fog of war came from the server, with the building under the cream
+  const unredacted = board(false, { "1.1": [["c", CREAM], ["f", FACTORY]] });
+  assert.deepEqual(unredacted.meshes(), names(unredacted, TILE, CREAM));
+  // the view has only the cream of a creamed cell of the opponent
+  const b = board(false, { "1.1": [["c", CREAM]] });
+  assert.deepEqual(b.meshes(), names(b, TILE, CREAM));
+  b.show({ "1.1": [["f", FACTORY]] });
+  assert.deepEqual(b.meshes(), names(b, TILE, FACTORY));
+  // the cream simply makes way: the shot's own burst comes from the event (matchEffects.detonate)
+  assert.deepEqual(b.exploded, []);
+  b.show({});
+  assert.deepEqual(b.exploded, [b.name(FACTORY)]);
+});
+
+test("a disposed board leaves nothing behind: no meshes, no explosion to come, the render loop balanced", () => {
+  const b = board(true, { "1.1": [["c", CREAM], ["f", FACTORY]], "0.0": [["t", CACAOTREE]] });
+  b.show({ "0.0": [["t", CACAOTREE]] }, ["1.1"]);
+  assert.ok(b.loops() > 0);
+  b.gamefield.dispose();
+  assert.deepEqual(b.scene.meshes.filter((mesh) => !mesh.isDisposed() && mesh.name.startsWith("0.")), []);
+  assert.equal(b.loops(), 0);
+  // the factory under the cream would have burst a second later
+  mock.timers.tick(5000);
+  assert.deepEqual(b.exploded, [b.name(AROUND)]);
+  assert.equal(b.loops(), 0);
+});
+
+test("the opponent's weapons face the own board", () => {
+  const b = board(false, { "1.1": [["a", EntityType.RUM_TRUFFLE_CANNON]], "0.0": [["t", CACAOTREE]] });
+  assert.equal(b.find(EntityType.RUM_TRUFFLE_CANNON)[0].rotation.y, Math.PI);
+  assert.equal(b.find(CACAOTREE)[0].rotation.y, 0);
+});
+
+test("a factory extension turns its pipes to the factory", () => {
+  // rows ≠ cols, so a mix-up of the two would show
+  const size = { rows: 3, cols: 4 };
+  const turn = (factory) =>
+    board(true, { "1.1": [["e", FACTORY_EXTENSION]], [factory]: [["f", FACTORY]] }, [], size).find(FACTORY_EXTENSION)[0]
+      .rotation.y;
+  assert.equal(turn("1.2"), 0);
+  assert.equal(turn("0.1"), -Math.PI / 2);
+  assert.equal(turn("2.1"), Math.PI / 2);
+  assert.equal(turn("1.0"), Math.PI);
+});
+
+test("board meshes know their cell for the scene's taps; the fountain's shield is not pickable", () => {
+  const b = board(true, { "1.1": [["t", CACAOTREE]], "2.2": [["f", CHOCOLATE_FOUNTAIN]] }, [], undefined, {
+    shield: true,
+  });
+  const [tree] = b.find(CACAOTREE);
+  assert.deepEqual({ ...tree.metadata, gamefield: tree.metadata.gamefield === b.gamefield }, {
+    gamefield: true,
+    row: 1,
+    col: 1,
+  });
+  const fountain = b.find(CHOCOLATE_FOUNTAIN);
+  assert.equal(fountain.length, 2);
+  assert.deepEqual(
+    fountain.map((mesh) => mesh.isPickable),
+    [true, false]
+  );
+});
