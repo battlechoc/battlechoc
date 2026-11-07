@@ -364,7 +364,7 @@ test("the fourth match unlocks the Choclab and online play with one dialog", asy
   );
   // every building came before: none in this dialog
   await expect(unlocked.getByTestId("unlocked-building")).toHaveCount(0);
-  await unlocked.getByText("Ok", { exact: true }).click();
+  await unlocked.getByText("OK", { exact: true }).click();
   await expect(unlocked).toHaveCount(0);
   await expect(page.getByTestId("unlock-hint")).toHaveCount(0);
   // offline the Choclab is no longer locked, only waits for the server
