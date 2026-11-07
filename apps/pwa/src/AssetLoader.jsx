@@ -14,6 +14,7 @@ import {
 import "./3d/gltf";
 import { cellMaterial } from "./3d/look";
 import { MODEL, catalogIconFiles } from "./catalog";
+import logger from "./helper/logger";
 import { fontsLoaded, registerAssetRetry } from "./firstLoad";
 
 class AssetLoader {
@@ -246,7 +247,7 @@ const loading = {
         return;
       } catch (error) {
         if (attempt >= MODEL_RETRY_DELAYS_MS.length) {
-          console.error("could not load", file, error);
+          logger.error("could not load", file, String(error));
           this.failed.set(file, true);
           this.callbacks.failed(true);
           return;

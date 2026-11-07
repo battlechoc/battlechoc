@@ -88,7 +88,7 @@ class Jukebox {
         clicks: this.clicks,
       })
       .catch((err) => {
-        console.warn("Could not persist audio settings. ", err);
+        logger.warn("Could not persist audio settings. ", err);
       });
     const settings = this.settings();
     this.listeners.forEach((listener) => listener(settings));
