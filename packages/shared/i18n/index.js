@@ -50,7 +50,6 @@ function fmt(str, values) {
 // Texts with {{placeholders}}: translate(key, ...values) fills them in this order.
 const placeholders = Object.freeze({
     WARNING_PLAYER_NOT_FOUND: ['name'],
-    SURRENDER_GAME_TEXT: ['name', 'coins'],
     PLAYER_NAME_GENERATED_BODY: ['name'],
     LAB_TABLE_HINT: ['ingredient'],
     LAB_NEEDS_SPECIAL: ['ingredient'],
@@ -67,9 +66,6 @@ const placeholders = Object.freeze({
     UNLOCK_ONLINE_GAMES: ['count'],
     NAME_CONFLICT_TEXT: ['name', 'generated'],
     PROFILE_XP: ['xp', 'next'],
-    MULTIPLAYER_AUTOMATICALLY_LOSE: ['hours', 'minutes'],
-    MULTIPLAYER_AUTOMATICALLY_WIN: ['hours', 'minutes'],
-    SERVER_NOTIFICATION_REMEMBER_TURN_TITLE: ['name'],
     CHALLENGE_HEADLINE: ['name'],
     CHALLENGE_PRIMER: ['name'],
     CHALLENGE_ON_THE_WAY: ['name'],
@@ -81,21 +77,12 @@ const placeholders = Object.freeze({
     CHALLENGE_CODE: ['code'],
     SECONDS_LEFT: ['seconds'],
     CHALLENGE_PREVIEW_TITLE: ['name'],
-    SERVER_NOTIFICATION_GAME_LOST_BODY: ['name'],
-    SERVER_NOTIFICATION_TURN_FINISHED_TITLE: ['name'],
-    SERVER_NOTIFICATION_OPPONENT_SURENDERED_TITLE: ['name'],
-    SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_TITLE: ['name'],
-    SERVER_NOTIFICATION_SESSION_TIMEDOUT_WINNER_BODY: ['name'],
-    SERVER_NOTIFICATION_SESSION_TIMEDOUT_LOOSER_TITLE: ['name'],
     INFO_LAST_UPDATE: ['time'],
     INFO_MADE_BY: ['names'],
 });
 
 // Texts that are picked or put together by code; each gets the language's table first.
 const special = {
-    TOOLTIP_INITIAL_TURN_OPPONENT: function (strings, name) {
-        return name + strings.TOOLTIP_INITIAL_TURN_OPPONENT;
-    },
     TOOLTIP_BUILDING_TITLE: function (strings, type) {
         switch (type) {
             case EntityType.CREAM:
@@ -216,23 +203,6 @@ const special = {
                 return strings['TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_' + attackType.replace('AttackType.', '')];
             default: return strings.TOOLTIP_ATTACK_PHASE_MESSAGE_BY_ATTACK_TYPE_UNKNOWN;
         }
-    },
-    ATTRIBUTE_NAME: function (strings, attribute) {
-        switch (attribute) {
-            case 'hp':
-            case 'area':
-            case 'buildingsPerTurn':
-            case 'cacaoPerTurn':
-            case 'attack':
-            case 'fortune':
-            case 'donutProbability':
-            case 'donutTypes':
-                return strings['ATTRIBUTE_NAME_' + attribute];
-            default: return strings.ATTRIBUTE_NAME_UNKNOWN;
-        }
-    },
-    UPDATE_LEVEL_FAILED: function (strings, upgrade) {
-        return upgrade ? strings.UPDATE_LEVEL_FAILED_UPGRADE : strings.UPDATE_LEVEL_FAILED_DOWNGRADE;
     },
 };
 
