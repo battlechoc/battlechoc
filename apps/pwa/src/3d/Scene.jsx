@@ -958,6 +958,8 @@ class Scene extends Component {
     this.pointerKey = "";
     this.hideTutorialPointer();
     this.weaponIndicators.forEach((indicator, id) => this.disposeIndicator(id, indicator));
+    // the boards' explosions and melting cells end with them, none of their timers runs later
+    [this.playerGameField, this.opponentGameField].forEach((field) => field && field.dispose());
     const instances = this.scene.meshes.filter((mesh) => mesh.isAnInstance);
     for (const instance of instances) {
       instance.dispose();

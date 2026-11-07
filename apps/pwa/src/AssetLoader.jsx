@@ -13,6 +13,7 @@ import {
 } from "./3d/babylon";
 import "./3d/gltf";
 import { cellMaterial } from "./3d/look";
+import { CREAM_AROUND_BUILDING } from "./3d/cellMeshes";
 import { fontsLoaded, registerAssetRetry } from "./firstLoad";
 
 class AssetLoader {
@@ -27,7 +28,7 @@ class AssetLoader {
         [EntityType.CACAOTREE]: "cacaotree.glb",
         [EntityType.RUM_TRUFFLE_CANNON]: "cannon.glb",
         [EntityType.CREAM]: "cream.glb",
-        [EntityType.CREAM + ".AROUND.BUILDING"]: "creamAroundBuilding.glb",
+        [CREAM_AROUND_BUILDING]: "creamAroundBuilding.glb",
         [EntityType.SPYING_EASTER_BUNNY]: "spyingEasterBunny.glb",
         [EntityType.XMAS_FACTORY]: "xmasFactory.glb",
         [EntityType.HOT_CHOCOLATE_BALLISTA]: "hotChocolateBallista.glb",
