@@ -29,7 +29,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   actions: {
     position: "absolute",
-    zIndex: 4,
+    zIndex: theme.layer.hud,
     display: "flex",
     top: theme.edge.top,
     left: theme.edge.left,

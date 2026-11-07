@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
@@ -9,8 +9,8 @@ import {
 import Dialog from "./Dialog";
 import Button from "../controls/Button";
 import { liveLobby } from "../../match/liveLobby";
-import { liveConnection } from "../../match/liveConnection";
 import Jukebox from "../misc/Jukebox";
+import { useCountdown, Pill } from "../controls/Countdown";
 
 const useStyles = createUseStyles((theme) => ({
   root: {
@@ -25,46 +25,31 @@ const useStyles = createUseStyles((theme) => ({
     "& p": { margin: 0 },
   },
   actions: { display: "flex", gap: "2vw" },
-  // the time left, as the challenge dialog shows it
-  pill: {
-    display: "inline-block",
-    padding: "0.05em 0.6em",
-    borderRadius: "1em",
-    background: "rgba(255, 255, 255, 0.18)",
-  },
-  // over the end screen of the finished match (GameEndOverview, z-index 100)
-  layer: { position: "fixed", inset: 0, zIndex: 110 },
+  // over the end screen of the finished match (GameEndOverview)
+  layer: { position: "fixed", inset: 0, zIndex: theme.layer.overEndScreen },
 }));
 
 // the opponent of a challenge match asks for a rematch (on the end screen, or back on the title)
 const IncomingInvite = ({ invite, inMatch }) => {
   const classes = useStyles();
-  const [, setTick] = useState(0);
   useEffect(() => {
-    if (!invite) {
-      return undefined;
+    if (invite) {
+      Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     }
-    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-    const interval = setInterval(() => setTick((tick) => tick + 1), 1000);
-    return () => clearInterval(interval);
   }, [invite]);
+  // the time left, as the challenge dialog shows it
+  const secondsLeft = useCountdown(invite ? invite.expiresAt : undefined, Boolean(invite));
 
   if (!invite || inMatch) {
     return null;
   }
-  const secondsLeft = Math.max(
-    0,
-    Math.ceil((invite.expiresAt - liveConnection.clock.serverNow()) / 1000)
-  );
   return (
     <div className={classes.layer}>
       <Dialog open={true} closable={false} mode="info" title={t(tr.REMATCH)}>
         <div className={classes.root} data-testid="incoming-invite">
           <p>{t(tr.REMATCH_OFFER, invite.from)}</p>
           <p>
-            <span className={classes.pill}>
-              {t(tr.SECONDS_LEFT, secondsLeft)}
-            </span>
+            <Pill>{t(tr.SECONDS_LEFT, secondsLeft)}</Pill>
           </p>
           <div className={classes.actions}>
             <Button

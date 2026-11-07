@@ -12,6 +12,7 @@ import {
 import { multiplayer } from "../../Multiplayer";
 import logger from "../../helper/logger";
 import withDefaultProps from "../../helper/defaultProps";
+import { outlined } from "../styles";
 
 const useStyles = createUseStyles((theme) => ({
   // the title screen's top right corner, level with the buttons at the top left
@@ -70,8 +71,7 @@ const useStyles = createUseStyles((theme) => ({
   rank: {
     fontFamily: theme.font.display,
     fontSize: theme.font.size.lg,
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme),
   },
 }));
 

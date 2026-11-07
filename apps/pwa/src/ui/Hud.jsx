@@ -44,6 +44,7 @@ import WeaponPalette from "./match/WeaponPalette";
 import ResourcePanel from "./match/ResourcePanel";
 import MatchBanner from "./match/MatchBanner";
 import InfoCard from "./match/InfoCard";
+import { outlined } from "./styles";
 
 // The title screen's logo: its top and size (a square in vh; logo.svg fills its width) and the
 // rays turning behind it, centred on the fountain (dev/icons.mjs puts it at x 308, y 22 to 392
@@ -73,7 +74,7 @@ const useStyles = createUseStyles((theme) => ({
     position: "absolute",
     top: theme.edge.top,
     left: theme.edge.left,
-    zIndex: 5,
+    zIndex: theme.layer.hud + 1,
   },
   logo: {
     position: "relative",
@@ -107,7 +108,7 @@ const useStyles = createUseStyles((theme) => ({
     left: 0,
     right: 0,
     bottom: theme.edge.bottom,
-    zIndex: 4,
+    zIndex: theme.layer.hud,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -134,8 +135,7 @@ const useStyles = createUseStyles((theme) => ({
     fontSize: theme.font.size.md,
     letterSpacing: "0.03em",
     color: "white",
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme),
   },
   menu: {
     flex: "0 0 auto",
@@ -195,7 +195,7 @@ const useStyles = createUseStyles((theme) => ({
     left: theme.edge.left,
     right: theme.edge.right,
     bottom: theme.edge.bottom,
-    zIndex: 4,
+    zIndex: theme.layer.hud,
     display: "flex",
     alignItems: "flex-end",
     justifyContent: "space-between",

@@ -11,13 +11,12 @@ import Dialog from "../dialogs/Dialog";
 import Button from "../controls/Button";
 import ItemIcon from "./ItemIcon";
 import {
-  bangers,
   effectLines,
-  gamePanel,
   itemName,
   labColors,
   TIER_COLORS,
 } from "./itemText";
+import { bangers, gamePanel } from "../styles";
 
 const useStyles = createUseStyles((theme) => {
   const colors = labColors(theme);

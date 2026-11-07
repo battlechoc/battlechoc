@@ -10,6 +10,7 @@ import {
 import { matchSession } from "../../match/LocalMatchHost";
 import { liveConnection } from "../../match/liveConnection";
 import useMatchTime from "./useMatchTime";
+import { outlined } from "../styles";
 
 const { MatchPhase, OutcomeReason } = engine;
 
@@ -26,8 +27,7 @@ const useStyles = createUseStyles((theme) => ({
     userSelect: "none",
     color: "white",
     fontFamily: theme.font.display,
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme),
     "& p": { margin: 0, fontSize: theme.font.size.xl },
     "& .timer": { fontSize: theme.font.size.lg },
     "& .warning": { color: theme.color.accent.light },

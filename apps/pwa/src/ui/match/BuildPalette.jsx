@@ -12,6 +12,7 @@ import { fruitCannonPossible } from "../../match/fruitCannon";
 import Jukebox from "../misc/Jukebox";
 import { LESSON } from "../../tutorial/ids";
 import { BUILD_PALETTE, BUILDING_ICON, DONUT_ICON, iconUrl } from "../../catalog";
+import { rise } from "../styles";
 
 const buildings = BUILD_PALETTE.map((type) => ({ type, image: BUILDING_ICON[type] }));
 
@@ -77,7 +78,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   locked: {
     border: `0.4vw solid ${theme.color.accent.dark}`,
-    background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 80%)`,
+    background: rise(theme.color.accent, "80%"),
     cursor: "default",
     "& > .icon": { backgroundSize: "50% 50%", backgroundPosition: "center" },
   },

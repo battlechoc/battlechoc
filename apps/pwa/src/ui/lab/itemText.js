@@ -34,24 +34,6 @@ export const labColors = (theme) => ({
   reason: theme.color.gold.light,
 });
 
-/** A game panel: dark blue with a light blue rim, like the info card of a match. */
-export const gamePanel = (theme) => ({
-  borderRadius: "0.8em",
-  background: theme.color.secondary.dark,
-  border: `0.15em solid ${theme.color.secondary.light}`,
-  boxSizing: "border-box",
-});
-
-/** Names, headings and counts: Bangers with a dark blue outline. */
-export const bangers = (theme, color = "white") => ({
-  fontFamily: theme.font.display,
-  fontWeight: "normal",
-  letterSpacing: "0.03em",
-  color,
-  "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-  "-webkit-font-smoothing": "antialiased",
-});
-
 const BADGES = {
   hp: "/images/lab/badge-hp.svg",
   cacaoAmount: "/images/ingredients/cocoa.svg",

@@ -23,7 +23,8 @@ import LabTable from "./LabTable";
 import InventoryPicker from "./InventoryPicker";
 import RecipeBook from "./RecipeBook";
 import LabIntro, { LAB_INTRO_SEEN, LAB_INTRO_STEPS, Spotlight } from "./LabIntro";
-import { bangers, effectLines, labColors } from "./itemText";
+import { effectLines, labColors } from "./itemText";
+import { bangers, outlined, rise } from "../styles";
 
 // loaded with the lab, like the game's scene: Babylon stays out of the first bundle
 const MeshPreview = React.lazy(() => import("../../3d/MeshPreview"));
@@ -43,7 +44,7 @@ const useStyles = createUseStyles((theme) => ({
     overflow: "hidden",
     color: "white",
     // the sky of the menus (the body gradient)
-    background: `linear-gradient(0deg, ${theme.color.sky.dark} 0%, ${theme.color.sky.light} 80%)`,
+    background: rise(theme.color.sky, "80%"),
     // the lab's parts size themselves in em of this
     fontSize: theme.font.size.md,
     // phones held sideways: too little height for everything, the page scrolls
@@ -90,8 +91,7 @@ const useStyles = createUseStyles((theme) => ({
     fontFamily: theme.font.display,
     fontSize: theme.font.size.xl,
     color: "white",
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme),
     "&:focus-visible": {
       outline: `0.3vw solid ${theme.color.gold.light}`,
     },

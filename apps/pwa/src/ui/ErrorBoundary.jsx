@@ -7,6 +7,7 @@ import {
 import Button from "./controls/Button";
 import logger from "../helper/logger";
 import { testHooksEnabled } from "../testHooks";
+import { rise } from "./styles";
 
 const useStyles = createUseStyles((theme) => ({
   // over everything, on the sky of the menus: the broken screen is gone, the way back is all
@@ -14,11 +15,11 @@ const useStyles = createUseStyles((theme) => ({
   screen: {
     position: "fixed",
     inset: 0,
-    zIndex: 1000,
+    zIndex: theme.layer.recovery,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    background: `linear-gradient(0deg, ${theme.color.sky.dark} 0%, ${theme.color.sky.light} 80%)`,
+    background: rise(theme.color.sky, "80%"),
   },
 }));
 

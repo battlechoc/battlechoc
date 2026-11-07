@@ -93,6 +93,21 @@ const theme = {
     gap: "var(--edge)",
   },
   fab: "var(--fab)",
+  // the layers of the screen, from the board up (a component's own parts stack inside its layer)
+  layer: {
+    // the HUD's corners and the match's bottom bar over the board
+    hud: 4,
+    // the dialogs' backdrop, and a dialog opened from another one
+    dialog: 10,
+    stackedDialog: 20,
+    // the end screen of a match, and the quick messages at the top
+    endScreen: 100,
+    messages: 100,
+    // a rematch offer over the end screen
+    overEndScreen: 110,
+    // the way back after a crash, over everything
+    recovery: 1000,
+  },
   // the widths are repeated in the type scale's media queries in src/index.css: keep them in sync
   breakpoints: {
     desktop: "@media screen and (min-width: 1200px)",

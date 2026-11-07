@@ -10,6 +10,7 @@ import IngredientBag from "../ingredients/IngredientBag";
 import { createUseStyles } from "react-jss";
 import confetti from "canvas-confetti";
 import CountUpModule from "react-countup";
+import { outlined } from "../styles";
 
 // the default import of this CommonJS module is its module.exports object
 const CountUp = CountUpModule.default ?? CountUpModule;
@@ -19,7 +20,7 @@ const useStyles = createUseStyles((theme) => ({
     height: "100%",
     width: "100%",
     position: "absolute",
-    zIndex: 100,
+    zIndex: theme.layer.endScreen,
     backgroundColor: "rgba(0, 0, 0, 0.8)",
     display: "flex",
     flexDirection: "column",
@@ -27,8 +28,7 @@ const useStyles = createUseStyles((theme) => ({
     fontFamily: theme.font.display,
     fontSize: theme.font.size.lg,
     color: "white",
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme),
   },
   headline: {
     textAlign: "center",
@@ -88,8 +88,7 @@ const useStyles = createUseStyles((theme) => ({
     width: "fit-content",
     borderSpacing: "1em 0.25em",
     color: theme.color.primary.light,
-    "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.primary.dark}`,
-    "-webkit-font-smoothing": "antialiased",
+    ...outlined(theme, theme.color.primary.dark),
     "& > div": {
       display: "table-row",
       "& > div": {

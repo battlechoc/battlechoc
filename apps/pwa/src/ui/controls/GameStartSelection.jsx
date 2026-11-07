@@ -12,6 +12,7 @@ import { submit, ignoreRuleErrors } from "../match/submit";
 import useMatchTime from "../match/useMatchTime";
 import Jukebox from "../misc/Jukebox";
 import { createUseStyles } from "react-jss";
+import { rise } from "../styles";
 
 const useStyles = createUseStyles((theme) => ({
   realtimeHint: {
@@ -35,7 +36,7 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   button: {
-    background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+    background: rise(theme.color.secondary, "70%"),
     height: "28vh",
     width: "28vh",
     border: `0.1vh solid ${theme.color.secondary.light}`,

@@ -10,12 +10,11 @@ import ItemIcon from "./ItemIcon";
 import IngredientIcon from "../ingredients/IngredientIcon";
 import Button from "../controls/Button";
 import {
-  bangers,
   effectLines,
-  gamePanel,
   itemName,
   labColors,
 } from "./itemText";
+import { bangers, gamePanel } from "../styles";
 
 const useStyles = createUseStyles((theme) => ({
   book: {
