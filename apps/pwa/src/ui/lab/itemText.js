@@ -1,24 +1,8 @@
 import {
-  EntityType,
   Items,
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
-
-// the picture of each building (public/images/<name>-icon.svg)
-export const BUILDING_ICON = {
-  [EntityType.FACTORY]: "factory",
-  [EntityType.CACAOTREE]: "cacao-tree",
-  [EntityType.RUM_TRUFFLE_CANNON]: "truffle-cannon",
-  [EntityType.FACTORY_EXTENSION]: "factory-extension",
-  [EntityType.SPYING_EASTER_BUNNY]: "easter-bunny",
-  [EntityType.XMAS_FACTORY]: "xmas-factory",
-  [EntityType.CHOCOLATE_FOUNTAIN]: "fountain",
-  [EntityType.FRUIT_CANNON]: "fruit-cannon",
-  [EntityType.HOT_CHOCOLATE_BALLISTA]: "ballista",
-  [EntityType.DONUT_FACTORY]: "donut-factory",
-  [EntityType.CREAM]: "cream",
-};
 
 // stats where a smaller value is better for the player who owns the item
 const LOWER_IS_BETTER = new Set([
@@ -48,24 +32,6 @@ export const labColors = (theme) => ({
   good: theme.color.primary.light,
   bad: theme.color.accent.light,
   reason: theme.color.gold.light,
-});
-
-/** A game panel: dark blue with a light blue rim, like the info card of a match. */
-export const gamePanel = (theme) => ({
-  borderRadius: "0.8em",
-  background: theme.color.secondary.dark,
-  border: `0.15em solid ${theme.color.secondary.light}`,
-  boxSizing: "border-box",
-});
-
-/** Names, headings and counts: Bangers with a dark blue outline. */
-export const bangers = (theme, color = "white") => ({
-  fontFamily: theme.font.display,
-  fontWeight: "normal",
-  letterSpacing: "0.03em",
-  color,
-  "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-  "-webkit-font-smoothing": "antialiased",
 });
 
 const BADGES = {

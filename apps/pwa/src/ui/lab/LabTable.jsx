@@ -10,12 +10,11 @@ import Button from "../controls/Button";
 import DialogFrame from "../dialogs/DialogFrame";
 import ItemIcon from "./ItemIcon";
 import {
-  bangers,
   effectLines,
-  gamePanel,
   itemName,
   labColors,
 } from "./itemText";
+import { bangers, gamePanel, rise } from "../styles";
 
 const useStyles = createUseStyles((theme) => {
   const colors = labColors(theme);
@@ -27,7 +26,7 @@ const useStyles = createUseStyles((theme) => {
       isolation: "isolate",
       overflow: "hidden",
       borderRadius: 20,
-      background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 100%)`,
+      background: rise(theme.color.secondary),
       boxShadow: "0 0.3em 0.9em rgba(0, 0, 0, 0.3)",
       color: "white",
     },
@@ -88,11 +87,11 @@ const useStyles = createUseStyles((theme) => {
       padding: 0,
       borderRadius: "12.5%",
       border: `0.12em solid ${theme.color.secondary.light}`,
-      background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+      background: rise(theme.color.secondary, "70%"),
       cursor: "pointer",
       "&:disabled": { filter: "grayscale(1)", cursor: "default" },
       "&:hover:not(:disabled)": {
-        background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 120%)`,
+        background: rise(theme.color.secondary, "120%"),
       },
       "&:focus-visible": {
         outline: `3px solid ${theme.color.gold.light}`,

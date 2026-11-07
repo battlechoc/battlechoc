@@ -5,7 +5,8 @@ import {
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import ItemIcon from "./ItemIcon";
-import { bangers, itemName, labColors } from "./itemText";
+import { itemName, labColors } from "./itemText";
+import { bangers } from "../styles";
 
 const useStyles = createUseStyles((theme) => ({
   slot: {

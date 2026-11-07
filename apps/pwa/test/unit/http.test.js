@@ -1,6 +1,6 @@
 // The game's HTTP client (node --test): fetch with what the callers took from axios, i.e.
 // `response.data`, `error.response.status` and `.data`, a timeout, and isCancel for a request the
-// caller aborted (src/account.js, src/helper/settings.jsx, PlayerNameInput).
+// caller aborted (src/api/account.js, src/api/client.js, PlayerNameInput).
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createClient, isCancel, HttpError } from "../../src/helper/http.js";

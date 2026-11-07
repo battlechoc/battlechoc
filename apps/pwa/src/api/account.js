@@ -1,6 +1,6 @@
-import { createClient } from "./helper/http";
-import OfflineStore from "./OfflineStore";
-import logger from "./helper/logger";
+import { createClient } from "../helper/http.js";
+import OfflineStore from "../OfflineStore.js";
+import logger from "../helper/logger.js";
 
 // Device account: on the first launch the API creates a player and returns a refresh token,
 // which stays in IndexedDB. Short-lived access tokens are fetched with it when needed. Without

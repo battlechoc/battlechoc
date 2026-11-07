@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import "./index.css";
 import App from "./App";
-import * as serviceWorker from "./serviceWorker";
+import * as serviceWorker from "./registerServiceWorker";
 import {
   translate as t,
   translationKeys as tr,
@@ -11,26 +11,43 @@ import {
 import rootReducer from "./RootReducer";
 import { matchSession } from "./match/LocalMatchHost";
 import { multiplayer } from "./Multiplayer";
-import { showQuickMessage, loadUiState } from "./ui/UiActions";
-import { connectivity } from "./connectivity";
+import {
+  showQuickMessage,
+  fontsArrived,
+  updateAvailableChanged,
+  connectivityChanged,
+} from "./ui/uiSlice";
+import { connectivity } from "./api/connectivity";
 import { fontsLoaded } from "./firstLoad";
 import { warmOnDemand } from "./ui/onDemand";
 import promiseDispatch from "./helper/promiseDispatch";
 import { configureStore } from "@reduxjs/toolkit";
+import { hydrateSettings, createSettingsPersistence } from "./settingsSlice";
+import OfflineStore from "./OfflineStore";
+import logger from "./helper/logger";
 import { ThemeProvider } from "react-jss";
 
 const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(promiseDispatch),
+    getDefaultMiddleware()
+      .prepend(
+        createSettingsPersistence(OfflineStore.settingsStore, (error) =>
+          logger.warn("could not keep the setting", error)
+        )
+      )
+      .concat(promiseDispatch),
 });
 matchSession.dispatch = store.dispatch;
+matchSession.getState = store.getState;
+// the settings kept on the device (tips, auto fullscreen)
+store.dispatch(hydrateSettings(OfflineStore.settingsStore));
 
 // the title screen's menu shows once the fonts are in (no jumping labels); it does not wait for
 // the 3D engine, which arrives later. Then the chunks of what the player may open next are
 // asked for (the lab, the tutorial, the end of a match).
 fontsLoaded().then(() => {
-  store.dispatch(loadUiState({ fontsReady: true }));
+  store.dispatch(fontsArrived());
   warmOnDemand();
 });
 
@@ -76,6 +93,21 @@ const theme = {
     gap: "var(--edge)",
   },
   fab: "var(--fab)",
+  // the layers of the screen, from the board up (a component's own parts stack inside its layer)
+  layer: {
+    // the HUD's corners and the match's bottom bar over the board
+    hud: 4,
+    // the dialogs' backdrop, and a dialog opened from another one
+    dialog: 10,
+    stackedDialog: 20,
+    // the end screen of a match, and the quick messages at the top
+    endScreen: 100,
+    messages: 100,
+    // a rematch offer over the end screen
+    overEndScreen: 110,
+    // the way back after a crash, over everything
+    recovery: 1000,
+  },
   // the widths are repeated in the type scale's media queries in src/index.css: keep them in sync
   breakpoints: {
     desktop: "@media screen and (min-width: 1200px)",
@@ -106,7 +138,7 @@ createRoot(document.getElementById("root")).render(
 // start it (dialogs/UpdateAvailable.jsx), after the match if one is running.
 let config = {
   onUpdate: () => {
-    store.dispatch(loadUiState({ updateAvailable: true }));
+    store.dispatch(updateAvailableChanged(true));
   },
 };
 
@@ -149,12 +181,7 @@ window.addEventListener("online", () => {
 // state.ui.online: whether the server answers, serverDown: the internet works but the server does
 // not (the toasts above follow the browser's network)
 connectivity.onChange((status) => {
-  store.dispatch(
-    loadUiState({
-      online: status === "online",
-      serverDown: status === "server-down",
-    })
-  );
+  store.dispatch(connectivityChanged(status));
   // a name chosen offline is claimed as soon as the server answers
   if (status === "online") {
     multiplayer.syncPendingUsername();

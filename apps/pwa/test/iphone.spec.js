@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import { advance, phase } from "./helpers/clock.js";
+import { waitForMatch, sceneSettled, factoryPlaced } from "./helpers/match.js";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -8,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 
 test("shows an info on iOS", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
-  await expect(page.locator("[class^=visible]").first()).toBeAttached();
+  await expect(page.locator("[data-testid=quick-message][data-variant=apple-pwa-hint][data-visible=true]")).toBeAttached();
   await page.screenshot({ fullPage: true, path: "test/output/screenshot_test003.png" });
 });
 
@@ -18,14 +20,11 @@ const situation = "/situation/d41d8cd98f00b204e9800998ecf8427e?testclock";
 
 const openSituation = async (page) => {
   await page.goto(situation);
-  await page.waitForFunction(() => window.__battlechoc && window.__battlechoc.host.match);
-  // the board fades in before it takes clicks
-  await page.waitForTimeout(3000);
+  await waitForMatch(page);
+  // the camera comes to the board before it takes clicks
+  await sceneSettled(page);
 };
 
-const advance = (page, ms) =>
-  page.evaluate((ms) => window.__battlechoc.host.clock.advance(ms), ms);
-const phase = (page) => page.evaluate(() => window.__battlechoc.host.match.phase);
 
 // The clicks hit cells of the 8×8 debug board at the iPhone's 667×375 points; they move with the
 // board's height on the screen (boardHeight in src/3d/Scene.jsx: a world unit up is 37.5 · 0.82
@@ -33,7 +32,7 @@ const phase = (page) => page.evaluate(() => window.__battlechoc.host.match.phase
 const placeFactoryAt = async (page, x, y) => {
   await openSituation(page);
   await page.mouse.click(x, y);
-  await page.waitForTimeout(500);
+  await factoryPlaced(page);
   await advance(page, 23000);
 };
 
@@ -58,7 +57,7 @@ test("counts down and starts the match after both factories are placed", async (
   await openSituation(page);
   await page.screenshot({ fullPage: true, path: "test/output/screenshot_test004_0.png" });
   await page.mouse.click(335, 261);
-  await page.waitForTimeout(500);
+  await factoryPlaced(page);
   expect(await phase(page)).toBe("MatchPhase.PLACEMENT");
   // the AI places its factory within a few seconds, then the countdown starts
   for (let i = 0; i < 10 && (await phase(page)) === "MatchPhase.PLACEMENT"; i++) {

@@ -1,5 +1,5 @@
 import { live } from "@battlechoc/battlechoc-shared-functions";
-import { liveConnection } from "./liveConnection";
+import { liveConnection } from "./liveConnection.js";
 import {
   liveStatusChanged,
   queueJoined,
@@ -14,8 +14,8 @@ import {
   challengeDismissed,
   challengeRequested,
   challengeViewed,
-} from "./liveSlice";
-import logger from "../helper/logger";
+} from "./liveSlice.js";
+import logger from "../helper/logger.js";
 
 const { ClientMessage, ServerMessage, LiveError } = live;
 
@@ -27,14 +27,18 @@ const { ClientMessage, ServerMessage, LiveError } = live;
 class LiveLobby {
   constructor() {
     this.dispatch = () => {};
+    this.getState = () => ({ live: {} });
     this.onMatch = () => {};
     this.wired = false;
     this.active = false;
     this.currentMatchId = undefined;
   }
 
-  init({ dispatch, onMatch }) {
+  init({ dispatch, getState, onMatch }) {
     this.dispatch = dispatch;
+    if (getState) {
+      this.getState = getState;
+    }
     this.onMatch = onMatch;
     if (this.wired) {
       return;
@@ -44,7 +48,7 @@ class LiveLobby {
     c.on("status", (status) => this.dispatch(liveStatusChanged(status)));
     c.on(ServerMessage.WELCOME, (message) => {
       // the own challenge link as the server knows it (after a reload, or gone after a restart)
-      this.dispatch(challengeUpdated(message.challenge || null));
+      this.challengeArrived(message.challenge || null);
       // a match is still running for this account (reload, other device): go back into it
       if (message.activeMatch && message.activeMatch.matchId !== this.currentMatchId) {
         this.startMatch({ matchId: message.activeMatch.matchId });
@@ -60,7 +64,7 @@ class LiveLobby {
     c.on(ServerMessage.INVITE, (message) => this.dispatch(inviteReceived(message.invite)));
     c.on(ServerMessage.INVITE_SENT, (message) => this.dispatch(inviteSent(message.invite)));
     c.on(ServerMessage.INVITE_CLOSED, (message) => this.dispatch(inviteClosed(message)));
-    c.on(ServerMessage.CHALLENGE, (message) => this.dispatch(challengeUpdated(message.challenge)));
+    c.on(ServerMessage.CHALLENGE, (message) => this.challengeArrived(message.challenge));
     c.on(ServerMessage.CHALLENGE_VIEW, (message) => this.dispatch(challengeViewed(message.view)));
     c.on(ServerMessage.ERROR, (message) => {
       logger.info("live error", message.code);
@@ -70,6 +74,16 @@ class LiveLobby {
         this.onMatchGone(this.currentMatchId);
       }
     });
+  }
+
+  // the own challenge as the server knows it; one the player closed the dialog on before it
+  // arrived is cancelled right away (liveSlice challengeToCancel)
+  challengeArrived(challenge) {
+    this.dispatch(challengeUpdated(challenge));
+    const code = this.getState().live.challengeToCancel;
+    if (code) {
+      this.cancelChallenge(code).catch((error) => logger.info("could not cancel the challenge", error));
+    }
   }
 
   startMatch(message) {
@@ -170,7 +184,6 @@ class LiveLobby {
     this.dispatch(liveErrorReceived(null));
     return this.send({ type: ClientMessage.REMATCH, matchId });
   }
-
 }
 
 const liveLobby = new LiveLobby();

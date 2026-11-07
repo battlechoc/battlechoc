@@ -11,7 +11,7 @@ import Dialog from "./Dialog";
 import Button from "../controls/Button";
 import { liveLobby } from "../../match/liveLobby";
 import { challengeViewed, challengeUnreachable } from "../../match/liveSlice";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import { CHALLENGE_UNREACHABLE_MS } from "./challengeTiming";
 
 const { ChallengeViewState: View, formatChallengeCode } = live;

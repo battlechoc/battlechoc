@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { readSetting, writeSetting } from "./helpers/profile.js";
 
 // the AGPL asks for the source code to be offered to everyone who plays: the Info dialog links it
 test("the Info dialog links the source code and the privacy policy", async ({ page }) => {
@@ -23,17 +24,7 @@ test("the Info dialog links the source code and the privacy policy", async ({ pa
 test("the Info dialog speaks the player's language", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.body.innerText.trim().length > 0);
-  await page.evaluate(
-    () =>
-      new Promise((resolve) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const tx = open.result.transaction("settings", "readwrite");
-          tx.objectStore("settings").put("de", "language");
-          tx.oncomplete = () => resolve();
-        };
-      })
-  );
+  await writeSetting(page, "language", "de");
   await page.goto("/", { waitUntil: "networkidle" });
   // the page tells the browser its language too
   await expect(page.locator("html")).toHaveAttribute("lang", "de");
@@ -59,34 +50,11 @@ test.describe("a Japanese browser", () => {
 test("a device that stored the old code vn keeps its Vietnamese", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.body.innerText.trim().length > 0);
-  await page.evaluate(
-    () =>
-      new Promise((resolve) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const tx = open.result.transaction("settings", "readwrite");
-          tx.objectStore("settings").put("vn", "language");
-          tx.oncomplete = () => resolve();
-        };
-      })
-  );
+  await writeSetting(page, "language", "vn");
   await page.goto("/", { waitUntil: "networkidle" });
   await expect(page.locator("html")).toHaveAttribute("lang", "vi");
   await page.locator("[data-icon=info]:visible").click();
   await expect(page.getByText("Giới thiệu battlechoc", { exact: true })).toBeVisible();
   // the device now holds the language code
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          new Promise((resolve) => {
-            const open = indexedDB.open("battlechoc");
-            open.onsuccess = () => {
-              const get = open.result.transaction("settings").objectStore("settings").get("language");
-              get.onsuccess = () => resolve(get.result);
-            };
-          })
-      )
-    )
-    .toBe("vi");
+  await expect.poll(() => readSetting(page, "language")).toBe("vi");
 });

@@ -2,6 +2,7 @@
 // music and the match sounds are `deferred`: they load only when told (Jukebox.loadDeferred, once
 // the 3D models are in), so they do not take the connection away from the first start. A song
 // asked to play before its file arrived starts as soon as it is there.
+import logger from "../../helper/logger.js";
 
 const fetchArrayBuffer = (url) =>
   new Promise((resolve, reject) => {
@@ -35,7 +36,7 @@ export class AudioClip {
     this.wanted = false;
     if (!deferred) {
       this.load().catch((error) =>
-        console.warn("Audio was unable to load: ", error)
+        logger.warn("Audio was unable to load: ", error)
       );
     }
   }
@@ -71,7 +72,7 @@ export class AudioClip {
         try {
           this.source.stop();
         } catch (error) {
-          console.info(error);
+          logger.info(error);
         }
       }
       this.source = this.context.createBufferSource();
@@ -102,7 +103,7 @@ export class AudioClip {
       try {
         this.source.stop();
       } catch (error) {
-        console.info(error);
+        logger.info(error);
       }
     }
   }

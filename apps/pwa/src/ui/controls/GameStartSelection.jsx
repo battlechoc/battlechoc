@@ -10,8 +10,9 @@ import {
 import { selectActiveGame } from "../../match/matchSlice";
 import { submit, ignoreRuleErrors } from "../match/submit";
 import useMatchTime from "../match/useMatchTime";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import { createUseStyles } from "react-jss";
+import { rise } from "../styles";
 
 const useStyles = createUseStyles((theme) => ({
   realtimeHint: {
@@ -35,7 +36,7 @@ const useStyles = createUseStyles((theme) => ({
     },
   },
   button: {
-    background: `linear-gradient(0deg, ${theme.color.secondary.dark} 0%, ${theme.color.secondary.light} 70%)`,
+    background: rise(theme.color.secondary, "70%"),
     height: "28vh",
     width: "28vh",
     border: `0.1vh solid ${theme.color.secondary.light}`,
@@ -207,6 +208,8 @@ const GameStartSelection = (props) => {
       <div
         className={(unlocked ? "active " : "inactive ") + classes.button}
         onClick={() => choose(0)}
+        data-testid="choose-field"
+        data-field={0}
       >
         {(() => {
           if (typeof game.board !== "undefined") {
@@ -257,6 +260,8 @@ const GameStartSelection = (props) => {
       <div
         className={(unlocked ? "active " : "inactive ") + classes.button}
         onClick={() => choose(1)}
+        data-testid="choose-field"
+        data-field={1}
       >
         {(() => {
           if (typeof game.board !== "undefined") {

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { connect } from "react-redux";
-import { loadUiState } from "../UiActions";
-import OfflineStore from "../../OfflineStore";
+import { tipsEnabledChanged } from "../../settingsSlice";
 import { createUseStyles } from "react-jss";
 import {
   engine,
@@ -201,15 +200,12 @@ const mapStateToProps = (state) => ({
   tappedBuilding: state.ui.tappedBuilding,
   selectedAttack: state.ui.selectedAttack,
   tutorial: state.ui.tutorial,
-  tipsEnabled: state.ui.tipsEnabled,
+  tipsEnabled: state.settings.tipsEnabled,
 });
 
-// the tips can be switched off here and back on in the settings
+// the tips can be switched off here and back on in the settings (settingsSlice keeps it)
 const mapDispatchToProps = (dispatch) => ({
-  hideTips: () => {
-    dispatch(loadUiState({ tipsEnabled: false }));
-    OfflineStore.settingsStore.set("tips", false);
-  },
+  hideTips: () => dispatch(tipsEnabledChanged(false)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(InfoCard);

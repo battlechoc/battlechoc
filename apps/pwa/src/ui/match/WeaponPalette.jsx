@@ -3,22 +3,17 @@ import { connect } from "react-redux";
 import { createUseStyles, useTheme } from "react-jss";
 import {
   engine,
-  AttackType,
 } from "@battlechoc/battlechoc-shared-functions";
-import { selectAttack, focusBoard } from "../UiActions";
-import { Jukebox } from "../misc";
+import { selectAttack, focusBoard } from "../uiSlice";
+import Jukebox from "../misc/Jukebox";
 import useMatchTime from "./useMatchTime";
 import ProgressRing from "./ProgressRing";
 import TapPointer from "../controls/TapPointer";
+import { WEAPON_PALETTE, ATTACK_ICON, iconUrl } from "../../catalog";
 
 const { WeaponState } = engine;
 
-const weapons = [
-  { type: AttackType.TRUFFLE, image: "truffle-cannon" },
-  { type: AttackType.FRUIT, image: "fruit-cannon" },
-  { type: AttackType.BUNNY, image: "easter-bunny" },
-  { type: AttackType.HOT_CHOCOLATE, image: "ballista" },
-];
+const weapons = WEAPON_PALETTE.map((type) => ({ type, image: ATTACK_ICON[type] }));
 
 const stateColors = (theme) => ({
   [WeaponState.READY]: theme.color.primary.light,
@@ -238,7 +233,7 @@ const WeaponPalette = ({ view, selectedAttack, deniedAttack, pointer, select, sw
                 select(weapon.type);
               }}
             >
-              <div className={classes.icon} style={{ backgroundImage: `url(/images/${weapon.image}-icon.svg)` }}>
+              <div className={classes.icon} style={{ backgroundImage: `url(${iconUrl(weapon.image)})` }}>
                 <ProgressRing
                   progress={stunned ? 0 : entry.progress}
                   color={free ? colors[WeaponState.READY] : "white"}

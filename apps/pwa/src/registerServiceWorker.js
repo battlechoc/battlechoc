@@ -1,3 +1,5 @@
+import logger from "./helper/logger.js";
+
 const isLocalhost = Boolean(
   window.location.hostname === "localhost" ||
     // [::1] is the IPv6 localhost address.
@@ -37,7 +39,7 @@ export function register(config) {
         // Add some additional logging to localhost, pointing developers to the
         // service worker/PWA documentation.
         navigator.serviceWorker.ready.then(() => {
-          console.log(
+          logger.info(
             "This web app is being served cache-first by a service " +
               "worker. To learn more, visit http://bit.ly/CRA-PWA"
           );
@@ -71,7 +73,7 @@ function registerValidSW(swUrl, config) {
                 config.onUpdate(registration);
               }
             } else {
-              console.log("Content is cached for offline use.");
+              logger.info("Content is cached for offline use.");
               if (config && config.onSuccess) {
                 config.onSuccess(registration);
               }
@@ -81,8 +83,7 @@ function registerValidSW(swUrl, config) {
       };
     })
     .catch((error) => {
-      console.warn("Error during service worker registration");
-      console.error(error);
+      logger.error("Error during service worker registration", String(error));
     });
 }
 
@@ -103,14 +104,12 @@ function checkValidServiceWorker(swUrl, config) {
           });
         });
       } else {
-        console.log("Service worker found. Proceed as normal.");
+        logger.info("Service worker found. Proceed as normal.");
         registerValidSW(swUrl, config);
       }
     })
     .catch(() => {
-      console.log(
-        "No internet connection found. App is running in offline mode."
-      );
+      logger.info("No internet connection found. App is running in offline mode.");
     });
 }
 

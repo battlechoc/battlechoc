@@ -1,6 +1,7 @@
 import React from "react";
+import { BUILDING_ICON, iconUrl } from "../../catalog";
 import { Items } from "@battlechoc/battlechoc-shared-functions";
-import { BUILDING_ICON, TIER_COLORS, badgeOf, itemName } from "./itemText";
+import { TIER_COLORS, badgeOf, itemName } from "./itemText";
 
 // An item: the picture of its building in a frame of its tier colour, with a badge for what it does.
 const ItemIcon = ({ item, size = "3.2em" }) => {
@@ -23,7 +24,7 @@ const ItemIcon = ({ item, size = "3.2em" }) => {
       }}
     >
       <img
-        src={`/images/${BUILDING_ICON[definition.entityType]}-icon.svg`}
+        src={iconUrl(BUILDING_ICON[definition.entityType])}
         alt=""
         draggable={false}
         style={{

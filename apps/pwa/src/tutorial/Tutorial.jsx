@@ -2,23 +2,23 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
-  EmptyPlayerStats,
   StarterKit,
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import IngredientBag from "../ui/ingredients/IngredientBag";
-import { Jukebox } from "../ui/misc";
+import Jukebox from "../ui/misc/Jukebox";
 import { multiplayer } from "../Multiplayer";
 import {
   updatePlayerStats,
-  showNotification,
-  loadUiState,
+  boardTopInsetChanged,
+  tutorialPointerChanged,
+  tutorialBoardChanged,
   tapBuilding,
   selectBuilding,
   deselectBuildings,
   focusBoard,
-} from "../ui/UiActions";
+} from "../ui/uiSlice";
 import PlayerNameInput from "../ui/controls/PlayerNameInput";
 import Button from "../ui/controls/Button";
 import CoachCard from "../ui/controls/CoachCard";
@@ -28,6 +28,7 @@ import { TutorialRunner } from "./runner";
 import { LESSON, lessonSteps } from "./lesson";
 import { demos } from "./demos";
 import logger from "../helper/logger";
+import { isNamed } from "../helper/playerName";
 
 const useStyles = createUseStyles((theme) => ({
   finished: {
@@ -51,8 +52,6 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-const isNamed = (stats) =>
-  typeof stats.username !== "undefined" && stats.username !== EmptyPlayerStats.username;
 
 /**
  * The tutorial on the real-time engine: an interactive first lesson against Mimi Marzipan
@@ -81,7 +80,7 @@ const Tutorial = (props) => {
   const [named, setNamed] = useState(isNamed(stats));
   const [initialUserName, setInitialUserName] = useState(stats.username);
   // in portrait the card lies across the top of the board: the scene moves the board below it
-  const cardLayout = useCallback((bottom) => dispatch(loadUiState({ boardTopInset: bottom })), [dispatch]);
+  const cardLayout = useCallback((bottom) => dispatch(boardTopInsetChanged(bottom)), [dispatch]);
 
   // the lesson: start once; the demos: (re)start whenever the page changes
   useEffect(() => {
@@ -104,7 +103,7 @@ const Tutorial = (props) => {
   useEffect(
     () => () => {
       runner.current.stop();
-      dispatch(loadUiState({ tutorialPointer: null }));
+      dispatch(tutorialPointerChanged(null));
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
@@ -114,8 +113,8 @@ const Tutorial = (props) => {
   const current = lessonSteps[step];
   useEffect(() => {
     dispatch(
-      loadUiState({
-        tutorialInteractive: lesson,
+      tutorialBoardChanged({
+        interactive: lesson,
         whitelistBuildings: lesson && !finished ? current.whitelist : undefined,
       })
     );
@@ -152,7 +151,7 @@ const Tutorial = (props) => {
       const key = JSON.stringify(target);
       if (key !== pointerKey.current) {
         pointerKey.current = key;
-        dispatch(loadUiState({ tutorialPointer: target }));
+        dispatch(tutorialPointerChanged(target));
       }
       if (current.done && current.done(context)) {
         const following = lessonSteps[step + 1];
@@ -173,7 +172,7 @@ const Tutorial = (props) => {
   useEffect(() => {
     if (lesson && finished) {
       pointerKey.current = "null";
-      dispatch(loadUiState({ tutorialPointer: null }));
+      dispatch(tutorialPointerChanged(null));
       if (!stats.tutorialFinished) {
         multiplayer.tutorialFinished();
       }
@@ -189,9 +188,6 @@ const Tutorial = (props) => {
   const close = (startGame) => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     runner.current.stop();
-    if (!lesson && props.notificationOnLoopsEnd) {
-      props.showNotification(props.notificationOnLoopsEnd);
-    }
     props.closeTutorial(startGame);
   };
 
@@ -331,7 +327,6 @@ const Tutorial = (props) => {
 const mapStateToProps = (state) => ({
   view: state.match.view,
   loops: state.ui.loopAnimations,
-  notificationOnLoopsEnd: state.ui.notificationOnLoopsEnd,
   playerInfos: state.ui.playerInfos,
   online: state.ui.online,
   selectedAttack: state.ui.selectedAttack,
@@ -340,7 +335,6 @@ const mapStateToProps = (state) => ({
 const mapDispatchToProps = (dispatch) => ({
   dispatch,
   updatePlayerStats: (stats) => dispatch(updatePlayerStats(stats)),
-  showNotification: (notification) => dispatch(showNotification(notification)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Tutorial);

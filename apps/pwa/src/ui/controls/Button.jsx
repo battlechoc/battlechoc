@@ -1,6 +1,6 @@
 import React from "react";
 import { createUseStyles } from "react-jss";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import withDefaultProps from "../../helper/defaultProps";
 
 // The text size comes from the type scale (huge: title menu, normal: dialogs, small: inline

@@ -31,6 +31,38 @@ const enterFullscreen = () =>
     .requestFullscreen()
     .catch(() => logger.info("fullscreen request failed"));
 
+/**
+ * Fullscreen for a match, held sideways on Android. Needs the player's click: call it
+ * synchronously in the click's handler. Not on iOS (pages have no fullscreen there).
+ */
+const enterMatchFullscreen = () => {
+  const isiOS = /^(iPhone|iPad|iPod)/.test(navigator.platform);
+  if (
+    isFullscreen() ||
+    isiOS ||
+    typeof document.documentElement.requestFullscreen !== "function"
+  ) {
+    return;
+  }
+  document.documentElement
+    .requestFullscreen()
+    .then(() => {
+      if (/Android/i.test(navigator.userAgent)) {
+        window.screen.orientation
+          .lock("landscape")
+          .catch(() => logger.info("Unable to lock orientation to landscape"));
+      }
+    })
+    .catch((error) => logger.warn(error.name + ": " + error.message));
+};
+
+/** Ends the landscape lock of a match (Android). */
+const releaseOrientation = () => {
+  if (/Android/i.test(navigator.userAgent) && window.screen.orientation) {
+    window.screen.orientation.unlock();
+  }
+};
+
 /** Whether a fullscreen button makes sense now: supported and not fullscreen yet. */
 const useFullscreenAvailable = () => {
   const [available, setAvailable] = useState(false);
@@ -43,4 +75,11 @@ const useFullscreenAvailable = () => {
   return available;
 };
 
-export { isFullscreen, fullscreenSupported, enterFullscreen, useFullscreenAvailable };
+export {
+  isFullscreen,
+  fullscreenSupported,
+  enterFullscreen,
+  enterMatchFullscreen,
+  releaseOrientation,
+  useFullscreenAvailable,
+};

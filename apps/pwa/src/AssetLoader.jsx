@@ -1,6 +1,6 @@
 import { useImperativeHandle } from "react";
 import { connect } from "react-redux";
-import { assetsReady, loadUiState } from "./ui/UiActions";
+import { assetsReady, assetsProgressed, assetsFailedChanged } from "./ui/uiSlice";
 import {
   EntityType,
   BoardCellTypes,
@@ -13,39 +13,19 @@ import {
 } from "./3d/babylon";
 import "./3d/gltf";
 import { cellMaterial } from "./3d/look";
-import { CREAM_AROUND_BUILDING } from "./3d/cellMeshes";
+import { MODEL, catalogIconFiles } from "./catalog";
+import logger from "./helper/logger";
 import { fontsLoaded, registerAssetRetry } from "./firstLoad";
 
 class AssetLoader {
   constructor() {
     this.assets = {
-      models: {
-        [BoardCellTypes.WHITE]: "field.glb",
-        [BoardCellTypes.BROWN]: "field.glb",
-        [BoardCellTypes.BLACK]: "field.glb",
-        [EntityType.FACTORY]: "factory.glb",
-        [EntityType.FACTORY_EXTENSION]: "factoryExtension.glb",
-        [EntityType.CACAOTREE]: "cacaotree.glb",
-        [EntityType.RUM_TRUFFLE_CANNON]: "cannon.glb",
-        [EntityType.CREAM]: "cream.glb",
-        [CREAM_AROUND_BUILDING]: "creamAroundBuilding.glb",
-        [EntityType.SPYING_EASTER_BUNNY]: "spyingEasterBunny.glb",
-        [EntityType.XMAS_FACTORY]: "xmasFactory.glb",
-        [EntityType.HOT_CHOCOLATE_BALLISTA]: "hotChocolateBallista.glb",
-        [EntityType.CHOCOLATE_FOUNTAIN]: "chocolateFountain.glb",
-        [EntityType.FRUIT_CANNON]: "fruitCannon.glb",
-        [EntityType.DONUT_FACTORY]: "donutFactory.glb",
-        // the trap donuts share one model, DONUT_COLORS paints them
-        [EntityType.DONUT_PORTAL_RED]: "donut.glb",
-        [EntityType.DONUT_PORTAL_BLUE]: "donut.glb",
-        [EntityType.DONUT_SURPRISE_YELLOW]: "donut.glb",
-        [EntityType.DONUT_STOP_PINK]: "donut.glb",
-        [EntityType.DONUT_CREAM_WHITE]: "donut.glb",
-        [EntityType.DONUT_HEALTH_GREEN]: "donut.glb",
-      },
+      models: MODEL,
       // the interface's pictures, warmed after the models (warmImages below). The progress
       // donuts are not here: the scene loads them itself for the indicators above the units.
       images: [
+        // the pictures of the buildings, attacks and donuts (src/catalog.js)
+        ...catalogIconFiles(),
         "add-icon.svg",
         "dialog-border-left.svg",
         "info-icon.svg",
@@ -61,7 +41,6 @@ class AssetLoader {
         "done.svg",
         "search.svg",
         "back.svg",
-        "donut-factory-icon.svg",
         "lab.svg",
         "secondary-close.svg",
         "backward-accent.svg",
@@ -69,7 +48,6 @@ class AssetLoader {
         "backward.svg",
         "level.svg",
         "settings.svg",
-        "ballista-icon.svg",
         "donuts-enabled.svg",
         "lock.svg",
         "share.svg",
@@ -77,9 +55,7 @@ class AssetLoader {
         "dropdown.svg",
         "logo.svg",
         "buildings-icon.svg",
-        "easter-bunny-icon.svg",
         "lost.svg",
-        "stop-donut-icon.svg",
         "error-icon.svg",
         "mute.svg",
         "stripes.svg",
@@ -87,39 +63,27 @@ class AssetLoader {
         "pen.svg",
         "success-icon.svg",
         "cacao-icon.svg",
-        "factory-extension-icon.svg",
         "phone-rotation.svg",
-        "surprise-donut-icon.svg",
-        "cacao-tree-icon.svg",
-        "factory-icon.svg",
-        "portal-donut-icon.svg",
         "cacao.svg",
         "fast-backward.svg",
         "primary-close.svg",
         "fast-forward.svg",
         "trophy.svg",
-        "truffle-cannon-icon.svg",
         "choclab-decoration-left.svg",
         "forward.svg",
         "forward-accent.svg",
         "user.svg",
         "choclab-decoration-right.svg",
-        "fountain-icon.svg",
         "volume.svg",
         "close.svg",
-        "fruit-cannon-icon.svg",
         "warning-close.svg",
         "coins.svg",
         "fullscreen.svg",
         "warning-icon.svg",
-        "cream-donut-icon.svg",
         "gears.svg",
         "win.svg",
-        "cream-icon.svg",
         "header.svg",
-        "xmas-factory-icon.svg",
         "cream.svg",
-        "health-donut-icon.svg",
         "decoration.svg",
         "highscore.svg",
         "bunny-caught.svg",
@@ -283,7 +247,7 @@ const loading = {
         return;
       } catch (error) {
         if (attempt >= MODEL_RETRY_DELAYS_MS.length) {
-          console.error("could not load", file, error);
+          logger.error("could not load", file, String(error));
           this.failed.set(file, true);
           this.callbacks.failed(true);
           return;
@@ -337,12 +301,10 @@ const AssetLoadingView = (props) => {
   useImperativeHandle(customRef, () => ({
     loadAssets(scene) {
       loading.start(scene, {
-        progress: (value) => props.loadUiState({ assetsProgress: value }),
-        failed: (value) => props.loadUiState({ assetsFailed: value }),
-        ready: () => {
-          props.loadUiState({ assetsProgress: 100, assetsFailed: false });
-          props.assetsReady();
-        },
+        progress: (value) => props.assetsProgressed(value),
+        failed: (value) => props.assetsFailedChanged(value),
+        // the progress at 100 and no failure
+        ready: () => props.assetsReady(),
       });
     },
   }));
@@ -350,7 +312,7 @@ const AssetLoadingView = (props) => {
 };
 
 const mapStateToProps = () => ({});
-const mapDispatchToProps = { assetsReady, loadUiState };
+const mapDispatchToProps = { assetsReady, assetsProgressed, assetsFailedChanged };
 const AssetLoadingViewContainer = connect(
   mapStateToProps,
   mapDispatchToProps

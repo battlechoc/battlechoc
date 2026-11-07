@@ -5,7 +5,7 @@ import {
 } from "@battlechoc/battlechoc-shared-functions";
 import Dialog from "./Dialog";
 import Button from "../controls/Button";
-import { buildingImages } from "../match/BuildPalette";
+import { BUILDING_ICON, iconUrl } from "../../catalog";
 
 // What a match just unlocked (src/unlocks.js), once each:
 // - buildings (two after each of the first three matches): their pictures and names, and the
@@ -47,7 +47,7 @@ const Unlocked = ({ unlock, gamesLeft, close, showDemos }) => {
                       width: "4em",
                       height: "4em",
                       margin: "0 auto",
-                      backgroundImage: `url(/images/${buildingImages[type]}-icon.svg)`,
+                      backgroundImage: `url(${iconUrl(BUILDING_ICON[type])})`,
                       backgroundSize: "contain",
                       backgroundRepeat: "no-repeat",
                       backgroundPosition: "center",

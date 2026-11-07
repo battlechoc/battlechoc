@@ -11,8 +11,7 @@ import Fab from "./Fab";
 import Button from "./Button";
 import Dialog from "../dialogs/Dialog";
 import GameMenu from "../dialogs/GameMenu";
-import { Jukebox, useAudioSettings } from "../misc";
-import { showOfflineMessage } from "../UiActions";
+import Jukebox, { useAudioSettings } from "../misc/Jukebox";
 import { enterFullscreen, useFullscreenAvailable } from "../../helper/fullscreen";
 import { createUseStyles } from "react-jss";
 
@@ -30,7 +29,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   actions: {
     position: "absolute",
-    zIndex: 4,
+    zIndex: theme.layer.hud,
     display: "flex",
     top: theme.edge.top,
     left: theme.edge.left,
@@ -193,15 +192,9 @@ const mapStateToProps = (state) => ({
   game: selectActiveGame(state),
   paused: state.match.paused,
   matchOnline: state.match.online,
-  // the server answers (connectivity)
-  online: state.ui.online,
-  players: state.players,
-  language: state.ui.language,
   tutorial: state.ui.tutorial,
   tutorialInteractive: state.ui.tutorialInteractive,
 });
 
-const mapDispatchToProps = { showOfflineMessage };
-
-const ActionbarContainer = connect(mapStateToProps, mapDispatchToProps)(Actionbar);
+const ActionbarContainer = connect(mapStateToProps)(Actionbar);
 export default ActionbarContainer;

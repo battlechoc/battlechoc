@@ -1,11 +1,8 @@
 import React, { useState } from "react";
 import { connect } from "react-redux";
-import {
-  hideQuickMessage,
-  showQuickMessage,
-  loadUiState,
-} from "../UiActions";
-import { Jukebox, useAudioSettings } from "../misc";
+import { showQuickMessage } from "../uiSlice";
+import { tipsEnabledChanged, autoFullscreenChanged } from "../../settingsSlice";
+import Jukebox, { useAudioSettings } from "../misc/Jukebox";
 import {
   translate as t,
   translationKeys as tr,
@@ -13,8 +10,9 @@ import {
   unlocks,
 } from "@battlechoc/battlechoc-shared-functions";
 import OfflineStore from "../../OfflineStore";
-import { ServerRequest } from "../../helper/settings";
+import { sendProblemReport } from "../../api/profile";
 import logger from "../../helper/logger";
+import { isNamed } from "../../helper/playerName";
 import { version, commit } from "../../build";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
@@ -145,7 +143,7 @@ const Settings = (props) => {
           version: version,
           commit: commit,
         };
-        await ServerRequest("post", "/debugging/gamestate", { report: report });
+        await sendProblemReport(report);
         props.showQuickMessage({
           text: t(tr.SUCCESSFULLY_SENDING_PROBLEM_REPORT),
           variant: "success",
@@ -310,11 +308,7 @@ const Settings = (props) => {
               <Button
                 className={classes.button}
                 color="secondary"
-                onClick={() => {
-                  const enabled = !props.autoFullscreen;
-                  props.loadUiState({ autoFullscreen: enabled });
-                  OfflineStore.settingsStore.set("autoFullscreen", enabled);
-                }}
+                onClick={() => props.autoFullscreenChanged(!props.autoFullscreen)}
               >
                 {props.autoFullscreen
                   ? t(tr.SETTINGS_AUTO_FULLSCREEN_ON)
@@ -337,9 +331,7 @@ const Settings = (props) => {
               color="secondary"
               onClick={() => {
                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
-                const enabled = !props.tipsEnabled;
-                props.loadUiState({ tipsEnabled: enabled });
-                OfflineStore.settingsStore.set("tips", enabled);
+                props.tipsEnabledChanged(!props.tipsEnabled);
               }}
             >
               {props.tipsEnabled ? t(tr.SETTINGS_TIPS_ON) : t(tr.SETTINGS_TIPS_OFF)}
@@ -357,7 +349,7 @@ const Settings = (props) => {
               // not during a match: the tutorial runs its own
               if (
                 typeof props.game === "undefined" &&
-                (props.playerInfos.stats.username !== "Chocnonymous" ||
+                (isNamed(props.playerInfos.stats) ||
                   props.playerInfos.stats.tutorialSkipped === true ||
                   props.playerInfos.stats.tutorialFinished === true)
               ) {
@@ -405,16 +397,15 @@ const Settings = (props) => {
 const mapStateToProps = (state) => ({
   game: state.match.view,
   playerInfos: state.ui.playerInfos,
-  tutorial: state.ui.tutorial,
-  tipsEnabled: state.ui.tipsEnabled,
-  autoFullscreen: state.ui.autoFullscreen,
+  tipsEnabled: state.settings.tipsEnabled,
+  autoFullscreen: state.settings.autoFullscreen,
   earlyUnlock: state.ui.earlyUnlock,
 });
 
 const mapDispatchToProps = {
-  loadUiState,
-  hideQuickMessage,
   showQuickMessage,
+  tipsEnabledChanged,
+  autoFullscreenChanged,
 };
 
 const SettingsContainer = connect(

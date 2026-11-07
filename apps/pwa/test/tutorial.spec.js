@@ -1,10 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { openWithStats, wonMatches } from "./helpers/profile.js";
+import { host, advance } from "./helpers/clock.js";
+import { sceneSettled } from "./helpers/match.js";
 
 // The tutorial on the real-time engine. ?testclock gives the lesson a manual clock
 // (window.__battlechoc.host.clock.advance), the demos always run on their own fast clock.
 
-const host = (page, fn, arg) => page.evaluate(fn, arg);
-const advance = (page, ms) => host(page, (ms) => window.__battlechoc.host.clock.advance(ms), ms);
 const submit = (page, type, payload) =>
   host(
     page,
@@ -39,18 +40,34 @@ const expectPointerOn = async (page, board, check) => {
 };
 // taps the field under the fingertip, once the camera stands still
 const tapPointer = async (page) => {
-  await page.waitForFunction(() => window.__battlechocScene && !window.__battlechocScene.flight);
-  await page.waitForTimeout(300);
+  await sceneSettled(page);
+  // and the hand has stopped following it (the same place over a few frames)
+  await pointer(page).evaluate(
+    (element) =>
+      new Promise((resolve) => {
+        let last = null;
+        const check = () => {
+          const place = `${element.style.left},${element.style.top}`;
+          if (place === last) {
+            resolve();
+          } else {
+            last = place;
+            requestAnimationFrame(() => requestAnimationFrame(check));
+          }
+        };
+        check();
+      })
+  );
   const { x, y } = await pointer(page).evaluate((element) => ({ x: parseFloat(element.style.left), y: parseFloat(element.style.top) }));
   await page.mouse.click(x, y);
 };
 
 test("the lesson teaches a whole match against Mimi Marzipan", async ({ page }) => {
   await page.goto("/?testclock", { waitUntil: "networkidle" });
-  await page.locator("div[class^=menu] > div:first-child").click();
+  await page.getByTestId("start-button").click();
   await expectStep(page, "welcome");
   await expect(pointer(page)).toHaveCount(0);
-  await step(page).locator("[class*=iconButton]").click();
+  await step(page).locator("[role=button][data-icon]").click();
 
   // the hand shows a dark field for the factory; a tap there places it
   await expectStep(page, "factory");
@@ -60,7 +77,7 @@ test("the lesson teaches a whole match against Mimi Marzipan", async ({ page }) 
   await advance(page, 3000);
   await expectStep(page, "slots");
   await expect(pointer(page)).toHaveCount(0);
-  await step(page).locator("[class*=iconButton]").click();
+  await step(page).locator("[role=button][data-icon]").click();
 
   // the tree is picked for the player, the hand shows a free white field
   await expectStep(page, "tree");
@@ -115,7 +132,7 @@ test("the lesson teaches a whole match against Mimi Marzipan", async ({ page }) 
   // offline there is no account: the player picks a name to finish
   await expect(page.getByTestId("tutorial-name")).toBeVisible();
   await page.locator("input:visible").first().fill("Lessonia");
-  await page.locator("div[class^=actionButton]:visible").first().click();
+  await page.getByTestId("name-submit").filter({ visible: true }).first().click();
   // the first finished lesson brings the starter kit (the server credits it once the device syncs)
   const kit = page.getByTestId("starter-kit");
   await expect(kit).toBeVisible();
@@ -126,34 +143,17 @@ test("the lesson teaches a whole match against Mimi Marzipan", async ({ page }) 
 
 test("skipping the lesson returns to the title screen", async ({ page }) => {
   await page.goto("/", { waitUntil: "networkidle" });
-  await page.locator("div[class^=menu] > div:first-child").click();
+  await page.getByTestId("start-button").click();
   await expectStep(page, "welcome");
   await step(page).getByText("Skip tutorial").click();
   await expect(step(page)).toHaveCount(0);
-  await expect(page.locator("div[class^=menu] > div:first-child")).toBeVisible();
+  await expect(page.getByTestId("start-button")).toBeVisible();
   expect(await host(page, () => window.__battlechoc.host === undefined || window.__battlechoc.host.stopped)).toBe(true);
 });
 
 test("the building demos play on the real engine", async ({ page }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
-  await page.waitForFunction(() => document.body.innerText.trim().length > 0);
   // a player who won once: the demos are in the settings
-  await page.evaluate(
-    () =>
-      new Promise((resolve, reject) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const tx = open.result.transaction("player", "readwrite");
-          const store = tx.objectStore("player");
-          const get = store.get("stats");
-          get.onsuccess = () =>
-            store.put(Object.assign({}, get.result || {}, { username: "Tester", score: 150, tutorialFinished: true, trackRecord: [{ id: "first", won: true, winners: [{ idx: 0 }] }] }), "stats");
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => reject(tx.error);
-        };
-      })
-  );
-  await page.goto("/", { waitUntil: "networkidle" });
+  await openWithStats(page, { username: "Tester", score: 150, tutorialFinished: true, trackRecord: wonMatches(1) });
   await page.locator("[data-icon=settings]:visible").first().click();
   await page.getByText("Show the buildings", { exact: true }).click();
 
@@ -187,7 +187,7 @@ test("the building demos play on the real engine", async ({ page }) => {
       );
       await page.screenshot({ path: "test/output/screenshot_demo_ballista.png" });
     }
-    await step(page).locator("[class*=iconButton]").last().click();
+    await step(page).locator("[role=button][data-icon]").last().click();
   }
   await expect(step(page)).toHaveCount(0);
 });

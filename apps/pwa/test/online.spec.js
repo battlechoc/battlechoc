@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { readEntry, writeEntry } from "./helpers/profile.js";
 
 // Live matches between two browsers against the local API that playwright.config.js starts; the
 // players are made in helpers/players.js.
@@ -143,18 +144,7 @@ const offlineDevice = async (browser, stats) => {
   const page = await context.newPage();
   await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.body.innerText.trim().length > 0);
-  await page.evaluate(
-    (value) =>
-      new Promise((resolve) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const tx = open.result.transaction("player", "readwrite");
-          tx.objectStore("player").put(value, "stats");
-          tx.oncomplete = () => resolve();
-        };
-      }),
-    stats
-  );
+  await writeEntry(page, "player", "stats", stats);
   await page.goto("/", { waitUntil: "networkidle" });
   return { context, page };
 };
@@ -164,7 +154,7 @@ const chooseNameOffline = async (page, name) => {
   await page.locator("[data-icon=user]:visible").click();
   await page.getByTestId("change-name").click();
   await page.locator("input:visible").first().fill(name);
-  await page.locator("div[class^=actionButton]:visible").first().click();
+  await page.getByTestId("name-submit").filter({ visible: true }).first().click();
   await expect(page.getByTestId("name-unsynced").filter({ visible: true })).toHaveCount(1);
   await page.locator("[data-icon=close]:visible").first().click();
 };
@@ -175,16 +165,7 @@ const profileName = async (page, name) => {
   await page.locator("[data-icon=user]:visible").click();
   await expect(page.getByText(name.slice(0, 12)).filter({ visible: true }).first()).toBeVisible();
   await expect(page.getByTestId("name-unsynced")).toHaveCount(0);
-  const stats = await page.evaluate(
-    () =>
-      new Promise((resolve) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const get = open.result.transaction("player").objectStore("player").get("stats");
-          get.onsuccess = () => resolve(get.result);
-        };
-      })
-  );
+  const stats = await readEntry(page, "player", "stats");
   expect({ username: stats.username, pending: Boolean(stats.usernamePending) }).toEqual({ username: name, pending: false });
 };
 

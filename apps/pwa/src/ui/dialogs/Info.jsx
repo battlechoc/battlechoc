@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { createUseStyles } from "react-jss";
 import Fab from "../controls/Fab";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import {
   translate as t,
   translationKeys as tr,

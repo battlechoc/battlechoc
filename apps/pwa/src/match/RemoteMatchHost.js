@@ -1,4 +1,4 @@
-import { BattlechocError, live } from "@battlechoc/battlechoc-shared-functions";
+import { BattlechocError, live, engine } from "@battlechoc/battlechoc-shared-functions";
 import {
   matchUpdated,
   matchAwarded,
@@ -160,7 +160,7 @@ class RemoteMatchHost {
   }
 
   surrender() {
-    return this.submit("battlechoc/match/surrender");
+    return this.submit(engine.MatchActionTypes.surrender);
   }
 
   // the server keeps the match; nothing to pause or save on this device

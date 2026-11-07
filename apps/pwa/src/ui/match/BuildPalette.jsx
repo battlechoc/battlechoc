@@ -7,34 +7,14 @@ import {
   unlocks,
   buildingsUnlockedBetween,
 } from "@battlechoc/battlechoc-shared-functions";
-import { selectBuilding, tapBuilding, focusBoard, deselectBuildings } from "../UiActions";
+import { selectBuilding, tapBuilding, focusBoard, deselectBuildings } from "../uiSlice";
 import { fruitCannonPossible } from "../../match/fruitCannon";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import { LESSON } from "../../tutorial/ids";
+import { BUILD_PALETTE, BUILDING_ICON, DONUT_ICON, iconUrl } from "../../catalog";
+import { rise } from "../styles";
 
-const buildings = [
-  { type: EntityType.CACAOTREE, image: "cacao-tree" },
-  { type: EntityType.RUM_TRUFFLE_CANNON, image: "truffle-cannon" },
-  { type: EntityType.CREAM, image: "cream" },
-  { type: EntityType.FACTORY_EXTENSION, image: "factory-extension" },
-  { type: EntityType.SPYING_EASTER_BUNNY, image: "easter-bunny" },
-  { type: EntityType.XMAS_FACTORY, image: "xmas-factory" },
-  { type: EntityType.CHOCOLATE_FOUNTAIN, image: "fountain" },
-  { type: EntityType.FRUIT_CANNON, image: "fruit-cannon" },
-  { type: EntityType.DONUT_FACTORY, image: "donut-factory" },
-];
-
-const donutImages = {
-  [EntityType.DONUT_PORTAL_BLUE]: "portal-donut",
-  [EntityType.DONUT_PORTAL_RED]: "portal-donut",
-  [EntityType.DONUT_SURPRISE_YELLOW]: "surprise-donut",
-  [EntityType.DONUT_HEALTH_GREEN]: "health-donut",
-  [EntityType.DONUT_STOP_PINK]: "stop-donut",
-  [EntityType.DONUT_CREAM_WHITE]: "cream-donut",
-};
-
-// the picture of each building, for the dialog that announces new ones too (dialogs/Unlocked.jsx)
-export const buildingImages = Object.fromEntries(buildings.map((building) => [building.type, building.image]));
+const buildings = BUILD_PALETTE.map((type) => ({ type, image: BUILDING_ICON[type] }));
 
 // the room between two buttons
 const GAP = 6;
@@ -98,7 +78,7 @@ const useStyles = createUseStyles((theme) => ({
   },
   locked: {
     border: `0.4vw solid ${theme.color.accent.dark}`,
-    background: `linear-gradient(0deg, ${theme.color.accent.dark} 0%, ${theme.color.accent.light} 80%)`,
+    background: rise(theme.color.accent, "80%"),
     cursor: "default",
     "& > .icon": { backgroundSize: "50% 50%", backgroundPosition: "center" },
   },
@@ -204,7 +184,7 @@ const BuildPalette = ({
             <div
               className="icon"
               style={{
-                backgroundImage: `url(/images/${donutImages[pendingDonut.type]}-icon.svg)`,
+                backgroundImage: `url(${iconUrl(DONUT_ICON[pendingDonut.type])})`,
               }}
             />
           </div>
@@ -214,7 +194,7 @@ const BuildPalette = ({
         {buildings.map((building) => {
           if (!unlocked(building.type)) {
             return (
-              <div key={building.type} className={`${classes.item} ${classes.locked}`}>
+              <div key={building.type} className={`${classes.item} ${classes.locked}`} data-locked="true">
                 <div className="icon" style={{ backgroundImage: "url(/images/lock.svg)" }} />
               </div>
             );
@@ -241,7 +221,7 @@ const BuildPalette = ({
             >
               <div
                 className="icon"
-                style={{ backgroundImage: `url(/images/${building.image}-icon.svg)` }}
+                style={{ backgroundImage: `url(${iconUrl(building.image)})` }}
               />
               {costs > 0 ? <div className={classes.costs}>{costs}</div> : null}
             </div>

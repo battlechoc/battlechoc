@@ -9,11 +9,11 @@ import {
 import Dialog from "./Dialog";
 import Button from "../controls/Button";
 import { liveLobby } from "../../match/liveLobby";
-import { liveConnection } from "../../match/liveConnection";
 import { challengeViewed } from "../../match/liveSlice";
 import { challengeLink } from "../../challengeLink";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import { CHALLENGE_UNREACHABLE_MS } from "./challengeTiming";
+import { useCountdown, minutesAndSeconds, Pill } from "../controls/Countdown";
 
 const { ChallengeState, formatChallengeCode, normalizeChallengeCode } = live;
 
@@ -87,13 +87,9 @@ const useStyles = createUseStyles((theme) => ({
     border: "2px dashed rgba(255, 255, 255, 0.55)",
     background: "rgba(93, 58, 36, 0.55)",
   },
+  // beside the status line
   pill: {
-    display: "inline-block",
     marginLeft: "0.5em",
-    padding: "0.05em 0.6em",
-    borderRadius: "1em",
-    background: "rgba(255, 255, 255, 0.18)",
-    fontFamily: theme.font.display,
   },
   divider: {
     width: "70%",
@@ -111,13 +107,6 @@ const ENDED = {
   lost: tr.CHALLENGE_LOST,
 };
 
-const countdown = (expiresAt) => {
-  const total = Math.max(
-    0,
-    Math.ceil((expiresAt - liveConnection.clock.serverNow()) / 1000)
-  );
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-};
 
 // a friend's code typed in (an iPhone's home-screen app does not get the link): opens their card
 const CodeEntry = ({ classes, openCode }) => {
@@ -184,18 +173,14 @@ const ChallengeDialog = ({
     );
     return () => clearTimeout(timeoutId);
   }, [waitingForServer]);
-  const [, setTick] = useState(0);
+  // the challenge's time left, renewed every second while the dialog is open
+  const secondsLeft = useCountdown(challenge ? challenge.expiresAt : undefined, open && !locked);
 
   useEffect(() => {
-    if (!open || locked) {
-      return undefined;
-    }
     // a challenge restored after a reload is shown as it is
-    if (challenge === null) {
+    if (open && !locked && challenge === null) {
       liveLobby.createChallenge().catch(() => {});
     }
-    const interval = setInterval(() => setTick((tick) => tick + 1), 1000);
-    return () => clearInterval(interval);
     // only when the dialog opens
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, locked]);
@@ -332,9 +317,9 @@ const ChallengeDialog = ({
         <p data-testid="challenge-status">
           {status}
           {waiting ? (
-            <span className={classes.pill} data-testid="challenge-countdown">
-              {countdown(challenge.expiresAt)}
-            </span>
+            <Pill className={classes.pill} data-testid="challenge-countdown">
+              {minutesAndSeconds(secondsLeft)}
+            </Pill>
           ) : null}
         </p>
         {cancelButton}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import logger from "../../helper/logger";
-import OfflineStore from "../../OfflineStore";
-import { AudioClip } from "./audioClip";
+import logger from "../../helper/logger.js";
+import OfflineStore from "../../OfflineStore.js";
+import { AudioClip } from "./audioClip.js";
 
 class Jukebox {
   constructor() {
@@ -88,7 +88,7 @@ class Jukebox {
         clicks: this.clicks,
       })
       .catch((err) => {
-        console.warn("Could not persist audio settings. ", err);
+        logger.warn("Could not persist audio settings. ", err);
       });
     const settings = this.settings();
     this.listeners.forEach((listener) => listener(settings));

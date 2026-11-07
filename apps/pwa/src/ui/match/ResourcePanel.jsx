@@ -4,6 +4,7 @@ import { createUseStyles, useTheme } from "react-jss";
 import { engine } from "@battlechoc/battlechoc-shared-functions";
 import useMatchTime from "./useMatchTime";
 import ProgressRing from "./ProgressRing";
+import { outlined } from "../styles";
 
 const POP_MS = 1400;
 
@@ -31,8 +32,7 @@ const useStyles = createUseStyles((theme) => ({
       fontFamily: theme.font.display,
       // the number sits next to the big round icon, so it takes the headline step
       fontSize: theme.font.size.xl,
-      "-webkit-text-stroke": `${theme.font.stroke} ${theme.color.secondary.dark}`,
-      "-webkit-font-smoothing": "antialiased",
+      ...outlined(theme),
     },
   },
   icon: {

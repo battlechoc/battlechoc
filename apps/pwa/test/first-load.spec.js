@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { writeSetting } from "./helpers/profile.js";
 
 // The first start of the game: the title screen (logo, decoration, buttons) does not wait for the
 // 3D models; the start button fills up while they load and starts the game once they are in. The
@@ -56,7 +57,7 @@ test("the title screen works before the 3D models are in; the start button fills
   await expect(
     page.getByText("Skip Tutorial", { exact: true }).first()
   ).toBeVisible();
-  await expect(page.locator("[class^=logo]").first()).toBeVisible();
+  await expect(page.getByTestId("title-logo")).toBeVisible();
   await page.screenshot({
     path: "test/output/screenshot_first_load_loading.png",
   });
@@ -97,20 +98,13 @@ test("muted, the music is not loaded until the sound is switched on", async ({
     requests.some((url) => url.includes("/music/CacaoLiving.mp3"));
   await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.body.innerText.trim().length > 0);
-  await page.evaluate(
-    () =>
-      new Promise((resolve) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const tx = open.result.transaction("settings", "readwrite");
-          tx.objectStore("settings").put(
-            { musicMuted: true, sfxMuted: true, musicVolume: 1, soundVolume: 1, clicks: true },
-            "audio"
-          );
-          tx.oncomplete = () => resolve();
-        };
-      })
-  );
+  await writeSetting(page, "audio", {
+    musicMuted: true,
+    sfxMuted: true,
+    musicVolume: 1,
+    soundVolume: 1,
+    clicks: true,
+  });
   requests.length = 0;
   await page.goto("/");
   const start = page.getByTestId("start-button");
@@ -143,7 +137,7 @@ test("what the player opens next arrives with the title screen: offline right af
   // nobody has tapped anything yet
   for (const chunk of [
     "onDemandDialogs",
-    "Choclab",
+    "Lab",
     "Tutorial",
     "GameEndOverview",
   ]) {
@@ -219,7 +213,7 @@ for (const viewport of [
     });
 
     release();
-    const logo = page.locator("[class^=logo] > div").first();
+    const logo = page.getByTestId("title-logo").locator(":scope > div").first();
     await expect(logo).toBeVisible({ timeout: 15000 });
     expect(await logoBox(logo)).toEqual(before);
     await expect(page.locator(".splash")).toHaveCount(0);
