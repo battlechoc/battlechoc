@@ -6,7 +6,7 @@ import {
   AttackType,
 } from "@battlechoc/battlechoc-shared-functions";
 import { selectAttack, focusBoard } from "../uiSlice";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import useMatchTime from "./useMatchTime";
 import ProgressRing from "./ProgressRing";
 import TapPointer from "../controls/TapPointer";

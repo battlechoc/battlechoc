@@ -137,7 +137,7 @@ test("what the player opens next arrives with the title screen: offline right af
   // nobody has tapped anything yet
   for (const chunk of [
     "onDemandDialogs",
-    "Choclab",
+    "Lab",
     "Tutorial",
     "GameEndOverview",
   ]) {

@@ -10,7 +10,7 @@ import {
 import { selectActiveGame } from "../../match/matchSlice";
 import { submit, ignoreRuleErrors } from "../match/submit";
 import useMatchTime from "../match/useMatchTime";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import { createUseStyles } from "react-jss";
 
 const useStyles = createUseStyles((theme) => ({

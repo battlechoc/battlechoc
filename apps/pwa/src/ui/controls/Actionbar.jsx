@@ -11,7 +11,7 @@ import Fab from "./Fab";
 import Button from "./Button";
 import Dialog from "../dialogs/Dialog";
 import GameMenu from "../dialogs/GameMenu";
-import { Jukebox, useAudioSettings } from "../misc";
+import Jukebox, { useAudioSettings } from "../misc/Jukebox";
 import { enterFullscreen, useFullscreenAvailable } from "../../helper/fullscreen";
 import { createUseStyles } from "react-jss";
 

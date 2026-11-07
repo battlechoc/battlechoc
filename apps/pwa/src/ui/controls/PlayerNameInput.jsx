@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { ServerRequest } from "../../helper/settings";
+import { checkUsername } from "../../api/profile";
 import { isCancel } from "../../helper/http";
 import { createUseStyles } from "react-jss";
 import logger from "../../helper/logger";
@@ -154,12 +154,11 @@ const PlayerNameInput = (componentProps) => {
 
           try {
             setRequestRunning(true);
-            let response = await ServerRequest(
-              "get",
-              "/check/available/" + playerName,
+            const { available } = await checkUsername(
+              playerName,
               abortController.current.signal
             );
-            setPlayerNameAvailable(response.data.available);
+            setPlayerNameAvailable(available);
             setBadInternetConnection(false);
           } catch (error) {
             if (

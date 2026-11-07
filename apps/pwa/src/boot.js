@@ -5,7 +5,7 @@ import {
 } from "@battlechoc/battlechoc-shared-functions";
 import OfflineStore from "./OfflineStore";
 import { multiplayer } from "./Multiplayer";
-import { Jukebox } from "./ui/misc";
+import Jukebox from "./ui/misc/Jukebox";
 import {
   updatePlayerStats,
   setPlayerRank,
@@ -68,6 +68,8 @@ export const boot = ({ dispatch, challengeCode, connectLive, onLanguage }) => {
     // a name chosen offline was taken meanwhile: the player chooses another (NameConflict)
     nameConflict: (conflict) => dispatch(nameConflictChanged(conflict)),
   });
+  // the device account and the player's profile on the server (offline: on a later start)
+  multiplayer.start();
 
   // the language the player chose, else the browser's (ja-JP → ja; English when the game
   // has no texts in it); a device may still hold the old codes jp and vn

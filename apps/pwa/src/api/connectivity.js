@@ -1,5 +1,5 @@
-import { apiUrl } from "./account";
-import { liveConnection } from "./match/liveConnection";
+import { apiUrl } from "./account.js";
+import { liveConnection } from "../match/liveConnection.js";
 
 const CHECK_TIMEOUT_MS = 5000;
 const RECHECK_MS = 20000;

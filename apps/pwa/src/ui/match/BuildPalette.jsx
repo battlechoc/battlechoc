@@ -9,7 +9,7 @@ import {
 } from "@battlechoc/battlechoc-shared-functions";
 import { selectBuilding, tapBuilding, focusBoard, deselectBuildings } from "../uiSlice";
 import { fruitCannonPossible } from "../../match/fruitCannon";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import { LESSON } from "../../tutorial/ids";
 
 const buildings = [

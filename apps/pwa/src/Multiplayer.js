@@ -1,13 +1,13 @@
-import OfflineStore from "./OfflineStore";
+import OfflineStore from "./OfflineStore.js";
 import {
   EmptyPlayerStats,
   translate as t,
   translationKeys as tr,
   engine,
 } from "@battlechoc/battlechoc-shared-functions";
-import { ServerRequest } from "./helper/settings";
-import { account } from "./account";
-import logger from "./helper/logger";
+import { account } from "./api/account.js";
+import * as profile from "./api/profile.js";
+import logger from "./helper/logger.js";
 
 // Player profile and social features against the battlechoc API (device account). Online
 // matches are live (match/liveLobby.js).
@@ -36,8 +36,12 @@ class Multiplayer {
       showNotification: notInitialized("showNotification"),
       nameConflict: notInitialized("nameConflict"),
     };
+  }
 
-    account
+  // the device account (created on the first start), then the player entry, the merge of the
+  // stats kept offline and the rank; called once at the start (src/boot.js), after the callbacks
+  start() {
+    return account
       .ensure()
       .then(() => this.accountReady())
       .catch((error) => logger.info("playing offline, no account yet", error));
@@ -50,7 +54,7 @@ class Multiplayer {
   async accountReady() {
     this.callbacks.notifyPlayerSignedIn({ uid: account.playerId });
     try {
-      await ServerRequest("post", "/user");
+      await profile.createPlayer();
       const mergedStats = await this.mergePlayerStats();
       if (
         typeof mergedStats !== "undefined" &&
@@ -95,7 +99,7 @@ class Multiplayer {
   }
 
   async subscribeToPush() {
-    const { publicKey } = (await ServerRequest("get", "/push/key")).data;
+    const { publicKey } = await profile.fetchPushKey();
     if (!publicKey || !("serviceWorker" in navigator)) {
       return;
     }
@@ -106,9 +110,7 @@ class Multiplayer {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       }));
-    await ServerRequest("post", "/push/subscription", {
-      subscription: subscription.toJSON(),
-    });
+    await profile.sendPushSubscription(subscription.toJSON());
   }
 
   // a push message forwarded by the service worker while the app is open
@@ -125,7 +127,8 @@ class Multiplayer {
 
   async setRandomPlayerName() {
     const generatedName = await this.fetchRandomName();
-    ServerRequest("post", "/user/username", { username: generatedName })
+    profile
+      .claimUsername(generatedName)
       .then(async () => {
         this.callbacks.showNotification({
           title: t(tr.PLAYER_NAME_GENERATED_TITLE),
@@ -161,7 +164,7 @@ class Multiplayer {
       await this.setUsernameOffline(username);
       return;
     }
-    await ServerRequest("post", "/user/username", { username });
+    await profile.claimUsername(username);
     await this.usernameSynced(username);
   }
 
@@ -190,7 +193,7 @@ class Multiplayer {
       }
       await account.ensure();
       try {
-        await ServerRequest("post", "/user/username", { username: stats.username });
+        await profile.claimUsername(stats.username);
         await this.usernameSynced(stats.username);
       } catch (error) {
         if (error.response && error.response.status === 400) {
@@ -210,7 +213,7 @@ class Multiplayer {
     if (generated === EmptyPlayerStats.username) {
       return;
     }
-    await ServerRequest("post", "/user/username", { username: generated });
+    await profile.claimUsername(generated);
     await this.usernameSynced(generated);
     this.callbacks.nameConflict({ taken, generated });
   }
@@ -248,9 +251,7 @@ class Multiplayer {
   async pushGameStats(gameStats) {
     if (this.signedIn()) {
       try {
-        const data = (
-          await ServerRequest("post", "/user/trackrecords", { stats: gameStats })
-        ).data;
+        const data = await profile.sendTrackRecords(gameStats);
         this.callbacks.updatePlayerStats(await this.withPendingName(data.stats));
         return;
       } catch (error) {
@@ -296,9 +297,7 @@ class Multiplayer {
       return this.fetchPlayerStats();
     }
     try {
-      const data = (
-        await ServerRequest("post", "/user/merge", { playerInfo: offlineAccount })
-      ).data;
+      const data = await profile.mergeProfile(offlineAccount);
       // A name chosen offline stays until the server has it (or turns it down). So does a name
       // the device has but the server's account does not, e.g. from before this server: the
       // merge takes it when it is free, so here it is taken (syncPendingUsername replaces it).
@@ -325,7 +324,7 @@ class Multiplayer {
   async fetchPlayerStats() {
     if (this.signedIn()) {
       try {
-        const data = (await ServerRequest("get", "/user")).data;
+        const data = await profile.fetchOwnProfile();
         const stats = await this.withPendingName(data.stats);
         this.callbacks.updatePlayerStats(stats);
         return stats;
@@ -377,7 +376,7 @@ class Multiplayer {
     }
     if (this.signedIn()) {
       try {
-        const data = (await ServerRequest("post", "/user/tutorial/" + step)).data;
+        const data = await profile.sendTutorialStep(step);
         const stats = await this.withPendingName(data.stats);
         this.callbacks.updatePlayerStats(stats);
         return stats;
@@ -410,7 +409,7 @@ class Multiplayer {
       if (!this.signedIn()) {
         throw new Error("offline");
       }
-      const data = (await ServerRequest("get", "/rank")).data;
+      const data = await profile.fetchRank();
       this.callbacks.setPlayerRank(data.ranking);
     } catch {
       this.callbacks.setPlayerRank("Offline");
@@ -418,17 +417,12 @@ class Multiplayer {
   }
 
   async fetchHighscore(page) {
-    return (
-      await ServerRequest(
-        "get",
-        "/highscore" + (typeof page !== "undefined" ? "?page=" + page : "")
-      )
-    ).data;
+    return profile.fetchHighscore(page);
   }
 
   async fetchRandomName() {
     try {
-      return (await ServerRequest("get", "/generaterandomname")).data.username;
+      return (await profile.fetchRandomName()).username;
     } catch (error) {
       logger.warn("Could not create a random player name.", error);
       return EmptyPlayerStats.username;

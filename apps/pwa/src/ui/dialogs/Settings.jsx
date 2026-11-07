@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { connect } from "react-redux";
 import { showQuickMessage } from "../uiSlice";
 import { tipsEnabledChanged, autoFullscreenChanged } from "../../settingsSlice";
-import { Jukebox, useAudioSettings } from "../misc";
+import Jukebox, { useAudioSettings } from "../misc/Jukebox";
 import {
   translate as t,
   translationKeys as tr,
@@ -10,7 +10,7 @@ import {
   unlocks,
 } from "@battlechoc/battlechoc-shared-functions";
 import OfflineStore from "../../OfflineStore";
-import { ServerRequest } from "../../helper/settings";
+import { sendProblemReport } from "../../api/profile";
 import logger from "../../helper/logger";
 import { version, commit } from "../../build";
 import { createUseStyles } from "react-jss";
@@ -142,7 +142,7 @@ const Settings = (props) => {
           version: version,
           commit: commit,
         };
-        await ServerRequest("post", "/debugging/gamestate", { report: report });
+        await sendProblemReport(report);
         props.showQuickMessage({
           text: t(tr.SUCCESSFULLY_SENDING_PROBLEM_REPORT),
           variant: "success",

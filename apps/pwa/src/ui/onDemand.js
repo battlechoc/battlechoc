@@ -12,7 +12,7 @@ import { loadChunk } from "../helper/loadChunk";
 // re-exports them) puts them back into the first load.
 
 const dialogs = loadChunk(() => import("./dialogs/onDemandDialogs"));
-const lab = loadChunk(() => import("./pages/Choclab"));
+const lab = loadChunk(() => import("./lab/Lab"));
 const tutorial = loadChunk(() => import("../tutorial/Tutorial"));
 const gameEnd = loadChunk(() => import("./controls/GameEndOverview"));
 

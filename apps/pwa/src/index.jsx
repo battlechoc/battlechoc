@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import "./index.css";
 import App from "./App";
-import * as serviceWorker from "./serviceWorker";
+import * as serviceWorker from "./registerServiceWorker";
 import {
   translate as t,
   translationKeys as tr,
@@ -17,7 +17,7 @@ import {
   updateAvailableChanged,
   connectivityChanged,
 } from "./ui/uiSlice";
-import { connectivity } from "./connectivity";
+import { connectivity } from "./api/connectivity";
 import { fontsLoaded } from "./firstLoad";
 import { warmOnDemand } from "./ui/onDemand";
 import promiseDispatch from "./helper/promiseDispatch";

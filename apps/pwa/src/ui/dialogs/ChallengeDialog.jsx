@@ -12,7 +12,7 @@ import { liveLobby } from "../../match/liveLobby";
 import { liveConnection } from "../../match/liveConnection";
 import { challengeViewed } from "../../match/liveSlice";
 import { challengeLink } from "../../challengeLink";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 import { CHALLENGE_UNREACHABLE_MS } from "./challengeTiming";
 
 const { ChallengeState, formatChallengeCode, normalizeChallengeCode } = live;

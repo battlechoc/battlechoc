@@ -8,7 +8,7 @@ import {
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import IngredientBag from "../ui/ingredients/IngredientBag";
-import { Jukebox } from "../ui/misc";
+import Jukebox from "../ui/misc/Jukebox";
 import { multiplayer } from "../Multiplayer";
 import {
   updatePlayerStats,

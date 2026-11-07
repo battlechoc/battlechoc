@@ -1,6 +1,6 @@
 import { live } from "@battlechoc/battlechoc-shared-functions";
-import { account, liveUrl } from "../account";
-import logger from "../helper/logger";
+import { account, liveUrl } from "../api/account.js";
+import logger from "../helper/logger.js";
 
 const { ClientMessage, ServerMessage, CloseCode, ClockSync, LiveDefaults } =
   live;

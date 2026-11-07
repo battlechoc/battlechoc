@@ -1,4 +1,4 @@
-import logger from "./helper/logger";
+import logger from "./helper/logger.js";
 
 const isLocalhost = Boolean(
   window.location.hostname === "localhost" ||

@@ -8,7 +8,7 @@ import {
   attackDenied,
   toggleBoardView,
   loadUiState,
-} from "../ui/UiActions";
+} from "../ui/uiSlice";
 import { selectActiveGame } from "../match/matchSlice";
 import { matchSession } from "../match/LocalMatchHost";
 import { submit, ignoreRuleErrors } from "../ui/match/submit";
@@ -24,7 +24,7 @@ import {
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
-import { Jukebox } from "../ui/misc";
+import Jukebox from "../ui/misc/Jukebox";
 import {
   Scene as BabylonScene,
   DynamicTexture,

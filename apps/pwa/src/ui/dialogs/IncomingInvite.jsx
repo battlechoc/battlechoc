@@ -10,7 +10,7 @@ import Dialog from "./Dialog";
 import Button from "../controls/Button";
 import { liveLobby } from "../../match/liveLobby";
 import { liveConnection } from "../../match/liveConnection";
-import { Jukebox } from "../misc";
+import Jukebox from "../misc/Jukebox";
 
 const useStyles = createUseStyles((theme) => ({
   root: {

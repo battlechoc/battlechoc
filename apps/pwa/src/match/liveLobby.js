@@ -15,7 +15,7 @@ import {
   challengeRequested,
   challengeViewed,
 } from "./liveSlice.js";
-import logger from "../helper/logger.jsx";
+import logger from "../helper/logger.js";
 
 const { ClientMessage, ServerMessage, LiveError } = live;
 

@@ -1,7 +1,7 @@
 import React, { Component, Suspense } from "react";
 import { connect } from "react-redux";
 import "./App.css";
-import { Jukebox } from "./ui/misc";
+import Jukebox from "./ui/misc/Jukebox";
 import OfflineStore from "./OfflineStore";
 import { multiplayer } from "./Multiplayer";
 import { EmptyPlayerStats, engine, unlocks } from "@battlechoc/battlechoc-shared-functions";
@@ -10,11 +10,10 @@ import { RemoteMatchHost } from "./match/RemoteMatchHost";
 import { liveConnection } from "./match/liveConnection";
 import { liveLobby } from "./match/liveLobby";
 import { createMatchController } from "./match/matchController";
-import { account } from "./account";
+import { account } from "./api/account";
 import { MatchClock, ManualClock } from "./match/clock";
 import { hideQuickMessage } from "./ui/uiSlice";
-import { debugScenarios } from "./situations/scenarios";
-import { exposeForTests } from "./testHooks";
+import { exposeForTests, testHooksEnabled } from "./testHooks";
 import Hud from "./ui/Hud";
 import ErrorBoundary from "./ui/ErrorBoundary";
 import { uuid } from "./helper/uuid";
@@ -124,10 +123,18 @@ class App extends Component {
     if (!prevProps.assetsReady && this.props.assetsReady) {
       // the 3D models are in: now the music and the match sounds may take the connection
       Jukebox.loadDeferred();
-      const debugScenario = debugScenarios[this.state.situation];
-      if (typeof debugScenario !== "undefined") {
+      // a debug board (/situation/<md5>): its scenarios are a chunk of the test builds only, the
+      // published game has none
+      const { situation } = this.state;
+      if (testHooksEnabled && typeof situation !== "undefined") {
         this.setState({ situation: undefined });
-        this.match.startLocalMatch(undefined, debugScenario);
+        import("./situations/scenarios")
+          .then(({ debugScenarios }) => {
+            if (typeof debugScenarios[situation] !== "undefined") {
+              this.match.startLocalMatch(undefined, debugScenarios[situation]);
+            }
+          })
+          .catch((error) => logger.warn("could not load the debug boards", error));
       }
     }
 

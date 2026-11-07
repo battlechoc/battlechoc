@@ -28,9 +28,9 @@ import { liveLobby } from "../match/liveLobby";
 import { matchSession } from "../match/LocalMatchHost";
 import { retryAssets } from "../firstLoad";
 import { multiplayer } from "../Multiplayer";
-import { ServerRequest } from "../helper/settings";
+import { fetchProfile } from "../api/profile";
 import logger from "../helper/logger";
-import { account } from "../account";
+import { account } from "../api/account";
 import Button from "./controls/Button";
 import Fab from "./controls/Fab";
 import Progress from "./controls/Progress";
@@ -38,13 +38,11 @@ import Actionbar from "./controls/Actionbar";
 import GameStartSelection from "./controls/GameStartSelection";
 import { createUseStyles } from "react-jss";
 import { selectActiveGame } from "../match/matchSlice";
-import {
-  BuildPalette,
-  WeaponPalette,
-  ResourcePanel,
-  MatchBanner,
-  InfoCard,
-} from "./match";
+import BuildPalette from "./match/BuildPalette";
+import WeaponPalette from "./match/WeaponPalette";
+import ResourcePanel from "./match/ResourcePanel";
+import MatchBanner from "./match/MatchBanner";
+import InfoCard from "./match/InfoCard";
 
 // The title screen's logo: its top and size (a square in vh; logo.svg fills its width) and the
 // rays turning behind it, centred on the fountain (dev/icons.mjs puts it at x 308, y 22 to 392
@@ -282,11 +280,7 @@ const Hud = (props) => {
           while (!account.isReady()) {
             await sleep(100);
           }
-          const response = await ServerRequest(
-            "get",
-            "/user/" + challengedPlayer
-          );
-          openAccountOverview(response.data[0]);
+          openAccountOverview(await fetchProfile(challengedPlayer));
         } catch (error) {
           if (error.response) {
             if (error.response.status === 404) {
