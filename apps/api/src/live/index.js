@@ -12,6 +12,29 @@ const { Lobby } = require('./lobby');
 
 const { ClientMessage, ServerMessage, LiveError, CloseCode, InviteClosedReason, LiveDefaults, LIVE_PROTOCOL_VERSION } = live;
 
+// how long close() waits for the clients to answer the closing handshake
+const CLOSE_GRACE_MS = 2000;
+
+// a connection with more than this waiting to be written is dropped (see the heartbeat)
+const MAX_BUFFERED_BYTES = 1024 * 1024;
+
+// A room sends each player a full view with every change, about 40 KB of JSON on the big board.
+// Compressed it is a tenth of that (permessage-deflate, which browsers negotiate by themselves; a
+// client that does not offer it gets plain text as before). What bounds the cost per socket:
+const COMPRESSION = {
+    // acks, pongs and presence messages are sent as they are: there is nothing to gain
+    threshold: 1024,
+    // every message is compressed on its own, so no compression state (some 200 KB) stays with a
+    // socket between messages; for one big JSON document that costs next to nothing
+    serverNoContextTakeover: true,
+    clientNoContextTakeover: true,
+    // zlib calls at a time in the whole process (ws keeps one limiter for all sockets)
+    concurrencyLimit: 10,
+    // level 3 takes about as long as building the JSON and leaves 10 % of it; level 6 takes three
+    // times as long for 1 % more
+    zlibDeflateOptions: { level: 3, memLevel: 7 },
+};
+
 /**
  * @param {object} options
  * @param {import('http').Server} options.server
@@ -22,15 +45,20 @@ const { ClientMessage, ServerMessage, LiveError, CloseCode, InviteClosedReason, 
  * @param {string[]} [options.origins] allowed browser origins (no Origin header: allowed)
  */
 const createLive = ({ server, pool, auth, clock = systemClock, config = {}, origins = [], log = console, random }) => {
-    const settings = { ...LiveDefaults, ...config };
+    const settings = { closeGraceMs: CLOSE_GRACE_MS, maxBufferedBytes: MAX_BUFFERED_BYTES, ...LiveDefaults, ...config };
     const store = createMatchStore(pool);
     const lobby = new Lobby({ pool, store, clock, config: settings, log, random });
     const connections = new Set();
+    // set by close(): what clients send from then on is not handled (they reconnect after the restart)
+    let closing = false;
+    // resolves the wait of close() once the last connection is gone
+    let drained = () => {};
 
     const wss = new WebSocketServer({
         server,
         path: '/live',
         maxPayload: settings.maxMessageBytes,
+        perMessageDeflate: COMPRESSION,
         verifyClient: ({ origin }) => !origin || origins.length === 0 || origins.includes(origin),
     });
 
@@ -96,6 +124,10 @@ const createLive = ({ server, pool, auth, clock = systemClock, config = {}, orig
                     ws.send(JSON.stringify(message));
                 }
             },
+            // bytes handed to the socket that the client has not taken yet
+            unsent() {
+                return ws.bufferedAmount;
+            },
             sendError(code, uid) {
                 this.send({ type: ServerMessage.ERROR, code, ...(uid ? { uid } : {}) });
             },
@@ -147,7 +179,7 @@ const createLive = ({ server, pool, auth, clock = systemClock, config = {}, orig
             }
             // messages of a connection are handled one after the other
             connection.pending = connection.pending.then(async () => {
-                if (connection.closed) {
+                if (connection.closed || closing) {
                     return;
                 }
                 if (connection.playerId === null) {
@@ -177,6 +209,9 @@ const createLive = ({ server, pool, auth, clock = systemClock, config = {}, orig
             if (connection.playerId !== null) {
                 lobby.unregister(connection);
             }
+            if (connections.size === 0) {
+                drained();
+            }
         });
     });
 
@@ -188,15 +223,40 @@ const createLive = ({ server, pool, auth, clock = systemClock, config = {}, orig
             if (now - connection.lastSeenAt > settings.offlineAfterMs) {
                 // no closing handshake with a dead peer: drop the socket right away
                 connection.terminate();
+            } else if (connection.unsent() > settings.maxBufferedBytes) {
+                // A client that still talks but takes its messages slower than they are written (a
+                // throttled phone) lets them pile up in this process without end. Views cannot be
+                // skipped to keep the pile small: each one carries the events since the last the
+                // client got (room.publishTo), which the client plays once, so a skipped view
+                // would lose them. The connection is dropped instead: the client reconnects, joins
+                // with the last event it has and gets the current view with all it missed.
+                // Checked here and not in send(): a compressed message first waits in the queue of
+                // ws, so several sent in one go would look like a client that is behind.
+                log.warn(`live connection of ${connection.playerId} dropped: ${connection.unsent()} bytes behind`);
+                connection.terminate();
             }
         });
     }, settings.pingIntervalMs);
 
     /** Stops the service; running matches are saved and continue after the restart. */
     const close = async () => {
+        closing = true;
         clearInterval(heartbeat);
         await lobby.shutdown();
         connections.forEach(connection => connection.close(CloseCode.RESTART, 'restart'));
+        // A client that is gone (a phone without network) never answers the close, and its socket
+        // would keep the HTTP server from closing for half a minute: after a moment for the others
+        // to answer, what is left is dropped.
+        if (connections.size > 0) {
+            await new Promise(resolve => {
+                const timer = setTimeout(resolve, settings.closeGraceMs);
+                drained = () => {
+                    clearTimeout(timer);
+                    resolve();
+                };
+            });
+            connections.forEach(connection => connection.terminate());
+        }
         await new Promise(resolve => wss.close(() => resolve()));
     };
 

@@ -1,0 +1,22 @@
+// Device accounts: creating one and exchanging its refresh token for access tokens (auth.js).
+
+const players = require('../players');
+
+/**
+ * `limit`: the rate limit of creating accounts, `tokenLimit` the one of refreshing tokens. Over
+ * the limit both answer 429, never 401: on a 401 for its refresh token the game takes its account
+ * for gone and creates a new one.
+ */
+const registerAccountRoutes = (app, { pool, auth, limit, tokenLimit }) => {
+    app.post('/accounts', limit, async (req, res) => {
+        const playerId = await players.createPlayer(pool);
+        const refreshToken = await auth.createSession(playerId);
+        res.status(201).json({ playerId, refreshToken, ...(await auth.issueAccessToken(playerId)) });
+    });
+
+    app.post('/accounts/token', tokenLimit, async (req, res) => {
+        res.json(await auth.refresh(req.body && req.body.refreshToken));
+    });
+};
+
+module.exports = { registerAccountRoutes };

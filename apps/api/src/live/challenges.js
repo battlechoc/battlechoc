@@ -112,6 +112,11 @@ class Challenges {
         challenge.readers.clear();
     }
 
+    /** The server stops: the challenges end with it (they live in memory), and so do their timers. */
+    shutdown() {
+        [...this.byCode.values()].forEach(challenge => this.remove(challenge));
+    }
+
     // ends a challenge that has not started: everyone with the card open sees it ended
     end(challenge) {
         if (challenge.acceptedBy !== null) {

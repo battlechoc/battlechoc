@@ -1,5 +1,5 @@
 // The lab: trying ingredients on the lab table, crafting items from discovered recipes, the
-// recipe book, the inventory and the equipment slots.
+// recipe book and the equipment slots (a player's items are part of their stats).
 
 const crypto = require('crypto');
 const {
@@ -8,32 +8,14 @@ const {
 const players = require('../players');
 const pantry = require('../pantry');
 const { withTransaction } = require('../db');
+const { slidingWindowLimit } = require('../limits');
+const { HttpError, ErrorCode } = require('../errors');
 
 const HOUR_MS = 60 * 60 * 1000;
 
-class LabError extends Error {
-    constructor(status, code) {
-        super(code);
-        this.status = status;
-        this.code = code;
-    }
-}
-
-const registerLabRoutes = (app, { pool, user, handle, recipes, oneAtATime, triesPerHour = 30, now = () => Date.now() }) => {
-    const tries = new Map();
-
+const registerLabRoutes = (app, { pool, user, recipes, oneAtATime, triesPerHour = 30, now = () => Date.now() }) => {
     // at most `triesPerHour` tries per player in a sliding hour
-    const allowTry = playerId => {
-        const since = now() - HOUR_MS;
-        const recent = (tries.get(playerId) || []).filter(at => at > since);
-        if (recent.length >= triesPerHour) {
-            tries.set(playerId, recent);
-            return false;
-        }
-        recent.push(now());
-        tries.set(playerId, recent);
-        return true;
-    };
+    const tries = slidingWindowLimit({ windowMs: HOUR_MS, max: triesPerHour, now });
 
     const discoveries = async db => {
         const { rows } = await db.query(
@@ -54,34 +36,19 @@ const registerLabRoutes = (app, { pool, user, handle, recipes, oneAtATime, tries
         ...discovery,
     });
 
-    const send = (res, error) => {
-        if (error instanceof LabError) {
-            res.status(error.status).json({ error: error.code });
-            return true;
-        }
-        if (error instanceof pantry.NotEnoughIngredientsError) {
-            res.status(400).json({ error: 'NOT ENOUGH INGREDIENTS' });
-            return true;
-        }
-        return false;
-    };
-
-    app.post('/lab/try', ...user, handle(async (req, res) => {
+    app.post('/lab/try', ...user, async (req, res) => {
         const { entityType, ingredients } = req.body || {};
         const special = SpecialIngredient[entityType];
         if (!special || !Array.isArray(ingredients) || ingredients.length !== 2 || !ingredients.every(id => Ingredients[id])) {
-            res.status(400).json({ error: 'INVALID REQUEST PARAMETERS' });
-            return;
+            throw new HttpError(400, ErrorCode.INVALID_REQUEST_PARAMETERS);
         }
         const tried = [special, ...ingredients];
         const owned = await pantry.totals(pool, req.playerId, now());
         if (!tried.every(id => (owned[id] || 0) > 0)) {
-            res.status(400).json({ error: 'MISSING INGREDIENTS' });
-            return;
+            throw new HttpError(400, ErrorCode.MISSING_INGREDIENTS);
         }
-        if (!allowTry(req.playerId)) {
-            res.status(429).json({ error: 'TOO MANY TRIES' });
-            return;
+        if (!tries.allow(req.playerId)) {
+            throw new HttpError(429, ErrorCode.TOO_MANY_TRIES);
         }
         const recipe = recipes.match(entityType, tried);
         if (!recipe) {
@@ -102,9 +69,9 @@ const registerLabRoutes = (app, { pool, user, handle, recipes, oneAtATime, tries
         }
         const after = await discoveries(pool);
         res.json({ result: 'found', first, recipe: publicRecipe(recipe, after.get(recipe.item)) });
-    }));
+    });
 
-    app.get('/lab/recipes', ...user, handle(async (req, res) => {
+    app.get('/lab/recipes', ...user, async (req, res) => {
         const known = await discoveries(pool);
         const undiscovered = {};
         recipes.entries.forEach(entry => {
@@ -116,114 +83,96 @@ const registerLabRoutes = (app, { pool, user, handle, recipes, oneAtATime, tries
             recipes: recipes.entries.filter(entry => known.has(entry.item)).map(entry => publicRecipe(entry, known.get(entry.item))),
             undiscovered,
         });
-    }));
+    });
 
-    app.post('/lab/craft', ...user, handle(async (req, res) => {
+    app.post('/lab/craft', ...user, async (req, res) => {
         const { item } = req.body || {};
         const recipe = typeof item === 'string' ? recipes.get(item) : undefined;
         if (!recipe) {
-            res.status(400).json({ error: 'INVALID REQUEST PARAMETERS' });
-            return;
+            throw new HttpError(400, ErrorCode.INVALID_REQUEST_PARAMETERS);
         }
-        try {
-            const crafted = await oneAtATime(req.playerId, () => withTransaction(pool, async client => {
-                const { rows } = await client.query('SELECT item_key FROM recipe_discoveries WHERE item_key = $1', [recipe.item]);
-                if (rows.length === 0) {
-                    throw new LabError(400, 'RECIPE NOT DISCOVERED');
-                }
-                const cost = { ...recipe.amounts };
-                cost.COCOA = (cost.COCOA || 0) + recipe.fee;
-                await pantry.spend(client, req.playerId, cost, now());
-                // the next serial number of this item type (the row update serializes concurrent crafts)
-                const updated = await client.query('UPDATE item_serials SET last = last + 1 WHERE item_key = $1 RETURNING last', [recipe.item]);
-                let serial;
-                if (updated.rows.length > 0) {
-                    serial = Number(updated.rows[0].last);
-                } else {
-                    await client.query('INSERT INTO item_serials (item_key, last) VALUES ($1, 1)', [recipe.item]);
-                    serial = 1;
-                }
-                const id = crypto.randomUUID();
-                await client.query('INSERT INTO items (id, player_id, item_key, serial, crafted_by, created_at) VALUES ($1, $2, $3, $4, $2, $5)',
-                    [id, req.playerId, recipe.item, serial, new Date(now())]);
-                return id;
-            }));
-            const items = await players.itemsOf(pool, req.playerId);
-            res.json({
-                item: items.find(entry => entry.id === crafted),
-                pantry: await pantry.totals(pool, req.playerId, now()),
-                spoiling: await pantry.spoiling(pool, req.playerId, now()),
-            });
-        } catch (error) {
-            if (!send(res, error)) {
-                throw error;
+        const crafted = await oneAtATime(req.playerId, () => withTransaction(pool, async client => {
+            const { rows } = await client.query('SELECT item_key FROM recipe_discoveries WHERE item_key = $1', [recipe.item]);
+            if (rows.length === 0) {
+                throw new HttpError(400, ErrorCode.RECIPE_NOT_DISCOVERED);
             }
-        }
-    }));
+            const cost = { ...recipe.amounts };
+            cost.COCOA = (cost.COCOA || 0) + recipe.fee;
+            // too little in the pantry: NotEnoughIngredientsError, answered as 400
+            await pantry.spend(client, req.playerId, cost, now());
+            // the next serial number of this item type (the row update serializes concurrent crafts)
+            const updated = await client.query('UPDATE item_serials SET last = last + 1 WHERE item_key = $1 RETURNING last', [recipe.item]);
+            let serial;
+            if (updated.rows.length > 0) {
+                serial = Number(updated.rows[0].last);
+            } else {
+                await client.query('INSERT INTO item_serials (item_key, last) VALUES ($1, 1)', [recipe.item]);
+                serial = 1;
+            }
+            const id = crypto.randomUUID();
+            await client.query('INSERT INTO items (id, player_id, item_key, serial, crafted_by, created_at) VALUES ($1, $2, $3, $4, $2, $5)',
+                [id, req.playerId, recipe.item, serial, new Date(now())]);
+            return id;
+        }));
+        const items = await players.itemsOf(pool, req.playerId);
+        res.json({
+            item: items.find(entry => entry.id === crafted),
+            pantry: await pantry.totals(pool, req.playerId, now()),
+            spoiling: await pantry.spoiling(pool, req.playerId, now()),
+        });
+    });
 
-    app.get('/user/items', ...user, handle(async (req, res) => {
-        res.json(await players.itemsOf(pool, req.playerId));
-    }));
-
-    app.post('/user/equipment', ...user, handle(async (req, res) => {
+    app.post('/user/equipment', ...user, async (req, res) => {
         const { entityType, slot, itemId } = req.body || {};
         if (!SpecialIngredient[entityType] || !EntityType.isInstanceOf(entityType) || !Number.isInteger(slot) ||
             slot < 0 || slot >= SLOTS_PER_BUILDING || !(itemId === null || typeof itemId === 'string')) {
-            res.status(400).json({ error: 'INVALID REQUEST PARAMETERS' });
-            return;
+            throw new HttpError(400, ErrorCode.INVALID_REQUEST_PARAMETERS);
         }
-        try {
-            const result = await oneAtATime(req.playerId, () => withTransaction(pool, async client => {
-                const player = await players.findPlayer(client, req.playerId);
-                const items = await players.itemsOf(client, req.playerId);
-                const equipment = JSON.parse(JSON.stringify(players.equipmentOf(player)));
-                // points of all equipped items (stored equipment may be over the budget after a balance change)
-                const pointsOf = stored => Object.values(stored).flat()
-                    .filter(id => id !== null)
-                    .reduce((sum, id) => sum + Items[items.find(entry => entry.id === id).item].points, 0);
-                const pointsBefore = pointsOf(equipment);
-                const slots = Array.from({ length: SLOTS_PER_BUILDING }, (_, i) => (equipment[entityType] || [])[i] || null);
-                if (itemId !== null) {
-                    const owned = items.find(entry => entry.id === itemId);
-                    if (!owned) {
-                        throw new LabError(400, 'NOT YOUR ITEM');
-                    }
-                    if (Items[owned.item].entityType !== entityType) {
-                        throw new LabError(400, 'WRONG BUILDING');
-                    }
-                    // an item is in one slot only: equipping it again moves it
-                    slots.forEach((id, i) => {
-                        if (id === itemId) {
-                            slots[i] = null;
-                        }
-                    });
-                    const otherSlot = slots.find((id, i) => i !== slot && id !== null);
-                    const other = otherSlot && items.find(entry => entry.id === otherSlot);
-                    if (other && other.item === owned.item) {
-                        throw new LabError(400, 'ALREADY ON THIS BUILDING');
-                    }
+        res.json(await oneAtATime(req.playerId, () => withTransaction(pool, async client => {
+            const player = await players.findPlayer(client, req.playerId);
+            const items = await players.itemsOf(client, req.playerId);
+            const equipment = JSON.parse(JSON.stringify(players.equipmentOf(player)));
+            // points of all equipped items (stored equipment may be over the budget after a balance change)
+            const pointsOf = stored => Object.values(stored).flat()
+                .filter(id => id !== null)
+                .reduce((sum, id) => sum + Items[items.find(entry => entry.id === id).item].points, 0);
+            const pointsBefore = pointsOf(equipment);
+            const slots = Array.from({ length: SLOTS_PER_BUILDING }, (_, i) => (equipment[entityType] || [])[i] || null);
+            if (itemId !== null) {
+                const owned = items.find(entry => entry.id === itemId);
+                if (!owned) {
+                    throw new HttpError(400, ErrorCode.NOT_YOUR_ITEM);
                 }
-                slots[slot] = itemId;
-                equipment[entityType] = slots;
-                if (slots.every(id => id === null)) {
-                    delete equipment[entityType];
+                if (Items[owned.item].entityType !== entityType) {
+                    throw new HttpError(400, ErrorCode.WRONG_BUILDING);
                 }
-                const wanted = players.loadoutOf({ equipment: { ...equipment } }, items);
-                // over the budget only refuses changes that add points, so too much can be taken off step by step
-                const points = pointsOf(equipment);
-                if (points > LOADOUT_BUDGET && points > pointsBefore) {
-                    throw new LabError(400, 'OVER BUDGET');
+                // an item is in one slot only: equipping it again moves it
+                slots.forEach((id, i) => {
+                    if (id === itemId) {
+                        slots[i] = null;
+                    }
+                });
+                const otherSlot = slots.find((id, i) => i !== slot && id !== null);
+                const other = otherSlot && items.find(entry => entry.id === otherSlot);
+                if (other && other.item === owned.item) {
+                    throw new HttpError(400, ErrorCode.ALREADY_ON_THIS_BUILDING);
                 }
-                await client.query('UPDATE players SET equipment = $1 WHERE id = $2', [JSON.stringify(equipment), req.playerId]);
-                return { equipment, loadout: sanitizeLoadout(wanted) };
-            }));
-            res.json(result);
-        } catch (error) {
-            if (!send(res, error)) {
-                throw error;
             }
-        }
-    }));
+            slots[slot] = itemId;
+            equipment[entityType] = slots;
+            if (slots.every(id => id === null)) {
+                delete equipment[entityType];
+            }
+            const wanted = players.loadoutOf({ equipment: { ...equipment } }, items);
+            // over the budget only refuses changes that add points, so too much can be taken off step by step
+            const points = pointsOf(equipment);
+            if (points > LOADOUT_BUDGET && points > pointsBefore) {
+                throw new HttpError(400, ErrorCode.OVER_BUDGET);
+            }
+            await client.query('UPDATE players SET equipment = $1 WHERE id = $2', [JSON.stringify(equipment), req.playerId]);
+            return { equipment, loadout: sanitizeLoadout(wanted) };
+        })));
+    });
 };
 
 module.exports = { registerLabRoutes };

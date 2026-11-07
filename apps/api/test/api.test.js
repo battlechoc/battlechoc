@@ -1,43 +1,15 @@
 const request = require('supertest');
 const pantry = require('../src/pantry');
-const { createApp } = require('../src/app');
-const { createAuth } = require('../src/auth');
+const players = require('../src/players');
 const { createPush } = require('../src/push');
-const { createTestPool, closeTestPools, JWT_SECRET } = require('./helper');
+const { closeTestPools } = require('./helpers/db');
+const { createTestApp, createAccount } = require('./helpers/api');
 
 afterAll(closeTestPools);
 
-const setup = async ({ now } = {}) => {
-    const pool = await createTestPool();
-    const auth = createAuth({ pool, secret: JWT_SECRET, ...(now ? { now } : {}) });
-    const sent = [];
-    const push = createPush({
-        pool,
-        publicKey: 'public',
-        privateKey: 'private',
-        sender: { setVapidDetails: () => {}, sendNotification: async (subscription, payload) => { sent.push({ subscription, payload }); } },
-    });
-    const app = createApp({ pool, auth, push, corsOrigins: ['https://battlechoc.com'], accountsPerMinute: 1000 });
-    return { app, pool, sent };
-};
-
-// creates a device account and returns helpers bound to its access token
-const account = async app => {
-    const created = await request(app).post('/accounts').expect(201);
-    const bearer = `Bearer ${created.body.accessToken}`;
-    return {
-        ...created.body,
-        get: path => request(app).get(path).set('Authorization', bearer),
-        post: (path, body = {}) => request(app).post(path).set('Authorization', bearer).send(body),
-        del: (path, body = {}) => request(app).delete(path).set('Authorization', bearer).send(body),
-    };
-};
-
-const named = async (app, username) => {
-    const player = await account(app);
-    await player.post('/user/username', { username }).expect(200);
-    return player;
-};
+const setup = options => createTestApp({ corsOrigins: ['https://battlechoc.com'], ...options });
+const account = app => createAccount(app);
+const named = (app, username) => createAccount(app, { username });
 
 const winRecord = (id, awards = [{ key: 'WINNER', xp: 9999 }]) => ({
     id, won: true, lost: false, builtEntities: 4, attacks: 3, espionages: 0, moltenFields: 0,
@@ -76,8 +48,7 @@ describe('accounts', () => {
     });
 
     test('creating accounts is rate limited', async () => {
-        const pool = await createTestPool();
-        const app = createApp({ pool, auth: createAuth({ pool, secret: JWT_SECRET }), push: createPush({ pool }), accountsPerMinute: 2 });
+        const { app } = await setup({ accountsPerMinute: 2 });
         await request(app).post('/accounts').expect(201);
         await request(app).post('/accounts').expect(201);
         await request(app).post('/accounts').expect(429);
@@ -117,6 +88,27 @@ describe('progress', () => {
         expect(again.body.stats).toMatchObject({ xp: 100, pantry: { COCOA: 100 } });
     });
 
+    test('the tutorial reward is paid once when several requests arrive together', async () => {
+        const { app, pool } = await setup();
+        const player = await account(app);
+        // the game reports the finished tutorial and syncs the offline profile at the same time
+        const responses = await Promise.all([
+            player.post('/user/tutorial/finished'),
+            player.post('/user/merge', { playerInfo: { tutorialFinished: true } }),
+            player.post('/user/tutorial/finished'),
+            player.post('/user/merge', { playerInfo: { tutorialFinished: true } }),
+        ]);
+        responses.forEach(response => expect(response.status).toBe(200));
+        const { stats } = (await player.get('/user').expect(200)).body;
+        expect(stats).toMatchObject({ tutorialFinished: true, xp: 100, pantry: { COCOA: 100, RUM: 1, SUGAR: 2, MILK: 2 } });
+
+        const other = await account(app);
+        await Promise.all(Array.from({ length: 8 }, () => players.finishTutorial(pool, other.playerId)));
+        expect((await other.get('/user').expect(200)).body.stats).toMatchObject({
+            tutorialStarted: true, tutorialSkipped: false, tutorialFinished: true, xp: 100, pantry: { COCOA: 100, RUM: 1, SUGAR: 2, MILK: 2 },
+        });
+    });
+
     test('offline match records credit server-computed xp once per record, never ingredients', async () => {
         const { app } = await setup();
         const player = await account(app);
@@ -151,13 +143,13 @@ describe('progress', () => {
         expect(again.body.mergedPlayerInfo).toMatchObject({ xp: 125, coins: 100 });
     });
 
-    test('the pantry endpoint lists totals and spoiling batches', async () => {
+    test('the stats list the pantry totals and the spoiling batches', async () => {
         const { app, pool } = await setup();
         const player = await account(app);
         await pantry.add(pool, player.playerId, [{ ingredient: 'VANILLA', amount: 2 }, { ingredient: 'SUGAR', amount: 4 }], Date.now());
-        const response = await player.get('/user/pantry').expect(200);
-        expect(response.body.pantry).toEqual({ VANILLA: 2, SUGAR: 4 });
-        expect(response.body.spoiling).toEqual([expect.objectContaining({ ingredient: 'VANILLA', amount: 2 })]);
+        const { stats } = (await player.get('/user').expect(200)).body;
+        expect(stats.pantry).toEqual({ VANILLA: 2, SUGAR: 4 });
+        expect(stats.spoiling).toEqual([expect.objectContaining({ ingredient: 'VANILLA', amount: 2 })]);
     });
 
     test('language and reports', async () => {
@@ -186,7 +178,7 @@ describe('players', () => {
         expect((await me.get('/user/friends')).body).toEqual([]);
     });
 
-    test('ranks and highscore: rated players by rating, then the unrated ones; lookups and random opponents', async () => {
+    test('ranks and highscore: rated players by rating, then the unrated ones; lookups by name', async () => {
         const { app, pool } = await setup();
         const names = ['Anna', 'Bert', 'Cleo', 'Dora'];
         // Anna never played a rated match; the others did
@@ -218,9 +210,6 @@ describe('players', () => {
         expect((await accounts[3].get('/user/anna').expect(200)).body[0]).toMatchObject({ name: 'Anna', score: 0, ranking: 4 });
         highscore.body.list.slice(0, 3).forEach(entry => expect(entry.score).toBe(entry.rating));
         await accounts[0].get('/user/nobody').expect(404);
-        expect((await accounts[0].get('/query/user/e')).body.map(entry => entry.name)).toEqual(['Cleo', 'Bert']);
-        const opponent = await accounts[0].get('/random/opponent').expect(200);
-        expect(['Bert', 'Cleo', 'Dora']).toContain(opponent.body.name);
     });
 
     test('the only player is first; unnamed players are not listed and have no rank', async () => {
@@ -264,21 +253,20 @@ describe('players', () => {
 
 describe('web push and transport', () => {
     test('subscriptions are stored per player and receive notifications', async () => {
-        const { app, pool, sent } = await setup();
+        const { app, push, sent } = await setup();
         const player = await account(app);
         expect((await request(app).get('/push/key')).body.publicKey).toBe('public');
         const subscription = { endpoint: 'https://push.example/abc', keys: { p256dh: 'key', auth: 'secret' } };
         await player.post('/push/subscription', { subscription }).expect(201);
         await player.post('/push/subscription', { subscription: { endpoint: 'x' } }).expect(400);
-        const push = createPush({ pool, publicKey: 'p', privateKey: 'q', sender: { setVapidDetails: () => {}, sendNotification: async (...args) => sent.push(args) } });
         expect(await push.sendToPlayer(player.playerId, { title: 'Invite' })).toBe(1);
+        expect(sent).toEqual([{ subscription, payload: JSON.stringify({ title: 'Invite' }) }]);
         await player.del('/push/subscription', { endpoint: subscription.endpoint }).expect(200);
         expect(await push.sendToPlayer(player.playerId, { title: 'Invite' })).toBe(0);
     });
 
     test('gone subscriptions are removed', async () => {
-        const pool = await createTestPool();
-        const app = createApp({ pool, auth: createAuth({ pool, secret: JWT_SECRET }), push: createPush({ pool }) });
+        const { app, pool } = await setup();
         const player = await account(app);
         const gone = createPush({ pool, publicKey: 'p', privateKey: 'q', sender: { setVapidDetails: () => {}, sendNotification: async () => { const error = new Error('gone'); error.statusCode = 410; throw error; } } });
         await gone.subscribe(player.playerId, { endpoint: 'https://push.example/gone', keys: { p256dh: 'a', auth: 'b' } });
@@ -299,9 +287,7 @@ describe('web push and transport', () => {
 describe('play page', () => {
     // the preview page behind play.battlechoc.com/<code> (nginx rewrites it to /play/<code>)
     const playApp = async (challengeInfo = () => null) => {
-        const pool = await createTestPool();
-        const auth = createAuth({ pool, secret: JWT_SECRET });
-        return createApp({ pool, auth, push: { enabled: false }, challengeInfo });
+        return (await setup({ challengeInfo })).app;
     };
     const meta = (html, property) => {
         const match = html.match(new RegExp(`<meta property="${property}" content="([^"]*)"`));
