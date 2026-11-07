@@ -130,8 +130,8 @@ const demos = {
     message: tr.TUTORIAL_DONUT_FACTORY_MESSAGE,
     speed: 4,
     duration: 38000,
-    // this seed bakes a green donut on the first try
-    seed: "demo-donut-factory-3",
+    // this seed bakes a green donut on the first try (out of the five sets)
+    seed: "demo-donut-factory-2",
     scenario: scenario(),
     scripts: [
       [build(1000, EntityType.DONUT_FACTORY, 4, 4), placeDonut(34000, EntityType.DONUT_HEALTH_GREEN, 2, 2)],

@@ -1321,8 +1321,8 @@ class Scene extends Component {
       return;
     }
     submit(engine.MatchActionTypes.attack, { attackType, row, col, allowRush: true }).catch((error) => {
-      // online the engine's error name travels as ruleName
-      const name = (error && (error.ruleName || (error.constructor && error.constructor.name))) || "";
+      // the rule error's code (shared errors.js); online it travels as ruleName
+      const name = (error && (error.ruleName || error.code)) || "";
       // nothing to hit there: just nothing happens; no shot available: the button flashes
       if (["WeaponNotReadyError", "NoCacaoLeftError", "NoAttacksLeftError", "StunnedError"].includes(name)) {
         this.props.attackDenied(attackType);

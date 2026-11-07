@@ -1,3 +1,5 @@
+// every language, as the server has them
+require('../i18n/all');
 const setCurrentLanguage = require('../index').setCurrentLanguage;
 const getCurrentLanguage = require('../index').getCurrentLanguage;
 const translate = require('../index').translate;

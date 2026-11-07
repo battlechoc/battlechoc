@@ -3,13 +3,11 @@ import { connect } from "react-redux";
 import "./App.css";
 import { Jukebox } from "./ui/misc";
 import OfflineStore from "./OfflineStore";
-import { ServerRequest } from "./helper/settings";
 import { multiplayer } from "./Multiplayer";
 import {
   PlayerType,
   translate as t,
   translationKeys as tr,
-  setCurrentLanguage,
   EmptyPlayerStats,
   live,
   engine,
@@ -54,7 +52,8 @@ import {
 } from "./ui/onDemand";
 import { challengeViewed } from "./match/liveSlice";
 import { loadUnlockState, takeNewUnlock } from "./unlocks";
-import { setDocumentLanguage } from "./helper/language";
+import { applyLanguage } from "./helper/language";
+import { rememberLanguage } from "./helper/rememberLanguage";
 import QuickMessage from "./ui/dialogs/QuickMessage";
 import logger from "./helper/logger";
 import { LESSON, allDemos } from "./tutorial/ids";
@@ -113,30 +112,16 @@ class App extends Component {
       nameConflict: (conflict) => this.props.loadUiState({ nameConflict: conflict }),
     });
 
-    let browserLanguage = "en";
-    if (navigator.userLanguage) {
-      browserLanguage = navigator.userLanguage.substr(0, 2);
-    } else if (navigator.language) {
-      browserLanguage = navigator.language.substr(0, 2);
-    }
-
-    OfflineStore.settingsStore.get("language").then((language) => {
-      const languageValue =
-        typeof language !== "undefined" ? language : browserLanguage;
-      setDocumentLanguage(languageValue);
-      setCurrentLanguage(languageValue, () => {
-        ServerRequest("post", "/user/language", { language: languageValue })
-          .catch((error) => {
-            if (!(error instanceof ReferenceError)) {
-              console.warn(error);
-            }
-          })
-          .finally(() =>
-            OfflineStore.settingsStore.set("language", languageValue)
-          );
-      });
-      this.forceUpdate();
-    });
+    // the language the player chose, else the browser's (ja-JP → ja; English when the game
+    // has no texts in it); a device may still hold the old codes jp and vn
+    OfflineStore.settingsStore
+      .get("language")
+      .then((stored) => applyLanguage(stored || navigator.language))
+      .then((code) => {
+        rememberLanguage(code);
+        this.forceUpdate();
+      })
+      .catch((error) => logger.warn("could not load the language", error));
 
     if (typeof this.challengeCode !== "undefined") {
       // the card shows at once, before the game has loaded; the server's answer fills it in

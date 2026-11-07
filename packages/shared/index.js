@@ -64,9 +64,9 @@ module.exports.PlayerType = PlayerType;
 Object.assign(module.exports, require('./errors'));
 module.exports.SurrenderCosts = SurrenderCosts;
 
-// The texts (i18n/). Every language is registered here; a client that loads its languages one
-// by one takes them from i18n and translations/ itself.
-const i18n = require('./i18n/all');
+// The texts (i18n/). Only English is built in: the game loads the one language its player
+// reads (translations/<code>), the server requires i18n/all for every language.
+const i18n = require('./i18n');
 module.exports.languages = i18n.languages;
 module.exports.normalizeLanguage = i18n.normalizeLanguage;
 module.exports.registerTranslations = i18n.registerTranslations;
