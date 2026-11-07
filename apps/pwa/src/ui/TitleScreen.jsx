@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 import { createUseStyles } from "react-jss";
 import {
   unlocks,

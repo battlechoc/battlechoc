@@ -1,4 +1,3 @@
-import React from "react";
 import {
   translate as t,
   translationKeys as tr,

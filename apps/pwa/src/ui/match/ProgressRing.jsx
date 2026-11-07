@@ -1,4 +1,3 @@
-import React from "react";
 
 // A ring drawn around a round icon that fills clockwise from the top with `progress` (0..1).
 // The parent needs `position: relative`; `outset` is how far (in % of the parent) the ring sits outside it.

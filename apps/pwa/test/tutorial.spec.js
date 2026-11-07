@@ -6,16 +6,6 @@ import { sceneSettled } from "./helpers/match.js";
 // The tutorial on the real-time engine. ?testclock gives the lesson a manual clock
 // (window.__battlechoc.host.clock.advance), the demos always run on their own fast clock.
 
-const submit = (page, type, payload) =>
-  host(
-    page,
-    ({ type, payload }) =>
-      window.__battlechoc.host.submit(type, payload).then(
-        () => "ok",
-        (error) => error.message
-      ),
-    { type, payload }
-  );
 const step = (page) => page.getByTestId("tutorial-coach");
 const expectStep = (page, id) => expect(step(page)).toHaveAttribute("data-step", id);
 

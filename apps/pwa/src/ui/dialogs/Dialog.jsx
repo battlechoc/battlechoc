@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import Jukebox from "../misc/Jukebox";
 import { createUseStyles } from "react-jss";
 import Fab from "../controls/Fab";

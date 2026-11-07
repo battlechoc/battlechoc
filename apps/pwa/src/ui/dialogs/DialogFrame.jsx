@@ -1,4 +1,3 @@
-import React from "react";
 import { createUseStyles } from "react-jss";
 
 // `scaled`: the pieces are this high relative to the panel's width (the parent is a size

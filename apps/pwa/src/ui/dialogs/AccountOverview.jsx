@@ -148,10 +148,10 @@ const AccountOverview = (props) => {
 
   const isPlayerAccount = typeof props.playerAccount === "undefined";
 
-  let winnings = 0;
-  let losses = 0;
+  let winnings;
+  let losses;
   let playerName = EmptyPlayerStats.username;
-  let ranking = 0;
+  let ranking;
 
   React.useEffect(() => {
     if (typeof props.playerAccount === "undefined") {

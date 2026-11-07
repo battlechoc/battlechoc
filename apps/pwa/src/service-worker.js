@@ -11,7 +11,7 @@ self.addEventListener("push", (event) => {
   let payload = {};
   try {
     payload = event.data ? event.data.json() : {};
-  } catch (error) {
+  } catch {
     payload = { title: "battlechoc", text: event.data ? event.data.text() : "" };
   }
   event.waitUntil(

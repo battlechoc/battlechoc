@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { connect } from "react-redux";
 import { tipsEnabledChanged } from "../../settingsSlice";
 import { createUseStyles } from "react-jss";

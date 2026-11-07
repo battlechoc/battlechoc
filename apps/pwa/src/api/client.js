@@ -16,7 +16,7 @@ const request = async (method, url, body) => {
   let token;
   try {
     token = await account.token();
-  } catch (error) {
+  } catch {
     throw new NoHealthyInternetConnectionError();
   }
   const config = {

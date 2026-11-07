@@ -1,4 +1,3 @@
-import React from "react";
 import { createUseStyles } from "react-jss";
 
 // the fingertip's place in images/tap-finger.svg, as a fraction of its width and height

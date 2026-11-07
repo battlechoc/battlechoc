@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import { Component } from "react";
 import { createUseStyles } from "react-jss";
 import {
   translate as t,

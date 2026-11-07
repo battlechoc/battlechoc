@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { createUseStyles } from "react-jss";
 import { rise } from "../styles";
 

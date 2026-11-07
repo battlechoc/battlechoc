@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useRef, useCallback } from "react";
+import { Suspense, useState, useRef, useCallback } from "react";
 import "./Hud.css";
 import { connect } from "react-redux";
 import {

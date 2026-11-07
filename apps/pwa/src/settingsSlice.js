@@ -49,7 +49,7 @@ export const hydrateSettings = (storage) => async (dispatch) => {
         if ((await storage.get(key)) === false) {
           stored[name] = false;
         }
-      } catch (error) {
+      } catch {
         // a setting that cannot be read keeps its default
       }
     })

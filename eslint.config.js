@@ -89,7 +89,7 @@ module.exports = [
   // The client's headless tests (node:test) and its configuration files: ES modules on Node.
   {
     name: "battlechoc/pwa-node",
-    files: ["apps/pwa/test/unit/**/*.js", "apps/pwa/*.js"],
+    files: ["apps/pwa/test/unit/**/*.js", "apps/pwa/*.js", "apps/pwa/scripts/**/*.mjs"],
     languageOptions: { sourceType: "module", globals: globals.node },
   },
 

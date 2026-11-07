@@ -1,4 +1,3 @@
-import React from "react";
 import { BUILDING_ICON, iconUrl } from "../../catalog";
 import { createUseStyles } from "react-jss";
 import {

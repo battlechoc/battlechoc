@@ -25,7 +25,7 @@
     "test:whitepaper": "node --test 'whitepaper/simulator/test/*.test.js'",
     "test:changelog": "node --test .github/scripts/pr-changelog.test.js",
     "check:build": "test -d apps/pwa/build && ! grep -rlE '__battlechoc|testclock' apps/pwa/build",
-    "verify": "npm run format:check && npm run test:changelog && npm test && npm run test:unit && npm run test:whitepaper && npm run test:api && npm run build && npm run check:build",
+    "verify": "npm run format:check && npm run lint && npm run test:changelog && npm test && npm run test:unit && npm run test:whitepaper && npm run test:api && npm run build && npm run check:build",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
