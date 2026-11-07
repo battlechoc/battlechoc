@@ -78,7 +78,14 @@ const useStyles = createUseStyles({
  * follow the breakpoints of what the hand points at). `from` is the corner the hand comes from.
  * Other props (data-testid, data-row, ...) go to the anchor element.
  */
-const TapPointer = ({ x, y, size, from = "bottom-right", className = "", ...rest }) => {
+const TapPointer = ({
+  x,
+  y,
+  size,
+  from = "bottom-right",
+  className = "",
+  ...rest
+}) => {
   const classes = useStyles();
   const length = (value) => (typeof value === "number" ? `${value}px` : value);
   const orientation = ORIENTATIONS[from];
@@ -93,7 +100,12 @@ const TapPointer = ({ x, y, size, from = "bottom-right", className = "", ...rest
     style["--tap-size"] = length(size);
   }
   return (
-    <div className={`${classes.pointer} ${className}`} style={style} aria-hidden="true" {...rest}>
+    <div
+      className={`${classes.pointer} ${className}`}
+      style={style}
+      aria-hidden="true"
+      {...rest}
+    >
       <div className={classes.ring} />
       <div className={classes.ring} />
       <div className={classes.hand} />

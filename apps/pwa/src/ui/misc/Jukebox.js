@@ -27,10 +27,12 @@ class Jukebox {
       MAIN_THEME: { filename: "/music/CacaoLiving.mp3", music: null },
     });
 
-    this.soundContext = new (window.AudioContext ||
-      window.webkitAudioContext)();
-    this.musicContext = new (window.AudioContext ||
-      window.webkitAudioContext)();
+    this.soundContext = new (
+      window.AudioContext || window.webkitAudioContext
+    )();
+    this.musicContext = new (
+      window.AudioContext || window.webkitAudioContext
+    )();
     // every sound and song plays through the volume of its kind
     this.soundOutput = this.soundContext.createGain();
     this.soundOutput.connect(this.soundContext.destination);
@@ -40,27 +42,39 @@ class Jukebox {
     // only the click loads at once; the music (2.5 MB) and the match sounds wait for the 3D
     // models (loadDeferred), so they do not slow down the first start
     Object.keys(this.SOUNDS).forEach((sound) => {
-      this.SOUNDS[sound].sound = new AudioClip(this.soundOutput, this.SOUNDS[sound].filename, false, {
-        deferred: !this.SOUNDS[sound].click,
-      });
+      this.SOUNDS[sound].sound = new AudioClip(
+        this.soundOutput,
+        this.SOUNDS[sound].filename,
+        false,
+        {
+          deferred: !this.SOUNDS[sound].click,
+        }
+      );
     });
     Object.keys(this.SONGS).forEach((song) => {
-      this.SONGS[song].music = new AudioClip(this.musicOutput, this.SONGS[song].filename, true, {
-        deferred: true,
-      });
+      this.SONGS[song].music = new AudioClip(
+        this.musicOutput,
+        this.SONGS[song].filename,
+        true,
+        {
+          deferred: true,
+        }
+      );
     });
 
     // the music and the match sounds have been asked for (loadDeferred); muted, they wait
     this.deferredWanted = false;
-    this.settingsLoaded = OfflineStore.settingsStore.get("audio").then((audioSettings) => {
-      if (typeof audioSettings !== "undefined") {
-        this.musicVolume = audioSettings.musicVolume ?? 1;
-        this.soundVolume = audioSettings.soundVolume ?? 1;
-        this.clicks = audioSettings.clicks ?? true;
-        this.applyVolumes();
-        this.mute(!audioSettings.sfxMuted);
-      }
-    });
+    this.settingsLoaded = OfflineStore.settingsStore
+      .get("audio")
+      .then((audioSettings) => {
+        if (typeof audioSettings !== "undefined") {
+          this.musicVolume = audioSettings.musicVolume ?? 1;
+          this.soundVolume = audioSettings.soundVolume ?? 1;
+          this.clicks = audioSettings.clicks ?? true;
+          this.applyVolumes();
+          this.mute(!audioSettings.sfxMuted);
+        }
+      });
   }
 
   settings() {
@@ -137,7 +151,11 @@ class Jukebox {
       ...Object.values(this.SOUNDS).map((entry) => entry.sound),
       ...Object.values(this.SONGS).map((entry) => entry.music),
     ];
-    clips.forEach((clip) => clip.load().catch((error) => logger.warn("Audio was unable to load: " + error)));
+    clips.forEach((clip) =>
+      clip
+        .load()
+        .catch((error) => logger.warn("Audio was unable to load: " + error))
+    );
   }
 
   startMusic(song) {

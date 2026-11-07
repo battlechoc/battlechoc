@@ -66,7 +66,11 @@ export const panBy = (fit, view, dx, dy, width, height) => {
   const bounds = orthoBounds(fit, view);
   const perPixel = (bounds.right - bounds.left) / width;
   const perPixelY = (bounds.top - bounds.bottom) / height;
-  return clampView(fit, { zoom: view.zoom, x: view.x - dx * perPixel, y: view.y + dy * perPixelY });
+  return clampView(fit, {
+    zoom: view.zoom,
+    x: view.x - dx * perPixel,
+    y: view.y + dy * perPixelY,
+  });
 };
 
 /** Between two views, `t` from 0 to 1 (the zoom in log steps, so both halves feel alike). */
@@ -77,7 +81,9 @@ export const lerpView = (from, to, t) => ({
 });
 
 export const sameView = (a, b) =>
-  Math.abs(a.zoom - b.zoom) < 1e-6 && Math.abs(a.x - b.x) < 1e-6 && Math.abs(a.y - b.y) < 1e-6;
+  Math.abs(a.zoom - b.zoom) < 1e-6 &&
+  Math.abs(a.x - b.x) < 1e-6 &&
+  Math.abs(a.y - b.y) < 1e-6;
 
 // Between the boards: 0 is the own board, 1 the opponent's; the Scene moves the camera along
 // the line between them, a swipe scrubs it. A drag of `dx` pixels pulls the other board in by
@@ -110,7 +116,10 @@ export const TAP_SLACK = 8;
  *   onWheel(deltaY, x, y, pinch)  the wheel, or a trackpad pinch (ctrl + wheel)
  * `enabled()` says whether drags and zooms count right now (taps always do).
  */
-export const attachGestures = (element, { onTap, onPan, onPanEnd = () => {}, onPinch, onWheel, enabled = () => true }) => {
+export const attachGestures = (
+  element,
+  { onTap, onPan, onPanEnd = () => {}, onPinch, onWheel, enabled = () => true }
+) => {
   const pointers = new Map();
   let moved = false;
   let pinching = false;
@@ -134,7 +143,11 @@ export const attachGestures = (element, { onTap, onPan, onPanEnd = () => {}, onP
       event.preventDefault();
     }
     const point = local(event);
-    pointers.set(event.pointerId, { ...point, startX: point.x, startY: point.y });
+    pointers.set(event.pointerId, {
+      ...point,
+      startX: point.x,
+      startY: point.y,
+    });
     if (pointers.size === 1) {
       moved = false;
       pinching = false;
@@ -175,7 +188,10 @@ export const attachGestures = (element, { onTap, onPan, onPanEnd = () => {}, onP
       pointer.y = point.y;
       return;
     }
-    if (!moved && Math.hypot(point.x - pointer.startX, point.y - pointer.startY) < TAP_SLACK) {
+    if (
+      !moved &&
+      Math.hypot(point.x - pointer.startX, point.y - pointer.startY) < TAP_SLACK
+    ) {
       return;
     }
     if (!enabled()) {

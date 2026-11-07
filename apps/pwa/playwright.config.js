@@ -44,7 +44,10 @@ export default defineConfig({
     {
       name: "desktop",
       testIgnore: /(iphone|service-worker)\.spec\.js/,
-      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 720 } },
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 720 },
+      },
     },
     {
       // the service worker for real (installing, offline, a new build); the spec serves the e2e

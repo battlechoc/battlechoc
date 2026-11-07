@@ -253,11 +253,7 @@ const PlayerNameInput = (componentProps) => {
                 backgroundSize: "100% 100%",
               }}
             ></div>
-            <div
-              className={classes.name}
-            >
-              {playerName}
-            </div>
+            <div className={classes.name}>{playerName}</div>
             {props.pending ? <UnsyncedMark /> : null}
           </div>
         )}

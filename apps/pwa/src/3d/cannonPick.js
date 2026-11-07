@@ -67,7 +67,7 @@ const lightPools = ({ scene, field, cells, setRenderLoop }) => {
     const pool = MeshBuilder.CreatePlane(
       `cannon-pool.${row}.${col}`,
       { size: POOL_SIZE },
-      scene,
+      scene
     );
     pool.rotation.x = Math.PI / 2;
     pool.position = field.position.add(new Vector3(row, TILE_TOP + 0.012, col));
@@ -145,7 +145,7 @@ export const showCannonPick = ({
     const project = (row, col, up) => {
       const point = Vector3.TransformCoordinates(
         field.position.add(new Vector3(row, TILE_TOP + up, col)),
-        transform,
+        transform
       );
       return [((point.x + 1) / 2) * width, ((1 - point.y) / 2) * height];
     };
@@ -158,11 +158,11 @@ export const showCannonPick = ({
       const top = square(CREAM_HEIGHT);
       const leftmost = bottom.reduce(
         (best, p, i) => (p[0] < bottom[best][0] ? i : best),
-        0,
+        0
       );
       const rightmost = bottom.reduce(
         (best, p, i) => (p[0] > bottom[best][0] ? i : best),
-        0,
+        0
       );
       return [
         bottom,

@@ -6,10 +6,12 @@ import { get, post } from "./client.js";
 export const fetchRecipes = () => get("/lab/recipes");
 
 /** Tries two ingredients on a building ({ result, … }). */
-export const tryIngredients = (entityType, ingredients) => post("/lab/try", { entityType, ingredients });
+export const tryIngredients = (entityType, ingredients) =>
+  post("/lab/try", { entityType, ingredients });
 
 /** Crafts the item of a discovered recipe ({ item, pantry, spoiling }). */
 export const craftItem = (item) => post("/lab/craft", { item });
 
 /** Puts an item into a building's slot (itemId null takes it out) ({ equipment, loadout }). */
-export const equipItem = (entityType, slot, itemId) => post("/user/equipment", { entityType, slot, itemId });
+export const equipItem = (entityType, slot, itemId) =>
+  post("/user/equipment", { entityType, slot, itemId });

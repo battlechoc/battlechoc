@@ -24,16 +24,13 @@ test("a chunk that does not arrive is asked for again until it does", async () =
   mock.timers.enable({ apis: ["setTimeout"] });
   try {
     let calls = 0;
-    const load = loadChunk(
-      async () => {
-        calls += 1;
-        if (calls < 4) {
-          throw new TypeError("Failed to fetch dynamically imported module");
-        }
-        return { default: "Tutorial" };
-      },
-      [1000, 3000]
-    );
+    const load = loadChunk(async () => {
+      calls += 1;
+      if (calls < 4) {
+        throw new TypeError("Failed to fetch dynamically imported module");
+      }
+      return { default: "Tutorial" };
+    }, [1000, 3000]);
     let result;
     let failed = false;
     load().then(

@@ -31,6 +31,7 @@ export const requestedLight = (() => {
       .filter((key) => query.has(key))
       .map((key) => [key, Number(query.get(key))])
   );
-  return query.has("tonemap") ? { ...light, tonemap: query.get("tonemap") } : light;
+  return query.has("tonemap")
+    ? { ...light, tonemap: query.get("tonemap") }
+    : light;
 })();
-

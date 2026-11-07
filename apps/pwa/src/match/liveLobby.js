@@ -50,7 +50,10 @@ class LiveLobby {
       // the own challenge link as the server knows it (after a reload, or gone after a restart)
       this.challengeArrived(message.challenge || null);
       // a match is still running for this account (reload, other device): go back into it
-      if (message.activeMatch && message.activeMatch.matchId !== this.currentMatchId) {
+      if (
+        message.activeMatch &&
+        message.activeMatch.matchId !== this.currentMatchId
+      ) {
         this.startMatch({ matchId: message.activeMatch.matchId });
       }
     });
@@ -59,17 +62,32 @@ class LiveLobby {
         this.startMatch(message);
       }
     });
-    c.on(ServerMessage.QUEUED, (message) => this.dispatch(queueJoined(message.since)));
+    c.on(ServerMessage.QUEUED, (message) =>
+      this.dispatch(queueJoined(message.since))
+    );
     c.on(ServerMessage.QUEUE_LEFT, () => this.dispatch(queueLeft()));
-    c.on(ServerMessage.INVITE, (message) => this.dispatch(inviteReceived(message.invite)));
-    c.on(ServerMessage.INVITE_SENT, (message) => this.dispatch(inviteSent(message.invite)));
-    c.on(ServerMessage.INVITE_CLOSED, (message) => this.dispatch(inviteClosed(message)));
-    c.on(ServerMessage.CHALLENGE, (message) => this.challengeArrived(message.challenge));
-    c.on(ServerMessage.CHALLENGE_VIEW, (message) => this.dispatch(challengeViewed(message.view)));
+    c.on(ServerMessage.INVITE, (message) =>
+      this.dispatch(inviteReceived(message.invite))
+    );
+    c.on(ServerMessage.INVITE_SENT, (message) =>
+      this.dispatch(inviteSent(message.invite))
+    );
+    c.on(ServerMessage.INVITE_CLOSED, (message) =>
+      this.dispatch(inviteClosed(message))
+    );
+    c.on(ServerMessage.CHALLENGE, (message) =>
+      this.challengeArrived(message.challenge)
+    );
+    c.on(ServerMessage.CHALLENGE_VIEW, (message) =>
+      this.dispatch(challengeViewed(message.view))
+    );
     c.on(ServerMessage.ERROR, (message) => {
       logger.info("live error", message.code);
       this.dispatch(liveErrorReceived(message.code));
-      if (message.code === LiveError.UNKNOWN_MATCH && typeof this.currentMatchId !== "undefined") {
+      if (
+        message.code === LiveError.UNKNOWN_MATCH &&
+        typeof this.currentMatchId !== "undefined"
+      ) {
         // the match is over and gone on the server
         this.onMatchGone(this.currentMatchId);
       }
@@ -82,7 +100,9 @@ class LiveLobby {
     this.dispatch(challengeUpdated(challenge));
     const code = this.getState().live.challengeToCancel;
     if (code) {
-      this.cancelChallenge(code).catch((error) => logger.info("could not cancel the challenge", error));
+      this.cancelChallenge(code).catch((error) =>
+        logger.info("could not cancel the challenge", error)
+      );
     }
   }
 

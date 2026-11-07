@@ -38,7 +38,10 @@ const IncomingInvite = ({ invite, inMatch }) => {
     }
   }, [invite]);
   // the time left, as the challenge dialog shows it
-  const secondsLeft = useCountdown(invite ? invite.expiresAt : undefined, Boolean(invite));
+  const secondsLeft = useCountdown(
+    invite ? invite.expiresAt : undefined,
+    Boolean(invite)
+  );
 
   if (!invite || inMatch) {
     return null;

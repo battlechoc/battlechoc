@@ -26,7 +26,9 @@ const useProfileRoute = (username, { show, showQuickMessage }) => {
       } catch (error) {
         if (error.response) {
           if (error.response.status === 404) {
-            showQuickMessage({ text: t(tr.WARNING_PLAYER_NOT_FOUND, username) });
+            showQuickMessage({
+              text: t(tr.WARNING_PLAYER_NOT_FOUND, username),
+            });
           } else {
             logger.warn(error, error.response.toString());
           }

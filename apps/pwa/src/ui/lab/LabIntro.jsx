@@ -60,7 +60,8 @@ const useStyles = createUseStyles((theme) => ({
     borderRadius: 20,
     pointerEvents: "none",
     boxShadow: "0 0 0 200vmax rgba(0, 0, 0, 0.6)",
-    transition: "top 0.35s ease, left 0.35s ease, width 0.35s ease, height 0.35s ease",
+    transition:
+      "top 0.35s ease, left 0.35s ease, width 0.35s ease, height 0.35s ease",
     "@media (prefers-reduced-motion: reduce)": { transition: "none" },
   },
 }));
@@ -84,7 +85,8 @@ export const Spotlight = ({ target, container }) => {
       const inner = target.getBoundingClientRect();
       setBox({
         top: inner.top - outer.top + container.scrollTop - SPOTLIGHT_PADDING,
-        left: inner.left - outer.left + container.scrollLeft - SPOTLIGHT_PADDING,
+        left:
+          inner.left - outer.left + container.scrollLeft - SPOTLIGHT_PADDING,
         width: inner.width + 2 * SPOTLIGHT_PADDING,
         height: inner.height + 2 * SPOTLIGHT_PADDING,
       });
@@ -92,7 +94,9 @@ export const Spotlight = ({ target, container }) => {
     measure();
     window.addEventListener("resize", measure);
     const observer =
-      typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measure);
+      typeof ResizeObserver === "undefined"
+        ? undefined
+        : new ResizeObserver(measure);
     if (observer) {
       observer.observe(target);
       observer.observe(container);
@@ -108,7 +112,13 @@ export const Spotlight = ({ target, container }) => {
   if (!box) {
     return null;
   }
-  return <div className={classes.spotlight} style={box} data-testid="lab-spotlight" />;
+  return (
+    <div
+      className={classes.spotlight}
+      style={box}
+      data-testid="lab-spotlight"
+    />
+  );
 };
 
 // The coach card of the lab's first visit: a few steps through the lab, with a skip link.

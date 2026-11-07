@@ -9,12 +9,7 @@ import {
 import Dialog from "../dialogs/Dialog";
 import Button from "../controls/Button";
 import ItemIcon from "./ItemIcon";
-import {
-  effectLines,
-  itemName,
-  labColors,
-  TIER_COLORS,
-} from "./itemText";
+import { effectLines, itemName, labColors, TIER_COLORS } from "./itemText";
 import { bangers, gamePanel } from "../styles";
 
 const useStyles = createUseStyles((theme) => {

@@ -56,7 +56,9 @@ test("post sends its data as JSON; without data there is no body", async () => {
   const { fetch, calls } = fakeFetch(() => json({ ok: true }));
   const client = createClient({ baseURL: "https://api.example", fetch });
   await client.post("/accounts/token", { refreshToken: "abc" });
-  await client.post("/user", undefined, { headers: { Authorization: "Bearer t" } });
+  await client.post("/user", undefined, {
+    headers: { Authorization: "Bearer t" },
+  });
   assert.equal(calls[0].url, "https://api.example/accounts/token");
   assert.equal(calls[0].init.method, "POST");
   assert.equal(calls[0].init.body, '{"refreshToken":"abc"}');
@@ -97,7 +99,9 @@ test("a status outside 2xx rejects with the response on the error", async () => 
 
 test("a body that is no JSON stays text, no body is the empty text", async () => {
   const { fetch } = fakeFetch((url) =>
-    url.endsWith("/text") ? new Response("pong") : new Response(null, { status: 204 })
+    url.endsWith("/text")
+      ? new Response("pong")
+      : new Response(null, { status: 204 })
   );
   const client = createClient({ fetch });
   assert.equal((await client.get("/text")).data, "pong");

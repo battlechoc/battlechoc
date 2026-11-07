@@ -53,20 +53,23 @@ export const useRematch = (game) => {
   const outgoingInvite = useSelector((state) => state.live.outgoingInvite);
   const inviteClosed = useSelector((state) => state.live.inviteClosed);
   const liveError = useSelector((state) => state.live.error);
-  const rematchable = Boolean(matchOnline && matchKind === "challenge" && matchSession.host);
+  const rematchable = Boolean(
+    matchOnline && matchKind === "challenge" && matchSession.host
+  );
   const opponentName = game.players[1 - game.viewer].name;
   const status = !rematchable
     ? undefined
     : outgoingInvite
-    ? t(tr.REMATCH_WAITING, opponentName)
-    : inviteClosed === "declined" || inviteClosed === "expired"
-    ? t(tr.REMATCH_DECLINED, opponentName)
-    : liveError === "PLAYER_OFFLINE"
-    ? t(tr.REMATCH_GONE, opponentName)
-    : undefined;
+      ? t(tr.REMATCH_WAITING, opponentName)
+      : inviteClosed === "declined" || inviteClosed === "expired"
+        ? t(tr.REMATCH_DECLINED, opponentName)
+        : liveError === "PLAYER_OFFLINE"
+          ? t(tr.REMATCH_GONE, opponentName)
+          : undefined;
   const rematch =
     rematchable && !outgoingInvite
-      ? () => liveLobby.requestRematch(matchSession.host.matchId).catch(() => {})
+      ? () =>
+          liveLobby.requestRematch(matchSession.host.matchId).catch(() => {})
       : undefined;
   return { rematch, status };
 };
@@ -96,10 +99,16 @@ const MatchHud = ({ endGame }) => {
         <Suspense fallback={null}>
           <GameEndOverview
             awards={(matchAwards || []).map((award) => ({
-              ...engine.matchAwards.find((candidate) => candidate.key === award.key),
+              ...engine.matchAwards.find(
+                (candidate) => candidate.key === award.key
+              ),
               xp: award.xp,
             }))}
-            outcome={result.winners.length === 1 && result.winners[0] === game.viewer ? "won" : "lost"}
+            outcome={
+              result.winners.length === 1 && result.winners[0] === game.viewer
+                ? "won"
+                : "lost"
+            }
             isWinner={result.winners.includes(game.viewer)}
             verified={matchOnline}
             drops={matchResult ? matchResult.drops : undefined}

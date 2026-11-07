@@ -7,7 +7,10 @@ import { waitForMatch } from "./helpers/match.js";
 // event "battlechoc-test-crash".
 const crash = (page, name) =>
   page.evaluate(
-    (name) => window.dispatchEvent(new CustomEvent("battlechoc-test-crash", { detail: name })),
+    (name) =>
+      window.dispatchEvent(
+        new CustomEvent("battlechoc-test-crash", { detail: name })
+      ),
     name
   );
 
@@ -26,10 +29,17 @@ test("a crash of the title screen offers the way back", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test("a crash in a match stops it and keeps it for Resume", async ({ page }) => {
+test("a crash in a match stops it and keeps it for Resume", async ({
+  page,
+}) => {
   await openWithStats(
     page,
-    { username: "Tester", score: 150, tutorialFinished: true, tutorialSkipped: true },
+    {
+      username: "Tester",
+      score: 150,
+      tutorialFinished: true,
+      tutorialSkipped: true,
+    },
     "/?testclock"
   );
   await expect(page.getByTestId("start-button")).toContainText("Start Game");
@@ -38,13 +48,17 @@ test("a crash in a match stops it and keeps it for Resume", async ({ page }) => 
   await crash(page, "hud");
   await page.getByTestId("error-recovery").getByRole("button").click();
   await expect(page.getByTestId("start-button")).toBeVisible();
-  expect(await page.evaluate(() => window.__battlechoc.host.stopped)).toBe(true);
+  expect(await page.evaluate(() => window.__battlechoc.host.stopped)).toBe(
+    true
+  );
   // the match was saved: Start asks whether to resume it
   await page.getByTestId("start-button").click();
   await expect(page.getByText("resume your last one")).toBeVisible();
 });
 
-test("a crash of the 3D scene reloads to the title screen", async ({ page }) => {
+test("a crash of the 3D scene reloads to the title screen", async ({
+  page,
+}) => {
   await page.goto("/", { waitUntil: "networkidle" });
   await expect(page.getByTestId("start-button")).toBeVisible();
   await crash(page, "scene");

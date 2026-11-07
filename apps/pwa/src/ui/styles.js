@@ -25,4 +25,5 @@ export const gamePanel = (theme) => ({
 
 /** The game's light from above: a colour of the theme ({ light, dark }) from its dark shade at
  * the bottom to its light one at `top` (of the height). */
-export const rise = (color, top = "100%") => `linear-gradient(0deg, ${color.dark} 0%, ${color.light} ${top})`;
+export const rise = (color, top = "100%") =>
+  `linear-gradient(0deg, ${color.dark} 0%, ${color.light} ${top})`;

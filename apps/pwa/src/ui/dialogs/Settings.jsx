@@ -295,20 +295,26 @@ const Settings = (props) => {
               color="secondary"
               onClick={() => Jukebox.mute(audio.muted)}
             >
-              {audio.muted ? t(tr.GAME_MENU_SOUND_OFF) : t(tr.GAME_MENU_SOUND_ON)}
+              {audio.muted
+                ? t(tr.GAME_MENU_SOUND_OFF)
+                : t(tr.GAME_MENU_SOUND_ON)}
             </Button>
             <Button
               className={classes.button}
               color="secondary"
               onClick={() => Jukebox.setClicks(!audio.clicks)}
             >
-              {audio.clicks ? t(tr.SETTINGS_CLICKS_ON) : t(tr.SETTINGS_CLICKS_OFF)}
+              {audio.clicks
+                ? t(tr.SETTINGS_CLICKS_ON)
+                : t(tr.SETTINGS_CLICKS_OFF)}
             </Button>
             {fullscreenSupported() ? (
               <Button
                 className={classes.button}
                 color="secondary"
-                onClick={() => props.autoFullscreenChanged(!props.autoFullscreen)}
+                onClick={() =>
+                  props.autoFullscreenChanged(!props.autoFullscreen)
+                }
               >
                 {props.autoFullscreen
                   ? t(tr.SETTINGS_AUTO_FULLSCREEN_ON)
@@ -334,7 +340,9 @@ const Settings = (props) => {
                 props.tipsEnabledChanged(!props.tipsEnabled);
               }}
             >
-              {props.tipsEnabled ? t(tr.SETTINGS_TIPS_ON) : t(tr.SETTINGS_TIPS_OFF)}
+              {props.tipsEnabled
+                ? t(tr.SETTINGS_TIPS_ON)
+                : t(tr.SETTINGS_TIPS_OFF)}
             </Button>
             <Button
               className={classes.button}
@@ -370,8 +378,9 @@ const Settings = (props) => {
                     >
                       {t(tr.RESTART_TUTORIAL)}
                     </Button>
-                    {unlocks(props.playerInfos.stats, { early: props.earlyUnlock }).games > 0 &&
-                    props.showBuildingDemos ? (
+                    {unlocks(props.playerInfos.stats, {
+                      early: props.earlyUnlock,
+                    }).games > 0 && props.showBuildingDemos ? (
                       <Button
                         className={classes.button}
                         color="secondary"

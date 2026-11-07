@@ -1,6 +1,10 @@
 import { useImperativeHandle } from "react";
 import { connect } from "react-redux";
-import { assetsReady, assetsProgressed, assetsFailedChanged } from "./ui/uiSlice";
+import {
+  assetsReady,
+  assetsProgressed,
+  assetsFailedChanged,
+} from "./ui/uiSlice";
 import {
   EntityType,
   BoardCellTypes,
@@ -240,7 +244,9 @@ const loading = {
       try {
         const { meshes } = await ImportMeshAsync("/models/" + file, this.scene);
         // copy before the first template gets its names and materials
-        const groups = keys.map((key, i) => (i === 0 ? meshes : copyModel(meshes[0])));
+        const groups = keys.map((key, i) =>
+          i === 0 ? meshes : copyModel(meshes[0])
+        );
         keys.forEach((key, i) => prepareModel(key, groups[i], this.scene));
         this.failed.delete(file);
         this.count(keys.length);
@@ -312,7 +318,11 @@ const AssetLoadingView = (props) => {
 };
 
 const mapStateToProps = () => ({});
-const mapDispatchToProps = { assetsReady, assetsProgressed, assetsFailedChanged };
+const mapDispatchToProps = {
+  assetsReady,
+  assetsProgressed,
+  assetsFailedChanged,
+};
 const AssetLoadingViewContainer = connect(
   mapStateToProps,
   mapDispatchToProps

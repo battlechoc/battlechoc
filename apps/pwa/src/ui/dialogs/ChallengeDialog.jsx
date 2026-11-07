@@ -107,7 +107,6 @@ const ENDED = {
   lost: tr.CHALLENGE_LOST,
 };
 
-
 // a friend's code typed in (an iPhone's home-screen app does not get the link): opens their card
 const CodeEntry = ({ classes, openCode }) => {
   const [text, setText] = useState("");
@@ -174,7 +173,10 @@ const ChallengeDialog = ({
     return () => clearTimeout(timeoutId);
   }, [waitingForServer]);
   // the challenge's time left, renewed every second while the dialog is open
-  const secondsLeft = useCountdown(challenge ? challenge.expiresAt : undefined, open && !locked);
+  const secondsLeft = useCountdown(
+    challenge ? challenge.expiresAt : undefined,
+    open && !locked
+  );
 
   useEffect(() => {
     // a challenge restored after a reload is shown as it is

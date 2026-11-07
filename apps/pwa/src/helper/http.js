@@ -83,7 +83,8 @@ const createClient = ({
         throw new HttpError(
           `Request failed with status code ${response.status}`,
           {
-            code: response.status >= 500 ? "ERR_BAD_RESPONSE" : "ERR_BAD_REQUEST",
+            code:
+              response.status >= 500 ? "ERR_BAD_RESPONSE" : "ERR_BAD_REQUEST",
             response: result,
           }
         );
@@ -102,7 +103,10 @@ const createClient = ({
       if (signal && signal.aborted) {
         throw new HttpError("canceled", { code: "ERR_CANCELED", cause: error });
       }
-      throw new HttpError("Network Error", { code: "ERR_NETWORK", cause: error });
+      throw new HttpError("Network Error", {
+        code: "ERR_NETWORK",
+        cause: error,
+      });
     } finally {
       clearTimeout(timer);
       if (signal) {

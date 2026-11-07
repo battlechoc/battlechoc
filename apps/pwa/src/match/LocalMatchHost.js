@@ -39,7 +39,13 @@ class LocalMatchHost {
   }
 
   startNew({ players, boardSize, seed, agents, scenario, balance }) {
-    this.match = engine.createMatch({ players, boardSize, seed, balance, fieldChooser: LOCAL_PLAYER });
+    this.match = engine.createMatch({
+      players,
+      boardSize,
+      seed,
+      balance,
+      fieldChooser: LOCAL_PLAYER,
+    });
     if (typeof scenario !== "undefined") {
       engine.prepareScenario(this.match, scenario);
     }
@@ -54,7 +60,9 @@ class LocalMatchHost {
       throw new Error("Unsupported saved match");
     }
     this.match = saved.match;
-    this.agents = saved.agents.map((descriptor) => engine.createAgent(descriptor));
+    this.agents = saved.agents.map((descriptor) =>
+      engine.createAgent(descriptor)
+    );
     this.clock.start(this.match.t);
     this.lastSeq = -1;
     this.publish();
@@ -82,16 +90,24 @@ class LocalMatchHost {
     if (!this.clock.running && this.match.phase !== engine.MatchPhase.ENDED) {
       return Promise.reject(new Error("The match is paused"));
     }
-    const result = engine.applyAction(this.match, { type, player: LOCAL_PLAYER, t: this.now(), payload });
+    const result = engine.applyAction(this.match, {
+      type,
+      player: LOCAL_PLAYER,
+      t: this.now(),
+      payload,
+    });
     this.runAgents();
     this.publish();
     this.schedule();
-    return result.ok ? Promise.resolve(result.events) : Promise.reject(result.error);
+    return result.ok
+      ? Promise.resolve(result.events)
+      : Promise.reject(result.error);
   }
 
   runAgents() {
     engine.runDueAgents(this.match, this.agents, {
-      onRejected: (error) => logger.info("agent action rejected", error.message),
+      onRejected: (error) =>
+        logger.info("agent action rejected", error.message),
     });
   }
 
@@ -127,7 +143,9 @@ class LocalMatchHost {
   }
 
   publish() {
-    const view = engine.getPlayerView(this.match, LOCAL_PLAYER, { eventsAfter: this.lastSeq });
+    const view = engine.getPlayerView(this.match, LOCAL_PLAYER, {
+      eventsAfter: this.lastSeq,
+    });
     const events = view.events;
     if (events.length > 0) {
       this.lastSeq = events[events.length - 1].seq;
@@ -165,9 +183,14 @@ class LocalMatchHost {
       won: outcome.winners.length === 1 && outcome.winners[0] === LOCAL_PLAYER,
       draw: outcome.winners.length === 2,
       reason: outcome.reason,
-      winners: outcome.winners.map((index) => ({ ...this.match.players[index], idx: index })),
+      winners: outcome.winners.map((index) => ({
+        ...this.match.players[index],
+        idx: index,
+      })),
       statistics: structuredClone(this.match.players[LOCAL_PLAYER].statistics),
-      awards: engine.computeMatchAwards(this.match, LOCAL_PLAYER).map((award) => ({ key: award.key, xp: award.xp })),
+      awards: engine
+        .computeMatchAwards(this.match, LOCAL_PLAYER)
+        .map((award) => ({ key: award.key, xp: award.xp })),
     };
   }
 

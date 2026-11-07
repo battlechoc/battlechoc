@@ -20,11 +20,22 @@ const Unlocked = ({ unlock, gamesLeft, close, showDemos }) => {
   const step = unlock.online ? "online" : "buildings";
   return (
     <Dialog open close={close} mode="info" title={t(tr.UNLOCK_TITLE)}>
-      <div data-testid="unlocked" data-step={step} style={{ textAlign: "center" }}>
+      <div
+        data-testid="unlocked"
+        data-step={step}
+        style={{ textAlign: "center" }}
+      >
         {buildings.length > 0 ? (
           <>
             <p>{t(tr.UNLOCK_BUILDINGS_HINT)}</p>
-            <div style={{ display: "flex", justifyContent: "center", gap: "1.5em", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "1.5em",
+                flexWrap: "wrap",
+              }}
+            >
               {buildings.map((type) => (
                 // a box as wide as its name's longest word (German names are one long word:
                 // "Schokoladenbrunnen"), which decides whether the two stand side by side or one
@@ -52,7 +63,9 @@ const Unlocked = ({ unlock, gamesLeft, close, showDemos }) => {
                       backgroundPosition: "center",
                     }}
                   />
-                  <div>{t(tr[`TOOLTIP_BUILDING_TITLE_${type.split(".")[1]}`])}</div>
+                  <div>
+                    {t(tr[`TOOLTIP_BUILDING_TITLE_${type.split(".")[1]}`])}
+                  </div>
                 </div>
               ))}
             </div>
@@ -70,7 +83,9 @@ const Unlocked = ({ unlock, gamesLeft, close, showDemos }) => {
           <>
             <p>{t(tr.UNLOCK_DEMOS_HINT)}</p>
             <div style={{ display: "flex", justifyContent: "center" }}>
-              <Button onClick={showDemos}>{t(tr.TUTORIAL_SHOW_BUILDINGS)}</Button>
+              <Button onClick={showDemos}>
+                {t(tr.TUTORIAL_SHOW_BUILDINGS)}
+              </Button>
             </div>
             {gamesLeft > 0 ? (
               <p>

@@ -82,11 +82,17 @@ const uiSlice = createSlice({
     },
     // "opponent" or "own": turns the camera to that board, on every call
     focusBoard(state, action) {
-      state.boardFocus = { target: action.payload, seq: state.boardFocus.seq + 1 };
+      state.boardFocus = {
+        target: action.payload,
+        seq: state.boardFocus.seq + 1,
+      };
     },
     // an attack that could not be fired right now: its palette button flashes
     attackDenied(state, action) {
-      state.deniedAttack = { type: action.payload, seq: state.deniedAttack.seq + 1 };
+      state.deniedAttack = {
+        type: action.payload,
+        seq: state.deniedAttack.seq + 1,
+      };
     },
     selectBuilding(state, action) {
       state.selectedBuilding = action.payload;
@@ -194,7 +200,9 @@ const uiSlice = createSlice({
         return {
           payload: {
             autoHideDuration:
-              typeof message.autoHideDuration === "undefined" ? 4000 : message.autoHideDuration,
+              typeof message.autoHideDuration === "undefined"
+                ? 4000
+                : message.autoHideDuration,
             id: uuid(),
             type: message.type,
             text: message.text || "",
@@ -204,7 +212,9 @@ const uiSlice = createSlice({
       },
     },
     hideQuickMessage(state, action) {
-      state.quickMessages = state.quickMessages.filter((message) => message.id !== action.payload);
+      state.quickMessages = state.quickMessages.filter(
+        (message) => message.id !== action.payload
+      );
     },
     showNotification(state, action) {
       const { title, message } = action.payload;
@@ -259,7 +269,9 @@ export const uiReducer = uiSlice.reducer;
 export const showOfflineMessage = () => (dispatch, getState) =>
   dispatch(
     showQuickMessage({
-      text: getState().ui.serverDown ? t(tr.SERVER_UNREACHABLE) : t(tr.OFFLINE_ONLY),
+      text: getState().ui.serverDown
+        ? t(tr.SERVER_UNREACHABLE)
+        : t(tr.OFFLINE_ONLY),
       variant: "info",
       type: "PWA_OFFLINE_MESSAGE",
     })

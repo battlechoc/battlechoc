@@ -4,7 +4,11 @@ import { test, beforeEach, afterEach, mock } from "node:test";
 import assert from "node:assert/strict";
 import { configureStore } from "@reduxjs/toolkit";
 import { engine } from "@battlechoc/battlechoc-shared-functions";
-import { uiReducer, updatePlayerStats, startTutorial as tutorialStarted } from "../../src/ui/uiSlice.js";
+import {
+  uiReducer,
+  updatePlayerStats,
+  startTutorial as tutorialStarted,
+} from "../../src/ui/uiSlice.js";
 import { matchReducer, matchUpdated } from "../../src/match/matchSlice.js";
 import { liveReducer } from "../../src/match/liveSlice.js";
 import { settingsReducer } from "../../src/settingsSlice.js";
@@ -64,17 +68,28 @@ class FakeHost {
 
 const setup = ({ stats = {}, connected = "online", online = true } = {}) => {
   const store = configureStore({
-    reducer: { ui: uiReducer, match: matchReducer, live: liveReducer, settings: settingsReducer },
+    reducer: {
+      ui: uiReducer,
+      match: matchReducer,
+      live: liveReducer,
+      settings: settingsReducer,
+    },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({ serializableCheck: false, immutableCheck: false }),
   });
   store.dispatch(
-    updatePlayerStats({ username: "Tester", score: 150, tutorialFinished: true, ...stats })
+    updatePlayerStats({
+      username: "Tester",
+      score: 150,
+      tutorialFinished: true,
+      ...stats,
+    })
   );
   const hosts = [];
   const lobby = {
     sent: [],
-    enter: () => (connected === "online" ? Promise.resolve() : new Promise(() => {})),
+    enter: () =>
+      connected === "online" ? Promise.resolve() : new Promise(() => {}),
     playAiNow() {
       this.sent.push("playAiNow");
       return Promise.resolve();
@@ -118,9 +133,14 @@ const setup = ({ stats = {}, connected = "online", online = true } = {}) => {
     },
     createClock: () => "clock",
     liveLobby: lobby,
-    liveConnection: { status: connected === "online" ? "online" : "connecting" },
+    liveConnection: {
+      status: connected === "online" ? "online" : "connecting",
+    },
     account: {
-      token: () => (connected === "no-account" ? new Promise(() => {}) : Promise.resolve("token")),
+      token: () =>
+        connected === "no-account"
+          ? new Promise(() => {})
+          : Promise.resolve("token"),
     },
     savedMatch: {
       get: async () => saved.match,
@@ -166,7 +186,9 @@ beforeEach(() => mock.timers.enable({ apis: ["setTimeout"] }));
 afterEach(() => mock.timers.reset());
 
 test("a new player's Start opens the lesson", async () => {
-  const { controller, store, hosts } = setup({ stats: { tutorialFinished: false, tutorialSkipped: false } });
+  const { controller, store, hosts } = setup({
+    stats: { tutorialFinished: false, tutorialSkipped: false },
+  });
   await controller.startGame();
   assert.equal(store.getState().ui.tutorial, true);
   assert.deepEqual(store.getState().ui.loopAnimations, [LESSON]);
@@ -203,7 +225,12 @@ test("a player still on the AI ladder asks the server's AI; without its match th
 test("the server's match makes the fallback to the local AI a late answer", async () => {
   const { controller, hosts, deps, store } = setup();
   await controller.startGame();
-  controller.startOnlineMatch({ matchId: "m1", playerIndex: 0, epoch: 5, kind: "ai" });
+  controller.startOnlineMatch({
+    matchId: "m1",
+    playerIndex: 0,
+    epoch: 5,
+    kind: "ai",
+  });
   assert.equal(hosts.length, 1);
   assert.equal(hosts[0].online, true);
   assert.equal(hosts[0].options.matchId, "m1");
@@ -221,10 +248,16 @@ test("with online play unlocked Start joins the queue; cancel leaves it", async 
   });
   await controller.startGame();
   assert.deepEqual(lobby.sent, ["joinQueue"]);
-  assert.deepEqual(events.filter((event) => event[0] === "matchmaking"), [["matchmaking", true]]);
+  assert.deepEqual(
+    events.filter((event) => event[0] === "matchmaking"),
+    [["matchmaking", true]]
+  );
   controller.cancelMatchmaking();
   assert.deepEqual(lobby.sent, ["joinQueue", "leaveQueue"]);
-  assert.deepEqual(events.filter((event) => event[0] === "matchmaking").pop(), ["matchmaking", false]);
+  assert.deepEqual(events.filter((event) => event[0] === "matchmaking").pop(), [
+    "matchmaking",
+    false,
+  ]);
 });
 
 test("a Start cancelled before the live service answers starts nothing", async () => {
@@ -265,7 +298,15 @@ test("the end screen follows a local match after a moment and keeps its record",
   hosts[0].options.onEnded({
     online: false,
     statistics: { builtEntities: 3 },
-    winners: [{ id: "local-player", name: "Carolin Cacao", type: "PlayerType.HUMAN", idx: 0, extra: true }],
+    winners: [
+      {
+        id: "local-player",
+        name: "Carolin Cacao",
+        type: "PlayerType.HUMAN",
+        idx: 0,
+        extra: true,
+      },
+    ],
     awards: [{ key: "WINNER" }],
   });
   assert.equal(store.getState().ui.overviewVisible, false);
@@ -275,7 +316,14 @@ test("the end screen follows a local match after a moment and keeps its record",
   assert.deepEqual(records, [
     {
       builtEntities: 3,
-      winners: [{ id: "local-player", name: "Carolin Cacao", type: "PlayerType.HUMAN", idx: 0 }],
+      winners: [
+        {
+          id: "local-player",
+          name: "Carolin Cacao",
+          type: "PlayerType.HUMAN",
+          idx: 0,
+        },
+      ],
       awards: [{ key: "WINNER" }],
       id: "id-1",
     },
@@ -284,44 +332,83 @@ test("the end screen follows a local match after a moment and keeps its record",
 
 test("an online match's end screen reloads the stats the server credited", async () => {
   const { controller, events } = setup();
-  const host = controller.startOnlineMatch({ matchId: "m1", playerIndex: 0, epoch: 1 });
+  const host = controller.startOnlineMatch({
+    matchId: "m1",
+    playerIndex: 0,
+    epoch: 1,
+  });
   host.options.onEnded({ online: true });
   mock.timers.tick(OVERVIEW_DELAY_MS);
   assert.ok(events.includes("fetchPlayerStats"));
-  assert.equal(events.some((event) => event[0] === "pushGameStats"), false);
+  assert.equal(
+    events.some((event) => event[0] === "pushGameStats"),
+    false
+  );
 });
 
 test("leaving an online match gives it up, after the music faded", async () => {
   const { controller, store, lobby, deps, events } = setup();
-  const host = controller.startOnlineMatch({ matchId: "m1", playerIndex: 0, epoch: 1 });
-  store.dispatch(matchUpdated({ view: { phase: engine.MatchPhase.RUNNING }, events: [] }));
+  const host = controller.startOnlineMatch({
+    matchId: "m1",
+    playerIndex: 0,
+    epoch: 1,
+  });
+  store.dispatch(
+    matchUpdated({ view: { phase: engine.MatchPhase.RUNNING }, events: [] })
+  );
   controller.endGame();
   assert.equal(host.stopped, false);
   mock.timers.tick(LEAVE_DELAY_MS);
-  assert.deepEqual(host.calls.map(([name]) => name), ["surrender", "persist"]);
+  assert.deepEqual(
+    host.calls.map(([name]) => name),
+    ["surrender", "persist"]
+  );
   assert.equal(host.stopped, true);
   assert.equal(deps.session.host, undefined);
   assert.equal(store.getState().match.view, undefined);
   assert.ok(lobby.sent.includes("matchLeft"));
   assert.ok(events.includes("scene cleared"));
   await flush();
-  assert.deepEqual(events.filter((event) => event[0] === "unlock"), [["unlock", { step: "buildings" }]]);
+  assert.deepEqual(
+    events.filter((event) => event[0] === "unlock"),
+    [["unlock", { step: "buildings" }]]
+  );
 });
 
 test("a finished online match is not given up", () => {
   const { controller, store } = setup();
-  const host = controller.startOnlineMatch({ matchId: "m1", playerIndex: 0, epoch: 1 });
-  store.dispatch(matchUpdated({ view: { phase: engine.MatchPhase.ENDED }, events: [] }));
+  const host = controller.startOnlineMatch({
+    matchId: "m1",
+    playerIndex: 0,
+    epoch: 1,
+  });
+  store.dispatch(
+    matchUpdated({ view: { phase: engine.MatchPhase.ENDED }, events: [] })
+  );
   controller.endGame();
   mock.timers.tick(LEAVE_DELAY_MS);
-  assert.deepEqual(host.calls.map(([name]) => name), ["persist"]);
+  assert.deepEqual(
+    host.calls.map(([name]) => name),
+    ["persist"]
+  );
 });
 
 test("a rematch from the end screen clears the finished board first", () => {
   const { controller, store, events } = setup();
-  const first = controller.startOnlineMatch({ matchId: "m1", playerIndex: 0, epoch: 1 });
-  store.dispatch(matchUpdated({ view: { phase: engine.MatchPhase.ENDED }, events: [] }));
-  const second = controller.startOnlineMatch({ matchId: "m2", playerIndex: 1, epoch: 2, kind: "challenge" });
+  const first = controller.startOnlineMatch({
+    matchId: "m1",
+    playerIndex: 0,
+    epoch: 1,
+  });
+  store.dispatch(
+    matchUpdated({ view: { phase: engine.MatchPhase.ENDED }, events: [] })
+  );
+  const second = controller.startOnlineMatch({
+    matchId: "m2",
+    playerIndex: 1,
+    epoch: 2,
+    kind: "challenge",
+  });
   assert.equal(first.stopped, true);
   assert.equal(store.getState().match.view, undefined);
   assert.ok(events.includes("scene cleared"));
@@ -333,7 +420,12 @@ test("the tutorial's end stops the pending timers", () => {
   controller.startGame();
   store.dispatch(tutorialStarted({ loops: allDemos }));
   // the end screen of the match is still to come
-  hosts[0].options.onEnded({ online: false, statistics: {}, winners: [], awards: [] });
+  hosts[0].options.onEnded({
+    online: false,
+    statistics: {},
+    winners: [],
+    awards: [],
+  });
   assert.equal(controller.pendingTimers, 1);
   controller.closeTutorial(false);
   assert.equal(controller.pendingTimers, 0);
@@ -352,7 +444,10 @@ test("the recovery after a crash closes the match at once and ends the tutorial"
   assert.deepEqual(host.calls.slice(-1), [["persist", true]]);
   assert.equal(deps.session.host, undefined);
   assert.equal(store.getState().ui.tutorial, false);
-  assert.deepEqual(events.filter((event) => event[0] === "matchmaking").pop(), ["matchmaking", false]);
+  assert.deepEqual(events.filter((event) => event[0] === "matchmaking").pop(), [
+    "matchmaking",
+    false,
+  ]);
 });
 
 test("the live connection is kept while the page is visible", async () => {
@@ -362,7 +457,10 @@ test("the live connection is kept while the page is visible", async () => {
     visibilityState: "visible",
     addEventListener: (name, listener) => (listeners[name] = listener),
   };
-  store.dispatch({ type: "battlechoc/live/challengeViewed", payload: { code: "K7Q2", state: "connecting" } });
+  store.dispatch({
+    type: "battlechoc/live/challengeViewed",
+    payload: { code: "K7Q2", state: "connecting" },
+  });
   await controller.keepLiveConnection(page);
   assert.equal(typeof lobby.initOptions.onMatch, "function");
   assert.deepEqual(lobby.sent, [["openChallenge", "K7Q2"]]);

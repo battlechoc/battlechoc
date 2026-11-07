@@ -22,7 +22,14 @@ const useStyles = createUseStyles((theme) => ({
  * A message with a title and one or two buttons below it (`children`), as an info dialog;
  * `close` is its close button and Escape. Renders nothing while closed.
  */
-const MessageDialog = ({ open, close, title, text, children, "data-testid": testId }) => {
+const MessageDialog = ({
+  open,
+  close,
+  title,
+  text,
+  children,
+  "data-testid": testId,
+}) => {
   const classes = useStyles();
   if (!open) {
     return null;

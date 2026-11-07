@@ -17,10 +17,16 @@ import {
 
 // a 1000 by 500 screen fitting a board with 5 world units of half height
 const fit = { distance: 5, ratio: 2, shift: 0 };
-const close = (a, b, message) => assert.ok(Math.abs(a - b) < 1e-9, `${message}: ${a} vs ${b}`);
+const close = (a, b, message) =>
+  assert.ok(Math.abs(a - b) < 1e-9, `${message}: ${a} vs ${b}`);
 
 test("the fitted view is the camera's whole window", () => {
-  assert.deepEqual(orthoBounds(fit, fitView()), { left: -10, right: 10, top: 5, bottom: -5 });
+  assert.deepEqual(orthoBounds(fit, fitView()), {
+    left: -10,
+    right: 10,
+    top: 5,
+    bottom: -5,
+  });
 });
 
 test("the tutorial's lift moves the window, not the view", () => {
@@ -29,7 +35,11 @@ test("the tutorial's lift moves the window, not the view", () => {
 });
 
 test("at zoom 1 there is nowhere to go", () => {
-  assert.deepEqual(clampView(fit, { zoom: 1, x: 3, y: -2 }), { zoom: 1, x: 0, y: 0 });
+  assert.deepEqual(clampView(fit, { zoom: 1, x: 3, y: -2 }), {
+    zoom: 1,
+    x: 0,
+    y: 0,
+  });
 });
 
 test("zoomed in, the window stays inside the fitted one", () => {
@@ -50,8 +60,16 @@ test("zooming about a point keeps that point under the pointer", () => {
   const view = zoomAbout(fit, fitView(), 2, 0.25, 0.75);
   assert.equal(view.zoom, 2);
   const bounds = orthoBounds(fit, view);
-  close(bounds.left + 0.25 * (bounds.right - bounds.left), -5, "x under the pointer");
-  close(bounds.top - 0.75 * (bounds.top - bounds.bottom), -2.5, "y under the pointer");
+  close(
+    bounds.left + 0.25 * (bounds.right - bounds.left),
+    -5,
+    "x under the pointer"
+  );
+  close(
+    bounds.top - 0.75 * (bounds.top - bounds.bottom),
+    -2.5,
+    "y under the pointer"
+  );
 });
 
 test("zooming about a corner cannot leave the board: the window stops at the edge", () => {
@@ -76,7 +94,11 @@ test("a drag moves the view by the pixels dragged", () => {
 });
 
 test("a view glides between two others, the zoom in even steps of its ratio", () => {
-  const middle = lerpView({ zoom: 1, x: 0, y: 0 }, { zoom: 4, x: 2, y: -2 }, 0.5);
+  const middle = lerpView(
+    { zoom: 1, x: 0, y: 0 },
+    { zoom: 4, x: 2, y: -2 },
+    0.5
+  );
   close(middle.zoom, 2, "zoom");
   close(middle.x, 1, "x");
   close(middle.y, -1, "y");
