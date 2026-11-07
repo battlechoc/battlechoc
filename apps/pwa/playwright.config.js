@@ -27,7 +27,8 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${port}`,
     locale: "en-US",
-    // the tests do not cover the service worker, it only makes page loads less deterministic
+    // only the service-worker project runs the worker; everywhere else it would make page loads
+    // less deterministic
     serviceWorkers: "block",
     trace: "retain-on-failure",
     launchOptions: {
@@ -42,8 +43,19 @@ export default defineConfig({
   projects: [
     {
       name: "desktop",
-      testIgnore: /iphone\.spec\.js/,
+      testIgnore: /(iphone|service-worker)\.spec\.js/,
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 720 } },
+    },
+    {
+      // the service worker for real (installing, offline, a new build); the spec serves the e2e
+      // build itself, with the cache headers of GitHub Pages
+      name: "service-worker",
+      testMatch: /service-worker\.spec\.js/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 720 },
+        serviceWorkers: "allow",
+      },
     },
     {
       name: "iphone",

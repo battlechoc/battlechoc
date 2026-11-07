@@ -1,7 +1,7 @@
 import { registerRoute } from "workbox-routing";
 import { StaleWhileRevalidate } from "workbox-strategies";
 import { clientsClaim } from "workbox-core";
-import { precacheAndRoute } from "workbox-precaching";
+import { precacheAndRoute, addPlugins } from "workbox-precaching";
 import { CacheableResponsePlugin } from "workbox-cacheable-response";
 // Web Push without Firebase: the API sends JSON payloads { title, text, url, ... }, e.g. a
 // live invite with url "/?invite=<id>".
@@ -73,6 +73,18 @@ clientsClaim();
 // build at scripts that no longer existed, and redrawn progress donuts kept revision "9", so
 // installed games went on showing the old ones. "/" finds index.html as its directory index,
 // and the start URL's parameters are ignored.
+// Workbox asks for every entry that has a revision (the media, index.html) with cache "reload",
+// past the browser's cache: on a first visit the worker downloaded the 6 MB the page had just
+// loaded a second time. With cache "no-cache" the browser asks the server whether its copy is
+// still good (If-None-Match; GitHub Pages sends ETags of the content) and takes it after a 304,
+// so a changed file that kept its address still arrives with the worker that carries its new
+// revision (test/service-worker.spec.js). The hashed scripts keep their default.
+addPlugins([
+  {
+    requestWillFetch: async ({ request }) =>
+      request.cache === "reload" ? new Request(request, { cache: "no-cache" }) : request,
+  },
+]);
 precacheAndRoute(
   self.__WB_MANIFEST,
   { ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^app_runs_as$/, /^app_version$/] }
