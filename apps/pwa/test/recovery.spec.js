@@ -1,4 +1,6 @@
 import { test, expect } from "@playwright/test";
+import { openWithStats } from "./helpers/profile.js";
+import { waitForMatch } from "./helpers/match.js";
 
 // A crash while the interface renders shows a way back to the title screen instead of an empty
 // blue page (src/ui/ErrorBoundary.jsx). The test builds let a boundary's children throw on the
@@ -7,32 +9,6 @@ const crash = (page, name) =>
   page.evaluate(
     (name) => window.dispatchEvent(new CustomEvent("battlechoc-test-crash", { detail: name })),
     name
-  );
-
-const seedProfile = (page) =>
-  page.evaluate(
-    () =>
-      new Promise((resolve, reject) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const tx = open.result.transaction("player", "readwrite");
-          const store = tx.objectStore("player");
-          const get = store.get("stats");
-          get.onsuccess = () =>
-            store.put(
-              Object.assign({}, get.result || {}, {
-                username: "Tester",
-                score: 150,
-                tutorialFinished: true,
-                tutorialSkipped: true,
-              }),
-              "stats"
-            );
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => reject(tx.error);
-        };
-        open.onerror = () => reject(open.error);
-      })
   );
 
 test("a crash of the title screen offers the way back", async ({ page }) => {
@@ -51,13 +27,14 @@ test("a crash of the title screen offers the way back", async ({ page }) => {
 });
 
 test("a crash in a match stops it and keeps it for Resume", async ({ page }) => {
-  await page.goto("/?testclock", { waitUntil: "networkidle" });
-  await page.waitForFunction(() => document.body.innerText.trim().length > 0);
-  await seedProfile(page);
-  await page.goto("/?testclock", { waitUntil: "networkidle" });
+  await openWithStats(
+    page,
+    { username: "Tester", score: 150, tutorialFinished: true, tutorialSkipped: true },
+    "/?testclock"
+  );
   await expect(page.getByTestId("start-button")).toContainText("Start Game");
   await page.getByTestId("start-button").click();
-  await page.waitForFunction(() => window.__battlechoc && window.__battlechoc.host.match);
+  await waitForMatch(page);
   await crash(page, "hud");
   await page.getByTestId("error-recovery").getByRole("button").click();
   await expect(page.getByTestId("start-button")).toBeVisible();

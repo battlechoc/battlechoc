@@ -1,87 +1,27 @@
 import { test, expect } from "@playwright/test";
+import { openWithStats, seedStats, readEntry, waitForUnlockDecision } from "./helpers/profile.js";
+import { advance, phase } from "./helpers/clock.js";
+import {
+  clickText,
+  waitForMatch,
+  startMatch,
+  chooseField,
+  reachRunningPhase,
+  sceneSettled,
+} from "./helpers/match.js";
 
 // Real-time single player match against Tom Toffee. The page is opened with ?testclock, which
 // replaces the match clock with a manual one exposed as window.__battlechoc.host.clock, so the
 // tests fast-forward match time instead of sleeping. Every test runs in a fresh browser context.
 const url = "/?testclock";
 
-const seedProfile = (page, score) =>
-  page.evaluate(
-    (score) =>
-      new Promise((resolve, reject) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const tx = open.result.transaction("player", "readwrite");
-          const store = tx.objectStore("player");
-          const get = store.get("stats");
-          get.onsuccess = () =>
-            store.put(
-              Object.assign({}, get.result || {}, {
-                username: "Tester",
-                score,
-                tutorialFinished: true,
-                tutorialSkipped: true,
-              }),
-              "stats"
-            );
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => reject(tx.error);
-        };
-        open.onerror = () => reject(open.error);
-      }),
-    score
-  );
-
 // opens the title screen as a player who finished the tutorial (score 150: Tom Toffee, 6x6)
-const openAsPlayer = async (page, score = 150) => {
-  await page.goto(url, { waitUntil: "networkidle" });
-  await page.waitForFunction(() => document.body.innerText.trim().length > 0);
-  await seedProfile(page, score);
-  await page.goto(url, { waitUntil: "networkidle" });
-};
-
-const clickText = (page, text) =>
-  page.evaluate((text) => {
-    const element = [...document.querySelectorAll("button, div")]
-      .filter((e) => e.innerText && e.innerText.trim() === text)
-      .pop();
-    if (!element) {
-      throw new Error("no element with the text " + text);
-    }
-    element.click();
-  }, text);
-
-const advance = (page, ms) =>
-  page.evaluate((ms) => window.__battlechoc.host.clock.advance(ms), ms);
-const phase = (page) => page.evaluate(() => window.__battlechoc.host.match.phase);
-const waitForMatch = (page) =>
-  page.waitForFunction(() => window.__battlechoc && window.__battlechoc.host.match, null, {
-    timeout: 10000,
-  });
-
-const startMatch = async (page, label = "Start Game") => {
-  await page.waitForFunction((label) => document.body.innerText.includes(label), label);
-  await clickText(page, label);
-  await waitForMatch(page);
-};
-
-const chooseField = (page) =>
-  page.evaluate(() =>
-    [...document.querySelectorAll('div[class*="button-"]')]
-      .find((element) => element.querySelector('[class*="fields"]'))
-      .click()
+const openAsPlayer = (page, score = 150) =>
+  openWithStats(
+    page,
+    { username: "Tester", score, tutorialFinished: true, tutorialSkipped: true },
+    url
   );
-
-const reachRunningPhase = async (page) => {
-  await chooseField(page);
-  await page.evaluate(() => {
-    const h = window.__battlechoc.host;
-    const grid = h.match.board.fields[h.match.players[0].fieldIndex].grid;
-    const cell = grid.find((c) => c.occupiedBy.every((e) => e.type === "EntityType.CREAM"));
-    return h.submit("battlechoc/match/placeFactory", { row: cell.row, col: cell.col });
-  });
-  await advance(page, 25000);
-};
 
 test("walks through field choice, simultaneous placement and countdown", async ({ page }) => {
   await openAsPlayer(page);
@@ -171,7 +111,12 @@ test("pauses when the tab is hidden and resumes after a reload", async ({ page }
   expect(await page.evaluate(() => window.__battlechoc.host.clock.running)).toBe(false);
   const savedAt = await page.evaluate(() => window.__battlechoc.host.match.t);
   // the match is saved to IndexedDB in the background
-  await page.waitForTimeout(1000);
+  await expect
+    .poll(async () => {
+      const saved = await readEntry(page, "gamestate", "realtime-match");
+      return saved && saved.match.t;
+    })
+    .toBe(savedAt);
 
   await page.goto(url, { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.body.innerText.includes("Start Game"));
@@ -241,7 +186,7 @@ test("a passive player's match ends within the time limit and shows the overview
   }
   await expect(page.getByText(/You won|You lost/i).first()).toBeVisible();
   // the achievements count up as XP; offline the ingredient bag stays empty and says why
-  await expect(page.locator('[class^="overview"] [class^="coins"]')).toHaveCount(0);
+  await expect(page.getByTestId("end-xp")).toBeVisible();
   await page.locator("[data-icon=fast-forward]:visible").first().click();
   await expect(page.getByTestId("ingredient-bag")).toContainText("Ingredients only drop in online matches");
   await page.screenshot({ path: "test/output/screenshot_realtime_ended.png" });
@@ -271,52 +216,28 @@ test("the first match unlocks two buildings with one dialog that leads to the de
   await expect(unlocked).toHaveCount(0);
   await expect(page.getByTestId("tutorial-coach")).toContainText("1/8");
   // the demos show every building, locked or not
-  await expect(page.getByTestId("build-palette").locator("[class*=locked]")).toHaveCount(0);
+  await expect(page.getByTestId("build-palette").locator("[data-locked]")).toHaveCount(0);
 });
 
 test("the fourth match unlocks the Choclab and online play with one dialog", async ({ page }) => {
   await page.goto(url, { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.body.innerText.trim().length > 0);
   // the app decides once what an earlier player keeps (src/unlocks.js); wait for that first
-  await page.waitForFunction(
-    () =>
-      new Promise((resolve) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const get = open.result.transaction("settings").objectStore("settings").get("unlocks");
-          get.onsuccess = () => resolve(get.result !== undefined);
-        };
-      })
-  );
+  await waitForUnlockDecision(page);
   // three finished matches on the device; their buildings were announced
-  await page.evaluate(
-    () =>
-      new Promise((resolve, reject) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const tx = open.result.transaction(["player", "settings"], "readwrite");
-          const player = tx.objectStore("player");
-          const get = player.get("stats");
-          get.onsuccess = () =>
-            player.put(
-              Object.assign({}, get.result || {}, {
-                username: "Tester",
-                score: 60,
-                tutorialFinished: true,
-                trackRecord: [
-                  { id: "first", won: true, winners: [{ idx: 0 }] },
-                  { id: "second", lost: true, winners: [{ idx: 1 }] },
-                  { id: "third", won: true, winners: [{ idx: 0 }] },
-                ],
-              }),
-              "stats"
-            );
-          tx.objectStore("settings").put({ early: false, announced: { buildings: 3, online: false } }, "unlocks");
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => reject(tx.error);
-        };
-        open.onerror = () => reject(open.error);
-      })
+  await seedStats(
+    page,
+    {
+      username: "Tester",
+      score: 60,
+      tutorialFinished: true,
+      trackRecord: [
+        { id: "first", won: true, winners: [{ idx: 0 }] },
+        { id: "second", lost: true, winners: [{ idx: 1 }] },
+        { id: "third", won: true, winners: [{ idx: 0 }] },
+      ],
+    },
+    { settings: { unlocks: { early: false, announced: { buildings: 3, online: false } } } }
   );
   await page.goto(url, { waitUntil: "networkidle" });
   await expect(page.getByTestId("unlock-hint")).toHaveText(
@@ -381,6 +302,7 @@ test("nothing floats up once the match is over", async ({ page }) => {
   await expect(page.getByText(/You won/i).first()).toBeVisible();
   // time goes on while the overview is open: the charging cannon must not report a shot
   await advance(page, 30000);
+  // nothing may float up: a few rounds of the weapon indicators (250 ms) must pass
   await page.waitForTimeout(1000);
   const after = await page.evaluate(() => ({
     spawned: window.__pops.filter((pop) => pop.phase === "MatchPhase.ENDED").length,
@@ -400,14 +322,14 @@ test("the wheel and a drag zoom and move the board, a swipe brings the other boa
   await openAsPlayer(page);
   await startMatch(page);
   await reachRunningPhase(page);
-  await page.waitForTimeout(1500);
+  await sceneSettled(page);
   const whole = await boardView(page);
   expect(whole.own).toEqual({ zoom: 1, x: 0, y: 0 });
 
   // the wheel over the board zooms in about the pointer
   await page.mouse.move(400, 400);
   await page.mouse.wheel(0, -400);
-  await page.waitForTimeout(300);
+  await expect.poll(async () => (await boardView(page)).own.zoom).toBeGreaterThan(1.5);
   const wheeled = await boardView(page);
   expect(wheeled.own.zoom).toBeGreaterThan(1.5);
   expect(wheeled.height).toBeCloseTo(whole.height / wheeled.own.zoom, 3);
@@ -417,7 +339,7 @@ test("the wheel and a drag zoom and move the board, a swipe brings the other boa
   await page.mouse.down();
   await page.mouse.move(540, 420, { steps: 5 });
   await page.mouse.up();
-  await page.waitForTimeout(300);
+  await expect.poll(async () => (await boardView(page)).own.x).not.toBeCloseTo(wheeled.own.x, 3);
   const dragged = await boardView(page);
   expect(dragged.own.zoom).toBeCloseTo(wheeled.own.zoom, 6);
   expect(dragged.own.x).not.toBeCloseTo(wheeled.own.x, 3);
@@ -436,16 +358,16 @@ test("the wheel and a drag zoom and move the board, a swipe brings the other boa
     return { row: free.row, col: free.col, x: ((p.x + 1) / 2) * canvas.clientWidth, y: ((1 - p.y) / 2) * canvas.clientHeight };
   });
   await page.mouse.click(cell.x, cell.y);
-  await page.waitForTimeout(500);
-  const built = await page.evaluate(
-    ({ row, col }) => {
-      const h = window.__battlechoc.host;
-      const grid = h.match.board.fields[h.match.players[0].fieldIndex].grid;
-      return grid.find((c) => c.row === row && c.col === col).occupiedBy.map((entity) => entity.type);
-    },
-    cell
-  );
-  expect(built).toEqual(["EntityType.CREAM"]);
+  const built = () =>
+    page.evaluate(
+      ({ row, col }) => {
+        const h = window.__battlechoc.host;
+        const grid = h.match.board.fields[h.match.players[0].fieldIndex].grid;
+        return grid.find((c) => c.row === row && c.col === col).occupiedBy.map((entity) => entity.type);
+      },
+      cell
+    );
+  await expect.poll(built).toEqual(["EntityType.CREAM"]);
   expect((await boardView(page)).own).toEqual(dragged.own);
   await page.screenshot({ path: "test/output/screenshot_realtime_zoom.png" });
 
@@ -463,8 +385,7 @@ test("the wheel and a drag zoom and move the board, a swipe brings the other boa
   expect((await boardView(page)).own).toEqual({ zoom: 1, x: 0, y: 0 });
   await expect(fitButton).toHaveCSS("opacity", "0", { timeout: 10000 });
   await page.keyboard.press("+");
-  await page.waitForTimeout(200);
-  expect((await boardView(page)).own.zoom).toBeCloseTo(1.25, 3);
+  await expect.poll(async () => (await boardView(page)).own.zoom).toBeCloseTo(1.25, 3);
   await page.keyboard.press("0");
   await expect(fitButton).toHaveCSS("opacity", "0", { timeout: 10000 });
   expect((await boardView(page)).own).toEqual({ zoom: 1, x: 0, y: 0 });
@@ -474,6 +395,7 @@ test("the wheel and a drag zoom and move the board, a swipe brings the other boa
 
   // a double click is two taps, no zoom (firing many cannons means tapping fast)
   await page.mouse.dblclick(500, 300);
+  // nothing may happen: a condition cannot tell, a short while can
   await page.waitForTimeout(500);
   expect((await boardView(page)).own.zoom).toBe(1);
 
@@ -503,7 +425,7 @@ test("the wheel and a drag zoom and move the board, a swipe brings the other boa
   // each board keeps its own view across the camera flights
   await page.mouse.move(640, 360);
   await page.mouse.wheel(0, -400);
-  await page.waitForTimeout(300);
+  await expect.poll(async () => (await boardView(page)).own.zoom).toBeGreaterThan(1.5);
   const zoomedOwn = (await boardView(page)).own;
   await page.getByTestId("board-preview").click();
   await expect.poll(between, { timeout: 10000 }).toBe(1);

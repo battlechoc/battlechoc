@@ -1,23 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { seedStats as seed } from "./helpers/profile.js";
 
 // The Start button without a reachable server: the tests block every host but localhost, so the
 // live service never answers and the local AI starts after at most 3 s.
-const seed = (page, stats) =>
-  page.evaluate(
-    (stats) =>
-      new Promise((resolve) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const tx = open.result.transaction("player", "readwrite");
-          const store = tx.objectStore("player");
-          const get = store.get("stats");
-          get.onsuccess = () => store.put(Object.assign({}, get.result || {}, stats), "stats");
-          tx.oncomplete = () => resolve();
-        };
-      }),
-    stats
-  );
-
 test("Start without a server plays the local AI within a few seconds", async ({ page }) => {
   await page.goto("/?testclock", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.body.innerText.trim().length > 0);

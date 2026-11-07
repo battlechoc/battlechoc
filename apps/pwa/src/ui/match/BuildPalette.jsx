@@ -214,7 +214,7 @@ const BuildPalette = ({
         {buildings.map((building) => {
           if (!unlocked(building.type)) {
             return (
-              <div key={building.type} className={`${classes.item} ${classes.locked}`}>
+              <div key={building.type} className={`${classes.item} ${classes.locked}`} data-locked="true">
                 <div className="icon" style={{ backgroundImage: "url(/images/lock.svg)" }} />
               </div>
             );

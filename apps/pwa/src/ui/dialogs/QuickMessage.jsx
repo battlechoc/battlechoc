@@ -157,6 +157,9 @@ const QuickMessage = (componentProps) => {
       className={`${visible ? classes.visible : classes.invisible} ${
         classes.message
       }`}
+      data-testid="quick-message"
+      data-variant={props.variant}
+      data-visible={visible ? "true" : "false"}
     >
       <div className={`${classes[variant]} ${classes.icon}`}>
         <div />

@@ -263,6 +263,7 @@ const PlayerNameInput = (componentProps) => {
         )}
         <div
           onClick={handleAction}
+          data-testid="name-submit"
           className={`${classes.actionButton} ${
             buttonDisabled ? classes.disabled : null
           } ${buttonError ? classes.buttonError : null}`}

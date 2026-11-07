@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { seedStats as seed } from "./helpers/profile.js";
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
@@ -128,25 +129,8 @@ const precached = (page) =>
     return keys.flat().map((request) => new URL(request.url).pathname);
   });
 
-const seed = (page, stats) =>
-  page.evaluate(
-    (stats) =>
-      new Promise((resolve) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const tx = open.result.transaction("player", "readwrite");
-          const store = tx.objectStore("player");
-          const get = store.get("stats");
-          get.onsuccess = () =>
-            store.put(Object.assign({}, get.result || {}, stats), "stats");
-          tx.oncomplete = () => resolve();
-        };
-      }),
-    stats
-  );
-
 const titleScreen = async (page, label) => {
-  await expect(page.locator("[class^=logo]").first()).toBeVisible();
+  await expect(page.getByTestId("title-logo")).toBeVisible();
   await expect(page.getByTestId("start-button")).toHaveText(label, {
     timeout: 30000,
   });

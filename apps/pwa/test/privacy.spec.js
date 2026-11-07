@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { seedStats as seed } from "./helpers/profile.js";
 
 // The privacy policy promises that the game loads nothing from other servers: everything comes
 // from battlechoc.com (here the preview server) and api.battlechoc.com. Babylon.js knows CDN
@@ -15,22 +16,6 @@ const foreignRequests = (page) => {
   });
   return foreign;
 };
-
-const seed = (page, stats) =>
-  page.evaluate(
-    (stats) =>
-      new Promise((resolve) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const tx = open.result.transaction("player", "readwrite");
-          const store = tx.objectStore("player");
-          const get = store.get("stats");
-          get.onsuccess = () => store.put(Object.assign({}, get.result || {}, stats), "stats");
-          tx.oncomplete = () => resolve();
-        };
-      }),
-    stats
-  );
 
 test("the game asks no other server, neither on the title nor in a match", async ({ page }) => {
   const foreign = foreignRequests(page);

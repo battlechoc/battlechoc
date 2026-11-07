@@ -207,6 +207,8 @@ const GameStartSelection = (props) => {
       <div
         className={(unlocked ? "active " : "inactive ") + classes.button}
         onClick={() => choose(0)}
+        data-testid="choose-field"
+        data-field={0}
       >
         {(() => {
           if (typeof game.board !== "undefined") {
@@ -257,6 +259,8 @@ const GameStartSelection = (props) => {
       <div
         className={(unlocked ? "active " : "inactive ") + classes.button}
         onClick={() => choose(1)}
+        data-testid="choose-field"
+        data-field={1}
       >
         {(() => {
           if (typeof game.board !== "undefined") {

@@ -1,27 +1,13 @@
 import { test, expect } from "@playwright/test";
+import { accountOf } from "./profile.js";
+
+export { accountOf };
 
 // Live matches between two browsers against the local API that playwright.config.js starts
 // (in-memory database, 20 s disconnect grace, AI fallback after 3 s). Each player is a separate
 // browser context with its own device account; names and a first win are set up through the
 // public API, as a real player would get them.
 export const api = `http://127.0.0.1:${process.env.API_PORT || 8091}`;
-
-export const accountOf = (page) =>
-  page.evaluate(
-    () =>
-      new Promise((resolve, reject) => {
-        const open = indexedDB.open("battlechoc");
-        open.onsuccess = () => {
-          const get = open.result
-            .transaction("player")
-            .objectStore("player")
-            .get("account");
-          get.onsuccess = () => resolve(get.result);
-          get.onerror = () => reject(get.error);
-        };
-        open.onerror = () => reject(open.error);
-      })
-  );
 
 // unlocked: three finished matches (online play needs three against the AI, shared
 // progression.js), one of them a win worth more than 100 XP; false keeps the player at 0 XP and

@@ -545,7 +545,7 @@ const Hud = (props) => {
                 </div>
               </Dialog>
               <div className={classes.titleScreen}>
-                <div className={classes.logo}>
+                <div className={classes.logo} data-testid="title-logo">
                   <div />
                   <div />
                 </div>
