@@ -198,56 +198,15 @@ class Scene extends Component {
     this.weaponIndicatorInterval = setInterval(() => this.updateWeaponIndicators(), 250);
   }
 
-  hideEnergyBar = (position, field) => {
+  hideEnergyBar = (position) => {
     const height = this.heightAbove(ENERGY_BAR);
-
-    if (position === null) {
-      position = new Vector3(field.row, height, field.col);
-    }
     let name = `${position.x}-${height}-${position.z}`;
     if (this.energyBars.includes(name)) {
       this.scene.stopAnimation(this.scene.getMeshByName("energy.bar." + name));
     }
   };
 
-  stopAllAnimations = () => {
-    for (const callback of this.animations) {
-      this.scene.stopAnimation(callback.target);
-    }
-
-    if (this.opponentGameField) {
-      this.opponentGameField.stopAllAnimations();
-    }
-
-    if (this.playerGameField) {
-      this.playerGameField.stopAllAnimations();
-    }
-
-    this.animations = [];
-  };
-
-  showEnergyBar = (entity, position, showShieldEnergyToo = false) => {
-    if (showShieldEnergyToo) {
-      const cellAt = (board, field, row, col) =>
-        board.fields[field].grid[row * board.size.cols + col];
-      const selectedCell = cellAt(
-        this.props.game.board,
-        this.props.game.players[this.props.game.viewer].fieldIndex,
-        entity.position.row,
-        entity.position.col
-      );
-      if (selectedCell.shielded) {
-        this.showEnergyBar(
-          this.getFountain(
-            entity.position.row,
-            entity.position.col,
-            this.props.game.board,
-            this.props.game.players[this.props.game.viewer].fieldIndex
-          )
-        );
-      }
-    }
-
+  showEnergyBar = (entity, position) => {
     const height = this.heightAbove(ENERGY_BAR);
 
     if (typeof position === "undefined") {
@@ -530,36 +489,6 @@ class Scene extends Component {
         "/images/cacao.svg",
         this.props.theme.color.accent.light,
         "-" + amount
-      );
-    } else if (messageType === InfoType.INCREASE_CACAO_PER_TURN) {
-      drawInfo(
-        "/images/cacao-per-turn.svg",
-        this.props.theme.color.primary.light,
-        "+" + amount
-      );
-    } else if (messageType === InfoType.INCREASE_BUILDINGS_PER_TURN) {
-      drawInfo(
-        "/images/buildings-per-turn.svg",
-        this.props.theme.color.primary.light,
-        "+" + amount
-      );
-    } else if (messageType === InfoType.INCREASE_ATTACKS_PER_TURN) {
-      drawInfo(
-        "/images/attacks-per-turn.svg",
-        this.props.theme.color.primary.light,
-        "+" + amount
-      );
-    } else if (messageType === InfoType.INCREASE_SPY_ATTACKS_PER_TURN) {
-      drawInfo(
-        "/images/spy-attacks-per-turn.svg",
-        this.props.theme.color.primary.light,
-        "+" + amount
-      );
-    } else if (messageType === InfoType.INCREASE_FRUIT_ATTACKS_PER_TURN) {
-      drawInfo(
-        "/images/fruit-attacks-per-turn.svg",
-        this.props.theme.color.primary.light,
-        "+" + amount
       );
     } else if (messageType === InfoType.BUILDING_READY) {
       drawInfo("/images/buildings-icon.svg", this.props.theme.color.primary.light, "+" + amount, true);
@@ -1171,31 +1100,6 @@ class Scene extends Component {
         col + this.opponentGameFieldDistance
       );
       this.opponentGameField.explode(truffle);
-    }
-  }
-
-  getFountain(row, col, board, field) {
-    let cellAt = (board, field, row, col) =>
-      board.fields[field].grid[row * board.size.cols + col];
-    let neighbors = [];
-    for (let r = row - 1; r < row + 2; r++) {
-      for (let c = col - 1; c < col + 2; c++) {
-        if (r >= 0 && c >= 0 && r < board.size.rows && c < board.size.cols) {
-          neighbors.push(cellAt(board, field, r, c));
-        }
-      }
-    }
-    const cellsWithFountains = neighbors.filter((cell) =>
-      cell.occupiedBy
-        .map((entity) => entity.type)
-        .includes(EntityType.CHOCOLATE_FOUNTAIN)
-    );
-    if (cellsWithFountains.length > 0) {
-      return cellsWithFountains[0].occupiedBy.filter(
-        (entity) => entity.type === EntityType.CHOCOLATE_FOUNTAIN
-      )[0];
-    } else {
-      return undefined;
     }
   }
 
