@@ -114,8 +114,8 @@ jobs:
     name: e2e (${{ matrix.group }})
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     runs-on: ubuntu-latest
-    # a group usually takes 4 to 15 minutes, 20 on a slow runner
-    timeout-minutes: 45
+    # a group's tests take 4 to 7 minutes, the setup about a minute
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -127,8 +127,15 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # Playwright's Chromium, kept between runs (the key is Playwright's version); the runner
+      # image has Chromium's system libraries already (Chrome is installed on it), and the
+      # `--with-deps` apt run that checked them took up to ten minutes on some runners
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('node_modules/@playwright/test/package.json') }}
       - name: Install Chromium for Playwright
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
       # the e2e build carries the test hooks (src/testHooks.js); the published build has none
       - name: End-to-end tests of the group (builds build-e2e/, Playwright serves it via vite preview)
         working-directory: apps/pwa
