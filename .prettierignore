@@ -10,6 +10,10 @@ apps/android/
 apps/pwa/dev/
 apps/pwa/public/
 apps/pwa/index.html
+# what the browser tests write
+apps/pwa/test/results/
+apps/pwa/test/output/
+apps/pwa/build-e2e/
 packages/
 .github/scripts/
 
