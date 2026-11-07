@@ -342,7 +342,7 @@ const TitleScreen = (props) => {
         <div className={classes.notification}>
           <p>{notification.message}</p>
           <Button size="small" style={{ marginRight: 32 }} onClick={() => props.hideNotification()}>
-            Ok
+            {t(tr.OK)}
           </Button>
         </div>
       </Dialog>

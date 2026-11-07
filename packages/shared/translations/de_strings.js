@@ -570,5 +570,7 @@ module.exports = {
     "CHALLENGE_CODE_COPIED": "Code kopiert",
     "ASSETS_LOADING": "3D-Modelle laden…",
     "ASSETS_FAILED": "Laden fehlgeschlagen: antippen",
-    "TUTORIAL_STARTER_KIT": "Dein Startpaket:"
+    "TUTORIAL_STARTER_KIT": "Dein Startpaket:",
+    "OK": "OK",
+    "ERROR_RECOVERY_TEXT": "Hier ist etwas schiefgegangen. Dein lokales Spiel ist gespeichert, und vom Startbildschirm aus geht es weiter."
 }

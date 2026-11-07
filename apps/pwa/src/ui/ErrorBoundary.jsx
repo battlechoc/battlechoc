@@ -18,8 +18,19 @@ const useStyles = createUseStyles((theme) => ({
     zIndex: theme.layer.recovery,
     display: "flex",
     alignItems: "center",
+    flexDirection: "column",
+    gap: "1.5em",
     justifyContent: "center",
+    padding: "0 var(--edge-cutout, 24px)",
     background: rise(theme.color.sky, "80%"),
+  },
+  text: {
+    maxWidth: "30em",
+    margin: 0,
+    textAlign: "center",
+    color: "white",
+    fontFamily: "var(--font-body)",
+    fontSize: theme.font.size.md,
   },
 }));
 
@@ -29,10 +40,11 @@ const Throw = () => {
   throw new Error("crash for the tests");
 };
 
-const RecoveryScreen =({ recover }) => {
+const RecoveryScreen = ({ recover }) => {
   const classes = useStyles();
   return (
     <div className={classes.screen} data-testid="error-recovery">
+      <p className={classes.text}>{t(tr.ERROR_RECOVERY_TEXT)}</p>
       <Button size="huge" onClick={recover}>
         {t(tr.GAME_MENU_LEAVE)}
       </Button>

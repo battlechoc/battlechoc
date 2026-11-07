@@ -64,7 +64,7 @@ const Unlocked = ({ unlock, gamesLeft, close, showDemos }) => {
             <p>{t(tr.UNLOCK_NEW_FEATURES)}</p>
             <p>{t(tr.UNLOCK_ONLINE_HINT)}</p>
             <div style={{ display: "flex", justifyContent: "center" }}>
-              <Button onClick={close}>Ok</Button>
+              <Button onClick={close}>{t(tr.OK)}</Button>
             </div>
           </>
         ) : (

@@ -570,5 +570,7 @@ module.exports = {
     "CHALLENGE_CODE_COPIED": "Code copied",
     "ASSETS_LOADING": "Loading 3D models…",
     "ASSETS_FAILED": "Loading failed: tap to retry",
-    "TUTORIAL_STARTER_KIT": "Your starter kit:"
+    "TUTORIAL_STARTER_KIT": "Your starter kit:",
+    "OK": "OK",
+    "ERROR_RECOVERY_TEXT": "Something went wrong here. Your local match is saved, and you can go on from the title screen."
 }

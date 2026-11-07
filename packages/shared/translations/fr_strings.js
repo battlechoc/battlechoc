@@ -570,5 +570,7 @@ module.exports = {
     "CHALLENGE_CODE_COPIED": "Code copié",
     "ASSETS_LOADING": "Chargement des modèles 3D…",
     "ASSETS_FAILED": "Échec du chargement : touche pour réessayer",
-    "TUTORIAL_STARTER_KIT": "Ton kit de départ :"
+    "TUTORIAL_STARTER_KIT": "Ton kit de départ :",
+    "OK": "OK",
+    "ERROR_RECOVERY_TEXT": "Un problème est survenu. Ta partie locale est sauvegardée, tu peux continuer depuis l'écran d'accueil."
 }
