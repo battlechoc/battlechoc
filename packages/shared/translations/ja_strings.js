@@ -570,5 +570,7 @@ module.exports = {
     "CHALLENGE_CODE_COPIED": "コードをコピーしました",
     "ASSETS_LOADING": "3Dモデルを読み込み中…",
     "ASSETS_FAILED": "読み込みに失敗：タップで再試行",
-    "TUTORIAL_STARTER_KIT": "スターターキット："
+    "TUTORIAL_STARTER_KIT": "スターターキット：",
+    "OK": "OK",
+    "ERROR_RECOVERY_TEXT": "問題が発生しました。ローカルの対戦は保存されています。タイトル画面から続けられます。"
 }

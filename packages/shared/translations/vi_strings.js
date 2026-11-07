@@ -570,5 +570,7 @@ module.exports = {
     "CHALLENGE_CODE_COPIED": "Đã sao chép mã",
     "ASSETS_LOADING": "Đang tải mô hình 3D…",
     "ASSETS_FAILED": "Tải thất bại: chạm để thử lại",
-    "TUTORIAL_STARTER_KIT": "Bộ khởi đầu của bạn:"
+    "TUTORIAL_STARTER_KIT": "Bộ khởi đầu của bạn:",
+    "OK": "OK",
+    "ERROR_RECOVERY_TEXT": "Đã xảy ra lỗi. Trận đấu cục bộ của bạn đã được lưu, bạn có thể tiếp tục từ màn hình chính."
 }

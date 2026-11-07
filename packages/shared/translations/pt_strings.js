@@ -570,5 +570,7 @@ module.exports = {
     "CHALLENGE_CODE_COPIED": "Código copiado",
     "ASSETS_LOADING": "Carregando modelos 3D…",
     "ASSETS_FAILED": "Falha ao carregar: toque para tentar de novo",
-    "TUTORIAL_STARTER_KIT": "Seu kit inicial:"
+    "TUTORIAL_STARTER_KIT": "Seu kit inicial:",
+    "OK": "OK",
+    "ERROR_RECOVERY_TEXT": "Algo deu errado. Sua partida local está salva e você pode continuar a partir da tela inicial."
 }

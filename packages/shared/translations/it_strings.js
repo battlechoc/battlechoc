@@ -570,5 +570,7 @@ module.exports = {
     "CHALLENGE_CODE_COPIED": "Codice copiato",
     "ASSETS_LOADING": "Caricamento modelli 3D…",
     "ASSETS_FAILED": "Caricamento fallito: tocca per riprovare",
-    "TUTORIAL_STARTER_KIT": "Il tuo kit iniziale:"
+    "TUTORIAL_STARTER_KIT": "Il tuo kit iniziale:",
+    "OK": "OK",
+    "ERROR_RECOVERY_TEXT": "Qualcosa è andato storto. La tua partita locale è salvata e puoi continuare dalla schermata iniziale."
 }
