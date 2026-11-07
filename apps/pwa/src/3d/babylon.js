@@ -35,7 +35,12 @@ import { CreateBox } from "@babylonjs/core/Meshes/Builders/boxBuilder.js";
 import { SceneLoaderFlags } from "@babylonjs/core/Loading/sceneLoaderFlags.js";
 
 // the builders in use; Babylon's MeshBuilder brings all 25
-export const MeshBuilder = { CreatePlane, CreateSphere, CreateTorus, CreateBox };
+export const MeshBuilder = {
+  CreatePlane,
+  CreateSphere,
+  CreateTorus,
+  CreateBox,
+};
 
 // What the barrel import used to register for us:
 import "@babylonjs/core/Animations/animatable.js"; // scene.beginAnimation & co.

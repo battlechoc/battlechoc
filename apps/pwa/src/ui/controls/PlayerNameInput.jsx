@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DEFAULT_NAME } from "../../helper/playerName";
 import { checkUsername } from "../../api/profile";
 import { isCancel } from "../../helper/http";
@@ -253,11 +253,7 @@ const PlayerNameInput = (componentProps) => {
                 backgroundSize: "100% 100%",
               }}
             ></div>
-            <div
-              className={classes.name}
-            >
-              {playerName}
-            </div>
+            <div className={classes.name}>{playerName}</div>
             {props.pending ? <UnsyncedMark /> : null}
           </div>
         )}

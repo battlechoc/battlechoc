@@ -5,4 +5,6 @@ export const DEFAULT_NAME = EmptyPlayerStats.username;
 
 /** Whether the stats carry a name the player chose (the default is no name). */
 export const isNamed = (stats) =>
-  Boolean(stats) && typeof stats.username === "string" && stats.username !== DEFAULT_NAME;
+  Boolean(stats) &&
+  typeof stats.username === "string" &&
+  stats.username !== DEFAULT_NAME;

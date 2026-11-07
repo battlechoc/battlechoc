@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import Fab from "./Fab";
 import Button from "./Button";
 import {
@@ -111,7 +111,9 @@ const useStyles = createUseStyles((theme) => ({
 // the cocoa that achievements gave instead of a special ingredient is shown as one item;
 // special ingredients and the daily fresh batch keep their source
 const bagItems = (drops) => {
-  const fallback = drops.filter((drop) => drop.ingredient === "COCOA" && drop.achievement !== "FRESHBATCH");
+  const fallback = drops.filter(
+    (drop) => drop.ingredient === "COCOA" && drop.achievement !== "FRESHBATCH"
+  );
   const cocoa = fallback.reduce((sum, drop) => sum + drop.amount, 0);
   return [
     ...(cocoa > 0 ? [{ ingredient: "COCOA", amount: cocoa }] : []),
@@ -134,7 +136,10 @@ const CONFETTI_COLORS = [
   "#3190c3", // blueberry
 ];
 const pickColors = (count) =>
-  Array.from({ length: count }, () => CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)]);
+  Array.from(
+    { length: count },
+    () => CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)]
+  );
 
 const GameEndOverview = (props) => {
   const classes = useStyles();
@@ -297,7 +302,11 @@ const GameEndOverview = (props) => {
             {verified ? (
               <IngredientBag
                 items={bagItems(drops || [])}
-                message={typeof drops === "undefined" ? t(tr.END_BAG_WAITING) : undefined}
+                message={
+                  typeof drops === "undefined"
+                    ? t(tr.END_BAG_WAITING)
+                    : undefined
+                }
               />
             ) : (
               <IngredientBag

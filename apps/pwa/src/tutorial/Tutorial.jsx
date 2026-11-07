@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
@@ -52,14 +52,21 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-
 /**
  * The tutorial on the real-time engine: an interactive first lesson against Mimi Marzipan
  * (loops = [LESSON]) or a series of scripted demos of the unlocked buildings.
  */
 const Tutorial = (props) => {
   const classes = useStyles();
-  const { loops, view, playerInfos, selectedAttack, dispatch, clearScene, testClock } = props;
+  const {
+    loops,
+    view,
+    playerInfos,
+    selectedAttack,
+    dispatch,
+    clearScene,
+    testClock,
+  } = props;
   // the first finished lesson brings the starter kit (the server credits it once, also later
   // when the lesson was played without it); a restarted lesson brings nothing
   const firstFinish = useRef(!playerInfos.stats.tutorialFinished);
@@ -80,7 +87,10 @@ const Tutorial = (props) => {
   const [named, setNamed] = useState(isNamed(stats));
   const [initialUserName, setInitialUserName] = useState(stats.username);
   // in portrait the card lies across the top of the board: the scene moves the board below it
-  const cardLayout = useCallback((bottom) => dispatch(boardTopInsetChanged(bottom)), [dispatch]);
+  const cardLayout = useCallback(
+    (bottom) => dispatch(boardTopInsetChanged(bottom)),
+    [dispatch]
+  );
 
   // the lesson: start once; the demos: (re)start whenever the page changes
   useEffect(() => {
@@ -146,7 +156,12 @@ const Tutorial = (props) => {
       if (typeof view === "undefined" || typeof host === "undefined") {
         return;
       }
-      const context = { view, now: host.now(), memory: memory.current, selectedAttack };
+      const context = {
+        view,
+        now: host.now(),
+        memory: memory.current,
+        selectedAttack,
+      };
       const target = current.point ? current.point(context) : null;
       const key = JSON.stringify(target);
       if (key !== pointerKey.current) {
@@ -177,7 +192,10 @@ const Tutorial = (props) => {
         multiplayer.tutorialFinished();
       }
       if (!named) {
-        (isNamed(stats) ? Promise.resolve(stats.username) : multiplayer.fetchRandomName())
+        (isNamed(stats)
+          ? Promise.resolve(stats.username)
+          : multiplayer.fetchRandomName()
+        )
           .then((name) => setInitialUserName(name))
           .catch((error) => logger.info(error));
       }
@@ -214,7 +232,9 @@ const Tutorial = (props) => {
 
   let card;
   if (lesson) {
-    const ready = !current.ready || (typeof view !== "undefined" && current.ready({ view }));
+    const ready =
+      !current.ready ||
+      (typeof view !== "undefined" && current.ready({ view }));
     card = (
       <CoachCard
         data-testid="tutorial-coach"
@@ -234,7 +254,10 @@ const Tutorial = (props) => {
             onClick={() => {
               Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
               const following = lessonSteps[step + 1];
-              memory.current = following.enter && view ? following.enter({ view, memory: {} }) : {};
+              memory.current =
+                following.enter && view
+                  ? following.enter({ view, memory: {} })
+                  : {};
               setStep(step + 1);
             }}
           />
@@ -288,7 +311,11 @@ const Tutorial = (props) => {
         open={lesson && finished}
         close={() => close(false)}
         closable={named}
-        title={named ? t(tr.TUTORIAL_DIALOG_TITLE) : t(tr.TUTORIAL_DIALOG_TITLE_BEFORE)}
+        title={
+          named
+            ? t(tr.TUTORIAL_DIALOG_TITLE)
+            : t(tr.TUTORIAL_DIALOG_TITLE_BEFORE)
+        }
       >
         {named ? (
           <div className={classes.finished} data-testid="tutorial-finished">
@@ -296,7 +323,9 @@ const Tutorial = (props) => {
               <div data-testid="starter-kit">
                 <p>{t(tr.TUTORIAL_STARTER_KIT)}</p>
                 <IngredientBag
-                  items={Object.entries(StarterKit).map(([ingredient, amount]) => ({ ingredient, amount }))}
+                  items={Object.entries(StarterKit).map(
+                    ([ingredient, amount]) => ({ ingredient, amount })
+                  )}
                   showSources={false}
                 />
               </div>
@@ -306,7 +335,9 @@ const Tutorial = (props) => {
               <br />
               {t(tr.TUTORIAL_DIALOG_HINT)}
             </p>
-            <Button onClick={() => close(true)}>{t(tr.TUTORIAL_DIALOG_PLAY_GAME)}</Button>
+            <Button onClick={() => close(true)}>
+              {t(tr.TUTORIAL_DIALOG_PLAY_GAME)}
+            </Button>
           </div>
         ) : (
           <div data-testid="tutorial-name">

@@ -46,7 +46,10 @@ test("hydrating takes a stored false and leaves everything else at the default",
   const storage = fakeStorage({ tips: false, autoFullscreen: "yes" });
   const store = storeWith(storage);
   await store.dispatch(hydrateSettings(storage));
-  assert.deepEqual(store.getState().settings, { tipsEnabled: false, autoFullscreen: true });
+  assert.deepEqual(store.getState().settings, {
+    tipsEnabled: false,
+    autoFullscreen: true,
+  });
   // reading writes nothing back
   await settled();
   assert.deepEqual(storage.writes, []);
@@ -56,7 +59,10 @@ test("nothing stored: the defaults", async () => {
   const storage = fakeStorage();
   const store = storeWith(storage);
   await store.dispatch(hydrateSettings(storage));
-  assert.deepEqual(store.getState().settings, { tipsEnabled: true, autoFullscreen: true });
+  assert.deepEqual(store.getState().settings, {
+    tipsEnabled: true,
+    autoFullscreen: true,
+  });
 });
 
 test("a storage that fails keeps the defaults", async () => {
@@ -67,7 +73,10 @@ test("a storage that fails keeps the defaults", async () => {
   };
   const store = storeWith(fakeStorage());
   await store.dispatch(hydrateSettings(storage));
-  assert.deepEqual(store.getState().settings, { tipsEnabled: true, autoFullscreen: true });
+  assert.deepEqual(store.getState().settings, {
+    tipsEnabled: true,
+    autoFullscreen: true,
+  });
 });
 
 test("every change is kept under the storage key installed games have", async () => {
@@ -82,7 +91,10 @@ test("every change is kept under the storage key installed games have", async ()
     ["autoFullscreen", false],
     ["tips", true],
   ]);
-  assert.deepEqual(store.getState().settings, { tipsEnabled: true, autoFullscreen: false });
+  assert.deepEqual(store.getState().settings, {
+    tipsEnabled: true,
+    autoFullscreen: false,
+  });
 });
 
 test("a failed write is reported, the state keeps the change", async () => {

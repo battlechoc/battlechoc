@@ -1,4 +1,3 @@
-import React from "react";
 import { BUILDING_ICON, iconUrl } from "../../catalog";
 import { createUseStyles } from "react-jss";
 import {
@@ -9,11 +8,7 @@ import Dialog from "../dialogs/Dialog";
 import ItemIcon from "./ItemIcon";
 import IngredientIcon from "../ingredients/IngredientIcon";
 import Button from "../controls/Button";
-import {
-  effectLines,
-  itemName,
-  labColors,
-} from "./itemText";
+import { effectLines, itemName, labColors } from "./itemText";
 import { bangers, gamePanel } from "../styles";
 
 const useStyles = createUseStyles((theme) => ({

@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useRef, useCallback } from "react";
+import { Suspense, useState, useRef, useCallback } from "react";
 import "./Hud.css";
 import { connect } from "react-redux";
 import {
@@ -50,7 +50,14 @@ const stageOf = ({ phase, choclab, waitingRoom }) => {
 };
 
 // the buttons at the top left: back from the Choclab, none while waiting, else the action bar
-const TopBar = ({ stage, classes, closeChoclab, endGame, showSettings, showSignInOrUp }) => {
+const TopBar = ({
+  stage,
+  classes,
+  closeChoclab,
+  endGame,
+  showSettings,
+  showSignInOrUp,
+}) => {
   if (stage === "CHOCLAB_SCREEN") {
     return (
       <div className={classes.actionbar}>
@@ -60,7 +67,13 @@ const TopBar = ({ stage, classes, closeChoclab, endGame, showSettings, showSignI
   } else if (stage === "WAITING_ROOM") {
     return null;
   }
-  return <Actionbar endGame={endGame} showSettings={showSettings} showSignInOrUp={showSignInOrUp} />;
+  return (
+    <Actionbar
+      endGame={endGame}
+      showSettings={showSettings}
+      showSignInOrUp={showSignInOrUp}
+    />
+  );
 };
 
 // what a stage shows below the top bar

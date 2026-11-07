@@ -1,4 +1,3 @@
-import React from "react";
 import { BUILDING_ICON, iconUrl } from "../../catalog";
 import { Items } from "@battlechoc/battlechoc-shared-functions";
 import { TIER_COLORS, badgeOf, itemName } from "./itemText";

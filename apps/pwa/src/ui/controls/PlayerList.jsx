@@ -1,4 +1,3 @@
-import React from "react";
 import { createUseStyles } from "react-jss";
 import withDefaultProps from "../../helper/defaultProps";
 import { outlined } from "../styles";

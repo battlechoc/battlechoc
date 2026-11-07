@@ -4,7 +4,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { configureStore } from "@reduxjs/toolkit";
-import { EntityType, EmptyPlayerStats } from "@battlechoc/battlechoc-shared-functions";
+import {
+  EntityType,
+  EmptyPlayerStats,
+} from "@battlechoc/battlechoc-shared-functions";
 import {
   uiReducer,
   resetUi,
@@ -75,25 +78,41 @@ test("every key the actions set is in the start state", () => {
 });
 
 test("the first load: fonts, progress, a failure and the end", () => {
-  let state = apply(fontsArrived(), assetsProgressed(40), assetsFailedChanged(true));
+  let state = apply(
+    fontsArrived(),
+    assetsProgressed(40),
+    assetsFailedChanged(true)
+  );
   assert.deepEqual(
-    { fontsReady: state.fontsReady, assetsProgress: state.assetsProgress, assetsFailed: state.assetsFailed },
+    {
+      fontsReady: state.fontsReady,
+      assetsProgress: state.assetsProgress,
+      assetsFailed: state.assetsFailed,
+    },
     { fontsReady: true, assetsProgress: 40, assetsFailed: true }
   );
   state = uiReducer(state, assetsReady());
   assert.deepEqual(
-    { assetsReady: state.assetsReady, assetsProgress: state.assetsProgress, assetsFailed: state.assetsFailed },
+    {
+      assetsReady: state.assetsReady,
+      assetsProgress: state.assetsProgress,
+      assetsFailed: state.assetsFailed,
+    },
     { assetsReady: true, assetsProgress: 100, assetsFailed: false }
   );
 });
 
 test("connectivity: online, offline and a server that is down", () => {
   assert.deepEqual(
-    (({ online, serverDown }) => ({ online, serverDown }))(apply(connectivityChanged("server-down"))),
+    (({ online, serverDown }) => ({ online, serverDown }))(
+      apply(connectivityChanged("server-down"))
+    ),
     { online: false, serverDown: true }
   );
   assert.deepEqual(
-    (({ online, serverDown }) => ({ online, serverDown }))(apply(connectivityChanged("offline"))),
+    (({ online, serverDown }) => ({ online, serverDown }))(
+      apply(connectivityChanged("offline"))
+    ),
     { online: false, serverDown: false }
   );
   assert.deepEqual(
@@ -112,11 +131,17 @@ test("the named setters", () => {
     previewBottomChanged(120),
     boardTopInsetChanged(88),
     tutorialPointerChanged({ board: "own", row: 1, col: 2 }),
-    tutorialBoardChanged({ interactive: true, whitelistBuildings: [EntityType.CACAOTREE] }),
+    tutorialBoardChanged({
+      interactive: true,
+      whitelistBuildings: [EntityType.CACAOTREE],
+    }),
     gameResumeable(true)
   );
   assert.equal(state.earlyUnlock, true);
-  assert.deepEqual(state.nameConflict, { taken: "Anna", generated: "Brave Bean" });
+  assert.deepEqual(state.nameConflict, {
+    taken: "Anna",
+    generated: "Brave Bean",
+  });
   assert.equal(state.updateAvailable, true);
   assert.equal(state.previewBottom, 120);
   assert.equal(state.boardTopInset, 88);
@@ -131,8 +156,14 @@ test("the tutorial starts with its loops and leaves the board as it found it", (
   let state = apply(startTutorial({ loops: ["LESSON"] }));
   assert.equal(state.tutorial, true);
   assert.deepEqual(state.loopAnimations, ["LESSON"]);
-  state = uiReducer(state, tutorialBoardChanged({ interactive: true, whitelistBuildings: ["x"] }));
-  state = uiReducer(state, tutorialPointerChanged({ weapon: "AttackType.TRUFFLE" }));
+  state = uiReducer(
+    state,
+    tutorialBoardChanged({ interactive: true, whitelistBuildings: ["x"] })
+  );
+  state = uiReducer(
+    state,
+    tutorialPointerChanged({ weapon: "AttackType.TRUFFLE" })
+  );
   state = uiReducer(state, stopTutorial());
   assert.deepEqual(
     {
@@ -141,12 +172,21 @@ test("the tutorial starts with its loops and leaves the board as it found it", (
       whitelistBuildings: state.whitelistBuildings,
       tutorialPointer: state.tutorialPointer,
     },
-    { tutorial: false, tutorialInteractive: false, whitelistBuildings: undefined, tutorialPointer: null }
+    {
+      tutorial: false,
+      tutorialInteractive: false,
+      whitelistBuildings: undefined,
+      tutorialPointer: null,
+    }
   );
 });
 
 test("resetUi picks the factory again and closes the overview", () => {
-  const state = apply(deselectBuildings(), selectAttack("AttackType.TRUFFLE"), resetUi());
+  const state = apply(
+    deselectBuildings(),
+    selectAttack("AttackType.TRUFFLE"),
+    resetUi()
+  );
   assert.equal(state.selectedBuilding, EntityType.FACTORY);
   assert.equal(state.tappedBuilding, EntityType.FACTORY);
   assert.equal(state.selectedAttack, undefined);
@@ -154,14 +194,21 @@ test("resetUi picks the factory again and closes the overview", () => {
 });
 
 test("the player: uid and stats", () => {
-  const state = apply(notifyPlayerSignedIn({ uid: "p-1" }), updatePlayerStats({ score: 70 }));
+  const state = apply(
+    notifyPlayerSignedIn({ uid: "p-1" }),
+    updatePlayerStats({ score: 70 })
+  );
   assert.equal(state.playerInfos.uid, "p-1");
   assert.equal(state.playerInfos.stats.score, 70);
   assert.equal(state.playerInfos.stats.username, EmptyPlayerStats.username);
 });
 
 test("focus and denied attacks count up on every call", () => {
-  const state = apply(focusBoard("opponent"), focusBoard("opponent"), attackDenied("AttackType.FRUIT"));
+  const state = apply(
+    focusBoard("opponent"),
+    focusBoard("opponent"),
+    attackDenied("AttackType.FRUIT")
+  );
   assert.deepEqual(state.boardFocus, { target: "opponent", seq: 2 });
   assert.deepEqual(state.deniedAttack, { type: "AttackType.FRUIT", seq: 1 });
 });
@@ -175,8 +222,15 @@ test("a quick message gets its id and defaults in the action, not in the reducer
   assert.deepEqual(uiReducer(initial, action), uiReducer(initial, action));
   const state = uiReducer(initial, action);
   assert.deepEqual(state.quickMessages, [action.payload]);
-  assert.deepEqual(uiReducer(state, hideQuickMessage(action.payload.id)).quickMessages, []);
-  assert.equal(showQuickMessage({ text: "x", autoHideDuration: null }).payload.autoHideDuration, null);
+  assert.deepEqual(
+    uiReducer(state, hideQuickMessage(action.payload.id)).quickMessages,
+    []
+  );
+  assert.equal(
+    showQuickMessage({ text: "x", autoHideDuration: null }).payload
+      .autoHideDuration,
+    null
+  );
 });
 
 test("the online and offline toasts replace each other", () => {
@@ -193,8 +247,16 @@ test("the online and offline toasts replace each other", () => {
 
 test("notifications open and close", () => {
   const state = apply(showNotification({ title: "T", message: "M" }));
-  assert.deepEqual(state.notification, { title: "T", message: "M", open: true });
-  assert.deepEqual(uiReducer(state, hideNotification()).notification, { title: null, message: null, open: false });
+  assert.deepEqual(state.notification, {
+    title: "T",
+    message: "M",
+    open: true,
+  });
+  assert.deepEqual(uiReducer(state, hideNotification()).notification, {
+    title: null,
+    message: null,
+    open: false,
+  });
 });
 
 test("the offline message says whether the server is down", () => {

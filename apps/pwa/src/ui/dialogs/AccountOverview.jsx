@@ -148,17 +148,16 @@ const AccountOverview = (props) => {
 
   const isPlayerAccount = typeof props.playerAccount === "undefined";
 
-  let winnings = 0;
-  let losses = 0;
+  let winnings;
+  let losses;
   let playerName = EmptyPlayerStats.username;
-  let ranking = 0;
+  let ranking;
 
   React.useEffect(() => {
     if (typeof props.playerAccount === "undefined") {
       multiplayer.computeRank();
     }
   }, [props.open, props.playerAccount]);
-
 
   if (isPlayerAccount) {
     playerName = props.playerInfos.stats.username;
@@ -211,7 +210,8 @@ const AccountOverview = (props) => {
   };
 
   const share =
-    playerName !== EmptyPlayerStats.username && (props.online || !isPlayerAccount) ? (
+    playerName !== EmptyPlayerStats.username &&
+    (props.online || !isPlayerAccount) ? (
       <Fab
         style={{ marginLeft: "2vw", marginRight: "-7vw" }}
         icon="share"
@@ -232,7 +232,9 @@ const AccountOverview = (props) => {
       }
       titleSlotAfter={
         <>
-          {isPlayerAccount && props.playerInfos.stats.usernamePending ? <UnsyncedMark /> : null}
+          {isPlayerAccount && props.playerInfos.stats.usernamePending ? (
+            <UnsyncedMark />
+          ) : null}
           {nameEditable ? (
             <Fab
               className={classes.pen}
@@ -266,7 +268,10 @@ const AccountOverview = (props) => {
                 early: props.earlyUnlock,
               }).gamesLeft.online;
               return (
-                <div className={classes.progress} data-testid="profile-progress">
+                <div
+                  className={classes.progress}
+                  data-testid="profile-progress"
+                >
                   <div className={classes.level} data-testid="profile-level">
                     {`${t(tr.ACCOUNT_OVERVIEW_LEVEL)} ${level.level}`}
                   </div>
@@ -277,13 +282,18 @@ const AccountOverview = (props) => {
                     aria-valuemax={level.to}
                     aria-valuenow={level.xp}
                   >
-                    <div style={{ width: `${Math.round(level.progress * 100)}%` }} />
+                    <div
+                      style={{ width: `${Math.round(level.progress * 100)}%` }}
+                    />
                   </div>
                   <div className={classes.xp} data-testid="profile-xp">
                     {t(tr.PROFILE_XP, level.xp, level.to)}
                   </div>
                   {gamesLeft > 0 ? (
-                    <p className={classes.note} data-testid="profile-next-unlock">
+                    <p
+                      className={classes.note}
+                      data-testid="profile-next-unlock"
+                    >
                       {gamesLeft === 1
                         ? t(tr.UNLOCK_ONLINE_ONE_GAME)
                         : t(tr.UNLOCK_ONLINE_GAMES, gamesLeft)}
@@ -336,7 +346,6 @@ const AccountOverview = (props) => {
             <div>{losses}</div>
           </div>
         </div>
-
       </div>
     </Dialog>
   );

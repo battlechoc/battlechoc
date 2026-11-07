@@ -45,7 +45,12 @@ const MeshPreview = (props) => {
 
   useEffect(() => {
     // sharp on high-density screens, but never more than twice the CSS pixels
-    engine.current = new Engine(container.current, true, { limitDeviceRatio: 2 }, true);
+    engine.current = new Engine(
+      container.current,
+      true,
+      { limitDeviceRatio: 2 },
+      true
+    );
 
     const createScene = () => {
       const scene = new BabylonScene(engine.current);
@@ -75,7 +80,11 @@ const MeshPreview = (props) => {
         if (scene.current.isDisposed) {
           return;
         }
-        const material = cellMaterial("brown.field.material", "#824529", scene.current);
+        const material = cellMaterial(
+          "brown.field.material",
+          "#824529",
+          scene.current
+        );
         material.sideOrientation = 0;
         group[1].material = material;
         group[1].scaling = new Vector3(1.5, 1, 1.5);

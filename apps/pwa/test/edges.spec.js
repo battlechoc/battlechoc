@@ -12,13 +12,18 @@ const BAND = 70;
 const situation = "/situation/d41d8cd98f00b204e9800998ecf8427e?testclock";
 
 const setTopInset = async (cdp, top) =>
-  cdp.send("Emulation.setSafeAreaInsetsOverride", { insets: { top, topMax: top } });
+  cdp.send("Emulation.setSafeAreaInsetsOverride", {
+    insets: { top, topMax: top },
+  });
 
-const top = (locator) => locator.evaluate((element) => element.getBoundingClientRect().top);
+const top = (locator) =>
+  locator.evaluate((element) => element.getBoundingClientRect().top);
 
 test.use({ viewport: { width: 412, height: 915 } });
 
-test("in full screen the title screen's corner buttons come in no further than the cutout cap", async ({ page }) => {
+test("in full screen the title screen's corner buttons come in no further than the cutout cap", async ({
+  page,
+}) => {
   const cdp = await page.context().newCDPSession(page);
   await page.goto("/", { waitUntil: "networkidle" });
   const settings = page.locator("[data-icon=settings]:visible").first();
@@ -30,17 +35,23 @@ test("in full screen the title screen's corner buttons come in no further than t
   await setTopInset(cdp, BAND);
   await expect.poll(() => top(settings)).toBe(36);
   expect(await top(trophy)).toBe(36);
-  await page.screenshot({ path: "test/output/screenshot_edges_fullscreen.png" });
+  await page.screenshot({
+    path: "test/output/screenshot_edges_fullscreen.png",
+  });
 
   await setTopInset(cdp, 0);
   await expect.poll(() => top(settings)).toBe(12);
   expect(await top(trophy)).toBe(12);
 });
 
-test("in full screen the match banner in the middle of the top edge keeps clear of the whole band", async ({ page }) => {
+test("in full screen the match banner in the middle of the top edge keeps clear of the whole band", async ({
+  page,
+}) => {
   const cdp = await page.context().newCDPSession(page);
   await page.goto(situation);
-  await page.waitForFunction(() => window.__battlechoc && window.__battlechoc.host.match);
+  await page.waitForFunction(
+    () => window.__battlechoc && window.__battlechoc.host.match
+  );
   const menu = page.locator("[data-icon=settings]:visible").first();
   const banner = page.getByTestId("match-banner");
   await expect(menu).toBeVisible();
@@ -54,7 +65,9 @@ test("in full screen the match banner in the middle of the top edge keeps clear 
 
 test("the match's message goes below the board preview", async ({ page }) => {
   await page.goto(situation);
-  await page.waitForFunction(() => window.__battlechoc && window.__battlechoc.host.match);
+  await page.waitForFunction(
+    () => window.__battlechoc && window.__battlechoc.host.match
+  );
   const preview = page.getByTestId("board-preview");
   const message = page.getByTestId("match-message");
   await expect(preview).toBeVisible();
@@ -70,9 +83,13 @@ test("the match's message goes below the board preview", async ({ page }) => {
 test.describe("a phone held sideways", () => {
   test.use({ viewport: { width: 844, height: 390 } });
 
-  test("the match's message keeps the row below the buttons", async ({ page }) => {
+  test("the match's message keeps the row below the buttons", async ({
+    page,
+  }) => {
     await page.goto(situation);
-    await page.waitForFunction(() => window.__battlechoc && window.__battlechoc.host.match);
+    await page.waitForFunction(
+      () => window.__battlechoc && window.__battlechoc.host.match
+    );
     const menu = page.locator("[data-icon=settings]:visible").first();
     const message = page.getByTestId("match-message");
     await expect(page.getByTestId("board-preview")).toBeVisible();

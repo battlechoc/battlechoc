@@ -232,7 +232,10 @@ test("each floating info has its picture, colour and text", () => {
     "/images/stop-donut-icon.svg"
   );
   // both portals show the portal picture (the red one showed the stop donut until 2026-11)
-  for (const portal of [EntityType.DONUT_PORTAL_RED, EntityType.DONUT_PORTAL_BLUE]) {
+  for (const portal of [
+    EntityType.DONUT_PORTAL_RED,
+    EntityType.DONUT_PORTAL_BLUE,
+  ]) {
     assert.equal(
       infoPicture(InfoType.DONUT_TRAP, undefined, portal).image,
       "/images/portal-donut-icon.svg"

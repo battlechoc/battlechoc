@@ -18,7 +18,8 @@ const stock = async (request, username, items) =>
 // the lab explains itself on the first visit; most tests start with that intro already seen
 const seeIntro = (page) => writeSetting(page, "labIntroSeen", true);
 
-const introSeen = async (page) => (await readSetting(page, "labIntroSeen")) === true;
+const introSeen = async (page) =>
+  (await readSetting(page, "labIntroSeen")) === true;
 
 const newPlayer = async (
   browser,

@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { createUseStyles, useTheme } from "react-jss";
 import Button from "./Button";
 import withDefaultProps from "../../helper/defaultProps";
 import { LAB_BUILDINGS, BUILDING_ICON, iconUrl } from "../../catalog";
 
 // the buildings the lab equips, with their pictures
-const labBuildings = LAB_BUILDINGS.map((type) => ({ type, icon: BUILDING_ICON[type] }));
+const labBuildings = LAB_BUILDINGS.map((type) => ({
+  type,
+  icon: BUILDING_ICON[type],
+}));
 
 const useStyles = createUseStyles((theme) => ({
   // the arrows at the ends keep an edge (--edge) from the screen's sides: 6px of it is their margin
@@ -90,8 +93,7 @@ const ChoclabPalette = (componentProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.selected]);
 
-  const previous =
-    labBuildings[checkEntityBounds(selectedEntity - 1)];
+  const previous = labBuildings[checkEntityBounds(selectedEntity - 1)];
   const selected = labBuildings[selectedEntity];
   const next = labBuildings[checkEntityBounds(selectedEntity + 1)];
 

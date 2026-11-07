@@ -4,9 +4,9 @@ import logger from "./logger";
 const isFullscreen = () =>
   Boolean(
     document.fullscreenElement ||
-      document.webkitFullscreenElement ||
-      document.mozFullScreenElement ||
-      document.msFullscreenElement
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement
   );
 
 // iOS has no fullscreen for pages, the installed app on a phone and the desktop app fill the
@@ -70,7 +70,8 @@ const useFullscreenAvailable = () => {
     const update = () => setAvailable(fullscreenSupported() && !isFullscreen());
     document.addEventListener("fullscreenchange", update, false);
     update();
-    return () => document.removeEventListener("fullscreenchange", update, false);
+    return () =>
+      document.removeEventListener("fullscreenchange", update, false);
   }, []);
   return available;
 };

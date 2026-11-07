@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { connect } from "react-redux";
 import { tipsEnabledChanged } from "../../settingsSlice";
 import { createUseStyles } from "react-jss";
@@ -67,12 +67,15 @@ const seconds = (ms) => Math.round(ms / 100) / 10;
 // real-time facts of a building, from the match balance and the player's equipment
 const buildingLines = (view, type) => {
   const spec = view.balance.entities[type] || {};
-  const value = (stat, base) => engine.equippedStat(view, view.viewer, type, stat, base);
+  const value = (stat, base) =>
+    engine.equippedStat(view, view.viewer, type, stat, base);
   const costs = engine.buildCosts(view, view.viewer, type);
   const lines = [];
   if (type === EntityType.CREAM) {
     // the square centred on the tapped cell (engine.creamArea)
-    lines.push(fill(t(tr.TOOLTIP_RT_CREAM), { size: spec.area || spec.footprint || 1 }));
+    lines.push(
+      fill(t(tr.TOOLTIP_RT_CREAM), { size: spec.area || spec.footprint || 1 })
+    );
   }
   if (!isDonut(type)) {
     lines.push(
@@ -92,7 +95,9 @@ const buildingLines = (view, type) => {
   if (spec.build) {
     lines.push(
       fill(t(tr.TOOLTIP_RT_BUILDINGS), {
-        seconds: seconds(value("buildIntervalMs", valueAt(spec.build.intervalMs))),
+        seconds: seconds(
+          value("buildIntervalMs", valueAt(spec.build.intervalMs))
+        ),
         capacity: value("buildCapacity", valueAt(spec.build.capacity)),
       })
     );
@@ -103,7 +108,9 @@ const buildingLines = (view, type) => {
     if (weapon.rush && weapon.rush.enabled) {
       lines.push(
         fill(t(tr.TOOLTIP_RT_RUSH), {
-          seconds: seconds(cooldownMs * value("rushFrom", weapon.rush.fromProgress)),
+          seconds: seconds(
+            cooldownMs * value("rushFrom", weapon.rush.fromProgress)
+          ),
           costs: value("rushCost", weapon.rush.cost),
         })
       );
@@ -112,8 +119,12 @@ const buildingLines = (view, type) => {
   if (spec.donuts) {
     lines.push(
       fill(t(tr.TOOLTIP_RT_DONUTS), {
-        seconds: seconds(value("donutIntervalMs", valueAt(spec.donuts.intervalMs))),
-        chance: Math.round(value("donutProbability", valueAt(spec.donuts.probability)) * 100),
+        seconds: seconds(
+          value("donutIntervalMs", valueAt(spec.donuts.intervalMs))
+        ),
+        chance: Math.round(
+          value("donutProbability", valueAt(spec.donuts.probability)) * 100
+        ),
       })
     );
   }
@@ -123,7 +134,14 @@ const buildingLines = (view, type) => {
   return lines;
 };
 
-const InfoCard = ({ view, tappedBuilding, selectedAttack, tutorial, tipsEnabled, hideTips }) => {
+const InfoCard = ({
+  view,
+  tappedBuilding,
+  selectedAttack,
+  tutorial,
+  tipsEnabled,
+  hideTips,
+}) => {
   const classes = useStyles();
   const [subject, setSubject] = useState(undefined);
 
@@ -171,7 +189,11 @@ const InfoCard = ({ view, tappedBuilding, selectedAttack, tutorial, tipsEnabled,
   }
 
   return (
-    <div className={classes.card} data-testid="info-card" onClick={() => setSubject(undefined)}>
+    <div
+      className={classes.card}
+      data-testid="info-card"
+      onClick={() => setSubject(undefined)}
+    >
       <h3>{title}</h3>
       {info ? <p>{info}</p> : null}
       {lines.length > 0 ? (

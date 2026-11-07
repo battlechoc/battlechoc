@@ -147,8 +147,14 @@ class Multiplayer {
   // gets a random one instead and a dialog says so (callbacks.nameConflict); it can be changed
   // in the profile.
   async setUsernameOffline(username) {
-    const stats = (await OfflineStore.playerStore.get("stats")) || { ...EmptyPlayerStats };
-    await OfflineStore.playerStore.set("stats", { ...stats, username, usernamePending: true });
+    const stats = (await OfflineStore.playerStore.get("stats")) || {
+      ...EmptyPlayerStats,
+    };
+    await OfflineStore.playerStore.set("stats", {
+      ...stats,
+      username,
+      usernamePending: true,
+    });
     this.callbacks.updatePlayerStats({ username, usernamePending: true });
   }
 
@@ -165,8 +171,14 @@ class Multiplayer {
 
   // the name now belongs to the player on the server
   async usernameSynced(username) {
-    const stats = (await OfflineStore.playerStore.get("stats")) || { ...EmptyPlayerStats };
-    await OfflineStore.playerStore.set("stats", { ...stats, username, usernamePending: false });
+    const stats = (await OfflineStore.playerStore.get("stats")) || {
+      ...EmptyPlayerStats,
+    };
+    await OfflineStore.playerStore.set("stats", {
+      ...stats,
+      username,
+      usernamePending: false,
+    });
     this.callbacks.updatePlayerStats({ username, usernamePending: false });
   }
 
@@ -198,7 +210,9 @@ class Multiplayer {
           logger.info("could not claim the name chosen offline", error);
         }
       }
-    }).catch((error) => logger.info("could not claim the name chosen offline", error));
+    }).catch((error) =>
+      logger.info("could not claim the name chosen offline", error)
+    );
   }
 
   // the device's name belongs to somebody else on the server: a random one instead, and the
@@ -215,7 +229,9 @@ class Multiplayer {
 
   // the server's stats, with a name chosen offline that it does not know yet
   async withPendingName(stats) {
-    const local = await OfflineStore.playerStore.get("stats").catch(() => undefined);
+    const local = await OfflineStore.playerStore
+      .get("stats")
+      .catch(() => undefined);
     return local && local.usernamePending
       ? { ...stats, username: local.username, usernamePending: true }
       : stats;
@@ -247,7 +263,9 @@ class Multiplayer {
     if (this.signedIn()) {
       try {
         const data = await profile.sendTrackRecords(gameStats);
-        this.callbacks.updatePlayerStats(await this.withPendingName(data.stats));
+        this.callbacks.updatePlayerStats(
+          await this.withPendingName(data.stats)
+        );
         return;
       } catch (error) {
         logger.warn("Could not update player track record.", error);
@@ -257,14 +275,24 @@ class Multiplayer {
       const playerStats = (await OfflineStore.playerStore.get("stats")) || {
         ...EmptyPlayerStats,
       };
-      playerStats.trackRecord = [...(playerStats.trackRecord || []), ...gameStats];
-      Object.assign(playerStats, this.computeTrackRecordStats(playerStats.trackRecord));
+      playerStats.trackRecord = [
+        ...(playerStats.trackRecord || []),
+        ...gameStats,
+      ];
+      Object.assign(
+        playerStats,
+        this.computeTrackRecordStats(playerStats.trackRecord)
+      );
       // offline matches give XP only; ingredients come from verified online matches
-      playerStats.score = (playerStats.score || 0) + this.calculateXpFromTrackRecord(gameStats);
+      playerStats.score =
+        (playerStats.score || 0) + this.calculateXpFromTrackRecord(gameStats);
       // and they move the AI ladder, as the server will when it gets the records
       playerStats.aiLadder = gameStats.reduce(
         (ladder, record) =>
-          engine.nextAiLadder(ladder, record.won ? "won" : record.lost ? "lost" : "draw"),
+          engine.nextAiLadder(
+            ladder,
+            record.won ? "won" : record.lost ? "lost" : "draw"
+          ),
         engine.aiLadderOf(playerStats)
       );
       await OfflineStore.playerStore.set("stats", playerStats);
@@ -300,11 +328,17 @@ class Multiplayer {
         offlineAccount.usernamePending ||
         (isNamed(offlineAccount) && !isNamed(data.mergedPlayerInfo));
       const merged = unclaimed
-        ? { ...data.mergedPlayerInfo, username: offlineAccount.username, usernamePending: true }
+        ? {
+            ...data.mergedPlayerInfo,
+            username: offlineAccount.username,
+            usernamePending: true,
+          }
         : data.mergedPlayerInfo;
       await OfflineStore.playerStore
         .set("stats", merged)
-        .catch((error) => logger.warn("could not set new player stats in idb.", error));
+        .catch((error) =>
+          logger.warn("could not set new player stats in idb.", error)
+        );
       this.callbacks.updatePlayerStats(merged);
       if (merged.usernamePending) {
         this.syncPendingUsername();
@@ -338,7 +372,10 @@ class Multiplayer {
       this.callbacks.updatePlayerStats(EmptyPlayerStats);
       return EmptyPlayerStats;
     }
-    Object.assign(offlineAccount, this.computeTrackRecordStats(offlineAccount.trackRecord));
+    Object.assign(
+      offlineAccount,
+      this.computeTrackRecordStats(offlineAccount.trackRecord)
+    );
     this.callbacks.updatePlayerStats(offlineAccount);
     return offlineAccount;
   }
@@ -351,7 +388,8 @@ class Multiplayer {
     }
     return trackRecord.reduce((total, record) => {
       const xp = (Array.isArray(record.awards) ? record.awards : []).reduce(
-        (sum, award) => sum + (award && typeof award.xp === "number" ? award.xp : 0),
+        (sum, award) =>
+          sum + (award && typeof award.xp === "number" ? award.xp : 0),
         0
       );
       return total + (record.lost === true ? Math.floor(xp / 2) : xp);
@@ -383,11 +421,17 @@ class Multiplayer {
   }
 
   tutorialStarted() {
-    return this.updateTutorialState("started", { tutorialStarted: true, tutorialSkipped: false });
+    return this.updateTutorialState("started", {
+      tutorialStarted: true,
+      tutorialSkipped: false,
+    });
   }
 
   async tutorialSkipped() {
-    const stats = await this.updateTutorialState("skipped", { tutorialStarted: false, tutorialSkipped: true });
+    const stats = await this.updateTutorialState("skipped", {
+      tutorialStarted: false,
+      tutorialSkipped: true,
+    });
     if (stats && stats.username === EmptyPlayerStats.username) {
       await this.setRandomPlayerName();
     }

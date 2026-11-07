@@ -20,8 +20,14 @@ test("each level keeps only its last messages", () => {
       ["info", 4],
     ]
   );
-  assert.deepEqual(warnings.map((entry) => entry.message), [["careful"]]);
-  assert.deepEqual(errors.map((entry) => entry.message), [["broken", 1]]);
+  assert.deepEqual(
+    warnings.map((entry) => entry.message),
+    [["careful"]]
+  );
+  assert.deepEqual(
+    errors.map((entry) => entry.message),
+    [["broken", 1]]
+  );
   assert.equal(typeof infos[0].time, "number");
 });
 

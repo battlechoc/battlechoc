@@ -2,7 +2,13 @@ import { engine } from "@battlechoc/battlechoc-shared-functions";
 import { LocalMatchHost, matchSession } from "../match/LocalMatchHost";
 import { MatchClock, ManualClock } from "../match/clock";
 import { matchCleared } from "../match/matchSlice";
-import { selectAttack, selectBuilding, deselectAttack, deselectBuildings, focusBoard } from "../ui/uiSlice";
+import {
+  selectAttack,
+  selectBuilding,
+  deselectAttack,
+  deselectBuildings,
+  focusBoard,
+} from "../ui/uiSlice";
 import { lessonMatch } from "./lesson";
 import { demos, demoMatch } from "./demos";
 import { exposeForTests } from "../testHooks";
@@ -39,7 +45,11 @@ class TutorialRunner {
   }
 
   host(clock, onEnded) {
-    const host = new LocalMatchHost({ dispatch: this.dispatch, clock, onEnded });
+    const host = new LocalMatchHost({
+      dispatch: this.dispatch,
+      clock,
+      onEnded,
+    });
     matchSession.host = host;
     exposeForTests({ host, engine });
     return host;
@@ -70,7 +80,10 @@ class TutorialRunner {
       }
       if (clock.now() >= demo.duration) {
         clearInterval(this.ticker);
-        this.restart = setTimeout(() => this.startDemo(id, { playerName }), LOOP_PAUSE_MS);
+        this.restart = setTimeout(
+          () => this.startDemo(id, { playerName }),
+          LOOP_PAUSE_MS
+        );
       }
     }, TICK_MS);
   }

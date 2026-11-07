@@ -59,11 +59,17 @@ const files = urls.map((url) => {
 });
 const sum = (key) => files.reduce((total, file) => total + file[key], 0);
 
-console.log("JavaScript before the first render (the entry and what it preloads):");
+console.log(
+  "JavaScript before the first render (the entry and what it preloads):"
+);
 for (const file of files) {
-  console.log(`${kB(file.raw)}  ${kB(file.gzip)} gzip  ${file.url}${file.babylon ? "  <- Babylon" : ""}`);
+  console.log(
+    `${kB(file.raw)}  ${kB(file.gzip)} gzip  ${file.url}${file.babylon ? "  <- Babylon" : ""}`
+  );
 }
-console.log(`${kB(sum("raw"))}  ${kB(sum("gzip"))} gzip  ${files.length} files, budget ${BUDGET_GZIP_KB} kB gzip`);
+console.log(
+  `${kB(sum("raw"))}  ${kB(sum("gzip"))} gzip  ${files.length} files, budget ${BUDGET_GZIP_KB} kB gzip`
+);
 
 const problems = [];
 if (sum("gzip") > BUDGET_GZIP_KB * 1000) {

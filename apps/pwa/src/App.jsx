@@ -4,7 +4,11 @@ import "./App.css";
 import Jukebox from "./ui/misc/Jukebox";
 import OfflineStore from "./OfflineStore";
 import { multiplayer } from "./Multiplayer";
-import { EmptyPlayerStats, engine, unlocks } from "@battlechoc/battlechoc-shared-functions";
+import {
+  EmptyPlayerStats,
+  engine,
+  unlocks,
+} from "@battlechoc/battlechoc-shared-functions";
 import { LocalMatchHost, matchSession } from "./match/LocalMatchHost";
 import { RemoteMatchHost } from "./match/RemoteMatchHost";
 import { liveConnection } from "./match/liveConnection";
@@ -57,7 +61,8 @@ class App extends Component {
       session: matchSession,
       createLocalHost: (options) => new LocalMatchHost(options),
       createRemoteHost: (options) => new RemoteMatchHost(options),
-      createClock: () => (this.testClock ? new ManualClock() : new MatchClock()),
+      createClock: () =>
+        this.testClock ? new ManualClock() : new MatchClock(),
       liveLobby,
       liveConnection,
       account,
@@ -106,7 +111,9 @@ class App extends Component {
     ) {
       const { code } = this.props.challengeView;
       this.props.challengeViewed({ code, state: "connecting" });
-      liveLobby.openChallenge(code).catch((error) => logger.info("could not open the challenge", error));
+      liveLobby
+        .openChallenge(code)
+        .catch((error) => logger.info("could not open the challenge", error));
     }
     // a newcomer who opened a challenge got a name from the server (shown on the card)
     const view = this.props.challengeView;
@@ -117,7 +124,9 @@ class App extends Component {
       view !== prevProps.challengeView &&
       (typeof ownName === "undefined" || ownName === EmptyPlayerStats.username)
     ) {
-      multiplayer.usernameSynced(view.name).catch((error) => logger.warn("could not keep the name", error));
+      multiplayer
+        .usernameSynced(view.name)
+        .catch((error) => logger.warn("could not keep the name", error));
     }
 
     if (!prevProps.assetsReady && this.props.assetsReady) {
@@ -134,7 +143,9 @@ class App extends Component {
               this.match.startLocalMatch(undefined, debugScenarios[situation]);
             }
           })
-          .catch((error) => logger.warn("could not load the debug boards", error));
+          .catch((error) =>
+            logger.warn("could not load the debug boards", error)
+          );
       }
     }
 
@@ -220,7 +231,9 @@ class App extends Component {
             <Unlocked
               unlock={this.state.unlocked || undefined}
               gamesLeft={
-                unlocks(this.props.playerInfos.stats, { early: this.props.earlyUnlock }).gamesLeft.online
+                unlocks(this.props.playerInfos.stats, {
+                  early: this.props.earlyUnlock,
+                }).gamesLeft.online
               }
               close={() => this.setState({ unlocked: false })}
               showDemos={() => {

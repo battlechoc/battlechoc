@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { connect } from "react-redux";
 import {
   engine,
@@ -12,7 +12,10 @@ import Button from "./Button";
 import Dialog from "../dialogs/Dialog";
 import GameMenu from "../dialogs/GameMenu";
 import Jukebox, { useAudioSettings } from "../misc/Jukebox";
-import { enterFullscreen, useFullscreenAvailable } from "../../helper/fullscreen";
+import {
+  enterFullscreen,
+  useFullscreenAvailable,
+} from "../../helper/fullscreen";
 import { createUseStyles } from "react-jss";
 
 const useStyles = createUseStyles((theme) => ({
@@ -122,7 +125,12 @@ const Actionbar = (props) => {
     // in a match one button opens the menu with all the rest; the boards switch through the
     // preview of the other board (Scene)
     buttons.push(
-      <Fab key="menu" color="secondary" icon="settings" onClick={openMenu}></Fab>
+      <Fab
+        key="menu"
+        color="secondary"
+        icon="settings"
+        onClick={openMenu}
+      ></Fab>
     );
   } else {
     // sound and fullscreen are in the settings; the profile also works offline (level, XP and

@@ -84,7 +84,8 @@ class LiveConnection {
       const ws = new WebSocket(liveUrl);
       this.ws = ws;
       let welcomed = false;
-      ws.onopen = () => ws.send(JSON.stringify({ type: ClientMessage.HELLO, token }));
+      ws.onopen = () =>
+        ws.send(JSON.stringify({ type: ClientMessage.HELLO, token }));
       ws.onmessage = (event) => {
         let message;
         try {
@@ -118,7 +119,11 @@ class LiveConnection {
           }
           // another tab or device took over this account: do not fight over it. A hello that
           // came too late (HELLO_TIMEOUT: the page was busy loading) is retried like a lost link.
-          if (this.holders > 0 && event.code !== CloseCode.REPLACED && event.code !== CloseCode.UNAUTHORIZED) {
+          if (
+            this.holders > 0 &&
+            event.code !== CloseCode.REPLACED &&
+            event.code !== CloseCode.UNAUTHORIZED
+          ) {
             this.scheduleReconnect();
           }
         }
@@ -128,19 +133,29 @@ class LiveConnection {
   }
 
   scheduleReconnect() {
-    const delay = RECONNECT_DELAYS_MS[Math.min(this.attempt, RECONNECT_DELAYS_MS.length - 1)];
+    const delay =
+      RECONNECT_DELAYS_MS[
+        Math.min(this.attempt, RECONNECT_DELAYS_MS.length - 1)
+      ];
     this.attempt += 1;
     clearTimeout(this.reconnectTimer);
     this.reconnectTimer = setTimeout(() => {
       if (this.holders > 0) {
-        this.open().catch((error) => logger.info("live reconnect failed", error));
+        this.open().catch((error) =>
+          logger.info("live reconnect failed", error)
+        );
       }
     }, delay);
   }
 
   startPings() {
     this.stopPings();
-    const ping = () => this.send({ type: ClientMessage.PING, id: this.nextPingId++, clientT: performance.now() });
+    const ping = () =>
+      this.send({
+        type: ClientMessage.PING,
+        id: this.nextPingId++,
+        clientT: performance.now(),
+      });
     // a quick burst for a first good sample, then the regular heartbeat
     ping();
     setTimeout(ping, 300);

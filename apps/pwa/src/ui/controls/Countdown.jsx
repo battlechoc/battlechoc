@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { createUseStyles } from "react-jss";
 import { liveConnection } from "../../match/liveConnection";
 
@@ -29,7 +29,10 @@ export const useCountdown = (expiresAt, running = true) => {
   if (typeof expiresAt !== "number") {
     return 0;
   }
-  return Math.max(0, Math.ceil((expiresAt - liveConnection.clock.serverNow()) / 1000));
+  return Math.max(
+    0,
+    Math.ceil((expiresAt - liveConnection.clock.serverNow()) / 1000)
+  );
 };
 
 /** Seconds as minutes and seconds: 125 → "2:05". */

@@ -111,6 +111,8 @@ export const MODEL = Object.freeze({
 /** Every icon of the catalog as a file name in public/images (for the asset loader). */
 export const catalogIconFiles = () => [
   ...new Set(
-    [...Object.values(BUILDING_ICON), ...Object.values(DONUT_ICON)].map((name) => `${name}-icon.svg`)
+    [...Object.values(BUILDING_ICON), ...Object.values(DONUT_ICON)].map(
+      (name) => `${name}-icon.svg`
+    )
   ),
 ];

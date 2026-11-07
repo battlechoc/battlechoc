@@ -1,4 +1,3 @@
-import React from "react";
 import { connect } from "react-redux";
 import {
   translate as t,
@@ -16,7 +15,9 @@ const NameConflict = ({ conflict, open, close }) => (
     open={open}
     close={close}
     title={t(tr.NAME_CONFLICT_TITLE)}
-    text={open ? t(tr.NAME_CONFLICT_TEXT, conflict.taken, conflict.generated) : null}
+    text={
+      open ? t(tr.NAME_CONFLICT_TEXT, conflict.taken, conflict.generated) : null
+    }
     data-testid="name-conflict"
   >
     <Button onClick={close}>{t(tr.NAME_CONFLICT_OK)}</Button>
@@ -25,7 +26,8 @@ const NameConflict = ({ conflict, open, close }) => (
 
 const mapStateToProps = (state) => ({
   conflict: state.ui.nameConflict,
-  open: Boolean(state.ui.nameConflict) && typeof state.match.view === "undefined",
+  open:
+    Boolean(state.ui.nameConflict) && typeof state.match.view === "undefined",
 });
 
 const mapDispatchToProps = (dispatch) => ({

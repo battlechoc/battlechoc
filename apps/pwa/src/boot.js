@@ -30,12 +30,16 @@ import logger from "./helper/logger";
  * (battlechoc.com/?challenge=K7Q2-M9XD), a player's profile (/<username>) or a debug board
  * (/situation/<md5>, test builds only).
  */
-export const readLaunchAddress = (location = window.location, history = window.history) => {
+export const readLaunchAddress = (
+  location = window.location,
+  history = window.history
+) => {
   const query = new URLSearchParams(location.search);
   const launch = {
     testClock: testHooksEnabled && query.has("testclock"),
     // also the code an iPhone's home-screen app gets typed in (ChallengeDialog)
-    challengeCode: live.normalizeChallengeCode(query.get("challenge")) || undefined,
+    challengeCode:
+      live.normalizeChallengeCode(query.get("challenge")) || undefined,
     player: undefined,
     situation: undefined,
   };
@@ -64,7 +68,8 @@ export const boot = ({ dispatch, challengeCode, connectLive, onLanguage }) => {
     setPlayerRank: (rank) => dispatch(setPlayerRank(rank)),
     notifyPlayerSignedIn: (player) => dispatch(notifyPlayerSignedIn(player)),
     showQuickMessage: (message) => dispatch(showQuickMessage(message)),
-    showNotification: (notification) => dispatch(showNotification(notification)),
+    showNotification: (notification) =>
+      dispatch(showNotification(notification)),
     // a name chosen offline was taken meanwhile: the player chooses another (NameConflict)
     nameConflict: (conflict) => dispatch(nameConflictChanged(conflict)),
   });
@@ -89,7 +94,9 @@ export const boot = ({ dispatch, challengeCode, connectLive, onLanguage }) => {
   }
   connectLive();
 
-  OfflineStore.hasGameToResume().then((resumeable) => dispatch(gameResumeable(resumeable)));
+  OfflineStore.hasGameToResume().then((resumeable) =>
+    dispatch(gameResumeable(resumeable))
+  );
 
   window.onfocus = () => Jukebox.playMusic();
   window.onblur = () => Jukebox.pauseMusic();

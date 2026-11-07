@@ -11,13 +11,21 @@ self.addEventListener("push", (event) => {
   let payload = {};
   try {
     payload = event.data ? event.data.json() : {};
-  } catch (error) {
-    payload = { title: "battlechoc", text: event.data ? event.data.text() : "" };
+  } catch {
+    payload = {
+      title: "battlechoc",
+      text: event.data ? event.data.text() : "",
+    };
   }
   event.waitUntil(
     (async () => {
-      const windows = await clients.matchAll({ type: "window", includeUncontrolled: true });
-      windows.forEach((client) => client.postMessage({ type: "battlechoc-push", payload }));
+      const windows = await clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      windows.forEach((client) =>
+        client.postMessage({ type: "battlechoc-push", payload })
+      );
       await self.registration.showNotification(payload.title || "battlechoc", {
         body: payload.text,
         icon: "images/battlechoc_notification_icon.png",
@@ -31,11 +39,19 @@ self.addEventListener("push", (event) => {
 // a click opens the app at the notification's url, in an open window if there is one
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = new URL((event.notification.data && event.notification.data.url) || "/", self.location.origin).href;
+  const url = new URL(
+    (event.notification.data && event.notification.data.url) || "/",
+    self.location.origin
+  ).href;
   event.waitUntil(
     (async () => {
-      const windows = await clients.matchAll({ type: "window", includeUncontrolled: true });
-      const app = windows.find((client) => new URL(client.url).origin === self.location.origin);
+      const windows = await clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      const app = windows.find(
+        (client) => new URL(client.url).origin === self.location.origin
+      );
       if (app) {
         const navigated = await app.navigate(url);
         return (navigated || app).focus();
@@ -82,13 +98,19 @@ clientsClaim();
 addPlugins([
   {
     requestWillFetch: async ({ request }) =>
-      request.cache === "reload" ? new Request(request, { cache: "no-cache" }) : request,
+      request.cache === "reload"
+        ? new Request(request, { cache: "no-cache" })
+        : request,
   },
 ]);
-precacheAndRoute(
-  self.__WB_MANIFEST,
-  { ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^app_runs_as$/, /^app_version$/] }
-);
+precacheAndRoute(self.__WB_MANIFEST, {
+  ignoreURLParametersMatching: [
+    /^utm_/,
+    /^fbclid$/,
+    /^app_runs_as$/,
+    /^app_version$/,
+  ],
+});
 
 // a picture that is not precached (the precache route above answers first for what is)
 registerRoute(

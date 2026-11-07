@@ -1,5 +1,8 @@
 import OfflineStore from "./OfflineStore";
-import { unlocks, buildingsUnlockedBetween } from "@battlechoc/battlechoc-shared-functions";
+import {
+  unlocks,
+  buildingsUnlockedBetween,
+} from "@battlechoc/battlechoc-shared-functions";
 import logger from "./helper/logger";
 
 // What a player has unlocked comes from their finished matches (shared progression.js: two
@@ -47,8 +50,11 @@ export const takeNewUnlock = async (stats) => {
   const state = await loadUnlockState(stats);
   const open = unlocks(stats, { early: state.early });
   const announced = state.announced || {};
-  const announcedUpTo = announced.buildings === true ? 1 : Number(announced.buildings) || 0;
-  const buildings = state.early ? [] : buildingsUnlockedBetween(announcedUpTo, open.games);
+  const announcedUpTo =
+    announced.buildings === true ? 1 : Number(announced.buildings) || 0;
+  const buildings = state.early
+    ? []
+    : buildingsUnlockedBetween(announcedUpTo, open.games);
   const online = open.online && !announced.online;
   if (buildings.length === 0 && !online) {
     return undefined;

@@ -1,4 +1,3 @@
-import React from "react";
 import { connect } from "react-redux";
 import {
   translate as t,
@@ -19,7 +18,9 @@ const UpdateAvailable = ({ open, later }) => (
     text={t(tr.PWA_UPDATE_TEXT)}
     data-testid="update-available"
   >
-    <Button onClick={() => window.location.reload()}>{t(tr.PWA_UPDATE_NOW)}</Button>
+    <Button onClick={() => window.location.reload()}>
+      {t(tr.PWA_UPDATE_NOW)}
+    </Button>
     <Button color="secondary" onClick={later}>
       {t(tr.PWA_UPDATE_LATER)}
     </Button>

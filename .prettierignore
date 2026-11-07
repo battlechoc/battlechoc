@@ -2,9 +2,14 @@
 # whitepaper's simulator (npm run format:check). Everything below is left alone, also by an
 # editor's "format on save"; CONTRIBUTING.md says why. Prettier skips what .gitignore names too.
 
-# Not formatted with Prettier. apps/api and packages/shared never were (4 spaces, single quotes,
-# long lines); in apps/pwa more than half of the files have drifted from it.
-apps/
+# Not formatted with Prettier: apps/api and packages/shared never were (4 spaces, single quotes,
+# long lines). The game (apps/pwa) is, except its art sources, the files it serves as they are
+# and the page with the inline splash.
+apps/api/
+apps/android/
+apps/pwa/dev/
+apps/pwa/public/
+apps/pwa/index.html
 packages/
 .github/scripts/
 

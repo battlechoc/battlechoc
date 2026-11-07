@@ -88,7 +88,10 @@ class Account {
   }
 
   async token() {
-    if (typeof this.accessToken === "undefined" || Date.now() > this.expiresAt - EXPIRY_MARGIN_MS) {
+    if (
+      typeof this.accessToken === "undefined" ||
+      Date.now() > this.expiresAt - EXPIRY_MARGIN_MS
+    ) {
       await this.ensure();
     }
     return this.accessToken;

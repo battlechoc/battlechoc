@@ -1,4 +1,8 @@
-import { createSlice, createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createListenerMiddleware,
+  isAnyOf,
+} from "@reduxjs/toolkit";
 
 // The settings the player switches in the game: the tips above the palettes and whether a match
 // goes fullscreen. They are kept on the device (IndexedDB "settings"); the storage keys are those
@@ -49,7 +53,7 @@ export const hydrateSettings = (storage) => async (dispatch) => {
         if ((await storage.get(key)) === false) {
           stored[name] = false;
         }
-      } catch (error) {
+      } catch {
         // a setting that cannot be read keeps its default
       }
     })
@@ -69,7 +73,10 @@ export const createSettingsPersistence = (storage, onError = () => {}) => {
     matcher: isAnyOf(tipsEnabledChanged, autoFullscreenChanged),
     effect: async (action, api) => {
       const settings = api.getState().settings;
-      const name = action.type === tipsEnabledChanged.type ? "tipsEnabled" : "autoFullscreen";
+      const name =
+        action.type === tipsEnabledChanged.type
+          ? "tipsEnabled"
+          : "autoFullscreen";
       try {
         await storage.set(STORAGE_KEYS[name], settings[name]);
       } catch (error) {

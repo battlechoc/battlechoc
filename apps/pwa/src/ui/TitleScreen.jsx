@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 import { createUseStyles } from "react-jss";
 import {
   unlocks,
@@ -182,8 +182,8 @@ const TitleScreen = (props) => {
     return left > 1
       ? t(tr.UNLOCK_FEATURE_GAMES, feature, left)
       : left === 1
-      ? t(tr.UNLOCK_FEATURE_ONE_GAME, feature)
-      : t(tr.UNLOCK_NEEDS_NAME);
+        ? t(tr.UNLOCK_FEATURE_ONE_GAME, feature)
+        : t(tr.UNLOCK_NEEDS_NAME);
   };
   const notifyLocked = (feature, part) => {
     props.showNotification({
@@ -201,7 +201,8 @@ const TitleScreen = (props) => {
   };
 
   const playername = stats.username;
-  const firstPlayScreen = stats.tutorialFinished === false && stats.tutorialSkipped === false;
+  const firstPlayScreen =
+    stats.tutorialFinished === false && stats.tutorialSkipped === false;
   // a few matches against the AI unlock the Choclab and online play; friends also need
   // a player name, under which others find and invite you (the server assigns one once
   // it is reachable)
@@ -224,16 +225,27 @@ const TitleScreen = (props) => {
       key="0"
       size="huge"
       data-testid="start-button"
-      progress={assetsReady || props.assetsFailed ? undefined : props.assetsProgress}
+      progress={
+        assetsReady || props.assetsFailed ? undefined : props.assetsProgress
+      }
       onClick={() => (assetsReady ? start() : retryAssets())}
     >
-      {assetsReady ? label : props.assetsFailed ? t(tr.ASSETS_FAILED) : t(tr.ASSETS_LOADING)}
+      {assetsReady
+        ? label
+        : props.assetsFailed
+          ? t(tr.ASSETS_FAILED)
+          : t(tr.ASSETS_LOADING)}
     </Button>
   );
   const controls = firstPlayScreen
     ? [
         startButton(t(tr.START_TUTORIAL), () => props.startTutorial()),
-        <Button key="1" size="huge" color="accent" onClick={() => props.skipTutorial()}>
+        <Button
+          key="1"
+          size="huge"
+          color="accent"
+          onClick={() => props.skipTutorial()}
+        >
           {t(tr.SKIP_TUTORIAL)}
         </Button>,
         <Button
@@ -335,13 +347,24 @@ const TitleScreen = (props) => {
         offline={!online}
         showOfflineMessage={props.showOfflineMessage}
         playername={playername}
-        showPlayerProfile={(session) => props.showProfile(session.opponent, "stacked")}
+        showPlayerProfile={(session) =>
+          props.showProfile(session.opponent, "stacked")
+        }
         showQuickMessage={props.showQuickMessage}
       />
-      <Dialog open={notification.open} mode="info" closable={false} title={notification.title}>
+      <Dialog
+        open={notification.open}
+        mode="info"
+        closable={false}
+        title={notification.title}
+      >
         <div className={classes.notification}>
           <p>{notification.message}</p>
-          <Button size="small" style={{ marginRight: 32 }} onClick={() => props.hideNotification()}>
+          <Button
+            size="small"
+            style={{ marginRight: 32 }}
+            onClick={() => props.hideNotification()}
+          >
             {t(tr.OK)}
           </Button>
         </div>
@@ -352,7 +375,9 @@ const TitleScreen = (props) => {
         <ChallengeDialog
           open={challengeDialog !== null || props.challenge !== null}
           locked={challengeDialog !== null && challengeDialog.locked}
-          lockText={challengeDialog !== null ? challengeDialog.lockText : undefined}
+          lockText={
+            challengeDialog !== null ? challengeDialog.lockText : undefined
+          }
           close={() => props.setChallengeDialog(null)}
         />
       </Suspense>

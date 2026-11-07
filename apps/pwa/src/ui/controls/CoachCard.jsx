@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { createUseStyles } from "react-jss";
 import { rise } from "../styles";
 
@@ -104,7 +104,8 @@ const CoachCard = ({
     if (!onLayout || !card.current) {
       return undefined;
     }
-    const report = () => onLayout(Math.round(card.current.getBoundingClientRect().bottom));
+    const report = () =>
+      onLayout(Math.round(card.current.getBoundingClientRect().bottom));
     const observer = new ResizeObserver(report);
     observer.observe(card.current);
     window.addEventListener("resize", report);

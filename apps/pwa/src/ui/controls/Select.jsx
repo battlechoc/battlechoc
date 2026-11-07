@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createUseStyles } from "react-jss";
 import withDefaultProps from "../../helper/defaultProps";
 import { rise } from "../styles";

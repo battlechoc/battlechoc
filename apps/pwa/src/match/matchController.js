@@ -1,4 +1,8 @@
-import { engine, unlocks, PlayerType } from "@battlechoc/battlechoc-shared-functions";
+import {
+  engine,
+  unlocks,
+  PlayerType,
+} from "@battlechoc/battlechoc-shared-functions";
 import { matchCleared } from "./matchSlice.js";
 import {
   resetUi,
@@ -21,7 +25,12 @@ export const OVERVIEW_DELAY_MS = 2000;
 // leaving: the music fades before the board goes
 export const LEAVE_DELAY_MS = 1000;
 // a friend's challenge card that asks the server again after a reconnect
-export const REOPENED_CHALLENGES = ["connecting", "unreachable", "open", "waiting-for-challenger"];
+export const REOPENED_CHALLENGES = [
+  "connecting",
+  "unreachable",
+  "open",
+  "waiting-for-challenger",
+];
 
 const noop = () => {};
 
@@ -94,7 +103,8 @@ export const createMatchController = (deps) => {
   };
 
   const stats = () => getState().ui.playerInfos.stats;
-  const isNewPlayer = () => !stats().tutorialFinished && !stats().tutorialSkipped;
+  const isNewPlayer = () =>
+    !stats().tutorialFinished && !stats().tutorialSkipped;
 
   // a new match starts on a board without selections
   const freshBoard = () => {
@@ -128,7 +138,8 @@ export const createMatchController = (deps) => {
   };
 
   // the end screen of every match, local or online
-  const onEnded = (result) => later(() => showRealtimeOverview(result), OVERVIEW_DELAY_MS);
+  const onEnded = (result) =>
+    later(() => showRealtimeOverview(result), OVERVIEW_DELAY_MS);
 
   // the interactive first lesson
   const playLesson = () => {
@@ -152,7 +163,10 @@ export const createMatchController = (deps) => {
     const host = createLocalHost({
       dispatch,
       clock: createClock(),
-      save: (data) => (typeof data === "undefined" ? savedMatch.clear() : savedMatch.save(data)),
+      save: (data) =>
+        typeof data === "undefined"
+          ? savedMatch.clear()
+          : savedMatch.save(data),
       onEnded,
     });
     session.host = host;
@@ -172,10 +186,14 @@ export const createMatchController = (deps) => {
     // the same setup as the server AI: board and opponent by the player's AI ladder (Tom Toffee,
     // then Gustav Ganache stronger step by step), the prepared first game for the very first match
     // unless a scenario is given, no hurry for field choice and placement
-    const { boardSize, opponent, balance, scenario: prepared } = engine.aiLadderSetup(
-      engine.aiLadderOf(playerInfos.stats),
-      { scenario }
-    );
+    const {
+      boardSize,
+      opponent,
+      balance,
+      scenario: prepared,
+    } = engine.aiLadderSetup(engine.aiLadderOf(playerInfos.stats), {
+      scenario,
+    });
     host.startNew({
       balance,
       players: [
@@ -190,7 +208,14 @@ export const createMatchController = (deps) => {
       ],
       boardSize,
       seed,
-      agents: [{ ...opponent.agent, playerIndex: 1, seed: `${seed}-ai`, reactionTimeMs: 1000 }],
+      agents: [
+        {
+          ...opponent.agent,
+          playerIndex: 1,
+          seed: `${seed}-ai`,
+          reactionTimeMs: 1000,
+        },
+      ],
       scenario: prepared,
     });
     return host;
@@ -269,12 +294,16 @@ export const createMatchController = (deps) => {
       if (!connected) {
         playLocally();
       } else if (againstAi) {
-        liveLobby.playAiNow().catch((error) => logger.info("AI match failed", error));
+        liveLobby
+          .playAiNow()
+          .catch((error) => logger.info("AI match failed", error));
         // the match message normally follows at once; without it the local AI plays
         later(playLocally, SERVER_MATCH_TIMEOUT_MS);
       } else {
         onMatchmaking(true);
-        liveLobby.joinQueue().catch((error) => logger.info("queue failed", error));
+        liveLobby
+          .joinQueue()
+          .catch((error) => logger.info("queue failed", error));
       }
     });
   };
@@ -282,10 +311,15 @@ export const createMatchController = (deps) => {
   const cancelMatchmaking = () => {
     attempt++;
     onMatchmaking(false);
-    liveLobby.leaveQueue().catch((error) => logger.info("leaving the queue failed", error));
+    liveLobby
+      .leaveQueue()
+      .catch((error) => logger.info("leaving the queue failed", error));
   };
 
-  const playAiNow = () => liveLobby.playAiNow().catch((error) => logger.info("AI match failed", error));
+  const playAiNow = () =>
+    liveLobby
+      .playAiNow()
+      .catch((error) => logger.info("AI match failed", error));
 
   // plays an online match hosted by the server (from the queue, an invite or a resume)
   const startOnlineMatch = ({ matchId, playerIndex, epoch, kind }) => {
@@ -316,7 +350,12 @@ export const createMatchController = (deps) => {
       onEnded,
     });
     session.host = host;
-    expose({ host, engine, live: liveConnection, view: () => getState().match.view });
+    expose({
+      host,
+      engine,
+      live: liveConnection,
+      view: () => getState().match.view,
+    });
     freshBoard();
     jukebox.startMusic(jukebox.SONGS.MAIN_THEME);
     return host;
@@ -332,7 +371,9 @@ export const createMatchController = (deps) => {
       // leaving a running online match gives it up; the server keeps finished ones
       const view = getState().match.view;
       if (view && view.phase !== engine.MatchPhase.ENDED) {
-        host.surrender().catch((error) => logger.info("surrender failed", error));
+        host
+          .surrender()
+          .catch((error) => logger.info("surrender failed", error));
       }
       liveLobby.matchLeft();
     }
@@ -340,7 +381,9 @@ export const createMatchController = (deps) => {
     host.stop();
     session.host = undefined;
     dispatch(matchCleared());
-    savedMatch.exists().then((resumeable) => dispatch(gameResumeable(resumeable)));
+    savedMatch
+      .exists()
+      .then((resumeable) => dispatch(gameResumeable(resumeable)));
     dispatch(resetUi());
     // the match may have unlocked something (buildings after each of the first three, the
     // Choclab and online play after the fourth): one dialog says what
@@ -401,7 +444,11 @@ export const createMatchController = (deps) => {
   // match (reload, other device) is resumed. `page` is the document (visibilityState and its
   // visibilitychange event).
   const keepLiveConnection = (page) => {
-    liveLobby.init({ dispatch, getState, onMatch: (message) => startOnlineMatch(message) });
+    liveLobby.init({
+      dispatch,
+      getState,
+      onMatch: (message) => startOnlineMatch(message),
+    });
     liveLobby.onMatchGone = () => {
       if (session.host && session.host.online) {
         endGame();

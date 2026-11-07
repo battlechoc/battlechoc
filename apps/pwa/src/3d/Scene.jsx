@@ -79,7 +79,12 @@ class Scene extends Component {
     this.loadingView = createRef();
     // the preview of the other board: where it is on the screen and which board it shows
     // and whether the board in view is zoomed in (the whole-board button shows then)
-    this.state = { preview: null, cannonSpots: null, zoomed: false, pointer: null };
+    this.state = {
+      preview: null,
+      cannonSpots: null,
+      zoomed: false,
+      pointer: null,
+    };
     // the tutorial's hand: the field it stands on and the observer that keeps it there
     this.pointerKey = "";
     this.pointerObserver = null;
@@ -114,10 +119,15 @@ class Scene extends Component {
       scene: this.scene,
       canvas: this.container,
       board: () => ({
-        cols: typeof this.props.game !== "undefined" ? this.props.game.board.size.cols : 10,
+        cols:
+          typeof this.props.game !== "undefined"
+            ? this.props.game.board.size.cols
+            : 10,
         topInset: this.props.boardTopInset,
       }),
-      canZoom: () => this.playerGameField !== null && (!this.props.tutorial || this.props.tutorialInteractive),
+      canZoom: () =>
+        this.playerGameField !== null &&
+        (!this.props.tutorial || this.props.tutorialInteractive),
       onView: this.viewChanged,
       onSwipeThrough: () => this.props.toggleBoardView(),
       onTap: this.tapBoard,
@@ -140,10 +150,13 @@ class Scene extends Component {
       requestRender: () => this.requestRender(),
       setRenderLoop: (run) => this.setRenderLoop(run),
       current: () =>
-        typeof this.props.game === "undefined" || typeof matchSession.host === "undefined" || this.matchEnded()
+        typeof this.props.game === "undefined" ||
+        typeof matchSession.host === "undefined" ||
+        this.matchEnded()
           ? null
           : { view: this.props.game, now: matchSession.host.now() },
-      onShotReady: (entity, attackType) => this.spawnInfo(InfoType.SHOT_READY, entity.position, 1, attackType),
+      onShotReady: (entity, attackType) =>
+        this.spawnInfo(InfoType.SHOT_READY, entity.position, 1, attackType),
     });
   }
 
@@ -196,7 +209,10 @@ class Scene extends Component {
       this.realtimeUpdate(prevProps);
     }
     // the end screen: what still floats up goes
-    if (this.matchEnded() && !(prevProps.game && prevProps.game.phase === engine.MatchPhase.ENDED)) {
+    if (
+      this.matchEnded() &&
+      !(prevProps.game && prevProps.game.phase === engine.MatchPhase.ENDED)
+    ) {
       this.stopInfos();
     }
     this.updateCannonPick();
@@ -254,7 +270,10 @@ class Scene extends Component {
     if (!camera || !this.previewTarget) {
       return null;
     }
-    const target = Vector3.TransformCoordinates(this.previewTarget, this.camera.getViewMatrix());
+    const target = Vector3.TransformCoordinates(
+      this.previewTarget,
+      this.camera.getViewMatrix()
+    );
     const width = camera.orthoRight - camera.orthoLeft;
     const height = camera.orthoTop - camera.orthoBottom;
     const clamp = (value) => Math.min(1, Math.max(0, value));
@@ -263,13 +282,24 @@ class Scene extends Component {
     const top = clamp((target.y + camera.orthoTop - bounds.top) / height);
     const bottom = clamp((target.y + camera.orthoTop - bounds.bottom) / height);
     const round = (value) => Math.round(value * 1000) / 1000;
-    return { left: round(left), top: round(top), width: round(right - left), height: round(bottom - top) };
+    return {
+      left: round(left),
+      top: round(top),
+      width: round(right - left),
+      height: round(bottom - top),
+    };
   }
 
   updateMinimap(bounds) {
     const minimap = this.minimapRect(bounds);
     const current = this.state.preview && this.state.preview.minimap;
-    if (minimap && (!current || ["left", "top", "width", "height"].some((key) => current[key] !== minimap[key]))) {
+    if (
+      minimap &&
+      (!current ||
+        ["left", "top", "width", "height"].some(
+          (key) => current[key] !== minimap[key]
+        ))
+    ) {
       this.setState({ preview: { ...this.state.preview, minimap } });
     }
   }
@@ -283,7 +313,10 @@ class Scene extends Component {
       x,
       y,
       (mesh) =>
-        mesh.isPickable && mesh.isVisible && mesh.isEnabled() && Boolean(mesh.metadata && mesh.metadata.gamefield),
+        mesh.isPickable &&
+        mesh.isVisible &&
+        mesh.isEnabled() &&
+        Boolean(mesh.metadata && mesh.metadata.gamefield),
       false,
       this.camera
     );
@@ -317,22 +350,48 @@ class Scene extends Component {
       // portrait: under the menu button, clear of the match time at the top middle; it takes
       // the row below the buttons (underButtons: the match's messages go below it)
       const side = 0.4 * width;
-      return { left: Math.round(left), top: Math.round(top + fab + gap), width: Math.round(side), height: Math.round(side * 0.6), underButtons: true, ...edges };
+      return {
+        left: Math.round(left),
+        top: Math.round(top + fab + gap),
+        width: Math.round(side),
+        height: Math.round(side * 0.6),
+        underButtons: true,
+        ...edges,
+      };
     }
     // landscape: beside the menu button; on a phone held sideways no higher than a fifth of the
     // screen, the board comes close to the corner there
-    const side = Math.min(Math.max(0.2 * width, 180), 340, (0.22 * height) / 0.6);
-    return { left: Math.round(left + fab + gap), top: Math.round(top), width: Math.round(side), height: Math.round(side * 0.6), underButtons: false, ...edges };
+    const side = Math.min(
+      Math.max(0.2 * width, 180),
+      340,
+      (0.22 * height) / 0.6
+    );
+    return {
+      left: Math.round(left + fab + gap),
+      top: Math.round(top),
+      width: Math.round(side),
+      height: Math.round(side * 0.6),
+      underButtons: false,
+      ...edges,
+    };
   }
 
   showPreview() {
     const game = this.props.game;
-    if (typeof game === "undefined" || this.props.tutorial || this.playerGameField === null) {
+    if (
+      typeof game === "undefined" ||
+      this.props.tutorial ||
+      this.playerGameField === null
+    ) {
       this.hidePreview();
       return;
     }
     if (!this.previewCamera) {
-      this.previewCamera = new FlyCamera("preview", new Vector3(30, 30, 30), this.scene);
+      this.previewCamera = new FlyCamera(
+        "preview",
+        new Vector3(30, 30, 30),
+        this.scene
+      );
       this.previewCamera.mode = Camera.ORTHOGRAPHIC_CAMERA;
       this.previewCamera.minZ = 0;
       this.previewCamera.maxZ = 200;
@@ -358,7 +417,12 @@ class Scene extends Component {
     };
     const camera = this.previewCamera;
     // viewport and scissor count from the bottom left
-    camera.viewport = new Viewport(inner.left / width, 1 - (inner.top + inner.height) / height, inner.width / width, inner.height / height);
+    camera.viewport = new Viewport(
+      inner.left / width,
+      1 - (inner.top + inner.height) / height,
+      inner.width / width,
+      inner.height / height
+    );
     const scale = this.engine.getRenderWidth() / width;
     this.previewPixels = {
       x: Math.round(inner.left * scale),
@@ -373,7 +437,11 @@ class Scene extends Component {
     const zoomed = Boolean(this.state.zoomed);
     const own = zoomed ? !this.lookAtOpponent : Boolean(this.lookAtOpponent);
     const away = own ? 0 : this.opponentGameFieldDistance;
-    const target = new Vector3(middle - away, boardHeight(cols) + 0.5, middle + away);
+    const target = new Vector3(
+      middle - away,
+      boardHeight(cols) + 0.5,
+      middle + away
+    );
     this.previewTarget = target;
     camera.position = target.add(new Vector3(1, 1, 1).normalize().scale(40));
     camera.setTarget(target);
@@ -399,7 +467,9 @@ class Scene extends Component {
     const current = this.state.preview;
     if (
       !current ||
-      ["left", "top", "width", "height", "own"].some((key) => current[key] !== preview[key]) ||
+      ["left", "top", "width", "height", "own"].some(
+        (key) => current[key] !== preview[key]
+      ) ||
       JSON.stringify(current.minimap) !== JSON.stringify(minimap)
     ) {
       this.setState({ preview });
@@ -407,7 +477,8 @@ class Scene extends Component {
     // in portrait the preview takes the row below the buttons: the HUD puts the match's
     // messages below it (MatchBanner); held sideways it stands beside the buttons, the row is free
     const previewBottom = rect.underButtons ? rect.top + rect.height : null;
-    const currentBottom = current && current.underButtons ? current.top + current.height : null;
+    const currentBottom =
+      current && current.underButtons ? current.top + current.height : null;
     if (!current || currentBottom !== previewBottom) {
       this.props.loadUiState({ previewBottom });
     }
@@ -415,7 +486,11 @@ class Scene extends Component {
   }
 
   hidePreview() {
-    if (this.scene && this.scene.activeCameras && this.scene.activeCameras.length > 0) {
+    if (
+      this.scene &&
+      this.scene.activeCameras &&
+      this.scene.activeCameras.length > 0
+    ) {
       this.scene.activeCameras = [];
       this.scene.activeCamera = this.camera;
     }
@@ -437,7 +512,9 @@ class Scene extends Component {
     this.hideTutorialPointer();
     this.weaponIndicators.clear();
     // the boards' explosions and melting cells end with them, none of their timers runs later
-    [this.playerGameField, this.opponentGameField].forEach((field) => field && field.dispose());
+    [this.playerGameField, this.opponentGameField].forEach(
+      (field) => field && field.dispose()
+    );
     const instances = this.scene.meshes.filter((mesh) => mesh.isAnInstance);
     for (const instance of instances) {
       instance.dispose();
@@ -487,7 +564,10 @@ class Scene extends Component {
   // like the cannon pick's light. On a weapon button the weapon palette shows the hand itself.
   updateTutorialPointer() {
     const target = this.props.tutorialPointer;
-    const onField = Boolean(target) && typeof target.row === "number" && this.playerGameField !== null;
+    const onField =
+      Boolean(target) &&
+      typeof target.row === "number" &&
+      this.playerGameField !== null;
     const key = onField ? `${target.board}.${target.row}.${target.col}` : "";
     if (key === this.pointerKey) {
       return;
@@ -497,24 +577,40 @@ class Scene extends Component {
     if (!onField) {
       return;
     }
-    const field = target.board === "opponent" ? this.opponentGameField : this.playerGameField;
-    const world = field.position.add(new Vector3(target.row, POINTER_HEIGHT, target.col));
+    const field =
+      target.board === "opponent"
+        ? this.opponentGameField
+        : this.playerGameField;
+    const world = field.position.add(
+      new Vector3(target.row, POINTER_HEIGHT, target.col)
+    );
     const place = () => {
       const width = this.container.clientWidth;
       const height = this.container.clientHeight;
-      const transform = this.camera.getViewMatrix().multiply(this.camera.getProjectionMatrix());
+      const transform = this.camera
+        .getViewMatrix()
+        .multiply(this.camera.getProjectionMatrix());
       const point = Vector3.TransformCoordinates(world, transform);
-      const pixelsPerField = height / (this.camera.orthoTop - this.camera.orthoBottom);
+      const pixelsPerField =
+        height / (this.camera.orthoTop - this.camera.orthoBottom);
       const pointer = {
         x: Math.round(((point.x + 1) / 2) * width),
         y: Math.round(((1 - point.y) / 2) * height),
-        size: Math.round(Math.min(POINTER_SIZE.max, Math.max(POINTER_SIZE.min, POINTER_SIZE.fields * pixelsPerField))),
+        size: Math.round(
+          Math.min(
+            POINTER_SIZE.max,
+            Math.max(POINTER_SIZE.min, POINTER_SIZE.fields * pixelsPerField)
+          )
+        ),
         board: target.board,
         row: target.row,
         col: target.col,
       };
       const current = this.state.pointer;
-      if (!current || Object.keys(pointer).some((prop) => current[prop] !== pointer[prop])) {
+      if (
+        !current ||
+        Object.keys(pointer).some((prop) => current[prop] !== pointer[prop])
+      ) {
         this.setState({ pointer });
       }
     };
@@ -534,15 +630,28 @@ class Scene extends Component {
 
   renderTutorialPointer({ x, y, size, board, row, col }) {
     return (
-      <TapPointer data-testid="tutorial-pointer" data-board={board} data-row={row} data-col={col} x={x} y={y} size={size} />
+      <TapPointer
+        data-testid="tutorial-pointer"
+        data-board={board}
+        data-row={row}
+        data-col={col}
+        x={x}
+        y={y}
+        size={size}
+      />
     );
   }
 
   // the screen dims around the lit cells of the cannons (their pools of light are meshes)
   renderCannonSpots({ lights, blur }) {
-    const points = (polygon) => polygon.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+    const points = (polygon) =>
+      polygon.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
     return (
-      <svg className="cannonSpots" aria-hidden="true" data-testid="cannon-spots">
+      <svg
+        className="cannonSpots"
+        aria-hidden="true"
+        data-testid="cannon-spots"
+      >
         <defs>
           <filter id="cannon-light">
             <feGaussianBlur stdDeviation={blur} />
@@ -551,12 +660,23 @@ class Scene extends Component {
             <rect width="100%" height="100%" fill="white" />
             <g filter="url(#cannon-light)">
               {lights.map((polygons, i) =>
-                polygons.map((polygon, j) => <polygon key={`${i}.${j}`} points={points(polygon)} fill="black" />)
+                polygons.map((polygon, j) => (
+                  <polygon
+                    key={`${i}.${j}`}
+                    points={points(polygon)}
+                    fill="black"
+                  />
+                ))
               )}
             </g>
           </mask>
         </defs>
-        <rect width="100%" height="100%" fill="rgba(30, 15, 8, 0.55)" mask="url(#cannon-spots)" />
+        <rect
+          width="100%"
+          height="100%"
+          fill="rgba(30, 15, 8, 0.55)"
+          mask="url(#cannon-spots)"
+        />
       </svg>
     );
   }
@@ -571,42 +691,55 @@ class Scene extends Component {
     if (!this.takesTaps()) {
       return;
     }
-    tapOwnCell(this.props.game, this.props.selectedBuilding, { row, col }, {
-      submit,
-      ignoreRuleErrors,
-      factoryPlaced: () => Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD),
-      donutPlaced: (next) => {
-        Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
-        if (next) {
-          this.props.selectBuilding(next);
-          this.props.tapBuilding(next);
-        } else {
-          this.props.deselectBuildings();
-        }
-      },
-      built: (costs) => {
-        Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
-        if (costs > 0) {
-          this.spawnInfo(InfoType.CACAO_CONSUMED, position.clone(), costs);
-        }
-      },
-    });
+    tapOwnCell(
+      this.props.game,
+      this.props.selectedBuilding,
+      { row, col },
+      {
+        submit,
+        ignoreRuleErrors,
+        factoryPlaced: () => Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD),
+        donutPlaced: (next) => {
+          Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
+          if (next) {
+            this.props.selectBuilding(next);
+            this.props.tapBuilding(next);
+          } else {
+            this.props.deselectBuildings();
+          }
+        },
+        built: (costs) => {
+          Jukebox.playSound(Jukebox.SOUNDS.UI_BUILD);
+          if (costs > 0) {
+            this.spawnInfo(InfoType.CACAO_CONSUMED, position.clone(), costs);
+          }
+        },
+      }
+    );
   }
 
   opponentFieldClick(row, col) {
     if (!this.takesTaps()) {
       return;
     }
-    tapOpponentCell(this.props.game, this.props.selectedAttack, { row, col }, {
-      submit,
-      ignoreRuleErrors,
-      // no shot available: the weapon's button flashes
-      denied: (attackType) => this.props.attackDenied(attackType),
-    });
+    tapOpponentCell(
+      this.props.game,
+      this.props.selectedAttack,
+      { row, col },
+      {
+        submit,
+        ignoreRuleErrors,
+        // no shot available: the weapon's button flashes
+        denied: (attackType) => this.props.attackDenied(attackType),
+      }
+    );
   }
 
   matchEnded() {
-    return typeof this.props.game !== "undefined" && this.props.game.phase === engine.MatchPhase.ENDED;
+    return (
+      typeof this.props.game !== "undefined" &&
+      this.props.game.phase === engine.MatchPhase.ENDED
+    );
   }
 
   // takes the floating infos away, also those still on their way up
@@ -615,7 +748,10 @@ class Scene extends Component {
   }
 
   // a height `offset` above the base of the boards (of `cols` columns, the match's by default)
-  heightAbove(offset, cols = this.props.game ? this.props.game.board.size.cols : 10) {
+  heightAbove(
+    offset,
+    cols = this.props.game ? this.props.game.board.size.cols : 10
+  ) {
     return boardHeight(cols) + offset;
   }
 
@@ -643,7 +779,9 @@ class Scene extends Component {
     // indicators as well.
     if (prevProps.game !== this.props.game) {
       this.syncBoards();
-      showProduction(prevProps.game, this.props.game, (...info) => this.spawnInfo(...info));
+      showProduction(prevProps.game, this.props.game, (...info) =>
+        this.spawnInfo(...info)
+      );
     }
     if (prevProps.matchEvents !== this.props.matchEvents) {
       this.playMatchEvents(this.props.matchEvents);
@@ -665,12 +803,17 @@ class Scene extends Component {
         ),
       // just above the cell's chocolate piece, wherever the board sits (boardHeight)
       chocolateFlash: (position) =>
-        chocolateFlash(this.scene, position, this.heightAbove(0.6), (run) => this.setRenderLoop(run)),
+        chocolateFlash(this.scene, position, this.heightAbove(0.6), (run) =>
+          this.setRenderLoop(run)
+        ),
       showEnergyBar: (entity, position) => this.showEnergyBar(entity, position),
       newDonuts: () => {
         // the tutorial's coach card explains donuts itself
         if (!this.props.tutorial) {
-          this.props.showQuickMessage({ text: t(tr.MATCH_NEW_DONUTS), autoHideDuration: 3000 });
+          this.props.showQuickMessage({
+            text: t(tr.MATCH_NEW_DONUTS),
+            autoHideDuration: 3000,
+          });
         }
       },
     });
@@ -688,11 +831,18 @@ class Scene extends Component {
   // the match runs
   syncWeaponIndicators() {
     const view = this.props.game;
-    if (typeof view === "undefined" || this.playerGameField === null || view.phase !== engine.MatchPhase.RUNNING) {
+    if (
+      typeof view === "undefined" ||
+      this.playerGameField === null ||
+      view.phase !== engine.MatchPhase.RUNNING
+    ) {
       return;
     }
     const grid = view.board.fields[view.players[view.viewer].fieldIndex].grid;
-    this.weaponIndicators.sync(grid, this.heightAbove(ENERGY_BAR, view.board.size.cols));
+    this.weaponIndicators.sync(
+      grid,
+      this.heightAbove(ENERGY_BAR, view.board.size.cols)
+    );
   }
 
   setRenderLoop(run = true) {
@@ -730,13 +880,20 @@ class Scene extends Component {
         setRenderLoop: (run) => this.setRenderLoop(run),
         requestRender: this.requestRender,
       });
-    this.playerGameField = board(true, playerFieldIndex, new Vector3(0, gamefieldHeight, 0), (row, col, position) =>
-      this.playerFieldClick(row, col, position)
+    this.playerGameField = board(
+      true,
+      playerFieldIndex,
+      new Vector3(0, gamefieldHeight, 0),
+      (row, col, position) => this.playerFieldClick(row, col, position)
     );
     this.opponentGameField = board(
       false,
       opponentFieldIndex,
-      new Vector3(-this.opponentGameFieldDistance, gamefieldHeight, this.opponentGameFieldDistance),
+      new Vector3(
+        -this.opponentGameFieldDistance,
+        gamefieldHeight,
+        this.opponentGameFieldDistance
+      ),
       (row, col) => this.opponentFieldClick(row, col)
     );
 
@@ -758,7 +915,9 @@ class Scene extends Component {
         data-testid="board-preview"
         data-board={own ? "own" : "opponent"}
         data-minimap={minimap ? "true" : undefined}
-        aria-label={own ? t(tr.BOARD_PREVIEW_OWN) : t(tr.BOARD_PREVIEW_OPPONENT)}
+        aria-label={
+          own ? t(tr.BOARD_PREVIEW_OWN) : t(tr.BOARD_PREVIEW_OPPONENT)
+        }
         onClick={() => {
           Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
           this.props.toggleBoardView();
@@ -824,7 +983,10 @@ class Scene extends Component {
     const landscape = this.container.clientWidth >= this.container.clientHeight;
     return landscape
       ? { left: Math.round(edgeLeft + fab + gap), top: Math.round(edgeTop) }
-      : { left: Math.round(edgeLeft), top: Math.round((this.props.boardTopInset || edgeTop + fab) + gap) };
+      : {
+          left: Math.round(edgeLeft),
+          top: Math.round((this.props.boardTopInset || edgeTop + fab) + gap),
+        };
   }
 
   renderFitButton({ left, top, height, edgeLeft, edgeTop, fab, gap }, where) {
@@ -872,14 +1034,23 @@ class Scene extends Component {
             this.container = container;
           }}
         />
-        {this.state.preview ? this.renderPreviewFrame(this.state.preview) : null}
+        {this.state.preview
+          ? this.renderPreviewFrame(this.state.preview)
+          : null}
         {this.state.preview
           ? this.renderFitButton(this.state.preview)
           : this.props.tutorial && this.container && this.playerGameField
-          ? this.renderFitButton(this.previewRect(), this.lessonFitPlace(this.previewRect()))
+            ? this.renderFitButton(
+                this.previewRect(),
+                this.lessonFitPlace(this.previewRect())
+              )
+            : null}
+        {this.state.cannonSpots
+          ? this.renderCannonSpots(this.state.cannonSpots)
           : null}
-        {this.state.cannonSpots ? this.renderCannonSpots(this.state.cannonSpots) : null}
-        {this.state.pointer ? this.renderTutorialPointer(this.state.pointer) : null}
+        {this.state.pointer
+          ? this.renderTutorialPointer(this.state.pointer)
+          : null}
       </div>
     );
   }

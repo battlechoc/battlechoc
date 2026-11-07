@@ -55,7 +55,11 @@ const startServer = async () => {
     let body;
     if (site.deployed.has(url)) {
       body = site.deployed.get(url);
-    } else if (file.startsWith(BUILD) && fs.existsSync(file) && fs.statSync(file).isFile()) {
+    } else if (
+      file.startsWith(BUILD) &&
+      fs.existsSync(file) &&
+      fs.statSync(file).isFile()
+    ) {
       body = fs.readFileSync(file);
     }
     const conditional = typeof request.headers["if-none-match"] === "string";
@@ -208,7 +212,10 @@ test("a new build reaches an installed game: the updated worker takes a changed 
   const picture = "/images/win.svg";
   const before = fs.readFileSync(path.join(BUILD, picture), "utf8");
   const inPage = () =>
-    page.evaluate((url) => fetch(url).then((response) => response.text()), picture);
+    page.evaluate(
+      (url) => fetch(url).then((response) => response.text()),
+      picture
+    );
   expect(await inPage()).toBe(before);
 
   // the next build: the picture changed, and with it its revision in the worker's manifest. The

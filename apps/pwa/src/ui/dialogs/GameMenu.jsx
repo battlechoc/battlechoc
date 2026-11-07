@@ -1,4 +1,3 @@
-import React from "react";
 import { createUseStyles } from "react-jss";
 import {
   translate as t,
@@ -27,7 +26,18 @@ const useStyles = createUseStyles((theme) => ({
 // and the way out. Against the AI the match waits while it is open (Actionbar pauses it);
 // online it keeps running, which the menu says. Only in the page while open: its button texts
 // also stand elsewhere.
-const GameMenu = ({ open, close, paused, online, soundOn, toggleSound, fullscreen, toggleFullscreen, openSettings, leave }) => {
+const GameMenu = ({
+  open,
+  close,
+  paused,
+  online,
+  soundOn,
+  toggleSound,
+  fullscreen,
+  toggleFullscreen,
+  openSettings,
+  leave,
+}) => {
   const classes = useStyles();
   if (!open) {
     return null;

@@ -84,6 +84,8 @@ jobs:
       # here belongs there too
       - name: Formatting of the files Prettier covers (.prettierignore names the rest)
         run: npm run format:check
+      - name: ESLint (correctness rules, eslint.config.js)
+        run: npm run lint
       - name: Changelog script tests
         run: npm run test:changelog
       - name: Shared rules engine unit tests

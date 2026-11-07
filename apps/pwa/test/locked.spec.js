@@ -1,7 +1,19 @@
 import { test, expect } from "@playwright/test";
-import { openWithStats, seedStats, waitForUnlockDecision, wonMatches } from "./helpers/profile.js";
-test("locked menu entries explain themselves and do not open", async ({ page }) => {
-  await openWithStats(page, { username: "Tester", score: 0, tutorialFinished: false, tutorialSkipped: true });
+import {
+  openWithStats,
+  seedStats,
+  waitForUnlockDecision,
+  wonMatches,
+} from "./helpers/profile.js";
+test("locked menu entries explain themselves and do not open", async ({
+  page,
+}) => {
+  await openWithStats(page, {
+    username: "Tester",
+    score: 0,
+    tutorialFinished: false,
+    tutorialSkipped: true,
+  });
   // what is left shows below the menu, and a tap on a locked entry says it again
   await expect(page.getByTestId("unlock-hint")).toHaveText(
     "4 more matches against the AI unlock the Choclab and online matches."
@@ -18,19 +30,33 @@ test("locked menu entries explain themselves and do not open", async ({ page }) 
     });
     const blob = await button.boundingBox();
     const box = await lock.boundingBox();
-    expect(box.x, `${name}: the label runs under the lock`).toBeGreaterThanOrEqual(labelRight);
-    expect(Math.abs(box.y + box.height / 2 - (blob.y + blob.height / 2)), `${name}: the lock is off the middle`).toBeLessThan(2);
-    expect(await lock.evaluate((element) => getComputedStyle(element).transform)).toMatch(/^matrix\(1, 0, 0, 1, /);
+    expect(
+      box.x,
+      `${name}: the label runs under the lock`
+    ).toBeGreaterThanOrEqual(labelRight);
+    expect(
+      Math.abs(box.y + box.height / 2 - (blob.y + blob.height / 2)),
+      `${name}: the lock is off the middle`
+    ).toBeLessThan(2);
+    expect(
+      await lock.evaluate((element) => getComputedStyle(element).transform)
+    ).toMatch(/^matrix\(1, 0, 0, 1, /);
   }
   await page.getByText("Choclab", { exact: true }).first().click();
-  await expect(page.getByText("Play 4 more matches against the AI to unlock “Choclab”.")).toBeVisible();
+  await expect(
+    page.getByText("Play 4 more matches against the AI to unlock “Choclab”.")
+  ).toBeVisible();
   await page.screenshot({ path: "test/output/visual_locked.png" });
   await expect(page.getByTestId("challenge-dialog")).toHaveCount(0);
 });
 
-test("four matches unlock the Choclab; friends also need a player name", async ({ page }) => {
+test("four matches unlock the Choclab; friends also need a player name", async ({
+  page,
+}) => {
   // the server's /health answers, nothing else does: online, but without an account
-  await page.route("**/health", (route) => route.fulfill({ status: 200, body: '{"ok":true}' }));
+  await page.route("**/health", (route) =>
+    route.fulfill({ status: 200, body: '{"ok":true}' })
+  );
   // skipped the tutorial without a server: plenty of coins, but no name
   await openWithStats(page, {
     username: "Chocnonymous",
@@ -56,8 +82,12 @@ test("four matches unlock the Choclab; friends also need a player name", async (
   await expect(page.getByText("Start Game", { exact: true })).toHaveCount(0);
 });
 
-test("a player who had everything under the old rule (one match) keeps it", async ({ page }) => {
-  await page.route("**/health", (route) => route.fulfill({ status: 200, body: '{"ok":true}' }));
+test("a player who had everything under the old rule (one match) keeps it", async ({
+  page,
+}) => {
+  await page.route("**/health", (route) =>
+    route.fulfill({ status: 200, body: '{"ok":true}' })
+  );
   await page.goto("/", { waitUntil: "networkidle" });
   await page.waitForFunction(() => document.body.innerText.trim().length > 0);
   // the app decides once what an earlier player keeps (src/unlocks.js); wait for that first
@@ -75,7 +105,9 @@ test("a player who had everything under the old rule (one match) keeps it", asyn
     { deleteSettings: ["unlocks"] }
   );
   await page.goto("/", { waitUntil: "networkidle" });
-  await expect(page.getByText("Start Game", { exact: true }).first()).toBeVisible();
+  await expect(
+    page.getByText("Start Game", { exact: true }).first()
+  ).toBeVisible();
   await expect(page.getByTestId("unlock-hint")).toHaveCount(0);
   await page.getByText("Choclab", { exact: true }).first().click();
   await expect(page.getByTestId("lab-intro")).toBeVisible();

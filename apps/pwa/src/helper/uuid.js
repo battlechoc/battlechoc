@@ -9,7 +9,9 @@ const uuid = () => {
   // version 4, variant 10xx (RFC 9562)
   bytes[6] = (bytes[6] & 0x0f) | 0x40;
   bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const hex = Array.from(bytes, (byte) =>
+    byte.toString(16).padStart(2, "0")
+  ).join("");
   return [
     hex.slice(0, 8),
     hex.slice(8, 12),

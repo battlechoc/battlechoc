@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
@@ -7,14 +7,27 @@ import {
   unlocks,
   buildingsUnlockedBetween,
 } from "@battlechoc/battlechoc-shared-functions";
-import { selectBuilding, tapBuilding, focusBoard, deselectBuildings } from "../uiSlice";
+import {
+  selectBuilding,
+  tapBuilding,
+  focusBoard,
+  deselectBuildings,
+} from "../uiSlice";
 import { fruitCannonPossible } from "../../match/fruitCannon";
 import Jukebox from "../misc/Jukebox";
 import { LESSON } from "../../tutorial/ids";
-import { BUILD_PALETTE, BUILDING_ICON, DONUT_ICON, iconUrl } from "../../catalog";
+import {
+  BUILD_PALETTE,
+  BUILDING_ICON,
+  DONUT_ICON,
+  iconUrl,
+} from "../../catalog";
 import { rise } from "../styles";
 
-const buildings = BUILD_PALETTE.map((type) => ({ type, image: BUILDING_ICON[type] }));
+const buildings = BUILD_PALETTE.map((type) => ({
+  type,
+  image: BUILDING_ICON[type],
+}));
 
 // the room between two buttons
 const GAP = 6;
@@ -122,39 +135,50 @@ const BuildPalette = ({
   const fruitPossible = fruitCannonPossible(view);
   const fruitWasPossible = useRef(fruitPossible);
   useEffect(() => {
-    if (selectedBuilding === EntityType.FRUIT_CANNON && fruitWasPossible.current && !fruitPossible) {
+    if (
+      selectedBuilding === EntityType.FRUIT_CANNON &&
+      fruitWasPossible.current &&
+      !fruitPossible
+    ) {
       endSelection();
     }
     fruitWasPossible.current = fruitPossible;
   }, [fruitPossible, selectedBuilding, endSelection]);
 
-  if (
-    typeof view === "undefined" ||
-    view.phase !== engine.MatchPhase.RUNNING
-  ) {
+  if (typeof view === "undefined" || view.phase !== engine.MatchPhase.RUNNING) {
     return null;
   }
   const me = view.players[view.viewer];
   const grid = view.board.fields[me.fieldIndex].grid;
   // the first matches unlock the buildings two by two (shared progression.js); the building demos
   // and a challenge match (a friend's link) show them all
-  const unlockedBuildings = unlocks(stats, { early: earlyUnlock }).unlockedBuildings;
+  const unlockedBuildings = unlocks(stats, {
+    early: earlyUnlock,
+  }).unlockedBuildings;
   // the lesson offers its own three buildings and locks the rest, as the first match does
   const lessonBuildings = lesson ? buildingsUnlockedBetween(-1, 0) : null;
   const unlocked = (type) =>
     lesson
       ? lessonBuildings.includes(type)
-      : tutorial || matchKind === "challenge" || unlockedBuildings.includes(type);
+      : tutorial ||
+        matchKind === "challenge" ||
+        unlockedBuildings.includes(type);
 
   const canBuild = (type) => {
     if (Array.isArray(whitelist) && !whitelist.includes(type)) {
       return false;
     }
     const entitySpec = view.balance.entities[type];
-    if (me.buildTokens < 1 || me.cacao < engine.buildCosts(view, view.viewer, type)) {
+    if (
+      me.buildTokens < 1 ||
+      me.cacao < engine.buildCosts(view, view.viewer, type)
+    ) {
       return false;
     }
-    if (entitySpec.maxPerField && countOnOwnField(grid, type) >= entitySpec.maxPerField) {
+    if (
+      entitySpec.maxPerField &&
+      countOnOwnField(grid, type) >= entitySpec.maxPerField
+    ) {
       return false;
     }
     if (type === EntityType.FRUIT_CANNON) {
@@ -194,8 +218,15 @@ const BuildPalette = ({
         {buildings.map((building) => {
           if (!unlocked(building.type)) {
             return (
-              <div key={building.type} className={`${classes.item} ${classes.locked}`} data-locked="true">
-                <div className="icon" style={{ backgroundImage: "url(/images/lock.svg)" }} />
+              <div
+                key={building.type}
+                className={`${classes.item} ${classes.locked}`}
+                data-locked="true"
+              >
+                <div
+                  className="icon"
+                  style={{ backgroundImage: "url(/images/lock.svg)" }}
+                />
               </div>
             );
           }
@@ -208,11 +239,18 @@ const BuildPalette = ({
               className={`${classes.item} ${
                 selectedBuilding === building.type ? classes.selected : ""
               } ${possible ? "" : classes.disabled} ${
-                possible && Array.isArray(whitelist) && selectedBuilding !== building.type ? classes.hint : ""
+                possible &&
+                Array.isArray(whitelist) &&
+                selectedBuilding !== building.type
+                  ? classes.hint
+                  : ""
               }`}
               onClick={() => {
                 // the tutorial only lets the player pick what the current step asks for
-                if (Array.isArray(whitelist) && !whitelist.includes(building.type)) {
+                if (
+                  Array.isArray(whitelist) &&
+                  !whitelist.includes(building.type)
+                ) {
                   return;
                 }
                 Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
@@ -239,7 +277,10 @@ const mapStateToProps = (state) => ({
   selectedBuilding: state.ui.selectedBuilding,
   whitelist: state.ui.whitelistBuildings,
   tutorial: state.ui.tutorial,
-  lesson: state.ui.tutorial && Array.isArray(state.ui.loopAnimations) && state.ui.loopAnimations[0] === LESSON,
+  lesson:
+    state.ui.tutorial &&
+    Array.isArray(state.ui.loopAnimations) &&
+    state.ui.loopAnimations[0] === LESSON,
   matchKind: state.match.kind,
 });
 

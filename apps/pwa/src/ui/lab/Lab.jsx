@@ -1,4 +1,11 @@
-import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
@@ -10,7 +17,12 @@ import {
 import ChoclabPalette from "../controls/ChoclabPalette";
 import Fab from "../controls/Fab";
 import { updatePlayerStats } from "../uiSlice";
-import { fetchRecipes, tryIngredients, craftItem, equipItem } from "../../api/lab";
+import {
+  fetchRecipes,
+  tryIngredients,
+  craftItem,
+  equipItem,
+} from "../../api/lab";
 import { fetchOwnProfile } from "../../api/profile";
 import logger from "../../helper/logger";
 import OfflineStore from "../../OfflineStore";
@@ -22,7 +34,11 @@ import BudgetBar from "./BudgetBar";
 import LabTable from "./LabTable";
 import InventoryPicker from "./InventoryPicker";
 import RecipeBook from "./RecipeBook";
-import LabIntro, { LAB_INTRO_SEEN, LAB_INTRO_STEPS, Spotlight } from "./LabIntro";
+import LabIntro, {
+  LAB_INTRO_SEEN,
+  LAB_INTRO_STEPS,
+  Spotlight,
+} from "./LabIntro";
 import { effectLines, labColors } from "./itemText";
 import { bangers, outlined, rise } from "../styles";
 
@@ -245,7 +261,9 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
           setIntroStep(0);
         }
       })
-      .catch((error) => logger.info("could not read the lab intro flag", error));
+      .catch((error) =>
+        logger.info("could not read the lab intro flag", error)
+      );
     return () => {
       active = false;
     };
@@ -255,7 +273,9 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
     setIntroStep(undefined);
     OfflineStore.settingsStore
       .set(LAB_INTRO_SEEN, true)
-      .catch((error) => logger.info("could not store the lab intro flag", error));
+      .catch((error) =>
+        logger.info("could not store the lab intro flag", error)
+      );
   };
   const introTarget =
     typeof introStep === "number" ? LAB_INTRO_STEPS[introStep].target : null;
@@ -553,7 +573,10 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
 
       {typeof introStep === "number" ? (
         <>
-          <Spotlight target={parts.current[introTarget]} container={page.current} />
+          <Spotlight
+            target={parts.current[introTarget]}
+            container={page.current}
+          />
           <LabIntro step={introStep} onStep={setIntroStep} onDone={endIntro} />
         </>
       ) : null}
