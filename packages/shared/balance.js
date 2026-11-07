@@ -105,7 +105,8 @@ const DefaultBalance = Object.freeze({
             donuts: {
                 intervalMs: 30000,
                 probability: { tiers: [[0, 0.666], [7, 0.75], [15, 0.999]] },
-                types: { tiers: [[0, 3], [13, 4], [17, 5]] },
+                // every set (engine DONUT_SETS): the portal pair, green, pink, white and yellow
+                types: 5,
             },
         },
     },
