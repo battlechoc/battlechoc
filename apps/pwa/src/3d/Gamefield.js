@@ -1,6 +1,5 @@
 import { EntityType, isDonut } from "@battlechoc/battlechoc-shared-functions";
 import {
-  Mesh,
   ParticleSystem,
   Vector3,
   Color4,
@@ -142,7 +141,7 @@ class Gamefield {
       if (phenotype === EntityType.FACTORY_EXTENSION) {
         if (
           this.playerField.grid[
-            cell.row * this.rows + Math.min(cell.col + 1, this.cols - 1)
+            cell.row * this.cols + Math.min(cell.col + 1, this.cols - 1)
           ].occupiedBy
             .map((building) => building.type)
             .includes(EntityType.FACTORY)

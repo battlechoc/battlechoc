@@ -41,7 +41,6 @@ import {
   Viewport,
 } from "./babylon";
 import { AssetLoadingViewContainer as AssetLoadingView } from "../AssetLoader";
-import logger from "../helper/logger";
 import { uuid as createUuid } from "../helper/uuid";
 import { withTheme } from "react-jss";
 import { measureEdges } from "../helper/edges";
@@ -1599,8 +1598,8 @@ class Scene extends Component {
 
   // a brown chocolate dome over a cell that fades out: the shield absorbed the shot
   chocolateFlash(position) {
-    const size = this.props.game ? this.props.game.board.size.cols : 10;
-    const top = size === 6 ? 4.6 : size === 8 ? 5.1 : 5.6;
+    // just above the cell's chocolate piece, wherever the board sits (boardHeight)
+    const top = this.heightAbove(0.6);
     const dome = MeshBuilder.CreateSphere("chocolate.flash." + Date.now(), { diameter: 1.05, segments: 16 }, this.scene);
     dome.scaling = new Vector3(1, 0.75, 1);
     dome.position = new Vector3(position.x, top, position.z);
@@ -1844,7 +1843,7 @@ class Scene extends Component {
       : { left: Math.round(edgeLeft), top: Math.round((this.props.boardTopInset || edgeTop + fab) + gap) };
   }
 
-  renderFitButton({ left, top, width, height, edgeLeft, edgeTop, fab, gap }, where) {
+  renderFitButton({ left, top, height, edgeLeft, edgeTop, fab, gap }, where) {
     const zoomed = this.state.zoomed;
     const size = Math.max(40, Math.round(0.7 * fab));
     const landscape = this.container.clientWidth >= this.container.clientHeight;
