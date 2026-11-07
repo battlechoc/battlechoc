@@ -86,6 +86,47 @@ test("the title screen works before the 3D models are in; the start button fills
   expect(requests.filter((url) => url.includes("-per-turn.svg"))).toEqual([]);
 });
 
+// With the sound off the music (2.5 MB, some 30 MB once decoded) and the match sounds are not
+// fetched; switching the sound on fetches them.
+test("muted, the music is not loaded until the sound is switched on", async ({
+  page,
+}) => {
+  const requests = [];
+  page.on("request", (request) => requests.push(request.url()));
+  const music = () =>
+    requests.some((url) => url.includes("/music/CacaoLiving.mp3"));
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.waitForFunction(() => document.body.innerText.trim().length > 0);
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const open = indexedDB.open("battlechoc");
+        open.onsuccess = () => {
+          const tx = open.result.transaction("settings", "readwrite");
+          tx.objectStore("settings").put(
+            { musicMuted: true, sfxMuted: true, musicVolume: 1, soundVolume: 1, clicks: true },
+            "audio"
+          );
+          tx.oncomplete = () => resolve();
+        };
+      })
+  );
+  requests.length = 0;
+  await page.goto("/");
+  const start = page.getByTestId("start-button");
+  await expect(start).toHaveText("Start Tutorial", { timeout: 30000 });
+  await page.waitForLoadState("networkidle");
+  expect(music()).toBe(false);
+  expect(requests.some((url) => url.includes("/sound/attack_"))).toBe(false);
+
+  await page.locator("[data-icon=settings]:visible").first().click();
+  await page.getByRole("button", { name: "Sound: off", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Sound: on", exact: true })
+  ).toBeVisible();
+  await expect.poll(music).toBe(true);
+});
+
 // The settings, the other dialogs, the lab, the tutorial and the end of a match are not part of
 // the first script (src/ui/onDemand.js); their chunks follow by themselves once the title screen
 // stands, so a device that loses its connection then (the tests run without a service worker)
