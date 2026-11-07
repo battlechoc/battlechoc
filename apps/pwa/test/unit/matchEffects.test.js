@@ -231,11 +231,13 @@ test("each floating info has its picture, colour and text", () => {
     infoPicture(InfoType.DONUT_TRAP, undefined, DONUT_STOP_PINK).image,
     "/images/stop-donut-icon.svg"
   );
-  assert.equal(
-    infoPicture(InfoType.DONUT_TRAP, undefined, EntityType.DONUT_PORTAL_RED)
-      .image,
-    "/images/stop-donut-icon.svg"
-  );
+  // both portals show the portal picture (the red one showed the stop donut until 2026-11)
+  for (const portal of [EntityType.DONUT_PORTAL_RED, EntityType.DONUT_PORTAL_BLUE]) {
+    assert.equal(
+      infoPicture(InfoType.DONUT_TRAP, undefined, portal).image,
+      "/images/portal-donut-icon.svg"
+    );
+  }
   assert.equal(infoPicture("InfoType.UNKNOWN", 1), undefined);
 });
 

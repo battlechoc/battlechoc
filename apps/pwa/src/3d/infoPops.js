@@ -13,24 +13,10 @@ import {
   Animation,
 } from "./babylon.js";
 import { InfoType } from "./InfoType.js";
+import { ATTACK_ICON, DONUT_ICON, iconUrl } from "../catalog.js";
 
 // a floating info rises and fades over this many frames (at 60 a second)
 const POP_FRAMES = 120;
-
-// the palette icon of the weapon that has a shot ready
-const SHOT_ICONS = {
-  [AttackType.TRUFFLE]: "truffle-cannon-icon",
-  [AttackType.FRUIT]: "fruit-cannon-icon",
-  [AttackType.BUNNY]: "easter-bunny-icon",
-  [AttackType.HOT_CHOCOLATE]: "ballista-icon",
-};
-// the icon of the donut that went off (the pink stop donut unless another one)
-const DONUT_ICONS = {
-  [EntityType.DONUT_PORTAL_BLUE]: "portal-donut-icon",
-  [EntityType.DONUT_HEALTH_GREEN]: "health-donut-icon",
-  [EntityType.DONUT_CREAM_WHITE]: "cream-donut-icon",
-  [EntityType.DONUT_SURPRISE_YELLOW]: "surprise-donut-icon",
-};
 
 // What each kind of info shows: its picture, the colour of its text (`gain` or `cost`, the
 // theme's) and the text. `plain` pictures are palette icons, drawn into a fixed box.
@@ -52,14 +38,15 @@ const INFOS = {
     plain: true,
   }),
   [InfoType.SHOT_READY]: ({ amount, kind }) => ({
-    image: `/images/${SHOT_ICONS[kind] || SHOT_ICONS[AttackType.TRUFFLE]}.svg`,
+    image: iconUrl(ATTACK_ICON[kind] || ATTACK_ICON[AttackType.TRUFFLE]),
     color: "gain",
     text: "+" + amount,
     plain: true,
   }),
   [InfoType.BUNNY_CAUGHT]: () => ({ image: "/images/bunny-caught.svg" }),
   [InfoType.DONUT_TRAP]: ({ kind }) => ({
-    image: `/images/${DONUT_ICONS[kind] || "stop-donut-icon"}.svg`,
+    // the donut that went off; both portals share the portal picture
+    image: iconUrl(DONUT_ICON[kind] || DONUT_ICON[EntityType.DONUT_STOP_PINK]),
     plain: true,
   }),
 };
