@@ -11,7 +11,8 @@ const REMEMBERED_UIDS = 64;
 
 const errorInfo = error => ({
     code: LiveError.ACTION_REJECTED,
-    name: error && error.constructor ? error.constructor.name : 'Error',
+    // the rule error's own code (errors.js); older games compare it with the class name, the same string
+    name: (error && error.code) || (error && error.constructor ? error.constructor.name : 'Error'),
     message: error && error.message,
 });
 

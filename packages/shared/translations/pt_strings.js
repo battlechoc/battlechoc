@@ -1,4 +1,3 @@
-/* eslint-disable no-template-curly-in-string */
 module.exports = {
     "ACCOUNTINFOS": "Informações da conta",
     "ACCOUNTINFOS_PREVIEW": "Em breve, informações sobre sua conta e estatísticas do jogador.",

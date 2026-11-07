@@ -1,4 +1,3 @@
-/* eslint-disable no-template-curly-in-string */
 module.exports = {
     "ACCOUNTINFOS": "アカウント情報",
     "ACCOUNTINFOS_PREVIEW": "近日中に、アカウントとプレーヤーの統計に関する情報が表示されます。",

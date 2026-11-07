@@ -7,10 +7,9 @@
 const crypto = require('crypto');
 const {
     live,
-    translate,
+    translateIn,
     translationKeys,
-    setCurrentLanguage,
-    getCurrentLanguage,
+    normalizeLanguage,
 } = require('@battlechoc/battlechoc-shared-functions');
 
 const { normalizeChallengeCode, formatChallengeCode } = live;
@@ -25,16 +24,6 @@ const escapeHtml = text => String(text)
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-
-const inLanguage = (language, fn) => {
-    const previous = getCurrentLanguage();
-    try {
-        setCurrentLanguage(language || 'en');
-        return fn();
-    } finally {
-        setCurrentLanguage(previous);
-    }
-};
 
 // The page may run its own script and style, marked with the nonce of this response, and nothing
 // else: no other script, no frame around it, no form. Its links and the redirect are navigations,
@@ -54,11 +43,10 @@ const contentSecurityPolicy = nonce => [
  * security policy.
  */
 const renderPlayPage = ({ code, info, nonce }) => {
-    const language = info ? info.language || 'en' : 'en';
-    const { title, text } = inLanguage(language, () => ({
-        title: info ? translate(translationKeys.CHALLENGE_PREVIEW_TITLE, info.from) : 'battlechoc',
-        text: translate(translationKeys.CHALLENGE_PREVIEW_TEXT),
-    }));
+    // the challenger's language (players from before 2026-11 may still have "jp" or "vn" stored)
+    const language = (info && normalizeLanguage(info.language)) || 'en';
+    const title = info ? translateIn(language, translationKeys.CHALLENGE_PREVIEW_TITLE, info.from) : 'battlechoc';
+    const text = translateIn(language, translationKeys.CHALLENGE_PREVIEW_TEXT);
     const formatted = code ? formatChallengeCode(code) : null;
     const target = formatted ? `${GAME_URL}?challenge=${formatted}` : GAME_URL;
     const pageUrl = formatted ? `${PLAY_URL}${formatted}` : PLAY_URL;

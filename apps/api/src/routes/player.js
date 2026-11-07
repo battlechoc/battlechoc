@@ -1,7 +1,7 @@
 // The player's own data: stats (with pantry, items and equipment), the import of an offline
 // profile, offline match records, the tutorial, the name, the language and problem reports.
 
-const { isValidLanguage } = require('@battlechoc/battlechoc-shared-functions');
+const { normalizeLanguage } = require('@battlechoc/battlechoc-shared-functions');
 const players = require('../players');
 const reports = require('../reports');
 const { isValidUsername } = require('../names');
@@ -86,7 +86,7 @@ const registerPlayerRoutes = (app, { pool, auth, user }) => {
         }
         try {
             await players.setUsername(pool, req.playerId, username);
-        } catch (error) {
+        } catch {
             // lost a race against another player for the same name
             throw new HttpError(400, ErrorCode.USERNAME_TAKEN);
         }
@@ -96,8 +96,9 @@ const registerPlayerRoutes = (app, { pool, auth, user }) => {
     /* ---------- settings, reports ---------- */
 
     app.post('/user/language', ...user, async (req, res) => {
-        const language = req.body && req.body.language;
-        if (!isValidLanguage(language)) {
+        // the game's code of the language (a device that stored "jp" sends it: that is "ja")
+        const language = normalizeLanguage(req.body && req.body.language);
+        if (typeof language === 'undefined') {
             throw new HttpError(400, ErrorCode.INVALID_LANGUAGE);
         }
         await players.setLanguage(pool, req.playerId, language);

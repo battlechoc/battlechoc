@@ -2,8 +2,9 @@
 // Kept apart from balance.js because every match stores a snapshot of the balance, and none of
 // this belongs in a match.
 
-const { EntityType, EmptyPlayerStats } = require('./constants');
+const { EntityType } = require('./constants');
 const { Ingredient, Ingredients, Rarity } = require('./ingredients');
+const { DefaultBalance, valueAt } = require('./balance');
 
 const SpecialIngredient = Object.freeze({
     [EntityType.CREAM]: Ingredient.CREAM,
@@ -30,9 +31,8 @@ const RARE_SPECIAL_DIVISOR = 5;
 
 /** What upgrading `entityType` from `level` to `level + 1` costs: cocoa plus milestone ingredients. */
 const choclabCost = (entityType, level) => {
-    // the cocoa price is the former coin price the Choclab page shows (lazy: index requires this module)
-    const { getEntityDescriptor } = require('./index');
-    const cocoa = getEntityDescriptor(entityType, { ...EmptyPlayerStats.level, [entityType]: level }).coins || 0;
+    // the cocoa price is the former coin price of the level (the balance's `coins`); cream has none
+    const cocoa = valueAt((DefaultBalance.entities[entityType] || {}).coins, level) || 0;
     const milestone = ChoclabMilestones[level + 1];
     const ingredients = {};
     if (milestone) {

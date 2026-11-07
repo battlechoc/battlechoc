@@ -3,6 +3,13 @@
   "version": "3.0.0",
   "description": "battlechoc definitions and functions used in server and pwa",
   "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./i18n": "./i18n/index.js",
+    "./i18n/all": "./i18n/all.js",
+    "./translations/*": "./translations/*_strings.js",
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "test": "jest tests",
     "test:coverage": "jest tests --coverage",
