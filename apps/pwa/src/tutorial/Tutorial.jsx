@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
-  EmptyPlayerStats,
   StarterKit,
   translate as t,
   translationKeys as tr,
@@ -29,6 +28,7 @@ import { TutorialRunner } from "./runner";
 import { LESSON, lessonSteps } from "./lesson";
 import { demos } from "./demos";
 import logger from "../helper/logger";
+import { isNamed } from "../helper/playerName";
 
 const useStyles = createUseStyles((theme) => ({
   finished: {
@@ -52,8 +52,6 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-const isNamed = (stats) =>
-  typeof stats.username !== "undefined" && stats.username !== EmptyPlayerStats.username;
 
 /**
  * The tutorial on the real-time engine: an interactive first lesson against Mimi Marzipan

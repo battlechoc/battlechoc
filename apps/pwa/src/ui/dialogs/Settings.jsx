@@ -12,6 +12,7 @@ import {
 import OfflineStore from "../../OfflineStore";
 import { sendProblemReport } from "../../api/profile";
 import logger from "../../helper/logger";
+import { isNamed } from "../../helper/playerName";
 import { version, commit } from "../../build";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
@@ -348,7 +349,7 @@ const Settings = (props) => {
               // not during a match: the tutorial runs its own
               if (
                 typeof props.game === "undefined" &&
-                (props.playerInfos.stats.username !== "Chocnonymous" ||
+                (isNamed(props.playerInfos.stats) ||
                   props.playerInfos.stats.tutorialSkipped === true ||
                   props.playerInfos.stats.tutorialFinished === true)
               ) {

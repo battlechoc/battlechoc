@@ -1,24 +1,8 @@
 import {
-  EntityType,
   Items,
   translate as t,
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
-
-// the picture of each building (public/images/<name>-icon.svg)
-export const BUILDING_ICON = {
-  [EntityType.FACTORY]: "factory",
-  [EntityType.CACAOTREE]: "cacao-tree",
-  [EntityType.RUM_TRUFFLE_CANNON]: "truffle-cannon",
-  [EntityType.FACTORY_EXTENSION]: "factory-extension",
-  [EntityType.SPYING_EASTER_BUNNY]: "easter-bunny",
-  [EntityType.XMAS_FACTORY]: "xmas-factory",
-  [EntityType.CHOCOLATE_FOUNTAIN]: "fountain",
-  [EntityType.FRUIT_CANNON]: "fruit-cannon",
-  [EntityType.HOT_CHOCOLATE_BALLISTA]: "ballista",
-  [EntityType.DONUT_FACTORY]: "donut-factory",
-  [EntityType.CREAM]: "cream",
-};
 
 // stats where a smaller value is better for the player who owns the item
 const LOWER_IS_BETTER = new Set([

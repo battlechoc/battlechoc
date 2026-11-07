@@ -1,4 +1,5 @@
 import React from "react";
+import { BUILDING_ICON, iconUrl } from "../../catalog";
 import { createUseStyles } from "react-jss";
 import {
   translate as t,
@@ -9,7 +10,6 @@ import ItemIcon from "./ItemIcon";
 import IngredientIcon from "../ingredients/IngredientIcon";
 import Button from "../controls/Button";
 import {
-  BUILDING_ICON,
   bangers,
   effectLines,
   gamePanel,
@@ -98,7 +98,7 @@ const RecipeBook = ({ open, close, book, buildings, buildingName, onUse }) => {
             <section key={entityType}>
               <div className={classes.building}>
                 <img
-                  src={`/images/${BUILDING_ICON[entityType]}-icon.svg`}
+                  src={iconUrl(BUILDING_ICON[entityType])}
                   alt=""
                   style={{ width: "2.2em", height: "2.2em" }}
                 />

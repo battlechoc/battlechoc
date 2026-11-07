@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { isNamed } from "../../helper/playerName";
 import { createUseStyles } from "react-jss";
 import { connect } from "react-redux";
 import { multiplayer } from "../../Multiplayer";
@@ -201,7 +202,7 @@ const AccountOverview = (props) => {
   const stats = props.playerInfos.stats;
   const nameEditable =
     isPlayerAccount &&
-    ((typeof stats.username !== "undefined" && stats.username !== EmptyPlayerStats.username) ||
+    (isNamed(stats) ||
       stats.tutorialSkipped === true ||
       stats.tutorialFinished === true);
   const changeName = async (username) => {

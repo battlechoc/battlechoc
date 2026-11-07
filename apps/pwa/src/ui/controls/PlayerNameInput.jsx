@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { DEFAULT_NAME } from "../../helper/playerName";
 import { checkUsername } from "../../api/profile";
 import { isCancel } from "../../helper/http";
 import { createUseStyles } from "react-jss";
@@ -108,7 +109,7 @@ const PlayerNameInput = (componentProps) => {
   const [playerNameValid, setPlayerNameValid] = useState(true);
   const [playerNameAvailable, setPlayerNameAvailable] = useState(true);
   const [playerName, updatePlayerName] = useState(
-    typeof startValue === "undefined" ? "Chocnonymous" : startValue
+    typeof startValue === "undefined" ? DEFAULT_NAME : startValue
   );
   const [unchanged, setUnchanged] = useState(current === startValue);
   const [badInternetConnection, setBadInternetConnection] = useState(false);
@@ -121,7 +122,7 @@ const PlayerNameInput = (componentProps) => {
   useEffect(() => {
     setEditMode(props.editMode);
     updatePlayerName(
-      typeof startValue === "undefined" ? "Chocnonymous" : startValue
+      typeof startValue === "undefined" ? DEFAULT_NAME : startValue
     );
     if (!props.editMode) {
       setPlayerNameAvailable(true);

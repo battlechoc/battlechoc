@@ -1,4 +1,5 @@
 import React from "react";
+import { BUILDING_ICON } from "../../catalog";
 import { createUseStyles } from "react-jss";
 import {
   translate as t,
@@ -10,7 +11,6 @@ import Dialog from "../dialogs/Dialog";
 import Button from "../controls/Button";
 import ItemIcon from "./ItemIcon";
 import {
-  BUILDING_ICON,
   bangers,
   effectLines,
   gamePanel,

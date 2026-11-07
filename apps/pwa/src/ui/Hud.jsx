@@ -30,6 +30,7 @@ import { retryAssets } from "../firstLoad";
 import { multiplayer } from "../Multiplayer";
 import { fetchProfile } from "../api/profile";
 import logger from "../helper/logger";
+import { isNamed } from "../helper/playerName";
 import { account } from "../api/account";
 import Button from "./controls/Button";
 import Fab from "./controls/Fab";
@@ -413,7 +414,7 @@ const Hud = (props) => {
           // a few matches against the AI unlock the Choclab and online play; friends also need
           // a player name, under which others find and invite you (the server assigns one once
           // it is reachable)
-          const unnamed = typeof playername === "undefined" || playername === "Chocnonymous";
+          const unnamed = !isNamed(playerInfos.stats);
           const lockedChoclab = !unlocked.choclab;
           const lockedFriends = unnamed || !unlocked.online;
           // how far the next step is, under the menu

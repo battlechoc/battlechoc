@@ -8,6 +8,7 @@ import {
 import { account } from "./api/account.js";
 import * as profile from "./api/profile.js";
 import logger from "./helper/logger.js";
+import { isNamed } from "./helper/playerName.js";
 
 // Player profile and social features against the battlechoc API (device account). Online
 // matches are live (match/liveLobby.js).
@@ -17,12 +18,6 @@ const urlBase64ToUint8Array = (base64) => {
   const raw = atob((base64 + padding).replace(/-/g, "+").replace(/_/g, "/"));
   return Uint8Array.from([...raw].map((char) => char.charCodeAt(0)));
 };
-
-// a name the player chose (the default "Chocnonymous" is no name)
-const isNamed = (stats) =>
-  Boolean(stats) &&
-  typeof stats.username === "string" &&
-  stats.username !== EmptyPlayerStats.username;
 
 class Multiplayer {
   constructor() {
