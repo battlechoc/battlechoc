@@ -68,17 +68,28 @@ function registerValidSW(swUrl, config) {
         if (installingWorker == null) {
           return;
         }
-        installingWorker.onstatechange = () => {
-          if (installingWorker.state === "installed") {
-            if (navigator.serviceWorker.controller) {
+        if (navigator.serviceWorker.controller) {
+          // A new build. Its worker skips waiting, and the game offers it once it is in charge, not
+          // as soon as it is installed: Chrome stops the old worker to hand over, and a request in
+          // that moment (the dialog's pictures) starts the old one again and leaves the new one
+          // waiting. The reload of "Start now" then went to the old worker as Chrome stopped it,
+          // and the page hung (test/service-worker.spec.js).
+          navigator.serviceWorker.addEventListener(
+            "controllerchange",
+            () => {
               if (config && config.onUpdate) {
                 config.onUpdate(registration);
               }
-            } else {
-              logger.info("Content is cached for offline use.");
-              if (config && config.onSuccess) {
-                config.onSuccess(registration);
-              }
+            },
+            { once: true }
+          );
+          return;
+        }
+        installingWorker.onstatechange = () => {
+          if (installingWorker.state === "installed") {
+            logger.info("Content is cached for offline use.");
+            if (config && config.onSuccess) {
+              config.onSuccess(registration);
             }
           }
         };
