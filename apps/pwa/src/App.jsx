@@ -700,11 +700,11 @@ class App extends Component {
   }
 }
 
+// (not the whole of state.ui: it changes up to twenty times a second while the models load, and
+// App never read it; every change re-rendered the app)
 const mapStateToProps = (state) => ({
   matchView: state.match.view,
   language: state.ui.language,
-  selectedBuilding: state.ui.selectedBuilding,
-  ui: state.ui,
   tutorial: state.ui.tutorial,
   assetsReady: state.ui.assetsReady,
   playerInfos: state.ui.playerInfos,

@@ -1064,6 +1064,7 @@ class Scene extends Component {
         cells,
         requestRender: this.requestRender,
         setRenderLoop: (run) => this.setRenderLoop(run),
+        // only when the picture changed (cannonPick compares), never on every frame
         onSpots: (cannonSpots) => this.setState({ cannonSpots }),
       });
     }
@@ -1250,16 +1251,24 @@ class Scene extends Component {
     } else if (prevProps.boardFocus.seq !== this.props.boardFocus.seq) {
       this.setLookAtOpponent(this.props.boardFocus.target === "opponent");
     }
-
-    this.opponentGameField.update();
-    this.playerGameField.update();
-    this.syncWeaponIndicators();
+    // The boards, the indicators above the units and the floating infos follow the match's
+    // view, nothing else. Every other update of this component (the preview's place, the
+    // tutorial's hand, the zoom, the cannon spots) used to diff both boards and redraw the
+    // indicators as well.
     if (prevProps.game !== this.props.game) {
+      this.syncBoards();
       this.showProduction(prevProps.game, this.props.game);
     }
     if (prevProps.matchEvents !== this.props.matchEvents) {
       this.playMatchEvents(this.props.matchEvents);
     }
+  }
+
+  // the meshes of both boards and the indicators above the units as the view has them
+  syncBoards() {
+    this.opponentGameField.update();
+    this.playerGameField.update();
+    this.syncWeaponIndicators();
     this.requestRender();
   }
 
@@ -1744,6 +1753,9 @@ class Scene extends Component {
       this.requestRender
     );
 
+    // the indicators above the units of a match resumed while running (the next view, which
+    // used to bring them, may be seconds away)
+    this.syncWeaponIndicators();
     this.showPreview();
     this.resize();
     // new instances only show up once their materials are compiled; render again then,

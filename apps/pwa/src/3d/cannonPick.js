@@ -93,12 +93,38 @@ const lightPools = ({ scene, field, cells, setRenderLoop }) => {
   };
 };
 
+/** Whether two pictures for onSpots draw the same: points to a tenth of a pixel, as drawn. */
+export const sameSpots = (a, b) => {
+  if (!a || !b) {
+    return a === b;
+  }
+  const tenth = (value) => Math.round(value * 10);
+  return (
+    a.blur === b.blur &&
+    a.lights.length === b.lights.length &&
+    a.lights.every(
+      (polygons, i) =>
+        polygons.length === b.lights[i].length &&
+        polygons.every(
+          (polygon, j) =>
+            polygon.length === b.lights[i][j].length &&
+            polygon.every(
+              ([x, y], k) =>
+                tenth(x) === tenth(b.lights[i][j][k][0]) &&
+                tenth(y) === tenth(b.lights[i][j][k][1])
+            )
+        )
+    )
+  );
+};
+
 /**
  * Puts the cannons of `cells` on the own board in the light: pools of light around them (above),
- * and the dimming of the rest, for which `onSpots` gets, every frame while it shows (the camera
- * may still fly to the own board), `lights`: polygons in CSS pixels of the canvas, one column
- * per cell from a little around its piece up to the top of its cream, and `blur`, how softly
- * they fade. Returns the function that ends it.
+ * and the dimming of the rest, for which `onSpots` gets `lights`: polygons in CSS pixels of the
+ * canvas, one column per cell from a little around its piece up to the top of its cream, and
+ * `blur`, how softly they fade. It gets them whenever the picture changes (the camera may still
+ * fly to the own board, the player may zoom), not on every frame the breathing pools render:
+ * that set the scene component's state sixty times a second. Returns the function that ends it.
  */
 export const showCannonPick = ({
   scene,
@@ -145,8 +171,13 @@ export const showCannonPick = ({
       ];
     });
     const pixelsPerUnit = height / (camera.orthoTop - camera.orthoBottom);
-    onSpots({ lights, blur: 0.12 * pixelsPerUnit });
+    const spots = { lights, blur: 0.12 * pixelsPerUnit };
+    if (!sameSpots(shown, spots)) {
+      shown = spots;
+      onSpots(spots);
+    }
   };
+  let shown = null;
   const takeAway = lightPools({ scene, field, cells, setRenderLoop });
   const observer = scene.onAfterRenderObservable.add(update);
   update();
