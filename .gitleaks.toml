@@ -1,0 +1,16 @@
+# gitleaks (.github/workflows/secret-scan.yml) with its built-in rules, plus the false positives
+# it reported here. Each exception names its file and its exact line, so a real secret elsewhere,
+# also in that file, is still found. (A .gitleaksignore would hide findings by fingerprint without
+# saying what they are.)
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+
+  [[rules.allowlists]]
+  description = "the shared package re-exports its translation keys (a list of text names)"
+  condition = "AND"
+  regexTarget = "line"
+  regexes = ['''module\.exports\.translationKeys = i18n\.translationKeys;''']
+  paths = ['''^packages/shared/index\.js$''']
