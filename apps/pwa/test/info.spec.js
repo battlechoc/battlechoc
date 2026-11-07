@@ -35,6 +35,8 @@ test("the Info dialog speaks the player's language", async ({ page }) => {
       })
   );
   await page.goto("/", { waitUntil: "networkidle" });
+  // the page tells the browser its language too
+  await expect(page.locator("html")).toHaveAttribute("lang", "de");
   await page.locator("[data-icon=info]:visible").click();
   await expect(page.getByText("Über battlechoc", { exact: true })).toBeVisible();
   await expect(page.getByTestId("info-build")).toContainText("Aktualisiert jetzt");

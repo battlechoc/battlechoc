@@ -8,7 +8,7 @@ import {
   Texture,
   MeshBuilder,
 } from "./babylon.js";
-import { v4 as uuidv4 } from "uuid";
+import { uuid as createUuid } from "../helper/uuid.js";
 
 class Gamefield {
   constructor(
@@ -483,7 +483,7 @@ class Gamefield {
       field.dispose();
     }, 1000);
 
-    const uuid = uuidv4();
+    const uuid = createUuid();
     this.animations.push({
       id: uuid,
       stopAnimation: () => {
@@ -596,7 +596,7 @@ class Gamefield {
     }
     this.scene.registerBeforeRender(setParticles);
 
-    const uuid = uuidv4();
+    const uuid = createUuid();
     this.animations.push({
       id: uuid,
       stopAnimation: () => {

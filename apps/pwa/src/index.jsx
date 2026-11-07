@@ -13,6 +13,8 @@ import { matchSession } from "./match/LocalMatchHost";
 import { multiplayer } from "./Multiplayer";
 import { showQuickMessage, loadUiState } from "./ui/UiActions";
 import { connectivity } from "./connectivity";
+import { fontsLoaded } from "./firstLoad";
+import { warmOnDemand } from "./ui/onDemand";
 import promiseDispatch from "./helper/promiseDispatch";
 import { configureStore } from "@reduxjs/toolkit";
 import { ThemeProvider } from "react-jss";
@@ -23,6 +25,14 @@ const store = configureStore({
     getDefaultMiddleware().concat(promiseDispatch),
 });
 matchSession.dispatch = store.dispatch;
+
+// the title screen's menu shows once the fonts are in (no jumping labels); it does not wait for
+// the 3D engine, which arrives later. Then the chunks of what the player may open next are
+// asked for (the lab, the tutorial, the end of a match).
+fontsLoaded().then(() => {
+  store.dispatch(loadUiState({ fontsReady: true }));
+  warmOnDemand();
+});
 
 const theme = {
   color: {

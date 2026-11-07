@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import PropTypes from "prop-types";
 import Fab from "./Fab";
 import Button from "./Button";
 import {
@@ -340,19 +339,6 @@ const GameEndOverview = (props) => {
       </div>
     </div>
   );
-};
-
-GameEndOverview.propTypes = {
-  finishGame: PropTypes.func.isRequired,
-  outcome: PropTypes.string.isRequired,
-  awards: PropTypes.array.isRequired,
-  isWinner: PropTypes.bool.isRequired,
-  // online matches are verified by the server, which sends the drops (undefined while pending)
-  verified: PropTypes.bool.isRequired,
-  drops: PropTypes.array,
-  // after a challenge match: asks the opponent for another one; rematchStatus says how it goes
-  rematch: PropTypes.func,
-  rematchStatus: PropTypes.string,
 };
 
 export default GameEndOverview;

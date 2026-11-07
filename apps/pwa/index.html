@@ -36,6 +36,45 @@
   <!-- the fonts ship with the app (src/index.css); fetch the latin files before the CSS asks -->
   <link rel="preload" href="/fonts/bangers-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="preload" href="/fonts/montserrat-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <!-- The splash: until the game's script has arrived and rendered the title screen, the page
+    shows that screen's logo at its place on the page's background (src/index.css), so nothing
+    jumps when React takes over. The box repeats `logo` in src/ui/Hud.jsx (LOGO: top and size by
+    orientation): change both together, test/first-load.spec.js compares them. The picture is
+    asked for at once; the title screen found it only after its script had run. -->
+  <link rel="preload" href="/images/logo.svg" as="image" type="image/svg+xml" fetchpriority="high" />
+  <style>
+    .splash {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .splash>div {
+      position: absolute;
+      background: url(/images/logo.svg) no-repeat;
+    }
+
+    @media screen and (orientation: landscape) {
+      .splash>div {
+        top: 5vh;
+        width: 50vh;
+        height: 50vh;
+      }
+    }
+
+    @media screen and (orientation: portrait) {
+      .splash>div {
+        top: 12vh;
+        width: 40vh;
+        height: 40vh;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -56,7 +95,11 @@
       </path>
     </clipPath>
   </svg>
-  <div id="root"></div>
+  <div id="root">
+    <div class="splash">
+      <div></div>
+    </div>
+  </div>
   <script type="module" src="/src/index.jsx"></script>
 </body>
 

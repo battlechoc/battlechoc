@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { Suspense, useState, useEffect, useRef } from "react";
 import "./Hud.css";
-import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import {
   engine,
@@ -14,30 +13,29 @@ import {
   showNotification,
   hideNotification,
 } from "./UiActions";
+import Info from "./dialogs/Info";
+import Dialog from "./dialogs/Dialog";
+import Highscore from "./dialogs/Highscore";
+// loaded after the title screen (src/ui/onDemand.js)
 import {
-  Info,
   Settings,
   AccountOverview,
-  Dialog,
-  Highscore,
-} from "./dialogs";
-import ChallengeDialog from "./dialogs/ChallengeDialog";
+  ChallengeDialog,
+  Choclab,
+  GameEndOverview,
+} from "./onDemand";
 import { liveLobby } from "../match/liveLobby";
 import { matchSession } from "../match/LocalMatchHost";
-import Choclab from "./pages/Choclab";
-import { retryAssets } from "../AssetLoader";
+import { retryAssets } from "../firstLoad";
 import { multiplayer } from "../Multiplayer";
 import { ServerRequest } from "../helper/settings";
 import logger from "../helper/logger";
 import { account } from "../account";
-import {
-  Button,
-  Fab,
-  Progress,
-  Actionbar,
-  GameStartSelection,
-  GameEndOverview,
-} from "./controls";
+import Button from "./controls/Button";
+import Fab from "./controls/Fab";
+import Progress from "./controls/Progress";
+import Actionbar from "./controls/Actionbar";
+import GameStartSelection from "./controls/GameStartSelection";
 import { createUseStyles } from "react-jss";
 import { selectActiveGame } from "../match/matchSlice";
 import {
@@ -50,7 +48,8 @@ import {
 
 // The title screen's logo: its top and size (a square in vh; logo.svg fills its width) and the
 // rays turning behind it, centred on the fountain (dev/icons.mjs puts it at x 308, y 22 to 392
-// of logo.svg's 1209 × 924)
+// of logo.svg's 1209 × 924). index.html shows the logo in the same box before the script has
+// arrived (its splash): change the top or the size there too.
 const LOGO = {
   landscape: { top: 5, size: 50, rays: 350 },
   portrait: { top: 12, size: 40, rays: 200 },
@@ -376,25 +375,27 @@ const Hud = (props) => {
   let unlockHint = null;
   return (
     <div className={className}>
-      <Settings
-        startTutorial={kickOffTutorial}
-        showBuildingDemos={props.showBuildingDemos}
-        open={openSettings}
-        close={() => {
-          setOpenSettings(false);
-          const after = afterSettings.current;
-          afterSettings.current = undefined;
-          if (after) {
-            after();
-          }
-        }}
-      />
-      <AccountOverview
-        dialogStyle={dialogStyle}
-        playerAccount={playerAccount}
-        open={showAccountOverview}
-        close={() => setShowAccountOverview(false)}
-      />
+      <Suspense fallback={null}>
+        <Settings
+          startTutorial={kickOffTutorial}
+          showBuildingDemos={props.showBuildingDemos}
+          open={openSettings}
+          close={() => {
+            setOpenSettings(false);
+            const after = afterSettings.current;
+            afterSettings.current = undefined;
+            if (after) {
+              after();
+            }
+          }}
+        />
+        <AccountOverview
+          dialogStyle={dialogStyle}
+          playerAccount={playerAccount}
+          open={showAccountOverview}
+          close={() => setShowAccountOverview(false)}
+        />
+      </Suspense>
       {(() => {
         if (stage === "CHOCLAB_SCREEN") {
           return (
@@ -613,12 +614,14 @@ const Hud = (props) => {
               </Dialog>
               <Info online={online} />
               {/* also open by itself for a challenge the welcome restored after a reload */}
-              <ChallengeDialog
-                open={challengeDialog !== null || props.challenge !== null}
-                locked={challengeDialog !== null && challengeDialog.locked}
-                lockText={challengeDialog !== null ? challengeDialog.lockText : undefined}
-                close={() => setChallengeDialog(null)}
-              />
+              <Suspense fallback={null}>
+                <ChallengeDialog
+                  open={challengeDialog !== null || props.challenge !== null}
+                  locked={challengeDialog !== null && challengeDialog.locked}
+                  lockText={challengeDialog !== null ? challengeDialog.lockText : undefined}
+                  close={() => setChallengeDialog(null)}
+                />
+              </Suspense>
             </>
           );
         } else if (stage === "CHOOSE_MENU") {
@@ -628,7 +631,11 @@ const Hud = (props) => {
             </div>
           );
         } else if (stage === "CHOCLAB_SCREEN") {
-          return <Choclab />;
+          return (
+            <Suspense fallback={null}>
+              <Choclab />
+            </Suspense>
+          );
         } else if (stage === "WAITING_ROOM") {
           return (
             <div className="waiting-room">
@@ -662,30 +669,32 @@ const Hud = (props) => {
                 <WeaponPalette />
               </div>
               {overviewVisible && result ? (
-                <GameEndOverview
-                  awards={(matchAwards || []).map((award) => ({
-                    ...engine.matchAwards.find(
-                      (candidate) => candidate.key === award.key
-                    ),
-                    xp: award.xp,
-                  }))}
-                  outcome={
-                    result.winners.length === 1 &&
-                    result.winners[0] === game.viewer
-                      ? "won"
-                      : "lost"
-                  }
-                  isWinner={result.winners.includes(game.viewer)}
-                  verified={matchOnline}
-                  drops={matchResult ? matchResult.drops : undefined}
-                  rematch={
-                    rematchable && !props.outgoingInvite
-                      ? () => liveLobby.requestRematch(matchSession.host.matchId).catch(() => {})
-                      : undefined
-                  }
-                  rematchStatus={rematchStatus}
-                  finishGame={() => endGame()}
-                />
+                <Suspense fallback={null}>
+                  <GameEndOverview
+                    awards={(matchAwards || []).map((award) => ({
+                      ...engine.matchAwards.find(
+                        (candidate) => candidate.key === award.key
+                      ),
+                      xp: award.xp,
+                    }))}
+                    outcome={
+                      result.winners.length === 1 &&
+                      result.winners[0] === game.viewer
+                        ? "won"
+                        : "lost"
+                    }
+                    isWinner={result.winners.includes(game.viewer)}
+                    verified={matchOnline}
+                    drops={matchResult ? matchResult.drops : undefined}
+                    rematch={
+                      rematchable && !props.outgoingInvite
+                        ? () => liveLobby.requestRematch(matchSession.host.matchId).catch(() => {})
+                        : undefined
+                    }
+                    rematchStatus={rematchStatus}
+                    finishGame={() => endGame()}
+                  />
+                </Suspense>
               ) : null}
             </div>
           );
@@ -693,15 +702,6 @@ const Hud = (props) => {
       })()}
     </div>
   );
-};
-
-Hud.propTypes = {
-  prepareNewGameCallback: PropTypes.func.isRequired,
-  startGameCallback: PropTypes.func.isRequired,
-  startTutorial: PropTypes.func.isRequired,
-  endGame: PropTypes.func.isRequired,
-  challengedPlayer: PropTypes.string,
-  className: PropTypes.string.isRequired,
 };
 
 const mapStateToProps = (state) => ({

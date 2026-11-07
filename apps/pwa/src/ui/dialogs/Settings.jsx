@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import {
   hideQuickMessage,
@@ -20,13 +19,17 @@ import logger from "../../helper/logger";
 import { version, commit } from "../../build";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
-import { Button, Select, Progress, Slider } from "../controls";
+import Button from "../controls/Button";
+import Select from "../controls/Select";
+import Progress from "../controls/Progress";
+import Slider from "../controls/Slider";
 import {
   enterFullscreen,
   fullscreenSupported,
   useFullscreenAvailable,
 } from "../../helper/fullscreen";
 import { LAB_INTRO_SEEN } from "../lab/LabIntro";
+import { setDocumentLanguage } from "../../helper/language";
 
 const useStyles = createUseStyles((theme) => ({
   wrapper: {
@@ -200,6 +203,7 @@ const Settings = (props) => {
 
   const changeLanguage = (value) => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+    setDocumentLanguage(value);
     setCurrentLanguage(value, () => {
       ServerRequest("post", "/user/language", { language: value })
         .catch((error) => {
@@ -401,13 +405,6 @@ const Settings = (props) => {
       </Dialog>
     </div>
   );
-};
-
-Settings.propTypes = {
-  open: PropTypes.bool.isRequired,
-  close: PropTypes.func.isRequired,
-  startTutorial: PropTypes.func.isRequired,
-  showBuildingDemos: PropTypes.func,
 };
 
 const mapStateToProps = (state) => ({

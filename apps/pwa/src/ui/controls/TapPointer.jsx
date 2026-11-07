@@ -1,5 +1,4 @@
 import React from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 
 // the fingertip's place in images/tap-finger.svg, as a fraction of its width and height
@@ -101,14 +100,6 @@ const TapPointer = ({ x, y, size, from = "bottom-right", className = "", ...rest
       <div className={classes.hand} />
     </div>
   );
-};
-
-TapPointer.propTypes = {
-  x: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
-  y: PropTypes.oneOfType([PropTypes.number, PropTypes.string]).isRequired,
-  size: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  from: PropTypes.oneOf(Object.keys(ORIENTATIONS)),
-  className: PropTypes.string,
 };
 
 export default TapPointer;

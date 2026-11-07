@@ -1,4 +1,4 @@
-import axios from "axios";
+import { createClient } from "./helper/http";
 import OfflineStore from "./OfflineStore";
 import logger from "./helper/logger";
 
@@ -20,7 +20,7 @@ const liveUrl = apiUrl.replace(/^http/, "ws").replace(/\/$/, "") + "/live";
 const ACCOUNT_KEY = "account";
 const EXPIRY_MARGIN_MS = 30000;
 
-const client = axios.create({ baseURL: apiUrl, timeout: 15000 });
+const client = createClient({ baseURL: apiUrl, timeout: 15000 });
 
 class Account {
   constructor() {

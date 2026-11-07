@@ -1,5 +1,4 @@
 import React from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import {
   translate as t,
@@ -58,20 +57,6 @@ const GameMenu = ({ open, close, paused, online, soundOn, toggleSound, fullscree
       </div>
     </Dialog>
   );
-};
-
-GameMenu.propTypes = {
-  open: PropTypes.bool.isRequired,
-  close: PropTypes.func.isRequired,
-  paused: PropTypes.bool,
-  online: PropTypes.bool,
-  soundOn: PropTypes.bool,
-  toggleSound: PropTypes.func.isRequired,
-  fullscreen: PropTypes.bool,
-  toggleFullscreen: PropTypes.func.isRequired,
-  openSettings: PropTypes.func.isRequired,
-  // undefined in the tutorial: it has its own way out
-  leave: PropTypes.func,
 };
 
 export default GameMenu;

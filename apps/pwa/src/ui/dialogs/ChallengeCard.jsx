@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
@@ -298,12 +297,6 @@ const ChallengeCard = ({
       </div>
     </Dialog>
   );
-};
-
-ChallengeCard.propTypes = {
-  // starts the tutorial (a newcomer) and the normal Start (everyone else)
-  learn: PropTypes.func.isRequired,
-  startMatch: PropTypes.func.isRequired,
 };
 
 const mapStateToProps = (state) => {

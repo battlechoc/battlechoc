@@ -50,7 +50,9 @@ class Jukebox {
       });
     });
 
-    OfflineStore.settingsStore.get("audio").then((audioSettings) => {
+    // the music and the match sounds have been asked for (loadDeferred); muted, they wait
+    this.deferredWanted = false;
+    this.settingsLoaded = OfflineStore.settingsStore.get("audio").then((audioSettings) => {
       if (typeof audioSettings !== "undefined") {
         this.musicVolume = audioSettings.musicVolume ?? 1;
         this.soundVolume = audioSettings.soundVolume ?? 1;
@@ -116,8 +118,21 @@ class Jukebox {
     this.changed();
   }
 
-  /** Loads the music and the match sounds (after the 3D models of the first start, App). */
+  /**
+   * Loads the music and the match sounds (after the 3D models of the first start, App) when the
+   * sound is on. Muted, nothing is fetched or decoded (the song alone is 2.5 MB, some 30 MB once
+   * decoded) until the player switches the sound on.
+   */
   loadDeferred() {
+    this.deferredWanted = true;
+    this.settingsLoaded.then(() => {
+      if (!this.isMuted) {
+        this.loadClips();
+      }
+    });
+  }
+
+  loadClips() {
     const clips = [
       ...Object.values(this.SOUNDS).map((entry) => entry.sound),
       ...Object.values(this.SONGS).map((entry) => entry.music),
@@ -169,6 +184,10 @@ class Jukebox {
           this.soundContext.suspend();
         }
       } else {
+        // the sound is on: what waited for it loads now (a song asked to play starts once it is in)
+        if (this.deferredWanted) {
+          this.loadClips();
+        }
         if (this.musicContext.state === "suspended") {
           this.musicContext.resume().then(() => this.playMusic());
         } else {

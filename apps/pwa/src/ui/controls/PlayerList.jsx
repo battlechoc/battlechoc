@@ -1,5 +1,4 @@
 import React from "react";
-import PropTypes from "prop-types";
 import { createUseStyles } from "react-jss";
 import withDefaultProps from "../../helper/defaultProps";
 
@@ -118,15 +117,6 @@ const defaultProps = {
   style: {},
   className: "",
   username: "",
-};
-
-PlayerList.propTypes = {
-  showProfile: PropTypes.func.isRequired,
-  players: PropTypes.array.isRequired,
-  withScore: PropTypes.bool,
-  style: PropTypes.object,
-  username: PropTypes.string,
-  className: PropTypes.string,
 };
 
 export default PlayerList;

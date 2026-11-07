@@ -13,7 +13,7 @@ import {
 } from "./3d/babylon";
 import "./3d/gltf";
 import { cellMaterial } from "./3d/look";
-
+import { fontsLoaded, registerAssetRetry } from "./firstLoad";
 
 class AssetLoader {
   constructor() {
@@ -42,6 +42,8 @@ class AssetLoader {
         [EntityType.DONUT_CREAM_WHITE]: "donut.glb",
         [EntityType.DONUT_HEALTH_GREEN]: "donut.glb",
       },
+      // the interface's pictures, warmed after the models (warmImages below). The progress
+      // donuts are not here: the scene loads them itself for the indicators above the units.
       images: [
         "add-icon.svg",
         "dialog-border-left.svg",
@@ -94,47 +96,35 @@ class AssetLoader {
         "fast-backward.svg",
         "primary-close.svg",
         "fast-forward.svg",
-        "progress-10.svg",
         "trophy.svg",
-        "progress-100.svg",
         "truffle-cannon-icon.svg",
         "choclab-decoration-left.svg",
         "forward.svg",
         "forward-accent.svg",
-        "progress-20.svg",
         "user.svg",
         "choclab-decoration-right.svg",
         "fountain-icon.svg",
-        "progress-30.svg",
         "volume.svg",
         "close.svg",
         "fruit-cannon-icon.svg",
-        "progress-40.svg",
         "warning-close.svg",
         "coins.svg",
         "fullscreen.svg",
-        "progress-50.svg",
         "warning-icon.svg",
         "cream-donut-icon.svg",
         "gears.svg",
-        "progress-60.svg",
         "win.svg",
         "cream-icon.svg",
         "header.svg",
-        "progress-70.svg",
         "xmas-factory-icon.svg",
         "cream.svg",
         "health-donut-icon.svg",
-        "progress-80.svg",
         "decoration.svg",
         "highscore.svg",
-        "progress-90.svg",
-        "attacks-per-turn.svg",
-        "buildings-per-turn.svg",
         "bunny-caught.svg",
-        "cacao-per-turn.svg",
-        "fruit-attacks-per-turn.svg",
-        "spy-attacks-per-turn.svg",
+        "fit-board.svg",
+        "offline.svg",
+        "tap-finger.svg",
       ],
     };
   }
@@ -216,45 +206,45 @@ const prepareModel = (key, group, scene) => {
   });
 };
 
-// the menu also waits for the fonts (src/index.css), but never longer than FONT_TIMEOUT:
-// a font that does not load must not keep the game from starting
-const FONTS = ["1em Bangers", "1em Montserrat"];
-const FONT_TIMEOUT = 5000;
-const loadFonts = () =>
-  Promise.race([
-    document.fonts
-      ? Promise.all(FONTS.map((font) => document.fonts.load(font)))
-      : Promise.resolve(),
-    new Promise((resolve) => setTimeout(resolve, FONT_TIMEOUT)),
-  ]).catch(() => undefined);
-
 // a model that does not arrive is asked for again after these pauses, then the start button offers
-// another try (retryAssets)
+// another try (retryAssets in src/firstLoad.js)
 const MODEL_RETRY_DELAYS_MS = [1000, 2500];
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const PROGRESS_INTERVAL_MS = 50;
 
-const loadImage = (src) =>
-  new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", src);
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        new Image().src = src;
-        resolve(xhr.response);
-      } else {
-        reject({ status: xhr.status, statusText: xhr.statusText });
-      }
-    };
-    xhr.onerror = () => reject({ status: xhr.status, statusText: xhr.statusText });
-    xhr.send();
-  });
+// The interface's pictures are not waited for: a screen fetches what it shows (CSS backgrounds,
+// the scene's floating infos). Once the models are in, each is still fetched once, a few at a
+// time and at low priority, into the browser's cache: a match started right away finds its icons
+// there, also on a device that goes offline before the service worker has stored the game. With
+// a service worker in charge they are stored already. (Until 2026-11 they held the start button
+// back: 92 requests next to the models, each followed by a second one for an Image nobody kept.)
+const WARMED_AT_ONCE = 4;
+const warmImages = (images) => {
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+    return;
+  }
+  const queue = [...images];
+  const next = () => {
+    const image = queue.shift();
+    if (typeof image === "undefined") {
+      return;
+    }
+    fetch("/images/" + image, { priority: "low" })
+      .then((response) => response.arrayBuffer())
+      // a missing picture shows as an empty icon
+      .catch(() => undefined)
+      .then(next);
+  };
+  for (let i = 0; i < WARMED_AT_ONCE; i++) {
+    next();
+  }
+};
 
 // The loading of the first start, once per page: the 3D models (the templates Gamefield
-// instances), the interface pictures and the fonts. The title screen does not wait for it; the
-// start button shows its progress (state.ui.assetsProgress) and starts the game once
-// state.ui.assetsReady.
+// instances) and the fonts; the interface's pictures follow (warmImages). The title screen does
+// not wait for it; the start button shows its progress (state.ui.assetsProgress) and starts the
+// game once state.ui.assetsReady.
 const loading = {
   scene: null,
   callbacks: null,
@@ -267,23 +257,15 @@ const loading = {
   start(scene, callbacks) {
     this.scene = scene;
     this.callbacks = callbacks;
-    const { models, images } = assetLoader.assets;
-    this.total = Object.keys(models).length + images.length + 1;
+    const { models } = assetLoader.assets;
+    this.total = Object.keys(models).length + 1;
     this.done = 0;
     // one request per file: the board cells and the trap donuts share theirs
     for (const file of new Set(Object.values(models))) {
       this.loadModel(file);
     }
-    loadFonts().then(() => {
-      this.callbacks.fontsReady();
-      this.count(1);
-    });
-    for (const image of images) {
-      // a missing picture shows as an empty icon; it must not keep the game from starting
-      loadImage("/images/" + image)
-        .catch((error) => console.warn("could not load", image, error))
-        .then(() => this.count(1));
-    }
+    // the fonts are asked for at the start of the page (src/firstLoad.js, the menu waits for them)
+    fontsLoaded().then(() => this.count(1));
   },
 
   async loadModel(file) {
@@ -335,6 +317,7 @@ const loading = {
         if (!this.readySent) {
           this.readySent = true;
           this.callbacks.ready();
+          warmImages(assetLoader.assets.images);
         }
       } else {
         this.callbacks.progress(Math.round((this.done / this.total) * 100));
@@ -343,8 +326,9 @@ const loading = {
   },
 };
 
-/** The start button's "try again" after a 3D model did not load. */
-export const retryAssets = () => loading.retry();
+// the start button's "try again" after a 3D model did not load (the title screen calls it
+// through src/firstLoad.js: it is there before this file has arrived)
+registerAssetRetry(() => loading.retry());
 
 // starts the loading with the scene (Scene.jsx); shows nothing itself, the start button does
 const AssetLoadingView = (props) => {
@@ -352,7 +336,6 @@ const AssetLoadingView = (props) => {
   useImperativeHandle(customRef, () => ({
     loadAssets(scene) {
       loading.start(scene, {
-        fontsReady: () => props.loadUiState({ fontsReady: true }),
         progress: (value) => props.loadUiState({ assetsProgress: value }),
         failed: (value) => props.loadUiState({ assetsFailed: value }),
         ready: () => {

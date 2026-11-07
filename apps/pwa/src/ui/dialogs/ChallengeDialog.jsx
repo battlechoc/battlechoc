@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import PropTypes from "prop-types";
 import { connect } from "react-redux";
 import { createUseStyles } from "react-jss";
 import {
@@ -359,13 +358,6 @@ const ChallengeDialog = ({
       </div>
     </Dialog>
   );
-};
-
-ChallengeDialog.propTypes = {
-  open: PropTypes.bool.isRequired,
-  close: PropTypes.func.isRequired,
-  locked: PropTypes.bool,
-  lockText: PropTypes.string,
 };
 
 const mapStateToProps = (state) => ({

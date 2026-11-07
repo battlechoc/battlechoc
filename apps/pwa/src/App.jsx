@@ -41,20 +41,23 @@ import {
 import { debugScenarios } from "./situations/scenarios";
 import { testHooksEnabled, exposeForTests } from "./testHooks";
 import Hud from "./ui/Hud";
-import { v4 as uuidv4 } from "uuid";
-import IncomingInvite from "./ui/dialogs/IncomingInvite";
-import ChallengeCard from "./ui/dialogs/ChallengeCard";
+import { uuid } from "./helper/uuid";
+// loaded after the title screen (src/ui/onDemand.js)
+import {
+  IncomingInvite,
+  ChallengeCard,
+  Matchmaking,
+  Unlocked,
+  NameConflict,
+  UpdateAvailable,
+  Tutorial,
+} from "./ui/onDemand";
 import { challengeViewed } from "./match/liveSlice";
-import Matchmaking from "./ui/dialogs/Matchmaking";
-import Unlocked from "./ui/dialogs/Unlocked";
-import NameConflict from "./ui/dialogs/NameConflict";
-import UpdateAvailable from "./ui/dialogs/UpdateAvailable";
 import { loadUnlockState, takeNewUnlock } from "./unlocks";
-import Tutorial from "./tutorial/Tutorial";
+import { setDocumentLanguage } from "./helper/language";
 import QuickMessage from "./ui/dialogs/QuickMessage";
 import logger from "./helper/logger";
-import { LESSON } from "./tutorial/lesson";
-import { allDemos } from "./tutorial/demos";
+import { LESSON, allDemos } from "./tutorial/ids";
 const Scene = React.lazy(() => import("./3d/Scene"));
 
 // Start: the time limits to reach the live service before the local AI plays instead
@@ -120,6 +123,7 @@ class App extends Component {
     OfflineStore.settingsStore.get("language").then((language) => {
       const languageValue =
         typeof language !== "undefined" ? language : browserLanguage;
+      setDocumentLanguage(languageValue);
       setCurrentLanguage(languageValue, () => {
         ServerRequest("post", "/user/language", { language: languageValue })
           .catch((error) => {
@@ -538,7 +542,7 @@ class App extends Component {
           idx: winner.idx,
         })),
         awards: result.awards,
-        id: uuidv4(),
+        id: uuid(),
       },
     ]);
   }
@@ -654,51 +658,55 @@ class App extends Component {
           endGame={() => this.endGame()}
           challengedPlayer={this.state.player}
         />
-        <IncomingInvite />
-        <ChallengeCard
-          learn={() => {
-            multiplayer.tutorialStarted();
-            this.startTutorial();
-          }}
-          startMatch={() => this.startGame()}
-        />
-        <NameConflict />
-        <UpdateAvailable />
-        <Unlocked
-          unlock={this.state.unlocked || undefined}
-          gamesLeft={
-            unlocks(this.props.playerInfos.stats, { early: this.props.earlyUnlock }).gamesLeft.online
-          }
-          close={() => this.setState({ unlocked: false })}
-          showDemos={() => {
-            this.setState({ unlocked: false });
-            this.showBuildingDemos();
-          }}
-        />
-        <Matchmaking
-          open={this.state.matchmaking}
-          cancel={this.cancelMatchmaking}
-          playAiNow={() =>
-            liveLobby.playAiNow().catch((error) => logger.info("AI match failed", error))
-          }
-        />
-        {this.props.tutorial ? (
-          <Tutorial
-            closeTutorial={this.closeTutorial}
-            clearScene={() => this.scene && this.scene.clear()}
-            testClock={this.testClock}
+        <Suspense fallback={null}>
+          <IncomingInvite />
+          <ChallengeCard
+            learn={() => {
+              multiplayer.tutorialStarted();
+              this.startTutorial();
+            }}
+            startMatch={() => this.startGame()}
           />
+          <NameConflict />
+          <UpdateAvailable />
+          <Unlocked
+            unlock={this.state.unlocked || undefined}
+            gamesLeft={
+              unlocks(this.props.playerInfos.stats, { early: this.props.earlyUnlock }).gamesLeft.online
+            }
+            close={() => this.setState({ unlocked: false })}
+            showDemos={() => {
+              this.setState({ unlocked: false });
+              this.showBuildingDemos();
+            }}
+          />
+          <Matchmaking
+            open={this.state.matchmaking}
+            cancel={this.cancelMatchmaking}
+            playAiNow={() =>
+              liveLobby.playAiNow().catch((error) => logger.info("AI match failed", error))
+            }
+          />
+        </Suspense>
+        {this.props.tutorial ? (
+          <Suspense fallback={null}>
+            <Tutorial
+              closeTutorial={this.closeTutorial}
+              clearScene={() => this.scene && this.scene.clear()}
+              testClock={this.testClock}
+            />
+          </Suspense>
         ) : null}
       </div>
     );
   }
 }
 
+// (not the whole of state.ui: it changes up to twenty times a second while the models load, and
+// App never read it; every change re-rendered the app)
 const mapStateToProps = (state) => ({
   matchView: state.match.view,
   language: state.ui.language,
-  selectedBuilding: state.ui.selectedBuilding,
-  ui: state.ui,
   tutorial: state.ui.tutorial,
   assetsReady: state.ui.assetsReady,
   playerInfos: state.ui.playerInfos,

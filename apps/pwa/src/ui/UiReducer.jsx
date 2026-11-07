@@ -5,15 +5,16 @@ import {
   EntityType,
 } from "@battlechoc/battlechoc-shared-functions";
 import OfflineStore from "../OfflineStore";
-import { v4 as uuidv4 } from "uuid";
+import { uuid } from "../helper/uuid";
 
 const uiReducer = createReducer(
   {
     selectedBuilding: EntityType.FACTORY,
     tappedBuilding: EntityType.FACTORY,
     assetsReady: false,
-    // the first start (AssetLoader): the title screen shows once the fonts are in; the start
-    // button fills up with the 3D models (0..100) and offers another try when one fails
+    // the first start (src/firstLoad.js, AssetLoader): the title screen shows once the fonts are
+    // in; the start button fills up with the 3D models (0..100) and offers another try when one
+    // fails
     fontsReady: false,
     assetsProgress: 0,
     assetsFailed: false,
@@ -148,7 +149,7 @@ const uiReducer = createReducer(
             typeof action.payload.autoHideDuration === "undefined"
               ? 4000
               : action.payload.autoHideDuration,
-          id: uuidv4(),
+          id: uuid(),
           // the online/offline toasts replace each other (above)
           type: action.payload.type,
           text: action.payload.text || "",

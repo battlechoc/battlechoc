@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from "react";
-import PropTypes from "prop-types";
 import { EntityType } from "@battlechoc/battlechoc-shared-functions";
 import { createUseStyles, useTheme } from "react-jss";
 import Button from "./Button";
@@ -201,11 +200,6 @@ const ChoclabPalette = (componentProps) => {
 const defaultProps = {
   className: "",
   style: {},
-};
-
-ChoclabPalette.propTypes = {
-  className: PropTypes.string,
-  style: PropTypes.object,
 };
 
 export default ChoclabPalette;

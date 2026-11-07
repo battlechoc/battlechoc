@@ -1,11 +1,9 @@
-import axios from "axios";
+import { createClient } from "./http";
 import { NoHealthyInternetConnectionError } from "@battlechoc/battlechoc-shared-functions";
 import { account, apiUrl } from "../account";
 import { version, builtAt } from "../build";
 
-const instance = axios.create({
-  baseURL: apiUrl,
-});
+const instance = createClient({ baseURL: apiUrl });
 
 // Calls the battlechoc API as the device account. For "get" the third argument is an
 // AbortSignal, for "post" and "delete" the request body.
