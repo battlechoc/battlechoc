@@ -554,5 +554,18 @@ module.exports = {
     "PASSKEY_CANT_UNLOCK": "このパスキーではここで言葉を開けません。リカバリーワードかバックアップファイルを使ってね。",
     "PASSKEY_UNKNOWN": "このパスキーには保存された言葉がありません。",
     "FILE_SAVE_FAILED": "バックアップファイルを保存できませんでした。もう一度試してね。",
-    "SESSION_ENDED_BY_KEY": "このデバイスのキーがアカウントから削除されたため、サインアウトされました。ここで遊ぶには、もう一度アカウントを接続してください。"
+    "SESSION_ENDED_BY_KEY": "このデバイスのキーがアカウントから削除されたため、サインアウトされました。ここで遊ぶには、もう一度アカウントを接続してください。",
+    "WALLET_DOOR": "Cardanoウォレットを使う",
+    "WALLET_DOOR_TITLE": "あなたのCardanoウォレット",
+    "WALLET_DOOR_TEXT": "ウォレットを選んでください。battlechocの短いテキストへの署名を求められます。費用はかからず、資金は動きません。",
+    "WALLET_QR_TEXT": "スマートフォンのCardanoウォレットでこのコードを読み取ってください。",
+    "WALLET_WAITING": "ウォレットを待っています。署名したらここに戻ってください。",
+    "WALLET_WRONG_NETWORK": "ウォレットが別のCardanoネットワークにあります。{{network}}に切り替えてもう一度お試しください。",
+    "WALLET_TAKEN": "このウォレットは別のプレイヤーのものです。",
+    "WALLET_FAILED": "ウォレットでうまくいきませんでした。アカウントは変わっていません。もう一度お試しください。",
+    "WALLET_NONE": "ここにはCardanoウォレットが見つかりません。",
+    "WALLET_LINK": "Cardanoウォレットを連携する",
+    "WALLET_LINKED": "ウォレットがこのプレイヤーに連携されました。",
+    "CONFIRM_WALLET": "ウォレットを使う",
+    "WORDS_UNKNOWN_USE_WALLET": "この単語を持つプレイヤーはいません。ご自身のウォレットの単語なら、代わりに「Cardanoウォレットを使う」を使ってください。"
 }

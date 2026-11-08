@@ -554,5 +554,18 @@ module.exports = {
     "PASSKEY_CANT_UNLOCK": "Questa passkey non può aprire le parole qui. Usa le tue parole di recupero o il file di backup.",
     "PASSKEY_UNKNOWN": "Questa passkey non protegge nessuna parola salvata.",
     "FILE_SAVE_FAILED": "Non è stato possibile salvare il file di backup. Riprova.",
-    "SESSION_ENDED_BY_KEY": "Questo dispositivo è stato disconnesso perché la sua chiave è stata rimossa dal tuo account. Collega di nuovo il tuo account per giocarci qui."
+    "SESSION_ENDED_BY_KEY": "Questo dispositivo è stato disconnesso perché la sua chiave è stata rimossa dal tuo account. Collega di nuovo il tuo account per giocarci qui.",
+    "WALLET_DOOR": "Usa un wallet Cardano",
+    "WALLET_DOOR_TITLE": "Il tuo wallet Cardano",
+    "WALLET_DOOR_TEXT": "Scegli il tuo wallet. Ti chiede di firmare un breve testo di battlechoc; non costa nulla e non sposta fondi.",
+    "WALLET_QR_TEXT": "Scansiona questo codice con il wallet Cardano del tuo telefono.",
+    "WALLET_WAITING": "In attesa del tuo wallet. Torna qui dopo aver firmato.",
+    "WALLET_WRONG_NETWORK": "Il tuo wallet è su un'altra rete Cardano. Passa a {{network}} e riprova.",
+    "WALLET_TAKEN": "Questo wallet appartiene a un altro giocatore.",
+    "WALLET_FAILED": "Non ha funzionato con il wallet. Il tuo account è invariato. Riprova.",
+    "WALLET_NONE": "Nessun wallet Cardano trovato qui.",
+    "WALLET_LINK": "Collega un wallet Cardano",
+    "WALLET_LINKED": "Il tuo wallet è ora collegato a questo giocatore.",
+    "CONFIRM_WALLET": "Usa il mio wallet",
+    "WORDS_UNKNOWN_USE_WALLET": "Nessun giocatore ha queste parole. Se sono le parole del tuo wallet, usa invece «Usa un wallet Cardano»."
 }

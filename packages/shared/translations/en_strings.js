@@ -554,5 +554,18 @@ module.exports = {
     "PASSKEY_CANT_UNLOCK": "This passkey can't open the words here. Use your recovery words or the backup file.",
     "PASSKEY_UNKNOWN": "This passkey guards no saved words.",
     "FILE_SAVE_FAILED": "The backup file could not be saved. Please try again.",
-    "SESSION_ENDED_BY_KEY": "This device was signed out because its key was removed from your account. Connect your account again to play with it here."
+    "SESSION_ENDED_BY_KEY": "This device was signed out because its key was removed from your account. Connect your account again to play with it here.",
+    "WALLET_DOOR": "Use a Cardano wallet",
+    "WALLET_DOOR_TITLE": "Your Cardano wallet",
+    "WALLET_DOOR_TEXT": "Choose your wallet. It asks you to sign a short text from battlechoc; that costs nothing and moves no funds.",
+    "WALLET_QR_TEXT": "Scan this code with the Cardano wallet on your phone.",
+    "WALLET_WAITING": "Waiting for your wallet. Come back here once you have signed.",
+    "WALLET_WRONG_NETWORK": "Your wallet is on another Cardano network. Switch it to {{network}} and try again.",
+    "WALLET_TAKEN": "This wallet belongs to another player.",
+    "WALLET_FAILED": "That did not work with the wallet. Your account is unchanged. Please try again.",
+    "WALLET_NONE": "No Cardano wallet found here.",
+    "WALLET_LINK": "Link a Cardano wallet",
+    "WALLET_LINKED": "Your wallet is now linked to this player.",
+    "CONFIRM_WALLET": "Use my wallet",
+    "WORDS_UNKNOWN_USE_WALLET": "No player has these words. If they are your own wallet's words, use \"Use a Cardano wallet\" instead."
 }

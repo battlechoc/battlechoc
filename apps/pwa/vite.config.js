@@ -200,6 +200,10 @@ const NEVER_IMPORTED = [
 // The Evolution SDK is loaded only for the Cardano sign-in (src/cardano/keys.js): a build without
 // VITE_CARDANO_NETWORK never loads it, so it is not precached either.
 const CARDANO_SDK = /[\\/]@evolution-sdk[\\/]evolution[\\/]/;
+// the wallet door (plan 3, src/ui/account/WalletDoor.jsx): the Cardano Foundation's component and
+// what it brings (peer-connect with PeerJS, styled-components, Radix), loaded only when it opens
+const WALLET_DOOR =
+  /[\\/](@cardano-foundation[\\/]cardano-connect-with-wallet(-core)?|@fabianbormann[\\/]cardano-peer-connect|peerjs|styled-components|@radix-ui)[\\/]/;
 const unreachableChunks = new Set();
 // `unused`: modules the build never runs; a chunk holding any of them is not precached, however
 // it is reached (the bundler shares such chunks between dynamic imports)
@@ -265,7 +269,9 @@ export default defineConfig(({ command, mode }) => ({
     stylesheetFirst(),
     withoutWgslShaders(),
     findUnreachableChunks(
-      loadEnv(mode, here, "VITE_").VITE_CARDANO_NETWORK ? [] : [CARDANO_SDK]
+      loadEnv(mode, here, "VITE_").VITE_CARDANO_NETWORK
+        ? []
+        : [CARDANO_SDK, WALLET_DOOR]
     ),
     react(),
     VitePWA({

@@ -554,5 +554,18 @@ module.exports = {
     "PASSKEY_CANT_UNLOCK": "Cette passkey ne peut pas ouvrir les mots ici. Utilise tes mots de récupération ou le fichier de sauvegarde.",
     "PASSKEY_UNKNOWN": "Cette passkey ne protège aucun mot enregistré.",
     "FILE_SAVE_FAILED": "Le fichier de sauvegarde n'a pas pu être enregistré. Réessaie.",
-    "SESSION_ENDED_BY_KEY": "Cet appareil a été déconnecté, car sa clé a été retirée de ton compte. Connecte à nouveau ton compte pour jouer avec ici."
+    "SESSION_ENDED_BY_KEY": "Cet appareil a été déconnecté, car sa clé a été retirée de ton compte. Connecte à nouveau ton compte pour jouer avec ici.",
+    "WALLET_DOOR": "Utiliser un portefeuille Cardano",
+    "WALLET_DOOR_TITLE": "Ton portefeuille Cardano",
+    "WALLET_DOOR_TEXT": "Choisis ton portefeuille. Il te demande de signer un court texte de battlechoc ; cela ne coûte rien et ne déplace aucun fonds.",
+    "WALLET_QR_TEXT": "Scanne ce code avec le portefeuille Cardano de ton téléphone.",
+    "WALLET_WAITING": "En attente de ton portefeuille. Reviens ici une fois que tu as signé.",
+    "WALLET_WRONG_NETWORK": "Ton portefeuille est sur un autre réseau Cardano. Passe-le sur {{network}} et réessaie.",
+    "WALLET_TAKEN": "Ce portefeuille appartient à un autre joueur.",
+    "WALLET_FAILED": "Cela n'a pas fonctionné avec le portefeuille. Ton compte n'a pas changé. Réessaie.",
+    "WALLET_NONE": "Aucun portefeuille Cardano trouvé ici.",
+    "WALLET_LINK": "Associer un portefeuille Cardano",
+    "WALLET_LINKED": "Ton portefeuille est maintenant associé à ce joueur.",
+    "CONFIRM_WALLET": "Utiliser mon portefeuille",
+    "WORDS_UNKNOWN_USE_WALLET": "Aucun joueur n'a ces mots. Si ce sont les mots de ton propre portefeuille, utilise plutôt « Utiliser un portefeuille Cardano »."
 }

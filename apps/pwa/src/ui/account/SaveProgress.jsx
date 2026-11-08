@@ -1,8 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { createUseStyles } from "react-jss";
 import Button from "../controls/Button";
 import RecoveryWords from "./RecoveryWords";
-import ConnectAccount from "./ConnectAccount";
+import ConnectAccount, { KEYS_CHANGED } from "./ConnectAccount";
 import BackupPassword from "./BackupPassword";
 import ConfirmChange from "./ConfirmChange";
 import {
@@ -33,6 +40,9 @@ import {
 } from "../../cardano";
 import logger from "../../helper/logger";
 import { outlined } from "../styles";
+
+// the wallet door (plan 3): loaded when it opens
+const WalletDoor = lazy(() => import("./WalletDoor"));
 
 // Saving the progress in the profile (the owner's pick "C", 2026-11-08): a quiet row at the
 // bottom: "Only on this device" with Save your progress, "Not backed up yet" with Back up now, or
@@ -226,6 +236,33 @@ const SaveProgress = ({ playerName }) => {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // a wallet linked from "Connect an existing account" (plan 3)
+  useEffect(() => {
+    window.addEventListener(KEYS_CHANGED, refresh);
+    return () => window.removeEventListener(KEYS_CHANGED, refresh);
+  }, [refresh]);
+
+  // "Link a Cardano wallet" (plan 3): a player with keys proves it first (ConfirmChange)
+  const [linking, setLinking] = useState(false);
+  const [linkProof, setLinkProof] = useState(false);
+  const [linkToken, setLinkToken] = useState(undefined);
+  const linkWallet = () => {
+    setLinkToken(undefined);
+    if (identities.length > 0) {
+      setLinkProof(true);
+    } else {
+      setLinking(true);
+    }
+  };
+  const walletLinked = (answer) => {
+    setLinking(false);
+    if (answer.outcome === "confirm") {
+      setLinkProof(true);
+      return;
+    }
+    refresh();
+  };
 
   const save = async () => {
     if (saving.current) {
@@ -496,8 +533,36 @@ const SaveProgress = ({ playerName }) => {
                 </div>
               ))
             : null}
+          {features.showWalletDoor() ? (
+            <div className={classes.row}>
+              <button className={classes.link} onClick={linkWallet}>
+                {t(tr.WALLET_LINK)}
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
+      {linking ? (
+        <Suspense fallback={null}>
+          <WalletDoor
+            open={linking}
+            purpose="link"
+            confirmToken={linkToken}
+            onClose={() => setLinking(false)}
+            onDone={walletLinked}
+          />
+        </Suspense>
+      ) : null}
+      <ConfirmChange
+        open={linkProof}
+        passkeyIds={(passkeys || []).map((passkey) => passkey.credentialId)}
+        onClose={() => setLinkProof(false)}
+        onConfirmed={async (token) => {
+          setLinkProof(false);
+          setLinkToken(token);
+          setLinking(true);
+        }}
+      />
       <ConnectAccount
         open={connecting}
         stacked

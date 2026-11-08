@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { createUseStyles } from "react-jss";
 import Dialog from "../dialogs/Dialog";
@@ -10,15 +10,19 @@ import {
 import {
   confirmWithPasskey,
   confirmWithWords,
+  features,
   normalizeWords,
   PasskeyCancelledError,
   wordsAreValid,
 } from "../../cardano";
 import logger from "../../helper/logger";
 
+// the wallet door (plan 3): a linked wallet proves it too; loaded when it opens
+const WalletDoor = lazy(() => import("./WalletDoor"));
+
 // "Is it you?" (plan 2, owner 2026-11-08): a key change needs a fresh proof by an existing key —
-// the passkey (`passkeyIds`: the player's passkeys) or the 24 recovery words typed in. A wallet
-// joins with plan 3. `onConfirmed(confirmToken)` does the change; every failure changes nothing.
+// the passkey (`passkeyIds`: the player's passkeys), the 24 recovery words typed in, or (plan 3)
+// a linked wallet. `onConfirmed(confirmToken)` does the change; every failure changes nothing.
 
 const WORD_COUNT = 24;
 
@@ -70,6 +74,7 @@ const ConfirmChange = ({ open, passkeyIds = [], onClose, onConfirmed }) => {
   const [text, setText] = useState("");
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [door, setDoor] = useState(false);
   const running = useRef(false);
 
   useEffect(() => {
@@ -77,6 +82,7 @@ const ConfirmChange = ({ open, passkeyIds = [], onClose, onConfirmed }) => {
       setText("");
       setError(null);
       setBusy(false);
+      setDoor(false);
     }
   }, [open]);
 
@@ -128,15 +134,26 @@ const ConfirmChange = ({ open, passkeyIds = [], onClose, onConfirmed }) => {
     >
       <div className={classes.body}>
         <p className={classes.text}>{t(tr.CONFIRM_TEXT)}</p>
-        {passkeyIds.length > 0 ? (
+        {passkeyIds.length > 0 || features.showWalletDoor() ? (
           <div className={classes.buttons}>
-            <Button
-              color="primary"
-              disabled={busy}
-              onClick={() => run(() => confirmWithPasskey(passkeyIds))}
-            >
-              {t(tr.CONFIRM_PASSKEY)}
-            </Button>
+            {passkeyIds.length > 0 ? (
+              <Button
+                color="primary"
+                disabled={busy}
+                onClick={() => run(() => confirmWithPasskey(passkeyIds))}
+              >
+                {t(tr.CONFIRM_PASSKEY)}
+              </Button>
+            ) : null}
+            {features.showWalletDoor() ? (
+              <Button
+                color="secondary"
+                disabled={busy}
+                onClick={() => setDoor(true)}
+              >
+                {t(tr.CONFIRM_WALLET)}
+              </Button>
+            ) : null}
           </div>
         ) : null}
         <textarea
@@ -165,6 +182,19 @@ const ConfirmChange = ({ open, passkeyIds = [], onClose, onConfirmed }) => {
           </Button>
         </div>
       </div>
+      {door ? (
+        <Suspense fallback={null}>
+          <WalletDoor
+            open={door}
+            purpose="confirm"
+            onClose={() => setDoor(false)}
+            onDone={(answer) => {
+              setDoor(false);
+              run(async () => answer.confirmToken);
+            }}
+          />
+        </Suspense>
+      ) : null}
     </Dialog>,
     document.body
   );
