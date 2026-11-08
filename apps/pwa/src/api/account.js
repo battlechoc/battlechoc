@@ -7,16 +7,8 @@ import { createKeyStore } from "../cardano/keyStore.js";
 // which stays in IndexedDB. Short-lived access tokens are fetched with it when needed. Without
 // a connection the game keeps working offline; the account is created on a later start.
 
-// localStorage "battlechoc.apiUrl" points a build at another API (e2e tests, local servers)
-const storedApiUrl = (() => {
-  try {
-    return window.localStorage.getItem("battlechoc.apiUrl");
-  } catch {
-    return null;
-  }
-})();
-const apiUrl =
-  storedApiUrl || import.meta.env.VITE_API_URL || "https://api.battlechoc.com";
+import { apiUrl } from "./apiUrl.js";
+
 const liveUrl = apiUrl.replace(/^http/, "ws").replace(/\/$/, "") + "/live";
 const ACCOUNT_KEY = "account";
 const EXPIRY_MARGIN_MS = 30000;
@@ -93,6 +85,12 @@ class Account {
         throw error;
       }
     }
+  }
+
+  // ends another session on the server (plan 3: a wallet's session the player did not keep);
+  // the device's own account is not touched
+  async logout(refreshToken) {
+    await client.post("/accounts/logout", { refreshToken });
   }
 
   // loads or creates the account; resolves once an access token is available

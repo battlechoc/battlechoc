@@ -10,14 +10,15 @@ import { api } from "./players.js";
 
 const hex = (bytes) => Buffer.from(bytes).toString("hex");
 
-/** The stake key and reward address (preprod) of 24 words (new ones unless given). */
+/** The stake key and reward address (preprod unless `networkId` 1) of 24 words (new ones unless given). */
 export const nodeKeys = (
-  words = PrivateKey.generateMnemonic(256).split(" ")
+  words = PrivateKey.generateMnemonic(256).split(" "),
+  { networkId = 0 } = {}
 ) => {
   const stakeKey = PrivateKey.fromMnemonicCardano(words.join(" "), { role: 2 });
   const hash = KeyHash.fromVKey(PrivateKey.toPublicKey(stakeKey));
   const account = new RewardAccount.RewardAccount({
-    networkId: 0,
+    networkId,
     stakeCredential: hash,
   });
   return {

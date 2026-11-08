@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { api, createPlayer } from "./helpers/players.js";
 import { accountOf, readEntry, writeEntry } from "./helpers/profile.js";
 import { linkSecondKey, nodeKeys, signAs } from "./helpers/cardano.js";
+import { fakeWallet } from "./helpers/wallet.js";
 import fs from "node:fs";
 
 // Saving progress with 24 recovery words (a Cardano key made on the device), the preprod chip,
@@ -319,10 +320,9 @@ test.describe("signing in again with the words", () => {
       nobody ||
       "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art";
     await enterWords(page, unknown);
+    // where the wallet door shows (plan 3), the answer points to it: a wallet's own words
     await expect(
-      page.getByText("We found no progress saved with these words", {
-        exact: false,
-      })
+      page.getByText("No player has these words.", { exact: false })
     ).toBeVisible();
     expect((await accountOf(page)).playerId).toBe(playerId);
     await context.close();
@@ -980,6 +980,517 @@ test.describe("signing in again with a passkey or a backup file (plan 2)", () =>
       page.getByText("This is not a battlechoc backup file")
     ).toBeVisible();
     await expect(page.getByLabel("Password", { exact: true })).toHaveCount(0);
+    await context.close();
+  });
+});
+
+test.describe("the wallet door (plan 3)", () => {
+  // the device's player links `keys` through the API (a known wallet for another device)
+  const linkWallet = async (page, request, keys) => {
+    const answer = await signAs(
+      request,
+      await accessTokenOf(page, request),
+      keys,
+      "link"
+    );
+    expect(answer.status()).toBe(200);
+  };
+
+  const openDoor = async (page) => {
+    await openProfile(page);
+    await page
+      .getByRole("button", { name: "Connect an existing account" })
+      .click();
+    await page.getByRole("button", { name: "Use a Cardano wallet" }).click();
+  };
+
+  const chooseEternl = (page) =>
+    page
+      .getByTestId("wallet-door")
+      .getByText("Eternl", { exact: false })
+      .first()
+      .click();
+
+  test("an unknown wallet links to the device's player and the profile lists it", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page } = await createPlayer(browser, request, "SiWally");
+    const wallet = nodeKeys();
+    const { signed } = await fakeWallet(context, wallet);
+    await page.reload({ waitUntil: "networkidle" });
+    const before = (await accountOf(page)).playerId;
+    await openDoor(page);
+    await expect(page.getByTestId("wallet-door")).toBeVisible();
+    await page.screenshot({ path: "test/output/wallet-door.png" });
+    await chooseEternl(page);
+    await expect(
+      page.getByText("Your wallet is now linked to this player.")
+    ).toBeVisible({ timeout: 15000 });
+    expect(signed).toHaveLength(1);
+    expect(signed[0]).toContain("Connect this wallet to battlechoc.");
+    expect((await accountOf(page)).playerId).toBe(before);
+    const identities = await identitiesOf(page, request);
+    expect(identities.map((identity) => identity.subject)).toEqual([
+      wallet.subject,
+    ]);
+    // the profile lists the wallet among the keys
+    await page.keyboard.press("Escape");
+    const row = page.getByTestId("save-progress");
+    await expect(row).toContainText("Saved");
+    await row.getByRole("button", { name: "Advanced" }).click();
+    await expect(row).toContainText(wallet.rewardAddress.slice(0, 14));
+    await context.close();
+  });
+
+  test("a known wallet on a new device switches to its player", async ({
+    browser,
+    request,
+  }) => {
+    const owner = await createPlayer(browser, request, "SiWerna");
+    const wallet = nodeKeys();
+    await linkWallet(owner.page, request, wallet);
+    const ownerId = (await accountOf(owner.page)).playerId;
+    const { context, page } = await freshDevice(browser);
+    await fakeWallet(context, wallet);
+    await page.reload({ waitUntil: "networkidle" });
+    await openDoor(page);
+    await chooseEternl(page);
+    await switchedTo(page, ownerId);
+    await expect(
+      page.getByText("Start Game", { exact: true }).first()
+    ).toBeVisible({ timeout: 15000 });
+    await context.close();
+    await owner.context.close();
+  });
+
+  test("a known wallet on a device with progress asks; keeping this device drops the wallet's session", async ({
+    browser,
+    request,
+  }) => {
+    const owner = await createPlayer(browser, request, "SiWilma");
+    const wallet = nodeKeys();
+    await linkWallet(owner.page, request, wallet);
+    const other = await createPlayer(browser, request, "SiWinni");
+    const { context, page } = other;
+    await fakeWallet(context, wallet);
+    await page.reload({ waitUntil: "networkidle" });
+    const before = (await accountOf(page)).playerId;
+    await openDoor(page);
+    const verified = page.waitForResponse((response) =>
+      response.url().endsWith("/auth/cardano/verify")
+    );
+    await chooseEternl(page);
+    const { refreshToken } = await (await verified).json();
+    expect(refreshToken).toEqual(expect.any(String));
+    await expect(
+      page.getByText("This device has progress of its own", { exact: false })
+    ).toBeVisible();
+    await page.getByRole("button", { name: "This device's progress" }).click();
+    await expect
+      .poll(async () =>
+        (
+          await request.post(`${api}/accounts/token`, {
+            data: { refreshToken },
+          })
+        ).status()
+      )
+      .toBe(401);
+    expect((await accountOf(page)).playerId).toBe(before);
+    await context.close();
+    await owner.context.close();
+  });
+
+  test("a mainnet wallet says so and changes nothing", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page } = await createPlayer(browser, request, "SiMaini");
+    const { signed } = await fakeWallet(
+      context,
+      nodeKeys(undefined, { networkId: 1 }),
+      {
+        networkId: 1,
+      }
+    );
+    await page.reload({ waitUntil: "networkidle" });
+    await openDoor(page);
+    await chooseEternl(page);
+    await expect(
+      page.getByText(
+        "Your wallet is on another Cardano network. Switch it to preprod",
+        {
+          exact: false,
+        }
+      )
+    ).toBeVisible();
+    expect(signed).toEqual([]);
+    expect(await identitiesOf(page, request)).toEqual([]);
+    await context.close();
+  });
+
+  test("saying no in the wallet changes nothing and shows no error", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page } = await createPlayer(browser, request, "SiNelly");
+    await fakeWallet(context, nodeKeys(), { decline: true });
+    await page.reload({ waitUntil: "networkidle" });
+    await openDoor(page);
+    await chooseEternl(page);
+    await page.waitForTimeout(1000);
+    await expect(page.getByTestId("wallet-door")).toBeVisible();
+    await expect(
+      page.getByTestId("wallet-door").getByRole("alert")
+    ).toHaveCount(0);
+    expect(await identitiesOf(page, request)).toEqual([]);
+    await context.close();
+  });
+
+  test("a linked wallet confirms the removal of a key", async ({
+    browser,
+    request,
+  }) => {
+    const saved = await savedPlayer(browser, request, "SiConni");
+    const { context, page } = saved;
+    const wallet = nodeKeys();
+    // the wallet joins with a proof by the words
+    const token = await accessTokenOf(page, request);
+    const { confirmToken } = await (
+      await signAs(request, token, nodeKeys(saved.words), "confirm")
+    ).json();
+    const linked = await signAs(request, token, wallet, "link", {
+      "X-Battlechoc-Confirm": confirmToken,
+    });
+    expect(linked.status()).toBe(200);
+    await fakeWallet(context, wallet);
+    await page.reload({ waitUntil: "networkidle" });
+    await openProfile(page);
+    const row = page.getByTestId("save-progress");
+    await row.getByRole("button", { name: "Advanced" }).click();
+    const words = nodeKeys(saved.words);
+    await row
+      .getByRole("button", {
+        name: `Remove ${words.rewardAddress.slice(0, 14)}`,
+        exact: false,
+      })
+      .click();
+    await page.getByRole("button", { name: "Use my wallet" }).click();
+    await chooseEternl(page);
+    await expect
+      .poll(async () =>
+        (await identitiesOf(page, request)).map((identity) => identity.subject)
+      )
+      .toEqual([wallet.subject]);
+    await context.close();
+  });
+
+  test("words that save nobody point to the wallet door", async ({
+    browser,
+  }) => {
+    // a device without progress of its own goes straight to the sign-in
+    const { context, page } = await freshDevice(browser);
+    await openProfile(page);
+    await page
+      .getByRole("button", { name: "Connect an existing account" })
+      .click();
+    await enterWords(page, nodeKeys().words.join(" "));
+    await expect(
+      page.getByText("If they are your own wallet's words", { exact: false })
+    ).toBeVisible();
+    await context.close();
+  });
+
+  test("after review: a wallet that never answers does not lock the door", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page } = await createPlayer(browser, request, "SiHanga");
+    await fakeWallet(context, nodeKeys(), { hang: true });
+    await page.reload({ waitUntil: "networkidle" });
+    await openDoor(page);
+    await chooseEternl(page);
+    await page.waitForTimeout(500);
+    // the door's own back button, while the wallet still has not answered
+    await page.locator("[data-icon=back]:visible").last().click();
+    await expect(page.getByTestId("wallet-door")).toHaveCount(0);
+    // "Connect an existing account" is still there
+    await expect(page.getByTestId("connect-words")).toBeVisible();
+    expect(await identitiesOf(page, request)).toEqual([]);
+    await context.close();
+  });
+
+  test("after review: closing the dialog while it asks which progress to keep drops the wallet's session", async ({
+    browser,
+    request,
+  }) => {
+    const owner = await createPlayer(browser, request, "SiKlaus");
+    const wallet = nodeKeys();
+    await linkWallet(owner.page, request, wallet);
+    const other = await createPlayer(browser, request, "SiKlara");
+    const { context, page } = other;
+    await fakeWallet(context, wallet);
+    await page.reload({ waitUntil: "networkidle" });
+    const before = (await accountOf(page)).playerId;
+    await openDoor(page);
+    const verified = page.waitForResponse((response) =>
+      response.url().endsWith("/auth/cardano/verify")
+    );
+    await chooseEternl(page);
+    const { refreshToken } = await (await verified).json();
+    await expect(
+      page.getByText("This device has progress of its own", { exact: false })
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect
+      .poll(async () =>
+        (
+          await request.post(`${api}/accounts/token`, {
+            data: { refreshToken },
+          })
+        ).status()
+      )
+      .toBe(401);
+    expect((await accountOf(page)).playerId).toBe(before);
+    await context.close();
+    await owner.context.close();
+  });
+
+  test("after review: wallets beyond the component's defaults are listed (Vespr)", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page } = await createPlayer(browser, request, "SiVespa");
+    await fakeWallet(context, nodeKeys(), { key: "vespr" });
+    await page.reload({ waitUntil: "networkidle" });
+    await openDoor(page);
+    await expect(
+      page.getByTestId("wallet-door").getByText("Vespr", { exact: false })
+    ).toBeVisible();
+    await context.close();
+  });
+
+  test('final review: the door reaches the PeerJS server only after "Phone wallet (QR code)"', async ({
+    browser,
+    request,
+  }) => {
+    const { context, page } = await createPlayer(browser, request, "SiPeeri");
+    const { peerjs } = await fakeWallet(context, nodeKeys());
+    await page.reload({ waitUntil: "networkidle" });
+    await openDoor(page);
+    await expect(
+      page.getByTestId("wallet-door").getByText("Eternl", { exact: false })
+    ).toBeVisible();
+    await page.waitForTimeout(1500);
+    expect(peerjs.tries).toBe(0);
+    await page
+      .getByTestId("wallet-door")
+      .getByRole("button", { name: "Phone wallet (QR code)" })
+      .click();
+    await expect
+      .poll(() => peerjs.tries, { timeout: 10000 })
+      .toBeGreaterThan(0);
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: "test/output/wallet-door-qr.png" });
+    await context.close();
+  });
+
+  test("in the Android app there is no wallet door", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page } = await createPlayer(browser, request, "SiAppy");
+    await fakeWallet(context, nodeKeys());
+    await page.goto("/index.html?app_runs_as=twa&app_version=1", {
+      waitUntil: "networkidle",
+    });
+    await openProfile(page);
+    await page
+      .getByRole("button", { name: "Connect an existing account" })
+      .click();
+    await expect(page.getByTestId("connect-words")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Use a Cardano wallet" })
+    ).toHaveCount(0);
+    await context.close();
+  });
+
+  test("the door on a phone", async ({ browser, request }) => {
+    const { context, page } = await createPlayer(browser, request, "SiPhoni");
+    await fakeWallet(context, nodeKeys());
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload({ waitUntil: "networkidle" });
+    await openDoor(page);
+    await expect(page.getByTestId("wallet-door")).toBeVisible();
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: "test/output/wallet-door-phone.png" });
+    await context.close();
+  });
+});
+
+test.describe("the phone's wallet browser: the link page (plan 3)", () => {
+  const PHONE =
+    "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36";
+
+  // the game on a phone without a wallet of its own: the account made, the title screen up
+  const phoneGame = async (browser) => {
+    const context = await browser.newContext({
+      userAgent: PHONE,
+      viewport: { width: 390, height: 844 },
+      hasTouch: true,
+      isMobile: true,
+    });
+    await context.addInitScript((url) => {
+      window.localStorage.setItem("battlechoc.apiUrl", url);
+    }, api);
+    const page = await context.newPage();
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect.poll(() => accountOf(page), { timeout: 15000 }).toBeTruthy();
+    return { context, page };
+  };
+
+  // the phone's wallet with its own browser: opens the link page of the deep link
+  const walletBrowser = async (browser, keys) => {
+    const context = await browser.newContext({ userAgent: PHONE });
+    await context.addInitScript((url) => {
+      window.localStorage.setItem("battlechoc.apiUrl", url);
+    }, api);
+    await fakeWallet(context, keys);
+    return { context, page: await context.newPage() };
+  };
+
+  // taps Eternl in the door; resolves with the page address the CIP-158 deep link opens (a test
+  // build records the link: a headless browser would show an error page for it)
+  const tapEternl = async (page) => {
+    await page.evaluate(() => {
+      window.__battlechocRecordDeepLinks = true;
+    });
+    await openDoor(page);
+    await page
+      .getByTestId("wallet-door")
+      .getByText("Eternl", { exact: false })
+      .first()
+      .click();
+    let deepLink;
+    await expect
+      .poll(async () => {
+        deepLink = await page.evaluate(
+          () => (window.__battlechocDeepLinks || [])[0]
+        );
+        return deepLink;
+      })
+      .toBeTruthy();
+    expect(deepLink).toMatch(/^web\+cardano:\/\/browse\/v1\?uri=/);
+    return decodeURIComponent(deepLink.split("uri=")[1]);
+  };
+
+  const openDoor = async (page) => {
+    await page.locator("[data-icon=user]:visible").first().click();
+    await page
+      .getByRole("button", { name: "Connect an existing account" })
+      .click();
+    await page.getByRole("button", { name: "Use a Cardano wallet" }).click();
+  };
+
+  test("an unknown wallet signs on the link page; the game on the phone gets it linked", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page } = await phoneGame(browser);
+    const pageUrl = await tapEternl(page);
+    expect(new URL(pageUrl).pathname).toBe("/link/");
+    expect(new URL(pageUrl).searchParams.get("code")).toMatch(
+      /^[A-Za-z0-9_-]{22}$/
+    );
+    // the game's own address is the game again
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/");
+    await expect(
+      page.getByText("Waiting for your wallet", { exact: false })
+    ).toBeVisible();
+    await page.screenshot({ path: "test/output/wallet-door-deeplink.png" });
+
+    const keys = nodeKeys();
+    const wallet = await walletBrowser(browser, keys);
+    await wallet.page.goto(new URL(pageUrl).pathname + new URL(pageUrl).search);
+    await expect(
+      wallet.page.getByText("Only go on if that device is yours", {
+        exact: false,
+      })
+    ).toBeVisible();
+    await wallet.page.screenshot({ path: "test/output/link-page.png" });
+    await wallet.page
+      .getByRole("button", { name: "Continue with Eternl" })
+      .click();
+    await expect(
+      wallet.page.getByText("Done. Go back to battlechoc.")
+    ).toBeVisible();
+    // the player goes back to the game, which asks for the code's outcome at once
+    await page.bringToFront();
+    await expect(
+      page.getByText("Your wallet is now linked to this player.")
+    ).toBeVisible({ timeout: 15000 });
+    expect(
+      (await identitiesOf(page, request)).map((identity) => identity.subject)
+    ).toEqual([keys.subject]);
+    await wallet.context.close();
+    await context.close();
+  });
+
+  test("a known wallet on the link page signs a new phone in as its player", async ({
+    browser,
+    request,
+  }) => {
+    const owner = await createPlayer(browser, request, "SiLinka");
+    const keys = nodeKeys();
+    expect(
+      (
+        await signAs(
+          request,
+          await accessTokenOf(owner.page, request),
+          keys,
+          "link"
+        )
+      ).status()
+    ).toBe(200);
+    const ownerId = (await accountOf(owner.page)).playerId;
+    const { context, page } = await phoneGame(browser);
+    const pageUrl = await tapEternl(page);
+    const wallet = await walletBrowser(browser, keys);
+    await wallet.page.goto(new URL(pageUrl).pathname + new URL(pageUrl).search);
+    await wallet.page
+      .getByRole("button", { name: "Continue with Eternl" })
+      .click();
+    await expect(
+      wallet.page.getByText("Done. Go back to battlechoc.")
+    ).toBeVisible();
+    await page.bringToFront();
+    await switchedTo(page, ownerId);
+    await wallet.context.close();
+    await context.close();
+    await owner.context.close();
+  });
+
+  test("an old link says so", async ({ browser }) => {
+    const wallet = await walletBrowser(browser, nodeKeys());
+    await wallet.page.goto("/link/?code=AAAAAAAAAAAAAAAAAAAAAA");
+    await wallet.page
+      .getByRole("button", { name: "Continue with Eternl" })
+      .click();
+    await expect(
+      wallet.page.getByText("This link is too old. Start again in battlechoc.")
+    ).toBeVisible();
+    await wallet.context.close();
+  });
+
+  test("the link page without a wallet goes to the game", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.goto("/link/?code=AAAAAAAAAAAAAAAAAAAAAA");
+    await expect
+      .poll(() => new URL(page.url()).pathname, { timeout: 10000 })
+      .toBe("/");
     await context.close();
   });
 });

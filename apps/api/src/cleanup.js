@@ -9,6 +9,7 @@ const pantry = require('./pantry');
 const reports = require('./reports');
 const { createMatchStore } = require('./live/store');
 const { cleanupChallenges } = require('./cardano');
+const { cleanupLinkCodes } = require('./linkCodes');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -28,6 +29,7 @@ const scheduleCleanup = (pool, { intervalMs = 60 * 60 * 1000, log = console, mat
         pantry: pantry.cleanup,
         reports: reports.cleanup,
         challenges: cleanupChallenges,
+        linkCodes: cleanupLinkCodes,
         ...(matchRetentionDays > 0 ? { matches: trimMatches(matchRetentionDays, log) } : {}),
     };
     const run = () => Promise.all(Object.entries(cleanups).map(([name, cleanup]) =>

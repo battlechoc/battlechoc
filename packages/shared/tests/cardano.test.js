@@ -48,6 +48,22 @@ describe('the sign-in challenge text', () => {
         expect(text[6]).toBe('Action: confirm');
     });
 
+    test('connecting a wallet has its own first line and statement', () => {
+        const text = cardano.challengeMessage({ ...input, purpose: 'connect' }).split('\n');
+        expect(text[0]).toBe('battlechoc.com wants you to connect your Cardano wallet:');
+        expect(text[3]).toBe('Connect this wallet to battlechoc.');
+        expect(text[6]).toBe('Action: connect');
+        expect(cardano.ChallengePurpose).toContain('connect');
+    });
+
+    test('the link page signs a text that warns it acts for the device that opened it', () => {
+        const text = cardano.challengeMessage({ ...input, purpose: 'connect', onAnotherDevice: true }).split('\n');
+        expect(text[3]).toBe('Connect this wallet to battlechoc on the device that opened this page. Only go on if that device is yours.');
+        expect(cardano.challengeMessage({ ...input, purpose: 'link', onAnotherDevice: true }).split('\n')[3])
+            .toBe('Link this wallet to the battlechoc player on the device that opened this page. Only go on if that device is yours.');
+        expect(() => cardano.challengeMessage({ ...input, purpose: 'sign-in', onAnotherDevice: true })).toThrow();
+    });
+
     test('an unknown purpose is refused', () => {
         expect(() => cardano.challengeMessage({ ...input, purpose: 'pay' })).toThrow();
     });

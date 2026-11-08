@@ -2,22 +2,50 @@
 // (apps/pwa/src/cardano/keys.js): CIP-30 signData with the stake key over the challenge text.
 
 const request = require('supertest');
-const { PrivateKey, KeyHash, RewardAccount, COSE } = require('@evolution-sdk/evolution');
+const { PrivateKey, KeyHash, RewardAccount, Address, COSE } = require('@evolution-sdk/evolution');
 
 const hex = bytes => Buffer.from(bytes).toString('hex');
 
-/** A key of 24 words (new ones unless given): { words, stakeKey, stakeKeyHashHex, rewardAddress }. */
+/**
+ * A key of 24 words (new ones unless given): { words, stakeKey, stakeKeyHashHex, rewardAddress,
+ * rewardAddressHex }, and as a wallet without a stake key would sign (plan 3): { paymentKey,
+ * paymentKeyHashHex, baseAddress, baseAddressHex, enterpriseAddress, enterpriseAddressHex }.
+ */
 const testKeys = ({ words = PrivateKey.generateMnemonic(256), networkId = 0 } = {}) => {
     const stakeKey = PrivateKey.fromMnemonicCardano(words, { role: 2 });
     const hash = KeyHash.fromVKey(PrivateKey.toPublicKey(stakeKey));
     const account = new RewardAccount.RewardAccount({ networkId, stakeCredential: hash });
-    return { words, stakeKey, stakeKeyHashHex: KeyHash.toHex(hash), rewardAddress: RewardAccount.toBech32(account) };
+    const paymentKey = PrivateKey.fromMnemonicCardano(words, { role: 0 });
+    const paymentHash = KeyHash.fromVKey(PrivateKey.toPublicKey(paymentKey));
+    const base = new Address.Address({ networkId, paymentCredential: paymentHash, stakingCredential: hash });
+    const enterprise = new Address.Address({ networkId, paymentCredential: paymentHash });
+    return {
+        words,
+        stakeKey,
+        stakeKeyHashHex: KeyHash.toHex(hash),
+        rewardAddress: RewardAccount.toBech32(account),
+        rewardAddressHex: RewardAccount.toHex(account),
+        paymentKey,
+        paymentKeyHashHex: KeyHash.toHex(paymentHash),
+        baseAddress: Address.toBech32(base),
+        baseAddressHex: Address.toHex(base),
+        enterpriseAddress: Address.toBech32(enterprise),
+        enterpriseAddressHex: Address.toHex(enterprise),
+    };
 };
 
-/** CIP-30 signData of `message` by `keys`, as hex: { signature, key }. */
-const signMessage = (keys, message) => {
-    const addressHex = RewardAccount.toHex(RewardAccount.fromBech32(keys.rewardAddress));
-    const signed = COSE.SignData.signData(addressHex, COSE.Utils.fromText(message), keys.stakeKey);
+/**
+ * CIP-30 signData of `message` by `keys`, as hex: { signature, key }. `with` picks the address a
+ * wallet signs with: 'stake' (the reward address and stake key), 'base' or 'enterprise' (the
+ * payment key).
+ */
+const signMessage = (keys, message, { with: kind = 'stake' } = {}) => {
+    const [addressHex, key] = {
+        stake: [keys.rewardAddressHex, keys.stakeKey],
+        base: [keys.baseAddressHex, keys.paymentKey],
+        enterprise: [keys.enterpriseAddressHex, keys.paymentKey],
+    }[kind];
+    const signed = COSE.SignData.signData(addressHex, COSE.Utils.fromText(message), key);
     return { signature: hex(signed.signature), key: hex(signed.key) };
 };
 
@@ -25,11 +53,11 @@ const signMessage = (keys, message) => {
  * Asks `app` for a challenge (with `account`'s token for a link) and signs it: resolves with the
  * body for POST /auth/cardano/verify and the challenge.
  */
-const signedChallenge = async (app, { keys, purpose, account }) => {
-    const body = { purpose, address: keys.rewardAddress };
+const signedChallenge = async (app, { keys, purpose, account, address = keys.rewardAddress, with: kind = 'stake' }) => {
+    const body = { purpose, address };
     const asked = account ? account.post('/auth/cardano/challenge', body) : request(app).post('/auth/cardano/challenge').send(body);
     const challenge = (await asked.expect(200)).body;
-    return { challenge, verify: { nonce: challenge.nonce, ...signMessage(keys, challenge.message) } };
+    return { challenge, verify: { nonce: challenge.nonce, ...signMessage(keys, challenge.message, { with: kind }) } };
 };
 
 /**

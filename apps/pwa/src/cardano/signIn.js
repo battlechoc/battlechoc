@@ -19,16 +19,20 @@ export class UnexpectedChallengeError extends Error {
   }
 }
 
-// the challenge text of shared/cardano/message.js for this address, purpose, network and nonce;
-// only the two times (the last two lines) are the server's
+// whether `message` is the challenge text of shared/cardano/message.js for this address (bech32),
+// purpose, network and nonce; only the two times (the last two lines) are the server's
 const DATED_LINES = 2;
-const isOurChallenge = (message, { address, purpose, network, nonce }) => {
+export const isOurChallenge = (
+  message,
+  { address, purpose, network, nonce, onAnotherDevice = false }
+) => {
   const expected = cardano
     .challengeMessage({
       address,
       purpose,
       network,
       nonce,
+      onAnotherDevice,
       issuedAt: new Date(0),
       expiresAt: new Date(0),
     })

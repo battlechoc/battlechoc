@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { createUseStyles } from "react-jss";
 import Dialog from "../dialogs/Dialog";
 import Button from "../controls/Button";
 import RecoveryWords from "./RecoveryWords";
+import ConfirmChange from "./ConfirmChange";
 import {
   translate as t,
   translationKeys as tr,
@@ -20,6 +21,7 @@ import {
   wordsFromPasskey,
   cardanoApi,
   connectAccount,
+  switchToSession,
   keyStore,
   NetworkMismatchError,
   normalizeWords,
@@ -27,6 +29,13 @@ import {
   wordsAreValid,
 } from "../../cardano";
 import logger from "../../helper/logger";
+import { account } from "../../api/account";
+
+// the wallet door (plan 3) and the Cardano Foundation's component: loaded when it opens
+const WalletDoor = lazy(() => import("./WalletDoor"));
+
+/** The game's keys changed (a wallet linked here): the profile reads them again. */
+export const KEYS_CHANGED = "battlechoc:keys-changed";
 
 // "I already have an account" (the owner's pick "C", 2026-11-08): one box for the 24 recovery
 // words with a counter and Paste. A device with progress of its own asks which progress to keep
@@ -141,7 +150,10 @@ const signInError = (failure) => {
     answer.data &&
     answer.data.error === "UNKNOWN IDENTITY"
   ) {
-    return t(tr.WORDS_UNKNOWN);
+    // a wallet's own words find nothing here: the wallet door is the way for them
+    return t(
+      features.showWalletDoor() ? tr.WORDS_UNKNOWN_USE_WALLET : tr.WORDS_UNKNOWN
+    );
   }
   if (failure instanceof NetworkMismatchError) {
     return t(tr.SAVE_ERROR_NETWORK);
@@ -172,11 +184,20 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
   const fileInput = useRef(null);
   // one run at a time: a second tap while the words are checked or the switch runs does nothing
   const running = useRef(false);
+  // the wallet door (plan 3), the proof it needs first (a player with keys), what it said
+  const [door, setDoor] = useState(false);
+  const [doorToken, setDoorToken] = useState(undefined);
+  const [proving, setProving] = useState(false);
+  const [passkeyIds, setPasskeyIds] = useState([]);
+  const [notice, setNotice] = useState(null);
 
   useEffect(() => {
     if (open) {
       setError(null);
       setAsking(false);
+      setNotice(null);
+      setDoor(false);
+      setDoorToken(undefined);
     }
   }, [open]);
 
@@ -192,11 +213,13 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
     }
   }, [open]);
 
-  // closing forgets the words (a shared device), but not while a switch runs
+  // closing forgets the words (a shared device), but not while a switch runs; a known wallet's
+  // session that waits for the player's choice is ended
   const close = () => {
     if (running.current) {
       return;
     }
+    dropWalletSession();
     setText("");
     setFileText(null);
     setPassword("");
@@ -216,15 +239,113 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
     setBusy(true);
     setError(null);
     try {
-      await connectAccount(chosen.current.words, {
-        source: chosen.current.source,
-      });
+      if (chosen.current.session) {
+        // a known wallet's player (plan 3): its session is there already
+        await switchToSession(chosen.current.session);
+      } else {
+        await connectAccount(chosen.current.words, {
+          source: chosen.current.source,
+        });
+      }
     } catch (failure) {
       logger.warn("could not sign in with the words", failure);
+      // a known wallet's session that could not be taken over is ended
+      await dropWalletSession();
       fail(signInError(failure));
       return;
     }
     window.location.reload();
+  };
+
+  // whether switching costs this device progress of its own (and sets what: `device`); `isSame`
+  // tells from this device's keys whether the account to switch to is this device's own
+  const assessSwitch = async (isSame) => {
+    const [answer, identities] = await Promise.all([
+      cardanoApi.progress(),
+      cardanoApi.identities(),
+    ]);
+    if (typeof answer.hasProgress !== "boolean") {
+      throw new Error(
+        "the server did not say whether this device has progress"
+      );
+    }
+    const progress = answer.hasProgress && !isSame(identities);
+    if (progress) {
+      // what switching would cost this device (its keys are `identities`, its words local)
+      const local = await keyStore.load().catch(() => null);
+      const localSubject = local ? await subjectOfWords(local) : null;
+      const ownWords = identities.some(
+        (identity) => identity.subject === localSubject
+      );
+      // words a passkey keeps on the server are backed up too (unreadable: not counted, so
+      // the device rather asks for a backup than switches without one)
+      const passkeys = await cardanoApi.passkeys().catch(() => []);
+      const backedUp =
+        (await keyStore.backedUp().catch(() => false)) ||
+        passkeys.some((passkey) => passkey.subject === localSubject);
+      setDevice({
+        lost: identities.length === 0,
+        words: ownWords && !backedUp ? local : null,
+      });
+    }
+    return progress;
+  };
+
+  // what the wallet door brought (plan 3): a linked wallet, another player's session (switch, or
+  // ask first when this device has progress of its own), or the need for a proof first
+  const fromWallet = async (answer) => {
+    setDoor(false);
+    if (answer.outcome === "linked") {
+      setNotice(t(tr.WALLET_LINKED));
+      window.dispatchEvent(new Event(KEYS_CHANGED));
+      return;
+    }
+    if (answer.outcome === "confirm") {
+      setPasskeyIds(
+        (await cardanoApi.passkeys().catch(() => [])).map(
+          (passkey) => passkey.credentialId
+        )
+      );
+      setProving(true);
+      return;
+    }
+    if (answer.outcome !== "known" || running.current) {
+      return;
+    }
+    running.current = true;
+    const { outcome, ...session } = answer;
+    chosen.current = { session, source: "wallet" };
+    setBusy(true);
+    setError(null);
+    let progress;
+    try {
+      progress = await assessSwitch(() => false);
+    } catch (failure) {
+      logger.warn("could not prepare the sign-in", failure);
+      await dropWalletSession();
+      fail(t(tr.SIGN_IN_FAILED));
+      return;
+    }
+    if (progress) {
+      running.current = false;
+      setBusy(false);
+      setAsking(true);
+      return;
+    }
+    await signIn();
+  };
+
+  // "Keep this device": a known wallet's session that was made for the switch is ended again
+  const dropWalletSession = async () => {
+    const { session } = chosen.current;
+    chosen.current = { words: [], source: "words" };
+    if (session) {
+      await account
+        .logout(session.refreshToken)
+        .catch((failure) =>
+          logger.warn("could not end the wallet's session", failure)
+        );
+    }
   };
 
   // checks the words of this attempt and signs in, or asks first what switching costs; the
@@ -239,37 +360,11 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
         fail(t(tr.WORDS_INVALID));
         return;
       }
+      const subject = await subjectOfWords(words);
       // the words of the account this device already is: nothing to choose
-      const [answer, identities, subject] = await Promise.all([
-        cardanoApi.progress(),
-        cardanoApi.identities(),
-        subjectOfWords(words),
-      ]);
-      const same = identities.some((identity) => identity.subject === subject);
-      if (typeof answer.hasProgress !== "boolean") {
-        throw new Error(
-          "the server did not say whether this device has progress"
-        );
-      }
-      progress = answer.hasProgress && !same;
-      if (progress) {
-        // what switching would cost this device (its keys are `identities`, its words local)
-        const local = await keyStore.load().catch(() => null);
-        const localSubject = local ? await subjectOfWords(local) : null;
-        const ownWords = identities.some(
-          (identity) => identity.subject === localSubject
-        );
-        // words a passkey keeps on the server are backed up too (unreadable: not counted, so
-        // the device rather asks for a backup than switches without one)
-        const passkeys = await cardanoApi.passkeys().catch(() => []);
-        const backedUp =
-          (await keyStore.backedUp().catch(() => false)) ||
-          passkeys.some((passkey) => passkey.subject === localSubject);
-        setDevice({
-          lost: identities.length === 0,
-          words: ownWords && !backedUp ? local : null,
-        });
-      }
+      progress = await assessSwitch((identities) =>
+        identities.some((identity) => identity.subject === subject)
+      );
     } catch (failure) {
       logger.warn("could not prepare the sign-in", failure);
       fail(t(tr.SIGN_IN_FAILED));
@@ -415,7 +510,10 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
               <Button
                 color="secondary"
                 disabled={busy}
-                onClick={() => setAsking(false)}
+                onClick={async () => {
+                  await dropWalletSession();
+                  setAsking(false);
+                }}
               >
                 {t(tr.KEEP_THIS_DEVICE)}
               </Button>
@@ -480,6 +578,26 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
                 <button type="submit" hidden />
               </form>
             ) : null}
+            {features.showWalletDoor() ? (
+              <div className={classes.buttons}>
+                <Button
+                  color="secondary"
+                  disabled={busy}
+                  onClick={() => {
+                    setError(null);
+                    setNotice(null);
+                    setDoor(true);
+                  }}
+                >
+                  {t(tr.WALLET_DOOR)}
+                </Button>
+              </div>
+            ) : null}
+            {notice ? (
+              <p className={classes.text} role="status">
+                {notice}
+              </p>
+            ) : null}
             <p className={classes.text}>{t(tr.CONNECT_TEXT)}</p>
             <textarea
               className={classes.area}
@@ -516,6 +634,27 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
           </>
         )}
       </div>
+      {door ? (
+        <Suspense fallback={null}>
+          <WalletDoor
+            open={door}
+            purpose="connect"
+            confirmToken={doorToken}
+            onClose={() => setDoor(false)}
+            onDone={fromWallet}
+          />
+        </Suspense>
+      ) : null}
+      <ConfirmChange
+        open={proving}
+        passkeyIds={passkeyIds}
+        onClose={() => setProving(false)}
+        onConfirmed={async (token) => {
+          setProving(false);
+          setDoorToken(token);
+          setDoor(true);
+        }}
+      />
       <RecoveryWords
         open={backingUp}
         words={device.words || []}

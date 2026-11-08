@@ -38,6 +38,8 @@ const ErrorCode = Object.freeze({
     INVALID_SIGNATURE: 'INVALID SIGNATURE',
     WRONG_NETWORK: 'WRONG NETWORK',
     UNKNOWN_IDENTITY: 'UNKNOWN IDENTITY',
+    // a link code (plan 3) that is unknown, expired, replaced or another player's
+    UNKNOWN_LINK_CODE: 'UNKNOWN LINK CODE',
     IDENTITY_TAKEN: 'IDENTITY TAKEN',
     LAST_IDENTITY: 'LAST IDENTITY',
     CONFIRMATION_REQUIRED: 'CONFIRMATION REQUIRED',
