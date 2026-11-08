@@ -46,9 +46,13 @@ const isOurChallenge = (message, { address, purpose, network, nonce }) => {
 /**
  * Asks `api` (src/api/cardano.js) for a challenge for the words' reward address on `network`
  * (shared cardano.Networks), signs its text and sends the signature; resolves with the server's
- * answer to /auth/cardano/verify.
+ * answer to /auth/cardano/verify. `confirmToken` goes with a link to a player who has keys.
  */
-export const signChallenge = async (words, purpose, { api, network }) => {
+export const signChallenge = async (
+  words,
+  purpose,
+  { api, network, confirmToken }
+) => {
   const serverNetwork = await api.network();
   if (serverNetwork !== network.name) {
     throw new NetworkMismatchError(network.name, serverNetwork);
@@ -67,5 +71,7 @@ export const signChallenge = async (words, purpose, { api, network }) => {
     throw new UnexpectedChallengeError();
   }
   const signed = await signMessage(keys, challenge.message);
-  return api.verify({ nonce: challenge.nonce, ...signed }, purpose);
+  return api.verify({ nonce: challenge.nonce, ...signed }, purpose, {
+    confirmToken,
+  });
 };

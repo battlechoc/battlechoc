@@ -10,11 +10,41 @@ import { cardanoApi } from "../api/cardano.js";
 import { createKeyStore } from "./keyStore.js";
 import { createFeatures } from "./features.js";
 import { signChallenge as signWith } from "./signIn.js";
+import {
+  confirmWithWords as confirmWords,
+  confirmWithPasskey as confirmPasskey,
+} from "./confirm.js";
+import { unlockWithPasskey } from "./passkey.js";
 import { isAndroidApp } from "./androidApp.js";
 import { keysFromWords } from "./keys.js";
 
+// iPhone, iPad, and an iPad that says it is a Mac (it has touch points)
+// a phone or tablet (the share sheet saves the backup file there)
+const onAndroid = () => {
+  try {
+    return /Android/.test(navigator.userAgent || "");
+  } catch {
+    return false;
+  }
+};
+
+const onIos = () => {
+  try {
+    const agent = navigator.userAgent || "";
+    return (
+      /iPhone|iPad|iPod/.test(agent) ||
+      (/Macintosh/.test(agent) && navigator.maxTouchPoints > 1)
+    );
+  } catch {
+    return false;
+  }
+};
+
 export const features = createFeatures({
   network: import.meta.env.VITE_CARDANO_NETWORK,
+  ios: onIos,
+  android: onAndroid,
+  confirmed: import.meta.env.VITE_CARDANO_CONFIRMED,
   // remembered at launch (boot.js), before the address is cleaned up
   androidApp: () => isAndroidApp(() => window.sessionStorage),
 });
@@ -22,17 +52,32 @@ export const features = createFeatures({
 export const keyStore = createKeyStore(OfflineStore.playerStore);
 
 /** Signs a challenge ("link" or "sign-in") with the words on the build's network. */
-export const signChallenge = (words, purpose) => {
+const deps = () => {
   if (!features.enabled()) {
-    return Promise.reject(
-      new Error("signing in with Cardano is off in this build")
-    );
+    throw new Error("signing in with Cardano is off in this build");
   }
-  return signWith(words, purpose, {
-    api: cardanoApi,
-    network: features.network(),
-  });
+  return { api: cardanoApi, network: features.network() };
 };
+
+/**
+ * Signs a challenge ("link", "sign-in", "confirm") with the words on the build's network;
+ * `confirmToken` goes with a further link (a key change).
+ */
+export const signChallenge = async (words, purpose, { confirmToken } = {}) =>
+  signWith(words, purpose, { ...deps(), confirmToken });
+
+/** A confirm token for a key change, signed with the words. */
+export const confirmWithWords = async (words) => confirmWords(words, deps());
+
+/** A confirm token for a key change, from the passkey (`credentialIds`: the player's passkeys). */
+export const confirmWithPasskey = async (credentialIds) =>
+  confirmPasskey({ ...deps(), allowCredentialIds: credentialIds });
+
+/** The words the player's passkey guards (`credentialIds`: the player's passkeys). */
+export const wordsFromPasskey = (credentialIds) =>
+  unlockWithPasskey((id) => cardanoApi.passkeyBackup(id), {
+    allowCredentialIds: credentialIds,
+  });
 
 /** The identity subject ("stake:<key hash>") of the words, as the server lists it. */
 export const subjectOfWords = async (words) =>
@@ -80,3 +125,17 @@ export { cardanoApi };
 export { newRecoveryWords, normalizeWords, wordsAreValid } from "./keys.js";
 export { KeyStoreError, KeyAlreadyStoredError } from "./keyStore.js";
 export { NetworkMismatchError, UnexpectedChallengeError } from "./signIn.js";
+export {
+  createPasskeyBackup,
+  passkeySupport,
+  PasskeyPrfError,
+  PasskeyCancelledError,
+  PasskeyExistsError,
+  PasskeyUnknownError,
+} from "./passkey.js";
+export {
+  encryptBackup,
+  decryptBackup,
+  saveBackup,
+  BackupFileError,
+} from "./backupFile.js";
