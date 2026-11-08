@@ -41,8 +41,17 @@ const rewardAccountOf = (address, network) => {
 const subjectOf = account => `stake:${KeyHash.toHex(account.stakeCredential)}`;
 
 /**
+ * The reward address of a subject on `network`: the same key has another address on mainnet than
+ * on preprod, so it is built when it is shown, never stored.
+ */
+const addressOfSubject = (subject, network) => RewardAccount.toBech32(new RewardAccount.RewardAccount({
+    networkId: network.networkId,
+    stakeCredential: KeyHash.fromHex(subject.replace(/^stake:/, '')),
+}));
+
+/**
  * Checks a CIP-30 DataSignature ({ signature, key }, hex) of `message` by the stake key of
- * `address`; resolves with the identity subject, throws INVALID SIGNATURE otherwise.
+ * `address`; returns the identity subject ("stake:<key hash>"), throws INVALID SIGNATURE otherwise.
  */
 const verifySignature = ({ signature, key, message, address, network }) => {
     const account = rewardAccountOf(address, network);
@@ -71,14 +80,15 @@ const createChallenge = async (pool, { purpose, address, playerId = null, networ
     if (!cardano.ChallengePurpose.includes(purpose) || typeof address !== 'string') {
         throw invalidRequest();
     }
-    rewardAccountOf(address, network);
+    // the usual (lower case) form of the address, whatever the game sent
+    const canonical = RewardAccount.toBech32(rewardAccountOf(address, network));
     const nonce = crypto.randomBytes(16).toString('hex');
     const issuedAt = new Date(now());
     const expiresAt = new Date(issuedAt.getTime() + CHALLENGE_TTL_MS);
-    const message = cardano.challengeMessage({ address, purpose, network, nonce, issuedAt, expiresAt });
+    const message = cardano.challengeMessage({ address: canonical, purpose, network, nonce, issuedAt, expiresAt });
     await pool.query(
         'INSERT INTO auth_challenges (nonce, purpose, address, player_id, message, expires_at) VALUES ($1, $2, $3, $4, $5, $6)',
-        [nonce, purpose, address, playerId, message, expiresAt]);
+        [nonce, purpose, canonical, playerId, message, expiresAt]);
     return { nonce, message, expiresAt: expiresAt.toISOString() };
 };
 
@@ -105,8 +115,8 @@ const linkIdentity = async (pool, { playerId, subject, address }) => {
     const owner = await playerOfSubject(pool, subject);
     if (typeof owner === 'undefined') {
         try {
-            await pool.query('INSERT INTO identities (provider, subject, player_id, address) VALUES ($1, $2, $3, $4)',
-                [IDENTITY_PROVIDER, subject, playerId, address]);
+            await pool.query('INSERT INTO identities (provider, subject, player_id) VALUES ($1, $2, $3)',
+                [IDENTITY_PROVIDER, subject, playerId]);
             return { provider: IDENTITY_PROVIDER, subject, address };
         } catch (error) {
             // linked at the same moment by another request: decided below by who has it now
@@ -128,6 +138,7 @@ const cleanupChallenges = (pool, now) => pool.query('DELETE FROM auth_challenges
 module.exports = {
     CHALLENGE_TTL_MS,
     IDENTITY_PROVIDER,
+    addressOfSubject,
     verifySignature,
     createChallenge,
     consumeChallenge,

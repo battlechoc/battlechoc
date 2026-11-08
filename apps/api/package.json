@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@battlechoc/battlechoc-shared-functions": "^3.0.0",
-    "@evolution-sdk/evolution": "^0.8.0",
+    "@evolution-sdk/evolution": "0.8.0",
     "express": "^5.3.0",
     "pg": "^8.23.1",
     "unique-names-generator": "^4.7.1",

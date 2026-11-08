@@ -341,9 +341,9 @@ const addTrackRecords = async (pool, playerId, records) => {
 /** The Cardano keys linked to a player (the device identity is not listed), oldest first. */
 const identitiesOf = async (pool, playerId) => {
     const { rows } = await pool.query(
-        "SELECT provider, subject, address, created_at FROM identities WHERE player_id = $1 AND provider = 'cardano' ORDER BY created_at ASC, subject ASC",
+        "SELECT provider, subject, created_at FROM identities WHERE player_id = $1 AND provider = 'cardano' ORDER BY created_at ASC, subject ASC",
         [playerId]);
-    return rows.map(row => ({ provider: row.provider, subject: row.subject, address: row.address, createdAt: new Date(row.created_at).toISOString() }));
+    return rows.map(row => ({ provider: row.provider, subject: row.subject, createdAt: new Date(row.created_at).toISOString() }));
 };
 
 /**

@@ -19,9 +19,11 @@ const registerCardanoRoutes = (app, { pool, auth, user, network, limit, oneAtATi
 
     app.post('/auth/cardano/challenge', limit, async (req, res) => {
         const body = req.body || {};
-        // a link is for the player who asks: their token is needed (requireAuth answers 401 without one)
+        // a link is for the player who asks: their token and player are needed (401 without a token)
         if (body.purpose === 'link') {
-            await auth.requireAuth(req, res, () => {});
+            for (const step of user) {
+                await step(req, res, () => {});
+            }
         }
         res.json(await cardano.createChallenge(pool, {
             purpose: body.purpose,
@@ -62,7 +64,10 @@ const registerCardanoRoutes = (app, { pool, auth, user, network, limit, oneAtATi
     });
 
     app.get('/user/identities', ...user, async (req, res) => {
-        res.json(await players.identitiesOf(pool, req.playerId));
+        const identities = await players.identitiesOf(pool, req.playerId);
+        res.json(identities.map(({ provider, subject, createdAt }) => ({
+            provider, subject, address: cardano.addressOfSubject(subject, network), createdAt,
+        })));
     });
 
     app.delete('/user/identities/:subject', ...user, async (req, res) => {

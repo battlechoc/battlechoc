@@ -22,7 +22,7 @@ const TOKENS_PER_MINUTE = 120;
 
 const createApp = ({
     pool, auth, push, corsOrigins = [], accountsPerMinute = 10, tokensPerMinute = TOKENS_PER_MINUTE, recipes = loadRecipes(),
-    labTriesPerHour = 30, challengeInfo = () => null, cardanoNetwork = null, now = () => Date.now(),
+    labTriesPerHour = 30, challengeInfo = () => null, cardanoNetwork = null, cardanoPerMinute = 30, now = () => Date.now(),
 }) => {
     const app = express();
     // purchases and equipment changes of one player run one at a time
@@ -62,7 +62,7 @@ const createApp = ({
     // signing in with a Cardano key, only on a server with CARDANO_NETWORK
     if (cardanoNetwork) {
         registerCardanoRoutes(app, {
-            pool, auth, user, network: cardanoNetwork, limit: rateLimit({ windowMs: 60000, max: 30 }), oneAtATime, now,
+            pool, auth, user, network: cardanoNetwork, limit: rateLimit({ windowMs: 60000, max: cardanoPerMinute }), oneAtATime, now,
         });
     }
     registerPlayerRoutes(app, { pool, auth, user });

@@ -7,6 +7,7 @@ const { cardano } = require('@battlechoc/battlechoc-shared-functions');
 const { createTestApp, createAccount, withToken } = require('./helpers/api');
 const { closeTestPools } = require('./helpers/db');
 const { testKeys, signMessage, signedChallenge } = require('./helpers/cardano');
+const { cleanupChallenges } = require('../src/cardano');
 
 afterAll(closeTestPools);
 
@@ -221,5 +222,41 @@ describe('the linked keys of a player and whether an account has progress', () =
         const discoverer = await createAccount(app);
         await pool.query('INSERT INTO recipe_discoveries (item_key, player_id) VALUES ($1, $2)', ['LIGHT_BARREL', discoverer.playerId]);
         expect((await discoverer.get('/user/progress')).body).toEqual({ hasProgress: true });
+    });
+});
+
+describe('after the first review', () => {
+    test('the address of a linked key follows the network the server runs on (the switch to mainnet keeps it)', async () => {
+        const { app, pool } = await setup();
+        const account = await createAccount(app);
+        const keys = testKeys();
+        await link(app, account, keys);
+        const onMainnet = await createTestApp({ pool, cardanoNetwork: cardano.Networks.mainnet });
+        const listed = (await withToken(onMainnet.app, account.accessToken).get('/user/identities').expect(200)).body;
+        expect(listed).toEqual([expect.objectContaining({ subject: `stake:${keys.stakeKeyHashHex}`, address: testKeys({ words: keys.words, networkId: 1 }).rewardAddress })]);
+    });
+
+    test('an address in capitals is taken in its usual lower-case form', async () => {
+        const { app } = await setup();
+        const keys = testKeys();
+        const { body } = await request(app).post('/auth/cardano/challenge').send({ purpose: 'sign-in', address: keys.rewardAddress.toUpperCase() }).expect(200);
+        expect(body.message.split('\n')[1]).toBe(keys.rewardAddress);
+    });
+
+    test('signing in is rate limited: 429, never 401', async () => {
+        const { app } = await setup({ cardanoPerMinute: 2 });
+        const body = { purpose: 'sign-in', address: testKeys().rewardAddress };
+        await request(app).post('/auth/cardano/challenge').send(body).expect(200);
+        await request(app).post('/auth/cardano/challenge').send(body).expect(200);
+        expect((await request(app).post('/auth/cardano/challenge').send(body).expect(429)).body).toEqual({ error: 'TOO MANY REQUESTS' });
+    });
+
+    test('the cleanup deletes the challenges nobody used in time', async () => {
+        const { app, pool } = await setup();
+        await request(app).post('/auth/cardano/challenge').send({ purpose: 'sign-in', address: testKeys().rewardAddress }).expect(200);
+        await cleanupChallenges(pool, Date.now());
+        expect(Number((await pool.query('SELECT COUNT(*) AS n FROM auth_challenges')).rows[0].n)).toBe(1);
+        await cleanupChallenges(pool, Date.now() + CHALLENGE_TTL_MS + 1000);
+        expect(Number((await pool.query('SELECT COUNT(*) AS n FROM auth_challenges')).rows[0].n)).toBe(0);
     });
 });
