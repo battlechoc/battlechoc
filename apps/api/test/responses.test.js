@@ -38,7 +38,8 @@ const setup = async () => {
 };
 
 // twelve named players and one without a name; the list order is Ida, Dora, Cleo, Fritz, Bert,
-// Lars, Greta, Jon (by rating; Cleo before Fritz because she joined first), then the unrated ones
+// Lars, Greta, Jon (by stars, each rated player with a deviation of 50: the rating minus 100; Cleo
+// before Fritz because she joined first), then the unrated ones
 // in the order they joined: Anna, Emil, Hans, Kira
 const NAMES = ['Anna', 'Bert', 'Cleo', 'Dora', 'Emil', 'Fritz', 'Greta', 'Hans', 'Ida', 'Jon', 'Kira', 'Lars'];
 const RATINGS = { Bert: 1550.4, Cleo: 1600, Dora: 1700, Fritz: 1600, Greta: 1420.5, Ida: 1810, Jon: 1300, Lars: 1550 };
@@ -46,14 +47,14 @@ const RECORDS = { Ida: ['won', 'won', 'won', 'lost'], Cleo: ['draw', 'lost', 'lo
 
 const info = (name, score, rating, [winnings, drawn, losses], ranking) => ({ name, score, rating, winnings, drawn, losses, ranking });
 const LIST = [
-    info('Ida', 1810, 1810, [3, 0, 1], 1),
-    info('Dora', 1700, 1700, [0, 0, 0], 2),
-    info('Cleo', 1600, 1600, [0, 1, 2], 3),
-    info('Fritz', 1600, 1600, [0, 0, 0], 4),
-    info('Bert', 1550, 1550, [0, 0, 0], 5),
-    info('Lars', 1550, 1550, [0, 0, 0], 6),
-    info('Greta', 1421, 1421, [0, 0, 0], 7),
-    info('Jon', 1300, 1300, [0, 0, 0], 8),
+    info('Ida', 1710, 1810, [3, 0, 1], 1),
+    info('Dora', 1600, 1700, [0, 0, 0], 2),
+    info('Cleo', 1500, 1600, [0, 1, 2], 3),
+    info('Fritz', 1500, 1600, [0, 0, 0], 4),
+    info('Bert', 1450, 1550, [0, 0, 0], 5),
+    info('Lars', 1450, 1550, [0, 0, 0], 6),
+    info('Greta', 1321, 1421, [0, 0, 0], 7),
+    info('Jon', 1200, 1300, [0, 0, 0], 8),
     info('Anna', 0, 1500, [1, 0, 0], 9),
     info('Emil', 0, 1500, [0, 0, 0], 10),
     info('Hans', 0, 1500, [0, 0, 0], 11),
@@ -69,7 +70,8 @@ const league = async () => {
         await env.pool.query('UPDATE players SET created_at = $1, xp = $2 WHERE id = $3',
             [new Date(Date.UTC(2026, 9, 1, 12, index)), 1000 - index, player.playerId]);
         if (RATINGS[name]) {
-            await env.pool.query('UPDATE players SET rating = $1, rated_matches = 2 WHERE id = $2', [RATINGS[name], player.playerId]);
+            await env.pool.query('UPDATE players SET rating = $1, rating_deviation = 50, rated_matches = 2 WHERE id = $2',
+                [RATINGS[name], player.playerId]);
         }
         await env.records(player.playerId, RECORDS[name] || []);
         env.players[name] = player;

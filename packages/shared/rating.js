@@ -1,5 +1,6 @@
 // Glicko-2 (Glickman 2012): a rating, its deviation (how uncertain it is) and the volatility.
-// Used for the public highscore; only verified online matches between humans change it.
+// Used for the public highscore; only verified matches change it: between two humans, and
+// against the server AI, whose rating per ladder step is fixed (engine.aiRatingOf).
 
 const SCALE = 173.7178;
 const EPSILON = 0.000001;
@@ -74,4 +75,34 @@ const rateMatch = (a, b, scoreA) => [
     updateRating(b, [{ opponent: a, score: 1 - scoreA }]),
 ];
 
-module.exports = { updateRating, rateMatch };
+// the stars count this many deviations below the rating
+const STARS_DEVIATIONS = 2;
+// a match against the server AI lifts the stars at most this far above the AI's own rating: wins
+// against the AI alone would otherwise climb without end (Glicko-2 keeps rewarding a streak, and a
+// new player's 1500 is above most of the ladder); beyond it only matches against people count
+const AI_RATING_REACH = 200;
+
+const cautious = ({ rating, deviation }) => rating - STARS_DEVIATIONS * deviation;
+
+/**
+ * The stars of a player: a cautious rating (the rating minus twice its deviation), so they grow
+ * with strength and with the number of verified matches; 0 before the first rated match, never
+ * below 0. The whitepaper's tournaments rank by the same number.
+ */
+const starsOf = ({ rating, deviation, ratedMatches }) => (ratedMatches > 0
+    ? Math.max(0, Math.round(cautious({ rating, deviation })))
+    : 0);
+
+/**
+ * New rating of `player` after a verified match against the server AI (`ai`: its fixed
+ * { rating, deviation }, engine.aiRatingOf); score 1 = win, 0.5 = draw, 0 = loss. The cautious
+ * rating never rises above the AI's rating plus AI_RATING_REACH, and a win never lowers it: the
+ * rating is held where the stars stay at the higher of the two.
+ */
+const rateAgainstAi = (player, ai, score) => {
+    const after = updateRating(player, [{ opponent: ai, score }]);
+    const allowed = Math.max(cautious(player), ai.rating + AI_RATING_REACH);
+    return { ...after, rating: Math.min(after.rating, allowed + STARS_DEVIATIONS * after.deviation) };
+};
+
+module.exports = { updateRating, rateMatch, rateAgainstAi, starsOf, AI_RATING_REACH, STARS_DEVIATIONS };

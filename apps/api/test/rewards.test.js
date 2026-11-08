@@ -67,3 +67,14 @@ test('a match is rated once; a draw between equals keeps both ratings', async ()
     const draw = await rewards.rateMatch(pool, 'm2', [c, d], 0.5);
     expect(draw[c]).toEqual({ before: 1500, after: 1500 });
 });
+
+test('a match against the AI is rated once, against the fixed rating of that AI', async () => {
+    const a = await players.createPlayer(pool);
+    const ai = { rating: 900, deviation: 50 };
+    const change = await rewards.rateAiMatch(pool, 'm3', a, ai, 1);
+    expect(change[a]).toEqual({ before: 1500, after: expect.any(Number) });
+    expect(await rewards.rateAiMatch(pool, 'm3', a, ai, 1)).toBeNull();
+    const { rows } = await pool.query('SELECT rated_matches, rating_deviation FROM players WHERE id = $1', [a]);
+    expect(rows[0].rated_matches).toBe(1);
+    expect(Number(rows[0].rating_deviation)).toBeLessThan(350);
+});

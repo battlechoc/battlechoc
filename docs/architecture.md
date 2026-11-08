@@ -73,7 +73,7 @@ the balance it started with.
   and its action log, so a restart of the server resumes the running matches; the players'
   games reconnect by themselves.
 - **Trust**: what has value comes only from matches the server hosted: ingredients
-  (`rewards.js`) and the public rating (only matches between two humans). A match played
+  (`rewards.js`) and the public rating (matches between two humans and against the server AI). A match played
   offline gives private experience only, which decides nothing but the player's own board size
   and AI opponent, so a faked result gains nothing.
 

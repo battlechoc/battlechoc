@@ -388,7 +388,7 @@ module.exports = {
     "LAB_FAILED": "Das hat nicht geklappt. Bitte versuch es noch einmal.",
     "LAB_NO_RECIPES": "Noch keine Rezepte entdeckt. Experimentiere am Labortisch!",
     "LAB_EQUIPMENT": "Ausrüstung",
-    "HIGHSCORE_EMPTY": "Noch keine gewerteten Partien – spiele online gegen andere Spieler, um einen Rang zu bekommen.",
+    "HIGHSCORE_EMPTY": "Noch keine Sterne – spiele online gegen andere Spieler oder die KI, um einen Rang zu bekommen.",
     "UNLOCK_NEW_FEATURES": "Neue Funktionen freigeschaltet: Choclab und Mit Freunden spielen!",
     "UNLOCK_TITLE": "Freigeschaltet!",
     "UNLOCK_BUILDINGS_HINT": "Neue Gebäude für dich:",

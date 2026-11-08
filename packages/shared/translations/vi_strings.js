@@ -388,7 +388,7 @@ module.exports = {
     "LAB_FAILED": "Không thành công. Vui lòng thử lại.",
     "LAB_NO_RECIPES": "Chưa có công thức nào. Hãy thử nghiệm ở bàn!",
     "LAB_EQUIPMENT": "Trang bị",
-    "HIGHSCORE_EMPTY": "Chưa có trận đấu xếp hạng nào – hãy chơi trực tuyến với người chơi khác để có thứ hạng.",
+    "HIGHSCORE_EMPTY": "Chưa có ngôi sao nào – hãy chơi trực tuyến với người chơi khác hoặc với AI để có thứ hạng.",
     "UNLOCK_NEW_FEATURES": "Đã mở khóa tính năng mới: Choclab và Chơi với bạn bè!",
     "UNLOCK_TITLE": "Đã mở khóa!",
     "UNLOCK_BUILDINGS_HINT": "Công trình mới dành cho bạn:",
