@@ -76,7 +76,7 @@ const main = async ({ wrap = app => app, env = process.env } = {}) => {
     // the link preview of a challenge asks the live lobby, which starts after the HTTP server exists
     let live;
     const challengeInfo = code => (live ? live.lobby.challenges.publicInfo(code) : null);
-    const app = createApp({ pool, auth, push, corsOrigins: config.corsOrigins, recipes, challengeInfo });
+    const app = createApp({ pool, auth, push, corsOrigins: config.corsOrigins, recipes, challengeInfo, cardanoNetwork: config.cardanoNetwork });
     const server = http.createServer(wrap(app, { pool }));
     live = createLive({ server, pool, auth, origins: config.corsOrigins, config: config.live });
     const recovered = await live.recover();

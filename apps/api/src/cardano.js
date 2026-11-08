@@ -1,0 +1,137 @@
+// Signing in with a Cardano key: challenges and their signatures (CIP-30 signData, CIP-8).
+//
+// A challenge is the text of shared/cardano/message.js for one reward address, with a random
+// nonce; it is stored until it is used once or expires. The signature must be the stake key's of
+// exactly that address, over exactly that text, on the network the server runs on. The Evolution
+// SDK is an ES module: Node 22 loads it with require(), Jest through babel-jest (package.json).
+
+const crypto = require('crypto');
+const { KeyHash, RewardAccount, COSE } = require('@evolution-sdk/evolution');
+const { cardano } = require('@battlechoc/battlechoc-shared-functions');
+const { HttpError, ErrorCode } = require('./errors');
+
+const CHALLENGE_TTL_MS = 5 * 60 * 1000;
+const IDENTITY_PROVIDER = 'cardano';
+const HEX = /^(?:[0-9a-f]{2})+$/i;
+
+const invalidRequest = () => new HttpError(400, ErrorCode.INVALID_REQUEST_PARAMETERS);
+const invalidSignature = () => new HttpError(400, ErrorCode.INVALID_SIGNATURE);
+
+/**
+ * The reward account of a bech32 reward address on `network`, with a key (not a script) as its
+ * stake credential. Refuses anything else.
+ */
+const rewardAccountOf = (address, network) => {
+    let account;
+    try {
+        account = RewardAccount.fromBech32(address);
+    } catch {
+        throw invalidRequest();
+    }
+    if (!(account.stakeCredential instanceof KeyHash.KeyHash)) {
+        throw invalidRequest();
+    }
+    if (account.networkId !== network.networkId) {
+        throw new HttpError(400, ErrorCode.WRONG_NETWORK);
+    }
+    return account;
+};
+
+/** The subject of a key in the identities table. */
+const subjectOf = account => `stake:${KeyHash.toHex(account.stakeCredential)}`;
+
+/**
+ * Checks a CIP-30 DataSignature ({ signature, key }, hex) of `message` by the stake key of
+ * `address`; resolves with the identity subject, throws INVALID SIGNATURE otherwise.
+ */
+const verifySignature = ({ signature, key, message, address, network }) => {
+    const account = rewardAccountOf(address, network);
+    if (typeof signature !== 'string' || typeof key !== 'string' || !HEX.test(signature) || !HEX.test(key)) {
+        throw invalidSignature();
+    }
+    let valid;
+    try {
+        valid = COSE.SignData.verifyData(
+            RewardAccount.toHex(account),
+            KeyHash.toHex(account.stakeCredential),
+            COSE.Utils.fromText(message),
+            { signature: Uint8Array.from(Buffer.from(signature, 'hex')), key: Uint8Array.from(Buffer.from(key, 'hex')) },
+        );
+    } catch {
+        valid = false;
+    }
+    if (!valid) {
+        throw invalidSignature();
+    }
+    return subjectOf(account);
+};
+
+/** Issues a challenge for `address` (checked against `network`); `playerId` binds a link to a player. */
+const createChallenge = async (pool, { purpose, address, playerId = null, network, now }) => {
+    if (!cardano.ChallengePurpose.includes(purpose) || typeof address !== 'string') {
+        throw invalidRequest();
+    }
+    rewardAccountOf(address, network);
+    const nonce = crypto.randomBytes(16).toString('hex');
+    const issuedAt = new Date(now());
+    const expiresAt = new Date(issuedAt.getTime() + CHALLENGE_TTL_MS);
+    const message = cardano.challengeMessage({ address, purpose, network, nonce, issuedAt, expiresAt });
+    await pool.query(
+        'INSERT INTO auth_challenges (nonce, purpose, address, player_id, message, expires_at) VALUES ($1, $2, $3, $4, $5, $6)',
+        [nonce, purpose, address, playerId, message, expiresAt]);
+    return { nonce, message, expiresAt: expiresAt.toISOString() };
+};
+
+/** Takes a challenge out (it works once); CHALLENGE EXPIRED when it is unknown, used or too old. */
+const consumeChallenge = async (pool, nonce, now) => {
+    if (typeof nonce !== 'string') {
+        throw new HttpError(400, ErrorCode.CHALLENGE_EXPIRED);
+    }
+    const { rows } = await pool.query('DELETE FROM auth_challenges WHERE nonce = $1 RETURNING *', [nonce]);
+    if (rows.length === 0 || new Date(rows[0].expires_at).getTime() <= now()) {
+        throw new HttpError(400, ErrorCode.CHALLENGE_EXPIRED);
+    }
+    return rows[0];
+};
+
+/** The player a key is linked to, undefined when it is linked to nobody. */
+const playerOfSubject = async (pool, subject) => {
+    const { rows } = await pool.query('SELECT player_id FROM identities WHERE provider = $1 AND subject = $2', [IDENTITY_PROVIDER, subject]);
+    return rows.length > 0 ? rows[0].player_id : undefined;
+};
+
+/** Links a key to a player; again for the same player is fine, for another one IDENTITY TAKEN. */
+const linkIdentity = async (pool, { playerId, subject, address }) => {
+    const owner = await playerOfSubject(pool, subject);
+    if (typeof owner === 'undefined') {
+        try {
+            await pool.query('INSERT INTO identities (provider, subject, player_id, address) VALUES ($1, $2, $3, $4)',
+                [IDENTITY_PROVIDER, subject, playerId, address]);
+            return { provider: IDENTITY_PROVIDER, subject, address };
+        } catch (error) {
+            // linked at the same moment by another request: decided below by who has it now
+            if (typeof (await playerOfSubject(pool, subject)) === 'undefined') {
+                throw error;
+            }
+            return linkIdentity(pool, { playerId, subject, address });
+        }
+    }
+    if (owner !== playerId) {
+        throw new HttpError(409, ErrorCode.IDENTITY_TAKEN);
+    }
+    return { provider: IDENTITY_PROVIDER, subject, address };
+};
+
+/** Deletes the challenges nobody used in time (cleanup.js). */
+const cleanupChallenges = (pool, now) => pool.query('DELETE FROM auth_challenges WHERE expires_at < $1', [new Date(now)]);
+
+module.exports = {
+    CHALLENGE_TTL_MS,
+    IDENTITY_PROVIDER,
+    verifySignature,
+    createChallenge,
+    consumeChallenge,
+    playerOfSubject,
+    linkIdentity,
+    cleanupChallenges,
+};

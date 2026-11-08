@@ -14,9 +14,13 @@
 //   LIVE_DISCONNECT_GRACE_MS, LIVE_AI_FALLBACK_MS, LIVE_INVITE_TTL_MS     live timings (tests)
 //   DB_POOL_MAX, DB_CONNECTION_TIMEOUT_MS, DB_IDLE_TIMEOUT_MS, DB_STATEMENT_TIMEOUT_MS
 //                             the connection pool, see createPool in db.js for the defaults
+//   CARDANO_NETWORK           "preprod" or "mainnet": turns on signing in with a Cardano key on that
+//                             network (routes/cardano.js); not set: off
 //   MATCH_RETENTION_DAYS      not set (the default): matches are kept in full for ever. Set to a
 //                             number of days: the logged actions and the snapshot of a match are
 //                             deleted that long after it was over (cleanup.js)
+
+const { cardano: { networkOf } } = require('@battlechoc/battlechoc-shared-functions');
 
 class ConfigError extends Error {
     constructor(problems) {
@@ -147,6 +151,12 @@ const loadConfig = (env = process.env) => {
         problems.push(`MATCH_RETENTION_DAYS must be a positive whole number of days, not "${retentionText}" (leave it out to keep matches)`);
     }
 
+    const cardanoNetworkText = read(env, 'CARDANO_NETWORK');
+    const cardanoNetwork = typeof cardanoNetworkText === 'undefined' ? null : networkOf(cardanoNetworkText);
+    if (typeof cardanoNetworkText !== 'undefined' && cardanoNetwork === null) {
+        problems.push(`CARDANO_NETWORK must be "preprod" or "mainnet" (or not set: no Cardano sign-in), not "${cardanoNetworkText}"`);
+    }
+
     if (problems.length > 0) {
         throw new ConfigError(problems);
     }
@@ -166,6 +176,7 @@ const loadConfig = (env = process.env) => {
         recipesFile,
         live,
         matchRetentionDays,
+        cardanoNetwork,
     });
 };
 

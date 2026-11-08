@@ -9,6 +9,7 @@ const { registerAccountRoutes } = require('./routes/accounts');
 const { registerPlayerRoutes } = require('./routes/player');
 const { registerSocialRoutes } = require('./routes/social');
 const { registerPushRoutes } = require('./routes/push');
+const { registerCardanoRoutes } = require('./routes/cardano');
 const { registerLabRoutes } = require('./lab/routes');
 const { registerPlayRoutes } = require('./playPage');
 const { loadRecipes } = require('./lab/recipes');
@@ -21,7 +22,7 @@ const TOKENS_PER_MINUTE = 120;
 
 const createApp = ({
     pool, auth, push, corsOrigins = [], accountsPerMinute = 10, tokensPerMinute = TOKENS_PER_MINUTE, recipes = loadRecipes(),
-    labTriesPerHour = 30, challengeInfo = () => null,
+    labTriesPerHour = 30, challengeInfo = () => null, cardanoNetwork = null, now = () => Date.now(),
 }) => {
     const app = express();
     // purchases and equipment changes of one player run one at a time
@@ -58,6 +59,10 @@ const createApp = ({
         limit: rateLimit({ windowMs: 60000, max: accountsPerMinute }),
         tokenLimit: rateLimit({ windowMs: 60000, max: tokensPerMinute }),
     });
+    // signing in with a Cardano key, only on a server with CARDANO_NETWORK
+    if (cardanoNetwork) {
+        registerCardanoRoutes(app, { pool, auth, network: cardanoNetwork, limit: rateLimit({ windowMs: 60000, max: 30 }), now });
+    }
     registerPlayerRoutes(app, { pool, auth, user });
     registerLabRoutes(app, { pool, user, recipes, oneAtATime, triesPerHour: labTriesPerHour });
     // last of the routes under /user: its GET /user/:name matches every path the others left

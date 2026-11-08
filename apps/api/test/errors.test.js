@@ -7,6 +7,7 @@ const { HttpError, ErrorCode } = require('../src/errors');
 const { NotEnoughIngredientsError } = require('../src/pantry');
 const { closeTestPools, failingOn } = require('./helpers/db');
 const { createTestApp, createAccount, withToken } = require('./helpers/api');
+const { testKeys, signedChallenge } = require('./helpers/cardano');
 
 afterAll(closeTestPools);
 
@@ -110,6 +111,24 @@ describe('errors', () => {
         await answers(player.post('/lab/craft', { item: 'LIGHT_BARREL' }), 400, 'RECIPE NOT DISCOVERED');
         await answers(player.post('/user/equipment', { entityType: EntityType.RUM_TRUFFLE_CANNON, slot: 9, itemId: null }), 400, 'INVALID REQUEST PARAMETERS');
         await answers(player.post('/user/equipment', { entityType: EntityType.RUM_TRUFFLE_CANNON, slot: 0, itemId: 'nope' }), 400, 'NOT YOUR ITEM');
+    });
+
+    test('signing in with a Cardano key: never a 401 but for a missing token', async () => {
+        const { app, account } = await setup({ cardanoNetwork: { name: 'preprod', networkId: 0 } });
+        const player = await account();
+        const keys = testKeys();
+        await answers(request(app).post('/auth/cardano/challenge').send({ purpose: 'pay', address: keys.rewardAddress }), 400, 'INVALID REQUEST PARAMETERS');
+        await answers(request(app).post('/auth/cardano/challenge').send({ purpose: 'sign-in', address: testKeys({ networkId: 1 }).rewardAddress }), 400, 'WRONG NETWORK');
+        await answers(request(app).post('/auth/cardano/verify').send({ nonce: 'nope' }), 400, 'CHALLENGE EXPIRED');
+        const unknown = await signedChallenge(app, { keys, purpose: 'sign-in' });
+        await answers(request(app).post('/auth/cardano/verify').send({ ...unknown.verify, signature: 'ab' }), 400, 'INVALID SIGNATURE');
+        const signIn = await signedChallenge(app, { keys, purpose: 'sign-in' });
+        await answers(request(app).post('/auth/cardano/verify').send(signIn.verify), 404, 'UNKNOWN IDENTITY');
+        const linked = await signedChallenge(app, { keys, purpose: 'link', account: player });
+        await player.post('/auth/cardano/verify', linked.verify).expect(200);
+        const other = await account();
+        const taken = await signedChallenge(app, { keys, purpose: 'link', account: other });
+        await answers(other.post('/auth/cardano/verify', taken.verify), 409, 'IDENTITY TAKEN');
     });
 
     test('transport: unknown paths, broken JSON, too many requests', async () => {
