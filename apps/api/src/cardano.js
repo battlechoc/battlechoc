@@ -96,8 +96,11 @@ const verifySignature = ({ signature, key, message, address, network }) => {
     return signer.subject;
 };
 
-/** Issues a challenge for `address` (checked against `network`); `playerId` binds a link to a player. */
-const createChallenge = async (pool, { purpose, address, playerId = null, network, now }) => {
+/**
+ * Issues a challenge for `address` (checked against `network`); `playerId` binds it to a player,
+ * `linkCodeHash` to the link code (plan 3) the link page asked with.
+ */
+const createChallenge = async (pool, { purpose, address, playerId = null, linkCodeHash = null, network, now }) => {
     if (!cardano.ChallengePurpose.includes(purpose) || typeof address !== 'string') {
         throw invalidRequest();
     }
@@ -106,10 +109,12 @@ const createChallenge = async (pool, { purpose, address, playerId = null, networ
     const nonce = crypto.randomBytes(16).toString('hex');
     const issuedAt = new Date(now());
     const expiresAt = new Date(issuedAt.getTime() + CHALLENGE_TTL_MS);
-    const message = cardano.challengeMessage({ address: canonical, purpose, network, nonce, issuedAt, expiresAt });
+    const message = cardano.challengeMessage({
+        address: canonical, purpose, network, nonce, issuedAt, expiresAt, onAnotherDevice: linkCodeHash !== null,
+    });
     await pool.query(
-        'INSERT INTO auth_challenges (nonce, purpose, address, player_id, message, expires_at) VALUES ($1, $2, $3, $4, $5, $6)',
-        [nonce, purpose, canonical, playerId, message, expiresAt]);
+        'INSERT INTO auth_challenges (nonce, purpose, address, player_id, message, expires_at, link_code_hash) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+        [nonce, purpose, canonical, playerId, message, expiresAt, linkCodeHash]);
     return { nonce, message, expiresAt: expiresAt.toISOString() };
 };
 

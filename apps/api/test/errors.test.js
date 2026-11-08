@@ -145,6 +145,7 @@ describe('errors', () => {
         // plan 3: a wallet nobody knows, for a player with keys, needs the proof as well
         const wallet = await signedChallenge(app, { keys: testKeys(), purpose: 'connect', account: player });
         await answers(player.post('/auth/cardano/verify', wallet.verify), 403, 'CONFIRMATION REQUIRED');
+        await answers(player.get('/user/link-codes/AAAAAAAAAAAAAAAAAAAAAA'), 404, 'UNKNOWN LINK CODE');
         const loggedOut = await request(app).post('/accounts/logout').send({ refreshToken: other.refreshToken });
         expect(loggedOut.status).toBe(204);
         expect(loggedOut.text).toBe('');

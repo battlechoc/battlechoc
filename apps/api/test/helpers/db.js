@@ -10,7 +10,9 @@ const { migrate } = require('../../src/db');
 const pools = [];
 
 const schemaPool = (url, schema) => {
-    const pool = new Pool({ connectionString: url, max: 5, options: `-c search_path=${schema}` });
+    // idle connections close soon: every test keeps its pool until its file ends, and the test
+    // files run side by side, which went past the server's 100 connections (plan 3, 2026-11-08)
+    const pool = new Pool({ connectionString: url, max: 5, idleTimeoutMillis: 200, options: `-c search_path=${schema}` });
     pool.schema = schema;
     pools.push(pool);
     return pool;
