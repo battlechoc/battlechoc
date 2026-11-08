@@ -509,5 +509,20 @@ module.exports = {
     "SAVING": "Đang lưu…",
     "SAVE_ERROR_NETWORK": "Trò chơi và máy chủ hiện không khớp nhau. Hãy tải lại trò chơi.",
     "SAVE_ERROR_STORAGE": "Trình duyệt này không cho trò chơi giữ các từ (cửa sổ riêng tư?). Tiến trình trên thiết bị này không thay đổi.",
-    "KEY_PROTECTION_NOTE": "Các từ được lưu mã hóa trên thiết bị này, nhưng điều đó không bảo vệ chúng khỏi mọi thứ. Hãy cất kỹ danh sách bạn đã chép."
+    "KEY_PROTECTION_NOTE": "Các từ được lưu mã hóa trên thiết bị này, nhưng điều đó không bảo vệ chúng khỏi mọi thứ. Hãy cất kỹ danh sách bạn đã chép.",
+    "CONNECT_ACCOUNT": "Kết nối tài khoản có sẵn",
+    "HAVE_ACCOUNT": "Tôi đã có tài khoản",
+    "CONNECT_TITLE": "Chào mừng trở lại",
+    "CONNECT_TEXT": "Nhập 24 từ khôi phục của bạn.",
+    "CONNECT_CONTINUE": "Tiếp tục",
+    "WORDS_COUNT": "{{n}} / 24 từ",
+    "PASTE": "Dán",
+    "WORDS_INVALID": "Các từ này không khớp với nhau. Hãy kiểm tra lại.",
+    "WORDS_UNKNOWN": "Không tìm thấy tiến trình nào được lưu với các từ này.",
+    "KEEP_WHICH": "Thiết bị này có tiến trình riêng. Bạn muốn giữ cái nào? Cái còn lại chỉ quay lại được bằng các từ khôi phục của chính nó.",
+    "KEEP_SAVED": "Tiến trình đã lưu của tôi",
+    "KEEP_THIS_DEVICE": "Tiến trình của thiết bị này",
+    "SIGN_IN_FAILED": "Không đăng nhập được. Tiến trình trên thiết bị này không thay đổi. Hãy thử lại.",
+    "KEEP_WHICH_LOST": "Thiết bị này có tiến trình riêng chưa được lưu ở đâu khác. Nếu bạn chuyển, nó sẽ mất. Bạn muốn giữ cái nào?",
+    "BACK_UP_FIRST": "Hãy sao lưu các từ khôi phục của thiết bị này trước, để bạn có thể quay lại tiến trình của nó."
 }

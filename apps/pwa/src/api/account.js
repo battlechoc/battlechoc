@@ -51,6 +51,14 @@ class Account {
     this.remember(data);
   }
 
+  // takes over a session the server gave for a key ("I already have an account"): this device
+  // is that player from now on
+  async adopt({ playerId, refreshToken, accessToken, expiresIn }) {
+    await OfflineStore.playerStore.set(ACCOUNT_KEY, { playerId, refreshToken });
+    this.refreshToken = refreshToken;
+    this.remember({ playerId, accessToken, expiresIn });
+  }
+
   async refresh() {
     try {
       const { data } = await client.post("/accounts/token", {

@@ -509,5 +509,20 @@ module.exports = {
     "SAVING": "Guardando…",
     "SAVE_ERROR_NETWORK": "El juego y su servidor no coinciden ahora mismo. Vuelve a cargar el juego.",
     "SAVE_ERROR_STORAGE": "Este navegador no deja que el juego guarde las palabras (¿una ventana privada?). Tu progreso en este dispositivo no ha cambiado.",
-    "KEY_PROTECTION_NOTE": "Las palabras se guardan cifradas en este dispositivo, pero eso no las protege de todo. Guarda tu lista escrita en un lugar seguro."
+    "KEY_PROTECTION_NOTE": "Las palabras se guardan cifradas en este dispositivo, pero eso no las protege de todo. Guarda tu lista escrita en un lugar seguro.",
+    "CONNECT_ACCOUNT": "Conectar una cuenta existente",
+    "HAVE_ACCOUNT": "Ya tengo una cuenta",
+    "CONNECT_TITLE": "Bienvenido de nuevo",
+    "CONNECT_TEXT": "Escribe tus 24 palabras de recuperación.",
+    "CONNECT_CONTINUE": "Continuar",
+    "WORDS_COUNT": "{{n}} de 24 palabras",
+    "PASTE": "Pegar",
+    "WORDS_INVALID": "Estas palabras no encajan. Revísalas.",
+    "WORDS_UNKNOWN": "No encontramos progreso guardado con estas palabras.",
+    "KEEP_WHICH": "Este dispositivo tiene su propio progreso. ¿Cuál quieres conservar? El otro solo vuelve con sus propias palabras de recuperación.",
+    "KEEP_SAVED": "Mi progreso guardado",
+    "KEEP_THIS_DEVICE": "El progreso de este dispositivo",
+    "SIGN_IN_FAILED": "No se pudo iniciar sesión. Tu progreso en este dispositivo no ha cambiado. Inténtalo de nuevo.",
+    "KEEP_WHICH_LOST": "Este dispositivo tiene su propio progreso, que no está guardado en ningún otro sitio. Si cambias, se perderá. ¿Cuál quieres conservar?",
+    "BACK_UP_FIRST": "Primero haz la copia de las palabras de recuperación de este dispositivo, para poder volver a su progreso."
 }

@@ -509,5 +509,20 @@ module.exports = {
     "SAVING": "Saving…",
     "SAVE_ERROR_NETWORK": "The game and its server don't fit together right now. Please reload the game.",
     "SAVE_ERROR_STORAGE": "This browser doesn't let the game keep the words (a private window?). Your progress on this device is unchanged.",
-    "KEY_PROTECTION_NOTE": "The words are stored encrypted on this device, but that does not protect them from everything. Keep your written list in a safe place."
+    "KEY_PROTECTION_NOTE": "The words are stored encrypted on this device, but that does not protect them from everything. Keep your written list in a safe place.",
+    "CONNECT_ACCOUNT": "Connect an existing account",
+    "HAVE_ACCOUNT": "I already have an account",
+    "CONNECT_TITLE": "Welcome back",
+    "CONNECT_TEXT": "Enter your 24 recovery words.",
+    "CONNECT_CONTINUE": "Continue",
+    "WORDS_COUNT": "{{n}} of 24 words",
+    "PASTE": "Paste",
+    "WORDS_INVALID": "These words don't fit together. Please check them.",
+    "WORDS_UNKNOWN": "We found no progress saved with these words.",
+    "KEEP_WHICH": "This device has progress of its own. Which do you want to keep? The other one only comes back with its own recovery words.",
+    "KEEP_SAVED": "My saved progress",
+    "KEEP_THIS_DEVICE": "This device's progress",
+    "SIGN_IN_FAILED": "Signing in did not work. Your progress on this device is unchanged. Please try again.",
+    "KEEP_WHICH_LOST": "This device has progress of its own that is not saved anywhere else. If you switch, it is gone. Which do you want to keep?",
+    "BACK_UP_FIRST": "Back up this device's recovery words first, so you can come back to its progress."
 }

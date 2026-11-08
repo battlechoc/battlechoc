@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createUseStyles } from "react-jss";
 import Button from "../controls/Button";
 import RecoveryWords from "./RecoveryWords";
+import ConnectAccount from "./ConnectAccount";
 import {
   getCurrentLanguage,
   translate as t,
@@ -137,9 +138,9 @@ const saveError = (failure) => {
 
 /**
  * The row; mounted while the profile is open, so it reads the linked keys and the device's words
- * each time the profile opens. `onConnect` opens "Connect an existing account".
+ * each time the profile opens.
  */
-const SaveProgress = ({ onConnect }) => {
+const SaveProgress = () => {
   const classes = useStyles();
   // the player's linked keys (null while they load or could not be read)
   const [identities, setIdentities] = useState(null);
@@ -153,6 +154,7 @@ const SaveProgress = ({ onConnect }) => {
   const [advanced, setAdvanced] = useState(false);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   // a second tap while saving does nothing (the key store also refuses a second key)
   const saving = useRef(false);
 
@@ -285,11 +287,9 @@ const SaveProgress = ({ onConnect }) => {
         </p>
       ) : null}
       <div className={classes.row}>
-        {onConnect ? (
-          <button className={classes.link} onClick={onConnect}>
-            {t(tr.CONNECT_ACCOUNT)}
-          </button>
-        ) : null}
+        <button className={classes.link} onClick={() => setConnecting(true)}>
+          {t(tr.CONNECT_ACCOUNT)}
+        </button>
         <button
           className={classes.link}
           aria-expanded={advanced}
@@ -347,6 +347,11 @@ const SaveProgress = ({ onConnect }) => {
             : null}
         </div>
       ) : null}
+      <ConnectAccount
+        open={connecting}
+        stacked
+        onClose={() => setConnecting(false)}
+      />
       <RecoveryWords
         open={shownWords !== null}
         words={shownWords || []}

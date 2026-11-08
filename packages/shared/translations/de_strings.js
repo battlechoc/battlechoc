@@ -509,5 +509,20 @@ module.exports = {
     "SAVING": "Wird gesichert …",
     "SAVE_ERROR_NETWORK": "Spiel und Server passen gerade nicht zusammen. Bitte lade das Spiel neu.",
     "SAVE_ERROR_STORAGE": "Dieser Browser lässt das Spiel die Wörter nicht speichern (ein privates Fenster?). Dein Fortschritt auf diesem Gerät ist unverändert.",
-    "KEY_PROTECTION_NOTE": "Die Wörter sind auf diesem Gerät verschlüsselt gespeichert, das schützt sie aber nicht vor allem. Bewahre deine aufgeschriebene Liste gut auf."
+    "KEY_PROTECTION_NOTE": "Die Wörter sind auf diesem Gerät verschlüsselt gespeichert, das schützt sie aber nicht vor allem. Bewahre deine aufgeschriebene Liste gut auf.",
+    "CONNECT_ACCOUNT": "Bestehendes Konto verbinden",
+    "HAVE_ACCOUNT": "Ich habe schon ein Konto",
+    "CONNECT_TITLE": "Willkommen zurück",
+    "CONNECT_TEXT": "Gib deine 24 Sicherungswörter ein.",
+    "CONNECT_CONTINUE": "Weiter",
+    "WORDS_COUNT": "{{n}} von 24 Wörtern",
+    "PASTE": "Einfügen",
+    "WORDS_INVALID": "Diese Wörter passen nicht zusammen. Bitte prüfe sie.",
+    "WORDS_UNKNOWN": "Mit diesen Wörtern ist kein Fortschritt gesichert.",
+    "KEEP_WHICH": "Auf diesem Gerät gibt es eigenen Fortschritt. Welchen möchtest du behalten? Der andere kommt nur mit seinen eigenen Sicherungswörtern zurück.",
+    "KEEP_SAVED": "Meinen gesicherten Fortschritt",
+    "KEEP_THIS_DEVICE": "Den Fortschritt dieses Geräts",
+    "SIGN_IN_FAILED": "Die Anmeldung hat nicht geklappt. Dein Fortschritt auf diesem Gerät ist unverändert. Bitte versuch es noch einmal.",
+    "KEEP_WHICH_LOST": "Auf diesem Gerät gibt es eigenen Fortschritt, der nirgends gesichert ist. Wenn du wechselst, ist er weg. Welchen möchtest du behalten?",
+    "BACK_UP_FIRST": "Sichere zuerst die Sicherungswörter dieses Geräts ab, damit du zu seinem Fortschritt zurückkommst."
 }

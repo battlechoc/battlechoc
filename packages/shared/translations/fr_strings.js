@@ -509,5 +509,20 @@ module.exports = {
     "SAVING": "Sauvegarde…",
     "SAVE_ERROR_NETWORK": "Le jeu et son serveur ne correspondent pas pour le moment. Recharge le jeu.",
     "SAVE_ERROR_STORAGE": "Ce navigateur ne laisse pas le jeu garder les mots (une fenêtre privée ?). Ta progression sur cet appareil n'a pas changé.",
-    "KEY_PROTECTION_NOTE": "Les mots sont enregistrés chiffrés sur cet appareil, mais cela ne les protège pas de tout. Garde ta liste écrite en lieu sûr."
+    "KEY_PROTECTION_NOTE": "Les mots sont enregistrés chiffrés sur cet appareil, mais cela ne les protège pas de tout. Garde ta liste écrite en lieu sûr.",
+    "CONNECT_ACCOUNT": "Connecter un compte existant",
+    "HAVE_ACCOUNT": "J'ai déjà un compte",
+    "CONNECT_TITLE": "Bon retour",
+    "CONNECT_TEXT": "Saisis tes 24 mots de récupération.",
+    "CONNECT_CONTINUE": "Continuer",
+    "WORDS_COUNT": "{{n}} mots sur 24",
+    "PASTE": "Coller",
+    "WORDS_INVALID": "Ces mots ne vont pas ensemble. Vérifie-les.",
+    "WORDS_UNKNOWN": "Aucune progression n'est sauvegardée avec ces mots.",
+    "KEEP_WHICH": "Cet appareil a sa propre progression. Laquelle veux-tu garder ? L'autre ne revient qu'avec ses propres mots de récupération.",
+    "KEEP_SAVED": "Ma progression sauvegardée",
+    "KEEP_THIS_DEVICE": "La progression de cet appareil",
+    "SIGN_IN_FAILED": "La connexion n'a pas fonctionné. Ta progression sur cet appareil n'a pas changé. Réessaie.",
+    "KEEP_WHICH_LOST": "Cet appareil a sa propre progression, sauvegardée nulle part ailleurs. Si tu changes, elle sera perdue. Laquelle veux-tu garder ?",
+    "BACK_UP_FIRST": "Sécurise d'abord les mots de récupération de cet appareil, pour pouvoir revenir à sa progression."
 }

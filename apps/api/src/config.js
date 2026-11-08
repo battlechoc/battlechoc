@@ -12,6 +12,8 @@
 //   RECIPES_FILE              the private recipe table of the lab; required in production
 //   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT     web push, off without the keys
 //   LIVE_DISCONNECT_GRACE_MS, LIVE_AI_FALLBACK_MS, LIVE_INVITE_TTL_MS     live timings (tests)
+//   ACCOUNTS_PER_MINUTE       new accounts per minute and address (default 10, app.js); the
+//                             browser tests create many from one address
 //   DB_POOL_MAX, DB_CONNECTION_TIMEOUT_MS, DB_IDLE_TIMEOUT_MS, DB_STATEMENT_TIMEOUT_MS
 //                             the connection pool, see createPool in db.js for the defaults
 //   CARDANO_NETWORK           "preprod" or "mainnet": turns on signing in with a Cardano key on that
@@ -151,6 +153,12 @@ const loadConfig = (env = process.env) => {
         problems.push(`MATCH_RETENTION_DAYS must be a positive whole number of days, not "${retentionText}" (leave it out to keep matches)`);
     }
 
+    const accountsText = read(env, 'ACCOUNTS_PER_MINUTE');
+    const accountsPerMinute = typeof accountsText === 'undefined' ? undefined : Number(accountsText);
+    if (typeof accountsText !== 'undefined' && !(isWholeNumber(accountsText) && accountsPerMinute > 0)) {
+        problems.push(`ACCOUNTS_PER_MINUTE must be a positive whole number, not "${accountsText}"`);
+    }
+
     const cardanoNetworkText = read(env, 'CARDANO_NETWORK');
     const cardanoNetwork = typeof cardanoNetworkText === 'undefined' ? null : networkOf(cardanoNetworkText);
     if (typeof cardanoNetworkText !== 'undefined' && cardanoNetwork === null) {
@@ -177,6 +185,7 @@ const loadConfig = (env = process.env) => {
         live,
         matchRetentionDays,
         cardanoNetwork,
+        accountsPerMinute,
     });
 };
 

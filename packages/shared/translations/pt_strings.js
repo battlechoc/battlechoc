@@ -509,5 +509,20 @@ module.exports = {
     "SAVING": "Salvando…",
     "SAVE_ERROR_NETWORK": "O jogo e o servidor não combinam agora. Recarregue o jogo.",
     "SAVE_ERROR_STORAGE": "Este navegador não deixa o jogo guardar as palavras (uma janela anônima?). Seu progresso neste dispositivo não mudou.",
-    "KEY_PROTECTION_NOTE": "As palavras ficam guardadas criptografadas neste dispositivo, mas isso não as protege de tudo. Guarde sua lista escrita em um lugar seguro."
+    "KEY_PROTECTION_NOTE": "As palavras ficam guardadas criptografadas neste dispositivo, mas isso não as protege de tudo. Guarde sua lista escrita em um lugar seguro.",
+    "CONNECT_ACCOUNT": "Conectar uma conta existente",
+    "HAVE_ACCOUNT": "Já tenho uma conta",
+    "CONNECT_TITLE": "Bem-vindo de volta",
+    "CONNECT_TEXT": "Digite suas 24 palavras de recuperação.",
+    "CONNECT_CONTINUE": "Continuar",
+    "WORDS_COUNT": "{{n}} de 24 palavras",
+    "PASTE": "Colar",
+    "WORDS_INVALID": "Estas palavras não combinam. Confira de novo.",
+    "WORDS_UNKNOWN": "Não encontramos progresso salvo com estas palavras.",
+    "KEEP_WHICH": "Este dispositivo tem seu próprio progresso. Qual você quer manter? O outro só volta com as próprias palavras de recuperação.",
+    "KEEP_SAVED": "Meu progresso salvo",
+    "KEEP_THIS_DEVICE": "O progresso deste dispositivo",
+    "SIGN_IN_FAILED": "Não foi possível entrar. Seu progresso neste dispositivo não mudou. Tente de novo.",
+    "KEEP_WHICH_LOST": "Este dispositivo tem seu próprio progresso, que não está salvo em nenhum outro lugar. Se você trocar, ele será perdido. Qual você quer manter?",
+    "BACK_UP_FIRST": "Primeiro faça a cópia das palavras de recuperação deste dispositivo, para poder voltar ao progresso dele."
 }

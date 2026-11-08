@@ -509,5 +509,20 @@ module.exports = {
     "SAVING": "Salvataggio…",
     "SAVE_ERROR_NETWORK": "Il gioco e il suo server non corrispondono al momento. Ricarica il gioco.",
     "SAVE_ERROR_STORAGE": "Questo browser non permette al gioco di conservare le parole (una finestra privata?). I tuoi progressi su questo dispositivo non sono cambiati.",
-    "KEY_PROTECTION_NOTE": "Le parole sono salvate cifrate su questo dispositivo, ma questo non le protegge da tutto. Conserva la tua lista scritta in un posto sicuro."
+    "KEY_PROTECTION_NOTE": "Le parole sono salvate cifrate su questo dispositivo, ma questo non le protegge da tutto. Conserva la tua lista scritta in un posto sicuro.",
+    "CONNECT_ACCOUNT": "Collega un account esistente",
+    "HAVE_ACCOUNT": "Ho già un account",
+    "CONNECT_TITLE": "Bentornato",
+    "CONNECT_TEXT": "Inserisci le tue 24 parole di recupero.",
+    "CONNECT_CONTINUE": "Continua",
+    "WORDS_COUNT": "{{n}} di 24 parole",
+    "PASTE": "Incolla",
+    "WORDS_INVALID": "Queste parole non vanno insieme. Controllale.",
+    "WORDS_UNKNOWN": "Non abbiamo trovato progressi salvati con queste parole.",
+    "KEEP_WHICH": "Questo dispositivo ha dei progressi propri. Quali vuoi tenere? Gli altri tornano solo con le loro parole di recupero.",
+    "KEEP_SAVED": "I miei progressi salvati",
+    "KEEP_THIS_DEVICE": "I progressi di questo dispositivo",
+    "SIGN_IN_FAILED": "L'accesso non è riuscito. I tuoi progressi su questo dispositivo non sono cambiati. Riprova.",
+    "KEEP_WHICH_LOST": "Questo dispositivo ha dei progressi propri che non sono salvati da nessun'altra parte. Se cambi, andranno persi. Quali vuoi tenere?",
+    "BACK_UP_FIRST": "Prima fai il backup delle parole di recupero di questo dispositivo, così potrai tornare ai suoi progressi."
 }
