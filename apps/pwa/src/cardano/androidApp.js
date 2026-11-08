@@ -4,14 +4,17 @@
 
 const ANDROID_APP_KEY = "battlechoc.androidApp";
 
-/** At launch: remembers in `storage` (sessionStorage) when the start was the Android app's. */
+// `storage` is a getter of the Storage (() => window.sessionStorage): with all site data blocked,
+// already reading window.sessionStorage throws, so it is asked for inside the guard
+
+/** At launch: remembers in `storage()` (sessionStorage) when the start was the Android app's. */
 export const rememberAndroidApp = ({ search, referrer, storage }) => {
   const launched =
     new URLSearchParams(search).get("app_runs_as") === "twa" ||
     String(referrer || "").startsWith("android-app://");
   if (launched) {
     try {
-      storage.setItem(ANDROID_APP_KEY, "1");
+      storage().setItem(ANDROID_APP_KEY, "1");
     } catch {
       // blocked storage: this page still knows it from the launch
     }
@@ -22,7 +25,7 @@ export const rememberAndroidApp = ({ search, referrer, storage }) => {
 /** Whether the tab was started by the Android app (false when storage is blocked). */
 export const isAndroidApp = (storage) => {
   try {
-    return storage.getItem(ANDROID_APP_KEY) === "1";
+    return storage().getItem(ANDROID_APP_KEY) === "1";
   } catch {
     return false;
   }

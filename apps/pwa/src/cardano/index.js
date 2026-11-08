@@ -6,11 +6,12 @@ import { createKeyStore } from "./keyStore.js";
 import { createFeatures } from "./features.js";
 import { signChallenge as signWith } from "./signIn.js";
 import { isAndroidApp } from "./androidApp.js";
+import { keysFromWords } from "./keys.js";
 
 export const features = createFeatures({
   network: import.meta.env.VITE_CARDANO_NETWORK,
   // remembered at launch (boot.js), before the address is cleaned up
-  androidApp: () => isAndroidApp(window.sessionStorage),
+  androidApp: () => isAndroidApp(() => window.sessionStorage),
 });
 
 export const keyStore = createKeyStore(OfflineStore.playerStore);
@@ -27,6 +28,10 @@ export const signChallenge = (words, purpose) => {
     network: features.network(),
   });
 };
+
+/** The identity subject ("stake:<key hash>") of the words, as the server lists it. */
+export const subjectOfWords = async (words) =>
+  `stake:${(await keysFromWords(words, features.network())).stakeKeyHashHex}`;
 
 export { cardanoApi };
 export { newRecoveryWords, normalizeWords, wordsAreValid } from "./keys.js";

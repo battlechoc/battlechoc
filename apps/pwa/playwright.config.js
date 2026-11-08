@@ -100,6 +100,8 @@ export default defineConfig({
         // page blocks for seconds at a time, and a reload must fit in it too
         LIVE_DISCONNECT_GRACE_MS: "20000",
         LIVE_AI_FALLBACK_MS: "3000",
+        // signing in with a Cardano key (test/signin.spec.js); the build has VITE_CARDANO_NETWORK
+        CARDANO_NETWORK: "preprod",
       },
     },
   ],

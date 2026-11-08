@@ -55,7 +55,7 @@ export const readLaunchAddress = (
   rememberAndroidApp({
     search: location.search,
     referrer: typeof document === "undefined" ? "" : document.referrer,
-    storage: window.sessionStorage,
+    storage: () => window.sessionStorage,
   });
   if (path !== "/" || query.has("challenge")) {
     history.pushState({}, null, location.origin);

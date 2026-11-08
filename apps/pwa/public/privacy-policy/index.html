@@ -121,7 +121,7 @@
 
       <section id="de" lang="de">
         <h1>Datenschutzerklärung</h1>
-        <p class="date">Stand: 3. November 2026</p>
+        <p class="date">Stand: 8. November 2026</p>
 
         <p class="summary">
           <strong>Kurz gesagt:</strong> battlechoc ist kostenlos, ohne Werbung, ohne Tracking, ohne
@@ -141,7 +141,8 @@
         <p>
           Das Spiel speichert im Speicher deines Browsers (IndexedDB) deine
           Einstellungen (Sprache, Lautstärke, Klickgeräusch, Vollbild), deinen Spielstand und deine
-          Statistiken, eine unterbrochene Partie und den Zugangsschlüssel deines Spielerkontos. Ein
+          Statistiken, eine unterbrochene Partie, den Zugangsschlüssel deines Spielerkontos und, wenn
+          du deinen Fortschritt sicherst, verschlüsselt deine 24 Sicherungswörter (Abschnitt 11). Ein
           Service Worker hält die Dateien des Spiels bereit, damit es auch ohne Verbindung startet.
           Das ist nötig, damit das Spiel funktioniert (§ 25 Abs. 2 Nr. 2 TDDDG). Was davon an unseren
           Server geht, steht in den folgenden Abschnitten. Du löschst diese Daten, indem du die
@@ -233,6 +234,7 @@
         <ul>
           <li>Spielerkonto und Spieldaten: solange das Konto besteht. Auf Wunsch löschen wir es (Abschnitt 10).</li>
           <li>Problemberichte: 60 Tage.</li>
+          <li>Fingerabdrücke verknüpfter Schlüssel: bis du den Schlüssel entfernst oder dein Konto gelöscht wird. Anmelde-Zufallszahlen: bis zur Anmeldung, nicht genutzte höchstens etwa eine Stunde.</li>
           <li>Push-Adressen: bis du die Erlaubnis widerrufst, der Push-Dienst sie für ungültig erklärt oder dein Konto gelöscht wird.</li>
         </ul>
 
@@ -254,13 +256,42 @@
           zum Beispiel bei der Behörde deines Wohnorts.
         </p>
 
-        <h2>11. Änderungen</h2>
+        <h2 id="cardano-de">11. Dein Fortschritt, dein Schlüssel und Cardano (preprod)</h2>
+        <p>
+          battlechoc findet: Was du in einem Spiel erspielst, sollte dir gehören und nicht nur ein
+          Eintrag in unserer Datenbank sein. Deshalb sollen die Gegenstände von battlechoc auf eine
+          Blockchain kommen, ein öffentliches Verzeichnis, das keine einzelne Firma kontrolliert. Dafür
+          nutzt battlechoc im Moment das Netz „preprod“ von Cardano: ein Testnetz, in dem nichts einen
+          Geldwert hat. Noch schreibt battlechoc nichts über dich auf eine Blockchain.
+        </p>
+        <p>
+          Wenn du „Fortschritt sichern“ wählst, erzeugt das Spiel auf deinem Gerät einen Schlüssel aus
+          24 Sicherungswörtern. Die Wörter bleiben auf deinem Gerät, verschlüsselt gespeichert, und auf
+          der Liste, die du aufbewahrst; wir bekommen sie nie. Die Verschlüsselung schützt sie nicht vor
+          allem (etwa nicht vor Programmen, die im Spiel selbst laufen), deshalb ist deine Liste
+          wichtig. Unser Server speichert einen Fingerabdruck (Hash) des öffentlichen Teils des
+          Schlüssels, verknüpft mit deinem Spielerkonto, damit du mit den Wörtern auf einem anderen
+          Gerät weiterspielen kannst. Für eine Anmeldung speichert er kurz eine Zufallszahl, die
+          öffentliche Adresse des Schlüssels und, beim Verknüpfen, dein Spielerkonto: bis die Anmeldung
+          erfolgt, nicht genutzte Einträge höchstens etwa eine Stunde. Die Adresse lässt sich aus dem
+          öffentlichen Schlüssel ableiten und ist nicht geheim. Rechtsgrundlage ist die Bereitstellung
+          des Spiels und seiner Funktionen (Art. 6 Abs. 1 lit. b DSGVO). Einen verknüpften Schlüssel
+          kannst du in deinem Profil entfernen (nicht den letzten); mit deinem Konto löschen wir auch
+          die Fingerabdrücke.
+        </p>
+        <p>
+          Du willst verstehen, was eine Blockchain ist?
+          <a href="https://cardanofoundation.org/academy/course/blockchain-fundamentals" rel="noopener">Mehr dazu im kostenlosen Kurs „Blockchain Fundamentals“ der Cardano Academy</a>
+          (auf Englisch).
+        </p>
+
+        <h2>12. Änderungen</h2>
         <p>Ändert sich das Spiel, passen wir diese Erklärung an. Es gilt die Fassung auf dieser Seite.</p>
       </section>
 
       <section id="en" lang="en">
         <h1>Privacy policy</h1>
-        <p class="date">Last updated: 3 November 2026</p>
+        <p class="date">Last updated: 8 November 2026</p>
 
         <p class="summary">
           <strong>In short:</strong> battlechoc is free, with no ads, no tracking, no analytics and
@@ -279,7 +310,8 @@
         <p>
           The game stores in your browser's storage (IndexedDB) your settings
           (language, volume, click sound, fullscreen), your progress and statistics, an interrupted
-          match and the key of your player account. A service worker keeps the game's files so it
+          match, the key of your player account and, if you save your progress, your 24 recovery
+          words, encrypted (section 11). A service worker keeps the game's files so it
           also starts without a connection. This is necessary for the game to work (Section 25 (2)
           no. 2 TDDDG). What of this reaches our server is described below. You delete this data by
           clearing the site data of battlechoc.com in your browser or by uninstalling the app.
@@ -365,6 +397,7 @@
         <ul>
           <li>Player account and game data: as long as the account exists. We delete it on request (section 10).</li>
           <li>Problem reports: 60 days.</li>
+          <li>Fingerprints of linked keys: until you remove the key or your account is deleted. Sign-in random numbers: until you sign in; unused ones at most about one hour.</li>
           <li>Push addresses: until you withdraw the permission, the push service declares them invalid or your account is deleted.</li>
         </ul>
 
@@ -385,7 +418,33 @@
           (Art. 77 GDPR), for example the one where you live.
         </p>
 
-        <h2>11. Changes</h2>
+        <h2 id="cardano-en">11. Your progress, your key and Cardano (preprod)</h2>
+        <p>
+          battlechoc believes that what you earn in a game should belong to you, not just be an entry in
+          our database. That is why battlechoc's items are to move to a blockchain, a public record that
+          no single company controls. For this battlechoc currently uses Cardano's "preprod" network: a
+          test network where nothing has a value in money. battlechoc does not write anything about you
+          to a blockchain yet.
+        </p>
+        <p>
+          When you choose "Save your progress", the game makes a key on your device from 24 recovery
+          words. The words stay on your device, stored encrypted, and on the list you keep; we never
+          receive them. The encryption does not protect them from everything (for example not from
+          programs running inside the game itself), which is why your list matters. Our server stores a
+          fingerprint (hash) of the key's public part, linked to your player account, so you can
+          continue with the words on another device. For a sign-in it briefly stores a random number,
+          the key's public address and, when linking, your player account: until you sign in, unused
+          entries at most about one hour. The address can be derived from the public key and is not
+          secret. The legal basis is providing the game and its features (Art. 6 (1) (b) GDPR). You can
+          remove a linked key in your profile (not the last one); when we delete your account, its
+          fingerprints go too.
+        </p>
+        <p>
+          Want to understand what a blockchain is?
+          <a href="https://cardanofoundation.org/academy/course/blockchain-fundamentals" rel="noopener">Learn more in the Cardano Academy's free course "Blockchain Fundamentals"</a>.
+        </p>
+
+        <h2>12. Changes</h2>
         <p>When the game changes, we update this policy. The version on this page applies.</p>
       </section>
     </main>

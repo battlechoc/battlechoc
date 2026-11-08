@@ -347,13 +347,19 @@ test("the Android app is remembered at launch, before the address is cleaned up"
     getItem: (key) => (storage.has(key) ? storage.get(key) : null),
     setItem: (key, value) => storage.set(key, value),
   };
-  assert.equal(isAndroidApp(session), false);
+  assert.equal(
+    isAndroidApp(() => session),
+    false
+  );
   rememberAndroidApp({
     search: "?app_runs_as=twa&app_version=1",
     referrer: "",
-    storage: session,
+    storage: () => session,
   });
-  assert.equal(isAndroidApp(session), true);
+  assert.equal(
+    isAndroidApp(() => session),
+    true
+  );
   const other = new Map();
   const otherSession = {
     getItem: (key) => other.get(key) ?? null,
@@ -362,9 +368,12 @@ test("the Android app is remembered at launch, before the address is cleaned up"
   rememberAndroidApp({
     search: "",
     referrer: "android-app://com.battlechoc.game/",
-    storage: otherSession,
+    storage: () => otherSession,
   });
-  assert.equal(isAndroidApp(otherSession), true);
+  assert.equal(
+    isAndroidApp(() => otherSession),
+    true
+  );
   const web = new Map();
   const webSession = {
     getItem: (key) => web.get(key) ?? null,
@@ -373,15 +382,58 @@ test("the Android app is remembered at launch, before the address is cleaned up"
   rememberAndroidApp({
     search: "?challenge=K7Q2",
     referrer: "https://google.com/",
-    storage: webSession,
+    storage: () => webSession,
   });
-  assert.equal(isAndroidApp(webSession), false);
   assert.equal(
-    isAndroidApp({
+    isAndroidApp(() => webSession),
+    false
+  );
+  assert.equal(
+    isAndroidApp(() => ({
       getItem: () => {
         throw new Error("blocked");
       },
-    }),
+    })),
     false
   );
+});
+
+test("the backup mark belongs to the stored key and goes with it", async () => {
+  const keyStore = createKeyStore(memoryStore());
+  assert.equal(await keyStore.backedUp(), false);
+  await keyStore.save(ABANDON);
+  assert.equal(await keyStore.backedUp(), false);
+  await keyStore.markBackedUp();
+  assert.equal(await keyStore.backedUp(), true);
+  await keyStore.clear();
+  assert.equal(await keyStore.backedUp(), false);
+  await keyStore.save(await newRecoveryWords());
+  assert.equal(await keyStore.backedUp(), false);
+});
+
+test("the storage is asked for inside the guard: blocked storage, where even reading window.sessionStorage throws, does not stop the game", () => {
+  const kept = new Map();
+  const session = () => ({
+    getItem: (key) => kept.get(key) ?? null,
+    setItem: (key, value) => kept.set(key, value),
+  });
+  rememberAndroidApp({
+    search: "?app_runs_as=twa",
+    referrer: "",
+    storage: session,
+  });
+  assert.equal(isAndroidApp(session), true);
+
+  const blocked = () => {
+    throw new DOMException("The operation is insecure.", "SecurityError");
+  };
+  assert.equal(
+    rememberAndroidApp({
+      search: "?app_runs_as=twa",
+      referrer: "",
+      storage: blocked,
+    }),
+    true
+  );
+  assert.equal(isAndroidApp(blocked), false);
 });

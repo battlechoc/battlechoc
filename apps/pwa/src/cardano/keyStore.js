@@ -5,6 +5,8 @@
 // decrypted, nor from a copy of the browser's profile folder, which holds the key's bytes too.
 
 const RECORD_KEY = "cardanoKey";
+// set once the player showed they wrote the words down (the check in RecoveryWords.jsx)
+const BACKED_UP_KEY = "cardanoKeyBackedUp";
 
 /** The device refused to keep the key (private mode, blocked or full storage). */
 export class KeyStoreError extends Error {
@@ -29,8 +31,9 @@ const sameWords = (a, b) =>
   a.every((word, i) => word === b[i]);
 
 /**
- * A key store on `store` ({ get, add, delete }, like OfflineStore.playerStore; `add` refuses a
- * key that exists, atomically, also across tabs): { save(words), load(), has(), clear() }.
+ * A key store on `store` ({ get, set, add, delete }, like OfflineStore.playerStore; `add` refuses
+ * a key that exists, atomically, also across tabs): { save(words), load(), has(), clear(),
+ * backedUp(), markBackedUp() }.
  */
 export const createKeyStore = (store, subtle = globalThis.crypto.subtle) => {
   const has = async () => typeof (await store.get(RECORD_KEY)) !== "undefined";
@@ -87,7 +90,16 @@ export const createKeyStore = (store, subtle = globalThis.crypto.subtle) => {
     }
   };
 
-  const clear = () => store.delete(RECORD_KEY);
+  // the mark goes with the key: a new key is never taken for backed up
+  const clear = async () => {
+    await store.delete(BACKED_UP_KEY);
+    await store.delete(RECORD_KEY);
+  };
 
-  return { save, load, has, clear };
+  const backedUp = async () =>
+    (await has()) && (await store.get(BACKED_UP_KEY)) === true;
+
+  const markBackedUp = () => store.set(BACKED_UP_KEY, true);
+
+  return { save, load, has, clear, backedUp, markBackedUp };
 };
