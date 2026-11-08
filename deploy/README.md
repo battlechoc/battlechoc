@@ -71,6 +71,7 @@ Fill in `.env` (`.env.example` explains every line):
 | `VAPID_SUBJECT` | `mailto:hello@battlechoc.com` |
 | `RECIPES_PATH` | `/opt/battlechoc/private/recipes.json` |
 | `API_DOMAIN` | only with Caddy: `api.battlechoc.com` |
+| `CARDANO_NETWORK` | optional: `preprod` (for now) turns on signing in with a Cardano key; the game's build needs `VITE_CARDANO_NETWORK` with the same value |
 
 Postgres takes `POSTGRES_PASSWORD` only when it creates its volume. Changing it later needs
 `docker compose down -v` (which deletes the data) or the old password.

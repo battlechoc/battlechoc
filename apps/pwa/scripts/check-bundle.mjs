@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
+import { loadEnv } from "vite";
 
 // about 15 % above the build this was last set for (see the commit); raise it knowingly
 const BUDGET_GZIP_KB = 200;
@@ -84,6 +85,31 @@ if (babylon.length > 0) {
     `the 3D engine is part of the first load (${babylon.map((file) => path.basename(file.url)).join(", ")}): ` +
       "a module of the title screen imports Babylon, src/3d or src/AssetLoader.jsx statically"
   );
+}
+// Without VITE_CARDANO_NETWORK the build has no use for the Evolution SDK (the Cardano sign-in is
+// off): its chunks must not be precached, or every device downloads them in the background.
+// "Invalid mnemonic" is a message only the SDK's key module carries.
+const mode =
+  process.env.BUILD_MODE ||
+  (path.basename(build) === "build-e2e" ? "e2e" : "production");
+const cardanoOn = Boolean(
+  loadEnv(mode, path.join(here, ".."), "VITE_").VITE_CARDANO_NETWORK
+);
+const serviceWorker = path.join(build, "service-worker.js");
+if (!cardanoOn && fs.existsSync(serviceWorker)) {
+  const precached = [
+    ...fs
+      .readFileSync(serviceWorker, "utf8")
+      .matchAll(/"(assets\/[^"]+\.js)"/g),
+  ].map((match) => match[1]);
+  const sdk = precached.filter((url) =>
+    fs.readFileSync(path.join(build, url), "utf8").includes("Invalid mnemonic")
+  );
+  if (sdk.length > 0) {
+    problems.push(
+      `the Cardano sign-in is off (no VITE_CARDANO_NETWORK in mode ${mode}), but the service worker precaches the Evolution SDK (${sdk.join(", ")}): see NEVER_IMPORTED in vite.config.js`
+    );
+  }
 }
 for (const problem of problems) {
   console.error(`check:bundle failed: ${problem}`);

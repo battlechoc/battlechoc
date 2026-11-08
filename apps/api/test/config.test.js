@@ -43,6 +43,7 @@ describe('configuration', () => {
             vapid: { publicKey: undefined, privateKey: undefined, subject: undefined },
             recipesFile: undefined,
             live: {},
+            cardanoNetwork: null,
         });
         expect(Object.isFrozen(loadConfig(development))).toBe(true);
     });
@@ -155,6 +156,21 @@ describe('configuration', () => {
         // a setting that deletes data is never guessed
         ['0', '-7', '1.5', 'a month', '30d'].forEach(MATCH_RETENTION_DAYS => expect(problemsOf({ ...development, MATCH_RETENTION_DAYS }))
             .toMatch(/MATCH_RETENTION_DAYS must be a positive whole number/));
+    });
+
+    test('accounts per minute and address: the default unless set, a positive whole number (browser tests)', () => {
+        expect(loadConfig(development).accountsPerMinute).toBeUndefined();
+        expect(loadConfig({ ...development, ACCOUNTS_PER_MINUTE: '500' }).accountsPerMinute).toBe(500);
+        ['0', '-1', 'many'].forEach(ACCOUNTS_PER_MINUTE => expect(problemsOf({ ...development, ACCOUNTS_PER_MINUTE }))
+            .toMatch(/ACCOUNTS_PER_MINUTE must be a positive whole number/));
+    });
+
+    test('the Cardano network: off when not set, preprod or mainnet, nothing else', () => {
+        expect(loadConfig({ ...development, CARDANO_NETWORK: '' }).cardanoNetwork).toBeNull();
+        expect(loadConfig({ ...development, CARDANO_NETWORK: 'preprod' }).cardanoNetwork).toEqual({ name: 'preprod', networkId: 0 });
+        expect(loadConfig({ ...development, CARDANO_NETWORK: 'mainnet' }).cardanoNetwork).toEqual({ name: 'mainnet', networkId: 1 });
+        ['testnet', 'Preprod', '0'].forEach(CARDANO_NETWORK => expect(problemsOf({ ...development, CARDANO_NETWORK }))
+            .toMatch(/CARDANO_NETWORK must be "preprod" or "mainnet"/));
     });
 
     test('the server reads its environment through the configuration and stops before it opens anything', async () => {

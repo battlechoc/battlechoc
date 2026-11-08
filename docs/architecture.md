@@ -60,9 +60,21 @@ the balance it started with.
   online play and the lab wait for the connection.
 - **Accounts** are device accounts: on the first start the server creates a player and hands out
   a refresh token, which the game keeps in IndexedDB. There are no passwords.
+- **Saving progress** (on when the build has `VITE_CARDANO_NETWORK` and the API `CARDANO_NETWORK`,
+  `preprod` for now): the game makes a Cardano key from 24 recovery words on the device
+  (`src/cardano/`, the Evolution SDK, loaded only when needed), keeps the words encrypted in
+  IndexedDB and links the key to the player by signing a server challenge (CIP-8, as a wallet's
+  `signData`). On another device the same words sign in as that player ("I already have an
+  account"). The server stores only the stake key's hash (`identities`), never the words. In the
+  Android app nothing visibly crypto shows (`src/cardano/androidApp.js`).
 
 ## The server (`apps/api`)
 
+- **Signing in with a Cardano key** (`src/cardano.js`, `src/routes/cardano.js`): single-use
+  challenges (5 minutes) with the text of `packages/shared/cardano/message.js`, verified with the
+  Evolution SDK (`COSE.SignData.verifyData`: exact text, address header, key hash, network);
+  `GET /cardano/network`, `POST /auth/cardano/challenge`, `POST /auth/cardano/verify`,
+  `GET|DELETE /user/identities`, `GET /user/progress`. Off without `CARDANO_NETWORK`.
 - **Express** serves the REST routes (`src/routes/`), **ws** the live WebSocket (`src/live/`), on
   one HTTP server. `src/config.js` reads and checks the environment once at the start.
 - **Postgres** stores players, sessions, matches with their actions (for recovery after a

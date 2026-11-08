@@ -1,0 +1,262 @@
+// Signing in with a Cardano key: the server issues a challenge, the game signs it (CIP-30
+// signData with the stake key), the server verifies it and links the key to a player or signs
+// that player in on another device.
+
+const request = require('supertest');
+const { cardano } = require('@battlechoc/battlechoc-shared-functions');
+const { createTestApp, createAccount, withToken } = require('./helpers/api');
+const { closeTestPools } = require('./helpers/db');
+const { testKeys, signMessage, signedChallenge } = require('./helpers/cardano');
+const { cleanupChallenges } = require('../src/cardano');
+
+afterAll(closeTestPools);
+
+const CHALLENGE_TTL_MS = 5 * 60 * 1000;
+
+const setup = async (options = {}) => {
+    let clock = Date.now();
+    const env = await createTestApp({ cardanoNetwork: cardano.Networks.preprod, now: () => clock, ...options });
+    return { ...env, advance: ms => { clock += ms; } };
+};
+
+const link = async (app, account, keys) => {
+    const { verify } = await signedChallenge(app, { keys, purpose: 'link', account });
+    return account.post('/auth/cardano/verify', verify);
+};
+
+const signIn = async (app, keys) => {
+    const { verify } = await signedChallenge(app, { keys, purpose: 'sign-in' });
+    return request(app).post('/auth/cardano/verify').send(verify);
+};
+
+describe('signing in with a Cardano key', () => {
+    test('the Evolution SDK loads under Jest', () => {
+        expect(testKeys().rewardAddress).toMatch(/^stake_test1/);
+    });
+
+    test('the network the server runs on', async () => {
+        const { app } = await setup();
+        expect((await request(app).get('/cardano/network').expect(200)).body).toEqual({ network: 'preprod' });
+    });
+
+    test('a challenge: the text to sign, a nonce and when it expires', async () => {
+        const { app } = await setup();
+        const keys = testKeys();
+        const { body } = await request(app).post('/auth/cardano/challenge').send({ purpose: 'sign-in', address: keys.rewardAddress }).expect(200);
+        expect(body.nonce).toMatch(/^[0-9a-f]{32}$/);
+        expect(body.message).toContain(keys.rewardAddress);
+        expect(body.message).toContain(`Nonce: ${body.nonce}`);
+        expect(body.message).toContain('Network: preprod');
+        expect(new Date(body.expiresAt).getTime() - Date.now()).toBeGreaterThan(CHALLENGE_TTL_MS - 60000);
+    });
+
+    test('link, then sign in on another device: a session for the same player', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app, { username: 'Carla' });
+        const keys = testKeys();
+        const linked = await link(app, account, keys);
+        expect(linked.status).toBe(200);
+        expect(linked.body).toEqual({ identity: { provider: 'cardano', subject: `stake:${keys.stakeKeyHashHex}`, address: keys.rewardAddress } });
+
+        const session = await signIn(app, testKeys({ words: keys.words }));
+        expect(session.status).toBe(200);
+        expect(session.body).toEqual({ playerId: account.playerId, refreshToken: expect.any(String), accessToken: expect.any(String), expiresIn: expect.any(Number) });
+        // the new device's session works like a device account's
+        expect((await withToken(app, session.body.accessToken).get('/user').expect(200)).body.stats.username).toBe('Carla');
+        const refreshed = await request(app).post('/accounts/token').send({ refreshToken: session.body.refreshToken }).expect(200);
+        expect(refreshed.body.playerId).toBe(account.playerId);
+    });
+
+    test('a nonce works once, and only for five minutes', async () => {
+        const { app, advance } = await setup();
+        const account = await createAccount(app);
+        const keys = testKeys();
+        await link(app, account, keys).then(response => expect(response.status).toBe(200));
+
+        const { verify } = await signedChallenge(app, { keys, purpose: 'sign-in' });
+        await request(app).post('/auth/cardano/verify').send(verify).expect(200);
+        expect((await request(app).post('/auth/cardano/verify').send(verify).expect(400)).body).toEqual({ error: 'CHALLENGE EXPIRED' });
+
+        const late = await signedChallenge(app, { keys, purpose: 'sign-in' });
+        advance(CHALLENGE_TTL_MS + 1000);
+        expect((await request(app).post('/auth/cardano/verify').send(late.verify).expect(400)).body).toEqual({ error: 'CHALLENGE EXPIRED' });
+        expect((await request(app).post('/auth/cardano/verify').send({ ...verify, nonce: 'f'.repeat(32) }).expect(400)).body)
+            .toEqual({ error: 'CHALLENGE EXPIRED' });
+    });
+
+    test('an address of another network is refused before anything is signed', async () => {
+        const { app } = await setup();
+        const mainnet = testKeys({ networkId: 1 });
+        const { body } = await request(app).post('/auth/cardano/challenge').send({ purpose: 'sign-in', address: mainnet.rewardAddress }).expect(400);
+        expect(body).toEqual({ error: 'WRONG NETWORK' });
+    });
+
+    test('a signature over another text, or by a key that is not the address\'s, is refused', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const keys = testKeys();
+
+        const other = await signedChallenge(app, { keys, purpose: 'link', account });
+        const overOtherText = { ...other.verify, ...signMessage(keys, other.challenge.message.replace('Link', 'Lnk')) };
+        expect((await account.post('/auth/cardano/verify', overOtherText).expect(400)).body).toEqual({ error: 'INVALID SIGNATURE' });
+
+        const stranger = await signedChallenge(app, { keys, purpose: 'link', account });
+        const byAnotherKey = { ...stranger.verify, ...signMessage({ ...testKeys(), rewardAddress: keys.rewardAddress }, stranger.challenge.message) };
+        expect((await account.post('/auth/cardano/verify', byAnotherKey).expect(400)).body).toEqual({ error: 'INVALID SIGNATURE' });
+
+        const broken = await signedChallenge(app, { keys, purpose: 'link', account });
+        expect((await account.post('/auth/cardano/verify', { ...broken.verify, signature: 'zz' }).expect(400)).body).toEqual({ error: 'INVALID SIGNATURE' });
+        expect((await request(app).get('/user/identities').set('Authorization', `Bearer ${account.accessToken}`)).status).not.toBe(500);
+    });
+
+    test('signing in with a key nobody linked: 404, never 401', async () => {
+        const { app } = await setup();
+        const response = await signIn(app, testKeys());
+        expect(response.status).toBe(404);
+        expect(response.body).toEqual({ error: 'UNKNOWN IDENTITY' });
+    });
+
+    test('linking the same key twice is fine; linking it to a second player is refused', async () => {
+        const { app } = await setup();
+        const first = await createAccount(app);
+        const second = await createAccount(app);
+        const keys = testKeys();
+        expect((await link(app, first, keys)).status).toBe(200);
+        expect((await link(app, first, keys)).status).toBe(200);
+        const taken = await link(app, second, keys);
+        expect(taken.status).toBe(409);
+        expect(taken.body).toEqual({ error: 'IDENTITY TAKEN' });
+    });
+
+    test('a link challenge only works with the token of the player who asked for it', async () => {
+        const { app } = await setup();
+        const asker = await createAccount(app);
+        const other = await createAccount(app);
+        const { verify } = await signedChallenge(app, { keys: testKeys(), purpose: 'link', account: asker });
+        expect((await other.post('/auth/cardano/verify', verify).expect(400)).body).toEqual({ error: 'CHALLENGE EXPIRED' });
+        // asking for a link needs a player
+        await request(app).post('/auth/cardano/challenge').send({ purpose: 'link', address: testKeys().rewardAddress }).expect(401);
+    });
+
+    test('a challenge needs a known purpose and a reward address', async () => {
+        const { app } = await setup();
+        const bad = [{ purpose: 'pay', address: testKeys().rewardAddress }, { purpose: 'sign-in' }, { purpose: 'sign-in', address: 'addr_test1nonsense' }];
+        for (const body of bad) {
+            expect((await request(app).post('/auth/cardano/challenge').send(body).expect(400)).body).toEqual({ error: 'INVALID REQUEST PARAMETERS' });
+        }
+    });
+
+    test('without CARDANO_NETWORK the routes do not exist', async () => {
+        const { app } = await createTestApp();
+        await request(app).get('/cardano/network').expect(404);
+        await request(app).post('/auth/cardano/challenge').send({ purpose: 'sign-in', address: testKeys().rewardAddress }).expect(404);
+    });
+});
+
+describe('the linked keys of a player and whether an account has progress', () => {
+    test('lists the linked keys, not the device', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        expect((await account.get('/user/identities').expect(200)).body).toEqual([]);
+        const keys = testKeys();
+        await link(app, account, keys);
+        expect((await account.get('/user/identities').expect(200)).body).toEqual([
+            { provider: 'cardano', subject: `stake:${keys.stakeKeyHashHex}`, address: keys.rewardAddress, createdAt: expect.any(String) },
+        ]);
+    });
+
+    test('removes one of two keys, never the last; a removed key no longer signs in', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const [first, second] = [testKeys(), testKeys()];
+        await link(app, account, first);
+        await link(app, account, second);
+        // the game sends the subject encoded (stake%3A…)
+        await account.del(`/user/identities/${encodeURIComponent(`stake:${first.stakeKeyHashHex}`)}`).expect(204);
+        expect((await account.get('/user/identities')).body.map(identity => identity.subject)).toEqual([`stake:${second.stakeKeyHashHex}`]);
+        expect((await signIn(app, first)).status).toBe(404);
+        const last = await account.del(`/user/identities/stake:${second.stakeKeyHashHex}`).expect(409);
+        expect(last.body).toEqual({ error: 'LAST IDENTITY' });
+        expect((await signIn(app, second)).status).toBe(200);
+    });
+
+    test('another player\'s key or one that does not exist cannot be removed', async () => {
+        const { app } = await setup();
+        const owner = await createAccount(app);
+        const other = await createAccount(app);
+        const keys = testKeys();
+        await link(app, owner, keys);
+        await link(app, owner, testKeys());
+        expect((await other.del(`/user/identities/stake:${keys.stakeKeyHashHex}`).expect(404)).body).toEqual({ error: 'NOT FOUND' });
+        await other.del('/user/identities/device').expect(404);
+        expect((await owner.get('/user/identities')).body).toHaveLength(2);
+    });
+
+    test('progress: a finished match (verified or offline), an item or a discovery; not the tutorial, its starter kit or a name', async () => {
+        const { app, pool } = await setup();
+        const fresh = await createAccount(app);
+        expect((await fresh.get('/user/progress').expect(200)).body).toEqual({ hasProgress: false });
+        const tutorial = await createAccount(app, { username: 'Tina', starter: true });
+        expect((await tutorial.get('/user/progress')).body).toEqual({ hasProgress: false });
+
+        const played = await createAccount(app);
+        await pool.query('INSERT INTO track_records (id, player_id, record, result, coins, xp, verified, created_at) VALUES ($1, $2, $3, $4, 0, 10, TRUE, NOW())',
+            [`${played.playerId}:m1`, played.playerId, JSON.stringify({ id: 'm1' }), 'won']);
+        expect((await played.get('/user/progress')).body).toEqual({ hasProgress: true });
+        // a match played offline and reported later counts too (owner, 2026-11-08): its XP and AI ladder
+        // would stay behind on an account nobody can reach
+        const offline = await createAccount(app);
+        await pool.query('INSERT INTO track_records (id, player_id, record, result, coins, xp, verified, created_at) VALUES ($1, $2, $3, $4, 0, 10, FALSE, NOW())',
+            [`${offline.playerId}:m2`, offline.playerId, JSON.stringify({ id: 'm2' }), 'lost']);
+        expect((await offline.get('/user/progress')).body).toEqual({ hasProgress: true });
+        // a match that never ended is none
+        const open = await createAccount(app);
+        await pool.query('INSERT INTO track_records (id, player_id, record, result, coins, xp, verified, created_at) VALUES ($1, $2, $3, $4, 0, 0, FALSE, NOW())',
+            [`${open.playerId}:m3`, open.playerId, JSON.stringify({ id: 'm3' }), 'open']);
+        expect((await open.get('/user/progress')).body).toEqual({ hasProgress: false });
+
+        const crafter = await createAccount(app);
+        await pool.query('INSERT INTO items (id, player_id, item_key, serial, crafted_by) VALUES ($1, $2, $3, 1, $2)', ['item-1', crafter.playerId, 'LIGHT_BARREL']);
+        expect((await crafter.get('/user/progress')).body).toEqual({ hasProgress: true });
+
+        const discoverer = await createAccount(app);
+        await pool.query('INSERT INTO recipe_discoveries (item_key, player_id) VALUES ($1, $2)', ['LIGHT_BARREL', discoverer.playerId]);
+        expect((await discoverer.get('/user/progress')).body).toEqual({ hasProgress: true });
+    });
+});
+
+describe('after the first review', () => {
+    test('the address of a linked key follows the network the server runs on (the switch to mainnet keeps it)', async () => {
+        const { app, pool } = await setup();
+        const account = await createAccount(app);
+        const keys = testKeys();
+        await link(app, account, keys);
+        const onMainnet = await createTestApp({ pool, cardanoNetwork: cardano.Networks.mainnet });
+        const listed = (await withToken(onMainnet.app, account.accessToken).get('/user/identities').expect(200)).body;
+        expect(listed).toEqual([expect.objectContaining({ subject: `stake:${keys.stakeKeyHashHex}`, address: testKeys({ words: keys.words, networkId: 1 }).rewardAddress })]);
+    });
+
+    test('an address in capitals is taken in its usual lower-case form', async () => {
+        const { app } = await setup();
+        const keys = testKeys();
+        const { body } = await request(app).post('/auth/cardano/challenge').send({ purpose: 'sign-in', address: keys.rewardAddress.toUpperCase() }).expect(200);
+        expect(body.message.split('\n')[1]).toBe(keys.rewardAddress);
+    });
+
+    test('signing in is rate limited: 429, never 401', async () => {
+        const { app } = await setup({ cardanoPerMinute: 2 });
+        const body = { purpose: 'sign-in', address: testKeys().rewardAddress };
+        await request(app).post('/auth/cardano/challenge').send(body).expect(200);
+        await request(app).post('/auth/cardano/challenge').send(body).expect(200);
+        expect((await request(app).post('/auth/cardano/challenge').send(body).expect(429)).body).toEqual({ error: 'TOO MANY REQUESTS' });
+    });
+
+    test('the cleanup deletes the challenges nobody used in time', async () => {
+        const { app, pool } = await setup();
+        await request(app).post('/auth/cardano/challenge').send({ purpose: 'sign-in', address: testKeys().rewardAddress }).expect(200);
+        await cleanupChallenges(pool, Date.now());
+        expect(Number((await pool.query('SELECT COUNT(*) AS n FROM auth_challenges')).rows[0].n)).toBe(1);
+        await cleanupChallenges(pool, Date.now() + CHALLENGE_TTL_MS + 1000);
+        expect(Number((await pool.query('SELECT COUNT(*) AS n FROM auth_challenges')).rows[0].n)).toBe(0);
+    });
+});

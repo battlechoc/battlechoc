@@ -32,7 +32,7 @@ const createTestApp = async ({ pool: given, now, wrapPool = pool => pool, ...opt
     const auth = createAuth({ pool: db, secret: JWT_SECRET, ...(now ? { now } : {}) });
     const { sender, sent } = fakePushSender();
     const push = createPush({ pool: db, publicKey: 'public', privateKey: 'private', sender });
-    const app = createApp({ pool: db, auth, push, accountsPerMinute: 1000, ...options });
+    const app = createApp({ pool: db, auth, push, accountsPerMinute: 1000, ...(now ? { now } : {}), ...options });
     return { app, pool, db, auth, push, sent };
 };
 

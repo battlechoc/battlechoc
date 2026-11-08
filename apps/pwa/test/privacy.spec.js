@@ -58,7 +58,7 @@ test("the privacy policy is a page of its own, in German and English", async ({
   await expect(page.locator("#de h1")).toHaveText("Datenschutzerklärung");
   await expect(page.locator("#en h1")).toHaveText("Privacy policy");
   for (const section of ["#de", "#en"]) {
-    await expect(page.locator(`${section} h2`)).toHaveCount(11);
+    await expect(page.locator(`${section} h2`)).toHaveCount(12);
     await expect(
       page.locator(`${section} a[href="mailto:hello@battlechoc.com"]`).first()
     ).toBeVisible();

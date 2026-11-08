@@ -83,6 +83,12 @@ module.exports.translate = i18n.translate;
 module.exports.translateIn = i18n.translateIn;
 module.exports.translationKeys = i18n.translationKeys;
 
+// Cardano: the networks and the sign-in challenge text (cardano/)
+module.exports.cardano = {
+    ...require('./cardano/network'),
+    ...require('./cardano/message'),
+};
+
 // Real-time engine
 const realtimeEngine = require('./engine');
 const { getPlayerView } = require('./engine/view');
