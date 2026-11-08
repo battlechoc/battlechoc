@@ -9,6 +9,7 @@ export { accountOf };
 // public API, as a real player would get them.
 export const api = `http://127.0.0.1:${process.env.API_PORT || 8091}`;
 
+// origin: another address of the same game (passkeys need http://localhost, not an IP address);
 // unlocked: three finished matches (online play needs three against the AI, shared
 // progression.js), one of them a win worth more than 100 XP; false keeps the player at 0 XP and
 // no matches (tutorial skipped), a new player's first matches.
@@ -17,7 +18,7 @@ export const createPlayer = async (
   browser,
   request,
   name,
-  { unlocked = true } = {}
+  { unlocked = true, origin = "" } = {}
 ) => {
   const { retry, repeatEachIndex } = test.info();
   const username =
@@ -27,7 +28,7 @@ export const createPlayer = async (
     window.localStorage.setItem("battlechoc.apiUrl", url);
   }, api);
   const page = await context.newPage();
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto(`${origin}/`, { waitUntil: "networkidle" });
   await expect.poll(() => accountOf(page), { timeout: 15000 }).toBeTruthy();
   const { refreshToken } = await accountOf(page);
   const { accessToken } = await (
@@ -71,7 +72,7 @@ export const createPlayer = async (
       ).ok()
     ).toBe(true);
   }
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto(`${origin}/`, { waitUntil: "networkidle" });
   await expect(
     page.getByText("Start Game", { exact: true }).first()
   ).toBeVisible({ timeout: 15000 });

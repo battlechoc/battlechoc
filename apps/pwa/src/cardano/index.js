@@ -18,8 +18,7 @@ import { unlockWithPasskey } from "./passkey.js";
 import { isAndroidApp } from "./androidApp.js";
 import { keysFromWords } from "./keys.js";
 
-// iPhone, iPad, and an iPad that says it is a Mac (it has touch points)
-// a phone or tablet (the share sheet saves the backup file there)
+// an Android phone or tablet
 const onAndroid = () => {
   try {
     return /Android/.test(navigator.userAgent || "");
@@ -28,6 +27,7 @@ const onAndroid = () => {
   }
 };
 
+// iPhone, iPad, and an iPad that says it is a Mac (it has touch points)
 const onIos = () => {
   try {
     const agent = navigator.userAgent || "";
@@ -73,6 +73,23 @@ export const confirmWithWords = async (words) => confirmWords(words, deps());
 export const confirmWithPasskey = async (credentialIds) =>
   confirmPasskey({ ...deps(), allowCredentialIds: credentialIds });
 
+/** Tells the password manager to drop a passkey that guards nothing (Chrome 132+, Safari 26). */
+export const forgetPasskey = async (credentialId) => {
+  try {
+    if (
+      typeof PublicKeyCredential !== "undefined" &&
+      typeof PublicKeyCredential.signalUnknownCredential === "function"
+    ) {
+      await PublicKeyCredential.signalUnknownCredential({
+        rpId: location.hostname,
+        credentialId,
+      });
+    }
+  } catch {
+    // nothing to do: it stays in the password manager
+  }
+};
+
 /** The words the player's passkey guards (`credentialIds`: the player's passkeys). */
 export const wordsFromPasskey = (credentialIds) =>
   unlockWithPasskey((id) => cardanoApi.passkeyBackup(id), {
@@ -86,13 +103,14 @@ export const subjectOfWords = async (words) =>
 /**
  * "I already have an account": signs in with the words and makes this device that player. It runs
  * in the game's stats lock (Multiplayer.exclusive), so a merge or name sync that is still going
- * finishes first and none runs halfway through the switch. The words are kept on the device
- * (backed up: the player just typed them). The device's stats become the saved player's (from the
+ * finishes first and none runs halfway through the switch. The words are kept on the device,
+ * backed up the way they came (`source`): "words" typed in, "file" a backup file, "passkey" a
+ * passkey (the server knows that backup, nothing is marked here). The device's stats become the saved player's (from the
  * server, so nothing looks lost until the next merge) plus the matches that never reached the
  * server, which the next start sends to the signed-in account (Multiplayer.mergePlayerStats). The
  * caller reloads the game afterwards, also when a step after the sign-in failed.
  */
-export const connectAccount = (words) =>
+export const connectAccount = (words, { source = "words" } = {}) =>
   multiplayer.exclusive(async () => {
     const session = await signChallenge(words, "sign-in");
     await account.adopt(session);
@@ -100,7 +118,9 @@ export const connectAccount = (words) =>
     try {
       await keyStore.clear();
       await keyStore.save(words);
-      await keyStore.markBackedUp();
+      if (source === "words" || source === "file") {
+        await keyStore.markBackedUp(source);
+      }
     } catch (failure) {
       logger.warn("could not keep the words on this device", failure);
     }
@@ -137,5 +157,6 @@ export {
   encryptBackup,
   decryptBackup,
   saveBackup,
+  isBackupFile,
   BackupFileError,
 } from "./backupFile.js";

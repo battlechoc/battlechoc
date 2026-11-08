@@ -437,3 +437,16 @@ test("the storage is asked for inside the guard: blocked storage, where even rea
   );
   assert.equal(isAndroidApp(blocked), false);
 });
+
+test("the backup mark lists how the words were backed up on this device", async () => {
+  const keyStore = createKeyStore(memoryStore());
+  await keyStore.save(ABANDON);
+  assert.deepEqual(await keyStore.backupMethods(), []);
+  await keyStore.markBackedUp("file");
+  await keyStore.markBackedUp("words");
+  await keyStore.markBackedUp("file");
+  assert.deepEqual(await keyStore.backupMethods(), ["file", "words"]);
+  assert.equal(await keyStore.backedUp(), true);
+  await keyStore.clear();
+  assert.deepEqual(await keyStore.backupMethods(), []);
+});

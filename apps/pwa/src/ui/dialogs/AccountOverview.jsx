@@ -352,7 +352,7 @@ const AccountOverview = (props) => {
         {/* saving the progress with a Cardano key: the own profile, online, where the build has it */}
         {/* mounted while the profile is open: it reads its state each time the profile opens */}
         {props.open && isPlayerAccount && props.online && features.enabled() ? (
-          <SaveProgress />
+          <SaveProgress playerName={playerName} />
         ) : null}
       </div>
     </Dialog>

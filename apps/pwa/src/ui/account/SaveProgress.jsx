@@ -3,6 +3,8 @@ import { createUseStyles } from "react-jss";
 import Button from "../controls/Button";
 import RecoveryWords from "./RecoveryWords";
 import ConnectAccount from "./ConnectAccount";
+import BackupPassword from "./BackupPassword";
+import ConfirmChange from "./ConfirmChange";
 import {
   getCurrentLanguage,
   translate as t,
@@ -10,14 +12,24 @@ import {
 } from "@battlechoc/battlechoc-shared-functions";
 import {
   cardanoApi,
+  createPasskeyBackup,
+  encryptBackup,
   features,
+  forgetPasskey,
   keyStore,
   KeyAlreadyStoredError,
   KeyStoreError,
   NetworkMismatchError,
   newRecoveryWords,
+  PasskeyCancelledError,
+  PasskeyExistsError,
+  PasskeyPrfError,
+  PasskeyUnknownError,
+  passkeySupport,
+  saveBackup,
   signChallenge,
   subjectOfWords,
+  wordsFromPasskey,
 } from "../../cardano";
 import logger from "../../helper/logger";
 import { outlined } from "../styles";
@@ -26,7 +38,9 @@ import { outlined } from "../styles";
 // bottom: "Only on this device" with Save your progress, "Not backed up yet" with Back up now, or
 // Saved. Below it Advanced (the words again, the linked keys) and, on preprod, a "preprod" chip
 // that leads to the privacy policy's section about it. Saving makes a Cardano key from 24 new
-// recovery words on the device and links it to the player (src/cardano).
+// recovery words on the device and links it to the player (src/cardano). Plan 2: the words are
+// backed up by writing them down, a passkey or a backup file ("Backed up with: …" in Advanced);
+// once a passkey exists, showing them needs it; removing a key needs a proof (ConfirmChange).
 
 const useStyles = createUseStyles((theme) => ({
   section: {
@@ -117,6 +131,9 @@ const useStyles = createUseStyles((theme) => ({
 const policyLink = () =>
   `/privacy-policy/#cardano-${getCurrentLanguage() === "de" ? "de" : "en"}`;
 
+// the server keeps at most this many passkeys per player (apps/api/src/cardano.js)
+const MAX_PASSKEYS = 10;
+
 const shortAddress = (address) =>
   address.length > 24
     ? `${address.slice(0, 14)}…${address.slice(-8)}`
@@ -136,11 +153,28 @@ const saveError = (failure) => {
   return t(tr.SAVE_PROGRESS_FAILED);
 };
 
+// what went wrong with a passkey backup, in words a player can act on (none for a closed prompt)
+const passkeyError = (failure) => {
+  if (failure instanceof PasskeyCancelledError) {
+    return null;
+  }
+  if (failure instanceof PasskeyPrfError) {
+    return t(tr.PASSKEY_NO_PRF);
+  }
+  if (failure instanceof PasskeyUnknownError) {
+    return t(tr.PASSKEY_UNKNOWN);
+  }
+  if (failure instanceof PasskeyExistsError) {
+    return t(tr.PASSKEY_EXISTS);
+  }
+  return t(tr.PASSKEY_FAILED);
+};
+
 /**
  * The row; mounted while the profile is open, so it reads the linked keys and the device's words
  * each time the profile opens.
  */
-const SaveProgress = () => {
+const SaveProgress = ({ playerName }) => {
   const classes = useStyles();
   // the player's linked keys (null while they load or could not be read)
   const [identities, setIdentities] = useState(null);
@@ -148,8 +182,17 @@ const SaveProgress = () => {
   const [local, setLocal] = useState({
     words: null,
     subject: null,
-    backedUp: false,
+    methods: [],
   });
+  // the player's passkey backups (all keys; null when they could not be read: then the words
+  // stay closed) and whether this device can make one
+  const [passkeys, setPasskeys] = useState(null);
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const makingPasskey = useRef(false);
+  const [canPasskey, setCanPasskey] = useState(false);
+  // the backup-file password dialog; the key a removal waits for a proof for
+  const [filing, setFiling] = useState(false);
+  const [confirming, setConfirming] = useState(null);
   const [shownWords, setShownWords] = useState(null);
   const [advanced, setAdvanced] = useState(false);
   const [error, setError] = useState(null);
@@ -164,16 +207,20 @@ const SaveProgress = () => {
     } catch (failure) {
       logger.warn("could not read the linked keys", failure);
     }
+    setPasskeys(await cardanoApi.passkeys().catch(() => null));
     try {
       const words = await keyStore.load();
       setLocal({
         words,
         subject: words ? await subjectOfWords(words) : null,
-        backedUp: await keyStore.backedUp(),
+        methods: await keyStore.backupMethods(),
       });
     } catch (failure) {
       logger.warn("could not read the key on this device", failure);
     }
+    setCanPasskey(
+      await features.offerPasskey(passkeySupport).catch(() => false)
+    );
   }, []);
 
   useEffect(() => {
@@ -212,22 +259,97 @@ const SaveProgress = () => {
     }
   };
 
-  const remove = async (subject) => {
-    try {
-      await cardanoApi.removeIdentity(subject);
-      // the words on this device belonged to that key: they would only link it again
-      if (subject === local.subject) {
-        await keyStore.clear();
-      }
-    } catch (failure) {
-      logger.warn("could not remove the key", failure);
+  // a key goes once its removal is confirmed (a proof by an existing key)
+  const remove = async (confirmToken) => {
+    const subject = confirming;
+    await cardanoApi.removeIdentity(subject, confirmToken);
+    // the words on this device belonged to that key: they would only link it again
+    if (subject === local.subject) {
+      await keyStore.clear();
     }
+    setConfirming(null);
     await refresh();
   };
 
   const backedUp = async () => {
-    await keyStore.markBackedUp();
+    await keyStore.markBackedUp("words");
     await refresh();
+  };
+
+  // the words for a backup or to show: with a passkey only after it (else saving a file or another
+  // passkey would hand out the words the passkey guards); closed when the passkeys are unknown
+  const guardedWords = async () => {
+    if (passkeys === null) {
+      throw new PasskeyUnknownError();
+    }
+    const own = passkeys.filter((passkey) => passkey.subject === local.subject);
+    return own.length === 0
+      ? local.words
+      : wordsFromPasskey(own.map((passkey) => passkey.credentialId));
+  };
+
+  const savePasskey = async () => {
+    if (makingPasskey.current) {
+      return;
+    }
+    makingPasskey.current = true;
+    setPasskeyBusy(true);
+    setError(null);
+    let backup;
+    try {
+      const words = await guardedWords();
+      backup = await createPasskeyBackup(words, {
+        playerName,
+        subject: local.subject,
+        excludeCredentialIds: passkeys.map((passkey) => passkey.credentialId),
+      });
+      await cardanoApi.storePasskey(backup);
+    } catch (failure) {
+      logger.warn("could not save a passkey backup", failure);
+      // a passkey made but not kept on the server guards nothing: the password manager drops it
+      if (backup) {
+        await forgetPasskey(backup.credentialId);
+      }
+      setError(passkeyError(failure));
+    } finally {
+      makingPasskey.current = false;
+      setPasskeyBusy(false);
+    }
+    await refresh();
+  };
+
+  const saveFile = async (password) => {
+    try {
+      const words = await guardedWords();
+      const text = await encryptBackup(words, password);
+      const result = await saveBackup(text, { mobile: features.isMobile() });
+      if (result !== "cancelled") {
+        await keyStore.markBackedUp("file");
+      }
+    } catch (failure) {
+      logger.warn("could not save the backup file", failure);
+      setError(
+        failure instanceof PasskeyCancelledError
+          ? null
+          : passkeyError(failure) || t(tr.FILE_SAVE_FAILED)
+      );
+    }
+    setFiling(false);
+    await refresh();
+  };
+
+  const showWords = async () => {
+    setError(null);
+    try {
+      setShownWords(await guardedWords());
+    } catch (failure) {
+      logger.warn("could not open the words with the passkey", failure);
+      setError(
+        failure instanceof PasskeyPrfError
+          ? t(tr.PASSKEY_CANT_UNLOCK)
+          : passkeyError(failure)
+      );
+    }
   };
 
   if (identities === null) {
@@ -240,6 +362,14 @@ const SaveProgress = () => {
     identities.some((identity) => identity.subject === local.subject);
   // in the Android app nothing visibly crypto until the Play Store's declaration (spec, section 7)
   const showKeys = !features.inAndroidApp();
+  const ownPasskeys = (passkeys || []).filter(
+    (passkey) => passkey.subject === local.subject
+  );
+  const methods = [
+    ...(local.methods.includes("words") ? [t(tr.BACKUP_WORDS)] : []),
+    ...(ownPasskeys.length > 0 ? [t(tr.BACKUP_PASSKEY)] : []),
+    ...(local.methods.includes("file") ? [t(tr.BACKUP_FILE)] : []),
+  ];
 
   let status;
   if (!saved) {
@@ -252,16 +382,13 @@ const SaveProgress = () => {
         </Button>
       </>
     );
-  } else if (ownWords && !local.backedUp) {
+  } else if (ownWords && methods.length === 0) {
     status = (
       <>
         <span className={`${classes.text} ${classes.warn}`}>
           {t(tr.BACKUP_MISSING)}
         </span>
-        <button
-          className={classes.link}
-          onClick={() => setShownWords(local.words)}
-        >
+        <button className={classes.link} onClick={showWords}>
           {t(tr.BACK_UP_NOW)}
         </button>
       </>
@@ -313,14 +440,38 @@ const SaveProgress = () => {
         <div className={classes.keys}>
           {ownWords ? (
             <>
-              <button
-                className={classes.link}
-                onClick={() => setShownWords(local.words)}
-              >
-                {t(tr.RECOVERY_WORDS_SHOW)}
-              </button>
+              {methods.length > 0 ? (
+                <span className={classes.text}>
+                  {t(tr.BACKED_UP_WITH, methods.join(", "))}
+                </span>
+              ) : null}
+              <div className={classes.row}>
+                {canPasskey &&
+                passkeys !== null &&
+                passkeys.length < MAX_PASSKEYS ? (
+                  <button
+                    className={classes.link}
+                    disabled={passkeyBusy}
+                    onClick={savePasskey}
+                  >
+                    {t(tr.SAVE_PASSKEY)}
+                  </button>
+                ) : null}
+                {features.offerFileShare() ? (
+                  <button
+                    className={classes.link}
+                    onClick={() => setFiling(true)}
+                  >
+                    {t(tr.SAVE_FILE)}
+                  </button>
+                ) : null}
+                <button className={classes.link} onClick={showWords}>
+                  {t(tr.RECOVERY_WORDS_SHOW)}
+                </button>
+              </div>
               <p className={`${classes.text} ${classes.error}`}>
                 {t(tr.KEY_PROTECTION_NOTE)}
+                {ownPasskeys.length === 0 ? ` ${t(tr.DEVICE_HOLDER_NOTE)}` : ""}
               </p>
             </>
           ) : null}
@@ -338,7 +489,7 @@ const SaveProgress = () => {
                     size="small"
                     disabled={identities.length <= 1}
                     aria-label={`${t(tr.LINKED_KEY_REMOVE)} ${shortAddress(identity.address)}`}
-                    onClick={() => remove(identity.subject)}
+                    onClick={() => setConfirming(identity.subject)}
                   >
                     {t(tr.LINKED_KEY_REMOVE)}
                   </Button>
@@ -351,6 +502,17 @@ const SaveProgress = () => {
         open={connecting}
         stacked
         onClose={() => setConnecting(false)}
+      />
+      <BackupPassword
+        open={filing}
+        onClose={() => setFiling(false)}
+        onSave={saveFile}
+      />
+      <ConfirmChange
+        open={confirming !== null}
+        passkeyIds={(passkeys || []).map((passkey) => passkey.credentialId)}
+        onClose={() => setConfirming(null)}
+        onConfirmed={remove}
       />
       <RecoveryWords
         open={shownWords !== null}

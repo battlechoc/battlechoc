@@ -33,7 +33,7 @@ const sameWords = (a, b) =>
 /**
  * A key store on `store` ({ get, set, add, delete }, like OfflineStore.playerStore; `add` refuses
  * a key that exists, atomically, also across tabs): { save(words), load(), has(), clear(),
- * backedUp(), markBackedUp() }.
+ * backedUp(), backupMethods(), markBackedUp(method) }.
  */
 export const createKeyStore = (store, subtle = globalThis.crypto.subtle) => {
   const has = async () => typeof (await store.get(RECORD_KEY)) !== "undefined";
@@ -96,10 +96,26 @@ export const createKeyStore = (store, subtle = globalThis.crypto.subtle) => {
     await store.delete(RECORD_KEY);
   };
 
-  const backedUp = async () =>
-    (await has()) && (await store.get(BACKED_UP_KEY)) === true;
+  // how the words were backed up on this device: "words" (written down and checked), "file";
+  // `true` is the mark of plan 1 (the checked words)
+  const backupMethods = async () => {
+    if (!(await has())) {
+      return [];
+    }
+    const mark = await store.get(BACKED_UP_KEY);
+    if (mark === true) {
+      return ["words"];
+    }
+    return Array.isArray(mark) ? [...mark].sort() : [];
+  };
 
-  const markBackedUp = () => store.set(BACKED_UP_KEY, true);
+  const backedUp = async () => (await backupMethods()).length > 0;
 
-  return { save, load, has, clear, backedUp, markBackedUp };
+  const markBackedUp = async (method = "words") => {
+    const methods = new Set(await backupMethods());
+    methods.add(method);
+    await store.set(BACKED_UP_KEY, [...methods].sort());
+  };
+
+  return { save, load, has, clear, backedUp, backupMethods, markBackedUp };
 };

@@ -7,6 +7,7 @@ import {
   encryptBackup,
   decryptBackup,
   saveBackup,
+  isBackupFile,
   BackupFileError,
 } from "../../src/cardano/backupFile.js";
 import {
@@ -488,4 +489,48 @@ test("unlocking asks only for the given passkeys; a backup that does not open is
   assert.deepEqual(get.allowCredentials, [
     { type: "public-key", id: new Uint8Array([1, 2, 3]) },
   ]);
+});
+
+test("isBackupFile tells a backup file from anything else without the password", async () => {
+  assert.equal(
+    isBackupFile(await encryptBackup(ABANDON, "choco-late-42")),
+    true
+  );
+  for (const text of [
+    "",
+    "{}",
+    '{"hello":"world"}',
+    "not json",
+    "[]",
+    "null",
+  ]) {
+    assert.equal(isBackupFile(text), false, text);
+  }
+});
+
+test("confirming with the passkey asks only for the given passkeys", async () => {
+  const authenticator = fakeAuthenticator({ prfOnCreate: true });
+  const backup = await createPasskeyBackup(ABANDON, {
+    playerName: "Carolin",
+    subject: "stake:abc",
+    rpId: "battlechoc.com",
+    credentials: authenticator,
+  });
+  const asked = [];
+  const credentials = {
+    ...authenticator,
+    get: async (options) => {
+      asked.push(options.publicKey.allowCredentials);
+      return authenticator.get(options);
+    },
+  };
+  await confirmWithPasskey({
+    api: { ...confirmApi(), passkeyBackup: async () => backup },
+    network: preprod,
+    rpId: "battlechoc.com",
+    credentials,
+    allowCredentialIds: [backup.credentialId],
+  });
+  assert.equal(asked.length, 1);
+  assert.equal(asked[0].length, 1);
 });

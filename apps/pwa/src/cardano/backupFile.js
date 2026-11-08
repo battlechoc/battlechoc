@@ -69,13 +69,13 @@ export const encryptBackup = async (words, password) => {
   );
 };
 
-/** The words of a backup file; BackupFileError when it is no backup or the password is wrong. */
-export const decryptBackup = async (text, password) => {
+// the parts of a backup file, or null when the text is no backup of this version
+const parseBackup = (text) => {
   let file;
   try {
     file = JSON.parse(text);
   } catch {
-    throw new BackupFileError("not-a-backup");
+    return null;
   }
   const isObject = (value) => value !== null && typeof value === "object";
   const kdf = isObject(file) && isObject(file.kdf) ? file.kdf : {};
@@ -93,9 +93,19 @@ export const decryptBackup = async (text, password) => {
     typeof kdf.salt === "string" &&
     typeof cipher.iv === "string" &&
     typeof file.data === "string";
-  if (!fitting) {
+  return fitting ? { kdf, cipher, data: file.data } : null;
+};
+
+/** Whether the text is a backup file this game can open (before asking for its password). */
+export const isBackupFile = (text) => parseBackup(text) !== null;
+
+/** The words of a backup file; BackupFileError when it is no backup or the password is wrong. */
+export const decryptBackup = async (text, password) => {
+  const file = parseBackup(text);
+  if (!file) {
     throw new BackupFileError("not-a-backup");
   }
+  const { kdf, cipher } = file;
   let salt;
   let iv;
   let data;

@@ -51,6 +51,7 @@ function fmt(str, values) {
 const placeholders = Object.freeze({
     RECOVERY_WORDS_WORD: ['n'],
     WORDS_COUNT: ['n'],
+    BACKED_UP_WITH: ['list'],
     WARNING_PLAYER_NOT_FOUND: ['name'],
     PLAYER_NAME_GENERATED_BODY: ['name'],
     LAB_TABLE_HINT: ['ingredient'],

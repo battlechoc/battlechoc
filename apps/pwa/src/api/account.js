@@ -1,6 +1,7 @@
 import { createClient } from "../helper/http.js";
 import OfflineStore from "../OfflineStore.js";
 import logger from "../helper/logger.js";
+import { createKeyStore } from "../cardano/keyStore.js";
 
 // Device account: on the first launch the API creates a player and returns a refresh token,
 // which stays in IndexedDB. Short-lived access tokens are fetched with it when needed. Without
@@ -29,6 +30,8 @@ class Account {
     this.accessToken = undefined;
     this.expiresAt = 0;
     this.pending = undefined;
+    // called once a session ended because its key was removed (Multiplayer shows why)
+    this.onSessionEnded = undefined;
   }
 
   isReady() {
@@ -67,9 +70,25 @@ class Account {
       this.remember(data);
     } catch (error) {
       if (error.response && error.response.status === 401) {
-        // the account is gone on the server (e.g. a reset backend): start a new one
-        logger.warn("stored account was rejected, creating a new one");
+        const ended =
+          error.response.data && error.response.data.error === "session ended";
+        if (ended) {
+          // the key that signed this device in was removed (on another device): its words are
+          // no use here any more, so the game forgets them before it starts anew
+          logger.warn("the session ended with its key, creating a new account");
+          await createKeyStore(OfflineStore.playerStore)
+            .clear()
+            .catch((failure) =>
+              logger.warn("could not forget the removed key", failure)
+            );
+        } else {
+          // the account is gone on the server (e.g. a reset backend): start a new one
+          logger.warn("stored account was rejected, creating a new one");
+        }
         await this.create();
+        if (ended && typeof this.onSessionEnded === "function") {
+          this.onSessionEnded();
+        }
       } else {
         throw error;
       }

@@ -234,7 +234,7 @@
         <ul>
           <li>Spielerkonto und Spieldaten: solange das Konto besteht. Auf Wunsch löschen wir es (Abschnitt 10).</li>
           <li>Problemberichte: 60 Tage.</li>
-          <li>Fingerabdrücke verknüpfter Schlüssel: bis du den Schlüssel entfernst oder dein Konto gelöscht wird. Anmelde-Zufallszahlen: bis zur Anmeldung, nicht genutzte höchstens etwa eine Stunde.</li>
+          <li>Fingerabdrücke verknüpfter Schlüssel und mit Passkeys gesicherte Wörter (verschlüsselt): bis du den Schlüssel entfernst oder dein Konto gelöscht wird. Anmelde-Zufallszahlen: bis zur Anmeldung, nicht genutzte höchstens etwa eine Stunde.</li>
           <li>Push-Adressen: bis du die Erlaubnis widerrufst, der Push-Dienst sie für ungültig erklärt oder dein Konto gelöscht wird.</li>
         </ul>
 
@@ -271,17 +271,24 @@
         <p>
           Wenn du „Fortschritt sichern“ wählst, erzeugt das Spiel auf deinem Gerät einen Schlüssel aus
           24 Sicherungswörtern. Die Wörter bleiben auf deinem Gerät, verschlüsselt gespeichert, und auf
-          der Liste, die du aufbewahrst; wir bekommen sie nie. Die Verschlüsselung schützt sie nicht vor
+          der Liste, die du aufbewahrst; lesbar bekommen wir sie nie. Die Verschlüsselung schützt sie nicht vor
           allem (etwa nicht vor Programmen, die im Spiel selbst laufen), deshalb ist deine Liste
           wichtig. Unser Server speichert einen Fingerabdruck (Hash) des öffentlichen Teils des
           Schlüssels, verknüpft mit deinem Spielerkonto, damit du mit den Wörtern auf einem anderen
           Gerät weiterspielen kannst. Für eine Anmeldung speichert er kurz eine Zufallszahl, die
           öffentliche Adresse des Schlüssels und, beim Verknüpfen, dein Spielerkonto: bis die Anmeldung
           erfolgt, nicht genutzte Einträge höchstens etwa eine Stunde. Die Adresse lässt sich aus dem
-          öffentlichen Schlüssel ableiten und ist nicht geheim. Rechtsgrundlage ist die Bereitstellung
+          öffentlichen Schlüssel ableiten und ist nicht geheim. Sicherst du die Wörter mit einem
+          Passkey, speichert unser Server sie verschlüsselt mit einem Schlüssel, den nur dein Passkey
+          liefert, zusammen mit der Kennung des Passkeys und verknüpft mit deinem Spielerkonto; wir
+          können sie nicht lesen. Wer die Kennung eines Passkeys kennt, kann die verschlüsselten Wörter
+          ohne Anmeldung abrufen, sie aber ohne den Passkey nicht öffnen. Eine Sicherungsdatei verschlüsselt das Spiel mit deinem
+          Passwort, und sie bleibt bei dir. Eine Anmeldung mit einem Schlüssel merkt sich, welcher
+          Schlüssel es war, damit sie endet, wenn du ihn entfernst. Rechtsgrundlage ist die Bereitstellung
           des Spiels und seiner Funktionen (Art. 6 Abs. 1 lit. b DSGVO). Einen verknüpften Schlüssel
-          kannst du in deinem Profil entfernen (nicht den letzten); mit deinem Konto löschen wir auch
-          die Fingerabdrücke.
+          kannst du in deinem Profil entfernen (nicht den letzten); mit ihm gehen seine mit Passkeys
+          gesicherten Wörter. Mit deinem Konto löschen wir auch die Fingerabdrücke und die mit Passkeys
+          gesicherten Wörter.
         </p>
         <p>
           Du willst verstehen, was eine Blockchain ist?
@@ -401,7 +408,7 @@
         <ul>
           <li>Player account and game data: as long as the account exists. We delete it on request (section 10).</li>
           <li>Problem reports: 60 days.</li>
-          <li>Fingerprints of linked keys: until you remove the key or your account is deleted. Sign-in random numbers: until you sign in; unused ones at most about one hour.</li>
+          <li>Fingerprints of linked keys and words backed up with passkeys (encrypted): until you remove the key or your account is deleted. Sign-in random numbers: until you sign in; unused ones at most about one hour.</li>
           <li>Push addresses: until you withdraw the permission, the push service declares them invalid or your account is deleted.</li>
         </ul>
 
@@ -436,15 +443,22 @@
         <p>
           When you choose "Save your progress", the game makes a key on your device from 24 recovery
           words. The words stay on your device, stored encrypted, and on the list you keep; we never
-          receive them. The encryption does not protect them from everything (for example not from
+          receive them in readable form. The encryption does not protect them from everything (for example not from
           programs running inside the game itself), which is why your list matters. Our server stores a
           fingerprint (hash) of the key's public part, linked to your player account, so you can
           continue with the words on another device. For a sign-in it briefly stores a random number,
           the key's public address and, when linking, your player account: until you sign in, unused
           entries at most about one hour. The address can be derived from the public key and is not
-          secret. The legal basis is providing the game and its features (Art. 6 (1) (b) GDPR). You can
-          remove a linked key in your profile (not the last one); when we delete your account, its
-          fingerprints go too.
+          secret. If you back up the words with a passkey, our server stores them encrypted with a key
+          only your passkey can give, together with the passkey's identifier and linked to your player
+          account; we cannot read them. Whoever knows a passkey's identifier can fetch the encrypted
+          words without signing in, but cannot open them without the passkey. A backup file is encrypted by the game with
+          your password and stays with you. A sign-in with a key remembers which key it was, so that it
+          ends when you remove that key. The legal basis is providing the game and its features
+          (Art. 6 (1) (b) GDPR). You can
+          remove a linked key in your profile (not the last one); its words backed up with passkeys go
+          with it. When we delete your account, its fingerprints and the words backed up with passkeys
+          go too.
         </p>
         <p>
           Want to understand what a blockchain is?

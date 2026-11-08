@@ -53,7 +53,7 @@ export const cardanoApi = {
   /** Keeps a passkey backup ({ credentialId, subject, iv, data }). */
   storePasskey: (backup) => post("/user/passkeys", backup),
 
-  /** The encrypted words a passkey guards ({ subject, iv, data }); undefined when none. */
+  /** The encrypted words a passkey guards ({ iv, data }); undefined when none. */
   passkeyBackup: async (credentialId) => {
     try {
       return (
