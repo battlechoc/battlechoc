@@ -144,6 +144,11 @@
           Statistiken, eine unterbrochene Partie, den Zugangsschlüssel deines Spielerkontos und, wenn
           du deinen Fortschritt sicherst, verschlüsselt deine 24 Sicherungswörter (Abschnitt 11). Ein
           Service Worker hält die Dateien des Spiels bereit, damit es auch ohne Verbindung startet.
+          Verbindest du eine Cardano-Wallet, merkt sich der Wallet-Baustein der Cardano Foundation im
+          lokalen Speicher (localStorage), welche Wallet zuletzt verbunden war
+          („cf-wallet-connected“, „cf-last-connected-wallet“, „cf-requested-extensions“; das Spiel
+          trennt die Wallet nach jeder Nutzung wieder), und der QR-Weg eine zufällige Kennung seiner
+          Verbindung („peer-connect-dapp-id“, gelöscht, wenn du die Wallet-Auswahl schließt).
           Das ist nötig, damit das Spiel funktioniert (§ 25 Abs. 2 Nr. 2 TDDDG). Was davon an unseren
           Server geht, steht in den folgenden Abschnitten. Du löschst diese Daten, indem du die
           Website-Daten von battlechoc.com in deinem Browser löschst oder die App deinstallierst.
@@ -234,7 +239,7 @@
         <ul>
           <li>Spielerkonto und Spieldaten: solange das Konto besteht. Auf Wunsch löschen wir es (Abschnitt 10).</li>
           <li>Problemberichte: 60 Tage.</li>
-          <li>Fingerabdrücke verknüpfter Schlüssel und mit Passkeys gesicherte Wörter (verschlüsselt): bis du den Schlüssel entfernst oder dein Konto gelöscht wird. Anmelde-Zufallszahlen: bis zur Anmeldung, nicht genutzte höchstens etwa eine Stunde.</li>
+          <li>Fingerabdrücke verknüpfter Schlüssel und mit Passkeys gesicherte Wörter (verschlüsselt): bis du den Schlüssel entfernst oder dein Konto gelöscht wird. Anmelde-Zufallszahlen: bis zur Anmeldung, nicht genutzte höchstens etwa eine Stunde. Verbindungscodes für Wallets (als Hash): 10 Minuten gültig, gelöscht spätestens nach etwa einer Stunde.</li>
           <li>Push-Adressen: bis du die Erlaubnis widerrufst, der Push-Dienst sie für ungültig erklärt oder dein Konto gelöscht wird.</li>
         </ul>
 
@@ -291,6 +296,23 @@
           gesicherten Wörter.
         </p>
         <p>
+          Verbindest du deine eigene Cardano-Wallet, signiert sie einen kurzen Text von battlechoc; dabei
+          wird nichts bezahlt und kein Guthaben bewegt. Unser Server speichert wie beim Schlüssel des
+          Spiels nur einen Fingerabdruck (Hash) des Wallet-Schlüssels, verknüpft mit deinem Spielerkonto;
+          eine Wallet ohne Stake-Schlüssel mit dem Fingerabdruck ihres Zahlungsschlüssels. Sonst speichern
+          wir nichts aus deiner Wallet. Auf dem Handy erzeugt das Spiel dafür einen Verbindungscode, der
+          eine Seite von battlechoc im eigenen Browser deiner Wallet öffnet; unser Server bewahrt den Code
+          nur als Hash und verknüpft mit deinem Spielerkonto auf: er gilt 10 Minuten und wird spätestens
+          nach etwa einer Stunde gelöscht. Verbindest du eine
+          Handy-Wallet über einen QR-Code, bauen dein Browser und die Wallet eine direkte Verbindung über
+          den öffentlichen PeerJS-Server (0.peerjs.com, betrieben vom PeerJS-Projekt), dessen
+          Weiterleitungsserver (turn.peerjs.com, in der EU und den USA) und einen STUN-Server von Google
+          (USA) auf. Diese sehen deine IP-Adresse und eine zufällige Kennung der Verbindung; battlechoc
+          schickt ihnen nichts weiter. Das geschieht nur, wenn du „Handy-Wallet (QR-Code)“ wählst; die
+          Verbindung besteht dann, bis das Spiel neu geladen wird. Rechtsgrundlage
+          ist die Bereitstellung des Spiels und seiner Funktionen (Art. 6 Abs. 1 lit. b DSGVO).
+        </p>
+        <p>
           Du willst verstehen, was eine Blockchain ist?
           <a href="https://cardanofoundation.org/academy/course/blockchain-fundamentals" rel="noopener">Mehr dazu im kostenlosen Kurs „Blockchain Fundamentals“ der Cardano Academy</a>
           (auf Englisch).
@@ -323,7 +345,11 @@
           (language, volume, click sound, fullscreen), your progress and statistics, an interrupted
           match, the key of your player account and, if you save your progress, your 24 recovery
           words, encrypted (section 11). A service worker keeps the game's files so it
-          also starts without a connection. This is necessary for the game to work (Section 25 (2)
+          also starts without a connection. If you connect a Cardano wallet, the Cardano Foundation's
+          wallet component remembers in local storage (localStorage) which wallet was connected last
+          ("cf-wallet-connected", "cf-last-connected-wallet", "cf-requested-extensions"; the game
+          disconnects the wallet after each use), and the QR path a random identifier of its
+          connection ("peer-connect-dapp-id", deleted when you close the wallet choice). This is necessary for the game to work (Section 25 (2)
           no. 2 TDDDG). What of this reaches our server is described below. You delete this data by
           clearing the site data of battlechoc.com in your browser or by uninstalling the app.
         </p>
@@ -408,7 +434,7 @@
         <ul>
           <li>Player account and game data: as long as the account exists. We delete it on request (section 10).</li>
           <li>Problem reports: 60 days.</li>
-          <li>Fingerprints of linked keys and words backed up with passkeys (encrypted): until you remove the key or your account is deleted. Sign-in random numbers: until you sign in; unused ones at most about one hour.</li>
+          <li>Fingerprints of linked keys and words backed up with passkeys (encrypted): until you remove the key or your account is deleted. Sign-in random numbers: until you sign in; unused ones at most about one hour. Link codes for wallets (as a hash): valid for 10 minutes, deleted after about an hour at the latest.</li>
           <li>Push addresses: until you withdraw the permission, the push service declares them invalid or your account is deleted.</li>
         </ul>
 
@@ -459,6 +485,22 @@
           remove a linked key in your profile (not the last one); its words backed up with passkeys go
           with it. When we delete your account, its fingerprints and the words backed up with passkeys
           go too.
+        </p>
+        <p>
+          If you connect your own Cardano wallet, it signs a short text from battlechoc; nothing is paid
+          and no funds move. As with the game's own key, our server stores only a fingerprint (hash) of
+          the wallet's key, linked to your player account; for a wallet without a stake key, the
+          fingerprint of its payment key. We store nothing else from your wallet. On a phone, the game
+          makes a link code for this that opens a page of battlechoc in your wallet's own browser; our
+          server keeps the code only as a hash, linked to your player account: it is valid for 10 minutes and
+          deleted after about an hour at the latest. If
+          you connect a phone wallet by scanning a QR code, your browser and the wallet set up a direct
+          connection through the public PeerJS server (0.peerjs.com, run by the PeerJS project), its
+          relay servers (turn.peerjs.com, in the EU and the USA) and a STUN server of Google (USA). They
+          see your IP address and a random identifier of the connection; battlechoc sends them nothing
+          else. This only happens when you choose "Phone wallet (QR code)"; the connection then stays until
+          the game is reloaded. The legal basis is providing the game and
+          its features (Art. 6 (1) (b) GDPR).
         </p>
         <p>
           Want to understand what a blockchain is?

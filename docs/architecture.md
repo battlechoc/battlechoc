@@ -73,6 +73,17 @@ the balance it started with.
   an account" too. Adding a further key or removing one needs a fresh proof by an existing key
   (a confirm token, `X-Battlechoc-Confirm`). Paths that only real phones can check stay hidden on
   iOS until listed in `VITE_CARDANO_CONFIRMED` (`passkey-ios`, `file-ios`).
+- **The wallet door** (plan 3): the Cardano Foundation's `ConnectWalletList`
+  (`src/ui/account/WalletDoor.jsx`, loaded only when it opens, never precached without a network)
+  lists extensions, a phone wallet by QR code (CIP-45, peer-connect) and on phones the CIP-158
+  wallets. The signing is the game's own (`src/cardano/wallet.js`: CIP-30 `signData` of exactly the
+  challenge text; the core's `signMessage` breaks line breaks). A wallet no player knows is linked to
+  the device's player (a proof first if it has keys); a known one gives that player's session, and
+  the game asks which progress to keep as with words. On a phone the door makes a link code and
+  opens `web+cardano://browse/v1?uri=<origin>/link/?code=…`: the link page (`link/index.html`,
+  `src/link/main.js`, a build of its own after the game's, `vite.link.config.js`) signs in the
+  wallet's own browser, and the game polls the code. Hidden in the Android app; deep links only
+  with `cip158` in `VITE_CARDANO_CONFIRMED`.
 
 ## The server (`apps/api`)
 
@@ -83,8 +94,12 @@ the balance it started with.
   `GET|DELETE /user/identities`, `GET /user/progress`; plan 2: purpose `confirm` (confirm tokens
   for key changes), `POST|GET /user/passkeys`, `GET /auth/cardano/passkeys/:credentialId`; removing
   a key also ends the sessions it signed in (except the remover's): their refresh answers 401
-  `session ended`, and the game then forgets that key's words and starts a new account. Off
-  without `CARDANO_NETWORK`.
+  `session ended`, and the game then forgets that key's words and starts a new account. Plan 3:
+  purpose `connect` (a wallet: unknown → linked, known → a session for its player), wallet
+  addresses as bech32 or CIP-30 hex, `pay:<hash>` subjects for wallets without a stake key, link
+  codes (`POST /user/link-codes`, `GET /user/link-codes/:code`; SHA-256 hashed, 10 minutes, one per
+  player, a signature claims the code atomically; a known wallet's session is made at the poll),
+  `POST /accounts/logout`. Off without `CARDANO_NETWORK`.
 - **Express** serves the REST routes (`src/routes/`), **ws** the live WebSocket (`src/live/`), on
   one HTTP server. `src/config.js` reads and checks the environment once at the start.
 - **Postgres** stores players, sessions, matches with their actions (for recovery after a
