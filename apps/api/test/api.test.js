@@ -182,22 +182,24 @@ describe('players', () => {
         expect((await me.get('/user/friends')).body).toEqual([]);
     });
 
-    test('ranks and highscore: rated players by rating, then the unrated ones; lookups by name', async () => {
+    test('ranks and highscore: rated players by stars, then the unrated ones; lookups by name', async () => {
         const { app, pool } = await setup();
         const names = ['Anna', 'Bert', 'Cleo', 'Dora'];
-        // Anna never played a rated match; the others did
-        const ratings = [null, 1550, 1600, 1700];
+        // Anna never played a rated match; the others did. Stars = rating - 2 x deviation: Dora has
+        // the highest rating, but it is uncertain, so she has the fewest stars
+        const ratings = [null, [1550, 50], [1600, 50], [1700, 250]];
         const accounts = [];
         for (const [index, name] of names.entries()) {
             const player = await named(app, name);
             await pool.query('UPDATE players SET xp = $1 WHERE id = $2', [(index + 1) * 100, player.playerId]);
             if (ratings[index] !== null) {
-                await pool.query('UPDATE players SET rating = $1, rated_matches = 1 WHERE id = $2', [ratings[index], player.playerId]);
+                await pool.query('UPDATE players SET rating = $1, rating_deviation = $2, rated_matches = 1 WHERE id = $3',
+                    [...ratings[index], player.playerId]);
             }
             accounts.push(player);
         }
-        expect((await accounts[3].get('/rank')).body.ranking).toBe(1);
-        expect((await accounts[1].get('/rank')).body.ranking).toBe(3);
+        expect((await accounts[2].get('/rank')).body.ranking).toBe(1);
+        expect((await accounts[3].get('/rank')).body.ranking).toBe(3);
         // an unrated player shows 0 and comes after every rated one
         expect((await accounts[0].get('/rank')).body).toEqual({ ranking: 4 });
         const highscore = await accounts[0].get('/highscore').expect(200);
@@ -205,14 +207,13 @@ describe('players', () => {
         // the own entry of an unrated player: name, rank and score 0, never the XP
         expect(highscore.body.own).toMatchObject({ name: 'Anna', ranking: 4, score: 0 });
         expect(highscore.body.own).not.toHaveProperty('xp');
-        expect((await accounts[1].get('/highscore')).body.own).toMatchObject({ name: 'Bert', ranking: 3, rating: 1550 });
-        expect(highscore.body.list.map(entry => [entry.name, entry.ranking, entry.rating])).toEqual([
-            ['Dora', 1, 1700], ['Cleo', 2, 1600], ['Bert', 3, 1550], ['Anna', 4, 1500],
+        expect((await accounts[1].get('/highscore')).body.own).toMatchObject({ name: 'Bert', ranking: 2, score: 1450, rating: 1550 });
+        expect(highscore.body.list.map(entry => [entry.name, entry.ranking, entry.score])).toEqual([
+            ['Cleo', 1, 1500], ['Bert', 2, 1450], ['Dora', 3, 1200], ['Anna', 4, 0],
         ]);
-        // the public score is the rating (XP can be faked offline); unrated players show 0
-        expect((await accounts[0].get('/user/cleo').expect(200)).body[0]).toMatchObject({ name: 'Cleo', score: 1600, rating: 1600, ranking: 2 });
+        // the public score is the stars (XP can be faked offline); unrated players show 0
+        expect((await accounts[0].get('/user/cleo').expect(200)).body[0]).toMatchObject({ name: 'Cleo', score: 1500, rating: 1600, ranking: 1 });
         expect((await accounts[3].get('/user/anna').expect(200)).body[0]).toMatchObject({ name: 'Anna', score: 0, ranking: 4 });
-        highscore.body.list.slice(0, 3).forEach(entry => expect(entry.score).toBe(entry.rating));
         await accounts[0].get('/user/nobody').expect(404);
     });
 

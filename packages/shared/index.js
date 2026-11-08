@@ -57,6 +57,10 @@ module.exports.applyStat = equipment.applyStat;
 const rating = require('./rating');
 module.exports.updateRating = rating.updateRating;
 module.exports.rateMatch = rating.rateMatch;
+module.exports.rateAgainstAi = rating.rateAgainstAi;
+module.exports.starsOf = rating.starsOf;
+module.exports.AI_RATING_REACH = rating.AI_RATING_REACH;
+module.exports.STARS_DEVIATIONS = rating.STARS_DEVIATIONS;
 module.exports.EmptyPlayerStats = EmptyPlayerStats;
 module.exports.PlayerType = PlayerType;
 

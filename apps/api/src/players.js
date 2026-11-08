@@ -1,7 +1,7 @@
 // Player data access and the response objects the PWA expects (stats and player infos).
 
 const crypto = require('crypto');
-const { EmptyPlayerStats, sanitizeLoadout, engine, StarterKit } = require('@battlechoc/battlechoc-shared-functions');
+const { EmptyPlayerStats, sanitizeLoadout, engine, StarterKit, starsOf, STARS_DEVIATIONS } = require('@battlechoc/battlechoc-shared-functions');
 const { resultOf, xpOf } = require('./xp');
 const { isValidUsername, randomName } = require('./names');
 const pantry = require('./pantry');
@@ -195,12 +195,17 @@ const stats = async (pool, playerId) => {
     return player ? statsOf(pool, player) : undefined;
 };
 
-// Every named player is on the highscore list. Its order: the shown score (the rating after
-// rated matches, 0 before), then who joined first; so every player has a rank of their own,
-// also the only player or several with 0.
-const score = table => `CASE WHEN ${table}.rated_matches > 0 THEN ${table}.rating ELSE 0 END`;
+// Every named player is on the highscore list. Its order: the shown score (the stars: the rating
+// minus twice its deviation after rated matches, never below 0; 0 before), then who joined first;
+// so every player has a rank of their own, also the only player or several with 0.
+const cautious = table => `${table}.rating - ${STARS_DEVIATIONS} * ${table}.rating_deviation`;
+const score = table => `CASE WHEN ${table}.rated_matches > 0 AND ${cautious(table)} > 0 THEN ${cautious(table)} ELSE 0 END`;
 const ORDER = `${score('players')} DESC, created_at ASC, id ASC`;
-const scoreOf = player => (Number(player.rated_matches) > 0 ? Number(player.rating) : 0);
+const scoreOf = player => starsOf({
+    rating: Number(player.rating),
+    deviation: Number(player.rating_deviation),
+    ratedMatches: Number(player.rated_matches),
+});
 const HIGHSCORE_PAGE_SIZE = 10;
 
 /**
@@ -237,8 +242,8 @@ const playerInfos = async (db, rows, ranks) => {
     const ranking = ranks || await ranksOf(db, rows);
     return rows.map(player => ({
         name: player.username || EmptyPlayerStats.username,
-        // what others see is the rating (verified matches only), never the XP, which offline matches feed
-        score: Math.round(scoreOf(player)),
+        // what others see is the stars (verified matches only), never the XP, which offline matches feed
+        score: scoreOf(player),
         rating: Math.round(player.rating),
         ...results.get(player.id),
         ranking: ranking.get(player.id),

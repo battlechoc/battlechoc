@@ -388,7 +388,7 @@ module.exports = {
     "LAB_FAILED": "Ça n’a pas marché. Réessaie.",
     "LAB_NO_RECIPES": "Aucune recette découverte. Expérimente sur la table du labo !",
     "LAB_EQUIPMENT": "Équipement",
-    "HIGHSCORE_EMPTY": "Aucune partie classée pour l'instant – joue en ligne contre d'autres joueurs pour obtenir un rang.",
+    "HIGHSCORE_EMPTY": "Pas encore d'étoiles – joue en ligne contre d'autres joueurs ou contre l'IA pour obtenir un rang.",
     "UNLOCK_NEW_FEATURES": "Nouvelles fonctions débloquées : Choclab et Jouer entre amis !",
     "UNLOCK_TITLE": "Débloqué !",
     "UNLOCK_BUILDINGS_HINT": "De nouveaux bâtiments pour toi :",

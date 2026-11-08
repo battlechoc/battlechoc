@@ -203,8 +203,9 @@ class Lobby {
         room.submit(index, connection, message);
     }
 
-    // credits a verified match: drops and XP per human player, a rating change between two humans;
-    // safe to run twice for the same room (after a restart), each part is credited once
+    // credits a verified match: drops and XP per human player, a rating change (the stars) between
+    // two humans and against the server AI; safe to run twice for the same room (after a restart),
+    // each part is credited once
     matchEnded(room) {
         this.challenges.matchEnded(room.id);
         const humans = room.humanIndexes();
@@ -223,6 +224,13 @@ class Lobby {
             if (humans.length === 2 && ran && room.kind !== 'challenge') {
                 const scoreA = winners.length === 2 ? 0.5 : winners[0] === 0 ? 1 : 0;
                 ratings = (await rewards.rateMatch(this.pool, room.id, room.playerIds, scoreA)) || {};
+            }
+            // against the server AI: rated against the fixed rating of its ladder step
+            const ai = humans.length === 1 && ran && room.kind === 'ai' ? room.aiRating() : null;
+            if (ai) {
+                const [human] = humans;
+                const score = winners.length === 2 ? 0.5 : winners.includes(human) ? 1 : 0;
+                ratings = (await rewards.rateAiMatch(this.pool, room.id, room.playerIds[human], ai, score)) || {};
             }
             for (const index of humans) {
                 const playerId = room.playerIds[index];
