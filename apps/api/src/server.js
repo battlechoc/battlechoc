@@ -85,6 +85,7 @@ const main = async ({ wrap = app => app, env = process.env } = {}) => {
         challengeInfo,
         cardanoNetwork: config.cardanoNetwork,
         ...(config.accountsPerMinute ? { accountsPerMinute: config.accountsPerMinute } : {}),
+        ...(config.cardanoPerMinute ? { cardanoPerMinute: config.cardanoPerMinute } : {}),
     });
     const server = http.createServer(wrap(app, { pool }));
     live = createLive({ server, pool, auth, origins: config.corsOrigins, config: config.live });

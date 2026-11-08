@@ -41,6 +41,13 @@ describe('the sign-in challenge text', () => {
         expect(text.split('\n')[6]).toBe('Action: link');
     });
 
+    test('confirming a change has its own first line and statement', () => {
+        const text = cardano.challengeMessage({ ...input, purpose: 'confirm' }).split('\n');
+        expect(text[0]).toBe('battlechoc.com wants you to confirm a change with your Cardano account:');
+        expect(text[3]).toBe('Confirm a change to your battlechoc player.');
+        expect(text[6]).toBe('Action: confirm');
+    });
+
     test('an unknown purpose is refused', () => {
         expect(() => cardano.challengeMessage({ ...input, purpose: 'pay' })).toThrow();
     });

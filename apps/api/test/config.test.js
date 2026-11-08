@@ -165,6 +165,12 @@ describe('configuration', () => {
             .toMatch(/ACCOUNTS_PER_MINUTE must be a positive whole number/));
     });
 
+    test('Cardano sign-in requests per minute and address: the default unless set (browser tests)', () => {
+        expect(loadConfig(development).cardanoPerMinute).toBeUndefined();
+        expect(loadConfig({ ...development, CARDANO_PER_MINUTE: '500' }).cardanoPerMinute).toBe(500);
+        expect(problemsOf({ ...development, CARDANO_PER_MINUTE: '0' })).toMatch(/CARDANO_PER_MINUTE must be a positive whole number/);
+    });
+
     test('the Cardano network: off when not set, preprod or mainnet, nothing else', () => {
         expect(loadConfig({ ...development, CARDANO_NETWORK: '' }).cardanoNetwork).toBeNull();
         expect(loadConfig({ ...development, CARDANO_NETWORK: 'preprod' }).cardanoNetwork).toEqual({ name: 'preprod', networkId: 0 });

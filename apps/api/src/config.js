@@ -14,6 +14,8 @@
 //   LIVE_DISCONNECT_GRACE_MS, LIVE_AI_FALLBACK_MS, LIVE_INVITE_TTL_MS     live timings (tests)
 //   ACCOUNTS_PER_MINUTE       new accounts per minute and address (default 10, app.js); the
 //                             browser tests create many from one address
+//   CARDANO_PER_MINUTE        Cardano sign-in requests per minute and address (default 30); the
+//                             browser tests too
 //   DB_POOL_MAX, DB_CONNECTION_TIMEOUT_MS, DB_IDLE_TIMEOUT_MS, DB_STATEMENT_TIMEOUT_MS
 //                             the connection pool, see createPool in db.js for the defaults
 //   CARDANO_NETWORK           "preprod" or "mainnet": turns on signing in with a Cardano key on that
@@ -159,6 +161,12 @@ const loadConfig = (env = process.env) => {
         problems.push(`ACCOUNTS_PER_MINUTE must be a positive whole number, not "${accountsText}"`);
     }
 
+    const cardanoLimitText = read(env, 'CARDANO_PER_MINUTE');
+    const cardanoPerMinute = typeof cardanoLimitText === 'undefined' ? undefined : Number(cardanoLimitText);
+    if (typeof cardanoLimitText !== 'undefined' && !(isWholeNumber(cardanoLimitText) && cardanoPerMinute > 0)) {
+        problems.push(`CARDANO_PER_MINUTE must be a positive whole number, not "${cardanoLimitText}"`);
+    }
+
     const cardanoNetworkText = read(env, 'CARDANO_NETWORK');
     const cardanoNetwork = typeof cardanoNetworkText === 'undefined' ? null : networkOf(cardanoNetworkText);
     if (typeof cardanoNetworkText !== 'undefined' && cardanoNetwork === null) {
@@ -186,6 +194,7 @@ const loadConfig = (env = process.env) => {
         matchRetentionDays,
         cardanoNetwork,
         accountsPerMinute,
+        cardanoPerMinute,
     });
 };
 

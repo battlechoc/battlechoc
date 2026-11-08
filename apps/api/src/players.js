@@ -348,10 +348,11 @@ const identitiesOf = async (pool, playerId) => {
 
 /**
  * Removes one of a player's Cardano keys: false when the player has no such key, LastIdentityError
- * when it is their last one (they could not sign in anywhere else any more).
+ * when it is their last one (they could not sign in anywhere else any more). `keepSession`: the
+ * session that removes it stays, also when that key signed it in.
  */
 class LastIdentityError extends Error {}
-const removeIdentity = (pool, playerId, subject) => withTransaction(pool, async client => {
+const removeIdentity = (pool, playerId, subject, { keepSession = null } = {}) => withTransaction(pool, async client => {
     // the player's row is locked: two removals at once (also from two API processes) wait for each other
     await client.query('SELECT id FROM players WHERE id = $1 FOR UPDATE', [playerId]);
     const keys = await count(client, "SELECT COUNT(*) AS n FROM identities WHERE player_id = $1 AND provider = 'cardano'", [playerId]);
@@ -364,6 +365,13 @@ const removeIdentity = (pool, playerId, subject) => withTransaction(pool, async 
         throw new LastIdentityError();
     }
     await client.query("DELETE FROM identities WHERE player_id = $1 AND provider = 'cardano' AND subject = $2", [playerId, subject]);
+    // the words of that key are no use any more: its passkey backups go with it, and so do the
+    // sessions it signed in (words that leaked must not keep a way in)
+    await client.query('DELETE FROM passkey_backups WHERE player_id = $1 AND subject = $2', [playerId, subject]);
+    // (but not the session that removes it: that device proved it holds another key)
+    await client.query("UPDATE sessions SET revoked = TRUE, revoked_reason = 'key-removed' WHERE player_id = $1 AND subject = $2 AND id <> $3",
+        [playerId, subject, keepSession || '']);
+    await client.query('UPDATE sessions SET subject = NULL WHERE id = $1', [keepSession || '']);
     return true;
 });
 

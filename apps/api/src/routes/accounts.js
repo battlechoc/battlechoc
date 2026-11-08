@@ -10,8 +10,8 @@ const players = require('../players');
 const registerAccountRoutes = (app, { pool, auth, limit, tokenLimit }) => {
     app.post('/accounts', limit, async (req, res) => {
         const playerId = await players.createPlayer(pool);
-        const refreshToken = await auth.createSession(playerId);
-        res.status(201).json({ playerId, refreshToken, ...(await auth.issueAccessToken(playerId)) });
+        const { refreshToken, sessionId } = await auth.createSession(playerId);
+        res.status(201).json({ playerId, refreshToken, ...(await auth.issueAccessToken(playerId, sessionId)) });
     });
 
     app.post('/accounts/token', tokenLimit, async (req, res) => {
