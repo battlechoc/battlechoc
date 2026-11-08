@@ -59,6 +59,21 @@ test('every language fills the same placeholders into a text', () => {
     });
 });
 
+test('every text with a placeholder fills it in (it is listed with its placeholders in i18n)', () => {
+    // a text that is not listed shows its {{placeholder}} as it is (found 2026-11-08, plan 3)
+    const { translateIn } = require('../index');
+    // the match's info card fills these by name itself (apps/pwa/src/ui/match/InfoCard.jsx)
+    const filledByTheCaller = key => key.startsWith('TOOLTIP_RT_');
+    for (const [key, text] of Object.entries(tableOf('en')).filter(([key]) => !filledByTheCaller(key))) {
+        const names = [...text.matchAll(/{{(\w+)}}/g)].map(match => match[1]);
+        if (names.length > 0) {
+            const values = names.map((name, index) => `value${index}`);
+            const filled = translateIn('en', key, ...values);
+            expect([key, filled.includes('{{')]).toEqual([key, false]);
+        }
+    }
+});
+
 test('Japanese and Vietnamese go by their language codes; the old country codes still work', () => {
     const { normalizeLanguage, isValidLanguage } = require('../index');
     expect(languages).toEqual(['en', 'de', 'ja', 'es', 'fr', 'it', 'pt', 'vi']);

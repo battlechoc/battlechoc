@@ -7,23 +7,36 @@ const hex = (bytes) => Buffer.from(bytes).toString("hex");
 
 /**
  * Injects the wallet into every page of `context`. `networkId` is what the wallet says it is on
- * (1: mainnet); `decline` makes it refuse to sign, as a player who says no. Resolves with
- * { signed }: the texts it was asked to sign.
+ * (1: mainnet); `decline` makes it refuse to sign, as a player who says no; `hang` never answers;
+ * `key` is its name in window.cardano (default "eternl"). Resolves with
+ * { signed, peerjs }: the texts it was asked to sign, and { tries } at the PeerJS server.
  */
 export const fakeWallet = async (
   context,
   keys,
-  { networkId = 0, decline = false } = {}
+  { networkId = 0, decline = false, hang = false, key = "eternl" } = {}
 ) => {
   const signed = [];
-  // the QR path (CIP-45) would reach the public PeerJS server: tests stay off the internet
-  await context.route(/peerjs\.com/, (route) => route.abort());
-  await context.routeWebSocket(/peerjs\.com/, (socket) => socket.close());
+  // the QR path (CIP-45) would reach the public PeerJS server: tests stay off the internet, and
+  // `peerjs.tries` counts the attempts
+  const peerjs = { tries: 0 };
+  await context.route(/peerjs\.com/, (route) => {
+    peerjs.tries += 1;
+    return route.abort();
+  });
+  await context.routeWebSocket(/peerjs\.com/, (socket) => {
+    peerjs.tries += 1;
+    socket.close();
+  });
   await context.exposeBinding(
     "__battlechocTestWalletSign",
     (source, addressHex, payloadHex) => {
       if (decline) {
         return { declined: true };
+      }
+      if (hang) {
+        // a wallet that never answers (a popup closed without a no, a phone gone)
+        return new Promise(() => {});
       }
       signed.push(Buffer.from(payloadHex, "hex").toString("utf8"));
       const data = COSE.SignData.signData(
@@ -35,7 +48,7 @@ export const fakeWallet = async (
     }
   );
   await context.addInitScript(
-    ({ rewardAddressHex, networkId }) => {
+    ({ rewardAddressHex, networkId, key }) => {
       const api = {
         getNetworkId: async () => networkId,
         getRewardAddresses: async () => [rewardAddressHex],
@@ -57,15 +70,15 @@ export const fakeWallet = async (
         },
       };
       window.cardano = window.cardano || {};
-      window.cardano.eternl = {
-        name: "eternl",
+      window.cardano[key] = {
+        name: key,
         apiVersion: "0.1.0",
         icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E",
         enable: async () => api,
         isEnabled: async () => true,
       };
     },
-    { rewardAddressHex: keys.rewardAddressHex, networkId }
+    { rewardAddressHex: keys.rewardAddressHex, networkId, key }
   );
-  return { signed };
+  return { signed, peerjs };
 };

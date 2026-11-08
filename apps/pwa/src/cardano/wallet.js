@@ -193,3 +193,20 @@ export const waitForLinkCode = (
 /** The link page a phone wallet's own browser opens for a link code (CIP-158). */
 export const linkPageUrl = (code, origin = globalThis.location.origin) =>
   `${origin}/link/?code=${encodeURIComponent(code)}`;
+
+/**
+ * The attempts of one wallet door: each tap starts one; an answer counts only while its attempt
+ * is the latest and the door is open (a wallet may answer after the door closed, or after a newer
+ * tap; peer-connect may call back from a door that is gone).
+ */
+export const createAttempts = () => {
+  let latest = 0;
+  let closed = false;
+  return {
+    start: () => (closed ? -1 : ++latest),
+    isCurrent: (attempt) => !closed && attempt === latest,
+    close: () => {
+      closed = true;
+    },
+  };
+};

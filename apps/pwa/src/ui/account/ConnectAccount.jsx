@@ -213,11 +213,13 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
     }
   }, [open]);
 
-  // closing forgets the words (a shared device), but not while a switch runs
+  // closing forgets the words (a shared device), but not while a switch runs; a known wallet's
+  // session that waits for the player's choice is ended
   const close = () => {
     if (running.current) {
       return;
     }
+    dropWalletSession();
     setText("");
     setFileText(null);
     setPassword("");
@@ -247,6 +249,8 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
       }
     } catch (failure) {
       logger.warn("could not sign in with the words", failure);
+      // a known wallet's session that could not be taken over is ended
+      await dropWalletSession();
       fail(signInError(failure));
       return;
     }

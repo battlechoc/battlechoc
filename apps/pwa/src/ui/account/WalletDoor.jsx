@@ -6,11 +6,14 @@ import {
   useCardano,
 } from "@cardano-foundation/cardano-connect-with-wallet";
 import {
+  generateCip158DeepLink,
+  getWalletConfig,
   NetworkType,
   UnavailableWalletVisibility,
   WrongNetworkTypeError,
 } from "@cardano-foundation/cardano-connect-with-wallet-core";
 import Dialog from "../dialogs/Dialog";
+import Button from "../controls/Button";
 import {
   translate as t,
   translationKeys as tr,
@@ -26,8 +29,11 @@ import {
   WalletCancelledError,
   WalletNetworkError,
 } from "../../cardano";
+import { createAttempts } from "../../cardano/wallet";
+import { account } from "../../api/account";
 import theme from "../../theme";
 import logger from "../../helper/logger";
+import { openDeepLink } from "../../testHooks";
 
 // The wallet door (plan 3): the Cardano Foundation's ConnectWalletList in a game dialog. It lists
 // the injected wallets (extensions, or the wallet of a phone wallet's own browser), the QR code
@@ -76,6 +82,33 @@ const LIST_CSS = `
 // the QR dialog of the component opens above the game's dialogs
 const QR_CSS = "z-index: 10000; font-family: var(--font-body);";
 
+// the wallets the list may show: the registry's (the component's default leaves out Vespr, Begin
+// and Gero) and whatever this browser injected (a wallet's own browser on a phone)
+const REGISTRY_WALLETS = [
+  "eternl",
+  "lace",
+  "vespr",
+  "begin",
+  "yoroi",
+  "nufi",
+  "typhoncip30",
+  "gerowallet",
+  "flint",
+  "nami",
+];
+const supportedWallets = () => {
+  let injected = [];
+  try {
+    const wallets = window.cardano || {};
+    injected = Object.keys(wallets).filter(
+      (key) => wallets[key] && typeof wallets[key].enable === "function"
+    );
+  } catch {
+    // none
+  }
+  return [...new Set([...REGISTRY_WALLETS, ...injected])];
+};
+
 const injectedWallets = () => {
   try {
     const wallets = window.cardano || {};
@@ -114,11 +147,46 @@ const WalletDoor = ({
       : NetworkType.TESTNET;
   const { disconnect } = useCardano({ limitNetwork });
   const [error, setError] = useState(null);
-  const [busy, setBusy] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [code, setCode] = useState(null);
-  const running = useRef(false);
+  // the QR code for a phone wallet (CIP-45) only once asked for: the component connects to the
+  // public PeerJS server as soon as it shows that way in (privacy policy, section 11)
+  const [qr, setQr] = useState(false);
+  const list = useRef(null);
+
+  // the component's own entry for it ("P2P Wallet") opens the QR code: tapped for the player
+  useEffect(() => {
+    if (!qr) {
+      return undefined;
+    }
+    const frame = requestAnimationFrame(() => {
+      const entry = [
+        ...(list.current ? list.current.querySelectorAll("*") : []),
+      ]
+        .reverse()
+        .find((node) => (node.textContent || "").trim() === "P2P Wallet");
+      if (entry) {
+        entry.click();
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [qr]);
+  const attempts = useRef(createAttempts());
   const polling = useRef(null);
+
+  // the door is gone: late answers are dropped, and the QR code's peer (CIP-45), which the
+  // component never ends, does not hand its id to the next door (a new one is made)
+  useEffect(
+    () => () => {
+      attempts.current.close();
+      try {
+        window.localStorage.removeItem("peer-connect-dapp-id");
+      } catch {
+        // nothing kept, nothing to drop
+      }
+    },
+    []
+  );
   const paths = features.walletPaths({ injected: injectedWallets() });
   const deeplink = paths.has("deeplink") && purpose !== "confirm";
 
@@ -165,22 +233,34 @@ const WalletDoor = ({
     onDone(answer);
   };
 
-  // a wallet the component connected (an extension, or a phone wallet by QR code)
+  // a wallet the component connected (an extension, or a phone wallet by QR code); an answer
+  // that comes after the door closed or after a newer tap does nothing (a known wallet's session
+  // made for it is ended again)
   const withWallet = async (walletName) => {
-    if (running.current) {
+    const attempt = attempts.current.start();
+    if (!attempts.current.isCurrent(attempt)) {
       return;
     }
-    running.current = true;
-    setBusy(true);
     setError(null);
     try {
       const walletApi = await walletApiOf(walletName);
-      if (purpose === "confirm") {
-        finish({ confirmToken: await confirmWithWallet(walletApi) });
-      } else {
-        finish(await connectWallet(walletApi, { purpose, confirmToken }));
+      const answer =
+        purpose === "confirm"
+          ? { confirmToken: await confirmWithWallet(walletApi) }
+          : await connectWallet(walletApi, { purpose, confirmToken });
+      if (attempts.current.isCurrent(attempt)) {
+        finish(answer);
+      } else if (answer.outcome === "known") {
+        account
+          .logout(answer.refreshToken)
+          .catch((failure) =>
+            logger.warn("could not end a late session", failure)
+          );
       }
     } catch (failure) {
+      if (!attempts.current.isCurrent(attempt)) {
+        return;
+      }
       const answer = failure && failure.response;
       if (
         answer &&
@@ -194,8 +274,6 @@ const WalletDoor = ({
       }
     } finally {
       forget();
-      running.current = false;
-      setBusy(false);
     }
   };
 
@@ -247,36 +325,44 @@ const WalletDoor = ({
       });
   };
 
-  // The component's CIP-158 link opens the page's own address in the wallet's browser: for the
-  // tap, the address is the link page with the code (that browser shares nothing with the game),
-  // then the game's own address again.
-  const pointLinkToCode = () => {
+  // On a phone, a tap on a CIP-158 wallet opens the link page with the code in the wallet's own
+  // browser (that browser shares nothing with the game). The deep link is the same for every
+  // wallet (the phone picks the app), so the door opens it itself: the component's own link would
+  // carry the game's address. Other wallets are left to the component (their store pages).
+  const tapDeepLink = (event) => {
     if (!deeplink || code === null) {
       return;
     }
-    const own = `${location.pathname}${location.search}${location.hash}`;
-    const link = new URL(linkPageUrl(code));
-    history.replaceState(history.state, "", `${link.pathname}${link.search}`);
-    const restore = () => {
-      if (location.pathname.startsWith("/link/")) {
-        history.replaceState(history.state, "", own);
+    for (
+      let node = event.target;
+      node && node !== event.currentTarget;
+      node = node.parentElement
+    ) {
+      const config = getWalletConfig(
+        (node.textContent || "").trim().toLowerCase()
+      );
+      if (config) {
+        if (config.hasCIP158Support) {
+          event.preventDefault();
+          event.stopPropagation();
+          openDeepLink(generateCip158DeepLink(linkPageUrl(code)));
+          waitForPhone();
+        }
+        return;
       }
-      window.removeEventListener("pagehide", restore);
-    };
-    window.addEventListener("pagehide", restore);
-    setTimeout(restore, 1500);
-    waitForPhone();
+    }
   };
 
   if (!open) {
     return null;
   }
-  const nothing = paths.size === 0 || (deeplink && code === null && !error);
+  // on a phone the list waits for the link code (without one a tap would lead nowhere)
+  const nothing = paths.size === 0 || (deeplink && code === null);
   return createPortal(
     <Dialog
       open={open}
-      close={() => !busy && onClose()}
-      closable={!busy}
+      close={onClose}
+      closable
       mode="stacked"
       icon="user"
       title={t(tr.WALLET_DOOR_TITLE)}
@@ -287,10 +373,11 @@ const WalletDoor = ({
           <p className={classes.text}>{t(tr.WALLET_NONE)}</p>
         ) : null}
         {!nothing ? (
-          <div className={classes.list} onClickCapture={pointLinkToCode}>
+          <div className={classes.list} ref={list} onClickCapture={tapDeepLink}>
             <ConnectWalletList
+              key={qr ? "with-qr" : "without-qr"}
               limitNetwork={limitNetwork}
-              peerConnectEnabled={paths.has("qr")}
+              peerConnectEnabled={paths.has("qr") && qr}
               cip158Enabled={deeplink}
               showUnavailableWallets={
                 deeplink
@@ -305,12 +392,18 @@ const WalletDoor = ({
               borderRadius={12}
               customCSS={LIST_CSS}
               onConnect={withWallet}
+              supportedWallets={supportedWallets()}
               onConnectError={(walletName, failure) => {
                 forget();
                 fail(failure);
               }}
             />
           </div>
+        ) : null}
+        {!nothing && paths.has("qr") && !qr ? (
+          <Button color="secondary" size="small" onClick={() => setQr(true)}>
+            {t(tr.WALLET_QR)}
+          </Button>
         ) : null}
         {waiting ? (
           <p className={classes.text}>{t(tr.WALLET_WAITING)}</p>

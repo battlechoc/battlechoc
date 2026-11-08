@@ -1117,9 +1117,12 @@ test.describe("the wallet door (plan 3)", () => {
     await openDoor(page);
     await chooseEternl(page);
     await expect(
-      page.getByText("Your wallet is on another Cardano network", {
-        exact: false,
-      })
+      page.getByText(
+        "Your wallet is on another Cardano network. Switch it to preprod",
+        {
+          exact: false,
+        }
+      )
     ).toBeVisible();
     expect(signed).toEqual([]);
     expect(await identitiesOf(page, request)).toEqual([]);
@@ -1198,6 +1201,100 @@ test.describe("the wallet door (plan 3)", () => {
     await context.close();
   });
 
+  test("after review: a wallet that never answers does not lock the door", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page } = await createPlayer(browser, request, "SiHanga");
+    await fakeWallet(context, nodeKeys(), { hang: true });
+    await page.reload({ waitUntil: "networkidle" });
+    await openDoor(page);
+    await chooseEternl(page);
+    await page.waitForTimeout(500);
+    // the door's own back button, while the wallet still has not answered
+    await page.locator("[data-icon=back]:visible").last().click();
+    await expect(page.getByTestId("wallet-door")).toHaveCount(0);
+    // "Connect an existing account" is still there
+    await expect(page.getByTestId("connect-words")).toBeVisible();
+    expect(await identitiesOf(page, request)).toEqual([]);
+    await context.close();
+  });
+
+  test("after review: closing the dialog while it asks which progress to keep drops the wallet's session", async ({
+    browser,
+    request,
+  }) => {
+    const owner = await createPlayer(browser, request, "SiKlaus");
+    const wallet = nodeKeys();
+    await linkWallet(owner.page, request, wallet);
+    const other = await createPlayer(browser, request, "SiKlara");
+    const { context, page } = other;
+    await fakeWallet(context, wallet);
+    await page.reload({ waitUntil: "networkidle" });
+    const before = (await accountOf(page)).playerId;
+    await openDoor(page);
+    const verified = page.waitForResponse((response) =>
+      response.url().endsWith("/auth/cardano/verify")
+    );
+    await chooseEternl(page);
+    const { refreshToken } = await (await verified).json();
+    await expect(
+      page.getByText("This device has progress of its own", { exact: false })
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect
+      .poll(async () =>
+        (
+          await request.post(`${api}/accounts/token`, {
+            data: { refreshToken },
+          })
+        ).status()
+      )
+      .toBe(401);
+    expect((await accountOf(page)).playerId).toBe(before);
+    await context.close();
+    await owner.context.close();
+  });
+
+  test("after review: wallets beyond the component's defaults are listed (Vespr)", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page } = await createPlayer(browser, request, "SiVespa");
+    await fakeWallet(context, nodeKeys(), { key: "vespr" });
+    await page.reload({ waitUntil: "networkidle" });
+    await openDoor(page);
+    await expect(
+      page.getByTestId("wallet-door").getByText("Vespr", { exact: false })
+    ).toBeVisible();
+    await context.close();
+  });
+
+  test('final review: the door reaches the PeerJS server only after "Phone wallet (QR code)"', async ({
+    browser,
+    request,
+  }) => {
+    const { context, page } = await createPlayer(browser, request, "SiPeeri");
+    const { peerjs } = await fakeWallet(context, nodeKeys());
+    await page.reload({ waitUntil: "networkidle" });
+    await openDoor(page);
+    await expect(
+      page.getByTestId("wallet-door").getByText("Eternl", { exact: false })
+    ).toBeVisible();
+    await page.waitForTimeout(1500);
+    expect(peerjs.tries).toBe(0);
+    await page
+      .getByTestId("wallet-door")
+      .getByRole("button", { name: "Phone wallet (QR code)" })
+      .click();
+    await expect
+      .poll(() => peerjs.tries, { timeout: 10000 })
+      .toBeGreaterThan(0);
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: "test/output/wallet-door-qr.png" });
+    await context.close();
+  });
+
   test("in the Android app there is no wallet door", async ({
     browser,
     request,
@@ -1227,6 +1324,173 @@ test.describe("the wallet door (plan 3)", () => {
     await expect(page.getByTestId("wallet-door")).toBeVisible();
     await page.waitForTimeout(800);
     await page.screenshot({ path: "test/output/wallet-door-phone.png" });
+    await context.close();
+  });
+});
+
+test.describe("the phone's wallet browser: the link page (plan 3)", () => {
+  const PHONE =
+    "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36";
+
+  // the game on a phone without a wallet of its own: the account made, the title screen up
+  const phoneGame = async (browser) => {
+    const context = await browser.newContext({
+      userAgent: PHONE,
+      viewport: { width: 390, height: 844 },
+      hasTouch: true,
+      isMobile: true,
+    });
+    await context.addInitScript((url) => {
+      window.localStorage.setItem("battlechoc.apiUrl", url);
+    }, api);
+    const page = await context.newPage();
+    await page.goto("/", { waitUntil: "networkidle" });
+    await expect.poll(() => accountOf(page), { timeout: 15000 }).toBeTruthy();
+    return { context, page };
+  };
+
+  // the phone's wallet with its own browser: opens the link page of the deep link
+  const walletBrowser = async (browser, keys) => {
+    const context = await browser.newContext({ userAgent: PHONE });
+    await context.addInitScript((url) => {
+      window.localStorage.setItem("battlechoc.apiUrl", url);
+    }, api);
+    await fakeWallet(context, keys);
+    return { context, page: await context.newPage() };
+  };
+
+  // taps Eternl in the door; resolves with the page address the CIP-158 deep link opens (a test
+  // build records the link: a headless browser would show an error page for it)
+  const tapEternl = async (page) => {
+    await page.evaluate(() => {
+      window.__battlechocRecordDeepLinks = true;
+    });
+    await openDoor(page);
+    await page
+      .getByTestId("wallet-door")
+      .getByText("Eternl", { exact: false })
+      .first()
+      .click();
+    let deepLink;
+    await expect
+      .poll(async () => {
+        deepLink = await page.evaluate(
+          () => (window.__battlechocDeepLinks || [])[0]
+        );
+        return deepLink;
+      })
+      .toBeTruthy();
+    expect(deepLink).toMatch(/^web\+cardano:\/\/browse\/v1\?uri=/);
+    return decodeURIComponent(deepLink.split("uri=")[1]);
+  };
+
+  const openDoor = async (page) => {
+    await page.locator("[data-icon=user]:visible").first().click();
+    await page
+      .getByRole("button", { name: "Connect an existing account" })
+      .click();
+    await page.getByRole("button", { name: "Use a Cardano wallet" }).click();
+  };
+
+  test("an unknown wallet signs on the link page; the game on the phone gets it linked", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page } = await phoneGame(browser);
+    const pageUrl = await tapEternl(page);
+    expect(new URL(pageUrl).pathname).toBe("/link/");
+    expect(new URL(pageUrl).searchParams.get("code")).toMatch(
+      /^[A-Za-z0-9_-]{22}$/
+    );
+    // the game's own address is the game again
+    await expect.poll(() => new URL(page.url()).pathname).toBe("/");
+    await expect(
+      page.getByText("Waiting for your wallet", { exact: false })
+    ).toBeVisible();
+    await page.screenshot({ path: "test/output/wallet-door-deeplink.png" });
+
+    const keys = nodeKeys();
+    const wallet = await walletBrowser(browser, keys);
+    await wallet.page.goto(new URL(pageUrl).pathname + new URL(pageUrl).search);
+    await expect(
+      wallet.page.getByText("Only go on if that device is yours", {
+        exact: false,
+      })
+    ).toBeVisible();
+    await wallet.page.screenshot({ path: "test/output/link-page.png" });
+    await wallet.page
+      .getByRole("button", { name: "Continue with Eternl" })
+      .click();
+    await expect(
+      wallet.page.getByText("Done. Go back to battlechoc.")
+    ).toBeVisible();
+    // the player goes back to the game, which asks for the code's outcome at once
+    await page.bringToFront();
+    await expect(
+      page.getByText("Your wallet is now linked to this player.")
+    ).toBeVisible({ timeout: 15000 });
+    expect(
+      (await identitiesOf(page, request)).map((identity) => identity.subject)
+    ).toEqual([keys.subject]);
+    await wallet.context.close();
+    await context.close();
+  });
+
+  test("a known wallet on the link page signs a new phone in as its player", async ({
+    browser,
+    request,
+  }) => {
+    const owner = await createPlayer(browser, request, "SiLinka");
+    const keys = nodeKeys();
+    expect(
+      (
+        await signAs(
+          request,
+          await accessTokenOf(owner.page, request),
+          keys,
+          "link"
+        )
+      ).status()
+    ).toBe(200);
+    const ownerId = (await accountOf(owner.page)).playerId;
+    const { context, page } = await phoneGame(browser);
+    const pageUrl = await tapEternl(page);
+    const wallet = await walletBrowser(browser, keys);
+    await wallet.page.goto(new URL(pageUrl).pathname + new URL(pageUrl).search);
+    await wallet.page
+      .getByRole("button", { name: "Continue with Eternl" })
+      .click();
+    await expect(
+      wallet.page.getByText("Done. Go back to battlechoc.")
+    ).toBeVisible();
+    await page.bringToFront();
+    await switchedTo(page, ownerId);
+    await wallet.context.close();
+    await context.close();
+    await owner.context.close();
+  });
+
+  test("an old link says so", async ({ browser }) => {
+    const wallet = await walletBrowser(browser, nodeKeys());
+    await wallet.page.goto("/link/?code=AAAAAAAAAAAAAAAAAAAAAA");
+    await wallet.page
+      .getByRole("button", { name: "Continue with Eternl" })
+      .click();
+    await expect(
+      wallet.page.getByText("This link is too old. Start again in battlechoc.")
+    ).toBeVisible();
+    await wallet.context.close();
+  });
+
+  test("the link page without a wallet goes to the game", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.goto("/link/?code=AAAAAAAAAAAAAAAAAAAAAA");
+    await expect
+      .poll(() => new URL(page.url()).pathname, { timeout: 10000 })
+      .toBe("/");
     await context.close();
   });
 });

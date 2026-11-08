@@ -31,8 +31,8 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:e2e": "vite build --mode e2e --outDir build-e2e",
+    "build": "vite build && vite build --config vite.link.config.js",
+    "build:e2e": "vite build --mode e2e --outDir build-e2e && vite build --config vite.link.config.js --mode e2e --outDir build-e2e",
     "test": "npm run build:e2e && playwright test",
     "live-testing": "npm run build:e2e && playwright test --headed",
     "test:unit": "node --test \"test/unit/*.test.js\"",

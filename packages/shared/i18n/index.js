@@ -82,6 +82,8 @@ const placeholders = Object.freeze({
     CHALLENGE_PREVIEW_TITLE: ['name'],
     INFO_LAST_UPDATE: ['time'],
     INFO_MADE_BY: ['names'],
+    WALLET_WRONG_NETWORK: ['network'],
+    LINK_CONTINUE: ['wallet'],
 });
 
 // Texts that are picked or put together by code; each gets the language's table first.

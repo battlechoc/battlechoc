@@ -567,5 +567,12 @@ module.exports = {
     "WALLET_LINK": "Associer un portefeuille Cardano",
     "WALLET_LINKED": "Ton portefeuille est maintenant associé à ce joueur.",
     "CONFIRM_WALLET": "Utiliser mon portefeuille",
-    "WORDS_UNKNOWN_USE_WALLET": "Aucun joueur n'a ces mots. Si ce sont les mots de ton propre portefeuille, utilise plutôt « Utiliser un portefeuille Cardano »."
+    "WORDS_UNKNOWN_USE_WALLET": "Aucun joueur n'a ces mots. Si ce sont les mots de ton propre portefeuille, utilise plutôt « Utiliser un portefeuille Cardano ».",
+    "LINK_TITLE": "Connecte ton portefeuille",
+    "LINK_TEXT": "Cela connecte ton portefeuille à battlechoc sur l'appareil qui a ouvert cette page. Continue seulement si cet appareil est le tien.",
+    "LINK_CONTINUE": "Continuer avec {{wallet}}",
+    "LINK_DONE": "C'est fait. Retourne sur battlechoc.",
+    "LINK_CONFIRM": "Confirme d'abord dans battlechoc, puis réessaie.",
+    "LINK_EXPIRED": "Ce lien est trop ancien. Recommence dans battlechoc.",
+    "WALLET_QR": "Portefeuille du téléphone (code QR)"
 }

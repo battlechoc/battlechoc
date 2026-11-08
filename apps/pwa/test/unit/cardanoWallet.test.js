@@ -12,6 +12,7 @@ import {
 } from "@evolution-sdk/evolution";
 import { cardano } from "@battlechoc/battlechoc-shared-functions";
 import {
+  createAttempts,
   signWithWallet,
   walletApiOf,
   waitForLinkCode,
@@ -361,4 +362,17 @@ test("the wallet door: hidden in the Android app; which ways in a device offers"
   );
   assert.equal(createFeatures({ network: "preprod" }).showWalletDoor(), true);
   assert.equal(createFeatures({ network: undefined }).showWalletDoor(), false);
+});
+
+test("after review: a door's attempts: a closed door or a newer attempt makes a late answer stale", () => {
+  const attempts = createAttempts();
+  const first = attempts.start();
+  assert.equal(attempts.isCurrent(first), true);
+  const second = attempts.start();
+  assert.equal(attempts.isCurrent(first), false);
+  assert.equal(attempts.isCurrent(second), true);
+  // the door closes: nothing that was running counts any more, nor can anything start
+  attempts.close();
+  assert.equal(attempts.isCurrent(second), false);
+  assert.equal(attempts.isCurrent(attempts.start()), false);
 });

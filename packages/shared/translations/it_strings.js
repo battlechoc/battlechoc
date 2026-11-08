@@ -567,5 +567,12 @@ module.exports = {
     "WALLET_LINK": "Collega un wallet Cardano",
     "WALLET_LINKED": "Il tuo wallet è ora collegato a questo giocatore.",
     "CONFIRM_WALLET": "Usa il mio wallet",
-    "WORDS_UNKNOWN_USE_WALLET": "Nessun giocatore ha queste parole. Se sono le parole del tuo wallet, usa invece «Usa un wallet Cardano»."
+    "WORDS_UNKNOWN_USE_WALLET": "Nessun giocatore ha queste parole. Se sono le parole del tuo wallet, usa invece «Usa un wallet Cardano».",
+    "LINK_TITLE": "Collega il tuo wallet",
+    "LINK_TEXT": "Così colleghi il tuo wallet a battlechoc sul dispositivo che ha aperto questa pagina. Continua solo se quel dispositivo è tuo.",
+    "LINK_CONTINUE": "Continua con {{wallet}}",
+    "LINK_DONE": "Fatto. Torna a battlechoc.",
+    "LINK_CONFIRM": "Conferma prima in battlechoc, poi riprova.",
+    "LINK_EXPIRED": "Questo link è troppo vecchio. Ricomincia in battlechoc.",
+    "WALLET_QR": "Wallet del telefono (codice QR)"
 }

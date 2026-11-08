@@ -567,5 +567,12 @@ module.exports = {
     "WALLET_LINK": "Cardano-Wallet verknüpfen",
     "WALLET_LINKED": "Deine Wallet ist jetzt mit diesem Spieler verknüpft.",
     "CONFIRM_WALLET": "Meine Wallet verwenden",
-    "WORDS_UNKNOWN_USE_WALLET": "Kein Spieler hat diese Wörter. Wenn es die Wörter deiner eigenen Wallet sind, nimm stattdessen „Cardano-Wallet verwenden“."
+    "WORDS_UNKNOWN_USE_WALLET": "Kein Spieler hat diese Wörter. Wenn es die Wörter deiner eigenen Wallet sind, nimm stattdessen „Cardano-Wallet verwenden“.",
+    "LINK_TITLE": "Wallet verbinden",
+    "LINK_TEXT": "Damit verbindest du deine Wallet mit battlechoc auf dem Gerät, das diese Seite geöffnet hat. Mach nur weiter, wenn das dein Gerät ist.",
+    "LINK_CONTINUE": "Weiter mit {{wallet}}",
+    "LINK_DONE": "Fertig. Geh zurück zu battlechoc.",
+    "LINK_CONFIRM": "Bestätige es zuerst in battlechoc und versuch es dann noch einmal.",
+    "LINK_EXPIRED": "Dieser Link ist zu alt. Fang in battlechoc noch einmal an.",
+    "WALLET_QR": "Handy-Wallet (QR-Code)"
 }

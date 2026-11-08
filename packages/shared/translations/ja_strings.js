@@ -567,5 +567,12 @@ module.exports = {
     "WALLET_LINK": "Cardanoウォレットを連携する",
     "WALLET_LINKED": "ウォレットがこのプレイヤーに連携されました。",
     "CONFIRM_WALLET": "ウォレットを使う",
-    "WORDS_UNKNOWN_USE_WALLET": "この単語を持つプレイヤーはいません。ご自身のウォレットの単語なら、代わりに「Cardanoウォレットを使う」を使ってください。"
+    "WORDS_UNKNOWN_USE_WALLET": "この単語を持つプレイヤーはいません。ご自身のウォレットの単語なら、代わりに「Cardanoウォレットを使う」を使ってください。",
+    "LINK_TITLE": "ウォレットを接続",
+    "LINK_TEXT": "このページを開いたデバイスのbattlechocにウォレットを接続します。そのデバイスがあなたのものである場合のみ続けてください。",
+    "LINK_CONTINUE": "{{wallet}}で続ける",
+    "LINK_DONE": "完了しました。battlechocに戻ってください。",
+    "LINK_CONFIRM": "まずbattlechocで確認してから、もう一度お試しください。",
+    "LINK_EXPIRED": "このリンクは古すぎます。battlechocでやり直してください。",
+    "WALLET_QR": "スマホのウォレット（QRコード）"
 }

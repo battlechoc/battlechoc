@@ -35,3 +35,19 @@ export const requestedLight = (() => {
     ? { ...light, tonemap: query.get("tonemap") }
     : light;
 })();
+
+/**
+ * Opens a deep link (CIP-158: the phone hands it to a wallet app, the game stays). When a test
+ * sets window.__battlechocRecordDeepLinks, a test build keeps the links in
+ * window.__battlechocDeepLinks instead: a headless browser would show an error page for it.
+ */
+export const openDeepLink = (url) => {
+  if (testHooksEnabled && window.__battlechocRecordDeepLinks) {
+    window.__battlechocDeepLinks = [
+      ...(window.__battlechocDeepLinks || []),
+      url,
+    ];
+    return;
+  }
+  window.location.href = url;
+};
