@@ -326,11 +326,13 @@ test("features: off without a network; the preprod badge not on mainnet and not 
   const web = createFeatures({ network: "preprod", androidApp: false });
   assert.equal(web.enabled(), true);
   assert.equal(web.showPreprodBadge(), true);
-  assert.equal(web.showWalletDoor(), false);
+  // plan 3: the wallet door shows on the web, not in the Android app (cardanoWallet.test.js)
+  assert.equal(web.showWalletDoor(), true);
   const app = createFeatures({ network: "preprod", androidApp: true });
   assert.equal(app.enabled(), true);
   assert.equal(app.inAndroidApp(), true);
   assert.equal(app.showPreprodBadge(), false);
+  assert.equal(app.showWalletDoor(), false);
   assert.equal(
     createFeatures({
       network: "mainnet",

@@ -17,6 +17,7 @@ import {
 import { unlockWithPasskey } from "./passkey.js";
 import { isAndroidApp } from "./androidApp.js";
 import { keysFromWords } from "./keys.js";
+import { signWithWallet, waitForLinkCode } from "./wallet.js";
 
 // an Android phone or tablet
 const onAndroid = () => {
@@ -100,51 +101,94 @@ export const wordsFromPasskey = (credentialIds) =>
 export const subjectOfWords = async (words) =>
   `stake:${(await keysFromWords(words, features.network())).stakeKeyHashHex}`;
 
-/**
- * "I already have an account": signs in with the words and makes this device that player. It runs
- * in the game's stats lock (Multiplayer.exclusive), so a merge or name sync that is still going
- * finishes first and none runs halfway through the switch. The words are kept on the device,
- * backed up the way they came (`source`): "words" typed in, "file" a backup file, "passkey" a
- * passkey (the server knows that backup, nothing is marked here). The device's stats become the saved player's (from the
- * server, so nothing looks lost until the next merge) plus the matches that never reached the
- * server, which the next start sends to the signed-in account (Multiplayer.mergePlayerStats). The
- * caller reloads the game afterwards, also when a step after the sign-in failed.
- */
-export const connectAccount = (words, { source = "words" } = {}) =>
-  multiplayer.exclusive(async () => {
-    const session = await signChallenge(words, "sign-in");
-    await account.adopt(session);
-    // from here on this device is the saved player: nothing below may undo that
-    try {
-      await keyStore.clear();
+// makes this device the player of `session` (from the words, a passkey, a file or a wallet): the
+// device's words become `words` (backed up the way they came, `source`: "words" typed in, "file"
+// a backup file, "passkey" a passkey, which the server knows), or none (a wallet: the words that
+// were here belong to the previous player). The device's stats become the saved player's (from
+// the server, so nothing looks lost until the next merge) plus the matches that never reached the
+// server, which the next start sends to the signed-in account (Multiplayer.mergePlayerStats).
+const takeOver = async (session, { words, source = "words" } = {}) => {
+  await account.adopt(session);
+  // from here on this device is the saved player: nothing below may undo that
+  try {
+    await keyStore.clear();
+    if (words) {
       await keyStore.save(words);
       if (source === "words" || source === "file") {
         await keyStore.markBackedUp(source);
       }
-    } catch (failure) {
-      logger.warn("could not keep the words on this device", failure);
     }
-    try {
-      const stats = await OfflineStore.playerStore
-        .get("stats")
-        .catch(() => undefined);
-      const unsynced = (stats && stats.trackRecord) || [];
-      const saved = await fetchOwnProfile()
-        .then((answer) => answer.stats)
-        .catch(() => undefined);
-      await OfflineStore.playerStore.set("stats", {
-        ...(saved || EmptyPlayerStats),
-        trackRecord: unsynced,
-      });
-    } catch (failure) {
-      logger.warn("could not prepare the stats of the saved player", failure);
-    }
+  } catch (failure) {
+    logger.warn("could not keep the words on this device", failure);
+  }
+  try {
+    const stats = await OfflineStore.playerStore
+      .get("stats")
+      .catch(() => undefined);
+    const unsynced = (stats && stats.trackRecord) || [];
+    const saved = await fetchOwnProfile()
+      .then((answer) => answer.stats)
+      .catch(() => undefined);
+    await OfflineStore.playerStore.set("stats", {
+      ...(saved || EmptyPlayerStats),
+      trackRecord: unsynced,
+    });
+  } catch (failure) {
+    logger.warn("could not prepare the stats of the saved player", failure);
+  }
+};
+
+/**
+ * "I already have an account": signs in with the words and makes this device that player
+ * (takeOver). It runs in the game's stats lock (Multiplayer.exclusive), so a merge or name sync
+ * that is still going finishes first and none runs halfway through the switch. The caller reloads
+ * the game afterwards, also when a step after the sign-in failed.
+ */
+export const connectAccount = (words, { source = "words" } = {}) =>
+  multiplayer.exclusive(async () => {
+    const session = await signChallenge(words, "sign-in");
+    await takeOver(session, { words, source });
   });
+
+/**
+ * Makes this device the player of a session a wallet gave (plan 3: a known wallet), in the stats
+ * lock like connectAccount; the caller reloads the game afterwards.
+ */
+export const switchToSession = (session) =>
+  multiplayer.exclusive(() => takeOver(session));
+
+/**
+ * Connects a wallet (its CIP-30 api) as this device's player: { outcome: "linked", identity } or
+ * { outcome: "known", playerId, refreshToken, … } (another player's wallet; nothing changed yet).
+ * `purpose` "link" links only (IDENTITY TAKEN for another player's wallet).
+ */
+export const connectWallet = (
+  walletApi,
+  { purpose = "connect", confirmToken } = {}
+) => signWithWallet(walletApi, purpose, { ...deps(), confirmToken });
+
+/** A confirm token for a key change, signed by a wallet linked to the player. */
+export const confirmWithWallet = async (walletApi) =>
+  (await signWithWallet(walletApi, "confirm", deps())).confirmToken;
+
+/** The link page (plan 3): signs the link code's challenge with the wallet of this browser. */
+export const signForLinkCode = (walletApi, code) =>
+  signWithWallet(walletApi, "connect", { ...deps(), code });
+
+/** Waits for a link code's outcome (`signal` stops it: the door closed). */
+export const waitForCode = (code, { signal } = {}) =>
+  waitForLinkCode(() => cardanoApi.pollLinkCode(code), { signal });
 
 export { cardanoApi };
 export { newRecoveryWords, normalizeWords, wordsAreValid } from "./keys.js";
 export { KeyStoreError, KeyAlreadyStoredError } from "./keyStore.js";
 export { NetworkMismatchError, UnexpectedChallengeError } from "./signIn.js";
+export {
+  walletApiOf,
+  linkPageUrl,
+  WalletCancelledError,
+  WalletNetworkError,
+} from "./wallet.js";
 export {
   createPasskeyBackup,
   passkeySupport,

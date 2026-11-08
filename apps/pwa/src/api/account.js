@@ -95,6 +95,12 @@ class Account {
     }
   }
 
+  // ends another session on the server (plan 3: a wallet's session the player did not keep);
+  // the device's own account is not touched
+  async logout(refreshToken) {
+    await client.post("/accounts/logout", { refreshToken });
+  }
+
   // loads or creates the account; resolves once an access token is available
   ensure() {
     if (typeof this.pending === "undefined") {

@@ -7,8 +7,9 @@ import { get, post, request } from "./client.js";
 // account. Errors are those of api/client.js (error.response.status, error.response.data.error).
 
 const open = createClient({ baseURL: apiUrl, timeout: 15000 });
-// challenges for the device's player (linking a key, confirming a change) go with its token
-const ASPLAYER = ["link", "confirm"];
+// challenges for the device's player (linking a key, confirming a change, connecting a wallet)
+// go with its token
+const ASPLAYER = ["link", "confirm", "connect"];
 
 export const cardanoApi = {
   /** The network the server runs on ("preprod" or "mainnet"). */
@@ -32,6 +33,34 @@ export const cardanoApi = {
           confirmToken ? { "X-Battlechoc-Confirm": confirmToken } : {}
         )
       : (await open.post("/auth/cardano/verify", body)).data,
+
+  /**
+   * A link code for a phone wallet's own browser (plan 3): { code, expiresAt }; `purpose`
+   * "connect" or "link", `confirmToken` when the player has keys.
+   */
+  createLinkCode: (purpose, confirmToken) =>
+    post(
+      "/user/link-codes",
+      { purpose },
+      confirmToken ? { "X-Battlechoc-Confirm": confirmToken } : {}
+    ),
+
+  /** The state of a link code: { state: "open" | "linked" | "known" | "confirm" | "failed", … }. */
+  pollLinkCode: (code) => get(`/user/link-codes/${encodeURIComponent(code)}`),
+
+  /** The link page's challenge for a code (no token: the code stands for the player). */
+  challengeForCode: async (code, address) =>
+    (
+      await open.post("/auth/cardano/challenge", {
+        purpose: "connect",
+        code,
+        address,
+      })
+    ).data,
+
+  /** The link page's signed challenge: { outcome: "linked" | "known" | "confirm" }. */
+  verifyForCode: async (body) =>
+    (await open.post("/auth/cardano/verify", body)).data,
 
   /** The player's linked keys: [{ provider, subject, address, createdAt }]. */
   identities: () => get("/user/identities"),

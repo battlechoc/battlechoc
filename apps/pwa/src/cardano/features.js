@@ -33,8 +33,31 @@ export const createFeatures = ({
     confirmed: isConfirmed,
     showPreprodBadge: () =>
       known !== null && known.name !== "mainnet" && !inAndroidApp(),
-    // the wallet door comes with plan 3 (CIP-30, CIP-45, CIP-158)
-    showWalletDoor: () => false,
+    /** The wallet door (plan 3): not in the Android app until the Play Store's declaration. */
+    showWalletDoor: () => known !== null && !inAndroidApp(),
+    /**
+     * The ways into the wallet door on this device: "extension" (a wallet is injected: an
+     * extension, or a phone wallet's own browser), "qr" (CIP-45, not on phones, in the Android
+     * app once `cip45-app` is confirmed), "deeplink" (CIP-158, phones once `cip158` is confirmed,
+     * not inside a wallet's own browser).
+     */
+    walletPaths: ({ injected }) => {
+      const paths = new Set();
+      if (known === null || inAndroidApp()) {
+        return paths;
+      }
+      const mobile = ask(ios) || ask(android);
+      if (injected) {
+        paths.add("extension");
+      }
+      if (!mobile && (!inAndroidApp() || isConfirmed("cip45-app"))) {
+        paths.add("qr");
+      }
+      if (mobile && !injected && isConfirmed("cip158")) {
+        paths.add("deeplink");
+      }
+      return paths;
+    },
     /** A passkey backup: where the browser supports it (`support`, passkeySupport), on iOS once confirmed. */
     offerPasskey: async (support) =>
       known !== null &&

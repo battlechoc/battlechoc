@@ -16,12 +16,14 @@ export const loadEvolution = () => {
       import("@evolution-sdk/evolution/RewardAccount"),
       import("@evolution-sdk/evolution/VKey"),
       import("@evolution-sdk/evolution/cose"),
-    ]).then(([PrivateKey, KeyHash, RewardAccount, VKey, COSE]) => ({
+      import("@evolution-sdk/evolution/Address"),
+    ]).then(([PrivateKey, KeyHash, RewardAccount, VKey, COSE, Address]) => ({
       PrivateKey,
       KeyHash,
       RewardAccount,
       VKey,
       COSE,
+      Address,
     }));
   }
   return evolution;
@@ -100,4 +102,16 @@ export const signMessage = async (keys, message) => {
     keys.stakeKey
   );
   return { signature: hex(signed.signature), key: hex(signed.key) };
+};
+
+/**
+ * The bech32 form of an address a CIP-30 wallet gives as hex: a reward address (header type
+ * 0xe/0xf), else a base or enterprise address. The kind is read from the header first, as the
+ * server does (apps/api/src/cardano.js): the SDK's reward parser also reads an enterprise address.
+ */
+export const addressToBech32 = async (addressHex) => {
+  const { RewardAccount, Address } = await loadEvolution();
+  return /^[ef]/i.test(addressHex)
+    ? RewardAccount.toBech32(RewardAccount.fromHex(addressHex))
+    : Address.toBech32(Address.fromHex(addressHex));
 };
