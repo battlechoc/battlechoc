@@ -37,6 +37,7 @@ const ErrorCode = Object.freeze({
     WRONG_NETWORK: 'WRONG NETWORK',
     UNKNOWN_IDENTITY: 'UNKNOWN IDENTITY',
     IDENTITY_TAKEN: 'IDENTITY TAKEN',
+    LAST_IDENTITY: 'LAST IDENTITY',
 });
 
 class HttpError extends Error {

@@ -5,13 +5,14 @@
 
 const { HttpError, ErrorCode } = require('../errors');
 const cardano = require('../cardano');
+const players = require('../players');
 
 const bearerOf = req => {
     const match = /^Bearer (.+)$/.exec(req.get('authorization') || '');
     return match ? match[1] : undefined;
 };
 
-const registerCardanoRoutes = (app, { pool, auth, network, limit, now = () => Date.now() }) => {
+const registerCardanoRoutes = (app, { pool, auth, user, network, limit, oneAtATime, now = () => Date.now() }) => {
     app.get('/cardano/network', (req, res) => {
         res.json({ network: network.name });
     });
@@ -58,6 +59,28 @@ const registerCardanoRoutes = (app, { pool, auth, network, limit, now = () => Da
         }
         const refreshToken = await auth.createSession(playerId);
         res.json({ playerId, refreshToken, ...(await auth.issueAccessToken(playerId)) });
+    });
+
+    app.get('/user/identities', ...user, async (req, res) => {
+        res.json(await players.identitiesOf(pool, req.playerId));
+    });
+
+    app.delete('/user/identities/:subject', ...user, async (req, res) => {
+        const removed = await oneAtATime(req.playerId, () => players.removeIdentity(pool, req.playerId, req.params.subject)).catch(error => {
+            if (error instanceof players.LastIdentityError) {
+                throw new HttpError(409, ErrorCode.LAST_IDENTITY);
+            }
+            throw error;
+        });
+        if (!removed) {
+            throw new HttpError(404, ErrorCode.NOT_FOUND);
+        }
+        res.status(204).end();
+    });
+
+    // before "I've played before" switches a device to a saved account (spec 2026-11-08, section 5)
+    app.get('/user/progress', ...user, async (req, res) => {
+        res.json({ hasProgress: await players.hasProgress(pool, req.playerId) });
     });
 };
 

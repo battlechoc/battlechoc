@@ -61,7 +61,9 @@ const createApp = ({
     });
     // signing in with a Cardano key, only on a server with CARDANO_NETWORK
     if (cardanoNetwork) {
-        registerCardanoRoutes(app, { pool, auth, network: cardanoNetwork, limit: rateLimit({ windowMs: 60000, max: 30 }), now });
+        registerCardanoRoutes(app, {
+            pool, auth, user, network: cardanoNetwork, limit: rateLimit({ windowMs: 60000, max: 30 }), oneAtATime, now,
+        });
     }
     registerPlayerRoutes(app, { pool, auth, user });
     registerLabRoutes(app, { pool, user, recipes, oneAtATime, triesPerHour: labTriesPerHour });

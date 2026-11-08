@@ -151,3 +151,75 @@ describe('signing in with a Cardano key', () => {
         await request(app).post('/auth/cardano/challenge').send({ purpose: 'sign-in', address: testKeys().rewardAddress }).expect(404);
     });
 });
+
+describe('the linked keys of a player and whether an account has progress', () => {
+    test('lists the linked keys, not the device', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        expect((await account.get('/user/identities').expect(200)).body).toEqual([]);
+        const keys = testKeys();
+        await link(app, account, keys);
+        expect((await account.get('/user/identities').expect(200)).body).toEqual([
+            { provider: 'cardano', subject: `stake:${keys.stakeKeyHashHex}`, address: keys.rewardAddress, createdAt: expect.any(String) },
+        ]);
+    });
+
+    test('removes one of two keys, never the last; a removed key no longer signs in', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const [first, second] = [testKeys(), testKeys()];
+        await link(app, account, first);
+        await link(app, account, second);
+        // the game sends the subject encoded (stake%3A…)
+        await account.del(`/user/identities/${encodeURIComponent(`stake:${first.stakeKeyHashHex}`)}`).expect(204);
+        expect((await account.get('/user/identities')).body.map(identity => identity.subject)).toEqual([`stake:${second.stakeKeyHashHex}`]);
+        expect((await signIn(app, first)).status).toBe(404);
+        const last = await account.del(`/user/identities/stake:${second.stakeKeyHashHex}`).expect(409);
+        expect(last.body).toEqual({ error: 'LAST IDENTITY' });
+        expect((await signIn(app, second)).status).toBe(200);
+    });
+
+    test('another player\'s key or one that does not exist cannot be removed', async () => {
+        const { app } = await setup();
+        const owner = await createAccount(app);
+        const other = await createAccount(app);
+        const keys = testKeys();
+        await link(app, owner, keys);
+        await link(app, owner, testKeys());
+        expect((await other.del(`/user/identities/stake:${keys.stakeKeyHashHex}`).expect(404)).body).toEqual({ error: 'NOT FOUND' });
+        await other.del('/user/identities/device').expect(404);
+        expect((await owner.get('/user/identities')).body).toHaveLength(2);
+    });
+
+    test('progress: a finished match (verified or offline), an item or a discovery; not the tutorial, its starter kit or a name', async () => {
+        const { app, pool } = await setup();
+        const fresh = await createAccount(app);
+        expect((await fresh.get('/user/progress').expect(200)).body).toEqual({ hasProgress: false });
+        const tutorial = await createAccount(app, { username: 'Tina', starter: true });
+        expect((await tutorial.get('/user/progress')).body).toEqual({ hasProgress: false });
+
+        const played = await createAccount(app);
+        await pool.query('INSERT INTO track_records (id, player_id, record, result, coins, xp, verified, created_at) VALUES ($1, $2, $3, $4, 0, 10, TRUE, NOW())',
+            [`${played.playerId}:m1`, played.playerId, JSON.stringify({ id: 'm1' }), 'won']);
+        expect((await played.get('/user/progress')).body).toEqual({ hasProgress: true });
+        // a match played offline and reported later counts too (owner, 2026-11-08): its XP and AI ladder
+        // would stay behind on an account nobody can reach
+        const offline = await createAccount(app);
+        await pool.query('INSERT INTO track_records (id, player_id, record, result, coins, xp, verified, created_at) VALUES ($1, $2, $3, $4, 0, 10, FALSE, NOW())',
+            [`${offline.playerId}:m2`, offline.playerId, JSON.stringify({ id: 'm2' }), 'lost']);
+        expect((await offline.get('/user/progress')).body).toEqual({ hasProgress: true });
+        // a match that never ended is none
+        const open = await createAccount(app);
+        await pool.query('INSERT INTO track_records (id, player_id, record, result, coins, xp, verified, created_at) VALUES ($1, $2, $3, $4, 0, 0, FALSE, NOW())',
+            [`${open.playerId}:m3`, open.playerId, JSON.stringify({ id: 'm3' }), 'open']);
+        expect((await open.get('/user/progress')).body).toEqual({ hasProgress: false });
+
+        const crafter = await createAccount(app);
+        await pool.query('INSERT INTO items (id, player_id, item_key, serial, crafted_by) VALUES ($1, $2, $3, 1, $2)', ['item-1', crafter.playerId, 'LIGHT_BARREL']);
+        expect((await crafter.get('/user/progress')).body).toEqual({ hasProgress: true });
+
+        const discoverer = await createAccount(app);
+        await pool.query('INSERT INTO recipe_discoveries (item_key, player_id) VALUES ($1, $2)', ['LIGHT_BARREL', discoverer.playerId]);
+        expect((await discoverer.get('/user/progress')).body).toEqual({ hasProgress: true });
+    });
+});

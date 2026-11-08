@@ -129,6 +129,8 @@ describe('errors', () => {
         const other = await account();
         const taken = await signedChallenge(app, { keys, purpose: 'link', account: other });
         await answers(other.post('/auth/cardano/verify', taken.verify), 409, 'IDENTITY TAKEN');
+        const [{ subject }] = (await player.get('/user/identities')).body;
+        await answers(player.del(`/user/identities/${encodeURIComponent(subject)}`), 409, 'LAST IDENTITY');
     });
 
     test('transport: unknown paths, broken JSON, too many requests', async () => {

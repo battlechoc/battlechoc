@@ -338,7 +338,60 @@ const addTrackRecords = async (pool, playerId, records) => {
     });
 };
 
+/** The Cardano keys linked to a player (the device identity is not listed), oldest first. */
+const identitiesOf = async (pool, playerId) => {
+    const { rows } = await pool.query(
+        "SELECT provider, subject, address, created_at FROM identities WHERE player_id = $1 AND provider = 'cardano' ORDER BY created_at ASC, subject ASC",
+        [playerId]);
+    return rows.map(row => ({ provider: row.provider, subject: row.subject, address: row.address, createdAt: new Date(row.created_at).toISOString() }));
+};
+
+/**
+ * Removes one of a player's Cardano keys: false when the player has no such key, LastIdentityError
+ * when it is their last one (they could not sign in anywhere else any more).
+ */
+class LastIdentityError extends Error {}
+const removeIdentity = (pool, playerId, subject) => withTransaction(pool, async client => {
+    // the player's row is locked: two removals at once (also from two API processes) wait for each other
+    await client.query('SELECT id FROM players WHERE id = $1 FOR UPDATE', [playerId]);
+    const keys = await count(client, "SELECT COUNT(*) AS n FROM identities WHERE player_id = $1 AND provider = 'cardano'", [playerId]);
+    const owned = await count(client, "SELECT COUNT(*) AS n FROM identities WHERE player_id = $1 AND provider = 'cardano' AND subject = $2",
+        [playerId, subject]);
+    if (owned === 0) {
+        return false;
+    }
+    if (keys <= 1) {
+        throw new LastIdentityError();
+    }
+    await client.query("DELETE FROM identities WHERE player_id = $1 AND provider = 'cardano' AND subject = $2", [playerId, subject]);
+    return true;
+});
+
+/**
+ * Whether an account has progress of its own on the server: a finished match (verified, or
+ * played offline and reported: its XP and AI ladder would stay behind otherwise; owner,
+ * 2026-11-08), an item or a recipe discovery. The tutorial (its XP and starter kit) and a name do
+ * not count: a device that only did the tutorial switches to a saved account without being asked.
+ */
+const hasProgress = async (pool, playerId) => {
+    const checks = [
+        "SELECT COUNT(*) AS n FROM track_records WHERE player_id = $1 AND result <> 'open'",
+        'SELECT COUNT(*) AS n FROM items WHERE player_id = $1',
+        'SELECT COUNT(*) AS n FROM recipe_discoveries WHERE player_id = $1',
+    ];
+    for (const sql of checks) {
+        if (await count(pool, sql, [playerId]) > 0) {
+            return true;
+        }
+    }
+    return false;
+};
+
 module.exports = {
+    identitiesOf,
+    removeIdentity,
+    LastIdentityError,
+    hasProgress,
     findPlayer, findPlayerByName, setUsername, setLanguage, setTutorialStep, mergeTutorialFlags, freeRandomName, assignRandomName,
     createPlayer, stats, statsOf, results, ladderOf, advanceAiLadder, finishTutorial, rankOf, playerInfo, highscore, friendsOf, addFriend,
     removeFriend, addTrackRecords, levelOf, itemsOf, equipmentOf, loadoutOf,
