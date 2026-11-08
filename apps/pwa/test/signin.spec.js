@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { api, createPlayer } from "./helpers/players.js";
 import { accountOf, readEntry, writeEntry } from "./helpers/profile.js";
+import { linkSecondKey, nodeKeys, signAs } from "./helpers/cardano.js";
+import fs from "node:fs";
 
 // Saving progress with 24 recovery words (a Cardano key made on the device), the preprod chip,
 // and the linked keys in the profile. The API runs with CARDANO_NETWORK=preprod
@@ -210,10 +212,14 @@ const enterWords = async (page, text) => {
   await page.getByRole("button", { name: "Continue" }).click();
 };
 
-// the device switched to the saved account: it reloads with the saved account's session
+// the device switched to the saved account: it reloads with the saved account's session (a read
+// that the reload cuts off is tried again)
 const switchedTo = (page, playerId) =>
   expect
-    .poll(async () => (await accountOf(page))?.playerId, { timeout: 15000 })
+    .poll(
+      async () => (await accountOf(page).catch(() => undefined))?.playerId,
+      { timeout: 15000 }
+    )
     .toBe(playerId);
 
 test.describe("signing in again with the words", () => {
@@ -507,5 +513,473 @@ test.describe("switching never loses a device's progress silently", () => {
     ).toBeVisible();
     await device.context.close();
     await saved.context.close();
+  });
+});
+
+// passkeys need a host name: the game on http://localhost (the e2e preview server's port)
+const LOCALHOST = `http://localhost:${process.env.PORT || 3000}`;
+
+// a passkey authenticator on the page (Chromium over CDP), with or without PRF; `asserted` counts
+// the times a passkey was used (a fingerprint/face/PIN prompt on a real device)
+const addAuthenticator = async (page, { prf = true } = {}) => {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("WebAuthn.enable");
+  await cdp.send("WebAuthn.addVirtualAuthenticator", {
+    options: {
+      protocol: "ctap2",
+      transport: "internal",
+      hasResidentKey: true,
+      hasUserVerification: true,
+      isUserVerified: true,
+      hasPrf: prf,
+    },
+  });
+  const used = { count: 0 };
+  cdp.on("WebAuthn.credentialAsserted", () => {
+    used.count += 1;
+  });
+  return used;
+};
+
+const accessTokenOf = async (page, request) => {
+  const { refreshToken } = await accountOf(page);
+  return (
+    await (
+      await request.post(`${api}/accounts/token`, { data: { refreshToken } })
+    ).json()
+  ).accessToken;
+};
+
+const passkeysOf = async (page, request) =>
+  (
+    await request.get(`${api}/user/passkeys`, {
+      headers: {
+        Authorization: `Bearer ${await accessTokenOf(page, request)}`,
+      },
+    })
+  ).json();
+
+// a saved player on localhost: the words shown once, closed without the check
+const savedOnLocalhost = async (
+  browser,
+  request,
+  name,
+  { prf = true } = {}
+) => {
+  const player = await createPlayer(browser, request, name, {
+    origin: LOCALHOST,
+  });
+  const used = await addAuthenticator(player.page, { prf });
+  await openProfile(player.page);
+  const row = player.page.getByTestId("save-progress");
+  await row.getByRole("button", { name: "Save your progress" }).click();
+  const words = await shownWords(player.page);
+  await player.page.locator("[data-icon=back]:visible").click();
+  await expect(row).toContainText("Not backed up yet");
+  await row.getByRole("button", { name: "Advanced" }).click();
+  return { ...player, row, words, used };
+};
+
+test.describe("backups with a passkey or a file (plan 2)", () => {
+  test("a passkey backs the words up; showing the words then asks for the passkey", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page, row, words, used } = await savedOnLocalhost(
+      browser,
+      request,
+      "SiXaver"
+    );
+    await row.getByRole("button", { name: "Save with a passkey" }).click();
+    await expect(row).toContainText("Backed up with: passkey");
+    await expect(row).not.toContainText("Not backed up yet");
+    expect(await passkeysOf(page, request)).toHaveLength(1);
+    await page.screenshot({ path: "test/output/signin-backups.png" });
+
+    const before = used.count;
+    await row.getByRole("button", { name: "Show recovery words" }).click();
+    expect(await shownWords(page)).toEqual(words);
+    expect(used.count).toBeGreaterThan(before);
+    await context.close();
+  });
+
+  test("a passkey without PRF cannot protect the words: it says so and keeps nothing", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page, row } = await savedOnLocalhost(
+      browser,
+      request,
+      "SiYara",
+      { prf: false }
+    );
+    await row.getByRole("button", { name: "Save with a passkey" }).click();
+    await expect(
+      page.getByText("can't protect the words", { exact: false })
+    ).toBeVisible();
+    expect(await passkeysOf(page, request)).toEqual([]);
+    await expect(row).toContainText("Not backed up yet");
+    await context.close();
+  });
+
+  test("a backup file is saved with a password and holds no word in the clear", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page, row, words } = await savedOnLocalhost(
+      browser,
+      request,
+      "SiZoe"
+    );
+    await row.getByRole("button", { name: "Save a backup file" }).click();
+    await page.getByLabel("Password", { exact: true }).fill("short");
+    await page.getByLabel("Password again").fill("short");
+    await page.getByRole("button", { name: "Save the file" }).click();
+    await expect(page.getByText("At least 8 characters")).toBeVisible();
+    await page.getByLabel("Password", { exact: true }).fill("choco-late-42");
+    await page.getByLabel("Password again").fill("choco-late-43");
+    await page.getByRole("button", { name: "Save the file" }).click();
+    await expect(page.getByText("not the same")).toBeVisible();
+    await page.getByLabel("Password again").fill("choco-late-42");
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "Save the file" }).click(),
+    ]);
+    expect(download.suggestedFilename()).toBe("battlechoc-recovery.json");
+    const text = fs.readFileSync(await download.path(), "utf8");
+    expect(JSON.parse(text).format).toBe("battlechoc-recovery");
+    for (const word of words) {
+      expect(text.includes(` ${word} `)).toBe(false);
+    }
+    await expect(row).toContainText("Backed up with: file");
+    await context.close();
+  });
+
+  test("removing a key needs a proof: the passkey", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page, row, words, used } = await savedOnLocalhost(
+      browser,
+      request,
+      "SiAbel"
+    );
+    await row.getByRole("button", { name: "Save with a passkey" }).click();
+    await expect(row).toContainText("Backed up with: passkey");
+    const { second, status } = await linkSecondKey(
+      request,
+      await accessTokenOf(page, request),
+      words
+    );
+    expect(status).toBe(200);
+    // the profile reads its keys when it opens
+    await page.keyboard.press("Escape");
+    await openProfile(page);
+    await row.getByRole("button", { name: "Advanced" }).click();
+    const before = used.count;
+    await row
+      .getByRole("button", {
+        name: `Remove ${second.rewardAddress.slice(0, 14)}`,
+        exact: false,
+      })
+      .click();
+    await page.getByRole("button", { name: "Use my passkey" }).click();
+    await expect
+      .poll(
+        async () =>
+          (
+            await (
+              await request.get(`${api}/user/identities`, {
+                headers: {
+                  Authorization: `Bearer ${await accessTokenOf(page, request)}`,
+                },
+              })
+            ).json()
+          ).length
+      )
+      .toBe(1);
+    expect(used.count).toBeGreaterThan(before);
+    await context.close();
+  });
+});
+
+// this browser becomes a new device: the game's data goes (on a page that does not hold the
+// database open), the passkey authenticator stays; resolves when the game made its new account
+const becomeNewDevice = async (page, before) => {
+  await page.goto(`${LOCALHOST}/privacy-policy/`);
+  await page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const request = indexedDB.deleteDatabase("battlechoc");
+        request.onsuccess = request.onerror = request.onblocked = resolve;
+      })
+  );
+  await page.goto(`${LOCALHOST}/`, { waitUntil: "networkidle" });
+  await expect
+    .poll(async () => (await accountOf(page))?.playerId, { timeout: 15000 })
+    .not.toBe(before);
+};
+
+test.describe("the passkey guards the words (plan 2, after review)", () => {
+  test("with a passkey, saving a backup file asks for the passkey first", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page, row, used } = await savedOnLocalhost(
+      browser,
+      request,
+      "SiDaria"
+    );
+    await row.getByRole("button", { name: "Save with a passkey" }).click();
+    await expect(row).toContainText("Backed up with: passkey");
+    const before = used.count;
+    await row.getByRole("button", { name: "Save a backup file" }).click();
+    await page.getByLabel("Password", { exact: true }).fill("choco-late-42");
+    await page.getByLabel("Password again").fill("choco-late-42");
+    await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "Save the file" }).click(),
+    ]);
+    expect(used.count).toBeGreaterThan(before);
+    await context.close();
+  });
+
+  test("removing this device's own key takes its passkey backup and its words along", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page, row, words } = await savedOnLocalhost(
+      browser,
+      request,
+      "SiEmil"
+    );
+    await row.getByRole("button", { name: "Save with a passkey" }).click();
+    await expect(row).toContainText("Backed up with: passkey");
+    const own = nodeKeys(words);
+    const { status } = await linkSecondKey(
+      request,
+      await accessTokenOf(page, request),
+      words
+    );
+    expect(status).toBe(200);
+    await page.keyboard.press("Escape");
+    await openProfile(page);
+    await row.getByRole("button", { name: "Advanced" }).click();
+    await row
+      .getByRole("button", {
+        name: `Remove ${own.rewardAddress.slice(0, 14)}`,
+        exact: false,
+      })
+      .click();
+    await page.getByRole("button", { name: "Use my passkey" }).click();
+    await expect.poll(() => passkeysOf(page, request)).toEqual([]);
+    await expect(
+      row.getByRole("button", { name: "Show recovery words" })
+    ).toHaveCount(0);
+    expect(await readEntry(page, "player", "cardanoKey")).toBeUndefined();
+    await context.close();
+  });
+
+  test("words that are not the player's do not confirm a change", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page, row, words } = await savedOnLocalhost(
+      browser,
+      request,
+      "SiFrida"
+    );
+    const { second, status } = await linkSecondKey(
+      request,
+      await accessTokenOf(page, request),
+      words
+    );
+    expect(status).toBe(200);
+    await page.keyboard.press("Escape");
+    await openProfile(page);
+    await row.getByRole("button", { name: "Advanced" }).click();
+    await row
+      .getByRole("button", {
+        name: `Remove ${second.rewardAddress.slice(0, 14)}`,
+        exact: false,
+      })
+      .click();
+    await page.getByTestId("confirm-words").fill(nodeKeys().words.join(" "));
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.getByText("Your keys are unchanged")).toBeVisible();
+    const keys = await (
+      await request.get(`${api}/user/identities`, {
+        headers: {
+          Authorization: `Bearer ${await accessTokenOf(page, request)}`,
+        },
+      })
+    ).json();
+    expect(keys).toHaveLength(2);
+    await context.close();
+  });
+});
+
+test.describe("a removed key signs its devices out (plan 2, after review)", () => {
+  test("a device signed in with a removed key forgets its words, says why and starts anew", async ({
+    browser,
+    request,
+  }) => {
+    const saved = await savedPlayer(browser, request, "SiLotte");
+    const { context, page } = await freshDevice(browser);
+    await page.getByTestId("start-button").click();
+    await page
+      .getByRole("button", { name: "I already have an account" })
+      .click();
+    await enterWords(page, saved.words.join(" "));
+    await switchedTo(page, saved.playerId);
+    expect(await readEntry(page, "player", "cardanoKey")).toBeTruthy();
+
+    // the first device replaces the key: a second one in, the words' key out
+    const token = await accessTokenOf(saved.page, request);
+    const { second, status } = await linkSecondKey(request, token, saved.words);
+    expect(status).toBe(200);
+    const { confirmToken } = await (
+      await signAs(request, token, second, "confirm")
+    ).json();
+    const removed = await request.delete(
+      `${api}/user/identities/${encodeURIComponent(
+        nodeKeys(saved.words).subject
+      )}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "X-Battlechoc-Confirm": confirmToken,
+        },
+      }
+    );
+    expect(removed.status()).toBe(204);
+
+    await page.reload({ waitUntil: "networkidle" });
+    await expect(
+      page.getByText("This device was signed out because its key was removed")
+    ).toBeVisible({ timeout: 15000 });
+    await expect
+      .poll(async () => (await accountOf(page))?.playerId, { timeout: 15000 })
+      .not.toBe(saved.playerId);
+    expect(await readEntry(page, "player", "cardanoKey")).toBeUndefined();
+    expect(
+      await readEntry(page, "player", "cardanoKeyBackedUp")
+    ).toBeUndefined();
+    // the device that removed the key plays on
+    expect(
+      (
+        await request.post(`${api}/accounts/token`, {
+          data: { refreshToken: (await accountOf(saved.page)).refreshToken },
+        })
+      ).status()
+    ).toBe(200);
+    await context.close();
+    await saved.context.close();
+  });
+});
+
+test.describe("signing in again with a passkey or a backup file (plan 2)", () => {
+  test("a new device signs in with the passkey", async ({
+    browser,
+    request,
+  }) => {
+    const saved = await savedOnLocalhost(browser, request, "SiBruno");
+    const { page, row } = saved;
+    await row.getByRole("button", { name: "Save with a passkey" }).click();
+    await expect(row).toContainText("Backed up with: passkey");
+    const { playerId } = await accountOf(page);
+    await becomeNewDevice(page, playerId);
+
+    await openProfile(page);
+    await page
+      .getByRole("button", { name: "Connect an existing account" })
+      .click();
+    await page.screenshot({ path: "test/output/signin-connect-backups.png" });
+    await page.getByRole("button", { name: "Use my passkey" }).click();
+    await switchedTo(page, playerId);
+    // the words came from the passkey: that is the backup, not paper
+    await openProfile(page);
+    const after = page.getByTestId("save-progress");
+    await after.getByRole("button", { name: "Advanced" }).click();
+    await expect(after).toContainText("Backed up with: passkey");
+    await expect(after).not.toContainText("on paper");
+    await saved.context.close();
+  });
+
+  test("a backup file opens on a new device with its password; a wrong password says so", async ({
+    browser,
+    request,
+  }) => {
+    const saved = await savedOnLocalhost(browser, request, "SiCarla");
+    const { page, row } = saved;
+    await row.getByRole("button", { name: "Save a backup file" }).click();
+    await page.getByLabel("Password", { exact: true }).fill("choco-late-42");
+    await page.getByLabel("Password again").fill("choco-late-42");
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "Save the file" }).click(),
+    ]);
+    const file = await download.path();
+    const { playerId } = await accountOf(page);
+
+    const device = await freshDevice(browser);
+    const signIns = [];
+    device.page.on("request", (sent) => {
+      if (sent.url().includes("/auth/cardano/")) {
+        signIns.push(sent.url());
+      }
+    });
+    await openProfile(device.page);
+    await device.page
+      .getByRole("button", { name: "Connect an existing account" })
+      .click();
+    await device.page.getByTestId("connect-file").setInputFiles(file);
+    await device.page
+      .getByLabel("Password", { exact: true })
+      .fill("wrong-password");
+    await device.page
+      .getByRole("button", { name: "Open", exact: true })
+      .click();
+    await expect(
+      device.page.getByText("The password does not fit this file")
+    ).toBeVisible();
+    expect(signIns).toEqual([]);
+    await device.page
+      .getByLabel("Password", { exact: true })
+      .fill("choco-late-42");
+    await device.page
+      .getByRole("button", { name: "Open", exact: true })
+      .click();
+    await switchedTo(device.page, playerId);
+    await expect(
+      device.page.getByText("Start Game", { exact: true }).first()
+    ).toBeVisible({ timeout: 15000 });
+    await openProfile(device.page);
+    const after = device.page.getByTestId("save-progress");
+    await after.getByRole("button", { name: "Advanced" }).click();
+    await expect(after).toContainText("Backed up with: file");
+    await expect(after).not.toContainText("on paper");
+    await device.context.close();
+    await saved.context.close();
+  });
+
+  test("a file that is no backup says so at once, asks for no password and sends nothing", async ({
+    browser,
+  }) => {
+    const { context, page } = await freshDevice(browser);
+    await openProfile(page);
+    await page
+      .getByRole("button", { name: "Connect an existing account" })
+      .click();
+    await page.getByTestId("connect-file").setInputFiles({
+      name: "notes.json",
+      mimeType: "application/json",
+      buffer: Buffer.from('{"hello":"world"}'),
+    });
+    await expect(
+      page.getByText("This is not a battlechoc backup file")
+    ).toBeVisible();
+    await expect(page.getByLabel("Password", { exact: true })).toHaveCount(0);
+    await context.close();
   });
 });

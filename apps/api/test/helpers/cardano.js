@@ -32,4 +32,26 @@ const signedChallenge = async (app, { keys, purpose, account }) => {
     return { challenge, verify: { nonce: challenge.nonce, ...signMessage(keys, challenge.message) } };
 };
 
-module.exports = { testKeys, signMessage, signedChallenge };
+/**
+ * A confirm token for `account` (plan 2: key changes need a proof by an existing key), signed by
+ * `keys`, which must be linked to that account. Resolves with the whole answer of /verify.
+ */
+const confirmWith = async (app, account, keys) => {
+    const { verify } = await signedChallenge(app, { keys, purpose: 'confirm', account });
+    return account.post('/auth/cardano/verify', verify);
+};
+
+/** Links `keys` to `account` with a confirm token (header X-Battlechoc-Confirm). */
+const linkConfirmed = async (app, account, keys, confirmToken) => {
+    const { verify } = await signedChallenge(app, { keys, purpose: 'link', account });
+    return request(app).post('/auth/cardano/verify').set('Authorization', `Bearer ${account.accessToken}`)
+        .set('X-Battlechoc-Confirm', confirmToken).send(verify);
+};
+
+/** Removes the key `subject` of `account`, with a confirm token when one is given. */
+const removeKey = (app, account, subject, confirmToken) => {
+    const sent = request(app).delete(`/user/identities/${encodeURIComponent(subject)}`).set('Authorization', `Bearer ${account.accessToken}`);
+    return confirmToken ? sent.set('X-Battlechoc-Confirm', confirmToken) : sent;
+};
+
+module.exports = { testKeys, signMessage, signedChallenge, confirmWith, linkConfirmed, removeKey };

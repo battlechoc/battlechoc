@@ -12,7 +12,7 @@ const instance = createClient({ baseURL: apiUrl });
  * NoHealthyInternetConnectionError; an answer other than 2xx rejects with the error of
  * helper/http.js (error.response.status).
  */
-const request = async (method, url, body) => {
+const request = async (method, url, body, headers = {}) => {
   let token;
   try {
     token = await account.token();
@@ -24,6 +24,7 @@ const request = async (method, url, body) => {
       Authorization: `Bearer ${token}`,
       "battlechoc-pwa-version": version,
       "battlechoc-pwa-date": builtAt,
+      ...headers,
     },
   };
 
@@ -43,7 +44,8 @@ const request = async (method, url, body) => {
 /** The answer's body of a GET. */
 const get = async (url, signal) => (await request("get", url, signal)).data;
 
-/** The answer's body of a POST. */
-const post = async (url, body) => (await request("post", url, body)).data;
+/** The answer's body of a POST (`headers`: extra request headers). */
+const post = async (url, body, headers) =>
+  (await request("post", url, body, headers)).data;
 
 export { request, get, post };

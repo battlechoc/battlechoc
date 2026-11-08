@@ -8,6 +8,8 @@ const ErrorCode = Object.freeze({
     MISSING_ACCESS_TOKEN: 'missing access token',
     INVALID_ACCESS_TOKEN: 'invalid access token',
     INVALID_REFRESH_TOKEN: 'invalid refresh token',
+    // a refresh token whose session ended because the key that signed it in was removed
+    SESSION_ENDED: 'session ended',
 
     NOT_FOUND: 'NOT FOUND',
     INVALID_JSON: 'INVALID JSON',
@@ -38,6 +40,10 @@ const ErrorCode = Object.freeze({
     UNKNOWN_IDENTITY: 'UNKNOWN IDENTITY',
     IDENTITY_TAKEN: 'IDENTITY TAKEN',
     LAST_IDENTITY: 'LAST IDENTITY',
+    CONFIRMATION_REQUIRED: 'CONFIRMATION REQUIRED',
+    NOT_YOUR_KEY: 'NOT YOUR KEY',
+    TOO_MANY_PASSKEYS: 'TOO MANY PASSKEYS',
+    PASSKEY_TAKEN: 'PASSKEY TAKEN',
 });
 
 class HttpError extends Error {

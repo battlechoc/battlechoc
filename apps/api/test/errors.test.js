@@ -7,7 +7,7 @@ const { HttpError, ErrorCode } = require('../src/errors');
 const { NotEnoughIngredientsError } = require('../src/pantry');
 const { closeTestPools, failingOn } = require('./helpers/db');
 const { createTestApp, createAccount, withToken } = require('./helpers/api');
-const { testKeys, signedChallenge } = require('./helpers/cardano');
+const { testKeys, signedChallenge, confirmWith, removeKey } = require('./helpers/cardano');
 
 afterAll(closeTestPools);
 
@@ -48,6 +48,9 @@ describe('errors', () => {
         await answers(request(app).post('/accounts/token').send({ refreshToken: 'x'.repeat(40) }), 401, 'invalid refresh token');
         await pool.query('UPDATE sessions SET revoked = TRUE WHERE player_id = $1', [player.playerId]);
         await answers(request(app).post('/accounts/token').send({ refreshToken: player.refreshToken }), 401, 'invalid refresh token');
+        // a session that a key removal ended says so (the game then forgets that key's words)
+        await pool.query("UPDATE sessions SET revoked_reason = 'key-removed' WHERE player_id = $1", [player.playerId]);
+        await answers(request(app).post('/accounts/token').send({ refreshToken: player.refreshToken }), 401, 'session ended');
         time += 16 * 60 * 1000;
         await answers(player.get('/user'), 401, 'invalid access token');
     });
@@ -130,7 +133,15 @@ describe('errors', () => {
         const taken = await signedChallenge(app, { keys, purpose: 'link', account: other });
         await answers(other.post('/auth/cardano/verify', taken.verify), 409, 'IDENTITY TAKEN');
         const [{ subject }] = (await player.get('/user/identities')).body;
-        await answers(player.del(`/user/identities/${encodeURIComponent(subject)}`), 409, 'LAST IDENTITY');
+        await answers(removeKey(app, player, subject), 403, 'CONFIRMATION REQUIRED');
+        await answers(confirmWith(app, player, testKeys()), 403, 'NOT YOUR KEY');
+        const { confirmToken } = (await confirmWith(app, player, keys)).body;
+        await answers(removeKey(app, player, subject, confirmToken), 409, 'LAST IDENTITY');
+        for (let n = 0; n < 10; n += 1) {
+            await player.post('/user/passkeys', { credentialId: `c${n}`, subject, iv: 'aXY', data: 'ZA' }).expect(201);
+        }
+        await answers(player.post('/user/passkeys', { credentialId: 'c10', subject, iv: 'aXY', data: 'ZA' }), 409, 'TOO MANY PASSKEYS');
+        await answers(player.post('/user/passkeys', { credentialId: 'c0', subject, iv: 'aXY', data: 'b3RoZXI' }), 409, 'PASSKEY TAKEN');
     });
 
     test('transport: unknown paths, broken JSON, too many requests', async () => {

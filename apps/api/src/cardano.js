@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const { KeyHash, RewardAccount, COSE } = require('@evolution-sdk/evolution');
 const { cardano } = require('@battlechoc/battlechoc-shared-functions');
 const { HttpError, ErrorCode } = require('./errors');
+const { count } = require('./db');
 
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const IDENTITY_PROVIDER = 'cardano';
@@ -132,6 +133,67 @@ const linkIdentity = async (pool, { playerId, subject, address }) => {
     return { provider: IDENTITY_PROVIDER, subject, address };
 };
 
+/** How many Cardano keys a player has. */
+const keyCount = (pool, playerId) => count(pool,
+    'SELECT COUNT(*) AS n FROM identities WHERE player_id = $1 AND provider = $2', [playerId, IDENTITY_PROVIDER]);
+
+// passkey backups: base64url text of plausible sizes (a credential id is at most 1023 bytes)
+const BASE64URL = /^[A-Za-z0-9_-]+$/;
+const plausible = (text, max) => typeof text === 'string' && text.length > 0 && text.length <= max && BASE64URL.test(text);
+
+// passkeys per player: a few devices and password managers, not a storage
+const MAX_PASSKEYS = 10;
+
+/**
+ * Stores a passkey backup of the words of one of the player's keys: true when it is new, false
+ * when that passkey has the same one already (another one for it: PASSKEY TAKEN). INVALID
+ * REQUEST PARAMETERS for anything else, TOO MANY PASSKEYS over the cap. The caller runs it one at
+ * a time per player.
+ */
+const storePasskey = async (pool, playerId, { credentialId, subject, iv, data } = {}) => {
+    if (!plausible(credentialId, 1400) || !plausible(iv, 64) || !plausible(data, 4096) || typeof subject !== 'string') {
+        throw invalidRequest();
+    }
+    if (await playerOfSubject(pool, subject) !== playerId) {
+        throw invalidRequest();
+    }
+    const { rows } = await pool.query('SELECT player_id, subject, iv, data FROM passkey_backups WHERE credential_id = $1', [credentialId]);
+    if (rows.length > 0) {
+        const [row] = rows;
+        if (row.player_id !== playerId) {
+            throw invalidRequest();
+        }
+        // the same backup again is fine; another one must not replace what a passkey guards
+        if (row.subject !== subject || row.iv !== iv || row.data !== data) {
+            throw new HttpError(409, ErrorCode.PASSKEY_TAKEN);
+        }
+        return false;
+    }
+    if (await count(pool, 'SELECT COUNT(*) AS n FROM passkey_backups WHERE player_id = $1', [playerId]) >= MAX_PASSKEYS) {
+        throw new HttpError(409, ErrorCode.TOO_MANY_PASSKEYS);
+    }
+    await pool.query('INSERT INTO passkey_backups (credential_id, player_id, subject, iv, data) VALUES ($1, $2, $3, $4, $5)',
+        [credentialId, playerId, subject, iv, data]);
+    return true;
+};
+
+/** The player's passkey backups: [{ credentialId, subject, createdAt }]. */
+const passkeysOf = async (pool, playerId) => {
+    const { rows } = await pool.query(
+        'SELECT credential_id, subject, created_at FROM passkey_backups WHERE player_id = $1 ORDER BY created_at ASC, credential_id ASC',
+        [playerId]);
+    return rows.map(row => ({ credentialId: row.credential_id, subject: row.subject, createdAt: new Date(row.created_at).toISOString() }));
+};
+
+/**
+ * The encrypted words of a passkey ({ iv, data }: only what the passkey opens, not whose they
+ * are); undefined when there are none.
+ */
+const passkeyBackup = async (pool, credentialId) => {
+    const { rows } = await pool.query('SELECT iv, data FROM passkey_backups WHERE credential_id = $1', [String(credentialId)]);
+    return rows.length > 0 ? { iv: rows[0].iv, data: rows[0].data } : undefined;
+};
+
 /** Deletes the challenges nobody used in time (cleanup.js). */
 const cleanupChallenges = (pool, now) => pool.query('DELETE FROM auth_challenges WHERE expires_at < $1', [new Date(now)]);
 
@@ -144,5 +206,9 @@ module.exports = {
     consumeChallenge,
     playerOfSubject,
     linkIdentity,
+    keyCount,
+    storePasskey,
+    passkeysOf,
+    passkeyBackup,
     cleanupChallenges,
 };

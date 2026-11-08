@@ -104,6 +104,7 @@ export default defineConfig({
         CARDANO_NETWORK: "preprod",
         // test/signin.spec.js creates many devices from one address in a minute
         ACCOUNTS_PER_MINUTE: "500",
+        CARDANO_PER_MINUTE: "1000",
       },
     },
   ],

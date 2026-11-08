@@ -9,6 +9,15 @@ import {
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import {
+  BackupFileError,
+  decryptBackup,
+  isBackupFile,
+  PasskeyCancelledError,
+  PasskeyPrfError,
+  PasskeyUnknownError,
+  passkeySupport,
+  features,
+  wordsFromPasskey,
   cardanoApi,
   connectAccount,
   keyStore,
@@ -24,9 +33,12 @@ import logger from "../../helper/logger";
 // (any finished match, an item or a recipe counts: GET /user/progress). Signing in reloads the
 // game as the saved player; every failure leaves this device's account as it was. Switching never
 // loses this device's progress silently: words of its own that are not backed up have to be
-// backed up first, and progress that was never saved is said to be gone.
+// backed up first, and progress that was never saved is said to be gone. Plan 2: the words can
+// also come from a passkey ("Use my passkey") or a backup file and its password.
 
 const WORD_COUNT = 24;
+// the largest file read as a backup (one is a few hundred bytes)
+const MAX_FILE_SIZE = 64 * 1024;
 
 const useStyles = createUseStyles((theme) => ({
   body: {
@@ -83,6 +95,28 @@ const useStyles = createUseStyles((theme) => ({
     color: theme.color.gold.light,
     margin: "0.8em auto 0",
   },
+  fileForm: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    marginBottom: "0.8em",
+  },
+  field: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.2em",
+    width: "min(20em, 100%)",
+    fontFamily: theme.font.body,
+    fontSize: theme.font.size.sm,
+    color: "white",
+  },
+  password: {
+    padding: "0.45em 0.7em",
+    borderRadius: 10,
+    border: `0.15em solid ${theme.color.secondary.light}`,
+    fontFamily: theme.font.body,
+    fontSize: `max(16px, ${theme.font.size.md})`,
+  },
   buttons: {
     display: "flex",
     justifyContent: "center",
@@ -129,6 +163,13 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
   // on this device that are not backed up yet); the words dialog for backing them up
   const [device, setDevice] = useState({ lost: false, words: null });
   const [backingUp, setBackingUp] = useState(false);
+  // the words of this attempt and where they came from ("words" typed, "passkey", "file")
+  const chosen = useRef({ words: [], source: "words" });
+  const [canPasskey, setCanPasskey] = useState(false);
+  // a backup file waiting for its password
+  const [fileText, setFileText] = useState(null);
+  const [password, setPassword] = useState("");
+  const fileInput = useRef(null);
   // one run at a time: a second tap while the words are checked or the switch runs does nothing
   const running = useRef(false);
 
@@ -139,7 +180,17 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
     }
   }, [open]);
 
-  const words = normalizeWords(text);
+  const typed = normalizeWords(text);
+
+  useEffect(() => {
+    if (open) {
+      setFileText(null);
+      setPassword("");
+      features
+        .offerPasskey(passkeySupport)
+        .then(setCanPasskey, () => setCanPasskey(false));
+    }
+  }, [open]);
 
   // closing forgets the words (a shared device), but not while a switch runs
   const close = () => {
@@ -147,6 +198,8 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
       return;
     }
     setText("");
+    setFileText(null);
+    setPassword("");
     onClose();
   };
 
@@ -163,7 +216,9 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
     setBusy(true);
     setError(null);
     try {
-      await connectAccount(words);
+      await connectAccount(chosen.current.words, {
+        source: chosen.current.source,
+      });
     } catch (failure) {
       logger.warn("could not sign in with the words", failure);
       fail(signInError(failure));
@@ -172,11 +227,10 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
     window.location.reload();
   };
 
-  const proceed = async () => {
-    if (running.current) {
-      return;
-    }
-    running.current = true;
+  // checks the words of this attempt and signs in, or asks first what switching costs; the
+  // caller holds the run (`running`)
+  const proceed = async (words, source) => {
+    chosen.current = { words, source };
     setBusy(true);
     setError(null);
     let progress;
@@ -188,7 +242,7 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
       // the words of the account this device already is: nothing to choose
       const [answer, identities, subject] = await Promise.all([
         cardanoApi.progress(),
-        cardanoApi.identities().catch(() => []),
+        cardanoApi.identities(),
         subjectOfWords(words),
       ]);
       const same = identities.some((identity) => identity.subject === subject);
@@ -205,7 +259,12 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
         const ownWords = identities.some(
           (identity) => identity.subject === localSubject
         );
-        const backedUp = await keyStore.backedUp().catch(() => false);
+        // words a passkey keeps on the server are backed up too (unreadable: not counted, so
+        // the device rather asks for a backup than switches without one)
+        const passkeys = await cardanoApi.passkeys().catch(() => []);
+        const backedUp =
+          (await keyStore.backedUp().catch(() => false)) ||
+          passkeys.some((passkey) => passkey.subject === localSubject);
         setDevice({
           lost: identities.length === 0,
           words: ownWords && !backedUp ? local : null,
@@ -223,6 +282,93 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
       return;
     }
     await signIn();
+  };
+
+  // "Continue" with the typed words
+  const fromTyped = () => {
+    if (running.current) {
+      return;
+    }
+    running.current = true;
+    proceed(typed, "words");
+  };
+
+  // "Use my passkey": the browser offers the player's battlechoc passkeys
+  const fromPasskey = async () => {
+    if (running.current) {
+      return;
+    }
+    running.current = true;
+    setBusy(true);
+    setError(null);
+    let unlocked;
+    try {
+      unlocked = await wordsFromPasskey();
+    } catch (failure) {
+      running.current = false;
+      setBusy(false);
+      if (failure instanceof PasskeyCancelledError) {
+        return;
+      }
+      logger.warn("could not open the words with a passkey", failure);
+      setError(
+        t(
+          failure instanceof PasskeyPrfError
+            ? tr.PASSKEY_CANT_UNLOCK
+            : failure instanceof PasskeyUnknownError
+              ? tr.PASSKEY_UNKNOWN
+              : tr.SIGN_IN_FAILED
+        )
+      );
+      return;
+    }
+    await proceed(unlocked, "passkey");
+  };
+
+  // "Open a backup file": a file this game cannot open is said at once, without a password
+  const chooseFile = async (event) => {
+    const [file] = event.target.files || [];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+    setError(null);
+    // a backup file is a few hundred bytes: a big file is no backup and is not read
+    const content =
+      file.size > MAX_FILE_SIZE ? "" : await file.text().catch(() => "");
+    if (!isBackupFile(content)) {
+      setFileText(null);
+      setError(t(tr.FILE_NOT_A_BACKUP));
+      return;
+    }
+    setPassword("");
+    setFileText(content);
+  };
+
+  const openFile = async () => {
+    if (running.current) {
+      return;
+    }
+    running.current = true;
+    setBusy(true);
+    setError(null);
+    let opened;
+    try {
+      opened = await decryptBackup(fileText, password);
+    } catch (failure) {
+      running.current = false;
+      setBusy(false);
+      setError(
+        t(
+          failure instanceof BackupFileError &&
+            failure.reason === "wrong-password"
+            ? tr.FILE_WRONG_PASSWORD
+            : tr.FILE_NOT_A_BACKUP
+        )
+      );
+      return;
+    }
+    await proceed(opened, "file");
   };
 
   const paste = async () => {
@@ -284,6 +430,56 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
           </>
         ) : (
           <>
+            <div className={classes.buttons}>
+              {canPasskey ? (
+                <Button color="secondary" disabled={busy} onClick={fromPasskey}>
+                  {t(tr.CONFIRM_PASSKEY)}
+                </Button>
+              ) : null}
+              <Button
+                color="secondary"
+                disabled={busy}
+                onClick={() => fileInput.current && fileInput.current.click()}
+              >
+                {t(tr.OPEN_FILE)}
+              </Button>
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".json,.txt,application/json,text/plain"
+                data-testid="connect-file"
+                hidden
+                onChange={chooseFile}
+              />
+            </div>
+            {fileText !== null ? (
+              <form
+                className={classes.fileForm}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  openFile();
+                }}
+              >
+                <p className={classes.text}>{t(tr.FILE_OPEN_TEXT)}</p>
+                <label className={classes.field}>
+                  {t(tr.FILE_PASSWORD)}
+                  <input
+                    className={classes.password}
+                    type="password"
+                    autoComplete="current-password"
+                    autoFocus
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
+                </label>
+                <div className={classes.buttons}>
+                  <Button color="primary" disabled={busy} onClick={openFile}>
+                    {t(tr.FILE_OPEN)}
+                  </Button>
+                </div>
+                <button type="submit" hidden />
+              </form>
+            ) : null}
             <p className={classes.text}>{t(tr.CONNECT_TEXT)}</p>
             <textarea
               className={classes.area}
@@ -296,7 +492,7 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
               onChange={(event) => setText(event.target.value)}
             />
             <div className={classes.counter}>
-              <span>{t(tr.WORDS_COUNT, words.length)}</span>
+              <span>{t(tr.WORDS_COUNT, typed.length)}</span>
               {canPaste() ? (
                 <button className={classes.link} onClick={paste}>
                   {t(tr.PASTE)}
@@ -311,8 +507,8 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
             <div className={classes.buttons}>
               <Button
                 color="primary"
-                disabled={busy || words.length !== WORD_COUNT}
-                onClick={proceed}
+                disabled={busy || typed.length !== WORD_COUNT}
+                onClick={fromTyped}
               >
                 {t(tr.CONNECT_CONTINUE)}
               </Button>

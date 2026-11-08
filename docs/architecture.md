@@ -67,6 +67,12 @@ the balance it started with.
   `signData`). On another device the same words sign in as that player ("I already have an
   account"). The server stores only the stake key's hash (`identities`), never the words. In the
   Android app nothing visibly crypto shows (`src/cardano/androidApp.js`).
+- **Backups and key changes** (plan 2): the words can also be backed up with a passkey (WebAuthn
+  PRF: the passkey's secret encrypts them, the server keeps only the ciphertext per passkey) or a
+  password-protected file (`src/cardano/{passkey,backupFile}.js`), and both open "I already have
+  an account" too. Adding a further key or removing one needs a fresh proof by an existing key
+  (a confirm token, `X-Battlechoc-Confirm`). Paths that only real phones can check stay hidden on
+  iOS until listed in `VITE_CARDANO_CONFIRMED` (`passkey-ios`, `file-ios`).
 
 ## The server (`apps/api`)
 
@@ -74,7 +80,11 @@ the balance it started with.
   challenges (5 minutes) with the text of `packages/shared/cardano/message.js`, verified with the
   Evolution SDK (`COSE.SignData.verifyData`: exact text, address header, key hash, network);
   `GET /cardano/network`, `POST /auth/cardano/challenge`, `POST /auth/cardano/verify`,
-  `GET|DELETE /user/identities`, `GET /user/progress`. Off without `CARDANO_NETWORK`.
+  `GET|DELETE /user/identities`, `GET /user/progress`; plan 2: purpose `confirm` (confirm tokens
+  for key changes), `POST|GET /user/passkeys`, `GET /auth/cardano/passkeys/:credentialId`; removing
+  a key also ends the sessions it signed in (except the remover's): their refresh answers 401
+  `session ended`, and the game then forgets that key's words and starts a new account. Off
+  without `CARDANO_NETWORK`.
 - **Express** serves the REST routes (`src/routes/`), **ws** the live WebSocket (`src/live/`), on
   one HTTP server. `src/config.js` reads and checks the environment once at the start.
 - **Postgres** stores players, sessions, matches with their actions (for recovery after a

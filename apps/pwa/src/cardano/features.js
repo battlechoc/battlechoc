@@ -4,20 +4,46 @@
 import { cardano } from "@battlechoc/battlechoc-shared-functions";
 
 /**
- * The switches for a network name and whether the game runs in the Android app (`androidApp`: a
- * boolean, or a function asked each time).
+ * The switches for a network name, whether the game runs in the Android app (`androidApp`) and on
+ * iOS (`ios`) — each a boolean or a function asked each time — and the device-only paths the
+ * owner confirmed (`confirmed`: VITE_CARDANO_CONFIRMED, e.g. "passkey-ios,file-ios").
  */
-export const createFeatures = ({ network, androidApp = false }) => {
+export const createFeatures = ({
+  network,
+  androidApp = false,
+  ios = false,
+  android = false,
+  confirmed = "",
+}) => {
   const known = cardano.networkOf(network);
-  const inAndroidApp = () =>
-    typeof androidApp === "function" ? androidApp() : androidApp;
+  const ask = (value) => (typeof value === "function" ? value() : value);
+  const inAndroidApp = () => ask(androidApp);
+  const confirmedPaths = new Set(
+    String(confirmed || "")
+      .split(",")
+      .map((path) => path.trim())
+      .filter(Boolean)
+  );
+  const isConfirmed = (path) => confirmedPaths.has(path);
   return {
     enabled: () => known !== null,
     network: () => known,
     inAndroidApp,
+    isIos: () => ask(ios),
+    confirmed: isConfirmed,
     showPreprodBadge: () =>
       known !== null && known.name !== "mainnet" && !inAndroidApp(),
     // the wallet door comes with plan 3 (CIP-30, CIP-45, CIP-158)
     showWalletDoor: () => false,
+    /** A passkey backup: where the browser supports it (`support`, passkeySupport), on iOS once confirmed. */
+    offerPasskey: async (support) =>
+      known !== null &&
+      (!ask(ios) || isConfirmed("passkey-ios")) &&
+      (await support()),
+    /** Saving the backup file: on iOS (the share sheet) once confirmed. */
+    offerFileShare: () =>
+      known !== null && (!ask(ios) || isConfirmed("file-ios")),
+    /** A phone or tablet: the share sheet saves the backup file (a desktop downloads it). */
+    isMobile: () => ask(ios) || ask(android),
   };
 };

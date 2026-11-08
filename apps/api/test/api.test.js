@@ -284,6 +284,8 @@ describe('web push and transport', () => {
         const preflight = await request(app).options('/user').set('Origin', 'https://battlechoc.com').expect(204);
         expect(preflight.headers['access-control-allow-origin']).toBe('https://battlechoc.com');
         expect(preflight.headers['access-control-allow-headers']).toContain('battlechoc-pwa-version');
+        // confirmed key changes (routes/cardano.js) send their proof in a header of their own
+        expect(preflight.headers['access-control-allow-headers']).toContain('X-Battlechoc-Confirm');
         const foreign = await request(app).options('/user').set('Origin', 'https://evil.example');
         expect(foreign.headers['access-control-allow-origin']).toBeUndefined();
     });

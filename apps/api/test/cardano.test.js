@@ -6,7 +6,7 @@ const request = require('supertest');
 const { cardano } = require('@battlechoc/battlechoc-shared-functions');
 const { createTestApp, createAccount, withToken } = require('./helpers/api');
 const { closeTestPools } = require('./helpers/db');
-const { testKeys, signMessage, signedChallenge } = require('./helpers/cardano');
+const { testKeys, signMessage, signedChallenge, confirmWith, linkConfirmed, removeKey } = require('./helpers/cardano');
 const { cleanupChallenges } = require('../src/cardano');
 
 afterAll(closeTestPools);
@@ -170,12 +170,14 @@ describe('the linked keys of a player and whether an account has progress', () =
         const account = await createAccount(app);
         const [first, second] = [testKeys(), testKeys()];
         await link(app, account, first);
-        await link(app, account, second);
+        const { confirmToken } = (await confirmWith(app, account, first)).body;
+        await linkConfirmed(app, account, second, confirmToken).then(response => expect(response.status).toBe(200));
         // the game sends the subject encoded (stake%3A…)
-        await account.del(`/user/identities/${encodeURIComponent(`stake:${first.stakeKeyHashHex}`)}`).expect(204);
+        await removeKey(app, account, `stake:${first.stakeKeyHashHex}`, confirmToken).expect(204);
         expect((await account.get('/user/identities')).body.map(identity => identity.subject)).toEqual([`stake:${second.stakeKeyHashHex}`]);
         expect((await signIn(app, first)).status).toBe(404);
-        const last = await account.del(`/user/identities/stake:${second.stakeKeyHashHex}`).expect(409);
+        const again = (await confirmWith(app, account, second)).body.confirmToken;
+        const last = await removeKey(app, account, `stake:${second.stakeKeyHashHex}`, again).expect(409);
         expect(last.body).toEqual({ error: 'LAST IDENTITY' });
         expect((await signIn(app, second)).status).toBe(200);
     });
@@ -184,12 +186,13 @@ describe('the linked keys of a player and whether an account has progress', () =
         const { app } = await setup();
         const owner = await createAccount(app);
         const other = await createAccount(app);
-        const keys = testKeys();
+        const [keys, others] = [testKeys(), testKeys()];
         await link(app, owner, keys);
-        await link(app, owner, testKeys());
-        expect((await other.del(`/user/identities/stake:${keys.stakeKeyHashHex}`).expect(404)).body).toEqual({ error: 'NOT FOUND' });
-        await other.del('/user/identities/device').expect(404);
-        expect((await owner.get('/user/identities')).body).toHaveLength(2);
+        await link(app, other, others);
+        const { confirmToken } = (await confirmWith(app, other, others)).body;
+        expect((await removeKey(app, other, `stake:${keys.stakeKeyHashHex}`, confirmToken).expect(404)).body).toEqual({ error: 'NOT FOUND' });
+        await removeKey(app, other, 'device', confirmToken).expect(404);
+        expect((await owner.get('/user/identities')).body).toHaveLength(1);
     });
 
     test('progress: a finished match (verified or offline), an item or a discovery; not the tutorial, its starter kit or a name', async () => {
@@ -258,5 +261,149 @@ describe('after the first review', () => {
         expect(Number((await pool.query('SELECT COUNT(*) AS n FROM auth_challenges')).rows[0].n)).toBe(1);
         await cleanupChallenges(pool, Date.now() + CHALLENGE_TTL_MS + 1000);
         expect(Number((await pool.query('SELECT COUNT(*) AS n FROM auth_challenges')).rows[0].n)).toBe(0);
+    });
+});
+
+describe('confirmed key changes and passkey backups (plan 2)', () => {
+    test('the first key needs no proof; a further key needs a confirm token signed by an existing key', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const [first, second] = [testKeys(), testKeys()];
+        expect((await link(app, account, first)).status).toBe(200);
+        // linking the same key again is a no-op, no proof needed
+        expect((await link(app, account, first)).status).toBe(200);
+        const refused = await link(app, account, second);
+        expect(refused.status).toBe(403);
+        expect(refused.body).toEqual({ error: 'CONFIRMATION REQUIRED' });
+        const confirmed = await confirmWith(app, account, first);
+        expect(confirmed.status).toBe(200);
+        expect(confirmed.body).toEqual({ confirmToken: expect.any(String), expiresIn: 300 });
+        expect((await linkConfirmed(app, account, second, confirmed.body.confirmToken)).status).toBe(200);
+        expect((await account.get('/user/identities')).body).toHaveLength(2);
+    });
+
+    test('a confirm token is never an access token', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const keys = testKeys();
+        await link(app, account, keys);
+        const { confirmToken } = (await confirmWith(app, account, keys)).body;
+        expect((await withToken(app, confirmToken).get('/user').expect(401)).body).toEqual({ error: 'invalid access token' });
+    });
+
+    test('a confirm must be signed by one of the player\'s own keys', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        await link(app, account, testKeys());
+        const stranger = await confirmWith(app, account, testKeys());
+        expect(stranger.status).toBe(403);
+        expect(stranger.body).toEqual({ error: 'NOT YOUR KEY' });
+    });
+
+    test('a confirm token of another player, an expired one or none is refused', async () => {
+        const { app, advance } = await setup();
+        const account = await createAccount(app);
+        const other = await createAccount(app);
+        const [mine, theirs] = [testKeys(), testKeys()];
+        await link(app, account, mine);
+        await link(app, other, theirs);
+        const otherToken = (await confirmWith(app, other, theirs)).body.confirmToken;
+        expect((await linkConfirmed(app, account, testKeys(), otherToken)).status).toBe(403);
+        expect((await removeKey(app, account, `stake:${mine.stakeKeyHashHex}`)).status).toBe(403);
+        const token = (await confirmWith(app, account, mine)).body.confirmToken;
+        advance(5 * 60 * 1000 + 1000);
+        expect((await linkConfirmed(app, account, testKeys(), token)).status).toBe(403);
+    });
+
+    test('a passkey backup is stored for one of the player\'s keys, fetched by its credential id without a token, and goes with its key', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const [first, second] = [testKeys(), testKeys()];
+        await link(app, account, first);
+        const subject = `stake:${first.stakeKeyHashHex}`;
+        const backup = { credentialId: 'cred-AbC_1', subject, iv: 'aXY', data: 'ZGF0YQ' };
+        await account.post('/user/passkeys', backup).expect(201);
+        // again with the same content: fine; with other content: refused (a token alone must not
+        // swap what a passkey guards)
+        await account.post('/user/passkeys', backup).expect(200);
+        expect((await account.post('/user/passkeys', { ...backup, data: 'bmV3' }).expect(409)).body).toEqual({ error: 'PASSKEY TAKEN' });
+        expect((await request(app).get('/auth/cardano/passkeys/cred-AbC_1')).body.data).toBe('ZGF0YQ');
+        expect((await account.get('/user/passkeys').expect(200)).body).toEqual([{ credentialId: 'cred-AbC_1', subject, createdAt: expect.any(String) }]);
+        // only what the passkey opens: no subject, no player
+        expect((await request(app).get('/auth/cardano/passkeys/cred-AbC_1').expect(200)).body).toEqual({ iv: 'aXY', data: 'ZGF0YQ' });
+        await request(app).get('/auth/cardano/passkeys/unknown').expect(404);
+        // only for the player's own keys, and only plausible sizes
+        await account.post('/user/passkeys', { ...backup, credentialId: 'cred-2', subject: `stake:${second.stakeKeyHashHex}` }).expect(400);
+        await account.post('/user/passkeys', { ...backup, credentialId: 'x'.repeat(2000) }).expect(400);
+        // removing the key removes its passkey backups
+        const token = (await confirmWith(app, account, first)).body.confirmToken;
+        await linkConfirmed(app, account, second, token);
+        await removeKey(app, account, subject, token).expect(204);
+        await request(app).get('/auth/cardano/passkeys/cred-AbC_1').expect(404);
+        expect((await account.get('/user/passkeys')).body).toEqual([]);
+    });
+
+    test('two stores of one passkey at once both succeed; at most 10 passkeys per player', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const keys = testKeys();
+        await link(app, account, keys);
+        const subject = `stake:${keys.stakeKeyHashHex}`;
+        const backup = n => ({ credentialId: `cred-${n}`, subject, iv: 'aXY', data: 'ZGF0YQ' });
+        const both = await Promise.all([account.post('/user/passkeys', backup(0)), account.post('/user/passkeys', backup(0))]);
+        expect(both.map(response => response.status).sort()).toEqual([200, 201]);
+        for (let n = 1; n < 10; n += 1) {
+            await account.post('/user/passkeys', backup(n)).expect(201);
+        }
+        expect((await account.post('/user/passkeys', backup(10)).expect(409)).body).toEqual({ error: 'TOO MANY PASSKEYS' });
+    });
+
+    test('removing a key ends the sessions it signed in (leaked words are locked out)', async () => {
+        const { app } = await setup();
+        const owner = await createAccount(app);
+        const [kept, leaked] = [testKeys(), testKeys()];
+        await link(app, owner, kept);
+        const token = (await confirmWith(app, owner, kept)).body.confirmToken;
+        await linkConfirmed(app, owner, leaked, token);
+        // someone with the leaked words signs in somewhere else
+        const intruder = (await signIn(app, testKeys({ words: leaked.words }))).body;
+        await request(app).post('/accounts/token').send({ refreshToken: intruder.refreshToken }).expect(200);
+        await removeKey(app, owner, `stake:${leaked.stakeKeyHashHex}`, token).expect(204);
+        // its own answer: the game clears the removed key's words before it starts anew
+        const ended = await request(app).post('/accounts/token').send({ refreshToken: intruder.refreshToken }).expect(401);
+        expect(ended.body).toEqual({ error: 'session ended' });
+        // the owner's own device session stays
+        await request(app).post('/accounts/token').send({ refreshToken: owner.refreshToken }).expect(200);
+    });
+
+    test('a device that signed in with a key and removes that key stays signed in', async () => {
+        const { app } = await setup();
+        const owner = await createAccount(app);
+        const [first, second] = [testKeys(), testKeys()];
+        await link(app, owner, first);
+        await linkConfirmed(app, owner, second, (await confirmWith(app, owner, first)).body.confirmToken);
+        // another device signs in with the first key's words, then replaces that key there
+        const device = (await signIn(app, testKeys({ words: first.words }))).body;
+        const deviceAccount = withToken(app, device.accessToken);
+        const token = (await confirmWith(app, { ...deviceAccount, accessToken: device.accessToken }, second)).body.confirmToken;
+        await removeKey(app, { accessToken: device.accessToken }, `stake:${first.stakeKeyHashHex}`, token).expect(204);
+        await request(app).post('/accounts/token').send({ refreshToken: device.refreshToken }).expect(200);
+    });
+
+    test('one confirm covers a replacement: link the new key, then remove the old one, within 5 minutes', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const [old, fresh] = [testKeys(), testKeys()];
+        await link(app, account, old);
+        const token = (await confirmWith(app, account, old)).body.confirmToken;
+        expect((await linkConfirmed(app, account, fresh, token)).status).toBe(200);
+        await removeKey(app, account, `stake:${old.stakeKeyHashHex}`, token).expect(204);
+    });
+
+    test('fetching passkey backups is rate limited', async () => {
+        const { app } = await setup({ cardanoPerMinute: 2 });
+        await request(app).get('/auth/cardano/passkeys/a').expect(404);
+        await request(app).get('/auth/cardano/passkeys/b').expect(404);
+        expect((await request(app).get('/auth/cardano/passkeys/c').expect(429)).body).toEqual({ error: 'TOO MANY REQUESTS' });
     });
 });
