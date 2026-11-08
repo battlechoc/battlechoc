@@ -407,3 +407,157 @@ describe('confirmed key changes and passkey backups (plan 2)', () => {
         expect((await request(app).get('/auth/cardano/passkeys/c').expect(429)).body).toEqual({ error: 'TOO MANY REQUESTS' });
     });
 });
+
+describe('the wallet door (plan 3)', () => {
+    // a wallet connects as the device's player: unknown → linked to it, known → that player's session
+    const connect = async (app, account, keys, { address, with: kind, confirmToken } = {}) => {
+        const { verify } = await signedChallenge(app, { keys, purpose: 'connect', account, address, with: kind });
+        const sent = request(app).post('/auth/cardano/verify').set('Authorization', `Bearer ${account.accessToken}`);
+        return (confirmToken ? sent.set('X-Battlechoc-Confirm', confirmToken) : sent).send(verify);
+    };
+    const sessionsOf = async (pool, playerId) =>
+        Number((await pool.query('SELECT COUNT(*) AS n FROM sessions WHERE player_id = $1', [playerId])).rows[0].n);
+
+    test('a wallet no player knows is linked to the player of the device', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const wallet = testKeys();
+        const answer = await connect(app, account, wallet);
+        expect(answer.status).toBe(200);
+        expect(answer.body).toEqual({
+            outcome: 'linked',
+            identity: { provider: 'cardano', subject: `stake:${wallet.stakeKeyHashHex}`, address: wallet.rewardAddress },
+        });
+        expect((await account.get('/user/identities')).body.map(identity => identity.subject)).toEqual([`stake:${wallet.stakeKeyHashHex}`]);
+    });
+
+    test('a player who has keys needs a proof before an unknown wallet is linked', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const words = testKeys();
+        await link(app, account, words);
+        const wallet = testKeys();
+        const refused = await connect(app, account, wallet);
+        expect(refused.status).toBe(403);
+        expect(refused.body).toEqual({ error: 'CONFIRMATION REQUIRED' });
+        expect((await account.get('/user/identities')).body).toHaveLength(1);
+        const { confirmToken } = (await confirmWith(app, account, words)).body;
+        const linked = await connect(app, account, wallet, { confirmToken });
+        expect(linked.status).toBe(200);
+        expect(linked.body.outcome).toBe('linked');
+        expect((await account.get('/user/identities')).body).toHaveLength(2);
+    });
+
+    test('a wallet another player knows answers with a session for that player', async () => {
+        const { app } = await setup();
+        const owner = await createAccount(app, { username: 'Wanda' });
+        const wallet = testKeys();
+        await link(app, owner, wallet);
+        const device = await createAccount(app);
+        const answer = await connect(app, device, wallet);
+        expect(answer.status).toBe(200);
+        expect(answer.body).toEqual({
+            outcome: 'known',
+            playerId: owner.playerId,
+            refreshToken: expect.any(String),
+            accessToken: expect.any(String),
+            expiresIn: expect.any(Number),
+        });
+        const refreshed = await request(app).post('/accounts/token').send({ refreshToken: answer.body.refreshToken }).expect(200);
+        expect(refreshed.body.playerId).toBe(owner.playerId);
+        // nothing is linked to the device's own player
+        expect((await device.get('/user/identities')).body).toEqual([]);
+    });
+
+    test('the player\'s own wallet again: linked, no new session', async () => {
+        const { app, pool } = await setup();
+        const account = await createAccount(app);
+        const wallet = testKeys();
+        await link(app, account, wallet);
+        const before = await sessionsOf(pool, account.playerId);
+        const answer = await connect(app, account, wallet);
+        expect(answer.status).toBe(200);
+        expect(answer.body.outcome).toBe('linked');
+        expect(await sessionsOf(pool, account.playerId)).toBe(before);
+    });
+
+    test('connecting is for the device\'s player: without a token a 401 for the missing token', async () => {
+        const { app } = await setup();
+        const answer = await request(app).post('/auth/cardano/challenge').send({ purpose: 'connect', address: testKeys().rewardAddress });
+        expect(answer.status).toBe(401);
+        expect(answer.body).toEqual({ error: 'missing access token' });
+    });
+
+    test('a wallet sends its address as hex (CIP-30): the text to sign carries the bech32 form', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const wallet = testKeys();
+        const { challenge, verify } = await signedChallenge(app, { keys: wallet, purpose: 'connect', account, address: wallet.rewardAddressHex });
+        expect(challenge.message.split('\n')[1]).toBe(wallet.rewardAddress);
+        expect((await account.post('/auth/cardano/verify', verify)).body.outcome).toBe('linked');
+    });
+
+    test('a wallet without a stake key signs with its payment key: identity pay:<hash>, signs in again', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const wallet = testKeys();
+        const answer = await connect(app, account, wallet, { address: wallet.enterpriseAddressHex, with: 'enterprise' });
+        expect(answer.status).toBe(200);
+        expect(answer.body.identity).toEqual({ provider: 'cardano', subject: `pay:${wallet.paymentKeyHashHex}`, address: wallet.enterpriseAddress });
+        const { verify } = await signedChallenge(app, { keys: wallet, purpose: 'sign-in', address: wallet.enterpriseAddress, with: 'enterprise' });
+        const session = await request(app).post('/auth/cardano/verify').send(verify);
+        expect(session.status).toBe(200);
+        expect(session.body.playerId).toBe(account.playerId);
+    });
+
+    test('a base address signs with its payment key too; the player\'s keys show the enterprise address', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const wallet = testKeys();
+        const answer = await connect(app, account, wallet, { address: wallet.baseAddress, with: 'base' });
+        expect(answer.status).toBe(200);
+        expect(answer.body.identity).toEqual({ provider: 'cardano', subject: `pay:${wallet.paymentKeyHashHex}`, address: wallet.enterpriseAddress });
+        const [identity] = (await account.get('/user/identities')).body;
+        expect(identity).toMatchObject({ subject: `pay:${wallet.paymentKeyHashHex}`, address: wallet.enterpriseAddress });
+    });
+
+    test('a script address, a mainnet payment address or a signature by the wrong key are refused', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const { Address, ScriptHash } = require('@evolution-sdk/evolution');
+        const script = Address.toBech32(new Address.Address({ networkId: 0, paymentCredential: ScriptHash.fromHex('ab'.repeat(28)) }));
+        expect((await account.post('/auth/cardano/challenge', { purpose: 'connect', address: script })).body).toEqual({ error: 'INVALID REQUEST PARAMETERS' });
+        expect((await account.post('/auth/cardano/challenge', { purpose: 'connect', address: 'addr_test1nonsense' })).status).toBe(400);
+        const mainnet = testKeys({ networkId: 1 });
+        expect((await account.post('/auth/cardano/challenge', { purpose: 'connect', address: mainnet.enterpriseAddress })).body).toEqual({ error: 'WRONG NETWORK' });
+        // the stake key cannot sign for the payment key's address
+        const wallet = testKeys();
+        const { challenge } = await signedChallenge(app, { keys: wallet, purpose: 'connect', account, address: wallet.enterpriseAddress, with: 'enterprise' });
+        const forged = { nonce: challenge.nonce, ...signMessage({ ...wallet, enterpriseAddressHex: wallet.enterpriseAddressHex, paymentKey: wallet.stakeKey }, challenge.message, { with: 'enterprise' }) };
+        expect((await account.post('/auth/cardano/verify', forged)).body).toEqual({ error: 'INVALID SIGNATURE' });
+    });
+
+    test('an enterprise address is never read as a reward address (the SDK would parse both 29-byte forms)', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const wallet = testKeys();
+        for (const address of [wallet.enterpriseAddress, wallet.enterpriseAddressHex]) {
+            const { challenge } = await signedChallenge(app, { keys: wallet, purpose: 'connect', account, address, with: 'enterprise' });
+            expect(challenge.message.split('\n')[1]).toBe(wallet.enterpriseAddress);
+        }
+    });
+
+    test('logout ends one session; again or with an unknown token it still answers 204', async () => {
+        const { app } = await setup();
+        const account = await createAccount(app);
+        const wallet = testKeys();
+        await link(app, account, wallet);
+        const other = (await signIn(app, wallet)).body;
+        await request(app).post('/accounts/logout').send({ refreshToken: other.refreshToken }).expect(204);
+        expect((await request(app).post('/accounts/token').send({ refreshToken: other.refreshToken }).expect(401)).body).toEqual({ error: 'invalid refresh token' });
+        await request(app).post('/accounts/token').send({ refreshToken: account.refreshToken }).expect(200);
+        await request(app).post('/accounts/logout').send({ refreshToken: other.refreshToken }).expect(204);
+        await request(app).post('/accounts/logout').send({ refreshToken: 'x'.repeat(40) }).expect(204);
+        await request(app).post('/accounts/logout').send({}).expect(204);
+    });
+});

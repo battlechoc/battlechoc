@@ -7,6 +7,9 @@ const { HttpError, ErrorCode } = require('../errors');
 const cardano = require('../cardano');
 const players = require('../players');
 
+// challenges that a player asks for themselves, with their token
+const FOR_PLAYER = ['link', 'confirm', 'connect'];
+
 const bearerOf = req => {
     const match = /^Bearer (.+)$/.exec(req.get('authorization') || '');
     return match ? match[1] : undefined;
@@ -19,8 +22,9 @@ const registerCardanoRoutes = (app, { pool, auth, user, network, limit, oneAtATi
 
     app.post('/auth/cardano/challenge', limit, async (req, res) => {
         const body = req.body || {};
-        // a link or a confirm is for the player who asks: their token and player are needed (401 without one)
-        const forPlayer = body.purpose === 'link' || body.purpose === 'confirm';
+        // a link, a confirm or a wallet's connect is for the player who asks: their token and player
+        // are needed (401 without one)
+        const forPlayer = FOR_PLAYER.includes(body.purpose);
         if (forPlayer) {
             for (const step of user) {
                 await step(req, res, () => {});
@@ -38,7 +42,7 @@ const registerCardanoRoutes = (app, { pool, auth, user, network, limit, oneAtATi
     app.post('/auth/cardano/verify', limit, async (req, res) => {
         const body = req.body || {};
         const challenge = await cardano.consumeChallenge(pool, body.nonce, now);
-        const forPlayer = challenge.purpose === 'link' || challenge.purpose === 'confirm';
+        const forPlayer = FOR_PLAYER.includes(challenge.purpose);
         if (forPlayer) {
             const token = bearerOf(req);
             const playerId = token ? await auth.verify(token).catch(() => undefined) : undefined;
@@ -62,13 +66,27 @@ const registerCardanoRoutes = (app, { pool, auth, user, network, limit, oneAtATi
             res.json(auth.issueConfirmToken(challenge.player_id));
             return;
         }
-        if (challenge.purpose === 'link') {
+        const linkToPlayer = async () => {
             // a further key needs a proof by an existing one (the first key and the same key again do not)
             if (typeof owner === 'undefined' && await cardano.keyCount(pool, challenge.player_id) > 0
                 && !auth.checkConfirmToken(req.get('x-battlechoc-confirm'), challenge.player_id)) {
                 throw new HttpError(403, ErrorCode.CONFIRMATION_REQUIRED);
             }
-            res.json({ identity: await cardano.linkIdentity(pool, { playerId: challenge.player_id, subject, address: challenge.address }) });
+            return cardano.linkIdentity(pool, { playerId: challenge.player_id, subject, address: cardano.addressOfSubject(subject, network) });
+        };
+        if (challenge.purpose === 'link') {
+            res.json({ identity: await linkToPlayer() });
+            return;
+        }
+        if (challenge.purpose === 'connect') {
+            // a wallet (plan 3): another player's → a session for that player (the game asks which
+            // progress to keep); unknown or the player's own → linked to the device's player
+            if (typeof owner !== 'undefined' && owner !== challenge.player_id) {
+                const { refreshToken, sessionId } = await auth.createSession(owner, { subject });
+                res.json({ outcome: 'known', playerId: owner, refreshToken, ...(await auth.issueAccessToken(owner, sessionId)) });
+                return;
+            }
+            res.json({ outcome: 'linked', identity: await linkToPlayer() });
             return;
         }
         const playerId = owner;

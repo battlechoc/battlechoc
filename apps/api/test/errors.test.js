@@ -142,6 +142,12 @@ describe('errors', () => {
         }
         await answers(player.post('/user/passkeys', { credentialId: 'c10', subject, iv: 'aXY', data: 'ZA' }), 409, 'TOO MANY PASSKEYS');
         await answers(player.post('/user/passkeys', { credentialId: 'c0', subject, iv: 'aXY', data: 'b3RoZXI' }), 409, 'PASSKEY TAKEN');
+        // plan 3: a wallet nobody knows, for a player with keys, needs the proof as well
+        const wallet = await signedChallenge(app, { keys: testKeys(), purpose: 'connect', account: player });
+        await answers(player.post('/auth/cardano/verify', wallet.verify), 403, 'CONFIRMATION REQUIRED');
+        const loggedOut = await request(app).post('/accounts/logout').send({ refreshToken: other.refreshToken });
+        expect(loggedOut.status).toBe(204);
+        expect(loggedOut.text).toBe('');
     });
 
     test('transport: unknown paths, broken JSON, too many requests', async () => {

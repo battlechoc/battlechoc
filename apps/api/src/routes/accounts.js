@@ -17,6 +17,13 @@ const registerAccountRoutes = (app, { pool, auth, limit, tokenLimit }) => {
     app.post('/accounts/token', tokenLimit, async (req, res) => {
         res.json(await auth.refresh(req.body && req.body.refreshToken));
     });
+
+    // ends one session (plan 3: a wallet's session the player did not keep); also for an unknown
+    // token, so nothing here tells whether a token was ever valid
+    app.post('/accounts/logout', tokenLimit, async (req, res) => {
+        await auth.logout(req.body && req.body.refreshToken);
+        res.status(204).end();
+    });
 };
 
 module.exports = { registerAccountRoutes };

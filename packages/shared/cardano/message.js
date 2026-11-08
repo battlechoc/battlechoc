@@ -7,18 +7,21 @@ const HEADLINES = Object.freeze({
     'sign-in': 'battlechoc.com wants you to sign in with your Cardano account:',
     link: 'battlechoc.com wants you to sign in with your Cardano account:',
     confirm: 'battlechoc.com wants you to confirm a change with your Cardano account:',
+    connect: 'battlechoc.com wants you to connect your Cardano wallet:',
 });
 
 const STATEMENTS = Object.freeze({
     'sign-in': 'Sign in to battlechoc.',
     link: 'Link this key to your battlechoc player.',
     confirm: 'Confirm a change to your battlechoc player.',
+    connect: 'Connect this wallet to battlechoc.',
 });
 
 /**
  * @param {object} challenge
- * @param {string} challenge.address the bech32 reward address that signs
- * @param {'sign-in'|'link'|'confirm'} challenge.purpose
+ * @param {string} challenge.address the bech32 address that signs (a reward address, or a
+ *   wallet's payment address when it has no stake key)
+ * @param {'sign-in'|'link'|'confirm'|'connect'} challenge.purpose
  * @param {{name: string}} challenge.network see network.js
  * @param {string} challenge.nonce issued by the server, used once
  * @param {Date} challenge.issuedAt

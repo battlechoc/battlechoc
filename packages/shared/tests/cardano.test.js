@@ -48,6 +48,14 @@ describe('the sign-in challenge text', () => {
         expect(text[6]).toBe('Action: confirm');
     });
 
+    test('connecting a wallet has its own first line and statement', () => {
+        const text = cardano.challengeMessage({ ...input, purpose: 'connect' }).split('\n');
+        expect(text[0]).toBe('battlechoc.com wants you to connect your Cardano wallet:');
+        expect(text[3]).toBe('Connect this wallet to battlechoc.');
+        expect(text[6]).toBe('Action: connect');
+        expect(cardano.ChallengePurpose).toContain('connect');
+    });
+
     test('an unknown purpose is refused', () => {
         expect(() => cardano.challengeMessage({ ...input, purpose: 'pay' })).toThrow();
     });

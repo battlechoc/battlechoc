@@ -75,6 +75,15 @@ const createAuth = ({ pool, secret, now = () => Date.now() }) => {
         return { playerId: rows[0].player_id, ...(await issueAccessToken(rows[0].player_id, rows[0].id)) };
     };
 
+    // ends the session of a refresh token (reason 'logout'); nothing for an unknown one
+    const logout = async refreshToken => {
+        if (typeof refreshToken !== 'string' || refreshToken.length < 20) {
+            return;
+        }
+        await pool.query("UPDATE sessions SET revoked = TRUE, revoked_reason = 'logout' WHERE token_hash = $1 AND NOT revoked",
+            [sha256(refreshToken)]);
+    };
+
     // the claims of a valid access token ({ sub, sid? })
     const verifyClaims = async accessToken => {
         let payload;
@@ -124,7 +133,7 @@ const createAuth = ({ pool, secret, now = () => Date.now() }) => {
         next();
     };
 
-    return { createSession, refresh, verify, issueAccessToken, requireAuth, issueConfirmToken, checkConfirmToken };
+    return { createSession, refresh, logout, verify, issueAccessToken, requireAuth, issueConfirmToken, checkConfirmToken };
 };
 
 module.exports = { createAuth, ACCESS_TOKEN_TTL_SECONDS };

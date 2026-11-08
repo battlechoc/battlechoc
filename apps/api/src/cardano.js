@@ -6,7 +6,7 @@
 // SDK is an ES module: Node 22 loads it with require(), Jest through babel-jest (package.json).
 
 const crypto = require('crypto');
-const { KeyHash, RewardAccount, COSE } = require('@evolution-sdk/evolution');
+const { KeyHash, RewardAccount, Address, COSE } = require('@evolution-sdk/evolution');
 const { cardano } = require('@battlechoc/battlechoc-shared-functions');
 const { HttpError, ErrorCode } = require('./errors');
 const { count } = require('./db');
@@ -18,52 +18,72 @@ const HEX = /^(?:[0-9a-f]{2})+$/i;
 const invalidRequest = () => new HttpError(400, ErrorCode.INVALID_REQUEST_PARAMETERS);
 const invalidSignature = () => new HttpError(400, ErrorCode.INVALID_SIGNATURE);
 
-/**
- * The reward account of a bech32 reward address on `network`, with a key (not a script) as its
- * stake credential. Refuses anything else.
- */
-const rewardAccountOf = (address, network) => {
-    let account;
+// an address as bech32 or as the hex a CIP-30 wallet gives: a reward account, or else a base or
+// enterprise address; undefined for anything else (pointer and Byron addresses, nonsense). The
+// kind is decided first, by the header's type (0xe/0xf: reward) or the bech32 prefix: the SDK's
+// reward parser also reads an enterprise address (both are 29 bytes) as a stake key.
+const parseAddress = (address) => {
+    const hex = HEX.test(address);
+    const reward = hex ? /^[ef]/i.test(address) : /^stake(_test)?1/i.test(address);
+    const module = reward ? RewardAccount : Address;
     try {
-        account = RewardAccount.fromBech32(address);
+        return { reward, parsed: module[hex ? 'fromHex' : 'fromBech32'](address) };
     } catch {
-        throw invalidRequest();
+        return undefined;
     }
-    if (!(account.stakeCredential instanceof KeyHash.KeyHash)) {
-        throw invalidRequest();
-    }
-    if (account.networkId !== network.networkId) {
-        throw new HttpError(400, ErrorCode.WRONG_NETWORK);
-    }
-    return account;
 };
 
-/** The subject of a key in the identities table. */
-const subjectOf = account => `stake:${KeyHash.toHex(account.stakeCredential)}`;
-
 /**
- * The reward address of a subject on `network`: the same key has another address on mainnet than
- * on preprod, so it is built when it is shown, never stored.
+ * The key of an address (bech32 or hex) on `network`: { canonical (bech32), addressHex, subject,
+ * keyHashHex }. A reward address is its stake key ("stake:<hash>"); a base or enterprise address,
+ * as a wallet without a stake key signs, its payment key ("pay:<hash>"). Script credentials and
+ * other addresses: INVALID REQUEST PARAMETERS; another network: WRONG NETWORK.
  */
-const addressOfSubject = (subject, network) => RewardAccount.toBech32(new RewardAccount.RewardAccount({
-    networkId: network.networkId,
-    stakeCredential: KeyHash.fromHex(subject.replace(/^stake:/, '')),
-}));
+const keyOfAddress = (address, network) => {
+    const found = typeof address === 'string' ? parseAddress(address) : undefined;
+    if (!found) {
+        throw invalidRequest();
+    }
+    const { reward, parsed } = found;
+    const credential = reward ? parsed.stakeCredential : parsed.paymentCredential;
+    if (!(credential instanceof KeyHash.KeyHash)) {
+        throw invalidRequest();
+    }
+    if (parsed.networkId !== network.networkId) {
+        throw new HttpError(400, ErrorCode.WRONG_NETWORK);
+    }
+    const keyHashHex = KeyHash.toHex(credential);
+    return reward
+        ? { canonical: RewardAccount.toBech32(parsed), addressHex: RewardAccount.toHex(parsed), subject: `stake:${keyHashHex}`, keyHashHex }
+        : { canonical: Address.toBech32(parsed), addressHex: Address.toHex(parsed), subject: `pay:${keyHashHex}`, keyHashHex };
+};
 
 /**
- * Checks a CIP-30 DataSignature ({ signature, key }, hex) of `message` by the stake key of
- * `address`; returns the identity subject ("stake:<key hash>"), throws INVALID SIGNATURE otherwise.
+ * The address of a subject on `network`: the reward address of a stake key, the enterprise
+ * address of a payment key. The same key has another address on mainnet than on preprod, so it is
+ * built when it is shown, never stored.
+ */
+const addressOfSubject = (subject, network) => {
+    const [kind, hash] = subject.split(':');
+    return kind === 'pay'
+        ? Address.toBech32(new Address.Address({ networkId: network.networkId, paymentCredential: KeyHash.fromHex(hash) }))
+        : RewardAccount.toBech32(new RewardAccount.RewardAccount({ networkId: network.networkId, stakeCredential: KeyHash.fromHex(hash) }));
+};
+
+/**
+ * Checks a CIP-30 DataSignature ({ signature, key }, hex) of `message` by the key of `address`
+ * (keyOfAddress); returns the identity subject, throws INVALID SIGNATURE otherwise.
  */
 const verifySignature = ({ signature, key, message, address, network }) => {
-    const account = rewardAccountOf(address, network);
+    const signer = keyOfAddress(address, network);
     if (typeof signature !== 'string' || typeof key !== 'string' || !HEX.test(signature) || !HEX.test(key)) {
         throw invalidSignature();
     }
     let valid;
     try {
         valid = COSE.SignData.verifyData(
-            RewardAccount.toHex(account),
-            KeyHash.toHex(account.stakeCredential),
+            signer.addressHex,
+            signer.keyHashHex,
             COSE.Utils.fromText(message),
             { signature: Uint8Array.from(Buffer.from(signature, 'hex')), key: Uint8Array.from(Buffer.from(key, 'hex')) },
         );
@@ -73,7 +93,7 @@ const verifySignature = ({ signature, key, message, address, network }) => {
     if (!valid) {
         throw invalidSignature();
     }
-    return subjectOf(account);
+    return signer.subject;
 };
 
 /** Issues a challenge for `address` (checked against `network`); `playerId` binds a link to a player. */
@@ -81,8 +101,8 @@ const createChallenge = async (pool, { purpose, address, playerId = null, networ
     if (!cardano.ChallengePurpose.includes(purpose) || typeof address !== 'string') {
         throw invalidRequest();
     }
-    // the usual (lower case) form of the address, whatever the game sent
-    const canonical = RewardAccount.toBech32(rewardAccountOf(address, network));
+    // the usual (lower case, bech32) form of the address, whatever the game or the wallet sent
+    const { canonical } = keyOfAddress(address, network);
     const nonce = crypto.randomBytes(16).toString('hex');
     const issuedAt = new Date(now());
     const expiresAt = new Date(issuedAt.getTime() + CHALLENGE_TTL_MS);
@@ -201,6 +221,7 @@ module.exports = {
     CHALLENGE_TTL_MS,
     IDENTITY_PROVIDER,
     addressOfSubject,
+    keyOfAddress,
     verifySignature,
     createChallenge,
     consumeChallenge,
