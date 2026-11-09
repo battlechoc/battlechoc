@@ -1,5 +1,27 @@
 # Changelog
 
+## [5.4.0](https://github.com/battlechoc/battlechoc/compare/v5.3.0...v5.4.0) (2026-11-09)
+
+
+### Features
+
+* **api:** connect a Cardano wallet: link an unknown one, sign in with a known one; payment-key wallets; logout ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **api:** key changes need a proof by an existing key; passkey backups of the recovery words ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **api:** link codes tie a phone wallet's browser to the device's player ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **api:** list and remove linked Cardano keys, tell whether an account has progress ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **api:** sign in and link a Cardano key by a signed challenge ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **pwa:** back up the recovery words with a passkey or a file, sign in again with them, confirm key changes ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **pwa:** Cardano keys from 24 recovery words (Evolution SDK, loaded lazily), the key store and the sign-in API client ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **pwa:** challenge links point to play.battlechoc.com ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **pwa:** passkey and file backups of the recovery words, confirming key changes ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **pwa:** save your progress with 24 recovery words, a preprod chip that explains it ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **pwa:** sign battlechoc's challenge with a Cardano wallet ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **pwa:** sign in again on another device with the recovery words ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **pwa:** the link page lets a phone wallet's browser connect to the game ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **pwa:** the wallet door: sign in, link a wallet, confirm with it ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* **shared:** the Cardano networks and the sign-in challenge text ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+* stars from matches against the server AI, shown as a cautious rating ([34681dd](https://github.com/battlechoc/battlechoc/commit/34681ddedcf21574754c797d62f86583f791b141))
+
 ## [5.3.0](https://github.com/battlechoc/battlechoc/compare/v5.2.2...v5.3.0) (2026-11-07)
 
 
