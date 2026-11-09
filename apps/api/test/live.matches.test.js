@@ -255,8 +255,8 @@ describe('live: matches', () => {
         lonely.send({ type: ClientMessage.QUEUE_AI });
         const { matchId } = await lonely.next(ServerMessage.MATCH);
         const r = room(env, matchId);
-        // surrendering during field choice: the match never ran, so no achievements, but it is the
-        // first verified match of the day
+        // surrendering during field choice: the match never ran, so no achievements and no stars,
+        // but it is the first verified match of the day
         expect((await lonely.act(matchId, MatchActionTypes.surrender, {})).ok).toBe(true);
         const { result } = await lonely.next(ServerMessage.RESULT);
         expect(result.lost).toBe(true);
@@ -292,7 +292,7 @@ describe('live: matches', () => {
         const stored = (await env.pool.query('SELECT snapshot FROM matches WHERE id = $1', [matchId])).rows[0].snapshot;
         expect((typeof stored === 'string' ? JSON.parse(stored) : stored).match.phase).toBe(MatchPhase.RUNNING);
 
-        // the AI gives up: a verified win with xp and drops
+        // the AI gives up: a verified win with xp, drops and stars (rated against Tom Toffee's fixed rating)
         const action = { type: MatchActionTypes.surrender, player: 1, t: r.now(), payload: {} };
         expect(engine.applyAction(r.match, action).ok).toBe(true);
         r.record(action);
@@ -301,7 +301,10 @@ describe('live: matches', () => {
         expect(result.won).toBe(true);
         expect(result.xp).toBeGreaterThan(0);
         expect(result.drops.length).toBeGreaterThan(0);
+        expect(result.rating).toEqual({ before: 1500, after: expect.any(Number) });
         await r.writes;
+        const rated = (await env.pool.query('SELECT rated_matches FROM players WHERE id = $1', [rookie.account.playerId])).rows[0];
+        expect(rated.rated_matches).toBe(1);
         const records = (await env.pool.query('SELECT verified FROM track_records WHERE player_id = $1', [rookie.account.playerId])).rows;
         expect(records).toEqual([{ verified: true }]);
     });

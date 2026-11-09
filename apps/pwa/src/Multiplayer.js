@@ -36,6 +36,11 @@ class Multiplayer {
   // the device account (created on the first start), then the player entry, the merge of the
   // stats kept offline and the rank; called once at the start (src/boot.js), after the callbacks
   start() {
+    account.onSessionEnded = () =>
+      this.callbacks.showQuickMessage({
+        text: t(tr.SESSION_ENDED_BY_KEY),
+        variant: "info",
+      });
     return account
       .ensure()
       .then(() => this.accountReady())

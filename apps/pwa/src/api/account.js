@@ -1,21 +1,14 @@
 import { createClient } from "../helper/http.js";
 import OfflineStore from "../OfflineStore.js";
 import logger from "../helper/logger.js";
+import { createKeyStore } from "../cardano/keyStore.js";
 
 // Device account: on the first launch the API creates a player and returns a refresh token,
 // which stays in IndexedDB. Short-lived access tokens are fetched with it when needed. Without
 // a connection the game keeps working offline; the account is created on a later start.
 
-// localStorage "battlechoc.apiUrl" points a build at another API (e2e tests, local servers)
-const storedApiUrl = (() => {
-  try {
-    return window.localStorage.getItem("battlechoc.apiUrl");
-  } catch {
-    return null;
-  }
-})();
-const apiUrl =
-  storedApiUrl || import.meta.env.VITE_API_URL || "https://api.battlechoc.com";
+import { apiUrl } from "./apiUrl.js";
+
 const liveUrl = apiUrl.replace(/^http/, "ws").replace(/\/$/, "") + "/live";
 const ACCOUNT_KEY = "account";
 const EXPIRY_MARGIN_MS = 30000;
@@ -29,6 +22,8 @@ class Account {
     this.accessToken = undefined;
     this.expiresAt = 0;
     this.pending = undefined;
+    // called once a session ended because its key was removed (Multiplayer shows why)
+    this.onSessionEnded = undefined;
   }
 
   isReady() {
@@ -51,6 +46,14 @@ class Account {
     this.remember(data);
   }
 
+  // takes over a session the server gave for a key ("I already have an account"): this device
+  // is that player from now on
+  async adopt({ playerId, refreshToken, accessToken, expiresIn }) {
+    await OfflineStore.playerStore.set(ACCOUNT_KEY, { playerId, refreshToken });
+    this.refreshToken = refreshToken;
+    this.remember({ playerId, accessToken, expiresIn });
+  }
+
   async refresh() {
     try {
       const { data } = await client.post("/accounts/token", {
@@ -59,13 +62,35 @@ class Account {
       this.remember(data);
     } catch (error) {
       if (error.response && error.response.status === 401) {
-        // the account is gone on the server (e.g. a reset backend): start a new one
-        logger.warn("stored account was rejected, creating a new one");
+        const ended =
+          error.response.data && error.response.data.error === "session ended";
+        if (ended) {
+          // the key that signed this device in was removed (on another device): its words are
+          // no use here any more, so the game forgets them before it starts anew
+          logger.warn("the session ended with its key, creating a new account");
+          await createKeyStore(OfflineStore.playerStore)
+            .clear()
+            .catch((failure) =>
+              logger.warn("could not forget the removed key", failure)
+            );
+        } else {
+          // the account is gone on the server (e.g. a reset backend): start a new one
+          logger.warn("stored account was rejected, creating a new one");
+        }
         await this.create();
+        if (ended && typeof this.onSessionEnded === "function") {
+          this.onSessionEnded();
+        }
       } else {
         throw error;
       }
     }
+  }
+
+  // ends another session on the server (plan 3: a wallet's session the player did not keep);
+  // the device's own account is not touched
+  async logout(refreshToken) {
+    await client.post("/accounts/logout", { refreshToken });
   }
 
   // loads or creates the account; resolves once an access token is available

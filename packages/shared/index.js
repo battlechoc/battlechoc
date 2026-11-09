@@ -57,6 +57,10 @@ module.exports.applyStat = equipment.applyStat;
 const rating = require('./rating');
 module.exports.updateRating = rating.updateRating;
 module.exports.rateMatch = rating.rateMatch;
+module.exports.rateAgainstAi = rating.rateAgainstAi;
+module.exports.starsOf = rating.starsOf;
+module.exports.AI_RATING_REACH = rating.AI_RATING_REACH;
+module.exports.STARS_DEVIATIONS = rating.STARS_DEVIATIONS;
 module.exports.EmptyPlayerStats = EmptyPlayerStats;
 module.exports.PlayerType = PlayerType;
 
@@ -78,6 +82,12 @@ module.exports.getDefaultLanguage = i18n.getDefaultLanguage;
 module.exports.translate = i18n.translate;
 module.exports.translateIn = i18n.translateIn;
 module.exports.translationKeys = i18n.translationKeys;
+
+// Cardano: the networks and the sign-in challenge text (cardano/)
+module.exports.cardano = {
+    ...require('./cardano/network'),
+    ...require('./cardano/message'),
+};
 
 // Real-time engine
 const realtimeEngine = require('./engine');

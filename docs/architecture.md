@@ -60,9 +60,46 @@ the balance it started with.
   online play and the lab wait for the connection.
 - **Accounts** are device accounts: on the first start the server creates a player and hands out
   a refresh token, which the game keeps in IndexedDB. There are no passwords.
+- **Saving progress** (on when the build has `VITE_CARDANO_NETWORK` and the API `CARDANO_NETWORK`,
+  `preprod` for now): the game makes a Cardano key from 24 recovery words on the device
+  (`src/cardano/`, the Evolution SDK, loaded only when needed), keeps the words encrypted in
+  IndexedDB and links the key to the player by signing a server challenge (CIP-8, as a wallet's
+  `signData`). On another device the same words sign in as that player ("I already have an
+  account"). The server stores only the stake key's hash (`identities`), never the words. In the
+  Android app nothing visibly crypto shows (`src/cardano/androidApp.js`).
+- **Backups and key changes** (plan 2): the words can also be backed up with a passkey (WebAuthn
+  PRF: the passkey's secret encrypts them, the server keeps only the ciphertext per passkey) or a
+  password-protected file (`src/cardano/{passkey,backupFile}.js`), and both open "I already have
+  an account" too. Adding a further key or removing one needs a fresh proof by an existing key
+  (a confirm token, `X-Battlechoc-Confirm`). Paths that only real phones can check stay hidden on
+  iOS until listed in `VITE_CARDANO_CONFIRMED` (`passkey-ios`, `file-ios`).
+- **The wallet door** (plan 3): the Cardano Foundation's `ConnectWalletList`
+  (`src/ui/account/WalletDoor.jsx`, loaded only when it opens, never precached without a network)
+  lists extensions, a phone wallet by QR code (CIP-45, peer-connect) and on phones the CIP-158
+  wallets. The signing is the game's own (`src/cardano/wallet.js`: CIP-30 `signData` of exactly the
+  challenge text; the core's `signMessage` breaks line breaks). A wallet no player knows is linked to
+  the device's player (a proof first if it has keys); a known one gives that player's session, and
+  the game asks which progress to keep as with words. On a phone the door makes a link code and
+  opens `web+cardano://browse/v1?uri=<origin>/link/?code=…`: the link page (`link/index.html`,
+  `src/link/main.js`, a build of its own after the game's, `vite.link.config.js`) signs in the
+  wallet's own browser, and the game polls the code. Hidden in the Android app; deep links only
+  with `cip158` in `VITE_CARDANO_CONFIRMED`.
 
 ## The server (`apps/api`)
 
+- **Signing in with a Cardano key** (`src/cardano.js`, `src/routes/cardano.js`): single-use
+  challenges (5 minutes) with the text of `packages/shared/cardano/message.js`, verified with the
+  Evolution SDK (`COSE.SignData.verifyData`: exact text, address header, key hash, network);
+  `GET /cardano/network`, `POST /auth/cardano/challenge`, `POST /auth/cardano/verify`,
+  `GET|DELETE /user/identities`, `GET /user/progress`; plan 2: purpose `confirm` (confirm tokens
+  for key changes), `POST|GET /user/passkeys`, `GET /auth/cardano/passkeys/:credentialId`; removing
+  a key also ends the sessions it signed in (except the remover's): their refresh answers 401
+  `session ended`, and the game then forgets that key's words and starts a new account. Plan 3:
+  purpose `connect` (a wallet: unknown → linked, known → a session for its player), wallet
+  addresses as bech32 or CIP-30 hex, `pay:<hash>` subjects for wallets without a stake key, link
+  codes (`POST /user/link-codes`, `GET /user/link-codes/:code`; SHA-256 hashed, 10 minutes, one per
+  player, a signature claims the code atomically; a known wallet's session is made at the poll),
+  `POST /accounts/logout`. Off without `CARDANO_NETWORK`.
 - **Express** serves the REST routes (`src/routes/`), **ws** the live WebSocket (`src/live/`), on
   one HTTP server. `src/config.js` reads and checks the environment once at the start.
 - **Postgres** stores players, sessions, matches with their actions (for recovery after a
@@ -73,7 +110,7 @@ the balance it started with.
   and its action log, so a restart of the server resumes the running matches; the players'
   games reconnect by themselves.
 - **Trust**: what has value comes only from matches the server hosted: ingredients
-  (`rewards.js`) and the public rating (only matches between two humans). A match played
+  (`rewards.js`) and the public rating (matches between two humans and against the server AI). A match played
   offline gives private experience only, which decides nothing but the player's own board size
   and AI opponent, so a faked result gains nothing.
 

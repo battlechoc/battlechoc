@@ -7,6 +7,9 @@ const crypto = require('crypto');
 const { HttpError, ErrorCode } = require('./errors');
 
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
+// a confirm token proves a fresh signature by one of the player's keys (key changes, routes/cardano.js)
+const CONFIRM_TOKEN_TTL_SECONDS = 5 * 60;
+const CONFIRM = 'confirm';
 const ISSUER = 'battlechoc';
 
 const sha256 = value => crypto.createHash('sha256').update(value).digest('hex');
@@ -36,44 +39,88 @@ const createAuth = ({ pool, secret, now = () => Date.now() }) => {
     if (!secret || secret.length < 32) {
         throw new Error('JWT secret must have at least 32 characters');
     }
-    const issueAccessToken = async playerId => {
+    // `sessionId`: the session the token was issued for (sid), so a key removal can spare it
+    const issueAccessToken = async (playerId, sessionId) => {
         const issuedAt = Math.floor(now() / 1000);
-        const token = signJwt({ sub: playerId, iss: ISSUER, iat: issuedAt, exp: issuedAt + ACCESS_TOKEN_TTL_SECONDS }, secret);
+        const token = signJwt({
+            sub: playerId, iss: ISSUER, iat: issuedAt, exp: issuedAt + ACCESS_TOKEN_TTL_SECONDS,
+            ...(sessionId ? { sid: sessionId } : {}),
+        }, secret);
         return { accessToken: token, expiresIn: ACCESS_TOKEN_TTL_SECONDS };
     };
 
-    // creates a session for a player and returns the plain refresh token (only time it exists)
-    const createSession = async playerId => {
+    // creates a session for a player: { refreshToken (the only time it exists in plain), sessionId };
+    // `subject`: the Cardano key that signed in (removing the key ends the session)
+    const createSession = async (playerId, { subject = null } = {}) => {
         const refreshToken = randomToken();
-        await pool.query('INSERT INTO sessions (id, player_id, token_hash) VALUES ($1, $2, $3)',
-            [crypto.randomUUID(), playerId, sha256(refreshToken)]);
-        return refreshToken;
+        const sessionId = crypto.randomUUID();
+        await pool.query('INSERT INTO sessions (id, player_id, token_hash, subject) VALUES ($1, $2, $3, $4)',
+            [sessionId, playerId, sha256(refreshToken), subject]);
+        return { refreshToken, sessionId };
     };
 
     const refresh = async refreshToken => {
         if (typeof refreshToken !== 'string' || refreshToken.length < 20) {
             throw new HttpError(401, ErrorCode.INVALID_REFRESH_TOKEN);
         }
-        const { rows } = await pool.query('SELECT id, player_id, revoked FROM sessions WHERE token_hash = $1', [sha256(refreshToken)]);
+        const { rows } = await pool.query('SELECT id, player_id, revoked, revoked_reason FROM sessions WHERE token_hash = $1',
+            [sha256(refreshToken)]);
         if (rows.length === 0 || rows[0].revoked) {
-            throw new HttpError(401, ErrorCode.INVALID_REFRESH_TOKEN);
+            // a session that a key removal ended says so: the game forgets that key's words (still a
+            // 401, so older games start anew as before)
+            throw new HttpError(401, rows.length > 0 && rows[0].revoked_reason === 'key-removed'
+                ? ErrorCode.SESSION_ENDED : ErrorCode.INVALID_REFRESH_TOKEN);
         }
         await pool.query('UPDATE sessions SET last_used_at = NOW() WHERE id = $1', [rows[0].id]);
-        return { playerId: rows[0].player_id, ...(await issueAccessToken(rows[0].player_id)) };
+        return { playerId: rows[0].player_id, ...(await issueAccessToken(rows[0].player_id, rows[0].id)) };
     };
 
-    const verify = async accessToken => {
+    // ends the session of a refresh token (reason 'logout'); nothing for an unknown one
+    const logout = async refreshToken => {
+        if (typeof refreshToken !== 'string' || refreshToken.length < 20) {
+            return;
+        }
+        await pool.query("UPDATE sessions SET revoked = TRUE, revoked_reason = 'logout' WHERE token_hash = $1 AND NOT revoked",
+            [sha256(refreshToken)]);
+    };
+
+    // the claims of a valid access token ({ sub, sid? })
+    const verifyClaims = async accessToken => {
         let payload;
         try {
             payload = verifyJwt(accessToken, secret);
         } catch {
             throw new HttpError(401, ErrorCode.INVALID_ACCESS_TOKEN);
         }
-        if (payload.iss !== ISSUER || typeof payload.sub !== 'string' || !(payload.exp > Math.floor(now() / 1000))) {
+        // a confirm token (`kind`) is never an access token
+        if (payload.iss !== ISSUER || typeof payload.sub !== 'string' || typeof payload.kind !== 'undefined'
+            || !(payload.exp > Math.floor(now() / 1000))) {
             throw new HttpError(401, ErrorCode.INVALID_ACCESS_TOKEN);
         }
-        return payload.sub;
+        return payload;
     };
+
+    const verify = async accessToken => (await verifyClaims(accessToken)).sub;
+
+    const issueConfirmToken = playerId => {
+        const issuedAt = Math.floor(now() / 1000);
+        const confirmToken = signJwt({ sub: playerId, iss: ISSUER, kind: CONFIRM, iat: issuedAt, exp: issuedAt + CONFIRM_TOKEN_TTL_SECONDS }, secret);
+        return { confirmToken, expiresIn: CONFIRM_TOKEN_TTL_SECONDS };
+    };
+
+    /** Until when (ms) `token` is a confirm token of `playerId`; undefined when it is none or expired. */
+    const confirmTokenExpiry = (token, playerId) => {
+        try {
+            const payload = verifyJwt(token, secret);
+            return payload.iss === ISSUER && payload.kind === CONFIRM && payload.sub === playerId
+                && payload.exp > Math.floor(now() / 1000) ? payload.exp * 1000 : undefined;
+        } catch {
+            return undefined;
+        }
+    };
+
+    /** Whether `token` is a confirm token of `playerId` that has not expired. */
+    const checkConfirmToken = (token, playerId) => typeof confirmTokenExpiry(token, playerId) !== 'undefined';
 
     // Express middleware: sets req.playerId or fails with 401
     const requireAuth = async (req, res, next) => {
@@ -82,11 +129,14 @@ const createAuth = ({ pool, secret, now = () => Date.now() }) => {
         if (!match) {
             throw new HttpError(401, ErrorCode.MISSING_ACCESS_TOKEN);
         }
-        req.playerId = await verify(match[1]);
+        const claims = await verifyClaims(match[1]);
+        req.playerId = claims.sub;
+        // the session the token belongs to (tokens from before have none)
+        req.sessionId = claims.sid;
         next();
     };
 
-    return { createSession, refresh, verify, issueAccessToken, requireAuth };
+    return { createSession, refresh, logout, verify, issueAccessToken, requireAuth, issueConfirmToken, checkConfirmToken, confirmTokenExpiry };
 };
 
 module.exports = { createAuth, ACCESS_TOKEN_TTL_SECONDS };

@@ -22,6 +22,8 @@ import {
 import PlayerNameInput from "../ui/controls/PlayerNameInput";
 import Button from "../ui/controls/Button";
 import CoachCard from "../ui/controls/CoachCard";
+import ConnectAccount from "../ui/account/ConnectAccount";
+import { features } from "../cardano";
 import Dialog from "../ui/dialogs/Dialog";
 import { matchSession } from "../match/LocalMatchHost";
 import { TutorialRunner } from "./runner";
@@ -49,6 +51,25 @@ const useStyles = createUseStyles((theme) => ({
     [theme.breakpoints.orientation.portrait]: {
       "&&": { top: theme.edge.topMiddle },
     },
+  },
+  // room above the title for the corner link
+  withCorner: {
+    "&&": { paddingTop: "1.9em" },
+  },
+  // "I already have an account" in the welcome card's top corner (the owner's pick "C")
+  haveAccount: {
+    position: "absolute",
+    // a bigger area to tap than the small text (children), the text where it was
+    top: "0.2em",
+    right: "0.4em",
+    padding: "0.4em",
+    border: 0,
+    background: "none",
+    fontFamily: theme.font.body,
+    fontSize: theme.font.size.xs,
+    color: "white",
+    textDecoration: "underline",
+    cursor: "pointer",
   },
 }));
 
@@ -79,6 +100,8 @@ const Tutorial = (props) => {
     runner.current = new TutorialRunner({ dispatch, clearScene, testClock });
   }
   const [page, setPage] = useState(0);
+  // "I already have an account" from the welcome card
+  const [connecting, setConnecting] = useState(false);
   const [step, setStep] = useState(0);
   const memory = useRef({});
   // where the hand points, as last told to the scene and the weapon palette
@@ -239,7 +262,11 @@ const Tutorial = (props) => {
       <CoachCard
         data-testid="tutorial-coach"
         onLayout={cardLayout}
-        className={classes.card}
+        className={`${classes.card} ${
+          current.id === "welcome" && features.enabled()
+            ? classes.withCorner
+            : ""
+        }`}
         data-step={current.id}
         title={t(current.title)}
         message={t(current.message)}
@@ -247,6 +274,14 @@ const Tutorial = (props) => {
         skipLabel={t(tr.SKIP_TUTORIAL)}
         onSkip={skipLesson}
       >
+        {current.id === "welcome" && features.enabled() ? (
+          <button
+            className={classes.haveAccount}
+            onClick={() => setConnecting(true)}
+          >
+            {t(tr.HAVE_ACCOUNT)}
+          </button>
+        ) : null}
         {current.next && ready ? (
           <Button
             icon="forward"
@@ -307,6 +342,7 @@ const Tutorial = (props) => {
   return (
     <>
       {finished ? null : card}
+      <ConnectAccount open={connecting} onClose={() => setConnecting(false)} />
       <Dialog
         open={lesson && finished}
         close={() => close(false)}

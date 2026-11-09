@@ -20,7 +20,7 @@ const cors = origins => (req, res, next) => {
     if (origin && origins.includes(origin)) {
         res.set('Access-Control-Allow-Origin', origin);
         res.set('Vary', 'Origin');
-        res.set('Access-Control-Allow-Headers', 'Authorization, Content-Type, battlechoc-pwa-version, battlechoc-pwa-date');
+        res.set('Access-Control-Allow-Headers', 'Authorization, Content-Type, battlechoc-pwa-version, battlechoc-pwa-date, X-Battlechoc-Confirm');
         res.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
         res.set('Access-Control-Max-Age', '600');
     }

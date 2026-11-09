@@ -8,6 +8,8 @@ import Fab from "../controls/Fab";
 import UnsyncedMark from "../controls/UnsyncedMark";
 import PlayerNameInput from "../controls/PlayerNameInput";
 import Dialog from "./Dialog";
+import SaveProgress from "../account/SaveProgress";
+import { features } from "../../cardano";
 import {
   EmptyPlayerStats,
   playerLevel,
@@ -346,6 +348,12 @@ const AccountOverview = (props) => {
             <div>{losses}</div>
           </div>
         </div>
+
+        {/* saving the progress with a Cardano key: the own profile, online, where the build has it */}
+        {/* mounted while the profile is open: it reads its state each time the profile opens */}
+        {props.open && isPlayerAccount && props.online && features.enabled() ? (
+          <SaveProgress playerName={playerName} />
+        ) : null}
       </div>
     </Dialog>
   );

@@ -31,6 +31,22 @@ test('problem reports are kept for 60 days, then deleted', async () => {
     expect(rows.map(row => row.payload.message)).toEqual(['recent']);
 });
 
+test('link codes (plan 3) are deleted once expired; the scheduled cleanup does it too', async () => {
+    const { createLinkCode, cleanupLinkCodes } = require('../src/linkCodes');
+    const other = await players.createPlayer(pool);
+    await createLinkCode(pool, { playerId, purpose: 'connect', now: () => NOW - 11 * 60 * 1000 });
+    await createLinkCode(pool, { playerId: other, purpose: 'connect', now: () => NOW });
+    await cleanupLinkCodes(pool, NOW);
+    expect((await pool.query('SELECT player_id FROM link_codes')).rows).toEqual([{ player_id: other }]);
+    await pool.query("UPDATE link_codes SET expires_at = NOW() - INTERVAL '1 minute'");
+    const stop = scheduleCleanup(pool, { intervalMs: 60 * 60 * 1000 });
+    try {
+        await until(async () => (await count('link_codes')) === 0);
+    } finally {
+        stop();
+    }
+});
+
 test('the scheduled cleanup runs right away and then periodically, until stopped', async () => {
     const left = async () => (await count('pantry')) + (await count('reports'));
     // waits on real time until everything is gone: on Postgres in CI a cleanup can take longer

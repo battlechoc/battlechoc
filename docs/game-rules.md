@@ -110,8 +110,13 @@ and everything a player may not see to itself.
   valuable count. A draw makes both players winners.
 - **Experience** decides the size of the board (6×6, 8×8 from 200, 10×10 from 500), the AI
   opponent and what is unlocked.
-- **Rating** (`packages/shared/rating.js`, Glicko-2) is the public highscore. Only matches
-  between two humans on the server change it.
+- **Rating** (`packages/shared/rating.js`, Glicko-2) is the public highscore. Only matches on
+  the server change it: between two humans, and against the server AI, whose rating per ladder
+  step is fixed (`engine.AI_LADDER`, 900 for Tom Toffee on 6×6 up to 1700 for Gustav Ganache at
+  full strength). Challenge-link matches and offline matches never count. The highscore shows
+  **stars**: the rating minus twice its deviation (never below 0), so they grow with strength and
+  with the number of matches. A match against the AI lifts the stars at most 200 above that AI's
+  rating; beyond that only matches against people count.
 - **Ingredients** (`packages/shared/ingredients.js`, `progression.js`) drop after matches and
   pay for equipment in the Choclab.
 

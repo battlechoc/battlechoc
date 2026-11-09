@@ -95,16 +95,20 @@ const aiMatchBalance = (balance = DefaultBalance) => {
 // at full strength after two or three matches, and losing never made it easier): the step decides
 // the opponent and the board. Two wins in a row go one step up, every loss one step down, a draw
 // breaks the run; once a player reached the 10x10 board, they never go back to a smaller one.
+// Each step has a fixed rating (2026-11-08): a verified match against the server AI moves the
+// player's stars like a match against a player of that rating; the AI's rating never changes.
 const AI_LADDER = Object.freeze([
-    Object.freeze({ step: 1, board: 6, opponent: 'TomToffee' }),
-    Object.freeze({ step: 2, board: 8, opponent: 'TomToffee' }),
-    Object.freeze({ step: 3, board: 8, opponent: 'GustavGanache', handicap: 4 }),
-    Object.freeze({ step: 4, board: 10, opponent: 'GustavGanache', handicap: 4 }),
-    Object.freeze({ step: 5, board: 10, opponent: 'GustavGanache', handicap: 3 }),
-    Object.freeze({ step: 6, board: 10, opponent: 'GustavGanache', handicap: 2 }),
-    Object.freeze({ step: 7, board: 10, opponent: 'GustavGanache', handicap: 1 }),
-    Object.freeze({ step: 8, board: 10, opponent: 'GustavGanache', handicap: 0 }),
+    Object.freeze({ step: 1, board: 6, opponent: 'TomToffee', rating: 900 }),
+    Object.freeze({ step: 2, board: 8, opponent: 'TomToffee', rating: 1050 }),
+    Object.freeze({ step: 3, board: 8, opponent: 'GustavGanache', handicap: 4, rating: 1200 }),
+    Object.freeze({ step: 4, board: 10, opponent: 'GustavGanache', handicap: 4, rating: 1300 }),
+    Object.freeze({ step: 5, board: 10, opponent: 'GustavGanache', handicap: 3, rating: 1400 }),
+    Object.freeze({ step: 6, board: 10, opponent: 'GustavGanache', handicap: 2, rating: 1500 }),
+    Object.freeze({ step: 7, board: 10, opponent: 'GustavGanache', handicap: 1, rating: 1600 }),
+    Object.freeze({ step: 8, board: 10, opponent: 'GustavGanache', handicap: 0, rating: 1700 }),
 ]);
+// the AI's strength is known: a small, fixed deviation
+const AI_RATING_DEVIATION = 50;
 const TOP_STEP = AI_LADDER.length;
 // the first step on the 10x10 board: a player who got there stays there
 const BIG_BOARD_STEP = AI_LADDER.find(entry => entry.board === 10).step;
@@ -176,6 +180,15 @@ const aiLadderSetup = (ladder, { scenario, balance } = {}) => {
     };
 };
 
+/**
+ * The fixed rating ({ rating, deviation }) of a server AI by its agent and the board it plays on;
+ * null for an AI that is not on the ladder (a debug board, a test bot): such a match is not rated.
+ */
+const aiRatingOf = ({ kind, handicap = 0, board }) => {
+    const entry = AI_LADDER.find(step => step.opponent === kind && (step.handicap || 0) === handicap && step.board === board);
+    return entry ? { rating: entry.rating, deviation: AI_RATING_DEVIATION } : null;
+};
+
 // a match against a friend through a challenge link: always the big board, and more time to place
 // the factory, since the friend may never have played before
 const CHALLENGE_BOARD_SIZE = Object.freeze({ rows: 10, cols: 10 });
@@ -200,6 +213,7 @@ module.exports = {
     aiLadderOf,
     nextAiLadder,
     aiLadderSetup,
+    aiRatingOf,
     challengeMatchSetup,
     CHALLENGE_BOARD_SIZE,
     CHALLENGE_PLACEMENT_MS,

@@ -115,6 +115,18 @@ class MatchRoom {
         return room;
     }
 
+    /** The fixed rating of the server AI in this match (engine.aiRatingOf); null without one. */
+    aiRating() {
+        if (this.agents.length !== 1) {
+            return null;
+        }
+        const [agent] = this.agents;
+        const { rows, cols } = this.match.board.size;
+        return rows === cols
+            ? engine.aiRatingOf({ kind: agent.kind, handicap: agent.options && agent.options.handicap, board: rows })
+            : null;
+    }
+
     humanIndexes() {
         return [0, 1].filter(index => this.playerIds[index] !== null);
     }

@@ -7,6 +7,7 @@ const { HttpError, ErrorCode } = require('../src/errors');
 const { NotEnoughIngredientsError } = require('../src/pantry');
 const { closeTestPools, failingOn } = require('./helpers/db');
 const { createTestApp, createAccount, withToken } = require('./helpers/api');
+const { testKeys, signedChallenge, confirmWith, removeKey } = require('./helpers/cardano');
 
 afterAll(closeTestPools);
 
@@ -47,6 +48,9 @@ describe('errors', () => {
         await answers(request(app).post('/accounts/token').send({ refreshToken: 'x'.repeat(40) }), 401, 'invalid refresh token');
         await pool.query('UPDATE sessions SET revoked = TRUE WHERE player_id = $1', [player.playerId]);
         await answers(request(app).post('/accounts/token').send({ refreshToken: player.refreshToken }), 401, 'invalid refresh token');
+        // a session that a key removal ended says so (the game then forgets that key's words)
+        await pool.query("UPDATE sessions SET revoked_reason = 'key-removed' WHERE player_id = $1", [player.playerId]);
+        await answers(request(app).post('/accounts/token').send({ refreshToken: player.refreshToken }), 401, 'session ended');
         time += 16 * 60 * 1000;
         await answers(player.get('/user'), 401, 'invalid access token');
     });
@@ -110,6 +114,41 @@ describe('errors', () => {
         await answers(player.post('/lab/craft', { item: 'LIGHT_BARREL' }), 400, 'RECIPE NOT DISCOVERED');
         await answers(player.post('/user/equipment', { entityType: EntityType.RUM_TRUFFLE_CANNON, slot: 9, itemId: null }), 400, 'INVALID REQUEST PARAMETERS');
         await answers(player.post('/user/equipment', { entityType: EntityType.RUM_TRUFFLE_CANNON, slot: 0, itemId: 'nope' }), 400, 'NOT YOUR ITEM');
+    });
+
+    test('signing in with a Cardano key: never a 401 but for a missing token', async () => {
+        const { app, account } = await setup({ cardanoNetwork: { name: 'preprod', networkId: 0 } });
+        const player = await account();
+        const keys = testKeys();
+        await answers(request(app).post('/auth/cardano/challenge').send({ purpose: 'pay', address: keys.rewardAddress }), 400, 'INVALID REQUEST PARAMETERS');
+        await answers(request(app).post('/auth/cardano/challenge').send({ purpose: 'sign-in', address: testKeys({ networkId: 1 }).rewardAddress }), 400, 'WRONG NETWORK');
+        await answers(request(app).post('/auth/cardano/verify').send({ nonce: 'nope' }), 400, 'CHALLENGE EXPIRED');
+        const unknown = await signedChallenge(app, { keys, purpose: 'sign-in' });
+        await answers(request(app).post('/auth/cardano/verify').send({ ...unknown.verify, signature: 'ab' }), 400, 'INVALID SIGNATURE');
+        const signIn = await signedChallenge(app, { keys, purpose: 'sign-in' });
+        await answers(request(app).post('/auth/cardano/verify').send(signIn.verify), 404, 'UNKNOWN IDENTITY');
+        const linked = await signedChallenge(app, { keys, purpose: 'link', account: player });
+        await player.post('/auth/cardano/verify', linked.verify).expect(200);
+        const other = await account();
+        const taken = await signedChallenge(app, { keys, purpose: 'link', account: other });
+        await answers(other.post('/auth/cardano/verify', taken.verify), 409, 'IDENTITY TAKEN');
+        const [{ subject }] = (await player.get('/user/identities')).body;
+        await answers(removeKey(app, player, subject), 403, 'CONFIRMATION REQUIRED');
+        await answers(confirmWith(app, player, testKeys()), 403, 'NOT YOUR KEY');
+        const { confirmToken } = (await confirmWith(app, player, keys)).body;
+        await answers(removeKey(app, player, subject, confirmToken), 409, 'LAST IDENTITY');
+        for (let n = 0; n < 10; n += 1) {
+            await player.post('/user/passkeys', { credentialId: `c${n}`, subject, iv: 'aXY', data: 'ZA' }).expect(201);
+        }
+        await answers(player.post('/user/passkeys', { credentialId: 'c10', subject, iv: 'aXY', data: 'ZA' }), 409, 'TOO MANY PASSKEYS');
+        await answers(player.post('/user/passkeys', { credentialId: 'c0', subject, iv: 'aXY', data: 'b3RoZXI' }), 409, 'PASSKEY TAKEN');
+        // plan 3: a wallet nobody knows, for a player with keys, needs the proof as well
+        const wallet = await signedChallenge(app, { keys: testKeys(), purpose: 'connect', account: player });
+        await answers(player.post('/auth/cardano/verify', wallet.verify), 403, 'CONFIRMATION REQUIRED');
+        await answers(player.get('/user/link-codes/AAAAAAAAAAAAAAAAAAAAAA'), 404, 'UNKNOWN LINK CODE');
+        const loggedOut = await request(app).post('/accounts/logout').send({ refreshToken: other.refreshToken });
+        expect(loggedOut.status).toBe(204);
+        expect(loggedOut.text).toBe('');
     });
 
     test('transport: unknown paths, broken JSON, too many requests', async () => {

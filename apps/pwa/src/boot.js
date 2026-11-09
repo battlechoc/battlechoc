@@ -23,6 +23,7 @@ import { rememberLanguage } from "./helper/rememberLanguage";
 import { isFullscreen } from "./helper/fullscreen";
 import { testHooksEnabled } from "./testHooks";
 import logger from "./helper/logger";
+import { rememberAndroidApp } from "./cardano/androidApp";
 
 /**
  * What the address the game was opened with asks for, read once before it is reset to the
@@ -50,6 +51,12 @@ export const readLaunchAddress = (
   } else if (testHooksEnabled && path.startsWith("/situation/")) {
     launch.situation = path.replace("/situation/", "").slice(0, 32);
   }
+  // the Android app's marker goes with the cleaned-up address: remembered for the tab first
+  rememberAndroidApp({
+    search: location.search,
+    referrer: typeof document === "undefined" ? "" : document.referrer,
+    storage: () => window.sessionStorage,
+  });
   if (path !== "/" || query.has("challenge")) {
     history.pushState({}, null, location.origin);
   }

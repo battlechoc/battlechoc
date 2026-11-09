@@ -69,3 +69,19 @@ describe('the AI ladder', () => {
         expect(engine.aiLadderOf({ score: 600, aiLadder: ladder(7) })).toMatchObject({ step: 7 });
     });
 });
+
+describe('the AI ratings', () => {
+    test('every step of the AI ladder has a fixed rating, rising with the step', () => {
+        const ratings = engine.AI_LADDER.map(entry =>
+            engine.aiRatingOf({ kind: entry.opponent, handicap: entry.handicap, board: entry.board }));
+        ratings.forEach((ai, index) => expect(ai).toEqual({ rating: engine.AI_LADDER[index].rating, deviation: expect.any(Number) }));
+        ratings.slice(1).forEach((ai, index) => expect(ai.rating).toBeGreaterThan(ratings[index].rating));
+    });
+
+    test('Tom Toffee plays without a handicap; an AI that is not on the ladder has no rating', () => {
+        expect(engine.aiRatingOf({ kind: 'TomToffee', board: 6 }).rating).toBe(engine.AI_LADDER[0].rating);
+        expect(engine.aiRatingOf({ kind: 'TomToffee', handicap: 0, board: 8 }).rating).toBe(engine.AI_LADDER[1].rating);
+        expect(engine.aiRatingOf({ kind: 'GustavGanache', handicap: 4, board: 6 })).toBeNull();
+        expect(engine.aiRatingOf({ kind: 'RandomBot', board: 10 })).toBeNull();
+    });
+});

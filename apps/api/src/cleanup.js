@@ -1,5 +1,5 @@
-// Deletes what is kept only for a while: spoiled and used-up ingredient batches, and problem
-// reports after 60 days. One failing cleanup does not stop the others.
+// Deletes what is kept only for a while: spoiled and used-up ingredient batches, problem
+// reports after 60 days, and sign-in challenges nobody used in time. One failing cleanup does not stop the others.
 //
 // Matches are kept for ever by default. Only when the operator sets a retention
 // (MATCH_RETENTION_DAYS, config.js) the logged actions and the snapshot of a match are removed
@@ -8,6 +8,8 @@
 const pantry = require('./pantry');
 const reports = require('./reports');
 const { createMatchStore } = require('./live/store');
+const { cleanupChallenges } = require('./cardano');
+const { cleanupLinkCodes } = require('./linkCodes');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -26,6 +28,8 @@ const scheduleCleanup = (pool, { intervalMs = 60 * 60 * 1000, log = console, mat
     const cleanups = {
         pantry: pantry.cleanup,
         reports: reports.cleanup,
+        challenges: cleanupChallenges,
+        linkCodes: cleanupLinkCodes,
         ...(matchRetentionDays > 0 ? { matches: trimMatches(matchRetentionDays, log) } : {}),
     };
     const run = () => Promise.all(Object.entries(cleanups).map(([name, cleanup]) =>

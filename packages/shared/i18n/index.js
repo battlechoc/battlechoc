@@ -49,6 +49,9 @@ function fmt(str, values) {
 
 // Texts with {{placeholders}}: translate(key, ...values) fills them in this order.
 const placeholders = Object.freeze({
+    RECOVERY_WORDS_WORD: ['n'],
+    WORDS_COUNT: ['n'],
+    BACKED_UP_WITH: ['list'],
     WARNING_PLAYER_NOT_FOUND: ['name'],
     PLAYER_NAME_GENERATED_BODY: ['name'],
     LAB_TABLE_HINT: ['ingredient'],
@@ -79,6 +82,8 @@ const placeholders = Object.freeze({
     CHALLENGE_PREVIEW_TITLE: ['name'],
     INFO_LAST_UPDATE: ['time'],
     INFO_MADE_BY: ['names'],
+    WALLET_WRONG_NETWORK: ['network'],
+    LINK_CONTINUE: ['wallet'],
 });
 
 // Texts that are picked or put together by code; each gets the language's table first.

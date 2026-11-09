@@ -1,7 +1,7 @@
 // Player data access and the response objects the PWA expects (stats and player infos).
 
 const crypto = require('crypto');
-const { EmptyPlayerStats, sanitizeLoadout, engine, StarterKit } = require('@battlechoc/battlechoc-shared-functions');
+const { EmptyPlayerStats, sanitizeLoadout, engine, StarterKit, starsOf, STARS_DEVIATIONS } = require('@battlechoc/battlechoc-shared-functions');
 const { resultOf, xpOf } = require('./xp');
 const { isValidUsername, randomName } = require('./names');
 const pantry = require('./pantry');
@@ -195,12 +195,17 @@ const stats = async (pool, playerId) => {
     return player ? statsOf(pool, player) : undefined;
 };
 
-// Every named player is on the highscore list. Its order: the shown score (the rating after
-// rated matches, 0 before), then who joined first; so every player has a rank of their own,
-// also the only player or several with 0.
-const score = table => `CASE WHEN ${table}.rated_matches > 0 THEN ${table}.rating ELSE 0 END`;
+// Every named player is on the highscore list. Its order: the shown score (the stars: the rating
+// minus twice its deviation after rated matches, never below 0; 0 before), then who joined first;
+// so every player has a rank of their own, also the only player or several with 0.
+const cautious = table => `${table}.rating - ${STARS_DEVIATIONS} * ${table}.rating_deviation`;
+const score = table => `CASE WHEN ${table}.rated_matches > 0 AND ${cautious(table)} > 0 THEN ${cautious(table)} ELSE 0 END`;
 const ORDER = `${score('players')} DESC, created_at ASC, id ASC`;
-const scoreOf = player => (Number(player.rated_matches) > 0 ? Number(player.rating) : 0);
+const scoreOf = player => starsOf({
+    rating: Number(player.rating),
+    deviation: Number(player.rating_deviation),
+    ratedMatches: Number(player.rated_matches),
+});
 const HIGHSCORE_PAGE_SIZE = 10;
 
 /**
@@ -237,8 +242,8 @@ const playerInfos = async (db, rows, ranks) => {
     const ranking = ranks || await ranksOf(db, rows);
     return rows.map(player => ({
         name: player.username || EmptyPlayerStats.username,
-        // what others see is the rating (verified matches only), never the XP, which offline matches feed
-        score: Math.round(scoreOf(player)),
+        // what others see is the stars (verified matches only), never the XP, which offline matches feed
+        score: scoreOf(player),
         rating: Math.round(player.rating),
         ...results.get(player.id),
         ranking: ranking.get(player.id),
@@ -333,7 +338,68 @@ const addTrackRecords = async (pool, playerId, records) => {
     });
 };
 
+/** The Cardano keys linked to a player (the device identity is not listed), oldest first. */
+const identitiesOf = async (pool, playerId) => {
+    const { rows } = await pool.query(
+        "SELECT provider, subject, created_at FROM identities WHERE player_id = $1 AND provider = 'cardano' ORDER BY created_at ASC, subject ASC",
+        [playerId]);
+    return rows.map(row => ({ provider: row.provider, subject: row.subject, createdAt: new Date(row.created_at).toISOString() }));
+};
+
+/**
+ * Removes one of a player's Cardano keys: false when the player has no such key, LastIdentityError
+ * when it is their last one (they could not sign in anywhere else any more). `keepSession`: the
+ * session that removes it stays, also when that key signed it in.
+ */
+class LastIdentityError extends Error {}
+const removeIdentity = (pool, playerId, subject, { keepSession = null } = {}) => withTransaction(pool, async client => {
+    // the player's row is locked: two removals at once (also from two API processes) wait for each other
+    await client.query('SELECT id FROM players WHERE id = $1 FOR UPDATE', [playerId]);
+    const keys = await count(client, "SELECT COUNT(*) AS n FROM identities WHERE player_id = $1 AND provider = 'cardano'", [playerId]);
+    const owned = await count(client, "SELECT COUNT(*) AS n FROM identities WHERE player_id = $1 AND provider = 'cardano' AND subject = $2",
+        [playerId, subject]);
+    if (owned === 0) {
+        return false;
+    }
+    if (keys <= 1) {
+        throw new LastIdentityError();
+    }
+    await client.query("DELETE FROM identities WHERE player_id = $1 AND provider = 'cardano' AND subject = $2", [playerId, subject]);
+    // the words of that key are no use any more: its passkey backups go with it, and so do the
+    // sessions it signed in (words that leaked must not keep a way in)
+    await client.query('DELETE FROM passkey_backups WHERE player_id = $1 AND subject = $2', [playerId, subject]);
+    // (but not the session that removes it: that device proved it holds another key)
+    await client.query("UPDATE sessions SET revoked = TRUE, revoked_reason = 'key-removed' WHERE player_id = $1 AND subject = $2 AND id <> $3",
+        [playerId, subject, keepSession || '']);
+    await client.query('UPDATE sessions SET subject = NULL WHERE id = $1', [keepSession || '']);
+    return true;
+});
+
+/**
+ * Whether an account has progress of its own on the server: a finished match (verified, or
+ * played offline and reported: its XP and AI ladder would stay behind otherwise; owner,
+ * 2026-11-08), an item or a recipe discovery. The tutorial (its XP and starter kit) and a name do
+ * not count: a device that only did the tutorial switches to a saved account without being asked.
+ */
+const hasProgress = async (pool, playerId) => {
+    const checks = [
+        "SELECT COUNT(*) AS n FROM track_records WHERE player_id = $1 AND result <> 'open'",
+        'SELECT COUNT(*) AS n FROM items WHERE player_id = $1',
+        'SELECT COUNT(*) AS n FROM recipe_discoveries WHERE player_id = $1',
+    ];
+    for (const sql of checks) {
+        if (await count(pool, sql, [playerId]) > 0) {
+            return true;
+        }
+    }
+    return false;
+};
+
 module.exports = {
+    identitiesOf,
+    removeIdentity,
+    LastIdentityError,
+    hasProgress,
     findPlayer, findPlayerByName, setUsername, setLanguage, setTutorialStep, mergeTutorialFlags, freeRandomName, assignRandomName,
     createPlayer, stats, statsOf, results, ladderOf, advanceAiLadder, finishTutorial, rankOf, playerInfo, highscore, friendsOf, addFriend,
     removeFriend, addTrackRecords, levelOf, itemsOf, equipmentOf, loadoutOf,

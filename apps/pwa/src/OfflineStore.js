@@ -42,6 +42,10 @@ class OfflineStore {
       async set(key, val) {
         return (await dbPromise).put(storeName, val, key);
       },
+      // like set, but refuses a key that exists (ConstraintError), atomically, also across tabs
+      async add(key, val) {
+        return (await dbPromise).add(storeName, val, key);
+      },
       async delete(key) {
         return (await dbPromise).delete(storeName, key);
       },

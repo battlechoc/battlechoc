@@ -197,8 +197,17 @@ const NEVER_IMPORTED = [
   /[\\/]@babylonjs[\\/]core[\\/]Materials[\\/]PBR[\\/]openpbrMaterial(\.pure)?\.js$/,
   /[\\/]@babylonjs[\\/]loaders[\\/]glTF[\\/]2\.0[\\/]openpbrMaterialLoadingAdapter\.js$/,
 ];
+// The Evolution SDK is loaded only for the Cardano sign-in (src/cardano/keys.js): a build without
+// VITE_CARDANO_NETWORK never loads it, so it is not precached either.
+const CARDANO_SDK = /[\\/]@evolution-sdk[\\/]evolution[\\/]/;
+// the wallet door (plan 3, src/ui/account/WalletDoor.jsx): the Cardano Foundation's component and
+// what it brings (peer-connect with PeerJS, styled-components, Radix), loaded only when it opens
+const WALLET_DOOR =
+  /[\\/](@cardano-foundation[\\/]cardano-connect-with-wallet(-core)?|@fabianbormann[\\/]cardano-peer-connect|peerjs|styled-components|@radix-ui)[\\/]/;
 const unreachableChunks = new Set();
-const findUnreachableChunks = () => ({
+// `unused`: modules the build never runs; a chunk holding any of them is not precached, however
+// it is reached (the bundler shares such chunks between dynamic imports)
+const findUnreachableChunks = (unused = []) => ({
   name: "battlechoc-unreachable-chunks",
   apply: "build",
   generateBundle(options, bundle) {
@@ -210,10 +219,14 @@ const findUnreachableChunks = () => ({
       NEVER_IMPORTED.some((pattern) =>
         pattern.test(chunk.facadeModuleId || "")
       );
+    const holdsUnused = (chunk) =>
+      (chunk.moduleIds || []).some((id) =>
+        unused.some((pattern) => pattern.test(id))
+      );
     const reached = new Set();
     const visit = (fileName) => {
       const chunk = bundle[fileName];
-      if (!chunk || reached.has(fileName)) {
+      if (!chunk || reached.has(fileName) || holdsUnused(chunk)) {
         return;
       }
       reached.add(fileName);
@@ -255,7 +268,11 @@ export default defineConfig(({ command, mode }) => ({
     preconnectApi(mode),
     stylesheetFirst(),
     withoutWgslShaders(),
-    findUnreachableChunks(),
+    findUnreachableChunks(
+      loadEnv(mode, here, "VITE_").VITE_CARDANO_NETWORK
+        ? []
+        : [CARDANO_SDK, WALLET_DOOR]
+    ),
     react(),
     VitePWA({
       srcDir: "src",

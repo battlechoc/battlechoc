@@ -8,6 +8,8 @@ const ErrorCode = Object.freeze({
     MISSING_ACCESS_TOKEN: 'missing access token',
     INVALID_ACCESS_TOKEN: 'invalid access token',
     INVALID_REFRESH_TOKEN: 'invalid refresh token',
+    // a refresh token whose session ended because the key that signed it in was removed
+    SESSION_ENDED: 'session ended',
 
     NOT_FOUND: 'NOT FOUND',
     INVALID_JSON: 'INVALID JSON',
@@ -31,6 +33,19 @@ const ErrorCode = Object.freeze({
     WRONG_BUILDING: 'WRONG BUILDING',
     ALREADY_ON_THIS_BUILDING: 'ALREADY ON THIS BUILDING',
     OVER_BUDGET: 'OVER BUDGET',
+    // signing in with a Cardano key (routes/cardano.js)
+    CHALLENGE_EXPIRED: 'CHALLENGE EXPIRED',
+    INVALID_SIGNATURE: 'INVALID SIGNATURE',
+    WRONG_NETWORK: 'WRONG NETWORK',
+    UNKNOWN_IDENTITY: 'UNKNOWN IDENTITY',
+    // a link code (plan 3) that is unknown, expired, replaced or another player's
+    UNKNOWN_LINK_CODE: 'UNKNOWN LINK CODE',
+    IDENTITY_TAKEN: 'IDENTITY TAKEN',
+    LAST_IDENTITY: 'LAST IDENTITY',
+    CONFIRMATION_REQUIRED: 'CONFIRMATION REQUIRED',
+    NOT_YOUR_KEY: 'NOT YOUR KEY',
+    TOO_MANY_PASSKEYS: 'TOO MANY PASSKEYS',
+    PASSKEY_TAKEN: 'PASSKEY TAKEN',
 });
 
 class HttpError extends Error {

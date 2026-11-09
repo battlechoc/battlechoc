@@ -44,6 +44,8 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+      # optional: signing in with a Cardano key on that network, preprod or mainnet (empty = off)
+      CARDANO_NETWORK: ${CARDANO_NETWORK:-}
       # optional: match retention and database pool settings (empty = the API's defaults)
       MATCH_RETENTION_DAYS: ${MATCH_RETENTION_DAYS:-}
       DB_POOL_MAX: ${DB_POOL_MAX:-}
