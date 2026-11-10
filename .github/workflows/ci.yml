@@ -108,20 +108,23 @@ jobs:
       - name: The published build has no test hooks
         run: npm run check:build
 
-  # The browser tests in four parallel jobs of about seven minutes each (in one job they took
-  # 29 min), next to test-and-build instead of after it. Each job builds the e2e build and runs
-  # the specs of its group; a spec not named in a group, a new one too, runs in "rest".
+  # The browser tests in six parallel jobs of about seven to eleven minutes each (in one job they
+  # took 29 min), next to test-and-build instead of after it. Each job builds the e2e build and
+  # runs the specs of its group; a spec not named in a group, a new one too, runs in "rest".
+  # signin.spec.js (42 tests, about 19 min) is split per test into two halves (--fully-parallel
+  # lets --shard split inside the file; its tests share no state): in "rest" it pushed the job
+  # past its timeout and cancelled CI on main (5.4.0, run 42708108451), which skips the deploy.
   # Rebalance by the test durations in the jobs' logs.
   e2e-group:
     name: e2e (${{ matrix.group }})
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     runs-on: ubuntu-latest
-    # a group's tests take 4 to 7 minutes, the setup about a minute
+    # a group's tests take 4 to 11 minutes, the setup about a minute
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        group: [challenge, online, realtime, rest]
+        group: [challenge, online, realtime, signin-1, signin-2, rest]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -147,16 +150,25 @@ jobs:
           challenge="test/challenge.spec.js"
           online="test/online.spec.js test/first-load.spec.js"
           realtime="test/realtime.spec.js test/lab.spec.js test/info.spec.js"
+          signin="test/signin.spec.js"
           specs=()
-          if [ "$GROUP" = rest ]; then
-            for spec in test/*.spec.js; do
-              [[ " $challenge $online $realtime " == *" $spec "* ]] || specs+=("$spec")
-            done
-          else
-            read -ra specs <<< "${!GROUP}"
-          fi
-          echo "specs: ${specs[*]}"
-          npm test -- "${specs[@]}"
+          options=()
+          case "$GROUP" in
+            rest)
+              for spec in test/*.spec.js; do
+                [[ " $challenge $online $realtime $signin " == *" $spec "* ]] || specs+=("$spec")
+              done
+              ;;
+            signin-*)
+              specs=("$signin")
+              options=(--fully-parallel "--shard=${GROUP#signin-}/2")
+              ;;
+            *)
+              read -ra specs <<< "${!GROUP}"
+              ;;
+          esac
+          echo "specs: ${specs[*]} ${options[*]}"
+          npm test -- "${specs[@]}" "${options[@]}"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
