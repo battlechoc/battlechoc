@@ -223,12 +223,24 @@ const switchedTo = (page, playerId) =>
     )
     .toBe(playerId);
 
+// After the switch the reloaded page creates its 3D engine anew. WebGL runs in software here
+// (SwiftShader, in Chrome's GPU process), and the engine's getContext/getExtension calls block
+// the page until the GPU process answers: 3 to 4 s on a laptop, but up to 24 s on a two-core CI
+// runner when the page before the reload kept the GPU process busy (the tutorial's board). So
+// the title screen gets a minute; players have a real GPU, where this takes milliseconds.
+const titleScreenAfterReload = (page) =>
+  expect(page.getByText("Start Game", { exact: true }).first()).toBeVisible({
+    timeout: 60000,
+  });
+
 test.describe("signing in again with the words", () => {
   test("a new device signs in from the tutorial's welcome card and plays on as that player", async ({
     browser,
     request,
   }) => {
     const saved = await savedPlayer(browser, request, "SiMona");
+    // only its words and id are needed: closed, its page holds no second WebGL context
+    await saved.context.close();
     const { context, page } = await freshDevice(browser);
     await page.getByTestId("start-button").click();
     await expect(page.getByTestId("tutorial-coach")).toHaveAttribute(
@@ -247,9 +259,7 @@ test.describe("signing in again with the words", () => {
     await page.screenshot({ path: "test/output/signin-connect.png" });
     await enterWords(page, saved.words.join(" "));
     await switchedTo(page, saved.playerId);
-    await expect(
-      page.getByText("Start Game", { exact: true }).first()
-    ).toBeVisible({ timeout: 15000 });
+    await titleScreenAfterReload(page);
     await openProfile(page);
     await expect(
       page.getByText(saved.username).filter({ visible: true }).first()
@@ -257,7 +267,6 @@ test.describe("signing in again with the words", () => {
     // the words are on this device now, backed up (the player just typed them)
     await expect(page.getByTestId("save-progress")).toContainText("Saved");
     await context.close();
-    await saved.context.close();
   });
 
   test("words typed loosely work: capitals, numbering, bullets, tabs, line breaks", async ({
@@ -382,9 +391,7 @@ test.describe("signing in again with the words", () => {
       .click();
     await enterWords(page, saved.words.join(" "));
     await switchedTo(page, saved.playerId);
-    await expect(
-      page.getByText("Start Game", { exact: true }).first()
-    ).toBeVisible({ timeout: 15000 });
+    await titleScreenAfterReload(page);
     const { refreshToken } = await accountOf(page);
     const { accessToken } = await (
       await request.post(`${api}/accounts/token`, { data: { refreshToken } })
@@ -450,9 +457,7 @@ test.describe("switching accounts safely", () => {
     await page.getByTestId("connect-words").fill(saved.words.join(" "));
     await page.getByRole("button", { name: "Continue" }).dblclick();
     await switchedTo(page, saved.playerId);
-    await expect(
-      page.getByText("Start Game", { exact: true }).first()
-    ).toBeVisible({ timeout: 15000 });
+    await titleScreenAfterReload(page);
     expect(verifies).toHaveLength(1);
     await context.close();
     await saved.context.close();
@@ -951,9 +956,7 @@ test.describe("signing in again with a passkey or a backup file (plan 2)", () =>
       .getByRole("button", { name: "Open", exact: true })
       .click();
     await switchedTo(device.page, playerId);
-    await expect(
-      device.page.getByText("Start Game", { exact: true }).first()
-    ).toBeVisible({ timeout: 15000 });
+    await titleScreenAfterReload(device.page);
     await openProfile(device.page);
     const after = device.page.getByTestId("save-progress");
     await after.getByRole("button", { name: "Advanced" }).click();
@@ -1057,9 +1060,7 @@ test.describe("the wallet door (plan 3)", () => {
     await openDoor(page);
     await chooseEternl(page);
     await switchedTo(page, ownerId);
-    await expect(
-      page.getByText("Start Game", { exact: true }).first()
-    ).toBeVisible({ timeout: 15000 });
+    await titleScreenAfterReload(page);
     await context.close();
     await owner.context.close();
   });
