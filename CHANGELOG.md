@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.5.0](https://github.com/battlechoc/battlechoc/compare/v5.4.0...v5.5.0) (2026-11-11)
+
+
+### Features
+
+* **pwa:** turn on signing in with Cardano (preprod) at battlechoc.com ([81713bd](https://github.com/battlechoc/battlechoc/commit/81713bd434ae7937a6e3cbfb741e6ea61ee35056))
+
 ## [5.4.0](https://github.com/battlechoc/battlechoc/compare/v5.3.0...v5.4.0) (2026-11-09)
 
 
