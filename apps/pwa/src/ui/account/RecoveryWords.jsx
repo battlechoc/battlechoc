@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { createUseStyles } from "react-jss";
 import Dialog from "../dialogs/Dialog";
@@ -10,6 +10,8 @@ import {
 import { outlined } from "../styles";
 import { normalizeWords } from "../../cardano";
 import logger from "../../helper/logger";
+import { suggestWords } from "../../cardano/wordSuggestions";
+import WordChips from "./WordChips";
 
 // The 24 recovery words (the owner's pick "A", 2026-11-08): white numbered tiles in three
 // columns, Print, and a check that asks three of them back before they count as backed up. It
@@ -146,6 +148,9 @@ const RecoveryWords = ({ open, words, onClose, onBackedUp }) => {
   const [positions, setPositions] = useState([]);
   const [answers, setAnswers] = useState({});
   const [wrong, setWrong] = useState(false);
+  // the position whose field has the focus (null without): its word gets suggestions
+  const [focused, setFocused] = useState(null);
+  const fields = useRef({});
 
   // a new opening starts with the words
   useEffect(() => {
@@ -177,6 +182,17 @@ const RecoveryWords = ({ open, words, onClose, onBackedUp }) => {
       onClose();
     } catch (failure) {
       logger.warn("could not keep the backup mark", failure);
+    }
+  };
+
+  const suggestions =
+    focused === null ? [] : suggestWords((answers[focused] || "").trim());
+  // a picked word fills the field, and the next field gets the focus
+  const pickWord = (word) => {
+    setAnswers({ ...answers, [focused]: word });
+    const next = positions[positions.indexOf(focused) + 1];
+    if (typeof next !== "undefined" && fields.current[next]) {
+      fields.current[next].focus();
     }
   };
 
@@ -216,13 +232,19 @@ const RecoveryWords = ({ open, words, onClose, onBackedUp }) => {
                     autoCapitalize="none"
                     spellCheck={false}
                     enterKeyHint={i === positions.length - 1 ? "done" : "next"}
+                    ref={(element) => {
+                      fields.current[n] = element;
+                    }}
                     value={answers[n] || ""}
                     onChange={(event) =>
                       setAnswers({ ...answers, [n]: event.target.value })
                     }
+                    onFocus={() => setFocused(n)}
+                    onBlur={() => setFocused(null)}
                   />
                 </label>
               ))}
+              <WordChips words={suggestions} onPick={pickWord} />
               {/* Enter in a field checks the words */}
               <button type="submit" hidden />
             </form>

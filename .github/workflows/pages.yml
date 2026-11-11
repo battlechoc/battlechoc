@@ -76,8 +76,11 @@ jobs:
           VITE_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
           # signing in with a Cardano key (src/cardano/features.js): the same network as the
           # API's CARDANO_NETWORK on the VPS (deploy/README.md). The paths that need a check on a
-          # real device stay hidden until VITE_CARDANO_CONFIRMED names them (TODO.md).
+          # real device stay hidden until VITE_CARDANO_CONFIRMED names them (comma-separated, TODO.md).
           VITE_CARDANO_NETWORK: preprod
+          # cip158: phones without a wallet's own browser get the wallet list with deep links
+          # into Eternl, Vespr and Begin (the link page, src/link/main.js)
+          VITE_CARDANO_CONFIRMED: cip158
         run: VITE_BUILD_TIME=$(date --utc -Iseconds) npm run build
       - name: The published build has no test hooks
         run: npm run check:build
