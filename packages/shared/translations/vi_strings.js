@@ -517,6 +517,7 @@ module.exports = {
     "CONNECT_CONTINUE": "Tiếp tục",
     "WORDS_COUNT": "{{n}} / 24 từ",
     "PASTE": "Dán",
+    "WORD_SUGGESTIONS": "Gợi ý từ",
     "WORDS_INVALID": "Các từ này không khớp với nhau. Hãy kiểm tra lại.",
     "WORDS_UNKNOWN": "Không tìm thấy tiến trình nào được lưu với các từ này.",
     "KEEP_WHICH": "Thiết bị này có tiến trình riêng. Bạn muốn giữ cái nào? Cái còn lại chỉ quay lại được bằng các từ khôi phục của chính nó.",

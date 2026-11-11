@@ -4,6 +4,7 @@ import { createUseStyles } from "react-jss";
 import Dialog from "../dialogs/Dialog";
 import Button from "../controls/Button";
 import RecoveryWords from "./RecoveryWords";
+import WordChips from "./WordChips";
 import ConfirmChange from "./ConfirmChange";
 import {
   translate as t,
@@ -28,6 +29,11 @@ import {
   subjectOfWords,
   wordsAreValid,
 } from "../../cardano";
+import {
+  completeAt,
+  fragmentAt,
+  suggestWords,
+} from "../../cardano/wordSuggestions";
 import logger from "../../helper/logger";
 import { account } from "../../api/account";
 
@@ -168,6 +174,11 @@ const signInError = (failure) => {
 const ConnectAccount = ({ open, onClose, stacked = false }) => {
   const classes = useStyles();
   const [text, setText] = useState("");
+  // where the cursor is in the words box while it has the focus (null without): the word there
+  // gets suggestions
+  const [caret, setCaret] = useState(null);
+  const area = useRef(null);
+  const placeCaret = useRef(null);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [asking, setAsking] = useState(false);
@@ -202,6 +213,22 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
   }, [open]);
 
   const typed = normalizeWords(text);
+  const suggestions =
+    caret === null ? [] : suggestWords(fragmentAt(text, caret).fragment);
+  const followCaret = (event) => setCaret(event.target.selectionStart);
+  const pickWord = (word) => {
+    const next = completeAt(text, caret, word);
+    placeCaret.current = next.caret;
+    setText(next.text);
+    setCaret(next.caret);
+  };
+  // after a picked word, the cursor goes behind it (React set the text and moved it to the end)
+  useEffect(() => {
+    if (placeCaret.current !== null && area.current) {
+      area.current.setSelectionRange(placeCaret.current, placeCaret.current);
+      placeCaret.current = null;
+    }
+  }, [text]);
 
   useEffect(() => {
     if (open) {
@@ -606,9 +633,17 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck={false}
+              ref={area}
               value={text}
-              onChange={(event) => setText(event.target.value)}
+              onChange={(event) => {
+                setText(event.target.value);
+                followCaret(event);
+              }}
+              onSelect={followCaret}
+              onFocus={followCaret}
+              onBlur={() => setCaret(null)}
             />
+            <WordChips words={suggestions} onPick={pickWord} />
             <div className={classes.counter}>
               <span>{t(tr.WORDS_COUNT, typed.length)}</span>
               {canPaste() ? (

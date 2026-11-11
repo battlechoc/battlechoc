@@ -517,6 +517,7 @@ module.exports = {
     "CONNECT_CONTINUE": "Continuer",
     "WORDS_COUNT": "{{n}} mots sur 24",
     "PASTE": "Coller",
+    "WORD_SUGGESTIONS": "Suggestions de mots",
     "WORDS_INVALID": "Ces mots ne vont pas ensemble. Vérifie-les.",
     "WORDS_UNKNOWN": "Aucune progression n'est sauvegardée avec ces mots.",
     "KEEP_WHICH": "Cet appareil a sa propre progression. Laquelle veux-tu garder ? L'autre ne revient qu'avec ses propres mots de récupération.",

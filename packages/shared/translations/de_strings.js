@@ -517,6 +517,7 @@ module.exports = {
     "CONNECT_CONTINUE": "Weiter",
     "WORDS_COUNT": "{{n}} von 24 Wörtern",
     "PASTE": "Einfügen",
+    "WORD_SUGGESTIONS": "Wortvorschläge",
     "WORDS_INVALID": "Diese Wörter passen nicht zusammen. Bitte prüfe sie.",
     "WORDS_UNKNOWN": "Mit diesen Wörtern ist kein Fortschritt gesichert.",
     "KEEP_WHICH": "Auf diesem Gerät gibt es eigenen Fortschritt. Welchen möchtest du behalten? Der andere kommt nur mit seinen eigenen Sicherungswörtern zurück.",
