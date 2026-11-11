@@ -74,6 +74,10 @@ jobs:
       - name: Build
         env:
           VITE_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
+          # signing in with a Cardano key (src/cardano/features.js): the same network as the
+          # API's CARDANO_NETWORK on the VPS (deploy/README.md). The paths that need a check on a
+          # real device stay hidden until VITE_CARDANO_CONFIRMED names them (TODO.md).
+          VITE_CARDANO_NETWORK: preprod
         run: VITE_BUILD_TIME=$(date --utc -Iseconds) npm run build
       - name: The published build has no test hooks
         run: npm run check:build
