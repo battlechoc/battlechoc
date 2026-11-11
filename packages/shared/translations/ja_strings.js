@@ -517,6 +517,7 @@ module.exports = {
     "CONNECT_CONTINUE": "続ける",
     "WORDS_COUNT": "{{n}} / 24 語",
     "PASTE": "貼り付け",
+    "WORD_SUGGESTIONS": "単語の候補",
     "WORDS_INVALID": "言葉の組み合わせが合いません。確かめてね。",
     "WORDS_UNKNOWN": "この言葉で保存された進行状況は見つかりませんでした。",
     "KEEP_WHICH": "この端末にも進行状況があります。どちらを残しますか？もう一方は、そのリカバリーワードがないと戻せません。",

@@ -3,6 +3,7 @@ import { api, createPlayer } from "./helpers/players.js";
 import { accountOf, readEntry, writeEntry } from "./helpers/profile.js";
 import { linkSecondKey, nodeKeys, signAs } from "./helpers/cardano.js";
 import { fakeWallet } from "./helpers/wallet.js";
+import { suggestWords } from "../src/cardano/wordSuggestions.js";
 import fs from "node:fs";
 
 // Saving progress with 24 recovery words (a Cardano key made on the device), the preprod chip,
@@ -179,7 +180,53 @@ test.describe("saving progress", () => {
     await expect(row).not.toContainText("stake");
     await context.close();
   });
+
+  test("the check of the words offers the word from its first letters and goes on to the next field", async ({
+    browser,
+    request,
+  }) => {
+    const { context, page } = await createPlayer(browser, request, "SiWenke");
+    await openProfile(page);
+    await page
+      .getByTestId("save-progress")
+      .getByRole("button", { name: "Save your progress" })
+      .click();
+    const words = await shownWords(page);
+    await page.getByRole("button", { name: "I wrote them down" }).click();
+    const fields = page.getByTestId("recovery-check-word");
+    await expect(fields).toHaveCount(3);
+    // the asked words are random: take the first field whose word a few letters offer (a short
+    // word like "stay" is never offered, it is typed in full)
+    const asked = [];
+    for (const field of await fields.all()) {
+      asked.push(words[Number(await field.getAttribute("data-n")) - 1]);
+    }
+    const index = asked.findIndex((word) => typedUntilOffered(word) !== null);
+    const word = asked[index];
+    const field = fields.nth(index);
+    await field.pressSequentially(typedUntilOffered(word));
+    const chips = page.getByTestId("word-suggestion");
+    await expect(
+      chips.filter({ hasText: new RegExp(`^${word}$`) })
+    ).toBeVisible();
+    await chips.filter({ hasText: new RegExp(`^${word}$`) }).click();
+    await expect(field).toHaveValue(word);
+    if (index < asked.length - 1) {
+      await expect(fields.nth(index + 1)).toBeFocused();
+    }
+    await context.close();
+  });
 });
+
+// the shortest start of `word` whose suggestions offer it, or null when none does
+const typedUntilOffered = (word) => {
+  for (let length = 1; length <= word.length; length += 1) {
+    if (suggestWords(word.slice(0, length)).includes(word)) {
+      return word.slice(0, length);
+    }
+  }
+  return null;
+};
 
 // a player who saved their progress (and backed the words up): { context, page, username, words, playerId }
 const savedPlayer = async (browser, request, name) => {
@@ -290,6 +337,30 @@ test.describe("signing in again with the words", () => {
     await switchedTo(page, saved.playerId);
     await context.close();
     await saved.context.close();
+  });
+
+  test("typing a word offers the words it starts; a tap puts it in and keeps typing in the box", async ({
+    browser,
+  }) => {
+    const { context, page } = await freshDevice(browser);
+    await openProfile(page);
+    await page
+      .getByRole("button", { name: "Connect an existing account" })
+      .click();
+    const area = page.getByTestId("connect-words");
+    const chips = page.getByTestId("word-suggestion");
+    await area.pressSequentially("1. Stu");
+    await expect(chips.filter({ hasText: /^stuff$/ })).toBeVisible();
+    await area.press("d");
+    await expect(chips).toHaveText(["student"]);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({ path: "test/output/signin-word-suggestions.png" });
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await chips.first().click();
+    await expect(area).toHaveValue("1. student ");
+    await expect(area).toBeFocused();
+    await expect(chips).toHaveCount(0);
+    await context.close();
   });
 
   test("one wrong word says so and sends nothing; unknown words leave the account as it was", async ({

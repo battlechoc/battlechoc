@@ -14,6 +14,7 @@
     "@cardano-foundation/cardano-connect-with-wallet": "0.2.22",
     "@evolution-sdk/evolution": "0.8.0",
     "@reduxjs/toolkit": "^2.13.0",
+    "@scure/bip39": "2.4.0",
     "babylonjs-gltf2interface": "^9.30.0",
     "canvas-confetti": "^1.9.4",
     "idb": "^8.0.4",
