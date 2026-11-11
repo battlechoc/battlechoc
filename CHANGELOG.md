@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.6.0](https://github.com/battlechoc/battlechoc/compare/v5.5.0...v5.6.0) (2026-11-11)
+
+
+### Features
+
+* **pwa:** show the phone wallets (CIP-158) in the wallet door ([744cacf](https://github.com/battlechoc/battlechoc/commit/744cacff31a3ab9529d30e286e74e7024a98f3e5))
+* **pwa:** suggest recovery words while typing ([744cacf](https://github.com/battlechoc/battlechoc/commit/744cacff31a3ab9529d30e286e74e7024a98f3e5))
+
 ## [5.5.0](https://github.com/battlechoc/battlechoc/compare/v5.4.0...v5.5.0) (2026-11-11)
 
 
