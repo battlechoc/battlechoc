@@ -1,5 +1,20 @@
 # Changelog
 
+## [5.7.0](https://github.com/battlechoc/battlechoc/compare/v5.6.0...v5.7.0) (2026-11-12)
+
+
+### Features
+
+* **pwa:** account safety and keep your words in the profile ([249565d](https://github.com/battlechoc/battlechoc/commit/249565dec63250191cbd7efcc94092a25b46e519))
+* **pwa:** rules for the account safety rows ([249565d](https://github.com/battlechoc/battlechoc/commit/249565dec63250191cbd7efcc94092a25b46e519))
+* **pwa:** the wallet door says once that it is the test network ([249565d](https://github.com/battlechoc/battlechoc/commit/249565dec63250191cbd7efcc94092a25b46e519))
+
+
+### Bug Fixes
+
+* **pwa:** errors stay with their dialog, and Print waits for the words ([249565d](https://github.com/battlechoc/battlechoc/commit/249565dec63250191cbd7efcc94092a25b46e519))
+* **shared:** the words dialog no longer promises printing on phones ([249565d](https://github.com/battlechoc/battlechoc/commit/249565dec63250191cbd7efcc94092a25b46e519))
+
 ## [5.6.0](https://github.com/battlechoc/battlechoc/compare/v5.5.0...v5.6.0) (2026-11-11)
 
 
