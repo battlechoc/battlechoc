@@ -490,7 +490,7 @@ module.exports = {
     "BACK_UP_NOW": "Jetzt absichern",
     "SAVE_PROGRESS_SAVED": "Gesichert",
     "RECOVERY_WORDS_TITLE": "Deine Sicherungswörter",
-    "RECOVERY_WORDS_TEXT": "Schreib sie auf oder druck sie aus und bewahre sie sicher auf. Mit ihnen bekommst du deinen Fortschritt auf jedem Gerät zurück. Wer sie hat, kann an deiner Stelle spielen.",
+    "RECOVERY_WORDS_TEXT": "Bewahre sie sicher auf. Mit ihnen bekommst du deinen Fortschritt auf jedem Gerät zurück. Wer sie hat, kann an deiner Stelle spielen.",
     "RECOVERY_WORDS_PRINT": "Drucken",
     "RECOVERY_WORDS_WROTE": "Ich habe sie aufgeschrieben",
     "RECOVERY_WORDS_CHECK_TITLE": "Kurzer Test",

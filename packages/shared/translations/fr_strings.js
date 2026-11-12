@@ -490,7 +490,7 @@ module.exports = {
     "BACK_UP_NOW": "Sécuriser maintenant",
     "SAVE_PROGRESS_SAVED": "Sauvegardé",
     "RECOVERY_WORDS_TITLE": "Tes mots de récupération",
-    "RECOVERY_WORDS_TEXT": "Note-les ou imprime-les et garde-les en lieu sûr. Avec eux, tu retrouves ta progression sur n'importe quel appareil. Quiconque les possède peut jouer à ta place.",
+    "RECOVERY_WORDS_TEXT": "Garde-les en lieu sûr. Avec eux, tu retrouves ta progression sur n'importe quel appareil. Quiconque les possède peut jouer à ta place.",
     "RECOVERY_WORDS_PRINT": "Imprimer",
     "RECOVERY_WORDS_WROTE": "Je les ai notés",
     "RECOVERY_WORDS_CHECK_TITLE": "Petite vérification",

@@ -490,7 +490,7 @@ module.exports = {
     "BACK_UP_NOW": "今すぐバックアップ",
     "SAVE_PROGRESS_SAVED": "保存済み",
     "RECOVERY_WORDS_TITLE": "リカバリーワード",
-    "RECOVERY_WORDS_TEXT": "書き留めるか印刷して、安全な場所に保管してね。どの端末でも進行状況を取り戻せるよ。この言葉を知っている人は誰でもあなたとしてプレイできるから、気をつけてね。",
+    "RECOVERY_WORDS_TEXT": "安全な場所に保管してね。どの端末でも進行状況を取り戻せるよ。この言葉を知っている人は誰でもあなたとしてプレイできるから、気をつけてね。",
     "RECOVERY_WORDS_PRINT": "印刷",
     "RECOVERY_WORDS_WROTE": "書き留めた",
     "RECOVERY_WORDS_CHECK_TITLE": "かんたんチェック",

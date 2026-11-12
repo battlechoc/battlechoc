@@ -490,7 +490,7 @@ module.exports = {
     "BACK_UP_NOW": "Sao lưu ngay",
     "SAVE_PROGRESS_SAVED": "Đã lưu",
     "RECOVERY_WORDS_TITLE": "Các từ khôi phục của bạn",
-    "RECOVERY_WORDS_TEXT": "Hãy chép lại hoặc in ra và cất giữ cẩn thận. Với chúng, bạn lấy lại tiến trình trên bất kỳ thiết bị nào. Ai có chúng đều có thể chơi thay bạn.",
+    "RECOVERY_WORDS_TEXT": "Hãy cất giữ chúng cẩn thận. Với chúng, bạn lấy lại tiến trình trên bất kỳ thiết bị nào. Ai có chúng đều có thể chơi thay bạn.",
     "RECOVERY_WORDS_PRINT": "In",
     "RECOVERY_WORDS_WROTE": "Tôi đã chép lại",
     "RECOVERY_WORDS_CHECK_TITLE": "Kiểm tra nhanh",

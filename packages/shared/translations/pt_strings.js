@@ -490,7 +490,7 @@ module.exports = {
     "BACK_UP_NOW": "Fazer a cópia agora",
     "SAVE_PROGRESS_SAVED": "Salvo",
     "RECOVERY_WORDS_TITLE": "Palavras de recuperação",
-    "RECOVERY_WORDS_TEXT": "Anote ou imprima e guarde em um lugar seguro. Com elas você recupera seu progresso em qualquer dispositivo. Quem as tiver pode jogar como você.",
+    "RECOVERY_WORDS_TEXT": "Guarde-as em um lugar seguro. Com elas você recupera seu progresso em qualquer dispositivo. Quem as tiver pode jogar como você.",
     "RECOVERY_WORDS_PRINT": "Imprimir",
     "RECOVERY_WORDS_WROTE": "Já anotei",
     "RECOVERY_WORDS_CHECK_TITLE": "Uma verificação rápida",
