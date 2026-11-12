@@ -51,7 +51,6 @@ function fmt(str, values) {
 const placeholders = Object.freeze({
     RECOVERY_WORDS_WORD: ['n'],
     WORDS_COUNT: ['n'],
-    BACKED_UP_WITH: ['list'],
     WARNING_PLAYER_NOT_FOUND: ['name'],
     PLAYER_NAME_GENERATED_BODY: ['name'],
     LAB_TABLE_HINT: ['ingredient'],
@@ -84,6 +83,10 @@ const placeholders = Object.freeze({
     INFO_MADE_BY: ['names'],
     WALLET_WRONG_NETWORK: ['network'],
     LINK_CONTINUE: ['wallet'],
+    PASSKEYS_SET_UP: ['count'],
+    WALLETS_CONNECTED: ['count'],
+    DETAILS_TEST_NETWORK: ['network'],
+    TEST_NETWORK_TEXT: ['network'],
 });
 
 // Texts that are picked or put together by code; each gets the language's table first.

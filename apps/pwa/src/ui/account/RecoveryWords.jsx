@@ -8,15 +8,17 @@ import {
   translationKeys as tr,
 } from "@battlechoc/battlechoc-shared-functions";
 import { outlined } from "../styles";
-import { normalizeWords } from "../../cardano";
+import { features, normalizeWords } from "../../cardano";
 import logger from "../../helper/logger";
 import { suggestWords } from "../../cardano/wordSuggestions";
 import WordChips from "./WordChips";
 
 // The 24 recovery words (the owner's pick "A", 2026-11-08): white numbered tiles in three
-// columns, Print, and a check that asks three of them back before they count as backed up. It
-// is drawn into the page's body, over the profile it is opened from (inside the profile's dialog
-// the profile's close button would cover its own back button).
+// columns, Print (not on phones and tablets, owner 2026-11-12: no "save as PDF" there), and a
+// check that asks three of them back before they count as backed up. It is drawn into the
+// page's body, over the profile it is opened from (inside the profile's dialog the profile's
+// close button would cover its own back button). Opened with `print` ("Print" in Keep your
+// words), it starts printing right away.
 
 const CHECKED_WORDS = 3;
 const PRINT_SHEET = "battlechoc-recovery-print";
@@ -139,10 +141,10 @@ const pickPositions = (count) => {
 };
 
 /**
- * The words in a dialog over the profile (`open`, `words`); `onClose`, and `onBackedUp` once the
- * player typed three of them back correctly.
+ * The words in a dialog over the profile (`open`, `words`, `print`: print them at once); `onClose`,
+ * and `onBackedUp` once the player typed three of them back correctly.
  */
-const RecoveryWords = ({ open, words, onClose, onBackedUp }) => {
+const RecoveryWords = ({ open, words, print = false, onClose, onBackedUp }) => {
   const classes = useStyles();
   const [checking, setChecking] = useState(false);
   const [positions, setPositions] = useState([]);
@@ -152,14 +154,31 @@ const RecoveryWords = ({ open, words, onClose, onBackedUp }) => {
   const [focused, setFocused] = useState(null);
   const fields = useRef({});
 
-  // a new opening starts with the words
+  // a new opening starts with the words: reset on closing too, so the first render of the next
+  // opening already shows them (and the print sheet), not a check left over from before
   useEffect(() => {
-    if (open) {
-      setChecking(false);
-      setWrong(false);
-      setAnswers({});
-    }
+    setChecking(false);
+    setWrong(false);
+    setAnswers({});
   }, [open]);
+
+  // "Print": once per opening, when the words (and so the print sheet) are on the screen
+  const canPrint = !features.isMobile();
+  const printed = useRef(false);
+  useEffect(() => {
+    if (!open) {
+      printed.current = false;
+      return undefined;
+    }
+    if (!print || !canPrint || checking || printed.current) {
+      return undefined;
+    }
+    const frame = requestAnimationFrame(() => {
+      printed.current = true;
+      window.print();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open, print, canPrint, checking]);
 
   const startCheck = () => {
     setPositions(pickPositions(words.length));
@@ -277,9 +296,11 @@ const RecoveryWords = ({ open, words, onClose, onBackedUp }) => {
               ))}
             </div>
             <div className={classes.buttons}>
-              <Button color="secondary" onClick={() => window.print()}>
-                {t(tr.RECOVERY_WORDS_PRINT)}
-              </Button>
+              {canPrint ? (
+                <Button color="secondary" onClick={() => window.print()}>
+                  {t(tr.RECOVERY_WORDS_PRINT)}
+                </Button>
+              ) : null}
               <Button color="primary" onClick={startCheck}>
                 {t(tr.RECOVERY_WORDS_WROTE)}
               </Button>

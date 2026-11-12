@@ -34,6 +34,8 @@ import { account } from "../../api/account";
 import theme from "../../theme";
 import logger from "../../helper/logger";
 import { openDeepLink } from "../../testHooks";
+import LineIcon from "./LineIcon";
+import { networkLabel } from "./safetyState";
 
 // The wallet door (plan 3): the Cardano Foundation's ConnectWalletList in a game dialog. It lists
 // the injected wallets (extensions, or the wallet of a phone wallet's own browser), the QR code
@@ -69,6 +71,37 @@ const useStyles = createUseStyles((theme) => ({
     justifyContent: "center",
     width: "min(20em, 100%)",
     margin: "0 auto",
+  },
+  // the test network (owner's mockup B, screen 6): the one statement about it in the door
+  network: {
+    display: "flex",
+    gap: "0.6em",
+    boxSizing: "border-box",
+    width: "100%",
+    maxWidth: "28em",
+    margin: "0 auto 0.9em",
+    padding: "0.75em",
+    borderRadius: 14,
+    background: "rgba(0, 0, 0, 0.28)",
+    border: `2px solid ${theme.color.gold.light}`,
+    fontFamily: theme.font.body,
+    fontSize: theme.font.size.sm,
+    lineHeight: 1.4,
+    color: "white",
+    textAlign: "left",
+  },
+  networkIcon: {
+    color: theme.color.gold.light,
+    marginTop: "0.05em",
+  },
+  networkTexts: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "0.2em",
+  },
+  networkTitle: {
+    fontWeight: 700,
+    color: theme.color.gold.light,
   },
 }));
 
@@ -368,6 +401,22 @@ const WalletDoor = ({
       title={t(tr.WALLET_DOOR_TITLE)}
     >
       <div className={classes.body} data-testid="wallet-door">
+        {features.showPreprodBadge() ? (
+          <div className={classes.network} data-testid="test-network">
+            <LineIcon
+              name="info"
+              size={1.4}
+              width={2.2}
+              className={classes.networkIcon}
+            />
+            <div className={classes.networkTexts}>
+              <span className={classes.networkTitle}>
+                {t(tr.TEST_NETWORK_TITLE)}
+              </span>
+              <span>{t(tr.TEST_NETWORK_TEXT, networkLabel(network.name))}</span>
+            </div>
+          </div>
+        ) : null}
         <p className={classes.text}>{t(tr.WALLET_DOOR_TEXT)}</p>
         {paths.size === 0 ? (
           <p className={classes.text}>{t(tr.WALLET_NONE)}</p>
