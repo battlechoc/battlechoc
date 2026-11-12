@@ -13,17 +13,18 @@ export const api = `http://127.0.0.1:${process.env.API_PORT || 8091}`;
 // unlocked: three finished matches (online play needs three against the AI, shared
 // progression.js), one of them a win worth more than 100 XP; false keeps the player at 0 XP and
 // no matches (tutorial skipped), a new player's first matches.
+// device: options of the browser context (a phone's user agent and screen).
 // A retry (or --repeat-each) gets new names: the first attempt took them on the server.
 export const createPlayer = async (
   browser,
   request,
   name,
-  { unlocked = true, origin = "" } = {}
+  { unlocked = true, origin = "", device = {} } = {}
 ) => {
   const { retry, repeatEachIndex } = test.info();
   const username =
     retry || repeatEachIndex ? `${name}_${repeatEachIndex}${retry}` : name;
-  const context = await browser.newContext();
+  const context = await browser.newContext(device);
   await context.addInitScript((url) => {
     window.localStorage.setItem("battlechoc.apiUrl", url);
   }, api);
