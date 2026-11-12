@@ -304,7 +304,11 @@ const SaveProgress = ({ playerName }) => {
       ) : null}
       <AccountSafety
         open={safety}
-        onClose={() => setSafety(false)}
+        onClose={() => {
+          // an error belongs to the dialog it showed in: it does not move down to the row
+          setError(null);
+          setSafety(false);
+        }}
         state={state}
         network={network}
         policyHref={policyLink()}
@@ -318,7 +322,10 @@ const SaveProgress = ({ playerName }) => {
       />
       <KeepWords
         open={keeping}
-        onClose={() => setKeeping(false)}
+        onClose={() => {
+          setError(null);
+          setKeeping(false);
+        }}
         wordsDone={state.wordsKept}
         fileDone={state.fileKept}
         canPrint={!features.isMobile()}

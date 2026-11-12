@@ -195,10 +195,15 @@ test.describe("saving progress", () => {
     request,
   }) => {
     const { context, page } = await createPlayer(browser, request, "SiPrinz");
+    // counts the prints and how many words the print sheet held at that moment
     await page.evaluate(() => {
       window.__printed = 0;
+      window.__sheet = [];
       window.print = () => {
         window.__printed += 1;
+        window.__sheet.push(
+          document.querySelectorAll(".battlechoc-recovery-print div").length
+        );
       };
     });
     await openProfile(page);
@@ -211,6 +216,16 @@ test.describe("saving progress", () => {
     // the print button of the words prints again
     await page.getByRole("button", { name: "Print", exact: true }).click();
     await expect.poll(() => page.evaluate(() => window.__printed)).toBe(2);
+    // a check left open does not come back with the next Print: the sheet is there to print
+    await page.getByRole("button", { name: "I wrote them down" }).click();
+    await expect(page.getByTestId("recovery-check-word")).toHaveCount(3);
+    await page.keyboard.press("Escape");
+    await expect(page.getByTestId("recovery-check-word")).toHaveCount(0);
+    await keepWords(page)
+      .getByRole("button", { name: /^Print/ })
+      .click();
+    await expect.poll(() => page.evaluate(() => window.__printed)).toBe(3);
+    expect(await page.evaluate(() => window.__sheet)).toEqual([24, 24, 24]);
     await context.close();
   });
 
@@ -963,6 +978,10 @@ test.describe("backups with a passkey or a file (plan 2)", () => {
     ).toBeVisible();
     expect(await passkeysOf(page, request)).toEqual([]);
     await expect(passkeyRow(page)).toContainText("Recommended");
+    // the error stays with Account safety: closing it does not move it under the profile's row
+    await page.keyboard.press("Escape");
+    await expect(safety(page)).toHaveCount(0);
+    await expect(profileRow(page).getByRole("alert")).toHaveCount(0);
     await context.close();
   });
 

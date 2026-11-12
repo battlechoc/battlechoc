@@ -154,24 +154,31 @@ const RecoveryWords = ({ open, words, print = false, onClose, onBackedUp }) => {
   const [focused, setFocused] = useState(null);
   const fields = useRef({});
 
-  // a new opening starts with the words
+  // a new opening starts with the words: reset on closing too, so the first render of the next
+  // opening already shows them (and the print sheet), not a check left over from before
   useEffect(() => {
-    if (open) {
-      setChecking(false);
-      setWrong(false);
-      setAnswers({});
-    }
+    setChecking(false);
+    setWrong(false);
+    setAnswers({});
   }, [open]);
 
-  // "Print": once the dialog (and its print sheet) is on the screen
+  // "Print": once per opening, when the words (and so the print sheet) are on the screen
   const canPrint = !features.isMobile();
+  const printed = useRef(false);
   useEffect(() => {
-    if (!open || !print || !canPrint) {
+    if (!open) {
+      printed.current = false;
       return undefined;
     }
-    const frame = requestAnimationFrame(() => window.print());
+    if (!print || !canPrint || checking || printed.current) {
+      return undefined;
+    }
+    const frame = requestAnimationFrame(() => {
+      printed.current = true;
+      window.print();
+    });
     return () => cancelAnimationFrame(frame);
-  }, [open, print, canPrint]);
+  }, [open, print, canPrint, checking]);
 
   const startCheck = () => {
     setPositions(pickPositions(words.length));
