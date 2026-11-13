@@ -71,7 +71,8 @@ const useStyles = createUseStyles((theme) => ({
     display: "flex",
     justifyContent: "center",
     width: "min(20em, 100%)",
-    margin: "0 auto",
+    // room before the QR button and the waiting text under the chips
+    margin: "0 auto 0.8em",
   },
   // the test network (owner's mockup B, screen 6): the one statement about it in the door
   network: {
