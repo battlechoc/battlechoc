@@ -83,6 +83,7 @@ const placeholders = Object.freeze({
     INFO_MADE_BY: ['names'],
     WALLET_WRONG_NETWORK: ['network'],
     LINK_CONTINUE: ['wallet'],
+    LINK_DETAILS: ['detail'],
     PASSKEYS_SET_UP: ['count'],
     WALLETS_CONNECTED: ['count'],
     DETAILS_TEST_NETWORK: ['network'],
