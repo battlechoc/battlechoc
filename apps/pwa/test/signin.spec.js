@@ -432,7 +432,37 @@ test.describe("saving progress", () => {
     }
     await context.close();
   });
+
+  test("after review: the buttons under the check stay put while suggestions come and go", async ({
+    browser,
+    request,
+  }) => {
+    // a word that starts several others ("con": five chips) took a second row of chips: the field
+    // lost the focus on the press of "Done", the chips went, "Done" moved up and the release
+    // missed it (CI, 2026-11-13: the last asked words "cat" and "man")
+    const { context, page } = await createPlayer(browser, request, "SiStella");
+    await openProfile(page);
+    await saveProgress(page);
+    await writeDown(page);
+    await page.getByRole("button", { name: "I wrote them down" }).click();
+    const field = page.getByTestId("recovery-check-word").first();
+    const done = page.getByRole("button", { name: "Done" });
+    const chips = page.getByTestId("word-suggestion");
+    const before = await gapBelow(field, done);
+    await field.pressSequentially("con");
+    await expect(chips).toHaveCount(5);
+    expect(await gapBelow(field, done)).toBe(before);
+    await field.blur();
+    await expect(chips).toHaveCount(0);
+    expect(await gapBelow(field, done)).toBe(before);
+    await context.close();
+  });
 });
+
+// how far `button` sits below `field`: what the suggestion chips between them must not change
+// (relative, as the dialog's content above may still grow, e.g. "Use my passkey" once known)
+const gapBelow = async (field, button) =>
+  (await button.boundingBox()).y - (await field.boundingBox()).y;
 
 // the shortest start of `word` whose suggestions offer it, or null when none does
 const typedUntilOffered = (word) => {
@@ -477,12 +507,14 @@ const enterWords = async (page, text) => {
 };
 
 // the device switched to the saved account: it reloads with the saved account's session (a read
-// that the reload cuts off is tried again)
+// that the reload cuts off is tried again). A minute like titleScreenAfterReload (below): the
+// reloaded page can block every read for the software WebGL's start, and on CI that took over
+// 15 s (2026-11-13: five failed attempts with the switch itself done)
 const switchedTo = (page, playerId) =>
   expect
     .poll(
       async () => (await accountOf(page).catch(() => undefined))?.playerId,
-      { timeout: 15000 }
+      { timeout: 60000 }
     )
     .toBe(playerId);
 
@@ -576,6 +608,30 @@ test.describe("signing in again with the words", () => {
     await expect(area).toHaveValue("1. student ");
     await expect(area).toBeFocused();
     await expect(chips).toHaveCount(0);
+    await context.close();
+  });
+
+  test("after review: Continue stays put while suggestions come and go", async ({
+    browser,
+  }) => {
+    // on a phone's width five chips take two rows
+    const { context, page } = await freshDevice(browser);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openProfile(page);
+    await page
+      .getByRole("button", { name: "I already have an account" })
+      .click();
+    const area = page.getByTestId("connect-words");
+    const go = page.getByRole("button", { name: "Continue" });
+    const chips = page.getByTestId("word-suggestion");
+    const before = await gapBelow(area, go);
+    await area.pressSequentially("con");
+    await expect(chips).toHaveCount(5);
+    expect(await gapBelow(area, go)).toBe(before);
+    await page.screenshot({ path: "test/output/signin-word-chips-row.png" });
+    await area.blur();
+    await expect(chips).toHaveCount(0);
+    expect(await gapBelow(area, go)).toBe(before);
     await context.close();
   });
 
