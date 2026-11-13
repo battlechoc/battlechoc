@@ -561,6 +561,7 @@ module.exports = {
     "LINK_DONE": "Xong. Hãy quay lại battlechoc.",
     "LINK_CONFIRM": "Hãy xác nhận trong battlechoc trước, rồi thử lại.",
     "LINK_EXPIRED": "Liên kết này đã quá cũ. Hãy bắt đầu lại trong battlechoc.",
+    "LINK_DETAILS": "Chi tiết: {{detail}}",
     "WALLET_QR": "Ví trên điện thoại (mã QR)",
     "BACKUP_FINISH": "Hoàn tất sao lưu",
     "BACKUP_FINISH_TEXT": "Hãy cất giữ an toàn 24 từ của bạn. Chỉ khi đó bạn mới vào lại được tài khoản trên thiết bị mới.",

@@ -561,6 +561,7 @@ module.exports = {
     "LINK_DONE": "Pronto. Volte para o battlechoc.",
     "LINK_CONFIRM": "Confirme primeiro no battlechoc e tente de novo.",
     "LINK_EXPIRED": "Este link é antigo demais. Comece de novo no battlechoc.",
+    "LINK_DETAILS": "Detalhes: {{detail}}",
     "WALLET_QR": "Carteira do celular (código QR)",
     "BACKUP_FINISH": "Conclua sua cópia de segurança",
     "BACKUP_FINISH_TEXT": "Guarde suas 24 palavras em um lugar seguro. Só assim você volta à sua conta em um dispositivo novo.",

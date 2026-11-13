@@ -52,6 +52,13 @@ body {
   font-weight: 700;
 }
 
+.link .detail {
+  max-width: 100%;
+  font-size: var(--fs-sm);
+  opacity: 0.85;
+  overflow-wrap: anywhere;
+}
+
 .link button {
   min-width: 14em;
   padding: 0.7em 1.4em;

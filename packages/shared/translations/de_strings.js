@@ -561,6 +561,7 @@ module.exports = {
     "LINK_DONE": "Fertig. Geh zurück zu battlechoc.",
     "LINK_CONFIRM": "Bestätige es zuerst in battlechoc und versuch es dann noch einmal.",
     "LINK_EXPIRED": "Dieser Link ist zu alt. Fang in battlechoc noch einmal an.",
+    "LINK_DETAILS": "Details: {{detail}}",
     "WALLET_QR": "Handy-Wallet (QR-Code)",
     "BACKUP_FINISH": "Sicherung abschließen",
     "BACKUP_FINISH_TEXT": "Bewahre deine 24 Wörter sicher auf. Erst dann kommst du auf einem neuen Gerät wieder an dein Konto.",

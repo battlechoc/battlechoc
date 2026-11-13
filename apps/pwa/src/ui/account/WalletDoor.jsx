@@ -30,6 +30,7 @@ import {
   WalletNetworkError,
 } from "../../cardano";
 import { createAttempts } from "../../cardano/wallet";
+import { injectedWalletKeys, listedWallets } from "../../cardano/walletList";
 import { account } from "../../api/account";
 import theme from "../../theme";
 import logger from "../../helper/logger";
@@ -70,7 +71,8 @@ const useStyles = createUseStyles((theme) => ({
     display: "flex",
     justifyContent: "center",
     width: "min(20em, 100%)",
-    margin: "0 auto",
+    // room before the QR button and the waiting text under the chips
+    margin: "0 auto 0.8em",
   },
   // the test network (owner's mockup B, screen 6): the one statement about it in the door
   network: {
@@ -105,51 +107,70 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-// the component's look, in the game's colours and fonts
+// the component's look (owner's pick, 2026-11-13): the white pills' shape in two columns, in the
+// dark rows' colours of Account safety; the logo on a white disc. `gap` and `borderRadius` go to the
+// component too, which then leaves out its own first/last-child corners these rules could not beat.
+const { secondary, gold } = theme.color;
 const LIST_CSS = `
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
   font-family: var(--font-body);
-  & > span, & > button, & > div {
+  & > span, & > div {
     font-family: var(--font-body);
   }
+  & > button {
+    flex: 0 1 calc(50% - 5px);
+    min-width: 0;
+    min-height: 52px;
+    margin: 0;
+    padding: 6px 14px 6px 6px;
+    gap: 10px;
+    box-sizing: border-box;
+    border: 2px solid ${secondary.light};
+    border-radius: 999px;
+    background-color: ${secondary.dark};
+    color: white;
+    font-family: var(--font-body);
+    font-size: var(--fs-md);
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  & > button:hover {
+    background-color: #245f80;
+  }
+  & > button:focus-visible {
+    outline: 3px solid ${gold.light};
+    outline-offset: 2px;
+  }
+  & > button > img {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    padding: 5px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    background: white;
+    object-fit: contain;
+  }
 `;
+const LIST_GAP = 10;
 // the QR dialog of the component opens above the game's dialogs
 const QR_CSS = "z-index: 10000; font-family: var(--font-body);";
 
-// the wallets the list may show: the registry's (the component's default leaves out Vespr, Begin
-// and Gero) and whatever this browser injected (a wallet's own browser on a phone)
-const REGISTRY_WALLETS = [
-  "eternl",
-  "lace",
-  "vespr",
-  "begin",
-  "yoroi",
-  "nufi",
-  "typhoncip30",
-  "gerowallet",
-  "flint",
-  "nami",
-];
-const supportedWallets = () => {
-  let injected = [];
+// the wallets this browser injected (an extension, or a phone wallet's own browser); a wallet's
+// browser may make reading window.cardano throw
+const injectedKeys = () => {
   try {
-    const wallets = window.cardano || {};
-    injected = Object.keys(wallets).filter(
-      (key) => wallets[key] && typeof wallets[key].enable === "function"
-    );
+    return injectedWalletKeys(window.cardano);
   } catch {
-    // none
-  }
-  return [...new Set([...REGISTRY_WALLETS, ...injected])];
-};
-
-const injectedWallets = () => {
-  try {
-    const wallets = window.cardano || {};
-    return Object.keys(wallets).some(
-      (key) => wallets[key] && typeof wallets[key].enable === "function"
-    );
-  } catch {
-    return false;
+    return [];
   }
 };
 
@@ -220,7 +241,8 @@ const WalletDoor = ({
     },
     []
   );
-  const paths = features.walletPaths({ injected: injectedWallets() });
+  const injected = injectedKeys();
+  const paths = features.walletPaths({ injected: injected.length > 0 });
   const deeplink = paths.has("deeplink") && purpose !== "confirm";
 
   // the game does not keep the wallet connected: the core remembers the last one otherwise
@@ -438,10 +460,15 @@ const WalletDoor = ({
               peerConnectSubtitle={t(tr.WALLET_QR_TEXT)}
               peerConnectCustomCSS={QR_CSS}
               primaryColor={theme.color.secondary.dark}
-              borderRadius={12}
+              borderRadius={999}
+              gap={LIST_GAP}
               customCSS={LIST_CSS}
               onConnect={withWallet}
-              supportedWallets={supportedWallets()}
+              supportedWallets={listedWallets({
+                deeplink,
+                injected,
+                configOf: getWalletConfig,
+              })}
               onConnectError={(walletName, failure) => {
                 forget();
                 fail(failure);

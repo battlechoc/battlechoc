@@ -20,6 +20,7 @@ import {
   WalletCancelledError,
   WalletNetworkError,
 } from "../cardano/wallet.js";
+import { detailOf, traced } from "./diagnosis.js";
 
 const WALLET_WAIT_MS = 3000;
 const network = cardano.networkOf(import.meta.env.VITE_CARDANO_NETWORK);
@@ -39,6 +40,15 @@ const api = {
   verifyForCode: async (body) =>
     (await client.post("/auth/cardano/verify", body)).data,
 };
+
+// the CIP-30 calls signWithWallet makes: traced for the detail under an error
+const WALLET_METHODS = [
+  "getNetworkId",
+  "getRewardAddresses",
+  "getUsedAddresses",
+  "getChangeAddress",
+  "signData",
+];
 
 const root = document.getElementById("link");
 
@@ -97,7 +107,8 @@ const messageOf = (failure) => {
   return t(tr.WALLET_FAILED);
 };
 
-const offer = (code, wallets, problem) => {
+// `problem`: the message for the player; `detail`: what failed, for whoever helps them
+const offer = (code, wallets, problem, detail) => {
   const nodes = [
     element("h1", t(tr.LINK_TITLE)),
     element("p", t(tr.LINK_TEXT), "warning"),
@@ -106,6 +117,9 @@ const offer = (code, wallets, problem) => {
     const alert = element("p", problem, "error");
     alert.setAttribute("role", "alert");
     nodes.push(alert);
+  }
+  if (detail) {
+    nodes.push(element("p", t(tr.LINK_DETAILS, detail), "detail"));
   }
   for (const wallet of wallets) {
     const button = element(
@@ -123,13 +137,18 @@ const connect = async (code, wallet, wallets) => {
   root.querySelectorAll("button").forEach((button) => {
     button.disabled = true;
   });
+  let step = "enable";
+  const onStep = (name) => {
+    step = name;
+  };
   try {
     const walletApi = await walletApiOf(wallet.key);
-    const answer = await signWithWallet(walletApi, "connect", {
-      api,
-      network,
-      code,
-    });
+    onStep("enable ok");
+    const answer = await signWithWallet(
+      traced(walletApi, WALLET_METHODS, onStep),
+      "connect",
+      { api: traced(api, Object.keys(api), onStep), network, code }
+    );
     show(
       element("h1", t(tr.LINK_TITLE)),
       element(
@@ -143,7 +162,7 @@ const connect = async (code, wallet, wallets) => {
       return;
     }
     console.warn("the link page could not connect the wallet", failure);
-    offer(code, wallets, messageOf(failure));
+    offer(code, wallets, messageOf(failure), detailOf(failure, step));
   }
 };
 

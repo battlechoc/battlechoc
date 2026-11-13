@@ -561,6 +561,7 @@ module.exports = {
     "LINK_DONE": "完了しました。battlechocに戻ってください。",
     "LINK_CONFIRM": "まずbattlechocで確認してから、もう一度お試しください。",
     "LINK_EXPIRED": "このリンクは古すぎます。battlechocでやり直してください。",
+    "LINK_DETAILS": "詳細: {{detail}}",
     "WALLET_QR": "スマホのウォレット（QRコード）",
     "BACKUP_FINISH": "バックアップを完了する",
     "BACKUP_FINISH_TEXT": "24個の言葉を安全に保管してね。保管して初めて、新しい端末でアカウントに戻れます。",
