@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.8.1](https://github.com/battlechoc/battlechoc/compare/v5.8.0...v5.8.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* **pwa:** the word chips stay on one line, so Done and Continue never move ([8c0919a](https://github.com/battlechoc/battlechoc/commit/8c0919afbd5bc7a4e7bc2889d740a8604dccd2c2))
+
 ## [5.8.0](https://github.com/battlechoc/battlechoc/compare/v5.7.0...v5.8.0) (2026-11-13)
 
 
