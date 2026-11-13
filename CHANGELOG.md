@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.8.0](https://github.com/battlechoc/battlechoc/compare/v5.7.0...v5.8.0) (2026-11-13)
+
+
+### Features
+
+* **pwa:** phones list only the wallets that open the link page, as chips ([41c2552](https://github.com/battlechoc/battlechoc/commit/41c2552662981922950fba53dc6c5b319a38b68b))
+* **pwa:** the link page says which step failed ([41c2552](https://github.com/battlechoc/battlechoc/commit/41c2552662981922950fba53dc6c5b319a38b68b))
+
+
+### Bug Fixes
+
+* **pwa:** room between the wallet chips and the QR button ([41c2552](https://github.com/battlechoc/battlechoc/commit/41c2552662981922950fba53dc6c5b319a38b68b))
+
 ## [5.7.0](https://github.com/battlechoc/battlechoc/compare/v5.6.0...v5.7.0) (2026-11-12)
 
 
