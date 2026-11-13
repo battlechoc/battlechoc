@@ -507,12 +507,14 @@ const enterWords = async (page, text) => {
 };
 
 // the device switched to the saved account: it reloads with the saved account's session (a read
-// that the reload cuts off is tried again)
+// that the reload cuts off is tried again). A minute like titleScreenAfterReload (below): the
+// reloaded page can block every read for the software WebGL's start, and on CI that took over
+// 15 s (2026-11-13: five failed attempts with the switch itself done)
 const switchedTo = (page, playerId) =>
   expect
     .poll(
       async () => (await accountOf(page).catch(() => undefined))?.playerId,
-      { timeout: 15000 }
+      { timeout: 60000 }
     )
     .toBe(playerId);
 
