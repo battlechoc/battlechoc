@@ -1806,6 +1806,19 @@ test.describe("the phone's wallet browser: the link page (plan 3)", () => {
     await page.getByRole("button", { name: "Use a Cardano wallet" }).click();
   };
 
+  test("on a phone the door lists only the wallets whose app opens the link page", async ({
+    browser,
+  }) => {
+    const { context, page } = await phoneGame(browser);
+    await openDoor(page);
+    const list = page.getByTestId("connect-wallet-list");
+    await expect(list.getByRole("button")).toHaveText(["Eternl", "Vespr"]);
+    await expect(list.getByText("Desktop Only")).toHaveCount(0);
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: "test/output/wallet-door-phone-list.png" });
+    await context.close();
+  });
+
   test("an unknown wallet signs on the link page; the game on the phone gets it linked", async ({
     browser,
     request,
