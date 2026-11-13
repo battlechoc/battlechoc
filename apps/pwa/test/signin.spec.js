@@ -1906,6 +1906,10 @@ test.describe("the phone's wallet browser: the link page (plan 3)", () => {
     await expect(
       wallet.page.getByText("This link is too old. Start again in battlechoc.")
     ).toBeVisible();
+    // the step that failed and the API's answer, for whoever helps the player
+    await expect(wallet.page.locator(".detail")).toHaveText(
+      "Details: challengeForCode · 404 UNKNOWN LINK CODE"
+    );
     await wallet.context.close();
   });
 
