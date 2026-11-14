@@ -17,6 +17,7 @@ This applies to the following paths:
 - apps/pwa/public/sound/
 - apps/pwa/public/*.png and apps/pwa/public/favicon.ico (app icons)
 - apps/pwa/dev/ (Blender, GIMP and audio sources)
+- docs/media/ (recordings of the game, such as the README's animation)
 
 Exceptions: third-party brand icons (for example discord.svg, facebook.svg,
 instagram.svg and apple-share-icon.svg in apps/pwa/public/images/) belong to
