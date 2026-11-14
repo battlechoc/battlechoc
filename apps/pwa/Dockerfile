@@ -16,6 +16,6 @@ ARG VITE_API_URL=http://localhost
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build --workspace apps/pwa
 
-FROM caddy:2.11.7-alpine
+FROM caddy:2.11.8-alpine
 COPY deploy/pwa.Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /app/apps/pwa/build /srv
