@@ -54,6 +54,7 @@ module.exports.SLOTS_PER_BUILDING = equipment.SLOTS_PER_BUILDING;
 module.exports.sanitizeLoadout = equipment.sanitizeLoadout;
 module.exports.loadoutPoints = equipment.loadoutPoints;
 module.exports.applyStat = equipment.applyStat;
+module.exports.salvageReturns = require('./salvage').salvageReturns;
 const rating = require('./rating');
 module.exports.updateRating = rating.updateRating;
 module.exports.rateMatch = rating.rateMatch;
