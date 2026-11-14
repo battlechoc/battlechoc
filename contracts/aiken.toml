@@ -1,0 +1,23 @@
+name = "battlechoc/contracts"
+version = "1.0.0"
+compiler = "v1.1.24"
+plutus = "v3"
+license = "AGPL-3.0-or-later"
+description = "battlechoc's on-chain contracts: the config, the fee treasury and the CIP-68 items"
+
+[repository]
+user = "battlechoc"
+project = "battlechoc"
+platform = "github"
+
+[[dependencies]]
+name = "aiken-lang/stdlib"
+version = "v4.0.0"
+source = "github"
+
+[[dependencies]]
+name = "aiken-lang/fuzz"
+version = "v3.0.0"
+source = "github"
+
+[config]
