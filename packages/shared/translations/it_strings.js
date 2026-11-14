@@ -531,7 +531,7 @@ module.exports = {
     "PASSKEY_EXISTS": "Questo dispositivo ha già una passkey per le tue parole.",
     "PASSKEY_FAILED": "La passkey non ha funzionato. Riprova.",
     "CONFIRM_TITLE": "Sei tu?",
-    "CONFIRM_TEXT": "Per cambiare le tue chiavi serve una prova: la tua passkey o le tue 24 parole di recupero.",
+    "CONFIRM_TEXT": "Per cambiare le tue chiavi serve una prova che sei proprio tu.",
     "CONFIRM_PASSKEY": "Usa la mia passkey",
     "CONFIRM_FAILED": "Non ha funzionato. Le tue chiavi non sono cambiate.",
     "OPEN_FILE": "Apri un file di backup",

@@ -531,7 +531,7 @@ module.exports = {
     "PASSKEY_EXISTS": "Thiết bị này đã có passkey cho các từ của bạn.",
     "PASSKEY_FAILED": "Passkey không hoạt động. Hãy thử lại.",
     "CONFIRM_TITLE": "Có phải bạn không?",
-    "CONFIRM_TEXT": "Để thay đổi khóa cần một bằng chứng: passkey của bạn, hoặc 24 từ khôi phục.",
+    "CONFIRM_TEXT": "Để thay đổi khóa cần một bằng chứng rằng đó đúng là bạn.",
     "CONFIRM_PASSKEY": "Dùng passkey của tôi",
     "CONFIRM_FAILED": "Không thành công. Các khóa của bạn không thay đổi.",
     "OPEN_FILE": "Mở tệp sao lưu",

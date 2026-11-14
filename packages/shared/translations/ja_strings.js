@@ -531,7 +531,7 @@ module.exports = {
     "PASSKEY_EXISTS": "この端末にはもうあなたの言葉のパスキーがあります。",
     "PASSKEY_FAILED": "パスキーがうまくいきませんでした。もう一度試してね。",
     "CONFIRM_TITLE": "本人ですか？",
-    "CONFIRM_TEXT": "キーを変えるには確認が必要です：パスキーを使うか、24個のリカバリーワードを入力してね。",
+    "CONFIRM_TEXT": "キーを変えるには、本人であることの確認が必要です。",
     "CONFIRM_PASSKEY": "パスキーを使う",
     "CONFIRM_FAILED": "うまくいきませんでした。キーは変わっていません。",
     "OPEN_FILE": "バックアップファイルを開く",
