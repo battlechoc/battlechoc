@@ -2,9 +2,27 @@
 // store "player" (stats, account), "settings" (unlocks, labIntroSeen, …) and "gamestate"
 // (realtime-match). The page must have opened the game once, which creates the stores.
 
+// a reload in the middle (the game reloads after a switch to another account, a moment after it
+// stored the new account) destroys the page the operations ran in: they run again in the new page,
+// once it has loaded. Each operation gives the same result twice (put, merge, delete, get).
+const CUT_OFF = /Execution context was destroyed/;
+const TRIES = 5;
+
 // runs the operations in one transaction in the page: { op: "get" | "put" | "merge" | "delete",
 // store, key, value }; resolves with what each "get" found
-const run = (page, ops) =>
+const run = async (page, ops, tries = TRIES) => {
+  try {
+    return await inPage(page, ops);
+  } catch (failure) {
+    if (tries <= 1 || !CUT_OFF.test(String(failure && failure.message))) {
+      throw failure;
+    }
+    await page.waitForLoadState("load");
+    return run(page, ops, tries - 1);
+  }
+};
+
+const inPage = (page, ops) =>
   page.evaluate(
     (ops) =>
       new Promise((resolve, reject) => {
