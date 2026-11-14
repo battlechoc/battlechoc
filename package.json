@@ -24,7 +24,7 @@
     "whitepaper:simulate": "node whitepaper/simulator/run.js",
     "test:whitepaper": "node --test 'whitepaper/simulator/test/*.test.js'",
     "test:changelog": "node --test .github/scripts/pr-changelog.test.js",
-    "check:contracts": "cd contracts && aiken fmt --check && aiken check --deny && aiken build --trace-level silent && git diff --exit-code plutus.json",
+    "check:contracts": "cd contracts && aiken fmt --check && aiken check --deny && aiken build --trace-level silent && git status --porcelain -- plutus.json && test -z \"$(git status --porcelain -- plutus.json)\"",
     "check:build": "test -d apps/pwa/build && ! grep -rlE '__battlechoc|testclock' apps/pwa/build",
     "verify": "npm run format:check && npm run lint && npm run test:changelog && npm test && npm run test:unit && npm run test:whitepaper && npm run test:api && npm run build && npm run check:build",
     "lint": "eslint .",
