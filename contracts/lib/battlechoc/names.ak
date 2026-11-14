@@ -100,10 +100,10 @@ test split_name_rejects_long_names() {
   split_name(bytearray.concat(reference_name(s), #"00")) == None
 }
 
-// Pins the CBOR encoding of the seed: the API (Task 6) must compute the same
-// suffix. Task 6 computes the value in JS and writes it here.
+// Pins the CBOR encoding of the seed: the API computes the same suffix
+// (apps/api/test/chain.blueprint.test.js pins this value too).
 test suffix_vector() {
-  suffix(example_seed) == #""
+  suffix(example_seed) == #"8131afd50ec08843dc8e60d31df11c1e9a4c2299f2096d9bfef16ad9"
 }
 
 test prop_distinct_seeds_distinct_suffixes(

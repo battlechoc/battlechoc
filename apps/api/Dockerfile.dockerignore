@@ -8,6 +8,7 @@
 !apps/api/package.json
 !apps/api/src
 !packages/shared
+!contracts/plutus.json
 packages/shared/node_modules
 packages/shared/coverage
 packages/shared/tests

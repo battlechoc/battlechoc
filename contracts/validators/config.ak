@@ -4,6 +4,7 @@
 //// share one script hash, so the NFT's policy id is also its address's
 //// payment credential. The NFT moves only with `threshold` admin signatures.
 
+use aiken/cbor
 use aiken/collection/dict
 use aiken/collection/list
 use aiken/option
@@ -436,4 +437,11 @@ test config_update_while_paused_ok() {
       outputs: [config_nft_output(base_config()), ..list.drop(tx.outputs, 1)],
     },
   )
+}
+
+// The encoding the API reproduces: apps/api/test/chain.blueprint.test.js pins
+// the same bytes for its encodeConfigDatum (the preprod-shaped fee option).
+
+test config_datum_vector() {
+  cbor.serialise(base_config()) == #"d8799f9f581c51515151515151515151515151515151515151515151515151515151ff9f581ca1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1581ca2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2581ca3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3ff02d879809fd8799f40409f1a000f42401a001e84801a003d0900ff9f9fd8799fd87a9f581c7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7effd87a80ff01ffffffffff"
 }

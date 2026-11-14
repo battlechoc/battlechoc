@@ -8,6 +8,7 @@
 //// no fee. A reference token leaves this address only burned, so an item's
 //// metadata never changes.
 
+use aiken/cbor
 use aiken/collection/dict.{Dict}
 use aiken/collection/list
 use aiken/collection/pairs
@@ -1055,4 +1056,11 @@ test prop_burn_rejects_positive(q via fuzz.int_at_least(0)) {
       |> dict.insert(user_name(s), user_quantity)
   }
   !burns_in_pairs(pair(q, -1)) && !burns_in_pairs(pair(-1, q))
+}
+
+// The encoding the API reproduces: apps/api/test/chain.blueprint.test.js pins
+// the same bytes for its mint redeemer.
+
+test mint_redeemer_vector() {
+  cbor.serialise(item_mint_redeemer()) == #"d8799fd8799f58205d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d02ff581c0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0e0100ff"
 }
