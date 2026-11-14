@@ -16,6 +16,9 @@ const TX_VALIDITY_MS = 20 * 60 * 1000;
 // what a wallet needs aside from the costs: the collateral of a Plutus transaction and some change
 const COLLATERAL_LOVELACE = 2_000_000;
 const CHANGE_RESERVE_LOVELACE = 1_000_000;
+// what a mint takes from a wallet besides the battlechoc fee and the change: the network fee and
+// the deposits of both token outputs, with room to spare; provisional
+const MINT_NEEDED_ESTIMATE_LOVELACE = 5_000_000; // measured in Task 9
 
 // the index of a tier into a fee option's `amounts` (the order of Tier in equipment.js and of
 // the items validator: COMMON 0, RARE 1, EPIC 2)
@@ -41,6 +44,7 @@ module.exports = {
     TX_VALIDITY_MS,
     COLLATERAL_LOVELACE,
     CHANGE_RESERVE_LOVELACE,
+    MINT_NEEDED_ESTIMATE_LOVELACE,
     TIER_ORDER,
     REFERENCE_LABEL,
     USER_LABEL,

@@ -17,6 +17,7 @@ describe('the minting constants', () => {
         expect(chain.CHANGE_RESERVE_LOVELACE).toBe(1_000_000);
         expect(typeof chain.COLLATERAL_LOVELACE).toBe('number');
         expect(typeof chain.CHANGE_RESERVE_LOVELACE).toBe('number');
+        expect(chain.MINT_NEEDED_ESTIMATE_LOVELACE).toBe(5_000_000);
     });
 
     test('the tiers index a fee option amounts in the order of Tier', () => {
