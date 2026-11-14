@@ -23,39 +23,78 @@ class OfflineStore {
       },
     });
 
+    this.dbPromise = dbPromise;
+    // set by eraseAll: the page is about to load anew, nothing it still saves may come back
+    this.erased = false;
+    const erased = () => this.erased;
+
     this.gamestateStore = OfflineStore.wrapObjectStore(
       gamestateStoreName,
-      dbPromise
+      dbPromise,
+      erased
     );
     this.settingsStore = OfflineStore.wrapObjectStore(
       settingsStoreName,
-      dbPromise
+      dbPromise,
+      erased
     );
-    this.playerStore = OfflineStore.wrapObjectStore(playerStoreName, dbPromise);
+    this.playerStore = OfflineStore.wrapObjectStore(
+      playerStoreName,
+      dbPromise,
+      erased
+    );
   }
 
-  static wrapObjectStore(storeName, dbPromise) {
+  // the writes do nothing once the database is erased
+  static wrapObjectStore(storeName, dbPromise, erased) {
     return {
       async get(key) {
         return (await dbPromise).get(storeName, key);
       },
       async set(key, val) {
+        if (erased()) {
+          return undefined;
+        }
         return (await dbPromise).put(storeName, val, key);
       },
       // like set, but refuses a key that exists (ConstraintError), atomically, also across tabs
       async add(key, val) {
+        if (erased()) {
+          return undefined;
+        }
         return (await dbPromise).add(storeName, val, key);
       },
       async delete(key) {
+        if (erased()) {
+          return undefined;
+        }
         return (await dbPromise).delete(storeName, key);
       },
       async clear() {
+        if (erased()) {
+          return undefined;
+        }
         return (await dbPromise).clear(storeName);
       },
       async keys() {
         return (await dbPromise).getAllKeys(storeName);
       },
     };
+  }
+
+  // "Reset battlechoc" (src/reset.js): empties every store in one transaction (the progress, the
+  // settings, the account and the recovery words on this device); the page loads anew right
+  // after, and until then no write gets through. Emptied, not deleted: deleting the database
+  // would wait for every open connection, this page's and other tabs'.
+  async eraseAll() {
+    this.erased = true;
+    const db = await this.dbPromise;
+    const names = [...db.objectStoreNames];
+    const transaction = db.transaction(names, "readwrite");
+    await Promise.all([
+      ...names.map((name) => transaction.objectStore(name).clear()),
+      transaction.done,
+    ]);
   }
 
   async hasGameToResume() {
