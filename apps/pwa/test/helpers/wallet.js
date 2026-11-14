@@ -14,7 +14,13 @@ const hex = (bytes) => Buffer.from(bytes).toString("hex");
 export const fakeWallet = async (
   context,
   keys,
-  { networkId = 0, decline = false, hang = false, key = "eternl" } = {}
+  {
+    networkId = 0,
+    decline = false,
+    hang = false,
+    refuse = false,
+    key = "eternl",
+  } = {}
 ) => {
   const signed = [];
   // the QR path (CIP-45) would reach the public PeerJS server: tests stay off the internet, and
@@ -48,7 +54,7 @@ export const fakeWallet = async (
     }
   );
   await context.addInitScript(
-    ({ rewardAddressHex, networkId, key }) => {
+    ({ rewardAddressHex, networkId, key, refuse }) => {
       const api = {
         getNetworkId: async () => networkId,
         getRewardAddresses: async () => [rewardAddressHex],
@@ -74,11 +80,17 @@ export const fakeWallet = async (
         name: key,
         apiVersion: "0.1.0",
         icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E",
-        enable: async () => api,
+        // `refuse`: how a wallet app without an account (or a locked one) answers
+        enable: async () => {
+          if (refuse) {
+            throw { code: -3, info: "no account" };
+          }
+          return api;
+        },
         isEnabled: async () => true,
       };
     },
-    { rewardAddressHex: keys.rewardAddressHex, networkId, key }
+    { rewardAddressHex: keys.rewardAddressHex, networkId, key, refuse }
   );
   return { signed, peerjs };
 };

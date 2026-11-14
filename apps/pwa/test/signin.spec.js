@@ -459,6 +459,14 @@ test.describe("saving progress", () => {
   });
 });
 
+// "Is it you?" with the 24 words: their box opens only from its button (owner 2026-11-14)
+const proveWithWords = async (page, words) => {
+  await expect(page.getByTestId("confirm-words")).toHaveCount(0);
+  await page.getByTestId("confirm-words-open").click();
+  await page.getByTestId("confirm-words").fill(words.join(" "));
+  await page.getByRole("button", { name: "Continue" }).click();
+};
+
 // how far `button` sits below `field`: what the suggestion chips between them must not change
 // (relative, as the dialog's content above may still grow, e.g. "Use my passkey" once known)
 const gapBelow = async (field, button) =>
@@ -1214,8 +1222,7 @@ test.describe("the passkey guards the words (plan 2, after review)", () => {
         exact: false,
       })
       .click();
-    await page.getByTestId("confirm-words").fill(nodeKeys().words.join(" "));
-    await page.getByRole("button", { name: "Continue" }).click();
+    await proveWithWords(page, nodeKeys().words);
     await expect(page.getByText("Your keys are unchanged")).toBeVisible();
     const keys = await (
       await request.get(`${api}/user/identities`, {
@@ -1490,9 +1497,12 @@ test.describe("the wallet door (plan 3)", () => {
       .getByTestId("safety-wallet")
       .getByRole("button", { name: "Connect" })
       .click();
-    // a player with keys proves it first: the words
-    await page.getByTestId("confirm-words").fill(saved.words.join(" "));
-    await page.getByRole("button", { name: "Continue" }).click();
+    // a player with keys proves it first: the words (no wallet linked yet, so none to use)
+    await expect(
+      page.getByRole("button", { name: "Use my wallet" })
+    ).toHaveCount(0);
+    await page.screenshot({ path: "test/output/confirm-change.png" });
+    await proveWithWords(page, saved.words);
     await chooseEternl(page);
     await expect(page.getByTestId("safety-wallet")).toContainText("Connected", {
       timeout: 15000,
@@ -1504,8 +1514,11 @@ test.describe("the wallet door (plan 3)", () => {
       .getByTestId("safety-wallet")
       .getByRole("button", { name: "Disconnect" })
       .click();
-    await page.getByTestId("confirm-words").fill(saved.words.join(" "));
-    await page.getByRole("button", { name: "Continue" }).click();
+    // now a wallet is linked and the extension is here: it could prove the change too
+    await expect(
+      page.getByRole("button", { name: "Use my wallet" })
+    ).toBeVisible();
+    await proveWithWords(page, saved.words);
     await expect(page.getByTestId("safety-wallet")).toContainText(
       "Not connected"
     );
@@ -1820,12 +1833,12 @@ test.describe("the phone's wallet browser: the link page (plan 3)", () => {
   };
 
   // the phone's wallet with its own browser: opens the link page of the deep link
-  const walletBrowser = async (browser, keys) => {
+  const walletBrowser = async (browser, keys, options = {}) => {
     const context = await browser.newContext({ userAgent: PHONE });
     await context.addInitScript((url) => {
       window.localStorage.setItem("battlechoc.apiUrl", url);
     }, api);
-    await fakeWallet(context, keys);
+    await fakeWallet(context, keys, options);
     return { context, page: await context.newPage() };
   };
 
@@ -1962,19 +1975,90 @@ test.describe("the phone's wallet browser: the link page (plan 3)", () => {
     await expect(
       wallet.page.getByText("This link is too old. Start again in battlechoc.")
     ).toBeVisible();
-    // the step that failed and the API's answer, for whoever helps the player
-    await expect(wallet.page.locator(".detail")).toHaveText(
-      "Details: challengeForCode · 404 UNKNOWN LINK CODE"
-    );
+    // a cause the page can name needs no technical detail
+    await expect(wallet.page.locator(".detail")).toHaveCount(0);
     await wallet.context.close();
   });
 
-  test("the link page without a wallet goes to the game", async ({
+  test("a wallet on mainnet is told to switch to Preprod, by name", async ({
+    browser,
+  }) => {
+    const wallet = await walletBrowser(browser, nodeKeys(), { networkId: 1 });
+    await wallet.page.goto("/link/?code=AAAAAAAAAAAAAAAAAAAAAA");
+    await wallet.page
+      .getByRole("button", { name: "Continue with Eternl" })
+      .click();
+    await expect(wallet.page.getByRole("alert")).toHaveText(
+      "Eternl is on mainnet. Switch Eternl to the “Preprod” network, then tap “Continue with Eternl” again."
+    );
+    await expect(wallet.page.locator(".detail")).toHaveCount(0);
+    await wallet.page.screenshot({ path: "test/output/link-page-mainnet.png" });
+    await wallet.context.close();
+  });
+
+  test("a wallet app without an account is told to set one up", async ({
+    browser,
+  }) => {
+    const wallet = await walletBrowser(browser, nodeKeys(), { refuse: true });
+    await wallet.page.goto("/link/?code=AAAAAAAAAAAAAAAAAAAAAA");
+    await wallet.page
+      .getByRole("button", { name: "Continue with Eternl" })
+      .click();
+    await expect(wallet.page.getByRole("alert")).toHaveText(
+      "Eternl did not share a wallet. First create a wallet in Eternl (or unlock it), set it to “Preprod”, then tap “Continue with Eternl” again."
+    );
+    await expect(
+      wallet.page.getByRole("button", { name: "Continue with Eternl" })
+    ).toBeEnabled();
+    await wallet.context.close();
+  });
+
+  test("an expired link in the game says so, and the next tap gets a new one", async ({
+    browser,
+  }) => {
+    const { context, page } = await phoneGame(browser);
+    // the polled code is gone (10 minutes over, or replaced by another door)
+    await page.route(/\/user\/link-codes\/[^/]+$/, (route) =>
+      route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "UNKNOWN LINK CODE" }),
+      })
+    );
+    const first = await tapEternl(page);
+    await expect(
+      page.getByText("The link has expired. Tap your wallet again.")
+    ).toBeVisible();
+    await page.unroute(/\/user\/link-codes\/[^/]+$/);
+    await page
+      .getByTestId("wallet-door")
+      .getByText("Eternl", { exact: false })
+      .first()
+      .click();
+    await expect
+      .poll(() =>
+        page.evaluate(() => (window.__battlechocDeepLinks || []).length)
+      )
+      .toBe(2);
+    const second = await page.evaluate(() => window.__battlechocDeepLinks[1]);
+    expect(decodeURIComponent(second.split("uri=")[1])).not.toBe(first);
+    await expect(
+      page.getByText("The link has expired. Tap your wallet again.")
+    ).toHaveCount(0);
+    await context.close();
+  });
+
+  test("the link page without a wallet says how to get one; without a code it goes to the game", async ({
     browser,
   }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await page.goto("/link/?code=AAAAAAAAAAAAAAAAAAAAAA");
+    await expect(page.getByRole("alert")).toHaveText(
+      "No wallet answers here. If you are in your wallet app: first create a wallet there and set it to “Preprod”. Then tap your wallet in battlechoc again.",
+      { timeout: 10000 }
+    );
+    await page.goto("/link/");
     await expect
       .poll(() => new URL(page.url()).pathname, { timeout: 10000 })
       .toBe("/");

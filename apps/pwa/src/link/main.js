@@ -2,8 +2,8 @@
 // that the game made for a link code (src/ui/account/WalletDoor.jsx). That browser shares nothing
 // with the game, so the code stands for the device's player: the page signs the code's challenge
 // with the wallet injected here and tells the player to go back; the game polls the code. Without
-// a wallet (or a code) the page is no use and goes to the game: a game whose address was briefly
-// this page's (the deep link's tap) lands in the game when it is reloaded.
+// a code the page is no use and goes to the game. Without a wallet it says how to get one: a
+// wallet app with no account set up offers none (messages.js).
 import "../index.css";
 import "./link.css";
 import {
@@ -14,13 +14,10 @@ import {
 import { applyLanguage } from "../helper/language.js";
 import { createClient } from "../helper/http.js";
 import { apiUrl } from "../api/apiUrl.js";
-import {
-  signWithWallet,
-  walletApiOf,
-  WalletCancelledError,
-  WalletNetworkError,
-} from "../cardano/wallet.js";
+import { signWithWallet, walletApiOf } from "../cardano/wallet.js";
+import { networkLabel } from "../ui/account/safetyState.js";
 import { detailOf, traced } from "./diagnosis.js";
+import { problemOf } from "./messages.js";
 
 const WALLET_WAIT_MS = 3000;
 const network = cardano.networkOf(import.meta.env.VITE_CARDANO_NETWORK);
@@ -92,21 +89,6 @@ const waitForWallets = async () => {
 
 const capitalized = (name) => name.charAt(0).toUpperCase() + name.slice(1);
 
-const messageOf = (failure) => {
-  const answer = failure && failure.response;
-  const error = answer && answer.data && answer.data.error;
-  if (error === "UNKNOWN LINK CODE" || error === "CHALLENGE EXPIRED") {
-    return t(tr.LINK_EXPIRED);
-  }
-  if (error === "IDENTITY TAKEN") {
-    return t(tr.WALLET_TAKEN);
-  }
-  if (failure instanceof WalletNetworkError) {
-    return t(tr.WALLET_WRONG_NETWORK, network.name);
-  }
-  return t(tr.WALLET_FAILED);
-};
-
 // `problem`: the message for the player; `detail`: what failed, for whoever helps them
 const offer = (code, wallets, problem, detail) => {
   const nodes = [
@@ -157,12 +139,22 @@ const connect = async (code, wallet, wallets) => {
       )
     );
   } catch (failure) {
-    if (failure instanceof WalletCancelledError) {
+    const problem = problemOf(failure, {
+      step,
+      wallet: capitalized(wallet.name),
+      network: networkLabel(network.name),
+    });
+    if (problem === null) {
       offer(code, wallets);
       return;
     }
     console.warn("the link page could not connect the wallet", failure);
-    offer(code, wallets, messageOf(failure), detailOf(failure, step));
+    offer(
+      code,
+      wallets,
+      t(tr[problem.key], ...problem.values),
+      problem.technical ? detailOf(failure, step) : null
+    );
   }
 };
 
@@ -173,9 +165,19 @@ const start = async () => {
     // English
   }
   const code = new URLSearchParams(location.search).get("code");
-  const wallets = network && code ? await waitForWallets() : [];
-  if (wallets.length === 0) {
+  if (!network || !code) {
     location.replace("/");
+    return;
+  }
+  const wallets = await waitForWallets();
+  if (wallets.length === 0) {
+    const alert = element(
+      "p",
+      t(tr.LINK_NO_WALLET, networkLabel(network.name)),
+      "error"
+    );
+    alert.setAttribute("role", "alert");
+    show(element("h1", t(tr.LINK_TITLE)), alert);
     return;
   }
   offer(code, wallets);

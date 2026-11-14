@@ -15,6 +15,7 @@ import {
   PasskeyCancelledError,
   wordsAreValid,
 } from "../../cardano";
+import { injectedWalletKeys } from "../../cardano/walletList";
 import logger from "../../helper/logger";
 
 // the wallet door (plan 3): a linked wallet proves it too; loaded when it opens
@@ -22,7 +23,9 @@ const WalletDoor = lazy(() => import("./WalletDoor"));
 
 // "Is it you?" (plan 2, owner 2026-11-08): a key change needs a fresh proof by an existing key —
 // the passkey (`passkeyIds`: the player's passkeys), the 24 recovery words typed in, or (plan 3)
-// a linked wallet. `onConfirmed(confirmToken)` does the change; every failure changes nothing.
+// a linked wallet (`hasWallet`). `onConfirmed(confirmToken)` does the change; every failure
+// changes nothing. Owner 2026-11-14: the wallet only when one is linked and this device can reach
+// it, the box for the words only after a tap on its button.
 
 const WORD_COUNT = 24;
 
@@ -69,12 +72,32 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
-const ConfirmChange = ({ open, passkeyIds = [], onClose, onConfirmed }) => {
+// a wallet proves a change through an extension or the QR code; the deep link on phones knows no
+// proofs (its link codes connect or link), so a phone reaches a wallet only in that wallet's browser
+const canReachWallet = () => {
+  let injected = [];
+  try {
+    injected = injectedWalletKeys(window.cardano);
+  } catch {
+    // none
+  }
+  const paths = features.walletPaths({ injected: injected.length > 0 });
+  return paths.has("extension") || paths.has("qr");
+};
+
+const ConfirmChange = ({
+  open,
+  passkeyIds = [],
+  hasWallet = false,
+  onClose,
+  onConfirmed,
+}) => {
   const classes = useStyles();
   const [text, setText] = useState("");
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [door, setDoor] = useState(false);
+  const [typing, setTyping] = useState(false);
   const running = useRef(false);
 
   useEffect(() => {
@@ -83,6 +106,7 @@ const ConfirmChange = ({ open, passkeyIds = [], onClose, onConfirmed }) => {
       setError(null);
       setBusy(false);
       setDoor(false);
+      setTyping(false);
     }
   }, [open]);
 
@@ -123,6 +147,7 @@ const ConfirmChange = ({ open, passkeyIds = [], onClose, onConfirmed }) => {
   if (!open) {
     return null;
   }
+  const withWallet = hasWallet && features.showWalletDoor() && canReachWallet();
   return createPortal(
     <Dialog
       open={open}
@@ -134,53 +159,66 @@ const ConfirmChange = ({ open, passkeyIds = [], onClose, onConfirmed }) => {
     >
       <div className={classes.body}>
         <p className={classes.text}>{t(tr.CONFIRM_TEXT)}</p>
-        {passkeyIds.length > 0 || features.showWalletDoor() ? (
-          <div className={classes.buttons}>
-            {passkeyIds.length > 0 ? (
-              <Button
-                color="primary"
-                disabled={busy}
-                onClick={() => run(() => confirmWithPasskey(passkeyIds))}
-              >
-                {t(tr.CONFIRM_PASSKEY)}
-              </Button>
-            ) : null}
-            {features.showWalletDoor() ? (
-              <Button
-                color="secondary"
-                disabled={busy}
-                onClick={() => setDoor(true)}
-              >
-                {t(tr.CONFIRM_WALLET)}
-              </Button>
-            ) : null}
-          </div>
+        <div className={classes.buttons}>
+          {passkeyIds.length > 0 ? (
+            <Button
+              color="primary"
+              disabled={busy}
+              onClick={() => run(() => confirmWithPasskey(passkeyIds))}
+            >
+              {t(tr.CONFIRM_PASSKEY)}
+            </Button>
+          ) : null}
+          {withWallet ? (
+            <Button
+              color="secondary"
+              disabled={busy}
+              onClick={() => setDoor(true)}
+            >
+              {t(tr.CONFIRM_WALLET)}
+            </Button>
+          ) : null}
+          {!typing ? (
+            <Button
+              color="secondary"
+              disabled={busy}
+              data-testid="confirm-words-open"
+              onClick={() => setTyping(true)}
+            >
+              {t(tr.CONFIRM_WORDS)}
+            </Button>
+          ) : null}
+        </div>
+        {typing ? (
+          <textarea
+            className={classes.area}
+            data-testid="confirm-words"
+            aria-label={t(tr.CONNECT_TEXT)}
+            autoComplete="off"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            autoFocus
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+          />
         ) : null}
-        <textarea
-          className={classes.area}
-          data-testid="confirm-words"
-          aria-label={t(tr.CONNECT_TEXT)}
-          autoComplete="off"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          value={text}
-          onChange={(event) => setText(event.target.value)}
-        />
         {error ? (
           <p className={`${classes.text} ${classes.error}`} role="alert">
             {error}
           </p>
         ) : null}
-        <div className={classes.buttons}>
-          <Button
-            color="secondary"
-            disabled={busy || words.length !== WORD_COUNT}
-            onClick={withWords}
-          >
-            {t(tr.CONNECT_CONTINUE)}
-          </Button>
-        </div>
+        {typing ? (
+          <div className={classes.buttons}>
+            <Button
+              color="secondary"
+              disabled={busy || words.length !== WORD_COUNT}
+              onClick={withWords}
+            >
+              {t(tr.CONNECT_CONTINUE)}
+            </Button>
+          </div>
+        ) : null}
       </div>
       {door ? (
         <Suspense fallback={null}>

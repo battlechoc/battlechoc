@@ -200,6 +200,8 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
   const [doorToken, setDoorToken] = useState(undefined);
   const [proving, setProving] = useState(false);
   const [passkeyIds, setPasskeyIds] = useState([]);
+  // the device's account has a wallet that can prove the change (every key but its own words)
+  const [proofWallet, setProofWallet] = useState(false);
   const [notice, setNotice] = useState(null);
 
   useEffect(() => {
@@ -328,10 +330,15 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
       return;
     }
     if (answer.outcome === "confirm") {
-      setPasskeyIds(
-        (await cardanoApi.passkeys().catch(() => [])).map(
-          (passkey) => passkey.credentialId
-        )
+      const [passkeys, identities, local] = await Promise.all([
+        cardanoApi.passkeys().catch(() => []),
+        cardanoApi.identities().catch(() => []),
+        keyStore.load().catch(() => null),
+      ]);
+      const localSubject = local ? await subjectOfWords(local) : null;
+      setPasskeyIds(passkeys.map((passkey) => passkey.credentialId));
+      setProofWallet(
+        identities.some((identity) => identity.subject !== localSubject)
       );
       setProving(true);
       return;
@@ -683,6 +690,7 @@ const ConnectAccount = ({ open, onClose, stacked = false }) => {
       <ConfirmChange
         open={proving}
         passkeyIds={passkeyIds}
+        hasWallet={proofWallet}
         onClose={() => setProving(false)}
         onConfirmed={async (token) => {
           setProving(false);
