@@ -57,9 +57,11 @@ const initialState = {
   // { taken, generated }: the device's name belongs to somebody else on the server, the
   // player got a random one (dialogs/NameConflict.jsx)
   nameConflict: null,
-  // a new build of the app has been installed by the service worker: the player may start it
-  // (dialogs/UpdateAvailable.jsx)
+  // the update dialog is open (dialogs/UpdateAvailable.jsx): a new build is ready to start
   updateAvailable: false,
+  // the service worker of a new build is in charge, the page still runs the old build until a
+  // reload; stays after "Later", so the Info dialog can offer the restart
+  updateReady: false,
 };
 
 // the online/offline toasts replace each other
@@ -143,6 +145,11 @@ const uiSlice = createSlice({
     },
     updateAvailableChanged(state, action) {
       state.updateAvailable = action.payload;
+    },
+    // the worker of a new build has taken over (registerServiceWorker.js, onUpdate)
+    updateInstalled(state) {
+      state.updateReady = true;
+      state.updateAvailable = true;
     },
     previewBottomChanged(state, action) {
       state.previewBottom = action.payload;
@@ -245,6 +252,7 @@ export const {
   earlyUnlockDecided,
   nameConflictChanged,
   updateAvailableChanged,
+  updateInstalled,
   previewBottomChanged,
   boardTopInsetChanged,
   tutorialPointerChanged,

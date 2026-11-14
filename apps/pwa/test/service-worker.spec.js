@@ -143,6 +143,31 @@ const titleScreen = async (page, label) => {
   });
 };
 
+// the next build: a picture changed, and with it its revision in the worker's manifest. The
+// browser's cache still holds the old picture as fresh (max-age), so only a request that asks the
+// server gets the new one. Returns the picture's address, its old and its new content.
+const deployNextBuild = () => {
+  const picture = "/images/win.svg";
+  const before = fs.readFileSync(path.join(BUILD, picture), "utf8");
+  const after = before.replace(/<svg/, "<!-- the next build --><svg");
+  expect(after).not.toBe(before);
+  const worker = fs.readFileSync(path.join(BUILD, "service-worker.js"), "utf8");
+  const revision = (content) =>
+    crypto.createHash("md5").update(content).digest("hex");
+  const entry = (hash) => `{"revision":"${hash}","url":"images/win.svg"}`;
+  expect(worker).toContain(entry(revision(before)));
+  site.deployed.set(picture, Buffer.from(after));
+  site.deployed.set(
+    "/service-worker.js",
+    Buffer.from(worker.replace(entry(revision(before)), entry(revision(after))))
+  );
+  return { picture, before, after };
+};
+
+// what the page gets for a URL (through the worker)
+const fetchedText = (page, url) =>
+  page.evaluate((url) => fetch(url).then((response) => response.text()), url);
+
 test("the first visit installs the worker; without a connection the game starts, a match against the AI too, and so does every further navigation", async ({
   page,
   context,
@@ -213,29 +238,11 @@ test("a new build reaches an installed game: the updated worker takes a changed 
 }) => {
   await firstVisit(page);
   const picture = "/images/win.svg";
-  const before = fs.readFileSync(path.join(BUILD, picture), "utf8");
-  const inPage = () =>
-    page.evaluate(
-      (url) => fetch(url).then((response) => response.text()),
-      picture
-    );
-  expect(await inPage()).toBe(before);
-
-  // the next build: the picture changed, and with it its revision in the worker's manifest. The
-  // browser's cache still holds the old picture as fresh (max-age), so only a request that asks
-  // the server gets the new one.
-  const after = before.replace(/<svg/, "<!-- the next build --><svg");
-  expect(after).not.toBe(before);
-  const worker = fs.readFileSync(path.join(BUILD, "service-worker.js"), "utf8");
-  const revision = (content) =>
-    crypto.createHash("md5").update(content).digest("hex");
-  const entry = (hash) => `{"revision":"${hash}","url":"images/win.svg"}`;
-  expect(worker).toContain(entry(revision(before)));
-  site.deployed.set(picture, Buffer.from(after));
-  site.deployed.set(
-    "/service-worker.js",
-    Buffer.from(worker.replace(entry(revision(before)), entry(revision(after))))
+  const inPage = () => fetchedText(page, picture);
+  expect(await inPage()).toBe(
+    fs.readFileSync(path.join(BUILD, picture), "utf8")
   );
+  const { after } = deployNextBuild();
   site.log.length = 0;
 
   // the browser looks for a new worker on every navigation; here the page asks for it
@@ -261,4 +268,48 @@ test("a new build reaches an installed game: the updated worker takes a changed 
   await page.getByText("Start now", { exact: true }).click();
   await titleScreen(page, "Start Tutorial");
   expect(await inPage()).toBe(after);
+});
+
+test("Check for updates in the Info dialog: the game is current; then a new build loads, the update dialog offers it, and after Later the button restarts into it", async ({
+  page,
+}) => {
+  await firstVisit(page);
+  const openInfo = async () => {
+    await page.locator("[data-icon=info]:visible").click();
+    await expect(
+      page.getByText("About battlechoc", { exact: true })
+    ).toBeVisible();
+  };
+  await openInfo();
+  const button = page.getByTestId("info-update");
+  await expect(button).toHaveText("Check for updates");
+  await page.screenshot({ path: "test/output/visual_info_update.png" });
+
+  // the server has nothing new: the button says so, then offers the check again
+  await button.click();
+  await expect(button).toHaveText("You have the latest version");
+  await expect(button).toHaveText("Check for updates", { timeout: 10000 });
+
+  // a new build: it loads, then the update dialog offers it in place of the Info dialog
+  const { picture, after } = deployNextBuild();
+  await button.click();
+  await expect(page.getByTestId("update-available")).toBeVisible({
+    timeout: 30000,
+  });
+  await expect(
+    page.getByText("About battlechoc", { exact: true })
+  ).toBeHidden();
+
+  // Later: the page keeps the old build, the Info dialog offers the restart into the new one
+  await page.getByText("Later", { exact: true }).click();
+  await expect(page.getByTestId("update-available")).toBeHidden();
+  await openInfo();
+  await expect(button).toHaveText("New version ready: restart");
+  await page.screenshot({ path: "test/output/visual_info_update_ready.png" });
+  await Promise.all([page.waitForEvent("load"), button.click()]);
+  await titleScreen(page, "Start Tutorial");
+  expect(await fetchedText(page, picture)).toBe(after);
+  // the new build runs: there is nothing left to restart into
+  await openInfo();
+  await expect(button).toHaveText("Check for updates");
 });
