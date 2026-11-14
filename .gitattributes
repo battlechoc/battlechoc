@@ -5,6 +5,7 @@
 *.glb binary
 *.png binary
 *.jpg binary
+*.gif binary
 *.ico binary
 *.mp3 binary
 *.wav binary
