@@ -18,6 +18,7 @@ import {
   waitForLinkCode,
   WalletCancelledError,
   WalletNetworkError,
+  WalletWithoutAddressError,
 } from "../../src/cardano/wallet.js";
 import { addressToBech32 } from "../../src/cardano/keys.js";
 import { UnexpectedChallengeError } from "../../src/cardano/signIn.js";
@@ -182,10 +183,26 @@ test("a wallet on another network: nothing asked, nothing signed", async () => {
   const api = fakeApi();
   await assert.rejects(
     signWithWallet(wallet, "connect", { api, network: preprod }),
-    WalletNetworkError
+    (error) => error instanceof WalletNetworkError && error.actual === 1
   );
   assert.deepEqual(api.calls, []);
   assert.deepEqual(wallet.signed, []);
+});
+
+test("a wallet without any address (no account set up in it) says so and asks the server nothing", async () => {
+  const empty = {
+    getNetworkId: async () => 0,
+    getRewardAddresses: async () => [],
+    getUsedAddresses: async () => [],
+    getChangeAddress: async () => undefined,
+    signData: async () => assert.fail("nothing to sign"),
+  };
+  const api = fakeApi();
+  await assert.rejects(
+    signWithWallet(empty, "connect", { api, network: preprod }),
+    WalletWithoutAddressError
+  );
+  assert.deepEqual(api.calls, []);
 });
 
 test("the server on another network than the game: nothing signed", async () => {
@@ -304,6 +321,47 @@ test("waitForLinkCode polls until the code has an outcome", async () => {
   });
   assert.deepEqual(outcome, { state: "linked" });
   assert.equal(polls, 3);
+});
+
+test("waitForLinkCode waits on when a poll gets no answer or a server error (a phone back from the wallet app)", async () => {
+  const offline = Object.assign(new Error("Network Error"), {
+    code: "ERR_NETWORK",
+  });
+  const busy = Object.assign(new Error("Request failed"), {
+    response: { status: 503, data: {} },
+  });
+  const answers = [offline, busy, { state: "open" }, { state: "linked" }];
+  let polls = 0;
+  const outcome = await waitForLinkCode(
+    async () => {
+      const answer = answers[polls++];
+      if (answer instanceof Error) {
+        throw answer;
+      }
+      return answer;
+    },
+    { every: 5 }
+  );
+  assert.deepEqual(outcome, { state: "linked" });
+  assert.equal(polls, 4);
+});
+
+test("waitForLinkCode ends at an answer that stays: an expired or replaced code", async () => {
+  const gone = Object.assign(new Error("Request failed"), {
+    response: { status: 404, data: { error: "UNKNOWN LINK CODE" } },
+  });
+  let polls = 0;
+  await assert.rejects(
+    waitForLinkCode(
+      async () => {
+        polls += 1;
+        throw gone;
+      },
+      { every: 5 }
+    ),
+    (error) => error === gone
+  );
+  assert.equal(polls, 1);
 });
 
 test("waitForLinkCode stops when it is aborted, and polls at once when the page is visible again", async () => {

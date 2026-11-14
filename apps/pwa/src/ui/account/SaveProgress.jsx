@@ -352,6 +352,7 @@ const SaveProgress = ({ playerName }) => {
       <ConfirmChange
         open={linkProof}
         passkeyIds={(passkeys || []).map((passkey) => passkey.credentialId)}
+        hasWallet={Boolean(state.wallet && state.wallet.count > 0)}
         onClose={() => setLinkProof(false)}
         onConfirmed={async (token) => {
           setLinkProof(false);
@@ -372,6 +373,7 @@ const SaveProgress = ({ playerName }) => {
       <ConfirmChange
         open={confirming !== null}
         passkeyIds={(passkeys || []).map((passkey) => passkey.credentialId)}
+        hasWallet={Boolean(state.wallet && state.wallet.count > 0)}
         onClose={() => setConfirming(null)}
         onConfirmed={remove}
       />

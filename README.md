@@ -1,6 +1,20 @@
+<p align="center">
+  <img src="docs/media/battlechoc.gif" width="800" alt="battlechoc in motion: the title screen, then a match against Gustav Ganache. On the player's chocolate board, cacao trees and cannons stand between cream; the camera flies over to Gustav's board, where shots land in the cream">
+</p>
+
 # battlechoc
 
-A chocolate-themed two-player strategy game. Each player owns a board of chocolate cells, builds a chocolate factory, cacao trees, cannons and special buildings, hides them under cream, and tries to destroy the opponent's economy. Playable against AI opponents and online, as a progressive web app.
+[![tests](https://img.shields.io/github/actions/workflow/status/battlechoc/battlechoc/ci.yml?branch=main&event=push&label=tests)](https://github.com/battlechoc/battlechoc/actions/workflows/ci.yml?query=branch%3Amain)
+[![secret scan](https://img.shields.io/github/actions/workflow/status/battlechoc/battlechoc/secret-scan.yml?branch=main&event=push&label=secret%20scan)](https://github.com/battlechoc/battlechoc/actions/workflows/secret-scan.yml?query=branch%3Amain)
+[![deploy](https://img.shields.io/github/actions/workflow/status/battlechoc/battlechoc/pages.yml?branch=main&label=deploy)](https://github.com/battlechoc/battlechoc/actions/workflows/pages.yml)
+[![release](https://img.shields.io/github/v/release/battlechoc/battlechoc?label=release)](https://github.com/battlechoc/battlechoc/releases/latest)
+[![play](https://img.shields.io/badge/play-battlechoc.com-7B3F00)](https://battlechoc.com)
+[![code license](https://img.shields.io/badge/code-AGPL--3.0--or--later-blue)](LICENSE)
+[![art license](https://img.shields.io/badge/art-CC%20BY--NC--SA%204.0-lightgrey)](LICENSE-ASSETS)
+
+A chocolate-themed two-player strategy game. Each player owns a board of chocolate cells, builds a chocolate factory, cacao trees, cannons and special buildings, hides them under cream, and tries to destroy the opponent's economy. Both players play at the same time, in real time.
+
+Play it at **[battlechoc.com](https://battlechoc.com)**: a progressive web app, offline against AI opponents or online against other players, in eight languages.
 
 ## Repository layout
 
@@ -8,7 +22,8 @@ A chocolate-themed two-player strategy game. Each player owns a board of chocola
 | --- | --- |
 | `apps/pwa` | The game client: React, Redux Toolkit, Babylon.js, Vite, Workbox |
 | `packages/shared` | Shared by client and server: the real-time rules engine, AIs, balance, equipment, live protocol, translations |
-| `apps/api` | The backend: REST API (accounts, profile, lab, Web Push) and the live match WebSocket, on Postgres |
+| `apps/api` | The backend: REST API (accounts and sign-in with a passkey, recovery words or a Cardano wallet; profile, lab, Web Push), the live match WebSocket and the preview pages of challenge links, on Postgres |
+| `apps/android` | The Android app: a Trusted Web Activity around the PWA, built with Bubblewrap |
 | `deploy` | Docker Compose stack for the server: Postgres and the API from its published image, behind the host's nginx (or Caddy); how to deploy it: [deploy/README.md](deploy/README.md) |
 | `whitepaper` | Draft whitepaper for the planned competitive layer, with the economy simulator behind its numbers |
 
@@ -17,6 +32,7 @@ A chocolate-themed two-player strategy game. Each player owns a board of chocola
 - [Game rules](docs/game-rules.md): how a match works, every building, weapon and donut
 - [Architecture](docs/architecture.md): how the game, the rules and the server fit together
 - [Deploying the server](deploy/README.md)
+- [Changelog](CHANGELOG.md)
 
 ## Development
 
@@ -26,12 +42,15 @@ Requires Node 22.13 or later (`.nvmrc` names the major version CI uses).
 npm install          # installs all workspaces
 npm run dev          # Vite dev server for the PWA on port 3000
 npm test             # unit tests of the shared rules engine
+npm run test:unit    # unit tests of the game client (tutorial, match logic, store) on node:test
 npm run build        # production build of the PWA into apps/pwa/build
 npm run test:e2e     # Playwright end-to-end tests; builds the e2e build (production build plus
                      # test hooks) into apps/pwa/build-e2e first (`npx playwright install chromium` once)
 npm run test:api     # tests of the API (in-memory database)
-npm run verify       # what the CI job test-and-build checks: formatting, all unit tests, the
-                     # API tests and the production build
+npm run lint         # ESLint
+npm run verify       # what the CI job test-and-build checks, without Postgres and the Docker image:
+                     # formatting, lint, all unit tests, the API tests, the production build and
+                     # that the build carries no test hooks
 ```
 
 Without an API the game runs offline: AI opponents work, but there are no accounts, no online matches and no lab. To play with everything, run the API locally in one of the two ways below.
