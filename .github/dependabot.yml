@@ -21,6 +21,11 @@ updates:
     ignore:
       # the workspace packages: linked from this repository, not on a registry
       - dependency-name: "@battlechoc/*"
+      # web-push 4 is an ES module only, and the API is CommonJS: require("web-push") fails in Jest
+      # (#66, 2026-11-14). Nothing uses Web Push yet (the game never asks for the permission), so
+      # the API stays on 3.x until push is wired up; then load it with import() and drop this.
+      - dependency-name: web-push
+        update-types: ["version-update:semver-major"]
 
   # The actions are pinned to commits (the version is in the comment behind): this moves the pins.
   - package-ecosystem: github-actions
