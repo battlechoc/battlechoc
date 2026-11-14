@@ -554,6 +554,7 @@ module.exports = {
     "WALLET_NONE": "Aucun portefeuille Cardano trouvé ici.",
     "WALLET_LINKED": "Ton portefeuille est maintenant associé à ce joueur.",
     "CONFIRM_WALLET": "Utiliser mon portefeuille",
+    "CONFIRM_WORDS": "Saisir mes mots de récupération",
     "WORDS_UNKNOWN_USE_WALLET": "Aucun joueur n'a ces mots. Si ce sont les mots de ton propre portefeuille, utilise plutôt « Utiliser un portefeuille Cardano ».",
     "LINK_TITLE": "Connecte ton portefeuille",
     "LINK_TEXT": "Cela connecte ton portefeuille à battlechoc sur l'appareil qui a ouvert cette page. Continue seulement si cet appareil est le tien.",

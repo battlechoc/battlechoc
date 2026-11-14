@@ -554,6 +554,7 @@ module.exports = {
     "WALLET_NONE": "Không tìm thấy ví Cardano nào ở đây.",
     "WALLET_LINKED": "Ví của bạn đã được liên kết với người chơi này.",
     "CONFIRM_WALLET": "Dùng ví của tôi",
+    "CONFIRM_WORDS": "Nhập các từ khôi phục của tôi",
     "WORDS_UNKNOWN_USE_WALLET": "Không người chơi nào có các từ này. Nếu đó là các từ của ví riêng của bạn, hãy dùng \"Dùng ví Cardano\".",
     "LINK_TITLE": "Kết nối ví của bạn",
     "LINK_TEXT": "Thao tác này kết nối ví của bạn với battlechoc trên thiết bị đã mở trang này. Chỉ tiếp tục nếu thiết bị đó là của bạn.",

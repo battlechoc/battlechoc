@@ -554,6 +554,7 @@ module.exports = {
     "WALLET_NONE": "No se encontró ninguna billetera Cardano aquí.",
     "WALLET_LINKED": "Tu billetera ya está vinculada a este jugador.",
     "CONFIRM_WALLET": "Usar mi billetera",
+    "CONFIRM_WORDS": "Introducir mis palabras de recuperación",
     "WORDS_UNKNOWN_USE_WALLET": "Ningún jugador tiene estas palabras. Si son las palabras de tu propia billetera, usa «Usar una billetera Cardano».",
     "LINK_TITLE": "Conecta tu billetera",
     "LINK_TEXT": "Esto conecta tu billetera con battlechoc en el dispositivo que abrió esta página. Continúa solo si ese dispositivo es tuyo.",

@@ -459,6 +459,14 @@ test.describe("saving progress", () => {
   });
 });
 
+// "Is it you?" with the 24 words: their box opens only from its button (owner 2026-11-14)
+const proveWithWords = async (page, words) => {
+  await expect(page.getByTestId("confirm-words")).toHaveCount(0);
+  await page.getByTestId("confirm-words-open").click();
+  await page.getByTestId("confirm-words").fill(words.join(" "));
+  await page.getByRole("button", { name: "Continue" }).click();
+};
+
 // how far `button` sits below `field`: what the suggestion chips between them must not change
 // (relative, as the dialog's content above may still grow, e.g. "Use my passkey" once known)
 const gapBelow = async (field, button) =>
@@ -1214,8 +1222,7 @@ test.describe("the passkey guards the words (plan 2, after review)", () => {
         exact: false,
       })
       .click();
-    await page.getByTestId("confirm-words").fill(nodeKeys().words.join(" "));
-    await page.getByRole("button", { name: "Continue" }).click();
+    await proveWithWords(page, nodeKeys().words);
     await expect(page.getByText("Your keys are unchanged")).toBeVisible();
     const keys = await (
       await request.get(`${api}/user/identities`, {
@@ -1490,9 +1497,12 @@ test.describe("the wallet door (plan 3)", () => {
       .getByTestId("safety-wallet")
       .getByRole("button", { name: "Connect" })
       .click();
-    // a player with keys proves it first: the words
-    await page.getByTestId("confirm-words").fill(saved.words.join(" "));
-    await page.getByRole("button", { name: "Continue" }).click();
+    // a player with keys proves it first: the words (no wallet linked yet, so none to use)
+    await expect(
+      page.getByRole("button", { name: "Use my wallet" })
+    ).toHaveCount(0);
+    await page.screenshot({ path: "test/output/confirm-change.png" });
+    await proveWithWords(page, saved.words);
     await chooseEternl(page);
     await expect(page.getByTestId("safety-wallet")).toContainText("Connected", {
       timeout: 15000,
@@ -1504,8 +1514,11 @@ test.describe("the wallet door (plan 3)", () => {
       .getByTestId("safety-wallet")
       .getByRole("button", { name: "Disconnect" })
       .click();
-    await page.getByTestId("confirm-words").fill(saved.words.join(" "));
-    await page.getByRole("button", { name: "Continue" }).click();
+    // now a wallet is linked and the extension is here: it could prove the change too
+    await expect(
+      page.getByRole("button", { name: "Use my wallet" })
+    ).toBeVisible();
+    await proveWithWords(page, saved.words);
     await expect(page.getByTestId("safety-wallet")).toContainText(
       "Not connected"
     );

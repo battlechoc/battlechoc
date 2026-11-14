@@ -554,6 +554,7 @@ module.exports = {
     "WALLET_NONE": "Nenhuma carteira Cardano encontrada aqui.",
     "WALLET_LINKED": "Sua carteira agora está vinculada a este jogador.",
     "CONFIRM_WALLET": "Usar minha carteira",
+    "CONFIRM_WORDS": "Digitar minhas palavras de recuperação",
     "WORDS_UNKNOWN_USE_WALLET": "Nenhum jogador tem estas palavras. Se forem as palavras da sua própria carteira, use \"Usar uma carteira Cardano\".",
     "LINK_TITLE": "Conecte sua carteira",
     "LINK_TEXT": "Isto conecta sua carteira ao battlechoc no dispositivo que abriu esta página. Só continue se esse dispositivo for seu.",

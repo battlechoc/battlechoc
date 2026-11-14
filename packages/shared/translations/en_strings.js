@@ -554,6 +554,7 @@ module.exports = {
     "WALLET_NONE": "No Cardano wallet found here.",
     "WALLET_LINKED": "Your wallet is now linked to this player.",
     "CONFIRM_WALLET": "Use my wallet",
+    "CONFIRM_WORDS": "Enter my recovery words",
     "WORDS_UNKNOWN_USE_WALLET": "No player has these words. If they are your own wallet's words, use \"Use a Cardano wallet\" instead.",
     "LINK_TITLE": "Connect your wallet",
     "LINK_TEXT": "This connects your wallet to battlechoc on the device that opened this page. Only go on if that device is yours.",
