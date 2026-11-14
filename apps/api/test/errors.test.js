@@ -5,6 +5,7 @@ const request = require('supertest');
 const { EntityType } = require('@battlechoc/battlechoc-shared-functions');
 const { HttpError, ErrorCode } = require('../src/errors');
 const { NotEnoughIngredientsError } = require('../src/pantry');
+const { createRecipeBook } = require('../src/lab/recipes');
 const { closeTestPools, failingOn } = require('./helpers/db');
 const { createTestApp, createAccount, withToken } = require('./helpers/api');
 const { testKeys, signedChallenge, confirmWith, removeKey } = require('./helpers/cardano');
@@ -114,6 +115,17 @@ describe('errors', () => {
         await answers(player.post('/lab/craft', { item: 'LIGHT_BARREL' }), 400, 'RECIPE NOT DISCOVERED');
         await answers(player.post('/user/equipment', { entityType: EntityType.RUM_TRUFFLE_CANNON, slot: 9, itemId: null }), 400, 'INVALID REQUEST PARAMETERS');
         await answers(player.post('/user/equipment', { entityType: EntityType.RUM_TRUFFLE_CANNON, slot: 0, itemId: 'nope' }), 400, 'NOT YOUR ITEM');
+    });
+
+    test('salvaging: not an item id, not the player\'s item, an item without a recipe', async () => {
+        // an empty recipe table: no item has a recipe any more
+        const { pool, account } = await setup({ recipes: createRecipeBook([]) });
+        const player = await account();
+        await answers(player.post('/lab/salvage', {}), 400, 'INVALID REQUEST PARAMETERS');
+        await answers(player.post('/lab/salvage', { itemId: 'nope' }), 400, 'NOT YOUR ITEM');
+        await pool.query("INSERT INTO items (id, player_id, item_key, serial, crafted_by) VALUES ('orphan', $1, 'LIGHT_BARREL', 1, $1)",
+            [player.playerId]);
+        await answers(player.post('/lab/salvage', { itemId: 'orphan' }), 400, 'NO RECIPE');
     });
 
     test('signing in with a Cardano key: never a 401 but for a missing token', async () => {

@@ -337,6 +337,26 @@ describe('live: matches', () => {
         expect(r.match.players[1 - playerIndex].loadout).toEqual({});
     });
 
+    test('a salvage during a running match leaves that match\'s loadout alone', async () => {
+        const env = await start();
+        // a new player: the prepared first game runs at once, with the player at index 0
+        const equipped = await player(env, { score: 100 });
+        const itemId = 'item-light';
+        await env.pool.query('INSERT INTO items (id, player_id, item_key, serial, crafted_by) VALUES ($1, $2, $3, 1, $2)',
+            [itemId, equipped.account.playerId, 'LIGHT_BARREL']);
+        await env.pool.query('UPDATE players SET equipment = $1 WHERE id = $2',
+            [JSON.stringify({ [EntityType.RUM_TRUFFLE_CANNON]: [itemId, null] }), equipped.account.playerId]);
+        equipped.send({ type: ClientMessage.QUEUE_AI });
+        const { matchId, playerIndex } = await equipped.next(ServerMessage.MATCH);
+        expect(playerIndex).toBe(0);
+        const r = room(env, matchId);
+        expect(r.match.phase).toBe(MatchPhase.RUNNING);
+        const bearer = `Bearer ${equipped.account.accessToken}`;
+        await request(env.app).post('/lab/salvage').set('Authorization', bearer).send({ itemId }).expect(200);
+        expect(room(env, matchId).match.players[0].loadout).toEqual({ [EntityType.RUM_TRUFFLE_CANNON]: ['LIGHT_BARREL'] });
+        expect((await request(env.app).get('/user').set('Authorization', bearer).expect(200)).body.stats.loadout).toEqual({});
+    });
+
     test('a match between two players that never ran changes no rating', async () => {
         const env = await start();
         const { a, b, matchId } = await queueMatch(env);

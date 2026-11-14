@@ -33,6 +33,8 @@ const ErrorCode = Object.freeze({
     WRONG_BUILDING: 'WRONG BUILDING',
     ALREADY_ON_THIS_BUILDING: 'ALREADY ON THIS BUILDING',
     OVER_BUDGET: 'OVER BUDGET',
+    // salvaging an item whose recipe is no longer in the recipe table
+    NO_RECIPE: 'NO RECIPE',
     // signing in with a Cardano key (routes/cardano.js)
     CHALLENGE_EXPIRED: 'CHALLENGE EXPIRED',
     INVALID_SIGNATURE: 'INVALID SIGNATURE',
