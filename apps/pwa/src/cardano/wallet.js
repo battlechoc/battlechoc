@@ -10,11 +10,21 @@ import {
   UnexpectedChallengeError,
 } from "./signIn.js";
 
-/** The wallet is on another network than the game: nothing was asked or signed. */
+/** The wallet is on another network than the game (CIP-30 ids: 1 mainnet, 0 a test network). */
 export class WalletNetworkError extends Error {
   constructor(expected, actual) {
     super(`the wallet is on network ${actual}, the game on ${expected}`);
     this.name = "WalletNetworkError";
+    this.expected = expected;
+    this.actual = actual;
+  }
+}
+
+/** The wallet gave no address at all: no account is set up in it (yet). Nothing was asked. */
+export class WalletWithoutAddressError extends Error {
+  constructor() {
+    super("the wallet gave no address");
+    this.name = "WalletWithoutAddressError";
   }
 }
 
@@ -61,7 +71,11 @@ const signingAddress = async (walletApi) => {
     return reward;
   }
   const [used] = (await walletApi.getUsedAddresses()) || [];
-  return used || walletApi.getChangeAddress();
+  const address = used || (await walletApi.getChangeAddress());
+  if (!address) {
+    throw new WalletWithoutAddressError();
+  }
+  return address;
 };
 
 /**
@@ -122,9 +136,17 @@ export const signWithWallet = async (
 
 const FINAL = ["linked", "known", "confirm", "failed"];
 
+// a poll that got no answer (a phone back from the wallet app is often offline for a moment) or a
+// busy server's: the next poll may well get through. Any other answer stays (an expired code: 404).
+const passing = (failure) => {
+  const answer = failure && failure.response;
+  return !answer || answer.status >= 500 || answer.status === 429;
+};
+
 /**
  * Polls a link code (`poll()`: its state) every `every` ms, and at once when the page becomes
- * visible again (the player comes back from the wallet), until it has an outcome; rejects with an
+ * visible again (the player comes back from the wallet), until it has an outcome; a poll without
+ * an answer or with a server error is tried again; rejects at any other failure, and with an
  * AbortError when `signal` aborts (the door closed).
  */
 export const waitForLinkCode = (
@@ -164,9 +186,11 @@ export const waitForLinkCode = (
           return;
         }
       } catch (failure) {
-        stop();
-        reject(failure);
-        return;
+        if (!passing(failure)) {
+          stop();
+          reject(failure);
+          return;
+        }
       } finally {
         polling = false;
       }

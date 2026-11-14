@@ -74,12 +74,14 @@ const useStyles = createUseStyles((theme) => ({
     // room before the QR button and the waiting text under the chips
     margin: "0 auto 0.8em",
   },
-  // the test network (owner's mockup B, screen 6): the one statement about it in the door
+  // the test network (owner's mockup B, screen 6): the one statement about it in the door. Its
+  // sides keep clear of the frame's chocolate corner, which reaches down beside it on phones
+  // (owner 2026-11-14); the corner scales with the screen's width, so does the room
   network: {
     display: "flex",
     gap: "0.6em",
     boxSizing: "border-box",
-    width: "100%",
+    width: "calc(100% - 8vw)",
     maxWidth: "28em",
     margin: "0 auto 0.9em",
     padding: "0.75em",
@@ -203,6 +205,8 @@ const WalletDoor = ({
   const [error, setError] = useState(null);
   const [waiting, setWaiting] = useState(false);
   const [code, setCode] = useState(null);
+  // a new link code when the last one expired (10 minutes) or was replaced
+  const [codeRound, setCodeRound] = useState(0);
   // the QR code for a phone wallet (CIP-45) only once asked for: the component connects to the
   // public PeerJS server as soon as it shows that way in (privacy policy, section 11)
   const [qr, setQr] = useState(false);
@@ -270,6 +274,10 @@ const WalletDoor = ({
       setError(t(tr.WALLET_WRONG_NETWORK, network ? network.name : ""));
     } else if (code === "IDENTITY TAKEN") {
       setError(t(tr.WALLET_TAKEN));
+    } else if (code === "UNKNOWN LINK CODE") {
+      // the polled code expired or was replaced: the next tap gets a new one
+      setError(t(tr.WALLET_LINK_EXPIRED));
+      setCodeRound((round) => round + 1);
     } else {
       logger.warn("the wallet door failed", failure);
       setError(t(tr.WALLET_FAILED));
@@ -347,7 +355,7 @@ const WalletDoor = ({
       setCode(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, deeplink, purpose, confirmToken]);
+  }, [open, deeplink, purpose, confirmToken, codeRound]);
 
   // the door closes: no more polling
   useEffect(() => {
@@ -400,6 +408,7 @@ const WalletDoor = ({
         if (config.hasCIP158Support) {
           event.preventDefault();
           event.stopPropagation();
+          setError(null);
           openDeepLink(generateCip158DeepLink(linkPageUrl(code)));
           waitForPhone();
         }
