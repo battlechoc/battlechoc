@@ -1,17 +1,24 @@
 //// Pure predicates the validators share: what a well-formed config is, who
-//// signed, and where the config NFT is in a transaction.
+//// signed, where the config NFT is in a transaction, what an item mint
+//// mints and where its tokens go, and the battlechoc fee.
 
+use aiken/collection/dict.{Dict}
 use aiken/collection/list
+use aiken/collection/pairs
 use aiken/crypto.{VerificationKeyHash}
 use aiken/primitive/bytearray
 use battlechoc/fixtures.{
-  admin_a, admin_b, admin_c, base_config, config_nft_input, config_policy,
-  other_policy, server_1, server_2,
+  ada_fee, admin_a, admin_b, admin_c, base_config, config_nft_input,
+  config_policy, other_policy, pot_address, server_1, server_2, team_address,
+  treasury_address,
 }
-use battlechoc/types.{ConfigDatum, FeeOption, config_token_name, tiers}
-use cardano/address.{Script}
-use cardano/assets.{PolicyId}
-use cardano/transaction.{InlineDatum, Input, Output}
+use battlechoc/names.{reference_name, user_name}
+use battlechoc/types.{
+  Cip68Datum, ConfigDatum, FeeOption, config_token_name, tiers,
+}
+use cardano/address.{Address, Script, VerificationKey}
+use cardano/assets.{AssetName, PolicyId}
+use cardano/transaction.{Datum, InlineDatum, Input, Output}
 
 /// A config datum the validators can rely on: at least one server key, at
 /// least one admin, every key 28 bytes, `1 <= threshold <= ` the number of
@@ -113,6 +120,150 @@ pub fn find_config(
   }
 }
 
+/// Whether `tokens` (what is minted under the items policy) is exactly the
+/// pair of `suffix`: its reference token and its user token, one each.
+pub fn minted_exactly_pair(
+  tokens: Dict<AssetName, Int>,
+  suffix: ByteArray,
+) -> Bool {
+  // a dict is sorted by key: label 100 (000643b0) before label 222 (000de140)
+  dict.to_pairs(tokens) == [
+    Pair(reference_name(suffix), 1),
+    Pair(user_name(suffix), 1),
+  ]
+}
+
+/// Whether an output whose payment credential is `owner`'s key (any stake
+/// part) holds exactly one `name` of `own_policy`.
+pub fn pays_user_token_to(
+  outputs: List<Output>,
+  owner: VerificationKeyHash,
+  own_policy: PolicyId,
+  name: AssetName,
+) -> Bool {
+  list.any(
+    outputs,
+    fn(output) {
+      and {
+        output.address.payment_credential == VerificationKey(owner),
+        assets.quantity_of(output.value, own_policy, name) == 1,
+      }
+    },
+  )
+}
+
+/// A CIP-68 version 1 datum, inline, whose metadata has a byte-string `name`
+/// and a byte-string `image`.
+pub fn well_formed_cip68(datum: Datum) -> Bool {
+  when datum is {
+    InlineDatum(data) ->
+      if data is Cip68Datum {
+        and {
+          data.version == 1,
+          has_bytes(data.metadata, "name"),
+          has_bytes(data.metadata, "image"),
+        }
+      } else {
+        False
+      }
+    _ -> False
+  }
+}
+
+fn has_bytes(metadata: Pairs<ByteArray, Data>, key: ByteArray) -> Bool {
+  when pairs.get_first(metadata, key) is {
+    Some(value) ->
+      if value is ByteArray {
+        True
+      } else {
+        False
+      }
+    None -> False
+  }
+}
+
+/// Whether exactly one output at the own script address (`Script(own_policy)`,
+/// any stake part) holds the reference token `name`, with a well-formed
+/// CIP-68 datum.
+pub fn locks_reference_token(
+  outputs: List<Output>,
+  own_policy: PolicyId,
+  name: AssetName,
+) -> Bool {
+  let locked = list.filter(
+    outputs,
+    fn(output) {
+      and {
+        output.address.payment_credential == Script(own_policy),
+        assets.quantity_of(output.value, own_policy, name) == 1,
+      }
+    },
+  )
+  when locked is {
+    [output] -> well_formed_cip68(output.datum)
+    _ -> False
+  }
+}
+
+/// What each receiver of `option` is due for an item of `tier`: the floor of
+/// its share of `amounts[tier]`, and the first receiver also gets what the
+/// floors leave over, so the dues add up to the amount. `None` for a tier
+/// outside `0..2` and for an option without receivers.
+pub fn fee_due(option: FeeOption, tier: Int) -> Option<List<(Address, Int)>> {
+  if tier < 0 || tier >= tiers {
+    None
+  } else {
+    when (list.at(option.amounts, tier), option.receivers) is {
+      (Some(amount), [(first, _), ..others]) -> {
+        let total = list.foldl(option.receivers, 0, fn(r, sum) { sum + r.2nd })
+        let others_due = list.map(
+          others,
+          fn(r) { (r.1st, amount * r.2nd / total) },
+        )
+        let first_due = amount - list.foldl(
+          others_due,
+          0,
+          fn(due, sum) { sum + due.2nd },
+        )
+        Some([(first, first_due), ..others_due])
+      }
+      _ -> None
+    }
+  }
+}
+
+/// Whether the outputs pay every receiver of `option` its due for `tier`:
+/// summed over the outputs at the receiver's exact address, the quantity of
+/// the option's asset (for ADA, the lovelace) is at least the due.
+pub fn fee_paid(outputs: List<Output>, option: FeeOption, tier: Int) -> Bool {
+  when fee_due(option, tier) is {
+    Some(dues) ->
+      list.all(
+        dues,
+        fn(due) {
+          let (receiver, amount) = due
+          let paid = list.foldl(
+            outputs,
+            0,
+            fn(output, sum) {
+              if output.address == receiver {
+                sum + assets.quantity_of(
+                  output.value,
+                  option.policy,
+                  option.name,
+                )
+              } else {
+                sum
+              }
+            },
+          )
+          paid >= amount
+        },
+      )
+    None -> False
+  }
+}
+
 // Tests
 
 test well_formed_config_accepts_the_base_config() {
@@ -169,4 +320,42 @@ test find_config_ignores_other_policies() {
 
 test find_config_without_reference_inputs_is_none() {
   find_config([], config_policy) == None
+}
+
+test fee_due_gives_the_remainder_to_the_first_receiver() {
+  let option = FeeOption {
+    ..ada_fee(),
+    amounts: [1_000_000, 2_000_000, 4_000_000],
+    receivers: [(treasury_address, 1), (pot_address, 1), (team_address, 1)],
+  }
+  fee_due(option, 0) == Some(
+    [
+      (treasury_address, 333_334), (pot_address, 333_333),
+      (team_address, 333_333),
+    ],
+  )
+}
+
+test fee_due_refuses_a_tier_outside_0_to_2() {
+  // even when an option has more amounts than tiers
+  let option = FeeOption { ..ada_fee(), amounts: [1, 2, 4, 8] }
+  and {
+    fee_due(option, 3) == None,
+    fee_due(option, -1) == None,
+    fee_due(option, 2) == Some([(treasury_address, 4)]),
+  }
+}
+
+test fee_due_without_receivers_is_none() {
+  fee_due(FeeOption { ..ada_fee(), receivers: [] }, 1) == None
+}
+
+test fee_paid_refuses_a_tier_outside_0_to_2() {
+  let option = FeeOption { ..ada_fee(), amounts: [1, 2, 4, 8] }
+  let paid = [fixtures.fee_output(treasury_address, 10)]
+  and {
+    !fee_paid(paid, option, 3),
+    !fee_paid(paid, option, -1),
+    fee_paid(paid, option, 2),
+  }
 }

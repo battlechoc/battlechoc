@@ -2,12 +2,16 @@
 //// a test changes one field (`Transaction { ..tx, field: value }`) to break
 //// exactly one rule.
 
+use aiken/builtin
 use aiken/crypto.{ScriptHash, VerificationKeyHash}
-use battlechoc/types.{ConfigDatum, FeeOption, config_token_name}
+use battlechoc/names.{reference_name, suffix, user_name}
+use battlechoc/types.{
+  Cip68Datum, ConfigDatum, FeeOption, ItemAction, MintItem, config_token_name,
+}
 use cardano/address.{Address}
-use cardano/assets.{PolicyId}
+use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{
-  InlineDatum, Input, NoDatum, Output, OutputReference, Transaction,
+  Datum, InlineDatum, Input, NoDatum, Output, OutputReference, Transaction,
 }
 
 // Keys and hashes (28 bytes each)
@@ -54,6 +58,23 @@ pub const treasury_hash: ScriptHash =
 pub const choc_policy: PolicyId =
   #"c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4"
 
+/// The items validator's hash in the tests: the policy id of every item token
+/// and the payment credential of the address the reference tokens sit at.
+pub const items_policy: PolicyId =
+  #"1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d1d"
+
+/// The prize pool's script, a receiver of the split fee.
+pub const pot_hash: ScriptHash =
+  #"90909090909090909090909090909090909090909090909090909090"
+
+/// The team's key, the other receiver of the split fee.
+pub const team_key: VerificationKeyHash =
+  #"3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a"
+
+/// A stake key, for addresses with a delegation part.
+pub const stake_key: VerificationKeyHash =
+  #"5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c"
+
 // Output references
 
 /// The output reference the config mint spends (the validator's parameter).
@@ -77,6 +98,13 @@ pub const treasury_ref =
     output_index: 3,
   }
 
+/// The seed an item mint spends: a UTxO of the player's wallet.
+pub const item_seed =
+  OutputReference {
+    transaction_id: #"5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d",
+    output_index: 2,
+  }
+
 // Addresses and outputs
 
 pub fn key_address(key: VerificationKeyHash) -> Address {
@@ -86,6 +114,16 @@ pub fn key_address(key: VerificationKeyHash) -> Address {
 pub fn script_address(hash: ScriptHash) -> Address {
   address.from_script(hash)
 }
+
+/// The treasury's enterprise script address (no stake part): the receiver of
+/// the preprod fee.
+pub const treasury_address: Address = script_address(treasury_hash)
+
+/// The prize pool's address, a receiver of `split_fee_config`.
+pub const pot_address: Address = script_address(pot_hash)
+
+/// The team's address, a receiver of `split_fee_config`.
+pub const team_address: Address = key_address(team_key)
 
 /// An output of `lovelace` at a key address, without datum or tokens.
 pub fn wallet_output(key: VerificationKeyHash, lovelace: Int) -> Output {
@@ -105,7 +143,7 @@ pub fn ada_fee() -> FeeOption {
     policy: #"",
     name: #"",
     amounts: [1_000_000, 2_000_000, 4_000_000],
-    receivers: [(script_address(treasury_hash), 1)],
+    receivers: [(treasury_address, 1)],
   }
 }
 
@@ -117,6 +155,25 @@ pub fn base_config() -> ConfigDatum {
     threshold: 2,
     paused: False,
     fees: [ada_fee()],
+  }
+}
+
+/// The config an item mint reads: two server keys, not paused, the ADA fee.
+pub fn item_config() -> ConfigDatum {
+  ConfigDatum { ..base_config(), server_keys: [server_1, server_2] }
+}
+
+/// `item_config` with one ADA option split 9:1 between the prize pool and the
+/// team: the validator pays any receivers, even though preprod has only one.
+pub fn split_fee_config() -> ConfigDatum {
+  ConfigDatum {
+    ..item_config(),
+    fees: [
+      FeeOption {
+        ..ada_fee(),
+        receivers: [(pot_address, 9), (team_address, 1)],
+      },
+    ],
   }
 }
 
@@ -134,6 +191,78 @@ pub fn config_nft_output(datum: ConfigDatum) -> Output {
 /// The config NFT's UTxO at `config_ref`.
 pub fn config_nft_input(datum: ConfigDatum) -> Input {
   Input { output_reference: config_ref, output: config_nft_output(datum) }
+}
+
+// The item `valid_item_mint_tx` mints
+
+/// The suffix both of the item's names end with.
+pub fn item_suffix() -> ByteArray {
+  suffix(item_seed)
+}
+
+/// The name of the item's reference token (label 100).
+pub fn item_reference_name() -> AssetName {
+  reference_name(item_suffix())
+}
+
+/// The name of the item's user token (label 222).
+pub fn item_user_name() -> AssetName {
+  user_name(item_suffix())
+}
+
+/// The item's CIP-68 metadata: a RARE "Dark Walls" with serial 7.
+pub fn item_metadata() -> Pairs<ByteArray, Data> {
+  let name: Data = "Dark Walls"
+  let image: Data = "https://battlechoc.com/items/DARK_WALLS.png"
+  let media_type: Data = "image/png"
+  let description: Data = "A battlechoc item."
+  let item: Data = "DARK_WALLS"
+  let serial: Data = 7
+  [
+    Pair("name", name), Pair("image", image), Pair("mediaType", media_type),
+    Pair("description", description), Pair("item", item), Pair("serial", serial),
+  ]
+}
+
+/// The reference token's datum: CIP-68 version 1, an empty list as `extra`.
+pub fn item_cip68_datum() -> Cip68Datum {
+  Cip68Datum {
+    metadata: item_metadata(),
+    version: 1,
+    extra: builtin.list_data([]),
+  }
+}
+
+/// The item's reference token at the items address with `datum`.
+pub fn item_reference_output(datum: Datum) -> Output {
+  Output {
+    address: script_address(items_policy),
+    value: assets.from_lovelace(2_000_000)
+      |> assets.add(items_policy, item_reference_name(), 1),
+    datum,
+    reference_script: None,
+  }
+}
+
+/// The item's user token at `address`.
+pub fn item_user_output(address: Address) -> Output {
+  Output {
+    address,
+    value: assets.from_lovelace(1_500_000)
+      |> assets.add(items_policy, item_user_name(), 1),
+    datum: NoDatum,
+    reference_script: None,
+  }
+}
+
+/// A fee payment: `lovelace` to `address`, without a datum.
+pub fn fee_output(address: Address, lovelace: Int) -> Output {
+  Output {
+    address,
+    value: assets.from_lovelace(lovelace),
+    datum: NoDatum,
+    reference_script: None,
+  }
 }
 
 // Transactions
@@ -201,6 +330,39 @@ pub fn valid_treasury_spend_tx() -> Transaction {
     reference_inputs: [config_nft_input(base_config())],
     outputs: [wallet_output(admin_a, 3_800_000)],
     extra_signatories: [admin_a, admin_b],
+    fee: 200_000,
+  }
+}
+
+/// The redeemer of `valid_item_mint_tx`: the owner mints a RARE item (tier 1)
+/// and pays with fee option 0.
+pub fn item_mint_redeemer() -> ItemAction {
+  MintItem { seed: item_seed, owner: owner_key, tier: 1, fee: 0 }
+}
+
+/// Spends the seed from the owner's wallet, reads `item_config` from a
+/// reference input and mints the item's pair: the reference token locked at
+/// the items address with its CIP-68 datum, the user token to the owner, the
+/// RARE fee (2 ADA) to the treasury; signed by `server_1` and the owner.
+pub fn valid_item_mint_tx() -> Transaction {
+  Transaction {
+    ..transaction.placeholder,
+    inputs: [
+      Input {
+        output_reference: item_seed,
+        output: wallet_output(owner_key, 10_000_000),
+      },
+    ],
+    reference_inputs: [config_nft_input(item_config())],
+    outputs: [
+      item_reference_output(InlineDatum(item_cip68_datum())),
+      item_user_output(key_address(owner_key)),
+      fee_output(treasury_address, 2_000_000),
+      wallet_output(owner_key, 4_300_000),
+    ],
+    mint: assets.from_asset(items_policy, item_reference_name(), 1)
+      |> assets.add(items_policy, item_user_name(), 1),
+    extra_signatories: [server_1, owner_key],
     fee: 200_000,
   }
 }
