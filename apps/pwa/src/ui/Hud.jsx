@@ -143,6 +143,7 @@ const Hud = (props) => {
         <Settings
           startTutorial={kickOffTutorial}
           showBuildingDemos={props.showBuildingDemos}
+          showAccount={() => openAccountOverview()}
           open={openSettings}
           close={() => {
             setOpenSettings(false);

@@ -16,6 +16,7 @@ import { isNamed } from "../../helper/playerName";
 import { version, commit } from "../../build";
 import { createUseStyles } from "react-jss";
 import Dialog from "./Dialog";
+import ResetDialog from "./ResetDialog";
 import Button from "../controls/Button";
 import Select from "../controls/Select";
 import Progress from "../controls/Progress";
@@ -101,6 +102,10 @@ const useStyles = createUseStyles((theme) => ({
     width: "100%",
     justifyContent: "space-evenly",
   },
+  // "Reset battlechoc" on a row of its own, apart from the everyday buttons
+  reset: {
+    marginTop: "1.5em",
+  },
 }));
 
 const Settings = (props) => {
@@ -108,6 +113,7 @@ const Settings = (props) => {
   const [withDeviceInformation, setWithDeviceInformation] = useState(false);
   const [additionalReportMessage, setAdditionalReportMessage] = useState(false);
   const [sendingReport, setSendingReport] = useState(false);
+  const [showReset, setShowReset] = useState(false);
   const [, setForceUpdate] = useState(0);
 
   const classes = useStyles();
@@ -118,6 +124,7 @@ const Settings = (props) => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     props.close();
     setShowErrorReport(false);
+    setShowReset(false);
   };
 
   const submitReport = async () => {
@@ -397,8 +404,35 @@ const Settings = (props) => {
               }
             })()}
           </div>
+          {/* not during a match: the reset would end it on the spot */}
+          {typeof props.game === "undefined" ? (
+            <Button
+              className={classes.reset}
+              color="warning"
+              onClick={() => {
+                Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+                setShowReset(true);
+              }}
+              data-testid="settings-reset"
+            >
+              {t(tr.SETTINGS_RESET)}
+            </Button>
+          ) : null}
         </div>
       </Dialog>
+
+      {/* after the Settings: over them */}
+      <ResetDialog
+        open={props.open && showReset}
+        close={() => setShowReset(false)}
+        online={props.online}
+        saveFirst={() => {
+          // the profile, where the account is saved
+          setShowReset(false);
+          props.close();
+          props.showAccount();
+        }}
+      />
     </div>
   );
 };
@@ -409,6 +443,7 @@ const mapStateToProps = (state) => ({
   tipsEnabled: state.settings.tipsEnabled,
   autoFullscreen: state.settings.autoFullscreen,
   earlyUnlock: state.ui.earlyUnlock,
+  online: state.ui.online,
 });
 
 const mapDispatchToProps = {

@@ -23,6 +23,7 @@ import {
   earlyUnlockDecided,
   nameConflictChanged,
   updateAvailableChanged,
+  updateInstalled,
   previewBottomChanged,
   boardTopInsetChanged,
   tutorialPointerChanged,
@@ -62,6 +63,7 @@ test("every key the actions set is in the start state", () => {
     "whitelistBuildings",
     "nameConflict",
     "updateAvailable",
+    "updateReady",
     "earlyUnlock",
     "online",
     "serverDown",
@@ -150,6 +152,19 @@ test("the named setters", () => {
   assert.deepEqual(state.whitelistBuildings, [EntityType.CACAOTREE]);
   assert.equal(state.resumeGamePossible, true);
   assert.equal(uiReducer(state, nameConflictChanged(null)).nameConflict, null);
+});
+
+test("a new build in charge opens the update dialog; Later closes the dialog, the build stays ready", () => {
+  assert.equal(initial.updateReady, false);
+  assert.equal(initial.updateAvailable, false);
+  let state = apply(updateInstalled());
+  assert.equal(state.updateReady, true);
+  assert.equal(state.updateAvailable, true);
+  // "Later" (dialogs/UpdateAvailable.jsx): the old build keeps running, the new one waits for a
+  // restart (the Info dialog offers it)
+  state = uiReducer(state, updateAvailableChanged(false));
+  assert.equal(state.updateAvailable, false);
+  assert.equal(state.updateReady, true);
 });
 
 test("the tutorial starts with its loops and leaves the board as it found it", () => {

@@ -13,7 +13,7 @@ import { multiplayer } from "./Multiplayer";
 import {
   showQuickMessage,
   fontsArrived,
-  updateAvailableChanged,
+  updateInstalled,
   connectivityChanged,
 } from "./ui/uiSlice";
 import { connectivity } from "./api/connectivity";
@@ -63,7 +63,7 @@ createRoot(document.getElementById("root")).render(
 // asked to start it (dialogs/UpdateAvailable.jsx), after the match if one is running.
 let config = {
   onUpdate: () => {
-    store.dispatch(updateAvailableChanged(true));
+    store.dispatch(updateInstalled());
   },
 };
 

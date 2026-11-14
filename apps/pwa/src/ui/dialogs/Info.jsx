@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 import { createUseStyles } from "react-jss";
 import Fab from "../controls/Fab";
 import Jukebox from "../misc/Jukebox";
@@ -8,7 +9,29 @@ import {
   getCurrentLanguage,
 } from "@battlechoc/battlechoc-shared-functions";
 import { version, commit, builtAt } from "../../build";
+import { checkForUpdate } from "../../updateCheck";
 import Dialog from "./Dialog";
+
+// the small round buttons in the subtitle: the version and "Check for updates"
+const chip = (theme) => ({
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.3em",
+  margin: "0.2em 0",
+  padding: "0.15em 0.6em",
+  borderRadius: "1em",
+  background: theme.color.secondary.dark,
+  border: `0.12em solid ${theme.color.secondary.light}`,
+  color: "white",
+  textDecoration: "none",
+  cursor: "pointer",
+  transition: "transform 0.15s",
+  "&:hover, &:focus-visible": {
+    transform: "scale(1.06)",
+    borderColor: theme.color.gold.light,
+  },
+  "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+});
 
 const useStyles = createUseStyles((theme) => ({
   // the bottom right corner of the title screen
@@ -32,24 +55,27 @@ const useStyles = createUseStyles((theme) => ({
     textAlign: "center",
   },
   // the version in the subtitle is a small button to the release notes on GitHub
-  release: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "0.3em",
-    margin: "0.2em 0",
-    padding: "0.15em 0.6em",
-    borderRadius: "1em",
-    background: theme.color.secondary.dark,
-    border: `0.12em solid ${theme.color.secondary.light}`,
-    color: "white",
-    textDecoration: "none",
-    cursor: "pointer",
-    transition: "transform 0.15s",
-    "&:hover, &:focus-visible": {
-      transform: "scale(1.06)",
-      borderColor: theme.color.gold.light,
+  release: chip(theme),
+  // below it: "Check for updates", and what the check found
+  update: {
+    ...chip(theme),
+    font: "inherit",
+    marginTop: "0.5em",
+    "&:disabled": {
+      cursor: "default",
+      opacity: 0.75,
+      transform: "none",
+      borderColor: theme.color.secondary.light,
     },
-    "@media (prefers-reduced-motion: reduce)": { transition: "none" },
+  },
+  // the circling arrows turn while the check or the download runs
+  busy: {
+    animation: "$turn 1s linear infinite",
+    "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+  },
+  "@keyframes turn": {
+    from: { transform: "rotate(0deg)" },
+    to: { transform: "rotate(360deg)" },
   },
   // the arrow out of a box: the link opens GitHub
   external: {
@@ -90,6 +116,95 @@ const timeAgo = (time) => {
   }).format(value, unit);
 };
 
+// how long "You have the latest version" and a failure stay before the button asks again
+const RESULT_MS = 5000;
+
+// "Check for updates": idle, checking, current, installing or failed. Once the worker of a new
+// build is in charge (state.ui.updateReady), the button restarts the game into it.
+const UpdateCheck = ({ classes, onInstalled }) => {
+  const ready = useSelector((state) => state.ui.updateReady);
+  // the game comes from the site's host (GitHub Pages), not from the API: the check needs the
+  // internet, not the server (state.ui.serverDown: the internet works, the API does not answer)
+  const internet = useSelector(
+    (state) => state.ui.online || state.ui.serverDown
+  );
+  const [status, setStatus] = useState("idle");
+
+  // the new build the player asked for has arrived: the update dialog takes over
+  useEffect(() => {
+    if (ready && status === "installing") {
+      setStatus("idle");
+      onInstalled();
+    }
+  }, [ready, status, onInstalled]);
+
+  useEffect(() => {
+    if (status !== "current" && status !== "failed") {
+      return undefined;
+    }
+    const timer = setTimeout(() => setStatus("idle"), RESULT_MS);
+    return () => clearTimeout(timer);
+  }, [status]);
+
+  // a game without a worker (the dev server) has nothing to check; without the internet the site
+  // is out of reach, but a ready build starts without it
+  const worker =
+    typeof navigator !== "undefined" &&
+    navigator.serviceWorker &&
+    navigator.serviceWorker.controller;
+  if (!ready && !(internet && worker)) {
+    return null;
+  }
+
+  const check = async () => {
+    Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
+    if (ready) {
+      window.location.reload();
+      return;
+    }
+    setStatus("checking");
+    const result = await checkForUpdate(navigator.serviceWorker, {
+      onFailed: () => setStatus("failed"),
+    });
+    setStatus(result === "unavailable" ? "failed" : result);
+  };
+
+  const busy = !ready && (status === "checking" || status === "installing");
+  const label = ready
+    ? t(tr.INFO_UPDATE_READY)
+    : {
+        current: t(tr.INFO_UP_TO_DATE),
+        installing: t(tr.INFO_UPDATE_LOADING),
+        failed: t(tr.INFO_UPDATE_FAILED),
+      }[status] || t(tr.INFO_CHECK_UPDATES);
+
+  return (
+    <button
+      type="button"
+      className={classes.update}
+      onClick={check}
+      disabled={busy}
+      aria-busy={busy}
+      aria-live="polite"
+      data-testid="info-update"
+      data-status={ready ? "ready" : status}
+    >
+      {label}
+      <svg
+        className={`${classes.external} ${busy ? classes.busy : ""}`}
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        {!ready && status === "current" ? (
+          <path d="M5 12.5l4.5 4.5L19 7.5" />
+        ) : (
+          <path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v4.5h-4.5" />
+        )}
+      </svg>
+    </button>
+  );
+};
+
 const Info = (props) => {
   const classes = useStyles();
   const [open, setOpen] = useState(false);
@@ -98,6 +213,7 @@ const Info = (props) => {
     Jukebox.playSound(Jukebox.SOUNDS.UI_ACCEPT);
     setOpen(false);
   };
+  const closeForUpdate = useCallback(() => setOpen(false), []);
 
   return (
     <>
@@ -133,26 +249,29 @@ const Info = (props) => {
         close={handleClose}
         title={t(tr.INFO_TITLE)}
         subtitle={
-          <div style={{ textAlign: "center" }} data-testid="info-build">
-            <a
-              className={classes.release}
-              href={releaseUrl(version)}
-              target="_blank"
-              rel="noopener noreferrer"
-              data-testid="info-release"
-            >
-              {t(tr.INFO_VERSION)} {version}
-              {commit ? ` · ${commit}` : null}
-              <svg
-                className={classes.external}
-                viewBox="0 0 24 24"
-                aria-hidden="true"
+          <div style={{ textAlign: "center" }}>
+            <div data-testid="info-build">
+              <a
+                className={classes.release}
+                href={releaseUrl(version)}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="info-release"
               >
-                <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
-              </svg>
-            </a>
-            <br />
-            {t(tr.INFO_LAST_UPDATE, timeAgo(builtAt))}
+                {t(tr.INFO_VERSION)} {version}
+                {commit ? ` · ${commit}` : null}
+                <svg
+                  className={classes.external}
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+                </svg>
+              </a>
+              <br />
+              {t(tr.INFO_LAST_UPDATE, timeAgo(builtAt))}
+            </div>
+            <UpdateCheck classes={classes} onInstalled={closeForUpdate} />
           </div>
         }
       >
