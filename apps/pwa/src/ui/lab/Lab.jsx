@@ -34,12 +34,15 @@ import BudgetBar from "./BudgetBar";
 import LabTable from "./LabTable";
 import InventoryPicker from "./InventoryPicker";
 import RecipeBook from "./RecipeBook";
+import ItemShelf from "./ItemShelf";
+import ItemCard from "./ItemCard";
 import LabIntro, {
   LAB_INTRO_SEEN,
   LAB_INTRO_STEPS,
   Spotlight,
 } from "./LabIntro";
 import { effectLines, labColors } from "./itemText";
+import { shelfGroups } from "./itemActions";
 import { bangers, outlined, rise } from "../styles";
 
 // loaded with the lab, like the game's scene: Babylon stays out of the first bundle
@@ -192,6 +195,31 @@ const useStyles = createUseStyles((theme) => ({
     margin: `0 max(1em, ${theme.edge.right}) max(0.8em, ${theme.edge.bottom}) max(1em, ${theme.edge.left})`,
     borderRadius: 20,
   },
+  // the lab table and the item shelf: tabs on the panel's top edge
+  tabs: {
+    display: "flex",
+    gap: "0.4em",
+    padding: "0 1.2em",
+  },
+  tab: {
+    minHeight: 44,
+    padding: "0.2em 1em",
+    border: "none",
+    borderRadius: "0.8em 0.8em 0 0",
+    background: theme.color.secondary.dark,
+    cursor: "pointer",
+    ...bangers(theme),
+    fontSize: theme.font.size.lg,
+    "&:focus-visible": {
+      outline: `3px solid ${theme.color.gold.light}`,
+      outlineOffset: -3,
+    },
+  },
+  // the open tab has the colour of the panel's top
+  activeTab: {
+    background: theme.color.secondary.light,
+    color: theme.color.gold.light,
+  },
 }));
 
 const persist = (changes) =>
@@ -225,6 +253,10 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   const [pantryOpen, setPantryOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [crafted, setCrafted] = useState(undefined);
+  // the bottom panel: "table" (the lab table) or "items" (the item shelf)
+  const [tab, setTab] = useState("table");
+  // the item card: { item, instanceId } while it is open
+  const [card, setCard] = useState(undefined);
   // the step of the first-visit intro, undefined when it is not shown
   const [introStep, setIntroStep] = useState(undefined);
 
@@ -410,10 +442,11 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       .finally(() => setBusy(false));
   };
 
-  const equip = (itemId) => {
-    const slot = pickerSlot;
+  // puts an item into a building's slot (itemId null empties it); resolves whether it worked,
+  // and the caller says why it did not (the lab table for the picker, the item card for Remove)
+  const putItem = (type, slot, itemId) => {
     setBusy(true);
-    equipItem(entityType, slot, itemId)
+    return equipItem(type, slot, itemId)
       .then((equipped) => {
         const changes = {
           equipment: equipped.equipment,
@@ -421,21 +454,57 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
         };
         updateStats(changes);
         persist(changes);
-        setPickerSlot(undefined);
+        return true;
       })
       .catch((error) => {
         logger.warn("equipping failed", error);
-        setResult({ status: "error", seq: Date.now() });
+        return false;
       })
       .finally(() => setBusy(false));
   };
 
-  // after crafting, offer the free slot of the item's building (or the first one)
-  const equipCrafted = () => {
-    const slots = equipment[entityType] || [];
+  const equip = (itemId) =>
+    putItem(entityType, pickerSlot, itemId).then((done) => {
+      if (done) {
+        setPickerSlot(undefined);
+      } else {
+        setResult({ status: "error", seq: Date.now() });
+      }
+    });
+
+  // the free slot of a building (or the first one)
+  const freeSlot = (type) => {
+    const slots = equipment[type] || [];
     const free = [0, 1].find((i) => !slots[i]);
+    return typeof free === "number" ? free : 0;
+  };
+
+  // after crafting, offer the free slot of the item's building
+  const equipCrafted = () => {
     setCrafted(undefined);
-    setPickerSlot(typeof free === "number" ? free : 0);
+    setPickerSlot(freeSlot(entityType));
+  };
+
+  // from the item card: the item's building, and the picker on its free slot
+  const equipFromCard = (itemKey) => {
+    const type = Items[itemKey].entityType;
+    setCard(undefined);
+    selectBuilding(type);
+    setPickerSlot(freeSlot(type));
+  };
+
+  // the server answered a salvage: the item is gone, its ingredients are back
+  const salvaged = (answer, itemId) => {
+    const changes = {
+      pantry: answer.pantry,
+      spoiling: answer.spoiling,
+      coins: answer.pantry.COCOA || 0,
+      items: items.filter((entry) => entry.id !== itemId),
+      equipment: answer.equipment,
+      loadout: answer.loadout,
+    };
+    updateStats(changes);
+    persist(changes);
   };
 
   const useRecipe = (entry) => {
@@ -468,6 +537,10 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       const entry = items.find((candidate) => candidate.id === id);
       return sum + (entry && Items[entry.item] ? Items[entry.item].points : 0);
     }, 0);
+  // the player's items of the type the item card shows
+  const cardGroup = card
+    ? shelfGroups(items).find((group) => group.item === card.item)
+    : undefined;
   const inactive = (index) => {
     const key = slotItem(index);
     return Boolean(key) && !equippedKeys.includes(key);
@@ -554,21 +627,48 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       </div>
 
       <div className={classes.table} ref={part("table")}>
-        <LabTable
-          buildingName={buildingName(entityType)}
-          bowls={bowls}
-          pantry={pantry}
-          onAdd={addIngredient}
-          onClear={clearBowl}
-          onTry={tryBowls}
-          result={result}
-          recipe={recipe}
-          onCraft={craft}
-          crafted={crafted}
-          onEquipCrafted={equipCrafted}
-          online={online}
-          busy={busy}
-        />
+        <div className={classes.tabs} role="tablist">
+          {[
+            ["table", tr.ITEM_TAB_TABLE, "item-table-tab"],
+            ["items", tr.ITEM_SHELF, "item-shelf-tab"],
+          ].map(([id, label, testId]) => (
+            <button
+              type="button"
+              key={id}
+              role="tab"
+              aria-selected={tab === id}
+              className={`${classes.tab} ${
+                tab === id ? classes.activeTab : ""
+              }`}
+              onClick={() => setTab(id)}
+              data-testid={testId}
+            >
+              {t(label)}
+            </button>
+          ))}
+        </div>
+        {tab === "items" ? (
+          <ItemShelf
+            items={items}
+            onOpen={(item, instanceId) => setCard({ item, instanceId })}
+          />
+        ) : (
+          <LabTable
+            buildingName={buildingName(entityType)}
+            bowls={bowls}
+            pantry={pantry}
+            onAdd={addIngredient}
+            onClear={clearBowl}
+            onTry={tryBowls}
+            result={result}
+            recipe={recipe}
+            onCraft={craft}
+            crafted={crafted}
+            onEquipCrafted={equipCrafted}
+            online={online}
+            busy={busy}
+          />
+        )}
       </div>
 
       {typeof introStep === "number" ? (
@@ -592,6 +692,26 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
         onEquip={equip}
         busy={busy}
       />
+      {card ? (
+        <ItemCard
+          open
+          close={() => setCard(undefined)}
+          item={card.item}
+          instanceId={card.instanceId}
+          instances={cardGroup ? cardGroup.instances : []}
+          equipment={equipment}
+          book={book}
+          online={online}
+          busy={busy}
+          buildingName={buildingName}
+          onEquip={equipFromCard}
+          onTakeOff={({ entityType: type, slot }) => putItem(type, slot, null)}
+          onSalvaged={salvaged}
+          onGone={refreshStats}
+          mintAction={undefined}
+          mintStatus={undefined}
+        />
+      ) : null}
       <RecipeBook
         open={bookOpen}
         close={() => setBookOpen(false)}

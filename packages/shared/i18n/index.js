@@ -92,6 +92,10 @@ const placeholders = Object.freeze({
     WALLETS_CONNECTED: ['count'],
     DETAILS_TEST_NETWORK: ['network'],
     TEST_NETWORK_TEXT: ['network'],
+    ITEM_SERIAL: ['serial'],
+    ITEM_EQUIPPED_ON: ['building'],
+    SALVAGE_TITLE: ['item', 'serial'],
+    SALVAGE_UNEQUIPS: ['building'],
 });
 
 // Texts that are picked or put together by code; each gets the language's table first.

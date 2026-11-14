@@ -267,8 +267,9 @@ describe('salvaging (minting plan A)', () => {
         const player = await account(app);
         const light = await giveItem(pool, player.playerId, 'LIGHT_BARREL');
         const before = (await statsOf(player)).pantry;
-        const statuses = (await Promise.all([1, 2].map(() => salvage(player, light)))).map(response => response.status).sort();
-        expect(statuses).toEqual([200, 400]);
+        const responses = await Promise.all([1, 2].map(() => salvage(player, light)));
+        expect(responses.map(response => response.status).sort()).toEqual([200, 400]);
+        expect(responses.find(response => response.status === 400).body.error).toBe('NOT YOUR ITEM');
         expect((await statsOf(player)).pantry).toEqual({ ...before, RUM: before.RUM + 1, SUGAR: before.SUGAR + 1 });
     });
 

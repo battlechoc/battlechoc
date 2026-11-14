@@ -8,7 +8,7 @@ import {
   slotOf,
   salvagePreview,
   cardActions,
-} from "../../src/ui/lab/itemCard.js";
+} from "../../src/ui/lab/itemActions.js";
 
 // stats.items: newest first
 const items = [
