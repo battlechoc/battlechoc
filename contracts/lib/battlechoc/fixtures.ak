@@ -181,3 +181,26 @@ pub fn valid_config_update_tx() -> Transaction {
     fee: 200_000,
   }
 }
+
+/// Spends a fee output (no datum) from the treasury to admin `a`'s wallet,
+/// with the config as a reference input, signed by `a` and `b`.
+pub fn valid_treasury_spend_tx() -> Transaction {
+  Transaction {
+    ..transaction.placeholder,
+    inputs: [
+      Input {
+        output_reference: treasury_ref,
+        output: Output {
+          address: script_address(treasury_hash),
+          value: assets.from_lovelace(4_000_000),
+          datum: NoDatum,
+          reference_script: None,
+        },
+      },
+    ],
+    reference_inputs: [config_nft_input(base_config())],
+    outputs: [wallet_output(admin_a, 3_800_000)],
+    extra_signatories: [admin_a, admin_b],
+    fee: 200_000,
+  }
+}

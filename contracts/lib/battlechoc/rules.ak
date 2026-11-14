@@ -5,12 +5,13 @@ use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
 use aiken/primitive/bytearray
 use battlechoc/fixtures.{
-  admin_a, admin_b, admin_c, base_config, server_1, server_2,
+  admin_a, admin_b, admin_c, base_config, config_nft_input, config_policy,
+  other_policy, server_1, server_2,
 }
 use battlechoc/types.{ConfigDatum, FeeOption, config_token_name, tiers}
 use cardano/address.{Script}
 use cardano/assets.{PolicyId}
-use cardano/transaction.{InlineDatum, Output}
+use cardano/transaction.{InlineDatum, Input, Output}
 
 /// A config datum the validators can rely on: at least one server key, at
 /// least one admin, every key 28 bytes, `1 <= threshold <= ` the number of
@@ -89,6 +90,29 @@ pub fn config_output(
   }
 }
 
+/// The config datum from the reference input that holds the config NFT of
+/// `config_policy`. The NFT is unique and the config validator keeps it at
+/// its own address with a well-formed datum, so holding it is enough.
+pub fn find_config(
+  reference_inputs: List<Input>,
+  config_policy: PolicyId,
+) -> Option<ConfigDatum> {
+  when
+    list.find(
+      reference_inputs,
+      fn(input) {
+        assets.quantity_of(input.output.value, config_policy, config_token_name) == 1
+      },
+    )
+  is {
+    Some(Input { output: Output { datum: InlineDatum(data), .. }, .. }) -> {
+      expect d: ConfigDatum = data
+      Some(d)
+    }
+    _ -> None
+  }
+}
+
 // Tests
 
 test well_formed_config_accepts_the_base_config() {
@@ -131,4 +155,18 @@ test signed_by_any_needs_one_of_the_keys() {
     !signed_by_any([server_1, server_2], [admin_a, admin_b]),
     !signed_by_any([], [admin_a]),
   }
+}
+
+test find_config_reads_the_nft_holder() {
+  find_config([config_nft_input(base_config())], config_policy) == Some(
+    base_config(),
+  )
+}
+
+test find_config_ignores_other_policies() {
+  find_config([config_nft_input(base_config())], other_policy) == None
+}
+
+test find_config_without_reference_inputs_is_none() {
+  find_config([], config_policy) == None
 }
