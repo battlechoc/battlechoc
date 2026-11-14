@@ -4,32 +4,36 @@
 //// end with the suffix of a seed the mint spends, so every pair is unique.
 //// A mint needs the server's signature (it vouches for the item and its
 //// tier) and the owner's, and pays the battlechoc fee the config names.
+//// Salvaging burns whole pairs, by the holder alone: no config, no server,
+//// no fee. A reference token leaves this address only burned, so an item's
+//// metadata never changes.
 
-use aiken/collection/dict
+use aiken/collection/dict.{Dict}
 use aiken/collection/list
 use aiken/collection/pairs
 use aiken/fuzz
 use aiken/primitive/bytearray
 use battlechoc/fixtures.{
   ada_fee, admin_a, choc_policy, config_nft_input, config_nft_output,
-  config_policy, config_ref, fee_output, item_cip68_datum, item_config,
-  item_metadata, item_mint_redeemer, item_reference_name, item_reference_output,
-  item_seed, item_suffix, item_user_name, item_user_output, items_policy,
-  key_address, other_policy, owner_key, pot_address, script_address, server_1,
-  server_2, split_fee_config, stake_key, team_address, treasury_address,
-  valid_item_mint_tx, wallet_output,
+  config_policy, config_ref, fee_output, held_user_input, item_cip68_datum,
+  item_config, item_metadata, item_mint_redeemer, item_reference_name,
+  item_reference_output, item_reference_ref, item_seed, item_suffix,
+  item_user_name, item_user_output, item_user_ref, items_policy, key_address,
+  other_policy, owner_key, pot_address, script_address, server_1, server_2,
+  split_fee_config, stake_key, stored_reference_input, team_address,
+  treasury_address, valid_item_burn_tx, valid_item_mint_tx, wallet_output,
 }
-use battlechoc/names.{reference_name, suffix, user_name}
+use battlechoc/names.{reference_name, split_name, suffix, user_name}
 use battlechoc/rules.{
-  fee_due, fee_paid, find_config, locks_reference_token, minted_exactly_pair,
-  pays_user_token_to, signed_by_any,
+  burns_in_pairs, fee_due, fee_paid, find_config, locks_reference_token,
+  minted_exactly_pair, pays_user_token_to, signed_by_any,
 }
 use battlechoc/types.{
   BurnItems, Cip68Datum, ConfigDatum, FeeOption, ItemAction, MintItem,
   config_token_name, reference_label, tiers, user_label,
 }
-use cardano/address.{Address}
-use cardano/assets.{Assets, PolicyId}
+use cardano/address.{Address, Script}
+use cardano/assets.{AssetName, Assets, PolicyId}
 use cardano/transaction.{
   DatumHash, InlineDatum, Input, NoDatum, Output, OutputReference, Transaction,
 }
@@ -70,19 +74,35 @@ validator items(config_policy: PolicyId) {
           },
         }
       }
-      // burning: Task 4
-      BurnItems -> False
+      // IB1, IB2: whole pairs only, nothing else (no config, no signature:
+      // the holder spends the user token anyway)
+      BurnItems -> burns_in_pairs(assets.tokens(self.mint, own_policy))
     }
   }
 
-  /// The reference tokens' store: Task 4.
+  /// The reference tokens' store: a reference token leaves it only burned,
+  /// so its metadata never changes. Where the ADA goes is free.
   spend(
     _datum: Option<Data>,
     _redeemer: Data,
-    _own_ref: OutputReference,
-    _self: Transaction,
+    own_ref: OutputReference,
+    self: Transaction,
   ) {
-    False
+    expect Some(store) = transaction.find_input(self.inputs, own_ref)
+    // the own policy is the store's script, whatever its stake part
+    expect Script(own_policy) = store.output.address.payment_credential
+    // IS1: the store holds exactly one token of the own policy, a reference
+    // token
+    expect [Pair(name, 1)] = dict.to_pairs(
+      assets.tokens(store.output.value, own_policy),
+    )
+    expect Some((label, _)) = split_name(name)
+    and {
+      label == reference_label,
+      // IS2: it is burned here, and the policy, which then runs, burns whole
+      // pairs only
+      assets.quantity_of(self.mint, own_policy, name) == -1,
+    }
   }
 
   else(_) {
@@ -664,4 +684,375 @@ test prop_fee_one_lovelace_short_fails(
     fee_paid(exact, option, 1),
     short_due == 0 || !fee_paid(list.indexed_map(dues, pay), option, 1),
   }
+}
+
+// Burning: helpers
+
+/// The whole burn `tx` passes: the policy with `BurnItems`, and the store's
+/// spend for every input at the items script.
+fn burn_tx(tx: Transaction) -> Bool {
+  items.mint(config_policy, BurnItems, items_policy, tx) && list.all(
+    tx.inputs,
+    fn(input) {
+      if input.output.address.payment_credential == Script(items_policy) {
+        run_spend(input.output_reference, tx)
+      } else {
+        True
+      }
+    },
+  )
+}
+
+/// The store's spend of the input at `own_ref`, with that input's datum.
+fn run_spend(own_ref: OutputReference, tx: Transaction) -> Bool {
+  expect Some(input) = transaction.find_input(tx.inputs, own_ref)
+  let datum = when input.output.datum is {
+    InlineDatum(data) -> Some(data)
+    _ -> None
+  }
+  items.spend(config_policy, datum, Void, own_ref, tx)
+}
+
+/// The valid burn with `mint` as what it burns.
+fn burning(mint: Assets) -> Bool {
+  burn_tx(Transaction { ..valid_item_burn_tx(), mint })
+}
+
+/// The valid burn with `reference_inputs`.
+fn burn_referencing(reference_inputs: List<Input>) -> Bool {
+  burn_tx(Transaction { ..valid_item_burn_tx(), reference_inputs })
+}
+
+/// A second item, B, minted from another seed of the owner.
+fn other_suffix() -> ByteArray {
+  suffix(OutputReference { ..item_seed, output_index: 3 })
+}
+
+/// Where B's tokens sit.
+const other_reference_ref =
+  OutputReference { ..item_reference_ref, output_index: 5 }
+
+const other_user_ref = OutputReference { ..item_user_ref, output_index: 6 }
+
+fn other_store() -> Input {
+  stored_reference_input(other_suffix(), other_reference_ref)
+}
+
+fn other_user() -> Input {
+  held_user_input(other_suffix(), other_user_ref)
+}
+
+/// The valid burn's store and user inputs.
+fn item_store() -> Input {
+  stored_reference_input(item_suffix(), item_reference_ref)
+}
+
+fn item_user() -> Input {
+  held_user_input(item_suffix(), item_user_ref)
+}
+
+/// The valid burn's store spent in `tx`.
+fn spend_store(tx: Transaction) -> Bool {
+  run_spend(item_reference_ref, tx)
+}
+
+/// The valid burn whose store, at `item_reference_ref`, holds `value`
+/// instead, spent alone with `mint`.
+fn spend_store_holding(value: Assets, mint: Assets) -> Bool {
+  let store = Input {
+    ..item_store(),
+    output: Output { ..item_store().output, value },
+  }
+  spend_store(
+    Transaction { ..valid_item_burn_tx(), inputs: [store, item_user()], mint },
+  )
+}
+
+// Burning: happy paths
+
+test burn_pair_ok() {
+  burn_tx(valid_item_burn_tx())
+}
+
+test burn_two_pairs_ok() {
+  let tx = valid_item_burn_tx()
+  burn_tx(
+    Transaction {
+      ..tx,
+      inputs: list.concat(tx.inputs, [other_store(), other_user()]),
+      mint: assets.merge(tx.mint, pair_of(other_suffix(), -1, -1)),
+    },
+  )
+}
+
+test burn_without_config_ok() {
+  burn_referencing([])
+}
+
+test burn_without_server_signature_ok() {
+  // the config names the server keys; only the holder signs
+  burn_tx(
+    Transaction {
+      ..valid_item_burn_tx(),
+      reference_inputs: [config_nft_input(item_config())],
+      extra_signatories: [owner_key],
+    },
+  )
+}
+
+test burn_while_paused_ok() {
+  burn_referencing(
+    [config_nft_input(ConfigDatum { ..item_config(), paused: True })],
+  )
+}
+
+test burn_pays_no_fee_ok() {
+  // a config with fees, and no output to the treasury
+  burn_referencing([config_nft_input(item_config())])
+}
+
+test burn_store_with_stake_part_ok() {
+  // the reference token may sit at the items script with any stake part
+  let staked = Input {
+    ..item_store(),
+    output: Output {
+      ..item_store().output,
+      address: script_address(items_policy)
+        |> address.with_delegation_key(stake_key),
+    },
+  }
+  burn_tx(Transaction { ..valid_item_burn_tx(), inputs: [staked, item_user()] })
+}
+
+// IB1: every quantity negative
+
+test burn_mixed_with_mint_fails() fail {
+  // B's whole pair +1 beside A's burn: only the sign is wrong
+  burning(
+    pair_of(item_suffix(), -1, -1)
+      |> assets.merge(pair_of(other_suffix(), 1, 1)),
+  )
+}
+
+// IB2: in pairs, -1 each
+
+test burn_only_user_token_fails() fail {
+  burn_tx(
+    Transaction {
+      ..valid_item_burn_tx(),
+      inputs: [item_user()],
+      mint: assets.from_asset(items_policy, item_user_name(), -1),
+    },
+  )
+}
+
+test burn_only_reference_token_fails() fail {
+  burn_tx(
+    Transaction {
+      ..valid_item_burn_tx(),
+      inputs: [item_store()],
+      mint: assets.from_asset(items_policy, item_reference_name(), -1),
+    },
+  )
+}
+
+test burn_quantity_minus_two_fails() fail {
+  burning(pair_of(item_suffix(), -1, -2))
+}
+
+test burn_unknown_label_fails() fail {
+  // label 333 with A's suffix, beside A's whole pair
+  burning(
+    pair_of(item_suffix(), -1, -1)
+      |> assets.add(
+          items_policy,
+          bytearray.concat(#"0014df10", item_suffix()),
+          -1,
+        ),
+  )
+}
+
+test burn_halves_of_two_items_fails() fail {
+  // A's reference token and B's user token
+  burn_tx(
+    Transaction {
+      ..valid_item_burn_tx(),
+      inputs: [item_store(), other_user()],
+      mint: assets.from_asset(items_policy, item_reference_name(), -1)
+        |> assets.add(items_policy, user_name(other_suffix()), -1),
+    },
+  )
+}
+
+// IS1: the spent store holds a reference token
+
+test spend_input_without_reference_token_fails() fail {
+  // ADA someone paid to the items address, spent beside the valid burn
+  let paid = Input {
+    output_reference: OutputReference { ..item_reference_ref, output_index: 7 },
+    output: Output {
+      ..item_store().output,
+      value: assets.from_lovelace(5_000_000),
+      datum: NoDatum,
+    },
+  }
+  let tx = valid_item_burn_tx()
+  run_spend(
+    paid.output_reference,
+    Transaction { ..tx, inputs: [paid, ..tx.inputs] },
+  )
+}
+
+test spend_store_holding_a_user_token_fails() fail {
+  // A's user token sent to the items address, burned with A's pair
+  spend_store_holding(
+    assets.from_lovelace(2_000_000)
+      |> assets.add(items_policy, item_user_name(), 1),
+    pair_of(item_suffix(), -1, -1),
+  )
+}
+
+/// A store holding A's and B's reference tokens: burning one pair would free
+/// the other reference token. Both ways round, so that neither the first nor
+/// the last token of the store can stand for all of them.
+fn spend_store_of_two_burning(s: ByteArray) -> Bool {
+  spend_store_holding(
+    item_store().output.value
+      |> assets.add(items_policy, reference_name(other_suffix()), 1),
+    pair_of(s, -1, -1),
+  )
+}
+
+test spend_store_of_two_reference_tokens_burning_a_fails() fail {
+  spend_store_of_two_burning(item_suffix())
+}
+
+test spend_store_of_two_reference_tokens_burning_b_fails() fail {
+  spend_store_of_two_burning(other_suffix())
+}
+
+test spend_store_holding_the_reference_token_twice_fails() fail {
+  spend_store_holding(
+    assets.from_lovelace(2_000_000)
+      |> assets.add(items_policy, item_reference_name(), 2),
+    pair_of(item_suffix(), -1, -1),
+  )
+}
+
+// IS2: that token is burned here
+
+test spend_reference_without_burn_fails() fail {
+  spend_store(Transaction { ..valid_item_burn_tx(), mint: assets.zero })
+}
+
+test spend_reference_burning_other_item_fails() fail {
+  // A's store spent beside B's burn
+  spend_store(
+    Transaction {
+      ..valid_item_burn_tx(),
+      inputs: [item_store(), other_store(), other_user()],
+      mint: pair_of(other_suffix(), -1, -1),
+    },
+  )
+}
+
+test spend_reference_burned_twice_fails() fail {
+  // cannot happen on chain (one reference token exists), but -1 is the rule
+  spend_store(
+    Transaction { ..valid_item_burn_tx(), mint: pair_of(item_suffix(), -2, -1) },
+  )
+}
+
+test spend_reference_burning_other_policy_fails() fail {
+  // the same names burned under another policy
+  spend_store(
+    Transaction {
+      ..valid_item_burn_tx(),
+      mint: assets.from_asset(other_policy, item_reference_name(), -1)
+        |> assets.add(other_policy, item_user_name(), -1),
+    },
+  )
+}
+
+test metadata_cannot_be_updated() fail {
+  // the 100 token paid back to the store with a new datum, nothing burned
+  let renamed: Data = "Darker Walls"
+  let new_datum = Cip68Datum {
+    ..item_cip68_datum(),
+    metadata: [
+      Pair("name", renamed),
+      ..pairs.delete_all(item_metadata(), "name")
+    ],
+  }
+  spend_store(
+    Transaction {
+      ..valid_item_burn_tx(),
+      inputs: [item_store()],
+      outputs: [Output { ..item_store().output, datum: InlineDatum(new_datum) }],
+      mint: assets.zero,
+    },
+  )
+}
+
+// The redeemer mix-up
+
+test mint_redeemer_with_burn_fails() fail {
+  // the valid mint of A, burning B under `MintItem` in the same transaction
+  let tx = valid_item_mint_tx()
+  mint_tx(
+    Transaction {
+      ..tx,
+      inputs: list.concat(tx.inputs, [other_store(), other_user()]),
+      mint: assets.merge(tx.mint, pair_of(other_suffix(), -1, -1)),
+    },
+  )
+}
+
+// Properties: whole pairs only
+
+/// The pairs of `suffixes`, burned.
+fn burned_pairs(suffixes: List<ByteArray>) -> Dict<AssetName, Int> {
+  list.foldl(
+    suffixes,
+    dict.empty,
+    fn(s, tokens) {
+      tokens
+        |> dict.insert(reference_name(s), -1)
+        |> dict.insert(user_name(s), -1)
+    },
+  )
+}
+
+/// Some pairs and one name of one of them.
+fn pairs_and_a_half() -> Fuzzer<(List<ByteArray>, AssetName)> {
+  let suffixes <- fuzz.and_then(
+    fuzz.set_between(fuzz.bytearray_fixed(28), 1, 4),
+  )
+  let (_, s) <- fuzz.and_then(fuzz.pick(suffixes))
+  let reference <- fuzz.map(fuzz.bool())
+  if reference {
+    (suffixes, reference_name(s))
+  } else {
+    (suffixes, user_name(s))
+  }
+}
+
+test prop_burn_accepts_complete_pairs(
+  suffixes via fuzz.set_between(fuzz.bytearray_fixed(28), 1, 4),
+) {
+  burns_in_pairs(burned_pairs(suffixes))
+}
+
+test prop_burn_rejects_a_missing_half((suffixes, half) via pairs_and_a_half()) {
+  !burns_in_pairs(dict.delete(burned_pairs(suffixes), half))
+}
+
+test prop_burn_rejects_positive(q via fuzz.int_at_least(0)) {
+  let s = item_suffix()
+  let pair = fn(reference_quantity, user_quantity) {
+    dict.empty
+      |> dict.insert(reference_name(s), reference_quantity)
+      |> dict.insert(user_name(s), user_quantity)
+  }
+  !burns_in_pairs(pair(q, -1)) && !burns_in_pairs(pair(-1, q))
 }

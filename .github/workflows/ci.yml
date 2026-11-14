@@ -128,6 +128,8 @@ jobs:
         run: aiken fmt --check
       - name: Contract tests (warnings are errors)
         run: aiken check --deny --max-success 500
+      - name: The committed blueprint is the one these sources build
+        run: aiken build --trace-level silent && git diff --exit-code plutus.json
 
   # The browser tests in six parallel jobs of about seven to eleven minutes each (in one job they
   # took 29 min), next to test-and-build instead of after it. Each job builds the e2e build and

@@ -105,6 +105,20 @@ pub const item_seed =
     output_index: 2,
   }
 
+/// Where the item's reference token sits after the mint (the store).
+pub const item_reference_ref =
+  OutputReference {
+    transaction_id: #"1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e",
+    output_index: 0,
+  }
+
+/// Where the item's user token sits after the mint, in the owner's wallet.
+pub const item_user_ref =
+  OutputReference {
+    transaction_id: #"1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e1e",
+    output_index: 1,
+  }
+
 // Addresses and outputs
 
 pub fn key_address(key: VerificationKeyHash) -> Address {
@@ -255,6 +269,36 @@ pub fn item_user_output(address: Address) -> Output {
   }
 }
 
+/// The reference token of the item with suffix `s`, locked at the items
+/// address with the item's datum, as the input at `at`.
+pub fn stored_reference_input(s: ByteArray, at: OutputReference) -> Input {
+  Input {
+    output_reference: at,
+    output: Output {
+      address: script_address(items_policy),
+      value: assets.from_lovelace(2_000_000)
+        |> assets.add(items_policy, reference_name(s), 1),
+      datum: InlineDatum(item_cip68_datum()),
+      reference_script: None,
+    },
+  }
+}
+
+/// The user token of the item with suffix `s` in the owner's wallet, as the
+/// input at `at`.
+pub fn held_user_input(s: ByteArray, at: OutputReference) -> Input {
+  Input {
+    output_reference: at,
+    output: Output {
+      address: key_address(owner_key),
+      value: assets.from_lovelace(1_500_000)
+        |> assets.add(items_policy, user_name(s), 1),
+      datum: NoDatum,
+      reference_script: None,
+    },
+  }
+}
+
 /// A fee payment: `lovelace` to `address`, without a datum.
 pub fn fee_output(address: Address, lovelace: Int) -> Output {
   Output {
@@ -363,6 +407,24 @@ pub fn valid_item_mint_tx() -> Transaction {
     mint: assets.from_asset(items_policy, item_reference_name(), 1)
       |> assets.add(items_policy, item_user_name(), 1),
     extra_signatories: [server_1, owner_key],
+    fee: 200_000,
+  }
+}
+
+/// The owner salvages the item `valid_item_mint_tx` minted: spends its
+/// reference token from the store and its user token from the wallet, burns
+/// both and takes the deposits (3.5 ADA less the fee) to the wallet. No
+/// config, no fee, no signature beyond the wallet's own witness.
+pub fn valid_item_burn_tx() -> Transaction {
+  Transaction {
+    ..transaction.placeholder,
+    inputs: [
+      stored_reference_input(item_suffix(), item_reference_ref),
+      held_user_input(item_suffix(), item_user_ref),
+    ],
+    outputs: [wallet_output(owner_key, 3_300_000)],
+    mint: assets.from_asset(items_policy, item_reference_name(), -1)
+      |> assets.add(items_policy, item_user_name(), -1),
     fee: 200_000,
   }
 }

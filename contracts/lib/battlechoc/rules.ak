@@ -1,6 +1,6 @@
 //// Pure predicates the validators share: what a well-formed config is, who
 //// signed, where the config NFT is in a transaction, what an item mint
-//// mints and where its tokens go, and the battlechoc fee.
+//// mints and where its tokens go, the battlechoc fee, and what a burn burns.
 
 use aiken/collection/dict.{Dict}
 use aiken/collection/list
@@ -9,10 +9,10 @@ use aiken/crypto.{VerificationKeyHash}
 use aiken/primitive/bytearray
 use battlechoc/fixtures.{
   ada_fee, admin_a, admin_b, admin_c, base_config, config_nft_input,
-  config_policy, other_policy, pot_address, server_1, server_2, team_address,
-  treasury_address,
+  config_policy, item_suffix, other_policy, pot_address, server_1, server_2,
+  team_address, treasury_address,
 }
-use battlechoc/names.{reference_name, user_name}
+use battlechoc/names.{reference_name, split_name, user_name}
 use battlechoc/types.{
   Cip68Datum, ConfigDatum, FeeOption, config_token_name, tiers,
 }
@@ -205,6 +205,28 @@ pub fn locks_reference_token(
   }
 }
 
+/// Whether `tokens` (what is minted under the items policy) burns whole pairs
+/// only: something, every quantity -1, every name an item's name (label 100
+/// or 222 and a suffix), and for each suffix both of its names.
+pub fn burns_in_pairs(tokens: Dict<AssetName, Int>) -> Bool {
+  and {
+    !dict.is_empty(tokens),
+    list.all(dict.values(tokens), fn(quantity) { quantity == -1 }),
+    list.all(
+      dict.keys(tokens),
+      fn(name) {
+        when split_name(name) is {
+          Some((_, s)) -> and {
+              dict.has_key(tokens, reference_name(s)),
+              dict.has_key(tokens, user_name(s)),
+            }
+          None -> False
+        }
+      },
+    ),
+  }
+}
+
 /// What each receiver of `option` is due for an item of `tier`: the floor of
 /// its share of `amounts[tier]`, and the first receiver also gets what the
 /// floors leave over, so the dues add up to the amount. `None` for a tier
@@ -358,4 +380,16 @@ test fee_paid_refuses_a_tier_outside_0_to_2() {
     !fee_paid(paid, option, -1),
     fee_paid(paid, option, 2),
   }
+}
+
+test burns_in_pairs_refuses_nothing() {
+  !burns_in_pairs(dict.empty)
+}
+
+test burns_in_pairs_accepts_one_pair() {
+  burns_in_pairs(
+    dict.empty
+      |> dict.insert(reference_name(item_suffix()), -1)
+      |> dict.insert(user_name(item_suffix()), -1),
+  )
 }
