@@ -50,18 +50,84 @@ const ErrorCode = Object.freeze({
     NOT_YOUR_KEY: 'NOT YOUR KEY',
     TOO_MANY_PASSKEYS: 'TOO MANY PASSKEYS',
     PASSKEY_TAKEN: 'PASSKEY TAKEN',
+    // the items on the chain (minting plan D, routes/chain.js); their statuses are CHAIN_STATUS's
+    CHAIN_OFF: 'CHAIN OFF',
+    CHAIN_UNAVAILABLE: 'CHAIN UNAVAILABLE',
+    CHAIN_PAUSED: 'CHAIN PAUSED',
+    NOT_ENOUGH_MATCHES: 'NOT ENOUGH MATCHES',
+    MINT_LIMIT: 'MINT LIMIT',
+    OPERATION_RUNNING: 'OPERATION RUNNING',
+    ITEM_BUSY: 'ITEM BUSY',
+    ALREADY_MINTED: 'ALREADY MINTED',
+    NOT_YOUR_WALLET: 'NOT YOUR WALLET',
+    WALLET_WAITING: 'WALLET WAITING',
+    // with `missing` and `needed` (lovelace strings) beside the code
+    NOT_ENOUGH_ADA: 'NOT ENOUGH ADA',
+    // the wallet has the ADA, but nothing the transaction can take as its collateral
+    NO_COLLATERAL: 'NO COLLATERAL',
+    // the wallet holds so many tokens that the transaction (the change carries them) is too large
+    WALLET_TOO_FULL: 'WALLET TOO FULL',
+    UNKNOWN_FEE: 'UNKNOWN FEE',
+    UNKNOWN_SIGN_CODE: 'UNKNOWN SIGN CODE',
+    INVALID_WITNESS: 'INVALID WITNESS',
+    OPERATION_NOT_OPEN: 'OPERATION NOT OPEN',
+    // the operation's owner address was chosen by the server alone: the wallet must name (and,
+    // without the player's session, sign for) its addresses first
+    ADDRESSES_NEEDED: 'ADDRESSES NEEDED',
+});
+
+// The status of each code of the chain routes, in one place: the game tells "try later" (503)
+// from "not you" (403) and "not now" (409) by it.
+const CHAIN_STATUS = Object.freeze({
+    [ErrorCode.CHAIN_OFF]: 404,
+    [ErrorCode.CHAIN_UNAVAILABLE]: 503,
+    [ErrorCode.CHAIN_PAUSED]: 503,
+    [ErrorCode.NOT_ENOUGH_MATCHES]: 403,
+    [ErrorCode.MINT_LIMIT]: 409,
+    [ErrorCode.OPERATION_RUNNING]: 409,
+    [ErrorCode.ITEM_BUSY]: 409,
+    [ErrorCode.ALREADY_MINTED]: 409,
+    [ErrorCode.NOT_YOUR_WALLET]: 400,
+    [ErrorCode.WALLET_WAITING]: 409,
+    [ErrorCode.NOT_ENOUGH_ADA]: 400,
+    [ErrorCode.NO_COLLATERAL]: 400,
+    [ErrorCode.WALLET_TOO_FULL]: 400,
+    [ErrorCode.UNKNOWN_FEE]: 400,
+    [ErrorCode.UNKNOWN_SIGN_CODE]: 404,
+    [ErrorCode.INVALID_WITNESS]: 400,
+    [ErrorCode.OPERATION_NOT_OPEN]: 409,
+    [ErrorCode.ADDRESSES_NEEDED]: 409,
 });
 
 class HttpError extends Error {
     /**
      * @param {number} status HTTP status of the response
      * @param {string} code one of ErrorCode, the `error` of the response body
+     * @param {object} [details] fields the body carries after `error` (e.g. NOT ENOUGH ADA's
+     *   `missing`), JSON values only and never an `error` of their own
      */
-    constructor(status, code) {
+    constructor(status, code, details) {
         super(code);
+        if (details !== undefined && (details === null || typeof details !== 'object' || Object.prototype.hasOwnProperty.call(details, 'error'))) {
+            throw new TypeError('HttpError: details are an object without an `error`');
+        }
         this.status = status;
         this.code = code;
+        if (details !== undefined) {
+            this.details = details;
+        }
     }
 }
 
-module.exports = { HttpError, ErrorCode };
+/** The HttpError of a chain route's `code` (one of CHAIN_STATUS's) with its status, and `details`. */
+const chainError = (code, details) => {
+    if (!Object.prototype.hasOwnProperty.call(CHAIN_STATUS, code)) {
+        throw new TypeError(`chainError: no chain code: ${code}`);
+    }
+    return new HttpError(CHAIN_STATUS[code], code, details);
+};
+
+/** The body of an HttpError's response: `{ error: <code> }`, then its details. */
+const bodyOf = error => ({ error: error.code, ...error.details });
+
+module.exports = { HttpError, ErrorCode, CHAIN_STATUS, chainError, bodyOf };

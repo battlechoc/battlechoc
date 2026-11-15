@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="google" content="notranslate" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#2878A6" />
+    <title>battlechoc</title>
+  </head>
+
+  <body>
+    <!-- The sign page (plan D): a phone wallet opens it in its own browser for a sign code and
+    signs the minting that battlechoc prepared on the player's device (src/sign/main.js). -->
+    <main id="sign" class="link sign">
+      <!-- without JavaScript nothing can be signed: the page says so in each of the game's
+      languages (it cannot know the player's before its script runs) -->
+      <noscript>
+        <p lang="de">Schalte JavaScript ein, um hier zu unterschreiben.</p>
+        <p lang="en">Turn on JavaScript to sign here.</p>
+        <p lang="es">Activa JavaScript para firmar aquí.</p>
+        <p lang="fr">Active JavaScript pour signer ici.</p>
+        <p lang="it">Attiva JavaScript per firmare qui.</p>
+        <p lang="pt">Ative o JavaScript para assinar aqui.</p>
+        <p lang="ja">ここで署名するにはJavaScriptを有効にしてください。</p>
+        <p lang="vi">Hãy bật JavaScript để ký tại đây.</p>
+      </noscript>
+    </main>
+    <script type="module" src="/src/sign/main.js"></script>
+  </body>
+</html>

@@ -1,7 +1,6 @@
 // Entry point of the battlechoc backend: REST API and the live match WebSocket (/live) on one
 // HTTP server (see deploy/docker-compose.yml for the environment, config.js for what is read from it).
 
-const fs = require('fs');
 const http = require('http');
 const { loadConfig, ConfigError } = require('./config');
 const { createPool, migrate } = require('./db');
@@ -11,23 +10,37 @@ const { createApp } = require('./app');
 const { createLive } = require('./live');
 const { loadRecipes } = require('./lab/recipes');
 const { scheduleCleanup } = require('./cleanup');
-const { createChain } = require('./chain');
+const { createChain, loadServerKey } = require('./chain');
 const { createWatcher } = require('./chain/watcher');
+const { operationsStep } = require('./chain/operationsStep');
 const { ownershipStep } = require('./chain/ownership');
 
 // Docker waits 10 seconds after SIGTERM, then it kills the container: the process leaves on its
 // own before that, also when a part of the shutdown hangs.
 const SHUTDOWN_TIMEOUT_MS = 8000;
 
+/** The line the start logs for the chain's provider (config.js `chain`): its kind and host, never its key. */
+const chainProviderLine = chainConfig => `chain provider: ${chainConfig.providerKind} at ${new URL(chainConfig.providerUrl).host}`;
+
 /**
- * With the chain features on, the watcher of the chain (its steps: the ownership sync) in
- * `runtime.watcher`, started: the function that stops it. Off, no watcher: a stop that does nothing.
+ * The warning the start logs for Koios without a key (its public tier): that tier limits a
+ * request's body to 1 kB and a mint is 2–3 kB, so its submit may be refused. Null otherwise.
+ */
+const chainProviderWarning = chainConfig =>
+    chainConfig.providerKind === 'koios' && !chainConfig.providerKey
+        ? "chain provider: Koios's public tier (no key) limits a request to 1 kB, a mint is 2-3 kB: minting may be refused for size: set CHAIN_PROVIDER_KEY (a free Koios token)"
+        : null;
+
+/**
+ * With the chain features on, the watcher of the chain (its steps: the chain operations, then the
+ * ownership sync, which must see a mint that landed as a minted item) in `runtime.watcher`,
+ * started: the function that stops it. Off, no watcher: a stop that does nothing.
  */
 const startWatcher = ({ chain, pool, intervalMs, runtime, log = console }) => {
     if (!chain.enabled) {
         return () => {};
     }
-    const watcher = createWatcher({ chain, pool, steps: [ownershipStep], intervalMs, log });
+    const watcher = createWatcher({ chain, pool, steps: [operationsStep, ownershipStep], intervalMs, log });
     runtime.watcher = watcher;
     return watcher.start();
 };
@@ -87,26 +100,31 @@ const createShutdown = ({
  * Starts the backend; `wrap(app, { pool, runtime })` may put a handler around the REST app (the
  * browser tests add routes of their own, see test/e2eServer.js); `runtime.chain` is the chain of
  * the server, `runtime.watcher` its watcher once it runs. `env` is the environment to configure it
- * from; `chainOverrides` (tests only) are doubles of the chain's provider and index (createChain).
+ * from; `chainOverrides` (tests only) are doubles of the chain's provider and index (createChain);
+ * `appOptions({ chain })` (tests only) answers options of createApp that win over the configured
+ * ones (the browser tests' API reads the on-chain config on every request).
  */
-const main = async ({ wrap = app => app, env = process.env, chainOverrides } = {}) => {
+const main = async ({ wrap = app => app, env = process.env, chainOverrides, appOptions = () => ({}) } = {}) => {
     // first of all: a mistake in the environment stops the start before anything is opened
     const config = loadConfig(env);
-    if (config.chain) {
-        // only that it can be read: what is in it is for chain/keys.js, and never for a message
-        try {
-            fs.accessSync(config.chain.serverKeyFile, fs.constants.R_OK);
-        } catch {
-            throw new ConfigError(['CHAIN_SERVER_KEY_FILE cannot be read']);
-        }
-    }
+    // the server key, loaded once with the chain features on: a file that is no key file (none,
+    // /dev/null, a directory, empty, open to others, not one ed25519_sk1… line) stops the start
+    // with a message that names CHAIN_SERVER_KEY_FILE, never what is in the file
+    const serverKey = config.chain ? loadServerKey(config.chain.serverKeyFile) : null;
     const recipes = loadRecipes(config.recipesFile, config.nodeEnv);
     const pool = createPool({ databaseUrl: config.databaseUrl, ...config.database });
     await migrate(pool);
     if (config.chainMissing.length > 0) {
         console.log(`chain features off: missing ${config.chainMissing.join(', ')}`);
     }
-    const chain = createChain({ config, pool, log: console, overrides: chainOverrides });
+    if (config.chain) {
+        console.log(chainProviderLine(config.chain));
+        const warning = chainProviderWarning(config.chain);
+        if (warning) {
+            console.warn(warning);
+        }
+    }
+    const chain = createChain({ config, pool, log: console, overrides: chainOverrides, serverKey });
     const runtime = { chain, watcher: null };
     const auth = createAuth({ pool, secret: config.jwtSecret });
     const push = createPush({ pool, ...config.vapid });
@@ -124,6 +142,7 @@ const main = async ({ wrap = app => app, env = process.env, chainOverrides } = {
         chain,
         ...(config.accountsPerMinute ? { accountsPerMinute: config.accountsPerMinute } : {}),
         ...(config.cardanoPerMinute ? { cardanoPerMinute: config.cardanoPerMinute } : {}),
+        ...appOptions({ chain }),
     });
     const server = http.createServer(wrap(app, { pool, runtime }));
     live = createLive({ server, pool, auth, origins: config.corsOrigins, config: config.live });
@@ -159,4 +178,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { main, createShutdown, startWatcher };
+module.exports = { main, chainProviderLine, createShutdown, startWatcher };

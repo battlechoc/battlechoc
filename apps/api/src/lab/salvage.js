@@ -4,7 +4,11 @@
 const { salvageReturns } = require('@battlechoc/battlechoc-shared-functions');
 const players = require('../players');
 const pantry = require('../pantry');
+const ops = require('../chain/ops');
 const { HttpError, ErrorCode } = require('../errors');
+
+// the states of the operations that ended, as SQL (chain_ops.item_id has no ON DELETE)
+const { ENDED_IN } = ops;
 
 /**
  * Salvages the player's item `itemId`; `client` is a transaction client, `now` a millisecond
@@ -23,12 +27,20 @@ const salvagePlain = async (client, { playerId, itemId, recipes, now }) => {
     if (rows[0].asset_name !== null) {
         throw new HttpError(409, ErrorCode.ITEM_MINTED);
     }
+    // an item a mint holds (prepared or sent, not in a block yet: no asset name); a prepared one
+    // whose sign window is over lets it go
+    const open = await ops.expireLapsed(client, await ops.openForItem(client, itemId), now);
+    if (open && ops.OPEN.includes(open.state)) {
+        throw new HttpError(409, ErrorCode.ITEM_BUSY);
+    }
     const recipe = recipes.get(rows[0].item_key);
     if (!recipe) {
         throw new HttpError(400, ErrorCode.NO_RECIPE);
     }
     const returned = salvageReturns(recipe.amounts);
-    // item_serials is left alone: a serial is never given twice
+    // item_serials is left alone: a serial is never given twice. The item's ended operations
+    // (cancelled, not signed, rejected) go with it; an open one would refuse the delete.
+    await client.query(`DELETE FROM chain_ops WHERE item_id = $1 AND state IN ${ENDED_IN}`, [itemId]);
     await client.query('DELETE FROM items WHERE id = $1', [itemId]);
 
     const equipment = {};

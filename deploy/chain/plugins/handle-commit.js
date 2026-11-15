@@ -3,7 +3,7 @@
 // on Yaci Store's own connection, schema yaci_store), global_state and console.
 //
 // Yaci Store writes a tx_input row for every input of every transaction, but keeps only the
-// outputs with a token of the game's policy (the filter on utxo.unspent.save). A spend of an output
+// outputs with a user token of the game's policy (the filter on utxo.unspent.save). A spend of an output
 // it never kept is useless: this deletes those rows after each batch of blocks. Yaci Store saves
 // a batch's outputs and spends before it sends CommitEvent, so an output spent in the same batch
 // is already there and its spend stays. The views of the API look only at spends of kept outputs,

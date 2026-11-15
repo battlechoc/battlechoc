@@ -1,99 +1,38 @@
 import { test, expect } from "@playwright/test";
-import { accountOf, readSetting, writeSetting } from "./helpers/profile.js";
+import { readSetting } from "./helpers/profile.js";
+import { api, authHeaders, labPlayer } from "./helpers/players.js";
+import { chooseBuilding, stock } from "./helpers/lab.js";
 
 // The lab against the local API (sample recipes): a new player finishes the tutorial (starter kit:
 // cocoa, rum, sugar, milk), discovers the starter recipe for the truffle cannon on the lab table,
 // and once a second rum is in the pantry crafts it, equips it, and the next match (on the server)
 // carries that equipment.
-const api = `http://127.0.0.1:${process.env.API_PORT || 8091}`;
-
-// ingredients as a won match may drop them (a route of the test server, apps/api/test/e2eServer.js)
-const stock = async (request, username, items) =>
-  expect(
-    (
-      await request.post(`${api}/test/pantry`, { data: { username, items } })
-    ).ok()
-  ).toBe(true);
 
 // the lab explains itself on the first visit; most tests start with that intro already seen
-const seeIntro = (page) => writeSetting(page, "labIntroSeen", true);
-
+// (labPlayer marks it seen unless `intro`)
 const introSeen = async (page) =>
   (await readSetting(page, "labIntroSeen")) === true;
 
-// the device account's access to the API, for calls the test makes beside the game
-const authHeaders = async (page, request) => {
-  const { refreshToken } = await accountOf(page);
-  const { accessToken } = await (
-    await request.post(`${api}/accounts/token`, { data: { refreshToken } })
-  ).json();
-  return { Authorization: `Bearer ${accessToken}` };
-};
-
-const newPlayer = async (
+// labPlayer on the test clock (?testclock), the page loaded again with the new state
+const newPlayer = (
   browser,
   request,
   username,
   viewport,
   { intro = false } = {}
-) => {
-  const context = await browser.newContext(viewport ? { viewport } : {});
-  await context.addInitScript(
-    (url) => window.localStorage.setItem("battlechoc.apiUrl", url),
-    api
-  );
-  const page = await context.newPage();
-  await page.goto("/?testclock", { waitUntil: "networkidle" });
-  await expect.poll(() => accountOf(page), { timeout: 15000 }).toBeTruthy();
-  const headers = await authHeaders(page, request);
-  expect(
-    (
-      await request.post(`${api}/user/username`, {
-        headers,
-        data: { username },
-      })
-    ).ok()
-  ).toBe(true);
-  expect(
-    (await request.post(`${api}/user/tutorial/finished`, { headers })).ok()
-  ).toBe(true);
-  // four finished matches against the AI unlock the Choclab (shared progression.js)
-  const matches = [0, 1, 2, 3].map((i) => ({
-    id: `seed-${username}-${i}`,
-    lost: true,
-    winners: [{ idx: 1, name: "Tom Toffee" }],
-    awards: [],
-  }));
-  expect(
-    (
-      await request.post(`${api}/user/trackrecords`, {
-        headers,
-        data: { stats: matches },
-      })
-    ).ok()
-  ).toBe(true);
-  if (!intro) {
-    await seeIntro(page);
-  }
-  await page.goto("/?testclock", { waitUntil: "networkidle" });
-  return { context, page };
-};
-
-const chooseBuilding = async (page, name) => {
-  for (let i = 0; i < 10; i++) {
-    if ((await page.getByTestId("lab-building").innerText()).trim() === name) {
-      return;
-    }
-    await page.locator("[data-testid=lab] [data-icon=forward]").first().click();
-  }
-  throw new Error(`building ${name} not found`);
-};
+) =>
+  labPlayer(browser, request, username, {
+    device: viewport ? { viewport } : {},
+    path: "/?testclock",
+    intro,
+    reload: true,
+  });
 
 test("the starter kit discovers the starter item, a second rum crafts it; the next match uses it", async ({
   browser,
   request,
 }) => {
-  const { context, page } = await newPlayer(browser, request, "Lena");
+  const { context, page, username } = await newPlayer(browser, request, "Lena");
   await page.getByText("Choclab", { exact: true }).first().click();
   await expect(page.getByTestId("lab")).toBeVisible();
   await expect(page.getByTestId("pantry-button")).toContainText("100");
@@ -122,7 +61,7 @@ test("the starter kit discovers the starter item, a second rum crafts it; the ne
   await expect(rumCost).toHaveAttribute("data-missing", "true");
   await expect(page.getByTestId("lab-craft")).toBeDisabled();
 
-  await stock(request, "Lena", [{ ingredient: "RUM", amount: 1 }]);
+  await stock(request, username, [{ ingredient: "RUM", amount: 1 }]);
   await page.goto("/?testclock", { waitUntil: "networkidle" });
   await page.getByText("Choclab", { exact: true }).first().click();
   await chooseBuilding(page, "Rum truffle cannon");
@@ -323,10 +262,10 @@ const openShelf = async (page) => {
   return shelf;
 };
 
-// the serial number a tile shows ("No. 3")
+// the serial number a tile shows ("No. 3", a no-break space between them)
 const serialOf = async (tile) => {
-  await expect(tile).toContainText(/No\. \d+/);
-  return (await tile.textContent()).match(/No\. (\d+)/)[1];
+  await expect(tile).toContainText(/No\.\s\d+/);
+  return (await tile.textContent()).match(/No\.\s(\d+)/)[1];
 };
 
 // a row of what salvaging gives back
@@ -347,8 +286,12 @@ test("an item on the shelf: the card shows it, says what salvaging gives back, a
   browser,
   request,
 }) => {
-  const { context, page } = await newPlayer(browser, request, "Salvia");
-  await craftLightBarrel(page, request, "Salvia");
+  const { context, page, username } = await newPlayer(
+    browser,
+    request,
+    "Salvia"
+  );
+  await craftLightBarrel(page, request, username);
   await page.getByTestId("lab-equip").click();
   await page
     .getByTestId("inventory")
@@ -446,11 +389,16 @@ test("no Mint button without plan D (on a phone in portrait)", async ({
   browser,
   request,
 }) => {
-  const { context, page } = await newPlayer(browser, request, "Melisse", {
-    width: 390,
-    height: 844,
-  });
-  await craftLightBarrel(page, request, "Melisse");
+  const { context, page, username } = await newPlayer(
+    browser,
+    request,
+    "Melisse",
+    {
+      width: 390,
+      height: 844,
+    }
+  );
+  await craftLightBarrel(page, request, username);
   const shelf = await openShelf(page);
   await expect(shelf.getByTestId("item-tile")).toHaveCount(1);
   await page.screenshot({
@@ -482,15 +430,19 @@ test("salvaged elsewhere: the card says the item is gone, the shelf empties", as
   browser,
   request,
 }) => {
-  const { context, page } = await newPlayer(browser, request, "Kerbel");
-  await craftLightBarrel(page, request, "Kerbel");
+  const { context, page, username } = await newPlayer(
+    browser,
+    request,
+    "Kerbel"
+  );
+  await craftLightBarrel(page, request, username);
   const shelf = await openShelf(page);
   await shelf.getByTestId("item-tile").click();
   const card = page.getByTestId("item-card");
   await expect(card).toBeVisible();
 
   // another device salvages it while the card is open
-  const headers = await authHeaders(page, request);
+  const { headers } = await authHeaders(page, request);
   const { stats } = await (
     await request.get(`${api}/user`, { headers })
   ).json();
@@ -523,15 +475,19 @@ test("two items of one type: the card picks the older one by its serial and salv
   browser,
   request,
 }) => {
-  const { context, page } = await newPlayer(browser, request, "Thymian");
-  await craftLightBarrel(page, request, "Thymian");
+  const { context, page, username } = await newPlayer(
+    browser,
+    request,
+    "Thymian"
+  );
+  await craftLightBarrel(page, request, username);
   // a second barrel: the first craft took the rum and the sugar (craftLightBarrel adds one rum)
-  await stock(request, "Thymian", [
+  await stock(request, username, [
     { ingredient: "RUM", amount: 1 },
     { ingredient: "SUGAR", amount: 2 },
     { ingredient: "COCOA", amount: 100 },
   ]);
-  await craftLightBarrel(page, request, "Thymian");
+  await craftLightBarrel(page, request, username);
 
   const shelf = await openShelf(page);
   const tile = shelf.getByTestId("item-tile");

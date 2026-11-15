@@ -17,6 +17,12 @@ const { IndexUnavailableError } = require('./indexUnavailable');
 const { lastingLog, messageOf } = require('./lastingLog');
 
 /**
+ * Whether the index's `tip` ({ time } or null) may be trusted at `nowMs`: it is at most
+ * `maxLagMs` old. The one rule for the watcher and for what the routes tell the game.
+ */
+const isFresh = (tip, maxLagMs, nowMs) => tip !== null && nowMs - tip.time <= maxLagMs;
+
+/**
  * A watcher over `chain` (chain/index.js: its `index` and `indexMaxLagMs`) and `pool`, running
  * `steps` ([{ name, run(context) }], in order) every `intervalMs` once started. Each step gets
  * `{ pool, chain, now, tip, fresh, log, memory }`: `now` is the clock (a function, ms), `tip` the
@@ -80,7 +86,7 @@ const createWatcher = ({ chain, pool, steps, intervalMs, now = Date.now, log = c
         }
         const { tip, unavailable } = await readTip();
         let indexFailed = unavailable;
-        const fresh = tip !== null && now() - tip.time <= chain.indexMaxLagMs;
+        const fresh = isFresh(tip, chain.indexMaxLagMs, now());
         noteFreshness(fresh, tip, unavailable);
         const report = { tip, fresh, steps: {} };
         for (const step of steps) {
@@ -131,4 +137,4 @@ const createWatcher = ({ chain, pool, steps, intervalMs, now = Date.now, log = c
     return Object.freeze({ runOnce, start });
 };
 
-module.exports = { createWatcher };
+module.exports = { createWatcher, isFresh };

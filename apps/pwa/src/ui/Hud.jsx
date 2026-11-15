@@ -25,6 +25,7 @@ import { selectActiveGame } from "../match/matchSlice";
 import TitleScreen from "./TitleScreen";
 import MatchHud from "./MatchHud";
 import useProfileRoute from "./useProfileRoute";
+import MintWatch from "./mint/MintWatch";
 
 const useStyles = createUseStyles((theme) => ({
   actionbar: {
@@ -162,6 +163,8 @@ const Hud = (props) => {
           close={() => setShowAccountOverview(false)}
         />
       </Suspense>
+      {/* follows a minting that runs while no minting dialog shows it */}
+      <MintWatch />
       <TopBar
         stage={stage}
         classes={classes}

@@ -23,7 +23,6 @@ import {
   craftItem,
   equipItem,
 } from "../../api/lab";
-import { fetchOwnProfile } from "../../api/profile";
 import logger from "../../helper/logger";
 import OfflineStore from "../../OfflineStore";
 import Jukebox from "../misc/Jukebox";
@@ -42,11 +41,20 @@ import LabIntro, {
   Spotlight,
 } from "./LabIntro";
 import { effectLines, labColors } from "./itemText";
+import MintStatus, { MintAction } from "../mint/MintStatus";
+import useChainEnabled, { useMintingSwitch } from "../mint/useChainEnabled";
+import { reloadItems } from "../mint/reloadItems";
+import { mintedWalletName } from "../mint/mintedWallet";
+import { cardanoApi } from "../../api/cardano";
+import { loadChunk } from "../../helper/loadChunk";
 import { shelfGroups, withoutAwayItems } from "./itemActions";
 import { bangers, outlined, rise } from "../styles";
 
 // loaded with the lab, like the game's scene: Babylon stays out of the first bundle
 const MeshPreview = React.lazy(() => import("../../3d/MeshPreview"));
+// the minting dialog, with the flow and the wallet code: loaded when it opens, and asked for again
+// until it arrives (a lost request never throws into the Hud: helper/loadChunk.js)
+const MintDialog = React.lazy(loadChunk(() => import("../mint/MintDialog")));
 
 // the buildings that can be equipped, in the order of the carousel
 const BUILDINGS = Object.keys(SpecialIngredient).filter((type) =>
@@ -270,6 +278,8 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   const [result, setResult] = useState(undefined);
   const [book, setBook] = useState(undefined);
   const [pickerSlot, setPickerSlot] = useState(undefined);
+  // the copy the item card chose to equip (its id), while the picker is open for it
+  const [pickerChoice, setPickerChoice] = useState(undefined);
   const [bookOpen, setBookOpen] = useState(false);
   const [pantryOpen, setPantryOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -278,6 +288,16 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   const [tab, setTab] = useState("table");
   // the item card: { item, instanceId } while it is open
   const [card, setCard] = useState(undefined);
+  // the minting dialog: the item it mints (as the card had it) while it is open
+  const [mintFor, setMintFor] = useState(undefined);
+  // minting shows: a network, not the Android app, online, the server's minting on
+  const minting = useChainEnabled();
+  // the server's minting switch alone (a connection that blips does not turn it off)
+  const mintSwitch = useMintingSwitch();
+  // what the minting dialog says of itself: { running, signing } (null before it says)
+  const [mintPhase, setMintPhase] = useState(null);
+  // the name of the linked wallet holding the player's minted items, for the card's mark
+  const [mintedWallet, setMintedWallet] = useState(null);
   // the step of the first-visit intro, undefined when it is not shown
   const [introStep, setIntroStep] = useState(undefined);
 
@@ -432,28 +452,73 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   };
 
   // reloads what the server knows about the player's pantry and items
-  const refreshStats = () =>
-    fetchOwnProfile()
-      .then(({ stats }) => {
-        const {
-          pantry: fresh,
-          spoiling,
-          items: owned,
-          equipment: equipped,
-          loadout: active,
-        } = stats;
-        const changes = {
-          pantry: fresh,
-          spoiling,
-          coins: (fresh && fresh.COCOA) || 0,
-          items: owned,
-          equipment: equipped,
-          loadout: active,
-        };
-        updateStats(changes);
-        persist(changes);
-      })
-      .catch((error) => logger.info("could not reload the stats", error));
+  const refreshStats = () => reloadItems(updateStats);
+
+  // A minting that runs (after Mint now) keeps its dialog through a connection that blips (the
+  // phone path comes back from the wallet app to a page that checks its connection anew), and
+  // through anything while a signature attempt is out; only the server's switch closes it.
+  const keepMintDialog =
+    Boolean(mintPhase) &&
+    (mintPhase.signing || (mintPhase.running && mintSwitch));
+  const mintDialogShown = Boolean(mintFor) && (minting || keepMintDialog);
+  // minting stopped showing (offline, the server's switch) and nothing keeps the dialog: it
+  // closes, nothing is cancelled (the watcher follows a minting that runs)
+  useEffect(() => {
+    if (mintFor && !mintDialogShown) {
+      setMintFor(undefined);
+    }
+  }, [mintFor, mintDialogShown]);
+  // a closed dialog says nothing any more
+  useEffect(() => {
+    if (!mintFor) {
+      setMintPhase(null);
+    }
+  }, [mintFor]);
+
+  // a minted item's card names the linked wallet that holds it (the account's identities)
+  const cardMinted =
+    minting &&
+    card &&
+    items.some(
+      (entry) =>
+        entry.item === card.item &&
+        entry.minted &&
+        entry.minted.state === "minted"
+    );
+  useEffect(() => {
+    if (!cardMinted) {
+      return undefined;
+    }
+    let gone = false;
+    cardanoApi
+      .identities()
+      .then(
+        (identities) => !gone && setMintedWallet(mintedWalletName(identities))
+      )
+      .catch((error) => logger.info("could not read the linked keys", error));
+    return () => {
+      gone = true;
+    };
+  }, [cardMinted]);
+
+  // the minting dialog for `entry` (the card's chosen item) instead of the card, and back
+  const openMint = (entry) => {
+    setCard(undefined);
+    setMintFor(entry);
+  };
+  // closed: the stats are read again, so the card shows the item as the server has it (a Mint now
+  // that was still out when the dialog closed may have locked it meanwhile; MintWatch then starts)
+  const closeMint = () => {
+    setMintFor(undefined);
+    refreshStats();
+  };
+  const openCardOf = (itemId) => {
+    const entry = items.find((candidate) => candidate.id === itemId);
+    setMintFor(undefined);
+    if (entry) {
+      setCard({ item: entry.item, instanceId: entry.id });
+    }
+  };
 
   const craft = () => {
     setBusy(true);
@@ -502,6 +567,7 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
     putItem(entityType, pickerSlot, itemId).then((done) => {
       if (done) {
         setPickerSlot(undefined);
+        setPickerChoice(undefined);
       } else {
         setResult({ status: "error", seq: Date.now() });
       }
@@ -517,14 +583,17 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
   // after crafting, offer the free slot of the item's building
   const equipCrafted = () => {
     setCrafted(undefined);
+    setPickerChoice(crafted ? crafted.id : undefined);
     setPickerSlot(freeSlot(entityType));
   };
 
-  // from the item card: the item's building, and the picker on its free slot
-  const equipFromCard = (itemKey) => {
-    const type = Items[itemKey].entityType;
+  // from the item card: the item's building, and the picker on its free slot with the copy
+  // the card chose (`entry`, an item of stats.items)
+  const equipFromCard = (entry) => {
+    const type = Items[entry.item].entityType;
     setCard(undefined);
     selectBuilding(type);
+    setPickerChoice(entry.id);
     setPickerSlot(freeSlot(type));
   };
 
@@ -574,6 +643,10 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       const entry = items.find((candidate) => candidate.id === id);
       return sum + (entry && Items[entry.item] ? Items[entry.item].points : 0);
     }, 0);
+  // the item the minting dialog mints: as the stats have it now, else as the card had it
+  const mintingEntry = mintFor
+    ? items.find((candidate) => candidate.id === mintFor.id) || mintFor
+    : undefined;
   // the player's items of the type the item card shows
   const cardGroup = card
     ? shelfGroups(items).find((group) => group.item === card.item)
@@ -725,7 +798,10 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
       ) : null}
       <InventoryPicker
         open={typeof pickerSlot === "number"}
-        close={() => setPickerSlot(undefined)}
+        close={() => {
+          setPickerSlot(undefined);
+          setPickerChoice(undefined);
+        }}
         buildingName={buildingName(entityType)}
         entityType={entityType}
         slot={pickerSlot || 0}
@@ -734,6 +810,7 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
         budgetUsed={equippedPoints}
         onEquip={equip}
         busy={busy}
+        chosenId={pickerChoice}
       />
       {card ? (
         <ItemCard
@@ -751,9 +828,37 @@ const Lab = ({ stats, liveStatus, updateStats }) => {
           onTakeOff={({ entityType: type, slot }) => putItem(type, slot, null)}
           onSalvaged={salvaged}
           onGone={refreshStats}
-          mintAction={undefined}
-          mintStatus={undefined}
+          mintAction={(entry) =>
+            minting && entry && !entry.minted ? (
+              <MintAction onMint={() => openMint(entry)} disabled={busy} />
+            ) : null
+          }
+          mintStatus={(entry) =>
+            minting && entry ? (
+              <MintStatus
+                // one per copy: a cancel's problem stays with the copy it was for
+                key={entry.id}
+                item={entry}
+                wallet={mintedWallet}
+                onMint={() => openMint(entry)}
+                onChanged={refreshStats}
+              />
+            ) : null
+          }
         />
+      ) : null}
+      {mintDialogShown ? (
+        <Suspense fallback={null}>
+          <MintDialog
+            open
+            item={mintingEntry}
+            onClose={closeMint}
+            onToItem={() => openCardOf(mintFor.id)}
+            onChanged={refreshStats}
+            onGoTo={openCardOf}
+            onPhase={setMintPhase}
+          />
+        </Suspense>
       ) : null}
       <RecipeBook
         open={bookOpen}

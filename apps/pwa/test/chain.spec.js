@@ -1,15 +1,21 @@
 import { test, expect } from "@playwright/test";
-import { api } from "./helpers/players.js";
-import {
-  accountOf,
-  readEntry,
-  readSetting,
-  seedStats,
-  writeSetting,
-} from "./helpers/profile.js";
+import { ANDROID_PHONE, api, labPlayer, ok } from "./helpers/players.js";
+import { readEntry, seedStats } from "./helpers/profile.js";
 import { nodeKeys, signAs } from "./helpers/cardano.js";
 import { fakeWallet } from "./helpers/wallet.js";
-import { chainBlocks, chainMinted, chainMove } from "./helpers/chain.js";
+import {
+  chainBlocks,
+  chainMinted,
+  chainMove,
+  chainReset,
+} from "./helpers/chain.js";
+import {
+  chooseBuilding,
+  craftItem,
+  equipItem,
+  openChoclab,
+  statsOf,
+} from "./helpers/lab.js";
 
 // Minted items in the game (minting plan C): the stamp on an item whose token is in the player's
 // wallet, the notices on the title screen when a token leaves the wallet or comes back, and what
@@ -19,19 +25,10 @@ import { chainBlocks, chainMinted, chainMove } from "./helpers/chain.js";
 // of the player's linked stake key (helpers/cardano.js nodeKeys), so that key makes the player
 // their owner.
 
-// the device account's access to the API, for calls the test makes beside the game
-const authHeaders = async (page, request) => {
-  const { refreshToken } = await accountOf(page);
-  const { accessToken } = await (
-    await request.post(`${api}/accounts/token`, { data: { refreshToken } })
-  ).json();
-  return { accessToken, headers: { Authorization: `Bearer ${accessToken}` } };
-};
-
-const ok = async (answer) => {
-  expect(answer.ok(), `${answer.status()} ${await answer.text()}`).toBe(true);
-  return answer.status() === 204 ? undefined : answer.json();
-};
+// the double's faults and held mempool are shared by every spec: none outlives a test
+test.afterEach(async ({ request }) => {
+  await chainReset(request);
+});
 
 const titleScreen = (page) =>
   expect(page.getByText("Start Game", { exact: true }).first()).toBeVisible({
@@ -48,111 +45,21 @@ const newPlayer = async (
   name,
   { device = {}, wallet = true } = {}
 ) => {
-  const { retry, repeatEachIndex } = test.info();
-  const username =
-    retry || repeatEachIndex ? `${name}_${repeatEachIndex}${retry}` : name;
-  const context = await browser.newContext(device);
-  await context.addInitScript(
-    (url) => window.localStorage.setItem("battlechoc.apiUrl", url),
-    api
-  );
-  const page = await context.newPage();
-  await page.goto("/", { waitUntil: "networkidle" });
-  await expect.poll(() => accountOf(page), { timeout: 15000 }).toBeTruthy();
-  const { accessToken, headers } = await authHeaders(page, request);
-  await ok(
-    await request.post(`${api}/user/username`, {
-      headers,
-      data: { username },
-    })
-  );
-  await ok(await request.post(`${api}/user/tutorial/finished`, { headers }));
-  const matches = [0, 1, 2, 3].map((i) => ({
-    id: `seed-${username}-${i}`,
-    lost: true,
-    winners: [{ idx: 1, name: "Tom Toffee" }],
-    awards: [],
-  }));
-  await ok(
-    await request.post(`${api}/user/trackrecords`, {
-      headers,
-      data: { stats: matches },
-    })
-  );
-  // the Choclab's intro (lab.spec.js) is not what these tests look at
-  await writeSetting(page, "labIntroSeen", true);
-  await expect.poll(() => readSetting(page, "labIntroSeen")).toBe(true);
+  const player = await labPlayer(browser, request, name, { device });
   const keys = nodeKeys();
   if (wallet) {
-    expect((await signAs(request, accessToken, keys, "link")).status()).toBe(
-      200
-    );
+    expect(
+      (await signAs(request, player.accessToken, keys, "link")).status()
+    ).toBe(200);
   }
-  return { context, page, username, headers, keys };
+  return { ...player, keys };
 };
 
-// a heavy rum barrel for the rum truffle cannon (the sample recipe RUM 3, CREAM 3, SPRINKLES 1
-// and 100 cocoa), crafted through the API as the lab table does it: the item ({ id, serial, … }).
-// Not the light barrel: lab.spec.js discovers that one itself and expects to be the first.
-const craftBarrel = async (request, { username, headers }) => {
-  await ok(
-    await request.post(`${api}/test/pantry`, {
-      data: {
-        username,
-        items: [
-          { ingredient: "RUM", amount: 3 },
-          { ingredient: "CREAM", amount: 3 },
-          { ingredient: "SPRINKLES", amount: 1 },
-          { ingredient: "COCOA", amount: 100 },
-        ],
-      },
-    })
-  );
-  // the first player of the run discovers the recipe; for the others the try finds it again
-  const tried = await ok(
-    await request.post(`${api}/lab/try`, {
-      headers,
-      data: {
-        entityType: "EntityType.RUM_TRUFFLE_CANNON",
-        ingredients: ["CREAM", "SPRINKLES"],
-      },
-    })
-  );
-  expect(tried.result).toBe("found");
-  const { item } = await ok(
-    await request.post(`${api}/lab/craft`, {
-      headers,
-      data: { item: "HEAVY_BARREL" },
-    })
-  );
-  return item;
-};
-
-const equip = async (request, { headers }, itemId, slot = 0) =>
-  ok(
-    await request.post(`${api}/user/equipment`, {
-      headers,
-      data: { entityType: "EntityType.RUM_TRUFFLE_CANNON", slot, itemId },
-    })
-  );
-
-const statsOf = async (request, { headers }) =>
-  (await ok(await request.get(`${api}/user`, { headers }))).stats;
-
-const openChoclab = async (page) => {
-  await page.getByText("Choclab", { exact: true }).first().click();
-  await expect(page.getByTestId("lab")).toBeVisible();
-};
-
-const chooseBuilding = async (page, name) => {
-  for (let i = 0; i < 10; i++) {
-    if ((await page.getByTestId("lab-building").innerText()).trim() === name) {
-      return;
-    }
-    await page.locator("[data-testid=lab] [data-icon=forward]").first().click();
-  }
-  throw new Error(`building ${name} not found`);
-};
+// a heavy rum barrel for the rum truffle cannon (the sample recipe RUM 3, CREAM 3, SPRINKLES 1),
+// crafted through the API as the lab table does it: the item ({ id, serial, … }). Not the light
+// barrel: lab.spec.js discovers that one itself and expects to be the first.
+const craftBarrel = (request, player) =>
+  craftItem(request, player, "HEAVY_BARREL");
 
 const cannonSlot = async (page) => {
   await chooseBuilding(page, "Rum truffle cannon");
@@ -196,7 +103,7 @@ test("a minted item shows the gold ring in the slot and the picker", async ({
   const mira = await newPlayer(browser, request, "Mira");
   const { page } = mira;
   const item = await craftBarrel(request, mira);
-  await equip(request, mira, item.id);
+  await equipItem(request, mira, item);
 
   // not minted: the tier ring, no stamp
   await page.goto("/", { waitUntil: "networkidle" });
@@ -221,7 +128,7 @@ test("a minted item shows the gold ring in the slot and the picker", async ({
   await expect(slot.getByTestId("item-serial-tag")).toHaveCount(0);
   await expect(
     slot.locator(
-      `[role=img][aria-label="Heavy rum barrel, minted, No. ${item.serial}"]`
+      `[role=img][aria-label="Heavy rum barrel, minted, No.\u00a0${item.serial}"]`
     )
   ).toBeVisible();
 
@@ -242,7 +149,7 @@ test("a minted item shows the gold ring in the slot and the picker", async ({
   await expect(tile.getByTestId("item-serial-tag")).toHaveCount(0);
   await expect(tile).toHaveAttribute(
     "aria-label",
-    `Heavy rum barrel, minted, No. ${item.serial}`
+    `Heavy rum barrel, minted, No.\u00a0${item.serial}`
   );
   await tile.click();
   const card = page.getByTestId("item-card");
@@ -260,7 +167,7 @@ test("an item sold leaves with a notice on the title screen", async ({
   const mira = await newPlayer(browser, request, "MiraSold");
   const { page } = mira;
   const item = await craftBarrel(request, mira);
-  await equip(request, mira, item.id);
+  await equipItem(request, mira, item);
   const assetName = await chainMinted(request, {
     username: mira.username,
     itemId: item.id,
@@ -324,7 +231,7 @@ test("an item that comes back arrives", async ({ browser, request }) => {
   const mira = await newPlayer(browser, request, "MiraBack");
   const { page } = mira;
   const item = await craftBarrel(request, mira);
-  await equip(request, mira, item.id);
+  await equipItem(request, mira, item);
   const assetName = await chainMinted(request, {
     username: mira.username,
     itemId: item.id,
@@ -565,15 +472,6 @@ test("a notice kept on the device does not show before the server has answered",
   await mira.context.close();
 });
 
-// an Android phone (Chromium with its user agent and screen), as in signin.spec.js
-const ANDROID_PHONE = {
-  userAgent:
-    "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
-  viewport: { width: 390, height: 844 },
-  hasTouch: true,
-  isMobile: true,
-};
-
 test("in the Android app nothing of it shows", async ({ browser, request }) => {
   const mira = await newPlayer(browser, request, "MiraApp", {
     device: ANDROID_PHONE,
@@ -581,7 +479,7 @@ test("in the Android app nothing of it shows", async ({ browser, request }) => {
   const { page } = mira;
   // one minted item stays and is equipped; another one left, so a notice waits
   const kept = await craftBarrel(request, mira);
-  await equip(request, mira, kept.id);
+  await equipItem(request, mira, kept);
   await chainMinted(request, {
     username: mira.username,
     itemId: kept.id,
@@ -625,7 +523,7 @@ test("in the Android app nothing of it shows", async ({ browser, request }) => {
   await expect(tile).toHaveCount(1);
   await expect(tile).toHaveAttribute(
     "aria-label",
-    `Heavy rum barrel (No. ${kept.serial})`
+    `Heavy rum barrel (No.\u00a0${kept.serial})`
   );
   await tile.click();
   await expect(page.getByTestId("item-card")).toBeVisible();

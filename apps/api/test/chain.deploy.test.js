@@ -305,19 +305,37 @@ describe('the scripts', () => {
     // every transaction into block 3_000_001
     const fakeClient = ({ utxos = adminUtxos, config = () => undefined } = {}) => {
         const submitted = [];
+        // what was asked, in order: where the index's start block was read, and the submits
+        const asked = [];
         return {
             submitted,
+            asked,
             params: async () => params,
             tip: async () => TIP,
             utxosAt: async address => utxos.filter(entry => Address.toBech32(entry.address) === address),
             utxoByUnit: async () => config(),
             submit: async cbor => {
+                asked.push('submit');
                 submitted.push(cbor);
                 return txIdOf(cbor);
             },
             blockOf: async () => TIP.block + 1,
+            blockAt: async height => {
+                asked.push(`blockAt ${height}`);
+                return blockAtHeight(height);
+            },
         };
     };
+    // a block of the fake chain by its height: 20 slots a block, below the tip
+    const blockAtHeight = height => ({ block: height, slot: TIP.slot - (TIP.block - height) * 20, hash: crypto.createHash('sha256').update(`block ${height}`).digest('hex') });
+    // the lines for the server's .env a run prints last
+    const envBlock = ({ policyId = plan().policyId, configRef, configPolicyId = plan().configPolicyId, start }) => [
+        `CHAIN_POLICY_ID=${policyId}`,
+        `CHAIN_CONFIG_REF=${configRef}`,
+        `CHAIN_CONFIG_POLICY_ID=${configPolicyId}`,
+        `YACI_SYNC_START_SLOT=${start.slot}`,
+        `YACI_SYNC_START_BLOCKHASH=${start.hash}`,
+    ];
     const run = async (script, argv, { client = fakeClient(), environment = env, deploymentFile = path.join(dir, 'preprod.json') } = {}) => {
         const lines = [];
         const error = await failure(script.main({ argv, env: environment, client, log: line => lines.push(String(line)), deploymentFile, sleep: async () => {} }));
@@ -360,7 +378,10 @@ describe('the scripts', () => {
         const txId = txIdOf(client.submitted[0]);
         expect(vkeyHashesOf(client.submitted[0])).toEqual([admin.keyHash]);
         expect(output).toContain(`config tx         ${txId}  waiting for a block … in block ${TIP.block + 1}`);
-        expect(lines.slice(-2)).toEqual([`CHAIN_POLICY_ID=${planned.policyId}`, `CHAIN_CONFIG_REF=${txId}#0`]);
+        // where the index starts: 20 blocks below the tip, read right before the submit
+        const start = blockAtHeight(TIP.block - 20);
+        expect(client.asked).toEqual([`blockAt ${TIP.block - 20}`, 'submit']);
+        expect(lines.slice(-5)).toEqual(envBlock({ policyId: planned.policyId, configRef: `${txId}#0`, configPolicyId: planned.configPolicyId, start }));
         noSecretIn(output);
 
         const record = JSON.parse(fs.readFileSync(deploymentFile, 'utf8'));
@@ -381,6 +402,7 @@ describe('the scripts', () => {
             status: 'confirmed',
             configTx: txId,
             block: TIP.block + 1,
+            indexStart: blockAtHeight(TIP.block - 20),
             confirmedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
         });
         noSecretIn(fs.readFileSync(deploymentFile, 'utf8'));
@@ -481,7 +503,9 @@ describe('the scripts', () => {
         expect(result.output).toMatch(new RegExp(`config tx ${RECORDED_TX} .*is in block 3000200`));
         expect(result.output).toMatch(/nothing new is submitted/);
         expect(JSON.parse(fs.readFileSync(deploymentFile, 'utf8'))).toMatchObject({ status: 'confirmed', block: 3_000_200, configTx: RECORDED_TX });
-        expect(result.lines.slice(-2)).toEqual([`CHAIN_POLICY_ID=${plan().policyId}`, `CHAIN_CONFIG_REF=${RECORDED_TX}#0`]);
+        // a record without a start point gets one below the block it landed in
+        expect(JSON.parse(fs.readFileSync(deploymentFile, 'utf8')).indexStart).toEqual(blockAtHeight(3_000_180));
+        expect(result.lines.slice(-5)).toEqual(envBlock({ configRef: `${RECORDED_TX}#0`, start: blockAtHeight(3_000_180) }));
     });
 
     test.each([
@@ -502,7 +526,7 @@ describe('the scripts', () => {
         expect(aside).not.toContain(EARLIER_FILE);
         expect(aside).toHaveLength(1);
         expect(JSON.parse(fs.readFileSync(path.join(dir, aside[0]), 'utf8')).configTx).toBe(RECORDED_TX);
-        expect(result.lines.slice(-2)).toEqual([`CHAIN_POLICY_ID=${plan().policyId}`, `CHAIN_CONFIG_REF=${EARLIER_TX}#0`]);
+        expect(result.lines.slice(-5)).toEqual(envBlock({ configRef: `${EARLIER_TX}#0`, start: blockAtHeight(3_000_130) }));
     });
 
     test.each([
@@ -690,6 +714,106 @@ describe('the scripts', () => {
         expect([unspent, confirmed, missing].flatMap(result => result.client.submitted)).toEqual([]);
     });
 
+    test("deploy reads the index's start block before it submits: none there, or a failure, and nothing is submitted or recorded", async () => {
+        for (const blockAt of [async () => null, async () => Promise.reject(new Error('blockAt: the provider answered 503'))]) {
+            const deploymentFile = path.join(dir, 'preprod.json');
+            const result = await run(deploy, withKey(deployArgs), { client: { ...fakeClient(), blockAt }, deploymentFile });
+            expect(result.error?.message).toMatch(/start block/);
+            expect(result.error?.message).toMatch(/nothing is submitted/);
+            expect(result.client.submitted).toEqual([]);
+            expect(fs.existsSync(deploymentFile)).toBe(false);
+        }
+        // a dry run submits nothing and needs no start block
+        const dry = await run(deploy, withKey([...deployArgs, '--dry-run']), { client: { ...fakeClient(), blockAt: async () => null } });
+        expect(dry.error).toBeUndefined();
+    });
+
+    // a start point recorded by an earlier run, before every block of the tests' chain
+    const FIRST_START = { block: 2_999_000, slot: 79_980_000, hash: 'aa'.repeat(32) };
+    test.each([
+        ['--again over a submitted record (the retry)', 'submitted', () => withKey([...deployArgs, '--again']), {}],
+        ['--again over a confirmed record (a second config policy)', 'confirmed', () => withKey([...deployArgs, '--again']), {}],
+        ['--new-seed', 'submitted', () => withKey([...deployArgs, '--new-seed']), { seedSpent: true }],
+        ['--confirm', 'submitted', () => ['--confirm'], {}],
+    ])('the start point is fixed once: %s keeps the one recorded first', async (_name, status, argv, { seedSpent: spent }) => {
+        const deploymentFile = path.join(dir, 'preprod.json');
+        writeRecord({ ...recordOf(status), indexStart: FIRST_START });
+        const result = await run(deploy, argv(), { client: spent ? seedSpent() : fakeClient(), deploymentFile });
+        expect(result.error).toBeUndefined();
+        expect(result.client.asked.filter(entry => entry.startsWith('blockAt'))).toEqual([]);
+        expect(JSON.parse(fs.readFileSync(deploymentFile, 'utf8'))).toMatchObject({ status: 'confirmed', indexStart: FIRST_START });
+        expect(result.lines.slice(-2)).toEqual([`YACI_SYNC_START_SLOT=${FIRST_START.slot}`, `YACI_SYNC_START_BLOCKHASH=${FIRST_START.hash}`]);
+    });
+
+    test('an adopted earlier attempt: the earliest start point of the two records is kept', async () => {
+        const deploymentFile = path.join(dir, 'preprod.json');
+        const later = { block: 3_000_010, slot: 80_000_200, hash: 'bb'.repeat(32) };
+        writeRecord({ ...recordOf('submitted'), indexStart: later });
+        writeRecord({ ...recordOf('submitted'), date: '2026-10-31T23:50:00.000Z', configTx: EARLIER_TX, configRef: `${EARLIER_TX}#0`, indexStart: FIRST_START }, path.join(dir, EARLIER_FILE));
+        const result = await run(deploy, ['--confirm'], { client: seedSpent({ [EARLIER_TX]: 3_000_150 }), deploymentFile });
+        expect(result.error).toBeUndefined();
+        expect(JSON.parse(fs.readFileSync(deploymentFile, 'utf8'))).toMatchObject({ configTx: EARLIER_TX, indexStart: FIRST_START });
+        // the other way round too: the earlier start of the later record wins over the adopted one's
+        fs.rmSync(dir, { recursive: true, force: true });
+        fs.mkdirSync(dir);
+        writeRecord({ ...recordOf('submitted'), indexStart: FIRST_START });
+        writeRecord({ ...recordOf('submitted'), date: '2026-10-31T23:50:00.000Z', configTx: EARLIER_TX, configRef: `${EARLIER_TX}#0`, indexStart: later }, path.join(dir, EARLIER_FILE));
+        const again = await run(deploy, ['--confirm'], { client: seedSpent({ [EARLIER_TX]: 3_000_150 }), deploymentFile });
+        expect(again.error).toBeUndefined();
+        expect(JSON.parse(fs.readFileSync(deploymentFile, 'utf8'))).toMatchObject({ configTx: EARLIER_TX, indexStart: FIRST_START });
+    });
+
+    test('an adopted earlier attempt without a start point, beside one recorded above its block: the start goes below the block it landed in', async () => {
+        const deploymentFile = path.join(dir, 'preprod.json');
+        // the later attempt read its start point after the earlier one had landed
+        writeRecord({ ...recordOf('submitted'), indexStart: blockAtHeight(3_000_180) });
+        writeRecord({ ...recordOf('submitted'), date: '2026-10-31T23:50:00.000Z', configTx: EARLIER_TX, configRef: `${EARLIER_TX}#0` }, path.join(dir, EARLIER_FILE));
+        const result = await run(deploy, ['--confirm'], { client: seedSpent({ [EARLIER_TX]: 3_000_150 }), deploymentFile });
+        expect(result.error).toBeUndefined();
+        expect(JSON.parse(fs.readFileSync(deploymentFile, 'utf8'))).toMatchObject({ configTx: EARLIER_TX, block: 3_000_150, indexStart: blockAtHeight(3_000_130) });
+    });
+
+    test('a start block that cannot be read while adopting: the record stays, and the message does not claim nothing was submitted', async () => {
+        const deploymentFile = path.join(dir, 'preprod.json');
+        const text = writeRecord(recordOf('submitted'));
+        const client = { ...seedSpent({ [RECORDED_TX]: 3_000_200 }), blockAt: async () => null };
+        const result = await run(deploy, ['--confirm'], { client, deploymentFile });
+        expect(result.error?.message).toMatch(/start block 3000180/);
+        expect(result.error?.message).not.toMatch(/nothing is submitted/);
+        expect(result.error?.message).toMatch(/the deployment is on the chain.*--confirm/);
+        expect(fs.readFileSync(deploymentFile, 'utf8')).toBe(text);
+    });
+
+    test.each([
+        ['a block that is no number', { block: 'x', slot: 79_980_000, hash: 'aa'.repeat(32) }],
+        ['a short hash', { block: 2_999_000, slot: 79_980_000, hash: 'aa' }],
+        ['no slot', { block: 2_999_000, hash: 'aa'.repeat(32) }],
+        ['not an object', 'block 2999000'],
+    ])('a malformed start point in a record (%s) is refused loudly, never replaced', async (_name, indexStart) => {
+        const deploymentFile = path.join(dir, 'preprod.json');
+        for (const [status, argv] of [
+            ['submitted', withKey([...deployArgs, '--again'])],
+            ['submitted', ['--confirm']],
+            ['confirmed', ['--confirm']],
+            ['confirmed', withKey([...deployArgs, '--again'])],
+        ]) {
+            const text = writeRecord({ ...recordOf(status), indexStart });
+            const result = await run(deploy, argv, { deploymentFile });
+            expect([status, argv.join(' '), result.error?.message]).toEqual([status, argv.join(' '), expect.stringMatching(/preprod\.json: its indexStart .*is malformed/)]);
+            expect(result.client.submitted).toEqual([]);
+            expect(fs.readFileSync(deploymentFile, 'utf8')).toBe(text);
+        }
+    });
+
+    test('a record confirmed before start points were recorded: --confirm says so and prints the lines it has', async () => {
+        const deploymentFile = path.join(dir, 'preprod.json');
+        writeRecord(recordOf('confirmed'));
+        const result = await run(deploy, ['--confirm'], { deploymentFile });
+        expect(result.error).toBeUndefined();
+        expect(result.output).toMatch(/no start point for the index/);
+        expect(result.lines.slice(-3)).toEqual([`CHAIN_POLICY_ID=${plan().policyId}`, `CHAIN_CONFIG_REF=${'e1'.repeat(32)}#0`, `CHAIN_CONFIG_POLICY_ID=${plan().configPolicyId}`]);
+    });
+
     test('--again refuses a record made with another admin key', async () => {
         const deploymentFile = path.join(dir, 'preprod.json');
         writeRecord({ ...recordOf('submitted'), adminKeyHash: stranger.keyHash });
@@ -708,9 +832,10 @@ describe('the scripts', () => {
             ...recordOf('submitted'),
             status: 'confirmed',
             block: TIP.block + 1,
+            indexStart: blockAtHeight(TIP.block + 1 - 20),
             confirmedAt: expect.stringMatching(/^\d{4}-/),
         });
-        expect(confirmed.lines.slice(-2)).toEqual([`CHAIN_POLICY_ID=${plan().policyId}`, `CHAIN_CONFIG_REF=${'e1'.repeat(32)}#0`]);
+        expect(confirmed.lines.slice(-5)).toEqual(envBlock({ configRef: `${'e1'.repeat(32)}#0`, start: blockAtHeight(TIP.block + 1 - 20) }));
 
         // once more: it is confirmed already, nothing changes
         const text = fs.readFileSync(deploymentFile, 'utf8');
@@ -836,6 +961,7 @@ describe('the scripts', () => {
         const deploymentFile = path.join(dir, 'preprod.json');
         const deployment = await run(deploy, withKey(deployArgs), { deploymentFile });
         expect(deployment.error).toBeUndefined();
+        const recordText = fs.readFileSync(deploymentFile, 'utf8');
         const client = () => fakeClient({ config: () => configUtxo });
 
         const dry = await run(updateConfig, ['--admin-key', adminKeyFile, '--pause', '--dry-run'], { client: client(), deploymentFile });
@@ -853,6 +979,9 @@ describe('the scripts', () => {
         expect(decodeConfigDatum(decoded(submitted).body.outputs[index].datumOption.data, preprod).paused).toBe(true);
         expect(real.lines.at(-1)).toBe(`CHAIN_CONFIG_REF=${txIdOf(submitted)}#${index}`);
         noSecretIn(dry.output + real.output);
+        // the record, its start point for the index with it, stays as the deployment wrote it
+        expect(fs.readFileSync(deploymentFile, 'utf8')).toBe(recordText);
+        expect(real.client.asked.filter(entry => entry.startsWith('blockAt'))).toEqual([]);
     });
 
     test('update-config after a submit: a refusal changed nothing; any other failure may have, and names the new CHAIN_CONFIG_REF', async () => {
@@ -934,10 +1063,38 @@ describe('the script helpers', () => {
         }
     });
 
-    test('providerFromEnv needs the URL and the project id', () => {
-        expect(() => providerFromEnv({ CHAIN_PROVIDER_URL: 'https://x' })).toThrow(/CHAIN_PROVIDER_KEY/);
-        expect(() => providerFromEnv({ CHAIN_PROVIDER_KEY: 'k' })).toThrow(/CHAIN_PROVIDER_URL/);
-        expect(() => providerFromEnv({ CHAIN_PROVIDER_URL: 'not a url', CHAIN_PROVIDER_KEY: 'k' })).toThrow(/CHAIN_PROVIDER_URL/);
+    test('providerFromEnv needs the URL, and the project id only with Blockfrost (Koios, the default, needs no key)', () => {
+        const blockfrost = { CHAIN_PROVIDER_KIND: 'blockfrost' };
+        expect(() => providerFromEnv({ ...blockfrost, CHAIN_PROVIDER_URL: 'https://x' })).toThrow(/CHAIN_PROVIDER_KEY/);
+        expect(() => providerFromEnv({ ...blockfrost, CHAIN_PROVIDER_KEY: 'k' })).toThrow(/CHAIN_PROVIDER_URL/);
+        expect(() => providerFromEnv({ ...blockfrost, CHAIN_PROVIDER_URL: 'not a url', CHAIN_PROVIDER_KEY: 'k' })).toThrow(/CHAIN_PROVIDER_URL/);
+        for (const CHAIN_PROVIDER_KIND of [undefined, '', 'koios', ' Koios ']) {
+            expect(Object.keys(providerFromEnv({ CHAIN_PROVIDER_KIND, CHAIN_PROVIDER_URL: 'https://preprod.koios.rest/api/v1' })).sort()).toEqual(['blockAt', 'blockOf', 'params', 'submit', 'tip', 'utxoByUnit', 'utxosAt']);
+            expect(() => providerFromEnv({ CHAIN_PROVIDER_KIND })).toThrow(/CHAIN_PROVIDER_URL/);
+        }
+        expect(() => providerFromEnv({ CHAIN_PROVIDER_KIND: 'BLOCKFROST', CHAIN_PROVIDER_URL: 'https://cardano-preprod.blockfrost.io/api/v0', CHAIN_PROVIDER_KEY: 'k' })).not.toThrow();
+        const secret = 'stand-in-for-a-key-in-the-wrong-variable';
+        for (const CHAIN_PROVIDER_KIND of ['maestro', secret]) {
+            // named before anything else is asked for
+            for (const env of [{ CHAIN_PROVIDER_URL: 'https://x', CHAIN_PROVIDER_KEY: 'k' }, {}]) {
+                const error = thrown(() => providerFromEnv({ ...env, CHAIN_PROVIDER_KIND }));
+                expect(error?.message).toMatch(/CHAIN_PROVIDER_KIND is unknown: it must be koios or blockfrost/);
+                expect(error?.message).not.toContain(secret);
+            }
+        }
+    });
+
+    test("providerFromEnv: a URL of the other kind is refused, naming CHAIN_PROVIDER_KIND (a Blockfrost project id is never sent to Blockfrost as a Koios token)", () => {
+        for (const [CHAIN_PROVIDER_KIND, CHAIN_PROVIDER_URL, message] of [
+            [undefined, 'https://cardano-preprod.blockfrost.io/api/v0', /CHAIN_PROVIDER_KIND must be blockfrost for a Blockfrost URL/],
+            ['koios', 'https://cardano-preprod.blockfrost.io/api/v0', /CHAIN_PROVIDER_KIND must be blockfrost for a Blockfrost URL/],
+            ['blockfrost', 'https://preprod.koios.rest/api/v1', /CHAIN_PROVIDER_KIND must be koios \(or not set\) for a Koios URL/],
+        ]) {
+            const error = thrown(() => providerFromEnv({ CHAIN_PROVIDER_KIND, CHAIN_PROVIDER_URL, CHAIN_PROVIDER_KEY: 'stand-in-key' }));
+            expect(error).toBeInstanceOf(Error);
+            expect(error.message).toMatch(message);
+            expect(error.message).not.toContain('stand-in-key');
+        }
     });
 
     test('redact removes every secret from a text', () => {
@@ -992,7 +1149,7 @@ describe('the provider over Blockfrost', () => {
         // the id travels as a header and nowhere else
         expect(requests.every(request => request.projectId === PROJECT_ID && !request.url.includes(PROJECT_ID))).toBe(true);
     });
-    const client = () => providerFromEnv({ CHAIN_PROVIDER_URL: BASE, CHAIN_PROVIDER_KEY: PROJECT_ID });
+    const client = () => providerFromEnv({ CHAIN_PROVIDER_KIND: 'blockfrost', CHAIN_PROVIDER_URL: BASE, CHAIN_PROVIDER_KEY: PROJECT_ID });
     const shown = error => [error?.message, error?.stack, JSON.stringify(error)].join('\n');
     const refusal = async promise => {
         const error = await failure(promise);
@@ -1015,6 +1172,10 @@ describe('the provider over Blockfrost', () => {
         expect(await client().blockOf(TX)).toBe(3_100_001);
         expect(await client().blockOf('cd'.repeat(32))).toBeNull();
         expect(requests.map(request => request.url)).toEqual([`${BASE}/blocks/latest`, `${BASE}/txs/${TX}`, `${BASE}/txs/${'cd'.repeat(32)}`]);
+        // a block by its height (where the index starts); one the chain does not have yet is null
+        answer([[/\/blocks\/3099980$/, () => json(200, { height: 3_099_980, slot: 80_999_600, hash: 'ef'.repeat(32) })]]);
+        expect(await client().blockAt(3_099_980)).toEqual({ block: 3_099_980, slot: 80_999_600, hash: 'ef'.repeat(32) });
+        expect(await client().blockAt(4_000_000)).toBeNull();
     });
 
     test('a 404 for the asset and an empty answer are no config NFT: utxoByUnit answers undefined', async () => {
@@ -1077,7 +1238,7 @@ describe('the provider over Blockfrost', () => {
             const deploymentFile = path.join(dir, 'preprod.json');
             const planned = plan();
             fs.writeFileSync(deploymentFile, JSON.stringify({ network: 'preprod', configSeed: SEED, configPolicyId: planned.configPolicyId, policyId: planned.policyId, status: 'confirmed' }));
-            const env = { CARDANO_NETWORK: 'preprod', CHAIN_PROVIDER_URL: BASE, CHAIN_PROVIDER_KEY: PROJECT_ID };
+            const env = { CARDANO_NETWORK: 'preprod', CHAIN_PROVIDER_KIND: 'blockfrost', CHAIN_PROVIDER_URL: BASE, CHAIN_PROVIDER_KEY: PROJECT_ID };
             const lines = [];
             const main = () => updateConfig.main({ argv: ['--admin-key', keyFile, '--pause', '--dry-run'], env, log: line => lines.push(line), deploymentFile });
 
@@ -1088,6 +1249,146 @@ describe('the provider over Blockfrost', () => {
             expect(lines.join('\n')).not.toContain(PROJECT_ID);
         } finally {
             fs.rmSync(dir, { recursive: true, force: true });
+        }
+    });
+});
+
+// The provider adapter over the SDK's own Koios provider (CHAIN_PROVIDER_KIND unset or koios),
+// with `fetch` stubbed (no network): Koios's answers, as preprod.koios.rest gave them, turned into
+// what the scripts need; every failure keeps its reason, a token never shows.
+describe('the provider over Koios', () => {
+    const BASE = 'https://preprod.koios.rest/api/v1';
+    const TOKEN = 'stand-in-for-a-koios-bearer-token';
+    const UNIT = 'ab'.repeat(28) + CONFIG_TOKEN_NAME;
+    const TX = 'ab'.repeat(32);
+    const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+    // Koios answers a refused token with 401
+    const unauthorized = () => json(401, { message: `invalid token ${TOKEN}` });
+    const unreachable = () => {
+        throw new TypeError('fetch failed', { cause: Object.assign(new Error('getaddrinfo ENOTFOUND preprod.koios.rest'), { code: 'ENOTFOUND' }) });
+    };
+    const KOIOS_PARAMS = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'chain', 'koios-epoch-params.json'), 'utf8'));
+
+    let realFetch;
+    let requests;
+    // fetch answers the first route whose pattern matches the URL; anything else is a test error
+    const answer = routes => {
+        globalThis.fetch = async (url, init = {}) => {
+            const headers = new Headers(init.headers);
+            requests.push({ url: String(url), method: init.method ?? 'GET', authorization: headers.get('authorization'), body: typeof init.body === 'string' ? init.body : undefined });
+            const route = routes.find(([pattern]) => pattern.test(String(url)));
+            if (!route) {
+                throw new Error(`no route for ${url}`);
+            }
+            return route[1](init);
+        };
+    };
+    beforeEach(() => {
+        realFetch = globalThis.fetch;
+        requests = [];
+    });
+    afterEach(() => {
+        globalThis.fetch = realFetch;
+        expect(requests.every(request => !request.url.includes(TOKEN) && !String(request.body ?? '').includes(TOKEN))).toBe(true);
+    });
+    const client = (key = TOKEN) => providerFromEnv({ CHAIN_PROVIDER_URL: BASE, ...(key ? { CHAIN_PROVIDER_KEY: key } : {}) });
+    const shown = error => [error?.message, error?.stack, JSON.stringify(error)].join('\n');
+    const refusal = async promise => {
+        const error = await failure(promise);
+        expect(error).toBeInstanceOf(Error);
+        expect(shown(error)).not.toContain(TOKEN);
+        return error;
+    };
+
+    let signed;
+    beforeAll(async () => {
+        signed = signWith((await build()).cbor, { privateKey: admin.privateKey });
+    });
+
+    test("reads the tip, a transaction's block and a block by its height; a transaction in no block yet is null; the token as a bearer token", async () => {
+        answer([
+            [/\/tip$/, () => json(200, [{ hash: 'bc'.repeat(32), epoch_no: 325, abs_slot: 139_066_878, epoch_slot: 1, block_height: 5_415_506, block_no: 5_415_506, block_time: 1_794_750_078 }])],
+            [/\/tx_info$/, init => json(200, JSON.parse(init.body)._tx_hashes[0] === TX ? [{ tx_hash: TX, block_height: 5_415_507 }] : [])],
+            [/\/blocks\?block_height=eq\.5415486&select=hash,abs_slot,block_height$/, () => json(200, [{ hash: 'cd'.repeat(32), abs_slot: 139_066_400, block_height: 5_415_486 }])],
+            [/\/blocks\?block_height=eq\.9999999/, () => json(200, [])],
+        ]);
+        expect(await client().tip()).toEqual({ slot: 139_066_878, block: 5_415_506 });
+        expect(await client().blockOf(TX)).toBe(5_415_507);
+        expect(await client().blockOf('cd'.repeat(32))).toBeNull();
+        expect(await client().blockAt(5_415_486)).toEqual({ block: 5_415_486, slot: 139_066_400, hash: 'cd'.repeat(32) });
+        expect(await client().blockAt(9_999_999)).toBeNull();
+        expect(requests.map(request => [request.method, request.url.slice(BASE.length)])).toEqual([
+            ['GET', '/tip'],
+            ['POST', '/tx_info'],
+            ['POST', '/tx_info'],
+            ['GET', '/blocks?block_height=eq.5415486&select=hash,abs_slot,block_height'],
+            ['GET', '/blocks?block_height=eq.9999999&select=hash,abs_slot,block_height'],
+        ]);
+        expect(requests.every(request => request.authorization === `Bearer ${TOKEN}`)).toBe(true);
+        expect(JSON.parse(requests[1].body)).toEqual({ _tx_hashes: [TX] });
+        // the public tier: no key, no header
+        requests = [];
+        await client(null).tip();
+        expect(requests[0].authorization).toBeNull();
+    });
+
+    test('the protocol parameters through the SDK, from what preprod.koios.rest answered: those the builder tests use', async () => {
+        answer([[/\/epoch_params\?limit=1&order=epoch_no\.desc$/, () => json(200, KOIOS_PARAMS)]]);
+        expect(await client().params()).toEqual(loadParams());
+    });
+
+    test('no holder of the config NFT, or no UTxO of it at its holder: utxoByUnit answers undefined; an address without UTxOs has none', async () => {
+        answer([[/\/asset_addresses\?/, () => json(200, [])]]);
+        expect(await client().utxoByUnit(UNIT)).toBeUndefined();
+        answer([
+            [/\/asset_addresses\?/, () => json(200, [{ payment_address: admin.enterpriseAddress, stake_address: null, quantity: '1' }])],
+            [/\/address_info$/, () => json(200, [{ address: admin.enterpriseAddress, balance: '0', stake_address: null, script_address: false, utxo_set: [] }])],
+        ]);
+        expect(await client().utxoByUnit(UNIT)).toBeUndefined();
+        answer([[/\/address_info$/, () => json(200, [])]]);
+        expect(await client().utxosAt(admin.enterpriseAddress)).toEqual([]);
+    });
+
+    test('a 401 says the provider refused the token, for every call, without printing it', async () => {
+        answer([[/./, unauthorized]]);
+        for (const call of [c => c.utxoByUnit(UNIT), c => c.utxosAt(admin.enterpriseAddress), c => c.params(), c => c.tip(), c => c.blockOf(TX), c => c.blockAt(1), c => c.submit(signed)]) {
+            const error = await refusal(call(client()));
+            expect(error.message).toMatch(/the provider refused the token \(401/);
+            expect(error.message).toMatch(/CHAIN_PROVIDER_KEY/);
+        }
+    });
+
+    test("a 400 on submit carries the node's reason and says the transaction was refused; a 500 may have gone through", async () => {
+        const reason = { tag: 'TxSubmitFail', contents: { tag: 'TxCmdTxSubmitValidationError', contents: { error: ['ConwayUtxowFailure (UtxoFailure (BadInputsUTxO (fromList [TxIn (TxId {unTxId = d2d2}) (TxIx {unTxIx = 1})])))'] } } };
+        answer([[/\/submittx$/, () => json(400, reason)]]);
+        const error = await refusal(client().submit(signed));
+        expect(error.message).toMatch(/^submit: the provider refused the transaction \(400\)/);
+        expect(error.message).toContain('BadInputsUTxO');
+        expect(error.refused).toBe(true);
+        answer([[/\/submittx$/, () => json(500, { message: 'An unexpected response was received from the backend.' })]]);
+        const later = await refusal(client().submit(signed));
+        expect(later.message).toMatch(/500/);
+        expect(later.refused).toBe(false);
+        answer([[/\/submittx$/, () => json(202, txIdOf(signed))]]);
+        expect(await client().submit(signed)).toBe(txIdOf(signed));
+    });
+
+    test('a 413 on submit says what to do: a free Koios token in CHAIN_PROVIDER_KEY; nothing reached the chain', async () => {
+        answer([[/\/submittx$/, () => new Response('Payload Too Large', { status: 413 })]]);
+        const error = await refusal(client(null).submit(signed));
+        expect(error.message).toMatch(/^submit: the provider refused the request for its size \(413\)/);
+        expect(error.message).toMatch(/register a free token at koios\.rest and put it into CHAIN_PROVIDER_KEY/);
+        expect(error.refused).toBe(true);
+    });
+
+    test("a 429 is the request limit; a network error says the URL's host could not be reached", async () => {
+        answer([[/./, () => json(429, {})]]);
+        expect((await refusal(client().tip())).message).toMatch(/request limit is reached \(429/);
+        answer([[/./, unreachable]]);
+        for (const call of [c => c.utxoByUnit(UNIT), c => c.utxosAt(admin.enterpriseAddress), c => c.tip(), c => c.blockOf(TX), c => c.submit(signed)]) {
+            const error = await refusal(call(client()));
+            expect(error.message).toMatch(/could not reach preprod\.koios\.rest \(ENOTFOUND\)/);
+            expect(error.refused).toBe(false);
         }
     });
 });
@@ -1132,7 +1433,7 @@ describe('no argument shaped like a secret is used or repeated', () => {
         'a hex key file name with an extension': [path.join(dir, `${hex}.sk`), hex],
         'a path ending in recovery words': [path.join(dir, words), words],
     });
-    const env = { CARDANO_NETWORK: 'preprod', CHAIN_PROVIDER_URL: 'https://cardano-preprod.blockfrost.io/api/v0', CHAIN_PROVIDER_KEY: 'stand-in-for-the-blockfrost-project-id' };
+    const env = { CARDANO_NETWORK: 'preprod', CHAIN_PROVIDER_KIND: 'blockfrost', CHAIN_PROVIDER_URL: 'https://cardano-preprod.blockfrost.io/api/v0', CHAIN_PROVIDER_KEY: 'stand-in-for-the-blockfrost-project-id' };
     // a command line of each script that would otherwise go ahead, and where each option goes in it
     const scripts = () => [
         ['new-key.js', newKey, ['--kind', 'key', '--out', path.join(dir, 'new.sk'), '--network', 'preprod']],

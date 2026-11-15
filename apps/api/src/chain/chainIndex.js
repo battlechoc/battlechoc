@@ -238,7 +238,7 @@ const createChainIndex = ({ pool, policyId, network, indexSchema = 'yaci_store',
         return rows.map(holderRow).filter(row => (row.stake !== null && wanted.has(row.stake)) || (row.pay !== null && wanted.has(row.pay)));
     };
 
-    /** The block of the transaction `hash` (the lowest, of those that touch the policy): { blockNo, slot } | null. */
+    /** The block of the transaction `hash` (the lowest, of those that touch a user token of the policy): { blockNo, slot } | null. */
     const transaction = async hash => {
         const [row] = await read(`SELECT block_no, slot FROM ${views}.tx_blocks WHERE tx_hash = $1 ORDER BY block_no, slot LIMIT 1`, [String(hash)]);
         return row ? { blockNo: Number(row.block_no), slot: Number(row.slot) } : null;

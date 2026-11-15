@@ -137,3 +137,20 @@ test('the offline profile names only what still exists (no friends, no invites)'
     setCurrentLanguage('en');
     expect(translate(keys.PROFILE_OFFLINE)).toBe('Offline: your rank comes back as soon as battlechoc reaches its server.');
 });
+
+test('the placeholders of a text are named in the order translate takes their values', () => {
+    const { placeholdersOf } = require('../index');
+    expect(placeholdersOf('MINT_CHECK_LOW_TEXT')).toEqual(['haveAda', 'needAda', 'missingAda']);
+    expect(placeholdersOf('MINT_ACTION')).toEqual([]);
+    // a copy: the registry stays as it is
+    placeholdersOf('ITEM_SERIAL').push('x');
+    expect(placeholdersOf('ITEM_SERIAL')).toEqual(['serial']);
+});
+
+test('a serial number stays with its "No." on one line: a no-break space before {{serial}}, never an ordinary one', () => {
+    languages.forEach(language => {
+        const strings = tableOf(language);
+        const breakable = Object.keys(strings).filter(key => strings[key].includes(' {{serial}}'));
+        expect({ language, breakable }).toEqual({ language, breakable: [] });
+    });
+});

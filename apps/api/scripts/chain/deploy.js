@@ -1,10 +1,12 @@
 // Deploys the contracts to preprod, once, for the owner:
 //
-//   CARDANO_NETWORK=preprod CHAIN_PROVIDER_URL=https://cardano-preprod.blockfrost.io/api/v0 \
-//   CHAIN_PROVIDER_KEY=<project id> node apps/api/scripts/chain/deploy.js \
+//   CARDANO_NETWORK=preprod CHAIN_PROVIDER_URL=https://preprod.koios.rest/api/v1 \
+//   node apps/api/scripts/chain/deploy.js \
 //     --admin-key <file> --server-key-hash <hex> [--dry-run] [--again]
 //   … deploy.js --admin-key <file> --server-key-hash <hex> --new-seed [--dry-run]
 //   … deploy.js --confirm [--dry-run]
+//   (Koios's public tier needs no key; with CHAIN_PROVIDER_KIND=blockfrost, CHAIN_PROVIDER_URL is
+//   Blockfrost's and CHAIN_PROVIDER_KEY its project id: lib.js providerFromEnv)
 //
 // One transaction, signed by the admin key and paid from its enterprise address: it spends the
 // seed (the admin's largest ADA-only UTxO), mints the config NFT under the config policy (the
@@ -15,9 +17,15 @@
 // datum, which names it), and the items policy (the items validator applied to the config
 // policy) travels in each mint.
 //
-// It prints the ids, waits for the block and prints the two lines for the server's .env
-// (CHAIN_POLICY_ID, CHAIN_CONFIG_REF), and writes contracts/deployments/preprod.json (public data
-// only). --dry-run builds and signs the transaction and shows all of it, and submits nothing.
+// Right before the submit it reads where the chain index (Yaci Store) shall start: the block
+// INDEX_START_DEPTH (20) below the tip, so a small rollback cannot remove it, with its slot and
+// hash (`indexStart` in the record). That start point is fixed once: a retry, --again, --new-seed,
+// --confirm and an adopted earlier attempt keep the earliest one recorded (a record without one
+// gets the block 20 below the one its transaction landed in), so a rebuilt index always starts
+// before the first mint. It prints the ids, waits for the block and prints the lines for the
+// server's .env (CHAIN_POLICY_ID, CHAIN_CONFIG_REF, CHAIN_CONFIG_POLICY_ID, YACI_SYNC_START_SLOT,
+// YACI_SYNC_START_BLOCKHASH; none is a secret), and writes contracts/deployments/preprod.json
+// (public data only). --dry-run builds and signs the transaction and shows all of it, and submits nothing.
 // Once the provider may have the transaction, the ids are printed ("submitted, not yet
 // confirmed") and the record is written with `status: 'submitted'` before the wait; once the
 // block is seen it is rewritten with `status: 'confirmed'` and the block height. Only a confirmed
@@ -60,6 +68,9 @@ const {
 
 /** Where the deployment of preprod is recorded (committed: public data only). */
 const DEPLOYMENT_FILE = path.resolve(__dirname, '../../../../contracts/deployments/preprod.json');
+
+/** How far below the tip the chain index starts: deeper than a small rollback reaches. */
+const INDEX_START_DEPTH = 20;
 
 /** The fee preprod deploys with: one ADA option, 1, 2 or 4 ADA by tier, all of it to `treasury`. */
 const PREPROD_FEE_AMOUNTS = [1_000_000, 2_000_000, 4_000_000];
@@ -165,7 +176,7 @@ const buildDeployment = async ({ blueprint, plan, admin, adminUtxos, params, tip
  * written once the transaction is submitted: `status: 'submitted'`, `date` the time of the
  * submit, `configTx` its id, `block` null. confirmedRecord makes it `confirmed`.
  */
-const deploymentRecord = ({ blueprint, blueprintSha256, plan, configRef, adminKeyHash, network, date }) => ({
+const deploymentRecord = ({ blueprint, blueprintSha256, plan, configRef, adminKeyHash, network, date, indexStart }) => ({
     network: network.name,
     date,
     compiler: blueprint.compiler,
@@ -182,6 +193,7 @@ const deploymentRecord = ({ blueprint, blueprintSha256, plan, configRef, adminKe
     status: 'submitted',
     configTx: configRef.split('#')[0],
     block: null,
+    indexStart,
 });
 
 /** `record` once its transaction is in the block of height `block`, seen at `date`. */
@@ -224,7 +236,61 @@ const deployedAlready = (file, record, network) => {
     return new ScriptError(`${file} exists, in no state this script knows (status ${JSON.stringify(record.status ?? null)}): look at it first. --again deploys anew and keeps it aside`);
 };
 
-const envLines = record => [`CHAIN_POLICY_ID=${record.policyId}`, `CHAIN_CONFIG_REF=${record.configRef}`];
+// whether `start` is a start point for the index: { block, slot, hash }
+const isStart = start => Boolean(start) && Number.isSafeInteger(start.block) && Number.isSafeInteger(start.slot) && typeof start.hash === 'string' && /^[0-9a-f]{64}$/.test(start.hash);
+
+/**
+ * The start point `record` (read from `file`) has: undefined if it has none; a ScriptError if it
+ * has one that is malformed. A start point is fixed once, so a malformed one is never replaced by
+ * another, which could lie after the first mint: the owner fixes it by hand.
+ */
+const recordedStart = (record, file) => {
+    const start = record?.indexStart;
+    if (start === undefined || start === null) {
+        return undefined;
+    }
+    if (!isStart(start)) {
+        throw new ScriptError(
+            `${path.basename(file)}: its indexStart ${JSON.stringify(start)} is malformed (it must be { block, slot, hash } of a block before the deployment). ` +
+                'It is never replaced by a later one: put the right block back by hand (a preprod explorer shows its slot and hash), then run again; nothing is changed'
+        );
+    }
+    return start;
+};
+
+/** The earliest of the start points `starts` (none among them ignored); undefined for none. */
+const earliestStart = (...starts) => starts.filter(isStart).sort((a, b) => a.slot - b.slot)[0];
+
+/**
+ * The start point for the index INDEX_START_DEPTH blocks below the block of height `height`, read
+ * from `client` (blockAt): { block, slot, hash }. A ScriptError when the provider has no such
+ * block or cannot be read; `consequence` says what that failure leaves (by default: nothing is
+ * submitted, as before a deploy's submit).
+ */
+const startBelow = async (client, height, consequence = 'nothing is submitted') => {
+    const wanted = Math.max(0, height - INDEX_START_DEPTH);
+    let block;
+    try {
+        block = await client.blockAt(wanted);
+    } catch (error) {
+        throw new ScriptError(`reading the index's start block ${wanted} failed: ${error.message}; ${consequence}`);
+    }
+    if (!isStart(block)) {
+        throw new ScriptError(`the provider has no start block ${wanted} for the index (${INDEX_START_DEPTH} below block ${height}); ${consequence}`);
+    }
+    return { block: block.block, slot: block.slot, hash: block.hash };
+};
+
+// the lines of `record` for the server's .env (none is a secret): the ids, then where the index
+// starts (a record made before start points were recorded has none: the README says what to take)
+const envLines = record => [
+    "for the server's .env (deploy/README.md, \"Chain features\"):",
+    ...(isStart(record.indexStart) ? [] : ['this record has no start point for the index: take the block of the deployment (deploy/README.md)']),
+    `CHAIN_POLICY_ID=${record.policyId}`,
+    `CHAIN_CONFIG_REF=${record.configRef}`,
+    `CHAIN_CONFIG_POLICY_ID=${record.configPolicyId}`,
+    ...(isStart(record.indexStart) ? [`YACI_SYNC_START_SLOT=${record.indexStart.slot}`, `YACI_SYNC_START_BLOCKHASH=${record.indexStart.hash}`] : []),
+];
 
 // A copy of `file` kept aside as <name>.replaced-<date>.json before `file` is written over; answers
 // the copy's path. A copy, not a rename: stopped at any point, `file` is still there, whole, and
@@ -327,25 +393,35 @@ const fateOf = async (client, file, record, utxos) => {
 };
 
 // Records the attempt `landed` (fateOf) as the deployment in `file`, confirmed: an attempt set
-// aside takes the place of the record in `file`, which is kept aside in turn. The order keeps a
-// readable `file` at every step: copy aside, write over (atomically), then remove the adopted file.
-const adopt = ({ file, landed, log, now, dryRun = false }) => {
+// aside takes the place of the record in `file` (`current`), which is kept aside in turn. The order
+// keeps a readable `file` at every step: copy aside, write over (atomically), then remove the
+// adopted file. The start point for the index is the earliest of the two records', else the block
+// INDEX_START_DEPTH below the one it landed in (read from `client`).
+const adopt = async ({ file, current, landed, client, log, now, dryRun = false }) => {
     const of = landed.file === file ? '' : ` of ${path.basename(landed.file)}`;
     log(`config tx ${landed.record.configTx}${of} is in block ${landed.block}: that deploy reached the chain, and nothing new is submitted`);
     if (dryRun) {
         log(`dry run: ${file} is not changed`);
         return;
     }
+    // the earliest recorded start, unless it lies above the block the deployment landed in (a later
+    // attempt read it after the earlier one had landed): then the block below that one
+    const recorded = earliestStart(recordedStart(landed.record, landed.file), recordedStart(current, file));
+    const indexStart =
+        recorded && recorded.block <= landed.block
+            ? recorded
+            : await startBelow(client, landed.block, `the deployment is on the chain, but ${path.basename(file)} is not changed: run deploy.js --confirm again`);
     const date = now().toISOString();
     if (landed.file !== file) {
         log(`the record of the later attempt is kept as ${path.basename(copyAside(file, date))}`);
     }
-    writeRecord(file, confirmedRecord(landed.record, landed.block, date));
+    const confirmed = { ...confirmedRecord(landed.record, landed.block, date), indexStart };
+    writeRecord(file, confirmed);
     if (landed.file !== file) {
         fs.rmSync(landed.file);
     }
     log(`wrote ${file} (status confirmed)`);
-    envLines(landed.record).forEach(line => log(line));
+    envLines(confirmed).forEach(line => log(line));
 };
 
 // deploy.js --confirm: confirms the submitted record in `file` once its transaction (or that of an
@@ -356,6 +432,7 @@ const confirm = async ({ env, log, client, file, network, now, sleep, dryRun = f
     if (!record) {
         throw new ScriptError(`no deployment record at ${file}: nothing to confirm`);
     }
+    recordedStart(record, file);
     if (record.status === 'confirmed') {
         log(labelled('config tx', `${record.configTx}  confirmed already, in block ${record.block}`));
         envLines(record).forEach(line => log(line));
@@ -372,7 +449,7 @@ const confirm = async ({ env, log, client, file, network, now, sleep, dryRun = f
         if (lost) {
             throw lost;
         }
-        adopt({ file, landed, log, now, dryRun });
+        return adopt({ file, current: record, landed, client: chainClient, log, now, dryRun });
     };
     const before = await fate();
     if (!before.open) {
@@ -386,7 +463,7 @@ const confirm = async ({ env, log, client, file, network, now, sleep, dryRun = f
         throw new ScriptError(`waiting for the block failed: ${error.message}; the record stays submitted`);
     }
     if (block !== null) {
-        return adopt({ file, landed: { file, record, block }, log, now, dryRun });
+        return adopt({ file, current: record, landed: { file, record, block }, client: chainClient, log, now, dryRun });
     }
     const after = await fate();
     if (!after.open) {
@@ -423,6 +500,7 @@ const main = async ({ argv, env, log, client, deploymentFile = DEPLOYMENT_FILE, 
     if (earlier && !args.again && !args['new-seed']) {
         throw deployedAlready(deploymentFile, earlier, network);
     }
+    const earlierStart = recordedStart(earlier, deploymentFile);
     // the retry of a deploy that never reached the chain spends the same seed: the same policy ids
     const retry = earlier?.status === 'submitted';
     const key = loadKey(args['admin-key']);
@@ -440,7 +518,7 @@ const main = async ({ argv, env, log, client, deploymentFile = DEPLOYMENT_FILE, 
     if (retry) {
         const { open, landed, lost } = await fateOf(chainClient, deploymentFile, earlier, adminUtxos);
         if (landed) {
-            return adopt({ file: deploymentFile, landed, log, now, dryRun });
+            return adopt({ file: deploymentFile, current: earlier, landed, client: chainClient, log, now, dryRun });
         }
         if (open && args['new-seed']) {
             throw new ScriptError(
@@ -475,6 +553,10 @@ const main = async ({ argv, env, log, client, deploymentFile = DEPLOYMENT_FILE, 
         return;
     }
 
+    // where the index starts: fixed by the first record that has it, else read now, below the tip
+    const indexStart = earlierStart ?? (await startBelow(chainClient, (await chainClient.tip()).block));
+    log(labelled('index start', `block ${indexStart.block}, slot ${indexStart.slot}, ${indexStart.hash}`));
+
     let submitted;
     let submitFailure;
     try {
@@ -495,6 +577,7 @@ const main = async ({ argv, env, log, client, deploymentFile = DEPLOYMENT_FILE, 
         adminKeyHash: admin.keyHash,
         network,
         date: now().toISOString(),
+        indexStart,
     });
     log('submitted, not yet confirmed:');
     log(labelled('  config policy', plan.configPolicyId));
@@ -534,7 +617,7 @@ const main = async ({ argv, env, log, client, deploymentFile = DEPLOYMENT_FILE, 
     envLines(record).forEach(line => log(line));
 };
 
-module.exports = { OPTIONS, DEPLOYMENT_FILE, planDeployment, buildDeployment, deploymentRecord, confirmedRecord, main };
+module.exports = { OPTIONS, DEPLOYMENT_FILE, INDEX_START_DEPTH, planDeployment, buildDeployment, deploymentRecord, confirmedRecord, main };
 
 if (require.main === module) {
     runScript(main);

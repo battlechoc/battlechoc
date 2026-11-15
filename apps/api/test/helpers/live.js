@@ -19,12 +19,13 @@ const environments = [];
 
 /**
  * A server with the REST app and the live service: { app, pool, auth, server, live, clock, url,
- * clients }. `pool` reuses a database (a restart of the server), `config` overrides LiveDefaults.
+ * clients }. `pool` reuses a database (a restart of the server), `config` overrides LiveDefaults,
+ * `random` is the random source of the ingredient drops (default: the lobby's, crypto).
  */
-const start = async ({ pool, config = {}, log = silentLog } = {}) => {
+const start = async ({ pool, config = {}, log = silentLog, random } = {}) => {
     const env = { ...(await createTestApp({ pool })), clock: new ManualClock(), clients: [] };
     env.server = http.createServer(env.app);
-    env.live = createLive({ server: env.server, pool: env.pool, auth: env.auth, clock: env.clock, config, log });
+    env.live = createLive({ server: env.server, pool: env.pool, auth: env.auth, clock: env.clock, config, log, ...(random ? { random } : {}) });
     await new Promise(resolve => env.server.listen(0, '127.0.0.1', resolve));
     env.url = `ws://127.0.0.1:${env.server.address().port}/live`;
     environments.push(env);

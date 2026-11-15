@@ -108,14 +108,21 @@ export default defineConfig({
         // test/signin.spec.js creates many devices from one address in a minute
         ACCOUNTS_PER_MINUTE: "500",
         CARDANO_PER_MINUTE: "1000",
-        // the chain features on, over the chain double of e2eServer.js (its /test/chain routes,
-        // test/helpers/chain.js): the policy is test/chainDouble.js TEST_POLICY_ID (the server
-        // refuses another), the provider URL is never called (the double answers instead), and
-        // "generate" makes e2eServer.js write a test server key into the OS temp directory
+        // the chain features on, over the chain double of e2eServer.js with plan B's fixture
+        // deployment on it (its /test/chain routes, test/helpers/chain.js): the policy is
+        // test/chainDouble.js TEST_POLICY_ID, the config is found by the fixture's config NFT
+        // (its policy; CHAIN_CONFIG_REF is only the fallback, never used: the NFT is there), and
+        // the server refuses other policies; the provider URL is never called (the double
+        // answers instead), and "generate" makes e2eServer.js write the fixture's server key
+        // (the one its config lists) into the OS temp directory
         CHAIN_POLICY_ID:
           "7b74a5bddaeee2acb07f59f8c9a98e4ebb3a09f0d827b085da71ee61",
+        CHAIN_CONFIG_POLICY_ID:
+          "57e7507db9c453389eb999af28af71e751ba44101d5943222291cd69",
         CHAIN_CONFIG_REF: "0".repeat(64) + "#0",
         CHAIN_SERVER_KEY_FILE: "generate",
+        // the double speaks Blockfrost's JSON to the Blockfrost adapter
+        CHAIN_PROVIDER_KIND: "blockfrost",
         CHAIN_PROVIDER_URL: "http://127.0.0.1:9",
         CHAIN_PROVIDER_KEY: "e2e",
         CHAIN_K_FINAL: "10",

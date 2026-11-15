@@ -7,6 +7,7 @@ const { isValidUsername, randomName } = require('./names');
 const pantry = require('./pantry');
 const { withTransaction, count } = require('./db');
 const { MAX_SUBJECTS, linkedPlayers } = require('./chain/hopWait');
+const { OPEN_IN } = require('./chain/ops');
 
 const findPlayer = async (pool, playerId) => (await pool.query('SELECT * FROM players WHERE id = $1', [playerId])).rows[0];
 
@@ -96,17 +97,34 @@ const results = async (pool, playerId) => (await resultsOf(pool, [playerId])).ge
 const levelOf = player => ({ ...EmptyPlayerStats.level, ...(player.level || {}) });
 
 /**
- * The mark of a minted item (plan C): { assetName, state: 'minted' } once its mint is in a block
- * (asset name and minted_at set) and while it is not burned, else null. Plan D adds 'minting'
- * from an open operation, plan E 'burning'.
+ * The mark of a minted item: { assetName, state: 'minted' } once its mint is in a block (asset name
+ * and minted_at set) and while it is not burned (plan C); else, while a mint of it is open (plan
+ * D: prepared or submitted, the asset name still null), { assetName, state: 'minting',
+ * operationId, signing } (`signing`: it waits for the wallet's signature); else null. Plan E adds
+ * 'burning'.
  */
-const mintedOf = row => (row.asset_name && row.minted_at && !row.burned_at ? { assetName: row.asset_name, state: 'minted' } : null);
+const mintedOf = row => {
+    if (row.asset_name && row.minted_at && !row.burned_at) {
+        return { assetName: row.asset_name, state: 'minted' };
+    }
+    if (row.op_kind === 'mint') {
+        return { assetName: row.op_asset_name, state: 'minting', operationId: row.op_id, signing: row.op_state === 'prepared' };
+    }
+    return null;
+};
 
-/** The crafted items of a player, newest first. */
+/**
+ * The crafted items of a player, newest first: one statement. An item has at most one open
+ * operation (ops.insertPrepared; on Postgres also the partial unique index on chain_ops (item_id),
+ * which serves the join); a player who never minted joins nothing.
+ */
 const itemsOf = async (db, playerId) => {
     const { rows } = await db.query(
-        `SELECT i.id, i.item_key, i.serial, i.crafted_by, i.created_at, i.asset_name, i.minted_at, i.burned_at, p.username AS crafter
-         FROM items i LEFT JOIN players p ON p.id = i.crafted_by WHERE i.player_id = $1`, [playerId]);
+        `SELECT i.id, i.item_key, i.serial, i.crafted_by, i.created_at, i.asset_name, i.minted_at, i.burned_at, p.username AS crafter,
+            o.id AS op_id, o.kind AS op_kind, o.state AS op_state, o.asset_name AS op_asset_name
+         FROM items i LEFT JOIN players p ON p.id = i.crafted_by
+         LEFT JOIN chain_ops o ON o.item_id = i.id AND o.state IN ${OPEN_IN}
+         WHERE i.player_id = $1`, [playerId]);
     return rows
         .map(row => ({
             id: row.id,

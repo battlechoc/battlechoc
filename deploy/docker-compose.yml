@@ -54,21 +54,28 @@ services:
       # the secret recipe table, mounted read-only (never in the repository or the image)
       RECIPES_FILE: /run/secrets/recipes.json
       # optional: the chain features (minting items on CARDANO_NETWORK, see README.md "Chain
-      # features"). They are off until all six of CHAIN_POLICY_ID, CHAIN_CONFIG_REF, the server
-      # key file, CHAIN_PROVIDER_URL, CHAIN_PROVIDER_KEY and CHAIN_K_FINAL are set; empty = off.
+      # features"). They are off until CHAIN_POLICY_ID, CHAIN_CONFIG_REF, the server key file,
+      # CHAIN_PROVIDER_URL and CHAIN_K_FINAL are set, and CHAIN_PROVIDER_KEY as well with
+      # CHAIN_PROVIDER_KIND=blockfrost (Koios, the default, runs without one, but a free token
+      # is recommended: README.md); empty = off.
       CHAIN_POLICY_ID: ${CHAIN_POLICY_ID:-}
       CHAIN_CONFIG_REF: ${CHAIN_CONFIG_REF:-}
       CHAIN_SERVER_KEY_FILE: /run/secrets/chain-server.key
+      CHAIN_PROVIDER_KIND: ${CHAIN_PROVIDER_KIND:-koios}
       CHAIN_PROVIDER_URL: ${CHAIN_PROVIDER_URL:-}
       CHAIN_PROVIDER_KEY: ${CHAIN_PROVIDER_KEY:-}
       CHAIN_K_FINAL: ${CHAIN_K_FINAL:-}
       CHAIN_WATCH_INTERVAL_MS: ${CHAIN_WATCH_INTERVAL_MS:-}
       CHAIN_INDEX_MAX_LAG_MS: ${CHAIN_INDEX_MAX_LAG_MS:-}
+      # optional: the config NFT's policy; with it an admin update of the config needs no new
+      # CHAIN_CONFIG_REF
+      CHAIN_CONFIG_POLICY_ID: ${CHAIN_CONFIG_POLICY_ID:-}
     volumes:
       - ${RECIPES_PATH:?set RECIPES_PATH in .env}:/run/secrets/recipes.json:ro
-      # the server's chain key, read-only; without CHAIN_SERVER_KEY_PATH it is /dev/null, an empty
-      # file that can be read. The API's start only checks that the key file can be read, so set
-      # CHAIN_SERVER_KEY_PATH whenever the chain variables are set (README.md "Turning it on").
+      # the server's chain key, read-only: one ed25519_sk1… line, owned by the container's user
+      # (uid 1000) and mode 600 (README.md "Turning it on"). Without CHAIN_SERVER_KEY_PATH it is
+      # /dev/null, which is no key file: with the chain variables set, the API then refuses to
+      # start (CHAIN_SERVER_KEY_FILE: … is not a file), so set both together.
       - ${CHAIN_SERVER_KEY_PATH:-/dev/null}:/run/secrets/chain-server.key:ro
     depends_on:
       postgres:
@@ -118,10 +125,12 @@ services:
       STORE_CARDANO_HOST: ${YACI_CARDANO_HOST:-preprod-node.play.dev.cardano.org}
       STORE_CARDANO_PORT: ${YACI_CARDANO_PORT:-3001}
       STORE_CARDANO_PROTOCOL_MAGIC: ${YACI_PROTOCOL_MAGIC:-1}
-      # where the sync starts: a block just before the policy's first transaction
+      # where the sync starts: the block deploy.js recorded, before the deployment's (20 below the
+      # tip before the first attempt's submit; for an adopted earlier attempt, the earliest recorded)
       STORE_CARDANO_SYNC_START_SLOT: ${YACI_SYNC_START_SLOT:-}
       STORE_CARDANO_SYNC_START_BLOCKHASH: ${YACI_SYNC_START_BLOCKHASH:-}
-      # the one policy whose outputs, mints and burns it keeps (chain/application-plugins.yml)
+      # the one policy whose user tokens' outputs, mints and burns it keeps
+      # (chain/application-plugins.yml)
       CHAIN_POLICY_ID: ${CHAIN_POLICY_ID:-}
     volumes:
       - ./chain/application.properties:/app/config/application.properties:ro

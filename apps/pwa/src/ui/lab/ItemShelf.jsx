@@ -7,6 +7,7 @@ import {
 import DialogFrame from "../dialogs/DialogFrame";
 import ItemIcon from "./ItemIcon";
 import {
+  groupMark,
   groupMinted,
   scrollCue,
   shelfGroups,
@@ -261,11 +262,12 @@ const ItemShelf = ({ items, onOpen, room, layout }) => {
                     data-item={item}
                   >
                     {/* small: the stamp shows only as the icon's rim, and only when every
-                        item of the type is minted (the card's chips tell them apart) */}
+                        item of the type is minted (the card's chips tell them apart); while
+                        one is being minted, its pulsing rim */}
                     <ItemIcon
                       item={item}
                       size="3.2em"
-                      minted={minted}
+                      minted={groupMark(instances)}
                       serial={newest.serial}
                     />
                     <span className={classes.name}>{itemName(item)}</span>

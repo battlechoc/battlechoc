@@ -6,7 +6,7 @@
 // SDK is an ES module: Node 22 loads it with require(), Jest through babel-jest (package.json).
 
 const crypto = require('crypto');
-const { KeyHash, RewardAccount, Address, COSE } = require('@evolution-sdk/evolution');
+const { CBOR, KeyHash, RewardAccount, Address, COSE } = require('@evolution-sdk/evolution');
 const { cardano } = require('@battlechoc/battlechoc-shared-functions');
 const { HttpError, ErrorCode } = require('./errors');
 const { count, withTransaction } = require('./db');
@@ -16,6 +16,11 @@ const IDENTITY_PROVIDER = 'cardano';
 const HEX = /^(?:[0-9a-f]{2})+$/i;
 // the CIP-30 name of a wallet (window.cardano.<name>), as the game sends it
 const WALLET_NAME = /^[a-z0-9]{1,24}$/;
+
+// The first line of the text a wallet signs to vouch for its addresses for a mint (shared
+// cardano.addressProofMessage): unlike every challenge's, and refused by the sign-in's verifier,
+// so a signature for the one is never taken for the other.
+const { ADDRESS_PROOF_HEADLINE } = cardano;
 
 const invalidRequest = () => new HttpError(400, ErrorCode.INVALID_REQUEST_PARAMETERS);
 const invalidSignature = () => new HttpError(400, ErrorCode.INVALID_SIGNATURE);
@@ -74,9 +79,11 @@ const addressOfSubject = (subject, network) => {
 
 /**
  * Checks a CIP-30 DataSignature ({ signature, key }, hex) of `message` by the key of `address`
- * (keyOfAddress); returns the identity subject, throws INVALID SIGNATURE otherwise.
+ * (keyOfAddress), whatever the text is; returns the identity subject, throws INVALID SIGNATURE
+ * otherwise. The sign-in uses verifySignature; the address proof of a mint uses this with the
+ * text it built itself.
  */
-const verifySignature = ({ signature, key, message, address, network }) => {
+const verifySignedData = ({ signature, key, message, address, network }) => {
     const signer = keyOfAddress(address, network);
     if (typeof signature !== 'string' || typeof key !== 'string' || !HEX.test(signature) || !HEX.test(key)) {
         throw invalidSignature();
@@ -96,6 +103,37 @@ const verifySignature = ({ signature, key, message, address, network }) => {
         throw invalidSignature();
     }
     return signer.subject;
+};
+
+/**
+ * The address a CIP-30 DataSignature (`signature`: its COSE_Sign1, hex) names in its protected
+ * header (CIP-8 'address'), as hex: the address the wallet signed with. Undefined when it names
+ * none or is no COSE_Sign1. Nothing is verified here (verifySignedData does).
+ */
+const signedAddressOf = signature => {
+    if (typeof signature !== 'string' || !HEX.test(signature)) {
+        return undefined;
+    }
+    try {
+        const sign1 = CBOR.fromCBORHex(signature);
+        const fields = Array.isArray(sign1) ? sign1 : sign1?.value;
+        const headers = Array.isArray(fields) && fields[0] instanceof Uint8Array ? CBOR.fromCBORBytes(fields[0]) : undefined;
+        const address = headers instanceof Map ? headers.get('address') : undefined;
+        return address instanceof Uint8Array && address.length > 0 ? Buffer.from(address).toString('hex') : undefined;
+    } catch {
+        return undefined;
+    }
+};
+
+/**
+ * verifySignedData for the sign-in and the link (a challenge's text): a text that begins with the
+ * address proof's first line is INVALID SIGNATURE, however it is signed.
+ */
+const verifySignature = ({ message, ...signed }) => {
+    if (typeof message !== 'string' || message.split('\n')[0] === ADDRESS_PROOF_HEADLINE) {
+        throw invalidSignature();
+    }
+    return verifySignedData({ ...signed, message });
 };
 
 /**
@@ -241,6 +279,9 @@ module.exports = {
     addressOfSubject,
     keyOfAddress,
     verifySignature,
+    verifySignedData,
+    signedAddressOf,
+    ADDRESS_PROOF_HEADLINE,
     createChallenge,
     consumeChallenge,
     playerOfSubject,

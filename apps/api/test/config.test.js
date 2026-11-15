@@ -189,8 +189,10 @@ describe('configuration', () => {
 
 describe('the chain configuration', () => {
     const PROVIDER_KEY = 'secret-key-value-123';
-    // the six variables that turn the chain features on, in the order the messages name them
+    // the variables that turn the chain features on, in the order the messages name them, for
+    // Blockfrost (the key is optional with Koios, the default kind; see `koiosOn`)
     const complete = {
+        CHAIN_PROVIDER_KIND: 'blockfrost',
         CHAIN_POLICY_ID: 'ab'.repeat(28),
         CHAIN_CONFIG_REF: `${'cd'.repeat(32)}#0`,
         CHAIN_SERVER_KEY_FILE: '/run/secrets/chain-server.skey',
@@ -200,6 +202,8 @@ describe('the chain configuration', () => {
     };
     const preprod = { ...development, CARDANO_NETWORK: 'preprod' };
     const on = { ...preprod, ...complete };
+    // the same on Koios, the default: no kind, Koios's URL, no key
+    const { CHAIN_PROVIDER_KIND: _kind, CHAIN_PROVIDER_KEY: _key, ...koiosOn } = { ...on, CHAIN_PROVIDER_URL: 'https://preprod.koios.rest/api/v1' };
 
     test('without a Cardano network the chain is off and nothing is missing', () => {
         const config = loadConfig({ ...development, ...complete });
@@ -208,15 +212,70 @@ describe('the chain configuration', () => {
         expect(loadConfig(development).chainMissing).toEqual([]);
     });
 
-    test('with a network but without the chain variables: off, and every missing one is named', () => {
+    test('with a network but without the chain variables: off, and every missing one is named (Koios needs no key)', () => {
         const config = loadConfig(preprod);
         expect(config.chain).toBeNull();
-        expect(config.chainMissing).toEqual(['CHAIN_POLICY_ID', 'CHAIN_CONFIG_REF', 'CHAIN_SERVER_KEY_FILE', 'CHAIN_PROVIDER_URL', 'CHAIN_PROVIDER_KEY', 'CHAIN_K_FINAL']);
+        expect(config.chainMissing).toEqual(['CHAIN_POLICY_ID', 'CHAIN_CONFIG_REF', 'CHAIN_SERVER_KEY_FILE', 'CHAIN_PROVIDER_URL', 'CHAIN_K_FINAL']);
+        expect(loadConfig({ ...preprod, CHAIN_PROVIDER_KIND: 'blockfrost' }).chainMissing).toEqual([
+            'CHAIN_POLICY_ID', 'CHAIN_CONFIG_REF', 'CHAIN_SERVER_KEY_FILE', 'CHAIN_PROVIDER_URL', 'CHAIN_PROVIDER_KEY', 'CHAIN_K_FINAL',
+        ]);
         // an empty variable counts as not set (docker compose passes `${NAME:-}`)
-        expect(loadConfig({ ...on, CHAIN_PROVIDER_KEY: '' }).chainMissing).toEqual(['CHAIN_PROVIDER_KEY']);
+        expect(loadConfig({ ...on, CHAIN_PROVIDER_KIND: 'blockfrost', CHAIN_PROVIDER_KEY: '' }).chainMissing).toEqual(['CHAIN_PROVIDER_KEY']);
     });
 
-    test('five of the six: still off, the sixth is named', () => {
+    test('the provider kind: unset or empty is koios, whose key is optional (a bearer token); blockfrost needs its project id', () => {
+        expect(_kind).toBe('blockfrost');
+        expect(_key).toBe(PROVIDER_KEY);
+        for (const CHAIN_PROVIDER_KIND of [undefined, '', 'koios', ' Koios ', 'KOIOS']) {
+            expect(loadConfig({ ...koiosOn, CHAIN_PROVIDER_KIND }).chain).toMatchObject({ providerKind: 'koios', providerKey: null, providerUrl: 'https://preprod.koios.rest/api/v1' });
+            expect(loadConfig({ ...koiosOn, CHAIN_PROVIDER_KIND, CHAIN_PROVIDER_KEY: '' }).chain).toMatchObject({ providerKind: 'koios', providerKey: null });
+            expect(loadConfig({ ...koiosOn, CHAIN_PROVIDER_KIND, CHAIN_PROVIDER_KEY: PROVIDER_KEY }).chain).toMatchObject({ providerKind: 'koios', providerKey: PROVIDER_KEY });
+        }
+        expect(loadConfig({ ...on, CHAIN_PROVIDER_KIND: 'Blockfrost' }).chain).toMatchObject({ providerKind: 'blockfrost', providerKey: PROVIDER_KEY });
+        const blockfrostWithoutKey = loadConfig({ ...on, CHAIN_PROVIDER_KEY: '' });
+        expect(blockfrostWithoutKey.chain).toBeNull();
+        expect(blockfrostWithoutKey.chainMissing).toEqual(['CHAIN_PROVIDER_KEY']);
+    });
+
+    test("a provider URL of the other kind stops the start, naming CHAIN_PROVIDER_KIND: a server that had Blockfrost's settings and no kind is not quietly switched to Koios", () => {
+        // the six Blockfrost variables of before CHAIN_PROVIDER_KIND, the kind unset (or koios)
+        const { CHAIN_PROVIDER_KIND, ...before } = on;
+        expect(CHAIN_PROVIDER_KIND).toBe('blockfrost');
+        for (const [kind, url] of [
+            [undefined, 'https://cardano-preprod.blockfrost.io/api/v0'],
+            ['', 'https://blockfrost.io/api/v0'],
+            ['koios', 'https://cardano-mainnet.blockfrost.io/api/v0'],
+        ]) {
+            const message = problemsOf({ ...before, CHAIN_PROVIDER_KIND: kind, CHAIN_PROVIDER_URL: url });
+            expect(message).toMatch(/CHAIN_PROVIDER_KIND must be blockfrost for a Blockfrost URL/);
+            expect(message).not.toContain(PROVIDER_KEY);
+            expect(message).not.toContain('blockfrost.io');
+        }
+        const koiosWithBlockfrost = problemsOf({ ...on, CHAIN_PROVIDER_URL: 'https://preprod.koios.rest/api/v1' });
+        expect(koiosWithBlockfrost).toMatch(/CHAIN_PROVIDER_KIND must be koios \(or not set\) for a Koios URL/);
+        expect(koiosWithBlockfrost).not.toContain('koios.rest');
+        // a fully qualified host (one trailing dot) is the same host
+        expect(problemsOf({ ...before, CHAIN_PROVIDER_URL: 'https://cardano-preprod.blockfrost.io./api/v0' })).toMatch(/CHAIN_PROVIDER_KIND must be blockfrost for a Blockfrost URL/);
+        expect(problemsOf({ ...on, CHAIN_PROVIDER_URL: 'https://preprod.koios.rest./api/v1' })).toMatch(/CHAIN_PROVIDER_KIND must be koios \(or not set\) for a Koios URL/);
+        // a host that only ends in the name is no Blockfrost or Koios host
+        expect(loadConfig({ ...koiosOn, CHAIN_PROVIDER_URL: 'https://notblockfrost.io/api' }).chain).toMatchObject({ providerKind: 'koios' });
+        expect(loadConfig({ ...on, CHAIN_PROVIDER_URL: 'http://localhost:3001' }).chain).toMatchObject({ providerKind: 'blockfrost' });
+    });
+
+    test('an unknown provider kind stops the start, whatever else is missing, naming the variable and never its value', () => {
+        for (const CHAIN_PROVIDER_KIND of ['maestro', 'koio', PROVIDER_KEY]) {
+            for (const env of [on, preprod, koiosOn]) {
+                const message = problemsOf({ ...env, CHAIN_PROVIDER_KIND });
+                expect(message).toMatch(/CHAIN_PROVIDER_KIND is unknown: it must be koios or blockfrost \(or not set: koios\)/);
+                expect(message).not.toContain(PROVIDER_KEY);
+                expect(message).not.toContain('maestro');
+            }
+        }
+        // without a Cardano network nothing of the chain is read
+        expect(loadConfig({ ...development, CHAIN_PROVIDER_KIND: 'maestro' }).chain).toBeNull();
+    });
+
+    test('all but one: still off, the missing one is named', () => {
         const { CHAIN_K_FINAL, ...five } = on;
         expect(CHAIN_K_FINAL).toBeDefined();
         const config = loadConfig(five);
@@ -226,14 +285,16 @@ describe('the chain configuration', () => {
         expect(loadConfig({ ...five, CHAIN_POLICY_ID: 'nope' }).chain).toBeNull();
     });
 
-    test('all six: on, with the defaults of the optional timings', () => {
+    test('all of them: on, with the defaults of the optional timings and the provider kind', () => {
         const config = loadConfig(on);
         expect(config.chainMissing).toEqual([]);
         expect(config.chain).toEqual({
             network: { name: 'preprod', networkId: 0 },
             policyId: 'ab'.repeat(28),
             configRef: `${'cd'.repeat(32)}#0`,
+            configPolicyId: null,
             serverKeyFile: '/run/secrets/chain-server.skey',
+            providerKind: 'blockfrost',
             providerUrl: 'https://cardano-preprod.blockfrost.io/api/v0',
             providerKey: PROVIDER_KEY,
             kFinal: 10,
@@ -257,6 +318,19 @@ describe('the chain configuration', () => {
         expect(loadConfig({ ...on, CHAIN_CONFIG_REF: `${'cd'.repeat(32)}#12` }).chain.configRef).toBe(`${'cd'.repeat(32)}#12`);
         ['cd'.repeat(32), `${'cd'.repeat(31)}#0`, `${'cd'.repeat(32)}#x`, `${'cd'.repeat(32)}:0`]
             .forEach(CHAIN_CONFIG_REF => expect(problemsOf({ ...on, CHAIN_CONFIG_REF })).toMatch(/CHAIN_CONFIG_REF/));
+    });
+
+    test('the config policy: optional, 56 lower-case hex characters when set', () => {
+        expect(loadConfig({ ...on, CHAIN_CONFIG_POLICY_ID: 'ef'.repeat(28) }).chain.configPolicyId).toBe('ef'.repeat(28));
+        // docker compose passes `${CHAIN_CONFIG_POLICY_ID:-}`: empty is not set
+        expect(loadConfig({ ...on, CHAIN_CONFIG_POLICY_ID: '' }).chain.configPolicyId).toBeNull();
+        ['ef'.repeat(27) + 'e', 'EF'.repeat(28), 'ef'.repeat(29), 'zz'.repeat(28)]
+            .forEach(CHAIN_CONFIG_POLICY_ID => expect(problemsOf({ ...on, CHAIN_CONFIG_POLICY_ID })).toMatch(/CHAIN_CONFIG_POLICY_ID/));
+        // not checked while the chain is off: neither without a network nor with a variable missing
+        const { CHAIN_K_FINAL, ...five } = on;
+        expect(CHAIN_K_FINAL).toBeDefined();
+        expect(loadConfig({ ...five, CHAIN_CONFIG_POLICY_ID: 'nope' }).chain).toBeNull();
+        expect(loadConfig({ ...development, ...complete, CHAIN_CONFIG_POLICY_ID: 'nope' }).chain).toBeNull();
     });
 
     test('the finality depth: a whole number from 1 to 2160', () => {

@@ -793,4 +793,4 @@ const addServerWitness = ({ cbor, bodyHash, key }) => {
 };
 
 // gameFeesOf and gameFeeOf live in fees.js (pure, no SDK) and are exported here as well
-module.exports = { ChainTxError, ownerOf, fundsCheck, readConfig, buildMint, buildBurn, verifyWitness, addServerWitness, minUtxoLovelace, gameFeesOf, gameFeeOf };
+module.exports = { ChainTxError, spendableOf, feeOutputsLovelace, ownerOf, fundsCheck, readConfig, buildMint, buildBurn, verifyWitness, addServerWitness, minUtxoLovelace, gameFeesOf, gameFeeOf };

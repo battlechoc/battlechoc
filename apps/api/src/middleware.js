@@ -3,7 +3,7 @@
 
 const players = require('./players');
 const { fixedWindowLimit } = require('./limits');
-const { HttpError, ErrorCode } = require('./errors');
+const { HttpError, ErrorCode, bodyOf } = require('./errors');
 
 // For every response: browsers take the content type as given (no sniffing of JSON as HTML), and
 // a link out of a page of ours does not tell the target where the visitor came from. The page with
@@ -63,7 +63,7 @@ const errorHandler = ({ log = console } = {}) =>
     // eslint-disable-next-line no-unused-vars
     (error, req, res, next) => {
         if (error instanceof HttpError) {
-            res.status(error.status).json({ error: error.code });
+            res.status(error.status).json(bodyOf(error));
         } else if (error.type === 'entity.parse.failed') {
             res.status(400).json({ error: ErrorCode.INVALID_JSON });
         } else {

@@ -30,7 +30,12 @@ const holderOf = bech32 => {
     } catch {
         return nobody();
     }
-    if (!PAYMENT_ADDRESSES.includes(address._tag) || !(address.paymentCredential instanceof KeyHash.KeyHash)) {
+    return holderOfAddress(address);
+};
+
+/** holderOf for an address the SDK has read already (AddressEras's: any era, Byron included). */
+const holderOfAddress = address => {
+    if (!PAYMENT_ADDRESSES.includes(address?._tag) || !(address.paymentCredential instanceof KeyHash.KeyHash)) {
         return nobody();
     }
     const stake = address._tag === 'BaseAddress' && address.stakeCredential instanceof KeyHash.KeyHash ? `stake:${KeyHash.toHex(address.stakeCredential)}` : null;
@@ -49,4 +54,4 @@ const addressOfSubjectForFunds = (subject, network) => {
     return addressOfSubject(subject, network);
 };
 
-module.exports = { holderOf, addressOfSubjectForFunds };
+module.exports = { holderOf, holderOfAddress, addressOfSubjectForFunds };

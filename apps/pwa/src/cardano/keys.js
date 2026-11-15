@@ -115,3 +115,90 @@ export const addressToBech32 = async (addressHex) => {
     ? RewardAccount.toBech32(RewardAccount.fromHex(addressHex))
     : Address.toBech32(Address.fromHex(addressHex));
 };
+
+/**
+ * An address battlechoc cannot sign for: `reason` "script" (a script's credential where the key
+ * should be) or "unreadable" (no reward, base or enterprise address: Byron, a pointer address,
+ * nonsense); `address` is the address as given.
+ */
+export class UnsupportedAddressError extends Error {
+  constructor(address, reason, cause) {
+    super(
+      reason === "script"
+        ? "the address has no key to sign with: it is a script's"
+        : "the address cannot be read",
+      typeof cause === "undefined" ? undefined : { cause }
+    );
+    this.name = "UnsupportedAddressError";
+    this.address = address;
+    this.reason = reason;
+  }
+}
+
+/**
+ * The identity subject of an address a CIP-30 wallet gives as hex, by the server's rule
+ * (apps/api/src/cardano.js keyOfAddress): a reward address (header type 0xe/0xf) is its stake key,
+ * "stake:<hash>"; a base or enterprise address its payment key, "pay:<hash>". Rejects with
+ * UnsupportedAddressError for a script's address and for anything that is no such address.
+ */
+export const subjectOfAddress = async (addressHex) => {
+  const { RewardAccount, Address, KeyHash } = await loadEvolution();
+  const reward = /^[ef]/i.test(addressHex);
+  let parsed;
+  try {
+    parsed = reward
+      ? RewardAccount.fromHex(addressHex)
+      : Address.fromHex(addressHex);
+  } catch (failure) {
+    throw new UnsupportedAddressError(addressHex, "unreadable", failure);
+  }
+  const credential = reward ? parsed.stakeCredential : parsed.paymentCredential;
+  if (!(credential instanceof KeyHash.KeyHash)) {
+    throw new UnsupportedAddressError(addressHex, "script");
+  }
+  return `${reward ? "stake" : "pay"}:${KeyHash.toHex(credential)}`;
+};
+
+// bytes as hex: an even number of hex digits
+const HEX_BYTES = /^(?:[0-9a-f]{2})+$/i;
+
+/**
+ * The bytes (lower-case hex) of an address given as hex or as bech32 (a reward address
+ * "stake…", else a base or enterprise address); rejects for anything else.
+ */
+export const addressBytesHex = async (address) => {
+  if (typeof address !== "string") {
+    throw new TypeError("an address is a text");
+  }
+  if (HEX_BYTES.test(address)) {
+    return address.toLowerCase();
+  }
+  const { RewardAccount, Address } = await loadEvolution();
+  return /^stake(_test)?1/i.test(address)
+    ? RewardAccount.toHex(RewardAccount.fromBech32(address)).toLowerCase()
+    : Address.toHex(Address.fromBech32(address)).toLowerCase();
+};
+
+/**
+ * The address the server names for a subject on `network` (apps/api/src/cardano.js
+ * addressOfSubject): the reward address of a stake key ("stake:<hash>"), the enterprise address
+ * of a payment key ("pay:<hash>"), bech32. Rejects for anything that is no subject.
+ */
+export const addressOfSubject = async (subject, network) => {
+  const match = /^(stake|pay):([0-9a-fA-F]{56})$/.exec(
+    typeof subject === "string" ? subject : ""
+  );
+  if (!match) {
+    throw new TypeError("no subject");
+  }
+  const sdk = await loadEvolution();
+  const hash = sdk.KeyHash.fromHex(match[2].toLowerCase());
+  return match[1] === "stake"
+    ? sdk.RewardAccount.toBech32(rewardAddressFor(sdk, hash, network))
+    : sdk.Address.toBech32(
+        new sdk.Address.Address({
+          networkId: network.networkId,
+          paymentCredential: hash,
+        })
+      );
+};
