@@ -2,12 +2,25 @@
 // an item is equipped, what salvaging it gives back and what the card offers.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { EntityType } from "@battlechoc/battlechoc-shared-functions";
+import { createRequire } from "node:module";
+import { EntityType, Items } from "@battlechoc/battlechoc-shared-functions";
 import {
   shelfGroups,
   slotOf,
   salvagePreview,
   cardActions,
+  isMinted,
+  groupMinted,
+  withoutAwayItems,
+  chipMarks,
+  scrollCue,
+  shelfView,
+  SHELF_NAME,
+  longestWord,
+  tileLabel,
+  shelfTileWidth,
+  shelfColumns,
+  SHELF_GAP,
 } from "../../src/ui/lab/itemActions.js";
 
 // stats.items: newest first
@@ -129,6 +142,14 @@ test("the card offers equip and salvage online only, and no salvage of a minted 
     equip: true,
     salvage: true,
   });
+  // GET /user marks a plain item with minted: null (plan C), an older API not at all
+  assert.deepEqual(
+    cardActions({ item: { ...plain, minted: null }, online: true }),
+    {
+      equip: true,
+      salvage: true,
+    }
+  );
   const minted = { ...plain, minted: { state: "minted" } };
   assert.deepEqual(cardActions({ item: minted, online: true }), {
     equip: true,
@@ -138,4 +159,242 @@ test("the card offers equip and salvage online only, and no salvage of a minted 
     equip: false,
     salvage: false,
   });
+});
+
+const MINTED = { assetName: "000de140aa", state: "minted" };
+
+test("an item is minted only with the server's mark in the minted state", () => {
+  assert.equal(isMinted({ id: "a", minted: MINTED }), true);
+  assert.equal(isMinted({ id: "a", minted: null }), false);
+  assert.equal(isMinted({ id: "a" }), false);
+  // a state this build does not know (a later plan's "minting") is no stamp yet
+  assert.equal(isMinted({ id: "a", minted: { state: "minting" } }), false);
+  assert.equal(isMinted(undefined), false);
+});
+
+test("a shelf tile wears the stamp only when every item of its type is minted", () => {
+  const minted = (id, serial) => ({
+    id,
+    item: "NUT_BRICKS",
+    serial,
+    minted: MINTED,
+  });
+  const plain = (id, serial) => ({
+    id,
+    item: "NUT_BRICKS",
+    serial,
+    minted: null,
+  });
+  assert.equal(groupMinted([minted("a", 1), minted("b", 2)]), MINTED);
+  assert.equal(groupMinted([minted("a", 1), plain("b", 2)]), null);
+  assert.equal(groupMinted([plain("a", 1)]), null);
+  // stats without the field (an older API, stats built offline)
+  assert.equal(groupMinted([{ id: "a", item: "NUT_BRICKS", serial: 1 }]), null);
+  assert.equal(groupMinted([]), null);
+});
+
+test("a slot whose item the player does not have (a minted item away from the wallet) is free", () => {
+  const owned = [
+    { id: "d1", item: "DARK_WALLS", serial: 2 },
+    { id: "l1", item: "LIGHT_BARREL", serial: 3 },
+  ];
+  const equipment = {
+    [EntityType.FACTORY]: ["away", "d1"],
+    [EntityType.RUM_TRUFFLE_CANNON]: ["l1", null],
+    [EntityType.CACAOTREE]: null,
+  };
+  assert.deepEqual(withoutAwayItems(equipment, owned), {
+    [EntityType.FACTORY]: [null, "d1"],
+    [EntityType.RUM_TRUFFLE_CANNON]: ["l1", null],
+    [EntityType.CACAOTREE]: [],
+  });
+  // the away item's place is not the building it was on any more
+  assert.equal(slotOf("away", withoutAwayItems(equipment, owned)), null);
+  assert.deepEqual(withoutAwayItems({}, owned), {});
+  assert.deepEqual(withoutAwayItems(equipment, []), {
+    [EntityType.FACTORY]: [null, null],
+    [EntityType.RUM_TRUFFLE_CANNON]: [null, null],
+    [EntityType.CACAOTREE]: [],
+  });
+});
+
+test("a serial chip: the chosen one is chosen, a minted one gets the mark only with the marks on", () => {
+  const plain = { id: "p", serial: 3, minted: null };
+  const minted = { id: "m", serial: 2, minted: MINTED };
+  assert.deepEqual(chipMarks(plain, "p", true), {
+    chosen: true,
+    minted: false,
+  });
+  assert.deepEqual(chipMarks(minted, "p", true), {
+    chosen: false,
+    minted: true,
+  });
+  assert.deepEqual(chipMarks(minted, "m", true), {
+    chosen: true,
+    minted: true,
+  });
+  // the Android app: no mark, the choice stays
+  assert.deepEqual(chipMarks(minted, "m", false), {
+    chosen: true,
+    minted: false,
+  });
+});
+
+test("the shelf's scroll cue: more below until the end, more above once scrolled", () => {
+  assert.deepEqual(
+    scrollCue({ scrollTop: 0, scrollHeight: 300, clientHeight: 200 }),
+    { above: false, below: true }
+  );
+  assert.deepEqual(
+    scrollCue({ scrollTop: 50, scrollHeight: 300, clientHeight: 200 }),
+    { above: true, below: true }
+  );
+  // the end, also with the half pixel a zoomed page leaves
+  assert.deepEqual(
+    scrollCue({ scrollTop: 99.5, scrollHeight: 300, clientHeight: 200 }),
+    { above: true, below: false }
+  );
+  // everything fits: no cue
+  assert.deepEqual(
+    scrollCue({ scrollTop: 0, scrollHeight: 200, clientHeight: 200 }),
+    { above: false, below: false }
+  );
+});
+
+test("the longest word of a name: CJK names break between their characters", () => {
+  assert.equal(longestWord("Heißer Kakaokessel"), "Kakaokessel");
+  assert.equal(longestWord("Turbo-Förderband"), "Turbo-Förderband");
+  assert.equal(longestWord("ナッツブリトルのレンガ"), "");
+  assert.equal(longestWord("Sugar fertilizer"), "fertilizer");
+});
+
+test("every item name's longest word in every language fits a shelf tile (no break inside a word)", () => {
+  const require = createRequire(import.meta.url);
+  const languages = ["en", "de", "es", "fr", "it", "ja", "pt", "vi"];
+  const longest = languages
+    .flatMap((language) => {
+      const strings = require(
+        `../../../../packages/shared/translations/${language}_strings.js`
+      );
+      return Object.keys(Items).map((item) =>
+        longestWord(strings[`ITEM_${item}`])
+      );
+    })
+    .reduce((a, b) => (b.length > a.length ? b : a), "");
+  // German "Streuselsortierer" as of 2026-11-15; a longer name needs wider tiles (SHELF_NAME)
+  assert.ok(
+    longest.length <= SHELF_NAME.wordChars,
+    `${longest} has ${longest.length} letters, the tiles fit ${SHELF_NAME.wordChars}`
+  );
+});
+
+// tiles as the shelf measures them: their top in the box (offsetTop) and their height; rows of
+// 104 px with a 9 px gap below a 3 px padding (a 390 px phone)
+const grid = (rows, perRow = 2, height = 104) =>
+  Array.from({ length: rows * perRow }, (_, i) => ({
+    top: 3 + Math.floor(i / perRow) * (height + 9),
+    height,
+  }));
+
+test("the shelf shows whole rows: up to two rows fit without scrolling", () => {
+  assert.equal(shelfView(grid(1), { rows: 2 }), null);
+  assert.equal(shelfView(grid(2), { rows: 2 }), null);
+  assert.equal(shelfView([], { rows: 2 }), null);
+});
+
+test("more rows: the box ends a third into the next row, and only that third fades", () => {
+  // the third row starts at 3 + 2 * 113 = 229; a third of its 104 px is 35
+  assert.deepEqual(shelfView(grid(3), { rows: 2 }), {
+    maxHeight: 264,
+    fade: 35,
+  });
+  assert.deepEqual(shelfView(grid(5), { rows: 2 }), {
+    maxHeight: 264,
+    fade: 35,
+  });
+  // landscape (a desktop, a phone held sideways): one row and a third
+  assert.deepEqual(shelfView(grid(2, 6, 127), { rows: 1 }), {
+    maxHeight: 3 + 136 + 42,
+    fade: 42,
+  });
+});
+
+test("a short phone: fewer whole rows (and the peek) where the lab has less room, at least one", () => {
+  // two rows and a third take 264 px, one row and a third 151 px (3 + 113 + 35)
+  assert.deepEqual(shelfView(grid(3), { rows: 2, limit: 264 }), {
+    maxHeight: 264,
+    fade: 35,
+  });
+  assert.deepEqual(shelfView(grid(3), { rows: 2, limit: 263 }), {
+    maxHeight: 151,
+    fade: 35,
+  });
+  // not even one row and its peek: still one row and its peek (the lab scrolls)
+  assert.deepEqual(shelfView(grid(3), { rows: 2, limit: 90 }), {
+    maxHeight: 151,
+    fade: 35,
+  });
+  // two rows that would all show (223 px with the padding below) but only 200 px of room
+  assert.deepEqual(shelfView(grid(2), { rows: 2, limit: 200 }), {
+    maxHeight: 151,
+    fade: 35,
+  });
+  assert.equal(shelfView(grid(2), { rows: 2, limit: 223 }), null);
+  assert.equal(shelfView(grid(1), { rows: 2, limit: 50 }), null);
+});
+
+test("a row is as high as its highest tile (a name on two lines); tops a pixel apart are one row", () => {
+  const tiles = [
+    { top: 3, height: 104 },
+    { top: 3.4, height: 118 },
+    { top: 130, height: 104 },
+    { top: 130, height: 104 },
+    { top: 243, height: 104 },
+    { top: 243.3, height: 119 },
+  ];
+  assert.deepEqual(shelfView(tiles, { rows: 2 }), {
+    maxHeight: 243 + 40,
+    fade: 40,
+  });
+});
+
+test("a shelf tile's label: the name with its serial or count, and 'minted' when it wears the ring", () => {
+  const barrel = (id, serial, state) => ({
+    id,
+    item: "HEAVY_BARREL",
+    serial,
+    minted: state ? { assetName: `name-${id}`, state } : null,
+  });
+  const name = "Heavy rum barrel";
+  assert.equal(
+    tileLabel("HEAVY_BARREL", [barrel("a", 4)], false),
+    `${name} (No. 4)`
+  );
+  assert.equal(
+    tileLabel("HEAVY_BARREL", [barrel("a", 4, "minted")], true),
+    `${name}, minted, No. 4`
+  );
+  assert.equal(
+    tileLabel("HEAVY_BARREL", [barrel("a", 4), barrel("b", 2)], false),
+    `${name} (× 2)`
+  );
+  assert.equal(
+    tileLabel(
+      "HEAVY_BARREL",
+      [barrel("a", 4, "minted"), barrel("b", 2, "minted")],
+      true
+    ),
+    `${name}, all minted, × 2`
+  );
+});
+
+test("the shelf's columns: tiles as wide as the longest word, but two columns on the narrowest phones", () => {
+  assert.equal(shelfTileWidth(), "8.8em");
+  // a tile is at most half the row (less half the gap), so two always fit side by side; there
+  // a long name hyphenates at its syllables
+  assert.equal(
+    shelfColumns(),
+    "repeat(auto-fill, minmax(min(8.8em, calc(50% - 0.3em)), 1fr))"
+  );
+  assert.equal(SHELF_GAP, "0.6em");
 });

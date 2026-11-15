@@ -214,6 +214,13 @@ const Info = (props) => {
     setOpen(false);
   };
   const closeForUpdate = useCallback(() => setOpen(false), []);
+  // the title screen holds a notice back while the info is open
+  const { onOpenChange } = props;
+  useEffect(() => {
+    if (onOpenChange) {
+      onOpenChange(open);
+    }
+  }, [open, onOpenChange]);
 
   return (
     <>

@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { createUseStyles } from "react-jss";
 import {
   unlocks,
@@ -9,7 +9,11 @@ import Info from "./dialogs/Info";
 import Dialog from "./dialogs/Dialog";
 import Highscore from "./dialogs/Highscore";
 // loaded after the title screen (src/ui/onDemand.js)
-import { ChallengeDialog } from "./onDemand";
+import { ChallengeDialog, ItemNotice } from "./onDemand";
+import { nextNotice, noticeAllowed, withoutNotice } from "./mint/notices";
+import { features } from "../cardano/appFeatures";
+import { markNoticesSeen } from "../api/profile";
+import logger from "../helper/logger";
 import { retryAssets } from "../firstLoad";
 import { isNamed } from "../helper/playerName";
 import Button from "./controls/Button";
@@ -163,14 +167,26 @@ const useStyles = createUseStyles((theme) => ({
   },
 }));
 
+// the notices about minted items the player answered in this session: they do not show again
+// until the next start, also when the post that marks them read failed (the server then lists
+// them again, and they come back with the next start's stats). The device keeps no notices
+// (storedStats.js): they show only from the server's stats.
+const answeredNotices = new Set();
+
 /**
  * The title screen: the logo, the menu (first visit: start or skip the tutorial, sign in;
  * afterwards: Start, Choclab, Play with a friend), the highscore, the info and its dialogs. The
- * open dialogs are the Hud's state (resume, challenge), so they outlive a match.
+ * open dialogs are the Hud's state (resume, challenge), so they outlive a match. A notice about a
+ * minted item (stats.notices, ItemNotice) shows one at a time, oldest first, once no other dialog
+ * is open (`otherDialogOpen`: the update, the name conflict, the settings and the others of the
+ * Hud and the App), and only with the server at hand: offline nothing could mark it read.
  */
 const TitleScreen = (props) => {
   const classes = useStyles();
   const { playerInfos, assetsReady, online, notification } = props;
+  // the highscore and the info keep whether they are open: a notice waits for them
+  const [highscoreOpen, setHighscoreOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const { stats } = playerInfos;
 
   // what the player has unlocked by playing (shared progression.js, src/unlocks.js)
@@ -294,6 +310,36 @@ const TitleScreen = (props) => {
       ];
 
   const { challengeDialog } = props;
+
+  // the next notice about a minted item: never over another dialog, in the tutorial or without
+  // the server (the player's account must be there to mark it read)
+  const noticeFree = noticeAllowed({
+    marks: features.showMintMarks(),
+    online,
+    signedIn: Boolean(playerInfos.uid),
+    inMatch: Boolean(props.inMatch),
+    tutorial: Boolean(props.tutorial),
+    firstPlay: firstPlayScreen,
+    dialogs: {
+      resume: props.resumeDialog,
+      challenge: challengeDialog !== null || props.challenge !== null,
+      notification: notification.open,
+      highscore: highscoreOpen,
+      info: infoOpen,
+      other: props.otherDialogOpen,
+    },
+  });
+  const notice = noticeFree ? nextNotice(stats.notices, answeredNotices) : null;
+  // a button of the notice: it is read (a failed post still hides it for this session)
+  const answerNotice = () => {
+    const { id } = notice;
+    answeredNotices.add(id);
+    props.updateStats({ notices: withoutNotice(stats, id).notices });
+    markNoticesSeen([id]).catch((error) =>
+      logger.info("could not mark the notice read", error)
+    );
+  };
+
   return (
     <>
       <Dialog
@@ -351,6 +397,7 @@ const TitleScreen = (props) => {
           props.showProfile(session.opponent, "stacked")
         }
         showQuickMessage={props.showQuickMessage}
+        onOpenChange={setHighscoreOpen}
       />
       <Dialog
         open={notification.open}
@@ -369,7 +416,7 @@ const TitleScreen = (props) => {
           </Button>
         </div>
       </Dialog>
-      <Info online={online} />
+      <Info online={online} onOpenChange={setInfoOpen} />
       {/* also open by itself for a challenge the welcome restored after a reload */}
       <Suspense fallback={null}>
         <ChallengeDialog
@@ -381,6 +428,20 @@ const TitleScreen = (props) => {
           close={() => props.setChallengeDialog(null)}
         />
       </Suspense>
+      {notice ? (
+        <Suspense fallback={null}>
+          <ItemNotice
+            key={notice.id}
+            notice={notice}
+            choclabOpen={!lockedChoclab}
+            onChoclab={() => {
+              answerNotice();
+              props.openChoclab();
+            }}
+            onDone={answerNotice}
+          />
+        </Suspense>
+      ) : null}
     </>
   );
 };

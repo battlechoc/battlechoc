@@ -96,6 +96,11 @@ const placeholders = Object.freeze({
     ITEM_EQUIPPED_ON: ['building'],
     SALVAGE_TITLE: ['item', 'serial'],
     SALVAGE_UNEQUIPS: ['building'],
+    ITEM_MINTED_LABEL: ['name', 'serial'],
+    ITEM_MINTED_GROUP_LABEL: ['name', 'count'],
+    ITEM_DEPARTED_SLOT: ['building'],
+    WALLET_ITEMS_COUNT: ['count'],
+    WALLET_ITEMS_WAIT: ['time'],
 });
 
 // Texts that are picked or put together by code; each gets the language's table first.

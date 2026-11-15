@@ -36,6 +36,12 @@ export const createFeatures = ({
     /** The wallet door (plan 3): not in the Android app until the Play Store's declaration. */
     showWalletDoor: () => known !== null && !inAndroidApp(),
     /**
+     * The marks of minted items (plan C): the stamp, the notices on the title screen and what the
+     * wallet row says about the wallets' items. Not in the Android app, where minted items stay
+     * usable but nothing says they are minted. Minting itself (plan D) builds on this.
+     */
+    showMintMarks: () => known !== null && !inAndroidApp(),
+    /**
      * The ways into the wallet door on this device: "extension" (a wallet is injected: an
      * extension, or a phone wallet's own browser), "qr" (CIP-45, not on phones, in the Android
      * app once `cip45-app` is confirmed), "deeplink" (CIP-158, phones once `cip158` is confirmed,

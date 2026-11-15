@@ -641,5 +641,21 @@ module.exports = {
     "SALVAGE_DONE": "Zerlegt! Frisch zurück in deinem Regal:",
     "SALVAGE_DONE_BUTTON": "Zu deinen Items",
     "SALVAGE_NO_RECIPE": "Dieses Item lässt sich nicht zerlegen: Sein Rezept gibt es im Choclab nicht mehr.",
-    "SALVAGE_GONE": "Dieses Item liegt nicht mehr in deinem Regal."
+    "SALVAGE_GONE": "Dieses Item liegt nicht mehr in deinem Regal.",
+    "ITEM_MINTED_LABEL": "{{name}}, geprägt, Nr. {{serial}}",
+    "ITEM_MINTED_GROUP_LABEL": "{{name}}, alle geprägt, × {{count}}",
+    "ITEM_ARRIVED_TITLE": "Neu in deiner Wallet",
+    "ITEM_ARRIVED_TEXT": "Das Item liegt in deiner Wallet, also kannst du es im Spiel ausrüsten.",
+    "ITEM_TO_CHOCLAB": "Ins Choclab",
+    "ITEM_LATER": "Später",
+    "ITEM_DEPARTED_TITLE": "Nicht mehr in deiner Wallet",
+    "ITEM_DEPARTED_SLOT": "Es war ausgerüstet: {{building}}. Dort wurde es abgelegt.",
+    "ITEM_DEPARTED_TEXT": "Du hast es verkauft, verschickt oder zum Verkauf eingestellt. Kommt es zurück in deine Wallet, sitzt es wieder an seinem Platz.",
+    "ITEM_GOT_IT": "Verstanden",
+    "WALLET_ITEMS_HERE": "Hier liegen deine geprägten Items. Mit der Wallet kommst du auch zurück in dein Konto.",
+    "WALLET_ITEMS_COUNT": "{{count}} geprägte Items",
+    "WALLET_ITEMS_ONE": "1 geprägtes Item",
+    "WALLET_ITEMS_WAIT": "Diese Wallet gehörte vorher zu einem anderen Konto. Ihre Items zählen für dich ab {{time}}.",
+    "WALLET_REMOVE_NOTE": "Entfernst du die Wallet, verschwinden ihre Items aus dem Spiel. Sie bleiben in der Wallet und kommen zurück, sobald du sie wieder verbindest.",
+    "WALLET_WHAT_IS": "Was ist eine Wallet?"
 }

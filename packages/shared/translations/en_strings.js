@@ -641,5 +641,21 @@ module.exports = {
     "SALVAGE_DONE": "Salvaged! Back on your shelf, fresh:",
     "SALVAGE_DONE_BUTTON": "To your items",
     "SALVAGE_NO_RECIPE": "This item cannot be salvaged: its recipe is no longer in the Choclab.",
-    "SALVAGE_GONE": "This item is no longer on your shelf."
+    "SALVAGE_GONE": "This item is no longer on your shelf.",
+    "ITEM_MINTED_LABEL": "{{name}}, minted, No. {{serial}}",
+    "ITEM_MINTED_GROUP_LABEL": "{{name}}, all minted, × {{count}}",
+    "ITEM_ARRIVED_TITLE": "New in your wallet",
+    "ITEM_ARRIVED_TEXT": "The item is in your wallet, so you can equip it in the game.",
+    "ITEM_TO_CHOCLAB": "To the Choclab",
+    "ITEM_LATER": "Later",
+    "ITEM_DEPARTED_TITLE": "No longer in your wallet",
+    "ITEM_DEPARTED_SLOT": "It was equipped: {{building}}. It has been taken off.",
+    "ITEM_DEPARTED_TEXT": "You sold it, sent it or listed it for sale. If it comes back to your wallet, it sits in its place again.",
+    "ITEM_GOT_IT": "Got it",
+    "WALLET_ITEMS_HERE": "Your minted items live here. With the wallet you can also get back into your account.",
+    "WALLET_ITEMS_COUNT": "{{count}} minted items",
+    "WALLET_ITEMS_ONE": "1 minted item",
+    "WALLET_ITEMS_WAIT": "This wallet belonged to another account before. Its items count for you from {{time}}.",
+    "WALLET_REMOVE_NOTE": "If you remove the wallet, its items leave the game. They stay in the wallet and come back as soon as you connect it again.",
+    "WALLET_WHAT_IS": "What is a wallet?"
 }

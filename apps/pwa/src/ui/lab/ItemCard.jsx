@@ -11,8 +11,15 @@ import Dialog from "../dialogs/Dialog";
 import Button from "../controls/Button";
 import IngredientIcon from "../ingredients/IngredientIcon";
 import ItemIcon from "./ItemIcon";
-import { cardActions, salvagePreview, slotOf } from "./itemActions";
-import { effectLines, itemName, labColors, TIER_COLORS } from "./itemText";
+import { features } from "../../cardano/appFeatures";
+import { cardActions, chipMarks, salvagePreview, slotOf } from "./itemActions";
+import {
+  effectLines,
+  itemName,
+  labColors,
+  STAMP,
+  TIER_COLORS,
+} from "./itemText";
 import { bangers, gamePanel } from "../styles";
 
 const useStyles = createUseStyles((theme) => {
@@ -36,8 +43,9 @@ const useStyles = createUseStyles((theme) => {
       alignItems: "center",
       gap: "0.6em",
     },
-    // the free line below the icon: the stamp's serial tag hangs into it
-    stampRoom: { height: "1.2em", marginTop: "-0.6em" },
+    // the free room below the icon for the stamp's serial tag (from the icon's bottom: the
+    // negative margin takes back the card's gap)
+    stampRoom: { height: STAMP.tagRoom(ICON_SIZE), marginTop: "-0.6em" },
     meta: { fontWeight: 600 },
     effects: {
       display: "flex",
@@ -55,6 +63,8 @@ const useStyles = createUseStyles((theme) => {
     },
     // one of several items of the type, by its serial number
     chip: {
+      display: "inline-flex",
+      alignItems: "center",
       minHeight: 40,
       padding: "0.2em 0.8em",
       borderRadius: 999,
@@ -74,6 +84,8 @@ const useStyles = createUseStyles((theme) => {
       borderColor: theme.color.gold.light,
       color: theme.color.gold.light,
     },
+    // a minted one: a small gold coin before its number (the chosen look stays the strongest)
+    chipDot: { display: "inline-block", ...STAMP.chipDot },
     equipped: { ...bangers(theme, colors.reason) },
     actions: {
       display: "flex",
@@ -115,6 +127,9 @@ const useStyles = createUseStyles((theme) => {
     },
   };
 });
+
+// the card's icon: large, with the stamp's serial tag below it
+const ICON_SIZE = "6em";
 
 const SALVAGE_ERRORS = {
   "NOT YOUR ITEM": "SALVAGE_GONE",
@@ -160,6 +175,8 @@ const ItemCard = ({
   const slot = selected ? slotOf(selected.id, equipment) : null;
   const preview = salvagePreview(item, book);
   const actions = selected ? cardActions({ item: selected, online }) : {};
+  // the stamp's marks (not in the Android app)
+  const marks = features.showMintMarks();
 
   const select = (id) => {
     setSelectedId(id);
@@ -300,9 +317,9 @@ const ItemCard = ({
           <>
             <ItemIcon
               item={item}
-              size="6em"
+              size={ICON_SIZE}
               large
-              minted={Boolean(selected.minted)}
+              minted={selected.minted}
               serial={selected.serial}
             />
             <div className={classes.stampRoom} aria-hidden="true" />
@@ -328,21 +345,33 @@ const ItemCard = ({
         ) : null}
         {instances.length > 1 || (!selected && instances.length > 0) ? (
           <div className={classes.instances}>
-            {instances.map((entry) => (
-              <button
-                type="button"
-                key={entry.id}
-                className={`${classes.chip} ${
-                  entry.id === selectedId ? classes.chosen : ""
-                }`}
-                aria-pressed={entry.id === selectedId}
-                onClick={() => select(entry.id)}
-                data-testid="item-instance"
-                data-serial={entry.serial}
-              >
-                {t(tr.ITEM_SERIAL, entry.serial)}
-              </button>
-            ))}
+            {instances.map((entry) => {
+              const look = chipMarks(entry, selectedId, marks);
+              return (
+                <button
+                  type="button"
+                  key={entry.id}
+                  className={`${classes.chip} ${
+                    look.chosen ? classes.chosen : ""
+                  }`}
+                  aria-pressed={look.chosen}
+                  aria-label={
+                    look.minted
+                      ? t(tr.ITEM_MINTED_LABEL, itemName(item), entry.serial)
+                      : undefined
+                  }
+                  onClick={() => select(entry.id)}
+                  data-testid="item-instance"
+                  data-serial={entry.serial}
+                  data-minted={look.minted ? "true" : "false"}
+                >
+                  {look.minted ? (
+                    <span className={classes.chipDot} aria-hidden="true" />
+                  ) : null}
+                  {t(tr.ITEM_SERIAL, entry.serial)}
+                </button>
+              );
+            })}
           </div>
         ) : null}
         {slot ? (

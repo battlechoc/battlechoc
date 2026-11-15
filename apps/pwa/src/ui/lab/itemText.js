@@ -24,6 +24,78 @@ export const TIER_COLORS = {
   EPIC: { ring: "#9b5de5", fill: "#ecdcfb", label: "LAB_TIER_EPIC" },
 };
 
+/** The gold of minted items (the owner's mockup, variant B): its gold, its dark edge, its ink. */
+export const MINT = { gold: "#FAD25A", dark: "#8A5A00", ink: "#3A2500" };
+
+// the drop shadow under every item icon
+export const ICON_SHADOW = "0 0.1em 0.25em rgba(0, 0, 0, 0.35)";
+
+// a share of an icon's diameter `size` (a CSS length), never thinner than `least`
+const share = (size, part, least = "1px") =>
+  `max(${least}, calc(${size} * ${part}))`;
+
+// the stamp's rings as shares of the icon's diameter (mockup variant B: 5, 3 and 4 px at 104 px)
+const RING = { rim: 0.05, dark: 0.03, gold: 0.04 };
+
+// the serial tag: how far it reaches into the outer ring (px), its text size in em of the icon's
+// font, its line height and its border in px
+const TAG = { overlap: 1, fontSize: 0.9, lineHeight: 1.25, border: 2 };
+
+// how far the stamp's rings reach beyond the icon: the dark ring and the outer gold one
+const ringReach = (size) =>
+  `${share(size, RING.dark)} + ${share(size, RING.gold)}`;
+
+/**
+ * Every look of the stamp on minted items in one place (spec section 2, mockup variant B): the
+ * gold double ring that replaces the tier ring, scaled with the icon (`ring(size)`); the serial
+ * tag below it where the item shows large; the room the tag needs under the icon
+ * (`tagRoom(size)`); the dot on an item card's serial chip; and an item that is gone (`away`:
+ * a dark face, a light dashed rim, a grey picture, no badge).
+ */
+export const STAMP = {
+  ring: (size) => ({
+    boxShadow: [
+      `inset 0 0 0 ${share(size, RING.rim)} ${MINT.gold}`,
+      `0 0 0 ${share(size, RING.dark)} ${MINT.dark}`,
+      `0 0 0 calc(${ringReach(size)}) ${MINT.gold}`,
+      ICON_SHADOW,
+    ].join(", "),
+  }),
+  // centred under the icon, against the outer ring's edge (a pixel into it, so no gap shows
+  // where the circle's edge is soft); the badge ends above that edge, so the two never touch
+  tag: (size) => ({
+    left: "50%",
+    top: `calc(100% + ${ringReach(size)} - ${TAG.overlap}px)`,
+    transform: "translateX(-50%)",
+    padding: "0 0.55em",
+    borderRadius: 999,
+    border: `${TAG.border}px solid ${MINT.dark}`,
+    background: MINT.gold,
+    color: MINT.ink,
+    fontSize: `${TAG.fontSize}em`,
+    lineHeight: TAG.lineHeight,
+    letterSpacing: "0.03em",
+  }),
+  tagRoom: (size) =>
+    `calc(${ringReach(size)} - ${TAG.overlap}px + ${
+      TAG.fontSize * TAG.lineHeight
+    }em + ${TAG.border * 2}px)`,
+  // an item card's serial chip of a minted item: a small gold coin before the number
+  chipDot: {
+    width: "0.55em",
+    height: "0.55em",
+    marginRight: "0.4em",
+    borderRadius: "50%",
+    background: MINT.gold,
+    boxShadow: `0 0 0 1px ${MINT.dark}`,
+  },
+  away: {
+    face: "#5C7482",
+    rim: (size) => `${share(size, 0.055, "2px")} dashed #B7C7D1`,
+    picture: "grayscale(1)",
+  },
+};
+
 /**
  * The lab's text colours, from the theme: what helps the player, what is the price or missing,
  * and why something cannot be done.

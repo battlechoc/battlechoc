@@ -117,6 +117,14 @@ const Highscore = (componentProps) => {
     }
   }, [open, openHighscorePage]);
 
+  // the title screen holds a notice back while the highscore is open
+  const { onOpenChange } = props;
+  useEffect(() => {
+    if (onOpenChange) {
+      onOpenChange(open);
+    }
+  }, [open, onOpenChange]);
+
   const ownName = own ? own.name : props.playername;
   // the own row below the list when the player is not on this page (or the list is empty)
   const ownElsewhere =

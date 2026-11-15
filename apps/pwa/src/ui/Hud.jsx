@@ -11,6 +11,7 @@ import {
   showOfflineMessage,
   showNotification,
   hideNotification,
+  updatePlayerStats,
 } from "./uiSlice";
 // loaded after the title screen (src/ui/onDemand.js)
 import { Settings, AccountOverview, Choclab } from "./onDemand";
@@ -201,6 +202,15 @@ const Hud = (props) => {
           hideNotification: props.hideNotification,
           showOfflineMessage: props.showOfflineMessage,
           showQuickMessage: props.showQuickMessage,
+          tutorial: props.tutorial,
+          inMatch: typeof phase !== "undefined",
+          // a dialog of the Hud or the App is open: a notice about a minted item waits
+          otherDialogOpen:
+            props.storeDialogOpen ||
+            Boolean(props.appDialogOpen) ||
+            openSettings ||
+            showAccountOverview,
+          updateStats: props.updatePlayerStats,
         }}
       />
     </div>
@@ -221,6 +231,14 @@ const mapStateToProps = (state) => {
     online: state.ui.online,
     earlyUnlock: state.ui.earlyUnlock,
     challenge: state.live.challenge,
+    tutorial: state.ui.tutorial,
+    // the dialogs over the title screen that the store opens (UpdateAvailable, NameConflict,
+    // ChallengeCard, IncomingInvite)
+    storeDialogOpen:
+      state.ui.updateAvailable ||
+      Boolean(state.ui.nameConflict) ||
+      state.live.challengeView !== null ||
+      state.live.incomingInvites.length > 0,
   };
 };
 
@@ -229,6 +247,7 @@ const mapDispatchToProps = {
   showOfflineMessage,
   showNotification,
   hideNotification,
+  updatePlayerStats,
 };
 
 const HudContainer = connect(mapStateToProps, mapDispatchToProps)(Hud);

@@ -44,6 +44,9 @@ export const fetchRank = () => get("/rank");
 export const fetchHighscore = (page) =>
   get("/highscore" + (typeof page !== "undefined" ? "?page=" + page : ""));
 
+/** Marks the notices `ids` about minted items as read (an empty answer). */
+export const markNoticesSeen = (ids) => post("/user/notices/seen", { ids });
+
 /** A problem report from the settings. */
 export const sendProblemReport = (report) =>
   post("/debugging/gamestate", { report });

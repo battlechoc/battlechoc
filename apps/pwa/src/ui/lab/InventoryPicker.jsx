@@ -9,6 +9,7 @@ import {
 import Dialog from "../dialogs/Dialog";
 import Button from "../controls/Button";
 import ItemIcon from "./ItemIcon";
+import { groupMinted } from "./itemActions";
 import { effectLines, itemName, labColors, TIER_COLORS } from "./itemText";
 import { bangers, gamePanel } from "../styles";
 
@@ -160,7 +161,13 @@ const InventoryPicker = ({
               className={`${classes.row} ${isCurrent ? classes.current : ""}`}
               data-item={item}
             >
-              <ItemIcon item={item} size="3.4em" />
+              {/* the stamp when every item of the row is minted, as on the shelf */}
+              <ItemIcon
+                item={item}
+                size="3.4em"
+                minted={groupMinted(instances)}
+                serial={free.serial}
+              />
               <div className={classes.text}>
                 <div className={classes.name}>{itemName(item)}</div>
                 <div className={classes.meta}>

@@ -641,5 +641,21 @@ module.exports = {
     "SALVAGE_DONE": "Desmontado! De volta à sua prateleira, fresquinhos:",
     "SALVAGE_DONE_BUTTON": "Para seus itens",
     "SALVAGE_NO_RECIPE": "Este item não pode ser desmontado: a receita dele não está mais no Choclab.",
-    "SALVAGE_GONE": "Este item não está mais entre os seus itens."
+    "SALVAGE_GONE": "Este item não está mais entre os seus itens.",
+    "ITEM_MINTED_LABEL": "{{name}}, cunhado, Nº {{serial}}",
+    "ITEM_MINTED_GROUP_LABEL": "{{name}}, todos cunhados, × {{count}}",
+    "ITEM_ARRIVED_TITLE": "Novo na sua carteira",
+    "ITEM_ARRIVED_TEXT": "O item está na sua carteira, então você pode equipá-lo no jogo.",
+    "ITEM_TO_CHOCLAB": "Para o Choclab",
+    "ITEM_LATER": "Mais tarde",
+    "ITEM_DEPARTED_TITLE": "Não está mais na sua carteira",
+    "ITEM_DEPARTED_SLOT": "Estava equipado em: {{building}}. Foi removido de lá.",
+    "ITEM_DEPARTED_TEXT": "Você o vendeu, enviou ou colocou à venda. Se ele voltar para a sua carteira, volta ao seu lugar.",
+    "ITEM_GOT_IT": "Entendi",
+    "WALLET_ITEMS_HERE": "Aqui ficam seus itens cunhados. Com a carteira você também pode voltar à sua conta.",
+    "WALLET_ITEMS_COUNT": "{{count}} itens cunhados",
+    "WALLET_ITEMS_ONE": "1 item cunhado",
+    "WALLET_ITEMS_WAIT": "Esta carteira pertencia antes a outra conta. Os itens dela contam para você a partir de {{time}}.",
+    "WALLET_REMOVE_NOTE": "Se você remover a carteira, os itens dela saem do jogo. Eles ficam na carteira e voltam assim que você a conectar de novo.",
+    "WALLET_WHAT_IS": "O que é uma carteira?"
 }
