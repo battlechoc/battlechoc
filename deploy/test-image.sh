@@ -29,7 +29,7 @@ docker build -f apps/api/Dockerfile -t battlechoc-api:test .
 
 # the chain modules load in the image (WORKDIR /app): the SDK through require, the Aiken
 # evaluator with its WASM file, and the blueprint at the path blueprint.js reads
-docker run --rm battlechoc-api:test node -e "require('./apps/api/src/chain/tx'); require('./apps/api/src/chain/blueprint').loadBlueprint()"
+docker run --rm battlechoc-api:test node -e "require('./apps/api/src/chain/tx'); require('./apps/api/src/chain/provider'); require('./apps/api/src/chain/blueprint').loadBlueprint()"
 echo "the chain modules and the blueprint load in the image"
 
 cat > "$env_file" <<EOF

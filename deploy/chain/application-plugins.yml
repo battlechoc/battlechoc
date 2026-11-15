@@ -1,5 +1,5 @@
-# Yaci Store's plugins (2.0.7): the filters that keep only the game's minting policy, and the
-# clean-up of the spends of everything else. Yaci Store loads this file itself (its jar includes
+# Yaci Store's plugins (2.0.7): the filters that keep only the game's user tokens (CIP-68 label
+# 000de140 under its minting policy), and the clean-up of the spends of everything else. Yaci Store loads this file itself (its jar includes
 # the profile `plugins`); mounted at /app/config/ next to application.properties.
 #
 # ${CHAIN_POLICY_ID} is a Spring placeholder: Spring resolves it from the container's environment
@@ -15,11 +15,21 @@
 # ("Created MVEL filter").
 #
 # What the views of apps/api/src/chain/views.sql rely on, and what the filters make true:
-# - address_utxo holds exactly the outputs with at least one token of the policy, each with all of
-#   its amounts (ada and any other tokens too); an output without one is never written;
-# - assets holds exactly the policy's mints and burns (the assets store sees nothing else);
+# - address_utxo holds exactly the outputs with at least one user token of the policy (a unit that
+#   starts with the policy id and 000de140), each with all of its amounts (ada and any other tokens
+#   too); any other output, the reference tokens' (000643b0) at the items contract included, is
+#   never written: the game reads them through the provider, never through the index;
+# - assets holds exactly the mints and burns of the policy's user tokens;
 # - tx_input is written for every input of every transaction, unfiltered; the views only look at
 #   the spends of outputs kept in address_utxo, and handle-commit.js deletes the rest.
+#
+# What the expressions read (Yaci Store 2.0.7 with yaci 0.4.7): an amount's `unit` and a TxAsset's
+# `unit` are the policy id followed by the asset name in lower-case hex, without a separator (yaci
+# writes "policy.name", Yaci Store removes the dot); `assetName` is the name decoded as UTF-8, or
+# the asset's fingerprint when it is no UTF-8 (a CIP-68 name never is), so only `unit` will do.
+# Every value they touch must be there: a null `amounts`, a null `unit` or a property that does
+# not exist (a typo, a renamed field in another Yaci Store version) throws instead of keeping
+# nothing, and stops the sync like a wrong policy id.
 store:
   plugins:
     enabled: true
@@ -35,17 +45,19 @@ store:
 
     filters:
       # the item is AddressUtxo; amounts is a list of Amt { unit, policyId, assetName, quantity }
-      # (the Java property names; the table's JSON has snake_case keys); ada has no policy id
+      # (the Java property names; the table's JSON has snake_case keys); ada's unit is "lovelace"
       utxo.unspent.save:
-        - name: "battlechoc: outputs with a token of the policy"
+        - name: "battlechoc: outputs with a user token of the policy"
           lang: mvel
           expression: |
             if ('${CHAIN_POLICY_ID}'.matches('[0-9a-f]{56}') == false) {
                 Integer.parseInt('CHAIN_POLICY_ID is not 56 hex digits: the filter stops the sync');
             }
-            if (amounts == null) return false;
+            if (amounts == null) {
+                Integer.parseInt('an output without amounts: the filter stops the sync');
+            }
             foreach (amount : amounts) {
-                if (amount.policyId == '${CHAIN_POLICY_ID}') {
+                if (amount.unit.startsWith('${CHAIN_POLICY_ID}000de140')) {
                     return true;
                 }
             }
@@ -53,15 +65,15 @@ store:
           exit-on-error: true
 
       # the item is TxAsset { policy, assetName, unit, quantity, mintType }; the assets store
-      # writes only mints and burns (mintType MINT or BURN), so the policy alone decides
+      # writes only mints and burns (mintType MINT or BURN), so the unit alone decides
       asset.save:
-        - name: "battlechoc: mints and burns of the policy"
+        - name: "battlechoc: mints and burns of the policy's user tokens"
           lang: mvel
           expression: |
             if ('${CHAIN_POLICY_ID}'.matches('[0-9a-f]{56}') == false) {
                 Integer.parseInt('CHAIN_POLICY_ID is not 56 hex digits: the filter stops the sync');
             }
-            return policy == '${CHAIN_POLICY_ID}';
+            return unit.startsWith('${CHAIN_POLICY_ID}000de140');
           exit-on-error: true
 
     event-handlers:
