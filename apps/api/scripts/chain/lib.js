@@ -1,11 +1,12 @@
 // What the chain scripts share (deploy.js, update-config.js, new-key.js): the network and the
-// provider from the environment, the Blockfrost client, waiting for a block, the check of a config
-// datum before it is written, building, signing and showing an admin's transaction, and running
-// a script so that nothing secret reaches the terminal.
+// provider from the environment (Koios or Blockfrost, CHAIN_PROVIDER_KIND), waiting for a block,
+// the check of a config datum before it is written, building, signing and showing an admin's
+// transaction, and running a script so that nothing secret reaches the terminal.
 //
-// The owner runs these scripts by hand against preprod with his own key and Blockfrost project id.
-// The project id goes into a request header only; the key stays in its file and in memory. A
-// script's error is printed as its message alone, with the project id taken out.
+// The owner runs these scripts by hand against preprod with his own key, through Koios's public
+// tier (no key) or with a Koios token or a Blockfrost project id. That key goes into a request
+// header only; the signing key stays in its file and in memory. A script's error is printed as
+// its message alone, with the provider's key taken out.
 
 const util = require('util');
 const {
@@ -29,10 +30,12 @@ const {
 // public subpaths of the package (its `./*` export), not in the root index
 const { makeTxBuilder } = require('@evolution-sdk/evolution/sdk/builders/TransactionBuilder');
 const { BlockfrostProvider } = require('@evolution-sdk/evolution/sdk/provider/Blockfrost');
+const { Koios } = require('@evolution-sdk/evolution/sdk/provider/Koios');
 const { createAikenEvaluator } = require('@evolution-sdk/aiken-uplc');
 const { cardano, chain } = require('@battlechoc/battlechoc-shared-functions');
 const { decodeConfigDatum, encodeConfigDatum, isFeeAsset } = require('../../src/chain/blueprint');
 const { maskKeys, secretShapeOf } = require('../../src/chain/keys');
+const { providerKindOf, providerKindProblem } = require('../../src/chain/providerKinds');
 
 const { preprod } = cardano.Networks;
 
@@ -107,8 +110,8 @@ const redact = (text, secrets) => secrets.filter(Boolean).reduce((result, secret
  * Runs `main` ({ argv, env, log, ...the rest of `args` }) with what it prints going to `out`, one
  * line at a time, and a failure to `err` as its message alone (no stack, no cause: they may carry
  * what an SDK parsed). Every line passes through maskKeys (with the command line's secret-shaped
- * arguments as known secrets) and has the provider's project id redacted. Answers the exit code:
- * 0, or 1 on a failure.
+ * arguments as known secrets) and has the provider's key (CHAIN_PROVIDER_KEY) redacted. Answers
+ * the exit code: 0, or 1 on a failure.
  */
 const runMain = async (main, { out, err, ...args }) => {
     const mask = text => maskKeys(redact(text, [args.env?.CHAIN_PROVIDER_KEY]), secretArgumentsOf(args.argv ?? []));
@@ -132,11 +135,11 @@ const runScript = main => {
 // The provider
 
 // What a provider failure was, from the errors under it. The SDK fails with a ProviderError
-// ("Blockfrost <operation> failed") whose `cause` chain leads to what happened: an
-// HttpResponseError (`status`, and Blockfrost's JSON body in its message after "non 2xx status
-// code : "), an HttpRequestError when no response came (its `cause` is fetch's error, with the
-// system's code in its own `cause`), or a ProviderError of the SDK's own ("No address found
-// holding unit …"). Read by `_tag`: the classes are internal to the SDK.
+// ("Blockfrost <operation> failed", "Koios <operation> failed") whose `cause` chain leads to what
+// happened: an HttpResponseError (`status`, and the provider's body in its message after "non 2xx
+// status code : "), an HttpRequestError when no response came (its `cause` is fetch's error, with
+// the system's code in its own `cause`), or a ProviderError of the SDK's own ("No address found
+// holding unit …", Koios's "Unit not found"). Read by `_tag`: the classes are internal to the SDK.
 const MAX_DEPTH = 10;
 const causesOf = error => {
     const causes = [];
@@ -154,8 +157,9 @@ const parsedOrUndefined = text => {
         return undefined;
     }
 };
-// Blockfrost's `message` from a body, else the body itself; a submit error's message is itself a
-// JSON string, which is unquoted
+// The provider's `message` from a body (Blockfrost's, PostgREST's behind Koios), else the body
+// itself (cardano-submit-api's JSON behind Koios's /submittx); a Blockfrost submit error's message
+// is itself a JSON string, which is unquoted
 const reasonOfBody = text => {
     const message = parsedOrUndefined(text)?.message;
     const reason = typeof message === 'string' ? message : String(text);
@@ -178,48 +182,77 @@ const failureOf = error => {
         return { unreachable: unreachableReasonOf(request.cause) };
     }
     // the SDK's own failures; the outer "Blockfrost … failed" says nothing the operation does not
-    return { reason: causes.map(cause => cause?.message).filter(message => message && !/^Blockfrost \w+ failed$/.test(message)).join('; ') || String(error?.message ?? error) };
+    return { reason: causes.map(cause => cause?.message).filter(message => message && !/^(?:Blockfrost|Koios) \w+ failed$/.test(message)).join('; ') || String(error?.message ?? error) };
 };
-// the SDK's answers for a unit no UTxO holds
-const NO_HOLDER = /^No (?:address|UTxO) found/;
+// the SDK's answers for a unit no UTxO holds (Blockfrost's provider, Koios's)
+const NO_HOLDER = /^(?:No (?:address|UTxO) found|Unit not found)/;
 const holdsNothing = error => causesOf(error).some(cause => (cause?._tag === 'ProviderError' && NO_HOLDER.test(cause.message ?? '')) || (cause?._tag === 'HttpResponseError' && cause.status === 404));
 
 /**
- * The chain through Blockfrost (CHAIN_PROVIDER_URL, CHAIN_PROVIDER_KEY = the project id): {
- * params (protocol parameters), utxosAt(bech32), utxoByUnit(unit) (undefined if none), tip ({
- * slot, block }), submit(cbor) → tx id, blockOf(txId) → the block height, null while it is in no
- * block }. The SDK's BlockfrostProvider reads and submits; `fetch` (globalThis.fetch by default)
- * reads the tip and a transaction's block.
+ * The chain through the provider of CHAIN_PROVIDER_KIND (koios, the default, or blockfrost) at
+ * CHAIN_PROVIDER_URL, with CHAIN_PROVIDER_KEY (Koios: a bearer token, optional; Blockfrost: the
+ * project id, required): { params (protocol parameters), utxosAt(bech32), utxoByUnit(unit)
+ * (undefined if none), tip ({ slot, block }), submit(cbor) → tx id, blockOf(txId) → the block
+ * height, null while it is in no block, blockAt(height) → { block, slot, hash }, null for a block
+ * the chain does not have }. The SDK's own provider (Koios or BlockfrostProvider) reads and
+ * submits, through its public `.effect` calls; `fetch` (globalThis.fetch by default) reads the
+ * tip and the blocks.
  *
  * A failure is a ScriptError that names the operation and what went wrong: the provider refused
- * the project id (401, 403), a limit (402, 429), the provider refused the transaction (400 on
- * submit, with the ledger's reason), another status with Blockfrost's message, or the host that
- * could not be reached. Its `refused` says the provider answered with a 4xx, so a refused submit
- * certainly did not reach the chain; any other failure of a submit may have. The project id is in
- * no message.
+ * the key (401, 403), a limit (402, 429), Koios's request size limit (413: a free token raises
+ * it), the provider refused the transaction (400 on submit, with the ledger's reason), another
+ * status with the provider's message, or the host that could not be reached. Its `refused` says the provider answered with a 4xx, so a refused submit
+ * certainly did not reach the chain; any other failure of a submit may have. The key is in no
+ * message.
  */
 const providerFromEnv = (env, { fetch } = {}) => {
-    for (const name of ['CHAIN_PROVIDER_URL', 'CHAIN_PROVIDER_KEY']) {
-        if (!env[name]) {
-            throw new ScriptError(`${name} is not set`);
-        }
+    // the server's rule (src/chain/providerKinds.js): the kind trimmed and in lower case, and a
+    // Blockfrost URL only with blockfrost, a Koios URL only with koios
+    const kind = providerKindOf(env.CHAIN_PROVIDER_KIND);
+    const unknownKind = providerKindProblem(kind);
+    if (unknownKind) {
+        throw new ScriptError(unknownKind);
+    }
+    const koios = kind === 'koios';
+    if (!env.CHAIN_PROVIDER_URL) {
+        throw new ScriptError(`CHAIN_PROVIDER_URL is not set (${koios ? 'https://preprod.koios.rest/api/v1' : 'https://cardano-preprod.blockfrost.io/api/v0'})`);
+    }
+    if (!koios && !env.CHAIN_PROVIDER_KEY) {
+        throw new ScriptError('CHAIN_PROVIDER_KEY is not set: the Blockfrost project id of a preprod project');
     }
     const baseUrl = env.CHAIN_PROVIDER_URL.replace(/\/+$/, '');
     let host;
     try {
         host = new URL(baseUrl).host;
     } catch {
-        throw new ScriptError('CHAIN_PROVIDER_URL is not a URL (https://cardano-preprod.blockfrost.io/api/v0)');
+        throw new ScriptError(`CHAIN_PROVIDER_URL is not a URL (${koios ? 'https://preprod.koios.rest/api/v1' : 'https://cardano-preprod.blockfrost.io/api/v0'})`);
     }
-    const projectId = env.CHAIN_PROVIDER_KEY;
-    const provider = new BlockfrostProvider(baseUrl, projectId);
+    const wrongKind = providerKindProblem(kind, baseUrl);
+    if (wrongKind) {
+        throw new ScriptError(wrongKind);
+    }
+    const key = env.CHAIN_PROVIDER_KEY || undefined;
+    // The SDK's own provider, not the server's adapter (src/chain/provider.js): the two can differ
+    // on a UTxO whose reference script the provider gives without its bytes. The SDK's providers
+    // (its Koios and its Blockfrost provider alike) drop such a script and answer the UTxO without
+    // it; the server's adapter refuses the answer. For the scripts that means: such a UTxO in the admin's (or a player's) own wallet
+    // counts as spendable (spendableOf sees no script) and may be spent, its script going with it;
+    // the config and the store are read by their tokens, never spent for their scripts.
+    const provider = koios ? new Koios(baseUrl, key) : new BlockfrostProvider(baseUrl, key);
+    const headers = koios ? (key ? { authorization: `Bearer ${key}` } : {}) : { project_id: key };
+    const refusedKey = koios
+        ? 'the provider refused the token (%s); check CHAIN_PROVIDER_KEY: a Koios bearer token, or none for the public tier'
+        : 'the provider refused the project id (%s); check CHAIN_PROVIDER_KEY: it must be the id of a preprod project';
 
     const failure = (operation, { status, reason, unreachable }) => {
         let message;
         if (unreachable !== undefined) {
             message = `${operation}: could not reach ${host} (${unreachable}); check CHAIN_PROVIDER_URL and the connection`;
         } else if (status === 401 || status === 403) {
-            message = `${operation}: the provider refused the project id (${status}: ${reason}); check CHAIN_PROVIDER_KEY: it must be the id of a preprod project`;
+            message = `${operation}: ${refusedKey.replace('%s', `${status}: ${reason}`)}`;
+        } else if (status === 413 && koios) {
+            // Koios limits a request's body by its tier: a deploy or mint can be over the public 1 kB
+            message = `${operation}: the provider refused the request for its size (413): Koios's public tier limits a request to 1 kB; register a free token at koios.rest and put it into CHAIN_PROVIDER_KEY`;
         } else if (status === 402 || status === 429) {
             message = `${operation}: the provider's request limit is reached (${status}: ${reason}); try again later`;
         } else if (status === 400 && operation === 'submit') {
@@ -229,7 +262,7 @@ const providerFromEnv = (env, { fetch } = {}) => {
         } else {
             message = `${operation} failed: ${reason}`;
         }
-        const error = new ScriptError(maskKeys(redact(message, [projectId])));
+        const error = new ScriptError(maskKeys(redact(message, [key])));
         error.refused = status !== undefined && status >= 400 && status < 500;
         return error;
     };
@@ -249,11 +282,12 @@ const providerFromEnv = (env, { fetch } = {}) => {
         }
         throw failure(operation, failureOf(result.left));
     };
-    // a GET of Blockfrost's REST API: the JSON, null for a 404
-    const get = async (operation, route) => {
+    // one request of the provider's REST API: the JSON, null for a 404
+    const call = async (operation, route, { body } = {}) => {
         let response;
         try {
-            response = await (fetch ?? globalThis.fetch)(`${baseUrl}${route}`, { headers: { project_id: projectId } });
+            const init = body === undefined ? { headers } : { method: 'POST', headers: { ...headers, 'content-type': 'application/json' }, body: JSON.stringify(body) };
+            response = await (fetch ?? globalThis.fetch)(`${baseUrl}${route}`, init);
         } catch (error) {
             throw failure(operation, { unreachable: unreachableReasonOf(error) });
         }
@@ -266,21 +300,45 @@ const providerFromEnv = (env, { fetch } = {}) => {
         }
         return JSON.parse(text);
     };
+    // the first row of a Koios list, null for none
+    const first = rows => (Array.isArray(rows) && rows.length > 0 ? rows[0] : null);
+    const blocks = koios
+        ? {
+              tip: async () => first(await call('tip', '/tip')),
+              tipOf: block => ({ slot: block.abs_slot, block: block.block_height }),
+              blockOf: async txId => first(await call('blockOf', '/tx_info', { body: { _tx_hashes: [txId] } }))?.block_height ?? null,
+              blockAt: async height => {
+                  const block = first(await call('blockAt', `/blocks?block_height=eq.${height}&select=hash,abs_slot,block_height`));
+                  return block ? { block: block.block_height, slot: block.abs_slot, hash: block.hash } : null;
+              },
+          }
+        : {
+              tip: () => call('tip', '/blocks/latest'),
+              tipOf: block => ({ slot: block.slot, block: block.height }),
+              blockOf: async txId => (await call('blockOf', `/txs/${txId}`))?.block_height ?? null,
+              blockAt: async height => {
+                  const block = await call('blockAt', `/blocks/${height}`);
+                  return block ? { block: block.height, slot: block.slot, hash: block.hash } : null;
+              },
+          };
     return {
         params: () => sdk('params', provider.effect.getProtocolParameters()),
         utxosAt: address => sdk('utxosAt', provider.effect.getUtxos(Address.fromBech32(address))),
         utxoByUnit: unit => sdk('utxoByUnit', provider.effect.getUtxoByUnit(unit), { absent: true }),
         tip: async () => {
-            const block = await get('tip', '/blocks/latest');
+            const block = await blocks.tip();
             if (!block) {
                 throw failure('tip', { status: 404, reason: 'no latest block; check CHAIN_PROVIDER_URL' });
             }
-            return { slot: block.slot, block: block.height };
+            return blocks.tipOf(block);
         },
         submit: async cbor => TransactionHash.toHex(await sdk('submit', provider.effect.submitTx(Transaction.fromCBORHex(cbor)))),
-        blockOf: async txId => {
-            const tx = await get('blockOf', `/txs/${txId}`);
-            return tx ? tx.block_height : null;
+        blockOf: txId => blocks.blockOf(txId),
+        blockAt: height => {
+            if (!Number.isSafeInteger(height) || height < 0) {
+                throw new ScriptError(`blockAt: a block height, not ${JSON.stringify(height)}`);
+            }
+            return blocks.blockAt(height);
         },
     };
 };

@@ -59,7 +59,7 @@ const fakeLog = () => {
 const providerWith = (routes, options = {}) => {
     const { fetch, requests } = fakeFetch(routes);
     const log = options.log || fakeLog();
-    const provider = createProvider({ url: BASE, key: KEY, network: preprod, fetch, log, ...options });
+    const provider = createProvider({ kind: 'blockfrost', url: BASE, key: KEY, network: preprod, fetch, log, ...options });
     return { provider, requests, log };
 };
 
@@ -387,6 +387,12 @@ describe('failures', () => {
         return { failure: failureOf(provider.utxosOf(`pay:${keys.paymentKeyHashHex}`)), log, provider };
     };
 
+    test('413, on a submit too: unavailable as any other status, nothing logged (as before Koios came)', async () => {
+        const { provider, log } = providerWith({ 'POST /tx/submit': { status: 413, text: 'Request Entity Too Large' } });
+        expect(await failureOf(provider.submit('00'))).toMatchObject({ code: 'unavailable', status: 413, message: 'chain provider submit: the provider answered 413' });
+        expect(log.lines).toEqual([]);
+    });
+
     test('429 and 418: busy; 5xx: unavailable', async () => {
         expect(await askWith({ status: 429, json: { status_code: 429 } }).failure).toMatchObject({ code: 'busy', status: 429 });
         expect(await askWith({ status: 418, json: { status_code: 418 } }).failure).toMatchObject({ code: 'busy', status: 418 });
@@ -410,7 +416,7 @@ describe('failures', () => {
         let clock = 1_000_000;
         const log = fakeLog();
         const { fetch } = fakeFetch({ [route]: { status: 403, json: { status_code: 403, error: 'Forbidden', message: `Invalid project token: ${KEY}` } } });
-        const provider = createProvider({ url: BASE, key: KEY, network: preprod, fetch, log, now: () => clock });
+        const provider = createProvider({ kind: 'blockfrost', url: BASE, key: KEY, network: preprod, fetch, log, now: () => clock });
         const ask = () => failureOf(provider.utxosOf(`pay:${keys.paymentKeyHashHex}`));
         const errors = [await ask(), await ask()];
         clock += 30 * 60 * 1000;
@@ -482,6 +488,20 @@ describe('protocolParameters and tip', () => {
         expect(await provider.protocolParameters()).toEqual(loadParams());
     });
 
+    test('a field the builder reads that is missing, null or not a number, or a missing cost model: unavailable, never a 0 or {}', async () => {
+        const whole = blockfrostParamsOf(loadParams());
+        const fields = ['min_fee_a', 'min_fee_b', 'max_tx_size', 'max_val_size', 'key_deposit', 'pool_deposit', 'price_mem', 'price_step', 'max_tx_ex_mem', 'max_tx_ex_steps', 'coins_per_utxo_size', 'collateral_percent', 'max_collateral_inputs', 'min_fee_ref_script_cost_per_byte'];
+        const broken = [
+            ...fields.flatMap(field => [{ ...whole, [field]: undefined }, { ...whole, [field]: null }, { ...whole, [field]: 'many' }]),
+            { ...whole, cost_models_raw: { ...whole.cost_models_raw, PlutusV3: undefined }, cost_models: {} },
+            { ...whole, cost_models_raw: undefined, cost_models: undefined },
+        ];
+        for (const params of broken) {
+            const { provider } = providerWith({ 'GET /epochs/latest/parameters': { json: params } });
+            expect(await failureOf(provider.protocolParameters())).toMatchObject({ name: 'ProviderError', code: 'unavailable' });
+        }
+    });
+
     test('without cost_models_raw the named cost models are read', async () => {
         const { cost_models_raw, ...named } = blockfrostParamsOf(loadParams());
         expect(cost_models_raw).toBeDefined();
@@ -493,7 +513,7 @@ describe('protocolParameters and tip', () => {
     test('cached for 10 minutes', async () => {
         let clock = 5_000_000;
         const { fetch, requests } = fakeFetch({ 'GET /epochs/latest/parameters': { json: blockfrostParamsOf(loadParams()) } });
-        const provider = createProvider({ url: BASE, key: KEY, network: preprod, fetch, log: fakeLog(), now: () => clock });
+        const provider = createProvider({ kind: 'blockfrost', url: BASE, key: KEY, network: preprod, fetch, log: fakeLog(), now: () => clock });
         await provider.protocolParameters();
         clock += 10 * 60 * 1000 - 1;
         await Promise.all([provider.protocolParameters(), provider.protocolParameters()]);

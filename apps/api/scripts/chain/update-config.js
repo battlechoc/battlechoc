@@ -1,9 +1,11 @@
 // Changes the config datum on preprod, for the owner:
 //
-//   CARDANO_NETWORK=preprod CHAIN_PROVIDER_URL=https://cardano-preprod.blockfrost.io/api/v0 \
-//   CHAIN_PROVIDER_KEY=<project id> node apps/api/scripts/chain/update-config.js \
+//   CARDANO_NETWORK=preprod CHAIN_PROVIDER_URL=https://preprod.koios.rest/api/v1 \
+//   node apps/api/scripts/chain/update-config.js \
 //     --admin-key <file> (--pause | --resume | --add-server-key <hex> | --remove-server-key <hex> |
 //                         --fees <json file>) [--dry-run]
+//   (Koios's public tier needs no key; with CHAIN_PROVIDER_KIND=blockfrost, CHAIN_PROVIDER_URL is
+//   Blockfrost's and CHAIN_PROVIDER_KEY its project id: lib.js providerFromEnv)
 //
 // One transaction, signed by the admin key and paid from its enterprise address: it spends the
 // config UTxO (found by its NFT, wherever the last update put it) with the config script

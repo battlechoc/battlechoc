@@ -57,7 +57,7 @@ const DEPLOYMENT = {
 
 // a stand-in for the Blockfrost project id: it must never be printed
 const PROJECT_ID = 'stand-in-for-the-blockfrost-project-id';
-const ENV = { CARDANO_NETWORK: 'preprod', CHAIN_PROVIDER_URL: 'https://cardano-preprod.blockfrost.io/api/v0', CHAIN_PROVIDER_KEY: PROJECT_ID };
+const ENV = { CARDANO_NETWORK: 'preprod', CHAIN_PROVIDER_KIND: 'blockfrost', CHAIN_PROVIDER_URL: 'https://cardano-preprod.blockfrost.io/api/v0', CHAIN_PROVIDER_KEY: PROJECT_ID };
 
 const ada = n => BigInt(n) * 1_000_000n;
 const txIdOfUtxo = entry => TransactionHash.toHex(entry.transactionId);
@@ -1033,6 +1033,29 @@ describe('the pure parts', () => {
             expect([name, verdict.text]).toEqual([name, expect.stringMatching(message)]);
             expect(verdict.text).not.toContain(PROJECT_ID);
         }
+    });
+
+    test("unsignedVerdict through Koios: cardano-submit-api's refusal behind /submittx is the ledger's refusal too", async () => {
+        const realFetch = globalThis.fetch;
+        const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+        const refusalOf = reason => json(400, { tag: 'TxSubmitFail', contents: { tag: 'TxCmdTxSubmitValidationError', contents: { tag: 'TxValidationErrorInCardanoMode', contents: { kind: 'ShelleyTxValidationError', error: [reason], era: 'ShelleyBasedEraConway' } } } });
+        const judgeAnswer = async answer => {
+            globalThis.fetch = async () => answer;
+            try {
+                const client = providerFromEnv({ CARDANO_NETWORK: 'preprod', CHAIN_PROVIDER_URL: 'https://preprod.koios.rest/api/v1' });
+                return unsignedVerdict({ outcome: { accepted: await client.submit(signed) }, serverKeyHash: server.keyHash, playerKeyHash: A.keyHash });
+            } catch (error) {
+                return unsignedVerdict({ outcome: { error }, serverKeyHash: server.keyHash, playerKeyHash: A.keyHash });
+            } finally {
+                globalThis.fetch = realFetch;
+            }
+        };
+        expect(await judgeAnswer(refusalOf(`ConwayUtxowFailure (MissingVKeyWitnessesUTXOW (fromList [KeyHash {unKeyHash = "${server.keyHash}"}]))`))).toMatchObject({ passed: true });
+        expect(await judgeAnswer(refusalOf(`ConwayUtxowFailure (MissingVKeyWitnessesUTXOW (fromList [KeyHash {unKeyHash = "${stranger.keyHash}"}]))`))).toMatchObject({
+            passed: false,
+            text: expect.stringMatching(/does not name the server key/),
+        });
+        expect(await judgeAnswer(json(401, { message: 'invalid token' }))).toMatchObject({ passed: false, text: expect.stringMatching(/not the ledger's refusal/) });
     });
 
     test('buildTransfer: a plain transaction, A pays the user token to B, the change to A, signed by A alone', async () => {

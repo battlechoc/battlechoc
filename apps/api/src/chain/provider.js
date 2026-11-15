@@ -1,7 +1,9 @@
-// The server's access to the chain through a Blockfrost-compatible API (CHAIN_PROVIDER_URL; the
-// project id CHAIN_PROVIDER_KEY goes in the `project_id` header of every request): a wallet's
-// UTxOs, the UTxOs at an address, one UTxO by its output reference or by a unit it holds, the
-// protocol parameters, the tip, and submitting and evaluating a transaction.
+// The server's access to the chain: a wallet's UTxOs, the UTxOs at an address, one UTxO by its
+// output reference or by a unit it holds, the protocol parameters, the tip, and submitting and
+// evaluating a transaction. createProvider chooses the API by CHAIN_PROVIDER_KIND: Koios
+// (koiosProvider.js; CHAIN_PROVIDER_KEY, if any, is a bearer token) or a Blockfrost-compatible
+// API (below; CHAIN_PROVIDER_KEY is the project id in the `project_id` header). Both answer
+// alike (test/chainProviderContract.test.js) and share providerCommon.js.
 //
 // UTxOs and parameters come back as the Evolution SDK's objects, exactly as tx.js takes them
 // (UTxO.UTxO with its address, assets, datumOption and scriptRef; Provider.ProtocolParameters).
@@ -11,48 +13,31 @@
 // whose reference script it could not fetch as a UTxO without one, which spendableOf would then
 // spend. A failure here is a ProviderError; the key is in no message and no log line.
 
-const { Address, Assets, Data, DatumHash, InlineDatum, NativeScripts, PlutusV1, PlutusV2, PlutusV3, ScriptHash, TransactionHash, UTxO } = require('@evolution-sdk/evolution');
+const { Assets } = require('@evolution-sdk/evolution');
 const { addressOfSubjectForFunds } = require('./addresses');
+const {
+    ProviderError,
+    TX_HASH,
+    assetsOf,
+    cachedParameters,
+    checkedTip,
+    createHttp,
+    datumOptionOf,
+    isScriptOf,
+    isUnit,
+    outRefParts,
+    parsed,
+    protocolParametersOf,
+    readPages,
+    scriptOf,
+    utxoOf,
+} = require('./providerCommon');
+const { createKoiosProvider } = require('./koiosProvider');
+const { PROVIDER_KINDS } = require('./providerKinds');
 
 const PAGE_SIZE = 100;
-const MAX_PAGES = 10;
-const PARAMS_TTL_MS = 10 * 60 * 1000;
-const REFUSAL_LOG_INTERVAL_MS = 60 * 60 * 1000;
-const MAX_REASON = 300;
 // reference scripts are immutable by their hash; a few hundred cover every script a wallet shows
 const MAX_CACHED_SCRIPTS = 256;
-
-const OUT_REF = /^([0-9a-f]{64})#(\d{1,10})$/;
-// a policy id and an asset name of up to 32 bytes, in lower-case hex
-const UNIT = /^[0-9a-f]{56}(?:[0-9a-f]{2}){0,32}$/;
-const TX_HASH = /^[0-9a-f]{64}$/;
-
-/**
- * A failure of the provider. `code`: 'rejected' (the provider refused a transaction: 400 on submit
- * or evaluate, or a script that fails; `message` is the provider's reason, at most 300
- * characters), 'busy' (a request limit: 402, 418, 425, 429), 'unauthorized' (401, 403: the key
- * was refused), 'unavailable' (5xx, no answer in time, a network error, an answer that cannot be
- * read). `status`: the HTTP status, null when no answer came.
- */
-class ProviderError extends Error {
-    constructor(code, message, status = null) {
-        super(message);
-        this.name = 'ProviderError';
-        this.code = code;
-        this.status = status;
-    }
-}
-
-const BUSY = [402, 418, 425, 429];
-const UNAUTHORIZED = [401, 403];
-
-const parsed = text => {
-    try {
-        return { json: JSON.parse(text) };
-    } catch {
-        return {};
-    }
-};
 
 // Blockfrost's `message` of an error answer, else the answer itself; a submit error's message is
 // itself a JSON string, which is read unquoted
@@ -66,80 +51,18 @@ const reasonOf = text => {
 // ---------------------------------------------------------------------------------------------
 // Blockfrost's JSON as the SDK's objects
 
-const bigintOf = value => BigInt(String(value));
-const optionalBigint = value => (value === undefined || value === null ? 0n : bigintOf(value));
-
-// the amounts [{ unit, quantity }] as Assets ('lovelace', else policy id and asset name in hex)
-const assetsOf = amounts => {
-    let assets = Assets.fromLovelace(0n);
-    for (const { unit, quantity } of amounts) {
-        assets = unit === 'lovelace' ? Assets.withLovelace(assets, bigintOf(quantity)) : Assets.addByHex(assets, unit.slice(0, 56), unit.slice(56), bigintOf(quantity));
-    }
-    return assets;
-};
-
-const datumOptionOf = ({ inline_datum: inline, data_hash: hash }) => {
-    if (inline) {
-        return new InlineDatum.InlineDatum({ data: Data.fromCBORHex(inline) });
-    }
-    return hash ? DatumHash.fromHex(hash) : undefined;
-};
-
 // a UTxO entry of Blockfrost (an address's or an account's UTxOs, a transaction's output) with the
-// transaction hash `txHash` and its reference script `scriptRef` (already fetched)
-const utxoOf = (entry, { txHash = entry.tx_hash, scriptRef } = {}) =>
-    new UTxO.UTxO({
-        transactionId: TransactionHash.fromHex(txHash),
-        index: bigintOf(entry.output_index),
-        address: Address.fromBech32(entry.address),
-        assets: assetsOf(entry.amount),
-        datumOption: datumOptionOf(entry),
-        scriptRef,
-    });
-
-// a script of the type Blockfrost names (/scripts/{hash}) from its CBOR (/scripts/{hash}/cbor)
-const scriptOf = (type, cbor) => {
-    switch (type) {
-        case 'timelock':
-            return NativeScripts.fromCBORHex(cbor);
-        case 'plutusV1':
-            return new PlutusV1.PlutusV1({ bytes: Buffer.from(cbor, 'hex') });
-        case 'plutusV2':
-            return new PlutusV2.PlutusV2({ bytes: Buffer.from(cbor, 'hex') });
-        case 'plutusV3':
-            return new PlutusV3.PlutusV3({ bytes: Buffer.from(cbor, 'hex') });
-        default:
-            throw new Error(`unknown script type ${type}`);
-    }
+// transaction hash `txHash` and its reference script `scriptRef` (already fetched); the amounts
+// [{ unit, quantity }] are 'lovelace' and units of a policy id and a hex asset name
+const blockfrostUtxoOf = (entry, { txHash = entry.tx_hash, scriptRef } = {}) => {
+    const lovelace = entry.amount.find(({ unit }) => unit === 'lovelace')?.quantity ?? 0;
+    const tokens = entry.amount.filter(({ unit }) => unit !== 'lovelace').map(({ unit, quantity }) => [unit.slice(0, 56), unit.slice(56), quantity]);
+    return utxoOf({ txHash, index: entry.output_index, address: entry.address, assets: assetsOf(lovelace, tokens), datumOption: datumOptionOf(entry.inline_datum, entry.data_hash), scriptRef });
 };
 
-// the cost model of `language`: the raw list (cost_models_raw) by index, else the named map
-const costModelOf = ({ cost_models_raw: raw, cost_models: named }, language) =>
-    raw?.[language]
-        ? Object.fromEntries(raw[language].map((cost, index) => [String(index), Number(cost)]))
-        : Object.fromEntries(Object.entries(named?.[language] ?? {}).map(([name, cost]) => [name, Number(cost)]));
-
-// /epochs/latest/parameters as Provider.ProtocolParameters, field by field as the SDK's provider
-// reads them (Blockfrost sends some integers as strings)
-const protocolParametersOf = params => ({
-    minFeeA: Number(params.min_fee_a),
-    minFeeB: Number(params.min_fee_b),
-    maxTxSize: Number(params.max_tx_size),
-    maxValSize: Number(params.max_val_size ?? 0),
-    keyDeposit: bigintOf(params.key_deposit),
-    poolDeposit: bigintOf(params.pool_deposit),
-    drepDeposit: optionalBigint(params.drep_deposit),
-    govActionDeposit: optionalBigint(params.gov_action_deposit),
-    priceMem: Number(params.price_mem) || 0,
-    priceStep: Number(params.price_step) || 0,
-    maxTxExMem: optionalBigint(params.max_tx_ex_mem),
-    maxTxExSteps: optionalBigint(params.max_tx_ex_steps),
-    coinsPerUtxoByte: optionalBigint(params.coins_per_utxo_size),
-    collateralPercentage: Number(params.collateral_percent ?? 0),
-    maxCollateralInputs: Number(params.max_collateral_inputs ?? 0),
-    minFeeRefScriptCostPerByte: Number(params.min_fee_ref_script_cost_per_byte) || 0,
-    costModels: { PlutusV1: costModelOf(params, 'PlutusV1'), PlutusV2: costModelOf(params, 'PlutusV2'), PlutusV3: costModelOf(params, 'PlutusV3') },
-});
+// the costs of `language` in /epochs/latest/parameters: the raw list (cost_models_raw) by index,
+// else the named map
+const blockfrostCostsOf = ({ cost_models_raw: raw, cost_models: named }) => language => (raw?.[language] ? raw[language] : named?.[language]);
 
 // Ogmios' EvaluateTx result (Blockfrost's /utils/txs/evaluate) as [{ tag, index, memory, steps }]
 const exUnitsOf = result =>
@@ -152,59 +75,13 @@ const exUnitsOf = result =>
 // The provider
 
 /**
- * The provider at `url` (no trailing slash) with the project id `key`, for `network`. Every
- * request: `${url}${path}`, the `project_id` header, at most `timeoutMs`. `log` gets one warning
- * when a wallet has more UTxOs than are read, and `chain provider refused the key` at most once an
- * hour (`now`) while the key is refused.
+ * The Blockfrost-compatible API at `url` (no trailing slash) with the project id `key`, for
+ * `network`. Every request: `${url}${path}`, the `project_id` header, at most `timeoutMs`. `log`
+ * gets one warning when a wallet has more UTxOs than are read, and `chain provider refused the
+ * key` at most once an hour (`now`) while the key is refused.
  */
-const createProvider = ({ url, key, network, fetch = globalThis.fetch, timeoutMs = 10000, now = Date.now, log = console }) => {
-    const base = String(url).replace(/\/+$/, '');
-    // defensive: whatever an answer repeats, the key never leaves in a message
-    const masked = text => (key ? String(text).split(key).join('<redacted>') : String(text));
-    const failure = (code, message, status) => new ProviderError(code, masked(message), status);
-    // the provider's reason, masked before it is cut (a cut through the key would leave a part)
-    const rejection = (reason, status) => new ProviderError('rejected', masked(reason).slice(0, MAX_REASON), status);
-    const unreadable = operation => failure('unavailable', `chain provider ${operation}: an answer that cannot be read`, null);
-
-    let refusalLoggedAt = -Infinity;
-    const refused = () => {
-        if (now() - refusalLoggedAt >= REFUSAL_LOG_INTERVAL_MS) {
-            refusalLoggedAt = now();
-            log.error('chain provider refused the key');
-        }
-    };
-
-    // The answer of one request: { status, text }. `rejectable`: a 400 is the provider refusing a
-    // transaction. 404 is answered as it is (each operation knows what it means); every other
-    // status but 2xx is a ProviderError.
-    const request = async (operation, method, path, { body, contentType, rejectable = false } = {}) => {
-        const headers = { project_id: key, ...(contentType ? { 'content-type': contentType } : {}) };
-        let status;
-        let text;
-        try {
-            // no redirect: it would carry the project_id header to wherever it points
-            const response = await fetch(`${base}${path}`, { method, headers, body, redirect: 'error', signal: AbortSignal.timeout(timeoutMs) });
-            status = response.status;
-            text = await response.text();
-        } catch (error) {
-            const why = error?.name === 'TimeoutError' ? `no answer within ${timeoutMs} ms` : `no answer (${error?.cause?.code || error?.name || 'network error'})`;
-            throw failure('unavailable', `chain provider ${operation}: ${why}`, null);
-        }
-        if ((status >= 200 && status < 300) || status === 404) {
-            return { status, text };
-        }
-        if (status === 400 && rejectable) {
-            throw rejection(reasonOf(text), status);
-        }
-        if (UNAUTHORIZED.includes(status)) {
-            refused();
-            throw failure('unauthorized', `chain provider ${operation}: the provider refused the key (${status})`, status);
-        }
-        if (BUSY.includes(status)) {
-            throw failure('busy', `chain provider ${operation}: the provider's request limit is reached (${status})`, status);
-        }
-        throw failure('unavailable', `chain provider ${operation}: the provider answered ${status}`, status);
-    };
+const createBlockfrostProvider = ({ url, key, network, fetch = globalThis.fetch, timeoutMs = 10000, now = Date.now, log = console }) => {
+    const { failure, rejection, unreadable, request } = createHttp({ url, headers: { project_id: key }, key, fetch, timeoutMs, now, log, reasonOf });
 
     // the JSON of a GET; undefined for a 404 when `absent` allows it
     const get = async (operation, path, { absent = true } = {}) => {
@@ -222,25 +99,8 @@ const createProvider = ({ url, key, network, fetch = globalThis.fetch, timeoutMs
         return json;
     };
 
-    // the entries of a paged list: pages of PAGE_SIZE until a shorter one, at most MAX_PAGES
-    const pages = async (operation, path) => {
-        const found = [];
-        for (let page = 1; page <= MAX_PAGES; page++) {
-            const entries = await get(operation, `${path}?count=${PAGE_SIZE}&page=${page}`);
-            if (entries === undefined) {
-                return found;
-            }
-            if (!Array.isArray(entries)) {
-                throw unreadable(operation);
-            }
-            found.push(...entries);
-            if (entries.length < PAGE_SIZE) {
-                return found;
-            }
-        }
-        log.warn(`chain provider ${operation}: more than ${PAGE_SIZE * MAX_PAGES} UTxOs, only the first ${PAGE_SIZE * MAX_PAGES} are read`);
-        return found;
-    };
+    // the entries of a paged list: pages of PAGE_SIZE until a shorter one, at most 1000 entries
+    const pages = (operation, path) => readPages({ operation, pageSize: PAGE_SIZE, page: n => get(operation, `${path}?count=${PAGE_SIZE}&page=${n}`), log, unreadable });
 
     // A reference script by its hash: its type and its CBOR, checked against the hash (a UTxO
     // never comes back with another script than the one it holds), cached.
@@ -255,14 +115,14 @@ const createProvider = ({ url, key, network, fetch = globalThis.fetch, timeoutMs
             throw failure('unavailable', `chain provider ${operation}: the provider does not know the reference script ${hash}`, 404);
         }
         let script;
-        let scriptHash;
+        let matches;
         try {
             script = scriptOf(info.type, cbor.cbor);
-            scriptHash = ScriptHash.toHex(ScriptHash.fromScript(script));
+            matches = isScriptOf(script, hash);
         } catch {
             throw unreadable(operation);
         }
-        if (scriptHash !== hash) {
+        if (!matches) {
             throw failure('unavailable', `chain provider ${operation}: the reference script ${hash} the provider sent has another hash`, null);
         }
         if (scripts.size >= MAX_CACHED_SCRIPTS) {
@@ -279,7 +139,7 @@ const createProvider = ({ url, key, network, fetch = globalThis.fetch, timeoutMs
             const hash = entry?.reference_script_hash;
             const scriptRef = hash ? await scriptByHash(operation, hash) : undefined;
             try {
-                utxos.push(utxoOf(entry, { txHash, scriptRef }));
+                utxos.push(blockfrostUtxoOf(entry, { txHash, scriptRef }));
             } catch {
                 throw unreadable(operation);
             }
@@ -310,11 +170,11 @@ const createProvider = ({ url, key, network, fetch = globalThis.fetch, timeoutMs
 
     /** The unspent output `ref` ('<tx hash>#<index>'); undefined if there is none. */
     const utxoByRef = async ref => {
-        const match = typeof ref === 'string' ? OUT_REF.exec(ref) : null;
-        if (!match) {
+        const parts = outRefParts(ref);
+        if (!parts) {
             return undefined;
         }
-        const [, txHash, index] = match;
+        const { txHash, index } = parts;
         const tx = await get('utxoByRef', `/txs/${txHash}/utxos`);
         if (tx === undefined) {
             return undefined;
@@ -323,7 +183,7 @@ const createProvider = ({ url, key, network, fetch = globalThis.fetch, timeoutMs
             throw unreadable('utxoByRef');
         }
         // a collateral return is no output of a valid transaction; a consumed output is spent
-        const output = tx.outputs.find(candidate => Number(candidate?.output_index) === Number(index) && candidate.collateral !== true);
+        const output = tx.outputs.find(candidate => Number(candidate?.output_index) === index && candidate.collateral !== true);
         if (!output) {
             return undefined;
         }
@@ -340,13 +200,14 @@ const createProvider = ({ url, key, network, fetch = globalThis.fetch, timeoutMs
     };
 
     /**
-     * The unspent output that holds `unit` (policy id and asset name, hex): at the address the
-     * provider names first as its holder (an NFT has exactly one). Undefined if nobody holds it;
+     * The unspent output that holds `unit` (policy id and asset name, hex), for a unit with one
+     * holder (an NFT: the config NFT, an item's tokens): at the address the provider names first as
+     * its holder; for a unit many outputs hold, only that first one. Undefined if nobody holds it;
      * an output it answers that does not hold the unit is a provider that answers wrongly
      * (ProviderError 'unavailable'), never another output.
      */
     const utxoByUnit = async unit => {
-        if (typeof unit !== 'string' || !UNIT.test(unit)) {
+        if (!isUnit(unit)) {
             return undefined;
         }
         const holders = await get('utxoByUnit', `/assets/${unit}/addresses`);
@@ -370,39 +231,23 @@ const createProvider = ({ url, key, network, fetch = globalThis.fetch, timeoutMs
         return utxo;
     };
 
-    // the parameters of the latest epoch, read at most every PARAMS_TTL_MS (a read under way is
-    // shared; a failed one is not kept)
-    let params;
-    /** The protocol parameters (Provider.ProtocolParameters), cached for 10 minutes. */
-    const protocolParameters = () => {
-        if (params && now() - params.at < PARAMS_TTL_MS) {
-            return params.answer;
-        }
-        const answer = get('protocolParameters', '/epochs/latest/parameters', { absent: false }).then(json => {
-            try {
-                return protocolParametersOf(json);
-            } catch {
-                throw unreadable('protocolParameters');
-            }
-        });
-        const entry = { at: now(), answer };
-        params = entry;
-        answer.catch(() => {
-            if (params === entry) {
-                params = undefined;
-            }
-        });
-        return answer;
-    };
+    /** The protocol parameters of the latest epoch (Provider.ProtocolParameters), cached for 10 minutes. */
+    const protocolParameters = cachedParameters({
+        now,
+        read: () =>
+            get('protocolParameters', '/epochs/latest/parameters', { absent: false }).then(json => {
+                try {
+                    return protocolParametersOf(json, blockfrostCostsOf(json));
+                } catch {
+                    throw unreadable('protocolParameters');
+                }
+            }),
+    });
 
     /** The latest block: { blockNo, slot, hash, time (ms) }. */
     const tip = async () => {
         const block = await get('tip', '/blocks/latest', { absent: false });
-        const answer = { blockNo: block?.height, slot: block?.slot, hash: block?.hash, time: block?.time * 1000 };
-        if (![answer.blockNo, answer.slot, answer.time].every(Number.isSafeInteger) || typeof answer.hash !== 'string') {
-            throw unreadable('tip');
-        }
-        return answer;
+        return checkedTip({ blockNo: block?.height, slot: block?.slot, hash: block?.hash, time: block?.time * 1000 }, unreadable);
     };
 
     /** Submits the signed transaction `cborHex`; resolves with its hash. */
@@ -435,4 +280,19 @@ const createProvider = ({ url, key, network, fetch = globalThis.fetch, timeoutMs
     return { utxosOf, utxosAt, utxoByRef, utxoByUnit, protocolParameters, tip, submit, evaluate };
 };
 
-module.exports = { ProviderError, createProvider };
+/**
+ * The provider of `kind` ('koios' or 'blockfrost', else a TypeError) at `url` with `key` (Koios:
+ * a bearer token or nothing; Blockfrost: the project id), for `network`; the other options
+ * (`fetch`, `timeoutMs`, `now`, `log`) as each provider takes them.
+ */
+const createProvider = ({ kind, ...options }) => {
+    if (kind === 'koios') {
+        return createKoiosProvider(options);
+    }
+    if (kind === 'blockfrost') {
+        return createBlockfrostProvider(options);
+    }
+    throw new TypeError(`createProvider: kind must be one of ${PROVIDER_KINDS.join(', ')}`);
+};
+
+module.exports = { PROVIDER_KINDS, ProviderError, createProvider };

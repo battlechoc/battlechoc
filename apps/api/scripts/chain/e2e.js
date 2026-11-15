@@ -1,8 +1,10 @@
 // The end-to-end run against preprod, for the owner, once per release with test ADA:
 //
-//   CARDANO_NETWORK=preprod CHAIN_PROVIDER_URL=https://cardano-preprod.blockfrost.io/api/v0 \
-//   CHAIN_PROVIDER_KEY=<project id> node apps/api/scripts/chain/e2e.js \
+//   CARDANO_NETWORK=preprod CHAIN_PROVIDER_URL=https://preprod.koios.rest/api/v1 \
+//   node apps/api/scripts/chain/e2e.js \
 //     --player-a <words file> --player-b <words file> --server-key <file> --run-dir <dir> [--dry-run]
+//   (Koios's public tier needs no key; with CHAIN_PROVIDER_KIND=blockfrost, CHAIN_PROVIDER_URL is
+//   Blockfrost's and CHAIN_PROVIDER_KEY its project id: lib.js providerFromEnv)
 //
 // It proves on the real chain what the offline tests prove locally, with tx.js used as the API
 // uses it (the server builds, the player's wallet signs, verifyWitness takes its witness set, the
