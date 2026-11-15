@@ -115,12 +115,27 @@ const addressOf = (data, network) => {
 };
 
 const bool = value => Data.constr(value ? 1n : 0n, []);
+
+// A fee option's asset: 'lovelace', or the policy (28 bytes) and the name (up to 32 bytes) in
+// lower-case hex. FEE_ASSET_INVALID for anything else: the config is written from a file a human
+// edits, and a mistyped asset must not become a fee in some other token.
+const FEE_ASSET = /^[0-9a-f]{56}(?:[0-9a-f]{2}){0,32}$/;
+/** Whether `asset` is a fee option's asset as encodeConfigDatum takes it. */
+const isFeeAsset = asset => asset === 'lovelace' || (typeof asset === 'string' && FEE_ASSET.test(asset));
+const assetParts = asset => {
+    if (!isFeeAsset(asset)) {
+        throw new ChainConfigError('FEE_ASSET_INVALID');
+    }
+    return asset === 'lovelace' ? ['', ''] : [asset.slice(0, 56), asset.slice(56)];
+};
 const bytesList = hexes => Data.list(hexes.map(hex => Data.bytearray(hex)));
 
 /**
  * The config datum (Aiken's `ConfigDatum`) of { serverKeys, admins (key hashes, hex), threshold,
  * paused, fees: [{ asset ('lovelace' or policy hex + name hex), amounts (by TIER_ORDER),
  * receivers: [{ address (bech32), share }] }] }. A receiver is an Aiken tuple: a 2-element list.
+ * FEE_ASSET_INVALID for an asset of another form. It checks nothing else: what the validator
+ * calls well formed is the deploy scripts' check (scripts/chain/lib.js checkConfigDatum).
  */
 const encodeConfigDatum = ({ serverKeys, admins, threshold, paused, fees }) =>
     Data.constr(0n, [
@@ -130,7 +145,7 @@ const encodeConfigDatum = ({ serverKeys, admins, threshold, paused, fees }) =>
         bool(paused),
         Data.list(
             fees.map(({ asset, amounts, receivers }) => {
-                const [policy, name] = asset === 'lovelace' ? ['', ''] : [asset.slice(0, 56), asset.slice(56)];
+                const [policy, name] = assetParts(asset);
                 return Data.constr(0n, [
                     Data.bytearray(policy),
                     Data.bytearray(name),
@@ -249,6 +264,7 @@ module.exports = {
     itemsScript,
     treasuryScript,
     scriptAddress,
+    isFeeAsset,
     encodeConfigDatum,
     decodeConfigDatum,
     mintItemRedeemer,

@@ -197,6 +197,17 @@ describe('the config datum', () => {
             expect(codeOf(thrown(() => decodeConfigDatum(data, preprod)))).toBe('CONFIG_INVALID');
         }
     });
+
+    test("a fee option's asset is 'lovelace' or a policy (28 bytes) and a name (up to 32 bytes) in hex; anything else is FEE_ASSET_INVALID", () => {
+        const withAsset = asset => ({ ...baseConfig, fees: [{ ...baseConfig.fees[0], asset }] });
+        for (const asset of ['c4'.repeat(28), 'c4'.repeat(28) + text('CHOC'), 'c4'.repeat(28) + 'ab'.repeat(32)]) {
+            expect(decodeConfigDatum(encodeConfigDatum(withAsset(asset)), preprod).fees[0].asset).toBe(asset);
+        }
+        const refused = ['', 'ada', 'Lovelace', 'c4'.repeat(27), 'c4'.repeat(28) + 'a', 'c4'.repeat(28) + 'ab'.repeat(33), 'C4'.repeat(28), 'zz'.repeat(28), 42, undefined];
+        for (const asset of refused) {
+            expect([asset, codeOf(thrown(() => encodeConfigDatum(withAsset(asset))))]).toEqual([asset, 'FEE_ASSET_INVALID']);
+        }
+    });
 });
 
 describe('the mint redeemer', () => {
