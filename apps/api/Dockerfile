@@ -26,6 +26,8 @@ ENV NODE_ENV=production
 COPY --from=deps /app ./
 COPY packages/shared ./packages/shared
 COPY apps/api/src ./apps/api/src
+# the contracts' blueprint, which src/chain/blueprint.js reads (the same path as in the repository)
+COPY contracts/plutus.json ./contracts/plutus.json
 USER node
 EXPOSE 8080
 # /health answers without the database; Docker restarts nothing by itself, but `docker ps` and

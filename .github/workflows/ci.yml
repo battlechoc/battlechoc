@@ -58,8 +58,9 @@ jobs:
   test-and-build:
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     runs-on: ubuntu-latest
-    # usually 3 to 4 minutes
-    timeout-minutes: 15
+    # usually about 8 minutes (an estimate from a local run): the chain suites of the API tests
+    # (apps/api/test/chain.*.test.js: the builds evaluate the validators) take about half of it
+    timeout-minutes: 25
     services:
       postgres:
         image: postgres:17-alpine
@@ -96,8 +97,10 @@ jobs:
         run: npm run test:whitepaper
       - name: API tests (in-memory Postgres)
         run: npm run test:api
-      - name: API tests (Postgres 17)
-        run: npm run test:api
+      # the chain suites use no database: they ran in the step above. The second `--` hands the
+      # option to Jest (one alone hands it to npm, which drops it and runs the word as a pattern)
+      - name: API tests (Postgres 17, without the chain suites)
+        run: npm run test:api -- -- --testPathIgnorePatterns '/test/chain\.'
         env:
           TEST_DATABASE_URL: postgres://postgres:test@localhost:5432/postgres
       # a release publishes this image (api-image.yml): it must build and start before that
@@ -107,6 +110,33 @@ jobs:
         run: npm run build
       - name: The published build has no test hooks
         run: npm run check:build
+
+  # The Aiken contracts (contracts/). Not part of `npm run verify`: Aiken is not an npm tool, so a
+  # contributor without it can still verify the rest; `npm run check:contracts` runs the same
+  # checks locally (the property tests with Aiken's default of 100 runs instead of 500).
+  contracts:
+    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
+    runs-on: ubuntu-latest
+    # usually under a minute
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: contracts
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: aiken-lang/setup-aiken@1728a4be43be099752e22d8b841706caaa6fdd88 # v1.0.4
+        with:
+          version: v1.1.24
+      - name: Formatting of the Aiken files
+        run: aiken fmt --check
+      - name: Contract tests (warnings are errors)
+        run: aiken check --deny --max-success 500
+      # git status also sees a blueprint that is untracked or deleted from git (git diff does not)
+      - name: The committed blueprint is the one these sources build
+        run: |
+          aiken build --trace-level silent
+          git status --porcelain -- plutus.json
+          test -z "$(git status --porcelain -- plutus.json)"
 
   # The browser tests in six parallel jobs of about seven to eleven minutes each (in one job they
   # took 29 min), next to test-and-build instead of after it. Each job builds the e2e build and

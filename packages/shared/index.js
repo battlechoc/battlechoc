@@ -88,6 +88,8 @@ module.exports.cardano = {
     ...require('./cardano/network'),
     ...require('./cardano/message'),
 };
+// minting items into a wallet: the rules, windows and URLs (chain.js)
+module.exports.chain = require('./chain');
 
 // Real-time engine
 const realtimeEngine = require('./engine');
